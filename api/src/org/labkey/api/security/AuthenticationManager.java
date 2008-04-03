@@ -380,13 +380,13 @@ public class AuthenticationManager
     }
 
 
-    public static interface UrlFactory
+    public static interface URLFactory
     {
-        ActionURL getUrl(AuthenticationProvider provider);
+        ActionURL getActionURL(AuthenticationProvider provider);
     }
 
 
-    public static HttpView getConfigurationView(ActionURL currentUrl, ActionURL returnUrl, UrlFactory enable, UrlFactory disable)
+    public static HttpView getConfigurationView(ActionURL currentUrl, ActionURL returnUrl, URLFactory enable, URLFactory disable)
     {
         StringBuilder sb = new StringBuilder("These are the installed authentication providers:<br><br>\n");
         sb.append("<table>\n");
@@ -404,7 +404,7 @@ public class AuthenticationManager
             else if (activeProviders.contains(authProvider))
             {
                 sb.append("<td>[<a href=\"");
-                sb.append(disable.getUrl(authProvider).getEncodedLocalURIString());
+                sb.append(disable.getActionURL(authProvider).getEncodedLocalURIString());
                 sb.append("\">");
                 sb.append("disable");
                 sb.append("</a>]</td>");
@@ -412,7 +412,7 @@ public class AuthenticationManager
             else
             {
                 sb.append("<td>[<a href=\"");
-                sb.append(enable.getUrl(authProvider).getEncodedLocalURIString());
+                sb.append(enable.getActionURL(authProvider).getEncodedLocalURIString());
                 sb.append("\">");
                 sb.append("enable");
                 sb.append("</a>]</td>");

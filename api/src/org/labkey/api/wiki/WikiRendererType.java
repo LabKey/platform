@@ -1,8 +1,8 @@
 package org.labkey.api.wiki;
 
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.GroovyView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
 
 /**
  * User: Tamra Myers
@@ -18,7 +18,7 @@ public enum WikiRendererType
             @Override
             public HttpView getSyntaxHelpView()
             {
-                return WikiService.get().getRadeoxSyntaxHelpView();
+                return new JspView("/org/labkey/wiki/view/wikiRadeoxHelp.jsp");
             }
         },
     HTML
@@ -28,7 +28,7 @@ public enum WikiRendererType
             @Override
             public HttpView getSyntaxHelpView()
             {
-                HttpView view = new GroovyView("/org/labkey/wiki/view/wiki_html_help.gm");
+                HttpView view = new JspView("/org/labkey/wiki/view/wikiHtmlHelp.jsp");
                 view.addObject("useVisualEditor", false);
                 return view;
             }

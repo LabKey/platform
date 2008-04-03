@@ -1358,20 +1358,16 @@ public class SecurityManager
     }
 
 
-    public static boolean isTermsOfUseRequired(Container container)
+    public static boolean isTermsOfUseRequired(Project project)
     {
         //TODO: Should do this more efficiently, but no efficient public wiki api for this yet
-        return null != getTermsOfUseHtml(container);
+        return null != getTermsOfUseHtml(project);
     }
 
 
-    public static String getTermsOfUseHtml(Container c)
+    public static String getTermsOfUseHtml(Project project)
     {
-        if (null == c)
-            return null;
-
-        Container proj = c.getProject();
-        if (null == proj)
+        if (null == project)
             return null;
 
         if (!ModuleLoader.getInstance().isStartupComplete())
@@ -1388,7 +1384,7 @@ public class SecurityManager
             return null;
         }
 
-        return service.getHtml(c, TERMS_OF_USE_WIKI_NAME, false);
+        return service.getHtml(project.getContainer(), TERMS_OF_USE_WIKI_NAME, false);
     }
 
 
@@ -1402,36 +1398,38 @@ public class SecurityManager
         if (null == proj)
             return false;
 
-        if ("Basic".equals(ctx.getRequest().getAttribute(AUTHENTICATION_METHOD)) || getTermsOfUseApproved(ctx, proj))
+        Project project = new Project(proj);
+
+        if ("Basic".equals(ctx.getRequest().getAttribute(AUTHENTICATION_METHOD)) || getTermsOfUseApproved(ctx, project))
             return false;
 
         ActionURL url = ctx.getActionURL();
         if (url != null && "query".equalsIgnoreCase(url.getPageFlow()) && "excelWebQuery".equalsIgnoreCase(url.getAction()))
             return false;
 
-        boolean required = isTermsOfUseRequired(proj);
+        boolean required = isTermsOfUseRequired(project);
 
         //stash result so that this is faster next time.
         if (!required)
-            setTermsOfUseApproved(ctx, proj, true);
+            setTermsOfUseApproved(ctx, project, true);
 
         return required;
     }
 
 
     private static String TERMS_APPROVED_KEY = "TERMS_APPROVED_KEY";
-    public static boolean getTermsOfUseApproved(ViewContext ctx, Container project)
+    public static boolean getTermsOfUseApproved(ViewContext ctx, Project project)
     {
         if (null == project)
             return true;
 
         HttpSession session = ctx.getRequest().getSession(true);
-        Set termsApproved = (Set) session.getAttribute(TERMS_APPROVED_KEY);
+        Set<Project> termsApproved = (Set<Project>) session.getAttribute(TERMS_APPROVED_KEY);
         return null != termsApproved && termsApproved.contains(project);
     }
 
 
-    public static void setTermsOfUseApproved(ViewContext ctx, Container project, boolean approved)
+    public static void setTermsOfUseApproved(ViewContext ctx, Project project, boolean approved)
     {
         if (null == project)
             return;
@@ -1439,10 +1437,10 @@ public class SecurityManager
         HttpSession session = ctx.getRequest().getSession(true);
         synchronized(session)
         {
-            Set<Container> termsApproved = (Set<Container>) session.getAttribute(TERMS_APPROVED_KEY);
+            Set<Project> termsApproved = (Set<Project>) session.getAttribute(TERMS_APPROVED_KEY);
             if (null == termsApproved)
             {
-                termsApproved = new HashSet<Container>();
+                termsApproved = new HashSet<Project>();
                 session.setAttribute(TERMS_APPROVED_KEY, termsApproved);
             }
             if (approved)

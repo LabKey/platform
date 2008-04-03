@@ -1,17 +1,14 @@
 package org.labkey.api.wiki;
 
-import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.data.Container;
 import org.labkey.api.attachments.Attachment;
+import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.view.WebPartView;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Jun 12, 2006
  * Time: 2:48:54 PM
- * To change this template use File | Settings | File Templates.
  */
 public class WikiService
 {
@@ -34,7 +31,6 @@ public class WikiService
         public WikiRenderer getRenderer(WikiRendererType rendererType, String attachPrefix, Attachment[] attachments);
         public WikiRendererType getDefaultWikiRendererType();
         public WikiRendererType getDefaultMessageRendererType();
-        public HttpView getRadeoxSyntaxHelpView();  // TODO: Refactor WikiRendererType as a proper interface with implementations in Wiki module so this isn't necessary
     }
 
     public static void register(Service serviceImpl)
