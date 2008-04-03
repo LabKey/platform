@@ -1,6 +1,11 @@
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.api.util.HelpTopic"%>
-
+<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.JspView"%>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%
+    JspView me = (JspView) HttpView.currentView();
+    ViewContext ctx = me.getViewContext();
+    boolean useVisualEditor = ((Boolean)ctx.get("useVisualEditor")).booleanValue();
+%>
 <table>
     <tr>
         <td colspan=2><b>Formatting Guide:</b></td>

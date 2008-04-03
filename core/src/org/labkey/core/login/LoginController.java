@@ -5,6 +5,7 @@ import org.labkey.api.action.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.Project;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
@@ -23,6 +24,7 @@ import org.mule.MuleManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
 
 import javax.mail.MessagingException;
 import javax.servlet.ServletException;
@@ -52,29 +54,23 @@ public class LoginController extends SpringActionController
     }
 
 
-    private static ActionURL getURL(String action)
-    {
-        return new ActionURL("login", action, "");
-    }
-
-
     public static class LoginURLFactoryImpl implements AuthenticationManager.LoginURLFactory
     {
         public ActionURL getURL(ActionURL returnURL)
         {
-            return getLoginURL(LoginController.getURL("login"), returnURL);
+            return addReturnURL(getLoginURL(), returnURL);
         }
 
         public ActionURL getURL(String returnURL)
         {
-            ActionURL loginURL = LoginController.getURL("login");
+            ActionURL loginURL = getLoginURL();
             loginURL.addParameter("URI", returnURL);
             return loginURL;
         }
     }
 
 
-    private static ActionURL getLoginURL(ActionURL loginURL, ActionURL returnURL)
+    private static ActionURL addReturnURL(ActionURL loginURL, ActionURL returnURL)
     {
         if (null != returnURL)
             loginURL.addParameter("URI", returnURL.getLocalURIString());
@@ -83,21 +79,15 @@ public class LoginController extends SpringActionController
     }
 
 
-    private static ActionURL getLoginURL(ActionURL returnURL)
-    {
-        return getLoginURL(getURL("login"), returnURL);
-    }
-
-
     private static ActionURL getLoginURL(ActionURL returnURL, String email)
     {
-        return getLoginURL(returnURL).addParameter("email", email);
+        return addReturnURL(getLoginURL(), returnURL).addParameter("email", email);
     }
 
 
     public static ActionURL getLoginURL()
     {
-        return getURL("login");
+        return new ActionURL(LoginAction.class);
     }
 
     @RequiresPermission(ACL.PERM_NONE) @ActionNames("login, showLogin")
@@ -175,9 +165,9 @@ public class LoginController extends SpringActionController
             {
                 throw new RuntimeSQLException(e);
             }
+
             // should never get here, as the success options throw RedirectExceptions
             throw new IllegalStateException("Should have redirected");
-
         }
 
         private boolean authenticate(LoginForm form, HttpServletRequest request, HttpServletResponse response)
@@ -223,7 +213,6 @@ public class LoginController extends SpringActionController
         {
             // No longer possible, as the handlePost() should redirect.
             throw new UnsupportedOperationException("This should never occur. Success should redirect.");
-
         }
 
         private String getSuccessURLAsString(LoginForm form) throws SQLException, ServletException
@@ -390,7 +379,7 @@ public class LoginController extends SpringActionController
     }
 
 
-    private Container getTermsOfUseProject(LoginForm form) throws ServletException
+    private Project getTermsOfUseProject(LoginForm form) throws ServletException
     {
         Container termsContainer = null;
 
@@ -423,17 +412,21 @@ public class LoginController extends SpringActionController
         if (null == termsContainer)
         {
             Container c = getContainer();
-            termsContainer = c.isRoot() ? c : c.getProject();
+
+            if (c.isRoot())
+                return null;
+            else
+                termsContainer = c.getProject();
         }
 
-        return termsContainer;
+        return new Project(termsContainer);
     }
 
 
     private boolean isTermsOfUseApproved(LoginForm form) throws ServletException, URISyntaxException
     {
-        Container termsContainer = getTermsOfUseProject(form);
-        return termsContainer == null || !SecurityManager.isTermsOfUseRequired(termsContainer) || form.isApprovedTermsOfUse();
+        Project termsProject = getTermsOfUseProject(form);
+        return termsProject == null || !SecurityManager.isTermsOfUseRequired(termsProject) || form.isApprovedTermsOfUse();
     }
 
 
@@ -519,7 +512,7 @@ public class LoginController extends SpringActionController
 
     public static ActionURL getLogoutURL()
     {
-        return getURL("logout");
+        return new ActionURL(LogoutAction.class);
     }
 
 
@@ -835,9 +828,9 @@ public class LoginController extends SpringActionController
     }
 
 
-    public static ActionURL getInitialUserUrl()
+    public static ActionURL getInitialUserURL()
     {
-        return getURL("initialUser");
+        return new ActionURL(InitialUserAction.class);
     }
 
 
@@ -1094,69 +1087,69 @@ public class LoginController extends SpringActionController
     }
 
 
-    private static abstract class ConfigUrlFactory implements AuthenticationManager.UrlFactory
+    private static abstract class ConfigURLFactory implements AuthenticationManager.URLFactory
     {
-        private ActionURL _returnUrl;
+        private ActionURL _returnURL;
 
-        private ConfigUrlFactory(ActionURL returnUrl)
+        private ConfigURLFactory(ActionURL returnURL)
         {
-            _returnUrl = returnUrl;
+            _returnURL = returnURL;
         }
 
-        public ActionURL getUrl(AuthenticationProvider provider)
+        public ActionURL getActionURL(AuthenticationProvider provider)
         {
-            ActionURL url = LoginController.getURL(getAction());
+            ActionURL url = new ActionURL(getActionClass());
             url.addParameter("name", provider.getName());
-            url.addParameter("returnUrl", _returnUrl.getLocalURIString());
+            url.addParameter(ReturnUrlForm.Params.returnUrl, _returnURL.getLocalURIString());
             return url;
         }
 
-        protected abstract String getAction();
+        protected abstract Class<? extends Controller> getActionClass();
     }
 
 
-    private static class EnableUrlFactory extends ConfigUrlFactory
+    private static class EnableURLFactory extends ConfigURLFactory
     {
-        private EnableUrlFactory(ActionURL returnUrl)
+        private EnableURLFactory(ActionURL returnURL)
         {
-            super(returnUrl);
+            super(returnURL);
         }
 
-        protected String getAction()
+        protected Class<? extends Controller> getActionClass()
         {
-            return "enable.view";
+            return EnableAction.class;
         }
     }
 
 
-    private static class DisableUrlFactory extends ConfigUrlFactory
+    private static class DisableURLFactory extends ConfigURLFactory
     {
-        private DisableUrlFactory(ActionURL returnUrl)
+        private DisableURLFactory(ActionURL returnURL)
         {
-            super(returnUrl);
+            super(returnURL);
         }
 
-        protected String getAction()
+        protected Class<? extends Controller> getActionClass()
         {
-            return "disable.view";
+            return DisableAction.class;
         }
     }
 
 
     @RequiresSiteAdmin
-    public class ConfigureAction extends SimpleViewAction
+    public class ConfigureAction extends SimpleViewAction<ReturnUrlForm>
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(ReturnUrlForm form, BindException errors) throws Exception
         {
-            ActionURL currentUrl = getViewContext().getActionURL();
-            ActionURL returnUrl = new ActionURL(currentUrl.getParameter("returnUrl"));
+            ActionURL currentURL = getViewContext().getActionURL();
+            ActionURL returnURL = form.getReturnActionURL();
 
-            return AuthenticationManager.getConfigurationView(currentUrl, returnUrl, new EnableUrlFactory(currentUrl), new DisableUrlFactory(currentUrl));
+            return AuthenticationManager.getConfigurationView(currentURL, returnURL, new EnableURLFactory(currentURL), new DisableURLFactory(currentURL));
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild("Admin Console", AdminController.getShowAdminUrl()).addChild("Authentication Providers");
+            root.addChild("Admin Console", AdminController.getShowAdminURL()).addChild("Authentication Providers");
             return root;
         }
     }

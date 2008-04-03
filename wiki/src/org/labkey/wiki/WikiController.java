@@ -1664,8 +1664,8 @@ public class WikiController extends SpringActionController
                     DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG).format(_wikiversion.getCreated()));
 
             //base url for different versions of this page
-            ActionURL urlVersion = wikiURL("version", "name", name);
-            versionView.addObject("versionLink", urlVersion.toString());
+            ActionURL versionURL = wikiURL("version", "name", name);
+            versionView.addObject("versionLink", versionURL.toString());
 
             return versionView;
         }
@@ -1675,15 +1675,15 @@ public class WikiController extends SpringActionController
             String pageTitle = _wikiversion.getTitle();
             pageTitle += " (Version " + _wikiversion.getVersion() + " of " + WikiManager.getVersionCount(_wiki) + ")";
 
-            return new VersionsAction(_wiki,_wikiversion).appendNavTrail(root)
+            return new VersionsAction(_wiki, _wikiversion).appendNavTrail(root)
                     .addChild(pageTitle, getUrl());
         }
 
         public ActionURL getUrl()
         {
-            ActionURL url = wikiURL("version")
-                    .addParameter("name",_wiki.getName())
-                    .addParameter("version",""+_wikiversion.getVersion());
+            ActionURL url = new ActionURL(VersionAction.class, getContainer());
+            url.addParameter("name", _wiki.getName());
+            url.addParameter("version", " "+ _wikiversion.getVersion());
             return url;
         }
     }
@@ -2676,6 +2676,11 @@ public class WikiController extends SpringActionController
             // We want a full wiki with attachments so rendering doesn't end up caching bogus HTML (e.g., lacking links
             // to attached content)
             Wiki fullWiki = WikiManager.getWiki(c, wiki2.getName());
+
+            // Could be null if wikis have been deleted/renamed while link checker is running
+            if (null == fullWiki)
+                continue;
+
             WikiVersion latest = fullWiki.latestVersion();
             String html = latest.getHtml(c, fullWiki);
             Collection<String> errorStrings = new ArrayList<String>();

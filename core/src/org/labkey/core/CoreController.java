@@ -1,15 +1,21 @@
 package org.labkey.core;
 
-import org.apache.beehive.netui.pageflow.FormData;
-import org.apache.beehive.netui.pageflow.Forward;
-import org.apache.beehive.netui.pageflow.annotations.Jpf;
 import org.apache.commons.lang.StringUtils;
+import org.labkey.api.action.ExportAction;
+import org.labkey.api.action.SimpleRedirectAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.security.ACL;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.util.AppProps;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.WebPartView;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -17,52 +23,52 @@ import java.util.concurrent.atomic.AtomicReference;
  * User: jeckels
  * Date: Jan 4, 2007
  */
-@Jpf.Controller(messageBundles = {@Jpf.MessageBundle(bundlePath = "messages.Validation")})
-public class CoreController  extends ViewController
+public class CoreController extends SpringActionController
 {
     private static final long SECS_IN_DAY = 60 * 60 * 24;
     private static final long MILLIS_IN_DAY = 1000 * SECS_IN_DAY;
 
-    @Jpf.Action
-    protected Forward begin() throws Exception
+    private static AtomicReference<PageFlowUtil.Content> _cssContent = new AtomicReference<PageFlowUtil.Content>();
+    private static ActionResolver _actionResolver = new DefaultActionResolver(CoreController.class);
+
+    public CoreController()
     {
-        return null;
+        super();
+        setActionResolver(_actionResolver);
     }
 
-
-    static AtomicReference<PageFlowUtil.Content> _cssContent = new AtomicReference<PageFlowUtil.Content>();
-
-
-    @Jpf.Action
-    protected Forward stylesheet() throws Exception
+    @RequiresPermission(ACL.PERM_NONE)
+    public class StylesheetAction extends ExportAction
     {
-        // This action gets called a LOT, so cache the generated .css 
-        PageFlowUtil.Content c = _cssContent.get();
-        Integer dependsOn = AppProps.getInstance().getLookAndFeelRevision();
-        if (null == c || !dependsOn.equals(c.dependencies) || null != getRequest().getParameter("nocache") || AppProps.getInstance().isDevMode())
+        public void export(Object o, HttpServletResponse response) throws Exception
         {
-            JspView view = new JspView("/org/labkey/core/stylesheet.jsp");
-            view.setFrame(WebPartView.FrameType.NONE);
-            c = PageFlowUtil.getViewContent(view, getRequest(), getResponse());
-            c.dependencies = dependsOn;
-            c.encoded = compressCSS(c.content);
-            _cssContent.set(c);
-        }
+            // This action gets called a LOT, so cache the generated .css
+            PageFlowUtil.Content c = _cssContent.get();
+            HttpServletRequest request = getViewContext().getRequest();
+            Integer dependsOn = AppProps.getInstance().getLookAndFeelRevision();
+            if (null == c || !dependsOn.equals(c.dependencies) || null != request.getParameter("nocache") || AppProps.getInstance().isDevMode())
+            {
+                JspView view = new JspView("/org/labkey/core/stylesheet.jsp");
+                view.setFrame(WebPartView.FrameType.NONE);
+                c = PageFlowUtil.getViewContent(view, request, response);
+                c.dependencies = dependsOn;
+                c.encoded = compressCSS(c.content);
+                _cssContent.set(c);
+            }
 
-        HttpServletResponse response = getResponse();
-        response.setContentType("text/css");
-        response.setDateHeader("Expires", System.currentTimeMillis() + MILLIS_IN_DAY * 10);
-        response.setDateHeader("Last-Modified", c.modified);
-        if (StringUtils.trimToEmpty(getRequest().getHeader("Accept-Encoding")).contains("gzip"))
-        {
-            response.setHeader("Content-Encoding", "gzip");
-            response.getOutputStream().write(c.encoded);
+            response.setContentType("text/css");
+            response.setDateHeader("Expires", System.currentTimeMillis() + MILLIS_IN_DAY * 10);
+            response.setDateHeader("Last-Modified", c.modified);
+            if (StringUtils.trimToEmpty(request.getHeader("Accept-Encoding")).contains("gzip"))
+            {
+                response.setHeader("Content-Encoding", "gzip");
+                response.getOutputStream().write(c.encoded);
+            }
+            else
+            {
+                response.getWriter().write(c.content);
+            }
         }
-        else
-        {
-            response.getWriter().write(c.content);
-        }
-        return null;
     }
 
 
@@ -76,26 +82,30 @@ public class CoreController  extends ViewController
     }
 
 
-    @Jpf.Action
-    protected Forward containerRedirect(RedirectForm form) throws Exception
+    @RequiresPermission(ACL.PERM_NONE)
+    public class ContainerRedirectAction extends SimpleRedirectAction<RedirectForm>
     {
-        Container targetContainer = ContainerManager.getForId(form.getContainerId());
-        if (targetContainer == null)
+        public ActionURL getRedirectURL(RedirectForm form) throws Exception
         {
-            return HttpView.throwNotFound();
+            Container targetContainer = ContainerManager.getForId(form.getContainerId());
+            if (targetContainer == null)
+            {
+                HttpView.throwNotFound();
+            }
+            ActionURL url = getViewContext().getActionURL().clone();
+            url.deleteParameter("action");
+            url.deleteParameter("pageflow");
+            url.deleteParameter("containerId");
+            url.setPageFlow(form.getPageflow());
+            url.setAction(form.getAction());
+            url.setExtraPath(targetContainer.getPath());
+
+            return url;
         }
-        ActionURL url = getActionURL().clone();
-        url.deleteParameter("action");
-        url.deleteParameter("pageflow");
-        url.deleteParameter("containerId");
-        url.setPageFlow(form.getPageflow());
-        url.setAction(form.getAction());
-        url.setExtraPath(targetContainer.getPath());
-        return HttpView.throwRedirect(url);
     }
 
 
-    public static class RedirectForm extends FormData
+    public static class RedirectForm
     {
         private String _containerId;
         private String _action;
@@ -131,5 +141,4 @@ public class CoreController  extends ViewController
             _pageflow = pageflow;
         }
     }
-
 }

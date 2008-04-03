@@ -72,7 +72,7 @@ function changeRenderer()
       }
     }
 
-    //reset the LABKEY dirty state so that the user isn't warned about loosing content
+    //reset the LABKEY dirty state so that the user isn't warned about losing content
     //(which the user won't since we're just doing a reshow)
     LABKEY.setDirty(false);
 

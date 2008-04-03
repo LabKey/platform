@@ -716,7 +716,7 @@ public class WikiManager
 
         Map<String, WikiRenderer.WikiLinkable> pages = getVersionMap(c);
 
-        Attachment[] attachments = wiki.getAttachments() == null ? null : wiki.getAttachments().toArray(new Attachment[0]);
+        Attachment[] attachments = wiki.getAttachments() == null ? null : wiki.getAttachments().toArray(new Attachment[wiki.getAttachments().size()]);
 
         //get formatter specified for this version
         WikiRenderer w = wikiversion.getRenderer(hrefPrefix, attachPrefix, pages, attachments);

@@ -122,7 +122,7 @@ public class AdminController extends ViewController
     }
 
 
-    public static ActionURL getShowAdminUrl()
+    public static ActionURL getShowAdminURL()
     {
         return getUrl("showAdmin");
     }
@@ -1693,7 +1693,7 @@ public class AdminController extends ViewController
         if (title != null)
             trailConfig.setTitle(title);
         if (!"showAdmin".equals(getActionURL().getAction()))
-            trailConfig.setExtraChildren(new NavTree("Admin Console", getShowAdminUrl()));
+            trailConfig.setExtraChildren(new NavTree("Admin Console", getShowAdminURL()));
 
         HomeTemplate template = new HomeTemplate(getViewContext(), getContainer(), view, trailConfig);
         includeView(template);
@@ -1780,7 +1780,7 @@ public class AdminController extends ViewController
     {
         //This is first UI at startup.  Create first admin account, if necessary.
         if (UserManager.hasNoUsers())
-            HttpView.throwRedirect(LoginController.getInitialUserUrl());
+            HttpView.throwRedirect(LoginController.getInitialUserURL());
         requiresAdmin();
 
         VBox vbox = new VBox();

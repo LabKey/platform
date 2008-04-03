@@ -162,11 +162,6 @@ public class ServiceImpl implements WikiService.Service
     }
 
 
-    public HttpView getRadeoxSyntaxHelpView()
-    {
-        return new JspView("/org/labkey/wiki/view/wikiHelp.jsp");
-    }
-
     public static ServiceImpl get()
     {
         return (ServiceImpl) WikiService.get();
