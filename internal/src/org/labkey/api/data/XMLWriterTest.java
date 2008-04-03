@@ -86,25 +86,26 @@ public class XMLWriterTest
             XMLWriterTest writer = new XMLWriterTest();
             writer.write(pw);
             StringBuffer sb = sw.getBuffer();
-            String value = "<Workspace this=\"1\" that=\"2\" theother=\"3\">\r\n" +
-                "  <Symbols>Weird symbols &lt; &amp; &gt; | { } make me happy</Symbols>\r\n" +
-                "  <Foo one=\"1\" two=\"2\" this=\"1\" that=\"2\" theother=\"3\" this=\"1\" that=\"2\"\r\n" +
-                "   theother=\"3\" this=\"1\" that=\"2\" theother=\"3\" this=\"1\" that=\"2\" theother=\"3\"\r\n" +
-                "   this=\"1\" that=\"2\" theother=\"3\" this=\"1\" that=\"2\" theother=\"3\" this=\"1\"\r\n" +
-                "   that=\"2\" theother=\"3\" this=\"1\" that=\"2\" theother=\"3\" this=\"1\" that=\"2\"\r\n" +
-                "   theother=\"3\" this=\"1\" that=\"2\" theother=\"3\" this=\"1\" that=\"2\" theother=\"3\"\r\n" +
-                "   this=\"1\" that=\"2\" theother=\"3\" this=\"1\" that=\"2\" theother=\"3\" this=\"1\"\r\n" +
-                "   that=\"2\" theother=\"3\" this=\"1\" that=\"2\" theother=\"3\">\r\n" +
-                "    <Bar fum=\"flow\">\r\n" +
-                "      <Floom this=\"1\" that=\"2\" theother=\"3\">\r\n" +
-                "      Some value that is really long in order to test the word wrapping stuff we&#039;re doing\r\n" +
-                "      </Floom>\r\n" +
-                "      <Spices Cinnamon=\"yum\" Nutmeg=\"yum\" Cumin=\"yum\" Cardamon=\"no thanks\" />\r\n" +
-                "    </Bar>\r\n" +
-                "  </Foo>\r\n" +
-                "</Workspace>\r\n";
+            String lineEnding = System.getProperty("line.separator");
+            String value = "<Workspace this=\"1\" that=\"2\" theother=\"3\">" + lineEnding +
+                "  <Symbols>Weird symbols &lt; &amp; &gt; | { } make me happy</Symbols>" + lineEnding +
+                "  <Foo one=\"1\" two=\"2\" this=\"1\" that=\"2\" theother=\"3\" this=\"1\" that=\"2\"" + lineEnding +
+                "   theother=\"3\" this=\"1\" that=\"2\" theother=\"3\" this=\"1\" that=\"2\" theother=\"3\"" + lineEnding +
+                "   this=\"1\" that=\"2\" theother=\"3\" this=\"1\" that=\"2\" theother=\"3\" this=\"1\"" + lineEnding +
+                "   that=\"2\" theother=\"3\" this=\"1\" that=\"2\" theother=\"3\" this=\"1\" that=\"2\"" + lineEnding +
+                "   theother=\"3\" this=\"1\" that=\"2\" theother=\"3\" this=\"1\" that=\"2\" theother=\"3\"" + lineEnding +
+                "   this=\"1\" that=\"2\" theother=\"3\" this=\"1\" that=\"2\" theother=\"3\" this=\"1\"" + lineEnding +
+                "   that=\"2\" theother=\"3\" this=\"1\" that=\"2\" theother=\"3\">" + lineEnding +
+                "    <Bar fum=\"flow\">" + lineEnding +
+                "      <Floom this=\"1\" that=\"2\" theother=\"3\">" + lineEnding +
+                "      Some value that is really long in order to test the word wrapping stuff we&#039;re doing" + lineEnding +
+                "      </Floom>" + lineEnding +
+                "      <Spices Cinnamon=\"yum\" Nutmeg=\"yum\" Cumin=\"yum\" Cardamon=\"no thanks\" />" + lineEnding +
+                "    </Bar>" + lineEnding +
+                "  </Foo>" + lineEnding +
+                "</Workspace>" + lineEnding;
 
-            assertTrue("Text doesn't match", sb.toString().equals(value));
+            assertEquals("Text doesn't match", value, sb.toString());
         }
 
         public static Test suite()
