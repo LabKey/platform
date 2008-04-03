@@ -1,0 +1,46 @@
+<script type="text/javascript">
+    LABKEY.requiresClientAPI();
+</script>
+
+<script type="text/javascript">
+    // valid chart options:
+    //
+    // schemaName {String}: Required.  The name of a schema defined within the current container.
+    // queryName {String}: Required.  The name of a query table associated with the chosen schema.   
+    // viewName {String}: Optional.  The name of a custom view associated with the chosen query. 
+    // renderTo {string}: Required. Element on the page where the chart will render.
+    // renderImageMapTo {string}: Element on the page where the imagemap will render.
+    // errorCallback {function}: Javascript function that can be used as a callback
+    //                  if an error occurs. Otherwise, a standard listener will be used.
+    // columnXName {String}: The name of the column to plot on the X axis.
+    // columnYName {String|[String]}: The name of the column (or columns) to plot on the Y axis,
+    //              if multiple columns, express in array format: ['APXwtkg', 'APXbpsys', 'APXbpdia'].
+    // logX {boolean}: Log scale X axis.
+    // logY {boolean}: Log scale Y axis.
+    // chartType {LABKEY.Chart.TIME | LABKEY.Chart.XY}: The type of chart to plot.
+    // height {int}: Height in pixels. Default = 480.
+    // width {int}: Width in pixels. Default = 640.
+    // showMultipleYAxis {boolean}: If there are multiple Y axis columns, display a separate Y axis
+    //                              for each column on the same plot. This option is mutually exclusive
+    //                              with showMultipleCharts.
+    // showLines {boolean}: Show lines between symbols.
+    // showMultipleCharts {boolean}: If multiple Y columns are specified, display each in its own plot.
+    // verticalOrientation {boolean}: If showMultipleCharts is 'true' this option controls whether
+    //                                charts are plotted vertically or horizontally (the default).
+
+    var chartConfig = {
+        queryName: 'Physical Exam',
+        schemaName: 'study',
+        chartType: LABKEY.Chart.XY,
+        renderTo: 'chartDiv',
+        columnXName: 'APXwtkg',
+        columnYName: ['APXwtkg', 'APXbpsys', 'APXbpdia']
+    };
+
+    var chart = new LABKEY.Chart(chartConfig);
+    chart.render();
+
+</script>
+
+<div id="chartDiv"></div>
+

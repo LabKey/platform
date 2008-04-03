@@ -1,0 +1,58 @@
+package org.labkey.api.exp.api;
+
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.Identifiable;
+
+import java.util.Comparator;
+import java.sql.SQLException;
+
+public interface ExpObject extends Identifiable
+{
+    int getRowId();
+    void setLSID(String lsid);
+    String getLSIDNamespacePrefix();
+    void setName(String name);
+    URLHelper detailsURL();
+    Container getContainer();
+    void setContainer(Container container);
+
+    void setProperty(User user, PropertyDescriptor pd, Object value) throws SQLException;
+    boolean logPropertyChange(User user, String propertyURI, Object oldValue, Object newValue);
+    Object getProperty(PropertyDescriptor pd);
+
+    String getComment();
+    void setComment(User user, String comment) throws Exception;
+    String urlFlag(boolean flagged);
+
+    boolean equals(Object o);
+    int hashCode();
+
+    User getCreatedBy();
+
+    public static final Comparator<ExpObject> NAME_COMPARATOR = new Comparator<ExpObject>()
+    {
+        public int compare(ExpObject o1, ExpObject o2)
+        {
+            if (o1.getName() != null)
+            {
+                if (o2.getName() != null)
+                {
+                    return o1.getName().compareToIgnoreCase(o2.getName());
+                }
+                return 1;
+            }
+            else
+            {
+                if (o2.getName() != null)
+                {
+                    return -1;
+                }
+                return 0;
+            }
+        }
+    };
+
+}

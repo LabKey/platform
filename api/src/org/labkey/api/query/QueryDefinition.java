@@ -1,0 +1,53 @@
+package org.labkey.api.query;
+
+import org.labkey.api.data.*;
+import org.labkey.api.security.User;
+import org.labkey.api.view.ActionURL;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.Map;
+import java.util.List;
+
+public interface QueryDefinition
+{
+    String getName();
+    String getSchemaName();
+
+    Container getContainer();
+    boolean canInherit();
+    void setCanInherit(boolean f);
+    boolean isHidden();
+    void setIsHidden(boolean f);
+
+    CustomView getCustomView(User user, HttpServletRequest request, String name);
+    Map<String, CustomView> getCustomViews(User user, HttpServletRequest request);
+    CustomView createCustomView(User user, String name);
+    List<ColumnInfo> getColumns(CustomView view, TableInfo table);
+    List<DisplayColumn> getDisplayColumns(CustomView view, TableInfo table);
+
+    /**
+     * Return a tableInfo representing this query.
+     * @param alias may be null if caller does not care about table alias.
+     */
+    TableInfo getTable(String alias, QuerySchema schema, List<QueryException> errors);
+    TableInfo getMainTable();
+
+    String getSql();
+    String getMetadataXml();
+    String getDescription();
+    void setDescription(String description);
+
+    void setSql(String sql);
+    void setMetadataXml(String xml);
+    void setContainer(Container container);
+
+    boolean canEdit(User user);
+    void save(User user, Container container) throws Exception;
+    void delete(User user) throws Exception;
+
+    List<QueryException> getParseErrors(QuerySchema schema);
+
+    ActionURL urlFor(QueryAction action);
+    ActionURL urlFor(QueryAction action, Container container);
+    UserSchema getSchema();
+}

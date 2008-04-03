@@ -1,0 +1,425 @@
+/**
+ * @fileOverview
+ * @author LabKey Software <a href="mailto:support@labkey.com">support@labkey.com</a>
+ * @version 8.1
+ * @license Copyright (c) 2008 LabKey Software Foundation
+ * <p/>
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * <p/>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p/>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * <p/>
+ */
+
+/**
+ * @namespace Query static class to programmatically retrieve, insert, update and 
+ *		delete data from LabKey public queries. <p/>
+ *		{@link LABKEY.Query#selectRows} works for all LabKey public queries.  However,
+ *		{@link LABKEY.Query#updateRows}, {@link LABKEY.Query#insertRows} and
+ *		{@link LABKEY.Query#deleteRows} are only available for queries that 
+ *		use either the "lists" schema or a user-defined schema. 
+ *		These three methods may not be used to operate on rows returned by queries to other LabKey 
+ *		module schemas (e.g., ms1, ms2, flow, etc). To update, insert or delete data returned by 
+ * 		queries to these types of schemas, use the methods for their respective classes, 
+ *		such as the methods defined by {@link LABKEY.Assay} for assays.
+ *
+ */
+LABKEY.Query = new function()
+{
+    function sendJsonQueryRequest(schemaName, queryName, action,
+                                  rowDataArray, successCallback, errorCallback)
+    {
+        var dataObject = {
+            schemaName : schemaName,
+            queryName : queryName,
+            rows : rowDataArray
+        };
+
+        Ext.Ajax.request({
+            url : LABKEY.ActionURL.buildURL("query", action),
+            method : 'POST',
+            success: getCallbackWrapper(successCallback),
+            failure: getCallbackWrapper(errorCallback),
+            jsonData : dataObject,
+            headers : {
+                'Content-Type' : 'application/json'
+            }
+        });
+    }
+
+    function getCallbackWrapper(callbackFn)
+    {
+        return function(response, options)
+        {
+            var data = Ext.util.JSON.decode(response.responseText);
+            callbackFn(data, options);
+        }
+    }
+
+    // public methods:
+    /** @scope LABKEY.Query.prototype */
+    return {
+
+		/**
+        * Select rows.
+        * @param {String} schemaName Name of a schema defined within the current container. See also: <a class="link"
+					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+					How To Find schemaName, queryName &amp; viewName</a>.
+        * @param {String} queryName Name of a query table associated with the chosen schema. See also: <a class="link"
+					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+					How To Find schemaName, queryName &amp; viewName</a>.
+        * @param {Function(LABKEY.Query.SelectRowsResults [LABKEY.Query.SelectRowsOptions])} successCallback
+				Function called when the "select" function executes successfully.		
+        * @param {Function} [errorCallback] Function called when execution of the "select" function fails.
+        * @param {Array} [filterArray] Array of objects created by {@link LABKEY.Filter#create}.
+        * @param {String} [sort]  String description of the sort.  It includes the column names
+        *       listed in the URL of a sorted data region (with an optional minus prefix to indicate
+        *       descending order). In the case of a multi-column sort, up to three column names can be
+        *       included, separated by commas.
+        * @example Example: <pre name="code" class="xml">
+&lt;script type="text/javascript"&gt;
+	LABKEY.requiresClientAPI();
+&lt;/script&gt;
+&lt;script type="text/javascript"&gt;
+	function failureHandler(responseObj) 
+	{ 
+	    alert("Failure: " + responseObj.exception); 
+	} 
+
+	function successHandler(responseObj) 
+	{ 
+	    alert("Success! " + responseObj.rowCount + " rows returned."); 
+	} 
+
+	LABKEY.Query.selectRows('lists', 'People', successHandler, failureHandler, 
+			[ LABKEY.Filter.create('FirstName', 'Johny')]); 
+&lt;/script&gt; </pre>
+		* @see LABKEY.Query.SelectRowsOptions
+		* @see LABKEY.Query.SelectRowsResults
+		*/
+        selectRows : function(schemaName, queryName, successCallback, errorCallback, filterArray, sort)
+        {
+            var dataObject = {};
+            dataObject['query.queryName'] = queryName;
+            dataObject['schemaName'] = schemaName;
+            if (sort)
+                dataObject['query.sort'] = sort;
+
+            if (filterArray)
+            {
+                for (var i = 0; i < filterArray.length; i++)
+                {
+                    var filter = filterArray[i];
+                    dataObject[filter.getURLParameterName()] = filter.getURLParameterValue();
+                }
+            }
+
+            Ext.Ajax.request({
+                url : LABKEY.ActionURL.buildURL('query', 'getQuery'),
+                method : 'GET',
+                success: getCallbackWrapper(successCallback),
+                failure: getCallbackWrapper(errorCallback),
+                params : dataObject
+            });
+        },
+
+        /**
+        * Update rows
+        * @param {String} schemaName Name of a schema defined within the current container. See also: <a class="link"
+					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+					How To Find schemaName, queryName &amp; viewName</a>.
+        * @param {String} queryName Name of a query table associated with the chosen schema.  See also: <a class="link"
+					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+					How To Find schemaName, queryName &amp; viewName</a>.
+        * @param {Function(LABKEY.Query.ModifyRowsResults [LABKEY.Query.ModifyRowsOptions])}
+						successCallback Function called when the "update" function executes successfully.
+        * @param {Function} [errorCallback] Function called when execution of the "update" function fails.
+        * @param {Array} rowDataArray Array of record objects in which each object has a property for each field.
+        *               The row array must include the primary key column values and values for
+        *               other columns you wish to update.
+		* @see LABKEY.Query.ModifyRowsResults
+		* @see LABKEY.Query.ModifyRowsOptions
+        */
+        updateRows : function(schemaName, queryName, rowDataArray, successCallback, errorCallback)
+        {
+            sendJsonQueryRequest(schemaName, queryName, "updateRows", rowDataArray, successCallback, errorCallback);
+        },
+
+        /**
+        * Insert rows
+        * @param {String} schemaName Name of a schema defined within the current container.  See also: <a class="link"
+					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+					How To Find schemaName, queryName &amp; viewName</a>.
+        * @param {String} queryName Name of a query table associated with the chosen schema. See also: <a class="link"
+					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+					How To Find schemaName, queryName &amp; viewName</a>.
+        * @param {Function(LABKEY.Query.ModifyRowsResults [LABKEY.Query.ModifyRowsOptions])} successCallback
+							Function called when the "insert" function executes successfully.
+        * @param {Function} [errorCallback]  Function called when execution of the "insert" function fails.
+        * @param {Array} rowDataArray Array of record objects in which each object has a property for each field.
+        *                  The row data array must include all column values except for the primary key column.
+        *                  However, you will need to include the primary key column values if you defined
+        *                  them yourself instead of relying on auto-number.
+		* @see LABKEY.Query.ModifyRowsResults
+		* @see LABKEY.Query.ModifyRowsOptions
+        */
+        insertRows : function(schemaName, queryName, rowDataArray, successCallback, errorCallback)
+        {
+            sendJsonQueryRequest(schemaName, queryName, "insertRows", rowDataArray, successCallback, errorCallback);
+        },
+
+        /**
+        * Delete rows
+        * @param {String} schemaName Name of a schema defined within the current container. See also: <a class="link"
+					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+					How To Find schemaName, queryName &amp; viewName</a>.
+        * @param {String} queryName Name of a query table associated with the chosen schema. See also: <a class="link"
+					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+					How To Find schemaName, queryName &amp; viewName</a>.
+        * @param {Function(LABKEY.Query.ModifyRowsResults [LABKEY.Query.ModifyRowsOptions])} successCallback
+							Function called when the "delete" function executes successfully.
+        * @param {Function} [errorCallback] Function called when execution of the "delete" function fails.
+        * @param {Array} rowDataArray Array of record objects in which each object has a property for each field.
+        *                  The row data array needs to include only the primary key column value, not all columns.
+		* @see LABKEY.Query.ModifyRowsResults
+		* @see LABKEY.Query.ModifyRowsOptions
+        */
+        deleteRows : function(schemaName, queryName, rowDataArray, successCallback, errorCallback)
+        {
+            sendJsonQueryRequest(schemaName, queryName, "deleteRows", rowDataArray, successCallback, errorCallback);
+        },
+
+        /**
+        * Build and return an object suitable for passing to the
+        * <a href = "http://extjs.com/deploy/dev/docs/?class=Ext.Ajax">Ext.Ajax</a> 'params' configuration property.
+        * @param {String} schemaName Name of a schema defined within the current container.  See also: <a class="link"
+					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+					How To Find schemaName, queryName &amp; viewName</a>.
+        * @param {String} queryName Name of a query table associated with the chosen schema.   See also: <a class="link"
+					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+					How To Find schemaName, queryName &amp; viewName</a>.
+        * @param {Array} [filterArray] Array of objects created by {@link LABKEY.Filter#create}.
+        * @param {String} [sort]  String description of the sort.  It includes the column names
+        *       listed in the URL of a sorted data region (with an optional minus prefix to indicate
+        *       descending order). In the case of a multi-column sort, up to three column names can be
+        *       included, separated by commas.
+        * @returns {Object} Object suitable for passing to the
+        * <a href = "http://extjs.com/deploy/dev/docs/?class=Ext.Ajax">Ext.Ajax</a> 'params' configuration property.
+        */
+
+        buildQueryParams: function(schemaName, queryName, filterArray, sort)
+        {
+            var params = {};
+            params['query.queryName'] = queryName;
+            params['schemaName'] = schemaName;
+            if (sort)
+                params['query.sort'] = sort;
+
+            if (filterArray)
+            {
+                for (var i = 0; i < filterArray.length; i++)
+                {
+                    var filter = filterArray[i];
+                    params[filter.getURLParameterName()] = filter.getURLParameterValue();
+                }
+            }
+
+            return params;
+        }
+    }
+};
+
+/**
+* @namespace
+* @description SelectRowsResults static class to describe the first
+            object passed to the successCallback function by
+            {@link LABKEY.Query#selectRows}. This object's properties are useful for
+            matching requests to responses, as HTTP requests are typically
+            processed asynchronously.
+* @property {Object} metaData Contains type and lookup information about the
+            columns in the resultset.
+ * @property {String} metaData.root	Name of the property containing rows
+            ("rows"). This is mainly for the Ext grid component.
+* @property {String} metaData.totalProperty	Name of the top-level property
+            containing the row count ("rowCount") in our case. This is mainly
+            for the Ext grid component.
+* @property {Object} metaData.sortInfo	Sort specification in Ext grid terms.
+            This contains two sub-properties, field and direction, which indicate
+            the sort field and direction ("ASC" or "DESC") respectively.
+* @property {String} metaData.id	Name of the primary key column.
+* @property {Object[]} metaData.fields	Array of field information.
+* @property {Object[]} metaData.fields	Array of field information.
+            Each field has the following properties:
+            <ul><li>name -- The name of the field</li>
+            <li>type -- JavaScript type name of the field</li>
+            <li>lookup -- If the field is a lookup, there will
+                be three sub-properties listed under this property:
+                schema, table, and column, which describe the schema, table, and
+                display column of the lookup table (query).</li></ul>
+* @property {String} columnModel Contains information about how one may interact
+            with the columns within a user interface. This format is generated
+            to match the requirements of the Ext grid component. See
+            <a href="http://extjs.com/deploy/dev/docs/?class=Ext.grid.ColumnModel">
+            Ext.grid.ColumnModel</a> for further information.
+* @property {Object[]} rows An array of rows, each of which is a
+            sub-element/object containing a property per column.
+* @property {Integer} rowCount Indicates the number of total rows that could be
+            returned by the query, which may be more than the number of objects
+            in the rows array if the client supplied a value for the query.maxRows
+            or query.offset parameters. This value is useful for clients that wish
+            to display paging UI, such as the Ext grid.
+* @see LABKEY.Query#selectRows
+*/ LABKEY.Query.SelectRowsResults = new function() {};
+
+/**
+* @namespace
+* @description SelectRowsOptions static class to describe
+            the second object passed to the successCallback function by
+            {@link LABKEY.Query#selectRows}.  This object's properties are useful for
+            matching requests to responses, as HTTP requests are typically
+            processed asynchronously.
+* @property {String} schemaName Contains the same schemaName the client passed to the
+            calling function. See <a class="link"
+            href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+            How To Find schemaName, queryName &amp; viewName</a>.
+* @property {String} query.queryName Contains the same queryName the client passed
+            to the calling function. See
+            <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+            How To Find schemaName, queryName &amp; viewName</a>.
+* @property {String} query.viewName	Name of a valid custom view for the chosen queryName. See
+            <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+            How To Find schemaName, queryName &amp; viewName</a>.
+* @property {Integer} query.offset Row number at which results should begin.
+            Use this with maxRows to get pages of results.
+* @property {String} query.sort	Sort specification. This can be a comma-delimited list of
+            column names, where each column may have an optional dash (-) before the name
+            to indicate a descending sort.
+* @property {Integer} maxRows Maximum number of rows to return
+* @property {String} filters &lt;column-name&gt;~&lt;oper&gt;=&lt;value&gt;
+            Filter specifications, one for each filter you supplied. All filters are combined
+            using AND logic. The list of valid operators:
+            <ul><li>eq = equals</li>
+            <li>neq = not equals</li>
+            <li>gt = greater-than</li>
+            <li>gte = greater-than or equal-to</li>
+            <li>lt = less-than</li>
+            <li>lte = less-than or equal-to</li>
+            <li>dateeq = date equal</li>
+            <li>dateneq = date not equal</li>
+            <li>neqornull = not equal or null</li>
+            <li>isblank = is null</li>
+            <li>isnonblank = is not null</li>
+            <li>contains = contains</li>
+            <li>doesnotcontain = does not contain</li>
+            <li>startswith = starts with</li>
+            <li>doesnotstartwith = does not start with</li></ul>
+* @property {Bool} [lookups="true"]	If 'true' (as by default), the {@link LABKEY.Query.SelectRowsResult}
+            for {@link LABKEY.Query#selectRows} will contain the
+            foreign key value for lookup columns and include lookup information
+            (schema and table) for this column in its metaData property. If 'false,'
+            the display value will be for lookup columns instead of the
+            foreign key value, and no lookup information will be supplied to the SelectRowsResult.
+* @see LABKEY.Query#selectRows
+*/ LABKEY.Query.SelectRowsOptions = new function() {};
+
+/**
+* @namespace
+* @description ModifyRowsResults static class to describe
+            the first object passed to the successCallback function
+            by {@link LABKEY.Query#updateRows}, {@link LABKEY.Query#insertRows} or
+            {@link LABKEY.Query#deleteRows}. This object's properties are useful for
+            matching requests to responses, as HTTP requests are typically
+            processed asynchronously.
+* @property {String} schemaName Contains the same schemaName the client passed to the calling function.
+* @property {String} queryName Contains the same queryName the client passed to the calling function.
+* @property {String} command Will be "update", "insert", or "delete" depending on the API called.
+* @property {Integer} rowsAffected Indicates the number of rows affected by the API action.
+            This will typically be the same number of rows passed in to the calling function.
+* @property {Object[]} rows Array of rows with field values for the rows updated, inserted,
+            or deleted, in the same order as the rows supplied in the request. For insert, the
+            new key value for an auto-increment key will be in the returned row's field values.
+            For insert or update, the other field values may also be different than those supplied
+            as a result of database default expressions, triggers, or LabKey's automatic tracking
+            feature, which automatically adjusts columns of certain names (e.g., Created, CreatedBy,
+            Modified, ModifiedBy, etc.).
+* @example For example:
+<pre name="code" class="xml">
+{  "schemaName": "lists",
+   "queryName": "API Test List"
+   "rowsAffected": 1,
+   "command": "insert",
+   "keys": [3],
+} </pre></code>
+* @see LABKEY.Query#updateRows
+* @see LABKEY.Query#insertRows
+* @see LABKEY.Query#deleteRows
+*/ LABKEY.Query.ModifyRowsResults = new function() {};
+
+/**
+* @namespace
+* @description ModifyRowsOptions static class to describe
+            the second object passed to the successCallback function
+            by {@link LABKEY.Query#updateRows}, {@link LABKEY.Query#insertRows} or
+            {@link LABKEY.Query#deleteRows}. This object's properties are useful for
+            matching requests to responses, as HTTP requests are typically
+            processed asynchronously.
+* @property {String} schemaName Contains the same schemaName the client passed to the calling function.
+* @property {String} queryName Contains the same queryName the client passed to the calling function.
+* @property {Object[]} rows Array of row objects that map the names of the row fields to their values.
+            The fields required for inclusion for each row depend on the which LABKEY.Query method you are
+            using (updateRows, insertRows or deleteRows).
+            <p/>
+            <b>{@link LABKEY.QUERY#updateRows}:</b> <p/>
+            For the update method, each row in the rows array must include its primary key value
+            as one of its fields.
+            <p/>
+            An example of a ModifyRowsOptions object for updateRows:
+<pre name="code" class="xml">
+{"schemaName": "lists",
+ "queryName": "API Test List",
+ "rows": [
+    {"Key": 1,
+    "FirstName": "Z",
+    "Age": "100"}]
+} </pre></code>
+
+            <p/>
+            <b>{@link LABKEY.QUERY#insertRows}:</b> <p/>
+            For the insert method, the fields of the rows should look the same as
+            they do for the 'updateRows' method, except that primary key values for new rows
+            need not be supplied if the primary key columns are auto-increment.
+            <p/>
+            An example of a ModifyRowsOptions object for insertRows:
+<pre name="code" class="xml">
+{"schemaName": "lists",
+ "queryName": "API Test List",
+ "rows": [
+     {"FirstName": "C",
+    "Age": "30"}]
+} </pre></code>
+
+            <p/>
+            <b>{@link LABKEY.QUERY#deleteRows}:</b> <p/>
+            For the 'deleteRows' method, the fields of the rows should look the
+            same as they do for the 'updateRows' method, except that the 'deleteRows'
+            method needs to supply only the primary key values for the rows. All
+            other row data will be ignored.
+            <p/>
+            An example of a ModifyRowsOptions object for deleteRows:
+<pre name="code" class="xml">
+{"schemaName": "lists",
+ "queryName": "API Test List",
+ "rows": [
+       {"Key": 3}]
+} </pre></code>
+* @see LABKEY.Query#updateRows
+* @see LABKEY.Query#insertRows
+* @see LABKEY.Query#deleteRows
+*/ LABKEY.Query.ModifyRowsOptions = new function() {};

@@ -1,0 +1,84 @@
+package org.labkey.api.study.assay;
+
+import org.labkey.api.data.*;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.query.*;
+
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
+
+/**
+ * User: brittp
+ * Date: Jul 6, 2007
+ * Time: 5:35:15 PM
+ */
+public class RunDataTable extends FilteredTable
+{
+    public RunDataTable(final QuerySchema schema, String alias, final ExpProtocol protocol)
+    {
+        super(OntologyManager.getTinfoObject(), schema.getContainer());
+        setAlias(alias);
+        List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
+        ColumnInfo objectIdColumn = addWrapColumn(_rootTable.getColumn("ObjectId"));
+        objectIdColumn.setKeyField(true);
+        ColumnInfo column = wrapColumn("Properties", _rootTable.getColumn("ObjectId"));
+        column.setKeyField(false);
+        column.setIsUnselectable(true);
+        final AssayProvider provider = AssayService.get().getProvider(protocol);
+        PropertyDescriptor[] pds = provider.getRunDataColumns(protocol);
+        OORAwarePropertyForeignKey fk = new OORAwarePropertyForeignKey(pds, this, schema);
+
+        Set<String> hiddenCols = new HashSet<String>();
+        for (PropertyDescriptor pd : fk.getDefaultHiddenProperties())
+            hiddenCols.add(pd.getName());
+
+        FieldKey dataKeyProp = new FieldKey(null, column.getName());
+        for (PropertyDescriptor lookupCol : pds)
+        {
+            if (!hiddenCols.contains(lookupCol.getName()))
+                visibleColumns.add(new FieldKey(dataKeyProp, lookupCol.getName()));
+        }
+        column.setFk(fk);
+        addColumn(column);
+        
+        SQLFragment filterClause = new SQLFragment("OwnerObjectId IN (\n" +
+                "SELECT ObjectId FROM exp.Object o, exp.Data d, exp.ExperimentRun r WHERE o.ObjectURI = d.lsid AND \n" +
+                "d.RunId = r.RowId and r.ProtocolLSID = ?)");
+        filterClause.add(protocol.getLSID());
+        addCondition(filterClause, "OwnerObjectId");
+
+        // TODO - we should have a more reliable (and speedier) way of identifying just the data rows here
+        SQLFragment dataRowClause = new SQLFragment("ObjectURI LIKE '%.DataRow-%'");
+        addCondition(dataRowClause, "ObjectURI");
+
+        String sqlRunLSID = "(SELECT RunObjects.objecturi FROM exp.Object AS DataRowParents, " +
+                "    exp.Object AS RunObjects, exp.Data d, exp.ExperimentRun r WHERE \n" +
+                "    DataRowParents.ObjectUri = d.lsid AND\n" +
+                "    r.RowId = d.RunId AND\n" +
+                "    RunObjects.ObjectURI = r.lsid AND\n" +
+                "    DataRowParents.ObjectID IN (SELECT OwnerObjectId FROM exp.Object AS DataRowObjects\n" +
+                "    WHERE DataRowObjects.ObjectId = " + ExprColumn.STR_TABLE_ALIAS + ".ObjectId))";
+
+        ExprColumn runColumn = new ExprColumn(this, "Run", new SQLFragment(sqlRunLSID), Types.VARCHAR);
+        runColumn.setFk(new LookupForeignKey("LSID")
+        {
+            public TableInfo getLookupTableInfo()
+            {
+                return AssayService.get().createRunTable(null, protocol, provider, schema.getUser(), schema.getContainer());
+            }
+        });
+        addColumn(runColumn);
+
+        for (PropertyDescriptor prop : provider.getRunPropertyColumns(protocol))
+            visibleColumns.add(FieldKey.fromParts("Run", "Run Properties", prop.getName()));
+        for (PropertyDescriptor prop : provider.getUploadSetColumns(protocol))
+            visibleColumns.add(FieldKey.fromParts("Run", "Run Properties", prop.getName()));
+
+        setDefaultVisibleColumns(visibleColumns);
+    }
+}

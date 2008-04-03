@@ -1,0 +1,18 @@
+<script type="text/javascript" src="/labkey/labkey.js"></script>
+<script type="text/javascript">
+    LABKEY.requiresClientAPI();
+</script>
+<!--
+Displaying a web part is accomplished by using the LABKEY.WebPart() class.
+-->
+<div id='mypart'>
+    <p>This is where the web part will render.</p>
+</div>
+
+<script type="text/javascript">
+     var webPartRenderer = new LABKEY.WebPart({partName: 'Wiki',
+                                                renderTo: 'mypart',
+                                                partConfig: {name: 'home'}
+                                                })
+     webPartRenderer.render();
+</script>

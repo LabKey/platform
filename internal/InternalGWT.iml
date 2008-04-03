@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module relativePaths="true" type="JAVA_MODULE" version="4">
+  <component name="FacetManager">
+    <facet type="gwt" name="GWT">
+      <configuration>
+        <setting name="gwtSdkUrl" value="file://$GWT_HOME$" />
+        <setting name="gwtScriptOutputStyle" value="DETAILED" />
+        <setting name="runGwtCompilerOnMake" value="true" />
+        <setting name="compilerMaxHeapSize" value="128" />
+        <packaging>
+          <module name="org.labkey.api.gwt.Internal" path="/org.labkey.api.gwt.Internal" />
+        </packaging>
+      </configuration>
+    </facet>
+  </component>
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_4" inherit-compiler-output="false">
+    <output url="file://$MODULE_DIR$/../../intellijBuild/internalGWT" />
+    <exclude-output />
+    <content url="file://$MODULE_DIR$/gwtsrc">
+      <sourceFolder url="file://$MODULE_DIR$/gwtsrc" isTestSource="false" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/build/gwt-user.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/build/gwt-user.jar!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntryProperties />
+  </component>
+</module>
+

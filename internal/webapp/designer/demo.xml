@@ -1,0 +1,7 @@
+<root xmlns:ns1="http://labkey.com/demo1" xmlns:ns2="http://labkey.com/demo2">
+    <ns1:column>
+        <ns1:child1>Child1Value</ns1:child1>
+    </ns1:column>
+    <ns1:column attr1="Attr1Value">
+    </ns1:column>
+</root>

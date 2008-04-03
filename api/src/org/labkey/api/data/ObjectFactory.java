@@ -1,0 +1,82 @@
+/*
+ * Copyright (c) 2003-2005 Fred Hutchinson Cancer Research Center
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.labkey.api.data;
+
+import org.apache.commons.collections.FastHashMap;
+import org.apache.log4j.Logger;
+import org.labkey.common.util.BoundMap;
+
+import java.util.Map;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+
+/**
+ * User: mbellew
+ * Date: Apr 1, 2004
+ * Time: 10:27:13 AM
+ */
+public interface ObjectFactory<K>
+{
+    K fromMap(Map<String, ? extends Object> m);
+
+    Map<String, Object> toMap(K bean, Map<String, Object> m);
+
+
+    K handle(ResultSet rs) throws SQLException;
+
+
+    K[] handleArray(ResultSet rs) throws SQLException;
+
+
+    public static class Registry
+    {
+        private static Logger _log = Logger.getLogger(Registry.class);
+
+        // UNDONE: Either replace with synchronized map OR setFast(true) at some point
+        static FastHashMap _registry = new FastHashMap(64);
+
+        public static <K> void register(Class<K> clss, ObjectFactory<K> f)
+        {
+            _registry.put(clss, f);
+        }
+
+        public static <K> ObjectFactory<K> getFactory(Class<K> clss)
+        {
+            ObjectFactory<K> f = (ObjectFactory<K>) _registry.get(clss);
+            if (f == null && (BoundMap.class.isAssignableFrom(clss) || !java.util.Map.class.isAssignableFrom(clss)))
+            {
+                try
+                {
+                    f = new BeanObjectFactory<K>(clss);
+                    _registry.put(clss, f);
+                }
+                catch (RuntimeException x)
+                {
+                    _log.error("getFactory: failed to create bean factory", x);
+                    throw x;
+                }
+                catch (Exception x)
+                {
+                    _log.error("getFactory: failed to create bean factory", x);
+                    throw new IllegalStateException(x);
+                }
+            }
+            return f;
+        }
+    }
+}

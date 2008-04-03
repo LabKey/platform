@@ -1,0 +1,98 @@
+package org.labkey.api.exp;
+
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineProvider;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
+
+import java.io.File;
+import java.util.List;
+
+/**
+ * User: jeckels
+ * Date: Oct 25, 2005
+ */
+public class ExperimentPipelineProvider extends PipelineProvider
+{
+    public static final String NAME = "Experiment";
+
+    private static final String DIR_NAME_EXPERIMENT = "experiment";
+    private static final String DIR_NAME_UPLOAD = "UploadedXARs";
+    private static final String DIR_NAME_MOVE = "moveRunLogs";
+
+    public static File getUploadDirectory(PipeRoot pr)
+    {
+        return getExperimentDirectory(pr, DIR_NAME_UPLOAD);
+    }
+
+    public static File getMoveDirectory(PipeRoot pr)
+    {
+        return getExperimentDirectory(pr, DIR_NAME_MOVE);
+    }
+
+    private static File getExperimentDirectory(PipeRoot pr, String name)
+    {
+        File systemDir = pr.ensureSystemDirectory();
+        return new File(new File(systemDir, DIR_NAME_EXPERIMENT), name);
+    }
+
+    private static File getExperimentDirectory(File systemDir, String name)
+    {
+        return new File(new File(systemDir, DIR_NAME_EXPERIMENT), name);
+    }
+
+    public ExperimentPipelineProvider()
+    {
+        super(NAME);
+    }
+
+    public void initSystemDirectory(File rootDir, File systemDir)
+    {
+        locateSystemDir(systemDir, DIR_NAME_MOVE);
+        locateSystemDir(systemDir, DIR_NAME_UPLOAD);
+    }
+
+    public void locateSystemDir(File systemDir, String name)
+    {
+        File f = new File(systemDir, name);
+        if (f.exists())
+            f.renameTo(getExperimentDirectory(systemDir, name));
+    }
+
+    // returns the web part appearing on the main page.
+    public HttpView getSetupWebPart()
+    {
+        return null;
+    }
+
+    public void updateFileProperties(ViewContext context, List<FileEntry> entries)
+    {
+        for (FileEntry entry : entries)
+        {
+            if (!entry.isDirectory())
+                continue;
+
+            addFileActions("Experiment", "importXarFile", "Import Experiment",
+                    entry, entry.listFiles(new XarFilenameFilter()));
+        }
+    }
+
+    private static class XarFilenameFilter extends FileEntryFilter
+    {
+        public boolean accept(File f)
+        {
+            String lowerCase = f.getName().toLowerCase();
+            return lowerCase.endsWith(".xar.xml") ||
+                   lowerCase.endsWith(".xar");
+        }
+    }
+
+    private static class ExperimentPipelineWebPart extends HtmlView
+    {
+        public ExperimentPipelineWebPart()
+        {
+            super("<p>Experiment: No setup required.</p>");
+        }
+    }
+}

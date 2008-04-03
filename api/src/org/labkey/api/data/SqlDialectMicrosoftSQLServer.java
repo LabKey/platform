@@ -1,0 +1,493 @@
+/*
+ * Copyright (c) 2003-2005 Fred Hutchinson Cancer Research Center
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.labkey.api.data;
+
+import org.labkey.api.util.CaseInsensitiveHashSet;
+import org.labkey.api.util.PageFlowUtil;
+
+import java.sql.SQLException;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+
+/**
+ * User: arauch
+ * Date: Dec 28, 2004
+ * Time: 8:58:25 AM
+ */
+
+// Dialect specifics for Microsoft SQL Server
+public class SqlDialectMicrosoftSQLServer extends SqlDialect
+{
+    protected String _tempTablePrefix = "##";
+    private static SqlDialectMicrosoftSQLServer _instance = new SqlDialectMicrosoftSQLServer();
+
+    public static SqlDialectMicrosoftSQLServer getInstance()
+    {
+        return _instance;
+    }
+
+    public SqlDialectMicrosoftSQLServer()
+    {
+        super();
+        reservedWordSet = new CaseInsensitiveHashSet(PageFlowUtil.set(
+            "ADD", "ALL", "ALTER", "AND", "ANY", "AS", "ASC", "AUTHORIZATION", "BACKUP", "BEGIN", "BETWEEN", "BREAK", "BROWSE", "BULK",
+            "BY", "CASCADE", "CASE", "CHECK", "CHECKPOINT", "CLOSE", "CLUSTERED", "COALESCE", "COLLATE", "COLUMN", "COMMIT", "COMPUTE",
+            "CONSTRAINT", "CONTAINS", "CONTAINSTABLE", "CONTINUE", "CONVERT", "CREATE", "CROSS", "CURRENT", "CURRENT_DATE",
+            "CURRENT_TIME", "CURRENT_TIMESTAMP", "CURRENT_USER", "CURSOR", "DATABASE", "DBCC", "DEALLOCATE", "DECLARE", "DEFAULT",
+            "DELETE", "DENY", "DESC", "DISK", "DISTINCT", "DISTRIBUTED", "DOUBLE", "DROP", "DUMMY", "DUMP", "ELSE", "END", "ERRLVL",
+            "ESCAPE", "EXCEPT", "EXEC", "EXECUTE", "EXISTS", "EXIT", "FETCH", "FILE", "FILLFACTOR", "FOR", "FOREIGN", "FREETEXT",
+            "FREETEXTTABLE", "FROM", "FULL", "FUNCTION", "GOTO", "GRANT", "GROUP", "HAVING", "HOLDLOCK", "IDENTITY", "IDENTITY_INSERT",
+            "IDENTITYCOL", "IF", "IN", "INDEX", "INNER", "INSERT", "INTERSECT", "INTO", "IS", "JOIN", "KEY", "KILL", "LEFT", "LIKE",
+            "LINENO", "LOAD", "NATIONAL", "NOCHECK", "NONCLUSTERED", "NOT", "NULL", "NULLIF", "OF", "OFF", "OFFSETS", "ON", "OPEN",
+            "OPENDATASOURCE", "OPENQUERY", "OPENROWSET", "OPENXML", "OPTION", "OR", "ORDER", "OUTER", "OVER", "PERCENT", "PLAN",
+            "PRECISION", "PRIMARY", "PRINT", "PROC", "PROCEDURE", "PUBLIC", "RAISERROR", "READ", "READTEXT", "RECONFIGURE",
+            "REFERENCES", "REPLICATION", "RESTORE", "RESTRICT", "RETURN", "REVOKE", "RIGHT", "ROLLBACK", "ROWCOUNT", "ROWGUIDCOL",
+            "RULE", "SAVE", "SCHEMA", "SELECT", "SESSION_USER", "SET", "SETUSER", "SHUTDOWN", "SOME", "STATISTICS", "SYSTEM_USER",
+            "TABLE", "TEXTSIZE", "THEN", "TO", "TOP", "TRAN", "TRANSACTION", "TRIGGER", "TRUNCATE", "TSEQUAL", "UNION", "UNIQUE",
+            "UPDATE", "UPDATETEXT", "USE", "USER", "VALUES", "VARYING", "VIEW", "WAITFOR", "WHEN", "WHERE", "WHILE", "WITH",
+            "WRITETEXT"
+        ));
+    }
+
+    public String getProductName()
+    {
+        return "Sql Server";
+    }
+
+    public String getSQLScriptPath()
+    {
+        return "sql server";
+    }
+
+    public String getDefaultDateTimeDatatype()
+    {
+        return "DATETIME";
+    }
+
+    public String getUniqueIdentType()
+    {
+        return "INT IDENTITY (1,1)";
+    }
+
+
+    @Override
+    public void appendStatement(StringBuilder sql, String statement)
+    {
+        sql.append('\n');
+        sql.append(statement);
+    }
+
+
+    void checkSqlScript(String lower, String lowerNoWhiteSpace, Collection<String> errors)
+    {
+    }
+
+
+    @Override
+    public void appendSelectAutoIncrement(StringBuilder sql, TableInfo tableName, String columnName)
+    {
+        appendStatement(sql, "SELECT @@IDENTITY");
+    }
+
+
+    @Override
+    public SQLFragment limitRows(SQLFragment frag, int rowCount)
+    {
+        if (rowCount > 0)
+        {
+            String sql = frag.getSQL();
+            if (!sql.substring(0, 6).equalsIgnoreCase("SELECT"))
+                throw new IllegalArgumentException("ERROR: Limit SQL Doesn't Start with SELECT: " + sql);
+
+            frag.insert(6, " TOP " + rowCount);
+        }
+        return frag;
+    }
+
+    @Override
+    public SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, int rowCount, long offset)
+    {
+        if (select == null)
+            throw new IllegalArgumentException("select");
+        if (from == null)
+            throw new IllegalArgumentException("from");
+
+        if (rowCount == 0 || (rowCount > 0 && offset == 0))
+        {
+            SQLFragment sql = new SQLFragment();
+            sql.append(select);
+            sql.append("\n").append(from);
+            if (filter != null) sql.append("\n").append(filter);
+            if (order != null) sql.append("\n").append(order);
+
+            return limitRows(sql, rowCount);
+        }
+        else
+        {
+            return _limitRows(select, from, filter, order, rowCount, offset);
+        }
+    }
+
+    @Override
+    public boolean supportOffset()
+    {
+        return false;
+    }
+
+    protected SQLFragment _limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, int rowCount, long offset)
+    {
+        throw new UnsupportedOperationException("limitRows() with an offset not supported in SQLServer 2000");
+
+//        String selectSql = select.getSQL();
+//        if (!selectSql.substring(0, 6).equalsIgnoreCase("SELECT"))
+//            throw new IllegalArgumentException("ERROR: Limit SQL Doesn't Start with SELECT: " + selectSql);
+//
+//        select.insert(6, " TOP " + (rowCount + offset));
+//
+//        if (order == null || order.trim().length() == 0)
+//            throw new IllegalArgumentException("ERROR: ORDER BY clause required to limit");
+//        String reverse = reverseSort(order);
+//
+//        SQLFragment sql = new SQLFragment();
+//        sql.append("SELECT * FROM (\n");
+//        sql.append("SELECT TOP ").append(rowCount).append(" * FROM (");
+//        sql.append(select); // top (rowCount+offset)
+//        sql.append("\n").append(from);
+//        if (filter != null) sql.append("\n").append(filter);
+//        sql.append(order);
+//        sql.append("\n) _rev ");
+//        sql.append(reverse);
+//        sql.append("\n) _page ");
+//        sql.append(order);
+//        return sql;
+    }
+
+    private String reverseSort(String sort)
+    {
+        StringBuffer result = new StringBuffer(sort.length());
+        result.append("ORDER BY ");
+
+        if (sort.startsWith("ORDER BY "))
+            sort = sort.substring("ORDER BY ".length());
+
+        String comma = "";
+        for (String part : sort.split(","))
+        {
+            part = part.trim();
+            if (part.length() == 0)
+                continue;
+            if (part.endsWith(" ASC"))
+            {
+                result.append(part.substring(0, part.length() - " ASC".length()));
+                result.append(" DESC");
+            }
+            else if (part.endsWith(" DESC"))
+            {
+                result.append(part.substring(0, part.length() - " DESC".length()));
+                result.append(" ASC");
+            }
+            result.append(comma);
+            comma = ", ";
+        }
+        return result.toString();
+    }
+
+
+    // Execute a stored procedure/function with the specified parameters
+    public String execute(DbSchema schema, String procedureName, String parameters)
+    {
+        return "EXEC " + schema.getOwner() + "." + procedureName + " " + parameters;
+    }
+
+
+    public String getConcatenationOperator()
+    {
+        return "+";
+    }
+
+
+    public String getCharClassLikeOperator()
+    {
+        return "LIKE";
+    }
+
+    public String getCaseInsensitiveLikeOperator()
+    {
+        return "LIKE";
+    }
+
+    public String getVarcharLengthFunction()
+    {
+        return "len";
+    }
+
+    public String getStdDevFunction()
+    {
+        return "stdev";
+    }
+
+    public String getClobLengthFunction()
+    {
+        return "datalength";
+    }
+
+    public String getStringIndexOfFunction(String stringToFind, String stringToSearch)
+    {
+        return "patindex('%' + " + stringToFind + " + '%', " + stringToSearch + ")";
+    }
+
+    public String getSubstringFunction(String s, String start, String length)
+    {
+        return "substring(" + s + ", " + start + ", " + length + ")";
+    }
+
+    public String getTempTableKeyword()
+    {
+        return "";
+    }
+
+    // UNDONE: why ## instead of #?
+    public String getTempTablePrefix()
+    {
+        return "##";
+    }
+
+
+    public String getGlobalTempTablePrefix()
+    {
+        return "tempdb..";
+    }
+
+
+    public boolean isNoDatabaseException(SQLException e)
+    {
+        return "S1000".equals(e.getSQLState());
+    }
+
+    public boolean isSortableDataType(String sqlDataTypeName)
+    {
+        return !("text".equalsIgnoreCase(sqlDataTypeName) ||
+            "ntext".equalsIgnoreCase(sqlDataTypeName) ||
+            "image".equalsIgnoreCase(sqlDataTypeName));
+    }
+
+    public String getDropIndexCommand(String tableName, String indexName)
+    {
+        return "DROP INDEX " + tableName + "." + indexName;
+    }
+
+    public String getCreateDatabaseSql(String dbName)
+    {
+        return "CREATE DATABASE " + dbName;
+    }
+
+    // Do nothing
+    public void prepareNewDbSchema(DbSchema schema)
+    {
+    }
+
+    public String getCreateSchemaSql(String schemaName)
+    {
+        return "EXEC sp_addapprole '" + schemaName + "', 'password'";
+    }
+
+    public String getDateDiff(int part, String value1, String value2)
+    {
+        String partName;
+        switch (part)
+        {
+            case Calendar.DATE:
+            {
+                partName = "day";
+                break;
+            }
+            case Calendar.HOUR:
+            {
+                partName = "hour";
+                break;
+            }
+            case Calendar.MINUTE:
+            {
+                partName = "minute";
+                break;
+            }
+            case Calendar.SECOND:
+            {
+                partName = "second";
+                break;
+            }
+            default:
+            {
+                throw new IllegalArgumentException("Unsupported time unit: " + part);
+            }
+        }
+        return "DATEDIFF(" + partName + ", " + value2 + ", " + value1 + ")";
+    }
+
+    public String getDateTimeToDateCast(String expression)
+    {
+        return "convert(datetime, convert(varchar, (" + expression + "), 101))";
+    }
+
+    public String getRoundFunction(String valueToRound)
+    {
+        return "ROUND(" + valueToRound + ", 0)";
+    }
+
+
+    protected String getSystemTableNames()
+    {
+        return "dtproperties,sysconstraints,syssegments";
+    }
+
+
+    public String getColumnSelectName(String columnName)
+    {
+        if (reservedWordSet.contains(columnName))
+            return "\"" + columnName + "\"";    // SQL Server wants quotes around column names that are key words
+        else
+            return columnName;
+    }
+
+    public String getTableSelectName(String tableName)
+    {
+        return getColumnSelectName(tableName);  // Same as column names
+    }
+
+    public String getOwnerSelectName(String ownerName)
+    {
+        return getColumnSelectName(ownerName);  // Same as column names
+    }
+
+    public String sanitizeException(SQLException ex)
+    {
+        if ("01004".equals(ex.getSQLState()))
+        {
+            return INPUT_TOO_LONG_ERROR_MESSAGE;
+        }
+        return GENERIC_ERROR_MESSAGE;
+    }
+
+    public String getAnalyzeCommandForTable(String tableName)
+    {
+        return "UPDATE STATISTICS " + tableName + ";";
+    }
+
+    protected String getSIDQuery()
+    {
+        return "SELECT @@spid";
+    }
+
+    public String getBooleanDatatype()
+    {
+        return "BIT";
+    }
+
+    /**
+     * Wrap one or more INSERT statements to allow explicit specification
+     * of values for autoincrementing columns (e.g. IDENTITY in SQL Server
+     * or SERIAL in Postgres). The input StringBuffer is modified.
+     *
+     * @param statements the insert statements. If more than one,
+     *                   they must have been joined by appendStatement
+     *                   and must all refer to the same table.
+     * @param tinfo      table used in the insert(s)
+     */
+    public void overrideAutoIncrement(StringBuffer statements, TableInfo tinfo)
+    {
+        statements.insert(0, "SET IDENTITY_INSERT " + tinfo + " ON\n");
+        statements.append("SET IDENTITY_INSERT ").append(tinfo).append(" OFF");
+    }
+
+    private static Pattern goPattern = Pattern.compile("^\\s*GO\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+
+    public int getNextSqlBlock(StringBuffer block, DbSchema schema, String sql, int start)
+    {
+        Matcher m = goPattern.matcher(sql);
+        int endOfBlock;
+        int nextStart;
+
+        if (m.find(start))
+        {
+            endOfBlock = m.start();
+            nextStart = m.end();
+        }
+        else
+        {
+            nextStart = endOfBlock = sql.length();
+        }
+
+        block.append(sql.substring(start, endOfBlock));
+
+        return nextStart;
+    }
+
+    public String getMasterDataBaseName()
+    {
+        return "master";
+    }
+
+    /*  jTDS example connection URLs we need to parse:
+
+        jdbc:jtds:sqlserver://host:1433/database
+        jdbc:jtds:sqlserver://host/database;SelectMethod=cursor
+
+    */
+    public static class JtdsJdbcHelper extends JdbcHelper
+    {
+        protected JtdsJdbcHelper(String url)
+        {
+            int dbEnd = url.indexOf(';');
+            if (-1 == dbEnd)
+                dbEnd = url.length();
+            int dbDelimiter = url.lastIndexOf('/', dbEnd);
+            if (-1 == dbDelimiter)
+                throw new RuntimeException("Invalid jTDS connection url: " + url);
+            _database = url.substring(dbDelimiter + 1, dbEnd);
+        }
+    }
+
+    public SQLFragment sqlLocate(SQLFragment littleString, SQLFragment bigString)
+    {
+        SQLFragment ret = new SQLFragment("(CHARINDEX(");
+        ret.append(littleString);
+        ret.append(",");
+        ret.append(bigString);
+        ret.append("))");
+        return ret;
+    }
+
+    public SQLFragment sqlLocate(SQLFragment littleString, SQLFragment bigString, SQLFragment startIndex)
+    {
+        SQLFragment ret = new SQLFragment("(CHARINDEX(");
+        ret.append(littleString);
+        ret.append(",");
+        ret.append(bigString);
+        ret.append(",");
+        ret.append(startIndex);
+        ret.append("))");
+        return ret;
+    }
+
+    public boolean allowSortOnSubqueryWithoutLimit()
+    {
+        return false;
+    }
+}

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<netui-config xmlns="http://beehive.apache.org/netui/2004/server/config">
+
+    <expression-languages>
+        <default-language>netuiel</default-language>
+        <expression-language>
+            <name>netuiel</name>
+            <factory-class>org.apache.beehive.netui.script.el.ExpressionEvaluatorImpl$NetUIELEngineFactory</factory-class>
+        </expression-language>
+    </expression-languages>
+
+    <pageflow-config>
+        <multipart-handler>memory</multipart-handler>
+    </pageflow-config>
+
+    <default-shared-flow-refs>
+        <shared-flow-ref>
+            <name>Global</name>
+            <type>org.labkey.core.global.Global</type>
+        </shared-flow-ref>
+    </default-shared-flow-refs>
+
+</netui-config>

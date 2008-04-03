@@ -1,0 +1,63 @@
+.lk_dialogbox .mask {
+    background-color:#000;
+    -moz-opacity:0.75;
+    opacity:.75;
+    filter:alpha(opacity=75);
+}
+.lk_dialogbox {
+    border:3px solid #666;
+    overflow:visible;
+    background-color:#fff;
+    padding:5px;
+}
+.lk_dialogbox .close {
+    top:8px;
+    right:8px;
+    height:15px;
+    width:50px;
+}
+.lk_dialogbox .close.nonsecure {
+    background-image:url(closelabel.gif);
+}
+.lk_dialogbox .close.secure {
+    background-image:url(closelabel.gif);
+}
+.lk_dialogbox .hd {
+    font-family:georgia, times new roman, times, serif;
+    font-weight:normal;
+    border:none;
+    border-bottom:1px solid #666;
+    background:transparent;
+    color:#FFF;
+    height:18px;
+    text-align:left;
+    overflow:visible;
+    padding:0;
+    padding-bottom:5px;
+    margin-bottom:5px;
+    width:100%;
+}
+.lk_dialogbox .hd span {
+    vertical-align:middle;
+    line-height:15px;
+}
+.lk_dialogbox .bd  {
+    padding:0;
+    overflow:hidden;
+}
+.lk_dialogbox .bd img {
+    border:none;
+}
+.lk_resizepanel .lk_resizehandle {
+    position:absolute;
+    width:25px;
+    height:4px;
+    right:0;
+    bottom:0;
+    margin:0;
+    padding:0;
+    z-index:1;
+    background:#666;
+    cursor:se-resize;
+    font-size:2px;
+}

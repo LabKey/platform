@@ -1,0 +1,96 @@
+/*
+ * Copyright (c) 2003-2005 Fred Hutchinson Cancer Research Center
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.labkey.api.view;
+
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.TableViewForm;
+import org.springframework.validation.BindException;
+
+import java.io.IOException;
+import java.io.Writer;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
+
+
+public class InsertView extends DataView
+{
+    private Map<String, Object> _initialValues = null;
+    private String _focusId;
+
+    public InsertView(DataRegion dataRegion, BindException errors)
+    {
+        super(dataRegion, errors);
+    }
+
+    public InsertView(DataRegion dataRegion, TableViewForm form, BindException errors)
+    {
+        super(dataRegion, form, errors);
+    }
+
+    public InsertView(TableViewForm form, BindException errors)
+    {
+        super(form, errors);
+    }
+
+
+    public InsertView(ColumnInfo[] cols, BindException errors)
+    {
+        super(new DataRegion(), errors);
+        getDataRegion().setColumns(cols);
+    }
+
+    public void setInitialValues(Map initialValues)
+    {
+        _initialValues = new HashMap(initialValues);
+    }
+
+    public Map getInitialValues()
+    {
+        return _initialValues;
+    }
+
+    protected void _renderDataRegion(RenderContext ctx, Writer out) throws IOException, SQLException
+    {
+        TableViewForm form = ctx.getForm();
+        assert form != null || getTable() != null;
+
+        if (form == null)
+        {
+            form = new TableViewForm(getTable());
+            form.reset(null, ctx.getRequest());
+        }
+
+        if (null != _initialValues)
+            form.setTypedValues(_initialValues, false);
+
+        ctx.setForm(form);
+        ctx.put("setFocusId", _focusId);
+        getDataRegion().renderInputForm(ctx, out);
+    }
+    
+    public void setFocusId(String focusId)
+    {
+        _focusId = focusId;
+    }
+
+    public String getFocusId()
+    {
+        return _focusId;
+    }
+}

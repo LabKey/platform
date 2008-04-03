@@ -1,0 +1,359 @@
+package org.labkey.api.data;
+
+import org.apache.log4j.Logger;
+import org.apache.tomcat.dbcp.dbcp.BasicDataSource;
+import org.labkey.api.util.Cache;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.MemTracker;
+
+import javax.servlet.ServletException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.TreeMap;
+import java.util.TreeSet;
+
+/**
+ * Created by IntelliJ IDEA.
+ * User: Matthew
+ * Date: May 4, 2006
+ * Time: 7:27:50 PM
+ */
+public class TempTableTracker extends WeakReference<Object>
+{
+    static Logger _log = Logger.getLogger(TempTableTracker.class);
+    static final String LOGFILE = "CPAS_sqlTempTables.log";
+    static final TreeMap<String,TempTableTracker> createdTableNames = new TreeMap<String,TempTableTracker>();
+    static final ReferenceQueue<Object> cleanupQueue = new ReferenceQueue<Object>();
+    static RandomAccessFile tempTableLog = null;
+
+    DbSchema schema;
+    String schemaName;
+    String tableName;
+    boolean deleted = false;
+
+
+    private TempTableTracker(DbSchema schema, String name, Object ref)
+    {
+        this(schema.getName(), name, ref);
+        this.schema = schema;
+    }
+
+
+    private TempTableTracker(String schema, String name, Object ref)
+    {
+        super(ref, cleanupQueue);
+        this.schemaName = schema;
+        this.tableName = name;
+    }
+
+    static final Object initlock = new Object();
+    static boolean initialized=false;
+
+    // make sure temp table tracker is initialized
+    public static void init()
+    {
+        synchronized(initlock)
+        {
+            if (!initialized)
+            {
+                initialized = true;
+                synchronizeLog(true);
+                purgeTempSchema();
+                tempTableThread.setDaemon(true);
+                tempTableThread.start();
+            }
+        }
+    }
+
+
+    public static TempTableTracker track(DbSchema schema, String name, Object ref)
+    {
+        init();
+        return track(new TempTableTracker(schema, name, ref));
+    }
+
+
+    private static TempTableTracker track(String schema, String name, Object ref)
+    {
+        return track(new TempTableTracker(schema, name, ref));
+    }
+
+
+    private static TempTableTracker track(TempTableTracker ttt)
+    {
+        _log.debug("track(" + ttt.tableName + ")");
+
+        synchronized(createdTableNames)
+        {
+            TempTableTracker old = createdTableNames.get(ttt.tableName);
+            if (old != null)
+                return old;
+            createdTableNames.put(ttt.tableName, ttt);
+            appendToLog("+" + ttt.schemaName + "\t" + ttt.tableName + "\n");
+            return ttt;
+        }
+    }
+
+
+    private DbSchema getSchema()
+    {
+        if (null == schema)
+            schema = DbSchema.get(schemaName);
+        return schema;
+    }
+
+
+    public synchronized void delete()
+    {
+        if (deleted)
+            return;
+
+        sqlDelete();
+
+        deleted = true;
+        untrack();
+    }
+
+
+    private boolean sqlDelete()
+    {
+        DbSchema schema = getSchema();
+        Connection conn = null;
+        Statement stmt = null;
+        boolean success = false;
+        try
+        {
+            // if we use Table.execute() it will log errors (HMMM, need to fix that...)
+            //Table.execute(schema, "DROP TABLE " + tableName, null);
+            conn = schema.getScope().getConnection();
+            assert MemTracker.remove(conn);         // we're a bg thread, so we can cause memTracker.view to fail
+            stmt = conn.createStatement();
+            assert MemTracker.remove(stmt);
+            stmt.execute("DROP TABLE " + tableName);
+            success = true;
+        }
+        catch (SQLException x)
+        {
+            // 42P01    postgres: UNDEFINED TABLE
+            // 42S02    sqlserver: Base table or view not found
+            if (x.getSQLState().startsWith("42"))
+                success = true;
+            else
+                _log.warn("Error deleting temp table '" + tableName + "'", x);
+        }
+        finally
+        {
+            if (null != stmt)
+            {
+                try { stmt.close(); } catch (Exception x) {_log.error("unexpected error", x);}
+            }
+            if (null != conn)
+            {
+                try { schema.getScope().releaseConnection(conn); } catch (Exception x) {_log.error("unexpected error", x);}
+            }
+        }
+        return success;
+    }
+
+
+    @Override
+    protected void finalize() throws Throwable
+    {
+        if (!deleted)
+            _log.error("finalizing undeleted TempTableTracker: " + tableName);
+        super.finalize();
+    }
+
+
+    private void untrack()
+    {
+        _log.debug("untrack(" + tableName + ")");
+
+        synchronized(createdTableNames)
+        {
+            createdTableNames.remove(tableName);
+            appendToLog("-" + schemaName + "\t" + tableName + "\n");
+
+            if (createdTableNames.isEmpty() || System.currentTimeMillis() > lastSync + Cache.DAY)
+                synchronizeLog(false);
+        }
+    }
+
+
+    private static void appendToLog(String str)
+    {
+        if (null != tempTableLog)
+        {
+            try
+            {
+                tempTableLog.writeUTF(str);
+            }
+            catch (IOException x)
+            {
+             _log.error("could not write to " + LOGFILE, x);
+            }
+        }
+    }
+
+
+    static long lastSync = System.currentTimeMillis();
+
+
+    private static void purgeTempSchema()
+    {
+        // consider: test to see if any of the schemas have different scope (dbName) than core schema
+        synchronized(createdTableNames)
+        {
+            try
+            {
+                SqlDialect dialect = CoreSchema.getInstance().getSchema().getSqlDialect();
+
+                if (dialect instanceof SqlDialectPostgreSQL)
+                {
+                    DbScope scope = CoreSchema.getInstance().getSchema().getScope();
+                    String tempSchemaName = dialect.getGlobalTempTablePrefix();
+                    if (tempSchemaName.endsWith("."))
+                        tempSchemaName = tempSchemaName.substring(0,tempSchemaName.length()-1);
+                    String dbName = SqlDialect.getDatabaseName((BasicDataSource)scope.getDataSource());
+
+                    Connection conn = null;
+                    ResultSet rs = null;
+                    Object noref = new Object();
+                    try
+                    {
+                        conn = CoreSchema.getInstance().getSchema().getScope().getConnection();
+                        rs = conn.getMetaData().getTables(dbName, tempSchemaName, "%", new String[] {"TABLE"});
+                        while (rs.next())
+                        {
+                            String table = rs.getString("TABLE_NAME");
+                            track("core", dialect.getGlobalTempTablePrefix() + table, noref);
+                        }
+                    }
+                    finally
+                    {
+                        ResultSetUtil.close(rs);
+                        if (null != conn)
+                            scope.releaseConnection(conn);
+                    }
+                }
+            }
+            catch (SQLException x)
+            {
+                _log.warn("error cleaning up temp schema", x);
+            }
+            catch (ServletException x)
+            {
+                _log.warn("error cleaning up temp schema", x);
+            }
+        }
+    }
+
+
+    static void synchronizeLog(boolean loadFile)
+    {
+        synchronized(createdTableNames)
+        {
+            try
+            {
+                if (null == tempTableLog)
+                    tempTableLog = new RandomAccessFile(PageFlowUtil.getTempDirectory() + LOGFILE, "rwd");
+
+                if (loadFile)
+                {
+                    TreeSet<String> logEntries = new TreeSet<String>();
+
+                    try
+                    {
+                        tempTableLog.seek(0);
+                        while (tempTableLog.getFilePointer() < tempTableLog.length())
+                        {
+                            String s = tempTableLog.readUTF().trim();
+                            if (s.charAt(0) == '+')
+                                logEntries.add(s.substring(1));
+                            else if (s.charAt(0) == '-')
+                                logEntries.remove(s.substring(1));
+                        }
+                    }
+                    catch (Exception x)
+                    {
+                        _log.error("error reading file '" + LOGFILE + "'", x);
+                    }
+
+                    Object noref = new Object();
+                    for (String s : logEntries)
+                    {
+                        try
+                        {
+                            String[] parts = s.split("\t");
+                            if (parts.length != 2)
+                                continue;
+                            String schemaName = parts[0].trim();
+                            String tableName = parts[1].trim();
+                            if (schemaName.length() == 0 || tableName.length() == 0)
+                                continue;
+                            track(schemaName, tableName, noref);
+                        }
+                        catch (IllegalArgumentException x)
+                        {
+                            _log.error("bad log entry", x);
+                        }
+                    }
+                }
+
+                //
+                // Rewrite file
+                //
+                // we could create new file and rename, but this doesn't have to be that robust
+                //
+                tempTableLog.seek(0);
+                tempTableLog.setLength(0);
+                for (String s : createdTableNames.keySet())
+                    appendToLog("+" + s + "\n");
+            }
+            catch (IOException x)
+            {
+                _log.error("could not create " + LOGFILE, x);
+            }
+            finally
+            {
+                lastSync = System.currentTimeMillis();
+            }
+        }
+    }
+
+
+    static final Thread tempTableThread = new Thread("Temp table cleanup")
+    {
+        public void run()
+        {
+            //noinspection InfiniteLoopStatement
+            while (true)
+            {
+                //noinspection EmptyCatchBlock
+                try
+                {
+                    Reference<? extends Object> r = cleanupQueue.remove();
+                    //noinspection RedundantCast
+                    TempTableTracker t = (TempTableTracker)(Object)r;
+                    t.delete();
+                }
+                catch (InterruptedException x)
+                {
+                    _log.debug("interrupted");
+                }
+                catch (Throwable x)
+                {
+                    _log.error("unexpected error", x);
+                }
+            }
+        }
+    };
+}

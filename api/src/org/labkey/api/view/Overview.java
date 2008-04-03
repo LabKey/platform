@@ -1,0 +1,265 @@
+package org.labkey.api.view;
+
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.security.User;
+import org.labkey.api.data.Container;
+import org.apache.commons.lang.StringUtils;
+
+import java.util.List;
+import java.util.ArrayList;
+
+/**
+ * Class for rendering a series of steps involved with setting something up.
+ * Steps may be enabled or disabled.  If disabled, they are shown as grey.
+ */
+public class Overview
+{
+    private User _user;
+    private Container _container;
+    private String _title;
+    private String _explanatoryHTML;
+    private String _statusHTML;
+    private List<Step> _steps;
+    private List<Action> _actions;
+    
+    static public class Step
+    {
+        public enum Status
+        {
+            normal,
+            required,
+            optional,
+            disabled,
+            completed,
+        }
+
+        String _title;
+        Status _status;
+        String _expanatoryHTML;
+        String _statusHTML;
+        List<Action> _actions;
+        public Step(String title, Status status)
+        {
+            _title = title;
+            _status = status;
+            _actions = new ArrayList();
+        }
+
+        public void setExplanatoryHTML(String html)
+        {
+            _expanatoryHTML = html;
+        }
+
+        public void setStatusHTML(String html)
+        {
+            _statusHTML = html;
+        }
+
+        public void addAction(Action action)
+        {
+            if (action == null)
+                return;
+            _actions.add(action);
+        }
+
+        public String toString()
+        {
+            StringBuilder ret = new StringBuilder("<li");
+            if (_status == Status.disabled)
+            {
+                ret.append(" class=\"step-disabled\"");
+            }
+            ret.append(">");
+            ret.append("<b>");
+            ret.append(h(_title));
+            ret.append("</b>");
+            if (_status == Status.optional)
+            {
+                ret.append(" (optional)");
+            }
+            if (_status == Status.completed)
+            {
+                ret.append(" (completed)");
+            }
+            if (_status == Status.required)
+            {
+                ret.append(" (required)");
+            }
+            if (!StringUtils.isEmpty(_expanatoryHTML))
+            {
+                ret.append("<br><i>");
+                ret.append(_expanatoryHTML);
+                ret.append("</i>");
+            }
+            if (!(StringUtils.isEmpty(_statusHTML)))
+            {
+                ret.append("<br>");
+                ret.append(_statusHTML);
+            }
+            for (Action action : _actions)
+            {
+                ret.append("<br>\n");
+                ret.append(action);
+            }
+            ret.append("</li>");
+            return ret.toString();
+        }
+    }
+
+    static public class Action
+    {
+        String _label;
+        ActionURL _url;
+        String _explanatoryHTML;
+        String _descriptionHTML;
+        public Action(String label, ActionURL url)
+        {
+            _label = label;
+            _url = url;
+        }
+
+        public void setExplanatoryHTML(String html)
+        {
+            _explanatoryHTML = html;
+        }
+
+        public void setDescriptionHTML(String html)
+        {
+            _descriptionHTML = html;
+        }
+        public String toString()
+        {
+            StringBuilder ret = new StringBuilder();
+            if (!StringUtils.isEmpty(_explanatoryHTML))
+            {
+                ret.append("<i>");
+                ret.append(_explanatoryHTML);
+                ret.append("</i><br>");
+            }
+            if (!StringUtils.isEmpty(_descriptionHTML))
+            {
+                ret.append(_descriptionHTML);
+                ret.append("<br>");
+            }
+            if (_url != null)
+            {
+                ret.append("[<a href=\"" + h(_url) + "\">" + h(_label) + "</a>]");
+            }
+            else
+            {
+                ret.append(_label);
+            }
+            return ret.toString();
+        }
+    }
+
+    static protected String h(Object text)
+    {
+        return PageFlowUtil.filter(text);
+    }
+
+    public String toString()
+    {
+        StringBuilder ret = new StringBuilder();
+        ret.append("<style>.step-disabled, .step-disabled a:link, .step-disabled a:visited { color: silver; }</style>");
+        if (!StringUtils.isEmpty(_title))
+        {
+            ret.append("<b>");
+            ret.append(h(_title));
+            ret.append("</b><br>\n");
+        }
+        if (!StringUtils.isEmpty(_explanatoryHTML))
+        {
+            ret.append("<i>");
+            ret.append(_explanatoryHTML);
+            ret.append("</i><br>\n");
+        }
+
+        if (!StringUtils.isEmpty(_statusHTML))
+        {
+            ret.append(_statusHTML);
+            ret.append("<br>");
+        }
+        if (_steps.size() != 0)
+        {
+            ret.append("<ol>");
+            for (Step step : _steps)
+            {
+                ret.append(step);
+            }
+            ret.append("</ol>");
+        }
+        for (Action miscAction : _actions)
+        {
+            ret.append(miscAction);
+            ret.append("<br>");
+        }
+        return ret.toString();
+    }
+
+    public Overview(User user, Container container)
+    {
+        _user = user;
+        _container = container;
+        _steps = new ArrayList();
+        _actions = new ArrayList();
+    }
+
+    public void addStep(Step step)
+    {
+        _steps.add(step);
+    }
+
+    public void addAction(Action action)
+    {
+        _actions.add(action);
+    }
+
+    public boolean hasPermission(int perm)
+    {
+        return _container.hasPermission(_user, perm);
+    }
+
+    public boolean isGlobalAdmin()
+    {
+        return getUser().isAdministrator();
+    }
+
+    public User getUser()
+    {
+        return _user;
+    }
+
+    public Container getContainer()
+    {
+        return _container;
+    }
+
+    /**
+     * Sets the title.  The title appears at the top.
+     */
+    public void setTitle(String title)
+    {
+        _title = title;
+    }
+
+    /**
+     * Set the explanatory text which appears at the top.
+     * Explanatory text is text that is intended to be ignored by users that know what they're doing.  It is
+     * rendered in italics.
+     */
+    public void setExplanatoryHTML(String html)
+    {
+        _explanatoryHTML = html;
+    }
+
+    /**
+     * Set the status text which appears at the top.
+     * Status text sometimes changes and contains information that may be useful even to people who know how to use the product.
+     */
+    public void setStatusHTML(String html)
+    {
+        _statusHTML = html;
+    }
+}

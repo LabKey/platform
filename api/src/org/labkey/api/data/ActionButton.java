@@ -1,0 +1,373 @@
+/*
+ * Copyright (c) 2003-2005 Fred Hutchinson Cancer Research Center
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.labkey.api.data;
+
+
+import org.labkey.api.security.ACL;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.MemTracker;
+import org.labkey.api.view.DisplayElement;
+import org.labkey.api.view.ActionURL;
+
+import java.io.IOException;
+import java.io.Writer;
+
+public class ActionButton extends DisplayElement implements Cloneable
+{
+    public enum Action
+    {
+        POST("post"), GET("get"), LINK("link"), SCRIPT("script");
+
+        private String _description;
+
+        private Action(String desc)
+        {
+            _description = desc;
+        }
+
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        public String toString()
+        {
+            return getDescription();
+        }
+    }
+
+    public static final int DISPLAY_TYPE_BUTTON = 0;
+    public static final int DISPLAY_TYPE_IMG = 1;
+    //public static final int DISPLAY_TYPE_LINK = 2;
+
+    public static ActionButton BUTTON_DELETE = null;
+    public static ActionButton BUTTON_SHOW_INSERT = null;
+    public static ActionButton BUTTON_SHOW_UPDATE = null;
+    public static ActionButton BUTTON_SHOW_GRID = null;
+    public static ActionButton BUTTON_DO_INSERT = null;
+    public static ActionButton BUTTON_DO_UPDATE = null;
+    public static ActionButton BUTTON_SELECT_ALL = null;
+    public static ActionButton BUTTON_CLEAR_ALL = null;
+
+    static
+    {
+        BUTTON_DELETE = new ActionButton("delete.post", "Delete");
+        BUTTON_DELETE.setDisplayPermission(ACL.PERM_DELETE);
+        BUTTON_DELETE.lock();
+        assert MemTracker.remove(BUTTON_DELETE);
+
+        BUTTON_SHOW_INSERT = new ActionButton("showInsert.view", "Insert New");
+        BUTTON_SHOW_INSERT.setActionType(Action.LINK);
+        BUTTON_SHOW_INSERT.setDisplayPermission(ACL.PERM_INSERT);
+        BUTTON_SHOW_INSERT.lock();
+        assert MemTracker.remove(BUTTON_SHOW_INSERT);
+
+        BUTTON_SHOW_UPDATE = new ActionButton("showUpdate.view", "Edit");
+        BUTTON_SHOW_UPDATE.setActionType(Action.GET);
+        BUTTON_SHOW_UPDATE.setDisplayPermission(ACL.PERM_UPDATE);
+        BUTTON_SHOW_UPDATE.lock();
+        assert MemTracker.remove(BUTTON_SHOW_UPDATE);
+
+        BUTTON_SHOW_GRID = new ActionButton("begin.view?.lastFilter=true", "Show Grid");
+        BUTTON_SHOW_GRID.setActionType(Action.LINK);
+        BUTTON_SHOW_GRID.lock();
+        assert MemTracker.remove(BUTTON_SHOW_GRID);
+
+        BUTTON_DO_INSERT = new ActionButton("insert.post", "Submit");
+        BUTTON_DO_INSERT.lock();
+        assert MemTracker.remove(BUTTON_DO_INSERT);
+
+        BUTTON_DO_UPDATE = new ActionButton("update.post", "Submit");
+        BUTTON_DO_UPDATE.lock();
+        assert MemTracker.remove(BUTTON_DO_UPDATE);
+
+        BUTTON_SELECT_ALL = new ActionButton("selectAll", "Select All");
+        BUTTON_SELECT_ALL.setScript("setAllCheckboxes(this.form, true);return false;");
+        BUTTON_SELECT_ALL.setActionType(ActionButton.Action.GET);
+        BUTTON_SELECT_ALL.lock();
+        assert MemTracker.remove(BUTTON_SELECT_ALL);
+
+        BUTTON_CLEAR_ALL = new ActionButton("clearAll", "Clear All");
+        BUTTON_CLEAR_ALL.setScript("setAllCheckboxes(this.form, false);return false;");
+        BUTTON_CLEAR_ALL.setActionType(ActionButton.Action.GET);
+        BUTTON_CLEAR_ALL.lock();
+        assert MemTracker.remove(BUTTON_CLEAR_ALL);
+    }
+
+
+    private Action _actionType = Action.POST;
+    private StringExpressionFactory.StringExpression _caption;
+    private StringExpressionFactory.StringExpression _actionName;
+    private StringExpressionFactory.StringExpression _imgPath;
+    private StringExpressionFactory.StringExpression _url;
+    private StringExpressionFactory.StringExpression _script;
+    private int _displayType;
+    private StringExpressionFactory.StringExpression _title;
+    private String _target;
+    private boolean _appendScript;
+
+
+    public ActionButton(String actionName)
+    {
+        _actionName = StringExpressionFactory.create(actionName);
+    }
+
+    public ActionButton(String caption, ActionURL link)
+    {
+        _caption = StringExpressionFactory.create(caption);
+        _url = StringExpressionFactory.create(link.toString(), true);
+        _actionType = Action.LINK;
+    }
+
+    public ActionButton(ActionURL url, String caption)
+    {
+        this(url.getLocalURIString(), caption);
+    }
+
+    public ActionButton(String actionName, String caption)
+    {
+        _actionName = StringExpressionFactory.create(actionName);
+        _caption = StringExpressionFactory.create(caption);
+    }
+
+    public ActionButton(String actionName, String caption, int displayModes)
+    {
+        this(actionName, caption);
+        setDisplayModes(displayModes);
+
+    }
+
+    public ActionButton(String actionName, String caption, int displayModes, Action actionType)
+    {
+        this(actionName, caption, displayModes);
+        setActionType(actionType);
+    }
+
+    public ActionButton(ActionButton ab)
+    {
+        _actionName = ab._actionName;
+        _actionType = ab._actionType;
+        _caption = ab._caption;
+        _displayType = ab._displayType;
+        _imgPath = ab._imgPath;
+        _script = ab._script;
+        _title = ab._title;
+        _url = ab._url;
+        _target = ab._target;
+    }
+
+    public String getActionType()
+    {
+        return _actionType.toString();
+    }
+
+    public void setActionType(Action actionType)
+    {
+        checkLocked();
+        _actionType = actionType;
+    }
+
+    public int getDisplayType()
+    {
+        return _displayType;
+    }
+
+    public void setDisplayType(int displayType)
+    {
+        checkLocked();
+        _displayType = displayType;
+    }
+
+    public void setActionName(String actionName)
+    {
+        checkLocked();
+        _actionName = StringExpressionFactory.create(actionName);
+    }
+
+    public String getActionName(RenderContext ctx)
+    {
+        return _eval(_actionName, ctx);
+    }
+
+    public String getImgPath(RenderContext ctx)
+    {
+        return _eval(_imgPath, ctx);
+    }
+
+    public void setImgPath(String imgPath)
+    {
+        checkLocked();
+        _imgPath = StringExpressionFactory.create(imgPath, true);
+        _displayType = DISPLAY_TYPE_IMG;
+    }
+
+    public String getCaption(RenderContext ctx)
+    {
+        if (null == _caption)
+            return _eval(_actionName, ctx);
+        else
+            return _eval(_caption, ctx);
+    }
+
+    public String getCaption()
+    {
+        if (null != _caption)
+            return _caption.getSource();
+        else if (null != _actionName)
+            return _actionName.getSource();
+        return null;    
+    }
+
+    public void setCaption(String caption)
+    {
+        checkLocked();
+        _caption = StringExpressionFactory.create(caption);
+    }
+
+    public void setURL(ActionURL url)
+    {
+        setURL(url.getLocalURIString());
+    }
+    public void setURL(String url)
+    {
+        checkLocked();
+        _actionType = Action.LINK;
+        _url = StringExpressionFactory.create(url, true);
+    }
+
+    public String getURL(RenderContext ctx)
+    {
+        return _eval(_url, ctx);
+    }
+
+    public String getScript(RenderContext ctx)
+    {
+        return _eval(_script, ctx);
+    }
+
+    public void setScript(String script)
+    {
+        setScript(script, false);
+    }
+
+    public void setScript(String script, boolean appendToDefaultScript)
+    {
+        checkLocked();
+        _actionType = Action.SCRIPT;
+        _script = StringExpressionFactory.create(script);
+        _appendScript = appendToDefaultScript;
+    }
+
+    public void setTarget(String target)
+    {
+        _target = target;
+    }
+
+    public String getTarget()
+    {
+        return _target;
+    }
+
+    private void renderDefaultScript(RenderContext ctx, Writer out) throws IOException
+    {
+        out.write("this.form.action=\"");
+        out.write(getActionName(ctx));
+        out.write("\";this.form.method=\"");
+        out.write(_actionType.toString());
+        out.write("\";");
+    }
+
+    public void render(RenderContext ctx, Writer out) throws IOException
+    {
+        if (!shouldRender(ctx))
+            return;
+
+        if (_actionType.equals(Action.POST) || _actionType.equals(Action.GET))
+        {
+            out.write("<input");
+            if (_displayType == DISPLAY_TYPE_IMG)
+            {
+                out.write(" type='image' src='");
+                out.write(getImgPath(ctx));
+                out.write("'");
+            }
+            else
+            {
+                out.write(" type='image' src='" + PageFlowUtil.buttonSrc(getCaption(ctx)) + "'");
+            }
+            out.write(" name='");
+            out.write(getActionName(ctx));
+            out.write("'");
+            out.write(" value='");
+            out.write(getCaption(ctx));
+            out.write("' onClick='");
+
+            // Added ability to use a script in the GET and POST case (e.g., to check the form before submiting)
+            if (null == _script || _appendScript)
+                renderDefaultScript(ctx, out);
+            if (_script != null)
+                out.write(getScript(ctx));
+
+            out.write("'>");
+        }
+        else if (_actionType.equals(Action.LINK))
+        {
+            out.write("<a href='");
+            out.write(_url != null ? getURL(ctx) : getActionName(ctx));
+            out.write("'");
+            if (_target != null)
+            {
+                out.write(" target=\"");
+                out.write(PageFlowUtil.filter(_target));
+                out.write("\"");
+            }
+            out.write(">");
+            out.write("<img border=0 src='" + PageFlowUtil.buttonSrc(getCaption(ctx)) + "'>");
+            out.write("</a>");
+        }
+        else
+        {
+            out.write("<a href='/' onClick='");
+            if (_appendScript)
+                renderDefaultScript(ctx, out);
+            out.write(getScript(ctx));
+            out.write("'>");
+            out.write("<img border=0 src='" + PageFlowUtil.buttonSrc(getCaption(ctx)) + "'>");
+            out.write("</a>");
+        }
+    }
+
+    public ActionButton clone()
+    {
+        try
+        {
+            ActionButton button = (ActionButton) super.clone();
+            button._locked = false;
+            return button;
+        }
+        catch (CloneNotSupportedException e)
+        {
+            throw new RuntimeException("Superclass was expected to be cloneable", e);
+        }
+    }
+
+    private static String _eval(StringExpressionFactory.StringExpression expr, RenderContext ctx)
+    {
+        return expr == null ? null : expr.eval(ctx);
+    }
+}

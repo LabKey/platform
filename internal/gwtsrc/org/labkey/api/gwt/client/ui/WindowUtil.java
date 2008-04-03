@@ -1,0 +1,134 @@
+package org.labkey.api.gwt.client.ui;
+
+import com.google.gwt.user.client.ui.Widget;
+import com.google.gwt.user.client.ui.DialogBox;
+import com.google.gwt.user.client.Window;
+import com.google.gwt.user.client.DeferredCommand;
+import com.google.gwt.user.client.Command;
+
+/**
+ * Created by IntelliJ IDEA.
+ * User: Mark Igra
+ * Date: Feb 26, 2007
+ * Time: 9:56:50 PM
+ */
+public class WindowUtil
+{
+    /**
+     * Gets the left scroll position.
+     *
+     * @return The left scroll position.
+     */
+    public static native int getScrollLeft() /*-{
+            var scrollLeft;
+            if ($wnd.innerHeight)
+            {
+                    scrollLeft = $wnd.pageXOffset;
+            }
+            else if ($doc.documentElement && $doc.documentElement.scrollLeft)
+            {
+                    scrollLeft = $doc.documentElement.scrollLeft;
+            }
+            else if ($doc.body)
+            {
+                    scrollLeft = $doc.body.scrollLeft;
+            }
+            return scrollLeft;
+    }-*/;
+
+    /**
+     * Gets the top scroll position.
+     *
+     * @return The top scroll position.
+     */
+    public static native int getScrollTop() /*-{
+            var scrollTop;
+            if ($wnd.innerHeight)
+            {
+                    scrollTop = $wnd.pageYOffset;
+            }
+            else if ($doc.documentElement && $doc.documentElement.scrollTop)
+            {
+                    scrollTop = $doc.documentElement.scrollTop;
+            }
+            else if ($doc.body)
+            {
+                    scrollTop = $doc.body.scrollTop;
+            }
+            return scrollTop;
+    }-*/;
+
+    public static native void scrollTo(int x, int y) /*-{
+        $wnd.scrollTo(x, y);
+    }-*/;
+
+
+    public static void scrollIntoView(Widget w)
+    {
+        int widgetTop = w.getAbsoluteTop();
+        int widgetLeft = w.getAbsoluteLeft();
+        int widgetWidth = w.getOffsetWidth();
+        int widgetHeight = w.getOffsetHeight();
+        int widgetRight = widgetLeft + widgetWidth;
+        int widgetBottom = widgetTop + widgetHeight;
+
+        int visTop = getScrollTop();
+        int visLeft = getScrollLeft();
+        int visWidth = Window.getClientWidth();
+        int visHeight = Window.getClientHeight();
+        int visRight = visLeft + visWidth;
+        int visBottom = visTop + visHeight;
+
+        if (widgetTop >= visTop && widgetBottom <= visBottom &&
+                widgetLeft >= visLeft &&  widgetRight <= visRight)
+            return;
+
+
+        int newTop = visTop;
+        int newLeft = visLeft;
+        if (widgetTop < visTop || widgetHeight > visHeight)
+            newTop = widgetTop;
+        else if (widgetBottom > visBottom)
+            newTop = widgetBottom - visHeight;
+
+        if (widgetLeft < visLeft || widgetWidth > visWidth)
+            newLeft = widgetLeft;
+        else if (widgetRight > visRight)
+            newLeft = widgetRight - visWidth;
+
+        scrollTo(newLeft, newTop);
+    }
+
+    /**
+     * Navigates to a different URL (leaving this app) using
+     * window.location=loc
+     * @param loc
+     */
+    public static native void setLocation(String loc) /*-{
+         $wnd.location = loc;
+    }-*/;
+
+    public static void centerDialog(DialogBox dialogBox)
+    {
+        dialogBox.setPopupPosition((Window.getClientWidth() - dialogBox.getOffsetWidth()) / 2, (Window.getClientHeight() - dialogBox.getOffsetHeight()) / 2);
+    }
+
+    public static class NavigateCommand implements Command
+    {
+        private String loc;
+        public NavigateCommand(String loc)
+        {
+            this.loc = loc;
+        }
+
+        public void execute()
+        {
+            setLocation(loc);
+        }
+    }
+
+    public static native String prompt(String prompt, String defaultValue) /*-{
+        return $wnd.prompt(prompt, null == defaultValue ? "" : defaultValue);
+    }-*/;
+
+}

@@ -1,0 +1,24 @@
+<script type="text/javascript">
+    LABKEY.requiresClientAPI();
+</script>
+<script type="text/javascript">
+    // Create new grid over a list named 'People'.  Note that the 'People' list must already exist.
+    var gridView = new LABKEY.GridView({
+        schemaName : 'lists',
+        queryName : 'People',
+        renderTo : 'gridDiv',
+        editable : true,
+        // Set display configuration for the new grid.  This configuration
+        // is passed through to the underlying Ext.grid.GridPanel implementation,
+        // so all GridPanel config options are valid:
+        // http://extjs.com/deploy/dev/docs/?class=Ext.grid.GridPanel
+        gridPanelConfig : {
+            title :'Test Grid',
+            autoHeight : true
+         }
+    });
+    // Place editable grid in 'gridDiv':
+    gridView.render();
+</script>
+
+<div id="gridDiv"></div>
