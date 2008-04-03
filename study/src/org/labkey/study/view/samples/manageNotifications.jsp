@@ -1,0 +1,112 @@
+<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.JspView"%>
+<%@ page import="org.labkey.study.SampleManager" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<script type="text/javascript">LABKEY.requiresScript('completion.js');</script>
+<script type="text/javascript">
+function setElementDisplayByCheckbox(checkbox, element)
+{
+    var target = document.getElementById(element);
+    if (document.getElementById(checkbox).checked)
+        target.style.display = "";
+    else
+        target.style.display = "none";
+  }
+</script>
+
+<%
+    JspView<SampleManager.RequestNotificationSettings> me =
+            (JspView<SampleManager.RequestNotificationSettings>) HttpView.currentView();
+    SampleManager.RequestNotificationSettings bean = me.getModelBean();
+    Container container = HttpView.getRootContext().getContainer();
+
+    ActionURL completionAction = new ActionURL("Security", "completeUser", container);
+    String completionURLPrefix = completionAction.getLocalURIString() + "prefix=";
+    boolean newRequestNotifyChecked = ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()) ?
+            bean.isNewRequestNotifyCheckbox() : (h(bean.getNewRequestNotify()) != null &&
+            h(bean.getNewRequestNotify()).compareTo("") != 0));
+    boolean ccChecked = ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()) ?
+            bean.isCcCheckbox() : (h(bean.getCc()) != null && h(bean.getCc()).compareTo("") != 0));
+%>
+
+<%=PageFlowUtil.getStrutsError(request, "main")%>
+<form action="handleUpdateNotifications.post" method="POST">
+    <table cellspacing="5" class="normal" width="500">
+        <tr>
+            <td colspan="2">The specimen request system sends emails as requested by the specimen administrator.
+                Some properties of these email notifications can be configured here.</td>
+        </tr>
+        <tr>
+            <td colspan="2" class="ms-searchform">Notification emails will be sent from the specified reply-to address.
+            This is the address that will receive replies and error messages, so it should be a monitored address.</td>
+        </tr>
+        <tr>
+            <th align="right">Reply-to Address:</th>
+            <td>
+                <input type="text" size="40" name="replyTo" value="<%= h(bean.getReplyTo()) %>">
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" class="ms-searchform">All specimen request emails have the same subject line.  <b>%requestId%</b> may be used
+                to insert the specimen request's study-specific ID number.  The format for the subject line is:
+                <b><%= h(StudyManager.getInstance().getStudy(container).getLabel()) %>: [Subject Suffix]</b>
+            </td>
+        </tr>
+        <tr>
+            <th align="right">Subject Suffix:</th>
+            <td>
+                <input type="text" size="40" name="subjectSuffix" value="<%= h(bean.getSubjectSuffix()) %>">
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" class="ms-searchform">Notification can be sent whenever a new specimen request is submitted.</td>
+        </tr>
+        <tr>
+            <td><input type='checkbox' value='true' id='newRequestNotifyCheckbox'
+                        name='newRequestNotifyCheckbox'
+                        onclick="setElementDisplayByCheckbox('newRequestNotifyCheckbox', 'newRequestNotifyArea');"
+                        <%= newRequestNotifyChecked ? " checked" : ""%>>Send Notification of New Requests</td>
+        </tr>
+        <tr id="newRequestNotifyArea" style="display:<%= newRequestNotifyChecked ? "" : "none"%>">
+            <th align="right">Notify of new requests<br>(one per line):</th>
+            <td>
+                <textarea name="newRequestNotify" id="newRequestNotify" cols="30" rows="3"
+                        onKeyDown="return ctrlKeyCheck(event);"
+                        onBlur="hideCompletionDiv();"
+                        autocomplete="off"
+                        onKeyUp="return handleChange(this, event, '<%= completionURLPrefix %>');"><%= h(bean.getNewRequestNotify()) %></textarea>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" class="ms-searchform">Email addresses listed under "always CC" will receive a single copy of each email notification.
+                Please keep security issues in mind when adding users to this list.</td>
+        </tr>
+        <tr>
+            <td><input type='checkbox' value='true' id='ccCheckbox'
+                        name='ccCheckbox'
+                        onclick="setElementDisplayByCheckbox('ccCheckbox', 'ccArea');"
+                        <%= ccChecked ? " checked" : ""%>>Always Send CC</td>
+        </tr>
+        <tr id="ccArea" style="display:<%= ccChecked ? "" : "none"%>">
+            <th align="right">Always CC<br>(one per line):</th>
+            <td>
+                <textarea name="cc" id="cc" cols="30" rows="3"
+                        onKeyDown="return ctrlKeyCheck(event);"
+                        onBlur="hideCompletionDiv();"
+                        autocomplete="off"
+                        onKeyUp="return handleChange(this, event, '<%= completionURLPrefix %>');"><%= h(bean.getCc() )%></textarea>
+            </td>
+        </tr>
+        <tr>
+            <th>&nbsp;</th>
+            <td>
+                <%= buttonImg("Save") %>&nbsp;
+                <%= buttonLink("Cancel", ActionURL.toPathString("Study", "manageStudy", container))%>
+            </td>
+        </tr>
+    </table>
+</form>

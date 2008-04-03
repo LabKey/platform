@@ -1,0 +1,37 @@
+#if($form.message)
+<span style="color:red">$form.message</span>
+#end
+#if($form.success)
+Slide successfully imported. <a href="details.view?modelId=$form.modelId&sampleId=$form.sampleId">View Sample</a>
+#end
+
+<form method=post enctype="multipart/form-data" action='insertSlides.post'>
+<input type=hidden name="modelId" value="$form.modelId" />
+<table>
+  <tr>
+    <td class='ms-searchform'>Sample</td><td class='ms-vb'><input type='text' size='40' name='sampleId' value='$!form.sampleId' ></td>
+  </tr>
+  <tr>
+    <td class='ms-searchform'>Stain</td><td class='ms-vb'>
+    <select name="stainId">
+    #foreach($s in $stains)
+        <option value="$s.name" #if($form.stainId.toString() == $s.name)selected#end>$tools.filter($s.object)</option>
+    #end
+    </select>
+    </td>
+    </tr>
+  <tr>
+    <td class='ms-searchform'>Notes</td><td class='ms-vb'><textarea cols='60' rows ='15' name='notes'></textarea>
+</td>  </tr>
+	<tr>
+    <td class="ms-searchForm">
+		Slide File
+    </td>
+    <td>
+        <input type="file" name="formFiles[0]">
+	</td>
+	</tr>
+</table>
+<br>
+<input type=image src='$tools.buttonSrc("Add Slide")' value="Insert">
+</form>

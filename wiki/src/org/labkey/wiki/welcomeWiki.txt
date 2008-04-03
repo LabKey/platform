@@ -1,0 +1,46 @@
+<p>Welcome to your LabKey Server. LabKey helps researchers collect, analyze, and 
+share data <br>
+from mass spectrometers, flow cytometers, and long-term observational studies.</p>
+<p>Here are some options for getting started:</p>
+<p><b>CPAS Proteomics Users</b></p>
+<ul>
+	<li>View the
+	<a href="http://help.labkey.org/Project/home/cpas/demo/begin.view">CPAS sample
+	project</a></li>
+	<li>Browse the
+	<a href="http://help.labkey.org/Project/home/cpas/documentation/begin.view">
+	CPAS documentation</a><br>
+	</li>
+	<li><a href="http://help.labkey.org/Project/home/cpas/support/begin.view">Ask
+	the development team a question</a><br>
+	</li>
+</ul>
+<p><b>Flow Cytometry Users</b><br>
+</p>
+<ul>
+	<li>Browse the
+	<a href="http://help.labkey.org/Project/home/flow/documentation/begin.view">
+	flow cytometry documentation</a></li>
+	<li><a href="http://help.labkey.org/Project/home/flow/support/begin.view">Ask
+	the development team a question</a><br>
+	</li>
+</ul>
+<p><b>Observational Study Users</b></p>
+<ul>
+	<li>Browse the
+	<a href="http://help.labkey.org/Project/home/study/documentation/begin.view">
+	observational study documentation</a></li>
+	<li><a href="http://help.labkey.org/Project/home/study/support/begin.view">Ask
+	the development team a question</a><br>
+	</li>
+</ul>
+<p><b>All Users</b><br>
+</p>
+<ul>
+	<li><a href="../../admin/modifyFolder.view?action=create">Create a new project</a>
+	and set permissions for it<br>
+	</li>
+	<li><a href="../../Wiki/home/update.view?name=default">Edit this page</a><br>
+	<br>
+	</li>
+</ul>

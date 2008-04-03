@@ -1,0 +1,1 @@
+CREATE INDEX IDX_Material_LSID ON exp.Material(LSID);

@@ -1,0 +1,116 @@
+package org.labkey.study.plate.query;
+
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.DataView;
+import org.labkey.api.data.*;
+import org.labkey.api.study.PlateQueryView;
+
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.io.PrintWriter;
+import java.io.IOException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+/**
+ * User: brittp
+ * Date: Nov 2, 2006
+ * Time: 10:50:49 AM
+ */
+public class PlateQueryViewImpl extends PlateQueryView
+{
+    private SimpleFilter _filter;
+    private Sort _sort;
+    private List<ActionButton> _buttons;
+    private Map<String, String> _hiddenFormFields;
+
+    public PlateQueryViewImpl(ViewContext context, QuerySettings settings, SimpleFilter filter)
+    {
+        super(new PlateSchema(context.getUser(), context.getContainer()), settings);
+        _filter = filter;
+    }
+
+    @Override
+    protected DataView createDataView()
+    {
+        DataView view = super.createDataView();
+        if (_filter != null)
+        {
+            SimpleFilter filter = (SimpleFilter) view.getRenderContext().getBaseFilter();
+            if (filter != null)
+                filter.addAllClauses(_filter);
+            else
+                filter = _filter;
+            view.getRenderContext().setBaseFilter(filter);
+        }
+        if (_sort != null && view.getRenderContext().getBaseSort() == null)
+            view.getRenderContext().setBaseSort(_sort);
+        if (_buttons != null)
+        {
+            ButtonBar bbar = view.getDataRegion().getButtonBar(DataRegion.MODE_GRID);
+            for (ActionButton button : _buttons)
+                bbar.add(button);
+            view.getDataRegion().setButtonBar(bbar);
+        }
+        else
+            view.getDataRegion().setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
+        return view;
+    }
+
+    protected void renderQueryPicker(PrintWriter out)
+    {
+        // do nothing: we don't want a query picker for plate views
+    }
+
+    @Override
+    protected DataRegion createDataRegion()
+    {
+        DataRegion region = super.createDataRegion();
+        region.setShowRecordSelectors(true);
+        region.setRecordSelectorValueColumns("RowId");
+        region.setShadeAlternatingRows(true);
+        region.setShowColumnSeparators(true);
+
+        if (_hiddenFormFields != null)
+        {
+            for (Map.Entry<String, String> field : _hiddenFormFields.entrySet())
+                region.addHiddenFormField(field.getKey(), field.getValue());
+        }
+        return region;
+    }
+
+    public void addHiddenFormField(String key, String value)
+    {
+        if (_hiddenFormFields == null)
+            _hiddenFormFields = new HashMap<String, String>();
+        _hiddenFormFields.put(key, value);
+    }
+
+    public void setButtons(List<ActionButton> buttons)
+    {
+        _buttons = buttons;
+    }
+
+    public boolean hasRecords() throws SQLException, IOException
+    {
+        DataView view = createDataView();
+        DataRegion rgn = view.getDataRegion();
+        ResultSet rs = null;
+        try
+        {
+            rs = rgn.getResultSet(view.getRenderContext());
+            return rs.next();
+        }
+        finally
+        {
+            if (rs != null) try { rs.close(); } catch (SQLException e) {}
+        }
+    }
+
+    public void setSort(Sort sort)
+    {
+        _sort = sort;
+    }
+}

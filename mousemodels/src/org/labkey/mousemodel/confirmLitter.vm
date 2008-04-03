@@ -1,0 +1,98 @@
+$!tools.pageFlowUtil.getStrutsError($request, "main")
+<form method='post' action='confirmLitter.post'>
+<input type=hidden name=modelId value="$breedingPair.modelId"/>
+<input type=hidden name=breedingPairId value="$breedingPair.breedingPairId"/>
+<table border=0>
+<tr>
+  <td>Breeding Pair</td>
+  <td>
+#if($breedingPair.name)
+        $breedingPair.name
+#else
+         $breedingPair.breedingPairId
+#end
+  </td>
+</tr>
+<tr>
+
+    <td>
+        Litter Name
+    </td>
+    <td>
+        <input name="litterName" value="$!form.litterName"/>
+    </td>
+    </tr>
+    <tr>
+    <td>
+        Birth Date
+    </td>
+    <td>
+        <input name="birthDateString" value="$!form.birthDateString"/>
+    </td>
+</tr>
+
+</table>
+<table border=0>
+    <tr>
+    <td>
+      Cage
+    </td>
+    <td>
+      Sex
+    </td>
+    <td>
+      Control
+    </td>
+    <td>
+      Toe Numbers
+    </td>
+      #foreach($colName in $customColumns.keySet())
+      <td>
+            $customColumns.get($colName)
+      </td>
+      #end
+    </tr>
+#set($cageNo = 0)
+#foreach($cage in $cages)
+    <tr>
+      <td>
+      <input name="cages[$cageNo].cageName" type=text value="$!cage.cageName"/>
+      </td>
+      <td>
+        <select name="cages[$cageNo].sex">
+            <option> </option>
+            <option #if($cage.sex=="F")selected #end >F</option>
+            <option #if($cage.sex=="M")selected #end >M</option>
+         </select>
+      </td>
+      <td colspan=2>
+         &nbsp;
+      </td>
+    </tr>
+    
+        #set($mice = $cage.mice)
+        #set($mouseNo = 0)
+        #foreach($mouse in $cage.mice)
+    <tr>
+      <td colspan=2>
+        &nbsp;
+      </td>
+      <td>
+            <input name="cages[$cageNo].mice[$mouseNo].control" type=checkbox #if($mouse.control) checked #end>
+      </td>
+      <td>
+            <input type=text size=4 name="cages[$cageNo].mice[$mouseNo].toeNo" value="$!mouse.toeNo">
+      </td>
+      #foreach($colName in $customColumns.keySet())
+      <td>
+            <input type=text name="cages[$cageNo].mice[$mouseNo].$colName" value="">
+      </td>
+      #end
+    </tr>
+        #set($mouseNo = $mouseNo + 1)
+        #end
+#set($cageNo = $cageNo + 1)
+#end ##foreach cage
+</table>
+<input type=image src='$tools.pageFlowUtil.buttonSrc("Submit")'>
+</form>

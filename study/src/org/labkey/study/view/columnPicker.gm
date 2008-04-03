@@ -1,0 +1,97 @@
+<%@ page import="org.labkey.study.controllers.reports.ReportsController"%>
+<%@ page import="org.labkey.study.model.Study"%>
+<%@ page import="org.labkey.study.model.DataSetDefinition"%>
+<%@ page import="java.util.List"%>
+<%@ page import="org.labkey.study.model.VisitDataSet"%>
+<%@ page import="java.util.HashMap"%>
+<%@ page import="org.labkey.study.model.Visit"%>
+<%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.api.exp.PropertyDescriptor"%>
+<%@ page import="org.labkey.api.exp.OntologyManager"%>
+<%
+//    Study study;
+//    ReportsController.ColumnPickerForm form;
+
+ReportsController.DataPickerBean bean;
+bean = modelBean;
+DataSetDefinition[] datasets = bean.study.getDataSets();
+DataSetDefinition selectedDataset = null;
+PropertyDescriptor[] pds = null;
+String error = null;
+%>
+<p><%=filter(bean.caption)%></p>
+<form id="columnPickerForm" action="renderConfigureEnrollmentReport.view" method="POST">
+<table class=normal>
+<tr><td>Dataset</td><td><select name="<%=DataSetDefinition.DATASETKEY%>" onchange="refreshForm(this.options[this.selectedIndex].value)">
+    <option value="-1"></option>
+<%
+for (DataSetDefinition ds : datasets)
+{
+    boolean selected = bean.form.getDatasetId() == ds.getDataSetId();
+    if (selected)
+        selectedDataset = ds;
+    %><option <%=selected?"selected ":""%>value="<%=ds.getDataSetId()%>"><%=filter(ds.getDisplayString())%></option><%
+}
+%></select></td></tr>
+<%
+if (selectedDataset != null)
+{
+    HashMap visits = new HashMap();
+    for (Visit visit : bean.study.getVisits())
+    {
+        if (visit.getSequenceNumMin() == visit.getSequenceNumMax())
+            visits.put(visit.getRowId(), visit);
+    }
+    List datasetVisits = selectedDataset.getVisitDataSets();
+    if (null != selectedDataset.getTypeURI())
+        pds = OntologyManager.getPropertiesForType(selectedDataset.getTypeURI(),bean.study.getContainer());
+    if (null == pds || pds.length == 0)
+        error = "Dataset is not defined yet.";
+
+    %><tr><td>Visit</td><td><select name="<%=Visit.SEQUENCEKEY%>"><%
+    if (datasetVisits.size() == 0 && error == null)
+        error = "No visits defined for this dataset.";
+    for (VisitDataSet vds : datasetVisits)
+    {
+        Visit visit = (Visit)visits.get(vds.getVisitRowId());
+//        if (!visit.isRequired())            continue;
+        if (null == visit)
+            {%><!-- <%=vds.getVisitRowId()%> not found --><% continue;}
+        %><option <%=bean.form.getSequenceNum() == visit.getSequenceNumMin() ? "selected " : ""%>value="<%=visit.getSequenceNumMin()%>"><%=filter(visit.getDisplayString())%></option><%
+    }
+    %></select></td></tr><%
+    %>
+    <%
+    if (bean.pickColumn)
+    {
+        %>
+        <tr><td>Column</td><td><select name="propertyId"><%
+        if (null != pds)
+        {
+            int count = 0;
+            for (PropertyDescriptor pd : pds)
+            {
+                if (bean.propertyType != null && bean.propertyType != pd.getPropertyType())
+                    continue;
+                count++;
+                %><option <%=pd.getPropertyId().equals(bean.form.getPropertyId())?"selected ":""%>value="<%=filter(pd.getPropertyId())%>"><%=filter(pd.getLabel())%></option><%
+            }
+            if (count==0 && error==null)
+                error = "No date fields found in this dataset.";
+        }
+        %></select></td></tr>
+    <%
+    }
+    %><%
+}
+%>
+</table>
+<input type="image" src="<%=PageFlowUtil.submitSrc()%>">
+</form>
+<font color=red><%= error==null ? "" : filter(error)%></font>
+<script type="text/javascript">
+function refreshForm(value)
+{
+    document.location = "?datasetId=" + value;
+}
+</script>

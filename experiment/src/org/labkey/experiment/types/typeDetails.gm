@@ -1,0 +1,19 @@
+<%@ page import="org.labkey.api.exp.PropertyDescriptor"%>
+<%@ page import="org.labkey.api.exp.PropertyType"%>
+<%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%
+//PropertyDescriptor pd;
+%><h3><%=filter(typeName)%></h3>
+<table>
+<tr><th class=normal>Name</th><th class=normal>PropertyURI</th><th class=normal>Type</th></tr><%
+for (pd in properties)
+    {
+    PropertyType t = pd.getPropertyType();
+    %><tr><td class=normal><%=filter(pd.getName())%></td><td class=normal><%=filter(pd.getPropertyURI())%></td><td class=normal><%=filter(t.getXmlName())%></td></tr><%
+    }
+%></table>
+<p>
+[ <a href="types.view">View Types</a> ]<br>
+[ <a href="importData.view?typeURI=<%=PageFlowUtil.encode(typeName)%>">Import Data</a> ]<br>&nbsp;<br>
+<a href="deleteData.view?typeURI=<%=PageFlowUtil.encode(typeName)%>&deleteType=0"><%=PageFlowUtil.buttonImg("Delete data")%></a>&nbsp;<a href="deleteData.view?typeURI=<%=PageFlowUtil.encode(typeName)%>&deleteType=1"><%=PageFlowUtil.buttonImg("Delete type")%></a>
+</p>

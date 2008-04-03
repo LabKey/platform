@@ -1,0 +1,11 @@
+<a href="$request.getContextPath()/MouseModel-Sample${container.path}/begin.view?modelId=$modelId">
+Show Samples</a><br>
+<a href="$request.getContextPath()/MouseModel-Sample${container.path}/showEnterSampleLocations.view?modelId=$modelId">
+Store Samples</a><br>
+<a href="$request.getContextPath()/MouseModel-Sample${container.path}/showInsertSlides.view?modelId=$modelId">
+Add Slides</a><br>
+<a href="$request.getContextPath()/MouseModel-Necropsy${container.path}/showNecropsyPhotoForm.view?modelId=$modelId">
+Submit Necropsy Photos</a><br>
+
+<a href="$request.getContextPath()/MouseModel${container.path}/showUpdate.view?modelId=$modelId">
+Edit Model Info</a><br>

@@ -1,0 +1,3 @@
+ALTER TABLE core.Containers ADD 
+    SortOrder INTEGER NOT NULL DEFAULT 0
+GO

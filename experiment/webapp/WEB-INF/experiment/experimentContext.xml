@@ -1,0 +1,12 @@
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>
+    <bean id="experimentPipelineRegistry" class="org.labkey.api.pipeline.TaskPipelineRegistrar">
+        <property name="factoryImpls">
+            <list>
+                <bean class="org.labkey.experiment.pipeline.XarGeneratorTask$Factory"/>
+                <bean class="org.labkey.experiment.pipeline.XarImportTask$Factory"/>
+            </list>
+        </property>
+    </bean>
+</beans>

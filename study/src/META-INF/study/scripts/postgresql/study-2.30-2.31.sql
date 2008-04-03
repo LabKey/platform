@@ -1,0 +1,2 @@
+ALTER TABLE study.Plate ADD COLUMN Type VARCHAR(200);
+

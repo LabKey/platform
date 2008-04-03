@@ -1,0 +1,271 @@
+package org.labkey.wiki.renderer;
+
+import org.apache.commons.lang.StringUtils;
+import static org.apache.commons.lang.StringUtils.trimToEmpty;
+import org.labkey.api.attachments.Attachment;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.wiki.WikiRenderer;
+import org.labkey.api.wiki.FormattedHtml;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+/**
+ * User: Tamra Myers
+ * Date: Aug 16, 2006
+ * Time: 12:33:37 PM
+ */
+public class HtmlRenderer implements WikiRenderer
+{
+    String _hrefPrefix;
+    String _attachPrefix;
+    Map<String, WikiLinkable> _pages;
+    Map<String, Attachment> _attachments;
+
+    private static Map<String, SubstitutionHandler> _substitutionHandlers = new HashMap<String, SubstitutionHandler>();
+
+    static
+    {
+        // Add SubstitutionHandlers for each ${labkey.<type>()}
+        _substitutionHandlers.put("webPart", new WebPartSubstitutionHandler());
+    }
+
+
+    public HtmlRenderer(String hrefPrefix, String attachPrefix, Map<String, WikiLinkable> pages, Attachment[] attachments)
+    {
+        _hrefPrefix = hrefPrefix;
+        _attachPrefix = attachPrefix;
+        _pages = pages == null ? new HashMap<String,WikiLinkable>() : pages;
+        _attachments = new HashMap<String,Attachment>();
+        if (null != attachments)
+            for (Attachment a : attachments)
+                _attachments.put(a.getName(), a);
+    }
+    
+
+    public FormattedHtml format(String text)
+    {
+        LinkedList<String> errors = new LinkedList<String>();
+        if (text == null)
+            return new FormattedHtml("");
+
+        FormattedHtml formattedHtml = handleLabkeySubstitutions(text);
+        boolean volatilePage = formattedHtml.isVolatile();
+        Document doc = PageFlowUtil.convertHtmlToDocument("<html><body>" + trimToEmpty(formattedHtml.getHtml()) + "</body></html>", errors);
+
+        // process A and IMG
+        NodeList nl = doc.getElementsByTagName("a");
+        for (int i=0 ; i<nl.getLength() ; i++)
+        {
+            Element a = (Element)nl.item(i);
+            String href = a.getAttribute("href");
+
+            Attachment at = _attachments.get(href);
+            if (null != at)
+            {
+                a.setAttribute("href", _attachPrefix + PageFlowUtil.encode(at.getName()));
+                continue;
+            }
+
+            if (href.startsWith("#"))
+                continue;
+            
+            WikiLinkable l = _pages.get(href);
+            if (null != l)
+            {
+                // UNDONE: why is l.getName() null???
+                //a.setAttribute("href", _hrefPrefix + PageFlowUtil.encode(.getName()));
+                a.setAttribute("href", _hrefPrefix + PageFlowUtil.encode(href));
+                continue;
+            }
+
+            // if this doesn't look like a url, then link to it as a wiki page
+            if (StringUtils.containsNone(href, "?:/.&"))
+            {
+                a.setAttribute("href", _hrefPrefix + PageFlowUtil.encode(href));
+            }
+        }
+
+        nl = doc.getElementsByTagName("img");
+        for (int i=0 ; i<nl.getLength() ; i++)
+        {
+            Element img = (Element)nl.item(i);
+            String src = img.getAttribute("src");
+            src = PageFlowUtil.decode(src);
+            Attachment at = _attachments.get(src);
+            if (null != at)
+                img.setAttribute("src", _attachPrefix + PageFlowUtil.encode(at.getName()));
+        }
+
+        // back to html
+        Node bodyNode = doc.getElementsByTagName("body").item(0);
+
+        // Uncomment the below to debug bodyNode contents
+        // inspectNode(bodyNode, 0);
+
+        String bodyHtml = PageFlowUtil.convertNodeToHtml(bodyNode);
+        String innerHtml = bodyHtml.substring("<body>".length(), bodyHtml.length()-"</body>".length());
+
+        return new FormattedHtml(innerHtml, volatilePage);
+    }
+
+
+    private void inspectNode(Node node, int indent)
+    {
+        System.out.println(StringUtils.repeat(" ", indent) + node.getLocalName() + " " + node.getNodeValue());
+
+        NodeList l = node.getChildNodes();
+
+        for (int i = 0; i < l.getLength(); i++)
+            inspectNode(l.item(i), indent + 1);
+    }
+
+    // ${labkey.<type>(<any_stream of characters>)}
+    // Pattern.DOTALL allows the parameter list to span multiple lines
+    private static final Pattern _substitutionPattern = Pattern.compile("\\$\\{labkey\\.(\\w+)\\((.*?)\\)\\}", Pattern.DOTALL);
+
+    // <any word>='<any value>', allowing whitespace before, after, and in-between
+    private static final Pattern _paramPattern = Pattern.compile("\\s*(\\w+)\\s*=\\s*'(.*)'\\s*");
+
+    private FormattedHtml handleLabkeySubstitutions(String text)
+    {
+        if (text == null)
+            return new FormattedHtml("");
+        
+        // Find all substitution templates embedded in wiki text that have the form ${labkey.<type>(<any_stream of characters>)}.
+        Matcher webPartMatcher = _substitutionPattern.matcher(text);
+
+        // If we find none, return immediately
+        if (!webPartMatcher.find())
+            return new FormattedHtml(text);
+
+        List<Definition> definitions = new ArrayList<Definition>(10);
+        Map<Definition, List<String>> wikiErrors = new HashMap<Definition, List<String>>();
+        do
+        {
+            List<String> paramErrors = new ArrayList<String>();
+            String substitutionType = webPartMatcher.group(1);          // type
+            String params = webPartMatcher.group(2).replace(",", "");
+            // Parse the parameters with the symbols in parseWith, they can be used in any order
+            // as long as they are the same symbol starts and completes a parameter value
+            List<String> paramList = new ArrayList<String>();
+            paramList.add(params);
+            String[] parseWith = { "&#39;", "'" };
+            for (String parser : parseWith)
+            {
+                List<String> paramListTemp = new ArrayList<String>();
+                for (String paramSection : paramList)
+                {
+                    String[] paramSplit = paramSection.split(parser);
+                    for (int i = 0; i < paramSplit.length; i+=2)
+                    {
+                        paramListTemp.add(paramSplit[i] + (paramSplit.length > i + 1 ? "'" + paramSplit[i+1]  + "'": ""));
+                    }
+                }
+                paramList = paramListTemp;
+            }
+
+            Map<String, String> paramMap = new HashMap<String, String>(10);
+            for (String param : paramList)
+            {
+                Matcher paramMatcher = _paramPattern.matcher(param);
+
+                if (paramMatcher.matches())
+                {
+                    if (paramMap.containsKey(paramMatcher.group(1)))
+                        paramErrors.add(param.trim() + ", there are multiple parameters with this name");
+                    else
+                        paramMap.put(paramMatcher.group(1), paramMatcher.group(2));
+                }
+                else
+                    paramErrors.add(param.trim());
+            }
+
+            // Stick new definition at beginning of list -- we want to replace them in reverse order
+            Definition definition = new Definition(substitutionType, webPartMatcher.start(), webPartMatcher.end(), paramMap);
+            definitions.add(0, definition);
+            wikiErrors.put(definition, paramErrors);
+        }
+        while(webPartMatcher.find());
+
+        StringBuilder sb = new StringBuilder(text);
+        boolean volatilePage = false;
+
+        // Get the corresponding substitution handler for each type and replace template with substitution
+        for (Definition definition : definitions)
+        {
+            SubstitutionHandler handler = _substitutionHandlers.get(definition.getType());
+            FormattedHtml substitution;
+
+            if (null != handler)
+                substitution = handler.getSubstitution(definition.getParams());
+            else
+                substitution = new FormattedHtml("<br><font class='error' color='red'>Error: unknown type, \"labkey." + definition.getType() + "\"</font>");
+
+            sb.replace(definition.getStart(), definition.getEnd(), substitution.getHtml());
+
+            if (substitution.isVolatile())
+                volatilePage = true;
+
+            List<String> paramErrors = wikiErrors.get(definition);
+            if (paramErrors.size() > 0)
+            {
+                String errorHTML = "<br>";
+                for (String error : paramErrors)
+                    errorHTML = errorHTML.concat("<font class='error' color='red'>Error with parameter " +
+                            error + " in " + definition.getType() + "</font><br><br>");
+                sb.insert(definition.getStart() + substitution.getHtml().length(), errorHTML);
+            }
+        }
+
+        return new FormattedHtml(sb.toString(), volatilePage);
+    }
+
+
+    private static class Definition
+    {
+        private String _type;
+        private int _start;
+        private int _end;
+        private Map<String, String> _params;
+
+        private Definition(String type, int start, int end, Map<String, String> params)
+        {
+            _type = type;
+            _start = start;
+            _end = end;
+            _params = params;
+        }
+
+        public String getType()
+        {
+            return _type;
+        }
+
+        private int getEnd()
+        {
+            return _end;
+        }
+
+        private Map<String, String> getParams()
+        {
+            return _params;
+        }
+
+        private int getStart()
+        {
+            return _start;
+        }
+    }
+
+
+    interface SubstitutionHandler
+    {
+        FormattedHtml getSubstitution(Map<String, String> params);
+    }
+}

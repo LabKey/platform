@@ -1,0 +1,3 @@
+
+ALTER TABLE mothership.ExceptionStackTrace DROP CONSTRAINT UQ_ExceptionStackTraceId_StackTraceHashContainer
+GO

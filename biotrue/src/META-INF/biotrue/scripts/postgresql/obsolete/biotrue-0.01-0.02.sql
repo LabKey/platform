@@ -1,0 +1,2 @@
+ALTER TABLE biotrue.server ADD COLUMN SyncInterval INT NOT NULL DEFAULT 0;
+ALTER TABLE biotrue.server ADD COLUMN NextSync TIMESTAMP;

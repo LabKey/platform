@@ -1,0 +1,99 @@
+<%@ page import="org.labkey.api.security.ACL" %>
+<%@ page import="org.labkey.api.security.User"%>
+<%@ page import="org.labkey.api.util.HelpTopic"%>
+<%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.api.view.WebPartView"%>
+<%@ page import="org.labkey.study.model.Site"%>
+<%@ page import="org.labkey.study.model.Study" %>
+<%@ page import="org.labkey.study.reports.ExportExcelReport" %>
+<%
+
+Study s = study;
+User user = (User)request.getUserPrincipal();
+Site[] sites = s.getSites();
+boolean isAdmin = user.isAdministrator() || s.getContainer().hasPermission(user, ACL.PERM_ADMIN);
+ %>
+
+<div style="width:600px">
+Spreadheet Export allows you to export data from one site exclusively, or to export all data from all sites simultaneously.
+Before you export, you can select the source site or sites using the "Site" drop-down menu.
+<ul>
+<li><b>All Sites</b>. If you select "All Sites" from the dropdown "Site" menu, you will export all data for all participants across all sites.</li>
+<li ><b>Single Site</b>. If you select a particular site from the "Site" menu, you will export only data associated with the chosen site.</li>
+</ul>
+</div>
+<% if (isAdmin)
+{ %><%    WebPartView.startTitleFrame(out, "Administrative Options", null, "600", null);%>
+As an administrator you can export via the "Export" button or save a view definition to the server via the "Save" button.<br><br>
+When you save the view definition, it will be listed in the reports and views web part. Each time a user clicks on the view, the current data will be downloaded.
+The saved view can also be secured so that only a subset of users (e.g. users from the particular site) can see it.<br><br>
+
+    Requirements for retrieving data for a single site:
+    <ol>
+    <li>You must have imported a Specimen Archive in order for the "Sites" dropdown to list sites. The Specimen Archive defines a list of sites for your Study. </li>
+    <li>You must associate ParticipantIDs with CurrentSiteIds via a “Participant Dataset.” This step allows participant data records to be mapped to sites. .</li>
+    </ol> See the <a href="<%=new HelpTopic("exportExcel", HelpTopic.Area.STUDY).getHelpTopicLink()%>">help page</a> for more information.
+<% WebPartView.endTitleFrame(out);
+}
+
+%>
+<%    WebPartView.startTitleFrame(out, "Configure", null, "600", null);%>
+    <form action="exportExcel.view" method=GET>
+    <table><tr><th class="ms-searchform">Site</th><td><select <%= isAdmin ? "onClick='siteId_onChange(this)'" : ""%> id=siteId name=siteId><option value="0">ALL</option>
+<%
+for (Site site : sites)
+{
+    String label = site.getLabel();
+    if (label == null || label.length() == 0)
+        label = "" + site.getRowId();
+    %><option value="<%=site.getRowId()%>"><%=filter(label)%></option><%
+}
+%></select></td></tr>
+<%if (isAdmin)
+    {
+    %>
+        <tr><th class="ms-searchform">Report name</th><td><input style="width:250;" type=text id=label name=label value=""></td></tr>
+<%}%>
+</table>
+<input type=image src="<%=PageFlowUtil.buttonSrc("Export")%>">
+        <% if (isAdmin)
+        {   %>
+            <input type=hidden name=reportType value="<%=ExportExcelReport.TYPE%>">
+            <input type=hidden id=params name=params value="siteId=-1">
+            <input type=image src="<%=PageFlowUtil.buttonSrc("Save")%>" onclick="this.form.action='saveReport.view'">
+
+        <script type="text/javascript">
+        var sites = {};
+        sites['-1'] = 'ALL';
+            <%
+            for (Site site : sites)
+            {
+                String label = site.getLabel();
+                if (label == null || label.length() == 0)
+                    label = "" + site.getRowId();
+                %>sites['<%=site.getRowId()%>']=<%=PageFlowUtil.jsString(label)%>;<%
+                out.print("\n");
+            }%>
+
+        siteId_onChange(document.getElementById("siteId"));
+
+        function siteId_onChange(select)
+        {
+            paramsInput = document.getElementById("params");
+            paramsInput.value = "siteId=" + select.value;
+            labelInput = document.getElementById("label");
+            labelInput.value = "Export to worksheet: " + sites[select.value];
+        }
+        </script>
+        <%}%>
+
+</form>
+<%
+
+    WebPartView.endTitleFrame(out);
+%>
+
+
+
+
+

@@ -1,0 +1,81 @@
+$!tools.pageFlowUtil.getStrutsError($request, "main")
+$!message
+<form action=submitSampleLocations.post method=post />
+<input type="hidden" name="modelId" value="$!modelId"/>
+<input type="hidden" name="materialSourceLSID" value="$!materialSourceLSID"/>
+Specimens
+<table>
+<tr><td align=center class=header>Sample (MMDDYY-XXX)</td>
+<td align=center class=header>Freezer</td>
+<td align=center class=header>Rack</td>
+<td align=center class=header>Box</td>
+<td align=center class=header>Slot</td>
+</tr>
+#set($sampleIds = $form.sampleIds)
+#set($i = 0)
+#foreach($location in $form.locations)
+<tr>
+    <td><input type=text size=15 value="$!{form.getSampleId($i)}" name="sampleIds[$i]" onfocus="guessSampleId(this)" onblur="updateSampleId(this)"/></td>
+    <td><input type=text size=10 value="$!location.freezer" name="locations[$i].freezer" onfocus="guessDefault(this, 'freezer')" onblur="updateDefault(this, 'freezer')"/></td>
+    <td><input type=text size=3 value="$!location.rack" name="locations[$i].rack" onfocus="guessDefault(this, 'rack')" onblur="updateDefault(this, 'rack')"/></td>
+    <td><input type=text size=3 value="$!location.box" name="locations[$i].box" onfocus="guessDefault(this, 'box')" onblur="updateDefault(this, 'box')"/></td>
+    <td><input type=text size=3 value="#if($location.cell > 0) $location.cell#end" name="locations[$i].cell" onfocus="guessDefault(this, 'cell', true)" onblur="updateDefault(this, 'cell')"/></td>
+</tr>
+#set($i = $i + 1)
+#end
+</table>
+<input type=image name=submit src='$tools.buttonSrc("Submit")'>
+</form>
+<script>
+var nextSampleId="";
+var sampleCount = $i;
+function guessSampleId(elem)
+    {
+    if (elem.value == null || elem.value == "")
+        {
+        elem.value = nextSampleId;
+        }
+    }
+
+function updateSampleId(elem)
+    {
+    if (elem.value != null && elem.value != "")
+        {
+        var sampleId = elem.value;
+        var result = sampleId.match(/\d+$/);
+        if (result.length > 0)
+            {
+            var val = result[0];
+            val = parseInt(val);
+            val = val + 1;
+            nextSampleId = sampleId.replace(/\d+$/, val);
+            }
+        }
+    }
+
+
+var defaults = {freezer:null, rack:null, cell:null, box:null, location:null}
+
+function updateDefault(elem, name)
+  {
+  window.status = elem.value;
+  defaults[name] = elem.value;
+  }
+
+function guessDefault(elem, name, increment)
+  {
+  if (null != elem.value && "" != elem.value)
+    return;
+
+  var val = defaults[name];
+  if (val == null)
+    return;
+
+  if (increment)
+    val = parseInt(val) + 1;
+
+  window.status = val;
+  elem.value = val;
+  }
+
+</script>

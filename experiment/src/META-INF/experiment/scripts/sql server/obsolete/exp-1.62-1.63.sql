@@ -1,0 +1,1 @@
+DROP INDEX exp.ObjectProperty.IDX_ObjectProperty_StringValue

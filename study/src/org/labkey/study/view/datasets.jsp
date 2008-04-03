@@ -1,0 +1,120 @@
+<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.study.controllers.OldStudyController"%>
+<%@ page import="org.labkey.api.view.JspView"%>
+<%@ page import="org.labkey.study.model.StudyManager"%>
+<%@ page import="org.labkey.api.view.ActionURL"%>
+<%@ page import="org.labkey.api.data.Container"%>
+<%@ page import="org.labkey.api.security.User"%>
+<%@ page import="org.labkey.study.model.*"%>
+<%@ page import="org.labkey.api.view.ViewContext"%>
+<%@ page import="org.labkey.api.security.ACL"%>
+<%@ page import="java.util.*"%>
+<%@ page import="java.io.StringWriter"%>
+<%@ page import="java.io.PrintWriter"%>
+<%@ page import="org.apache.commons.lang.StringUtils" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%
+JspView me = (JspView)HttpView.currentView();
+ViewContext ctx = me.getViewContext();
+StudyManager manager = StudyManager.getInstance();
+Container container = ctx.getContainer();
+Study study = manager.getStudy(container);
+User user = ctx.getUser();
+DataSetDefinition[] datasets = manager.getDataSetDefinitions(study);
+
+if (null == datasets || datasets.length == 0)
+{
+    out.print("No datasets defined<br><br>");
+    if (container.hasPermission(user, ACL.PERM_ADMIN))
+    {
+        out.print(textLink("Manage Datasets", ctx.getActionURL().relativeUrl("manageTypes.view", null, "Study")));
+    }
+    return;
+}
+// UNDONE: move into stylesheet
+String borderColor = "#808080";
+String styleTH=" style=\"border-right:solid 1px " + borderColor + "; border-top:solid 2px " + borderColor + ";\"";
+
+%>
+<table border="0" cellspacing="3" cellpadding="2" width="100%" class="normal">
+
+<%
+    List<DataSetDefinition> userDatasets = new ArrayList<DataSetDefinition>();
+    for (DataSetDefinition dataSet : datasets)
+    {
+        if (!dataSet.isShowByDefault())
+            continue;
+
+        if (dataSet.canRead(ctx.getUser()))
+            userDatasets.add(dataSet);
+    }
+
+    int datasetsPerCol = userDatasets.size() / 3;
+
+    %>
+    <td valign=top><%=renderDatasets(ctx, userDatasets, 0, datasetsPerCol + 1)%></td>
+    <td valign=top><%=renderDatasets(ctx, userDatasets, datasetsPerCol + 1, (2 * datasetsPerCol) + 1)%></td>
+    <td valign=top><%=renderDatasets(ctx, userDatasets, (2 * datasetsPerCol) + 1, userDatasets.size())%></td>
+</table>
+<%
+    if (container.hasPermission(user, ACL.PERM_ADMIN))
+        out.print("<br>" + textLink("Manage Datasets", ctx.getActionURL().relativeUrl("manageTypes.view", null, "Study")));
+%>
+    <%!
+        String renderDatasets(ViewContext ctx, List<DataSetDefinition> datasets, int startIndex, int endIndex)
+        {
+            StringBuffer sb = new StringBuffer();
+            if (startIndex >= datasets.size())
+                return "";
+
+            String category = startIndex == 0 ? null : datasets.get(startIndex-1).getCategory();
+            String datasetUrl = ctx.cloneActionURL().deleteParameters().setPageFlow("Study").setAction("defaultDatasetReport").getLocalURIString();
+            sb.append("<table>");
+            //Print a column header if necessary
+            DataSetDefinition firstDataset = datasets.get(startIndex);
+            if (!equal(category, firstDataset.getCategory()))
+            {
+                category = firstDataset.getCategory();
+                sb.append("<tr><th align=\"left\" bgcolor=\"#AAAAAA\">");
+                sb.append(h(category == null ? "Uncategorized" : category));
+                sb.append("</th></tr>\n");
+            }
+            else if (null != category)
+            {
+                sb.append("<tr><th align=\"left\" bgcolor=\"#AAAAAA\">");
+                sb.append(h(category)).append(" (Continued)");
+                sb.append("</th></tr>\n");
+            }
+
+            for (DataSetDefinition dataSet : datasets.subList(startIndex, endIndex))
+            {
+                if (!equal(category, dataSet.getCategory()))
+                {
+                    category = dataSet.getCategory();
+                    sb.append("<tr><th align=\"left\" bgcolor=\"#AAAAAA\">").append(h(category == null ? "Uncategorized" : category)).append("</th></tr>\n");
+                }
+
+                String dataSetLabel = (dataSet.getLabel() != null ? dataSet.getLabel() : "" + dataSet.getDataSetId());
+
+                sb.append("<tr><td>");
+                sb.append("<a href=\"").append(datasetUrl).append("&datasetId=").append(dataSet.getDataSetId());
+                sb.append("\">");
+                sb.append(h(dataSetLabel));
+                sb.append("</a></td></tr>\n");
+            }
+            sb.append("</table>");
+
+            return sb.toString();
+        }
+
+        boolean equal(String s1, String s2)
+         {
+            if ((s1 == null) != (s2 == null))
+                return false;
+
+            if (null == s1)
+                return true;
+
+            return s1.equals(s2);
+         }
+    %>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module relativePaths="true" type="JAVA_MODULE" version="4">
+  <component name="FacetManager">
+    <facet type="Spring" name="Spring" implicit="true">
+      <configuration>
+        <options>
+          <option name="enableValidation" value="true" />
+          <option name="reportErrorsAsWarnings" value="true" />
+        </options>
+        <customNs />
+      </configuration>
+    </facet>
+  </component>
+  <component name="NewModuleRootManager" inherit-compiler-output="false">
+    <output url="file://$MODULE_DIR$/../../../intellijBuild/modules/experiment/classes" />
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/src/META-INF/experiment/scripts/postgresql/obsolete" />
+      <excludeFolder url="file://$MODULE_DIR$/src/META-INF/experiment/scripts/sql server/obsolete" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="Internal" />
+    <orderEntry type="module" module-name="API" />
+    <orderEntry type="module" module-name="ExperimentGWT" />
+    <orderEntryProperties />
+  </component>
+</module>
+

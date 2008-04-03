@@ -1,0 +1,28 @@
+<%
+if (null != exception)
+    {
+    out.print("<b>" + exception.getMessage() + "</b><br>");
+    out.print("<br>");
+    }
+%>
+<script type="text/javascript" language="javascript">
+    LABKEY.requiresScript("util.js");
+</script>
+<b>Upgrading <%=form.getModuleName()%> module from version <%=form.getFormattedFrom()%> to version <%=form.formattedTo%>.</b><br><br>
+
+<%
+if (form.shouldRecommend())
+    {
+    if (0 == Double.parseDouble(form.getFrom()))
+        {
+        out.print("Installing this module may require changes to the tables and views in your database.  If you see a list of recommended scripts ");
+        out.print("below, click the \"Run Recommended Scripts and Finish\" button to perform these changes.  If you don't see a list of recommended ");
+        out.print("scripts, click the \"Finish\" button.");
+        }
+    else
+        out.print("To upgrade this module you should run the recommended SQL scripts below.");
+    }
+else
+    out.print("Click the 'Finish' button when you're done manually upgrading the schema.");
+%><br><br>
+

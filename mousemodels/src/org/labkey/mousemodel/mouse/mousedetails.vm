@@ -1,0 +1,17 @@
+#foreach($row in $dr.rows)
+<table border="0" cellpadding="0" cellspacing="0" width="100%">
+<tr class="wpHeader"><td  colspan=3 title="$caption" style="width:100%;" nowrap><div class="wpTitle"><span>$caption</span></div></td></tr>
+<tr>
+    <td style="background-color:#EEEEEE"><b>Mouse: <a href="details.view?entityId=$row.fields.entityId">$row.fields.mouseNo</a></b></td>
+    <td style="background-color:#EEEEEE">DOB: $row.fields.birthDate</td>
+    <td rowspan=2 style="background-color: #EEEEEE;" align=right><form method="get" action="showSamples.view">Show Mouse <input type=text name=mouseNo><input type=image src='$tools.buttonSrc("Go")'></form></td>
+</tr>
+<tr>
+    <td style="background-color:#EEEEEE">Sex: $row.fields.sex</td>
+    <td style="background-color:#EEEEEE">DOD: $row.fields.deathDate</td>
+</tr>
+</table>
+   
+<br>
+$tools.includeView($request, $response, "child")
+#end

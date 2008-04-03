@@ -1,0 +1,180 @@
+package org.labkey.wiki.model;
+
+import org.labkey.api.data.Container;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.security.User;
+import org.labkey.api.view.GroovyView;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ActionURL;
+import org.labkey.wiki.BaseWikiPermissions;
+import org.labkey.wiki.WikiController;
+import org.labkey.wiki.WikiManager;
+
+import java.sql.SQLException;
+
+/**
+ * Created by IntelliJ IDEA.
+ * User: Mark Igra
+ * Date: Jun 12, 2006
+ * Time: 3:29:31 PM
+ */
+
+abstract class BaseWikiView extends GroovyView
+{
+    String _pageId = null;
+    int _index = 0;
+    Wiki _wiki = null;
+    WikiVersion _wikiVersion = null;
+
+    protected BaseWikiView()
+    {
+        super("/org/labkey/wiki/view/wiki.gm");
+        addObject("hasReadPermission", Boolean.TRUE);
+        addObject("hasAdminPermission", Boolean.FALSE);
+        addObject("hasInsertPermission", Boolean.FALSE);
+        addObject("updateContentLink", null);
+        addObject("insertLink", null);
+        addObject("manageLink", null);
+        addObject("versionsLink", null);
+        addObject("wiki", null);
+        addObject("wikiversion", null);
+        addObject("redirect", "");
+        addObject("wikiPageCount", 0);
+        addObject("customizeLink", null);
+        addObject("printLink", null);
+        addObject("startDiscussion", Boolean.FALSE);
+        addObject("hasContent", Boolean.TRUE);
+        addObject("includeLinks", Boolean.TRUE);
+        addObject("isEmbedded", Boolean.FALSE);
+        this.setBodyClass("normal");
+    }
+
+
+    // Was prepareWebPart -- now moving all initialization to creation time.  e.g., Portal.populatePortalView needs to see title hrefs before prepare.
+    // TODO: Refactor this into Base, WikiView, and WikiWebPart (e.g., eliminate isInWebPart)
+    protected void init(Container c, String name, boolean isInWebPart)
+    {
+        ViewContext context = getViewContext();
+        User user = context.getUser();
+        ActionURL url = context.getActionURL();
+
+        BaseWikiPermissions perms = new BaseWikiPermissions(user, c);
+
+        context.put("isInWebPart", isInWebPart);
+
+        //current number of pages in container
+        int pageCount = WikiManager.getPageList(c).size();
+        context.put("wikiPageCount", pageCount);
+
+        //set initial page title
+        String title;
+        if (isInWebPart)
+            title = "Wiki Web Part";
+        else
+        {
+            if (pageCount == 0)
+                title = "Wiki";
+            else
+                title = name;
+        }
+
+        if (name == null)
+        {
+            _wiki = new Wiki(c, "default");
+            addObject("hasContent", false);
+        }
+        else
+        {
+            if (null == _wiki)
+                _wiki = WikiManager.getWiki(c, name);
+
+            //this is a non-existent wiki
+            if (null == _wiki)
+            {
+                _wiki = new Wiki(c, name);
+                addObject("hasContent", false); 
+            }
+
+            assert _wiki.getName() != null;
+
+            if (null == _wikiVersion)
+                _wikiVersion = WikiManager.getLatestVersion(_wiki);
+
+            if (null == _wikiVersion)
+                _wikiVersion = new WikiVersion(name);
+
+            String html;
+
+            try
+            {
+                html = _wikiVersion.getHtml(c, _wiki);
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
+
+            context.put("wiki", _wiki);
+            context.put("name", _wiki.getName());
+            context.put("formattedHtml", html);
+
+            //set title if page has content and user has permission to see it
+            if (html != null && perms.allowRead(_wiki))
+                title = getTitle() == null ? _wikiVersion.getTitle() : getTitle();
+
+            //what does "~" represent?
+            if (!_wiki.getName().startsWith("~"))
+            {
+                if (perms.allowUpdate(_wiki))
+                {
+                    context.put("manageLink", _wiki.getManageLink());
+                }
+            }
+        }
+
+        context.put("hasReadPermission", Boolean.valueOf(perms.allowRead(_wiki)));
+        context.put("hasAdminPermission", Boolean.valueOf(perms.allowAdmin()));
+        context.put("hasInsertPermission", Boolean.valueOf(perms.allowInsert()));
+
+        if (perms.allowInsert())
+        {
+            ActionURL insertLink = _wiki.getWikiLink("showInsert", null);
+
+            if (isInWebPart)
+            {
+                insertLink.addParameter("redirect", url.getLocalURIString());
+                insertLink.addParameter("pageId", _pageId);
+                insertLink.addParameter("index", Integer.toString(_index));
+            }
+            context.put("insertLink", insertLink.toString());
+
+            String versionsLink = _wiki.getVersionsLink();
+            context.put("versionsLink", versionsLink);
+        }
+
+        if (perms.allowUpdate(_wiki))
+        {
+            ActionURL updateContentLink = _wiki.getUpdateContentLink();
+            updateContentLink.addParameter("redirect", url.getLocalURIString());
+            context.put("updateContentLink", updateContentLink);
+        }
+
+        if (isInWebPart)
+        {
+            ActionURL customizeUrl = url.clone();
+            customizeUrl.setAction("customizeWebPart");
+            customizeUrl.addParameter("pageId", _pageId);
+            customizeUrl.addParameter("index", Integer.toString(_index));
+            context.put("customizeLink", customizeUrl.toString());
+            setTitleHref(WikiController.getPageUrl(_wiki).getEncodedLocalURIString());
+        }
+
+        if (!isInWebPart || perms.allowInsert())
+        {
+            if (null == context.getRequest().getParameter("_print"))
+                context.put("printLink", _wiki.getPageLink() + "&_print=1");
+        }
+
+        setTitle(title);
+    }
+}

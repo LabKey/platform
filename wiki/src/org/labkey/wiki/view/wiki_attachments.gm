@@ -1,0 +1,38 @@
+<%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<form method="post" action="update.post" enctype="multipart/form-data">
+<table>
+  <tr>
+    <td class='ms-searchform'>Name</td><td class='ms-vb'>
+    ${wiki.name}
+    <input type="hidden" name="rowId" value="${wiki.rowId}">
+    <input type="hidden" name="name" value="${wiki.name}">
+    </td>
+  </tr>
+  <tr>
+    <td class='ms-searchform'>Attachments</td>
+    <td class="normal">
+<%
+    for (attach in wiki.attachments)
+        {
+        out.print(PageFlowUtil.filter(attach.name));
+        deleteURLHelper.setFileName(attach.name);
+        out.print(" [<a href=\"#deleteAttachment\" onClick=\"window.open('");
+        out.print(deleteURLHelper.getLocalURIString());
+        out.print("', null, 'height=200,width=450', false);\" style=\"color:green;\">");
+        out.print("Delete");
+        out.print("</a>]");
+        out.print("<br>\n");
+        }
+%>
+	</td>
+  </tr>
+  <tr>
+    <td colspan=2 align=left>
+    <a href="#addAttachment" onclick="window.open('${addAttachmentURL}',null,'width=550,height=200',false);" style="color:green;"><img border=0 src="<%=PageFlowUtil.buttonSrc('Add Attachment')%>"></a>
+    <a href="<%= PageFlowUtil.filter(redirect) %>"><img border=0 src="<%=PageFlowUtil.buttonSrc('Done')%>"></a>
+    </td>
+  </tr>
+</table>
+<input type=hidden name=".oldValues" value="<%=PageFlowUtil.encodeObject(wiki)%>">
+<input type=hidden name="redirect" value="${PageFlowUtil.filter(redirect)}">
+</form>

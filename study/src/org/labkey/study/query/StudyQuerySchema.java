@@ -1,0 +1,172 @@
+package org.labkey.study.query;
+
+import org.labkey.study.StudySchema;
+import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.Study;
+import org.labkey.study.model.Visit;
+import org.labkey.study.model.StudyManager;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.User;
+
+import javax.servlet.ServletException;
+import java.util.*;
+
+public class StudyQuerySchema extends UserSchema
+{
+    Study _study;
+    boolean _mustCheckPermissions;
+    private Map<Integer, List<Double>> _datasetSequenceMap;
+
+    public StudyQuerySchema(Study study, User user, boolean mustCheckPermissions)
+    {
+        super("study", user, study.getContainer(), StudySchema.getInstance().getSchema());
+        _study = study;
+        _mustCheckPermissions = mustCheckPermissions;
+    }
+
+    public Set<String> getTableNames()
+    {
+        Set<String> ret = new LinkedHashSet<String>();
+        ret.add("Cohort");
+        ret.add("Participant");
+        ret.add("Site");
+        ret.add("Visit");
+        ret.add("SpecimenEvent");
+        ret.add("SpecimenDetail");
+        ret.add("SpecimenSummary");
+        ret.add("SpecimenRequest");
+        ret.add("SpecimenRequestStatus");
+        ret.add("ParticipantVisit");
+        ret.addAll(getDataSetDefinitions().keySet());
+        return ret;
+    }
+
+    public Map<String, DataSetDefinition> getDataSetDefinitions()
+    {
+        Map<String, DataSetDefinition> ret = new LinkedHashMap<String, DataSetDefinition>();
+        for (DataSetDefinition dsd : _study.getDataSets())
+        {
+            if (dsd.getLabel() == null)
+                continue;
+            ret.put(dsd.getLabel(), dsd);
+        }
+        return ret;
+    }
+
+    public FilteredTable getDataSetTable(DataSetDefinition definition, String alias)
+    {
+        try
+        {
+            DataSetTable ret = new DataSetTable(this, definition);
+            ret.setName(alias);
+            return ret;
+        }
+        catch (ServletException e)
+        {
+            return null;
+        }
+    }
+
+    synchronized List<Double> getSequenceNumsForDataset(DataSetDefinition dsd)
+    {
+        if (null == _datasetSequenceMap)
+            _datasetSequenceMap =  StudyManager.getInstance().getVisitManager(_study).getDatasetSequenceNums();
+
+        return _datasetSequenceMap.get(dsd.getDataSetId());
+    }
+
+
+    @Override
+    public TableInfo getTable(String name, String alias)
+    {
+        if ("Cohort".equals(name))
+        {
+            CohortTable ret = new CohortTable(this);
+            ret.setAlias(alias);
+            return ret;
+        }
+        if ("Participant".equals(name))
+        {
+            ParticipantTable ret = new ParticipantTable(this);
+            ret.setAlias(alias);
+            return ret;
+        }
+        if ("Site".equals(name))
+        {
+            SiteTable ret = new SiteTable(this);
+            ret.setAlias(alias);
+            return ret;
+        }
+        if ("SpecimenSummary".equals(name))
+        {
+            SpecimenSummaryTable ret = new SpecimenSummaryTable(this);
+            ret.setAlias(alias);
+            return ret;
+        }
+        if ("SpecimenDetail".equals(name))
+        {
+            SpecimenDetailTable ret = new SpecimenDetailTable(this);
+            ret.setAlias(alias);
+            return ret;
+        }
+        if ("SpecimenEvent".equals(name))
+        {
+            SpecimenEventTable ret = new SpecimenEventTable(this);
+            ret.setAlias(alias);
+            return ret;
+        }
+        if ("ParticipantVisit".equals(name))
+        {
+            ParticipantVisitTable ret = new ParticipantVisitTable(this, null);
+            ret.setAlias(alias);
+            return ret;
+        }
+        if ("SpecimenRequest".equals(name))
+        {
+            SpecimenRequestTable ret = new SpecimenRequestTable(this);
+            ret.setAlias(alias);
+            return ret;
+        }
+        if ("SpecimenRequestStatus".equals(name))
+        {
+            RequestStatusTable ret = new RequestStatusTable(this);
+            ret.setAlias(alias);
+            return ret;
+        }
+        if ("Visit".equals(name))
+        {
+            VisitTable ret = new VisitTable(this);
+            ret.setAlias(alias);
+            return ret;
+        }
+
+        DataSetDefinition dsd = getDataSetDefinitions().get(name);
+        if (dsd == null)
+        {
+            return super.getTable(name, alias);
+        }
+        return getDataSetTable(dsd, alias);
+    }
+
+    public Study getStudy()
+    {
+        return _study;
+    }
+
+    public String decideTableName(DataSetDefinition dsd)
+    {
+        return dsd.getName();
+    }
+
+    public String decideTableName(Visit visit)
+    {
+        return visit.getLabel();
+    }
+
+    public boolean getMustCheckPermissions()
+    {
+        return _mustCheckPermissions;
+    }
+}

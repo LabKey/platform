@@ -1,0 +1,3 @@
+ALTER TABLE comm.Pages
+    ADD Parent INT NOT NULL DEFAULT -1,
+    ADD DisplayOrder REAL NOT NULL DEFAULT 1.0;

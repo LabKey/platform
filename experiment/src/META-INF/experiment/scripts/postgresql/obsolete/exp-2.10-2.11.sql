@@ -1,0 +1,5 @@
+ALTER TABLE exp.Protocol ADD COLUMN RunPropertiesDomainURI VARCHAR(200) NULL;
+
+ALTER TABLE exp.Protocol ADD COLUMN BatchPropertiesDomainURI VARCHAR(200) NULL;
+
+ALTER TABLE exp.Protocol ADD COLUMN RunDataDomainURI VARCHAR(200) NULL;

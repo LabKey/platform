@@ -1,0 +1,1 @@
+ALTER TABLE exp.list ADD COLUMN TitleColumn VARCHAR(200) NULL;

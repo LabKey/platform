@@ -1,0 +1,132 @@
+package org.labkey.assay.upload.client;
+
+import com.google.gwt.core.client.EntryPoint;
+import com.google.gwt.core.client.GWT;
+import com.google.gwt.user.client.ui.*;
+import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.google.gwt.user.client.DOM;
+import com.google.gwt.user.client.Element;
+import com.google.gwt.user.client.Window;
+import org.labkey.api.gwt.client.ui.*;
+import org.labkey.api.gwt.client.util.ServiceUtil;
+import org.labkey.api.gwt.client.util.PropertyUtil;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.gwt.client.assay.AssayServiceAsync;
+import org.labkey.api.gwt.client.assay.AssayService;
+
+/**
+ * User: jeckels
+ * Date: Sep 24, 2007
+ */
+public class ListChooser implements EntryPoint, LookupListener
+{
+    private LookupEditor _lookupEditor;
+    private Label _label;
+    private AssayServiceAsync _service;
+
+    public void onModuleLoad()
+    {
+        RootPanel rootPanel = RootPanel.get("org.labkey.assay.upload.ListChooser-Root");
+        HorizontalPanel panel = new HorizontalPanel();
+        rootPanel.add(panel);
+        panel.setSpacing(5);
+        panel.setVerticalAlignment(HorizontalPanel.ALIGN_MIDDLE);
+        panel.add(new ImageButton("Choose list...", new ClickListener()
+        {
+            public void onClick(Widget sender)
+            {
+                GWTPropertyDescriptor pd = createPropertyDescriptorFromForm();
+                _lookupEditor.init(pd);
+
+                _lookupEditor.show();
+
+                int x = (Window.getClientWidth() - _lookupEditor.getOffsetWidth()) / 2;
+                int y = (Window.getClientHeight() - _lookupEditor.getOffsetHeight()) / 2;
+                _lookupEditor.setPopupPosition(x, y);
+            }
+        }));
+        _label = new Label();
+        panel.add(_label);
+        _lookupEditor = new LookupEditor(getLookupService(), this);
+        _lookupEditor.setTitle(PropertyUtil.getServerProperty("dialogTitle"));
+
+        lookupUpdated(createPropertyDescriptorFromForm());
+    }
+
+    private GWTPropertyDescriptor createPropertyDescriptorFromForm()
+    {
+        GWTPropertyDescriptor pd = new GWTPropertyDescriptor();
+        pd.setLookupContainer(FormUtil.getValueInForm(getContainerElement()));
+        pd.setLookupSchema(FormUtil.getValueInForm(getSchemaElement()));
+        pd.setLookupQuery(FormUtil.getValueInForm(getQueryElement()));
+        return pd;
+    }
+
+    private Element getContainerElement()
+    {
+        return DOM.getElementById("ThawListList-Container");
+    }
+
+    public void lookupUpdated(GWTPropertyDescriptor pd)
+    {
+        FormUtil.setValueInForm(pd.getLookupContainer(), getContainerElement());
+        FormUtil.setValueInForm(pd.getLookupSchema(), getSchemaElement());
+        FormUtil.setValueInForm(pd.getLookupQuery(), getQueryElement());
+
+        String description = "";
+        if (pd.getLookupSchema() != null && pd.getLookupQuery() != null)
+        {
+            description = pd.getLookupSchema() + "." + pd.getLookupQuery();
+            if (pd.getLookupContainer() != null)
+            {
+                description += " in " + pd.getLookupContainer();
+            }
+        }
+        else
+        {
+            description = "No list is currently selected.";
+        }
+        _label.setText(description);
+    }
+
+    private Element getQueryElement()
+    {
+        return DOM.getElementById("ThawListList-QueryName");
+    }
+
+    private Element getSchemaElement()
+    {
+        return DOM.getElementById("ThawListList-SchemaName");
+    }
+
+    private AssayServiceAsync getService()
+    {
+        if (_service == null)
+        {
+            _service = (AssayServiceAsync) GWT.create(AssayService.class);
+            ServiceUtil.configureEndpoint(_service, "service");
+        }
+        return _service;
+    }
+
+    LookupServiceAsync getLookupService()
+    {
+        return new LookupServiceAsync()
+        {
+            public void getContainers(AsyncCallback async)
+            {
+                getService().getContainers(async);
+            }
+
+            public void getSchemas(String containerId, AsyncCallback async)
+            {
+                getService().getSchemas(containerId, async);
+            }
+
+            public void getTablesForLookup(String containerId, String schemaName, AsyncCallback async)
+            {
+                getService().getTablesForLookup(containerId, schemaName, async);
+            }
+        };
+    }
+}

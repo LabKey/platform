@@ -1,0 +1,2 @@
+ALTER TABLE core.Report ALTER COLUMN ReportKey NVARCHAR(255)
+go

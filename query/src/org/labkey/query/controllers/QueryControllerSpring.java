@@ -1,0 +1,1668 @@
+package org.labkey.query.controllers;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.labkey.api.action.*;
+import org.labkey.api.data.*;
+import org.labkey.api.exp.list.ListDefinition;
+import org.labkey.api.exp.list.ListItem;
+import org.labkey.api.exp.list.ListService;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.jsp.FormPage;
+import org.labkey.api.query.*;
+import org.labkey.api.security.ACL;
+import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.User;
+import org.labkey.api.util.AppProps;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.view.*;
+import org.labkey.api.view.template.PageConfig;
+import org.labkey.query.CustomViewImpl;
+import org.labkey.query.QueryDefinitionImpl;
+import org.labkey.query.data.Query;
+import org.labkey.query.design.QueryDocument;
+import org.labkey.query.design.ViewDocument;
+import org.labkey.query.persist.DbUserSchemaDef;
+import org.labkey.query.persist.QueryDef;
+import org.labkey.query.persist.QueryManager;
+import org.labkey.query.view.DbUserSchema;
+import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
+import org.springframework.web.servlet.ModelAndView;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletResponse;
+import java.io.PrintWriter;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+
+public class QueryControllerSpring extends SpringActionController
+{
+    static DefaultActionResolver _actionResolver = new BeehivePortingActionResolver(QueryController.class, QueryControllerSpring.class);
+
+    public QueryControllerSpring() throws Exception
+    {
+        super();
+        setActionResolver(_actionResolver);
+    }
+
+    private ActionURL actionURL(QueryAction action)
+    {
+        return new ActionURL("query", action.name(), getContainer());
+    }
+
+    private ActionURL actionURL(QueryAction action, QueryParam param, String value)
+    {
+        return new ActionURL("query", action.name(), getContainer()).addParameter(param, value);
+    }
+
+    protected boolean queryExists(QueryForm form)
+    {
+        return form.getSchema() != null && form.getSchema().getTable(form.getQueryName(), null) != null;
+    }
+
+    protected void assertQueryExists(QueryForm form) throws ServletException
+    {
+        if (form.getSchema() == null)
+            HttpView.throwNotFound("Could not find schema: " + form.getSchemaName());
+        if (!queryExists(form))
+            HttpView.throwNotFound("Query '" + form.getQueryName() + "' in schema '" + form.getSchemaName() + "' doesn't exist.");
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class BeginAction extends QueryControllerSpring.QueryViewAction
+    {
+        public ModelAndView getView(QueryForm form, BindException errors) throws Exception
+        {
+            _form = form;
+            return FormPage.getView(QueryControllerSpring.class, _form, "begin.jsp");
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild("Query start page", actionURL(QueryAction.begin));
+            return root;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class SchemaAction extends QueryControllerSpring.QueryViewAction
+    {
+        public SchemaAction() {}
+
+        SchemaAction(QueryForm form)
+        {
+            _form = form;
+        }
+
+        public ModelAndView getView(QueryForm form, BindException errors) throws Exception
+        {
+            _form = form;
+            if (null == form.getSchemaName())
+                return HttpView.redirect(actionURL(QueryAction.begin));
+            return FormPage.getView(QueryControllerSpring.class, _form, "schema.jsp");
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            String schemaName = _form.getSchemaName();
+            (new QueryControllerSpring.BeginAction()).appendNavTrail(root)
+                .addChild(schemaName, actionURL(QueryAction.schema, QueryParam.schemaName, schemaName));
+            return root;
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class NewQueryAction extends FormViewAction<NewQueryForm>
+    {
+        NewQueryForm _form;
+        ActionURL _successUrl;
+
+        public void validateCommand(NewQueryForm target, org.springframework.validation.Errors errors)
+        {
+        }
+
+        public ModelAndView getView(NewQueryForm form, boolean reshow, BindException errors) throws Exception
+        {
+            _form = form;
+            return FormPage.getView(QueryControllerSpring.class, form, "newQuery.jsp");
+        }
+
+        public boolean handlePost(NewQueryForm form, BindException errors) throws Exception
+        {
+            if (!form.getSchema().canCreate())
+                HttpView.throwUnauthorized();
+            try
+            {
+                if (form.ff_baseTableName == null || "".equals(form.ff_baseTableName))
+                {
+                    errors.reject(ERROR_MSG, "You must select a base table or query name.");
+                    return false;
+                }
+
+                UserSchema schema = form.getSchema();
+                QueryDef existing = QueryManager.get().getQueryDef(getContainer(), form.getSchemaName(), form.ff_newQueryName);
+                if (existing != null)
+                {
+                    errors.reject(ERROR_MSG, "The query '" + form.ff_newQueryName + "' already exists.");
+                    return false;
+                }
+                QueryDefinition newDef = QueryService.get().createQueryDef(getContainer(), form.getSchemaName(), form.ff_newQueryName);
+                Query query = new Query(schema);
+                query.setRootTable(FieldKey.fromParts(form.ff_baseTableName));
+                newDef.setSql(query.getQueryText());
+                newDef.save(getUser(), getContainer());
+
+                _successUrl = newDef.urlFor(form.ff_redirect);
+                return true;
+            }
+            catch (Exception e)
+            {
+                errors.reject(ERROR_MSG, e.getMessage());
+                return false;
+            }
+        }
+
+        public ActionURL getSuccessURL(NewQueryForm newQueryForm)
+        {
+            return _successUrl;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public ModelAndView getView(NewQueryForm form, BindException errors) throws Exception
+        {
+            if (!form.getSchema().canCreate())
+                HttpView.throwUnauthorized();
+            getPageConfig().setFocus("forms[0].ff_newQueryName");
+            return FormPage.getView(QueryControllerSpring.class, form, "newQuery.jsp");
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            (new QueryControllerSpring.SchemaAction(_form)).appendNavTrail(root)
+                    .addChild("New Query", actionURL(QueryAction.newQuery));
+            return root;
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class SourceQueryAction extends FormViewAction<SourceForm>
+    {
+        SourceForm _form;
+
+        public void validateCommand(SourceForm target, Errors errors)
+        {
+        }
+
+        public ModelAndView getView(SourceForm form, boolean reshow, BindException errors) throws Exception
+        {
+            _form = form;
+            if (form.ff_queryText == null)
+            {
+                form.ff_queryText = form.getQueryDef().getSql();
+                form.ff_metadataText = form.getQueryDef().getMetadataXml();
+            }
+            try
+            {
+                QueryDefinition query = form.getQueryDef();
+                for (QueryException qpe : query.getParseErrors(form.getSchema()))
+                {
+                    errors.reject(ERROR_MSG, qpe.toString());
+                }
+            }
+            catch (Exception e)
+            {
+                errors.reject("ERROR_MSG", e.toString());
+                Logger.getLogger(QueryControllerSpring.class).error("Error", e);
+            }
+
+            return new JspView<SourceForm>(QueryControllerSpring.class, "sourceQuery.jsp", form, errors);
+        }
+
+        public boolean handlePost(SourceForm form, BindException errors) throws Exception
+        {
+            _form = form;
+
+            if (!form.canEdit())
+                return false;
+
+            try
+            {
+                QueryDefinition query = form.getQueryDef();
+                query.setSql(form.ff_queryText);
+                query.setMetadataXml(form.ff_metadataText);
+                query.save(getUser(), getContainer());
+                return true;
+            }
+            catch (Exception e)
+            {
+                errors.reject("An exception occurred: " + e);
+                Logger.getLogger(QueryControllerSpring.class).error("Error", e);
+                return false;
+            }
+        }
+
+        public ActionURL getSuccessURL(SourceForm sourceForm)
+        {
+            return _form.getForwardURL();
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            (new QueryControllerSpring.SchemaAction(_form)).appendNavTrail(root)
+                    .addChild("Edit " + _form.getQueryName(), _form.urlFor(QueryAction.sourceQuery));
+            return root;
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_DELETE)
+    public class DeleteQueryAction extends ConfirmAction<QueryForm>
+    {
+        QueryForm _form;
+
+        public ModelAndView getConfirmView(QueryForm queryForm, BindException errors) throws Exception
+        {
+            return FormPage.getView(QueryControllerSpring.class, queryForm, "deleteQuerySpring.jsp");
+        }
+
+        public boolean handlePost(QueryForm form, BindException errors) throws Exception
+        {
+            _form = form;
+            QueryDefinition d = form.getQueryDef();
+            if (null == d)
+                return false;
+            d.delete(getUser());
+            return true;
+        }
+
+        public void validateCommand(QueryForm queryForm, Errors errors)
+        {
+        }
+
+        public ActionURL getSuccessURL(QueryForm queryForm)
+        {
+            return _form.getSchema().urlFor(QueryAction.schema);
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class ExecuteQueryAction extends QueryControllerSpring.QueryViewAction
+    {
+        public ModelAndView getView(QueryForm form, BindException errors) throws Exception
+        {
+            _form = form;
+
+            if (form.getSchema() == null)
+            {
+                HttpView.throwNotFound("Schema not found: " + form.getSchemaName());
+                return null;
+            }
+            QueryDefinition query = form.getQueryDef();
+            if (null == query)
+            {
+                HttpView.throwNotFound("Query '" + form.getQueryName() + "' in schema '" + form.getSchemaName() + "' not found");
+                return null;
+            }
+
+            QueryView queryView = QueryView.create(form);
+            queryView.setShowRReportButton(true);
+            queryView.setPrintView(isPrint());
+            queryView.setShadeAlternatingRows(true);
+            queryView.setShowColumnSeparators(true);
+            return queryView;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            (new QueryControllerSpring.SchemaAction(_form)).appendNavTrail(root);
+            root.addChild(_form.getQueryName(), _form.urlFor(QueryAction.executeQuery));
+            return root;
+        }
+    }
+
+
+    // for backwards compat same as _executeQuery.view ?_print=1
+    @RequiresPermission(ACL.PERM_READ)
+    public class PrintRowsAction extends QueryControllerSpring.ExecuteQueryAction
+    {
+        public ModelAndView getView(QueryForm form, BindException errors) throws Exception
+        {
+            _print = true;
+            return super.getView(form, errors);
+        }
+    }
+
+
+    abstract class _ExportQuery extends SimpleViewAction<QueryForm>
+    {
+        public ModelAndView getView(QueryForm form, BindException errors) throws Exception
+        {
+            assertQueryExists(form);
+            QueryView view = QueryView.create(form);
+            getPageConfig().setTemplate(PageConfig.Template.None);
+            _export(form, view);
+            return null;
+        }
+
+        abstract void _export(QueryForm form, QueryView view) throws Exception;
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class ExportRowsExcelAction extends _ExportQuery
+    {
+        void _export(QueryForm form, QueryView view) throws Exception
+        {
+            view.exportToExcel(getViewContext().getResponse());
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class ExportRowsTsvAction extends _ExportQuery
+    {
+        void _export(QueryForm form, QueryView view) throws Exception
+        {
+            view.exportToTsv(getViewContext().getResponse(), form.isExportAsWebPage());
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_NONE)
+    public class ExcelWebQueryAction extends ExportRowsTsvAction
+    {
+        public ModelAndView getView(QueryForm form, BindException errors) throws Exception
+        {
+            if (!getContainer().hasPermission(getUser(), ACL.PERM_READ))
+            {
+                if (!getUser().isGuest())
+                    HttpView.throwUnauthorized();
+                getViewContext().getResponse().setHeader("WWW-Authenticate", "Basic realm=\"" + AppProps.getInstance().getSystemDescription() + "\"");
+                getViewContext().getResponse().setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                return null;
+            }
+
+            assertQueryExists(form);
+            QueryView view = QueryView.create(form);
+            getPageConfig().setTemplate(PageConfig.Template.None);
+            view.exportToExcelWebQuery(getViewContext().getResponse());
+            return null;
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class ExcelWebQueryDefinitionAction extends SimpleViewAction<QueryForm>
+    {
+        public ModelAndView getView(QueryForm form, BindException errors) throws Exception
+        {
+            assertQueryExists(form);
+            getPageConfig().setTemplate(PageConfig.Template.None);
+            assertQueryExists(form);
+            String queryViewActionURL = form.getQueryViewActionURL();
+            ActionURL url;
+            if (queryViewActionURL != null)
+            {
+                url = new ActionURL(queryViewActionURL);
+            }
+            else
+            {
+                url = getViewContext().cloneActionURL();
+                url.setAction("excelWebQuery.view");
+            }
+            getViewContext().getResponse().setContentType("text/x-ms-iqy");
+            String filename =  form.getQueryName() + "_" + DateUtil.toISO(System.currentTimeMillis()) + ".iqy";
+            filename = filename.replace(':', '_');
+            getViewContext().getResponse().setHeader("Content-disposition", "attachment; filename=\"" + filename +"\"");
+            PrintWriter writer = getViewContext().getResponse().getWriter();
+            writer.println("WEB");
+            writer.println("1");
+            writer.println(url.getURIString());
+            return null;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class MetadataQueryAction extends FormViewAction<MetadataForm>
+    {
+        QueryDefinition _query = null;
+        MetadataForm _form = null;
+        
+        public void validateCommand(MetadataForm target, Errors errors)
+        {
+        }
+
+        public ModelAndView getView(MetadataForm form, boolean reshow, BindException errors) throws Exception
+        {
+            assertQueryExists(form);
+            _form = form;
+            _query = _form.getQueryDef();
+            return FormPage.getView(QueryControllerSpring.class, form, errors, "metadata.jsp");
+        }
+
+        public boolean handlePost(MetadataForm form, BindException errors) throws Exception
+        {
+            if (form.canEdit())
+            {
+                try
+                {
+                    _query = form.getQueryDef();
+                    _query.setMetadataXml(form.ff_metadataText);
+                    _query.save(getUser(), getContainer());
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public ActionURL getSuccessURL(MetadataForm metadataForm)
+        {
+            return _query.urlFor(QueryAction.metadataQuery);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            (new SchemaAction(_form)).appendNavTrail(root);
+            root.addChild("Query Metadata", _query.urlFor(QueryAction.metadataQuery));
+            return root;
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class DesignQueryAction extends FormViewAction<DesignForm>
+    {
+        DesignForm _form;
+        QueryDefinitionImpl _queryDef;
+
+        public void validateCommand(DesignForm target, Errors errors)
+        {
+        }
+
+        public ModelAndView getView(DesignForm form, boolean reshow, BindException errors) throws Exception
+        {
+            _form = form;
+            _queryDef = (QueryDefinitionImpl) form.getQueryDef();
+            if (null == _queryDef)
+                HttpView.throwNotFound();
+
+            if (form.ff_designXML == null)
+            {
+                Query q = _queryDef.getQuery(form.getSchema());
+                if (q.isAggregate() || q.hasSubSelect())
+                {
+                    errors.reject(ERROR_MSG, "Query is too complicated for design view");
+                    SourceQueryAction a = new SourceQueryAction();
+                    a.setViewContext(getViewContext());
+                    return a.getView(new SourceForm(getViewContext()), reshow, errors);
+                }
+                QueryDocument queryDoc = _queryDef.getDesignDocument(form.getSchema());
+                if (queryDoc == null)
+                    return HttpView.redirect(_queryDef.urlFor(QueryAction.sourceQuery));
+                form.ff_designXML = queryDoc.toString();
+            }
+            return FormPage.getView(QueryControllerSpring.class, form, "designQuery.jsp");
+        }
+
+        public boolean handlePost(DesignForm form, BindException errors) throws Exception
+        {
+            _form = form;
+            _queryDef = (QueryDefinitionImpl) form.getQueryDef();
+            if (null == _queryDef)
+                HttpView.throwNotFound();
+
+            if (form.ff_dirty)
+            {
+                List<QueryException> qerrors = new ArrayList<QueryException>();
+                _queryDef.updateDesignDocument(form.getSchema(), QueryDocument.Factory.parse(form.ff_designXML), qerrors);
+                if (qerrors.size() == 0)
+                {
+                    _queryDef.save(getUser(), getContainer());
+                }
+                for (QueryException qerror : qerrors)
+                {
+                    errors.reject(ERROR_MSG, qerror.getMessage());
+                }
+            }
+            return errors.getErrorCount() == 0;
+        }
+
+        public ActionURL getSuccessURL(DesignForm designForm)
+        {
+            return _queryDef.urlFor(_form.ff_redirect);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            (new QueryControllerSpring.SchemaAction(_form)).appendNavTrail(root);
+            String name = _queryDef.getName();
+            root.addChild("Design query " + name, getViewContext().getActionURL());
+            return root;
+        }
+    }
+
+
+//    private NavTrailConfig getNavTrailConfig(QueryForm form) throws Exception
+//    {
+//        NavTrailConfig ret = new NavTrailConfig(getViewContext());
+//        if (form.getSchema() == null)
+//        {
+//            return ret;
+//        }
+//        if (form.getQueryDef() != null)
+//        {
+//            ret.setTitle(form.getQueryDef().getName());
+//            ret.setExtraChildren(new NavTree(form.getSchemaName() + " queries", form.getSchema().urlFor(QueryAction.begin)));
+//        }
+//        else if (form.getSchemaName() != null)
+//        {
+//            ret.setTitle(form.getSchemaName());
+//        }
+//        return ret;
+//    }
+
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class ChooseColumnsAction extends FormViewAction<ChooseColumnsForm>
+    {
+        ActionURL _returnURL = null;
+
+        protected boolean canEdit(ChooseColumnsForm form, Errors errors)
+        {
+            CustomView view = form.getQueryDef().getCustomView(getUser(), getViewContext().getRequest(), form.ff_columnListName);
+            if (view != null && view.canInherit())
+            {
+                if (!getContainer().getId().equals(view.getContainer().getId()))
+                {
+                    errors.reject(ERROR_MSG, "Inherited view '" + view.getName() + "' can only edited from the folder it was created in");
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public void validateCommand(ChooseColumnsForm form, Errors errors)
+        {
+            canEdit(form, errors);
+        }
+
+        public ModelAndView getView(ChooseColumnsForm form, boolean reshow, BindException errors) throws Exception
+        {
+            if (form.getQuerySettings() == null)
+            {
+                HttpView.throwNotFound();
+                return null;
+            }
+
+            if (form.ff_designXML == null)
+            {
+                if (queryExists(form))
+                {
+                    CustomView view = form.getQueryDef().getCustomView(getUser(), getViewContext().getRequest(), form.getQuerySettings().getViewName());
+                    if (view == null)
+                    {
+                        view = form.getQueryDef().createCustomView(getUser(), form.getQuerySettings().getViewName());
+                    }
+
+                    ActionURL url = new ActionURL();
+                    form.applyFilterAndSortToURL(url, "query");
+                    view.setFilterAndSortFromURL(url, "query");
+                    ViewDocument designDoc = ((CustomViewImpl) view).getDesignDocument(form.getSchema());
+                    if (designDoc == null)
+                    {
+                        errors.reject(ERROR_MSG, "The query '" + form.getQueryName() + "' has errors.");
+                        form.ff_designXML = null;
+                    }
+                    else
+                    {
+                        form.ff_designXML = designDoc.toString();
+                    }
+                }
+                else
+                {
+                    errors.reject(ERROR_MSG, "The query '" + form.getQueryName() + "' doesn't exist.");
+                }
+            }
+            return FormPage.getView(QueryController.class, form, errors, "chooseColumns.jsp");
+        }
+
+        public boolean handlePost(ChooseColumnsForm form, BindException errors) throws Exception
+        {
+            User owner = getUser();
+            String regionName = form.getDataRegionName();
+            if (form.ff_saveForAllUsers && form.canSaveForAllUsers())
+            {
+                owner = null;
+            }
+            String name = StringUtils.trimToNull(form.ff_columnListName);
+
+            boolean canEdit = canEdit(form, errors);
+            if (canEdit)
+            {
+                CustomView view = form.getQueryDef().getCustomView(owner, getViewContext().getRequest(), name);
+                if (view == null || owner != null && view.getOwner() == null)
+                {
+                    view = form.getQueryDef().createCustomView(owner, name);
+                }
+                ViewDocument doc = ViewDocument.Factory.parse(StringUtils.trimToEmpty(form.ff_designXML));
+                ((CustomViewImpl) view).update(doc, form.ff_saveFilter);
+                if (form.canSaveForAllUsers())
+                {
+                    view.setCanInherit(form.ff_inheritable);
+                }
+                view.save(getUser(), getViewContext().getRequest());
+                if (owner == null)
+                {
+                    CustomView personalView = form.getQueryDef().getCustomView(getUser(), getViewContext().getRequest(), name);
+                    if (personalView != null && personalView.getOwner() != null)
+                    {
+                        personalView.delete(getUser(), getViewContext().getRequest());
+                    }
+                }
+            }
+
+            _returnURL = form.getSourceURL();
+            if (null != _returnURL)
+            {
+                if (name == null || !canEdit)
+                {
+                    _returnURL.deleteParameter(regionName + "." + QueryParam.viewName);
+                }
+                else
+                {
+                    _returnURL.replaceParameter(regionName + "." + QueryParam.viewName, name);
+                }
+                _returnURL.deleteParameter(regionName + "." + QueryParam.ignoreFilter.toString());
+                if (form.ff_saveFilter)
+                {
+                    for (String key : _returnURL.getKeysByPrefix(regionName + "."))
+                    {
+                        if (form.isFilterOrSort(regionName, key))
+                            _returnURL.deleteFilterParameters(key);
+                    }
+                }
+            }
+            return true;
+        }
+
+        public ActionURL getSuccessURL(ChooseColumnsForm chooseColumnsForm)
+        {
+            if (null != _returnURL)
+                return _returnURL;
+            return getViewContext().cloneActionURL().setAction(QueryAction.executeQuery.name());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild("Customize Grid View");
+            return root;
+        }
+    }
+
+
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class PropertiesQueryAction extends FormViewAction<PropertiesForm>
+    {
+        PropertiesForm _form = null;
+        
+        public void validateCommand(PropertiesForm target, Errors errors)
+        {
+        }
+
+        public ModelAndView getView(PropertiesForm form, boolean reshow, BindException errors) throws Exception
+        {
+            // assertQueryExists requires that it be well-formed
+            // assertQueryExists(form);
+            QueryDefinition queryDef = form.getQueryDef();
+            if (queryDef == null)
+                HttpView.throwNotFound("Query not found");
+            _form = form;
+            return FormPage.getView(QueryController.class, form, errors, "propertiesQuery.jsp");
+        }
+
+        public boolean handlePost(PropertiesForm form, BindException errors) throws Exception
+        {
+            // assertQueryExists requires that it be well-formed
+            // assertQueryExists(form);
+            if (!form.canEdit())
+                HttpView.throwUnauthorized();
+            QueryDefinition queryDef = form.getQueryDef();
+            if (queryDef == null)
+                HttpView.throwNotFound("Query not found");
+            queryDef.setDescription(form.ff_description);
+            queryDef.setCanInherit(form.ff_inheritable);
+            queryDef.setIsHidden(form.ff_hidden);
+            queryDef.save(getUser(), getContainer());
+            _form = form;
+            return true;
+        }
+
+
+        public ActionURL getSuccessURL(PropertiesForm propertiesForm)
+        {
+            return _form.getSchema().urlFor(QueryAction.schema);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            (new SchemaAction(_form)).appendNavTrail(root);
+            root.addChild("Edit query properties");
+            return root;
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_DELETE)
+    public class DeleteQueryRowsAction extends FormHandlerAction<QueryForm>
+    {
+        ActionURL _url = null;
+        
+        public void validateCommand(QueryForm target, Errors errors)
+        {
+        }
+
+        public boolean handlePost(QueryForm form, BindException errors) throws Exception
+        {
+            ActionURL forward = null;
+            String returnURL = (String)this.getProperty(QueryParam.srcURL); // UNDONE: add to QueryForm
+            if (returnURL != null)
+                forward = new ActionURL(returnURL);
+            TableInfo table = form.getQueryDef().getTable(null, form.getSchema(), null);
+            QueryUpdateForm quf = new QueryUpdateForm(table, getViewContext().getRequest());
+            if (!table.hasPermission(getUser(), ACL.PERM_DELETE))
+            {
+                HttpView.throwUnauthorized();
+            }
+            try
+            {
+                _url = table.delete(getUser(), forward, quf);
+            }
+            catch (SQLException x)
+            {
+                if (!isConstraintException(x))
+                    throw x;
+                errors.reject(ERROR_MSG, getMessage(quf.getTable().getSchema().getSqlDialect(), x));
+                return false;
+            }
+            return true;
+        }
+
+        public ActionURL getSuccessURL(QueryForm queryForm)
+        {
+            return _url;
+        }
+    }
+
+    
+    // alias
+    public class DeleteAction extends DeleteQueryRowsAction
+    {
+    }
+
+
+/*
+    @Jpf.Action
+    protected Forward tableInfo(TableInfoForm form) throws Exception
+    {
+        requiresPermission(ACL.PERM_READ);
+        TablesDocument ret = TablesDocument.Factory.newInstance();
+        TablesDocument.Tables tables = ret.addNewTables();
+
+        FieldKey[] fields = form.getFieldKeys();
+        if (fields.length != 0)
+        {
+            TableInfo tinfo = QueryView.create(form).getTable();
+            Map<FieldKey, ColumnInfo> columnMap = CustomViewImpl.getColumnInfos(tinfo, Arrays.asList(fields));
+            TableXML.initTable(tables.addNewTable(), tinfo, null, columnMap.values());
+        }
+
+        for (FieldKey tableKey : form.getTableKeys())
+        {
+            TableInfo tableInfo = form.getTableInfo(tableKey);
+            TableType xbTable = tables.addNewTable();
+            TableXML.initTable(xbTable, tableInfo, tableKey);
+        }
+        getResponse().setContentType("text/xml");
+        getResponse().getWriter().write(ret.toString());
+
+        return null;
+    }
+
+    @Jpf.Action
+    protected Forward deleteView(DeleteViewForm form) throws Exception
+    {
+        requiresPermission(ACL.PERM_READ);
+        requiresLogin();
+        CustomView view = form.getCustomView();
+        if (view != null)
+        {
+            if (view.getOwner() == null)
+            {
+                requiresPermission(ACL.PERM_ADMIN);
+            }
+            view.delete(getUser(), getRequest());
+        }
+        String returnURL = getRequest().getParameter(QueryParam.srcURL.toString());
+        if (returnURL != null)
+        {
+            return new ViewForward(new ActionURL(returnURL));
+        }
+        return new ViewForward(form.urlFor(QueryAction.begin));
+    }
+
+    @Jpf.Action
+    protected Forward queryInfo(TableInfoForm form) throws Exception
+    {
+        requiresPermission(ACL.PERM_READ);
+        return null;
+    }
+
+    @Jpf.Action
+    protected Forward checkSyntax() throws Exception
+    {
+        String sql = getRequest().getParameter("sql");
+        if (sql == null)
+        {
+            sql = PageFlowUtil.getStreamContentsAsString(getRequest().getInputStream());
+        }
+        ErrorsDocument ret = ErrorsDocument.Factory.newInstance();
+        Errors xbErrors = ret.addNewErrors();
+        List<QueryParseException> errors = new ArrayList();
+        try
+        {
+            QParser.parseExpr(sql, errors);
+        }
+        catch (Throwable t)
+        {
+            _log.error("Error", t);
+            errors.add(new QueryParseException("Unhandled exception: " + t, null, 0, 0));
+        }
+        for (QueryParseException e : errors)
+        {
+            DgMessage msg = xbErrors.addNewError();
+            msg.setStringValue(e.getMessage());
+            msg.setLine(e.getLine());
+        }
+        getResponse().setContentType("text/xml");
+        getResponse().getWriter().write(ret.toString());
+        return null;
+    }
+
+    @Jpf.Action
+    protected Forward manageViews(QueryForm form) throws Exception
+    {
+        requiresPermission(ACL.PERM_READ);
+        requiresLogin();
+
+        return renderInTemplate(form, "manageViews.jsp");
+    }
+
+    @Jpf.Action
+    protected Forward internalDeleteView(InternalViewForm form) throws Exception
+    {
+        requiresPermission(ACL.PERM_READ);
+        if (isPost())
+        {
+            CstmView view = form.getViewAndCheckPermission();
+            QueryManager.get().delete(getUser(), view);
+            return new ViewForward("query", "manageViews", getContainer());
+        }
+        return renderInTemplate(FormPage.getView(QueryController.class, form, "internalDeleteView.jsp"), getContainer(), "Confirm Delete");
+    }
+
+    @Jpf.Action
+    protected Forward internalSourceView(InternalSourceViewForm form) throws Exception
+    {
+        requiresPermission(ACL.PERM_READ);
+        CstmView view = form.getViewAndCheckPermission();
+        if (isPost())
+        {
+            view.setColumns(form.ff_columnList);
+            view.setFilter(form.ff_filter);
+            QueryManager.get().update(getUser(), view);
+            return new ViewForward("query", "manageViews", getContainer());
+        }
+        form.ff_columnList = view.getColumns();
+        form.ff_filter = view.getFilter();
+        return renderInTemplate(FormPage.getView(QueryController.class, form, "internalSourceView.jsp"), getContainer(), "Edit Source of Grid View");
+    }
+
+    @Jpf.Action
+    protected Forward internalNewView(InternalNewViewForm form) throws Exception
+    {
+        requiresLogin();
+        requiresPermission(ACL.PERM_READ);
+        if (isPost())
+        {
+            Forward ret = doNewView(form);
+            if (ret != null)
+                return ret;
+        }
+        return renderInTemplate(FormPage.getView(QueryController.class, form, "internalNewView.jsp"), getContainer(), "Create New Grid View");
+    }
+
+    private Forward doNewView(InternalNewViewForm form) throws Exception
+    {
+        boolean errors = false;
+        if (StringUtils.trimToNull(form.ff_schemaName) == null)
+        {
+            errors = addError("Schema name cannot be blank.");
+        }
+        if (StringUtils.trimToNull(form.ff_queryName) == null)
+        {
+            errors = addError("Query name cannot be blank");
+        }
+        if (errors)
+            return null;
+        if (form.ff_share)
+        {
+            requiresPermission(ACL.PERM_ADMIN);
+        }
+        CstmView[] existing = QueryManager.get().getColumnLists(getContainer(), form.ff_schemaName, form.ff_queryName, form.ff_viewName, form.ff_share ? null : getUser(), false);
+        CstmView view = null;
+        if (existing.length != 0)
+        {
+            view = existing[0];
+        }
+        else
+        {
+            view = new CstmView();
+            view.setSchema(form.ff_schemaName);
+            view.setQueryName(form.ff_queryName);
+            view.setName(form.ff_viewName);
+            view.setContainerId(getContainer().getId());
+            if (form.ff_share)
+            {
+                view.setCustomViewOwner(null);
+            }
+            else
+            {
+                view.setCustomViewOwner(getUser().getUserId());
+            }
+            InternalViewForm.checkEdit(getViewContext(), view);
+            try
+            {
+                view = QueryManager.get().insert(getUser(), view);
+            }
+            catch (Exception e)
+            {
+                _log.error("Error", e);
+                errors = addError("An exception occurred: " + e);
+                return null;
+            }
+        }
+        ActionURL forward = new ActionURL("query", "internalSourceView", getContainer());
+        forward.addParameter("customViewId", Integer.toString(view.getCustomViewId()));
+        return new ViewForward(forward);
+    }
+
+    @Jpf.Action
+    protected Forward admin(QueryForm form) throws Exception
+    {
+        requiresGlobalAdmin();
+        return renderInTemplate(form, "admin.jsp");
+    }
+
+    @Jpf.Action
+    protected Forward adminEditDbUserSchema(DbUserSchemaForm form) throws Exception
+    {
+        requiresGlobalAdmin();
+        ActionURL fwd = new ActionURL("query", "admin", form.getContainer());
+
+        if (isPost())
+        {
+            form.doUpdate();
+            return new ViewForward(fwd);
+        }
+        UpdateView view = new UpdateView(form);
+        ButtonBar bb = new ButtonBar();
+        bb.add(new ActionButton("adminEditDbUserSchema.post", "Update"));
+        bb.add(new ActionButton("Cancel", fwd));
+        ActionURL urlDelete = new ActionURL("query", "adminDeleteDbUserSchema", form.getContainer());
+        urlDelete.addParameter("dbUserSchemaId", Integer.toString(form.getBean().getDbUserSchemaId()));
+        bb.add(new ActionButton("Delete", urlDelete));
+        view.getDataRegion().setButtonBar(bb);
+
+        return renderInTemplate(view, getContainer(), "Update Schema");
+    }
+
+    @Jpf.Action
+    protected Forward adminNewDbUserSchema(DbUserSchemaForm form) throws Exception
+    {
+        requiresGlobalAdmin();
+        ActionURL fwd = new ActionURL("query", "admin", form.getContainer());
+
+        if (isPost())
+        {
+            form.doInsert();
+            return new ViewForward(fwd);
+        }
+        InsertView view = new InsertView(form);
+        Map<String, Object> initialValues = new HashMap();
+        initialValues.put("DbContainer", getContainer().getId());
+        view.setInitialValues(initialValues);
+        ButtonBar bb = new ButtonBar();
+        bb.add(new ActionButton("adminNewDbUserSchema.post", "Create"));
+        bb.add(new ActionButton("Cancel", fwd));
+        view.getDataRegion().setButtonBar(bb);
+
+        return renderInTemplate(view, getContainer(), "Define Schema");
+    }
+
+    @Jpf.Action
+    protected Forward adminDeleteDbUserSchema(DbUserSchemaForm form) throws Exception
+    {
+        requiresGlobalAdmin();
+        form.refreshFromDb(false);
+        ActionURL fwd = new ActionURL("query", "admin", form.getContainer());
+        if (isPost())
+        {
+            QueryManager.get().delete(getUser(), form.getBean());
+            return new ViewForward(fwd);
+        }
+        return renderInTemplate(FormPage.getView(QueryController.class, form, "adminDeleteDbUserSchema.jsp"), getContainer(), "Delete Schema");
+    }
+    */
+
+    public abstract class QueryViewAction extends SimpleViewAction<QueryForm>
+    {
+        QueryForm _form;
+    }
+
+    public abstract class QueryFormAction extends FormViewAction<QueryForm>
+    {
+        QueryForm _form;
+    }
+
+    public static class APIQueryForm extends QueryForm
+    {
+        private Integer _start;
+        private Integer _limit;
+        private String _sort;
+        private String _dir;
+        private boolean _lookups = true;
+
+        public Integer getStart()
+        {
+            return _start;
+        }
+
+        public void setStart(Integer start)
+        {
+            _start = start;
+        }
+
+        public Integer getLimit()
+        {
+            return _limit;
+        }
+
+        public void setLimit(Integer limit)
+        {
+            _limit = limit;
+        }
+
+        public String getSort()
+        {
+            return _sort;
+        }
+
+        public void setSort(String sort)
+        {
+            _sort = sort;
+        }
+
+        public String getDir()
+        {
+            return _dir;
+        }
+
+        public void setDir(String dir)
+        {
+            _dir = dir;
+        }
+
+        public boolean isLookups()
+        {
+            return _lookups;
+        }
+
+        public void setLookups(boolean lookups)
+        {
+            _lookups = lookups;
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class GetQueryAction extends ApiAction<APIQueryForm>
+    {
+        public ApiResponse execute(APIQueryForm form, BindException errors) throws Exception
+        {
+            assertQueryExists(form);
+            if (form.getLimit() != null)
+                form.getQuerySettings().setMaxRows(form.getLimit().intValue());
+            if (form.getStart() != null)
+                form.getQuerySettings().setOffset(form.getStart().intValue());
+            if (form.getSort() != null)
+            {
+                ActionURL sortFilterURL = getViewContext().getActionURL().clone();
+                boolean desc = "DESC".equals(form.getDir());
+                sortFilterURL.replaceParameter("query.sort", (desc ? "-" : "") + form.getSort());
+                form.getQuerySettings().setSortFilterURL(sortFilterURL); //this isn't working!
+            }
+
+            QueryView view = QueryView.create(form);
+            return new ApiQueryResponse(view, getViewContext(), isSchemaEditable(form.getSchema()), form.isLookups(),
+                    form.getSchemaName(), form.getQueryName(), form.getQuerySettings().getOffset());
+        }
+    }
+
+    protected boolean isSchemaEditable(UserSchema schema)
+    {
+        if(!getViewContext().getContainer().hasPermission(getUser(), ACL.PERM_UPDATE | ACL.PERM_INSERT | ACL.PERM_DELETE))
+            return false;
+        if(schema.getSchemaName().equalsIgnoreCase("lists"))
+            return true;
+        else if(schema instanceof DbUserSchema)
+            return ((DbUserSchema)schema).areTablesEditable();
+        else
+            return false;
+    }
+
+    public static class ApiSaveRowsForm implements ApiJsonForm
+    {
+        private JSONObject _json;
+
+        public void setJsonObject(JSONObject jsonObj)
+        {
+            _json = jsonObj;
+        }
+
+        public JSONObject getJsonObject()
+        {
+            return _json;
+        }
+    }
+
+    protected enum SaveAction
+    {
+        INSERT,
+        UPDATE,
+        DELETE
+    }
+
+    /**
+     * Base action class for insert/update/delete actions
+     */
+    public abstract class SaveRowsAction extends ApiAction<ApiSaveRowsForm>
+    {
+        private SaveAction _action = null;
+        private static final String PROP_SCHEMA_NAME = "schemaName";
+        private static final String PROP_QUERY_NAME = "queryName";
+        private static final String PROP_ROWS = "rows";
+
+        public SaveRowsAction(SaveAction action)
+        {
+            _action = action;
+        }
+
+        public ApiResponse execute(ApiSaveRowsForm form, BindException errors) throws Exception
+        {
+            //TODO: when we add XML support, we'll need to conditionalize this based on getRequestFormat()
+            return executeJson(form);
+        }
+
+        protected ApiResponse executeJson(ApiSaveRowsForm form) throws Exception
+        {
+            JSONObject json = form.getJsonObject();
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            String schemaName = json.getString(PROP_SCHEMA_NAME);
+            String queryName = json.getString(PROP_QUERY_NAME);
+            if(null == schemaName || null == queryName)
+                throw new IllegalArgumentException("You must supply a schemaName and queryName in the metaData object!");
+
+            JSONArray rows = json.getJSONArray(PROP_ROWS);
+            if(null == rows || rows.length() < 1)
+                throw new Exception("No 'rows' array supplied!");
+
+            ListDefinition listDef = null;
+            DbUserSchema schema = null;
+            TableInfo userTable = null;
+            TableInfo dbTable = null;
+            if(schemaName.equalsIgnoreCase("lists"))
+                listDef = getListDef(queryName);
+            else
+            {
+                schema = getSchema(schemaName);
+                userTable = schema.getTable(queryName, null);
+                dbTable = getTable(schema, queryName);
+            }
+
+            //we will transact operations by default, but the user may
+            //override this by sending a "transacted" property set to false
+            boolean transacted = json.optBoolean("transacted", true);
+
+            //begin a transaction if there are more than one rows
+            //if schema is null, this will start a transaction on lists
+            if(transacted)
+                beginTransaction(schema);
+
+            //setup the response, providing the schema name, query name, and operation
+            //so that the client can sort out which request this response belongs to
+            //(clients often submit these async)
+            response.put(PROP_SCHEMA_NAME, schemaName);
+            response.put(PROP_QUERY_NAME, queryName);
+            addOperation(response);
+
+            ArrayList<Object> responseRows = new ArrayList<Object>();
+            response.put("rows", responseRows);
+
+            int rowsAffected = 0;
+
+            try
+            {
+                for(int idx = 0; idx < rows.length(); ++idx)
+                {
+                    JSONObject row = rows.getJSONObject(idx);
+                    Map<String,Object> rowMap = row.getMap(true);
+                    if(null != userTable)
+                        stripReadOnlyCols(userTable, rowMap);
+
+                    if(null != row)
+                    {
+                        switch(_action)
+                        {
+                            case UPDATE:
+                                if(null != listDef)
+                                    updateListItem(listDef, rowMap, responseRows);
+                                else
+                                    updateTableRow(dbTable, rowMap, responseRows);
+                                break;
+                            case INSERT:
+                                if(null != listDef)
+                                    insertListItem(listDef, rowMap, responseRows);
+                                else
+                                    insertTableRow(dbTable, rowMap, responseRows);
+                                break;
+                            case DELETE:
+                                if(null != listDef)
+                                    deleteListItem(listDef, rowMap, responseRows);
+                                else
+                                    deleteTableRow(dbTable, rowMap, responseRows);
+
+                                break;
+                        }
+
+                        ++rowsAffected;
+                    }
+                }
+
+                if(transacted)
+                    commitTransaction(schema);
+            }
+            finally
+            {
+                //will only rollback if transaction is still active
+                if(transacted)
+                    rollbackTransaction(schema);
+            }
+
+            response.put("rowsAffected", rowsAffected);
+
+            return response;
+        }
+
+        protected void updateListItem(ListDefinition listDef, Map row, ArrayList<Object> responseRows) throws Exception {}
+        protected void updateTableRow(TableInfo table, Map row, ArrayList<Object> responseRows) throws Exception {}
+        protected void insertListItem(ListDefinition listDef, Map row, ArrayList<Object> responseRows) throws Exception {}
+        protected void insertTableRow(TableInfo table, Map row, ArrayList<Object> responseRows) throws Exception {}
+        protected void deleteListItem(ListDefinition listDef, Map row, ArrayList<Object> responseRows) throws Exception {}
+        protected void deleteTableRow(TableInfo table, Map row, ArrayList<Object> responseRows) throws Exception {}
+
+        protected void addOperation(ApiSimpleResponse response)
+        {
+            switch(_action)
+            {
+                case INSERT:
+                    response.put("command", "insert");
+                    break;
+                case UPDATE:
+                    response.put("command", "update");
+                    break;
+                case DELETE:
+                    response.put("command", "delete");
+                    break;
+            }
+        }
+
+        protected void beginTransaction(DbUserSchema schema) throws Exception
+        {
+            if(null != schema)
+                schema.getDbSchema().getScope().beginTransaction();
+            else
+                ListService.get().beginTransaction(); //for lists
+        }
+
+        protected void commitTransaction(DbUserSchema schema) throws Exception
+        {
+            if(null != schema)
+                schema.getDbSchema().getScope().commitTransaction();
+            else
+                ListService.get().commitTransaction(); //for lists
+        }
+
+        protected void rollbackTransaction(DbUserSchema schema)
+        {
+            if(null != schema)
+            {
+                DbScope scope = schema.getDbSchema().getScope();
+                if(scope.isTransactionActive())
+                    scope.rollbackTransaction();
+            }
+            else
+            {
+                ListService.Interface svc = ListService.get();
+                if(svc.isTransactionActive())
+                    svc.rollbackTransaction();
+            }
+        }
+
+
+        protected ListDefinition getListDef(String listName)
+        {
+            Map<String, ListDefinition> listDefs =  ListService.get().getLists(getViewContext().getContainer());
+            if(null == listDefs)
+                throw new NotFoundException("No lists found in the container '" + getViewContext().getContainer().getPath() + "'.");
+
+            ListDefinition listDef = listDefs.get(listName);
+            if(null == listDef)
+                throw new NotFoundException("List '" + listName + "' was not found in the container '" + getViewContext().getContainer().getPath() + "'.");
+            return listDef;
+        }
+
+        protected ListItem getListItem(Map itemData, ListDefinition listDef)
+        {
+            Object key = itemData.get(listDef.getKeyName());
+            if(null == key)
+                throw new NotFoundException("Not value was supplied for key column '" + listDef.getKeyName() + "'!");
+            ListItem item = listDef.getListItem(key);
+            if(null == item)
+                throw new NotFoundException("List item with key value '" + itemData.get(listDef.getKeyName()) + "' was not found!");
+            return item;
+        }
+
+        protected DbUserSchema getSchema(String schemaName) throws Exception
+        {
+            DbUserSchema schema = null;
+            DbUserSchemaDef[] defs = QueryManager.get().getDbUserSchemaDefs(getViewContext().getContainer());
+            for(DbUserSchemaDef def : defs)
+            {
+                if(def.getUserSchemaName().equalsIgnoreCase(schemaName))
+                {
+                    schema = new DbUserSchema(getUser(), getViewContext().getContainer(), def);
+                    break;
+                }
+            }
+
+            if(null == schema)
+                throw new NotFoundException("There is no editable schema named '" + schemaName + "' in " + getViewContext().getContainer().getPath() + "!");
+            if(!schema.areTablesEditable())
+                throw new RuntimeException("Schema " + schemaName + " is not editable!");
+
+            return schema;
+        }
+
+        protected TableInfo getTable(DbUserSchema schema, String tableName)
+        {
+            TableInfo table = schema.getDbSchema().getTable(tableName);
+            if(null == table)
+                throw new NotFoundException("Table '" + tableName + "' does not exist within schema '" + schema.getSchemaName() + "'!");
+            return table;
+        }
+
+        protected Object getRowId(TableInfo table, Map row)
+        {
+            ColumnInfo[] pkCols = table.getPkColumns();
+            if(1 == pkCols.length)
+                return row.get(pkCols[0].getName());
+            else
+            {
+                Object[] pkVals = new Object[pkCols.length];
+                for(int idx = 0; idx < pkVals.length; ++idx)
+                    pkVals[idx] = row.get(pkCols[idx].getName());
+                return pkVals;
+            }
+        }
+
+        //TODO: this should really be an array/enum in Table.java
+        //Query handles several columns with specific names automagically, so we should
+        //always strip those from the row map so that clients cannot override this behavior
+        //the full list is:
+        // Owner, CreatedBy, Created, ModifiedBy, Modified, EntityId, _ts
+        //
+        // HOWEVER, Modified and _ts are used by the table layer to do optimistic concurrency checks
+        // so DO NOT strip those out--the table layer will keep those out of the values sent to
+        // the database (per Matt) 
+        private String[] _specialColumns = {"Owner", "CreatedBy", "Created", "ModifiedBy", "EntityId"};
+
+        protected void stripReadOnlyCols(TableInfo userTable, Map<String,Object> rowMap)
+        {
+            //remove specially-handled columns from the map
+            for(String colName : _specialColumns)
+                rowMap.remove(colName);
+
+            //strip all read-only columns from the row map so that we don't get database
+            //errors on insert/update. The Ext grid sends all column values during update
+            //and other clients may do the same.
+            for(ColumnInfo col : userTable.getColumns())
+            {
+                //don't strip the PK, which will be read-only if it's auto-incr
+                if(!col.isKeyField() && isColReadOnly(col))
+                    rowMap.remove(col.getName());
+            }
+        }
+
+        protected boolean isColReadOnly(ColumnInfo col)
+        {
+            //a column is read-only if it is:
+            // - read-only or
+            // - not user-editable or
+            // - is an fk to a non-public table
+            TableInfo fkTable = col.getFkTableInfo();
+            return col.isReadOnly() || !col.isUserEditable()
+                    || (null != fkTable && !fkTable.isPublic());
+        }
+
+        protected Map<String,Object> getListItemAsMap(ListDefinition listDef, ListItem item)
+        {
+            ListItem itemNew = listDef.getListItem(item.getKey());
+            Map<String,Object> map = new HashMap<String,Object>();
+            map.put(listDef.getKeyName(), itemNew.getKey());
+            map.put("EntityId", itemNew.getEntityId());
+            for(DomainProperty prop : listDef.getDomain().getProperties())
+                map.put(prop.getName(), itemNew.getProperty(prop));
+            
+            return map;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_UPDATE)
+    public class UpdateRowsAction extends SaveRowsAction
+    {
+        public UpdateRowsAction()
+        {
+            super(SaveAction.UPDATE);
+        }
+
+        protected void updateListItem(ListDefinition listDef, Map row, ArrayList<Object> responseRows) throws Exception
+        {
+            ListItem item = getListItem(row, listDef);
+
+            for(Object key : row.keySet())
+            {
+                //if key column, don't try to set
+                if(((String)key).equalsIgnoreCase(listDef.getKeyName()))
+                    continue;
+
+                DomainProperty prop = listDef.getDomain().getPropertyByName((String)key);
+                if(null != prop)
+                    item.setProperty(prop, row.get(key));
+            }
+
+            item.save(getUser());
+
+            responseRows.add(getListItemAsMap(listDef, item));
+        }
+
+        protected void updateTableRow(TableInfo table, Map row, ArrayList<Object> responseRows) throws Exception
+        {
+            Table.update(getUser(), table, row, getRowId(table, row), null);
+
+            //re-fetch the row from the database to pick up any column values
+            //assigned via default expressions or triggers
+            row = Table.selectObject(table, getRowId(table, row), Map.class);
+
+            responseRows.add(row);
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_INSERT)
+    public class InsertRowsAction extends SaveRowsAction
+    {
+        public InsertRowsAction()
+        {
+            super(SaveAction.INSERT);
+        }
+
+        protected void insertListItem(ListDefinition listDef, Map row, ArrayList<Object> responseRows) throws Exception
+        {
+            ListItem item = listDef.createListItem();
+
+            //set the key if it's not an auto-increment
+            if (listDef.getKeyType() != ListDefinition.KeyType.AutoIncrementInteger)
+                item.setKey(row.get(listDef.getKeyName()));
+
+            for(Object key : row.keySet())
+            {
+                //if key column, don't try to set
+                if(((String)key).equalsIgnoreCase(listDef.getKeyName()))
+                    continue;
+
+                DomainProperty prop = listDef.getDomain().getPropertyByName((String)key);
+                if(null != prop)
+                    item.setProperty(prop, row.get(key));
+            }
+
+            item.save(getUser());
+            responseRows.add(getListItemAsMap(listDef, item));
+        }
+
+        protected void insertTableRow(TableInfo table, Map row, ArrayList<Object> responseRows) throws Exception
+        {
+            row = Table.insert(getUser(), table, row);
+
+            //re-fetch the row from the database to pick up any column values
+            //assigned via default expressions or triggers
+            row = Table.selectObject(table, getRowId(table, row), Map.class);
+
+            responseRows.add(row);
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_DELETE)
+    public class DeleteRowsAction extends SaveRowsAction
+    {
+        public DeleteRowsAction()
+        {
+            super(SaveAction.DELETE);
+        }
+
+        protected void deleteListItem(ListDefinition listDef, Map row, ArrayList<Object> responseRows) throws Exception
+        {
+            ListItem item = getListItem(row, listDef);
+            item.delete(getUser(), getViewContext().getContainer());
+            Map<String,Object> responseRow = new HashMap<String,Object>();
+            responseRow.put(listDef.getKeyName(), item.getKey());
+            responseRows.add(responseRow);
+        }
+
+        protected void deleteTableRow(TableInfo table, Map row, ArrayList<Object> responseRows) throws Exception
+        {
+            Table.delete(table, getRowId(table, row), null);
+
+            //for delete, just include the key column value(s) in the reply
+            Map<String,Object> responseRow = new HashMap<String,Object>();
+            for(ColumnInfo col : table.getColumns())
+            {
+                if(col.isKeyField())
+                    responseRow.put(col.getName(), row.get(col.getName()));
+            }
+
+            responseRows.add(responseRow);
+        }
+    }
+
+    //alias
+    @RequiresPermission(ACL.PERM_DELETE)
+    public class DelRowsAction extends DeleteRowsAction
+    {
+        public DelRowsAction()
+        {
+            super();
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class ApiTestAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new JspView("/org/labkey/query/controllers/apitest.jsp");
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("API Test");
+        }
+    }
+
+    public static boolean isConstraintException(SQLException x)
+    {
+        String sqlState = x.getSQLState();
+        if (!sqlState.startsWith("23"))
+            return false;
+        return sqlState.equals("23000") || sqlState.equals("23505") || sqlState.equals("23503");
+    }
+
+    public static String getMessage(SqlDialect d, SQLException x)
+    {
+        return x.getMessage();
+    }
+}

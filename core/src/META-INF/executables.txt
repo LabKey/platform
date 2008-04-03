@@ -1,0 +1,197 @@
+The following executable files are shipped and installed with the standard LabKey Server Graphical Windows Installer.  They are also shipped in the zip download used for manual Windows installations.
+
+1 Trans Proteomic Pipeline
+
+Developer: {link:Institute for Systems Biology|http://www.systemsbiology.org}\\
+License: {link:LGPL|http://www.gnu.org/copyleft/lesser.html}\\
+Source: {link:Sashimi|http://sashimi.sourceforge.net/}
+
+The Trans Proteomic Pipeline provides the following mass spectrometery analysis tools.
+
+Raw mass spectrometer data conversion to mzXML
+- ReAdW.exe - Requires ThermoFinnigan software
+
+mzXML conversion to search engine input formats
+- MzXML2Search.exe
+
+Search engine native output conversion to pepXML
+- Tandem2XML.exe
+- MASCOT2XML.exe
+- Out2XML.exe
+- Sequest2XML.exe
+    -- out2summary.exe
+- Comet2XML.exe
+
+Search validation tools
+- PeptideProphetParser.exe
+- ProteinProphet.exe
+
+Quantitation tools
+- ASAPRatioPeptideParser.exe
+- ASAPRatioProteinRatioParser.exe
+- ASAPRatioPvalueParser.exe
+- LibraPeptideParser.exe
+- LibraProteinRatioParser.exe
+- Q3ProteinRatioParser.exe
+- XPressPeptideParser.exe
+- XPressProteinRatioParser.exe
+
+Results batching and normalization tools
+- xinteract.exe
+    -- DatabaseParser.exe
+    -- InteractParser.exe
+    -- RefreshParser.exe
+    -- batchcoverage.exe
+
+1 Computational Proteomics Laboratory at Fred Hutchinson Cancer Research Center
+
+Developer: {link:CPL|http://proteomics.fhcrc.org/}\\
+License: Apache\\
+Source: {link:msInspect|http://proteomics.fhcrc.org/CPL/msinspect.html}
+
+msInspect Q3 Quantitation and MS1 Feature Finding
+- viewerApp.jar
+
+1 Computational Proteomics Laboratory at Fred Hutchinson Cancer Research Center
+
+Developer: {link:LabKey Software|http://www.labkey.org/}\\
+License: Apache\\
+Source: {link:LabKey tools|http://www.labkey.org/}
+
+Match MS1 features and peaks to MS2 peptide search IDs
+- pepmatch.exe
+
+1 STLPort
+
+Developer: {link:STLPort Consulting|http://www.stlport.org/}\\
+License: Public Domain\\
+Source: {link:STLPort Project|http://sourceforge.net/projects/stlport}
+
+The STLPort project provides a free open source Windows version of STL that is more portable to Unix versions of STL than Microsoft's version.  Used by ISB's Trans Proteomic Pipeline.
+
+- stlport_vc846.dll
+
+1 UnxUtils
+
+License: Public Domain\\
+Source: {link:STLPort|http://sourceforge.net/projects/unxutils}
+
+The UnxUtils project provides a free open source port of most useful Unix commands.  The ones listed below are included with LabKey Server, and used by ISB's Trans Proteomic Pipeline.
+
+- cat.exe
+- find.exe
+- ls.exe
+- md5sum.exe
+- mkdir.exe
+- mv.exe
+- rm.exe
+- sort.exe
+- tail.exe
+- tar.exe
+
+1 BsdTar
+
+Developer: {link:GnuWin32|http://gnuwin32.sourceforg.net/}\\
+License: {link:GnuWin32 License|http://gnuwin32.sourceforge.net/license.html}\\
+Source: {link:GnuWin32 Project|http://sourceforge.net/projects/gnuwin32}
+
+Bsdtar creates and manipulates streaming archive files (tar, tar.gz, tar.bz2, cpio, shar, iso, zip, gz and bz2 archives), and is used by ISB's Trans Proteomic Pipeline.
+
+- bsdtar.exe
+    -- bzip2.dll
+    -- archive1.dll
+
+1 X! Tandem
+
+Developer: {link:The Global Proteom Machine Organization|http://www.thegpm.org/}\\
+License: {link:Artistic License|http://www.opensource.org/licenses/artistic-license.php}\\
+Source: {link:X! Tandem|http://www.thegpm.org/TANDEM/index.html}
+
+X! Tandem open source is software that can match tandem mass spectra with peptide sequences, in a process that has come to be known as protein identification.
+
+- tandem.exe
+   -- default_input.xml
+
+1 Graphviz
+
+Developer:\\
+License:\\
+Source:
+
+- dot.exe
+   -- freetype6.dll  (Do these come from somewhere else?)
+   -- jpeg.dll
+   -- png.dll
+   -- z.dll
+
+1 Zlib
+
+License: {link:Zlib License|http://www.zlib.net/zlib_license.html}\\
+Source: {link:Zlib|http://www.zlib.net/}
+
+Zlib is an open source compression library used by the ISB's Trans Proteomic Pipeline, and the Graphviz utility.
+
+- zlib1.dll
+
+1 Expat
+
+Developer: {link:Expat|http://expat.sourceforge.net/}\\
+License: {link:MIT License|http://www.opensource.org/licenses/mit-license.php}\\
+Source: {link:Expat Project|http://sourceforge.net/projects/expat/}
+
+Expat is an open source XML SAX-parser used by the ISB's Trans Proteomic Pipeline, the GPM's X! Tandem, and Graphviz.
+
+- libexpat.dll
+- libexpatw.dll
+
+
+1 Sun Java Runtime Environment (JRE) 1.5.0_11 (Windows graphical installer only)
+
+Developer: {link:Sun Microsystems, Inc.|http://www.sun.com}\\
+License: {link:Binary Code License Agreement|http://java.com/en/download/license.jsp}\\
+Source: {link:Sun Developer Network|http://java.sun.com/j2se/desktopjava/jre/index.jsp}
+
+Provides the Java Virtual Machine, libraries, and other components to run LabKey Server on Windows PCs and servers.
+
+1 PostgreSQL 8.2.5
+
+Developer: {link:PostgreSQL|http://www.postgresql.org/}\\
+License: {link:BSD|http://www.postgresql.org/about/licence}\\
+Source: {link:PostgreSQL|http://www.postgresql.org/}
+
+A powerful, open source relational database system that LabKey Server uses to store all its data.
+
+1 Apache Tomcat 5.5.20
+
+Developer: {link:Apache|http://tomcat.apache.org/}\\
+License: {link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}\\
+Source: {link:Apache|http://tomcat.apache.org/}
+
+Web server on which LabKey Server runs.
+
+1 Microsoft C-Runtime Library
+
+Developer: {link:Microsoft|http://www.microsoft.com}\\
+License: {link:Visual C++ 2005 Redistributables|http://msdn2.microsoft.com/en-us/library/ms235299.aspx}\\
+Source: With VC++ 2005 installation
+
+The C-Runtime for VC++ 2005 may not be installed on all Windows versions.  It is used by the ISB's Trans Proteomic Pipeline and the GPM's X! Tandem.
+
+- Microsoft.VC80.CRT.manifest
+- msvcm80.dll
+- msvcp80.dll
+- msvcr80.dll
+
+1 Microsoft Foundation Classes Library
+
+Developer: {link:Microsoft|http://www.microsoft.com}\\
+License: {link:Visual C++ 2005 Redistributables|http://msdn2.microsoft.com/en-us/library/ms235299.aspx}\\
+Source: With VC++ 2005 installation
+
+MFC for VC++ 2005 may not be installed on all Windows versions.  It is used by the ISB's ReAdW.exe.
+
+- Microsoft.VC80.MFC.manifest
+- mfc80.dll
+- mfc80u.dll
+- mfcm80.dll
+- mfcm80u.dll

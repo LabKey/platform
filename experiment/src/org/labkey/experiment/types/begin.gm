@@ -1,0 +1,10 @@
+<div class="normal">
+<p>This is the admin console for defining types, such as SampleSets or Forms.
+Note that creating a type is typically done in the context of another module.
+This page is for troubleshooting and testing purposes.
+</p>
+
+[&nbsp;<a href="importVocabulary.view">Import&nbsp;Concepts</a>&nbsp;]<br>
+[&nbsp;<a href="findConcepts.view">Search&nbsp;Concepts</a>&nbsp;]<br>
+[&nbsp;<a href="types.view">View&nbsp;Types</a>&nbsp;]<br>
+</div>

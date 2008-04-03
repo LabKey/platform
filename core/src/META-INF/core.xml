@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+
+ * Copyright (c) 2003-2005 Fred Hutchinson Cancer Research Center
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+
+ -->
+<ns:tables xsi:schemaLocation="http://labkey.org/data/xml ..\..\..\..\..\schemas\tableInfo.xsd" xmlns:ns="http://labkey.org/data/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <ns:table tableName="ACLs" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="_ts"/>
+      <ns:column columnName="ObjectId"/>
+      <ns:column columnName="ACL"/>
+      <ns:column columnName="Container"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="Containers" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="_ts"/>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="EntityId"/>
+      <ns:column columnName="CreatedBy"/>
+      <ns:column columnName="Created"/>
+      <ns:column columnName="Parent"/>
+      <ns:column columnName="Name"/>
+      <ns:column columnName="SortOrder"/>
+      <ns:column columnName="CaBIGPublished"/>        
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="Documents" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="_ts"/>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="CreatedBy"/>
+      <ns:column columnName="Created"/>
+      <ns:column columnName="ModifiedBy"/>
+      <ns:column columnName="Modified"/>
+      <ns:column columnName="Owner"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="Parent"/>
+      <ns:column columnName="DocumentName"/>
+      <ns:column columnName="DocumentSize"/>
+      <ns:column columnName="DocumentType"/>
+      <ns:column columnName="Document"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="Logins" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="Email"/>
+      <ns:column columnName="Crypt"/>
+      <ns:column columnName="Verification"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="Members" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="UserId"/>
+      <ns:column columnName="GroupId"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="Modules" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="Name"/>
+      <ns:column columnName="ClassName"/>
+      <ns:column columnName="InstalledVersion"/>
+      <ns:column columnName="Enabled"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="Principals" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="UserId">
+        <ns:datatype>int identity</ns:datatype>
+        <ns:columnTitle>User Id</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>10</ns:inputLength>
+        <ns:nullable>false</ns:nullable>
+        <ns:isAutoInc>true</ns:isAutoInc>
+        <ns:isReadOnly>false</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="OwnerId">
+        <ns:datatype>uniqueidentifier</ns:datatype>
+        <ns:columnTitle>Owner Id</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>36</ns:inputLength>
+      </ns:column>
+      <ns:column columnName="Name">
+        <ns:columnTitle>Name</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:scale>255</ns:scale>
+        <ns:inputLength>40</ns:inputLength>
+        <ns:isReadOnly>false</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="Type"/>
+    </ns:columns>
+    <ns:tableTitle>Principals</ns:tableTitle>
+    <ns:titleColumn>Name</ns:titleColumn>
+  </ns:table>
+  <ns:table tableName="SqlScripts" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="_ts"/>
+      <ns:column columnName="CreatedBy"/>
+      <ns:column columnName="Created"/>
+      <ns:column columnName="ModifiedBy">
+        <ns:columnTitle>Run By</ns:columnTitle>
+        <ns:fk>
+          <ns:fkColumnName>UserId</ns:fkColumnName>
+          <ns:fkTable>Users</ns:fkTable>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="Modified">
+        <ns:columnTitle>Last Run</ns:columnTitle>
+        <ns:formatString>DateTime</ns:formatString>
+        <ns:displayWidth>120</ns:displayWidth>
+      </ns:column>
+      <ns:column columnName="ModuleName"/>
+      <ns:column columnName="FileName"/>
+    </ns:columns>
+    <ns:tableTitle>SqlScripts</ns:tableTitle>
+  </ns:table>
+  <ns:table tableName="UsersData" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="_ts"/>
+      <ns:column columnName="EntityId"/>
+      <ns:column columnName="CreatedBy"/>
+      <ns:column columnName="Created"/>
+      <ns:column columnName="ModifiedBy"/>
+      <ns:column columnName="Modified"/>
+      <ns:column columnName="Owner"/>
+      <ns:column columnName="UserId"/>
+      <ns:column columnName="FirstName"/>
+      <ns:column columnName="LastName"/>
+      <ns:column columnName="Phone"/>
+      <ns:column columnName="Mobile"/>
+      <ns:column columnName="Pager"/>
+      <ns:column columnName="IM"/>
+      <ns:column columnName="Description"/>
+      <ns:column columnName="LastLogin"/>
+      <ns:column columnName="DisplayName"/>
+    </ns:columns>
+    <ns:titleColumn>DisplayName</ns:titleColumn>
+  </ns:table>
+  <ns:table tableName="Contacts" tableDbType="VIEW">
+    <ns:columns>
+      <ns:column columnName="Name"/>
+      <ns:column columnName="Email"/>
+      <ns:column columnName="Phone"/>
+      <ns:column columnName="UserId"/>
+      <ns:column columnName="OwnerId"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="DisplayName"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="Users" tableDbType="VIEW">
+    <ns:columns>
+      <ns:column columnName="Email">
+        <ns:columnTitle>Email</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:scale>255</ns:scale>
+        <ns:inputLength>40</ns:inputLength>
+        <ns:isReadOnly>true</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="_ts">
+        <ns:columnTitle>_ts</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>8</ns:inputLength>
+        <ns:isReadOnly>true</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="EntityId">
+        <ns:columnTitle>Entity Id</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>36</ns:inputLength>
+        <ns:isReadOnly>true</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="CreatedBy">
+        <ns:columnTitle>Created By</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>10</ns:inputLength>
+        <ns:isReadOnly>true</ns:isReadOnly>
+        <ns:fk>
+          <ns:fkColumnName>UserId</ns:fkColumnName>
+          <ns:fkTable>Users</ns:fkTable>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="Created">
+        <ns:columnTitle>Created</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>23</ns:inputLength>
+        <ns:isReadOnly>true</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="ModifiedBy">
+        <ns:columnTitle>Modified By</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>10</ns:inputLength>
+        <ns:isReadOnly>true</ns:isReadOnly>
+        <ns:fk>
+          <ns:fkColumnName>UserId</ns:fkColumnName>
+          <ns:fkTable>Users</ns:fkTable>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="Modified">
+        <ns:columnTitle>Modified</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>23</ns:inputLength>
+        <ns:isReadOnly>true</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="Owner">
+        <ns:columnTitle>Owner</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>10</ns:inputLength>
+        <ns:isReadOnly>false</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="UserId">
+        <ns:columnTitle>User Id</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>10</ns:inputLength>
+        <ns:nullable>false</ns:nullable>
+        <ns:isReadOnly>false</ns:isReadOnly>
+        <ns:isUserEditable>false</ns:isUserEditable>
+      </ns:column>
+      <ns:column columnName="DisplayName">
+        <ns:columnTitle>Display Name</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>40</ns:inputLength>
+        <ns:nullable>false</ns:nullable>
+        <ns:isReadOnly>false</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="FirstName">
+        <ns:columnTitle>First Name</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>40</ns:inputLength>
+        <ns:isReadOnly>false</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="LastName">
+        <ns:columnTitle>Last Name</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>40</ns:inputLength>
+        <ns:isReadOnly>false</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="Phone">
+        <ns:columnTitle>Phone</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>24</ns:inputLength>
+        <ns:isReadOnly>false</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="Mobile">
+        <ns:columnTitle>Mobile</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>24</ns:inputLength>
+        <ns:isReadOnly>false</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="Pager">
+        <ns:columnTitle>Pager</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>24</ns:inputLength>
+        <ns:isReadOnly>false</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="IM">
+        <ns:columnTitle>IM</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>40</ns:inputLength>
+        <ns:isReadOnly>false</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="Description">
+        <ns:columnTitle>Description</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>40</ns:inputLength>
+        <ns:isReadOnly>false</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="LastLogin">
+        <ns:columnTitle>Last Login</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:formatString>DateTime</ns:formatString>
+        <ns:inputLength>23</ns:inputLength>
+        <ns:isReadOnly>true</ns:isReadOnly>
+      </ns:column>
+    </ns:columns>
+    <ns:tableTitle>Users</ns:tableTitle>
+    <ns:pkColumnName>UserId</ns:pkColumnName>
+    <ns:versionColumnName>_ts</ns:versionColumnName>
+    <ns:titleColumn>DisplayName</ns:titleColumn>
+  </ns:table>
+    <ns:table tableName="UserHistory" tableDbType="TABLE">
+      <ns:columns>
+        <ns:column columnName="UserId" />
+        <ns:column columnName="Date">
+          <ns:formatString>DateTime</ns:formatString>
+          <ns:displayWidth>120</ns:displayWidth>
+          <ns:textAlign>left</ns:textAlign>
+        </ns:column>
+        <ns:column columnName="Message">
+          <ns:displayWidth>800</ns:displayWidth>
+        </ns:column>
+      </ns:columns>
+    </ns:table>
+    <ns:table tableName="Report" tableDbType="TABLE">
+      <ns:columns>
+        <ns:column columnName="RowId"/>
+        <ns:column columnName="ReportKey"/>
+        <ns:column columnName="CreatedBy"/>
+        <ns:column columnName="ModifiedBy"/>
+        <ns:column columnName="Created"/>
+        <ns:column columnName="Modified"/>
+        <ns:column columnName="ContainerId"/>
+        <ns:column columnName="DescriptorXML"/>
+        <ns:column columnName="EntityId"/>
+        <ns:column columnName="ReportOwner"/>
+        <ns:column columnName="Flags"/>
+      </ns:columns>
+    </ns:table>
+
+    <ns:table tableName="ContainerAliases" tableDbType="TABLE">
+      <ns:columns>
+        <ns:column columnName="Path"/>
+        <ns:column columnName="ContainerId"/>
+      </ns:columns>
+    </ns:table>
+
+    <ns:table tableName="MappedDirectories" tableDbType="TABLE">
+      <ns:columns>
+        <ns:column columnName="EntityId"/>
+        <ns:column columnName="Container"/>
+        <ns:column columnName="Relative"/>
+        <ns:column columnName="Name"/>
+        <ns:column columnName="Path"/>
+      </ns:columns>
+    </ns:table>
+</ns:tables>
+

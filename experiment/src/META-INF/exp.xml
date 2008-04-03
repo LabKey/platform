@@ -1,0 +1,693 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+ * Copyright (c) 2003-2005 Fred Hutchinson Cancer Research Center
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+
+ -->
+<ns:tables xsi:schemaLocation="http://labkey.org/data/xml ..\..\..\..\..\schemas\tableInfo.xsd" xmlns:ns="http://labkey.org/data/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <ns:table tableName="Data" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="LSID"/>
+      <ns:column columnName="Name"/>
+      <ns:column columnName="CpasType"/>
+      <ns:column columnName="SourceApplicationId"/>
+      <ns:column columnName="SourceProtocolLSID"/>
+      <ns:column columnName="DataFileUrl"/>
+      <ns:column columnName="RunId"/>
+      <ns:column columnName="Created"/>
+      <ns:column columnName="Container"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="DataInput" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="DataId"/>
+      <ns:column columnName="TargetApplicationId"/>
+      <ns:column columnName="PropertyId" />
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="Experiment" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="LSID"/>
+      <ns:column columnName="Name"/>
+      <ns:column columnName="Hypothesis">
+          <ns:description>An optional hypothesis for this run group if it represents an experiment.</ns:description>
+      </ns:column>
+      <ns:column columnName="ContactId">
+          <ns:columnTitle>Contact</ns:columnTitle>
+          <ns:description>An optional contact who is responsible for this run group.</ns:description>
+      </ns:column>
+      <ns:column columnName="ExperimentDescriptionURL">
+          <ns:columnTitle>Description URL</ns:columnTitle>
+          <ns:description>An optional URL that has further details about the purpose of this run group.</ns:description>
+      </ns:column>
+      <ns:column columnName="Comments">
+          <ns:description>Optional extra information about this run group.</ns:description>
+      </ns:column>
+      <ns:column columnName="EntityId"/>
+      <ns:column columnName="Created"/>
+      <ns:column columnName="CreatedBy">
+        <ns:fk>
+          <ns:fkColumnName>UserId</ns:fkColumnName>
+          <ns:fkTable>Users</ns:fkTable>
+          <ns:fkDbSchema>core</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="Modified"/>
+      <ns:column columnName="ModifiedBy">
+        <ns:fk>
+          <ns:fkColumnName>UserId</ns:fkColumnName>
+          <ns:fkTable>Users</ns:fkTable>
+          <ns:fkDbSchema>core</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="Container"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="ExperimentRun" tableDbType="TABLE">
+      <ns:titleColumn>Name</ns:titleColumn>
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="Name"/>
+      <ns:column columnName="LSID">
+        <ns:displayWidth>200</ns:displayWidth>
+      </ns:column>
+      <ns:column columnName="ProtocolLSID"/>
+      <ns:column columnName="Comments">
+          <ns:inputRows>2</ns:inputRows>
+      </ns:column>
+      <ns:column columnName="EntityId"/>
+      <ns:column columnName="Created">
+        <ns:formatString>DateTime</ns:formatString>
+        <ns:displayWidth>0</ns:displayWidth>
+      </ns:column>
+      <ns:column columnName="CreatedBy">
+        <ns:fk>
+          <ns:fkColumnName>UserId</ns:fkColumnName>
+          <ns:fkTable>Users</ns:fkTable>
+          <ns:fkDbSchema>core</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="Modified"/>
+      <ns:column columnName="ModifiedBy">
+        <ns:fk>
+          <ns:fkColumnName>UserId</ns:fkColumnName>
+          <ns:fkTable>Users</ns:fkTable>
+          <ns:fkDbSchema>core</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="FilePathRoot"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="List" tableDbType="TABLE">
+      <ns:columns>
+          <ns:column columnName="RowId" />
+          <ns:column columnName="EntityId" />
+          <ns:column columnName="Created" />
+          <ns:column columnName="CreatedBy" />
+          <ns:column columnName="Modified" />
+          <ns:column columnName="ModifiedBy" />
+          <ns:column columnName="Container" />
+          <ns:column columnName="Name" />
+          <ns:column columnName="DomainId" />
+          <ns:column columnName="KeyName" />
+          <ns:column columnName="KeyType" />
+          <ns:column columnName="TitleColumn" /> 
+          <ns:column columnName="Description" />
+          <ns:column columnName="DiscussionSetting" />
+          <ns:column columnName="AllowDelete" />
+          <ns:column columnName="AllowUpload" />
+          <ns:column columnName="AllowExport" />
+      </ns:columns>
+  </ns:table>
+    <ns:table tableName="IndexInteger" tableDbType="TABLE">
+        <ns:columns>
+            <ns:column columnName="ListId"/>
+            <ns:column columnName="Key" />
+            <ns:column columnName="ObjectId" />
+            <ns:column columnName="EntityId" />
+        </ns:columns>
+    </ns:table>
+    <ns:table tableName="IndexVarchar" tableDbType="TABLE">
+        <ns:columns>
+            <ns:column columnName="ListId" />
+            <ns:column columnName="Key" />
+            <ns:column columnName="ObjectId" />
+            <ns:column columnName="EntityId" />
+        </ns:columns>
+    </ns:table>
+    <ns:table tableName="Material" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="LSID"/>
+      <ns:column columnName="Name"/>
+      <ns:column columnName="CpasType"/>
+      <ns:column columnName="SourceApplicationId"/>
+      <ns:column columnName="SourceProtocolLSID"/>
+      <ns:column columnName="RunId"/>
+      <ns:column columnName="Created"/>
+      <ns:column columnName="Container"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="MaterialInput" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="MaterialId"/>
+      <ns:column columnName="TargetApplicationId"/>
+      <ns:column columnName="PropertyId" />
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="MaterialSource" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="Name"/>
+      <ns:column columnName="LSID">
+          <ns:isReadOnly>true</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="MaterialLSIDPrefix"/>
+      <ns:column columnName="Description"/>
+      <ns:column columnName="Created"/>
+      <ns:column columnName="IdCol1"/>
+      <ns:column columnName="IdCol2"/>
+      <ns:column columnName="IdCol3"/>
+      <ns:column columnName="CreatedBy">
+        <ns:fk>
+          <ns:fkColumnName>UserId</ns:fkColumnName>
+          <ns:fkTable>Users</ns:fkTable>
+          <ns:fkDbSchema>core</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="Modified"/>
+      <ns:column columnName="ModifiedBy">
+        <ns:fk>
+          <ns:fkColumnName>UserId</ns:fkColumnName>
+          <ns:fkTable>Users</ns:fkTable>
+          <ns:fkDbSchema>core</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="Container"/>
+    </ns:columns>
+  </ns:table>
+    <ns:table tableName="MaterialSourceWithProject" tableDbType="VIEW">
+        <ns:pkColumnName>RowId</ns:pkColumnName>
+      <ns:columns>
+        <ns:column columnName="RowId"/>
+        <ns:column columnName="Name"/>
+        <ns:column columnName="LSID">
+            <ns:isReadOnly>true</ns:isReadOnly>
+        </ns:column>
+        <ns:column columnName="MaterialLSIDPrefix"/>
+        <ns:column columnName="Description"/>
+        <ns:column columnName="IdCol1"/>
+        <ns:column columnName="IdCol2"/>
+        <ns:column columnName="IdCol3"/>
+        <ns:column columnName="Created"/>
+        <ns:column columnName="CreatedBy">
+          <ns:fk>
+            <ns:fkColumnName>UserId</ns:fkColumnName>
+            <ns:fkTable>Users</ns:fkTable>
+            <ns:fkDbSchema>core</ns:fkDbSchema>
+          </ns:fk>
+        </ns:column>
+        <ns:column columnName="Modified"/>
+        <ns:column columnName="ModifiedBy">
+          <ns:fk>
+            <ns:fkColumnName>UserId</ns:fkColumnName>
+            <ns:fkTable>Users</ns:fkTable>
+            <ns:fkDbSchema>core</ns:fkDbSchema>
+          </ns:fk>
+        </ns:column>
+        <ns:column columnName="Container"/>
+        <ns:column columnName="Project">
+            <ns:isUserEditable>false</ns:isUserEditable>
+        </ns:column>
+      </ns:columns>
+    </ns:table>
+  <ns:table tableName="PropertyDescriptor" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="PropertyId"/>
+      <ns:column columnName="PropertyURI"/>
+      <ns:column columnName="OntologyURI"/>
+      <ns:column columnName="RangeURI"/>
+      <ns:column columnName="Name"/>
+      <ns:column columnName="Description"/>
+      <ns:column columnName="ConceptURI"/>
+      <ns:column columnName="Label"/>
+      <ns:column columnName="SearchTerms"/>
+      <ns:column columnName="SemanticType"/>
+      <ns:column columnName="Format"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="Project"/>
+      <ns:column columnName="LookupContainer" />
+      <ns:column columnName="LookupSchema" />
+      <ns:column columnName="LookupQuery" />
+  </ns:columns>
+  </ns:table>
+  <ns:table tableName="DomainDescriptor" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="DomainId"/>
+      <ns:column columnName="DomainURI"/>
+      <ns:column columnName="Name"/>
+      <ns:column columnName="Description"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="Project"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="PropertyDomain" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="PropertyId"/>
+      <ns:column columnName="DomainId"/>
+      <ns:column columnName="Required"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="Object" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="ObjectId"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="ObjectUri"/>
+      <ns:column columnName="OwnerObjectId"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="ObjectProperty" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="ObjectId"/>
+      <ns:column columnName="PropertyId"/>
+      <ns:column columnName="TypeTag"/>
+      <ns:column columnName="FloatValue"/>
+      <ns:column columnName="DateTimeValue"/>
+      <ns:column columnName="StringValue"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="Protocol" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="LSID"/>
+      <ns:column columnName="Name"/>
+      <ns:column columnName="ProtocolDescription"/>
+      <ns:column columnName="ApplicationType"/>
+      <ns:column columnName="MaxInputMaterialPerInstance"/>
+      <ns:column columnName="MaxInputDataPerInstance"/>
+      <ns:column columnName="OutputMaterialPerInstance"/>
+      <ns:column columnName="OutputDataPerInstance"/>
+      <ns:column columnName="OutputMaterialType"/>
+      <ns:column columnName="OutputDataType"/>
+      <ns:column columnName="Instrument"/>
+      <ns:column columnName="Software"/>
+      <ns:column columnName="ContactId"/>
+      <ns:column columnName="Created"/>
+      <ns:column columnName="EntityId"/>
+      <ns:column columnName="CreatedBy">
+        <ns:fk>
+          <ns:fkColumnName>UserId</ns:fkColumnName>
+          <ns:fkTable>Users</ns:fkTable>
+          <ns:fkDbSchema>core</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="Modified"/>
+      <ns:column columnName="ModifiedBy">
+        <ns:fk>
+          <ns:fkColumnName>UserId</ns:fkColumnName>
+          <ns:fkTable>Users</ns:fkTable>
+          <ns:fkDbSchema>core</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="Container"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="ProtocolAction" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="ParentProtocolId"/>
+      <ns:column columnName="ChildProtocolId"/>
+      <ns:column columnName="Sequence"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="ProtocolActionPredecessor" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="ActionId"/>
+      <ns:column columnName="PredecessorId"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="ProtocolApplication" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="LSID"/>
+      <ns:column columnName="Name"/>
+      <ns:column columnName="CpasType"/>
+      <ns:column columnName="ProtocolLSID"/>
+      <ns:column columnName="ActivityDate"/>
+      <ns:column columnName="Comments"/>
+      <ns:column columnName="RunId"/>
+      <ns:column columnName="ActionSequence"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="ProtocolApplicationParameter" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="ProtocolApplicationId"/>
+      <ns:column columnName="Name"/>
+      <ns:column columnName="ValueType"/>
+      <ns:column columnName="StringValue"/>
+      <ns:column columnName="IntegerValue"/>
+      <ns:column columnName="DoubleValue"/>
+      <ns:column columnName="DateTimeValue"/>
+      <ns:column columnName="OntologyEntryURI"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="ProtocolParameter" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="ProtocolId"/>
+      <ns:column columnName="Name"/>
+      <ns:column columnName="ValueType"/>
+      <ns:column columnName="StringValue"/>
+      <ns:column columnName="IntegerValue"/>
+      <ns:column columnName="DoubleValue"/>
+      <ns:column columnName="DateTimeValue"/>
+      <ns:column columnName="OntologyEntryURI"/>
+    </ns:columns>
+  </ns:table>
+
+  <ns:table tableName="ChildDataForApplication" tableDbType="VIEW">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="LSID"/>
+      <ns:column columnName="Name"/>
+      <ns:column columnName="SourceApplicationId"/>
+      <ns:column columnName="SourceProtocolLSID"/>
+      <ns:column columnName="DataFileUrl"/>
+      <ns:column columnName="RunId"/>
+      <ns:column columnName="Created"/>
+      <ns:column columnName="ApplicationID"/>
+      <ns:column columnName="ApplicationLSID"/>
+      <ns:column columnName="ApplicationName"/>
+      <ns:column columnName="ApplicationType"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="ChildMaterialForApplication" tableDbType="VIEW">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="LSID"/>
+      <ns:column columnName="Name"/>
+      <ns:column columnName="SourceApplicationId"/>
+      <ns:column columnName="SourceProtocolLSID"/>
+      <ns:column columnName="RunId"/>
+      <ns:column columnName="Created"/>
+      <ns:column columnName="ApplicationID"/>
+      <ns:column columnName="ApplicationLSID"/>
+      <ns:column columnName="ApplicationName"/>
+      <ns:column columnName="ApplicationType"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="MarkedOutputDataForRun" tableDbType="VIEW">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="LSID"/>
+      <ns:column columnName="Name"/>
+      <ns:column columnName="SourceApplicationId"/>
+      <ns:column columnName="SourceProtocolLSID"/>
+      <ns:column columnName="DataFileUrl"/>
+      <ns:column columnName="RunId"/>
+      <ns:column columnName="Created"/>
+      <ns:column columnName="ApplicationID"/>
+      <ns:column columnName="ApplicationLSID"/>
+      <ns:column columnName="ApplicationName"/>
+      <ns:column columnName="ApplicationCpasType"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="MarkedOutputMaterialForRun" tableDbType="VIEW">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="LSID"/>
+      <ns:column columnName="Name"/>
+      <ns:column columnName="SourceApplicationId"/>
+      <ns:column columnName="SourceProtocolLSID"/>
+      <ns:column columnName="RunId"/>
+      <ns:column columnName="Created"/>
+      <ns:column columnName="ApplicationID"/>
+      <ns:column columnName="ApplicationLSID"/>
+      <ns:column columnName="ApplicationName"/>
+      <ns:column columnName="ApplicationCpasType"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="OutputDataForNode" tableDbType="VIEW">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="LSID"/>
+      <ns:column columnName="Name"/>
+      <ns:column columnName="SourceApplicationId"/>
+      <ns:column columnName="SourceProtocolLSID"/>
+      <ns:column columnName="DataFileUrl"/>
+      <ns:column columnName="RunId"/>
+      <ns:column columnName="Created"/>
+      <ns:column columnName="ApplicationID"/>
+      <ns:column columnName="ApplicationLSID"/>
+      <ns:column columnName="ApplicationName"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="OutputMaterialForNode" tableDbType="VIEW">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="LSID"/>
+      <ns:column columnName="Name"/>
+      <ns:column columnName="SourceApplicationId"/>
+      <ns:column columnName="SourceProtocolLSID"/>
+      <ns:column columnName="RunId"/>
+      <ns:column columnName="Created"/>
+      <ns:column columnName="ApplicationID"/>
+      <ns:column columnName="ApplicationLSID"/>
+      <ns:column columnName="ApplicationName"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="PredecessorAllDataView" tableDbType="VIEW">
+    <ns:columns>
+      <ns:column columnName="RunProtocolLSID"/>
+      <ns:column columnName="RunStepProtocolLSID"/>
+      <ns:column columnName="RunStepSequence"/>
+      <ns:column columnName="PredecessorParentLSID"/>
+      <ns:column columnName="PredecessorChildLSID"/>
+      <ns:column columnName="PredecessorSequence"/>
+      <ns:column columnName="OutputRowId"/>
+      <ns:column columnName="OutputLSID"/>
+      <ns:column columnName="OutputName"/>
+      <ns:column columnName="OutputCpasType"/>
+      <ns:column columnName="RunId"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="PredecessorAllMaterialsView" tableDbType="VIEW">
+    <ns:columns>
+      <ns:column columnName="RunProtocolLSID"/>
+      <ns:column columnName="RunStepProtocolLSID"/>
+      <ns:column columnName="RunStepSequence"/>
+      <ns:column columnName="PredecessorParentLSID"/>
+      <ns:column columnName="PredecessorChildLSID"/>
+      <ns:column columnName="PredecessorSequence"/>
+      <ns:column columnName="OutputRowId"/>
+      <ns:column columnName="OutputLSID"/>
+      <ns:column columnName="OutputName"/>
+      <ns:column columnName="OutputCpasType"/>
+      <ns:column columnName="RunId"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="PredecessorOutputDataView" tableDbType="VIEW">
+    <ns:columns>
+      <ns:column columnName="RunProtocolLSID"/>
+      <ns:column columnName="RunStepProtocolLSID"/>
+      <ns:column columnName="RunStepSequence"/>
+      <ns:column columnName="PredecessorParentLSID"/>
+      <ns:column columnName="PredecessorChildLSID"/>
+      <ns:column columnName="PredecessorSequence"/>
+      <ns:column columnName="OutputRowId"/>
+      <ns:column columnName="OutputLSID"/>
+      <ns:column columnName="OutputName"/>
+      <ns:column columnName="OutputCpasType"/>
+      <ns:column columnName="RunId"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="PredecessorOutputMaterialsView" tableDbType="VIEW">
+    <ns:columns>
+      <ns:column columnName="RunProtocolLSID"/>
+      <ns:column columnName="RunStepProtocolLSID"/>
+      <ns:column columnName="RunStepSequence"/>
+      <ns:column columnName="PredecessorParentLSID"/>
+      <ns:column columnName="PredecessorChildLSID"/>
+      <ns:column columnName="PredecessorSequence"/>
+      <ns:column columnName="OutputRowId"/>
+      <ns:column columnName="OutputLSID"/>
+      <ns:column columnName="OutputName"/>
+      <ns:column columnName="OutputCpasType"/>
+      <ns:column columnName="RunId"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="PredecessorRunStartDataView" tableDbType="VIEW">
+    <ns:columns>
+      <ns:column columnName="RunProtocolLSID"/>
+      <ns:column columnName="RunStepProtocolLSID"/>
+      <ns:column columnName="RunStepSequence"/>
+      <ns:column columnName="PredecessorParentLSID"/>
+      <ns:column columnName="PredecessorChildLSID"/>
+      <ns:column columnName="PredecessorSequence"/>
+      <ns:column columnName="OutputRowId"/>
+      <ns:column columnName="OutputLSID"/>
+      <ns:column columnName="OutputName"/>
+      <ns:column columnName="OutputCpasType"/>
+      <ns:column columnName="RunId"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="PredecessorRunStartMaterialsView" tableDbType="VIEW">
+    <ns:columns>
+      <ns:column columnName="RunProtocolLSID"/>
+      <ns:column columnName="RunStepProtocolLSID"/>
+      <ns:column columnName="RunStepSequence"/>
+      <ns:column columnName="PredecessorParentLSID"/>
+      <ns:column columnName="PredecessorChildLSID"/>
+      <ns:column columnName="PredecessorSequence"/>
+      <ns:column columnName="OutputRowId"/>
+      <ns:column columnName="OutputLSID"/>
+      <ns:column columnName="OutputName"/>
+      <ns:column columnName="OutputCpasType"/>
+      <ns:column columnName="RunId"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="ProtocolActionPredecessorLSIDView" tableDbType="VIEW">
+    <ns:columns>
+      <ns:column columnName="ParentProtocolLSID"/>
+      <ns:column columnName="ChildProtocolLSID"/>
+      <ns:column columnName="ActionSequence"/>
+      <ns:column columnName="PredecessorParentLSID"/>
+      <ns:column columnName="PredecessorChildLSID"/>
+      <ns:column columnName="PredecessorSequence"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="ProtocolActionStepDetailsView" tableDbType="VIEW">
+    <ns:columns>
+      <ns:column columnName="ParentProtocolLSID"/>
+      <ns:column columnName="LSID"/>
+      <ns:column columnName="ChildProtocolLSID"/>
+      <ns:column columnName="Sequence"/>
+      <ns:column columnName="ActionSequence"/>
+      <ns:column columnName="ActionId"/>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="Name"/>
+      <ns:column columnName="ProtocolDescription"/>
+      <ns:column columnName="ApplicationType"/>
+      <ns:column columnName="MaxInputMaterialPerInstance"/>
+      <ns:column columnName="MaxInputDataPerInstance"/>
+      <ns:column columnName="OutputMaterialPerInstance"/>
+      <ns:column columnName="OutputDataPerInstance"/>
+      <ns:column columnName="OutputMaterialType"/>
+      <ns:column columnName="OutputDataType"/>
+      <ns:column columnName="Instrument"/>
+      <ns:column columnName="Software"/>
+      <ns:column columnName="ContactId"/>
+      <ns:column columnName="Created"/>
+      <ns:column columnName="EntityId"/>
+      <ns:column columnName="CreatedBy"/>
+      <ns:column columnName="Modified"/>
+      <ns:column columnName="ModifiedBy"/>
+      <ns:column columnName="Container"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="AllLsid" tableDbType="VIEW">
+    <ns:columns>
+      <ns:column columnName="LSID"/>
+      <ns:column columnName="Type"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="AllLsidContainers" tableDbType="VIEW">
+    <ns:columns>
+      <ns:column columnName="LSID"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="Type"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="ObjectClasses" tableDbType="VIEW">
+    <ns:columns>
+      <ns:column columnName="DomainURI"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="ExperimentRunMaterialInputs" tableDbType="VIEW">
+    <ns:columns>
+      <ns:column columnName="RunLSID"/>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="LSID"/>
+      <ns:column columnName="Name"/>
+      <ns:column columnName="CpasType"/>
+      <ns:column columnName="SourceApplicationId"/>
+      <ns:column columnName="SourceProtocolLSID"/>
+      <ns:column columnName="RunId"/>
+      <ns:column columnName="Created"/>
+      <ns:column columnName="Container"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="ObjectPropertiesView" tableDbType="VIEW">
+    <ns:columns>
+      <ns:column columnName="ObjectId"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="ObjectURI"/>
+      <ns:column columnName="OwnerObjectId"/>
+      <ns:column columnName="name"/>
+      <ns:column columnName="PropertyURI"/>
+      <ns:column columnName="RangeURI"/>
+      <ns:column columnName="TypeTag"/>
+      <ns:column columnName="FloatValue"/>
+      <ns:column columnName="StringValue"/>
+      <ns:column columnName="DatetimeValue"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="ExperimentRunDataInputs" tableDbType="VIEW">
+    <ns:columns>
+      <ns:column columnName="RunLSID"/>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="LSID"/>
+      <ns:column columnName="Name"/>
+      <ns:column columnName="CpasType"/>
+      <ns:column columnName="SourceApplicationId"/>
+      <ns:column columnName="SourceProtocolLSID"/>
+      <ns:column columnName="DataFileUrl"/>
+      <ns:column columnName="RunId"/>
+      <ns:column columnName="Created"/>
+      <ns:column columnName="Container"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="ExperimentRunDataOutputs" tableDbType="VIEW">
+    <ns:columns>
+      <ns:column columnName="DataLSID"/>
+      <ns:column columnName="RunLSID"/>
+      <ns:column columnName="Container"/>
+    </ns:columns>
+  </ns:table>
+    <ns:table tableName="ExperimentRunMaterialOutputs" tableDbType="VIEW">
+      <ns:columns>
+        <ns:column columnName="MaterialLSID"/>
+        <ns:column columnName="RunLSID"/>
+        <ns:column columnName="Container"/>
+      </ns:columns>
+    </ns:table>
+    <ns:table tableName="RunList" tableDbType="TABLE">
+      <ns:columns>
+        <ns:column columnName="ExperimentId"/>
+        <ns:column columnName="ExperimentRunId"/>
+      </ns:columns>
+    </ns:table>
+    <ns:table tableName="ActiveMaterialSource" tableDbType="TABLE">
+      <ns:columns>
+        <ns:column columnName="Container"/>
+        <ns:column columnName="MaterialSourceLSID"/>
+      </ns:columns>
+    </ns:table>
+
+</ns:tables>

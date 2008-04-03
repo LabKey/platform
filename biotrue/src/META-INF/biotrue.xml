@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?><ns:tables xmlns:ns="http://labkey.org/data/xml">
+  <ns:table tableName="Server" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="Name"/>
+      <ns:column columnName="Container" />
+      <ns:column columnName="WsdlURL" />
+      <ns:column columnName="ServiceNamespaceURI" />
+      <ns:column columnName="ServiceLocalPart" />
+      <ns:column columnName="UserName" />
+      <ns:column columnName="Password" />
+      <ns:column columnName="PhysicalRoot" />
+      <ns:column columnName="SyncInterval" />
+      <ns:column columnName="NextSync" />
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="Entity" tableDbType="TABLE">
+      <ns:columns>
+          <ns:column columnName="RowId" />
+          <ns:column columnName="ServerId" />
+          <ns:column columnName="ParentId" />
+          <ns:column columnName="BioTrue_Id" />
+          <ns:column columnName="BioTrue_Type" />
+          <ns:column columnName="BioTrue_Name" />
+          <ns:column columnName="PhysicalName" />
+      </ns:columns>
+  </ns:table>
+    <ns:table tableName="Task" tableDbType="TABLE">
+        <ns:columns>
+            <ns:column columnName="RowId" />
+            <ns:column columnName="ServerId" />
+            <ns:column columnName="EntityId" />
+            <ns:column columnName="Operation" />
+            <ns:column columnName="Started" />
+        </ns:columns>
+    </ns:table>
+</ns:tables>

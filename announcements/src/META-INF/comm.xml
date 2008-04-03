@@ -1,0 +1,321 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+ * Copyright (c) 2003-2005 Fred Hutchinson Cancer Research Center
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+
+ -->
+<ns:tables xsi:schemaLocation="http://cpas.fhcrc.org/data/xml ..\..\..\..\schemas\tableInfo.xsd" xmlns:ns="http://labkey.org/data/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <ns:table tableName="Announcements" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="RowId">
+        <ns:columnTitle>Row Id</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>10</ns:inputLength>
+        <ns:nullable>false</ns:nullable>
+        <ns:isReadOnly>true</ns:isReadOnly>
+        <ns:isKeyField>true</ns:isKeyField>
+      </ns:column>
+      <ns:column columnName="EntityId"/>
+      <ns:column columnName="CreatedBy">
+        <ns:datatype>int</ns:datatype>
+        <ns:columnTitle>Created By</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>10</ns:inputLength>
+        <ns:isReadOnly>true</ns:isReadOnly>
+        <ns:fk>
+          <ns:fkColumnName>UserId</ns:fkColumnName>
+          <ns:fkTable>Users</ns:fkTable>
+          <ns:fkDbSchema>core</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="Created">
+        <ns:columnTitle>Created</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:formatString>DateTime</ns:formatString>
+        <ns:inputLength>23</ns:inputLength>
+        <ns:isReadOnly>true</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="ModifiedBy">
+        <ns:datatype>int</ns:datatype>
+        <ns:columnTitle>Modified By</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>10</ns:inputLength>
+        <ns:isReadOnly>true</ns:isReadOnly>
+        <ns:fk>
+          <ns:fkColumnName>UserId</ns:fkColumnName>
+          <ns:fkTable>Users</ns:fkTable>
+          <ns:fkDbSchema>core</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="Modified">
+        <ns:columnTitle>Modified</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>23</ns:inputLength>
+        <ns:isReadOnly>true</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="AssignedTo">
+        <ns:datatype>int</ns:datatype>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>10</ns:inputLength>
+        <ns:isReadOnly>false</ns:isReadOnly>
+        <ns:fk>
+          <ns:fkColumnName>UserId</ns:fkColumnName>
+          <ns:fkTable>Users</ns:fkTable>
+          <ns:fkDbSchema>core</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="Parent"/>
+      <ns:column columnName="Title">
+        <ns:columnTitle>Title</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>40</ns:inputLength>
+        <ns:isReadOnly>false</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="Expires">
+        <ns:columnTitle>Expires</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>23</ns:inputLength>
+        <ns:isReadOnly>false</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="Body">
+        <ns:columnTitle>Body</ns:columnTitle>
+        <ns:inputType>textarea</ns:inputType>
+        <ns:scale>1073741823</ns:scale>
+        <ns:inputLength>60</ns:inputLength>
+        <ns:isReadOnly>false</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="RendererType">
+        <ns:columnTitle>RendererType</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>50</ns:inputLength>
+        <ns:isReadOnly>false</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="Status">
+        <ns:displayWidth>20</ns:displayWidth>
+      </ns:column>
+      <ns:column columnName="EmailList"/>
+      <ns:column columnName="discussionsrcidentifier"/>
+      <ns:column columnName="discussionsrcurl"/>
+    </ns:columns>
+    <ns:tableTitle>Announcements</ns:tableTitle>
+    <ns:pkColumnName>RowId</ns:pkColumnName>
+    <ns:versionColumnName>Modified</ns:versionColumnName>
+    <ns:titleColumn>Title</ns:titleColumn>
+  </ns:table>
+  <ns:table tableName="Pages" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="RowId">
+        <ns:columnTitle>Row Id</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>10</ns:inputLength>
+        <ns:nullable>false</ns:nullable>
+        <ns:isReadOnly>true</ns:isReadOnly>
+        <ns:isKeyField>true</ns:isKeyField>
+      </ns:column>
+      <ns:column columnName="EntityId">
+        <ns:datatype>uniqueidentifier</ns:datatype>
+        <ns:columnTitle>Entity Id</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>36</ns:inputLength>
+        <ns:nullable>true</ns:nullable>
+        <ns:isReadOnly>true</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="CreatedBy">
+        <ns:datatype>int</ns:datatype>
+        <ns:columnTitle>Created By</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>10</ns:inputLength>
+        <ns:isReadOnly>true</ns:isReadOnly>
+        <ns:fk>
+          <ns:fkColumnName>UserId</ns:fkColumnName>
+          <ns:fkTable>Users</ns:fkTable>
+          <ns:fkDbSchema>core</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="Created">
+        <ns:columnTitle>Created</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>23</ns:inputLength>
+        <ns:isReadOnly>true</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="ModifiedBy">
+        <ns:datatype>int</ns:datatype>
+        <ns:columnTitle>Modified By</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>10</ns:inputLength>
+        <ns:isReadOnly>true</ns:isReadOnly>
+        <ns:fk>
+          <ns:fkColumnName>UserId</ns:fkColumnName>
+          <ns:fkTable>Users</ns:fkTable>
+          <ns:fkDbSchema>core</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="Modified">
+        <ns:columnTitle>Modified</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>23</ns:inputLength>
+        <ns:isReadOnly>true</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="Owner">
+        <ns:datatype>int</ns:datatype>
+        <ns:columnTitle>Owner</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>10</ns:inputLength>
+        <ns:isReadOnly>false</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="Container">
+        <ns:datatype>nvarchar</ns:datatype>
+        <ns:columnTitle>Container</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:scale>255</ns:scale>
+        <ns:inputLength>40</ns:inputLength>
+        <ns:nullable>true</ns:nullable>
+        <ns:isReadOnly>false</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="Name">
+        <ns:columnTitle>Name</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:scale>195</ns:scale>
+        <ns:inputLength>40</ns:inputLength>
+        <ns:nullable>true</ns:nullable>
+        <ns:isReadOnly>false</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="Parent"/>
+      <ns:column columnName="DisplayOrder"/>
+      <ns:column columnName="PageVersionId"/>
+    </ns:columns>
+    <ns:tableTitle>Pages</ns:tableTitle>
+    <ns:pkColumnName>RowId</ns:pkColumnName>
+    <ns:versionColumnName>Modified</ns:versionColumnName>
+    <ns:titleColumn>EntityId</ns:titleColumn>
+  </ns:table>
+  <ns:table tableName="PageVersions" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="PageEntityId"/>
+      <ns:column columnName="CreatedBy">
+        <ns:datatype>int</ns:datatype>
+        <ns:columnTitle>Created By</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>10</ns:inputLength>
+        <ns:isReadOnly>true</ns:isReadOnly>
+        <ns:fk>
+          <ns:fkColumnName>UserId</ns:fkColumnName>
+          <ns:fkTable>Users</ns:fkTable>
+          <ns:fkDbSchema>core</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="Created">
+        <ns:formatString>DateTime</ns:formatString>
+      </ns:column>
+      <ns:column columnName="Owner"/>
+      <ns:column columnName="Version"/>
+      <ns:column columnName="Title"/>
+      <ns:column columnName="Body"/>
+      <ns:column columnName="RendererType"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="EmailFormats" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="EmailFormatId"/>
+      <ns:column columnName="EmailFormat"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="EmailOptions" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="EmailOptionId"/>
+      <ns:column columnName="EmailOption"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="PageTypes" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="PageTypeId"/>
+      <ns:column columnName="PageType"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="EmailPrefs" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="UserId"/>
+      <ns:column columnName="EmailOptionId"/>
+      <ns:column columnName="EmailFormatId"/>
+      <ns:column columnName="PageTypeId"/>
+      <ns:column columnName="LastModifiedBy"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="UserList" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="MessageId"/>
+      <ns:column columnName="UserId"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="Threads" tableDbType="VIEW">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="EntityId"/>
+      <ns:column columnName="CreatedBy">
+        <ns:fk>
+          <ns:fkColumnName>UserId</ns:fkColumnName>
+          <ns:fkTable>Users</ns:fkTable>
+          <ns:fkDbSchema>core</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="Created">
+        <ns:formatString>DateTime</ns:formatString>
+        <ns:displayWidth>150</ns:displayWidth>
+      </ns:column>
+      <ns:column columnName="ResponseCreatedBy">
+        <ns:columnTitle>Most Recent Post By</ns:columnTitle>
+        <ns:displayWidth>150</ns:displayWidth>
+        <ns:fk>
+          <ns:fkColumnName>UserId</ns:fkColumnName>
+          <ns:fkTable>Users</ns:fkTable>
+          <ns:fkDbSchema>core</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="ResponseCreated">
+        <ns:columnTitle>Most Recent Post</ns:columnTitle>
+        <ns:formatString>DateTime</ns:formatString>
+        <ns:displayWidth>150</ns:displayWidth>
+      </ns:column>
+      <ns:column columnName="AssignedTo">
+        <ns:displayWidth>150</ns:displayWidth>
+        <ns:fk>
+          <ns:fkColumnName>UserId</ns:fkColumnName>
+          <ns:fkTable>Users</ns:fkTable>
+          <ns:fkDbSchema>core</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="Title">
+        <ns:displayWidth>300</ns:displayWidth>
+      </ns:column>
+      <ns:column columnName="Body"/>
+      <ns:column columnName="RendererType"/>
+      <ns:column columnName="Expires">
+        <ns:displayWidth>100</ns:displayWidth>
+      </ns:column>
+      <ns:column columnName="Status">
+        <ns:displayWidth>20</ns:displayWidth>
+      </ns:column>
+      <ns:column columnName="LatestId"/>
+      <ns:column columnName="discussionsrcidentifier"/>
+      <ns:column columnName="discussionsrcurl"/>
+      <ns:column columnName="ResponseCount"/>
+    </ns:columns>
+    <ns:pkColumnName>RowId</ns:pkColumnName>
+  </ns:table>
+</ns:tables>

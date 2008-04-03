@@ -1,0 +1,18 @@
+<%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<form name="frmCustomize" method="post" action="<%=postURL%>">
+<input type="hidden" name="pageId" value="<%=webPart.pageId%>">
+<input type="hidden" name="index" value="<%=webPart.index%>">
+<table>
+<tr>
+    <td><input type="checkbox" name="includeSubfolders" <%="off".equals(webPart.propertyMap.includeSubfolders) ? "" : "checked"%>></td>
+    <td>Search subfolders</td>
+</tr>
+
+<tr>
+    <td colspan=2>
+        <input type="image" src="<%=PageFlowUtil.submitSrc()%>">
+        <a href="begin.view"><img src="<%=PageFlowUtil.cancelSrc()%>"></a>
+    </td>
+</tr>
+</table>
+</form>

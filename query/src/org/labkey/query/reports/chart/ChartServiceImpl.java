@@ -1,0 +1,127 @@
+package org.labkey.query.reports.chart;
+
+import com.google.gwt.user.client.rpc.SerializableException;
+import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.commons.lang.StringUtils;
+import org.labkey.api.gwt.client.model.GWTChart;
+import org.labkey.api.gwt.client.model.GWTChartRenderer;
+import org.labkey.api.gwt.client.ui.ChartService;
+import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.reports.Report;
+import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.chart.ChartRenderer;
+import org.labkey.api.reports.chart.ChartRendererFactory;
+import org.labkey.api.reports.report.view.ChartDesignerBean;
+import org.labkey.api.reports.report.view.ChartUtil;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ActionURL;
+import org.labkey.common.util.Pair;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Created by IntelliJ IDEA.
+ * User: Karl Lum
+ * Date: Dec 3, 2007
+ */
+public class ChartServiceImpl extends BaseRemoteService implements ChartService
+{
+    public ChartServiceImpl(ViewContext context)
+    {
+        super(context);
+    }
+
+    public GWTChart getChart(int id) throws Exception
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public String saveChart(GWTChart chart) throws Exception
+    {
+        List<String> errors = new ArrayList<String>();
+
+        if (getUser().isGuest())
+            throw new SerializableException("Unable to save report, you must be logged in");
+
+        ChartDesignerBean bean = new ChartDesignerBean();
+        PropertyUtils.copyProperties(bean, chart);
+        if (!chart.isShared())
+            bean.setOwner(_context.getUser().getUserId());
+
+        Report report = bean.getReport();
+        if (report != null)
+        {
+            final String key = ChartUtil.getReportQueryKey(report.getDescriptor());
+            if (!reportNameExists(_context, chart.getReportName(), key))
+            {
+                ReportService.get().saveReport(_context, key, report);
+            }
+            else
+                throw new SerializableException("There is already a report with the name of: '" + report.getDescriptor().getReportName() +
+                        "'. Please specify a different name.");
+        }
+        else
+            throw new SerializableException("Unable to save report, the report could not be instantiated");
+        return null;
+    }
+
+    private boolean reportNameExists(ViewContext context, String reportName, String key)
+    {
+        try {
+            for (Report report : ReportService.get().getReports(context.getUser(), context.getContainer(), key))
+            {
+                if (StringUtils.equals(reportName, report.getDescriptor().getReportName()))
+                    return true;
+            }
+            return false;
+        }
+        catch (Exception e)
+        {
+            return false;
+        }
+    }
+
+    public GWTChartRenderer[] getChartRenderers(GWTChart chart) throws Exception
+    {
+        UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), chart.getSchemaName());
+        QuerySettings qs = new QuerySettings(_context.getActionURL(), null);
+        qs.setSchemaName(schema.getSchemaName());
+        qs.setQueryName(chart.getQueryName());
+
+        QueryView view = new QueryView(schema, qs);
+        List<GWTChartRenderer> gwtRenderers = new ArrayList<GWTChartRenderer>();
+
+        for (ChartRenderer renderer : ChartRendererFactory.get().getChartRenderers())
+        {
+            GWTChartRenderer cr = new GWTChartRenderer();
+
+            cr.setName(renderer.getName());
+            cr.setType(renderer.getType());
+            cr.setColumnX(renderer.getDisplayColumns(view, true));
+            cr.setColumnY(renderer.getDisplayColumns(view, false));
+
+            gwtRenderers.add(cr);
+        }
+        return gwtRenderers.toArray(new GWTChartRenderer[0]);
+    }
+
+    public String getDisplayURL(GWTChart chart) throws Exception
+    {
+        ChartDesignerBean bean = new ChartDesignerBean();
+        PropertyUtils.copyProperties(bean, chart);
+
+        ActionURL url = new ActionURL("reports", "plotChart", _context.getContainer());
+
+        for (Pair<String, String> param : bean.getParameters())
+        {
+            url.addParameter(param.getKey(), param.getValue());
+        }
+
+        return url.toString();
+    }
+}

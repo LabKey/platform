@@ -1,0 +1,33 @@
+<%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<h3>Upload Vocabulary</h3>
+
+<p>
+Use this form to upload a vocabulary or dictionary of concepts.  The file format is compatible with
+the flat file format used by NCICB, except column headers are required. see <a href="http://ncicb.nci.nih.gov/core/EVS/">http://ncicb.nci.nih.gov/core/EVS/</a>.
+</p>
+<p>
+Specifically it should be a tab-delimited text file with no column headers, and these columns.
+</p>
+
+<table>
+    <tr><th align=left valign=top nowrap>Code</th><td valign=top>not used internally</td><td valign=top><code>C25298</code></td></tr>
+    <tr><th align=left valign=top nowrap>UMLS</th><td valign=top>8 char UMLS code, not used internally</td><td valign=top><code>C0428880</code></td></tr>
+    <tr><th align=left valign=top nowrap>Name<span style="color:red;">*</span></th><td valign=top>Alphanumeric with - and _, required</td><td valign=top><code>Systolic_Pressure</code></td></tr>
+    <tr><th align=left valign=top nowrap>Label</th><td valign=top>Display name</td><td valign=top><code>Systolic Pressure</code></td></tr>
+    <tr><th align=left valign=top nowrap>Parent</th><td valign=top>More general concept for this term</td><td valign=top><code>Personal_Attribute</code></td></tr>
+    <tr><th align=left valign=top nowrap>SemanticType</th><td valign=top>Type of concept, | separated if more than one</td><td valign=top><code>Quantitative Concept</code></td></tr>
+    <tr><th align=left valign=top nowrap>Synonyms</th><td valign=top>Synonyms separated by |.  These words are used for searching.  The first synonym is used as the label if no label is specified.</td><td valign=top><code>Systolic Pressure|SBP</code></td></tr>
+    <tr><th align=left valign=top nowrap>Description</th><td valign=top>Free form description</td><td valign=top><code>The blood pressure during the contraction of the left ventricle of the heart.</code></td></tr>
+    <tr><th align=left valign=top nowrap>RangeURI</th><td valign=top>Datatype of this property</td><td valign=top><code>xsd:int</code></td></tr>
+</table>
+
+<p>&nbsp;</p>
+
+<form action="importVocabulary.post" method="POST" enctype="multipart/form-data">
+<table>
+<tr><td class=ms-searchform>Thesaurus URI<br><small>e.g http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl</small></td><td><input name="name" value="<%=filter(form.name)%>"></td></tr>
+<!--<tr><td class=ms-searchform>Short prefix<br><small>e.g NCI_Thesaurus</small></td><td><input name="prefix" value=""></td></tr> -->
+<tr><td class=ms-searchform>Upload File</td><td><input type=file name=thesaurus></td></tr>
+</table>
+<input type=image src="<%=PageFlowUtil.buttonSrc("Submit","large")%>">
+</form>

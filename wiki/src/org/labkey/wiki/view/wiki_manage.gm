@@ -1,0 +1,190 @@
+<%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.springframework.validation.BindException" %>
+<%@ page import="org.springframework.validation.FieldError" %>
+<%
+    ViewContext context = HttpView.currentContext();
+    BindException errors = _errors;
+%>
+<script>
+function saveWikiList(listName, targetName)
+  {
+  var wikiSelect = document.manage[listName];
+  var wikiList = "";
+  for (var i = 0; i < wikiSelect.length; i++)
+    {
+    wikiList += wikiSelect.item(i).value;
+    if (i < wikiSelect.length - 1)
+      wikiList += ",";
+    }
+  document.manage[targetName].value = wikiList;
+  }
+
+function orderModule(listName, down, targetName)
+{
+  var wikiSelect = document.manage[listName];
+  var selWikiIndex = wikiSelect.selectedIndex;
+  if (selWikiIndex != -1)
+    {
+    var swapWiki = null;
+    if (selWikiIndex > 0 && down == 0)
+      {
+      swapWiki = wikiSelect.item(selWikiIndex - 1);
+      wikiSelect.selectedIndex--;
+      }
+    else if (selWikiIndex < wikiSelect.length-1 && down == 1)
+      {
+      swapWiki = wikiSelect.item(selWikiIndex + 1);
+      wikiSelect.selectedIndex++;
+      }
+    if (swapWiki != null)
+      {
+      var selWiki = wikiSelect.item(selWikiIndex);
+      var selText = selWiki.text;
+      var selValue = selWiki.value;
+      selWiki.text = swapWiki.text;
+      selWiki.value = swapWiki.value;
+      swapWiki.text = selText;
+      swapWiki.value = selValue;
+      saveWikiList(listName, targetName);
+      document.manage.nextAction.value = "manage";
+      return false;
+      }
+  } else {
+    alert("Please select a page first.");
+  }
+  return false;
+}
+</script>
+
+
+<form method="post" name="manage" action="manage.post" enctype="multipart/form-data" onsubmit="return checkWikiName(name.value)">
+<input type="hidden" name="containerPath" value="<%=containerPath%>">
+    
+<table>
+
+<%
+    FieldError nameError = errors.getFieldError("name");
+	if (nameError)
+		{
+		%><tr><td colspan=2><span class="labkey-error"><%=context.getMessage(nameError)%></span></td></tr><%
+		}
+  %>
+  <tr>
+    <td class='ms-searchform'>Name</td>
+    <td class='ms-vb'><input type="text" size="40" name="name" value="<%= filter(wiki.getName()) %>"></td>
+  </tr>
+  <tr>
+    <td class='ms-vb'></td>
+    <td class='ms-vb'>WARNING: Changing a page's name will break any links to the page.</td>
+  </tr>
+  <tr>
+    <td class='ms-searchform'>Title</td>
+    <td class='ms-vb'><input type="text" size="40" name="title" value="<%= filter(wiki.latestVersion().getTitle()) %>"></td>
+  </tr>
+  <tr>
+    <td class='ms-searchform'>Parent</td>
+    <td class='ms-vb'><select name="parent" onChange="document.manage.nextAction.value = 'manage'; submit();">
+        <option <%= wiki.getParent() == -1 ? "selected" : "" %> value="-1">[none]</option>
+<%
+    for (possibleParent in possibleParents)
+        {
+        if (possibleParent.getRowId() != wiki.getRowId())
+            {
+            def indent = "";
+            def depth = possibleParent.getDepth();
+            while (depth-- > 0)
+              indent = indent + "&nbsp;&nbsp;";
+%>
+        <option <%= possibleParent.getRowId() == wiki.getParent() ? "selected" : "" %> value="<%= possibleParent.getRowId() %>"><%= indent %><%= possibleParent.latestVersion().getTitle() %> (<%= possibleParent.getName() %>)</option>
+<%
+            }
+        }
+%>
+    </select></td>
+
+</tr>
+  <tr>
+    <td class='ms-searchform'>Sibling Order</td>
+    <td class='ms-vb'>
+        <table>
+            <tr>
+                <td>
+                    <select name="siblings" size="10">
+<%
+        for (sibling in siblings)
+            {
+%>
+                      <option <%= sibling.getRowId() == wiki.getRowId() ? "selected" : "" %> value="<%= sibling.getRowId() %>"><%= sibling.latestVersion().getTitle() %> (<%= sibling.getName() %>)</option>
+<%
+            }
+%>
+                    </select>
+                </td>
+                <td align="center" valign="center">
+                    <input type='image' src="<%=PageFlowUtil.buttonSrc('Move Up')%>" value='Move Up' onclick="return orderModule('siblings', 0, 'siblingOrder')"><br><br>
+                    <input type='image' src="<%=PageFlowUtil.buttonSrc('Move Down')%>" value='Move Down' onclick="return orderModule('siblings', 1, 'siblingOrder')">
+                </td>
+            </tr>
+        </table>
+        <input type="hidden" name="siblingOrder" value="">
+    </td>
+  </tr>
+<%
+    if (showChildren && wiki.getChildren() != null && wiki.getChildren().size() > 0)
+        {
+%>
+  <tr>
+    <td class='ms-searchform'>Child Order</td>
+    <td class='ms-vb'><table>
+            <tr>
+                <td>
+                    <select name="children" size="10">
+<%
+        for (child in wiki.getChildren())
+            {
+%>
+                      <option value="<%= child.getRowId() %>"><%= child.latestVersion().getTitle() %> (<%= child.getName() %>)</option>
+<%
+            }
+%>
+                    </select>
+                </td>
+                <td align="center" valign="center">
+                    <input type='image' src="<%=PageFlowUtil.buttonSrc('Move Up')%>" value='Move Up' onclick="return orderModule('children', 0, 'childOrder')"><br><br>
+                    <input type='image' src="<%=PageFlowUtil.buttonSrc('Move Down')%>" value='Move Down' onclick="return orderModule('children', 1, 'childOrder')">
+                </td>
+            </tr>
+        </table>
+        <input type="hidden" name="childOrder" value="">
+    </td>
+  </tr>
+<%
+        }
+%>
+</table>
+<input type="hidden" name="originalName" value="<%= wiki.getName() %>">
+<input type="hidden" name="rowId" value="<%= wiki.getRowId() %>">
+<input type="hidden" name="nextAction" value="">
+<input type="image" src="<%=PageFlowUtil.buttonSrc('Save')%>" value="Save" onClick="document.manage.nextAction.value = 'page'; return true;" title="Save Changes">
+<input type="image" src="<%=PageFlowUtil.buttonSrc('Edit Content')%>" value="Edit Content" onClick="document.manage.nextAction.value = 'update'; return true;" title="Edit Content and Attachments">
+<% if (deleteLink != null)
+    {
+    %><a href="<%= deleteLink %>"><img border="0" src="<%=PageFlowUtil.buttonSrc('Delete Page')%>" title="Delete this Page"></a><%
+    }
+%>
+
+<script type="text/javascript">
+existingWikiPages = [<% for (p in pages) out.print(PageFlowUtil.jsString(p.name) + ","); %>];
+function checkWikiName(name)
+    {
+    if (!name)
+        {
+        window.alert("Please choose a name for this wiki page.");
+        return false;
+        }
+    return true;
+    }
+</script>
+</form>

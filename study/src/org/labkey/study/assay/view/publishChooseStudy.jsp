@@ -1,0 +1,115 @@
+<%@ page import="org.labkey.api.data.Container"%>
+<%@ page import="org.labkey.api.data.DataRegion" %>
+<%@ page import="org.labkey.api.data.DataRegionSelection" %>
+<%@ page import="org.labkey.api.security.ACL" %>
+<%@ page import="org.labkey.api.study.actions.PublishStartAction" %>
+<%@ page import="org.labkey.api.study.assay.AssayPublishService" %>
+<%@ page import="org.labkey.api.study.assay.AssayService" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.common.util.Pair" %>
+<%@ page import="org.labkey.study.model.Study" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="java.util.Iterator" %>
+<%@ page import="java.util.Map" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%
+    JspView<PublishStartAction.PublishBean> me = (JspView<PublishStartAction.PublishBean>) HttpView.currentView();
+    PublishStartAction.PublishBean bean = me.getModelBean();
+    boolean unambiguous = !bean.isInsufficientPermissions() && !bean.isNullStudies() && bean.getStudies().size() == 1;
+    Study firstStudy = null;
+    Container firstStudyContainer = null;
+    if (unambiguous)
+    {
+        Iterator<Container> studyIt = bean.getStudies().iterator();
+        firstStudyContainer = studyIt.next();
+        firstStudy = StudyManager.getInstance().getStudy(firstStudyContainer);
+        if (firstStudy == null)
+            unambiguous = false;
+    }
+
+    ActionURL postURL = AssayService.get().getPublishConfirmURL(getViewContext().getContainer(), bean.getProtocol());
+    Pair<String, String>[] parameters = postURL.getParameters();
+    postURL.deleteParameters();
+%>
+
+<%
+    if (bean.getStudies().size() > 1)
+    {
+%>
+<span class="labkey-error"><h4>WARNING: The selected runs were initially associated with different studies.</h4></span>
+<%
+    }
+    if (bean.isInsufficientPermissions())
+    {
+%>
+<span class="labkey-error"><h4>WARNING: You do not have permissions to publish to one or more of the selected run's associated studies.</h4></span>
+<%
+    }
+%>
+<form action="<%= postURL.getLocalURIString() %>" method="POST">
+<%
+    for (Pair<String, String> parameter : parameters)
+    {
+%>
+    <input type="hidden" name="<%= parameter.getKey() %>" value="<%= h(parameter.getValue()) %>">
+<%
+    }
+    for (Integer id : bean.getIds())
+    {
+%>
+    <input type="hidden" name="<%= DataRegion.SELECT_CHECKBOX_NAME %>" value="<%= id %>">
+<%
+    }
+%>
+<input type="hidden" name="<%= DataRegionSelection.DATA_REGION_SELECTION_KEY %>" value="<%= bean.getDataRegionSelectionKey() %>">
+<table>
+    <%
+        if (unambiguous)
+        {
+    %>
+        <tr>
+            <td colspan="2">
+                All data is marked for publication to study <b><%= h(firstStudy.getLabel()) %></b>
+                in folder <b><%= h(firstStudy.getContainer().getPath()) %></b>.<br>
+                <input type="checkbox"
+                       onclick="getElementById('targetStudyTitle').style.display = (this.checked ? 'block' : 'none');
+                                getElementById('targetStudyPicker').style.display = (this.checked ? 'block' : 'none')">
+                Publish to a different study
+            </td>
+        </tr>
+    <%
+        }
+    %>
+    <tr>
+        <td>
+            <span id="targetStudyTitle" style="display:<%= unambiguous ? "none" : "block" %>">Choose target study:</span>
+        </td>
+        <td>
+            <span id="targetStudyPicker" style="display:<%= unambiguous ? "none" : "block" %>">
+                <select name="targetStudy">
+                <%
+
+                    Map<Container, String> targets = AssayPublishService.get().getValidPublishTargets(getViewContext().getUser(), ACL.PERM_INSERT);
+                    for (Map.Entry<Container, String> target : targets.entrySet())
+                    {
+                        String path = target.getKey().getPath();
+                        boolean selected = firstStudyContainer != null && firstStudyContainer.getPath().equals(path);
+                %>
+                    <option value="<%= h(target.getKey().getId()) %>" <%= selected ? "SELECTED" : "" %>><%= h(path)%> (<%= h(target.getValue()) %>)</option>
+                <%
+                    }
+                %>
+                </select>
+            </span>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="2">
+            <%= buttonLink("Cancel", AssayService.get().getAssayRunsURL(getViewContext().getContainer(), bean.getProtocol()).addParameter("clearCataRegionSelectionKey", bean.getDataRegionSelectionKey()))%>
+            <%= buttonImg("Next") %>
+        </td>
+    </tr>
+</table>
+</form>

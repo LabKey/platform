@@ -1,0 +1,11 @@
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<b>The following error occurred while running a SQL script in <%=providerName%>:</b><br><br>
+<%
+if (null != exception)
+{
+    out.print("<b>" + filter(exception.getMessage()) + "</b><br>");
+    out.print("<br>");
+}
+%>
+<a href="<%=showListUrl%>"><img border=0 src="<%=PageFlowUtil.buttonSrc("Show List")%>"></a>
+<a href="<%=finishUrl%>"><img border=0 src="<%=PageFlowUtil.buttonSrc("Finish")%>"></a>

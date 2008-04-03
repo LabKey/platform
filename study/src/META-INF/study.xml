@@ -1,0 +1,594 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+ * Copyright (c) 2003-2005 Fred Hutchinson Cancer Research Center
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+
+ -->
+<ns:tables xsi:schemaLocation="http://cpas.fhcrc.org/data/xml ..\..\..\..\schemas\tableInfo.xsd" xmlns:ns="http://labkey.org/data/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <ns:table tableName="Study" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="Label"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="entityid"/>
+      <ns:column columnName="DateBased"/>
+      <ns:column columnName="StartDate"/>
+      <ns:column columnName="StudySecurity"/>
+      <ns:column columnName="participantcohortdatasetid"/>
+      <ns:column columnName="participantcohortproperty"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="Site" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="ScharpId"/>
+      <ns:column columnName="LdmsLabCode"/>
+      <ns:column columnName="LabwareLabCode"/>
+      <ns:column columnName="LabUploadCode"/>
+      <ns:column columnName="IsSal"/>
+      <ns:column columnName="IsRepository"/>
+      <ns:column columnName="IsEndpoint"/>
+      <ns:column columnName="IsClinic"/>
+      <ns:column columnName="Label"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="EntityId"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="Visit" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="TypeCode"/>
+      <ns:column columnName="Label"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="DisplayOrder"/>
+      <ns:column columnName="ShowByDefault"/>
+      <ns:column columnName="VisitDateDatasetId"/>
+      <ns:column columnName="rowid"/>
+      <ns:column columnName="SequenceNumMax"/>
+      <ns:column columnName="SequenceNumMin"/>
+      <ns:column columnName="cohortid"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="VisitMap" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="DataSetId">
+        <ns:propertyURI>http://cpas.labkey.com/Study#DatasetId</ns:propertyURI>
+      </ns:column>
+      <ns:column columnName="Required"/>
+      <ns:column columnName="visitrowid"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="DataSet" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="DataSetId">
+        <ns:propertyURI>http://cpas.labkey.com/Study#DatasetId</ns:propertyURI>
+      </ns:column>
+      <ns:column columnName="TypeURI"/>
+      <ns:column columnName="Label"/>
+      <ns:column columnName="Category"/>
+      <ns:column columnName="DisplayOrder"/>
+      <ns:column columnName="ShowByDefault"/>
+      <ns:column columnName="entityid"/>
+      <ns:column columnName="VisitDatePropertyName"/>
+      <ns:column columnName="KeyPropertyName"/>
+      <ns:column columnName="name"/>
+      <ns:column columnName="description"/>
+      <ns:column columnName="DemographicData"/>
+      <ns:column columnName="cohortid"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="SampleRequest" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="CreatedBy">
+        <ns:datatype>int</ns:datatype>
+        <ns:columnTitle>Created By</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>10</ns:inputLength>
+        <ns:isReadOnly>true</ns:isReadOnly>
+        <ns:fk>
+          <ns:fkColumnName>UserId</ns:fkColumnName>
+          <ns:fkTable>Users</ns:fkTable>
+          <ns:fkDbSchema>core</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="Created">
+        <ns:columnTitle>Created</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:formatString>DateTime</ns:formatString>
+        <ns:inputLength>23</ns:inputLength>
+        <ns:isReadOnly>true</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="ModifiedBy">
+        <ns:datatype>int</ns:datatype>
+        <ns:columnTitle>Modified By</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>10</ns:inputLength>
+        <ns:isReadOnly>true</ns:isReadOnly>
+        <ns:fk>
+          <ns:fkColumnName>UserId</ns:fkColumnName>
+          <ns:fkTable>Users</ns:fkTable>
+          <ns:fkDbSchema>core</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="Modified">
+        <ns:columnTitle>Last Modified</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:formatString>DateTime</ns:formatString>
+        <ns:inputLength>23</ns:inputLength>
+        <ns:isReadOnly>true</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="StatusId">
+        <ns:columnTitle>Status</ns:columnTitle>
+      </ns:column>
+      <ns:column columnName="Comments"/>
+      <ns:column columnName="DestinationSiteId"/>
+      <ns:column columnName="_ts"/>
+      <ns:column columnName="Hidden"/>
+      <ns:column columnName="EntityId"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="Report" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="ReportId"/>
+      <ns:column columnName="EntityId"/>
+      <ns:column columnName="CreatedBy"/>
+      <ns:column columnName="Created"/>
+      <ns:column columnName="ContainerId"/>
+      <ns:column columnName="Label"/>
+      <ns:column columnName="Params"/>
+      <ns:column columnName="ReportType"/>
+      <ns:column columnName="Scope"/>
+      <ns:column columnName="ShowWithDataset"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="SampleRequestEvent" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="CreatedBy">
+        <ns:datatype>int</ns:datatype>
+        <ns:columnTitle>User</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>10</ns:inputLength>
+        <ns:isReadOnly>true</ns:isReadOnly>
+        <ns:fk>
+          <ns:fkColumnName>UserId</ns:fkColumnName>
+          <ns:fkTable>Users</ns:fkTable>
+          <ns:fkDbSchema>core</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="Created">
+        <ns:columnTitle>Created</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:formatString>DateTime</ns:formatString>
+        <ns:inputLength>23</ns:inputLength>
+        <ns:isReadOnly>true</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="EntityId"/>
+      <ns:column columnName="EntryType"/>
+      <ns:column columnName="RequestId"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="Comments"/>
+      <ns:column columnName="RequirementId"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="Participant" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="ParticipantId">
+        <ns:propertyURI>http://cpas.labkey.com/Study#ParticipantId</ns:propertyURI>
+      </ns:column>
+      <ns:column columnName="EnrollmentSiteId"/>
+      <ns:column columnName="CurrentSiteId"/>
+      <ns:column columnName="StartDate"/>
+      <ns:column columnName="cohortid"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="SampleRequestActor" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="SortOrder"/>
+      <ns:column columnName="Label"/>
+      <ns:column columnName="PerSite"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="SampleRequestRequirement" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="RequestId"/>
+      <ns:column columnName="ActorId"/>
+      <ns:column columnName="SiteId"/>
+      <ns:column columnName="Description"/>
+      <ns:column columnName="Complete"/>
+      <ns:column columnName="OwnerEntityId"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="SampleRequestStatus" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="SortOrder"/>
+      <ns:column columnName="Label"/>
+      <ns:column columnName="FinalState"/>
+      <ns:column columnName="SpecimensLocked"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="studydata" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="container"/>
+      <ns:column columnName="participantid">
+        <ns:columnTitle>Participant ID</ns:columnTitle>
+        <ns:description>Participant identifier</ns:description>
+        <ns:propertyURI>http://cpas.labkey.com/Study#ParticipantId</ns:propertyURI>
+      </ns:column>
+      <ns:column columnName="datasetid">
+        <ns:columnTitle>Dataset ID</ns:columnTitle>
+        <ns:propertyURI>http://cpas.labkey.com/Study#DatasetId</ns:propertyURI>
+      </ns:column>
+      <ns:column columnName="lsid"/>
+      <ns:column columnName="sourcelsid">
+        <ns:columnTitle>Source Lsid</ns:columnTitle>
+        <ns:propertyURI>http://cpas.labkey.com/Study#SourceLSID</ns:propertyURI>
+      </ns:column>
+      <ns:column columnName="created">
+        <ns:columnTitle>Created</ns:columnTitle>
+        <ns:description>Date record/form was created</ns:description>
+        <ns:propertyURI>http://cpas.labkey.com/Study#Created</ns:propertyURI>
+      </ns:column>
+      <ns:column columnName="modified">
+        <ns:columnTitle>Modified</ns:columnTitle>
+        <ns:description>Last time record/form was modified</ns:description>
+        <ns:propertyURI>http://cpas.labkey.com/Study#Modified</ns:propertyURI>
+      </ns:column>
+      <ns:column columnName="SequenceNum">
+        <ns:propertyURI>http://cpas.labkey.com/Study#SequenceNum</ns:propertyURI>
+        <ns:nullable>false</ns:nullable>
+      </ns:column>
+      <ns:column columnName="_VisitDate">
+        <ns:propertyURI>http://cpas.labkey.com/Study#VisitDate</ns:propertyURI>
+      </ns:column>
+      <ns:column columnName="_key"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="SampleRequestSpecimen" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="SampleRequestId"/>
+      <ns:column columnName="specimenglobaluniqueid"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="Specimen" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="GlobalUniqueId"/>
+      <ns:column columnName="Ptid"/>
+      <ns:column columnName="DrawTimestamp"/>
+      <ns:column columnName="SalReceiptDate"/>
+      <ns:column columnName="SpecimenNumber"/>
+      <ns:column columnName="ClassId"/>
+      <ns:column columnName="VisitValue">
+        <ns:formatString>0.####</ns:formatString>
+      </ns:column>
+      <ns:column columnName="ProtocolNumber"/>
+      <ns:column columnName="VisitDescription"/>
+      <ns:column columnName="Volume">
+        <ns:formatString>#,###.0#</ns:formatString>
+      </ns:column>
+      <ns:column columnName="VolumeUnits"/>
+      <ns:column columnName="SubAdditiveDerivative"/>
+      <ns:column columnName="PrimaryTypeId"/>
+      <ns:column columnName="DerivativeTypeId"/>
+      <ns:column columnName="AdditiveTypeId"/>
+      <ns:column columnName="originatinglocationid"/>
+      <ns:column columnName="requestable"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="SpecimenSummary" tableDbType="VIEW">
+    <ns:columns>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="Ptid"/>
+      <ns:column columnName="DrawTimestamp"/>
+      <ns:column columnName="SalReceiptDate"/>
+      <ns:column columnName="SpecimenNumber"/>
+      <ns:column columnName="ProtocolNumber"/>
+      <ns:column columnName="ClassId"/>
+      <ns:column columnName="VisitValue">
+        <ns:formatString>0.####</ns:formatString>
+      </ns:column>
+      <ns:column columnName="VisitDescription"/>
+      <ns:column columnName="TotalVolume">
+        <ns:formatString>#,###.0#</ns:formatString>
+      </ns:column>
+      <ns:column columnName="VolumeUnits"/>
+      <ns:column columnName="PrimaryTypeId">
+        <ns:fk>
+          <ns:fkColumnName>ScharpId</ns:fkColumnName>
+          <ns:fkTable>SpecimenPrimaryType</ns:fkTable>
+          <ns:fkDbSchema>study</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="DerivativeTypeId">
+        <ns:fk>
+          <ns:fkColumnName>ScharpId</ns:fkColumnName>
+          <ns:fkTable>SpecimenDerivative</ns:fkTable>
+          <ns:fkDbSchema>study</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="AdditiveTypeId">
+        <ns:fk>
+          <ns:fkColumnName>ScharpId</ns:fkColumnName>
+          <ns:fkTable>SpecimenAdditive</ns:fkTable>
+          <ns:fkDbSchema>study</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="SubAdditiveDerivative"/>
+      <ns:column columnName="LockedInRequestCount"/>
+      <ns:column columnName="AtRepositoryCount"/>
+      <ns:column columnName="AvailableCount"/>
+      <ns:column columnName="VialCount"/>
+      <ns:column columnName="AvailableVolume">
+        <ns:formatString>#,##0.0#</ns:formatString>
+      </ns:column>
+      <ns:column columnName="originatinglocationid"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="SpecimenDetail" tableDbType="VIEW">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="GlobalUniqueId"/>
+      <ns:column columnName="Ptid"/>
+      <ns:column columnName="DrawTimestamp"/>
+      <ns:column columnName="SalReceiptDate"/>
+      <ns:column columnName="SpecimenNumber"/>
+      <ns:column columnName="ClassId"/>
+      <ns:column columnName="VisitValue">
+        <ns:formatString>0.####</ns:formatString>
+      </ns:column>
+      <ns:column columnName="ProtocolNumber"/>
+      <ns:column columnName="VisitDescription"/>
+      <ns:column columnName="Volume">
+        <ns:formatString>#,##0.0#</ns:formatString>
+      </ns:column>
+      <ns:column columnName="SiteName"/>
+      <ns:column columnName="SiteLdmsCode"/>
+      <ns:column columnName="AtRepository"/>
+      <ns:column columnName="Available"/>
+      <ns:column columnName="VolumeUnits"/>
+      <ns:column columnName="SubAdditiveDerivative"/>
+      <ns:column columnName="PrimaryTypeId">
+        <ns:fk>
+          <ns:fkColumnName>ScharpId</ns:fkColumnName>
+          <ns:fkTable>SpecimenPrimaryType</ns:fkTable>
+          <ns:fkDbSchema>study</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="DerivativeTypeId">
+        <ns:fk>
+          <ns:fkColumnName>ScharpId</ns:fkColumnName>
+          <ns:fkTable>SpecimenDerivative</ns:fkTable>
+          <ns:fkDbSchema>study</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="AdditiveTypeId">
+        <ns:fk>
+          <ns:fkColumnName>ScharpId</ns:fkColumnName>
+          <ns:fkTable>SpecimenAdditive</ns:fkTable>
+          <ns:fkDbSchema>study</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="lockedinrequest"/>
+      <ns:column columnName="originatinglocationid"/>
+      <ns:column columnName="requestable"/>
+      <ns:column columnName="fr_container"/>
+      <ns:column columnName="fr_level1"/>
+      <ns:column columnName="fr_level2"/>
+      <ns:column columnName="fr_position"/>
+      <ns:column columnName="freezer"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="SpecimenAdditive" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="ScharpId"/>
+      <ns:column columnName="LdmsAdditiveCode"/>
+      <ns:column columnName="LabwareAdditiveCode"/>
+      <ns:column columnName="Additive"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="SpecimenDerivative" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="ScharpId"/>
+      <ns:column columnName="LdmsDerivativeCode"/>
+      <ns:column columnName="LabwareDerivativeCode"/>
+      <ns:column columnName="Derivative"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="SpecimenEvent" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="ScharpId"/>
+      <ns:column columnName="SpecimenId"/>
+      <ns:column columnName="LabId"/>
+      <ns:column columnName="UniqueSpecimenId"/>
+      <ns:column columnName="ParentSpecimenId"/>
+      <ns:column columnName="Stored"/>
+      <ns:column columnName="StorageFlag"/>
+      <ns:column columnName="StorageDate"/>
+      <ns:column columnName="ShipFlag"/>
+      <ns:column columnName="ShipBatchNumber"/>
+      <ns:column columnName="ShipDate"/>
+      <ns:column columnName="ImportedBatchNumber"/>
+      <ns:column columnName="LabReceiptDate"/>
+      <ns:column columnName="Comments"/>
+      <ns:column columnName="SpecimenCondition"/>
+      <ns:column columnName="SampleNumber"/>
+      <ns:column columnName="XSampleOrigin"/>
+      <ns:column columnName="ExternalLocation"/>
+      <ns:column columnName="UpdateTimestamp"/>
+      <ns:column columnName="OtherSpecimenId"/>
+      <ns:column columnName="ExpectedTimeValue"/>
+      <ns:column columnName="ExpectedTimeUnit"/>
+      <ns:column columnName="GroupProtocol"/>
+      <ns:column columnName="RecordSource"/>
+      <ns:column columnName="fr_container"/>
+      <ns:column columnName="fr_level1"/>
+      <ns:column columnName="fr_level2"/>
+      <ns:column columnName="fr_position"/>
+      <ns:column columnName="freezer"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="SpecimenPrimaryType" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="ScharpId"/>
+      <ns:column columnName="PrimaryTypeLdmsCode"/>
+      <ns:column columnName="PrimaryTypeLabwareCode"/>
+      <ns:column columnName="PrimaryType"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="LockedSpecimens" tableDbType="VIEW">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="GlobalUniqueId"/>
+      <ns:column columnName="Container"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="UploadLog" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="Created"/>
+      <ns:column columnName="CreatedBy"/>
+      <ns:column columnName="Description"/>
+      <ns:column columnName="FilePath"/>
+      <ns:column columnName="DatasetId"/>
+      <ns:column columnName="Status"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="ParticipantVisit" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="ParticipantId"/>
+      <ns:column columnName="VisitDate"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="visitrowid"/>
+      <ns:column columnName="sequencenum"/>
+      <ns:column columnName="Day"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="Plate" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="LSID"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="Name"/>
+      <ns:column columnName="CreatedBy">
+        <ns:datatype>int</ns:datatype>
+        <ns:columnTitle>Created By</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>10</ns:inputLength>
+        <ns:isReadOnly>true</ns:isReadOnly>
+        <ns:fk>
+          <ns:fkColumnName>UserId</ns:fkColumnName>
+          <ns:fkTable>Users</ns:fkTable>
+          <ns:fkDbSchema>core</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="Created">
+        <ns:columnTitle>Created</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:formatString>DateTime</ns:formatString>
+        <ns:inputLength>23</ns:inputLength>
+        <ns:isReadOnly>true</ns:isReadOnly>
+      </ns:column>
+      <ns:column columnName="Template"/>
+      <ns:column columnName="Rows"/>
+      <ns:column columnName="Columns"/>
+      <ns:column columnName="DataFileId"/>
+      <ns:column columnName="Type"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="Well" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="LSID"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="Value"/>
+      <ns:column columnName="Dilution"/>
+      <ns:column columnName="PlateId"/>
+      <ns:column columnName="Row"/>
+      <ns:column columnName="Col"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="WellGroup" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="PlateId"/>
+      <ns:column columnName="LSID"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="Name"/>
+      <ns:column columnName="TypeName"/>
+      <ns:column columnName="Template"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="StudyDesign" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="_ts"/>
+      <ns:column columnName="StudyId"/>
+      <ns:column columnName="CreatedBy"/>
+      <ns:column columnName="Created"/>
+      <ns:column columnName="ModifiedBy"/>
+      <ns:column columnName="Modified"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="PublicRevision"/>
+      <ns:column columnName="DraftRevision"/>
+      <ns:column columnName="Label"/>
+      <ns:column columnName="Active"/>
+      <ns:column columnName="SourceContainer"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="StudyDesignVersion" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="_ts"/>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="StudyId"/>
+      <ns:column columnName="CreatedBy"/>
+      <ns:column columnName="Created"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="Revision"/>
+      <ns:column columnName="Draft"/>
+      <ns:column columnName="Label"/>
+      <ns:column columnName="Description"/>
+      <ns:column columnName="XML"/>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="cohort" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="rowid"/>
+      <ns:column columnName="label"/>
+      <ns:column columnName="container"/>
+    </ns:columns>
+  </ns:table>
+</ns:tables>

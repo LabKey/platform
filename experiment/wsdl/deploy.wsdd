@@ -1,0 +1,107 @@
+<!-- Use this file to deploy some handlers/chains and services      -->
+<!-- Two ways to do this:                                           -->
+<!--   java org.apache.axis.client.AdminClient deploy.wsdd          -->
+<!--      after the axis server is running                          -->
+<!-- or                                                             -->
+<!--   java org.apache.axis.utils.Admin client|server deploy.wsdd   -->
+<!--      from the same directory that the Axis engine runs         -->
+
+<deployment
+    xmlns="http://xml.apache.org/axis/wsdd/"
+    xmlns:java="http://xml.apache.org/axis/wsdd/providers/java">
+
+  <!-- Services from ExperimentWebServiceService WSDL service -->
+
+  <service name="ExperimentService" provider="java:RPC" style="rpc" use="encoded">
+      <parameter name="wsdlTargetNamespace" value="http://www.labkey.org/services/urn:experiment"/>
+      <parameter name="wsdlServiceElement" value="ExperimentWebServiceService"/>
+      <parameter name="schemaQualified" value="http://www.labkey.org/experimentQuery/xml,http://cpas.fhcrc.org/exp/xml,http://www.w3.org/1999/02/22-rdf-syntax-ns#"/>
+      <parameter name="schemaUnqualified" value="http://www.labkey.org/services/urn:experiment"/>
+      <parameter name="wsdlServicePort" value="ExperimentService"/>
+      <parameter name="className" value="org.labkey.experiment.ws.ExperimentWebService"/>
+      <parameter name="wsdlPortType" value="ExperimentWebService"/>
+      <parameter name="typeMappingVersion" value="1.2"/>
+      <parameter name="allowedMethods" value="*"/>
+
+      <typeMapping
+        xmlns:ns1="http://www.labkey.org/experimentQuery/xml"
+        qname="ns1:Target"
+        type="java:org.labkey.experiment.ws.experimentQuery.Target"
+        serializer="org.apache.axis.encoding.ser.BeanSerializerFactory"
+        deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory"
+        encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+      />
+      <typeMapping
+        xmlns:ns1="http://www.labkey.org/experimentQuery/xml"
+        qname="ns1:Folder"
+        type="java:org.labkey.experiment.ws.experimentQuery.Folder"
+        serializer="org.apache.axis.encoding.ser.BeanSerializerFactory"
+        deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory"
+        encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+      />
+      <typeMapping
+        xmlns:ns1="http://www.labkey.org/experimentQuery/xml"
+        qname="ns1:Folders"
+        type="java:org.labkey.experiment.ws.experimentQuery.Folders"
+        serializer="org.apache.axis.encoding.ser.BeanSerializerFactory"
+        deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory"
+        encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+      />
+      <typeMapping
+        xmlns:ns1="http://www.labkey.org/experimentQuery/xml"
+        qname="ns1:Group"
+        type="java:org.labkey.experiment.ws.experimentQuery.Group"
+        serializer="org.apache.axis.encoding.ser.BeanSerializerFactory"
+        deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory"
+        encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+      />
+      <typeMapping
+        xmlns:ns1="http://www.labkey.org/experimentQuery/xml"
+        qname="ns1:LogicalOperator"
+        type="java:org.labkey.experiment.ws.experimentQuery.LogicalOperator"
+        serializer="org.apache.axis.encoding.ser.BeanSerializerFactory"
+        deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory"
+        encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+      />
+      <typeMapping
+        xmlns:ns1="http://www.labkey.org/experimentQuery/xml"
+        qname="ns1:Objects"
+        type="java:org.labkey.experiment.ws.experimentQuery.Objects"
+        serializer="org.apache.axis.encoding.ser.BeanSerializerFactory"
+        deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory"
+        encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+      />
+      <typeMapping
+        xmlns:ns1="http://www.labkey.org/experimentQuery/xml"
+        qname="ns1:Predicate"
+        type="java:org.labkey.experiment.ws.experimentQuery.Predicate"
+        serializer="org.apache.axis.encoding.ser.BeanSerializerFactory"
+        deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory"
+        encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+      />
+      <typeMapping
+        xmlns:ns1="http://www.labkey.org/experimentQuery/xml"
+        qname="ns1:Property"
+        type="java:org.labkey.experiment.ws.experimentQuery.Property"
+        serializer="org.apache.axis.encoding.ser.BeanSerializerFactory"
+        deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory"
+        encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+      />
+      <typeMapping
+        xmlns:ns2="http://cpas.fhcrc.org/exp/xml"
+        qname="ns2:ExperimentArchive"
+        type="java:org.fhcrc.cpas.exp.xml.ExperimentArchiveDocument"
+        serializer="org.apache.axis.encoding.ser.xbeans.XmlBeanSerializerFactory"
+        deserializer="org.apache.axis.encoding.ser.xbeans.XmlBeanDeserializerFactory"
+        encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+      />
+      <typeMapping
+        xmlns:ns1="http://www.labkey.org/experimentQuery/xml"
+        qname="ns1:FolderList"
+        type="java:org.labkey.experimentQuery.xml.FolderList"
+        serializer="org.apache.axis.encoding.ser.xbeans.XmlBeanSerializerFactory"
+        deserializer="org.apache.axis.encoding.ser.xbeans.XmlBeanDeserializerFactory"
+        encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+      />
+  </service>
+</deployment>

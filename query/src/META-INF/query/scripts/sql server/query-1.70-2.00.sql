@@ -1,0 +1,1 @@
+UPDATE query.querydef SET metadata = REPLACE(CAST(metadata AS VARCHAR(8000)), 'http://cpas.fhcrc.org/data/xml', 'http://labkey.org/data/xml');

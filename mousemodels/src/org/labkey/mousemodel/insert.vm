@@ -1,0 +1,37 @@
+$!tools.pageFlowUtil.getStrutsError($request, "main")
+$dr.formHeader
+#foreach($row in $dr.rows)
+<table>
+#set($fields = $row.fields)
+$fields.name.formField
+$fields.mouseStrainId.formField
+$fields.targetGeneId.formField
+$fields.genotypeId.formField
+$fields.tumorType.formField
+$fields.penetrance.formField
+$fields.latency.formField
+$fields.metastasis.formField
+$fields.emiceId.formField
+$fields.investigator.formField
+$fields.treatmentId.formField
+$fields.preNecroChem.formField
+$fields.irradDoseId.formField
+$fields.location.formField
+</table>
+The following fields are extra fields that can be used to store information specific to this
+mouse model. To store the extra information give each of the fields a caption. Fields are
+of specific data types indicated.
+<table>
+<tr><td>Type</td><td>Caption</td></tr>
+<tr><td class="ms-searchform">Integer 1</td><td>$fields.int1Caption.inputHtml</td></tr>
+<tr><td class="ms-searchform">Integer 2</td><td>$fields.int2Caption.inputHtml</td></tr>
+<tr><td class="ms-searchform">Integer 3</td><td>$fields.int3Caption.inputHtml</td></tr>
+<tr><td class="ms-searchform">Date 1</td><td>$fields.date1Caption.inputHtml</td></tr>
+<tr><td class="ms-searchform">Date 2</td><td>$fields.date2Caption.inputHtml</td></tr>
+<tr><td class="ms-searchform">Text 1</td><td>$fields.string1Caption.inputHtml</td></tr>
+<tr><td class="ms-searchform">Text 2</td><td>$fields.string2Caption.inputHtml</td></tr>
+<tr><td class="ms-searchform">Text 3</td><td>$fields.string3Caption.inputHtml</td></tr>
+</table>
+#end
+$dr.buttonBar
+$dr.formEnd

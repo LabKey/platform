@@ -1,0 +1,2 @@
+ALTER TABLE exp.list ADD TitleColumn NVARCHAR(200)
+GO

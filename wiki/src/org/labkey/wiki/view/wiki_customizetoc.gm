@@ -1,0 +1,45 @@
+<%@ page import="org.labkey.api.util.PageFlowUtil"%>
+
+<form name= "frmCustomize" method="post" action="${postURL}">
+<input type="hidden" name="pageId" value="${webPart.pageId}">
+<input type="hidden" name="index" value="${webPart.index}">
+
+<table>
+    <tr>
+        <td class="normal">
+        Enter the title for the Wiki TOC web part.
+        </td>
+        <td>
+        <input name="title" type="text" value="<%= webPart.propertyMap.title == null ? "Pages" : filter(webPart.propertyMap.title) %>">
+        </td>
+     </tr>
+    <tr>
+        <td class="normal">
+        Select the path to the folder containing the wiki to display.
+        </td>
+        <td>
+        <select name="webPartContainer">
+            <%
+            for (container in containerList)
+            {
+                if(container == currentContainer && webPart.propertyMap.webPartContainer == null)
+                {%>
+                    <option selected value="<%=container.getId()%>"><%=filter(container.getPath())%></option>
+                <%}
+                else
+                {%>
+                    <option <%=container.getId() == webPart.propertyMap.webPartContainer ? "selected" : "" %> value="<%=container.getId()%>"><%=filter(container.getPath())%></option>
+                <%}
+            }
+            %>
+        </select>
+        </td>
+     </tr>
+<tr>
+    <td colspan=2 align="right">
+        <input type="image" src="<%=PageFlowUtil.submitSrc()%>">
+        <a href="begin.view"><img src="<%=PageFlowUtil.cancelSrc()%>"></a>
+    </td>
+</tr>
+</table>
+</form>

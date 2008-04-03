@@ -1,0 +1,2 @@
+ALTER TABLE study.StudyData
+    ADD COLUMN 	SourceLSID VARCHAR(200) NULL;

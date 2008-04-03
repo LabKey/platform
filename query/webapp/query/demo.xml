@@ -1,0 +1,25 @@
+<query xmlns="http://query.labkey.com/design">
+    <select>
+        <column>
+            <value>
+                <field>foo.bar</field>
+            </value>
+        </column>
+        <column>
+            <value>
+                <field>baz.boo</field>
+            </value>
+        </column>
+        <column alias="Expression">
+            <value>
+                <sql>1 + 2</sql>
+            </value>
+        </column >
+    </select>
+    <where>
+
+    </where>
+    <orderBy>
+        
+    </orderBy>
+</query>

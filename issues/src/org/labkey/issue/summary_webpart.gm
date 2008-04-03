@@ -1,0 +1,27 @@
+#if (hasPermission)
+<table class="dataRegion">
+    <tr><td class="header">User</td><td class="header">Open</td><td class="header">Resolved</td>
+<% for (bug in bugs) { %>
+    <tr>
+      <td>
+      <% if (bug.displayName) { %>
+         <a href="${url}Issues.AssignedTo/DisplayName~eq=${bug.displayName}">${bug.displayName}</a>
+      <% } else { %>
+         <a href="${url}Issues.AssignedTo/DisplayName~isblank"><i>Unassigned</i></a>
+      <% } %>
+      </td>
+    <td align="right">${bug.open}</td>
+    <td align="right">${bug.resolved}</td>
+    </tr>
+<% } %>
+</table>
+[<a href="${url}Issues.Status~eq=open">view open issues</a>]
+#else
+<span class="normal">
+  <% if (isGuest) { %>
+     Please log in to see this data.
+  <% } else { %>
+     You do not have permission to see this data.
+  <% } %>
+</span>
+#end

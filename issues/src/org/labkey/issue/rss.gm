@@ -1,0 +1,23 @@
+<% currentContext.getResponse().setContentType("text/xml");%><rss version="2.0">
+<channel>
+    <title>${app.systemShortName}: Issues - ${PageFlowUtil.filter(container.path)} </title>
+    <link>${homePageUrl}</link>
+    <description>${app.systemShortName}: Issues</description>
+<%
+filteredURL = filter(url);
+for (issue in issues) { %>
+    <item>
+        <title><%=issue.issueId%>: <%=filter(issue.milestone) %> <%=filter(issue.status)%> <%=filter(issue.assignedToName)%> <%=filter(issue.title)%></title>
+        <link><%=filteredURL%><%=issue.issueId%></link>
+        <guid><%=filteredURL%><%=issue.issueId%></guid>
+        <pubDate>${issue.created}</pubDate>
+        <description>
+openedby <%=filter(issue.createdByName)%>
+priority <%=issue.priority%>
+type <%=filter(issue.type)%>
+area <%=filter(issue.area)%>
+        </description>
+    </item>
+<% } %>
+</channel>
+</rss>

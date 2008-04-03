@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+ * Copyright (c) 2003-2005 Fred Hutchinson Cancer Research Center
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+
+ -->
+<ns:tables xsi:schemaLocation="http://labkey.org/data/xml ..\..\..\..\..\schemas\tableInfo.xsd"
+           xmlns:ns="http://labkey.org/data/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <ns:table tableName="ExceptionReport" tableDbType="TABLE">
+        <ns:columns>
+            <ns:column columnName="ExceptionReportId">
+                <ns:columnTitle>Report Id</ns:columnTitle>
+                <ns:isHidden>true</ns:isHidden>
+            </ns:column>
+            <ns:column columnName="ExceptionStackTraceId">
+                <ns:fk>
+                    <ns:fkColumnName>ExceptionStackTraceId</ns:fkColumnName>
+                    <ns:fkTable>ExceptionStackTrace</ns:fkTable>
+                    <ns:fkDbSchema>mothership</ns:fkDbSchema>
+                </ns:fk>
+            </ns:column>
+            <ns:column columnName="Created"/>
+            <ns:column columnName="ServerSessionId"/>
+            <ns:column columnName="URL"/>
+            <ns:column columnName="ReferrerURL"/>
+            <ns:column columnName="Username"/>
+            <ns:column columnName="Browser"/>
+            <ns:column columnName="PageflowName"/>
+            <ns:column columnName="SQLState"/>
+            <ns:column columnName="PageflowAction"/>
+        </ns:columns>
+    </ns:table>
+    <ns:table tableName="ExceptionStackTrace" tableDbType="TABLE">
+        <ns:columns>
+            <ns:column columnName="ExceptionStackTraceId">
+                <ns:isHidden>true</ns:isHidden>
+            </ns:column>
+            <ns:column columnName="StackTrace"/>
+            <ns:column columnName="StackTraceHash"/>
+            <ns:column columnName="Container"/>
+            <ns:column columnName="AssignedTo">
+                <ns:inputType>select</ns:inputType>
+                <ns:fk>
+                    <ns:fkColumnName>UserId</ns:fkColumnName>
+                    <ns:fkTable>Users</ns:fkTable>
+                    <ns:fkDbSchema>core</ns:fkDbSchema>
+                </ns:fk>
+            </ns:column>
+            <ns:column columnName="BugNumber"/>
+            <ns:column columnName="Comments">
+                <ns:inputRows>4</ns:inputRows>
+            </ns:column>
+        </ns:columns>
+    </ns:table>
+    <ns:table tableName="ServerInstallation" tableDbType="TABLE">
+        <ns:columns>
+            <ns:column columnName="ServerInstallationId">
+                <ns:isHidden>true</ns:isHidden>
+            </ns:column>
+            <ns:column columnName="ServerInstallationGUID">
+                <ns:isReadOnly>true</ns:isReadOnly>
+                <ns:isHidden>true</ns:isHidden>
+            </ns:column>
+            <ns:column columnName="Note">
+                <ns:inputLength>80</ns:inputLength>
+            </ns:column>
+            <ns:column columnName="Container"/>
+            <ns:column columnName="SystemDescription">
+                <ns:isReadOnly>true</ns:isReadOnly>
+                <ns:inputLength>60</ns:inputLength>
+            </ns:column>
+            <ns:column columnName="LogoLink">
+                <ns:isReadOnly>true</ns:isReadOnly>
+                <ns:inputLength>60</ns:inputLength>
+            </ns:column>
+            <ns:column columnName="OrganizationName">
+                <ns:isReadOnly>true</ns:isReadOnly>
+                <ns:inputLength>60</ns:inputLength>
+            </ns:column>
+            <ns:column columnName="SystemShortName">
+                <ns:isReadOnly>true</ns:isReadOnly>
+                <ns:inputLength>60</ns:inputLength>
+            </ns:column>
+            <ns:column columnName="ServerIP">
+                <ns:isReadOnly>true</ns:isReadOnly>
+            </ns:column>
+            <ns:column columnName="ServerHostName">
+                <ns:inputLength>60</ns:inputLength>
+                <ns:scale>255</ns:scale>
+                <ns:isReadOnly>true</ns:isReadOnly>
+            </ns:column>
+        </ns:columns>
+        <ns:pkColumnName>ServerInstallationId</ns:pkColumnName>
+        <ns:titleColumn>OrganizationName</ns:titleColumn>
+    </ns:table>
+    <ns:table tableName="ServerInstallationWithSession" tableDbType="VIEW">
+        <ns:columns>
+            <ns:column columnName="ServerInstallationId">
+                <ns:isHidden>true</ns:isHidden>
+            </ns:column>
+            <ns:column columnName="ServerInstallationGUID">
+                <ns:isReadOnly>true</ns:isReadOnly>
+                <ns:isHidden>true</ns:isHidden>
+            </ns:column>
+            <ns:column columnName="Note">
+                <ns:inputLength>80</ns:inputLength>
+            </ns:column>
+            <ns:column columnName="Container"/>
+            <ns:column columnName="SystemDescription">
+                <ns:inputLength>60</ns:inputLength>
+            </ns:column>
+            <ns:column columnName="LogoLink">
+                <ns:inputLength>60</ns:inputLength>
+            </ns:column>
+            <ns:column columnName="OrganizationName">
+                <ns:inputLength>60</ns:inputLength>
+            </ns:column>
+            <ns:column columnName="SystemShortName">
+                <ns:inputLength>60</ns:inputLength>
+            </ns:column>
+            <ns:column columnName="ServerIP"/>
+            <ns:column columnName="ServerHostName">
+                <ns:inputLength>60</ns:inputLength>
+                <ns:scale>255</ns:scale>
+            </ns:column>
+            <ns:column columnName="LastKnownTime"/>
+        </ns:columns>
+        <ns:pkColumnName>ServerInstallationId</ns:pkColumnName>
+        <ns:titleColumn>OrganizationName</ns:titleColumn>
+    </ns:table>
+    <ns:table tableName="ServerSession" tableDbType="TABLE">
+        <ns:columns>
+            <ns:column columnName="ServerSessionId">
+                <ns:isHidden>true</ns:isHidden>
+            </ns:column>
+            <ns:column columnName="ServerInstallationId">
+                <ns:fk>
+                    <ns:fkColumnName>ServerInstallationId</ns:fkColumnName>
+                    <ns:fkTable>ServerInstallation</ns:fkTable>
+                    <ns:fkDbSchema>mothership</ns:fkDbSchema>
+                </ns:fk>
+            </ns:column>
+            <ns:column columnName="ServerSessionGUID"/>
+            <ns:column columnName="EarliestKnownTime">
+                <ns:formatString>DateTime</ns:formatString>
+            </ns:column>
+            <ns:column columnName="LastKnownTime">
+                <ns:formatString>DateTime</ns:formatString>
+            </ns:column>
+            <ns:column columnName="Container"/>
+            <ns:column columnName="SVNRevision">
+                <ns:columnTitle>Rev</ns:columnTitle>
+                <ns:fk>
+                    <ns:fkTable>SoftwareRelease</ns:fkTable>
+                    <ns:fkColumnName>SVNRevision</ns:fkColumnName>
+                </ns:fk>
+            </ns:column>
+            <ns:column columnName="DatabaseProductName">
+                <ns:columnTitle>DB Name</ns:columnTitle>
+            </ns:column>
+            <ns:column columnName="DatabaseProductVersion">
+                <ns:columnTitle>DB Version</ns:columnTitle>
+            </ns:column>
+            <ns:column columnName="DatabaseDriverName">
+                <ns:columnTitle>JDBC Name</ns:columnTitle>
+            </ns:column>
+            <ns:column columnName="DatabaseDriverVersion">
+                <ns:columnTitle>JDBC Version</ns:columnTitle>
+            </ns:column>
+            <ns:column columnName="RuntimeOS"/>
+            <ns:column columnName="JavaVersion"/>
+            <ns:column columnName="LDAPEnabled"/>
+            <ns:column columnName="EnterprisePipelineEnabled"/>
+            <ns:column columnName="UserCount"/>
+            <ns:column columnName="ActiveUserCount"/>
+            <ns:column columnName="ProjectCount"/>
+            <ns:column columnName="ContainerCount"/>
+            <ns:column columnName="AdministratorEmail"/>
+        </ns:columns>
+    </ns:table>
+
+    <ns:table tableName="ExceptionSummary" tableDbType="VIEW">
+        <ns:columns>
+            <ns:column columnName="ExceptionStackTraceId">
+                <ns:columnTitle>Id</ns:columnTitle>
+            </ns:column>
+            <ns:column columnName="StackTrace">
+                <ns:textAlign>left</ns:textAlign>
+            </ns:column>
+            <ns:column columnName="Container"/>
+            <ns:column columnName="MaxSVNRevision">
+                <ns:columnTitle>Max Rev</ns:columnTitle>
+                <ns:fk>
+                    <ns:fkTable>SoftwareRelease</ns:fkTable>
+                    <ns:fkColumnName>SVNRevision</ns:fkColumnName>
+                </ns:fk>
+            </ns:column>
+            <ns:column columnName="MinSVNRevision">
+                <ns:columnTitle>Min Rev</ns:columnTitle>
+                <ns:fk>
+                    <ns:fkTable>SoftwareRelease</ns:fkTable>
+                    <ns:fkColumnName>SVNRevision</ns:fkColumnName>
+                </ns:fk>
+            </ns:column>
+            <ns:column columnName="Instances"/>
+            <ns:column columnName="FirstReport">
+                <ns:columnTitle>First</ns:columnTitle>
+            </ns:column>
+            <ns:column columnName="LastReport">
+                <ns:columnTitle>Last</ns:columnTitle>
+            </ns:column>
+            <ns:column columnName="BugNumber">
+                <ns:columnTitle>Bug</ns:columnTitle>
+            </ns:column>
+            <ns:column columnName="AssignedTo">
+                <ns:fk>
+                    <ns:fkColumnName>UserId</ns:fkColumnName>
+                    <ns:fkTable>Users</ns:fkTable>
+                    <ns:fkDbSchema>core</ns:fkDbSchema>
+                </ns:fk>
+            </ns:column>
+        </ns:columns>
+    </ns:table>
+
+    <ns:table tableName="SoftwareRelease" tableDbType="TABLE">
+        <ns:titleColumn>Description</ns:titleColumn>
+        <ns:columns>
+            <ns:column columnName="ReleaseId" />
+            <ns:column columnName="SVNRevision">
+                <ns:columnTitle>Revision</ns:columnTitle>
+            </ns:column>
+            <ns:column columnName="Description" />
+            <ns:column columnName="Container" />
+        </ns:columns>
+    </ns:table>
+
+    <ns:table tableName="ExceptionReportSummary" tableDbType="VIEW">
+        <ns:columns>
+            <ns:column columnName="SVNRevision">
+                <ns:columnTitle>Rev</ns:columnTitle>
+                <ns:fk>
+                    <ns:fkTable>SoftwareRelease</ns:fkTable>
+                    <ns:fkColumnName>SVNRevision</ns:fkColumnName>
+                </ns:fk>
+            </ns:column>
+            <ns:column columnName="DatabaseProductName">
+                <ns:columnTitle>DB Name</ns:columnTitle>
+            </ns:column>
+            <ns:column columnName="DatabaseProductVersion">
+                <ns:columnTitle>DB Version</ns:columnTitle>
+            </ns:column>
+            <ns:column columnName="DatabaseDriverName">
+                <ns:columnTitle>JDBC Name</ns:columnTitle>
+            </ns:column>
+            <ns:column columnName="DatabaseDriverVersion">
+                <ns:columnTitle>JDBC Version</ns:columnTitle>
+            </ns:column>
+            <ns:column columnName="RuntimeOS"/>
+            <ns:column columnName="JavaVersion"/>
+            <ns:column columnName="ServerSessionGUID"/>
+            <ns:column columnName="ExceptionReportId">
+                <ns:columnTitle>Report Id</ns:columnTitle>
+            </ns:column>
+            <ns:column columnName="ExceptionStackTraceId"/>
+            <ns:column columnName="Created">
+                <ns:formatString>DateTime</ns:formatString>
+            </ns:column>
+            <ns:column columnName="ServerSessionId"/>
+            <ns:column columnName="ReferrerURL"/>
+            <ns:column columnName="PageflowName"/>
+            <ns:column columnName="PageflowAction"/>
+            <ns:column columnName="URL"/>
+            <ns:column columnName="Username"/>
+            <ns:column columnName="Browser"/>
+            <ns:column columnName="StackTrace"/>
+            <ns:column columnName="SQLState"/>
+        </ns:columns>
+    </ns:table>
+</ns:tables>

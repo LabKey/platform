@@ -1,0 +1,140 @@
+package org.labkey.study.model;
+
+import org.labkey.api.data.Container;
+import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.Attachment;
+
+import java.util.Date;
+import java.util.Collection;
+import java.io.File;
+
+/**
+ * User: brittp
+ * Date: Feb 24, 2006
+ * Time: 1:56:09 PM
+ */
+public class SampleRequestEvent extends AbstractStudyCachable<SampleRequestEvent> implements AttachmentParent
+{
+    private int _rowId;
+    private String _entityId;
+    private int _createdBy;
+    private long _created;
+    private Container _container;
+    private int _requestId;
+    private Integer _requirementId;
+    private String _comments;
+    private String _entryType;
+
+    public String getComments()
+    {
+        return _comments;
+    }
+
+    public void setComments(String comments)
+    {
+        verifyMutability();
+        _comments = comments;
+    }
+
+    public Container getContainer()
+    {
+        return _container;
+    }
+
+    public String getContainerId()
+    {
+        return _container.getId();
+    }
+
+    public void setContainer(Container container)
+    {
+        verifyMutability();
+        _container = container;
+    }
+
+    public void setAttachments(Collection<Attachment> attachments)
+    {
+    }
+
+    public Date getCreated()
+    {
+        return new Date(_created);
+    }
+
+    public void setCreated(Date created)
+    {
+        verifyMutability();
+        _created = created.getTime();
+    }
+
+    public int getCreatedBy()
+    {
+        return _createdBy;
+    }
+
+    public void setCreatedBy(int createdBy)
+    {
+        verifyMutability();
+        _createdBy = createdBy;
+    }
+
+    public String getEntityId()
+    {
+        return _entityId;
+    }
+
+    public void setEntityId(String entityId)
+    {
+        verifyMutability();
+        _entityId = entityId;
+    }
+
+    public String getEntryType()
+    {
+        return _entryType;
+    }
+
+    public void setEntryType(String entryType)
+    {
+        verifyMutability();
+        _entryType = entryType;
+    }
+
+    public int getRequestId()
+    {
+        return _requestId;
+    }
+
+    public void setRequestId(int requestId)
+    {
+        verifyMutability();
+        _requestId = requestId;
+    }
+
+    public Object getPrimaryKey()
+    {
+        return getRowId();
+    }
+
+    public int getRowId()
+    {
+        return _rowId;
+    }
+
+    public void setRowId(int rowId)
+    {
+        verifyMutability();
+        _rowId = rowId;
+    }
+
+    public Integer getRequirementId()
+    {
+        return _requirementId;
+    }
+
+    public void setRequirementId(Integer requirementId)
+    {
+        verifyMutability();
+        _requirementId = requirementId;
+    }
+}

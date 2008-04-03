@@ -1,0 +1,3 @@
+ALTER TABLE study.StudyData
+    ADD SourceLSID VARCHAR(200) NULL
+GO

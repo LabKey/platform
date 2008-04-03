@@ -1,0 +1,2 @@
+-- placeholder schema script to ensure that next schema change picks a higher schema number than 1.61
+-- so that afterSchemaUpgrade gets called after 1.604 has been run and doesn't skip over subsequent schema changes

@@ -1,0 +1,73 @@
+<%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.wiki.WikiManager"%>
+<!--wiki-->
+<table width="100%" cellpadding=0>
+    <tr><td align=left class="normal" colspan="2">
+<%
+if (!hasReadPermission)
+{
+    if (user.isGuest())
+    {
+        %>Please log in to see this data.<%
+    }
+    else
+    {
+        %>You do not have permission to see this data.<%
+    }%>
+    </td></tr></table>
+
+<%}
+else
+{
+    String formattedHtml = wikiversion.getHtml(container, wiki);
+    if (!wikiversion || null == formattedHtml)
+    {
+        %>This page has no content.<%
+    }
+
+    else
+    {
+        out.print(formattedHtml);
+
+        %><br><br></td></tr> <%
+
+        def nCurVersion = wikiversion.getVersion();
+        def nLatestVersion = wiki.latestVersion().getVersion();
+        def fOutputMakeCurrent = hasSetCurVersionPermission && (nCurVersion != nLatestVersion);
+
+        if(fOutputMakeCurrent)
+        {
+            %><tr><td align=right class="normal" colspan="2"><form method=POST action="<%=filter(makeCurrentLink)%>"><input type=image border="0" src="<%=PageFlowUtil.buttonSrc('Make Current')%>"></form></td></tr><%
+        }%>
+
+       <tr style="height:1;"><td colspan=2 class=ms-titlearealine><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
+       <tr>
+           <td align=left class="normal">
+               <i>created by:</i> <%=createdBy%><br>
+               <i>date:</i> <%=created%><br>
+           </td>
+           <td align=right class="normal">
+               [<a class="link" href="<%=filter(pageLink)%>">page</a>]&nbsp;
+               [<a class="link" href="<%=filter(versionsLink)%>">history</a>]&nbsp;<%
+
+        out.print("&nbsp;[versions:");
+
+        def versions = WikiManager.getAllVersions(wiki);
+        for (v in versions)
+        {
+            def n = v.getVersion();
+            if (n == wikiversion.getVersion())
+            {%>
+               <b><%=n%></b><%
+            }
+            else
+            {%>
+                <a class="link" href="<%=versionLink + "&version=" + n%>"><%=n%></a><%
+            }
+        }
+        out.print("]");
+    }%>
+    </td></tr></table>
+    <%
+}%>
+<!--/wiki-->

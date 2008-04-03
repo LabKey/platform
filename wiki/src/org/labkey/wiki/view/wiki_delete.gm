@@ -1,0 +1,4 @@
+Are you sure you want to delete this page?
+<p/>
+<b>name: <%=filter(wiki.name)%></b><br/>
+<b>title: <%=filter(wiki.latestVersion().title)%></b>

@@ -1,0 +1,105 @@
+package org.labkey.study.plate.query;
+
+import org.labkey.api.query.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.security.User;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.study.PlateQueryView;
+import org.labkey.api.study.WellGroup;
+import org.labkey.api.study.PlateService;
+import org.labkey.api.study.PlateTemplate;
+import org.labkey.study.StudySchema;
+
+import java.util.Set;
+import java.util.HashSet;
+import java.sql.SQLException;
+
+/**
+ * User: brittp
+ * Date: Nov 1, 2006
+ * Time: 4:33:11 PM
+ */
+public class PlateSchema extends UserSchema
+{
+    public static final String SCHEMA_NAME = "plate";
+
+    static public class Provider extends DefaultSchema.SchemaProvider
+    {
+        public QuerySchema getSchema(DefaultSchema schema)
+        {
+            try
+            {
+                PlateTemplate[] templates = PlateService.get().getPlateTemplates(schema.getContainer());
+                if (templates != null && templates.length > 0)
+                    return new PlateSchema(schema.getUser(), schema.getContainer());
+                else
+                    return null;
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
+        }
+    }
+
+    public PlateSchema(User user, Container container)
+    {
+        super(SCHEMA_NAME, user, container, StudySchema.getInstance().getSchema());
+    }
+
+    public Set<String> getTableNames()
+    {
+        Set<String> tableSet = new HashSet<String>();
+        tableSet.add("Plate");
+        tableSet.add("WellGroup");
+        for (WellGroup.Type type : WellGroup.Type.values())
+            tableSet.add("WellGroup_" + type.name());
+        return tableSet;
+    }   
+
+    public static PlateQueryView createPlateQueryView(ViewContext context, SimpleFilter filter)
+    {
+        String name = "Plate";
+        QuerySettings settings = new QuerySettings(context.getActionURL(), name);
+        settings.setSchemaName(SCHEMA_NAME);
+        settings.setQueryName(name);
+        return new PlateQueryViewImpl(context, settings, filter);
+    }
+
+    public static PlateQueryView createWellGroupQueryView(ViewContext context, SimpleFilter filter, WellGroup.Type type)
+    {
+        String name = "WellGroup";
+        if (type != null)
+            name += "_" + type.name();
+
+        QuerySettings settings = new QuerySettings(context.getActionURL(), name);
+        settings.setSchemaName(SCHEMA_NAME);
+        settings.setQueryName(name);
+        return new PlateQueryViewImpl(context, settings, filter);
+    }
+
+    public static PlateQueryView createWellGroupQueryView(ViewContext context, SimpleFilter filter)
+    {
+        return createWellGroupQueryView(context, filter, null);
+    }
+
+    @Override
+    public TableInfo getTable(String name, String alias)
+    {
+        if (name.equals("Plate"))
+            return new PlateTable(this);
+        else if (name.equals("WellGroup"))
+            return new WellGroupTable(this, null);
+        else if (name.startsWith("WellGroup_"))
+        {
+            String typeName = name.substring("WellGroup_".length());
+            return new WellGroupTable(this, WellGroup.Type.valueOf(typeName));
+        }
+        else
+            return super.getTable(name, alias);
+    }
+
+}

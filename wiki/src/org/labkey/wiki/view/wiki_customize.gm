@@ -1,0 +1,226 @@
+<%@ page import="org.labkey.api.util.PageFlowUtil"%>
+
+<%
+    //build array of containers/wiki lists
+    def construct = "var m = new Object();\n";
+    for (entry in mapEntries.entrySet())
+    {
+       construct += "m[\"" + entry.getKey().getId() + "\"] = ";
+       construct += "null;\n";
+    }
+%>
+
+
+
+<script type="text/javascript">
+LABKEY.requiresClientAPI(); //for Ext AJAX object
+
+//output variable definition for array of containers/pages
+${construct}
+
+//store current container id on client
+var currentContainerId = "${currentContainer.getId()}";
+
+function updatePageList()
+{
+    //get selection value
+    var containerId = document.forms[0].webPartContainer.value;
+    var wikiPageList = m[containerId];
+
+    if(null != wikiPageList)
+        loadPages(wikiPageList);
+    else
+    {
+        //disable the submit button while we're fetching the list of pages
+        disableSubmit();
+
+        //show a "loading..." option while AJAX request is happening
+        var select = document.forms[0].name;
+        select.options.length = 0;
+        o = new Option("loading...", "", true, true);
+        select.options[select.options.length] = o;
+
+        Ext.Ajax.request({
+            url: LABKEY.ActionURL.buildURL("wiki", "getPages"),
+            success: onSuccess,
+            failure: onError,
+            method: 'GET',
+            params: {'id' : containerId}
+        })
+    }
+    return true;
+}
+
+function loadPages(wikiPageList)
+{
+    var select = document.forms[0].name;
+    if(null == select)
+        return;
+
+    select.options.length = 0;
+    var text;
+    var fDefaultSelected;
+    var o;
+
+    if(wikiPageList != null)
+    {
+        for(var i = 0; i < wikiPageList.length; i++)
+        {
+            text = wikiPageList[i].name + " (" + wikiPageList[i].title + ")";
+            fDefaultSelected = wikiPageList[i].name.toLowerCase() == "default";
+            o = new Option(text, wikiPageList[i].name, fDefaultSelected, fDefaultSelected);
+            select.options[select.options.length] = o;
+        }
+    }
+    else
+    {
+        o = new Option("<no pages>", "", true, true);
+        select.options[select.options.length] = o;
+    }
+
+    //re-enable the submit button while we're fetching the list of pages
+    enableSubmit();
+}
+
+function enableSubmit()
+{
+    var btn = document.getElementById("btnSubmit");
+    btn.src = "<%=PageFlowUtil.buttonSrc("Submit")%>";
+    btn.disabled = false;
+}
+
+function disableSubmit()
+{
+    var btn = document.getElementById("btnSubmit");
+    btn.disabled = true;
+    btn.src = "<%=PageFlowUtil.buttonSrc("Submit", "disabled")%>";
+}
+
+function onSuccess(response, config)
+{
+    //parse the response text as JSON
+    var json = Ext.util.JSON.decode(response.responseText);
+    if(null != json)
+    {
+        //add the page list to the global map so that we don't need to fetch it again
+        m[config.params.id] = json.pages;
+        loadPages(json.pages);
+    }
+    else
+        window.alert("Unable to parse the response from the server!");
+}
+
+function onError(response, config)
+{
+    if(response.status >= 500 && response.status <= 599)
+    {
+        //exception thrown within the server
+        //parse the response text as JSON
+        var json = Ext.util.JSON.decode(response.responseText);
+        window.alert("The server experienced the following error: " + json.exception);
+    }
+    else if(response.status >= 400 && response.status <= 499)
+    {
+        //invalid container id
+        var json = Ext.util.JSON.decode(response.responseText);
+        window.alert("The server could not find the selected project or folder: " + json.exception);
+    }
+    else
+        window.alert("Problem communicating with the server: " + response.statusText + " (" + response.status + ")");
+
+    var select = document.forms[0].name;
+    select.options.length = 0;
+    o = new Option("<error getting pages>", "", true, true);
+    select.options[select.options.length] = o;
+
+}
+
+function restoreDefaultPage()
+{
+    //set webPartContainer select value to current container
+    document.forms[0].webPartContainer.value = currentContainerId;
+    updatePageList();
+}
+</script>
+
+
+<form name= "frmCustomize" method="post" action="${postURL}">
+<input type="hidden" name="pageId" value="${webPart.pageId}">
+<input type="hidden" name="index" value="${webPart.index}">
+
+<table cellpadding="2">
+    <tr>
+        <td colspan="2" class="normal">
+            To display a different wiki page in this web part, first select the folder containing the page
+            you want to display, then select the name of the page.<br><br>
+        </td>
+    </tr>
+    <tr>
+        <td class="normal" width="20%" nowrap="1">
+        Folder containing the page to display:
+        </td>
+        <td width="80%">
+        <select name="webPartContainer" onChange="updatePageList();">
+            <%
+            for (container in containerList)
+            {
+                //if there's no property setting for container, select the current container.
+                if(container.getId() == currentContainer.getId() && webPart.propertyMap.webPartContainer == null)
+                {%>
+                    <option selected value="<%=container.getId()%>"><%=filter(container.getPath())%></option>
+                <%}
+                else
+                {%>
+                    <option <%=container.getId() == webPart.propertyMap.webPartContainer ? "selected" : "" %> value="<%=container.getId()%>"><%=filter(container.getPath())%></option>
+                <%}
+            }
+            %>
+        </select>
+        [<a href="javascript:restoreDefaultPage();">Reset to Folder Default Page</a>]
+        </td>
+     </tr>
+    <tr>
+        <td class="normal" width="20%" nowrap="1">
+        Name and title of the page to display:
+        </td>
+        <td width="80%">
+        <select name="name">
+            <%
+            //if current container has no pages
+            if(null == containerWikiList || containerWikiList.size() == 0)
+            {%>
+                <option selected value="">&lt;no pages&gt;</option>
+            <%}
+            else
+            {
+                for (wikipage in containerWikiList)
+                {
+                    //if there's a "default" page and no other page has been selected as default, select it.
+                    if (wikipage.getName().toLowerCase() == "default" && webPart.propertyMap.name == null)
+                    {%>
+                        <option selected value="<%=filter(wikipage.getName())%>"><%=filter(wikipage.getName()) + " (" + filter(wikipage.latestVersion().getTitle()) + ")"%></option>
+                    <%}
+                    else
+                    {%>
+                        <option <%= wikipage.getName() == webPart.propertyMap.name ? "selected" : "" %> value="<%=filter(wikipage.getName())%>"><%=filter(wikipage.getName()) + " (" + filter(wikipage.latestVersion().getTitle()) + ")"%></option>
+                    <%}
+                }
+            }%>
+        </select>
+        </td>
+    </tr>
+<tr>
+    <td colspan="2" align="left">
+        <table>
+            <tr>
+                <td align="left">
+                    <input name="Submit" type="image" src="<%=PageFlowUtil.submitSrc()%>" value="Submit" id="btnSubmit">
+                    <a href="begin.view"><img src="<%=PageFlowUtil.cancelSrc()%>"></a>
+                </td>
+            </tr>
+        </table>
+
+    </td>
+</tr>
+</table>
+</form>

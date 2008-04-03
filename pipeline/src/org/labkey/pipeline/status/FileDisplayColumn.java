@@ -1,0 +1,127 @@
+/*
+ * Copyright (c) 2005 LabKey Software, LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.labkey.pipeline.status;
+
+import org.labkey.api.data.SimpleDisplayColumn;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.pipeline.PipelineProvider;
+import org.labkey.api.pipeline.PipelineService;
+
+import java.io.*;
+import java.util.Map;
+import java.util.Arrays;
+
+/**
+ * FileDisplayColumn class
+ * <p/>
+ * Created: Oct 25, 2005
+ *
+ * @author bmaclean
+ */
+public class FileDisplayColumn extends SimpleDisplayColumn
+{
+    public FileDisplayColumn()
+    {
+        super();
+        setCaption("Files");
+    }
+
+    public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
+    {
+        String[] fileNames = null;
+        File dir = null;
+
+        Map cols = ctx.getRow();
+        Integer rowIdI = (Integer) cols.get("rowId");
+        String filePath = (String) cols.get("filePath");
+        String providerName = (String) cols.get("provider");
+        if (rowIdI != null && filePath != null && filePath.length() > 0)
+        {
+            File f = new File(filePath);
+            dir = f.getParentFile();
+
+            if (NetworkDrive.exists(dir))
+            {
+                // calculate base name of the .status file
+                String statusName = f.getName();
+
+                // remove .status
+                final String basename = statusName.substring(0, statusName.lastIndexOf('.'));
+                final PipelineProvider provider = PipelineService.get().getPipelineProvider(providerName);
+
+                // get files with .log, or same basename and .out
+                fileNames = dir.list(
+                        new FilenameFilter()
+                        {
+                            public boolean accept(File dir, String name)
+                            {
+                                if (provider != null)
+                                    return provider.isStatusViewableFile(name, basename);
+
+                                return StatusController.isVisibleFile(name, basename);
+                            }
+                        }
+                );
+            }
+        }
+
+        if (fileNames == null || fileNames.length == 0)
+        {
+            out.write("&nbsp;");
+        }
+        else
+        {
+            Arrays.sort(fileNames);
+            for (int i = 0; i < fileNames.length; i++)
+            {
+                final String fileName = fileNames[i];
+
+                // make sure the files can be open for read
+                FileInputStream fis = null;
+                try
+                {
+                    fis = new FileInputStream(new File(dir, fileName));
+                    out.write("<a href=\"");
+                    out.write(PageFlowUtil.filter("showFile.view?filename=" + PageFlowUtil.encode(fileName) + "&rowId=" + rowIdI));
+                    out.write("\">");
+                    out.write(PageFlowUtil.filter(fileName));
+                    out.write("</a><br>\n");
+                }
+                catch (IOException e)
+                {
+                    out.write(PageFlowUtil.filter(fileName));
+                    out.write("<br>\n");
+                }
+                finally
+                {
+                    if (fis != null)
+                    {
+                        try
+                        {
+                            fis.close();
+                        }
+                        catch (Exception e)
+                        {
+                        }
+                    }
+                }
+
+            }
+        }
+    }
+}

@@ -1,0 +1,198 @@
+#macro(sampleTypeDropDown $i $sample)
+<select name="samples[$i].tissueId" onkeypress="return selectKeyPress()" onkeydown="return selectKeyDown()">
+  <option value="0">&lt;none&gt;</option>
+#foreach($type in $sampleTypes)
+  <option value="$type.name" #if($sample.tissueId.toString() == $type.name)selected#end>$tools.filter($type.object)</option>
+#end
+</select>
+#end
+
+$!tools.pageFlowUtil.getStrutsError($request, "main")
+<script src="$request.getContextPath()/select.js"></script>
+<form action=submitNecropsy.post method=post />
+<table>
+<tr>
+<td>
+Mouse:
+#if($mouse)
+<input type=hidden name="mouseEntityId" value="$!mouse.entityId"/><b>$!mouse.mouseNo</b>
+#else
+<input type=text name="mouseNo" value="$!form.mouseNo"/>
+#end
+
+<input type=hidden name=taskId value="$!taskId">
+<input type=hidden name="modelId" value="$modelId"/>
+</td>
+<td align=right>Necropsy Date <input name="collectionDateString" onchange="setDate()" id="collectionDate" value="$!collectionDate"/>
+</td>
+</tr>
+<tr>
+<td>
+Sample Numbering Style: <br>
+&nbsp;&nbsp;<input id=numberStyleManual type=radio name=numberStyle checked value=0 ><span id="prefix">Date</span>-<b>XXX</b>
+&nbsp;&nbsp;<input id=numberStyleBarCode type=radio name=numberStyle value=1 >Full Entry (bar-code reader)
+<script>
+function setDate()
+{
+var elem = document.getElementById("collectionDate");
+var d = new Date(elem.value);
+var month = d.getMonth() + 1;
+var year = d.getYear();
+var day = d.getDate();
+var monthStr = month < 10 ? "0" + month : "" + month;
+var dayStr = day < 10 ? "0" + day : "" + day;
+var yearStr = year < 10 ? "0" + year : "" + year;
+var prefix = monthStr + dayStr + yearStr;
+
+elem = document.getElementById("prefix");
+elem.innerHTML = prefix;
+}
+setDate();
+</script>
+<br>
+</td>
+</tr>
+<tr>
+<td colspan=2>
+<br>Appearance and Behavior<br>
+<textarea rows=4 cols=60 name=appearance>
+</textarea></td>
+</tr>
+<tr>
+<td colspan=2>
+Gross Findings<br>
+<textarea rows=4 cols=60 name=grossFindings>
+</textarea>
+</td>
+</tr>
+</table>
+Specimens
+<table>
+<tr><td align=center class=header>ID#</td>
+<!-- <td align=center class=header>Sub-Ids<br>(e.g. a-c,d)</td>-->
+<td align=center class=header>Tissue</td>
+<td align=center class=header>Fix</td><td align=center class=header>Frozen</td>
+<td align=center class=header>Freezer</td>
+<td align=center class=header>Rack</td>
+<td align=center class=header>Box</td>
+<td align=center class=header>Slot</td>
+<td align=center class=header>Notes</td></tr>
+#set($i = 0)
+#foreach($sample in $samples)
+<tr>
+    <td><input type=text size=8 value="$!sample.sampleId" name="samples[$i].sampleId" id="samples[$i].sampleId" onfocus="guessSampleId(this)" onblur="updateSampleId(this)"/></td>
+    <!-- <td><input type=text size=6 value="$!sample.aliquots" name="samples[$i].aliquots" id="samples[$i].aliquots" /></td>-->
+    <td>#sampleTypeDropDown($i $sample)</td>
+    <td><input type=checkbox size=8 name="samples[$i].fixed" #if($sample.fixed)checked#end value="true"/></td>
+    <td><input type=checkbox size=8 name="samples[$i].frozen" #if($sample.frozen)checked#end value="true"/></td>
+    <td><input type=text size=8 value="$!sample.freezer" name="samples[$i].freezer" onfocus="guessDefault(this, 'freezer')" onblur="updateDefault(this, 'freezer')"/></td>
+    <td><input type=text size=3 value="$!sample.rack" name="samples[$i].rack" onfocus="guessDefault(this, 'rack')" onblur="updateDefault(this, 'rack')"/></td>
+    <td><input type=text size=3 value="$!sample.box" name="samples[$i].box" onfocus="guessDefault(this, 'box')" onblur="updateDefault(this, 'box')"/></td>
+    <td><input type=text size=3 value="#if($sample.cell > 0) $sample.cell#end" name="samples[$i].cell" onfocus="guessDefault(this, 'cell', true)" onblur="updateDefault(this, 'cell')"/></td>
+    <td><input type=text size=40 name="samples[$i].description" value="$tools.filter($sample.description)"/></td>
+</tr>    
+#set($i = $i + 1)
+#end
+</table>
+<input type=image name=submit src='$tools.buttonSrc("Submit")'>
+</form>
+<script>
+var nextSampleId=$nextSampleId;
+var sampleCount = $i;
+function guessSampleId(elem)
+    {
+    var radioNumberStyle = document.getElementById("numberStyleManual");
+    if (!radioNumberStyle.checked)
+        return;
+
+    if (elem.value == null || elem.value == "")
+        {
+        elem.value = nextSampleId;
+        nextSampleId++;
+        }
+    }
+
+function updateSampleId(elem)
+    {
+    var radioNumberStyle = document.getElementById("numberStyleManual");
+    if (!radioNumberStyle.checked)
+        return;
+
+    if (elem.value != null && elem.value != "")
+        {
+        var val = Number(elem.value);
+        if (val != Number.NaN)
+            nextSampleId = val + 1;
+        }
+    }
+
+
+var defaults = {freezer:null, rack:null, cell:null, box:null, location:null}
+
+function updateDefault(elem, name)
+  {
+  window.status = elem.value;
+  defaults[name] = elem.value;
+  }
+
+function guessDefault(elem, name, increment)
+  {
+  if (elem.value != null && elem.value.length > 0)
+    return;
+
+  var val = defaults[name];
+  if (val == null)
+    return;
+
+  if (increment)
+  {
+    val = parseInt(val);
+    if (isNaN(val))
+      return;
+    val += 1;
+  }
+
+  window.status = val;
+  elem.value = val;
+  }
+
+/*
+function updateAliquots()
+{
+    var radioNumberStyle = document.getElementById("numberStyleManual");
+    if (!radioNumberStyle.checked)
+    {
+        var i;
+        for(i = 0; i < sampleCount; i++)
+        {
+          var sampleInput = document.getElementById("samples[" + i + "].sampleId");
+          if (null == sampleInput)
+            {
+              alert("null == sampleInput: " + "samples[" + i + "].sampleId");
+              continue;
+              }
+          sampleInput.size = 12;
+          var aliquotInput = document.getElementById("samples[" + i + "].aliquots");
+          if (null == aliquotInput)
+            continue;
+          aliquotInput.disabled = true;
+          aliquotInput.value = "";
+        }
+    }
+    else
+    {
+        for(i = 0; i < sampleCount; i++)
+        {
+          var sampleInput = document.getElementById("samples[" + i + "].sampleId");
+          if (null == sampleInput)
+              continue;
+          sampleInput.size = 8;
+          var aliquotInput = document.getElementById("samples[" + i + "].aliquots");
+          if (null == aliquotInput)
+            continue;
+          aliquotInput.disabled = false;
+        }
+    }
+}
+*/
+</script>

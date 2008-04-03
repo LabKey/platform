@@ -1,0 +1,609 @@
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+xmlns:w="urn:schemas-microsoft-com:office:word"
+xmlns="http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=windows-1252">
+<meta name=ProgId content=Word.Document>
+<meta name=Generator content="Microsoft Word 11">
+<meta name=Originator content="Microsoft Word 11">
+<link rel=File-List href="readme_files/filelist.xml">
+<title>Sample Code for Combining Assays with Xars </title>
+<!--[if gte mso 9]><xml>
+ <w:WordDocument>
+  <w:Zoom>110</w:Zoom>
+  <w:SpellingState>Clean</w:SpellingState>
+  <w:GrammarState>Clean</w:GrammarState>
+  <w:ValidateAgainstSchemas/>
+  <w:SaveIfXMLInvalid>false</w:SaveIfXMLInvalid>
+  <w:IgnoreMixedContent>false</w:IgnoreMixedContent>
+  <w:AlwaysShowPlaceholderText>false</w:AlwaysShowPlaceholderText>
+  <w:BrowserLevel>MicrosoftInternetExplorer4</w:BrowserLevel>
+ </w:WordDocument>
+</xml><![endif]--><!--[if gte mso 9]><xml>
+ <w:LatentStyles DefLockedState="false" LatentStyleCount="156">
+ </w:LatentStyles>
+</xml><![endif]-->
+<style>
+<!--
+ /* Style Definitions */
+ p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{mso-style-parent:"";
+	margin:0in;
+	margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:12.0pt;
+	font-family:"Times New Roman";
+	mso-fareast-font-family:"Times New Roman";}
+h2
+	{margin-top:12.0pt;
+	margin-right:0in;
+	margin-bottom:3.0pt;
+	margin-left:0in;
+	mso-pagination:widow-orphan;
+	page-break-after:avoid;
+	mso-outline-level:2;
+	font-size:14.0pt;
+	font-family:Arial;
+	font-style:italic;}
+h3
+	{margin-top:12.0pt;
+	margin-right:0in;
+	margin-bottom:3.0pt;
+	margin-left:0in;
+	mso-pagination:widow-orphan;
+	page-break-after:avoid;
+	mso-outline-level:3;
+	font-size:13.0pt;
+	font-family:Arial;}
+a:link, span.MsoHyperlink
+	{color:blue;
+	text-decoration:underline;
+	text-underline:single;}
+a:visited, span.MsoHyperlinkFollowed
+	{color:purple;
+	text-decoration:underline;
+	text-underline:single;}
+span.SpellE
+	{mso-style-name:"";
+	mso-spl-e:yes;}
+span.GramE
+	{mso-style-name:"";
+	mso-gram-e:yes;}
+@page Section1
+	{size:8.5in 11.0in;
+	margin:1.0in 1.25in 1.0in 1.25in;
+	mso-header-margin:.5in;
+	mso-footer-margin:.5in;
+	mso-paper-source:0;}
+div.Section1
+	{page:Section1;}
+ /* List Definitions */
+ @list l0
+	{mso-list-id:198905195;
+	mso-list-template-ids:1005333896;}
+@list l0:level1
+	{mso-level-start-at:9;
+	mso-level-tab-stop:.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l0:level2
+	{mso-level-start-at:5;
+	mso-level-number-format:alpha-lower;
+	mso-level-tab-stop:1.0in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l0:level3
+	{mso-level-tab-stop:1.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l0:level4
+	{mso-level-tab-stop:2.0in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l0:level5
+	{mso-level-tab-stop:2.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l0:level6
+	{mso-level-tab-stop:3.0in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l0:level7
+	{mso-level-tab-stop:3.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l0:level8
+	{mso-level-tab-stop:4.0in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l0:level9
+	{mso-level-tab-stop:4.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l1
+	{mso-list-id:798688249;
+	mso-list-template-ids:1005333896;}
+@list l1:level1
+	{mso-level-tab-stop:.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l1:level2
+	{mso-level-number-format:alpha-lower;
+	mso-level-tab-stop:1.0in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l1:level3
+	{mso-level-tab-stop:1.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l1:level4
+	{mso-level-tab-stop:2.0in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l1:level5
+	{mso-level-tab-stop:2.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l1:level6
+	{mso-level-tab-stop:3.0in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l1:level7
+	{mso-level-tab-stop:3.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l1:level8
+	{mso-level-tab-stop:4.0in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l1:level9
+	{mso-level-tab-stop:4.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l2
+	{mso-list-id:1661886161;
+	mso-list-template-ids:-1598923376;}
+@list l2:level1
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	mso-ansi-font-size:10.0pt;
+	font-family:Symbol;}
+@list l2:level2
+	{mso-level-tab-stop:1.0in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l2:level3
+	{mso-level-tab-stop:1.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l2:level4
+	{mso-level-tab-stop:2.0in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l2:level5
+	{mso-level-tab-stop:2.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l2:level6
+	{mso-level-tab-stop:3.0in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l2:level7
+	{mso-level-tab-stop:3.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l2:level8
+	{mso-level-tab-stop:4.0in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l2:level9
+	{mso-level-tab-stop:4.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l3
+	{mso-list-id:2094280941;
+	mso-list-template-ids:1005333896;}
+@list l3:level1
+	{mso-level-tab-stop:.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l3:level2
+	{mso-level-number-format:alpha-lower;
+	mso-level-tab-stop:1.0in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l3:level3
+	{mso-level-tab-stop:1.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l3:level4
+	{mso-level-tab-stop:2.0in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l3:level5
+	{mso-level-tab-stop:2.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l3:level6
+	{mso-level-tab-stop:3.0in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l3:level7
+	{mso-level-tab-stop:3.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l3:level8
+	{mso-level-tab-stop:4.0in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l3:level9
+	{mso-level-tab-stop:4.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+ol
+	{margin-bottom:0in;}
+ul
+	{margin-bottom:0in;}
+-->
+</style>
+<!--[if gte mso 10]>
+<style>
+ /* Style Definitions */
+ table.MsoNormalTable
+	{mso-style-name:"Table Normal";
+	mso-tstyle-rowband-size:0;
+	mso-tstyle-colband-size:0;
+	mso-style-noshow:yes;
+	mso-style-parent:"";
+	mso-padding-alt:0in 5.4pt 0in 5.4pt;
+	mso-para-margin:0in;
+	mso-para-margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:10.0pt;
+	font-family:"Times New Roman";
+	mso-ansi-language:#0400;
+	mso-fareast-language:#0400;
+	mso-bidi-language:#0400;}
+</style>
+<![endif]-->
+</head>
+
+<body lang=EN-US link=blue vlink=purple style='tab-interval:.5in'>
+
+<div class=Section1>
+
+<h2>Sample Code for Combining Assays with <span class=SpellE>Xars</span> <br>
+on<span class=GramE>&nbsp; LabKey</span> Server v. 2.2</h2>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal>Author:&nbsp; Peter Hussey</p>
+
+<p class=MsoNormal>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+LabKey Software</p>
+
+<p class=MsoNormal>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="mailto:peter@labkey.com">peter@labkey.com</a></p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal>Version date:&nbsp; Oct 16, 2007</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal>LabKey 2.2 introduces the Assay facility, which is in part a
+user-interface over the definition and collection of metadata associated with
+an experiment run.&nbsp; As a new feature in 2.2, Assays were not retrofitted
+to the structure of MS2 experiment runs and protocols.&nbsp; This sample code
+hooks up Assays with MS2 runs.&nbsp; Functionally, it replaces the “Describe
+MS2 Runs” step in the steps for searching for peptides.&nbsp; The sample code
+installs two new Assay providers:&nbsp; a generic “<span class=SpellE>XarAssay</span>”
+provider and a specific subclass “<span class=SpellE>Cptac</span>” assay provider.&nbsp;
+The <span class=SpellE>Cptac</span> provider is designed for use in the CPTAC
+initiative with pre-defined metadata properties.</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<h3>Installation </h3>
+
+<p class=MsoNormal>Unzip the distribution files into a temporary directory.<span
+style='mso-spacerun:yes'>  </span>The compiled module is called <span
+class=SpellE><span class=GramE>xarassay.module</span></span><span class=GramE> <span
+style='mso-spacerun:yes'> </span>and</span> should copied into a directory
+called “<span class=SpellE>externalModules</span>” under the LabKey
+installation root. <span style='mso-spacerun:yes'> </span>If you are installing
+on Windows and have used the setup program with the path defaults, the
+installation root is </p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>C:\Program Files\LabKey Server<o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>Create a directory named <span class=SpellE>externalModules</span>
+under this root and copy <span class=SpellE>xarassay.module</span> into this
+directory. <span style='mso-spacerun:yes'> </span>The stop and restart the
+LabKey Tomcat server.<span style='mso-spacerun:yes'>  </span></p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<h3>Setting up a project </h3>
+
+<p class=MsoNormal>The sample code is intended and tested to be used in the
+following configuration:</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<ol style='margin-top:0in' start=1 type=1>
+ <li class=MsoNormal style='mso-list:l1 level1 lfo1;tab-stops:list .5in'>Download
+     and unpack the CPAS Demo files available from <a
+     href="https://www.labkey.org/Project/home/Download/begin.view">https://www.labkey.org/Project/home/Download/begin.view</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+     </li>
+ <li class=MsoNormal style='mso-list:l1 level1 lfo1;tab-stops:list .5in'>Create
+     a new project and give it a folder type of “Collaboration”</li>
+ <li class=MsoNormal style='mso-list:l1 level1 lfo1;tab-stops:list .5in'>Customize
+     the folder type to enable these modules:</li>
+ <ol style='margin-top:0in' start=1 type=a>
+  <li class=MsoNormal style='mso-list:l1 level2 lfo1;tab-stops:list 1.0in'>Experiment</li>
+  <li class=MsoNormal style='mso-list:l1 level2 lfo1;tab-stops:list 1.0in'>MS2</li>
+  <li class=MsoNormal style='mso-list:l1 level2 lfo1;tab-stops:list 1.0in'>Pipeline</li>
+  <li class=MsoNormal style='mso-list:l1 level2 lfo1;tab-stops:list 1.0in'>Study</li>
+ </ol>
+ <li class=MsoNormal style='mso-list:l1 level1 lfo1;tab-stops:list .5in'>On the
+     Portal page, add the following new Web Parts</li>
+</ol>
+
+<ol style='margin-top:0in' start=4 type=1>
+ <ol style='margin-top:0in' start=1 type=a>
+  <li class=MsoNormal style='mso-list:l1 level2 lfo2;tab-stops:list 1.0in'>Data
+      Pipeline</li>
+  <li class=MsoNormal style='mso-list:l1 level2 lfo2;tab-stops:list 1.0in'>Assay
+      List</li>
+  <li class=MsoNormal style='mso-list:l1 level2 lfo2;tab-stops:list 1.0in'>Lists</li>
+  <li class=MsoNormal style='mso-list:l1 level2 lfo2;tab-stops:list 1.0in'>Sample
+      Sets (narrow Web Part for right-hand part of screen)</li>
+ </ol>
+ <li class=MsoNormal style='mso-list:l1 level1 lfo2;tab-stops:list .5in'>Setup
+     the Data Pipeline to start at the <span class=SpellE>CPASDemo</span>
+     directory created in step 1</li>
+ <li class=MsoNormal style='mso-list:l1 level1 lfo2;tab-stops:list .5in'>Create
+     a sample set at the project level:</li>
+</ol>
+
+<ol style='margin-top:0in' start=6 type=1>
+ <ol style='margin-top:0in' start=1 type=a>
+  <li class=MsoNormal style='mso-list:l1 level2 lfo3;tab-stops:list 1.0in'>Click
+      on the title bar of the Sample Sets part </li>
+  <li class=MsoNormal style='mso-list:l1 level2 lfo3;tab-stops:list 1.0in'>select
+      Import Sample Set</li>
+  <li class=MsoNormal style='mso-list:l1 level2 lfo3;tab-stops:list 1.0in'>Open
+      the file <span class=SpellE>YeastSampleSet.tsv</span> in a text editor.</li>
+  <li class=MsoNormal style='mso-list:l1 level2 lfo3;tab-stops:list 1.0in'>Select
+      All content in the file and Copy to clipboard</li>
+  <li class=MsoNormal style='mso-list:l1 level2 lfo3;tab-stops:list 1.0in'>Return
+      to the browser and past the contents into the large input box for
+      uploading a sample set.</li>
+  <li class=MsoNormal style='mso-list:l1 level2 lfo3;tab-stops:list 1.0in'>Give
+      the sample set a&nbsp; name</li>
+  <li class=MsoNormal style='mso-list:l1 level2 lfo3;tab-stops:list 1.0in'>Make
+      sure the Key column is detected as <span class=SpellE>SampleID</span></li>
+  <li class=MsoNormal style='mso-list:l1 level2 lfo3;tab-stops:list 1.0in'>Press
+      Submit </li>
+ </ol>
+ <li class=MsoNormal style='mso-list:l1 level1 lfo3;tab-stops:list .5in'>Create
+     a new Assay Definition</li>
+</ol>
+
+<ol style='margin-top:0in' start=7 type=1>
+ <ol style='margin-top:0in' start=1 type=a>
+  <li class=MsoNormal style='mso-list:l1 level2 lfo4;tab-stops:list 1.0in'>On
+      the Assay List&nbsp; web part, click the link that says “<b>Manage Assays</b>”</li>
+  <li class=MsoNormal style='mso-list:l1 level2 lfo4;tab-stops:list 1.0in'>Click
+      the “<b>Create Assay</b>” link</li>
+  <li class=MsoNormal style='mso-list:l1 level2 lfo4;tab-stops:list 1.0in'>Select
+      <span class=SpellE>Cptac</span> as the Assay type </li>
+  <li class=MsoNormal style='mso-list:l1 level2 lfo4;tab-stops:list 1.0in'>Give
+      the Assay definition a name and optional comments.&nbsp; For this note
+      the name will be assumed to be <span class=SpellE>MyCptacAssay</span></li>
+  <li class=MsoNormal style='mso-list:l1 level2 lfo4;tab-stops:list 1.0in'>Add
+      or delete any Run Group or Run properties as desired.</li>
+  <li class=MsoNormal style='mso-list:l1 level2 lfo4;tab-stops:list 1.0in'>Press
+      Save Changes, then press <span class=GramE>Done</span>.</li>
+ </ol>
+ <li class=MsoNormal style='mso-list:l1 level1 lfo4;tab-stops:list .5in'>.&nbsp;
+     Populate the required lookup lists.&nbsp;&nbsp; These lists become entries
+     in the dropdown select controls when creating a run for a <span
+     class=SpellE>Cptac</span> assay.&nbsp; </li>
+</ol>
+
+<ol style='margin-top:0in' start=8 type=1>
+ <ol style='margin-top:0in' start=1 type=a>
+  <li class=MsoNormal style='mso-list:l1 level2 lfo5;tab-stops:list 1.0in'>In
+      the Lists web part, select each list ( as defined by the <span
+      class=SpellE>Cptac</span> Assay provider),</li>
+  <li class=MsoNormal style='mso-list:l1 level2 lfo5;tab-stops:list 1.0in'>&nbsp;Upload
+      the appropriate data for the list.&nbsp; Easiest way is to collect these
+      lists in a spreadsheet page (one page per list) with the column titles as
+      specified in the list definition.&nbsp; See the Excel workbook
+      “Consolidated Lists for <span class=SpellE>Cptac</span> Assay
+      Provider.xls “ in the same directory as this note </li>
+ </ol>
+ <li class=MsoNormal style='mso-list:l1 level1 lfo5;tab-stops:list .5in'>Prepare
+     a subfolder</li>
+</ol>
+
+<ol style='margin-top:0in' start=9 type=1>
+ <ol style='margin-top:0in' start=1 type=a>
+  <li class=MsoNormal style='mso-list:l1 level2 lfo6;tab-stops:list 1.0in'>With
+      the project folder currently selected, open the Manage Project admin
+      tools box on the left sidebar, select Manage Folders </li>
+  <li class=MsoNormal style='mso-list:l1 level2 lfo6;tab-stops:list 1.0in'>Press
+      Create Subfolder</li>
+  <li class=MsoNormal style='mso-list:l1 level2 lfo6;tab-stops:list 1.0in'>Assign
+      a new name,<span class=GramE>&nbsp; a</span> folder type of
+      Collaboration, and press Create New Folder.&nbsp; You will end up with a
+      page containing <span class=SpellE>Wiki</span>, Messages, and Pages web
+      parts.</li>
+  <li class=MsoNormal style='mso-list:l1 level2 lfo6;tab-stops:list 1.0in'>From
+      Manage Project, select Customize folder.&nbsp; Check on the following
+      modules</li>
+ </ol>
+</ol>
+
+<p class=MsoNormal style='margin-left:1.5in;text-indent:-1.5in'><span
+style='font-size:7.0pt'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span><span class=SpellE>i</span>.<span style='font-size:7.0pt'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span>Experiment</p>
+
+<p class=MsoNormal style='margin-left:1.5in;text-indent:-1.5in'><span
+style='font-size:7.0pt'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span>ii.<span style='font-size:7.0pt'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>MS2</p>
+
+<p class=MsoNormal style='margin-left:1.5in;text-indent:-1.5in'><span
+style='font-size:7.0pt'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span>iii.<span style='font-size:7.0pt'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>Pipeline</p>
+
+<p class=MsoNormal style='margin-left:1.5in;text-indent:-1.5in'><span
+style='font-size:7.0pt'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span>iv.<span style='font-size:7.0pt'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>Study</p>
+
+<ol style='margin-top:0in' start=9 type=1>
+ <ol style='margin-top:0in' start=5 type=a>
+  <li class=MsoNormal style='mso-list:l0 level2 lfo7;tab-stops:list 1.0in'>On
+      the main (portal) page of the folder just created, add the following web
+      parts</li>
+ </ol>
+</ol>
+
+<p class=MsoNormal style='margin-left:1.5in;text-indent:-1.5in'><span
+style='font-size:7.0pt'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span><span class=SpellE>i</span>.<span style='font-size:7.0pt'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span>Assay Details.&nbsp; Select the Assay you defined in step 7</p>
+
+<p class=MsoNormal style='margin-left:1.5in;text-indent:-1.5in'><span
+style='font-size:7.0pt'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span>ii.<span style='font-size:7.0pt'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>Sample
+Sets (narrow web part).&nbsp; </p>
+
+<p class=MsoNormal style='margin-left:2.0in;text-indent:-.25in'>1.<span
+style='font-size:7.0pt'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>Add part to the
+page</p>
+
+<p class=MsoNormal style='margin-left:2.0in;text-indent:-.25in'>2.<span
+style='font-size:7.0pt'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>Click on the
+Sample Sets title bar of the web part to get the full wide list.&nbsp; The
+sample set you defined in the project in step 6 should be listed but not “<span
+class=SpellE>Acitve</span>”</p>
+
+<p class=MsoNormal style='margin-left:2.0in;text-indent:-.25in'>3.<span
+style='font-size:7.0pt'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>Check the box
+next to this list and press <span class=GramE>Set</span> as Active</p>
+
+<p class=MsoNormal style='margin-left:2.0in;text-indent:-.25in'>4.<span
+style='font-size:7.0pt'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>Click on the
+folder name to return to the main page. </p>
+
+<p class=MsoNormal style='margin-left:1.5in;text-indent:-1.5in'><span
+style='font-size:7.0pt'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span><span class=GramE>iii.<span style='font-size:7.0pt'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span>MS2</span> Runs (enhanced)</p>
+
+<p class=MsoNormal style='margin-left:1.5in;text-indent:-1.5in'><span
+style='font-size:7.0pt'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span>iv.<span style='font-size:7.0pt'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>Data
+Pipeline</p>
+
+<p class=MsoNormal style='margin-left:1.5in;text-indent:-1.5in'><span
+style='font-size:7.0pt'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span>v.<span style='font-size:7.0pt'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>Remove
+the <span class=SpellE>Wiki</span>, Messages, and Pages web parts if you wish</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<h3>Describing a run</h3>
+
+<p class=MsoNormal><span class=SpellE><span class=GramE>Therer</span></span><span
+class=GramE> are</span> a few optional paths to the <span class=SpellE>Cptac</span>
+assay:</p>
+
+<ul style='margin-top:0in' type=disc>
+ <li class=MsoNormal style='mso-list:l2 level1 lfo8;tab-stops:list .5in'>You
+     can describe runs of the <span class=SpellE>MyCptacAssay</span><span
+     class=GramE>&nbsp; in</span> the project folder itself or in any
+     subfolder. This example uses a subfolder.&nbsp; </li>
+ <li class=MsoNormal style='mso-list:l2 level1 lfo8;tab-stops:list .5in'>There
+     are two entry points into the dialog for associating an Assay with an <span
+     class=SpellE>mzXML</span> data <span class=GramE>file.:</span>&nbsp; from
+     the Data Pipeline web part button “Process and Upload Data”, or from the
+     “Upload Runs” button of the Assay List details page for an assay.&nbsp;
+     This example uses the Data Pipeline button &nbsp;&nbsp;</li>
+ <li class=MsoNormal style='mso-list:l2 level1 lfo8;tab-stops:list .5in'>The
+     default <span class=SpellE>Cptac</span> Assay assumes that each file may
+     have come from a different starting sample and asks for run properties for
+     every file in the directory.&nbsp; This example uses the default.&nbsp; An
+     optional Fractionation <span class=SpellE>xar</span> template describes
+     all <span class=SpellE>mzxml</span> files in a directory as belonging to
+     fractions of the same sample.&nbsp; </li>
+</ul>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal>The following steps show the choices indicated.</p>
+
+<ol style='margin-top:0in' start=1 type=1>
+ <li class=MsoNormal style='mso-list:l3 level1 lfo9;tab-stops:list .5in'>In the
+     folder, select the Process<span class=GramE>&nbsp; and</span> Upload Data
+     button in the Data Pipeline part.&nbsp; In the resulting Pipeline browser
+     dialog, open the <span class=SpellE>Peroxisomal_ICAT</span> directory
+     containing 3 <span class=SpellE>mzXML</span> files.&nbsp; </li>
+ <li class=MsoNormal style='mso-list:l3 level1 lfo9;tab-stops:list .5in'>Press
+     the Create Assay Run button </li>
+ <li class=MsoNormal style='mso-list:l3 level1 lfo9;tab-stops:list .5in'>You should
+     get a Data Upload page generated from the Assay definition.&nbsp; Select
+     the appropriate values in the Upload Set dropdowns.</li>
+ <li class=MsoNormal style='mso-list:l3 level1 lfo9;tab-stops:list .5in'>Press
+     Next, the<span class=GramE>&nbsp; Run</span> Properties section of the
+     form is shown.</li>
+ <li class=MsoNormal style='mso-list:l3 level1 lfo9;tab-stops:list .5in'>Fill
+     out a name and select the starting sample for the file that is listed as
+     the current file in the Run Data dialog box.&nbsp; The Comments and other
+     fields can also be filled in.</li>
+ <li class=MsoNormal style='mso-list:l3 level1 lfo9;tab-stops:list .5in'>Press
+     Save and Upload <span class=GramE>Another</span> Run.&nbsp; After a few
+     seconds you should get the message “Upload Successful” at the top, and a
+     new Current file listed.</li>
+ <li class=MsoNormal style='mso-list:l3 level1 lfo9;tab-stops:list .5in'>Repeat
+     steps 6 and 7 until there is one more file left, then press Save and
+     Finish instead of Save and Upload Another Run.&nbsp; </li>
+ <li class=MsoNormal style='mso-list:l3 level1 lfo9;tab-stops:list .5in'>In the
+     resulting runs grid, click on the name of a run to see a graphical
+     representation of its steps.</li>
+ <li class=MsoNormal style='mso-list:l3 level1 lfo9;tab-stops:list .5in'>To
+     initiate scoring of the same <span class=SpellE>mzXML</span> files, </li>
+ <ol style='margin-top:0in' start=1 type=a>
+  <li class=MsoNormal style='mso-list:l3 level2 lfo9;tab-stops:list 1.0in'>select
+      the Process&nbsp; and Upload Data button in the Data Pipeline part</li>
+  <li class=MsoNormal style='mso-list:l3 level2 lfo9;tab-stops:list 1.0in'><span
+      class=GramE>this</span> time select the <span class=SpellE>X!Tandem</span>
+      Peptide Search button instead of the <span class=SpellE>Xar</span> Assay
+      button.</li>
+ </ol>
+ <li class=MsoNormal style='mso-list:l3 level1 lfo9;tab-stops:list .5in'>As per
+     the CPAS Demo tutorial, select the existing <span class=SpellE>yeast_ICAT</span>
+     search protocol and press Search.</li>
+</ol>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+</div>
+
+</body>
+
+</html>

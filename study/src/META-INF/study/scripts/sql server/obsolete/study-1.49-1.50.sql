@@ -1,0 +1,3 @@
+ALTER TABLE study.Specimen
+    ALTER COLUMN Ptid NVARCHAR(32)
+GO

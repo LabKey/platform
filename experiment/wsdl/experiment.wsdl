@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions targetNamespace="http://www.labkey.org/services/urn:experiment"
+                  xmlns:apachesoap="http://xml.apache.org/xml-soap"
+                  xmlns:impl="http://www.labkey.org/services/urn:experiment"
+                  xmlns:intf="http://www.labkey.org/services/urn:experiment"
+                  xmlns:exp="http://cpas.fhcrc.org/exp/xml"
+                  xmlns:experimentQuery="http://www.labkey.org/experimentQuery/xml"
+                  xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tns1="http://exp.cpas.fhcrc.org"
+                  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:wsdlsoap="http://schemas.xmlsoap.org/wsdl/soap/"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <wsdl:types>
+        <schema targetNamespace="http://www.labkey.org/services/urn:experiment"
+                xmlns="http://www.w3.org/2001/XMLSchema">
+            <import namespace="http://exp.cpas.fhcrc.org"/>
+            <import namespace="http://schemas.xmlsoap.org/soap/encoding/"/>
+            <xsd:import namespace="http://cpas.fhcrc.org/exp/xml" schemaLocation="../../../../schemas/expTypes.xsd"/>
+            <xsd:import namespace="http://www.labkey.org/experimentQuery/xml" schemaLocation="../../../../schemas/experimentQuery.xsd"/>
+
+            <complexType name="FullXAR">
+                <sequence>
+                    <element name="ExperimentArchive" type="exp:ExperimentArchiveType" minOccurs="1" maxOccurs="1"/>
+                </sequence>
+            </complexType>
+        </schema>
+    </wsdl:types>
+
+    <wsdl:message name="targetRequest">
+        <wsdl:part name="queryObject" element="experimentQuery:queryObject"/>
+    </wsdl:message>
+
+    <wsdl:message name="fullXARResponse">
+        <wsdl:part name="returnValue" type="impl:FullXAR"/>
+    </wsdl:message>
+
+    <wsdl:message name="getFoldersResponse">
+        <wsdl:part name="returnValue" type="experimentQuery:FolderList"/>
+    </wsdl:message>
+
+    <wsdl:portType name="ExperimentWebService">
+        <wsdl:operation name="getExperiments" parameterOrder="queryObject">
+            <wsdl:input message="impl:targetRequest" name="getExperimentsRequest"/>
+            <wsdl:output message="impl:fullXARResponse" name="getExperimentsResponse"/>
+        </wsdl:operation>
+
+        <wsdl:operation name="getFolders" parameterOrder="queryObject">
+            <wsdl:input message="impl:targetRequest" name="getFoldersRequest"/>
+            <wsdl:output message="impl:getFoldersResponse" name="getFoldersResponse"/>
+        </wsdl:operation>
+
+        <wsdl:operation name="getProtocols" parameterOrder="queryObject">
+            <wsdl:input message="impl:targetRequest" name="getProtocolsRequest"/>
+            <wsdl:output message="impl:fullXARResponse" name="getProtocolsResponse"/>
+        </wsdl:operation>
+
+        <wsdl:operation name="getExperimentRuns" parameterOrder="queryObject">
+            <wsdl:input message="impl:targetRequest" name="getExperimentRunsRequest"/>
+            <wsdl:output message="impl:fullXARResponse" name="getExperimentRunsResponse"/>
+        </wsdl:operation>
+    </wsdl:portType>
+
+    <wsdl:binding name="ExperimentServiceSoapBinding" type="impl:ExperimentWebService">
+        <wsdlsoap:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
+
+        <wsdl:operation name="getExperiments">
+            <wsdlsoap:operation soapAction=""/>
+            <wsdl:input name="getExperimentsRequest">
+                <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+                               namespace="http://experiment.cpas" use="encoded"/>
+            </wsdl:input>
+            <wsdl:output name="getExperimentsResponse">
+                <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+                               namespace="http://www.labkey.org/services/urn:experiment" use="encoded"/>
+            </wsdl:output>
+        </wsdl:operation>
+
+        <wsdl:operation name="getFolders">
+            <wsdlsoap:operation soapAction=""/>
+            <wsdl:input name="getFoldersRequest">
+                <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+                               namespace="http://experiment.cpas" use="encoded"/>
+            </wsdl:input>
+            <wsdl:output name="getFoldersResponse">
+                <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+                               namespace="http://www.labkey.org/services/urn:experiment" use="encoded"/>
+            </wsdl:output>
+        </wsdl:operation>
+
+        <wsdl:operation name="getProtocols">
+            <wsdlsoap:operation soapAction=""/>
+            <wsdl:input name="getProtocolsRequest">
+                <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+                               namespace="http://experiment.cpas" use="encoded"/>
+            </wsdl:input>
+            <wsdl:output name="getProtocolsResponse">
+                <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+                               namespace="http://www.labkey.org/services/urn:experiment" use="encoded"/>
+            </wsdl:output>
+        </wsdl:operation>
+
+        <wsdl:operation name="getExperimentRuns">
+            <wsdlsoap:operation soapAction=""/>
+            <wsdl:input name="getExperimentRunsRequest">
+                <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+                               namespace="http://experiment.cpas" use="encoded"/>
+            </wsdl:input>
+            <wsdl:output name="getExperimentRunsResponse">
+                <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+                               namespace="http://www.labkey.org/services/urn:experiment" use="encoded"/>
+            </wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+
+    <wsdl:service name="ExperimentWebServiceService">
+        <wsdl:port binding="impl:ExperimentServiceSoapBinding" name="ExperimentService">
+            <wsdlsoap:address location="http://www.labkey.org/services/ExperimentService"/>
+        </wsdl:port>
+    </wsdl:service>
+
+</wsdl:definitions>

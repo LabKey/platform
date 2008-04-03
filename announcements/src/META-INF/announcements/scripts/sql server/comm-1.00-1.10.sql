@@ -1,0 +1,4 @@
+ALTER TABLE comm.Pages ADD
+	Parent INT DEFAULT -1 NOT NULL,
+	DisplayOrder FLOAT DEFAULT 1.0 NOT NULL
+GO

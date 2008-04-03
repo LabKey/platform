@@ -1,0 +1,93 @@
+package org.labkey.study.model;
+
+import org.labkey.api.data.Container;
+
+import java.util.Date;
+
+/**
+ * Copyright (c) 2007 LabKey Software Foundation
+ * <p/>
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * <p/>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p/>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * <p/>
+ * User: brittp
+ * Created: Jan 17, 2008 10:26:32 AM
+ */
+public class Participant
+{
+    private Container _container;
+    private String _participantId;
+    private Integer _enrollmentSiteId;
+    private Integer _currentSiteId;
+    private Date _startDate;
+    private Integer _cohortId;
+
+    public Container getContainer()
+    {
+        return _container;
+    }
+
+    public void setContainer(Container container)
+    {
+        _container = container;
+    }
+
+    public String getParticipantId()
+    {
+        return _participantId;
+    }
+
+    public void setParticipantId(String participantId)
+    {
+        _participantId = participantId;
+    }
+
+    public Integer getEnrollmentSiteId()
+    {
+        return _enrollmentSiteId;
+    }
+
+    public void setEnrollmentSiteId(Integer enrollmentSiteId)
+    {
+        _enrollmentSiteId = enrollmentSiteId;
+    }
+
+    public Integer getCurrentSiteId()
+    {
+        return _currentSiteId;
+    }
+
+    public void setCurrentSiteId(Integer currentSiteId)
+    {
+        _currentSiteId = currentSiteId;
+    }
+
+    public Date getStartDate()
+    {
+        return _startDate;
+    }
+
+    public void setStartDate(Date startDate)
+    {
+        _startDate = startDate;
+    }
+
+    public Integer getCohortId()
+    {
+        return _cohortId;
+    }
+
+    public void setCohortId(Integer cohortId)
+    {
+        _cohortId = cohortId;
+    }
+}

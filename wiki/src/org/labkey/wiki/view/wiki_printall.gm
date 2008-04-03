@@ -1,0 +1,30 @@
+<%@ page import="org.labkey.api.util.DateUtil"%>
+<div class="normal" style="padding:10px;">
+    <table style="width:100%;">
+        <tr>
+            <td align=left><h3 class=".heading-1">Table of Contents</h3></td>
+            <td align=right><%=userEmail%><br><%=DateUtil.formatDate()%></td>
+        </tr>
+    </table>
+
+<%  //print list of page titles with anchors at top
+    for(wikipage in wikiPageList)
+    {
+        def i = 0;
+        while(i < wikipage.getDepth())
+        {
+            %>&nbsp;&nbsp;<%
+            i++;
+        }%>
+        <a href="#<%=wikipage.getName()%>"><%= filter(wikipage.latestVersion().getTitle())%></a><br>
+    <%}
+
+    //print each page's content with title
+    for(wikipage in wikiContentList)
+    {%>
+        <hr size=1>
+        <h3><a name="<%=wikipage.getName()%>"></a><%= filter(wikipage.latestVersion().getTitle())%></h3><br>
+        <%=wikipage.latestVersion().getHtml(container, wikipage)%><br><br>
+    <%}
+%>
+</div>

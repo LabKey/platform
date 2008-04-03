@@ -1,0 +1,2 @@
+ALTER TABLE study.LDMSSample
+    DROP CONSTRAINT FK_LDMSSample_Material;

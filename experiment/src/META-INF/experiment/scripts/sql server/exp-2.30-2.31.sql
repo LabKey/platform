@@ -1,0 +1,2 @@
+ALTER TABLE exp.ExperimentRun ALTER COLUMN Name NVARCHAR(100)
+GO

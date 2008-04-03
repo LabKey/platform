@@ -1,0 +1,73 @@
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.WebPartView" %>
+<%@ page import="org.labkey.study.controllers.OldStudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.model.Study" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.study.model.Visit" %>
+<%@ page extends="org.labkey.study.view.BaseStudyPage" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<labkey:errors />
+<%
+    OldStudyController.StudyPropertiesForm form = (OldStudyController.StudyPropertiesForm) getModelBean();
+%>
+
+<table class="normal">
+    <tr>
+        <td>New visits can be defined for this study at any time.</td>
+        <td><%= textLink("Create New Timepoint", "createVisit.view")%></td>
+    </tr>
+    <tr>
+        <td>Assign data to the correct timepoint</td>
+        <td><%= textLink("Recompute Timepoints", "updateParticipantVisits.view")%></td>
+    </tr>
+</table>
+
+<%WebPartView.startTitleFrame(out, "Start Date", null, "600", null);%>
+<form action="manageVisits.post" method="POST">
+    <table cellspacing="3" class="normal">
+           <tr><td colspan="2">Data in this study is grouped using date-based timepoints rather than visit ids.
+               <ul>
+               <li>A timepoint is assigned to each dataset row by computing the number of days between a subject's start date and the date supplied in the row.</li>
+               <li>Each subject can have an individual start date specified by providing a StartDate field in a demographic dataset.</li>
+               <li>If no start date is available for a subject, the study start date is used.</li></ul>
+           </td></tr>
+        <tr>
+            <th>Start Date<%=helpPopup("Start Date", "A start date is required for studies that are date based.")%></th>
+            <td><input type="text" name="startDateString" value="<%=h(form.getStartDateString())%>">
+            </td>
+        </tr>
+        <tr>
+            <td>&nbsp;</td>
+            <td><%= buttonImg("Update")%>&nbsp;<%= buttonLink("Back", "#", "window.history.back();return false;")%></td>
+        </tr>
+    </table>
+</form>
+<%WebPartView.endTitleFrame(out);%>
+<%WebPartView.startTitleFrame(out, "Timepoints", null, "600", null);%>
+NOTE: If you edit the day range of timepoints, use the <%= textLink("Recompute Timepoints", "updateParticipantVisits.view")%> action to
+assign dataset data to the correct timepoints.
+<table>
+    <tr>
+        <th>&nbsp;</th>
+        <th>Label</th>
+        <th>Start Day</th>
+        <th>End Day</th>
+    </tr>
+<%
+    Study study = getStudy();
+    Visit[] timepoints = StudyManager.getInstance().getVisits(study);
+    ActionURL editTimepointURL = new ActionURL(StudyController.VisitSummaryAction.class, study.getContainer());
+    for (Visit timepoint : timepoints)
+    {%>
+    <tr>
+        <td><%=textLink("edit", editTimepointURL.replaceParameter("id", String.valueOf(timepoint.getRowId())))%></td>
+        <td><%=h(timepoint.getLabel())%></td>
+        <td><%=h(""+timepoint.getSequenceNumMin())%></td>
+        <td><%=h(""+timepoint.getSequenceNumMax())%></td>
+    </tr>
+<%  }
+%>
+</table>
+<%WebPartView.endTitleFrame(out);%>
+

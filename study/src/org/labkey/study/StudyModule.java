@@ -1,0 +1,364 @@
+package org.labkey.study;
+
+import junit.framework.TestCase;
+import org.apache.log4j.Logger;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.exp.LsidManager;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.module.DefaultModule;
+import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.reports.Report;
+import org.labkey.api.reports.ReportService;
+import org.labkey.api.security.ACL;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.User;
+import org.labkey.api.study.PlateService;
+import org.labkey.api.study.SpecimenService;
+import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.*;
+import org.labkey.api.wiki.WikiService;
+import org.labkey.study.assay.*;
+import org.labkey.study.assay.query.AssayAuditViewFactory;
+import org.labkey.study.assay.query.AssaySchema;
+import org.labkey.study.controllers.OldStudyController;
+import org.labkey.study.controllers.StudyController;
+import org.labkey.study.controllers.assay.AssayController;
+import org.labkey.study.controllers.designer.DesignerController;
+import org.labkey.study.controllers.plate.PlateController;
+import org.labkey.study.controllers.reports.ReportsController;
+import org.labkey.study.controllers.samples.SpringSpecimenController;
+import org.labkey.study.controllers.security.SecurityController;
+import org.labkey.study.designer.view.StudyDesignsWebPart;
+import org.labkey.study.model.DatasetDomainKind;
+import org.labkey.study.model.Study;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.pipeline.StudyPipeline;
+import org.labkey.study.plate.PlateManager;
+import org.labkey.study.plate.query.PlateSchema;
+import org.labkey.study.query.StudySchemaProvider;
+import org.labkey.study.reports.*;
+import org.labkey.study.samples.SamplesWebPart;
+import org.labkey.study.view.AssayDetailsWebPartFactory;
+import org.labkey.study.view.AssayListWebPartFactory;
+import org.labkey.study.view.DatasetsWebPartView;
+import org.labkey.study.view.StudySummaryWebPartFactory;
+
+import java.beans.PropertyChangeEvent;
+import java.lang.reflect.InvocationTargetException;
+import java.sql.SQLException;
+import java.util.*;
+
+
+public class StudyModule extends DefaultModule implements ContainerManager.ContainerListener
+{
+    private static final Logger _log = Logger.getLogger(DefaultModule.class);
+    public static final String NAME = "Study";
+    public static final WebPartFactory reportsPartFactory = new ReportsWebPartFactory();
+    public static final WebPartFactory reportsWidePartFactory = new ReportsWideWebPartFactory();
+    public static final WebPartFactory samplesPartFactory = new SamplesWebPartFactory("right");
+    public static final WebPartFactory samplesWidePartFactory = new SamplesWebPartFactory(HttpView.BODY);
+    public static final WebPartFactory datasetsPartFactory = new DatasetsWebPartFactory();
+    public static final WebPartFactory manageStudyPartFactory = new StudySummaryWebPartFactory();
+    public static final WebPartFactory enrollmentChartPartFactory = new EnrollmentChartWebPartFactory();
+    public static final WebPartFactory studyDesignsWebPartFactory = new StudyDesignsWebPartFactory();
+    public static final WebPartFactory studyDesignSummaryWebPartFactory = new StudyDesignSummaryWebPartFactory();
+    public static final WebPartFactory assayListWebPartFactory = new AssayListWebPartFactory();
+    public static final WebPartFactory assayDetailsWebPartFactory = new AssayDetailsWebPartFactory();
+
+    public StudyModule()
+    {
+        super(NAME, 2.33, "/org/labkey/study", true, reportsPartFactory, reportsWidePartFactory, samplesPartFactory,
+                samplesWidePartFactory, datasetsPartFactory, manageStudyPartFactory,
+                enrollmentChartPartFactory, studyDesignsWebPartFactory, studyDesignSummaryWebPartFactory,
+                assayListWebPartFactory, assayDetailsWebPartFactory);
+
+        addController("study", StudyController.class);
+        addController("study-reports", ReportsController.class);
+        addController("study-samples", SpringSpecimenController.class);
+        addController("study-security", SecurityController.class);
+        addController("study-designer", DesignerController.class);
+        addController("plate", PlateController.class);
+        addController("assay", AssayController.class);
+
+        PlateService.register(new PlateManager());
+        AssayService.setInstance(new AssayManager());
+        DefaultSchema.registerProvider("study", new StudySchemaProvider());
+        DefaultSchema.registerProvider("plate", new PlateSchema.Provider());
+        DefaultSchema.registerProvider("assay", new AssaySchema.Provider());
+
+        PropertyService.get().registerDomainKind(new DatasetDomainKind());
+        PropertyService.get().registerDomainKind(new AssayDomainKind());
+    }
+
+    public void containerCreated(Container c)
+    {
+    }
+
+    public void containerDeleted(Container c, User user)
+    {
+        try
+        {
+            StudyManager.getInstance().deleteAllStudyData(c);
+        }
+        catch (SQLException e)
+        {
+            // ignore any failures.
+            _log.error("Failure cleaning up study data when deleting container " + c.getPath(), e);
+        }
+    }
+
+
+    public Collection<String> getSummary(Container c)
+    {
+        Study study = StudyManager.getInstance().getStudy(c);
+
+        if (study != null)
+        {
+            Collection<String> list = new LinkedList<String>();
+            list.add("Study: " + study.getLabel());
+            long participants = StudyManager.getInstance().getParticipantCount(study);
+            list.add("" + participants + " Study participants");
+            return list;
+        }
+        else
+            return Collections.emptyList();
+    }
+
+
+    public void propertyChange(PropertyChangeEvent evt)
+    {
+    }
+
+    public void startup(ModuleContext moduleContext)
+    {
+        super.startup(moduleContext);
+        PipelineService.get().registerPipelineProvider(new StudyPipeline());
+        ContainerManager.addContainerListener(this);
+        AssayPublishService.register(new AssayPublishManager());
+        SpecimenService.register(new SpecimenServiceImpl());
+        LsidManager.get().registerHandler("Study", StudyManager.getLsidHandler());
+        WikiService.get().registerMacroProvider("study", new StudyMacroProvider());
+        PlateManager.get().registerLsidHandlers();
+        registerFolderType();
+        SecurityManager.addViewFactory(new SecurityController.StudySecurityViewFactory());
+        AssayService.get().registerAssayProvider(new TsvAssayProvider());
+        ExperimentService.get().registerExperimentDataHandler(new TsvDataHandler());
+        AuditLogService.get().addAuditViewFactory(AssayAuditViewFactory.getInstance());
+
+        ReportService.get().registerReport(new OldStudyController.StudyChartReport());
+        ReportService.get().registerReport(new EnrollmentReport());
+        ReportService.get().registerReport(new StudyQueryReport());
+        ReportService.get().registerReport(new ChartReportView.DatasetChartReport());
+        ReportService.get().registerReport(new ExternalReport());
+        ReportService.get().registerReport(new AttachmentReport());
+        ReportService.get().registerReport(new ExportExcelReport());
+        ReportService.get().registerReport(new ChartReportView());
+        ReportService.get().registerReport(new StudyChartQueryReport());
+        ReportService.get().registerReport(new StudyCrosstabReport());
+        ReportService.get().registerReport(new StudyRReport());
+
+        ReportService.get().registerDescriptor(new ChartReportView.ChartReportViewDescriptor());
+        ReportService.get().registerDescriptor(new CrosstabReportDescriptor());
+
+        ReportService.get().addViewFactory(new ReportsController.StudyRReportViewFactory());
+    }
+
+
+    public Set<String> getSchemaNames()
+    {
+        return PageFlowUtil.set(StudyManager.getSchemaName());
+    }
+
+    public Set<DbSchema> getSchemasToTest()
+    {
+        return PageFlowUtil.set(StudySchema.getInstance().getSchema());
+    }
+
+    public Set<String> getModuleDependencies()
+    {
+        Set<String> result = new HashSet<String>();
+        result.add("Experiment");
+        result.add("Pipeline");
+        result.add("Wiki");
+        result.add("Portal");
+        return result;
+    }
+
+    private void registerFolderType()
+    {
+        ModuleLoader.getInstance().registerFolderType(new StudyFolderType(this));
+    }
+
+
+    public void afterSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)
+    {
+        if (moduleContext.getInstalledVersion() >= 1.3 && moduleContext.getInstalledVersion() < 1.7)
+        {
+            StudyManager.getInstance().upgradeParticipantVisits();
+        }
+
+        if (moduleContext.getInstalledVersion() >= 1.7 && moduleContext.getInstalledVersion() < 1.74)
+        {
+            ReportManager.get().upgradeStudyReports(viewContext);
+        }
+
+        if (moduleContext.getInstalledVersion() >= 1.3 && moduleContext.getInstalledVersion() < 2.11)
+        {
+            try
+            {
+                SampleManager.getInstance().upgradeRequirementsTables();
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
+        }
+
+        if (moduleContext.getInstalledVersion() >= 1.74 && moduleContext.getInstalledVersion() < 2.21)
+        {
+            ReportManager.UpgradeReport_22_23 upgrade = new ReportManager.UpgradeReport_22_23(moduleContext, viewContext);
+            upgrade.upgradeStudyReports();
+        }
+    }
+
+    private static class ReportsWebPartFactory extends WebPartFactory
+    {
+        public ReportsWebPartFactory()
+        {
+            super("Reports and Views", WebPartFactory.LOCATION_RIGHT);
+            addLegacyNames("Reports");
+        }
+
+        public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
+        {
+            if (!portalCtx.hasPermission(ACL.PERM_READ))
+                return new HtmlView("Reports and Views", portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data");
+
+            if (null == StudyManager.getInstance().getStudy(portalCtx.getContainer()))
+                return new HtmlView("Reports and Views", "This folder does not contain a study");
+            return new ReportsController.ReportsWebPart(false);
+        }
+    }
+
+    private static class ReportsWideWebPartFactory extends WebPartFactory
+    {
+        public ReportsWideWebPartFactory()
+        {
+            super("Reports and Views");
+            addLegacyNames("Reports");
+        }
+
+        public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
+        {
+            if (!portalCtx.hasPermission(ACL.PERM_READ))
+                return new HtmlView("Reports and Views", portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data");
+
+            if (null == StudyManager.getInstance().getStudy(portalCtx.getContainer()))
+                return new HtmlView("Reports and Views", "This folder does not contain a study");
+
+            return new ReportsController.ReportsWebPart(!"right".equalsIgnoreCase(webPart.getLocation()));
+        }
+    }
+
+    private static class SamplesWebPartFactory extends DefaultWebPartFactory
+    {
+        public SamplesWebPartFactory(String position)
+        {
+            super("Specimens", position, SamplesWebPart.class);
+        }
+
+        @Override
+        public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException, InstantiationException
+        {
+            if (!portalCtx.hasPermission(ACL.PERM_READ))
+                return new HtmlView("Specimens", portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data");
+
+            if (null == StudyManager.getInstance().getStudy(portalCtx.getContainer()))
+                return new HtmlView("Specimens", "This folder does not contain a study.");
+            return new SamplesWebPart(webPart.getLocation().equals(HttpView.BODY));
+        }
+    }
+
+    private static class DatasetsWebPartFactory extends DefaultWebPartFactory
+    {
+        public DatasetsWebPartFactory()
+        {
+            super("Datasets", DatasetsWebPartView.class);
+        }
+
+
+        public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException, InstantiationException
+        {
+            if (!portalCtx.hasPermission(ACL.PERM_READ))
+                return new HtmlView("Datasets", portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data");
+
+            if (null == StudyManager.getInstance().getStudy(portalCtx.getContainer()))
+                return new HtmlView("Datasets", "This folder does not contain a study.");
+
+            return new DatasetsWebPartView();
+        }
+    }
+
+
+    private static class EnrollmentChartWebPartFactory extends WebPartFactory
+    {
+        public EnrollmentChartWebPartFactory()
+        {
+            super("Enrollment Report");
+        }
+
+        public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+        {
+            Container c = portalCtx.getContainer();
+            Report report = EnrollmentReport.getEnrollmentReport(portalCtx.getUser(), StudyManager.getInstance().getStudy(c), true);
+            WebPartView view = new EnrollmentReport.EnrollmentView(report);
+            view.setFrame(WebPartView.FrameType.PORTAL);
+            return view;
+        }
+    }
+
+    private static class StudyDesignsWebPartFactory extends WebPartFactory
+    {
+        public StudyDesignsWebPartFactory()
+        {
+            super("Vaccine Study Protocols");
+            addLegacyNames("Study Designs");
+        }
+        public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+        {
+            return new StudyDesignsWebPart(portalCtx, true);
+        }
+    }
+    
+    private static class StudyDesignSummaryWebPartFactory extends WebPartFactory
+    {
+        public StudyDesignSummaryWebPartFactory()
+        {
+            super("Study Protocol Summary");
+        }
+        public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+        {
+            JspView view =  new JspView("/org/labkey/study/designer/view/studyDesignSummary.jsp");
+            view.setTitle("Study Protocol Summary");
+            view.setFrame(WebPartView.FrameType.PORTAL);
+            return view;
+        }
+    }
+
+    public Set<Class<? extends TestCase>> getJUnitTests()
+    {
+        Set<Class<? extends TestCase>> set = new HashSet<Class<? extends TestCase>>();
+        set.add(StudyManager.StudyTestCase.class);
+        return set;
+    }
+}

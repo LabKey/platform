@@ -1,0 +1,43 @@
+<%@ page import="org.labkey.api.exp.OntologyManager"%>
+<%@ page import="org.labkey.api.exp.PropertyDescriptor"%>
+<%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.springframework.validation.ObjectError" %>
+<%@ page import="java.util.List" %>
+<%
+    String typeURI = form.typeURI;
+    PropertyDescriptor[] pds = new PropertyDescriptor[0];
+    if (null != typeURI)
+        pds = OntologyManager.getPropertiesForType(typeURI, form.container );
+%>
+
+<table border=0 cellspacing=2 cellpadding=0>
+<%
+    if (errors != null)
+    {
+        for (ObjectError e : (List<ObjectError>) errors.getAllErrors())
+        {
+            %><tr><td colspan=3><font color="red" class="error"><%=PageFlowUtil.filter(HttpView.currentContext().getMessage(e))%></font></td></tr><%
+        }
+    }
+%>
+</table>
+
+<form action="showImportDataset.post" method=POST>
+    <table>
+    <tr><td class=ms-searchform width=150>Type URI</td><td><%=filter(form.typeURI)%><input type=hidden name="typeURI" value="<%=filter(form.typeURI)%>"></td></tr>
+    <tr><td class=ms-searchform width=150>Key Fields</td><td><%=filter(form.keys)%><input type=hidden name="keys" value="<%=filter(form.keys)%>"></td></tr>
+        <tr><td class=ms-searchform width=150 >Tab delimited data (TSV)</td>
+        <td>[<a href="template.view?datasetId=<%=form.datasetId%>">template spreadsheet</a>]
+        </td></tr>
+        <tr><td colspan=2><textarea id=tsv name=tsv rows=25 cols=80  wrap=off ><%=filter(form.tsv)%></textarea></td></tr>
+    </table>
+	<input type=hidden name=datasetId value="<%=form.datasetId%>">
+	<input type=image src="<%=PageFlowUtil.buttonSrc("Submit","large")%>">
+
+
+    <br>&nbsp;
+    <p />
+    <div id=columnMap>
+    </div>
+</form>

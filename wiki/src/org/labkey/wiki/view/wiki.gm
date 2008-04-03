@@ -1,0 +1,142 @@
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.security.ACL" %>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.wiki.model.Wiki" %>
+<!--wiki-->
+<%
+    HttpView me = HttpView.currentView();
+    ViewContext context = me.getViewContext();
+    User user = context.getUser();
+    Wiki wiki = (Wiki) context.get("wiki");
+    String formattedHtml = (String) context.get("formattedHtml");
+    Container c = (wiki != null && wiki.getContainerId() != null) ? ContainerManager.getForId(wiki.getContainerId()) : context.getContainer();
+    if(null == c)
+    {
+        %><p><span class="labkey-error">This wiki page has an invalid parent container. Please delete this page.</span></p><%
+        return;
+    }
+    boolean hasContent = (Boolean) context.get("hasContent");
+    boolean includeLinks = (Boolean)context.get("includeLinks");
+    boolean isEmbedded = (Boolean)context.get("isEmbedded");
+
+if (!c.hasPermission(user, ACL.PERM_READ))
+{
+    %><table width="100%"><tr><td align=left class="normal"><%
+    if (user.isGuest())
+    {
+        %>Please log in to see this data.<%
+    }
+    else
+    {
+        %>You do not have permission to see this data.<%
+    }%></td></tr></table><%
+    return;
+}
+
+//if page has content, write out commands
+if (hasContent && includeLinks)
+{
+    %><table width="100%" cellpadding=0><tr><td align=right class="normal" style="height:16;"><%
+
+    if (updateContentLink)
+    {
+        %>[<a class="link" href="<%=filter(updateContentLink)%>">edit</a>]<%
+    }
+
+    //user must have update perms
+    if (manageLink)
+    {
+        %>&nbsp;[<a class="link" href="<%=filter(manageLink)%>">manage</a>]<%
+    }
+
+    //user must have update perms
+    if (versionsLink)
+    {
+        %>&nbsp;[<a class="link" href="<%=filter(versionsLink)%>">history</a>]<%
+    }
+
+    if (printLink)
+    {
+        %>&nbsp;[<a class="link" target="_blank" href="<%= filter(printLink) %>">print</a>]<%
+    }
+    %>
+    </td></tr></table><%
+}
+
+%><table width="100%" cellpadding=0><tr><td><%
+
+//if page has no content, write out message and add content command
+if (!hasContent)
+{
+    //if this is a web part and user has update perms
+    if (isInWebPart)
+    {%>
+        <%
+        if (wikiPageCount == 0 && hasInsertPermission && !isEmbedded)
+        {%>
+            The Wiki web part displays a single wiki page.
+            This folder does not currently contain any wiki pages to display. You can:<br>
+            <ul>
+                <li><a class="link" href="<%=filter(insertLink)%>">Create a new wiki page</a> to display in this web part.</li>
+            </ul>
+        <%}
+        else if (wikiPageCount > 0 && hasAdminPermission && !isEmbedded)
+        {%>
+            The Wiki web part displays a single wiki page.
+            Currently there is no page selected to display. You can:<br>
+            <ul>
+                <li><a class="link" href="<%=filter(customizeLink)%>">Choose an existing page to display</a> from this project or a different project.</li>
+                <li><a class="link" href="<%=filter(insertLink)%>">Create a new wiki page</a> to display in this web part.</li>
+            </ul><%
+        }
+        else
+        {
+            %>This Wiki web part is not configured to display content.<%
+        }
+    }
+    else
+    {
+        if (wikiPageCount == 0 && insertLink)
+        {%>
+            This Wiki currently does not contain any pages.<br><br>
+            [<a href="<%=insertLink%>">add a new page</a>]
+        <%}
+        else
+        {
+            %>
+            This page has no content.<br><br>
+            <%
+
+            if (updateContentLink)
+            {%>
+                [<a class="link" href="<%=filter(updateContentLink)%>">add content</a>]
+            <%}
+        }
+    }
+}
+else
+{
+    out.print(formattedHtml);
+
+    if (wiki.attachments)
+    {
+        %><p /><%
+    }
+
+    for (a in wiki.attachments)
+    {
+        %><a class="link" href="<%=filter(a.getDownloadUrl("Wiki"))%>"><img border=0 src="<%=request.getContextPath()%><%=filter(a.getFileIcon())%>">&nbsp;<%=filter(a.name)%></a><br><%
+    }
+}
+%></td></tr></table>
+<br>
+<%
+if (hasContent && null != me.getView("discussion"))
+{
+    me.include(me.getView("discussion"));
+}
+%>
+<!--/wiki-->

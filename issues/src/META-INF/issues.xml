@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+
+ * Copyright (c) 2003-2005 Fred Hutchinson Cancer Research Center
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+
+ -->
+<ns:tables xsi:schemaLocation="http://labkey.org/data/xml ..\..\..\..\..\schemas\tableInfo.xsd" xmlns:ns="http://labkey.org/data/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<ns:table tableName="Comments" tableDbType="TABLE">
+		<ns:columns>
+			<ns:column columnName="CommentId"/>
+			<ns:column columnName="IssueId">
+				<ns:columnTitle>Issue Id</ns:columnTitle>
+				<ns:inputType>select</ns:inputType>
+				<ns:inputLength>10</ns:inputLength>
+				<ns:nullable>false</ns:nullable>
+				<ns:isAutoInc>false</ns:isAutoInc>
+				<ns:isReadOnly>false</ns:isReadOnly>
+				<ns:isUserEditable>false</ns:isUserEditable>
+				<ns:fk>
+					<ns:fkColumnName>IssueId</ns:fkColumnName>
+					<ns:fkTable>Issues</ns:fkTable>
+				</ns:fk>
+			</ns:column>
+			<ns:column columnName="CreatedBy"/>
+			<ns:column columnName="Created">
+				<ns:columnTitle>Created</ns:columnTitle>
+				<ns:inputType>text</ns:inputType>
+				<ns:inputLength>23</ns:inputLength>
+				<ns:nullable>false</ns:nullable>
+				<ns:isAutoInc>false</ns:isAutoInc>
+				<ns:isReadOnly>false</ns:isReadOnly>
+				<ns:isUserEditable>true</ns:isUserEditable>
+			</ns:column>
+			<ns:column columnName="Comment">
+				<ns:columnTitle>Comment</ns:columnTitle>
+				<ns:inputType>text</ns:inputType>
+				<ns:scale>1073741823</ns:scale>
+				<ns:inputLength>40</ns:inputLength>
+				<ns:isReadOnly>false</ns:isReadOnly>
+				<ns:isUserEditable>true</ns:isUserEditable>
+			</ns:column>
+		</ns:columns>
+		<ns:tableTitle>Comments</ns:tableTitle>
+		<ns:pkColumnName>Created,IssueId</ns:pkColumnName>
+		<ns:titleColumn>IssueId</ns:titleColumn>
+	</ns:table>
+	<ns:table tableName="IssueKeywords" tableDbType="TABLE">
+		<ns:columns>
+			<ns:column columnName="Container"/>
+			<ns:column columnName="Type"/>
+			<ns:column columnName="Keyword"/>
+            <ns:column columnName="Default"/>
+		</ns:columns>
+	</ns:table>
+	<ns:table tableName="Issues" tableDbType="TABLE">
+		<ns:columns>
+			<ns:column columnName="_ts">
+				<ns:columnTitle>_ts</ns:columnTitle>
+				<ns:inputType>text</ns:inputType>
+				<ns:inputLength>8</ns:inputLength>
+				<ns:isReadOnly>true</ns:isReadOnly>
+			</ns:column>
+			<ns:column columnName="Container">
+				<ns:columnTitle>Container</ns:columnTitle>
+				<ns:inputType>text</ns:inputType>
+				<ns:inputLength>36</ns:inputLength>
+				<ns:nullable>true</ns:nullable>
+				<ns:isReadOnly>false</ns:isReadOnly>
+			</ns:column>
+			<ns:column columnName="IssueId">
+				<ns:columnTitle>Issue</ns:columnTitle>
+				<ns:inputType>text</ns:inputType>
+				<ns:displayWidth>50</ns:displayWidth>
+				<ns:inputLength>10</ns:inputLength>
+				<ns:nullable>false</ns:nullable>
+				<ns:isReadOnly>true</ns:isReadOnly>
+				<ns:isUserEditable>false</ns:isUserEditable>
+			</ns:column>
+			<ns:column columnName="EntityId">
+				<ns:columnTitle>Entity Id</ns:columnTitle>
+				<ns:inputType>text</ns:inputType>
+				<ns:inputLength>36</ns:inputLength>
+				<ns:isReadOnly>true</ns:isReadOnly>
+			</ns:column>
+			<ns:column columnName="Title">
+				<ns:columnTitle>Title</ns:columnTitle>
+				<ns:inputType>text</ns:inputType>
+				<ns:displayWidth>470</ns:displayWidth>
+				<ns:inputLength>40</ns:inputLength>
+				<ns:nullable>false</ns:nullable>
+				<ns:isReadOnly>false</ns:isReadOnly>
+				<ns:isUserEditable>true</ns:isUserEditable>
+			</ns:column>
+			<ns:column columnName="Status">
+				<ns:columnTitle>Status</ns:columnTitle>
+				<ns:inputType>text</ns:inputType>
+				<ns:displayWidth>60</ns:displayWidth>
+				<ns:inputLength>8</ns:inputLength>
+				<ns:nullable>false</ns:nullable>
+				<ns:isReadOnly>false</ns:isReadOnly>
+				<ns:isUserEditable>true</ns:isUserEditable>
+			</ns:column>
+			<ns:column columnName="AssignedTo">
+				<ns:columnTitle>Assigned To</ns:columnTitle>
+				<ns:inputType>text</ns:inputType>
+				<ns:displayWidth>130</ns:displayWidth>
+				<ns:inputLength>10</ns:inputLength>
+				<ns:nullable>false</ns:nullable>
+				<ns:isReadOnly>false</ns:isReadOnly>
+				<ns:isUserEditable>true</ns:isUserEditable>
+				<ns:fk>
+					<ns:fkColumnName>UserId</ns:fkColumnName>
+					<ns:fkTable>Users</ns:fkTable>
+					<ns:fkDbSchema>core</ns:fkDbSchema>
+				</ns:fk>
+			</ns:column>
+			<ns:column columnName="Type">
+				<ns:columnTitle>Type</ns:columnTitle>
+				<ns:inputType>text</ns:inputType>
+                <ns:displayWidth>75</ns:displayWidth>
+				<ns:inputLength>32</ns:inputLength>
+				<ns:isReadOnly>false</ns:isReadOnly>
+				<ns:isUserEditable>true</ns:isUserEditable>
+			</ns:column>
+			<ns:column columnName="Area">
+				<ns:columnTitle>Area</ns:columnTitle>
+				<ns:inputType>text</ns:inputType>
+				<ns:displayWidth>75</ns:displayWidth>
+				<ns:inputLength>32</ns:inputLength>
+				<ns:isReadOnly>false</ns:isReadOnly>
+				<ns:isUserEditable>true</ns:isUserEditable>
+			</ns:column>
+			<ns:column columnName="Priority">
+				<ns:columnTitle>Pri</ns:columnTitle>
+				<ns:inputType>text</ns:inputType>
+				<ns:displayWidth>35</ns:displayWidth>
+				<ns:inputLength>10</ns:inputLength>
+				<ns:nullable>false</ns:nullable>
+				<ns:isReadOnly>false</ns:isReadOnly>
+				<ns:isUserEditable>true</ns:isUserEditable>
+			</ns:column>
+			<ns:column columnName="Milestone">
+				<ns:columnTitle>Milestone</ns:columnTitle>
+				<ns:inputType>text</ns:inputType>
+				<ns:displayWidth>70</ns:displayWidth>
+				<ns:inputLength>32</ns:inputLength>
+				<ns:isReadOnly>false</ns:isReadOnly>
+				<ns:isUserEditable>true</ns:isUserEditable>
+			</ns:column>
+			<ns:column columnName="BuildFound">
+				<ns:columnTitle>Build Found</ns:columnTitle>
+				<ns:inputType>text</ns:inputType>
+				<ns:inputLength>32</ns:inputLength>
+				<ns:isReadOnly>false</ns:isReadOnly>
+				<ns:isUserEditable>true</ns:isUserEditable>
+			</ns:column>
+			<ns:column columnName="ModifiedBy">
+				<ns:columnTitle>Modified By</ns:columnTitle>
+				<ns:inputType>text</ns:inputType>
+				<ns:inputLength>10</ns:inputLength>
+				<ns:nullable>false</ns:nullable>
+				<ns:isReadOnly>false</ns:isReadOnly>
+				<ns:isUserEditable>true</ns:isUserEditable>
+				<ns:fk>
+					<ns:fkColumnName>UserId</ns:fkColumnName>
+					<ns:fkTable>Users</ns:fkTable>
+					<ns:fkDbSchema>core</ns:fkDbSchema>
+				</ns:fk>
+			</ns:column>
+			<ns:column columnName="Modified">
+				<ns:columnTitle>Modified</ns:columnTitle>
+				<ns:inputType>text</ns:inputType>
+				<ns:inputLength>23</ns:inputLength>
+				<ns:isReadOnly>false</ns:isReadOnly>
+				<ns:isUserEditable>true</ns:isUserEditable>
+			</ns:column>
+			<ns:column columnName="CreatedBy">
+				<ns:columnTitle>Created By</ns:columnTitle>
+				<ns:inputType>text</ns:inputType>
+				<ns:inputLength>10</ns:inputLength>
+				<ns:nullable>false</ns:nullable>
+				<ns:isReadOnly>false</ns:isReadOnly>
+				<ns:isUserEditable>true</ns:isUserEditable>
+				<ns:fk>
+					<ns:fkColumnName>UserId</ns:fkColumnName>
+					<ns:fkTable>Users</ns:fkTable>
+					<ns:fkDbSchema>core</ns:fkDbSchema>
+				</ns:fk>
+			</ns:column>
+			<ns:column columnName="Created">
+				<ns:columnTitle>Created</ns:columnTitle>
+				<ns:inputType>text</ns:inputType>
+				<ns:inputLength>23</ns:inputLength>
+				<ns:isReadOnly>false</ns:isReadOnly>
+				<ns:isUserEditable>true</ns:isUserEditable>
+			</ns:column>
+			<ns:column columnName="Tag">
+				<ns:columnTitle>Tag</ns:columnTitle>
+				<ns:inputType>text</ns:inputType>
+				<ns:inputLength>32</ns:inputLength>
+				<ns:isReadOnly>false</ns:isReadOnly>
+				<ns:isUserEditable>true</ns:isUserEditable>
+			</ns:column>
+			<ns:column columnName="ResolvedBy">
+				<ns:columnTitle>Resolved By</ns:columnTitle>
+				<ns:inputType>text</ns:inputType>
+				<ns:inputLength>10</ns:inputLength>
+				<ns:isReadOnly>false</ns:isReadOnly>
+				<ns:isUserEditable>true</ns:isUserEditable>
+				<ns:fk>
+					<ns:fkColumnName>UserId</ns:fkColumnName>
+					<ns:fkTable>Users</ns:fkTable>
+					<ns:fkDbSchema>core</ns:fkDbSchema>
+				</ns:fk>
+			</ns:column>
+			<ns:column columnName="Resolved">
+				<ns:columnTitle>Resolved</ns:columnTitle>
+				<ns:inputType>text</ns:inputType>
+				<ns:inputLength>23</ns:inputLength>
+				<ns:isReadOnly>false</ns:isReadOnly>
+				<ns:isUserEditable>true</ns:isUserEditable>
+			</ns:column>
+			<ns:column columnName="Resolution">
+				<ns:columnTitle>Resolution</ns:columnTitle>
+				<ns:inputType>text</ns:inputType>
+				<ns:inputLength>32</ns:inputLength>
+				<ns:isReadOnly>false</ns:isReadOnly>
+				<ns:isUserEditable>true</ns:isUserEditable>
+			</ns:column>
+			<ns:column columnName="Duplicate">
+				<ns:columnTitle>Duplicate</ns:columnTitle>
+				<ns:inputType>text</ns:inputType>
+				<ns:inputLength>10</ns:inputLength>
+				<ns:isReadOnly>false</ns:isReadOnly>
+				<ns:isUserEditable>true</ns:isUserEditable>
+			</ns:column>
+			<ns:column columnName="ClosedBy">
+				<ns:columnTitle>Closed By</ns:columnTitle>
+				<ns:inputType>text</ns:inputType>
+				<ns:inputLength>10</ns:inputLength>
+				<ns:isReadOnly>false</ns:isReadOnly>
+				<ns:isUserEditable>true</ns:isUserEditable>
+				<ns:fk>
+					<ns:fkColumnName>UserId</ns:fkColumnName>
+					<ns:fkTable>Users</ns:fkTable>
+					<ns:fkDbSchema>core</ns:fkDbSchema>
+				</ns:fk>
+			</ns:column>
+			<ns:column columnName="Closed">
+				<ns:columnTitle>Closed</ns:columnTitle>
+				<ns:inputType>text</ns:inputType>
+				<ns:inputLength>23</ns:inputLength>
+				<ns:isReadOnly>false</ns:isReadOnly>
+				<ns:isUserEditable>true</ns:isUserEditable>
+			</ns:column>
+            <ns:column columnName="Int1"/>
+            <ns:column columnName="Int2"/>
+            <ns:column columnName="String1"/>
+            <ns:column columnName="String2"/>
+            <ns:column columnName="NotifyList"/>
+        </ns:columns>
+		<ns:tableTitle>Issues</ns:tableTitle>
+		<ns:pkColumnName>IssueId</ns:pkColumnName>
+		<ns:versionColumnName>_ts</ns:versionColumnName>
+		<ns:titleColumn>_ts</ns:titleColumn>
+	</ns:table>
+    <ns:table tableName="EmailPrefs" tableDbType="TABLE">
+        <ns:columns>
+            <ns:column columnName="Container"/>
+            <ns:column columnName="UserId"/>
+            <ns:column columnName="EmailOption"/>
+        </ns:columns>
+    </ns:table>
+</ns:tables>

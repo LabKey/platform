@@ -1,0 +1,128 @@
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="java.util.List" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%
+    JspView<ViewContext> me = (JspView<ViewContext>) HttpView.currentView();
+    ViewContext context = me.getViewContext();
+    Container current = context.getContainer();
+    List<Container> containers;
+    boolean reorderingProjects = current.isRoot() || current.getParent().isRoot();
+    if (current.isRoot())
+       containers = current.getChildren();
+    else
+        containers = current.getParent().getChildren();
+
+    boolean isCustomOrder = false;
+    for (Container container : containers)
+    {
+        if (container.getSortOrder() > 0)
+            isCustomOrder = true;
+    }
+%>
+<script type="text/javascript">
+function saveList()
+{
+    var itemList = "";
+    var itemSelect = document.reorder.items;
+    for (var i = 0; i < itemSelect.length; i++)
+    {
+        itemList += itemSelect.item(i).value;
+        if (i < itemSelect.length - 1)
+            itemList += ";";
+    }
+    document.reorder.order.value = itemList;
+}
+
+function orderModule(down)
+{
+    if (reorderDisabled())
+        return false;
+
+    var itemSelect = document.reorder.items;
+    var selIndex = itemSelect.selectedIndex;
+    if (selIndex != -1)
+    {
+        var swapItem = null;
+        if (selIndex > 0 && down == 0)
+        {
+            swapItem = itemSelect.item(selIndex - 1);
+            itemSelect.selectedIndex--;
+        }
+        else if (selIndex < itemSelect.length-1 && down == 1)
+        {
+            swapItem = itemSelect.item(selIndex + 1);
+            itemSelect.selectedIndex++;
+        }
+        if (swapItem != null)
+        {
+            var selItem = itemSelect.item(selIndex);
+            var selText = selItem.text;
+            var selValue = selItem.value;
+            selItem.text = swapItem.text;
+            selItem.value = swapItem.value;
+            swapItem.text = selText;
+            swapItem.value = selValue;
+            saveList();
+        }
+    }
+    else
+    {
+        alert("Please select a folder first.");
+    }
+    return false;
+}
+
+function reorderDisabled()
+{
+    var radios = document.reorder.resetToAlphabetical;
+    for(var i = 0; i < radios.length; i++)
+    {
+		if(radios[i].checked)
+			return radios[i].value == "true";
+	}
+    return false;
+}
+
+function toggleItemSelector()
+{
+    var disabled = reorderDisabled();
+    if (disabled)
+        document.reorder.items.selectedIndex = -1;
+    document.reorder.items.disabled = disabled;
+}
+
+</script>
+<form action="reorderFolders.post" name="reorder" method="POST" onSubmit="saveList()">
+<p>
+    <input type="radio" name="resetToAlphabetical" value="true" <%= isCustomOrder ? "" : "checked" %> onChange="toggleItemSelector();"/> Sort <%= reorderingProjects ? "projects" : "folders" %> alphabetically<br>
+    <input type="radio" name="resetToAlphabetical" value="false" <%= isCustomOrder ? "checked" : "" %> onChange="toggleItemSelector();" /> Use custom <%= reorderingProjects ? "project" : "folder" %> order
+</p>
+<p>
+    <table class="normal">
+        <tr>
+            <td>
+                <select name="items" size="<%= containers.size() %>"  <%= isCustomOrder ? "" : "DISABLED" %>>
+                <%
+                for (Container container : containers)
+                {
+                    %>
+                    <option value="<%= container.getName() %>"><%= container.getName() %></option>
+                    <%
+                }
+                %>
+                </select>
+            </td>
+            <td align="center" valign="center">
+                <input type='image' src="<%= PageFlowUtil.buttonSrc("Move Up")%>" value='Move Up' onclick="return orderModule(0)"><br><br>
+                <input type='image' src="<%= PageFlowUtil.buttonSrc("Move Down")%>" value='Move Down' onclick="return orderModule(1)">
+            </td>
+        </tr>
+    </table>
+</p>
+    <input type="hidden" name="order" value="">
+    <%= buttonImg("Save") %>&nbsp;<%= buttonLink("Cancel", reorderingProjects ? "showAdmin.view" : "manageFolders.view") %>
+</form>

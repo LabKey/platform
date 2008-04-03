@@ -1,0 +1,23 @@
+<%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<form method="post" action="${postURL}">
+<input type="hidden" name="pageId" value="${webPart.pageId}">
+<input type="hidden" name="index" value="${webPart.index}">
+<table>
+
+<%for(prop in propertyDescriptors)
+    {%>
+<tr>
+    <td>${prop.displayName}</td>
+    <td>
+    <input type="text" name="${prop.name}" value="${webPart.propertyMap.get(prop.name) == null ? "" : webPart.propertyMap.get(prop.name)}">
+    </td>
+</tr>
+<%}%>
+<tr>
+    <td colspan=2 align="right">
+        <input type="image" src="<%=PageFlowUtil.submitSrc()%>">
+        <a href="begin.view"><img src="<%=PageFlowUtil.cancelSrc()%>"></a>
+    </td>
+</tr>
+</table>
+</form>

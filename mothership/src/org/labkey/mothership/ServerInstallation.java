@@ -1,0 +1,119 @@
+package org.labkey.mothership;
+
+/**
+ * User: jeckels
+ * Date: Apr 21, 2006
+ */
+public class ServerInstallation
+{
+    private int _serverInstallationId;
+    private String _serverInstallationGUID;
+    private String _note;
+    private String _container;
+    private String _systemDescription;
+    private String _logoLink;
+    private String _organizationName;
+    private String _systemShortName;
+    private String _serverIP;
+    private String _serverHostName;
+
+    public String getSystemDescription()
+    {
+        return _systemDescription;
+    }
+
+    public void setSystemDescription(String systemDescription)
+    {
+        _systemDescription = systemDescription;
+    }
+
+    public String getLogoLink()
+    {
+        return _logoLink;
+    }
+
+    public void setLogoLink(String logoLink)
+    {
+        _logoLink = logoLink;
+    }
+
+    public String getOrganizationName()
+    {
+        return _organizationName;
+    }
+
+    public void setOrganizationName(String organizationName)
+    {
+        _organizationName = organizationName;
+    }
+
+    public String getSystemShortName()
+    {
+        return _systemShortName;
+    }
+
+    public void setSystemShortName(String systemShortName)
+    {
+        _systemShortName = systemShortName;
+    }
+
+    public int getServerInstallationId()
+    {
+        return _serverInstallationId;
+    }
+
+    public void setServerInstallationId(int serverInstallationId)
+    {
+        _serverInstallationId = serverInstallationId;
+    }
+
+    public String getServerInstallationGUID()
+    {
+        return _serverInstallationGUID;
+    }
+
+    public void setServerInstallationGUID(String serverInstallationGUID)
+    {
+        _serverInstallationGUID = serverInstallationGUID;
+    }
+
+    public String getNote()
+    {
+        return _note;
+    }
+
+    public void setNote(String note)
+    {
+        _note = note;
+    }
+
+    public String getContainer()
+    {
+        return _container;
+    }
+
+    public void setContainer(String container)
+    {
+        _container = container;
+    }
+
+    public String getServerIP()
+    {
+        return _serverIP;
+    }
+
+    public void setServerIP(String serverIP)
+    {
+        _serverIP = serverIP;
+    }
+
+    public String getServerHostName()
+    {
+        return _serverHostName;
+    }
+
+    public void setServerHostName(String serverHostName)
+    {
+        _serverHostName = serverHostName;
+    }
+}

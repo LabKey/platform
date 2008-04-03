@@ -1,0 +1,35 @@
+<%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.study.model.Study" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.study.model.Visit" %>
+<%@ page import="org.labkey.study.model.VisitMapKey" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.study.visitmanager.VisitManager" %>
+<%
+    Visit visit = currentContext.get("visit");
+    Study study = currentContext.get("study");
+    String errors = PageFlowUtil.getStrutsError(request, "main");
+    if (null != errors)
+    {
+%><div style="color:red"><%=errors%></div><%
+    }
+    StudyManager manager = StudyManager.getInstance();
+    VisitManager visitManager = manager.getVisitManager(study);
+    Map summaryMap = visitManager.getVisitSummary(null);
+    int count = 0;
+    for (Map.Entry e : summaryMap.entrySet())
+    {
+        VisitMapKey key = (VisitMapKey)e.getKey();
+        if (key.visitRowId == visit.getRowId())
+            count += (Integer)e.getValue();
+    }
+%>
+<form action="deleteVisit.view" method=POST>
+    Do you want to delete <%=visitManager.getLabel() %> <b><%=visit.getDisplayString()%></b>?<p/>
+    <%if (count != 0)
+    {
+        %>This <%=visitManager.getLabel()%> has <%=count%> dataset results which will also be deleted.<p/><%
+    }%>
+    <input type=image src="<%=PageFlowUtil.buttonSrc("Delete","large")%>">&nbsp;<input type=image src="<%=PageFlowUtil.buttonSrc("Cancel","large")%>" value="Cancel" onclick="javascript:window.history.back(); return false;">
+    <input type=hidden name=id value="<%=visit.getRowId()%>">
+</form>

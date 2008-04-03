@@ -1,0 +1,34 @@
+$!tools.pageFlowUtil.getStrutsError($request, "main")
+#if($form.inputMode)
+#set($action="showFillBox.view")
+#else
+#set($action="showSelectSamples.view")
+#end
+<form action="$action">
+<input type=hidden name=modelId value="$!form.modelId">
+<table>
+<tr>
+<td>
+Freezer: 
+</td>
+<td>
+<select name="freezerId">
+#foreach($f in $freezers)
+  <option value="$f.name" #if($form.freezerId.toString() == $f.name)selected#end>$tools.filter($f.object)</option>
+#end
+</select>
+</td>
+</tr>
+<tr><td>Rack</td><td><input name=rack value="$!form.rack"></td></tr>
+<tr><td>Shelf</td><td><input name=shelf value="$!form.shelf"></td></tr>
+<tr><td>Drawer</td><td><input name=drawer value="$!form.drawer"></td></tr>
+<tr><td>Box:</td><td><input name=boxName value="$!form.boxName"></td></tr>
+<tr><td>Collection Date</td><td><input name="collectionDateString" value="$!form.collectionDateString"/></td></tr>
+</table>
+#if($form.inputMode)
+<input type=image src='$tools.buttonSrc("Fill Box")'/>
+#else
+<input type=image src='$tools.buttonSrc("Show Box")'"/>
+#end
+<a href="begin.view?modelId=$!form.modelId"><img border=0 src='$tools.buttonSrc("Cancel")'></a>
+</form>

@@ -1,0 +1,1 @@
+ALTER TABLE study.ParticipantVisit ADD CONSTRAINT PK_ParticipantVisit PRIMARY KEY (Container, ParticipantId, VisitId)
