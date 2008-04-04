@@ -102,8 +102,9 @@ public class ValidEmail
 
     public static class InvalidEmailException extends Exception
     {
-        private String _badEmail;
-        InvalidEmailException(String badEmail)
+        private final String _badEmail;
+
+        public InvalidEmailException(String badEmail)
         {
             _badEmail = badEmail;
         }
