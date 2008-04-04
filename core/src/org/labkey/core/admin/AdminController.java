@@ -865,13 +865,22 @@ public class AdminController extends ViewController
         // E.g. "Labkey <support@labkey.com>" -> "support@labkey.com"
         try
         {
-            ValidEmail email = new ValidEmail(form.getSystemEmailAddress());
-            props.setSystemEmailAddresses(email.getEmailAddress());
+            String address = form.getSystemEmailAddress().trim();
+            // Manually check for a space or a quote, as these will later
+            // fail to send via JavaMail.
+            if (address.contains(" ") || address.contains("\""))
+                throw new ValidEmail.InvalidEmailException(address);
+
+            // this will throw an InalidEmailException for some types
+            // of invalid email addresses
+            new ValidEmail(form.getSystemEmailAddress());
+            props.setSystemEmailAddresses(address);
         }
         catch (ValidEmail.InvalidEmailException e)
         {
             ActionErrors errors = PageFlowUtil.getActionErrors(getRequest(), true);
-            errors.add("main", new ActionMessage("Error", "Invalid System Email Address. Please enter a valid email address."));
+            errors.add("main", new ActionMessage("Error", "Invalid System Email Address: ["
+                    + e.getBadEmail() + "]. Please enter a valid email address."));
             return new ViewForward(getCustomizeSiteURL(), false);
         }
 

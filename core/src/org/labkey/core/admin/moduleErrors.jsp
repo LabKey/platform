@@ -1,6 +1,8 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="java.io.PrintWriter" %>
+<%@ page import="java.io.StringWriter" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
@@ -22,7 +24,13 @@
 %>
         <tr>
             <td valign="top"><pre><%=entry.getKey()%></pre></td>
-            <td valign="top"><pre><%entry.getValue().printStackTrace(new PrintWriter(out));%></pre></td>
+            <td valign="top"><pre><%
+
+                StringWriter writer = new StringWriter();
+                entry.getValue().printStackTrace(new PrintWriter(writer));
+                out.print(PageFlowUtil.filter(writer.toString()));
+
+            %></pre></td>
 
         </tr>
 <%
