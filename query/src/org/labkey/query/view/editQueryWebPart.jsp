@@ -1,37 +1,39 @@
+<%@ page import="org.json.JSONObject"%>
 <%@ page import="org.labkey.api.query.DefaultSchema"%>
-<%@ page import="org.labkey.api.query.UserSchema"%>
 <%@ page import="static org.labkey.api.query.QueryService.*" %>
-<%@ page import="java.util.*" %>
+<%@ page import="org.labkey.api.query.QueryDefinition" %>
+<%@ page import="org.labkey.api.query.UserSchema" %>
 <%@ page import="org.labkey.api.util.CaseInsensitiveHashMap" %>
+<%@ page import="java.util.*" %>
 <%@ page extends="org.labkey.query.view.EditQueryPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<script type="text/javascript">
-    var schemaInfos = new Object();
-    var tableNames;
 <%
     Map<String, String> schemaOptions = new TreeMap<String, String>();
-    Map<String, Map<String, String>> schemaTableNames = new CaseInsensitiveHashMap<Map<String, String>>();
+
+    Map<String, Map<String, List<String>>> schemaTableNames = new CaseInsensitiveHashMap<Map<String, List<String>>>();
     DefaultSchema defSchema = DefaultSchema.get(getUser(), getContainer());
     for (String name : defSchema.getUserSchemaNames())
     {
         schemaOptions.put(name, name);
         UserSchema schema = get().getUserSchema(getUser(), getContainer(), name);
-        Map<String, String> tableNames = new LinkedHashMap<String, String>();
+        Map<String, List<String>> tableNames = new CaseInsensitiveHashMap<List<String>>();
         for (String tableName : new TreeSet<String>(schema.getTableAndQueryNames(true)))
         {
-            tableNames.put(tableName, tableName);
+            List<String> viewNames = new LinkedList<String>();
+            viewNames.add(""); // default view
+
+            QueryDefinition queryDef = schema.getQueryDefForTable(tableName);
+            if (queryDef != null)
+            {
+                for (String viewName : queryDef.getCustomViews(getUser(), getViewContext().getRequest()).keySet())
+                {
+                    viewNames.add(viewName);
+                }
+            }
+
+            tableNames.put(tableName, viewNames);
         }
         schemaTableNames.put(name, tableNames);
-        %>
-        tableNames = new Array();
-        schemaInfos['<%= name %>'] = tableNames;
-        <%
-        int index = 0;
-        for (String tableName : tableNames.values()) {
-            %>
-            tableNames[<%= index++%>] = '<%= tableName %>';
-            <%
-        }
     }
 
     Map<String, String> pm = getWebPart().getPropertyMap();
@@ -50,15 +52,38 @@
 
     boolean querySelected = pm.get("queryName") != null && !"".equals(pm.get("queryName").trim());
 %>
+<script type="text/javascript">
+var schemaInfos = <%= new JSONObject(schemaTableNames).toString() %>;
 function updateQueries(schemaName)
 {
     var tableNames = schemaInfos[schemaName];
     var querySelect = document.getElementById('queryName');
+
     querySelect.options.length = 0;
-    for (var i = 0; i < tableNames.length; i++)
+    for (var opt in tableNames)
     {
-        querySelect.options[i] = new Option(tableNames[i], tableNames[i]);
+        querySelect.options[querySelect.options.length] = new Option(opt, opt);
     }
+
+    updateViews(querySelect.value);
+}
+function updateViews(queryName)
+{
+    var tableName = document.getElementById('schemaName').value;
+    var viewNames = schemaInfos[tableName][queryName];
+    var viewSelect = document.getElementById('viewName');
+
+    viewSelect.options.length = 0;
+    for (var i = 0; i < viewNames.length; i++)
+    {
+        var opt = viewNames[i];
+        viewSelect.options[i] = new Option(opt == "" ? "<default view>" : opt, opt);
+    }
+}
+function disableQuerySelect(disable)
+{
+    document.getElementById('queryName').disabled = disable;
+    document.getElementById('viewName').disabled = disable;
 }
 </script>
 <form name="frmCustomize" method="post" action="<%=h(_part.getCustomizePostURL(getContainer()))%>">
@@ -70,21 +95,64 @@ function updateQueries(schemaName)
         <tr>
             <td class="ms-searchform">Schema:</td>
             <td>
-                <select name="schemaName" onchange="updateQueries(this.value)">
+                <select name="schemaName" id="schemaName"
+                        title="Select a Schema Name"
+                        onchange="updateQueries(this.value)">
                     <labkey:options value="<%=pm.get("schemaName")%>" map="<%=schemaOptions%>" />
                 </select>
             </td>
         </tr>
         <tr>
-            <td class="ms-searchform" rowspan="2">Query:</td>
-            <td><input type="radio" name="selectQuery" value="false" <% if (!querySelected) { %> checked <% } %> onchange="document.getElementById('queryName').disabled = this.value == 'false';"/>Show the list of tables in this schema.</td>
-        </tr>
-        <tr>
+            <td class="ms-searchform" valign="top">Query and View:</td>
             <td>
-                <input type="radio" name="selectQuery" value="true" <% if (querySelected) { %> checked <% } %>  onchange="document.getElementById('queryName').disabled = this.value == 'false';"/>Show the contents of a specific table:
-                <select name="queryName" id="queryName" <% if (!querySelected) { %> disabled="true" <% } %>>
-                    <labkey:options value="<%= pm.get("queryName") %>" map="<%= schemaTableNames.get(pm.get("schemaName")) == null ? Collections.<String, String>emptyMap() : schemaTableNames.get(pm.get("schemaName")) %>" />
-                </select>
+                <table class="normal">
+                    <tr>
+                        <td><input type="radio" name="selectQuery" value="false" <% if (!querySelected) { %> checked <% } %> onchange="disableQuerySelect(this.value == 'false');"/></td>
+                        <td>Show the list of tables in this schema.</td>
+                    </tr>
+                    <tr>
+                        <td><input type="radio" name="selectQuery" value="true" <% if (querySelected) { %> checked <% } %>  onchange="disableQuerySelect(this.value == 'false');"/></td>
+                        <td>Show the contents of a specific table and view.</td>
+                    </tr>
+                    <tr>
+                        <td/>
+                        <td>
+                            <select name="queryName" id="queryName"
+                                    title="Select a Table Name" onchange="updateViews(this.value)"
+                                    <% if (!querySelected) { %> disabled="true" <% } %>>
+                                <%
+                                Map<String, List<String>> tableNames = schemaTableNames.get(pm.get("schemaName"));
+                                if (tableNames != null)
+                                {
+                                    for (String queryName : tableNames.keySet())
+                                    {
+                                        %><option value="<%=h(queryName)%>" <%=queryName.equals(pm.get("queryName")) ? "selected" : ""%>><%=h(queryName)%></option><%
+                                    }
+                                }
+                                %>
+                            </select>
+                            <br/>
+                            <select name="viewName" id="viewName"
+                                    title="Select a View Name"
+                                    <% if (!querySelected) { %> disabled="true" <% } %>>
+                                <%
+                                if (tableNames != null)
+                                {
+                                    List<String> viewNames = tableNames.get(pm.get("queryName"));
+                                    if (viewNames != null)
+                                    {
+                                        for (String viewName : viewNames)
+                                        {
+                                            String value = viewName.equals("") ? "<default view>" : viewName;
+                                            %><option value="<%=h(viewName)%>" <%=viewName.equals(pm.get("viewName")) ? "selected" : ""%>><%=h(value)%></option><%
+                                        }
+                                    }
+                                }
+                                %>
+                            </select>
+                        </td>
+                    </tr>
+                </table>
             </td>
         </tr>
         <tr>
