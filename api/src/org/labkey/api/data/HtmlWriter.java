@@ -23,8 +23,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -41,18 +39,12 @@ import java.util.Map;
  */
 public class HtmlWriter
 {
-    private SimpleDateFormat _dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
     private ResultSet _rs = null;
     private List<DisplayColumn> _columns = null;
     private HttpServletResponse _response = null;
     private RenderContext _ctx = null;
     private boolean _fullHtmlPage = false;
     private PrintWriter _out = null;
-
-    public SimpleDateFormat getDateFormat()
-    {
-        return _dateFormat;
-    }
 
     public ResultSet getResultSet()
     {
@@ -185,7 +177,7 @@ public class HtmlWriter
             for(DisplayColumn dc : getColumns())
             {
                 out.write(getOpenHeader());
-                out.write(PageFlowUtil.filter(dc.getCaption()));
+                out.write(PageFlowUtil.filter(dc.getName())); //FIX: 5649
                 out.write(getCloseHeader());
             }
         }
@@ -203,22 +195,11 @@ public class HtmlWriter
             for(DisplayColumn dc : getColumns())
             {
                 out.write(getOpenValue());
-                writeValue(dc.getDisplayValue(ctx));
+                out.write(PageFlowUtil.filter(dc.getTsvFormattedValue(ctx))); //FIX: 5696 
                 out.write(getCloseValue());
             }
         }
         out.write(getCloseRow());
-    }
-
-    protected void writeValue(Object value) throws IOException
-    {
-        if(null == value)
-            return;
-
-        if(value instanceof Date)
-            getWriter().write(_dateFormat.format((Date)value));
-        else
-            getWriter().write(value.toString());
     }
 
     protected PrintWriter prepare(HttpServletResponse response) throws IOException

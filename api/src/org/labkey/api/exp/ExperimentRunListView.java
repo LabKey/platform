@@ -126,7 +126,13 @@ public class ExperimentRunListView extends QueryView
         if (_showAddToExperimentButton && c.hasPermission(context.getUser(), ACL.PERM_INSERT))
         {
             MenuButton addToExperimentButton = new MenuButton("Add to run group");
-            addToExperimentButton.addMenuItem("Create new run group...", PageFlowUtil.urlProvider(ExperimentUrls.class).getCreateRunGroupURL(getViewContext().getContainer(), getViewContext().getActionURL(), view.getDataRegion().getSelectionKey()).toString());
+
+            ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getCreateRunGroupURL(getViewContext().getContainer(), getViewContext().getActionURL(), true);
+            String javascript = "javascript: " + view.getDataRegion().getJavascriptFormReference() + ".method = \"POST\";\n " +
+                    view.getDataRegion().getJavascriptFormReference() + ".action = " + PageFlowUtil.filterQuote(url + "&noPost=true") + ";\n " +
+                    view.getDataRegion().getJavascriptFormReference() + ".submit();";
+            addToExperimentButton.addMenuItem("Create new run group...", javascript);
+
             ExpExperiment[] experiments = ExperimentService.get().getExperiments(c);
             if (experiments.length > 0)
             {
@@ -136,7 +142,7 @@ public class ExperimentRunListView extends QueryView
             for (ExpExperiment exp : experiments)
             {
                 ActionURL addRunUrl = PageFlowUtil.urlProvider(ExperimentUrls.class).getAddRunsToExperimentURL(getContainer(), exp);
-                addToExperimentButton.addMenuItem(exp.getName(), "javascript: if (verifySelected(document.forms[\"" + view.getDataRegion().getName() + "\"], \"" + addRunUrl.getLocalURIString() + "\", \"post\", \"run\")) { document.forms[\"" + view.getDataRegion().getName() + "\"].submit(); }");
+                addToExperimentButton.addMenuItem(exp.getName(), "javascript: if (verifySelected(" + view.getDataRegion().getJavascriptFormReference() + ", \"" + addRunUrl.getLocalURIString() + "\", \"post\", \"run\")) { " + view.getDataRegion().getJavascriptFormReference() + ".submit(); }");
             }
             bar.add(addToExperimentButton);
         }

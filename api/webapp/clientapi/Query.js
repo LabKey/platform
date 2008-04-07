@@ -1,6 +1,6 @@
 /**
  * @fileOverview
- * @author LabKey Software <a href="mailto:support@labkey.com">support@labkey.com</a>
+ * @author <a href="https://www.labkey.org">LabKey Software</a> (<a href="mailto:support@labkey.com">support@labkey.com</a>)
  * @version 8.1
  * @license Copyright (c) 2008 LabKey Software Foundation
  * <p/>
@@ -75,14 +75,16 @@ LABKEY.Query = new function()
         * @param {String} queryName Name of a query table associated with the chosen schema. See also: <a class="link"
 					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
-        * @param {Function(LABKEY.Query.SelectRowsResults [LABKEY.Query.SelectRowsOptions])} successCallback
-				Function called when the "select" function executes successfully.		
-        * @param {Function} [errorCallback] Function called when execution of the "select" function fails.
+        * @param {Function} successCallback
+				Function called when the "selectRows" function executes successfully. Will be called with arguments:
+				{@link LABKEY.Query.SelectRowsResults} and (optionally) {@link LABKEY.Query.SelectRowsOptions}
+        * @param {Function} [errorCallback] Function called when execution of the "selectRows" function fails.
         * @param {Array} [filterArray] Array of objects created by {@link LABKEY.Filter#create}.
         * @param {String} [sort]  String description of the sort.  It includes the column names
         *       listed in the URL of a sorted data region (with an optional minus prefix to indicate
         *       descending order). In the case of a multi-column sort, up to three column names can be
         *       included, separated by commas.
+        * @param {String} [viewName] The name of a custom view saved on the server for the specified query.
         * @example Example: <pre name="code" class="xml">
 &lt;script type="text/javascript"&gt;
 	LABKEY.requiresClientAPI();
@@ -104,7 +106,7 @@ LABKEY.Query = new function()
 		* @see LABKEY.Query.SelectRowsOptions
 		* @see LABKEY.Query.SelectRowsResults
 		*/
-        selectRows : function(schemaName, queryName, successCallback, errorCallback, filterArray, sort)
+        selectRows : function(schemaName, queryName, successCallback, errorCallback, filterArray, sort, viewName)
         {
             var dataObject = {};
             dataObject['query.queryName'] = queryName;
@@ -121,6 +123,9 @@ LABKEY.Query = new function()
                 }
             }
 
+            if(viewName)
+                dataObject['query.viewName'] = viewName;
+
             Ext.Ajax.request({
                 url : LABKEY.ActionURL.buildURL('query', 'getQuery'),
                 method : 'GET',
@@ -131,16 +136,17 @@ LABKEY.Query = new function()
         },
 
         /**
-        * Update rows
+        * Update rows.
         * @param {String} schemaName Name of a schema defined within the current container. See also: <a class="link"
 					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
         * @param {String} queryName Name of a query table associated with the chosen schema.  See also: <a class="link"
 					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
-        * @param {Function(LABKEY.Query.ModifyRowsResults [LABKEY.Query.ModifyRowsOptions])}
-						successCallback Function called when the "update" function executes successfully.
-        * @param {Function} [errorCallback] Function called when execution of the "update" function fails.
+        * @param {Function} successCallback Function called when the "updateRows" function executes successfully.
+						Will be called with arguments: {@link LABKEY.Query.ModifyRowsResults} and (optionally)
+						{@link LABKEY.Query.ModifyRowsOptions}.
+        * @param {Function} [errorCallback] Function called when execution of the "updateRows" function fails.
         * @param {Array} rowDataArray Array of record objects in which each object has a property for each field.
         *               The row array must include the primary key column values and values for
         *               other columns you wish to update.
@@ -153,16 +159,17 @@ LABKEY.Query = new function()
         },
 
         /**
-        * Insert rows
+        * Insert rows.
         * @param {String} schemaName Name of a schema defined within the current container.  See also: <a class="link"
 					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
         * @param {String} queryName Name of a query table associated with the chosen schema. See also: <a class="link"
 					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
-        * @param {Function(LABKEY.Query.ModifyRowsResults [LABKEY.Query.ModifyRowsOptions])} successCallback
-							Function called when the "insert" function executes successfully.
-        * @param {Function} [errorCallback]  Function called when execution of the "insert" function fails.
+        * @param {Function} successCallback Function called when the "insertRows" function executes successfully.
+						Will be called with arguments: {@link LABKEY.Query.ModifyRowsResults} and (optionally)
+						{@link LABKEY.Query.ModifyRowsOptions}.
+		* @param {Function} [errorCallback]  Function called when execution of the "insertRows" function fails.
         * @param {Array} rowDataArray Array of record objects in which each object has a property for each field.
         *                  The row data array must include all column values except for the primary key column.
         *                  However, you will need to include the primary key column values if you defined
@@ -176,16 +183,17 @@ LABKEY.Query = new function()
         },
 
         /**
-        * Delete rows
+        * Delete rows.
         * @param {String} schemaName Name of a schema defined within the current container. See also: <a class="link"
 					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
         * @param {String} queryName Name of a query table associated with the chosen schema. See also: <a class="link"
 					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
-        * @param {Function(LABKEY.Query.ModifyRowsResults [LABKEY.Query.ModifyRowsOptions])} successCallback
-							Function called when the "delete" function executes successfully.
-        * @param {Function} [errorCallback] Function called when execution of the "delete" function fails.
+        * @param {Function} successCallback Function called when the "deleteRows" function executes successfully.
+        			Will be called with arguments: {@link LABKEY.Query.ModifyRowsResults} and (optionally)
+				    {@link LABKEY.Query.ModifyRowsOptions}.
+		* @param {Function} [errorCallback] Function called when execution of the "deleteRows" function fails.
         * @param {Array} rowDataArray Array of record objects in which each object has a property for each field.
         *                  The row data array needs to include only the primary key column value, not all columns.
 		* @see LABKEY.Query.ModifyRowsResults
@@ -376,11 +384,11 @@ LABKEY.Query = new function()
             The fields required for inclusion for each row depend on the which LABKEY.Query method you are
             using (updateRows, insertRows or deleteRows).
             <p/>
-            <b>{@link LABKEY.QUERY#updateRows}:</b> <p/>
-            For the update method, each row in the rows array must include its primary key value
+            <b>For {@link LABKEY.Query#updateRows}:</b> <p/>
+            For the 'updateRows' method, each row in the rows array must include its primary key value
             as one of its fields.
             <p/>
-            An example of a ModifyRowsOptions object for updateRows:
+            An example of a ModifyRowsOptions object for the 'updateRows' successCallback:
 <pre name="code" class="xml">
 {"schemaName": "lists",
  "queryName": "API Test List",
@@ -391,12 +399,12 @@ LABKEY.Query = new function()
 } </pre></code>
 
             <p/>
-            <b>{@link LABKEY.QUERY#insertRows}:</b> <p/>
-            For the insert method, the fields of the rows should look the same as
+            <b>For {@link LABKEY.Query#insertRows}:</b> <p/>
+            For the 'insertRows' method, the fields of the rows should look the same as
             they do for the 'updateRows' method, except that primary key values for new rows
             need not be supplied if the primary key columns are auto-increment.
             <p/>
-            An example of a ModifyRowsOptions object for insertRows:
+            An example of a ModifyRowsOptions object for the 'insertRows' successCallback:
 <pre name="code" class="xml">
 {"schemaName": "lists",
  "queryName": "API Test List",
@@ -406,13 +414,13 @@ LABKEY.Query = new function()
 } </pre></code>
 
             <p/>
-            <b>{@link LABKEY.QUERY#deleteRows}:</b> <p/>
+            <b>For {@link LABKEY.Query#deleteRows}:</b> <p/>
             For the 'deleteRows' method, the fields of the rows should look the
             same as they do for the 'updateRows' method, except that the 'deleteRows'
             method needs to supply only the primary key values for the rows. All
             other row data will be ignored.
             <p/>
-            An example of a ModifyRowsOptions object for deleteRows:
+            An example of a ModifyRowsOptions object for the 'deleteRows' successCallback:
 <pre name="code" class="xml">
 {"schemaName": "lists",
  "queryName": "API Test List",

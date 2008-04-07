@@ -5,13 +5,12 @@ import org.labkey.api.data.SqlScriptRunner.SqlScriptException;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.module.DefaultModule;
+import org.labkey.api.module.ModuleContext;
 import org.labkey.api.util.CaseInsensitiveHashSet;
+import org.labkey.api.util.AppProps;
 
 import java.io.*;
-import java.util.Set;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.*;
 import java.util.regex.Pattern;
 
 /**
@@ -27,6 +26,19 @@ public class FileSqlScriptProvider implements SqlScriptProvider
     public FileSqlScriptProvider(DefaultModule module)
     {
         _module = module;
+    }
+
+
+    public Set<String> getSchemaNames() throws SqlScriptException
+    {
+        List<SqlScript> allScripts = getScripts(null);
+        Set<String> schemaNames = new HashSet<String>();
+
+        for (SqlScript script : allScripts)
+            if (!schemaNames.contains(script.getSchemaName()))
+                schemaNames.add(script.getSchemaName());
+
+        return schemaNames;
     }
 
 
@@ -150,6 +162,31 @@ public class FileSqlScriptProvider implements SqlScriptProvider
     public String getProviderName()
     {
         return _module.getName();
+    }
+
+    public void saveScript(String description, String contents) throws IOException
+    {
+        if (!AppProps.getInstance().isDevMode())
+            throw new IllegalStateException("Can't save scripts while in production mode");
+
+        File file = new File(_module.getBuildPath() + "/src" + getScriptPath() + "/" + description);
+
+        if (file.exists())
+            throw new IllegalStateException("File " + file.getAbsolutePath() + " already exists");
+
+        FileWriter fw = null;
+
+        try
+        {
+            fw = new FileWriter(file);
+            fw.write(contents);
+            fw.flush();
+        }
+        finally
+        {
+            if (null != fw)
+                fw.close();
+        }
     }
 
     private void afterScriptRuns(FileSqlScript fileSqlScript)
@@ -286,6 +323,11 @@ public class FileSqlScriptProvider implements SqlScriptProvider
         public int hashCode()
         {
             return (_fileName != null ? _fileName.hashCode() : 0);
+        }
+
+        public String createFilename(String schema, double fromVersion, double toVersion)
+        {
+            return schema + "-" + ModuleContext.formatVersion(fromVersion) + "-" + ModuleContext.formatVersion(toVersion) + ".sql"; 
         }
     }
 }

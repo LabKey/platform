@@ -1,6 +1,6 @@
 /**
  * @fileOverview
- * @author LabKey Software <a href="mailto:support@labkey.com">support@labkey.com</a>
+ * @author <a href="https://www.labkey.org">LabKey Software</a> (<a href="mailto:support@labkey.com">support@labkey.com</a>)
  * @version 8.1
  * @license Copyright (c) 2008 LabKey Software Foundation
  * <p/>
@@ -61,7 +61,8 @@
   * @param {Bool} [config.verticalOrientation='false'] If showMultipleCharts is 'true' this
   *                 option controls whether charts are plotted vertically or
   *                 horizontally (the default).
-  * @example Example: 
+  * @example Example #1 uses the "Physical Exam" dataset in the <a href = "https://www.labkey.org/Project/home/Study/demo/start.view?">Demo Study</a>
+  * to plot a simple chart with one y-value:
 <pre name="code" class="xml">&lt;script type="text/javascript"&gt;
 	LABKEY.requiresClientAPI();
 &lt;/script&gt;
@@ -78,6 +79,25 @@
     chart.render();
 &lt;/script&gt;
 &lt;div id="chartDiv"&gt;&lt;/div&gt;
+
+Example #2 demonstrates plotting of multiple y-values:
+
+&lt;script type="text/javascript"&gt;
+	LABKEY.requiresClientAPI();
+&lt;/script&gt;
+&lt;script type="text/javascript"&gt;
+    var chartConfig2 = {
+        queryName: 'Physical Exam',
+        schemaName: 'study',
+        chartType: LABKEY.Chart.XY,
+        renderTo: 'chartDiv2',
+        columnXName: 'APXwtkg',
+        columnYName: ['APXwtkg', 'APXbpsys', 'APXbpdia']
+    };
+    var chart = new LABKEY.Chart(chartConfig2);
+    chart.render();
+&lt;/script&gt;
+&lt;div id="chartDiv2"&gt;&lt;/div&gt;
 </pre>
   */
 

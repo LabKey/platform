@@ -258,7 +258,7 @@ public class RenderContext extends BoundMap // extends ViewContext
             availableColNames.add(col.getAlias());
         for (Aggregate aggregate : aggregatesIn)
         {
-            if (availableColNames.contains(aggregate.getColumnName()))
+            if (aggregate.isCountStar() || availableColNames.contains(aggregate.getColumnName()))
                 aggregates.add(aggregate);
         }
         if (!aggregates.isEmpty())

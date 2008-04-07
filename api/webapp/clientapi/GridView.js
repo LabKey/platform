@@ -1,6 +1,6 @@
 /**
  * @fileOverview
- * @author LabKey Software <a href="mailto:support@labkey.com">support@labkey.com</a>
+ * @author <a href="https://www.labkey.org">LabKey Software</a> (<a href="mailto:support@labkey.com">support@labkey.com</a>)
  * @version 8.1
  * @license Copyright (c) 2008 LabKey Software Foundation
  * <p/>
@@ -96,6 +96,7 @@ where 'grid' is a reference to the Ext.grid.GridPanel instance.
             gridPanelConfig : { 
                 title :'My People Grid', 
                 autoHeight : true, 
+                width : 500
             } 
         }); 
 	// place editable grid in 'testDiv': 
@@ -115,11 +116,6 @@ LABKEY.GridView = function(config)
     if (!config.schemaName || !config.queryName)
     {
         alert("config.schemaName and config.queryName are required parameters");
-        return;
-    }
-    if (!config.renderTo)
-    {
-        alert("config.renderTo is a required parameter.");
         return;
     }
 

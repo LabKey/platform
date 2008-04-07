@@ -24,8 +24,10 @@ import javax.servlet.http.*;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.util.AppProps;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.FirstRequestHandler;
+import org.labkey.api.module.SafeFlushResponseWrapper;
 
 
 public class AuthFilter implements Filter
@@ -48,15 +50,20 @@ public class AuthFilter implements Filter
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException
     {
         HttpServletRequest req = (HttpServletRequest) request;
-        HttpServletResponse resp = (HttpServletResponse) response;
+        HttpServletResponse resp = new SafeFlushResponseWrapper((HttpServletResponse)response);
 
-        // Only check for SSL redirection if there were no startup problems.
-        // We don't want to blow up in our filter code because Tomcat handles
-        // exceptions from filters, meaning we don't get to show our Beehive based
-        // error page.
-        if (ModuleLoader.getInstance().getStartupFailure() == null &&
-            !req.getScheme().toLowerCase().equals("https") &&
-            AppProps.getInstance().isSSLRequired())
+        // TODO: get rid of getStartupFailureURL, startupFailure action, startupErrorRequest
+
+        Throwable t = ModuleLoader.getInstance().getStartupFailure();
+
+        if (t != null)
+        {
+            ExceptionUtil.handleException(req, resp, t, null, true);
+            return;
+        }
+
+        // No startup failure, so check for SSL redirection
+        if (!req.getScheme().toLowerCase().equals("https") && AppProps.getInstance().isSSLRequired())
         {
             StringBuffer originalURL = req.getRequestURL();
             if (req.getQueryString() != null)

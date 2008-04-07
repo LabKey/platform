@@ -31,7 +31,7 @@
                     if (bean.getManagePopupView() != null)
                     {
                 %>
-                [<a id="manageMenu" href="#">manage assay design >></a>]
+                [<a id="manageMenu" href="javascript: void(0);">manage assay design >></a>]
                 <%
                     }
                     for (Map.Entry<String, ActionURL> entry : bean.getLinks().entrySet())

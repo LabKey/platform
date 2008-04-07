@@ -196,20 +196,6 @@ public class RunRReportView extends RunReportView
         return form;
     }
 
-    protected boolean isReadOnly(Report report) throws Exception
-    {
-        int perms = RReport.getEditPermissions();
-        if (getViewContext().hasPermission(perms))
-        {
-            if (isReportInherited(report))
-                return true;
-            if (report.getDescriptor().getCreatedBy() != 0)
-                return (report.getDescriptor().getCreatedBy() != getViewContext().getUser().getUserId());
-            return false;
-        }
-        return true;
-    }
-
     protected ActionURL getRenderAction() throws Exception
     {
         return null;
@@ -225,7 +211,7 @@ public class RunRReportView extends RunReportView
             if (getRenderAction() != null)
                 designer.addObject("renderAction", getRenderAction().getLocalURIString());
 
-            boolean isReadOnly = isReadOnly(_report);
+            boolean isReadOnly = !_report.getDescriptor().canEdit(getViewContext());
             designer.addObject("readOnly", isReadOnly);
 
             view.addView(designer);

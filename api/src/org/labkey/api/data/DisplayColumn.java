@@ -377,7 +377,7 @@ public abstract class DisplayColumn extends RenderColumn
         out.write(img);
         out.write("\" align=\"bottom\" title=\"Filter\"  style=\"cursor:hand;\"");
         if (null != this.getColumnInfo())
-            out.write(" id=\""+rgn.getName()+":"+this.getColumnInfo().getName()+":filter\"");
+            out.write(" id=\""+PageFlowUtil.filter(rgn.getName() + ":" + this.getColumnInfo().getName() + ":filter") + "\"");
         out.write(" onclick=\"");
         renderFilterOnClick(ctx, out);
         out.write("\" >");

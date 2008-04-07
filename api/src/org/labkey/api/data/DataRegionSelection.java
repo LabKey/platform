@@ -26,7 +26,7 @@ public class DataRegionSelection
         Set<String> result = (Set<String>)session.getAttribute(key);
         if (result == null && create)
         {
-            result = new HashSet<String>();
+            result = new LinkedHashSet<String>();
             session.setAttribute(key, result);
         }
         return result;
@@ -77,7 +77,7 @@ public class DataRegionSelection
      */
     public static Set<String> getSelected(ViewContext context, String key, boolean mergeSession, boolean clearSession)
     {
-        Set<String> result = new HashSet<String>();
+        Set<String> result = new LinkedHashSet<String>();
         String[] values = context.getRequest().getParameterValues(DataRegion.SELECT_CHECKBOX_NAME);
         List<String> parameterSelected = values == null ? new ArrayList<String>() : Arrays.asList(values);
         result.addAll(parameterSelected);

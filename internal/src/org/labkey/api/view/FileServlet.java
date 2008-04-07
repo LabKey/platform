@@ -42,7 +42,7 @@ public class FileServlet extends HttpServlet
         if (request.getAttribute(ViewServlet.ORIGINAL_URL) == null)
         {
             URLHelper helper = new URLHelper(request);
-            request.setAttribute(ViewServlet.ORIGINAL_URL, helper.getLocalURIString());
+            request.setAttribute(ViewServlet.ORIGINAL_URL, helper.getURIString());
         }
 
         //The servlet path looks like a pageflow. Stash this away so that

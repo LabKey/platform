@@ -1403,7 +1403,7 @@ public class Table
         boolean first = true;
         for (Aggregate agg : aggregates)
         {
-            if (columns.containsKey(agg.getColumnName()))
+            if (agg.isCountStar() || columns.containsKey(agg.getColumnName()))
             {
                 if (first)
                     first = false;

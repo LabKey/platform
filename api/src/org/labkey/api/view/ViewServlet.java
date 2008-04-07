@@ -300,7 +300,7 @@ public class ViewServlet extends HttpServlet
         if (request.getAttribute(ViewServlet.ORIGINAL_URL) == null)
         {
             URLHelper helper = new URLHelper(request);
-            request.setAttribute(ViewServlet.ORIGINAL_URL, helper.getLocalURIString());
+            request.setAttribute(ViewServlet.ORIGINAL_URL, helper.getURIString());
         }
         request.setAttribute(REQUEST_URL, url);
 
@@ -342,7 +342,7 @@ public class ViewServlet extends HttpServlet
         if (request.getAttribute(ViewServlet.ORIGINAL_URL) == null)
         {
             URLHelper helper = new URLHelper(request);
-            request.setAttribute(ViewServlet.ORIGINAL_URL, helper.getLocalURIString());
+            request.setAttribute(ViewServlet.ORIGINAL_URL, helper.getURIString());
         }
         request.setAttribute(REQUEST_URL, url);
 

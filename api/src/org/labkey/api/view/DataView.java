@@ -131,6 +131,6 @@ public abstract class DataView extends WebPartView<RenderContext>
 
     public String createVerifySelectedScript(ActionURL url, String objectsDescription)
     {
-        return "javascript: if (verifySelected(document.forms[\"" + getDataRegion().getName() + "\"], \"" + url.getLocalURIString() + "\", \"post\", \"" + objectsDescription + "\")) { document.forms[\"" + getDataRegion().getName() + "\"].submit(); }";
+        return "javascript: if (verifySelected(" + getDataRegion().getJavascriptFormReference() + ", \"" + url.getLocalURIString() + "\", \"post\", \"" + objectsDescription + "\")) { " + getDataRegion().getJavascriptFormReference() + ".submit(); }";
     }
 }

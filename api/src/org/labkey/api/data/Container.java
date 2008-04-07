@@ -330,7 +330,7 @@ public class Container implements Serializable
                     defaultModuleName = (String) props.get("name");
 
                 boolean initRequired = false;
-                if (defaultModuleName == null)
+                if (null == defaultModuleName || null == ModuleLoader.getInstance().getModule(defaultModuleName))
                 {
                     defaultModuleName = "Portal";
                     initRequired = true;

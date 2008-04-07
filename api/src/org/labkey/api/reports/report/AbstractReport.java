@@ -57,6 +57,11 @@ public abstract class AbstractReport implements Report
         return ChartUtil.getRunReportURL(context, this);
     }
 
+    public ActionURL getEditReportURL(ViewContext context)
+    {
+        return null;
+    }
+
     public HttpView renderDataView(ViewContext context) throws Exception
     {
         return new HtmlView("No Data view available for this report");

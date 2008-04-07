@@ -270,7 +270,7 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
     protected void addResetButton(FormClass newRunForm, InsertView insertView, ButtonBar bbar)
     {
         ActionButton resetDefaultsButton = new ActionButton(getViewContext().getActionURL().getAction() + ".view", "Reset Default Values");
-        resetDefaultsButton.setScript("this.form.action=\"" + getViewContext().getActionURL().getAction() + ".view" + "\"; document.forms." + insertView.getDataRegion().getName() + ".resetDefaultValues.value = \"true\";");
+        resetDefaultsButton.setScript("this.form.action=\"" + getViewContext().getActionURL().getAction() + ".view" + "\"; " + insertView.getDataRegion().getJavascriptFormReference() + ".resetDefaultValues.value = \"true\";");
         resetDefaultsButton.setActionType(ActionButton.Action.POST);
         bbar.add(resetDefaultsButton);
     }
@@ -354,7 +354,7 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
     protected void addFinishButtons(FormClass newRunForm, InsertView insertView, ButtonBar bbar)
     {
         ActionButton saveFinishButton = new ActionButton(getViewContext().getActionURL().getAction() + ".view", "Save and Finish");
-        saveFinishButton.setScript("document.forms." + insertView.getDataRegion().getName() + ".multiRunUpload.value = \"false\";");
+        saveFinishButton.setScript(insertView.getDataRegion().getJavascriptFormReference() + ".multiRunUpload.value = \"false\";");
         saveFinishButton.setActionType(ActionButton.Action.POST);
         bbar.add(saveFinishButton);
 
@@ -364,7 +364,7 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
             if (collector.allowAdditionalUpload(newRunForm))
             {
                 ActionButton saveUploadAnotherButton = new ActionButton(getViewContext().getActionURL().getAction() + ".view", "Save and Upload Another Run");
-                saveUploadAnotherButton.setScript("document.forms." + insertView.getDataRegion().getName() + ".multiRunUpload.value = \"true\";");
+                saveUploadAnotherButton.setScript(insertView.getDataRegion().getJavascriptFormReference() + ".multiRunUpload.value = \"true\";");
                 saveUploadAnotherButton.setActionType(ActionButton.Action.POST);
                 bbar.add(saveUploadAnotherButton);
                 break;

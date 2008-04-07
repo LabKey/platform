@@ -134,7 +134,7 @@ public class QueryView extends WebPartView<Object>
 
     protected boolean ignoreUserFilter()
     {
-        return getViewContext().getRequest().getParameter(param(QueryParam.ignoreFilter)) != null;
+        return getViewContext().getRequest().getParameter(param(QueryParam.ignoreFilter)) != null || (getSettings() != null && getSettings().getIgnoreUserFilter());
     }
 
 

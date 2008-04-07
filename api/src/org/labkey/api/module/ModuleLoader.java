@@ -841,17 +841,8 @@ public class ModuleLoader implements Filter
 
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException
     {
-        HttpServletResponse originalResponse = (HttpServletResponse) servletResponse;
-        HttpServletResponse response = new SafeFlushResponseWrapper(originalResponse);
+        HttpServletResponse response = (HttpServletResponse) servletResponse;
         HttpServletRequest request = (HttpServletRequest) servletRequest;
-
-        // TODO: get rid of getStartupFailureURL, startupFailure action, startupErrorRequest
-
-        if (getStartupFailure() != null)
-        {
-            ExceptionUtil.handleException(request, response, getStartupFailure(), null, true);
-            return;
-        }
 
         User user = (User)request.getUserPrincipal();
         if (isAdminOnlyMode())

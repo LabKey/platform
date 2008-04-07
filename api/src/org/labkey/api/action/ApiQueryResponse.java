@@ -142,13 +142,10 @@ public class ApiQueryResponse implements ApiResponse
     {
         HashMap<String,Object> fmdata = new HashMap<String,Object>();
         fmdata.put("name", dc.getColumnInfo().getName());
-        fmdata.put("type", dc.getDisplayJsonTypeName());
+        fmdata.put("type", dc.getJsonTypeName());
 
-        if(isEditable(dc) && isLookup(dc))
+        if(isLookup(dc))
         {
-            //reset type to actual column value type
-            fmdata.put("type", dc.getJsonTypeName());
-            
             TableInfo lookupTable = dc.getColumnInfo().getFkTableInfo();
             if(null != lookupTable && lookupTable.getPkColumns().length == 1)
             {
@@ -229,10 +226,10 @@ public class ApiQueryResponse implements ApiResponse
 
     protected void putValue(Map<String,Object> row, DisplayColumn dc) throws Exception
     {
-        Object value = isLookup(dc) ? dc.getValue(_ctx) : dc.getDisplayValue(_ctx);
+        Object value = dc.getValue(_ctx); //FIX: 5682 -- always use getVale() so that we return raw FK value instead of display value
 
         if(value instanceof Date)
-            row.put(dc.getColumnInfo().getName(), _dateFormat.format(value)); //row.put(dc.getColumnInfo().getName(), "new Date(" + String.valueOf(((Date) value).getTime()) + ")");
+            row.put(dc.getColumnInfo().getName(), _dateFormat.format(value));
         else
             row.put(dc.getColumnInfo().getName(), value);
     }
@@ -245,7 +242,7 @@ public class ApiQueryResponse implements ApiResponse
     protected boolean isLookup(DisplayColumn dc)
     {
         //to be treated as a lookup, the column must have an FK, and an FK TableInfo that is public
-        return (_includeLookupInfo && isEditable(dc)
+        return (_includeLookupInfo
                 && null != dc.getColumnInfo().getFk()
                 && null != dc.getColumnInfo().getFkTableInfo()
                 && dc.getColumnInfo().getFkTableInfo().isPublic());

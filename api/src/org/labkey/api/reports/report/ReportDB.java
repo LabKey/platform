@@ -29,7 +29,8 @@ public class ReportDB
     {
         _containerId = c.getId();
         _entityId = descriptor.getEntityId();
-        _createdBy = userId;
+        _createdBy = descriptor.getCreatedBy() == 0 ? userId : descriptor.getCreatedBy();
+        _modifiedBy = userId;
         _created = new Date();
         _key = key;
         _descriptorXML = descriptor.serialize();

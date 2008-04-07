@@ -9,7 +9,7 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or impliedse.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -572,7 +572,7 @@ public class DataRegion extends DisplayElement
 
                 if (column != null && (null != (countColumnName = column.getAlias())))
                 {
-                    newAggregates.add(new Aggregate(column, Aggregate.Type.COUNT));
+                    newAggregates.add(Aggregate.createCountStar());
                     aggregates = newAggregates.toArray(new Aggregate[newAggregates.size()]);
                 }
             }
@@ -580,10 +580,9 @@ public class DataRegion extends DisplayElement
 
         _aggregateResults =  ctx.getAggregates(_displayColumns, getTable(), getName(), aggregates, false);
 
-        // remove the Count aggregate from the results
-        if (countAggregate && countColumnName != null)
+        if (countAggregate)
         {
-            Aggregate.Result result = (countExists ? _aggregateResults.get(countColumnName) : _aggregateResults.remove(countColumnName));
+            Aggregate.Result result = _aggregateResults.remove(Aggregate.STAR);
             if (result != null)
                 _totalRows = (Long)result.getValue();
         }
@@ -701,7 +700,7 @@ public class DataRegion extends DisplayElement
         if (renderButtons)
             renderFormHeader(out, MODE_GRID);
 
-        out.write("<table id=\"dataregion_header_" + getName() + "\">\n");
+        out.write("<table id=\"" + PageFlowUtil.filter("dataregion_header_" + getName()) + "\">\n");
         out.write("<tr><td nowrap>\n");
         if (renderButtons)
         {
@@ -721,7 +720,7 @@ public class DataRegion extends DisplayElement
 
     protected void renderFooter(RenderContext ctx, Writer out, Integer resultSetSize, boolean renderButtons) throws IOException
     {
-        out.write("<table id=\"dataregion_footer_" + getName() + "\">\n");
+        out.write("<table id=\"" + PageFlowUtil.filter("dataregion_footer_" + getName()) + "\">\n");
         out.write("<tr><td nowrap>\n");
         if (renderButtons && _buttonBarPosition.atBottom())
         {
@@ -741,8 +740,9 @@ public class DataRegion extends DisplayElement
         if (_showPagination)
         {
             out.write("<script type='text/javascript'>\n");
-            out.write("YAHOO.util.Event.onAvailable('dataregion_" + getName() + "', function () { resizeContainer('" + getName() + "', true); }, null, null, false);\n");
-            out.write("YAHOO.util.Event.addListener(window, \"resize\", function () { resizeContainer(\"" + getName() + "\", false); });\n");
+            out.write("YAHOO.util.Event.onAvailable('" + PageFlowUtil.encodeJavascriptStringLiteral("dataregion_" + getName()) + "', function () { resizeContainer('" + PageFlowUtil.encodeJavascriptStringLiteral(getName()) + "', true); }, null, null, false);\n");
+            out.write("YAHOO.util.Event.addListener(window, \"load\", function () { resizeContainer('" + PageFlowUtil.encodeJavascriptStringLiteral(getName()) + "', false); });\n");
+            out.write("YAHOO.util.Event.addListener(window, \"resize\", function () { resizeContainer('" + PageFlowUtil.encodeJavascriptStringLiteral(getName()) + "', false); });\n");
             out.write("</script>\n");
         }
     }
@@ -802,7 +802,7 @@ public class DataRegion extends DisplayElement
 
     protected void paginateLink(Writer out, String title, String text, long newOffset) throws IOException
     {
-        out.write("<a title=\"" + title + "\" href='javascript:setOffset(\"" + getName() + "\", " + newOffset + ");'>" + text + "</a> ");
+        out.write("<a title=\"" + title + "\" href='javascript:setOffset(" + PageFlowUtil.filterQuote(getName()) + ", " + newOffset + ");'>" + text + "</a> ");
     }
 
     protected void renderNoRowsMessage(RenderContext ctx, Writer out, List<DisplayColumn> renderers) throws IOException
@@ -896,7 +896,7 @@ public class DataRegion extends DisplayElement
         if (style.length() > 0)
             out.write(" style=\"" + style.toString() + "\"");
 
-        out.write(" id=\"dataregion_" + getName() + "\"");
+        out.write(" id=\"" + PageFlowUtil.filter("dataregion_" + getName()) + "\"");
         out.write(" cellspacing=\"0\" cellpadding=\"1\">\n");
         out.write("<colgroup>");
         if (_showRecordSelectors)
@@ -1110,7 +1110,7 @@ public class DataRegion extends DisplayElement
         String name = getName();
         if (name != null)
         {
-            out.write("id=\"" + name + "\" ");
+            out.write("id=\"" + PageFlowUtil.filter(name) + "\" ");
         }
         switch (mode)
         {
@@ -1924,4 +1924,8 @@ public class DataRegion extends DisplayElement
         _horizontalGroups = horizontalGroups;
     }
 
+    public String getJavascriptFormReference()
+    {
+        return "document.forms[" + PageFlowUtil.filterQuote(getName()) + "]";
+    }
 }

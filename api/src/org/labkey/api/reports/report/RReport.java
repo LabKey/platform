@@ -447,6 +447,15 @@ public class RReport extends AbstractReport implements AttachmentParent, Report.
         return ChartUtil.getRunReportURL(context, this);
     }
 
+    public ActionURL getEditReportURL(ViewContext context)
+    {
+        if (getDescriptor().canEdit(context))
+        {
+            return ChartUtil.getRunReportURL(context, this).addParameter(TabStripView.TAB_PARAM, RunRReportView.TAB_SOURCE);
+        }
+        return null;
+    }
+
     public abstract static class ROutputView extends HttpView
     {
         private String _label;

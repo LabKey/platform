@@ -56,6 +56,7 @@ public interface Report
     void beforeDelete(ViewContext context);
 
     ActionURL getRunReportURL(ViewContext context);
+    ActionURL getEditReportURL(ViewContext context);
 
     /**
      * Allows source grid data to be downloaded for query based reports. This would be most

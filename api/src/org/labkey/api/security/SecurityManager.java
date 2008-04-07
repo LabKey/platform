@@ -81,6 +81,18 @@ public class SecurityManager
         SUBMITTER("Submitter", ACL.PERM_INSERT),
         NO_PERMISSIONS("No Permissions", 0);
 
+        private static List<Pair<Integer, String>> _allPerms;
+        static {
+            _allPerms = new ArrayList<Pair<Integer, String>>();
+            _allPerms.add(new Pair<Integer, String>(ACL.PERM_READ, "READ"));
+            _allPerms.add(new Pair<Integer, String>(ACL.PERM_INSERT, "INSERT"));
+            _allPerms.add(new Pair<Integer, String>(ACL.PERM_UPDATE, "UPDATE"));
+            _allPerms.add(new Pair<Integer, String>(ACL.PERM_DELETE, "DELETE"));
+            _allPerms.add(new Pair<Integer, String>(ACL.PERM_READOWN, "READ-OWN"));
+            _allPerms.add(new Pair<Integer, String>(ACL.PERM_UPDATEOWN, "UPDATE-OWN"));
+            _allPerms.add(new Pair<Integer, String>(ACL.PERM_DELETEOWN, "DELETE-OWN"));
+            _allPerms.add(new Pair<Integer, String>(ACL.PERM_ADMIN, "ADMIN"));
+        }
         private int _permissions;
         private String _label;
         private PermissionSet(String label, int permissions)
@@ -96,6 +108,27 @@ public class SecurityManager
         public String getLabel()
         {
             return _label;
+        }
+
+        /**
+         * Returns a label enumerating all the individual ACL perms
+         * that the specified permission posseses.
+         */
+        public static String getLabel(int permissions)
+        {
+            StringBuffer sb = new StringBuffer();
+            String concat = "";
+
+            for (Pair<Integer, String> pair : _allPerms)
+            {
+                if ((pair.getKey() & permissions) != 0)
+                {
+                    sb.append(concat);
+                    sb.append(pair.getValue());
+                    concat = "|";
+                }
+            }
+            return sb.toString();
         }
 
         public int getPermissions()

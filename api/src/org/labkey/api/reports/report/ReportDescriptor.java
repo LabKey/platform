@@ -426,4 +426,29 @@ public class ReportDescriptor extends Entity
     {
         return (getPermissions(u) & ACL.PERM_READ) != 0;
     }
+
+    public boolean canEdit(ViewContext context)
+    {
+        if (isInherited(context.getContainer()))
+            return false;
+        if (getOwner() != null && !getOwner().equals(context.getUser().getUserId()))
+            return false;
+        if (context.hasPermission(ACL.PERM_ADMIN))
+            return true;
+        if (getCreatedBy() != 0)
+            return (getCreatedBy() == context.getUser().getUserId());
+        return false;
+    }
+
+    public boolean isInherited(Container c)
+    {
+        if (getReportId() != -1)
+        {
+            if ((getFlags() & ReportDescriptor.FLAG_INHERITABLE) != 0)
+            {
+                return !c.getId().equals(getContainerId());
+            }
+        }
+        return false;
+    }
 }

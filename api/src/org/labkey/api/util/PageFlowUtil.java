@@ -243,6 +243,15 @@ public class PageFlowUtil
     }
 
 
+    public static String encodeJavascriptStringLiteral(Object value)
+    {
+        if (value == null)
+            return "null";
+        String ret = PageFlowUtil.groovyString(value.toString());
+        ret = StringUtils.replace(ret, "'", "\\'");
+        return ret;
+    }
+
     /**
      * put quotes around a JavaScript string, and HTML encode that.
      */
@@ -251,7 +260,7 @@ public class PageFlowUtil
         if (value == null)
             return "null";
         String ret = PageFlowUtil.filter("\"" + PageFlowUtil.groovyString(value.toString()) + "\"");
-        ret = StringUtils.replace(ret, "'", "&#39;");
+        ret = ret.replace("&#039;", "\\&#039;");
         return ret;
     }
 

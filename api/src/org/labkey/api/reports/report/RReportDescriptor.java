@@ -1,5 +1,7 @@
 package org.labkey.api.reports.report;
 
+import org.labkey.api.view.ViewContext;
+
 import java.util.List;
 import java.util.Collections;
 
@@ -45,5 +47,15 @@ public class RReportDescriptor extends ReportDescriptor
             return Prop.includedReports.toString().equals(prop);
         }
         return true;
+    }
+
+    public boolean canEdit(ViewContext context)
+    {
+        int perms = RReport.getEditPermissions();
+        if (context.hasPermission(perms))
+        {
+            return super.canEdit(context);
+        }
+        return false;
     }
 }

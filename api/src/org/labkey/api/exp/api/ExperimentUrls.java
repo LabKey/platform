@@ -30,7 +30,7 @@ public interface ExperimentUrls extends UrlProvider
 
     ActionURL getDeleteSelectedExpRunsURL(Container container, ActionURL returnURL);
 
-    ActionURL getCreateRunGroupURL(Container container, ActionURL returnURL, String dataRegionSelectionKey);
+    ActionURL getCreateRunGroupURL(Container container, ActionURL returnURL, boolean addSelectedRuns);
 
     ActionURL getAddRunsToExperimentURL(Container container, ExpExperiment expExperiment);
 

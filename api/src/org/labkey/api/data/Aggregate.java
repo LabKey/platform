@@ -10,6 +10,8 @@ import java.sql.SQLException;
  */
 public class Aggregate
 {
+    public static String STAR = "*";
+
     public enum Type
     {
         SUM("Total"),
@@ -60,11 +62,30 @@ public class Aggregate
     private String _columnName;
     private Type _type;
     private String _aggregateColumnName;
+
+    private Aggregate()
+    {
+    }
+
     public Aggregate(ColumnInfo column, Aggregate.Type type)
     {
         _columnName = column.getAlias();
         _type = type;
         _aggregateColumnName = type.name() + _columnName;
+    }
+
+    public static Aggregate createCountStar()
+    {
+        Aggregate agg = new Aggregate();
+        agg._columnName = STAR;
+        agg._type = Type.COUNT;
+        agg._aggregateColumnName = "COUNT_STAR";
+        return agg;
+    }
+
+    public boolean isCountStar()
+    {
+        return _columnName.equals(STAR) && _type == Type.COUNT;
     }
 
     public String getSQL()

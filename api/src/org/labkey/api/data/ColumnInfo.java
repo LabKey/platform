@@ -907,7 +907,7 @@ public class ColumnInfo
         this.description = description;
     }
 
-    static protected class SchemaForeignKey implements ForeignKey
+    static public class SchemaForeignKey implements ForeignKey
     {
         public ColumnInfo createLookupColumn(ColumnInfo foreignKey, String displayField)
         {

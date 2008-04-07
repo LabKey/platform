@@ -162,8 +162,8 @@ public class SqlScriptRunner
     }
 
 
-    // Get the recommended scripts from a single schema
-    private static List<SqlScript> getRecommendedScripts(Collection<SqlScript> schemaScripts, double from, double to)
+    // Get the recommended scripts from a given collection of scripts
+    public static List<SqlScript> getRecommendedScripts(Collection<SqlScript> schemaScripts, double from, double to)
     {
         // Create a map of SqlScript objects.  For each fromVersion, store only the script with the highest toVersion
         Map<Double, SqlScript> m = new HashMap<Double, SqlScript>();
@@ -421,6 +421,7 @@ public class SqlScriptRunner
 
     public interface SqlScriptProvider
     {
+        public Set<String> getSchemaNames() throws SqlScriptException;
         public List<SqlScript> getScripts(String schemaName) throws SqlScriptException;
         public SqlScript getScript(String description);
         public String getProviderName();

@@ -1,6 +1,6 @@
 /**
  * @fileOverview
- * @author LabKey Software <a href="mailto:support@labkey.com">support@labkey.com</a>
+ * @author <a href="https://www.labkey.org">LabKey Software</a> (<a href="mailto:support@labkey.com">support@labkey.com</a>)
  * @version 8.1
  * @license Copyright (c) 2008 LabKey Software Foundation
  * <p/>
@@ -84,7 +84,7 @@ LABKEY.Filter = new function()
         * Creates a filter
         * @param {String} columnName String name of the column to filter
         * @param value Value used as the filter criterion
-        * @param {LABKEY.Filter.Type} [filterType] Type of filter to apply to the 'column' using the 'value'
+        * @param {LABKEY.Filter#Types} [filterType] Type of filter to apply to the 'column' using the 'value'
 		* @example Example: <pre name="code" class="xml">
 &lt;script type="text/javascript"&gt;
 	LABKEY.requiresClientAPI();
@@ -117,7 +117,25 @@ LABKEY.Filter = new function()
 /**
 * @namespace FilterDefinition static class to define the functions that describe how a particular
             type of filter is identified and operates.  See {@link LABKEY.Filter}.
-* @property {String Function()} getDisplayText Gets the string displayed for this filter.
-* @property {String Function()} getURLSuffix Gets the ULR suffix used to identify this filter.
-* @property {Bool Function()} isDataValueRequired Gets the Boolean that indicates whether a data value is required.
 */ LABKEY.Filter.FilterDefinition = new function() {};
+
+/**
+* Get the Boolean that indicates whether a data value is required.
+* @name getDisplayText
+* @methodOf LABKEY.Filter.FilterDefinition
+* @type String
+*/
+
+/**
+* Get the string displayed for this filter.
+* @name getURLSuffix
+* @methodOf LABKEY.Filter.FilterDefinition
+* @type String
+*/
+
+/**
+* Get the ULR suffix used to identify this filter.
+* @name isDataValueRequired
+* @methodOf LABKEY.Filter.FilterDefinition
+* @type Boolean
+*/

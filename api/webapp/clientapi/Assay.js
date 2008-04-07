@@ -1,6 +1,6 @@
 /**
  * @fileOverview
- * @author LabKey Software <a href="mailto:support@labkey.com">support@labkey.com</a>
+ * @author <a href="https://www.labkey.org">LabKey Software</a> (<a href="mailto:support@labkey.com">support@labkey.com</a>)
  * @version 8.1
  * @license Copyright (c) 2008 LabKey Software Foundation
  * <p/>
@@ -50,8 +50,9 @@ LABKEY.Assay = new function()
 
 	/**
 	* Gets all assays.
-	* @param {Function(LABKEY.Assay.AssayDesign[])} successCallback Required. Function called when the 
-			"getAll" function executes successfully.
+	* @param {Function} successCallback Required. Function called when the
+			"getAll" function executes successfully.  Will be called with the argument: 
+			{@link LABKEY.Assay.AssayDesign[]}.
 	* @param {Function} [failureCallback] Function called when execution of the "getAll" function fails.
 	* @example Example:
 <pre name="code" class="xml">
