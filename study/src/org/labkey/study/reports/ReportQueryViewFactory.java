@@ -6,9 +6,11 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.DataRegion;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
@@ -43,7 +45,7 @@ public class ReportQueryViewFactory
             settings.setQueryName(queryName);
             settings.setViewName(viewName);
 
-            ReportQueryView view = new ReportQueryView(schema, settings);
+            ReportQueryView view = new StudyReportQueryView(schema, settings);
             final String filterParam = descriptor.getProperty("filterParam");
             if (!StringUtils.isEmpty(filterParam))
             {
@@ -53,7 +55,7 @@ public class ReportQueryViewFactory
                     view.setFilter(new SimpleFilter(filterParam, filterValue));
                 }
             }
-            return view;            
+            return view;
         }
 
         return null;
@@ -86,5 +88,20 @@ public class ReportQueryViewFactory
         if (study != null)
             return new StudyQuerySchema(study, context.getUser(), mustCheckUserPermissions);
         return null;
+    }
+
+    public static class StudyReportQueryView extends ReportQueryView
+    {
+        public StudyReportQueryView(UserSchema schema, QuerySettings settings)
+        {
+            super(schema, settings);
+        }
+
+        public DataRegion createDataRegion()
+        {
+            DataRegion data = super.createDataRegion();
+            StudyManager.getInstance().applyDefaultFormats(getContainer(), data.getDisplayColumns());
+            return data;
+        }
     }
 }

@@ -1,6 +1,5 @@
 package org.labkey.core.ftp;
 
-import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.ftp.FtpConnector;
 import org.labkey.api.security.User;
@@ -75,11 +74,11 @@ public class FtpPage
     public String getURL(Container c, User user)
     {
         String ftpUser = user.getEmail();
-        return getScheme()+PageFlowUtil.encode(ftpUser)+"@"+_getHostPath(c);
+        return getScheme()+"://"+PageFlowUtil.encode(ftpUser)+"@"+_getHostPath(c);
     }
 
     public String getURL(Container c)
     {
-        return getScheme()+_getHostPath(c);
+        return getScheme()+"://"+_getHostPath(c);
     }
 }

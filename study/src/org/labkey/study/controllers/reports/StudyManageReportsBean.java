@@ -8,6 +8,7 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.RReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.view.ChartUtil;
 import org.labkey.api.reports.report.view.ManageReportsBean;
 import org.labkey.api.reports.report.view.RunRReportView;
@@ -161,21 +162,18 @@ public class StudyManageReportsBean extends ManageReportsBean
                     getSharedURL(r, permissionURL));
             getList(EXCEL_EXPORT_REPORT, views).add(rec);
         }
-        else if (StudyRReport.TYPE.equals(reportType))
+        else if (StudyRReport.TYPE.equals(reportType) || RReport.TYPE.equals(reportType))
         {
             String permissionURL = _context.cloneActionURL().relativeUrl("reportPermissions.view", "reportId=" + r.getDescriptor().getReportId(), "Study-Security");
-            ActionURL displayURL = new ActionURL(ReportsController.RunRReportAction.class, _context.getContainer());
-            displayURL.addParameter("Dataset.viewName", r.getDescriptor().getReportId());
-
             StudyReportRecordImpl rec = new StudyReportRecordImpl(r, r.getDescriptor().getProperty(ReportDescriptor.Prop.reportName),
-                    displayURL.getLocalURIString(),
+                    r.getRunReportURL(_context).getLocalURIString(),
                     _context.cloneActionURL().relativeUrl("deleteReport.view", "reportId=" + r.getDescriptor().getReportId(), "Study-Reports"),
                     permissionsLink(permissionURL),
                     getSharedURL(r, permissionURL));
 
-            displayURL.addParameter(TabStripView.TAB_PARAM, RunRReportView.TAB_SOURCE).
-                    addParameter("redirectUrl", _context.getActionURL().getLocalURIString());
-            rec.setEditURL(displayURL.getLocalURIString());
+            ActionURL editURL = r.getEditReportURL(_context);
+            if (editURL != null)
+                rec.setEditURL(editURL.getLocalURIString());
             String queryName = r.getDescriptor().getProperty(QueryParam.queryName.toString());
             
             if (!StringUtils.isEmpty(queryName))

@@ -151,6 +151,6 @@
 
     boolean isOwner(Report report)
     {
-        return report.getDescriptor().getCreatedBy() == HttpView.currentContext().getUser().getUserId();
+        return report.getDescriptor().canEdit(HttpView.currentContext());
     }
 %>

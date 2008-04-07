@@ -2615,7 +2615,7 @@ public class ExperimentController extends SpringActionController
             form.setReturnURL(getViewContext().getRequest().getParameter("returnURL"));
             form.setAddSelectedRuns("true".equals(getViewContext().getRequest().getParameter("addSelectedRuns")));
             form.setDataRegionSelectionKey(getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY));
-            if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
+            if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()) && !"true".equals(getViewContext().getRequest().getParameter("noPost")))
             {
                 Experiment exp = form.getBean();
                 if (exp.getName() == null || exp.getName().trim().length() == 0)
@@ -2661,6 +2661,10 @@ public class ExperimentController extends SpringActionController
             drg.addHiddenFormField("returnURL", getViewContext().getRequest().getParameter("returnURL"));
             drg.addHiddenFormField("addSelectedRuns", Boolean.toString("true".equals(getViewContext().getRequest().getParameter("addSelectedRuns"))));
             form.setDataRegionSelectionKey(getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY));
+            for (String rowId : DataRegionSelection.getSelected(getViewContext(), false))
+            {
+                drg.addHiddenFormField(DataRegion.SELECT_CHECKBOX_NAME, rowId);
+            }
             drg.addHiddenFormField(DataRegionSelection.DATA_REGION_SELECTION_KEY, getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY));
 
             drg.addColumns(ExperimentServiceImpl.get().getTinfoExperiment(), "RowId,Name,LSID,ContactId,ExperimentDescriptionURL,Hypothesis,Comments,Created");
@@ -3199,18 +3203,16 @@ public class ExperimentController extends SpringActionController
             return new ActionURL(RemoveSelectedExpRunsAction.class, container).addParameter("returnURL", returnURL.toString()).addParameter("expRowId", exp.getRowId());
         }
 
-        /** @param dataRegionSelectionKey if not null, the name of the run data region selection key to be used to add to this experiment when created */
-        public ActionURL getCreateRunGroupURL(Container container, ActionURL returnURL, String dataRegionSelectionKey)
+        public ActionURL getCreateRunGroupURL(Container container, ActionURL returnURL, boolean addSelectedRuns)
         {
             ActionURL result = new ActionURL(CreateRunGroupAction.class, container);
             if (returnURL != null)
             {
                 result.addParameter("returnURL", returnURL.toString());
             }
-            if (dataRegionSelectionKey != null)
+            if (addSelectedRuns)
             {
                 result.addParameter("addSelectedRuns", "true");
-                result.addParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY, dataRegionSelectionKey);
             }
             return result;
         }

@@ -62,24 +62,25 @@
                          href="<%=currentSchema.urlFor(QueryAction.propertiesQuery, query)%>"/>
         </td>
         <% } %>
-        <td><%
+        <td>
+<%--
             try
             {
                 if (query.getParseErrors(currentSchema).size() != 0)
-            { %>
-                <span style="color:red">(has errors)</span>
-                <% }
-                }
-                catch (Throwable t)
                 {
-                %>
-                <span style="color:red">An exception occurred: <%=h(t.toString())%></span>
-                <%}
-                %>
-
-            <% if (query.getDescription() != null) { %>
-            <i><%=h(query.getDescription())%></i>
-            <% }%>
+                    %><span style="color:red">(has errors)</span><%
+                }
+            }
+            catch (Throwable t)
+            {
+                %><span style="color:red">An exception occurred: <%=h(t.toString())%></span><%
+            } --%>
+<%
+            if (query.getDescription() != null)
+            {
+                %><i><%=h(query.getDescription())%></i><%
+            }
+%>
         </td>
 
     </tr>

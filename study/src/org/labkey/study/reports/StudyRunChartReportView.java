@@ -22,10 +22,17 @@ import java.util.List;
 public class StudyRunChartReportView extends RunChartReportView
 {
     public static final String PARTICIPANT_KEY = "participantId";
+    private Report[] _reports;
 
     StudyRunChartReportView(Report report)
     {
         super(report);
+    }
+
+    StudyRunChartReportView(Report[] reports)
+    {
+        super(reports[0]);
+        _reports = reports;
     }
 
     protected HttpView getTabView(String tabId) throws Exception
@@ -33,6 +40,7 @@ public class StudyRunChartReportView extends RunChartReportView
         if (TAB_VIEW.equals(tabId))
         {
             VBox view = new VBox();
+            Report[] reports = _reports != null ? _reports : new Report[]{getReport()};
             boolean isParticipantChart = PARTICIPANT_KEY.equals(getReport().getDescriptor().getProperty(ReportDescriptor.Prop.filterParam));
             if (isParticipantChart)
             {
@@ -48,16 +56,25 @@ public class StudyRunChartReportView extends RunChartReportView
                 view.addView(ReportsController.getParticipantNavTrail(context, participants));
 
                 String participantId = (String)context.get(PARTICIPANT_KEY);
-                ActionURL url = ChartUtil.getPlotChartURL(context, getReport());
-                if (participantId != null)
-                    url.addParameter(PARTICIPANT_KEY, participantId);
-                view.addView(new HtmlView("<img border=0 src='" + url.getLocalURIString() + "'>"));
+                addChartView(view, reports, participantId);
             }
             else
-                view.addView(super.getTabView(tabId));
+                addChartView(view, reports, null);
             return view;
         }
         return super.getTabView(tabId);
+    }
+
+    private void addChartView(VBox view, Report[] reports, String participantId)
+    {
+        for (Report report : reports)
+        {
+            ActionURL url = ChartUtil.getPlotChartURL(getViewContext(), report);
+            if (participantId != null)
+                url.addParameter(PARTICIPANT_KEY, participantId);
+
+            view.addView(new HtmlView("<img border=0 src='" + url.getLocalURIString() + "'>"));
+        }
     }
 
     protected DataSetDefinition getDataSetDefinition()

@@ -23,8 +23,8 @@ public class ServerSession
     private String _runtimeOS;
     private String _javaVersion;
 
-    private boolean _ldapEnabled;
-    private boolean _enterprisePipelineEnabled;
+    private Boolean _ldapEnabled;
+    private Boolean _enterprisePipelineEnabled;
 
     private Integer _userCount;
     private Integer _activeUserCount;
@@ -212,22 +212,22 @@ public class ServerSession
         _administratorEmail = administratorEmail;
     }
 
-    public boolean isLdapEnabled()
+    public Boolean isLdapEnabled()
     {
         return _ldapEnabled;
     }
 
-    public void setLdapEnabled(boolean ldapEnabled)
+    public void setLdapEnabled(Boolean ldapEnabled)
     {
         _ldapEnabled = ldapEnabled;
     }
 
-    public boolean isEnterprisePipelineEnabled()
+    public Boolean isEnterprisePipelineEnabled()
     {
         return _enterprisePipelineEnabled;
     }
 
-    public void setEnterprisePipelineEnabled(boolean enterprisePipelineEnabled)
+    public void setEnterprisePipelineEnabled(Boolean enterprisePipelineEnabled)
     {
         _enterprisePipelineEnabled = enterprisePipelineEnabled;
     }

@@ -252,7 +252,7 @@ public class SpecimenImporter
             new SpecimenColumn("expected_time_unit", "ExpectedTimeUnit", "VARCHAR(15)", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("group_protocol", "GroupProtocol", "INT", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("sub_additive_derivative", "SubAdditiveDerivative", "VARCHAR(20)", TargetTable.SPECIMENS),
-            new SpecimenColumn("comments", "Comments", "VARCHAR(30)", TargetTable.SPECIMEN_EVENTS),
+            new SpecimenColumn("comments", "Comments", "VARCHAR(200)", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("primary_specimen_type_id", "PrimaryTypeId", "INT", TargetTable.SPECIMENS),
             new SpecimenColumn("derivative_type_id", "DerivativeTypeId", "INT", TargetTable.SPECIMENS),
             new SpecimenColumn("additive_type_id", "AdditiveTypeId", "INT", TargetTable.SPECIMENS),
@@ -379,6 +379,10 @@ public class SpecimenImporter
             replaceTable(schema, container, "SpecimenPrimaryType", PRIMARYTYPE_COLUMNS,
                     tsvMap.get("primary_types"), false);
             populateSpecimenTables(schema, container, loadInfo);
+
+            Study study = StudyManager.getInstance().getStudy(container);
+            StudyManager.getInstance().getVisitManager(study).updateParticipantVisits();
+
             if (!DEBUG)
                 scope.commitTransaction();
         }

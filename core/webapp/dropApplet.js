@@ -216,8 +216,8 @@ function _updateDropUI()
         ftpFilesPending.innerHTML = "" + filesPending;
 
     var ftpLocation = _id("ftpLocation");
-    if (ftpLocation && dropApplet)
-        ftpLocation.innerHTML = h(dropApplet.getFtpLocation());
+    //if (ftpLocation && dropApplet)
+    //    ftpLocation.innerHTML = h(dropApplet.getFtpLocation());
 
     var ftpCountUpdate = _id("ftpCountUpdate");
     if (ftpCountUpdate)

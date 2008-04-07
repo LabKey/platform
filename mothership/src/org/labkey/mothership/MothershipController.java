@@ -13,23 +13,23 @@ import org.jfree.data.time.Day;
 import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.data.xy.XYDataset;
+import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.*;
 import org.labkey.api.data.Container;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.query.FilteredTable;
 import org.labkey.api.security.ACL;
-import org.labkey.api.security.UserManager;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.util.MothershipReport;
 import org.labkey.api.view.*;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.FormHandlerAction;
-import org.labkey.api.action.SpringActionController;
 import org.labkey.mothership.query.MothershipSchema;
-import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
 import java.awt.*;
@@ -690,6 +690,7 @@ public class MothershipController extends SpringActionController
             getDataRegion().setSortable(false);
             getDataRegion().setShowFilters(false);
             getDataRegion().setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
+            getDataRegion().setShowPagination(false);
         }
     }
 
@@ -1147,10 +1148,6 @@ public class MothershipController extends SpringActionController
         {
             DataRegion result = super.createDataRegion();
             List<Aggregate> aggregates = new ArrayList<Aggregate>();
-            if (getTable().getColumn("ServerHostName") != null)
-            {
-                aggregates.add(new Aggregate(getTable().getColumn("ServerHostName"), Aggregate.Type.COUNT));
-            }
             if (getTable().getColumn("DaysActive") != null)
             {
                 aggregates.add(new Aggregate(getTable().getColumn("DaysActive"), Aggregate.Type.AVG));

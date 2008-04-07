@@ -233,7 +233,7 @@ public class ReportsController extends SpringActionController
 
             if (report != null)
             {
-                if (getUser().getUserId() != report.getDescriptor().getCreatedBy())
+                if (!report.getDescriptor().canEdit(getViewContext()))
                     return HttpView.throwUnauthorizedMV();
                 ReportService.get().deleteReport(getViewContext(), report);
             }
@@ -827,7 +827,7 @@ public class ReportsController extends SpringActionController
                     _report = ReportService.get().getReport(reportId);
                     if (_report != null)
                     {
-                        if (getUser().getUserId() != _report.getDescriptor().getCreatedBy())
+                        if (!_report.getDescriptor().canEdit(getViewContext()))
                         {
                             errors.reject("renameReportAction", "Unauthorized operation");
                             return;
@@ -902,7 +902,7 @@ public class ReportsController extends SpringActionController
                 _report = ReportService.get().getReport(reportId);
                 if (_report != null)
                 {
-                    if (getUser().getUserId() != _report.getDescriptor().getCreatedBy())
+                    if (!_report.getDescriptor().canEdit(getViewContext()))
                         errors.reject("reportDescription", "Unauthorized operation");
                 }
             }

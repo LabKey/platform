@@ -494,24 +494,35 @@ public class UserController extends SpringActionController
             ACL acl = child.getAcl();
             int permissions = acl.getPermissions(requestedUser);
             SecurityManager.PermissionSet set = SecurityManager.PermissionSet.findPermissionSet(permissions);
-            assert set != null : "Unknown permission set: " + permissions;
+            //assert set != null : "Unknown permission set: " + permissions;
             String access;
             if (set == null)
-                access = "Unknown: " + permissions;
+                access = SecurityManager.PermissionSet.getLabel(permissions);
             else
+            {
                 access = set.getLabel();
+                // use set.getPermissions because this is guaranteed to be minimal: only READ or READ_OWN will be
+                // set, but not both.  This is important because otherwise we might ask the acl if we have both
+                // permission bits set, which may not be the case.  We only care if the greater of the two is set,
+                // which the PermissionSet object guarantees.
+                permissions = set.getPermissions();
+            }
             List<Group> relevantGroups = new ArrayList<Group>();
-            if (set != SecurityManager.PermissionSet.NO_PERMISSIONS)
+            if (set == null || set != SecurityManager.PermissionSet.NO_PERMISSIONS)
             {
                 Group[] groups = SecurityManager.getGroups(child.getProject(), true);
                 for (Group group : groups)
                 {
-                    // use set.getPermissions because this is guaranteed to be minimal: only READ or READ_OWN will be
-                    // set, but not both.  This is important because otherwise we might ask the acl if we have both
-                    // permission bits set, which may not be the case.  We only care if the greater of the two is set,
-                    // which the PermissionSet object guarantees.
-                    if (requestedUser.isInGroup(group.getUserId()) && acl.hasPermission(group, set.getPermissions()))
-                        relevantGroups.add(group);
+                    if (requestedUser.isInGroup(group.getUserId()))
+                    {
+                        if (set != null && acl.hasPermission(group, permissions))
+                            relevantGroups.add(group);
+                        // Issue #5645, if the held permission does not correspond to a standard role,
+                        // it also means that a single group does not hold the entire permission set, instead
+                        // we need to check whether the group has any part of the aggregate permission.
+                        else if (set == null && (acl.getPermissions(group) & permissions) != 0)
+                            relevantGroups.add(group);
+                    }
                 }
             }
             rows.add(new AccessDetailRow(child, access, relevantGroups, depth));

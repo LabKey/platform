@@ -2,6 +2,9 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.data.DataRegionSelection" %>
+<%@ page import="org.labkey.api.data.DataRegion" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
+
 <%
     JspView<MoveRunsBean> me = (JspView<MoveRunsBean>) HttpView.currentView();
     MoveRunsBean bean = me.getModelBean();
@@ -14,6 +17,12 @@
     }
 </script>
 <form name="moveForm" action="moveRuns.post" method="POST">
+    <%
+        for (String id : DataRegionSelection.getSelected(HttpView.currentContext(), false))
+        { %>
+            <input type="hidden" name="<%= DataRegion.SELECT_CHECKBOX_NAME%>" value="<%= h(id) %>" /><%
+        }
+    %>
     <input type="hidden" name="<%= DataRegionSelection.DATA_REGION_SELECTION_KEY %>" value="<%= bean.getDataRegionSelectionKey() %>" />
     <input type="hidden" name="targetContainerId" />
 <table class="dataRegion">

@@ -96,6 +96,12 @@ public class ChartReportView extends AbstractReportView
         Report[] reports = getChildReports(context);
         if (reports.length == 1)
             return reports[0].getRunReportView(context);
+        // Issue #5634, Backwards compatibility for when multiple charts could be embedded into a parent chart.
+        // this is no longer supported directly in the designer, instead the multi chart option is used.
+        //
+        else if (reports.length > 1)
+            return new StudyRunChartReportView(reports);
+
         return super.getRunReportView(context);
     }
 

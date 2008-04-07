@@ -3,9 +3,9 @@ package org.labkey.issue.query;
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.api.security.ACL;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
 import org.labkey.common.util.Pair;
 
 import java.io.IOException;
@@ -13,9 +13,9 @@ import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 
 public class IssuesQueryView extends QueryView
 {
@@ -48,8 +48,6 @@ public class IssuesQueryView extends QueryView
         view.getDataRegion().setRecordSelectorValueColumns("IssueId");
         view.getDataRegion().setShadeAlternatingRows(true);
         view.getDataRegion().setShowColumnSeparators(true);
-        ColumnInfo ci = view.getDataRegion().getTable().getColumn("IssueId");
-        view.getDataRegion().setAggregates(new Aggregate(ci, Aggregate.Type.COUNT));
 
         DisplayColumn issueid = view.getDataRegion().getDisplayColumn("IssueId");
         if (null != issueid)
@@ -66,7 +64,7 @@ public class IssuesQueryView extends QueryView
         if (view.getDataRegion().getButtonBarPosition() != DataRegion.ButtonBarPosition.NONE)
         {
             String viewDetailsURL = _context.cloneActionURL().setAction("detailsList.view").getEncodedLocalURIString();
-            ActionButton listDetailsButton = new ActionButton("button", "View Selected Details");
+            ActionButton listDetailsButton = new ActionButton("button", "View Details");
             listDetailsButton.setScript("return verifySelected(this.form, \"" + viewDetailsURL + "\", \"post\", \"rows\")");
             listDetailsButton.setActionType(ActionButton.Action.GET);
             listDetailsButton.setDisplayPermission(ACL.PERM_READ);

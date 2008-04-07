@@ -17,6 +17,7 @@
     WikiController.WikiDataForm form = _form;
     boolean useVisualEditor = _useVisualEditor;
     boolean hasScript = _hasScript;
+    boolean hasPreTags = _hasPreTags;
     WikiRendererType currentRendererType = _currentRendererType;
 %>
 
@@ -287,7 +288,8 @@ function deleteAttachment(entityId, name, sourceElem)
 var wikiEditor = {
     origBody:"",
     useVisualEditor:<%=useVisualEditor?"true":"false"%>, 
-    hasScript:<%=hasScript?"true":"false"%>
+    hasScript:<%=hasScript?"true":"false"%>,
+    hasPreTags:<%=hasPreTags?"true":"false"%>
 };
 wikiEditor.origBody = getWikiBody().value;
 wikiEditor.isDirty = function ()
@@ -306,9 +308,17 @@ window.onbeforeunload = LABKEY.beforeunload(wikiEditor.isDirty);
 
 function toggleVisualEditor()
 {
-    if (!wikiEditor.useVisualEditor && wikiEditor.hasScript)
+    if (!wikiEditor.useVisualEditor && (wikiEditor.hasScript || wikiEditor.hasPreTags))
     {
-        if (!window.confirm("Warning: the visual editor will strip forms and script from your HTML source.  Continue?"))
+        var msg = "Warning: the visual editor will remove or alter the following elements in your HTML source:\n\n";
+        if(wikiEditor.hasScript)
+            msg += "\t-Forms and script\n";
+        if(wikiEditor.hasPreTags)
+            msg += "\t-Formatted text in <pre> tags\n";
+        
+        msg += "\nAre you sure you want to switch to the visual editor?"
+
+        if (!window.confirm(msg))
             return false;
     }
     document.editForm.nextAction.value = wikiEditor.useVisualEditor ? 'toggleVisualEditorOff' : 'toggleVisualEditorOn';

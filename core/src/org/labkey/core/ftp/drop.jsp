@@ -5,6 +5,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.WebTheme" %>
 <%@ page import="org.labkey.core.ftp.FtpPage" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView me = HttpView.currentView();
     ViewContext context = me.getViewContext();
@@ -39,7 +40,9 @@ LABKEY.borderColor = '<%=border%>';
 LABKEY.requiresScript("applet.js",true);
 LABKEY.requiresScript("dropApplet.js",true);
 </script>
-<div><h3 id="ftpLocation" class="ms-announcementtitle">&nbsp;</h3></div>
+<div><h3 class="ms-announcementtitle">
+    <a id="ftpLocation" href="<%=h(dropPage.getURL(context.getContainer(), context.getUser()))%>"><%=dropPage.getURL(context.getContainer())%></a>
+</h3></div>
 <table id=ftpOuterTable width="100%"><tr>
     <td valign="top" width=200 height=100%><div id="appletDiv" style="border:solid 1px <%=border%>; padding:2px; margin:1px; width:200px; height:200px;"><script type="text/javascript">
 LABKEY.writeApplet({

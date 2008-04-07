@@ -20,6 +20,7 @@ import org.apache.beehive.netui.pageflow.FormData;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.collections15.MultiMap;
@@ -760,6 +761,7 @@ public class WikiController extends SpringActionController
                 PageFlowUtil.validateHtml(form.getBody(), warnings, true);
             }
             boolean hasScript = false;
+            boolean hasPreTags = false;
             if (currentRendererType == WikiRendererType.HTML)
             {
                 List<String> scriptErrors = new ArrayList<String>();
@@ -770,6 +772,9 @@ public class WikiController extends SpringActionController
                     for (String scriptError : scriptErrors)
                         errors.addError(new FieldError("wiki", "body", "", false, new String[] {"Warning"}, new Object[] {scriptError}, scriptError));
                 }
+
+                String bodyLower = form.getBody().toLowerCase();
+                hasPreTags = (bodyLower.contains("<pre>") || bodyLower.contains("<pre "));
             }
 
             if (!explicitUseVisualEditor && hasScript)
@@ -785,6 +790,7 @@ public class WikiController extends SpringActionController
             updateView.addObject("_currentRendererType", currentRendererType);
             updateView.addObject("_useVisualEditor", useVisualEditor);
             updateView.addObject("_hasScript", hasScript);
+            updateView.addObject("_hasPreTags", hasPreTags);
             updateView.addObject("_reshow", reshow);
 
             ActionURL urlDelete = getViewContext().getActionURL().clone();
@@ -2123,7 +2129,7 @@ public class WikiController extends SpringActionController
                     msg.append("Body='" + String.valueOf(getBody()) + "'\n");
 
                     log.error(msg.toString());
-                    errors.rejectValue("renderType", "Render As selection was not specified.");
+                    errors.rejectValue("rendererType", "Render As selection was not specified.");
                 }
                 else
                 {
@@ -2745,9 +2751,13 @@ public class WikiController extends SpringActionController
                     return;
 
                 HttpClient client = new HttpClient();
+                HttpMethodParams params = new HttpMethodParams();
+                params.setSoTimeout(30000);    // Wait no more than 30 seconds
                 method = new GetMethod(urlString);
+                method.setParams(params);
                 method.setFollowRedirects(true);
                 int statusCode = client.executeMethod(method);
+                String contents = method.getResponseBodyAsString();
 
                 if (HttpStatus.SC_OK != statusCode)
                 {
@@ -2755,8 +2765,6 @@ public class WikiController extends SpringActionController
                 }
                 else
                 {
-                    String contents = method.getResponseBodyAsString();
-
                     if (contents.indexOf("This page has no content.") != -1)
                     {
                         failureMessage = "Wiki page does not exist";

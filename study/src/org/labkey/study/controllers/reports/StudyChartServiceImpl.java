@@ -202,6 +202,7 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
         QuerySettings qs = new QuerySettings(_context.getActionURL(), null);
         qs.setSchemaName(schema.getSchemaName());
         qs.setQueryName(chart.getQueryName());
+        qs.setViewName(chart.getViewName());
 
         QueryView view = new QueryView(schema, qs);
         List<GWTChartRenderer> gwtRenderers = new ArrayList<GWTChartRenderer>();

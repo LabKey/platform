@@ -15,6 +15,7 @@ import org.labkey.api.query.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
+import org.labkey.api.security.ActionNames;
 import org.labkey.api.util.AppProps;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.view.*;
@@ -36,10 +37,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.*;
 
 public class QueryControllerSpring extends SpringActionController
 {
@@ -214,7 +212,7 @@ public class QueryControllerSpring extends SpringActionController
                 QueryDefinition query = form.getQueryDef();
                 for (QueryException qpe : query.getParseErrors(form.getSchema()))
                 {
-                    errors.reject(ERROR_MSG, qpe.toString());
+                    errors.reject(ERROR_MSG, qpe.getMessage());
                 }
             }
             catch (Exception e)
@@ -394,6 +392,13 @@ public class QueryControllerSpring extends SpringActionController
                 getViewContext().getResponse().setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 return null;
             }
+
+            // Bug 5610. Excel web queries don't work over SSL if caching is disabled,
+            // so we need to allow caching so that Excel can read from IE on Windows.
+            HttpServletResponse response = getViewContext().getResponse();
+            // Set the headers to allow the client to cache, but not proxies
+            response.setHeader("Pragma", "private");
+            response.setHeader("Cache-Control", "private");
 
             assertQueryExists(form);
             QueryView view = QueryView.create(form);
@@ -1159,6 +1164,7 @@ public class QueryControllerSpring extends SpringActionController
     }
 
 
+    @ActionNames("selectRows, getQuery")
     @RequiresPermission(ACL.PERM_READ)
     public class GetQueryAction extends ApiAction<APIQueryForm>
     {
@@ -1178,7 +1184,7 @@ public class QueryControllerSpring extends SpringActionController
             }
 
             QueryView view = QueryView.create(form);
-            return new ApiQueryResponse(view, getViewContext(), isSchemaEditable(form.getSchema()), form.isLookups(),
+            return new ApiQueryResponse(view, getViewContext(), isSchemaEditable(form.getSchema()), true,
                     form.getSchemaName(), form.getQueryName(), form.getQuerySettings().getOffset());
         }
     }
