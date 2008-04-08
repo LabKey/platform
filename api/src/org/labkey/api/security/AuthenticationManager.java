@@ -72,7 +72,7 @@ public class AuthenticationManager
     public static ActionURL getLoginURL(ActionURL returnURL)
     {
         if (null == returnURL)
-            returnURL = new ActionURL(AppProps.getInstance().getHomePageUrl());
+            returnURL = AppProps.getInstance().getHomePageActionURL();
 
         return getLoginURLFactory().getURL(returnURL);
     }
@@ -465,9 +465,7 @@ public class AuthenticationManager
                 // Clear the image cache so the web server sends the new logo
                 AttachmentCache.clearAuthLogoCache();
                 // Bump the look & feel revision to force browsers to retrieve new logo
-                WriteableAppProps app = AppProps.getWriteableInstance();
-                app.incrementLookAndFeelRevision();
-                app.save();
+                WriteableAppProps.incrementLookAndFeelRevision2();
             }
 
             saveAuthLogoURL(getProviderName(), form.getUrl());

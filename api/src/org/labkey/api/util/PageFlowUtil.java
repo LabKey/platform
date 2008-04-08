@@ -1392,17 +1392,22 @@ public class PageFlowUtil
     public static String getStandardIncludes()
     {
         String contextPath = AppProps.getInstance().getContextPath();
+        int lookAndFeelRevision = AppProps.getInstance().getLookAndFeelRevision();
         StringBuilder sb = new StringBuilder();
         sb.append("    <link rel=\"shortcut icon\" href=\"");
         sb.append(contextPath);
-        sb.append("/favicon.image\" />\n");
+        sb.append("/favicon.image?revision=");
+        sb.append(lookAndFeelRevision);
+        sb.append("\" />\n");
         sb.append("    <link rel=\"icon\" href=\"");
         sb.append(contextPath);
-        sb.append("/favicon.image\" />\n");
+        sb.append("/favicon.image?revision=");
+        sb.append(lookAndFeelRevision);
+        sb.append("\" />\n");
         sb.append("    <link href=\"");
         sb.append(contextPath);
         sb.append("/core/stylesheet.view?revision=");
-        sb.append(AppProps.getInstance().getLookAndFeelRevision());
+        sb.append(lookAndFeelRevision);
         sb.append("\" type=\"text/css\" rel=\"stylesheet\"/>");
         return sb.toString();
     }

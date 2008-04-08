@@ -239,6 +239,13 @@ public class WriteableAppProps extends AppProps
         storeIntValue(LOOK_AND_FEEL_REVISION, getLookAndFeelRevision() + 1);
     }
 
+    public static void incrementLookAndFeelRevision2() throws SQLException
+    {
+        WriteableAppProps app = AppProps.getWriteableInstance();
+        app.incrementLookAndFeelRevision();
+        app.save();
+    }
+
     public void setNetworkDriveLetter(String letter)
     {
         storeStringValue(NETWORK_DRIVE_LETTER, letter);

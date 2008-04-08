@@ -1,11 +1,13 @@
 package org.labkey.api.data;
 
+import java.io.Serializable;
+
 /**
  * User: adam
  * Date: Apr 2, 2008
  * Time: 8:45:15 PM
  */
-public class Project
+public class Project implements Serializable
 {
     private Container _c;
 

@@ -1,13 +1,11 @@
 package org.labkey.api.view;
 
-import org.labkey.api.util.AppProps;
-import org.labkey.api.data.PropertyManager;
-
 import org.apache.commons.lang.StringUtils;
+import org.labkey.api.util.AppProps;
 
-import java.util.List;
-import java.util.ArrayList;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ThemeFont
 {
@@ -120,7 +118,7 @@ public class ThemeFont
             try
             {
                 String webThemeFont = AppProps.getInstance().getThemeFont();
-                themeFont = ThemeFont.getThemeFont (webThemeFont);
+                themeFont = ThemeFont.getThemeFont(webThemeFont);
             }
             catch (IllegalArgumentException e)
             {

@@ -215,7 +215,7 @@ public class MailHelper
     }
     
     /**
-     * Message with support for Velocity template for message body.
+     * Message with support for a view for message body.
      */
     public static class ViewMessage extends MimeMessage
     {

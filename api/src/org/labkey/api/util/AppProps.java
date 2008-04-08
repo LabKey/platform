@@ -21,6 +21,7 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.view.ThemeFont;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebTheme;
+import org.labkey.api.view.ActionURL;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import javax.naming.Context;
@@ -48,6 +49,8 @@ public class AppProps
     private static String _scheme;
     private static String _serverName;
     private static String _projectRoot = null;
+    private static String _homePageURLString = null;
+    private static ActionURL _homePageURL = null;
 
     protected static final String DEFAULT_DOMAIN_PROP = "defaultDomain";
     protected static final String LDAP_DOMAIN_PROP = "LDAPDomain";
@@ -70,7 +73,6 @@ public class AppProps
     protected static final String PIPELINE_FTPPORT_PROP = "pipelineFTPPort";
     protected static final String PIPELINE_FTPSECURE_PROP = "pipelineFTPSecure";
     protected static final String SEQUEST_SERVER_PROP = "SequestServer";
-
     protected static final String SSL_REQUIRED = "sslRequired";
     protected static final String SSL_PORT = "sslPort";
     protected static final String USER_REQUESTED_ADMIN_ONLY_MODE = "adminOnlyMode";
@@ -86,18 +88,14 @@ public class AppProps
     protected static final String THEME_FONT_PROP = "themeFont";
     protected static final String SYSTEM_MAINTENANCE_INTERVAL = "systemMaintenanceInterval";  // NEVER, DAILY
     protected static final String SYSTEM_MAINTENANCE_TIME = "systemMaintenanceTime"; // 02:00
-
     protected static final String MEMORY_USAGE_DUMP_INTERVAL = "memoryUsageDumpInterval";
     protected static final String NAVIGATION_BAR_WIDTH = "navigationBarWidth";
-
     protected static final String NETWORK_DRIVE_LETTER = "networkDriveLetter";
     protected static final String NETWORK_DRIVE_PATH = "networkDrivePath";
     protected static final String NETWORK_DRIVE_USER = "networkDriveUser";
     protected static final String NETWORK_DRIVE_PASSWORD = "networkDrivePassword";
     protected static final String FOLDER_DISPLAY_MODE = "folderDisplayMode";
-
     protected static final String CABIG_ENABLED = "caBIGEnabled";
-
 
     private static final String SERVER_SESSION_GUID = GUID.makeGUID();
 
@@ -323,11 +321,18 @@ public class AppProps
 
     public String getHomePageUrl()
     {
-        String contextPath = getContextPath();
-        if ("/".equals(contextPath))
-            return "/Project/home/begin.view";
-        else
-            return contextPath + "/Project/home/begin.view";
+        if (null == _homePageURLString)
+            _homePageURLString = getHomePageActionURL().getLocalURIString();
+
+        return _homePageURLString;
+    }
+
+    public ActionURL getHomePageActionURL()
+    {
+        if (null == _homePageURL)
+            _homePageURL = new ActionURL("project", "begin.view", "/home");
+
+        return _homePageURL;
     }
 
     public String getLDAPDomain()
@@ -367,7 +372,7 @@ public class AppProps
 
     public String getUnsubstitutedReportAProblemPath()
     {
-        return lookupStringValue(REPORT_A_PROBLEM_PATH_PROP, "${contextPath}/Project" + Container.DEFAULT_SUPPORT_PROJECT_PATH + "/begin.view");
+        return lookupStringValue(REPORT_A_PROBLEM_PATH_PROP, "${contextPath}/project" + Container.DEFAULT_SUPPORT_PROJECT_PATH + "/begin.view");
     }
 
     public String getReportAProblemPath()

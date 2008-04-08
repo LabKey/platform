@@ -446,7 +446,7 @@ public class ExceptionUtil
                 }
                 else
                 {
-                    out.print(PageFlowUtil.buttonLink("Home", AppProps.getInstance().getHomePageUrl()));
+                    out.print(PageFlowUtil.buttonLink("Home", AppProps.getInstance().getHomePageActionURL()));
                     out.print("&nbsp;");
                     out.print(PageFlowUtil.buttonLink("Back", "javascript:window.history.back();"));
                     out.print("&nbsp;");

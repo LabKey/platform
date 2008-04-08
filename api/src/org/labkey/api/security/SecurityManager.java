@@ -1450,15 +1450,20 @@ public class SecurityManager
     }
 
 
-    private static String TERMS_APPROVED_KEY = "TERMS_APPROVED_KEY";
+    private static final String TERMS_APPROVED_KEY = "TERMS_APPROVED_KEY";
+    private static final Object TERMS_APPROVED_LOCK = new Object();
+
     public static boolean getTermsOfUseApproved(ViewContext ctx, Project project)
     {
         if (null == project)
             return true;
 
-        HttpSession session = ctx.getRequest().getSession(true);
-        Set<Project> termsApproved = (Set<Project>) session.getAttribute(TERMS_APPROVED_KEY);
-        return null != termsApproved && termsApproved.contains(project);
+        synchronized (TERMS_APPROVED_LOCK)
+        {
+            HttpSession session = ctx.getRequest().getSession(true);
+            Set<Project> termsApproved = (Set<Project>) session.getAttribute(TERMS_APPROVED_KEY);
+            return null != termsApproved && termsApproved.contains(project);
+        }
     }
 
 
@@ -1467,9 +1472,9 @@ public class SecurityManager
         if (null == project)
             return;
 
-        HttpSession session = ctx.getRequest().getSession(true);
-        synchronized(session)
+        synchronized (TERMS_APPROVED_LOCK)
         {
+            HttpSession session = ctx.getRequest().getSession(true);
             Set<Project> termsApproved = (Set<Project>) session.getAttribute(TERMS_APPROVED_KEY);
             if (null == termsApproved)
             {
