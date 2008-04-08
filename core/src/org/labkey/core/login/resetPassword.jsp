@@ -3,6 +3,8 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.login.LoginController" %>
+<%@ page import="org.labkey.api.security.AuthenticationManager" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     LoginController.LoginForm form = ((JspView<LoginController.LoginForm>)HttpView.currentView()).getModelBean();
@@ -23,7 +25,7 @@
         <tr>
             <td></td>
             <td style="height:50"><input name="reset" type="image" value="reset" src="<%=ButtonServlet.buttonSrc("Submit")%>">
-            <%=PageFlowUtil.buttonLink("Cancel", LoginController.getLoginURL())%>
+            <%=PageFlowUtil.buttonLink("Cancel", AuthenticationManager.getLoginURL((ActionURL)null))%>
             </td>
         </tr>
     </table>

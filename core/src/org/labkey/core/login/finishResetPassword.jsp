@@ -8,4 +8,4 @@
     String message = ((HttpView<String>) HttpView.currentView()).getModelBean();
 %>
 <%=message%>
-<%=PageFlowUtil.buttonLink("Sign In", AuthenticationManager.getLoginURL((ActionURL)null))%>&nbsp;<%=PageFlowUtil.buttonLink("Home", AppProps.getInstance().getHomePageUrl())%>
+<%=PageFlowUtil.buttonLink("Sign In", AuthenticationManager.getLoginURL((ActionURL)null))%>&nbsp;<%=PageFlowUtil.buttonLink("Home", AppProps.getInstance().getHomePageActionURL())%>

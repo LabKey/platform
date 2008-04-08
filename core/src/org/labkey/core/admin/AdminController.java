@@ -19,14 +19,12 @@ package org.labkey.core.admin;
 import org.apache.beehive.netui.pageflow.FormData;
 import org.apache.beehive.netui.pageflow.Forward;
 import org.apache.beehive.netui.pageflow.annotations.Jpf;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.collections15.MultiMap;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
-import org.apache.struts.upload.FormFile;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
@@ -35,17 +33,12 @@ import org.jfree.data.category.DefaultCategoryDataset;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.SpringActionController.ActionDescriptor;
 import org.labkey.api.action.SpringActionController.ActionResolver;
-import org.labkey.api.attachments.*;
+import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
-import org.labkey.api.data.ContainerManager.RootContainer;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.jsp.FormPage;
 import org.labkey.api.module.*;
-import org.labkey.api.ms2.MS2Service;
-import org.labkey.api.ms2.SearchClient;
-import org.labkey.api.pipeline.PipelineStatusUrls;
-import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.util.*;
@@ -55,28 +48,20 @@ import org.labkey.api.util.preferences.PreferenceService;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.DialogTemplate;
 import org.labkey.api.view.template.HomeTemplate;
-import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.wiki.WikiRenderer;
-import org.labkey.api.wiki.WikiRendererType;
-import org.labkey.api.wiki.WikiService;
 import org.labkey.common.util.Pair;
 import org.labkey.core.login.LoginController;
 import org.springframework.web.servlet.mvc.Controller;
 
-import javax.net.ssl.HttpsURLConnection;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import java.beans.Introspector;
 import java.io.*;
 import java.lang.management.*;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Jpf.Controller(messageBundles = {@Jpf.MessageBundle(bundlePath = "messages.Validation")})
 public class AdminController extends ViewController
@@ -89,358 +74,7 @@ public class AdminController extends ViewController
     @Jpf.Action @RequiresPermission(ACL.PERM_NONE)
     protected Forward begin() throws Exception
     {
-        return new ViewForward("admin", "showAdmin", "");
-    }
-
-
-    @Jpf.Action @RequiresPermission(ACL.PERM_NONE)
-    protected Forward maintenance() throws Exception
-    {
-        WikiRenderer formatter = WikiService.get().getRenderer(WikiRendererType.RADEOX);
-        String content = formatter.format(ModuleLoader.getInstance().getAdminOnlyMessage()).getHtml();
-        HtmlView errorView = new HtmlView("The site is currently undergoing maintenance", content);
-        HttpView template = new DialogTemplate(errorView);
-        template.render(getRequest(), getResponse());
-        return null;
-    }
-
-    @Jpf.Action @RequiresPermission(ACL.PERM_NONE)
-    public Forward containerId() throws Exception
-    {
-        HttpView view = new HtmlView(
-                getContainer().getName() + "<br>" +
-                getContainer().getId() + "<br>" +
-                getContainer().getRowId()
-                );
-        return includeView(view);
-    }
-
-
-    private static ActionURL getUrl(String action)
-    {
-        return new ActionURL("admin", action, "");
-    }
-
-
-    public static ActionURL getShowAdminURL()
-    {
-        return getUrl("showAdmin");
-    }
-
-
-    @Jpf.Action @RequiresSiteAdmin
-    protected Forward showAdmin() throws Exception
-    {
-        ActionURL url;
-        Container c = getContainer();
-
-        JspView view = new JspView("/org/labkey/core/admin/admin.jsp");
-
-        view.addObject("Modules", ModuleLoader.getInstance().getModules());
-
-        view.addObject("javaVersion", System.getProperty("java.version"));
-        view.addObject("userName", System.getProperty("user.name"));
-        view.addObject("osName", System.getProperty("os.name"));
-        view.addObject("mode", AppProps.getInstance().isDevMode() ? "Development" : "Production");
-        view.addObject("servletContainer", ModuleLoader.getServletContext().getServerInfo());
-
-        view.addObject("schema", CoreSchema.getInstance().getSchema());
-
-        List<String> emails = UserManager.getUserEmailList();
-        List<Pair<String, Long>> active = UserManager.getActiveUsers(System.currentTimeMillis() - DateUtils.MILLIS_PER_HOUR);
-
-        view.addObject("userEmail", getUser().getEmail());
-        view.addObject("emails", emails);
-        view.addObject("active", active);
-
-        // Configuration
-        view.addObject("customizeSiteUrl", ActionURL.toPathString("admin", "showCustomizeSite.view", ""));
-        view.addObject("authenticationUrl", new ActionURL("login", "configure.view", "").addParameter("returnUrl", getActionURL().getLocalURIString()));
-        view.addObject("FlowAdminUrl", ActionURL.toPathString("Flow", "flowAdmin.view", ""));
-        view.addObject("customizeEmailUrl", ActionURL.toPathString("admin", "customizeEmail.view", ""));
-        view.addObject("reorderProjectsUrl", ActionURL.toPathString("admin", "reorderFolders.view", ""));
-        view.addObject("configureRReportUrl", ActionURL.toPathString("reports", "configureRReport.view", ""));
-
-        // Management
-        view.addObject("MS1AdminUrl", ActionURL.toPathString("ms1", "showAdmin.view", ""));
-        view.addObject("MS2AdminUrl", ActionURL.toPathString("MS2", "showMS2Admin.view", ""));
-        url = PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c);
-        view.addObject("PipeAdminUrl", url.getLocalURIString() + "StatusFiles.Status%7Eneqornull=COMPLETE");
-        url = PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(c);
-        view.addObject("pipelineSetupUrl", url.getLocalURIString());
-        view.addObject("ProteinAdminUrl", ActionURL.toPathString("MS2", "showProteinAdmin.view", ""));
-        view.addObject("auditLogUrl", ActionURL.toPathString("admin", "showAuditLog.view", ""));
-
-        // Diagnostics
-        view.addObject("threadsUrl", ActionURL.toPathString("admin", "showThreads.view", ""));
-        view.addObject("memoryUrl", ActionURL.toPathString("admin", "memTracker.view", ""));
-        view.addObject("actionsUrl", ActionURL.toPathString("admin", "actions.view", ""));
-        view.addObject("scriptsUrl", ActionURL.toPathString("admin", "scripts.view", ""));
-        view.addObject("groovyUrl", ActionURL.toPathString("admin", "groovy.view", ""));
-        view.addObject("allErrorsUrl", ActionURL.toPathString("admin", "showAllErrors.view", ""));
-        view.addObject("recentErrorsUrl", ActionURL.toPathString("admin", "showErrorsSinceMark.view", ""));
-        view.addObject("resetErrorsUrl", ActionURL.toPathString("admin", "resetErrorMark.view", ""));
-        view.addObject("testLdapUrl", ActionURL.toPathString("admin", "showTestLdap.view", ""));
-        view.addObject("dbCheck", ActionURL.toPathString("admin", "dbChecker.view", ""));
-        view.addObject("creditsUrl", ActionURL.toPathString("admin", "credits.view", ""));
-
-        return _renderInTemplate(view, "Admin Console");
-    }
-
-
-    private static final String _libPath = "/WEB-INF/lib/";
-
-
-    @Jpf.Action @RequiresPermission(ACL.PERM_NONE)
-    protected Forward credits() throws Exception
-    {
-        // No security checks... anyone (even guests) can view the credits page
-
-        HttpView jars = new CreditsView(getCreditsFile("jars.txt"), getWebInfJars(true), "JAR", "webapp", "^[\\w|-]+\\.jar\\|");
-        HttpView scripts = new CreditsView(getCreditsFile("scripts.txt"), null, "javascript", "/internal/webapp directory", null);
-        HttpView bins = new CreditsView(getCreditsFile("executables.txt"), getBinFilenames(), "executable", "/external/bin directory", null);
-
-        return _renderInTemplate(new VBox(jars, scripts, bins), "Credits");
-    }
-
-
-    private static class CreditsView extends WebPartView
-    {
-        private final String WIKI_LINE_SEP = "\r\n\r\n";
-        private String _html;
-
-        CreditsView(String wikiSource, List<String> filenames, String fileType, String foundWhere, String wikiSourceSearchPattern)
-        {
-            super();
-            setTitle(StringUtils.capitalize(fileType) + " Files Shipped with LabKey");
-
-            if (null != filenames)
-            {
-                String undocumented = getUndocumentedFilesText(wikiSource,  filenames, fileType, foundWhere);
-                String missing = getMissingFilesText(wikiSource, filenames, fileType, foundWhere, wikiSourceSearchPattern);
-
-                wikiSource = wikiSource + undocumented + missing;
-            }
-
-            WikiRenderer wf = WikiService.get().getRenderer(WikiRendererType.RADEOX);
-            _html = wf.format(wikiSource).getHtml();
-        }
-
-
-        private String getUndocumentedFilesText(String wikiSource, List<String> filenames, String fileType, String foundWhere)
-        {
-            List<String> undocumented = new ArrayList<String>();
-
-            for (String filename : filenames)
-                if (!wikiSource.contains(filename))
-                    undocumented.add(filename);
-
-            if (undocumented.isEmpty())
-                return "";
-            else
-                return WIKI_LINE_SEP + "**WARNING: The following " + fileType + " files were found in your " + foundWhere + " but are not documented in " + fileType.toLowerCase() + "s.txt:**\\\\" + StringUtils.join(undocumented.iterator(), "\\\\");
-        }
-
-
-        private String getMissingFilesText(String wikiSource, List<String> filenames, String fileType, String foundWhere, String wikiSourceSearchPattern)
-        {
-            if (null == wikiSourceSearchPattern)
-                return "";
-
-            Pattern p = Pattern.compile("^[\\w|-]+\\.jar\\|", Pattern.MULTILINE);
-            Matcher m = p.matcher(wikiSource);
-
-            List<String> missing = new ArrayList<String>();
-
-            while(m.find())
-            {
-                String found = wikiSource.substring(m.start(), m.end() - 1);
-
-                if (!filenames.contains(found))
-                    missing.add(found);
-            }
-
-            if (missing.isEmpty())
-                return "";
-            else
-                return WIKI_LINE_SEP + "**WARNING: The following " + fileType + " files are documented in " + fileType.toLowerCase() + "s.txt but were not found in your " + foundWhere + ":**\\\\" + StringUtils.join(missing.iterator(), "\\\\");
-        }
-
-
-        @Override
-        public void renderView(Object model, PrintWriter out) throws IOException, ServletException
-        {
-            out.print(_html);
-        }
-    }
-
-
-    private String getCreditsFile(String filename) throws IOException
-    {
-        Module core = ModuleLoader.getInstance().getCoreModule();
-        InputStream is = core.getResourceStream("/META-INF/" + filename);
-        return PageFlowUtil.getStreamContentsAsString(is);
-    }
-
-
-    private List<String> getWebInfJars(boolean removeInternalJars)
-    {
-        if (!AppProps.getInstance().isDevMode())
-            return null;
-
-        Set<String> resources = getServletContext().getResourcePaths(_libPath);
-        List<String> filenames = new ArrayList<String>(resources.size());
-
-        // Remove path prefix and copy to a modifiable collection
-        for (String filename : resources)
-            filenames.add(filename.substring(_libPath.length()));
-
-        if (removeInternalJars)
-        {
-            filenames.remove("api.jar");            // Internal JAR
-            filenames.remove("schemas.jar");        // Internal JAR
-            filenames.remove("common.jar");         // Internal JAR
-            filenames.remove("internal.jar");       // Internal JAR
-        }
-
-        Collections.sort(filenames, String.CASE_INSENSITIVE_ORDER);
-        return filenames;
-    }
-
-
-    private List<String> getBinFilenames()
-    {
-        if (!AppProps.getInstance().isDevMode())
-            return null;
-
-        Module core = ModuleLoader.getInstance().getCoreModule();
-        
-        File binRoot = new File(core.getBuildPath(), "../../../external/bin");
-
-        if (!binRoot.exists())
-            return null;
-
-        List<String> filenames = new ArrayList<String>();
-
-        addAllChildren(binRoot, filenames);
-
-        return filenames;
-    }
-
-
-    private static FileFilter _fileFilter = new FileFilter() {
-        public boolean accept(File f)
-        {
-            return !f.isDirectory();
-        }
-    };
-
-    private static FileFilter _dirFilter = new FileFilter() {
-        public boolean accept(File f)
-        {
-            return f.isDirectory() && !".svn".equals(f.getName());
-        }
-    };
-
-    private void addAllChildren(File root, List<String> filenames)
-    {
-        File[] files = root.listFiles(_fileFilter);
-
-        for (File file : files)
-            filenames.add(file.getName());
-
-        File[] dirs = root.listFiles(_dirFilter);
-
-        for (File dir : dirs)
-            addAllChildren(dir, filenames);
-    }
-
-
-    @Jpf.Action @RequiresSiteAdmin
-    protected Forward showTestLdap(TestLdapForm form) throws Exception
-    {
-        HttpView view = new GroovyView("/org/labkey/core/admin/testLdap.gm");
-        view.addObject("form", form);
-        PageConfig page = new PageConfig();
-        if (null == form.getMessage() || form.getMessage().length() < 200)
-            page.setFocusId("server");
-        return includeView(new DialogTemplate(view, page));
-    }
-
-
-    @Jpf.Action @RequiresSiteAdmin
-    protected Forward testLdap(TestLdapForm form) throws Exception
-    {
-        try
-        {
-            boolean success = SecurityManager.LDAPConnect(form.getServer(), form.getPrincipal(), form.getPassword(), form.getAuthentication());
-            form.setMessage("<b>Connected to server.  Authentication " + (success ? "succeeded" : "failed") + ".</b>");
-        }
-        catch(Exception e)
-        {
-            String message = "<b>Failed to connect with these settings.  Error was:</b><br>" + ExceptionUtil.renderException(e);
-            form.setMessage(message);
-        }
-        return showTestLdap(form);
-    }
-
-
-    @Jpf.Action @RequiresSiteAdmin
-    protected Forward resetFavicon() throws Exception
-    {
-        deleteExistingFavicon();
-
-        return new ViewForward(getCustomizeSiteURL());
-    }
-
-
-    @Jpf.Action @RequiresSiteAdmin
-    protected Forward resetLogo() throws Exception
-    {
-        deleteExistingLogo();
-        return new ViewForward(getCustomizeSiteURL());
-    }
-
-
-    @Jpf.Action @RequiresSiteAdmin
-    protected Forward showCustomizeSite(CustomizeSiteForm form) throws Exception
-    {
-        HttpView view = new CustomizeSiteView(false, form.getThemeName(), form.isTestInPage());
-        return _renderInTemplate(view, "Customize Site");
-    }
-
-
-    @Jpf.Action @RequiresSiteAdmin
-    protected Forward showUpgradeCustomizeSite(CustomizeSiteForm form) throws Exception
-    {
-        HttpView view = new CustomizeSiteView(true, form.getThemeName(), form.isTestInPage());
-        return includeView(new DialogTemplate(view));
-    }
-
-
-    private static class CustomizeSiteView extends GroovyView
-    {
-        public CustomizeSiteView(boolean upgradeInProgress, String newThemeName, boolean testInPage) throws SQLException
-        {
-            super("/org/labkey/core/admin/customizeSite.gm");
-            addObject("Themes", WebTheme.getWebThemes ());
-            addObject("CurrentTheme", WebTheme.getTheme());
-            addObject("ThemeFonts", ThemeFont.getThemeFonts ());
-            addObject("CurrentThemeFont", ThemeFont.getThemeFont());
-            addObject("appProps", AppProps.getInstance());
-            addObject("upgradeInProgress", upgradeInProgress);
-            addObject("customLogo", AttachmentCache.lookupLogoAttachment());
-            addObject("customFavIcon", AttachmentCache.lookupFavIconAttachment());
-            addObject("helpLink", "<a href=\"" + (new HelpTopic( "configAdmin", HelpTopic.Area.SERVER)).getHelpTopicLink() + "\" target=\"labkey\">more info...</a>");
-            addObject("ftpHelpLink", "<a href=\"" + (new HelpTopic( "configureFtp", HelpTopic.Area.SERVER)).getHelpTopicLink() + "\" target=\"labkey\">help configuring ftp...</a>");
-            addObject("testInPage", testInPage);
-
-            //if new color scheme defined, get new theme name from url
-            WebTheme newTheme = null;
-            if (newThemeName != null)
-                newTheme = WebTheme.getTheme(newThemeName);
-            addObject("NewTheme", newTheme);
-        }
+        return new ViewForward(AdminControllerSpring.getShowAdminURL());
     }
 
 
@@ -489,13 +123,7 @@ public class AdminController extends ViewController
             throw new IllegalAccessException();
         }
 
-        ActionURL url = cloneActionURL();
-        url.deleteParameters();
-
-        if (form.isUpgradeInProgress())
-            url.setAction("showUpgradeCustomizeSite");
-        else
-            url.setAction("showCustomizeSite");
+        ActionURL url = AdminControllerSpring.getCustomizeSiteURL(form.isUpgradeInProgress());
 
         if (null != getRequest().getParameter("Delete.x"))
         {
@@ -522,9 +150,7 @@ public class AdminController extends ViewController
             url.addParameter("themeName", themeName);
         }
 
-        WriteableAppProps appProps = AppProps.getWriteableInstance();
-        appProps.incrementLookAndFeelRevision();
-        appProps.save();
+        WriteableAppProps.incrementLookAndFeelRevision2();
 
         return new ViewForward(url);
     }
@@ -572,82 +198,6 @@ public class AdminController extends ViewController
     {
         getResponse().getWriter().write(GUID.makeGUID());
         return null;
-    }
-
-
-    private void handleLogoFile(FormFile file) throws ServletException, SQLException, IOException, AttachmentService.DuplicateFilenameException
-    {
-        User user = getViewContext().getUser();
-
-        // Set the name to something we'll recognize as a logo file
-        String uploadedFileName = file.getFileName();
-        int index = uploadedFileName.lastIndexOf(".");
-        if (index == -1)
-        {
-            throw new ServletException("No file extension on the uploaded image");
-        }
-
-        // Get rid of any existing logos
-        deleteExistingLogo();
-
-        AttachmentFile renamed = new StrutsAttachmentFile(file);
-        renamed.setFilename(AttachmentCache.LOGO_FILE_NAME_PREFIX + uploadedFileName.substring(index));
-        AttachmentService.get().addAttachments(user, RootContainer.get(), Collections.<AttachmentFile>singletonList(renamed));
-        AttachmentCache.clearLogoCache();
-    }
-
-    private void deleteExistingLogo()
-            throws SQLException
-    {
-        RootContainer rootContainer = RootContainer.get();
-        Attachment[] attachments = AttachmentService.get().getAttachments(rootContainer);
-        for (Attachment attachment : attachments)
-        {
-            if (attachment.getName().startsWith(AttachmentCache.LOGO_FILE_NAME_PREFIX))
-            {
-                AttachmentService.get().deleteAttachment(rootContainer, attachment.getName());
-                AttachmentCache.clearLogoCache();
-            }
-        }
-    }
-
-    private void handleIconFile(FormFile file) throws SQLException, IOException, ServletException, AttachmentService.DuplicateFilenameException
-    {
-        User user = getViewContext().getUser();
-
-        if (!file.getFileName().toLowerCase().endsWith(".ico"))
-        {
-            throw new ServletException("FavIcon must be a .ico file");
-        }
-
-        deleteExistingFavicon();
-
-        AttachmentFile renamed = new StrutsAttachmentFile(file);
-        renamed.setFilename(AttachmentCache.FAVICON_FILE_NAME);
-        AttachmentService.get().addAttachments(user, RootContainer.get(), Collections.<AttachmentFile>singletonList(renamed));
-        AttachmentCache.clearFavIconCache();
-    }
-
-    private void deleteExistingFavicon()
-            throws SQLException
-    {
-        // TODO: Simplify this whole thing to: AttachmentService.get().deleteAttachment(RootContainer.get(), AttachmentCache.FAVICON_FILE_NAME); AttachmentCache.clearFavIconCache();
-
-        RootContainer rootContainer = RootContainer.get();
-        Attachment[] attachments = AttachmentService.get().getAttachments(rootContainer);
-        for (Attachment attachment : attachments)
-        {
-            if (attachment.getName().equals(AttachmentCache.FAVICON_FILE_NAME))
-            {
-                AttachmentService.get().deleteAttachment(rootContainer, attachment.getName());
-                AttachmentCache.clearFavIconCache();
-            }
-        }
-    }
-
-    private ActionURL getCustomizeSiteURL() throws ServletException
-    {
-        return new ActionURL("admin", "showCustomizeSite.view", getContainer());
     }
 
 
@@ -716,282 +266,6 @@ public class AdminController extends ViewController
         return includeView(new DialogTemplate(v));
     }
 
-    @Jpf.Action @RequiresSiteAdmin
-    protected Forward updatePreferences(SiteAdminForm form) throws Exception
-    {
-        ModuleLoader.getInstance().setDeferUsageReport(false);
-
-        // We only need to check that SSL is running if the user isn't already using SSL
-        if (form.isSslRequired() && !(getRequest().isSecure() && (form.getSslPort() == getRequest().getServerPort())))
-        {
-            URL testURL = new URL("https", getRequest().getServerName(), form.getSslPort(), AppProps.getInstance().getContextPath());
-            String error = null;
-            try
-            {
-                HttpsURLConnection connection = (HttpsURLConnection)testURL.openConnection();
-                HttpsUtil.disableValidation(connection);
-                if (connection.getResponseCode() != 200)
-                {
-                    error = "Bad response code, " + connection.getResponseCode() + " when connecting to the SSL port over HTTPS";
-                }
-            }
-            catch (IOException e)
-            {
-                error = "Error connecting over HTTPS - ensure that the web server is configured for SSL and that the port was correct. " +
-                        "If you are receiving this message even though SSL is enabled, try saving these settings while connected via SSL. " +
-                        "Attempted to connect to " + testURL + " and received the following error: " +
-                        (e.getMessage() == null ? e.toString() : e.getMessage());
-            }
-            if (error != null)
-            {
-                ActionErrors errors = PageFlowUtil.getActionErrors(getRequest(), true);
-                errors.add("main", new ActionMessage("Error", error));
-                return new ViewForward(getCustomizeSiteURL(), false);
-            }
-        }
-
-        if (null != form.getMultipartRequestHandler())
-        {
-            Map<String, FormFile> fileMap = form.getMultipartRequestHandler().getFileElements();
-            FormFile logoFile = fileMap.get("logoImage");
-            if (logoFile != null && !"".equals(logoFile.getFileName()) && logoFile.getFileSize() > 0)
-            {
-                try
-                {
-                    handleLogoFile(logoFile);
-                }
-                catch (Exception e)
-                {
-                    ActionErrors errors = PageFlowUtil.getActionErrors(getRequest(), true);
-                    errors.add("main", new ActionMessage("Error", e.getMessage()));
-                    return new ViewForward(getCustomizeSiteURL(), false);
-                }
-            }
-
-            FormFile iconFile = fileMap.get("iconImage");
-            if (logoFile != null && !"".equals(iconFile.getFileName()) && iconFile.getFileSize() > 0)
-            {
-                try
-                {
-                    handleIconFile(iconFile);
-                }
-                catch (Exception e)
-                {
-                    ActionErrors errors = PageFlowUtil.getActionErrors(getRequest(), true);
-                    errors.add("main", new ActionMessage("Error", e.getMessage()));
-                    return new ViewForward(getCustomizeSiteURL(), false);
-                }
-            }
-        }
-
-        // Make sure we can parse the system maintenance time
-        Date systemMaintenanceTime = SystemMaintenance.parseSystemMaintenanceTime(form.getSystemMaintenanceTime());
-
-        if (null == systemMaintenanceTime)
-        {
-            ActionErrors errors = PageFlowUtil.getActionErrors(getRequest(), true);
-            errors.add("main", new ActionMessage("Error", "Invalid format for System Maintenance Time - please enter time in 24-hour format (e.g., 0:30 for 12:30AM, 14:00 for 2:00PM)"));
-            return new ViewForward(getCustomizeSiteURL(), false);
-        }
-
-        if (!"".equals(form.getMascotServer()))
-        {
-            // we perform the Mascot setting test here in case user did not do so
-            SearchClient mascotClient = MS2Service.get().createSearchClient("mascot",form.getMascotServer(), Logger.getLogger("null"),
-                form.getMascotUserAccount(), form.getMascotUserPassword());
-            mascotClient.setProxyURL(form.getMascotHTTPProxy());
-            mascotClient.findWorkableSettings(true);
-
-            if (0 != mascotClient.getErrorCode())
-            {
-                ActionErrors errors = PageFlowUtil.getActionErrors(getRequest(), true);
-                errors.add("main", new ActionMessage("Error", mascotClient.getErrorString()));
-                return new ViewForward(getCustomizeSiteURL(), false);
-            }
-        }
-
-        if (!"".equals(form.getSequestServer()))
-        {
-            // we perform the Sequest setting test here in case user did not do so
-            SearchClient sequestClient = MS2Service.get().createSearchClient("sequest",form.getSequestServer(), Logger.getLogger("null"),
-                null, null);
-            sequestClient.findWorkableSettings(true);
-            if (0 != sequestClient.getErrorCode())
-            {
-                ActionErrors errors = PageFlowUtil.getActionErrors(getRequest(), true);
-                errors.add("main", new ActionMessage("Error", sequestClient.getErrorString()));
-                return new ViewForward(getCustomizeSiteURL(), false);
-            }
-        }
-
-
-        WriteableAppProps props = AppProps.getWriteableInstance();
-        try
-        {
-            if (form.getThemeName() != null)
-            {
-                WebTheme theme = WebTheme.getTheme(form.getThemeName());
-                if (theme != null)
-                {
-                    WebTheme.setTheme(theme);
-                    props.setThemeName(theme.getFriendlyName());
-                }
-                ThemeFont themeFont = ThemeFont.getThemeFont(form.getThemeFont());
-                if (themeFont != null)
-                {
-                    ThemeFont.setThemeFont(themeFont);
-                    props.setThemeFont(themeFont.getFriendlyName());
-                }
-                AttachmentCache.clearGradientCache();
-                ButtonServlet.resetColorScheme();
-            }
-        }
-        catch (IllegalArgumentException e)
-        {
-        }
-
-        props.setCompanyName(form.getCompanyName());
-        props.setDefaultDomain(form.getDefaultDomain());
-        props.setDefaultLsidAuthority(form.getDefaultLsidAuthority());
-        props.setLDAPDomain(form.getLDAPDomain());
-        props.setLDAPPrincipalTemplate(form.getLDAPPrincipalTemplate());
-        props.setLDAPServers(form.getLDAPServers());
-        props.setLDAPAuthentication(form.useSASLAuthentication());
-        props.setLogoHref(form.getLogoHref());
-        props.setReportAProblemPath(form.getReportAProblemPath());
-        props.setSystemDescription(form.getSystemDescription());
-
-        // Need to strip out any extraneous characters from the email address.
-        // E.g. "Labkey <support@labkey.com>" -> "support@labkey.com"
-        try
-        {
-            String address = form.getSystemEmailAddress().trim();
-            // Manually check for a space or a quote, as these will later
-            // fail to send via JavaMail.
-            if (address.contains(" ") || address.contains("\""))
-                throw new ValidEmail.InvalidEmailException(address);
-
-            // this will throw an InalidEmailException for some types
-            // of invalid email addresses
-            new ValidEmail(form.getSystemEmailAddress());
-            props.setSystemEmailAddresses(address);
-        }
-        catch (ValidEmail.InvalidEmailException e)
-        {
-            ActionErrors errors = PageFlowUtil.getActionErrors(getRequest(), true);
-            errors.add("main", new ActionMessage("Error", "Invalid System Email Address: ["
-                    + e.getBadEmail() + "]. Please enter a valid email address."));
-            return new ViewForward(getCustomizeSiteURL(), false);
-        }
-
-
-        props.setSystemShortName(form.getSystemShortName());
-        props.setPipelineCluster(form.isPipelineCluster());
-        props.setPipelineToolsDir(form.getPipelineToolsDirectory());
-        props.setSequestServer(form.getSequestServer());
-        props.setSSLRequired(form.isSslRequired());
-        props.setSSLPort(form.getSslPort());
-        props.setMemoryUsageDumpInterval(form.getMemoryUsageDumpInterval());
-        props.setNavigationBarWidth(form.getNavigationBarWidth());
-        FolderDisplayMode folderDisplayMode = FolderDisplayMode.ALWAYS;
-        try
-        {
-            folderDisplayMode = FolderDisplayMode.fromString(form.getFolderDisplayMode());
-            props.setFolderDisplayMode(folderDisplayMode);
-        }
-        catch (IllegalArgumentException e)
-        {
-        }
-
-
-        // Save the old system maintenance property values, compare with the new ones, and set a flag if they've changed
-        String oldInterval = props.getSystemMaintenanceInterval();
-        Date oldTime = props.getSystemMaintenanceTime();
-        props.setSystemMaintenanceInterval(form.getSystemMaintenanceInterval());
-        props.setSystemMaintenanceTime(systemMaintenanceTime);
-
-        boolean setSystemMaintenanceTimer = (!oldInterval.equals(props.getSystemMaintenanceInterval()) || !oldTime.equals(props.getSystemMaintenanceTime()));
-
-        props.setAdminOnlyMessage(form.getAdminOnlyMessage());
-        props.setUserRequestedAdminOnlyMode(form.isAdminOnlyMode());
-        props.setMascotServer(form.getMascotServer());
-        props.setMascotUserAccount(form.getMascotUserAccount());
-        props.setMascotUserPassword(form.getMascotUserPassword());
-        props.setMascotHTTPProxy(form.getMascotHTTPProxy());
-        props.setPipelineFTPHost(form.getPipelineFTPHost());
-        props.setPipelineFTPPort(form.getPipelineFTPPort());
-        props.setPipelineFTPSecure(form.isPipelineFTPSecure());
-
-        props.setMicroarrayFeatureExtractionServer(form.getMicroarrayFeatureExtractionServer());
-
-        try
-        {
-            ExceptionReportingLevel level = ExceptionReportingLevel.valueOf(form.getExceptionReportingLevel());
-            props.setExceptionReportingLevel(level);
-        }
-        catch (IllegalArgumentException e)
-        {
-        }
-
-        UsageReportingLevel level = null;
-
-        try
-        {
-            level = UsageReportingLevel.valueOf(form.getUsageReportingLevel());
-            props.setUsageReportingLevel(level);
-        }
-        catch (IllegalArgumentException e)
-        {
-        }
-        props.incrementLookAndFeelRevision();
-
-        if (form.getNetworkDriveLetter() != null && form.getNetworkDriveLetter().trim().length() > 0)
-        {
-            ActionErrors errors = validateNetworkDrive(form);
-
-            if (errors.size() > 0)
-            {
-                return new ViewForward(getCustomizeSiteURL(), false);
-            }
-        }
-
-        props.setNetworkDriveLetter(form.getNetworkDriveLetter() == null ? null : form.getNetworkDriveLetter().trim());
-        props.setNetworkDrivePath(form.getNetworkDrivePath() == null ? null : form.getNetworkDrivePath().trim());
-        props.setNetworkDriveUser(form.getNetworkDriveUser() == null ? null : form.getNetworkDriveUser().trim());
-        props.setNetworkDrivePassword(form.getNetworkDrivePassword() == null ? null : form.getNetworkDrivePassword().trim());
-        props.setCaBIGEnabled(form.isCaBIGEnabled());
-
-        if (null != form.getBaseServerUrl())
-        {
-            try
-            {
-                props.setBaseServerUrl(form.getBaseServerUrl());
-            }
-            catch (URISyntaxException e)
-            {
-                ActionErrors errors = PageFlowUtil.getActionErrors(getRequest(), true);
-                errors.add("main", new ActionMessage("Error", "Invalid Base Server URL, " + e.getMessage() + ".  Please enter a valid URL, for example: http://www.labkey.org, https://www.labkey.org, or http://www.labkey.org:8080"));
-                return new ViewForward(getCustomizeSiteURL(), false);
-            }
-        }
-
-        props.save();
-
-        if (null != level)
-            level.scheduleUpgradeCheck();
-
-        if (setSystemMaintenanceTimer)
-            SystemMaintenance.setTimer();
-
-        if (form.isUpgradeInProgress())
-        {
-            return new ViewForward("Project", "begin.view", "/home");
-        }
-        else
-        {
-            return new ViewForward(getCustomizeSiteURL());
-        }
-    }
 
     private ActionErrors validateNetworkDrive(SiteAdminForm form)
     {
@@ -1181,7 +455,8 @@ public class AdminController extends ViewController
 
     public static class SiteAdminForm extends ViewForm
     {
-        private boolean _upgradeInProgress;
+        private boolean _upgradeInProgress = false;
+        private boolean _testInPage = false;
 
         private String _systemDescription;
         private String _companyName;
@@ -1287,7 +562,7 @@ public class AdminController extends ViewController
         {
             _LDAPPrincipalTemplate = LDAPPrincipalTemplate;
         }
-        
+
         public boolean useSASLAuthentication()
         {
             return _LDAPAuthentication;
@@ -1345,7 +620,7 @@ public class AdminController extends ViewController
 
         public void setPipelineFTPHost(String pipelineFTPHost)
         {
-            this._pipelineFTPHost = pipelineFTPHost;
+            _pipelineFTPHost = pipelineFTPHost;
         }
 
         public String getPipelineFTPPort()
@@ -1355,7 +630,7 @@ public class AdminController extends ViewController
 
         public void setPipelineFTPPort(String pipelineFTPPort)
         {
-            this._pipelineFTPPort = pipelineFTPPort;
+            _pipelineFTPPort = pipelineFTPPort;
         }
 
         public boolean isPipelineFTPSecure()
@@ -1365,7 +640,7 @@ public class AdminController extends ViewController
 
         public void setPipelineFTPSecure(boolean pipelineFTPSecure)
         {
-            this._pipelineFTPSecure = pipelineFTPSecure;
+            _pipelineFTPSecure = pipelineFTPSecure;
         }
 
         public String getSystemEmailAddress()
@@ -1415,7 +690,7 @@ public class AdminController extends ViewController
 
         public void setThemeName(String themeName)
         {
-            this._themeName = themeName;
+            _themeName = themeName;
         }
 
         public String getThemeFont()
@@ -1425,7 +700,7 @@ public class AdminController extends ViewController
 
         public void setThemeFont(String themeFont)
         {
-            this._themeFont = themeFont;
+            _themeFont = themeFont;
         }
 
         public String getCompanyName()
@@ -1435,7 +710,7 @@ public class AdminController extends ViewController
 
         public void setCompanyName(String companyName)
         {
-            this._companyName = companyName;
+            _companyName = companyName;
         }
 
         public boolean isPipelineCluster()
@@ -1445,7 +720,7 @@ public class AdminController extends ViewController
 
         public void setPipelineCluster(boolean pipelineCluster)
         {
-            this._pipelineCluster = pipelineCluster;
+            _pipelineCluster = pipelineCluster;
         }
 
         public String getPipelineToolsDirectory()
@@ -1465,7 +740,7 @@ public class AdminController extends ViewController
 
         public void setSequest(boolean sequest)
         {
-            this._sequest = sequest;
+            _sequest = sequest;
         }
 
         public String getSequestServer()
@@ -1567,7 +842,7 @@ public class AdminController extends ViewController
         {
             _upgradeInProgress = upgradeInProgress;
         }
-        
+
         public int getMemoryUsageDumpInterval()
         {
             return _memoryUsageDumpInterval;
@@ -1667,6 +942,16 @@ public class AdminController extends ViewController
         {
             _microarrayFeatureExtractionServer = microarrayFeatureExtractionServer;
         }
+
+        public boolean isTestInPage()
+        {
+            return _testInPage;
+        }
+
+        public void setTestInPage(boolean testInPage)
+        {
+            _testInPage = testInPage;
+        }
     }
 
 
@@ -1684,7 +969,7 @@ public class AdminController extends ViewController
                     getUser().getEmail() + " impersonated user: " + email);
             AuditLogService.get().addEvent(getViewContext(), UserManager.USER_AUDIT_EVENT, impersonatedUser.getUserId(),
                     email + " was impersonated by user: " + getUser().getEmail());
-            return new ViewForward(AppProps.getInstance().getHomePageUrl());
+            return new ViewForward(AppProps.getInstance().getHomePageActionURL());
         }
 
         return _renderInTemplate(new HtmlView("User doesn't exist"), "Impersonate User");
@@ -1702,7 +987,7 @@ public class AdminController extends ViewController
         if (title != null)
             trailConfig.setTitle(title);
         if (!"showAdmin".equals(getActionURL().getAction()))
-            trailConfig.setExtraChildren(new NavTree("Admin Console", getShowAdminURL()));
+            trailConfig.setExtraChildren(new NavTree("Admin Console", AdminControllerSpring.getShowAdminURL()));
 
         HomeTemplate template = new HomeTemplate(getViewContext(), getContainer(), view, trailConfig);
         includeView(template);
@@ -1780,7 +1065,7 @@ public class AdminController extends ViewController
             throw failure;
         }
         else
-            return new ViewForward(AppProps.getInstance().getHomePageUrl());
+            return new ViewForward(AppProps.getInstance().getHomePageActionURL());
     }
 
 
@@ -1799,9 +1084,9 @@ public class AdminController extends ViewController
             vbox.addView(new StartUpgradingView(ModuleLoader.getInstance().getUpgradeUser(), form.getForce(), ModuleLoader.getInstance().isNewInstall()));
         else
         {
-            String url = getActionURL().relativeUrl("showUpgradeCustomizeSite", null, "admin");
             SqlScriptRunner.stopBackgroundThread();
 
+            ActionURL url = AdminControllerSpring.getCustomizeSiteURL();
             vbox.addView(new HtmlView("All modules are up-to-date.<br><br>" +
                     "<a href='" + url + "'><img border=0 src='" + PageFlowUtil.buttonSrc("Next") + "'></a>"));
         }
@@ -2437,43 +1722,6 @@ public class AdminController extends ViewController
         }
     }
 
-    public static class CustomizeSiteForm extends FormData
-    {
-        private boolean _testInPage = false;
-        private String _themeName;
-//        private boolean upgradeInProgress;
-
-        public boolean isTestInPage()
-        {
-            return _testInPage;
-        }
-
-        public void setTestInPage(boolean testInPage)
-        {
-            _testInPage = testInPage;
-        }
-
-        public String getThemeName()
-        {
-            return _themeName;
-        }
-
-        public void setThemeName(String themeName)
-        {
-            _themeName = themeName;
-        }
-
-//        public boolean isUpgradeInProgress()
-//        {
-//            return upgradeInProgress;
-//        }
-//
-//        public void setUpgradeInProgress(boolean upgradeInProgress)
-//        {
-//            this.upgradeInProgress = upgradeInProgress;
-//        }
-    }
-
     public static class ChartForm extends FormData
     {
         private String _type;
@@ -2561,86 +1809,6 @@ public class AdminController extends ViewController
         ChartUtilities.writeChartAsPNG(getResponse().getOutputStream(), chart, showLegend ? 800 : 398, showLegend ? 100 : 70);
         return null;
     }
-
-    public static class TestLdapForm extends FormData
-    {
-        private String server;
-        private String principal;
-        private String password;
-        private String message;
-        private boolean authentication;
-
-        public void reset(ActionMapping actionMapping, HttpServletRequest httpServletRequest)
-        {
-            User user = (User) httpServletRequest.getUserPrincipal();
-            server = AppProps.getInstance().getLDAPServersArray()[0];
-            authentication = AppProps.getInstance().useSASLAuthentication();
-            ValidEmail email;
-
-            try
-            {
-                email = new ValidEmail(user.getEmail());
-            }
-            catch(ValidEmail.InvalidEmailException e)
-            {
-                throw new RuntimeException(e);
-            }
-            principal = SecurityManager.emailToLdapPrincipal(email);
-
-            super.reset(actionMapping, httpServletRequest);
-        }
-
-        public String getPrincipal()
-        {
-            return (null == principal ? "" : principal);
-        }
-
-        public void setPrincipal(String principal)
-        {
-            this.principal = principal;
-        }
-
-        public String getPassword()
-        {
-            return (null == password ? "" : password);
-        }
-
-        public void setPassword(String password)
-        {
-            this.password = password;
-        }
-
-        public String getServer()
-        {
-            return (null == server ? "" : server);
-        }
-
-        public void setServer(String server)
-        {
-            this.server = server;
-        }
-        
-        public boolean getAuthentication()
-        {
-            return authentication;
-        }
-
-        public void setAuthentication(boolean authentication)
-        {
-            this.authentication = authentication;
-        }
-
-        public String getMessage()
-        {
-            return message;
-        }
-
-        public void setMessage(String message)
-        {
-            this.message = message;
-        }
-    }
-
 
     @Jpf.Action @RequiresSiteAdmin
     protected Forward dbChecker() throws Exception

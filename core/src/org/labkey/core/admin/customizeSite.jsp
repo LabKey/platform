@@ -2,12 +2,19 @@
 <%@ page import="org.labkey.api.util.SystemMaintenance" %>
 <%@ page import="org.labkey.api.util.FolderDisplayMode" %>
 <%@ page import="org.labkey.api.util.AppProps" %>
+<%@ page import="org.labkey.core.admin.AdminControllerSpring" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.WebTheme" %>
+<%@ page import="org.apache.commons.lang.StringUtils" %>
+<%@ page import="org.labkey.api.view.ThemeFont" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 
-<%=PageFlowUtil.getStrutsError(request,"main")%>
+<%=formatMissedErrors("form")%>
 <%
-    AppProps appprops = AppProps.getInstance();
+    AdminControllerSpring.CustomizeSiteBean bean = ((JspView<AdminControllerSpring.CustomizeSiteBean>)HttpView.currentView()).getModelBean();
+    AppProps appProps = AppProps.getInstance();
 %>
-
 <script type="text/javascript">
 function testNetworkDrive()
 {
@@ -71,11 +78,11 @@ function testSequest()
 </script>
 
 <form name="preferences" enctype="multipart/form-data" method="post">
-<input type="hidden" name="upgradeInProgress" value="${upgradeInProgress}" />
+<input type="hidden" name="upgradeInProgress" value="<%=bean.upgradeInProgress ? 1 : 0%>" />
 
 <table>
 <%
-if (upgradeInProgress)
+if (bean.upgradeInProgress)
 {%>
 <tr>
     <td class="normal"><p>You can use this page to customize your LabKey Server installation. If you prefer to customize it later, you can reach this page again by clicking <b>Manage Site->Admin Console->Customize Site</b>.</p>
@@ -93,58 +100,58 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 
 <tr>
-    <td class="normal" colspan=2>Customize the look and feel of your LabKey Server installation ($helpLink)</td>
+    <td class="normal" colspan=2>Customize the look and feel of your LabKey Server installation (<%=bean.helpLink%>)</td>
 </tr>
 <tr style="height:1;"><td colspan=3 class=ms-titlearealine><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
 <tr>
     <td class="ms-searchform">Web site description (appears in every page header)</td>
-    <td class="normal"><input type="text" name="systemDescription" size="50" value="<%= PageFlowUtil.filter(appProps.getSystemDescription()) %>"></td>
+    <td class="normal"><input type="text" name="systemDescription" size="50" value="<%= h(appProps.getSystemDescription()) %>"></td>
 </tr>
 <tr>
     <td class="ms-searchform">Web site short name (appears in every page header and in emails)</td>
-    <td class="normal"><input type="text" name="systemShortName" size="50" value="<%= PageFlowUtil.filter(appProps.getSystemShortName()) %>"></td>
+    <td class="normal"><input type="text" name="systemShortName" size="50" value="<%= h(appProps.getSystemShortName()) %>"></td>
 </tr>
 <tr>
     <td class="ms-searchform">Web site theme (color scheme)</td>
     <td class="normal">
         <select name="themeName">
-            <% for (theme in Themes)
+            <% for (WebTheme theme : bean.themes)
                 {
-                    def selected;
+                    String selected;
 
                     //if a new theme has just been defined
-                    if (NewTheme != null)
-                        selected = theme == NewTheme ? "selected" : "";
+                    if (bean.newTheme != null)
+                        selected = theme == bean.newTheme ? "selected" : "";
                     else
-                        selected = theme == CurrentTheme ? "selected" : "";
+                        selected = theme == bean.currentTheme ? "selected" : "";
                     %>
-                    <option value="<%=filter(theme.toString())%>" <%=selected%>><%=filter(theme.getFriendlyName())%></option>
+                    <option value="<%=h(theme.toString())%>" <%=selected%>><%=h(theme.getFriendlyName())%></option>
                 <%}
             %>
         </select>
         <%
-            def webThemesView = "showDefineWebThemes.view";
-            if (upgradeInProgress)
+            String webThemesView = "showDefineWebThemes.view";
+            if (bean.upgradeInProgress)
                 webThemesView = "showUpgradeDefineWebThemes.view";
         %>
 
-        [<a href="<%=webThemesView%>?upgradeInProgress=${upgradeInProgress}">Define Web Themes</a>]
+        [<a href="<%=webThemesView%>?upgradeInProgress=<%=bean.upgradeInProgress ? 1 : 0%>">Define Web Themes</a>]
     </td>
 </tr>
 <tr>
     <td class="ms-searchform">Default font size</td>
     <td class="normal">
         <select name="themeFont">
-            <% for (themeFont in ThemeFonts)
+            <% for (ThemeFont themeFont : bean.themeFonts)
                 {
-                out.print("<option value=\"" + themeFont.toString() + "\"" + (themeFont == CurrentThemeFont ? " selected>" : ">") + themeFont.getFriendlyName() + "</option>\n")
+                out.print("<option value=\"" + themeFont.toString() + "\"" + (themeFont == bean.currentThemeFont ? " selected>" : ">") + themeFont.getFriendlyName() + "</option>\n");
                 }
             %>
         </select>
         Font Size Samples:
-            <% for (themeFont in ThemeFonts)
+            <% for (ThemeFont themeFont : bean.themeFonts)
                 {
-                out.print("<span class=\""+themeFont.getId()+"\">&nbsp;&nbsp;" + themeFont.toString() + "</span>");
+                out.print("<span class=\"" + themeFont.getId() + "\">&nbsp;&nbsp;" + themeFont.toString() + "</span>");
                 }
             %>
     </td>
@@ -174,7 +181,7 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr>
     <td></td>
     <td class="normal">
-        <% if (customLogo)
+        <% if (null != bean.customLogo)
         { %>
             Currently using a custom logo. [<a href="resetLogo.view">Reset logo to default</a>]
         <% } else { %>
@@ -184,7 +191,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <tr>
     <td class="ms-searchform">Logo link (specifies page that logo links to)</td>
-    <td class="normal"><input type="text" name="logoHref" size="50" value="<%= PageFlowUtil.filter(appProps.getLogoHref()) %>"></td>
+    <td class="normal"><input type="text" name="logoHref" size="50" value="<%= h(appProps.getLogoHref()) %>"></td>
 </tr>
 <tr>
     <td class="ms-searchform">Web site favorite icon (page icon displayed in user's favorites, .ico file only)</td>
@@ -193,7 +200,7 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr>
     <td></td>
     <td class="normal">
-        <% if (customFavIcon)
+        <% if (null != bean.customFavIcon)
         { %>
             Currently using a custom favorite icon. [<a href="resetFavicon.view">Reset favorite logo to default</a>]
         <% } else { %>
@@ -206,28 +213,28 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 
 <tr>
-    <td class="normal" colspan=2>Set system email, log in, and support properties ($helpLink)</td>
+    <td class="normal" colspan=2>Set system email, log in, and support properties (<%=bean.helpLink%>)</td>
 </tr>
 <tr style="height:1;"><td colspan=3 class=ms-titlearealine><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
 <tr>
     <td class="ms-searchform">System email address (<i>from</i> address for system notification emails)</td>
-    <td class="normal"><input type="text" name="systemEmailAddress" size="50" value="<%= PageFlowUtil.filter(appProps.getSystemEmailAddress()) %>"></td>
+    <td class="normal"><input type="text" name="systemEmailAddress" size="50" value="<%= h(appProps.getSystemEmailAddress()) %>"></td>
 </tr>
 <tr>
     <td class="ms-searchform">Organization name (appears in notification emails sent by system)</td>
-    <td class="normal"><input type="text" name="companyName" size="50" value="<%= PageFlowUtil.filter(appProps.getCompanyName()) %>"></td>
+    <td class="normal"><input type="text" name="companyName" size="50" value="<%= h(appProps.getCompanyName()) %>"></td>
 </tr>
 <tr>
     <td class="ms-searchform">System default domain (default domain for user log in)</td>
-    <td class="normal"><input type="text" name="defaultDomain" size="50" value="<%= PageFlowUtil.filter(appProps.getDefaultDomain()) %>"></td>
+    <td class="normal"><input type="text" name="defaultDomain" size="50" value="<%= h(appProps.getDefaultDomain()) %>"></td>
 </tr>
 <tr>
     <td class="ms-searchform">Support link (specifies page where users can request support)</td>
-    <td class="normal"><input type="text" name="reportAProblemPath" size="50" value="<%= PageFlowUtil.filter(appProps.getUnsubstitutedReportAProblemPath()) %>"></td>
+    <td class="normal"><input type="text" name="reportAProblemPath" size="50" value="<%= h(appProps.getUnsubstitutedReportAProblemPath()) %>"></td>
 </tr>
 <tr>
     <td class="ms-searchform">Base server url (used to create links in emails sent by the system)</td>
-    <td class="normal"><input type="text" name="baseServerUrl" size="50" value="<%= PageFlowUtil.filter(appProps.getBaseServerUrl()) %>"></td>
+    <td class="normal"><input type="text" name="baseServerUrl" size="50" value="<%= h(appProps.getBaseServerUrl()) %>"></td>
 </tr>
 <tr>
     <td class="normal">&nbsp;</td>
@@ -236,7 +243,7 @@ Click the Save button at any time to accept the current settings and continue.</
 
 <tr>
     <td class="normal" colspan=2>Automatically check for updates to LabKey Server, and
-        report anonymous usage statistics to the LabKey team ($helpLink)</td>
+        report anonymous usage statistics to the LabKey team (<%=bean.helpLink%>)</td>
 </tr>
 <tr style="height:1;"><td colspan=3 class=ms-titlearealine><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
 <tr>
@@ -245,15 +252,15 @@ Click the Save button at any time to accept the current settings and continue.</
     <td class="normal">
     <table>
         <tr>
-            <td valign="top"><input type="radio" name="usageReportingLevel" value="NONE" <%=appProps.getUsageReportingLevel().toString() == "NONE" ? "checked" : ""%>></td>
+            <td valign="top"><input type="radio" name="usageReportingLevel" value="NONE" <%="NONE".equals(appProps.getUsageReportingLevel().toString()) ? "checked" : ""%>></td>
             <td class="normal"><b>OFF</b> - Do not report any usage or check for updates</td>
         </tr>
         <tr>
-            <td valign="top"><input type="radio" name="usageReportingLevel" value="LOW" <%=appProps.getUsageReportingLevel().toString() == "LOW" ? "checked" : ""%>></td>
+            <td valign="top"><input type="radio" name="usageReportingLevel" value="LOW" <%="LOW".equals(appProps.getUsageReportingLevel().toString()) ? "checked" : ""%>></td>
             <td class="normal"><b>ON, low</b> - Check for updates and report system information</td>
         </tr>
         <tr>
-            <td valign="top"><input type="radio" name="usageReportingLevel" value="MEDIUM" <%=appProps.getUsageReportingLevel().toString() == "MEDIUM" ? "checked" : ""%>></td>
+            <td valign="top"><input type="radio" name="usageReportingLevel" value="MEDIUM" <%="MEDIUM".equals(appProps.getUsageReportingLevel().toString()) ? "checked" : ""%>></td>
             <td class="normal"><b>ON, medium</b> - Check for updates, report system information, organization, and administrator information from this page</td>
         </tr>
     </table>
@@ -263,7 +270,7 @@ Click the Save button at any time to accept the current settings and continue.</
     <td class="normal">&nbsp;</td>
 </tr>
 <tr>
-    <td class="normal" colspan=2>Automatically report exceptions to the LabKey team ($helpLink)</td>
+    <td class="normal" colspan=2>Automatically report exceptions to the LabKey team (<%=bean.helpLink%>)</td>
 </tr>
 <tr style="height:1;"><td colspan=3 class=ms-titlearealine><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
 <tr>
@@ -271,19 +278,19 @@ Click the Save button at any time to accept the current settings and continue.</
     <td class="normal">
         <table>
             <tr>
-                <td valign="top"><input type="radio" name="exceptionReportingLevel" value="NONE" <%=appProps.getExceptionReportingLevel().toString() == "NONE" ? "checked" : ""%>></td>
+                <td valign="top"><input type="radio" name="exceptionReportingLevel" value="NONE" <%="NONE".equals(appProps.getExceptionReportingLevel().toString()) ? "checked" : ""%>></td>
                 <td class="normal"><b>OFF</b> - Do not report exceptions</td>
             </tr>
             <tr>
-                <td valign="top"><input type="radio" name="exceptionReportingLevel" value="LOW" <%=appProps.getExceptionReportingLevel().toString() == "LOW" ? "checked" : ""%>></td>
+                <td valign="top"><input type="radio" name="exceptionReportingLevel" value="LOW" <%="LOW".equals(appProps.getExceptionReportingLevel().toString()) ? "checked" : ""%>></td>
                 <td class="normal"><b>ON, low</b> - Include anonymous system and exception information</td>
             </tr>
             <tr>
-                <td valign="top"><input type="radio" name="exceptionReportingLevel" value="MEDIUM" <%=appProps.getExceptionReportingLevel().toString() == "MEDIUM" ? "checked" : ""%>></td>
+                <td valign="top"><input type="radio" name="exceptionReportingLevel" value="MEDIUM" <%="MEDIUM".equals(appProps.getExceptionReportingLevel().toString()) ? "checked" : ""%>></td>
                 <td class="normal"><b>ON, medium</b> - Include anonymous system and exception information, as well as the URL that triggered the exception</td>
             </tr>
             <tr>
-                <td valign="top"><input type="radio" name="exceptionReportingLevel" value="HIGH" <%=appProps.getExceptionReportingLevel().toString() == "HIGH" ? "checked" : ""%>></td>
+                <td valign="top"><input type="radio" name="exceptionReportingLevel" value="HIGH" <%="HIGH".equals(appProps.getExceptionReportingLevel().toString()) ? "checked" : ""%>></td>
                 <td class="normal"><b>ON, high</b> - Include the above, plus the user's email address. The user will be contacted only for assistance in reproducing the bug, if necessary</td>
             </tr>
         </table>
@@ -294,23 +301,23 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 
 <tr>
-    <td class="normal" colspan=2>Customize LabKey system properties ($helpLink)</td>
+    <td class="normal" colspan=2>Customize LabKey system properties (<%=bean.helpLink%>)</td>
 </tr>
 <tr style="height:1;"><td colspan=3 class=ms-titlearealine><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
 <tr>
     <td class="ms-searchform">Default Life Sciences Identifier (LSID) authority</td>
-    <td class="normal"><input type="text" name="defaultLsidAuthority" size="50" value="<%= PageFlowUtil.filter(appProps.getDefaultLsidAuthority()) %>"></td>
+    <td class="normal"><input type="text" name="defaultLsidAuthority" size="50" value="<%= h(appProps.getDefaultLsidAuthority()) %>"></td>
 </tr>
 <tr>
     <td class="ms-searchform">Log memory usage frequency, in minutes (for debugging, set to 0 to disable)</td>
-    <td class="normal"><input type="text" name="memoryUsageDumpInterval" size="4" value="<%= PageFlowUtil.filter(appProps.getMemoryUsageDumpInterval()) %>"></td>
+    <td class="normal"><input type="text" name="memoryUsageDumpInterval" size="4" value="<%= h(appProps.getMemoryUsageDumpInterval()) %>"></td>
 </tr>
 <tr>
     <td class="normal">&nbsp;</td>
 </tr>
 
 <tr>
-    <td class="normal" colspan=2>System maintenance ($helpLink)</td>
+    <td class="normal" colspan=2>System maintenance (<%=bean.helpLink%>)</td>
 </tr>
 <tr style="height:1;"><td colspan=3 class=ms-titlearealine><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
 <tr>
@@ -318,11 +325,11 @@ Click the Save button at any time to accept the current settings and continue.</
     <td class="normal">
         <table>
             <tr>
-                <td valign="top"><input type="radio" name="systemMaintenanceInterval" value="never" <%=appProps.getSystemMaintenanceInterval() == "never" ? "checked" : ""%>></td>
+                <td valign="top"><input type="radio" name="systemMaintenanceInterval" value="never" <%="never".equals(appProps.getSystemMaintenanceInterval()) ? "checked" : ""%>></td>
                 <td class="normal"><b>Never</b> - Do not perform regular system &amp; database maintenance</td>
             </tr>
             <tr>
-                <td valign="top"><input type="radio" name="systemMaintenanceInterval" value="daily" <%=appProps.getSystemMaintenanceInterval() == "daily" ? "checked" : ""%>></td>
+                <td valign="top"><input type="radio" name="systemMaintenanceInterval" value="daily" <%="daily".equals(appProps.getSystemMaintenanceInterval()) ? "checked" : ""%>></td>
                 <td class="normal"><b>Daily</b> - Perform regular system &amp; database maintenance every day at <input type="text" name="systemMaintenanceTime" value="<%=SystemMaintenance.formatSystemMaintenanceTime(appProps.getSystemMaintenanceTime())%>" size="4">.  Enter this time in 24-hour format (e.g., 0:30 for 12:30AM, 14:00 for 2:00PM).</td>
             </tr>
         </table>
@@ -338,7 +345,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 
 <tr>
-    <td class="normal" colspan=2>Configure SSL ($helpLink)</td>
+    <td class="normal" colspan=2>Configure SSL (<%=bean.helpLink%>)</td>
 </tr>
 <tr style="height:1;"><td colspan=3 class=ms-titlearealine><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
 <tr>
@@ -354,20 +361,20 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 
 <tr>
-    <td class="normal" colspan=2>Configure LDAP settings ($helpLink)</td>
+    <td class="normal" colspan=2>Configure LDAP settings (<%=bean.helpLink%>)</td>
 </tr>
 <tr style="height:1;"><td colspan=3 class=ms-titlearealine><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
 <tr>
     <td class="ms-searchform">LDAP servers</td>
-    <td class="normal"><input type="text" name="LDAPServers" size="50" value="<%= PageFlowUtil.filter(appProps.getLDAPServers()) %>"></td>
+    <td class="normal"><input type="text" name="LDAPServers" size="50" value="<%= h(StringUtils.join(appProps.getLDAPServersArray(), ";")) %>"></td>
 </tr>
 <tr>
     <td class="ms-searchform">LDAP domain</td>
-    <td class="normal"><input type="text" name="LDAPDomain" size="50" value="<%= PageFlowUtil.filter(appProps.getLDAPDomain()) %>"></td>
+    <td class="normal"><input type="text" name="LDAPDomain" size="50" value="<%= h(appProps.getLDAPDomain()) %>"></td>
 </tr>
 <tr>
     <td class="ms-searchform">LDAP principal template</td>
-    <td class="normal"><input type="text" name="LDAPPrincipalTemplate" size="50" value="<%= PageFlowUtil.filter(appProps.getLDAPPrincipalTemplate()) %>"></td>
+    <td class="normal"><input type="text" name="LDAPPrincipalTemplate" size="50" value="<%= h(appProps.getLDAPPrincipalTemplate()) %>"></td>
 </tr>
 <tr>
     <td class="ms-searchform">Use SASL authentication</td>
@@ -378,7 +385,7 @@ Click the Save button at any time to accept the current settings and continue.</
     <td class="normal">&nbsp;</td>
 </tr>
 <tr>
-    <td class="normal" colspan=2>Configure pipeline settings ($helpLink)</td>
+    <td class="normal" colspan=2>Configure pipeline settings (<%=bean.helpLink%>)</td>
 </tr>
 <tr style="height:1;"><td colspan=3 class=ms-titlearealine><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
 <tr>
@@ -387,14 +394,14 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <tr>
     <td class="ms-searchform">Pipeline tools directory</td>
-    <td class="normal"><input type="text" name="pipelineToolsDirectory" size="50" value="<%= PageFlowUtil.filter(appProps.getPipelineToolsDirectory()) %>"></td>
+    <td class="normal"><input type="text" name="pipelineToolsDirectory" size="50" value="<%= h(appProps.getPipelineToolsDirectory()) %>"></td>
 </tr>
 <tr>
     <td class="normal">&nbsp;</td>
 </tr>
 
 <tr>
-    <td class="normal" colspan=2>Map network drive (Windows only) ($helpLink)</td>
+    <td class="normal" colspan=2>Map network drive (Windows only) (<%=bean.helpLink%>)</td>
 </tr>
 <tr>
     <td class="ms-searchform">Drive letter</td>
@@ -421,15 +428,15 @@ Click the Save button at any time to accept the current settings and continue.</
     <td class="normal">&nbsp;</td>
 </tr>
 <tr>
-    <td class="normal" colspan=2>Configure file system server ($ftpHelpLink)</td>
+    <td class="normal" colspan=2>Configure file system server (<%=bean.ftpHelpLink%>)</td>
 </tr>
 <tr>
     <td class="ms-searchform">Server name</td>
-    <td class="normal"><input type="text" name="pipelineFTPHost" size="64" value="${appProps.getPipelineFTPHost()}"></td>
+    <td class="normal"><input type="text" name="pipelineFTPHost" size="64" value="<%=appProps.getPipelineFTPHost()%>"></td>
 </tr>
 <tr>
     <td class="ms-searchform">Port</td>
-    <td class="normal"><input type="text" name="pipelineFTPPort" size="5" value="${appProps.getPipelineFTPPort()}"></td>
+    <td class="normal"><input type="text" name="pipelineFTPPort" size="5" value="<%=appProps.getPipelineFTPPort()%>"></td>
 </tr>
 <tr>
     <td class="ms-searchform">Use SSL to connect (FTP server must be configured)</td>
@@ -447,23 +454,23 @@ Click the Save button at any time to accept the current settings and continue.</
     <td class="normal">&nbsp;</td>
 </tr>
 <tr>
-    <td class="normal" colspan=2>Configure Mascot settings ($helpLink)</td>
+    <td class="normal" colspan=2>Configure Mascot settings (<%=bean.helpLink%>)</td>
 </tr>
 <tr>
     <td class="ms-searchform">Mascot server</td>
-    <td class="normal"><input type="text" name="mascotServer" size="64" value="${appProps.getMascotServer()}"></td>
+    <td class="normal"><input type="text" name="mascotServer" size="64" value="<%=appProps.getMascotServer()%>"></td>
 </tr>
 <tr>
     <td class="ms-searchform">User</td>
-    <td class="normal"><input type="text" name="mascotUserAccount" size="50" value="${appProps.getMascotUserAccount()}"></td>
+    <td class="normal"><input type="text" name="mascotUserAccount" size="50" value="<%=appProps.getMascotUserAccount()%>"></td>
 </tr>
 <tr>
     <td class="ms-searchform">Password</td>
-    <td class="normal"><input type="password" name="mascotUserPassword" size="50" value="${appProps.getMascotUserPassword()}"></td>
+    <td class="normal"><input type="password" name="mascotUserPassword" size="50" value="<%=appProps.getMascotUserPassword()%>"></td>
 </tr>
 <tr>
     <td class="ms-searchform">HTTP Proxy URL</td>
-    <td class="normal"><input type="text" name="mascotHTTPProxy" size="64" value="${appProps.getMascotHTTPProxy()}"></td>
+    <td class="normal"><input type="text" name="mascotHTTPProxy" size="64" value="<%=appProps.getMascotHTTPProxy()%>"></td>
 </tr>
 <tr>
     <td></td>
@@ -475,11 +482,11 @@ Click the Save button at any time to accept the current settings and continue.</
     <td class="normal">&nbsp;</td>
 </tr>
 <tr>
-    <td class="normal" colspan=2>Configure Sequest settings ($helpLink)</td>
+    <td class="normal" colspan=2>Configure Sequest settings (<%=bean.helpLink%>)</td>
 </tr>
 <tr>
     <td class="ms-searchform">Sequest server</td>
-    <td class="normal"><input type="text" name="sequestServer" size="64" value="${appProps.getSequestServer()}"></td>
+    <td class="normal"><input type="text" name="sequestServer" size="64" value="<%=appProps.getSequestServer()%>"></td>
 </tr>
 <tr>
     <td></td>
@@ -491,18 +498,18 @@ Click the Save button at any time to accept the current settings and continue.</
     <td class="normal">&nbsp;</td>
 </tr>
 <tr>
-    <td class="normal" colspan=2>Configure microarray settings ($helpLink)</td>
+    <td class="normal" colspan=2>Configure microarray settings (<%=bean.helpLink%>)</td>
 </tr>
 <tr>
     <td class="ms-searchform">Microarray feature extraction server</td>
-    <td class="normal"><input type="text" name="microarrayFeatureExtractionServer" size="64" value="${appProps.getMicroarrayFeatureExtractionServer()}"></td>
+    <td class="normal"><input type="text" name="microarrayFeatureExtractionServer" size="64" value="<%=appProps.getMicroarrayFeatureExtractionServer()%>"></td>
 </tr>
 
 <tr>
     <td class="normal">&nbsp;</td>
 </tr>
 <tr>
-    <td class="normal" colspan=2>Configure caBIG&trade; ($helpLink)</td>
+    <td class="normal" colspan=2>Configure caBIG&trade; (<%=bean.helpLink%>)</td>
 </tr>
 <tr style="height:1;"><td colspan=3 class=ms-titlearealine><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
 <tr>
@@ -513,7 +520,7 @@ Click the Save button at any time to accept the current settings and continue.</
     <td class="normal">&nbsp;</td>
 </tr>
 <tr>
-    <td class="normal" colspan=2>Put web site in administrative mode ($helpLink)</td>
+    <td class="normal" colspan=2>Put web site in administrative mode (<%=bean.helpLink%>)</td>
 </tr>
 <tr style="height:1;"><td colspan=3 class=ms-titlearealine><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
 <tr>
@@ -522,7 +529,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <tr>
     <td class="ms-searchform" valign="top">Message to users when site is in admin-only mode<br/>(Wiki formatting allowed)</td>
-    <td class="normal"><textarea id="adminOnlyMessage" name="adminOnlyMessage" cols="60" rows="3"><%= PageFlowUtil.filter(appProps.getAdminOnlyMessage()) %></textarea></td>
+    <td class="normal"><textarea id="adminOnlyMessage" name="adminOnlyMessage" cols="60" rows="3"><%= h(appProps.getAdminOnlyMessage()) %></textarea></td>
 </tr>
 
 <tr>
@@ -535,19 +542,19 @@ Click the Save button at any time to accept the current settings and continue.</
 </table>
 </form>
 
-<form name="mascottest" action="mascotTest.view" enctype="multipart/form-data" method="post"  <% if (!testInPage) { %> target="_new" <% } %> >
-    <input type="hidden" name="upgradeInProgress" value="${upgradeInProgress}" />
+<form name="mascottest" action="mascotTest.view" enctype="multipart/form-data" method="post"  <% if (!bean.testInPage) { %> target="_new" <% } %> >
+    <input type="hidden" name="upgradeInProgress" value="<%=bean.upgradeInProgress ? 0 : 1%>" />
     <input type="hidden" name="mascotServer" value="" />
     <input type="hidden" name="mascotUserAccount" value="" />
     <input type="hidden" name="mascotUserPassword" value="" />
     <input type="hidden" name="mascotHTTPProxy" value="" />
 </form>
-<form name="sequesttest" action="sequestTest.view" enctype="multipart/form-data" method="post" <% if (!testInPage) { %> target="_new" <% } %> >
-    <input type="hidden" name="upgradeInProgress" value="${upgradeInProgress}" />
+<form name="sequesttest" action="sequestTest.view" enctype="multipart/form-data" method="post" <% if (!bean.testInPage) { %> target="_new" <% } %> >
+    <input type="hidden" name="upgradeInProgress" value="<%=bean.upgradeInProgress ? 0 : 1%>" />
     <input type="hidden" name="sequestServer" value="" />
 </form>
 <form name="networkdrivetest" action="showNetworkDriveTest.view" enctype="multipart/form-data" method="post" target="_new">
-    <input type="hidden" name="upgradeInProgress" value="${upgradeInProgress}" />
+    <input type="hidden" name="upgradeInProgress" value="<%=bean.upgradeInProgress ? 0 : 1%>" />
     <input type="hidden" name="networkDriveLetter" value="" />
     <input type="hidden" name="networkDrivePath" value="" />
     <input type="hidden" name="networkDriveUser" value="" />

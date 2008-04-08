@@ -18,7 +18,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
-import org.labkey.core.admin.AdminController;
+import org.labkey.core.admin.AdminControllerSpring;
 import org.labkey.core.user.UserController;
 import org.mule.MuleManager;
 import org.springframework.validation.BindException;
@@ -493,7 +493,7 @@ public class LoginController extends SpringActionController
         public ActionURL getReturnActionURL()
         {
             if (null == getReturnUrl())
-                return new ActionURL(AppProps.getInstance().getHomePageUrl());
+                return AppProps.getInstance().getHomePageActionURL();
             else
                 return super.getReturnActionURL();
         }
@@ -521,7 +521,7 @@ public class LoginController extends SpringActionController
     {
         public ActionURL getSuccessURL(Object o)
         {
-            return new ActionURL(AppProps.getInstance().getHomePageUrl());
+            return AppProps.getInstance().getHomePageActionURL();
         }
 
         public boolean doAction(Object o, BindException errors) throws Exception
@@ -731,7 +731,7 @@ public class LoginController extends SpringActionController
                 _email = new ValidEmail(rawEmail);
 
                 if (SecurityManager.isLdapEmail(_email))  // TODO: Address SSO
-                    // ldap authentication, users must reset through their ldap administrator
+                    // ldap authentication users must reset through their ldap administrator
                     errors.reject("reset", "Reset Password failed: " + _email + " is an LDAP email. Please contact your administrator to reset the password for this account.");
                 else if (!SecurityManager.loginExists(_email))
                     errors.reject("reset", "Reset Password failed: " + _email + " is not a registered user.");
@@ -1149,7 +1149,7 @@ public class LoginController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild("Admin Console", AdminController.getShowAdminURL()).addChild("Authentication Providers");
+            root.addChild("Admin Console", AdminControllerSpring.getShowAdminURL()).addChild("Authentication Providers");
             return root;
         }
     }

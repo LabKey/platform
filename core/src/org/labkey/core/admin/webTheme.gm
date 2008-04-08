@@ -1,6 +1,7 @@
 <%@ page import="org.apache.commons.lang.StringUtils"%>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.core.admin.AdminControllerSpring" %>
 
 <link href="<%= request.getContextPath() %>/js_color_picker_v2.css" type="text/css" media="screen" rel="stylesheet">
 <script type="text/javascript">
@@ -342,7 +343,7 @@ if (!webThemeErrors)
         }
         else
             {%>
-            <%=PageFlowUtil.buttonLink("Done", form.upgradeInProgress ? "showUpgradeCustomizeSite.view" : "showCustomizeSite.view")%>
+            <%=PageFlowUtil.buttonLink("Done", AdminControllerSpring.getCustomizeSiteURL(form.upgradeInProgress))%>
            <%}%>
     </td>
 </tr>
