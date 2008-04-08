@@ -879,6 +879,7 @@ pipeline/src/org/labkey/pipeline/api/ParamParserImpl.java -text
 pipeline/src/org/labkey/pipeline/api/PipeRootImpl.java -text
 pipeline/src/org/labkey/pipeline/api/PipelineEmailPreferences.java -text
 pipeline/src/org/labkey/pipeline/api/PipelineJobServiceImpl.java -text
+pipeline/src/org/labkey/pipeline/api/PipelineJobStoreImpl.java -text
 pipeline/src/org/labkey/pipeline/api/PipelineManager.java -text
 pipeline/src/org/labkey/pipeline/api/PipelineQueueImpl.java -text
 pipeline/src/org/labkey/pipeline/api/PipelineRoot.java -text
@@ -898,6 +899,7 @@ pipeline/src/org/labkey/pipeline/mule/EPipelineStatus.java -text
 pipeline/src/org/labkey/pipeline/mule/EPipelineStatusWriter.java -text
 pipeline/src/org/labkey/pipeline/mule/MuleListenerHelper.java -text
 pipeline/src/org/labkey/pipeline/mule/PipelineJobRunner.java -text
+pipeline/src/org/labkey/pipeline/mule/PipelineJobRunnerGlobus.java -text
 pipeline/src/org/labkey/pipeline/mule/PipelineProgressionRunner.java -text
 pipeline/src/org/labkey/pipeline/mule/PipelineStatusSetter.java -text
 pipeline/src/org/labkey/pipeline/mule/PipelineTaskRunner.java -text

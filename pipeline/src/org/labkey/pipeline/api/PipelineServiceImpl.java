@@ -1,7 +1,5 @@
 package org.labkey.pipeline.api;
 
-import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.XppDriver;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -19,9 +17,6 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.pipeline.PipelineModule;
 import org.labkey.pipeline.mule.EPipelineQueueImpl;
 import org.labkey.pipeline.browse.BrowseViewImpl;
-import org.labkey.pipeline.xstream.FileXStreamConverter;
-import org.labkey.pipeline.xstream.TaskIdXStreamConverter;
-import org.labkey.pipeline.xstream.URIXStreamConverter;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,10 +24,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class PipelineServiceImpl extends PipelineService
-        implements PipelineStatusFile.JobStore, PipelineJobService.ApplicationProperties
+        implements PipelineJobService.ApplicationProperties
 {
     public static String PARAM_Provider = "provider";
     public static String PARAM_Action = "action";
@@ -45,33 +39,6 @@ public class PipelineServiceImpl extends PipelineService
 
     private Map<String, PipelineProvider> _mapPipelineProviders = new TreeMap<String, PipelineProvider>();
     private PipelineQueue _queue = null;
-
-    private final AtomicReference<XStream> _xstream = new AtomicReference<XStream>();
-
-    public final XStream getXStream()
-    {
-        XStream instance = _xstream.get();
-
-        if (instance == null)
-        {
-            try
-            {
-                instance = new XStream(new XppDriver());
-                instance.registerConverter(new TaskIdXStreamConverter());
-                instance.registerConverter(new FileXStreamConverter());
-                instance.registerConverter(new URIXStreamConverter());
-                if (!_xstream.compareAndSet(null, instance))
-                    instance = _xstream.get();
-            }
-            catch (Exception e)
-            {
-                throw new IllegalStateException("Failed to initialize XStream for pipeline jobs.", e);
-            }
-        }
-
-        return instance;
-    }
-
 
     public void registerPipelineProvider(PipelineProvider provider, String... aliases)
     {
@@ -311,26 +278,6 @@ public class PipelineServiceImpl extends PipelineService
                               String status, String statusInfo) throws Exception
     {
         setStatusFile(info, new PipelineStatusFileImpl(job, status, statusInfo));
-    }
-
-    public PipelineJob getJob(String jobId) throws SQLException
-    {
-        return fromXML(PipelineStatusManager.retreiveJob(jobId));
-    }
-
-    public void storeJob(ViewBackgroundInfo info, PipelineJob job) throws SQLException
-    {
-        PipelineStatusManager.storeJob(job.getJobGUID(), toXML(job));
-    }
-
-    public String toXML(PipelineJob job)
-    {
-        return getXStream().toXML(job);
-    }
-
-    public PipelineJob fromXML(String xml)
-    {
-        return (PipelineJob) getXStream().fromXML(xml);
     }
 
     public String getToolsDirectory()
