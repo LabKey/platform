@@ -465,7 +465,7 @@ public class AuthenticationManager
                 // Clear the image cache so the web server sends the new logo
                 AttachmentCache.clearAuthLogoCache();
                 // Bump the look & feel revision to force browsers to retrieve new logo
-                WriteableAppProps.incrementLookAndFeelRevision2();
+                WriteableAppProps.incrementLookAndFeelRevisionAndSave();
             }
 
             saveAuthLogoURL(getProviderName(), form.getUrl());
