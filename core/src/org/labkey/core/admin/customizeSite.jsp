@@ -28,7 +28,7 @@ function testNetworkDrive()
     }
 
     if (preferenceForm.networkDrivePath.value.length == 0)
-        {
+    {
         alert("Please specify your drive path before testing.");
         try {preferenceForm.networkDrivePath.focus();} catch(x){}
         return;

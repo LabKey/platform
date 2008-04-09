@@ -301,11 +301,10 @@ core/src/org/labkey/core/admin/auditLog.jsp -text
 core/src/org/labkey/core/admin/confirmProjectMove.gm -text
 core/src/org/labkey/core/admin/customizeEmail.jsp -text
 core/src/org/labkey/core/admin/customizeFolder.jsp -text
-core/src/org/labkey/core/admin/customizeSite.gm -text
 core/src/org/labkey/core/admin/customizeSite.jsp -text
 core/src/org/labkey/core/admin/folderAliases.jsp -text
 core/src/org/labkey/core/admin/manageFolders.jsp -text
-core/src/org/labkey/core/admin/memTracker.gm -text
+core/src/org/labkey/core/admin/memTracker.jsp -text
 core/src/org/labkey/core/admin/modifyFolder.jsp -text
 core/src/org/labkey/core/admin/moduleErrors.jsp -text
 core/src/org/labkey/core/admin/reorderFolders.jsp -text
@@ -314,7 +313,7 @@ core/src/org/labkey/core/admin/sql/SqlScriptController.java -text
 core/src/org/labkey/core/admin/sql/errors.gm -text
 core/src/org/labkey/core/admin/sql/header.gm -text
 core/src/org/labkey/core/admin/sql/showRunningScripts.jsp -text
-core/src/org/labkey/core/admin/testLdap.gm -text
+core/src/org/labkey/core/admin/testLdap.jsp -text
 core/src/org/labkey/core/admin/testNetworkDrive.jsp -text
 core/src/org/labkey/core/admin/threads.jsp -text
 core/src/org/labkey/core/admin/webTheme.gm -text

@@ -8,8 +8,8 @@
         <setting name="runGwtCompilerOnMake" value="true" />
         <setting name="compilerMaxHeapSize" value="128" />
         <packaging>
-          <module name="org.labkey.plate.designer.TemplateDesigner" path="/org.labkey.plate.designer.TemplateDesigner" />
           <module name="org.labkey.study.designer.Designer" path="/org.labkey.study.designer.Designer" />
+          <module name="org.labkey.plate.designer.TemplateDesigner" path="/org.labkey.plate.designer.TemplateDesigner" />
           <module name="org.labkey.study.chart.StudyChartDesigner" path="/org.labkey.study.chart.StudyChartDesigner" />
           <module name="org.labkey.study.dataset.Designer" path="/org.labkey.study.dataset.Designer" />
           <module name="org.labkey.assay.designer.AssayDesigner" path="/org.labkey.assay.designer.AssayDesigner" />
@@ -28,6 +28,32 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="InternalGWT" />
     <orderEntryProperties />
+  </component>
+  <component name="copyright">
+    <Base>
+      <setting name="state" value="2" />
+    </Base>
+    <LanguageOptions name="JAVA">
+      <option name="templateOptions">
+        <value>
+          <option name="block" value="true" />
+          <option name="separateBefore" value="false" />
+          <option name="separateAfter" value="false" />
+          <option name="prefixLines" value="true" />
+          <option name="lenBefore" value="80" />
+          <option name="lenAfter" value="80" />
+          <option name="box" value="false" />
+          <option name="filler" value=" " />
+        </value>
+      </option>
+      <option name="notice" value="/*&#10; * Copyright (c) 2005 Fred Hutchinson Cancer Research Center&#10; *&#10; * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);&#10; * you may not use this file except in compliance with the License.&#10; * You may obtain a copy of the License at&#10; *&#10; *     http://www.apache.org/licenses/LICENSE-2.0&#10; *&#10; * Unless required by applicable law or agreed to in writing, software&#10; * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,&#10; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.&#10; * See the License for the specific language governing permissions and&#10; * limitations under the License.&#10; */" />
+      <option name="keyword" value="Copyright" />
+      <option name="fileTypeOverride" value="4" />
+      <option name="relativeBefore" value="true" />
+      <option name="addBlankAfter" value="true" />
+      <option name="fileLocation" value="1" />
+      <option name="useAlternate" value="false" />
+    </LanguageOptions>
   </component>
 </module>
 

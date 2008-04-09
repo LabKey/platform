@@ -1,10 +1,10 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.core.admin.AdminControllerSpring" %>
 <%@ page import="java.util.Set" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    HttpView<AdminController.ThreadsBean> me = (HttpView<AdminController.ThreadsBean>) HttpView.currentView();
-    AdminController.ThreadsBean bean = me.getModelBean();
+    HttpView<AdminControllerSpring.ThreadsBean> me = (HttpView<AdminControllerSpring.ThreadsBean>) HttpView.currentView();
+    AdminControllerSpring.ThreadsBean bean = me.getModelBean();
 
 %>
 <p><b>Currently Running Threads</b></p>
@@ -13,7 +13,7 @@ for (Thread t : bean.threads)
 {
     try
     {
-    %><a href="#<%= t.getName() %>"><b><%= t.getName() %></b></a> (<%= t.getState() %>)<%
+    %><a href="#<%=h(t.getName())%>"><b><%= t.getName() %></b></a> (<%= t.getState() %>)<%
     Set<Integer> values = bean.spids.get(t);
     if (values.size() > 0)
     {

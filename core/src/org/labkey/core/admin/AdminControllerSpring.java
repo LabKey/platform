@@ -5,6 +5,11 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionMapping;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartUtilities;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.data.category.DefaultCategoryDataset;
 import org.labkey.api.action.*;
 import org.labkey.api.attachments.*;
 import org.labkey.api.audit.AuditLogService;
@@ -34,14 +39,20 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.beans.Introspector;
 import java.io.*;
+import java.lang.management.*;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.sql.SQLException;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -54,6 +65,8 @@ import java.util.regex.Pattern;
 public class AdminControllerSpring extends SpringActionController
 {
     private static DefaultActionResolver _actionResolver = new BeehivePortingActionResolver(AdminController.class, AdminControllerSpring.class);
+    private static long _errorMark = 0;
+    private static NumberFormat formatInteger = DecimalFormat.getIntegerInstance();
 
     public AdminControllerSpring() throws Exception
     {
@@ -75,7 +88,7 @@ public class AdminControllerSpring extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresSiteAdmin
     public class ShowAdminAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -233,7 +246,7 @@ public class AdminControllerSpring extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresSiteAdmin
     public class ShowModuleErrors extends SimpleViewAction
     {
         public NavTree appendNavTrail(NavTree root)
@@ -243,54 +256,16 @@ public class AdminControllerSpring extends SpringActionController
 
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            JspView jspView = new JspView("/org/labkey/core/admin/moduleErrors.jsp");
-            return jspView;
+            return new JspView("/org/labkey/core/admin/moduleErrors.jsp");
         }
     }
+
 
     public static class AdminUrlsImpl implements AdminUrls
     {
         public ActionURL getModuleErrorsUrl(Container container)
         {
             return new ActionURL(ShowModuleErrors.class, container);
-        }
-    }
-
-
-    @RequiresPermission(ACL.PERM_NONE)
-    public class MaintenanceAction extends SimpleViewAction<AdminController>
-    {
-        public ModelAndView getView(AdminController adminController, BindException errors) throws Exception
-        {
-            getPageConfig().setTemplate(Template.Dialog);
-            WikiRenderer formatter = WikiService.get().getRenderer(WikiRendererType.RADEOX);
-            String content = formatter.format(ModuleLoader.getInstance().getAdminOnlyMessage()).getHtml();
-            return new HtmlView("The site is currently undergoing maintenance", content);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-    }
-
-
-    @RequiresPermission(ACL.PERM_NONE)
-    public class ContainerIdAction extends SimpleViewAction
-    {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            getPageConfig().setTemplate(Template.None);
-            return new HtmlView(
-                getContainer().getName() + "<br>" +
-                getContainer().getId() + "<br>" +
-                getContainer().getRowId()
-                );
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
         }
     }
 
@@ -602,6 +577,54 @@ public class AdminControllerSpring extends SpringActionController
 
 
     @RequiresPermission(ACL.PERM_NONE)
+    public class MaintenanceAction extends SimpleViewAction<AdminController>
+    {
+        public ModelAndView getView(AdminController adminController, BindException errors) throws Exception
+        {
+            getPageConfig().setTemplate(Template.Dialog);
+            WikiRenderer formatter = WikiService.get().getRenderer(WikiRendererType.RADEOX);
+            String content = formatter.format(ModuleLoader.getInstance().getAdminOnlyMessage()).getHtml();
+            return new HtmlView("The site is currently undergoing maintenance", content);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_NONE)
+    public class ContainerIdAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            getPageConfig().setTemplate(Template.None);
+            return new HtmlView(
+                getContainer().getName() + "<br>" +
+                getContainer().getId() + "<br>" +
+                getContainer().getRowId()
+                );
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_NONE)
+    public class GuidAction extends ExportAction
+    {
+        public void export(Object o, HttpServletResponse response) throws Exception
+        {
+            response.getWriter().write(GUID.makeGUID());
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_NONE)
     public class CreditsAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -785,8 +808,7 @@ public class AdminControllerSpring extends SpringActionController
 
         public ModelAndView getView(TestLdapForm form, boolean reshow, BindException errors) throws Exception
         {
-            HttpView view = new GroovyView("/org/labkey/core/admin/testLdap.gm");
-            view.addObject("form", form);
+            HttpView view = new JspView<TestLdapForm>("/org/labkey/core/admin/testLdap.jsp", form, errors);
             PageConfig page = new PageConfig();
             if (null == form.getMessage() || form.getMessage().length() < 200)
                 page.setFocusId("server");
@@ -901,13 +923,13 @@ public class AdminControllerSpring extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresSiteAdmin
     public class ResetFaviconAction extends SimpleRedirectAction
     {
         public ActionURL getRedirectURL(Object o) throws Exception
         {
             deleteExistingFavicon();
-            WriteableAppProps.incrementLookAndFeelRevision2();
+            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
 
             return getCustomizeSiteURL();
         }
@@ -921,13 +943,13 @@ public class AdminControllerSpring extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresSiteAdmin
     public class ResetLogoAction extends SimpleRedirectAction
     {
         public ActionURL getRedirectURL(Object o) throws Exception
         {
             deleteExistingLogo();
-            WriteableAppProps.incrementLookAndFeelRevision2();
+            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
             return getCustomizeSiteURL();
         }
     }
@@ -1303,7 +1325,7 @@ public class AdminControllerSpring extends SpringActionController
         {
             if (form.isUpgradeInProgress())
             {
-                return new ActionURL("Project", "begin.view", "/home");
+                return AppProps.getInstance().getHomePageActionURL();
             }
             else
             {
@@ -1842,4 +1864,863 @@ public class AdminControllerSpring extends SpringActionController
             _testInPage = testInPage;
         }
     }
+
+
+    @RequiresSiteAdmin
+    public class ShowThreadsAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new JspView<ThreadsBean>("/org/labkey/core/admin/threads.jsp", new ThreadsBean());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return appendAdminNavTrail(root, "Current Threads");
+        }
+    }
+
+
+    public static class ThreadsBean
+    {
+        public Map<Thread, Set<Integer>> spids = new HashMap<Thread, Set<Integer>>();
+        public Thread[] threads;
+
+        ThreadsBean()
+        {
+            int threadCount = Thread.activeCount();
+            threads = new Thread[threadCount];
+            Thread.enumerate(threads);
+            Arrays.sort(threads, new Comparator<Thread>()
+            {
+                public int compare(Thread o1, Thread o2)
+                {
+                    return o1.getName().compareToIgnoreCase(o2.getName());
+                }
+            });
+
+            spids = new HashMap<Thread, Set<Integer>>();
+
+            for (Thread t : threads)
+            {
+                spids.put(t, ConnectionWrapper.getSPIDsForThread(t));
+            }
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class ShowNetworkDriveTestAction extends SimpleViewAction<SiteAdminForm>
+    {
+        public ModelAndView getView(SiteAdminForm form, BindException errors) throws Exception
+        {
+            NetworkDrive testDrive = new NetworkDrive();
+            testDrive.setPassword(form.getNetworkDrivePassword());
+            testDrive.setPath(form.getNetworkDrivePath());
+            testDrive.setUser(form.getNetworkDriveUser());
+
+            validateNetworkDrive(form, errors);
+
+            TestNetworkDriveBean bean = new TestNetworkDriveBean();
+
+            if (!errors.hasErrors())
+            {
+                char driveLetter = form.getNetworkDriveLetter().trim().charAt(0);
+                try
+                {
+                    String mountError = testDrive.mount(driveLetter);
+                    if (mountError != null)
+                    {
+                        errors.reject(ERROR_MSG, mountError);
+                    }
+                    else
+                    {
+                        File f = new File(driveLetter + ":\\");
+                        if (!f.exists())
+                        {
+                            errors.reject(ERROR_MSG, "Could not access network drive");
+                        }
+                        else
+                        {
+                            String[] fileNames = f.list();
+                            if (fileNames == null)
+                                fileNames = new String[0];
+                            Arrays.sort(fileNames);
+                            bean.setFiles(fileNames);
+                        }
+                    }
+                }
+                catch (IOException e)
+                {
+                    errors.reject(ERROR_MSG, "Error mounting drive: " + e);
+                }
+                catch (InterruptedException e)
+                {
+                    errors.reject(ERROR_MSG, "Error mounting drive: " + e);
+                }
+                try
+                {
+                    testDrive.unmount(driveLetter);
+                }
+                catch (IOException e)
+                {
+                    errors.reject(ERROR_MSG, "Error mounting drive: " + e);
+                }
+                catch (InterruptedException e)
+                {
+                    errors.reject(ERROR_MSG, "Error mounting drive: " + e);
+                }
+            }
+
+            getPageConfig().setTemplate(Template.Dialog);
+            return new JspView<TestNetworkDriveBean>("/org/labkey/core/admin/testNetworkDrive.jsp", bean);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class ImpersonateAction extends SimpleRedirectAction
+    {
+        public ActionURL getRedirectURL(Object o) throws Exception
+        {
+            String rawEmail = getViewContext().getActionURL().getParameter("email");
+            ValidEmail email = new ValidEmail(rawEmail);
+
+            if (!UserManager.userExists(email))
+                throw new NotFoundException("User doesn't exist");
+
+            final User impersonatedUser = UserManager.getUser(email);
+            SecurityManager.setAuthenticatedUser(getViewContext().getRequest(), impersonatedUser);
+            AuditLogService.get().addEvent(getViewContext(), UserManager.USER_AUDIT_EVENT, getUser().getUserId(),
+                    getUser().getEmail() + " impersonated user: " + email);
+            AuditLogService.get().addEvent(getViewContext(), UserManager.USER_AUDIT_EVENT, impersonatedUser.getUserId(),
+                    email + " was impersonated by user: " + getUser().getEmail());
+            return AppProps.getInstance().getHomePageActionURL();
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class ResetErrorMarkAction extends SimpleRedirectAction
+    {
+        public ActionURL getRedirectURL(Object o) throws Exception
+        {
+            File errorLogFile = getErrorLogFile();
+            _errorMark = errorLogFile.length();
+            return getShowAdminURL();
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class ShowErrorsSinceMarkAction extends ExportAction
+    {
+        public void export(Object o, HttpServletResponse response) throws Exception
+        {
+            showErrors(response, _errorMark);
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class ShowAllErrorsAction extends ExportAction
+    {
+        public void export(Object o, HttpServletResponse response) throws Exception
+        {
+            showErrors(response, 0);
+        }
+    }
+
+
+    private File getErrorLogFile()
+    {
+        File tomcatHome = new File(System.getProperty("catalina.home"));
+        return new File(tomcatHome, "logs/labkey-errors.log");
+    }
+
+
+    public void showErrors(HttpServletResponse response, long startingOffset) throws Exception
+    {
+        File errorLogFile = getErrorLogFile();
+        if (errorLogFile.exists())
+        {
+            FileInputStream fIn = null;
+            try
+            {
+                fIn = new FileInputStream(errorLogFile);
+                //noinspection ResultOfMethodCallIgnored
+                fIn.skip(startingOffset);
+                OutputStream out = response.getOutputStream();
+                response.setContentType("text/plain");
+                byte[] b = new byte[4096];
+                int i;
+                while ((i = fIn.read(b)) != -1)
+                {
+                    out.write(b, 0, i);
+                }
+            }
+            finally
+            {
+                if (fIn != null)
+                {
+                    fIn.close();
+                }
+            }
+        }
+    }
+
+
+    private static ActionURL getActionsURL()
+    {
+        return new ActionURL(ActionsAction.class);
+    }
+
+
+    @RequiresSiteAdmin
+    public class ActionsAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new ActionsTabStrip();
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return appendAdminNavTrail(root, "Spring Actions");
+        }
+    }
+
+
+    private static class ActionsTabStrip extends TabStripView
+    {
+        protected List<TabInfo> getTabList()
+        {
+            List<TabInfo> tabs = new ArrayList<TabInfo>(2);
+
+            tabs.add(new TabInfo("Summary", "summary", getActionsURL()));
+            tabs.add(new TabInfo("Details", "details", getActionsURL()));
+
+            return tabs;
+        }
+
+        protected HttpView getTabView(String tabId) throws Exception
+        {
+            ActionsView view = new ActionsView();
+            view.setSummary("summary".equals(tabId));
+            return view;
+        }
+    }
+
+
+    private static class ActionsView extends HttpView
+    {
+        private boolean _summary = false;
+
+        public boolean isSummary()
+        {
+            return _summary;
+        }
+
+        public void setSummary(boolean summary)
+        {
+            _summary = summary;
+        }
+
+        protected void renderInternal(Object model, PrintWriter out) throws Exception
+        {
+            List<Module> modules = ModuleLoader.getInstance().getModules();
+
+            out.print("<table>");
+
+            if (_summary)
+                out.print("<tr align=left><th>Spring Controller</th><th>Actions</th><th>Invoked</th><th>Coverage</th></tr>");
+            else
+                out.print("<tr align=left><th>Spring Controller</th><th>Action</th><th>Invocations</th><th>Cumulative Time</th><th>Average Time</th><th>Max Time</th></tr>");
+
+            int totalActions = 0;
+            int totalInvoked = 0;
+
+            for (Module module : modules)
+            {
+                Map<String, Class> pageFlows = module.getPageFlowNameToClass();
+                Set<Class> controllerClasses = new HashSet<Class>(pageFlows.values());
+
+                for (Class controllerClass : controllerClasses)
+                {
+                    if (Controller.class.isAssignableFrom(controllerClass))
+                    {
+                        SpringActionController controller = (SpringActionController)ViewServlet.getController(module, controllerClass);
+                        ActionResolver ar = controller.getActionResolver();
+                        Comparator<ActionDescriptor> comp = new Comparator<ActionDescriptor>(){
+                            public int compare(ActionDescriptor ad1, ActionDescriptor ad2)
+                            {
+                                return ad1.getActionClass().getSimpleName().compareTo(ad2.getActionClass().getSimpleName());
+                            }
+                        };
+                        Set<ActionDescriptor> set = new TreeSet<ActionDescriptor>(comp);
+                        set.addAll(ar.getActionDescriptors());
+
+                        String controllerTd = "<td>" + controller.getClass().getSimpleName() + "</td>";
+
+                        if (_summary)
+                        {
+                            out.print("<tr>");
+                            out.print(controllerTd);
+                        }
+
+                        int invokedCount = 0;
+
+                        for (ActionDescriptor ad : set)
+                        {
+                            if (!_summary)
+                            {
+                                out.print("<tr>");
+                                out.print(controllerTd);
+                                controllerTd = "<td>&nbsp;</td>";
+                                out.print("<td>");
+                                out.print(ad.getActionClass().getSimpleName());
+                                out.print("</td>");
+                            }
+
+                            // Synchronize to ensure the stats aren't updated half-way through rendering
+                            synchronized(ad)
+                            {
+                                if (ad.getCount() > 0)
+                                    invokedCount++;
+
+                                if (_summary)
+                                    continue;
+
+                                renderTd(out, ad.getCount());
+                                renderTd(out, ad.getElapsedTime());
+                                renderTd(out, 0 == ad.getCount() ? 0 : ad.getElapsedTime() / ad.getCount());
+                                renderTd(out, ad.getMaxTime());
+                            }
+
+                            out.print("</tr>");
+                        }
+
+                        totalActions += set.size();
+                        totalInvoked += invokedCount;
+
+                        double coverage = set.isEmpty() ? 0 : invokedCount / (double)set.size();
+
+                        if (!_summary)
+                            out.print("<tr><td>&nbsp;</td><td>Action Coverage</td>");
+                        else
+                        {
+                            out.print("<td>");
+                            out.print(set.size());
+                            out.print("</td><td>");
+                            out.print(invokedCount);
+                            out.print("</td>");
+                        }
+
+                        out.print("<td>");
+                        out.print(Formats.percent1.format(coverage));
+                        out.print("</td></tr>");
+
+                        if (!_summary)
+                            out.print("<tr><td colspan=6>&nbsp;</td></tr>");
+                    }
+                }
+            }
+
+            double totalCoverage = (0 == totalActions ? 0 : totalInvoked / (double)totalActions);
+
+            if (_summary)
+            {
+                out.print("<tr><td colspan=4>&nbsp;</td></tr><tr><td>Total</td><td>");
+                out.print(totalActions);
+                out.print("</td><td>");
+                out.print(totalInvoked);
+                out.print("</td>");
+            }
+            else
+            {
+                out.print("<tr><td colspan=2>Total Action Coverage</td>");
+            }
+
+            out.print("<td>");
+            out.print(Formats.percent1.format(totalCoverage));
+            out.print("</td></tr>");
+            out.print("</table>");
+        }
+
+
+        private void renderTd(PrintWriter out, Number d)
+        {
+            out.print("<td>");
+            out.print(formatInteger.format(d));
+            out.print("</td>");
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class RunSystemMaintenanceAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            SystemMaintenance sm = new SystemMaintenance(false);
+            sm.run();
+
+            return new HtmlView("System maintenance task started");
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return appendAdminNavTrail(root, "System Maintenance");
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class GroovyAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            StringBuilder sb = new StringBuilder();
+
+            InputStream s = this.getClass().getResourceAsStream("/META-INF/groovy.txt");
+            List<String> allTemplates = PageFlowUtil.getStreamContentsAsList(s);  // Enumerate this one
+            Collections.sort(allTemplates);
+
+            // Need a copy of allTemplates that we can modify
+            List<String> modifiable = new ArrayList<String>(allTemplates);
+
+            // Create copy of the rendered templates list -- we need to sort it and modify it
+            List<String> renderedTemplates = new ArrayList<String>(GroovyView.getRenderedTemplates());
+
+            int templateCount = allTemplates.size();
+            int renderedCount = renderedTemplates.size();
+
+            sb.append("Groovy templates that have rendered successfully since server startup:<br><br>");
+
+            for (String template : allTemplates)
+            {
+                for (String rt : renderedTemplates)
+                {
+                    if (template.endsWith(rt))
+                    {
+                        sb.append("&nbsp;&nbsp;");
+                        sb.append(template);
+                        sb.append("<br>\n");
+                        modifiable.remove(template);
+                        renderedTemplates.remove(rt);
+                        break;
+                    }
+                }
+            }
+
+            if (!renderedTemplates.isEmpty())
+            {
+                renderedCount = renderedCount - renderedTemplates.size();
+                sb.append("<br><br><b>Warning: unknown Groovy templates:</b><br><br>\n");
+
+                for (String path : renderedTemplates)
+                {
+                    sb.append("&nbsp;&nbsp;");
+                    sb.append(path);
+                    sb.append("<br>\n");
+                }
+            }
+
+            sb.append("<br><br>Groovy templates that have not rendered successfully since server startup:<br><br>\n");
+
+            for (String template : modifiable)
+            {
+                sb.append("&nbsp;&nbsp;");
+                sb.append(template);
+                sb.append("<br>\n");
+            }
+
+            sb.append("<br><br>Rendered ").append(renderedCount).append("/").append(templateCount).append(" (").append(Formats.percent.format(renderedCount / (float)templateCount)).append(").");
+
+            return new HtmlView(sb.toString());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return appendAdminNavTrail(root, "Groovy Templates");
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class ScriptsAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            TableInfo tinfo = CoreSchema.getInstance().getTableInfoSqlScripts();
+            List<String> allRun = Arrays.asList(Table.executeArray(tinfo, tinfo.getColumn("FileName"), null, new Sort("FileName"), String.class));
+            List<String> incrementalRun = new ArrayList<String>();
+
+            for (String filename : allRun)
+                if (isIncrementalScript(filename))
+                    incrementalRun.add(filename);
+
+            StringBuilder html = new StringBuilder("<table><tr><td colspan=2>Scripts that have run on this server</td><td colspan=2>Scripts that have not run on this server</td></tr>");
+            html.append("<tr><td>All</td><td>Incremental</td><td>All</td><td>Incremental</td></tr>");
+
+            html.append("<tr valign=top>");
+
+            appendFilenames(html, allRun);
+            appendFilenames(html, incrementalRun);
+
+            List<String> allNotRun = new ArrayList<String>();
+            List<String> incrementalNotRun = new ArrayList<String>();
+            List<Module> modules = ModuleLoader.getInstance().getModules();
+
+            for (Module module : modules)
+            {
+                if (module instanceof DefaultModule)
+                {
+                    DefaultModule defModule = (DefaultModule)module;
+
+                    if (defModule.hasScripts())
+                    {
+                        SqlScriptRunner.SqlScriptProvider provider = new FileSqlScriptProvider(defModule);
+                        List<SqlScriptRunner.SqlScript> scripts = provider.getScripts(null);
+
+                        for (SqlScriptRunner.SqlScript script : scripts)
+                            if (!allRun.contains(script.getDescription()))
+                                allNotRun.add(script.getDescription());
+                    }
+                }
+            }
+
+            for (String filename : allNotRun)
+                if (isIncrementalScript(filename))
+                    incrementalNotRun.add(filename);
+
+            appendFilenames(html, allNotRun);
+            appendFilenames(html, incrementalNotRun);
+
+            html.append("</tr></table>");
+
+            return new HtmlView(html.toString());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return appendAdminNavTrail(root, "SQL Scripts");
+        }
+    }
+
+
+    private boolean isIncrementalScript(String filename)
+    {
+        String[] parts = filename.split("-|\\.sql");
+
+        double startVersion = Double.parseDouble(parts[1]) * 10;
+        double endVersion = Double.parseDouble(parts[2]) * 10;
+
+        return (Math.floor(startVersion) != startVersion || Math.floor(endVersion) != endVersion);
+    }
+
+
+    private void appendFilenames(StringBuilder html, List<String> filenames)
+    {
+        html.append("<td>\n");
+
+        if (filenames.size() > 0)
+        {
+            Object[] filenameArray = filenames.toArray();
+            Arrays.sort(filenameArray);
+            html.append(StringUtils.join(filenameArray, "<br>\n"));
+        }
+        else
+            html.append("None");
+
+        html.append("</td>\n");
+    }
+
+
+    public static ActionURL getMemTrackerURL(boolean clearCaches, boolean gc)
+    {
+        ActionURL url = new ActionURL(MemTrackerAction.class);
+
+        if (clearCaches)
+            url.addParameter(MemForm.Params.clearCaches, "1");
+
+        if (gc)
+            url.addParameter(MemForm.Params.gc, "1");
+
+        return url;
+    }
+
+
+    @RequiresSiteAdmin
+    public class MemTrackerAction extends SimpleViewAction<MemForm>
+    {
+        public ModelAndView getView(MemForm form, BindException errors) throws Exception
+        {
+            if (form.isClearCaches())
+            {
+                Introspector.flushCaches();
+                CacheMap.purgeAllCaches();
+            }
+
+            if (form.isGc())
+                System.gc();
+
+            return new JspView<MemBean>("/org/labkey/core/admin/memTracker.jsp", new MemBean(getViewContext().getRequest()));
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return appendAdminNavTrail(root, "Memory usage -- " + DateUtil.formatDateTime());
+        }
+    }
+
+
+    public static class MemForm
+    {
+        private enum Params {clearCaches, gc}
+
+        private boolean _clearCaches = false;
+        private boolean _gc = false;
+
+        public boolean isClearCaches()
+        {
+            return _clearCaches;
+        }
+
+        public void setClearCaches(boolean clearCaches)
+        {
+            _clearCaches = clearCaches;
+        }
+
+        public boolean isGc()
+        {
+            return _gc;
+        }
+
+        public void setGc(boolean gc)
+        {
+            _gc = gc;
+        }
+    }
+
+
+    public static class MemBean
+    {
+        public List<Pair<String, Object>> systemProperties = new ArrayList<Pair<String,Object>>();
+        public List<MemTracker.HeldReference> all = MemTracker.getReferences();
+        public List<MemTracker.HeldReference> references = new ArrayList<MemTracker.HeldReference>(all.size());
+        public List<String> graphNames = new ArrayList<String>();
+        public boolean assertsEnabled = false;
+
+        private MemBean(HttpServletRequest request)
+        {
+            // removeCache recentely allocated
+            long threadId = Thread.currentThread().getId();
+            long start = ViewServlet.getRequestStartTime(request);
+            for (MemTracker.HeldReference r : all)
+            {
+                if (r.getThreadId() == threadId && r.getAllocationTime() >= start)
+                    continue;
+                references.add(r);
+            }
+
+            // memory:
+            graphNames.add("Heap");
+            graphNames.add("Non Heap");
+
+            MemoryMXBean membean = ManagementFactory.getMemoryMXBean();
+            if (membean != null)
+            {
+                systemProperties.add(new Pair<String,Object>("Total Heap Memory", getUsageString(membean.getHeapMemoryUsage())));
+                systemProperties.add(new Pair<String,Object>("Total Non-heap Memory", getUsageString(membean.getNonHeapMemoryUsage())));
+            }
+
+            List<MemoryPoolMXBean> pools = ManagementFactory.getMemoryPoolMXBeans();
+            for (MemoryPoolMXBean pool : pools)
+            {
+                systemProperties.add(new Pair<String,Object>(pool.getName() + " " + pool.getType(), getUsageString(pool)));
+                graphNames.add(pool.getName());
+            }
+
+            // class loader:
+            ClassLoadingMXBean classbean = ManagementFactory.getClassLoadingMXBean();
+            if (classbean != null)
+            {
+                systemProperties.add(new Pair<String,Object>("Loaded Class Count", classbean.getLoadedClassCount()));
+                systemProperties.add(new Pair<String,Object>("Unloaded Class Count", classbean.getUnloadedClassCount()));
+                systemProperties.add(new Pair<String,Object>("Total Loaded Class Count", classbean.getTotalLoadedClassCount()));
+            }
+
+            // runtime:
+            RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
+            if (runtimeBean != null)
+            {
+                systemProperties.add(new Pair<String,Object>("VM Start Time", DateUtil.formatDateTime(new Date(runtimeBean.getStartTime()))));
+                long upTime = runtimeBean.getUptime(); // round to sec
+                upTime = upTime - (upTime % 1000);
+                systemProperties.add(new Pair<String,Object>("VM Uptime", DateUtil.formatDuration(upTime)));
+                systemProperties.add(new Pair<String,Object>("VM Version", runtimeBean.getVmVersion()));
+                systemProperties.add(new Pair<String,Object>("VM Classpath", runtimeBean.getClassPath()));
+            }
+
+            // threads:
+            ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
+            if (threadBean != null)
+            {
+                systemProperties.add(new Pair<String,Object>("Thread Count", threadBean.getThreadCount()));
+                systemProperties.add(new Pair<String,Object>("Peak Thread Count", threadBean.getPeakThreadCount()));
+                long[] deadlockedThreads = threadBean.findMonitorDeadlockedThreads();
+                systemProperties.add(new Pair<String,Object>("Deadlocked Thread Count", deadlockedThreads != null ? deadlockedThreads.length : 0));
+            }
+
+            // threads:
+            List<GarbageCollectorMXBean> gcBeans = ManagementFactory.getGarbageCollectorMXBeans();
+            for (GarbageCollectorMXBean gcBean : gcBeans)
+            {
+                systemProperties.add(new Pair<String,Object>(gcBean.getName() + " GC count", gcBean.getCollectionCount()));
+                systemProperties.add(new Pair<String,Object>(gcBean.getName() + " GC time", DateUtil.formatDuration(gcBean.getCollectionTime())));
+            }
+
+            systemProperties.add(new Pair<String, Object>("In-use Connections", ConnectionWrapper.getActiveConnectionCount()));
+
+            //noinspection ConstantConditions
+            assert assertsEnabled = true;
+        }
+    }
+
+
+    private static String getUsageString(MemoryPoolMXBean pool)
+    {
+        try
+        {
+            return getUsageString(pool.getUsage());
+        }
+        catch (IllegalArgumentException x)
+        {
+            // sometimes we get usage>committed exception with older verions of JRockit
+            return "exception getting usage";
+        }
+    }
+
+
+    private static String getUsageString(MemoryUsage usage)
+    {
+        if (null == usage)
+            return "null";
+
+        try
+        {
+            StringBuffer sb = new StringBuffer();
+            sb.append("init = ").append(formatInteger.format(usage.getInit()));
+            sb.append("; used = ").append(formatInteger.format(usage.getUsed()));
+            sb.append("; committed = ").append(formatInteger.format(usage.getCommitted()));
+            sb.append("; max = ").append(formatInteger.format(usage.getMax()));
+            return sb.toString();
+        }
+        catch (IllegalArgumentException x)
+        {
+            // sometime we get usage>committed exception with older verions of JRockit
+            return "exception getting usage";
+        }
+    }
+
+
+    public static class ChartForm extends FormData
+    {
+        private String _type;
+
+        public String getType()
+        {
+            return _type;
+        }
+
+        public void setType(String type)
+        {
+            _type = type;
+        }
+    }
+
+
+    private static class MemoryCategory implements Comparable<MemoryCategory>
+    {
+        private String _type;
+        private double _mb;
+        public MemoryCategory(String type, double mb)
+        {
+            _type = type;
+            _mb = mb;
+        }
+
+        public int compareTo(MemoryCategory o)
+        {
+            return new Double(getMb()).compareTo(new Double(o.getMb()));
+        }
+
+        public String getType()
+        {
+            return _type;
+        }
+
+        public double getMb()
+        {
+            return _mb;
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class MemoryChartAction extends ExportAction<ChartForm>
+    {
+        public void export(ChartForm form, HttpServletResponse response) throws Exception
+        {
+            MemoryUsage usage = null;
+            boolean showLegend = false;
+            if ("Heap".equals(form.getType()))
+            {
+                usage = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
+                showLegend = true;
+            }
+            else if ("Non Heap".equals(form.getType()))
+                usage = ManagementFactory.getMemoryMXBean().getNonHeapMemoryUsage();
+            else
+            {
+                List<MemoryPoolMXBean> pools = ManagementFactory.getMemoryPoolMXBeans();
+                for (Iterator it = pools.iterator(); it.hasNext() && usage == null;)
+                {
+                    MemoryPoolMXBean pool = (MemoryPoolMXBean) it.next();
+                    if (form.getType().equals(pool.getName()))
+                        usage = pool.getUsage();
+                }
+            }
+
+            if (usage == null)
+                throw new NotFoundException();
+
+            DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+            List<MemoryCategory> types = new ArrayList<MemoryCategory>(4);
+
+            types.add(new MemoryCategory("Init", usage.getInit() / (1024 * 1024)));
+            types.add(new MemoryCategory("Used", usage.getUsed() / (1024 * 1024)));
+            types.add(new MemoryCategory("Committed", usage.getCommitted() / (1024 * 1024)));
+            types.add(new MemoryCategory("Max", usage.getMax() / (1024 * 1024)));
+            Collections.sort(types);
+
+            for (int i = 0; i < types.size(); i++)
+            {
+                double mbPastPrevious = i > 0 ? types.get(i).getMb() - types.get(i - 1).getMb() : types.get(i).getMb();
+                dataset.addValue(mbPastPrevious, types.get(i).getType(), "");
+            }
+
+            JFreeChart chart = ChartFactory.createStackedBarChart(form.getType(), null, null, dataset, PlotOrientation.HORIZONTAL, showLegend, false, false);
+            response.setContentType("image/png");
+            ChartUtilities.writeChartAsPNG(response.getOutputStream(), chart, showLegend ? 800 : 398, showLegend ? 100 : 70);
+        }
+    }
+
+
 }
