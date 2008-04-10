@@ -19,8 +19,14 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.FormViewAction;
 import org.labkey.study.plate.PlateDataServiceImpl;
 import org.labkey.study.plate.PlateManager;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
@@ -31,19 +37,32 @@ import java.sql.SQLException;
  * Date: Jan 29, 2007
  * Time: 3:53:57 PM
  */
-@Jpf.Controller(messageBundles = {@Jpf.MessageBundle(bundlePath = "messages.Validation")})
-public class PlateController extends BaseController
+public class PlateController extends SpringActionController
 {
+    static SpringActionController.DefaultActionResolver _actionResolver = new DefaultActionResolver(PlateController.class);
     private static Logger _log = Logger.getLogger(PlateController.class);
 
-    @Jpf.Action
-    @RequiresPermission(ACL.PERM_READ)
-    protected Forward begin() throws Exception
+    public PlateController()
     {
-        return new ViewForward(getActionURL().relativeUrl("plateTemplateList", null));
+        super();
+        setActionResolver(_actionResolver);
     }
 
-    public static class PlateTemplateListForm extends FormData
+    @RequiresPermission(ACL.PERM_READ)
+    public class BeginAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return HttpView.redirect(new ActionURL(PlateTemplateListAction.class, getContainer()));
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+    public static class PlateTemplateListForm
     {
         private String _returnURL;
 
@@ -72,27 +91,39 @@ public class PlateController extends BaseController
         }
     }
 
-    @Jpf.Action
     @RequiresPermission(ACL.PERM_READ)
-    protected Forward plateTemplateList(PlateTemplateListForm form) throws Exception
+    public class PlateTemplateListAction extends SimpleViewAction<PlateTemplateListForm>
     {
-        PlateTemplate[] plateTemplates = PlateService.get().getPlateTemplates(getContainer());
-        JspView<PlateTemplateListBean> summaryView =
-                new JspView<PlateTemplateListBean>("/org/labkey/study/plate/view/plateTemplateList.jsp", 
-                        new PlateTemplateListBean(plateTemplates));
-        return _renderInTemplate(summaryView, "Plate Templates", new NavTree("Plate Templates"));
+        public ModelAndView getView(PlateTemplateListForm plateTemplateListForm, BindException errors) throws Exception
+        {
+            PlateTemplate[] plateTemplates = PlateService.get().getPlateTemplates(getContainer());
+            return new JspView<PlateTemplateListBean>("/org/labkey/study/plate/view/plateTemplateList.jsp",
+                    new PlateTemplateListBean(plateTemplates));
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Plate Templates");
+        }
     }
 
-    @Jpf.Action
     @RequiresPermission(ACL.PERM_READ)
-    protected Forward designerService() throws Exception
+    public class DesignerServiceAction extends SimpleViewAction
     {
-        PlateDataServiceImpl service = new PlateDataServiceImpl(getViewContext());
-        service.doPost(getRequest(), getResponse());
-        return null;
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            PlateDataServiceImpl service = new PlateDataServiceImpl(getViewContext());
+            service.doPost(getViewContext().getRequest(), getViewContext().getResponse());
+            return null;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
     }
 
-    public static class RowIdForm extends FormData
+    public static class RowIdForm
     {
         private int _rowId;
 
@@ -107,17 +138,25 @@ public class PlateController extends BaseController
         }
     }
 
-    @Jpf.Action
     @RequiresPermission(ACL.PERM_READ)
-    protected Forward plateDetails(RowIdForm form) throws Exception
+    public class PlateDetailsAction extends SimpleViewAction<RowIdForm>
     {
-        Plate plate = PlateService.get().getPlate(getContainer(), form.getRowId());
-        if (plate == null)
-            return HttpView.throwNotFound("Plate " + form.getRowId() + " does not exist.");
-        ActionURL url = PlateManager.get().getDetailsURL(plate);
-        if (url == null)
-            return HttpView.throwNotFound("Details URL has not been configured for plate type " + plate.getName() + ".");
-        return new ViewForward(url);
+        public ModelAndView getView(RowIdForm form, BindException errors) throws Exception
+        {
+            Plate plate = PlateService.get().getPlate(getContainer(), form.getRowId());
+            if (plate == null)
+                return HttpView.throwNotFoundMV("Plate " + form.getRowId() + " does not exist.");
+            ActionURL url = PlateManager.get().getDetailsURL(plate);
+            if (url == null)
+                return HttpView.throwNotFoundMV("Details URL has not been configured for plate type " + plate.getName() + ".");
+
+            return HttpView.redirect(url);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
     }
 
     public class TemplateViewBean
@@ -149,53 +188,65 @@ public class PlateController extends BaseController
         }
     }
 
-    @Jpf.Action
     @RequiresPermission(ACL.PERM_INSERT)
-    protected Forward designer(NameForm form) throws Exception
+    public class DesignerAction extends SimpleViewAction<NameForm>
     {
-        Map<String, String> properties = new HashMap<String, String>();
-        if (form.getTemplateName() != null)
+        public ModelAndView getView(NameForm form, BindException errors) throws Exception
         {
-            properties.put("copyTemplate", Boolean.toString(form.isCopy()));
-            properties.put("templateName", form.getTemplateName());
-            if (form.isCopy())
-                properties.put("defaultPlateName", getUniqueName(getContainer(), form.getTemplateName()));
-            else
-                properties.put("defaultPlateName", form.getTemplateName());
-        }
-        if (form.getAssayType() != null)
-        {
-            properties.put("assayTypeName", form.getAssayType());
+            Map<String, String> properties = new HashMap<String, String>();
+            if (form.getTemplateName() != null)
+            {
+                properties.put("copyTemplate", Boolean.toString(form.isCopy()));
+                properties.put("templateName", form.getTemplateName());
+                if (form.isCopy())
+                    properties.put("defaultPlateName", getUniqueName(getContainer(), form.getTemplateName()));
+                else
+                    properties.put("defaultPlateName", form.getTemplateName());
+            }
+            if (form.getAssayType() != null)
+            {
+                properties.put("assayTypeName", form.getAssayType());
+            }
+
+            if (form.getTemplateType() != null)
+            {
+                properties.put("templateTypeName", form.getTemplateType());
+            }
+
+            PlateTemplate[] templates = PlateService.get().getPlateTemplates(getContainer());
+            for (int i = 0; i < templates.length; i++)
+            {
+                PlateTemplate template = templates[i];
+                properties.put("templateName[" + i + "]", template.getName());
+            }
+            return new GWTView("org.labkey.plate.designer.TemplateDesigner", properties);
         }
 
-        if (form.getTemplateType() != null)
+        public NavTree appendNavTrail(NavTree root)
         {
-            properties.put("templateTypeName", form.getTemplateType());
+            return root.addChild("Plate Template Editor");
         }
-
-        PlateTemplate[] templates = PlateService.get().getPlateTemplates(getContainer());
-        for (int i = 0; i < templates.length; i++)
-        {
-            PlateTemplate template = templates[i];
-            properties.put("templateName[" + i + "]", template.getName());
-        }
-        GWTView view = new GWTView("org.labkey.plate.designer.TemplateDesigner", properties);
-        return _renderInTemplate(view, "Plate Template Editor");
     }
 
-    @Jpf.Action
     @RequiresPermission(ACL.PERM_INSERT)
-    protected Forward delete(NameForm form) throws Exception
+    public class DeleteAction extends SimpleViewAction<NameForm>
     {
-        PlateTemplate[] templates = PlateService.get().getPlateTemplates(getContainer());
-        if (templates != null && templates.length > 1)
+        public ModelAndView getView(NameForm form, BindException errors) throws Exception
         {
-            PlateTemplate template = PlateService.get().getPlateTemplate(getContainer(), form.getTemplateName());
-            if (template != null)
-                PlateService.get().deletePlate(getContainer(), template.getRowId());
+            PlateTemplate[] templates = PlateService.get().getPlateTemplates(getContainer());
+            if (templates != null && templates.length > 1)
+            {
+                PlateTemplate template = PlateService.get().getPlateTemplate(getContainer(), form.getTemplateName());
+                if (template != null)
+                    PlateService.get().deletePlate(getContainer(), template.getRowId());
+            }
+            return HttpView.redirect(new ActionURL(BeginAction.class, getContainer()));
         }
 
-        return new ViewForward("Plate", "begin", getContainer());
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
     }
 
     public static class CopyTemplateBean
@@ -214,7 +265,7 @@ public class PlateController extends BaseController
                 @Override
                 protected void renderCellContents(StringBuilder html, Container c, ActionURL url)
                 {
-                    ActionURL copyURL = new ActionURL("Plate", "copyTemplate", container);
+                    ActionURL copyURL = new ActionURL(CopyTemplateAction.class, container);
                     copyURL.addParameter("templateName", templateName);
                     copyURL.addParameter("destination", c.getPath());
                     boolean selected = c.getPath().equals(selectedDestination);
@@ -270,42 +321,95 @@ public class PlateController extends BaseController
         }
     }
 
-    @Jpf.Action
     @RequiresPermission(ACL.PERM_INSERT)
-    protected Forward copyTemplate(CopyForm form) throws Exception
+    public class CopyTemplateAction extends FormViewAction<CopyForm>
     {
-        if (form.getTemplateName() == null || form.getTemplateName().length() == 0)
-            return new ViewForward("Plate", "begin", getContainer());
-        
-        JspView<CopyTemplateBean> summaryView =
-                new JspView<CopyTemplateBean>("/org/labkey/study/plate/view/copyTemplate.jsp",
-                        new CopyTemplateBean(getContainer(), getUser(), form.getTemplateName(), form.getDestination()));
-        return _renderInTemplate(summaryView, "Select Copy Destination");
+        public void validateCommand(CopyForm form, Errors errors)
+        {
+        }
+
+        public ModelAndView getView(CopyForm form, boolean reshow, BindException errors) throws Exception
+        {
+            if (form.getTemplateName() == null || form.getTemplateName().length() == 0)
+                return HttpView.redirect(new ActionURL(BeginAction.class, getContainer()));
+
+            return new JspView<CopyTemplateBean>("/org/labkey/study/plate/view/copyTemplate.jsp",
+                    new CopyTemplateBean(getContainer(), getUser(), form.getTemplateName(), form.getDestination()), errors);
+        }
+
+        public boolean handlePost(CopyForm form, BindException errors) throws Exception
+        {
+            return true;
+        }
+
+        public ActionURL getSuccessURL(CopyForm copyForm)
+        {
+            return null;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Select Copy Destination");
+        }
     }
 
-    @Jpf.Action(validationErrorForward = @Jpf.Forward(path = "copyTemplate.do", name = "validate"))
     @RequiresPermission(ACL.PERM_INSERT)
-    protected Forward handleCopy(CopyForm form) throws Exception
+    public class HandleCopyAction extends CopyTemplateAction
     {
-        Container destination = ContainerManager.getForPath(form.getDestination());
-        // earlier validation should prevent a null or inaccessible destination container:
-        if (destination == null || !destination.hasPermission(getUser(), ACL.PERM_INSERT))
-            return HttpView.throwNotFound();
+        public void validateCommand(CopyForm form, Errors errors)
+        {
+            Container destination = ContainerManager.getForPath(form.getDestination());
+            if (destination == null || !destination.hasPermission(getUser(), ACL.PERM_INSERT))
+                errors.reject("copyForm", "Destination container does not exist or permission is denied.");
 
-        // earlier validation should prevent a missing source template:
-        PlateTemplate template = PlateService.get().getPlateTemplate(getContainer(), form.getTemplateName());
-        if (template == null)
-            throw new RuntimeException("Plate " + form.getTemplateName() + " does not exist in source container.");
+            PlateTemplate destinationTemplate = null;
+            try
+            {
+                destinationTemplate = PlateService.get().getPlateTemplate(destination, form.getTemplateName());
+            }
+            catch (SQLException e)
+            {
+                _log.error("Failure checking for template in destination container", e);
+                errors.reject("copyForm", "Unable to validate destination directory: " + e.getMessage());
+            }
 
-        // earlier validation should prevent an already-existing destination template:
-        PlateTemplate destinationTemplate = PlateService.get().getPlateTemplate(destination, form.getTemplateName());
-        if (destinationTemplate != null)
-            throw new RuntimeException("Plate " + form.getTemplateName() + " already exists in destination container.");
+            if (destinationTemplate != null)
+                errors.reject("copyForm", "A plate template with the same name already exists in the destination folder.");
+        }
 
-        PlateService.get().copyPlateTemplate(template, getUser(), destination);
-        return new ViewForward(new ActionURL("Plate", "plateTemplateList", destination));
+        public boolean handlePost(CopyForm form, BindException errors) throws Exception
+        {
+            Container destination = ContainerManager.getForPath(form.getDestination());
+            // earlier validation should prevent a null or inaccessible destination container:
+            if (destination == null || !destination.hasPermission(getUser(), ACL.PERM_INSERT))
+            {
+                errors.reject("copyForm", "The destination is invalid or you do not have INSERT privileges on the specified container");
+                return false;
+            }
+            // earlier validation should prevent a missing source template:
+            PlateTemplate template = PlateService.get().getPlateTemplate(getContainer(), form.getTemplateName());
+            if (template == null)
+            {
+                errors.reject("copyForm", "Plate " + form.getTemplateName() + " does not exist in source container.");
+                return false;
+            }
+
+            // earlier validation should prevent an already-existing destination template:
+            PlateTemplate destinationTemplate = PlateService.get().getPlateTemplate(destination, form.getTemplateName());
+            if (destinationTemplate != null)
+            {
+                errors.reject("copyForm", "Plate " + form.getTemplateName() + " already exists in destination container.");
+                return false;
+            }
+            PlateService.get().copyPlateTemplate(template, getUser(), destination);
+            return true;
+        }
+
+        public ActionURL getSuccessURL(CopyForm copyForm)
+        {
+            return new ActionURL(PlateTemplateListAction.class, getContainer());
+        }
     }
-
 
     private String getUniqueName(Container container, String originalName) throws SQLException
     {
@@ -325,7 +429,7 @@ public class PlateController extends BaseController
         return uniqueName;
     }
 
-    public static class NameForm extends FormData
+    public static class NameForm
     {
         private String _templateName;
         private String _assayType;
@@ -373,7 +477,7 @@ public class PlateController extends BaseController
         }
     }
 
-    public static class CopyForm extends ViewForm
+    public static class CopyForm
     {
         private String _destination;
         private String _templateName;
@@ -396,32 +500,6 @@ public class PlateController extends BaseController
         public void setTemplateName(String templateName)
         {
             _templateName = templateName;
-        }
-
-        @Override
-        public ActionErrors validate(ActionMapping mapping, HttpServletRequest request)
-        {
-            ActionErrors errors = new ActionErrors();
-
-            Container destination = ContainerManager.getForPath(getDestination());
-            if (destination == null || !destination.hasPermission(getContext().getUser(), ACL.PERM_INSERT))
-                errors.add("main", new ActionMessage("Error", "Destination container does not exist or permission is denied."));
-
-            PlateTemplate destinationTemplate = null;
-            try
-            {
-                destinationTemplate = PlateService.get().getPlateTemplate(destination, getTemplateName());
-            }
-            catch (SQLException e)
-            {
-                _log.error("Failure checking for template in destination container", e);
-                errors.add("main", new ActionMessage("Error", "Unable to validate destination directory: " + e.getMessage()));
-            }
-
-            if (destinationTemplate != null)
-                errors.add("main", new ActionMessage("Error", "A plate template with the same name already exists in the destination folder."));
-
-            return errors;
         }
     }
 }

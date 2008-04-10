@@ -1,26 +1,15 @@
+<%@ page import="org.labkey.api.study.PlateTemplate" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.plate.PlateController" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.apache.commons.lang.StringUtils" %>
-<%@ page import="org.labkey.api.study.PlateTemplate" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+
 <%
     JspView<PlateController.CopyTemplateBean> me = (JspView<PlateController.CopyTemplateBean>) HttpView.currentView();
-    ViewContext context = me.getViewContext();
     PlateController.CopyTemplateBean bean = me.getModelBean();
-    String errs = PageFlowUtil.getStrutsError(request, "main");
-
-    if (null != StringUtils.trimToNull(errs))
-    {
-        out.write("<span class=\"labkey-error\">");
-        out.write(errs);
-        out.write("</span>");
-    }
-
 %>
+<labkey:errors />
 <table class="normal">
     <tr>
         <td>Copy <b><%= h(bean.getTemplateName()) %></b> to:</td>
