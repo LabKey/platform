@@ -9,15 +9,15 @@
 <%@ page import="org.labkey.biotrue.controllers.BtController" %>
 <%@ page import="org.labkey.biotrue.task.BtTaskManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <%
     ViewContext context = HttpView.currentContext();
     Server[] servers = BtManager.get().getServers(context.getContainer());
-    String errors = PageFlowUtil.getStrutsError(request, "main");
 %>
-<span class="labkey-error"><%=errors%></span>
+<labkey:errors />
 
-<form action="updateAdmin.view" method="post">
+<form action="" method="post">
     <table class="normal">
 <%
     for (Server server : servers) {

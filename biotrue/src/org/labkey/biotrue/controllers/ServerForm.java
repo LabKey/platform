@@ -8,19 +8,20 @@ import javax.servlet.http.HttpServletRequest;
 
 public class ServerForm extends ViewForm
 {
-    BtServer _server;
-    public void reset(ActionMapping actionMapping, HttpServletRequest request)
+    private int _serverId;
+
+    public int getServerId()
     {
-        super.reset(actionMapping, request);
-        String serverId = request.getParameter("serverId");
-        if (serverId != null)
-        {
-            _server = BtServer.fromId(Integer.valueOf(serverId));
-        }
+        return _serverId;
+    }
+
+    public void setServerId(int serverId)
+    {
+        _serverId = serverId;
     }
 
     public BtServer getServer()
     {
-        return _server;
+        return BtServer.fromId(_serverId);
     }
 }
