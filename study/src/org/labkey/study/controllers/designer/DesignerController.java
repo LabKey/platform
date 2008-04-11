@@ -1,62 +1,50 @@
 package org.labkey.study.controllers.designer;
 
-import jxl.Range;
-import jxl.Workbook;
-import jxl.WorkbookSettings;
-import org.apache.beehive.netui.pageflow.FormData;
-import org.apache.beehive.netui.pageflow.Forward;
-import org.apache.beehive.netui.pageflow.annotations.Jpf;
-import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.lang.StringUtils;
-import org.labkey.api.announcements.DiscussionService;
-import org.labkey.api.attachments.AttachmentDirectory;
-import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.action.*;
+import org.labkey.api.view.*;
+import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.ACL;
+import org.labkey.api.security.User;
+import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ExcelColumn;
-import org.labkey.api.data.TableViewForm;
-import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.User;
-import org.labkey.api.util.CaseInsensitiveHashMap;
-import org.labkey.api.util.DateUtil;
+import org.labkey.api.announcements.DiscussionService;
+import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.attachments.AttachmentDirectory;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.*;
-import org.labkey.common.tools.TabLoader;
-import org.labkey.study.controllers.BaseController;
-import org.labkey.study.designer.*;
-import org.labkey.study.designer.client.model.GWTCohort;
-import org.labkey.study.designer.client.model.GWTStudyDefinition;
+import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.portal.ProjectUrls;
 import org.labkey.study.designer.view.StudyDesignsWebPart;
+import org.labkey.study.designer.*;
+import org.labkey.study.designer.client.model.GWTStudyDefinition;
+import org.labkey.study.designer.client.model.GWTCohort;
 import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
+import org.labkey.common.tools.TabLoader;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
+import org.apache.commons.lang.StringUtils;
 
-import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.util.*;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.*;
+
+import jxl.Workbook;
+import jxl.WorkbookSettings;
+import jxl.Range;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Mark Igra
- * Date: Feb 12, 2007
- * Time: 5:01:42 PM
+ * User: jgarms
  */
-@Jpf.Controller(messageBundles = {@Jpf.MessageBundle(bundlePath = "messages.Validation")}, longLived = true)
-public class DesignerController extends BaseController
+public class DesignerController extends SpringActionController
 {
-    private static final String TEMPLATE_NAME = "Template";
-    private CreateRepositoryForm wizardForm; //Will get reused at each step of the wizard
-    private static final TabLoader.ColumnDescriptor[] PARTICIPANT_COLS = new TabLoader.ColumnDescriptor[]{
-            new TabLoader.ColumnDescriptor("ParticipantId", String.class),
-            new TabLoader.ColumnDescriptor("Cohort", String.class),
-            new TabLoader.ColumnDescriptor("StartDate", Date.class)
-    };
-
     public enum WizardStep
     {
         INIT(0,  null),
@@ -82,7 +70,7 @@ public class DesignerController extends BaseController
         {
             return number;
         }
-        
+
         private String title;
         private int number;
 
@@ -96,158 +84,303 @@ public class DesignerController extends BaseController
         }
     }
 
-    @Jpf.Action
-    @RequiresPermission(ACL.PERM_READ)
-    protected Forward begin() throws Exception
+    private static final String TEMPLATE_NAME = "Template";
+    private static final TabLoader.ColumnDescriptor[] PARTICIPANT_COLS = new TabLoader.ColumnDescriptor[]{
+            new TabLoader.ColumnDescriptor("ParticipantId", String.class),
+            new TabLoader.ColumnDescriptor("Cohort", String.class),
+            new TabLoader.ColumnDescriptor("StartDate", Date.class)
+    };
+
+    private static final String PARTICIPANT_KEY = DesignerController.class + ".participants";
+    private static final String SPECIMEN_KEY = DesignerController.class + ".specimens";
+
+    private static final DefaultActionResolver ACTION_RESOLVER =
+            new DefaultActionResolver(DesignerController.class);
+
+    public DesignerController()
     {
-        return _renderInTemplate(new StudyDesignsWebPart(getViewContext(), false), "Study Protocol Registration");
-    }
-    private ActionURL urlBegin()
-    {
-        return cloneActionURL().deleteParameters().setAction("begin.view");
+        super();
+        setActionResolver(ACTION_RESOLVER);
     }
 
-    @Jpf.Action
-    /**
-     * This method represents the point of entry into the pageflow
-     */
     @RequiresPermission(ACL.PERM_READ)
-    protected Forward designer(StudyDesignForm form) throws Exception
+    public class BeginAction extends SimpleViewAction
     {
-        Map<String, String> params = new HashMap<String,String>();
-        params.put("studyId", Integer.toString(form.getStudyId()));
-        StudyDesignInfo info = StudyDesignManager.get().getStudyDesign(getContainer(), form.getStudyId());
-        //If url is to source container and we've moved to study folder throw the new container
-        if (null != info && !info.getContainer().equals(getContainer()))
+
+        public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            ActionURL url = cloneActionURL().setExtraPath(info.getContainer().getPath());
-            return new ViewForward(url);
+            return new StudyDesignsWebPart(getViewContext(), false);
         }
 
-        int revision = form.getRevision();
-        if (revision == 0 && form.getStudyId() > 0)
-            revision = StudyDesignManager.get().getLatestRevisionNumber(getContainer(), form.getStudyId());
-        params.put("revision", Integer.toString(revision));
-        params.put("edit", getViewContext().hasPermission(ACL.PERM_UPDATE) && form.isEdit() ? "true" : "false");
-        boolean canEdit = getViewContext().hasPermission(ACL.PERM_UPDATE);
-        params.put("canEdit",  Boolean.toString(canEdit));
-        params.put("canCreateRepository", Boolean.toString(canEdit && null != info && !info.isActive()));
-        if (null != StringUtils.trimToNull(form.getFinishURL()))
-            params.put("finishURL", form.getFinishURL());
-        
-        HttpView studyView = new GWTView("org.labkey.study.designer.Designer", params);
-        if (0 != form.getStudyId())
+        public NavTree appendNavTrail(NavTree root)
         {
-            HttpView discussion = DiscussionService.get().getDisussionArea(getViewContext(),
-                    info.getLsid().toString(), getActionURL(), "Discussion of " + info.getLabel() + " revision " + revision, true, false);
-            VBox vbox = new VBox();
-            if (null != getRequest().getParameter("discussion.start") || null != getRequest().getParameter("discussion.id"))
-                vbox.addView(new HtmlView("Study information is on this page below the discussion."));
-            vbox.addView(discussion);
-            vbox.addView(studyView);
-            studyView = vbox;
+            return root.addChild("Study Protocol Registration");
         }
-        return _renderInTemplate(studyView, "Study Protocol Definition", new NavTree("Study Protocol Registration", urlBegin()));
     }
 
-    @Jpf.Action
-    @RequiresPermission(ACL.PERM_READ)
-    protected Forward editTemplate(StudyDesignForm form) throws Exception
-    {
-        //Just find the template and redirect...
-        StudyDesignInfo info = getTemplateInfo(getUser(), getContainer());
-        ActionURL url = cloneActionURL();
-        url.setAction("designer");
-        url.setExtraPath(info.getContainer().getPath());
-        url.deleteParameters();
-        url.addParameter("edit", "true");
-        url.addParameter("studyId", String.valueOf(info.getStudyId()));
-        url.addParameter("finishURL", cloneActionURL().setAction("begin.view").toString());
-        return new ViewForward(url, true);
-    }
-
-    @Jpf.Action
     @RequiresPermission(ACL.PERM_DELETE)
-    protected Forward delete(DeleteForm form) throws Exception
+    public class DeleteAction extends FormHandlerAction
     {
-        String[] selectedRows = form.getSelectedRows();
 
-        if (null != selectedRows)
-            for (String row : selectedRows)
-                StudyDesignManager.get().deleteStudyDesign(getContainer(), Integer.parseInt(row));
+        public void validateCommand(Object target, Errors errors) {}
 
-        return new ViewForward(cloneActionURL().setAction("begin.view"));
-    }
-
-    @Jpf.Action(useFormBean = "wizardForm") //Note form will get reused at each step of wizard
-    @RequiresPermission(ACL.PERM_ADMIN)
-    protected Forward createRepository(CreateRepositoryForm form) throws Exception
-    {
-        int studyId = form.getStudyId();
-        StudyDesignInfo info = StudyDesignManager.get().getStudyDesign(getContainer(), studyId);
-
-        form.setMessage(null); //We're reusing the form, so reset the message.
-        validateStep(form, info); //Make sure we are not in some weird back/forward state
-        
-        //Wizard step is the *last* wizard step shown to the user.
-        //Each method handles the post and sets up the form to render the next wizard step
-        //  or re-render same step if errors occured
-        switch(form.getWizardStep())
+        public boolean handlePost(Object o, BindException errors) throws Exception
         {
-            case INIT:
-                //We keep the same form instance across posts except if we start new wizard
-                form = new CreateRepositoryForm();
-                form.setStudyId(studyId);
-                form.setParentFolder(getContainer());
-                form.setBeginDateStr(DateUtil.formatDate(new Date()));
-                form.setWizardStepNumber(1);
-                GWTStudyDefinition def = StudyDesignManager.get().getGWTStudyDefinition(getContainer(), info);
-                form.setStudyDefinition(def);
-
-                form.setStudyName(info.getLabel());
-                form.setFolderName(info.getLabel());
-
-                wizardForm = form;
-                break;
-            case PICK_FOLDER:
-                pickFolder(form);
-                break;
-            case SHOW_PARTICIPANTS:
-                showParticipants(form);
-                break;
-            case UPLOAD_PARTICIPANTS:
-                uploadParticipants(form);
-                break;
-            case SHOW_SAMPLES:
-                showSamples(form);
-                break;
-            case UPLOAD_SAMPLES:
-                handleUploadSamples(form);
-                break;
-            case CONFIRM:
-                //Put visitids back on uploaded participant info...
-                Map<String,Object>[] participantMaps = new Map[form.getParticipants().length];
-                for (int i = 0; i < form.getParticipants().length; i++)
-                {
-                    participantMaps[i] = new HashMap<String,Object>(form.getParticipants()[i]);
-                    participantMaps[i].put("Date", participantMaps[i].get("StartDate")); //Date of demographic data *is* StartDate by default
-                }
-                Study study = StudyDesignManager.get().generateStudyFromDesign(getUser(), form.getParentFolder(), form.getFolderName(), form.getBeginDate(), info, participantMaps, form.getSpecimens());
-                ActionURL studyUrl = cloneActionURL().deleteParameters();
-                wizardForm = null; //This is a long-lived pageFlow so free the memory
-                studyUrl.setExtraPath(study.getContainer().getPath());
-                studyUrl.setPageFlow("Project");
-                studyUrl.setAction("begin.view");
-                return new ViewForward(studyUrl);
+            Set<String> selectedRows = DataRegionSelection.getSelected(getViewContext(), true);
+            for (String row : selectedRows)
+            {
+                StudyDesignManager.get().deleteStudyDesign(getContainer(), Integer.parseInt(row));
+            }
+            return true;
         }
 
-        JspView<CreateRepositoryForm> wizardView = new JspView<CreateRepositoryForm>("/org/labkey/study/designer/view/CreateRepositoryWizard.jsp", form);
-        return _renderInTemplate(wizardView, "Create Study Folder: " + form.getWizardStep().getTitle());
+        public ActionURL getSuccessURL(Object o)
+        {
+            return new ActionURL(BeginAction.class, getContainer());
+        }
     }
 
-    void validateStep(CreateRepositoryForm form, StudyDesignInfo info) throws Exception
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class CancelWizardAction extends SimpleRedirectAction<CreateRepositoryForm>
+    {
+        public ActionURL getRedirectURL(CreateRepositoryForm form) throws Exception
+        {
+            setParticipants(null);
+            setSpecimens(null);
+            ActionURL designURL = new ActionURL(DesignerAction.class, getContainer());
+            designURL.addParameter("studyId", form.getStudyId());
+            return designURL;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class DesignerAction extends SimpleViewAction<StudyDesignForm>
     {
 
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Study Protocol Registration");
+        }
+
+        public ModelAndView getView(StudyDesignForm form, BindException errors) throws Exception
+        {
+            Map<String, String> params = new HashMap<String,String>();
+            params.put("studyId", Integer.toString(form.getStudyId()));
+            StudyDesignInfo info = StudyDesignManager.get().getStudyDesign(getContainer(), form.getStudyId());
+            //If url is to source container and we've moved to study folder throw the new container
+            if (null != info && !info.getContainer().equals(getContainer()))
+            {
+                ActionURL url = new ActionURL(DesignerAction.class, info.getContainer());
+                HttpView.throwRedirect(url);
+            }
+
+            int revision = form.getRevision();
+            if (revision == 0 && form.getStudyId() > 0)
+                revision = StudyDesignManager.get().getLatestRevisionNumber(getContainer(), form.getStudyId());
+            params.put("revision", Integer.toString(revision));
+            params.put("edit", getViewContext().hasPermission(ACL.PERM_UPDATE) && form.isEdit() ? "true" : "false");
+            boolean canEdit = getViewContext().hasPermission(ACL.PERM_UPDATE);
+            params.put("canEdit",  Boolean.toString(canEdit));
+            params.put("canCreateRepository", Boolean.toString(canEdit && null != info && !info.isActive()));
+            if (null != StringUtils.trimToNull(form.getFinishURL()))
+                params.put("finishURL", form.getFinishURL());
+
+            HttpView studyView = new GWTView("org.labkey.study.designer.Designer", params);
+            if (0 != form.getStudyId() && info != null)
+            {
+                HttpView discussion = DiscussionService.get().getDisussionArea(
+                        getViewContext(),
+                        info.getLsid().toString(),
+                        getViewContext().getActionURL(),
+                        "Discussion of " + info.getLabel() + " revision " + revision,
+                        true, false);
+                VBox vbox = new VBox();
+                if (null != HttpView.currentRequest().getParameter("discussion.start") || null != HttpView.currentRequest().getParameter("discussion.id"))
+                    vbox.addView(new HtmlView("Study information is on this page below the discussion."));
+                vbox.addView(discussion);
+                vbox.addView(studyView);
+                studyView = vbox;
+            }
+            return studyView;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class DefinitionServiceAction extends GWTServiceAction
+    {
+        protected BaseRemoteService createService()
+        {
+            return new StudyDefinitionServiceImpl(getViewContext());
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class EditTemplateAction extends SimpleRedirectAction<StudyDesignForm>
+    {
+        public ActionURL getRedirectURL(StudyDesignForm studyDesignForm) throws Exception
+        {
+            StudyDesignInfo info = getTemplateInfo(getUser(), getContainer());
+            ActionURL url = new ActionURL(DesignerAction.class, info.getContainer());
+            url.addParameter("edit", "true");
+            url.addParameter("studyId", info.getStudyId());
+            url.addParameter("finishURL", new ActionURL(BeginAction.class, info.getContainer()).toString());
+            return url;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class GetParticipantExcelAction extends ExportAction<CreateRepositoryForm>
+    {
+        public void export(CreateRepositoryForm form, HttpServletResponse response) throws Exception
+        {
+            List<Map<String,Object>> participantList = new ArrayList<Map<String,Object>>();
+            int participantNum = 1;
+            for (GWTCohort cohort : (List<GWTCohort>) getStudyDefinition(form).getGroups())
+            {
+                for (int i = 0; i < cohort.getCount(); i++)
+                {
+                    HashMap<String,Object> hm = new HashMap<String,Object>();
+                    hm.put("SubjectId", participantNum++);
+                    hm.put("Cohort", cohort.getName());
+                    hm.put("StartDate", form.getBeginDate());
+                    participantList.add(hm);
+                }
+            }
+
+            TabLoader.ColumnDescriptor[] xlCols = new TabLoader.ColumnDescriptor[3];
+            xlCols[0] = new TabLoader.ColumnDescriptor("SubjectId", Integer.class);
+            xlCols[1] = new TabLoader.ColumnDescriptor("Cohort", String.class);
+            xlCols[2] = new TabLoader.ColumnDescriptor("StartDate", Date.class);
+            MapArrayExcelWriter xlWriter = new MapArrayExcelWriter
+                    (participantList.toArray(new Map[participantList.size()]), xlCols);
+            xlWriter.setHeaders(Arrays.asList("#Update the SubjectId column of this spreadsheet to the identifiers used when sending a sample to labs", "#"));
+            xlWriter.write(response);
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class GetSpecimenExcelAction extends ExportAction<CreateRepositoryForm>
+    {
+        public void export(CreateRepositoryForm form, HttpServletResponse response) throws Exception
+        {
+            Container c = getContainer();
+            //Search for a template in all folders up to root.
+            Workbook inputWorkbook = null;
+            while (!c.equals(ContainerManager.getRoot()))
+            {
+                AttachmentDirectory dir = AttachmentService.get().getMappedAttachmentDirectory(c, false);
+                if (null != dir && dir.getFileSystemDirectory().exists())
+                {
+                    if (new File(dir.getFileSystemDirectory(), "Samples.xls").exists())
+                    {
+                        WorkbookSettings settings = new WorkbookSettings();
+                        settings.setGCDisabled(true);
+                        inputWorkbook = Workbook.getWorkbook(new File(dir.getFileSystemDirectory(), "Samples.xls"), settings);
+                    }
+                }
+                c = c.getParent();
+            }
+            int startRow = 0;
+            if (null != inputWorkbook)
+            {
+                Range[] range = inputWorkbook.findByName("specimen_headers");
+                if (null != range && range.length > 0)
+                    startRow = range[0].getTopLeft().getRow();
+                else
+                    inputWorkbook = null;
+            }
+
+            SimpleSpecimenImporter importer = new SimpleSpecimenImporter(true, "Subject Id");
+            Map<String,Object>[] defaultSpecimens = StudyDesignManager.get().generateSampleList(getStudyDefinition(form), getParticipants(), form.getBeginDate());
+            MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns());
+            for (ExcelColumn col : xlWriter.getColumns())
+            {
+                col.setCaption(importer.label(col.getName()));
+            }
+            xlWriter.setCurrentRow(startRow);
+            if (null != inputWorkbook)
+                xlWriter.setTemplate(inputWorkbook);
+
+            xlWriter.write(response);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class CreateRepository extends SimpleViewAction<CreateRepositoryForm>
+    {
+        String titleForNav;
+
+        public ModelAndView getView(CreateRepositoryForm form, BindException errors) throws Exception
+        {
+            int studyId = form.getStudyId();
+            StudyDesignInfo info = StudyDesignManager.get().getStudyDesign(getContainer(), studyId);
+
+            form.setMessage(null); //We're reusing the form, so reset the message.
+            validateStep(form, info); //Make sure we are not in some weird back/forward state
+
+            //Wizard step is the *last* wizard step shown to the user.
+            //Each method handles the post and sets up the form to render the next wizard step
+            //  or re-render same step if errors occured
+            switch(form.getWizardStep())
+            {
+                case INIT:
+                    //We keep the same form instance across posts except if we start new wizard
+                    form = new CreateRepositoryForm();
+                    form.setStudyId(studyId);
+                    form.setParentFolderId(getContainer().getId());
+                    form.setBeginDate(new Date());
+                    form.setWizardStepNumber(WizardStep.PICK_FOLDER.getNumber());
+                    form.setStudyName(info.getLabel());
+                    form.setFolderName(info.getLabel());
+                    setParticipants(null);
+                    setSpecimens(null);
+                    break;
+                case PICK_FOLDER:
+                    pickFolder(form);
+                    break;
+                case SHOW_PARTICIPANTS:
+                    showParticipants(form);
+                    break;
+                case UPLOAD_PARTICIPANTS:
+                    uploadParticipants(form);
+                    break;
+                case SHOW_SAMPLES:
+                    showSamples(form);
+                    break;
+                case UPLOAD_SAMPLES:
+                    handleUploadSamples(form);
+                    break;
+                case CONFIRM:
+                    //Put visitids back on uploaded participant info...
+                    Map<String,Object>[] participantMaps = new Map[getParticipants().length];
+                    for (int i = 0; i < getParticipants().length; i++)
+                    {
+                        participantMaps[i] = new HashMap<String,Object>(getParticipants()[i]);
+                        participantMaps[i].put("Date", participantMaps[i].get("StartDate")); //Date of demographic data *is* StartDate by default
+                    }
+                    Study study = StudyDesignManager.get().generateStudyFromDesign(getUser(), ContainerManager.getForId(form.getParentFolderId()), form.getFolderName(), form.getBeginDate(), info, participantMaps, getSpecimens());
+                    final ActionURL studyFolderUrl = PageFlowUtil.urlProvider(ProjectUrls.class).urlStart(study.getContainer());
+                    HttpView.throwRedirect(studyFolderUrl);
+            }
+
+            titleForNav = form.getWizardStep().getTitle();
+            if (titleForNav == null)
+                titleForNav = form.getStudyName();
+            return new JspView<CreateRepositoryForm>("/org/labkey/study/designer/view/CreateRepositoryWizard.jsp", form);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Create Study Folder: " + titleForNav);
+        }
+    }
+
+
+    private void validateStep(CreateRepositoryForm form, StudyDesignInfo info) throws Exception
+    {
         if (null == info)
             throw new NotFoundException("Couldn't find study with id " + form.getStudyId());
 
@@ -257,118 +390,201 @@ public class DesignerController extends BaseController
 
         //Make sure we haven't done some crazy back/forward thing
         int stepNumber = form.getWizardStep().getNumber();
-        if (null == form.getStudyName() || null == form.getParentFolder()|| null == form.getStudyDefinition())
+        if (null == form.getStudyName() ||
+                "".equals(form.getStudyName()) ||
+                null == form.getParentFolderId()||
+                null == getStudyDefinition(form))
         {
             form.setWizardStep(WizardStep.INIT);
             return;
         }
-        Container studyFolder = form.getParentFolder().getChild(form.getFolderName());
+        Container studyFolder = ContainerManager.getForId(form.getParentFolderId()).getChild(form.getFolderName());
         if (null != studyFolder && null != StudyManager.getInstance().getStudy(studyFolder))
         {
             form.setMessage("Folder already exists");
             form.setWizardStep(WizardStep.PICK_FOLDER);
             return;
         }
-        if (stepNumber > WizardStep.UPLOAD_PARTICIPANTS.getNumber() && null == form.getParticipants())
+        if (stepNumber > WizardStep.UPLOAD_PARTICIPANTS.getNumber() && null == getParticipants())
         {
             form.setWizardStep(WizardStep.SHOW_PARTICIPANTS);
             return;
         }
-        if (stepNumber > WizardStep.UPLOAD_SAMPLES.getNumber() && null == form.getSpecimens())
+        if (stepNumber > WizardStep.UPLOAD_SAMPLES.getNumber() && null == getSpecimens())
         {
             form.setWizardStep(WizardStep.SHOW_SAMPLES);
+        }
+    }
+
+    private void pickFolder(CreateRepositoryForm form)
+            throws SQLException
+    {
+        String folderName = StringUtils.trimToNull(form.getFolderName());
+        Container container = getContainer();
+        if (null == folderName)
+            form.setMessage("Please set a folder name.");
+        else if (null == form.getBeginDate())
+        {
+            form.setMessage("Please enter a date in the format yyyy-MM-dd.");
+            form.setBeginDate(new Date());
+        }
+        else if (container.hasChild(folderName) && null != StudyManager.getInstance().getStudy(container.getChild(folderName)))
+            form.setMessage(container.getName() + " already has a child named " + folderName + " containing a study.");
+        else
+        {
+            GWTStudyDefinition def = getStudyDefinition(form);
+            Map<String,Object>[] participantDataset = StudyDesignManager.get().generateParticipantDataset(getUser(), def);
+            setParticipants(participantDataset);
+            form.setWizardStep(WizardStep.SHOW_PARTICIPANTS);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void showParticipants(CreateRepositoryForm form) throws IOException, SQLException
+    {
+        if (null != form.getParticipantTSV())
+        {
+            TabLoader tl = new TabLoader(form.getParticipantTSV(), true);
+            setParticipants((Map<String,Object>[]) tl.load());
+        }
+        if (form.isUploadParticipants())
+            uploadParticipants(form);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void uploadParticipants(CreateRepositoryForm form)
+            throws SQLException, IOException
+    {
+        //Parse and validate uploaded participant info
+        if (null == StringUtils.trimToNull(form.getParticipantTSV()))
+        {
+            form.setMessage("Please provide participant information.");
             return;
         }
-    }
-
-    @Jpf.Action(useFormBean = "wizardForm") //Note form will get reused at each step of wizard
-    @RequiresPermission(ACL.PERM_ADMIN)
-    protected Forward cancelWizard(CreateRepositoryForm form) throws Exception
-    {
-        //Don't save any settings after cancel
-        wizardForm = new CreateRepositoryForm();
-        ActionURL designUrl = cloneActionURL().deleteParameters();
-        designUrl.setAction("designer").replaceParameter("studyId", String.valueOf(form.getStudyId()));
-
-        return new ViewForward(designUrl);
-    }
-
-    @Jpf.Action(useFormBean = "wizardForm") //Note form will get reused at each step of wizard
-    @RequiresPermission(ACL.PERM_ADMIN)
-    protected Forward getParticipantExcel(CreateRepositoryForm form) throws Exception
-    {
+        TabLoader loader = new TabLoader(form.getParticipantTSV(), true);
+        fixupParticipantCols(loader);
+        List<String> errors = new ArrayList<String>();
         Set<String> participants = new HashSet<String>();
-        List<Map<String,Object>> participantList = new ArrayList<Map<String,Object>>();
-        int participantNum = 1;
-        for (GWTCohort cohort : (List<GWTCohort>) form.getStudyDefinition().getGroups())
-            for (int i = 0; i < cohort.getCount(); i++)
-            {
-                HashMap<String,Object> hm = new HashMap<String,Object>();
-                hm.put("SubjectId", participantNum++);
-                hm.put("Cohort", cohort.getName());
-                hm.put("StartDate", form.getBeginDate());
-                participantList.add(hm);
-            }
+        Map<String,Integer> cohortCounts = new CaseInsensitiveHashMap<Integer>();
+        GWTStudyDefinition def = getStudyDefinition(form);
+        for (GWTCohort group : (List<GWTCohort>) def.getGroups())
+            cohortCounts.put(group.getName(), 0);
 
-        TabLoader.ColumnDescriptor[] xlCols = new TabLoader.ColumnDescriptor[3];
-        xlCols[0] = new TabLoader.ColumnDescriptor("SubjectId", Integer.class);
-        xlCols[1] = new TabLoader.ColumnDescriptor("Cohort", String.class);
-        xlCols[2] = new TabLoader.ColumnDescriptor("StartDate", Date.class);
-        MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(participantList.toArray(new Map[0]), xlCols);
-        xlWriter.setHeaders(Arrays.asList("#Update the SubjectId column of this spreadsheet to the identifiers used when sending a sample to labs", "#"));
-        xlWriter.write(getResponse());
-
-        return null;
-    }
-
-    @Jpf.Action(useFormBean = "wizardForm") //Note form will get reused at each step of wizard
-    @RequiresPermission(ACL.PERM_READ)
-    protected Forward getSpecimenExcel(CreateRepositoryForm form) throws Exception
-    {
-        Container c = getContainer();
-        //Search for a template in all folders up to root.
-        Workbook inputWorkbook = null;
-        while (!c.equals(ContainerManager.getRoot()))
+        Map<String,Object>[] rows = (Map<String,Object>[]) loader.load();
+        setParticipants(rows);
+        int rowNum = 1;
+        for (Map row : rows)
         {
-            AttachmentDirectory dir = AttachmentService.get().getMappedAttachmentDirectory(c, false);
-            if (null != dir && dir.getFileSystemDirectory().exists())
+            String cohort = (String) row.get("Cohort");
+            String participant = (String) row.get("ParticipantId");
+            Date startDate = (Date) row.get("StartDate");
+            if (!form.isIgnoreWarnings() && null == cohort)
             {
-                if (new File(dir.getFileSystemDirectory(), "Samples.xls").exists())
+                errors.add("Warning, Row " + rowNum + " no cohort is listed.");
+                form.setContainsWarnings(true);
+            }
+            else if (!form.isIgnoreWarnings() && !cohortCounts.containsKey(cohort))
+            {
+                errors.add("Warning, Row " + rowNum + " cohort " + cohort + " is not listed in study definition.");
+                form.setContainsWarnings(true);
+            }
+            else
+                cohortCounts.put(cohort, (null == cohortCounts.get(cohort) ? 0 : cohortCounts.get(cohort).intValue()) + 1);
+
+            if (null == participant)
+                errors.add("Error, Row " + rowNum + " no subject is listed.");
+            else if (participants.contains(participant))
+                errors.add("Error, Row " + rowNum + " subject is listed more than once");
+            else
+                participants.add(participant);
+
+            if (null == startDate)
+                errors.add("Error, Row " + rowNum + " StartDate is not provided.");
+
+            if (errors.size() >= 3)
+                break;
+
+            rowNum++;
+        }
+        if (!form.isIgnoreWarnings() && errors.size() == 0)
+            for (GWTCohort group : (List<GWTCohort>) def.getGroups())
+            {
+                if (cohortCounts.get(group.getName()).intValue() < group.getCount())
                 {
-                    WorkbookSettings settings = new WorkbookSettings();
-                    settings.setGCDisabled(true);
-                    inputWorkbook = Workbook.getWorkbook(new File(dir.getFileSystemDirectory(), "Samples.xls"), settings);
+                    errors.add("Warning: not enough subjects for cohort " + group.getName() + " expected " + group.getCount() + " found " + cohortCounts.get(group.getName()));
+                    form.setContainsWarnings(true);
                 }
             }
-            c = c.getParent();
-        }
-        int startRow = 0;
-        if (null != inputWorkbook)
+
+        if (errors.size() > 0 && !form.isIgnoreWarnings())
         {
-            Range[] range = inputWorkbook.findByName("specimen_headers");
-            if (null != range && range.length > 0)
-                startRow = range[0].getTopLeft().getRow();
-            else
-                inputWorkbook = null;
+            StringBuilder sb = new StringBuilder();
+            for (String error : errors)
+                sb.append(error).append("\n");
+
+            form.setMessage(sb.toString());
         }
-
-        SimpleSpecimenImporter importer = new SimpleSpecimenImporter(true, "Subject Id");
-        Map<String,Object>[] defaultSpecimens = StudyDesignManager.get().generateSampleList(form.getStudyDefinition(), form.getParticipants(), form.getBeginDate());
-        MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns());
-        for (ExcelColumn col : xlWriter.getColumns())
-            col.setCaption(importer.label(col.getName()));
-        xlWriter.setCurrentRow(startRow);
-        if (null != inputWorkbook)
-            xlWriter.setTemplate(inputWorkbook);
-
-        xlWriter.write(getResponse());
-
-        return null;
+        else
+        {
+            form.setWizardStep(WizardStep.SHOW_SAMPLES);
+        }
     }
 
+    private static void fixupParticipantCols(TabLoader loader) throws IOException
+    {
+        TabLoader.ColumnDescriptor[] loaderCols = loader.getColumns();
+        Map<String,TabLoader.ColumnDescriptor> colMap = new CaseInsensitiveHashMap<TabLoader.ColumnDescriptor>();
+        for (TabLoader.ColumnDescriptor col : PARTICIPANT_COLS)
+            colMap.put(col.name, col);
+        colMap.put("ptid", colMap.get("ParticipantId"));
+        colMap.put("SubjectId", colMap.get(SimpleSpecimenImporter.PARTICIPANT_ID));
 
+        TabLoader.ColumnDescriptor[] newCols = new TabLoader.ColumnDescriptor[loaderCols.length];
+        for (int i = 0; i < loaderCols.length; i++)
+        {
+            if (colMap.containsKey(loaderCols[i].name))
+                newCols[i] = colMap.get(loaderCols[i].name);
+            else
+                newCols[i] = loaderCols[i];
+        }
+        loader.setColumns(newCols);
+    }
+
+    private static StudyDesignInfo getTemplateInfo(User u, Container c) throws Exception
+    {
+        StudyDesignInfo info = StudyDesignManager.get().getStudyDesign(c.getProject(), TEMPLATE_NAME);
+        if (null == info)
+        {
+            getTemplate(u, c);
+            info = StudyDesignManager.get().getStudyDesign(c.getProject(), TEMPLATE_NAME);
+        }
+        return info;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void showSamples(CreateRepositoryForm form) throws SQLException, IOException
+    {
+        if (form.isUploadSpecimens())
+        {
+            if (null != form.getSpecimenTSV())
+            {
+                //Handle back->forward case by reloading
+                TabLoader tl = new TabLoader(form.getSpecimenTSV(), true);
+                setSpecimens((Map<String,Object>[]) tl.load());
+            }
+            handleUploadSamples(form);
+        }
+        else
+        {
+            if (null != form.getSpecimenTSV()) //Reset to autogenerated list
+                setSpecimens(StudyDesignManager.get().generateSampleList(getStudyDefinition(form), getParticipants(), form.getBeginDate()));
+            form.setWizardStep(WizardStep.CONFIRM);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
     private void handleUploadSamples(CreateRepositoryForm form)
-            throws IOException
+            throws SQLException, IOException
     {
         Set<String> errors = new LinkedHashSet<String>();
         String specimenTSV = StringUtils.trimToNull(form.getSpecimenTSV());
@@ -402,7 +618,7 @@ public class DesignerController extends BaseController
         importer.fixupSpecimenColumns(loader);
 
         Map<String,Object>[] specimenRows = (Map<String,Object>[]) loader.load();
-        form.setSpecimens(specimenRows);
+        setSpecimens(specimenRows);
         Set<String> participants = new HashSet<String>();
         int rowNum = 1;
         for (Map<String,Object> row : specimenRows)
@@ -425,7 +641,7 @@ public class DesignerController extends BaseController
         if (!form.isIgnoreWarnings())
         {
             int nParticipantsExpected = 0;
-            for (GWTCohort cohort : (List<GWTCohort>) form.getStudyDefinition().getGroups())
+            for (GWTCohort cohort : (List<GWTCohort>) getStudyDefinition(form).getGroups())
                 nParticipantsExpected += cohort.getCount();
 
             if (participants.size() != nParticipantsExpected)
@@ -445,167 +661,52 @@ public class DesignerController extends BaseController
             form.setWizardStep(WizardStep.CONFIRM);
     }
 
-    private void showSamples(CreateRepositoryForm form) throws IOException
+    public static GWTStudyDefinition getStudyDefinition(CreateRepositoryForm form, Container container) throws SQLException
     {
-        if (form.isUploadSpecimens())
-        {
-            if (null != form.getSpecimenTSV())
-            {
-                //Handle back->forward case by reloading
-                TabLoader tl = new TabLoader(form.getSpecimenTSV(), true);
-                form.setSpecimens((Map<String,Object>[]) tl.load());
-            }
-            handleUploadSamples(form);
-        }
-        else
-        {
-            if (null != form.getSpecimenTSV()) //Reset to autogenerated list
-                form.setSpecimens(StudyDesignManager.get().generateSampleList(form.getStudyDefinition(), form.getParticipants(), form.getBeginDate()));
-            form.setWizardStep(WizardStep.CONFIRM);
-        }
+        StudyDesignInfo info = StudyDesignManager.get().getStudyDesign(container, form.getStudyId());
+        if (info == null)
+            throw new IllegalStateException("Could not find StudyDesignInfo for studyId " + form.getStudyId());
+        return StudyDesignManager.get().getGWTStudyDefinition(container, info);
     }
 
-    private void uploadParticipants(CreateRepositoryForm form)
-            throws IOException
+    private GWTStudyDefinition getStudyDefinition(CreateRepositoryForm form) throws SQLException
     {
-        //Parse and validate uploaded participant info
-        if (null == StringUtils.trimToNull(form.getParticipantTSV()))
+        return getStudyDefinition(form, getContainer());
+    }
+
+    @SuppressWarnings("unchecked")
+    public static Map<String,Object>[] getParticipants()
+    {
+        return (Map<String,Object>[])HttpView.currentContext().getSession().getAttribute(PARTICIPANT_KEY);
+    }
+
+    private void setParticipants(Map<String,Object>[] participants)
+    {
+        HttpSession session = HttpView.currentContext().getSession();
+        if (participants == null)
         {
-            form.setMessage("Please provide participant information.");
+            session.removeAttribute(PARTICIPANT_KEY);
             return;
         }
-        TabLoader loader = new TabLoader(form.getParticipantTSV(), true);
-        fixupParticipantCols(loader);
-        List<String> errors = new ArrayList<String>();
-        Set<String> participants = new HashSet<String>();
-        Map<String,Integer> cohortCounts = new CaseInsensitiveHashMap<Integer>();
-        GWTStudyDefinition def = form.getStudyDefinition();
-        for (GWTCohort group : (List<GWTCohort>) def.getGroups())
-            cohortCounts.put(group.getName(), 0);
-
-        Map<String,Object>[] rows = (Map<String,Object>[]) loader.load();
-        form.setParticipants(rows);
-        int rowNum = 1;
-        for (Map row : rows)
-        {
-            String cohort = (String) row.get("Cohort");
-            String participant = (String) row.get("ParticipantId");
-            Date startDate = (Date) row.get("StartDate");
-            if (!form.isIgnoreWarnings() && null == cohort)
-            {
-                errors.add("Warning, Row " + rowNum + " no cohort is listed.");
-                form.setContainsWarnings(true);
-            }
-            else if (!form.isIgnoreWarnings() && !cohortCounts.containsKey(cohort))
-            {
-                errors.add("Warning, Row " + rowNum + " cohort " + cohort + " is not listed in study definition.");
-                form.setContainsWarnings(true);
-            }
-            else
-                cohortCounts.put(cohort, (null == cohortCounts.get(cohort) ? 0 : cohortCounts.get(cohort)) + 1);
-
-            if (null == participant)
-                errors.add("Error, Row " + rowNum + " no subject is listed.");
-            else if (participants.contains(participant))
-                errors.add("Error, Row " + rowNum + " subject is listed more than once");
-
-            if (null == startDate)
-                errors.add("Error, Row " + rowNum + " StartDate is not provided.");
-            
-            if (errors.size() >= 3)
-                break;
-
-            rowNum++;
-        }
-        if (!form.isIgnoreWarnings() && errors.size() == 0)
-            for (GWTCohort group : (List<GWTCohort>) def.getGroups())
-            {
-                if (cohortCounts.get(group.getName()) < group.getCount())
-                {
-                    errors.add("Warning: not enough subjects for cohort " + group.getName() + " expected " + group.getCount() + " found " + cohortCounts.get(group.getName()));
-                    form.setContainsWarnings(true);
-                }                    
-            }
-
-        if (errors.size() > 0 && !form.isIgnoreWarnings())
-        {
-            StringBuilder sb = new StringBuilder();
-            for (String error : errors)
-                sb.append(error).append("\n");
-
-            form.setMessage(sb.toString());
-        }
-        else
-        {
-            form.setWizardStep(WizardStep.SHOW_SAMPLES);
-        }
+        session.setAttribute(PARTICIPANT_KEY, participants);
     }
 
-    private void fixupParticipantCols(TabLoader loader) throws IOException
+    @SuppressWarnings("unchecked")
+    public static Map<String,Object>[] getSpecimens()
     {
-        TabLoader.ColumnDescriptor[] loaderCols = loader.getColumns();
-        Map<String,TabLoader.ColumnDescriptor> colMap = new CaseInsensitiveHashMap<TabLoader.ColumnDescriptor>();
-        for (TabLoader.ColumnDescriptor col : PARTICIPANT_COLS)
-            colMap.put(col.name, col);
-        colMap.put("ptid", colMap.get("ParticipantId"));
-        colMap.put("SubjectId", colMap.get(SimpleSpecimenImporter.PARTICIPANT_ID));
-
-        TabLoader.ColumnDescriptor[] newCols = new TabLoader.ColumnDescriptor[loaderCols.length];
-        for (int i = 0; i < loaderCols.length; i++)
-        {
-            if (colMap.containsKey(loaderCols[i].name))
-                newCols[i] = colMap.get(loaderCols[i].name);
-            else
-                newCols[i] = loaderCols[i];
-        }
-        loader.setColumns(newCols);
+        return (Map<String,Object>[])HttpView.currentContext().getSession().getAttribute(SPECIMEN_KEY);
     }
 
-    private void showParticipants(CreateRepositoryForm form) throws IOException, SQLException
+    private void setSpecimens(Map<String,Object>[] specimens)
     {
-        if (null != form.getParticipantTSV())
+        HttpSession session = HttpView.currentContext().getSession();
+        if (specimens == null)
         {
-            TabLoader tl = new TabLoader(form.getParticipantTSV(), true);
-            form.setParticipants((Map<String,Object>[]) tl.load());
-        }
-        if (form.isUploadParticipants())
-            uploadParticipants(form);
-    }
-
-    private void pickFolder(CreateRepositoryForm form)
-            throws ServletException, SQLException
-    {
-        Date beginDate = null;
-        if (null == StringUtils.trimToNull(form.getBeginDateStr()))
-        {
-            form.setMessage("Please enter a start date");
+            session.removeAttribute(SPECIMEN_KEY);
             return;
         }
-        try
-        {
-            beginDate = (Date) ConvertUtils.convert(form.getBeginDateStr(), Date.class);
-            form.setBeginDate(beginDate);
-        }
-        catch (ConversionException x)
-        {
-            form.setMessage("Please enter a valid start date.");
-            return;
-        }
-
-        String folderName = StringUtils.trimToNull(form.getFolderName());
-        if (null == folderName)
-            form.setMessage("Please set a folder name.");
-        else if (getContainer().hasChild(folderName) && null != StudyManager.getInstance().getStudy(getContainer().getChild(folderName)))
-            form.setMessage(getContainer().getName() + " already has a child named " + folderName + " containing a study.");
-        else
-        {
-            GWTStudyDefinition def = form.getStudyDefinition();
-            Map<String,Object>[] participantDataset = StudyDesignManager.get().generateParticipantDataset(getUser(), def);
-            form.setParticipants(participantDataset);
-            form.setWizardStep(WizardStep.SHOW_PARTICIPANTS);
-        }
+        session.setAttribute(SPECIMEN_KEY, specimens);
     }
-
 
     public static synchronized GWTStudyDefinition getTemplate(User u, Container c) throws Exception
     {
@@ -634,44 +735,18 @@ public class DesignerController extends BaseController
         return def;
     }
 
-    private StudyDesignInfo getTemplateInfo(User u, Container c) throws Exception
-    {
-        StudyDesignInfo info = StudyDesignManager.get().getStudyDesign(c.getProject(), TEMPLATE_NAME);
-        if (null == info)
-        {
-            getTemplate(u, c);
-            info = StudyDesignManager.get().getStudyDesign(c.getProject(), TEMPLATE_NAME);
-        }
-        return info;
-    }
-
-
-        @Jpf.Action
-    @RequiresPermission(ACL.PERM_READ)
-    protected Forward definitionService() throws Exception
-    {
-        StudyDefinitionServiceImpl service = new StudyDefinitionServiceImpl(getViewContext());
-        service.doPost(getRequest(), getResponse());
-        return null;
-    }
-
-
-    public static class CreateRepositoryForm extends FormData
+    public static class CreateRepositoryForm
     {
         private int wizardStepNumber;
         private int studyId;
         private String studyName;
         private String folderName;
         private String message;
-        private GWTStudyDefinition studyDefinition;
-        private Map<String,Object>[] participants;
-        private Map<String,Object>[] specimens;
         private boolean uploadParticipants;
         private boolean uploadSpecimens;
         private String participantTSV;
         private String specimenTSV;
-        private Container parentFolder;
-        private String beginDateStr;
+        private String parentFolderId;
         private Date beginDate;
         private boolean ignoreWarnings;
         private boolean containsWarnings;
@@ -727,26 +802,6 @@ public class DesignerController extends BaseController
             this.folderName = folderName;
         }
 
-        public GWTStudyDefinition getStudyDefinition()
-        {
-            return studyDefinition;
-        }
-
-        public void setStudyDefinition(GWTStudyDefinition studyDefinition)
-        {
-            this.studyDefinition = studyDefinition;
-        }
-
-        public Map<String, Object>[] getParticipants()
-        {
-            return participants;
-        }
-
-        public void setParticipants(Map<String, Object>[] participants)
-        {
-            this.participants = participants;
-        }
-
         public boolean isUploadParticipants()
         {
             return uploadParticipants;
@@ -765,16 +820,6 @@ public class DesignerController extends BaseController
         public void setParticipantTSV(String participantTSV)
         {
             this.participantTSV = participantTSV;
-        }
-
-        public Map<String, Object>[] getSpecimens()
-        {
-            return specimens;
-        }
-
-        public void setSpecimens(Map<String, Object>[] specimens)
-        {
-            this.specimens = specimens;
         }
 
         public boolean isUploadSpecimens()
@@ -807,24 +852,14 @@ public class DesignerController extends BaseController
             wizardStepNumber = wizardStep.getNumber();
         }
 
-        public Container getParentFolder()
+        public String getParentFolderId()
         {
-            return parentFolder;
+            return parentFolderId;
         }
 
-        public void setParentFolder(Container parentFolder)
+        public void setParentFolderId(String parentFolderId)
         {
-            this.parentFolder = parentFolder;
-        }
-
-        public String getBeginDateStr()
-        {
-            return beginDateStr;
-        }
-
-        public void setBeginDateStr(String beginDateStr)
-        {
-            this.beginDateStr = beginDateStr;
+            this.parentFolderId = parentFolderId;
         }
 
         public void setBeginDate(Date beginDate)
@@ -857,7 +892,8 @@ public class DesignerController extends BaseController
             this.containsWarnings = containsWarnings;
         }
     }
-    public static class StudyDesignForm extends FormData
+
+    public static class StudyDesignForm
     {
         private int studyId;
         private int revision;
@@ -902,14 +938,6 @@ public class DesignerController extends BaseController
         public void setFinishURL(String finishURL)
         {
             this.finishURL = finishURL;
-        }
-    }
-
-    public static class DeleteForm extends TableViewForm
-    {
-        public DeleteForm()
-        {
-            super(StudyDesignManager.get().getStudyDesignTable());
         }
     }
 }

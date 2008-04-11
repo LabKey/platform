@@ -6,7 +6,9 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.portal.ProjectUrls;
 import org.labkey.study.designer.StudyDesignManager;
+import org.labkey.study.controllers.designer.DesignerController;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -27,23 +29,20 @@ public class StudyDesignsWebPart extends GridView
         DataRegion dr = getDataRegion();
         dr.setSelectionKey(DataRegionSelection.getSelectionKey(table.getSchema().getName(), table.getName(), null, "StudyDesigns"));
         dr.addColumns(table.getColumns("StudyId", "Label", "Modified", "PublicRevision","Container", "Active"));
-        ActionURL helper = ctx.cloneActionURL();
-        helper.setPageFlow("Study-Designer");
-        helper.setAction("designer.view");
-        helper.deleteParameters();
         dr.getDisplayColumn("StudyId").setCaption("Id");
+
+        ActionURL helper = new ActionURL(DesignerController.DesignerAction.class, ctx.getContainer());
         dr.getDisplayColumn("Label").setURL(helper.toString() + "&studyId=${studyId}");
         dr.getDisplayColumn("PublicRevision").setCaption("Revision");
         dr.getDisplayColumn("Container").setVisible(false);
         dr.getDisplayColumn("Active").setVisible(false);
-        final ActionURL studyFolderUrl = ctx.cloneActionURL();
-        studyFolderUrl.setPageFlow("Project");
-        studyFolderUrl.setAction("start.view");
+        final ActionURL studyFolderUrl = PageFlowUtil.urlProvider(ProjectUrls.class).urlStart(ctx.getContainer());
         dr.addColumn(new DataColumn(table.getColumn("Active")) {
             @Override
             public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
             {
-                if ((Boolean) getValue(ctx))
+                boolean value = ((Boolean)getValue(ctx)).booleanValue();
+                if (value)
                 {
                     Container c = ContainerManager.getForId((String) ctx.get("Container"));
                     studyFolderUrl.setExtraPath(c.getPath());
@@ -73,7 +72,7 @@ public class StudyDesignsWebPart extends GridView
         {
             if (ctx.getContainer().hasPermission(ctx.getUser(), ACL.PERM_UPDATE))
             {
-                ActionURL adminURL = helper.clone().deleteParameters().setAction("begin.view");
+                ActionURL adminURL = new ActionURL(DesignerController.BeginAction.class, ctx.getContainer());
                 bb.add(new ActionButton("Manage Protocols", adminURL));
             }
         }
@@ -90,7 +89,7 @@ public class StudyDesignsWebPart extends GridView
             if (ctx.getContainer().getProject().hasPermission(ctx.getUser(), ACL.PERM_ADMIN))
             {
                 ActionURL templateHelper = helper.clone();
-                templateHelper.setAction("editTemplate.view");
+                templateHelper.setAction(DesignerController.EditTemplateAction.class);
                 bb.add(new ActionButton("Edit Template for Project", templateHelper));
             }
         }

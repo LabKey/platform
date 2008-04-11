@@ -1,5 +1,4 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.ACL" %>
@@ -9,23 +8,22 @@
 <%@ page import="org.labkey.study.controllers.designer.DesignerController" %>
 <%@ page import="org.labkey.study.designer.client.model.GWTCohort" %>
 <%@ page import="java.util.*" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
 <%
     DesignerController.CreateRepositoryForm form = (DesignerController.CreateRepositoryForm) HttpView.currentModel();
-    ActionURL cancelUrl = HttpView.currentContext().cloneActionURL();
-    cancelUrl.setAction("cancelWizard.view").replaceParameter("studyId", String.valueOf(form.getStudyId()));
-    String species = form.getStudyDefinition().getAnimalSpecies();
-    if (null == StringUtils.trimToNull(species))
-        species = "animal";
-    else
-        species = species.toLowerCase();
+    Container container = HttpView.currentContext().getContainer();
+    String species = DesignerController.getStudyDefinition(form, container).getAnimalSpecies();
+    ActionURL cancelUrl = new ActionURL(DesignerController.CancelWizardAction.class, container).addParameter("studyId", String.valueOf(form.getStudyId()));
     if (null != form.getMessage())
     {%>
         <span class="labkey-error"><%=PageFlowUtil.filter(form.getMessage(), true)%></span><br><%
     }%>
 Use this wizard to create a folder that will contain all of the assay results and information about each <%=h(species)%> (subject) within
 the vaccine study.
-<form action="createRepository.view" method="post">
+
+<form name="createRepositoryForm" action="createRepository.view" method="post">
     <input type="hidden" name="studyId" value="<%=form.getStudyId()%>">
+    <input type="hidden" name="studyName" value="<%=h(form.getStudyName())%>">
     <input type="hidden" name="wizardStepNumber" value="<%=form.getWizardStepNumber()%>">
 <%
     if (form.getWizardStep() == DesignerController.WizardStep.PICK_FOLDER)
@@ -34,7 +32,7 @@ the vaccine study.
     <table>
         <tr>
             <td class="ms-vh">Study Begin Date</td>
-            <td class="ms-vb"><input name="beginDateStr" value="<%=h(form.getBeginDateStr())%>"></td>
+            <td class="ms-vb"><input name="beginDate" value="<%=DateUtil.formatDate(form.getBeginDate())%>"></td>
         </tr>
         <tr>
         <td class="ms-vh">Folder Name</td>
@@ -43,7 +41,7 @@ the vaccine study.
         <tr>
             <td class="ms-vh">Parent Folder</td>
             <td class="ms-vb">
-                <select name="parentFolder">
+                <select name="parentFolderId">
             <%
                 Set<Container> writableContainers = ContainerManager.getContainerSet(ContainerManager.getContainerTree(), HttpView.currentContext().getUser(), ACL.PERM_ADMIN);
                 SortedSet<Container> sortedContainers = new TreeSet<Container>(new Comparator<Container>()
@@ -57,7 +55,7 @@ the vaccine study.
                 for (Container c : sortedContainers)
                 {
             %>
-                    <option value="<%=c.getId()%>" <%=c.equals(form.getParentFolder()) ? "selected" : ""%>><%=h(c.getPath())%></option>
+                    <option value="<%=c.getId()%>" <%=c.getId().equals(form.getParentFolderId()) ? "selected" : ""%>><%=h(c.getPath())%></option>
             <%  } %>
                 </select>
             </td>
@@ -67,21 +65,27 @@ the vaccine study.
 
 <%
 }
-else if (form.getWizardStep() == DesignerController.WizardStep.SHOW_SAMPLES)
+else
+{
+%>
+    <input type="hidden" name="beginDate" value="<%=form.getBeginDate()%>">
+    <input type="hidden" name="folderName" value="<%=h(form.getFolderName())%>">
+    <input type="hidden" name="parentFolderId" value="<%=form.getParentFolderId()%>">
+<%
+}
+if (form.getWizardStep() == DesignerController.WizardStep.SHOW_SAMPLES)
 {
 %>
 Each study needs specimen ids for the specimens included in the study. To upload the
     specimens, follow the instructions below.<br>
 <ol>
-    <li>Download the specimen spreadsheet <%
-    ActionURL xlUrl = HttpView.currentContext().cloneActionURL().setAction("getSpecimenExcel");
-%>
-<%=textLink("Download Excel Workbook", xlUrl)%><br>
+    <li>Download the specimen spreadsheet
+        [<a href="#downloadSpecimens" onclick="sendFormTo('getSpecimenExcel.view')">Download Excel Workbook</a>]<br>
 </li>
     <li>Save the spreadsheet to your computer</li>
     <li>Fill in the specimen spreadsheet. The following columns must be filled in
         <ul>
-            <li>Subject -- Unique identifier for the <%=species%></li>
+            <li>Subject -- Unique identifier for the <%=h(species)%></li>
             <li>Day -- The day number when the sample was drawn</li>
         </ul>
     </li>
@@ -101,7 +105,7 @@ Each study needs specimen ids for the specimens included in the study. To upload
 <input type="hidden" name="uploadSpecimens" value="true"> <br>
 <%
 }
-else if (form.getWizardStep() == DesignerController.WizardStep.UPLOAD_SAMPLES)
+if (form.getWizardStep() == DesignerController.WizardStep.UPLOAD_SAMPLES)
 {
 %>
 Paste a tab-delimited dataset copied from the workbook downloaded in the previous set. Copy the area
@@ -116,22 +120,29 @@ Paste a tab-delimited dataset copied from the workbook downloaded in the previou
     <input type="image" src="<%=PageFlowUtil.buttonSrc("Next")%>">&nbsp;&nbsp;<%=PageFlowUtil.buttonLink("Cancel", cancelUrl)%>
 <%
 }
-else if (form.getWizardStep() == DesignerController.WizardStep.SHOW_PARTICIPANTS)
+if (form.getWizardStep() != DesignerController.WizardStep.UPLOAD_SAMPLES &&
+        form.getWizardStep() != DesignerController.WizardStep.SHOW_SAMPLES)
 {
-    List<GWTCohort> groups = form.getStudyDefinition().getGroups();
+%>
+    <input type="hidden" name="specimenTSV" value="<%=h(form.getSpecimenTSV())%>">
+<%
+}
+if (form.getWizardStep() == DesignerController.WizardStep.SHOW_PARTICIPANTS)
+{
+    List<GWTCohort> groups = DesignerController.getStudyDefinition(form, container).getGroups();
     int nParticipants = 0;
     for (GWTCohort group : groups)
         nParticipants += group.getCount();
 %>
-    This study defines <%=form.getStudyDefinition().getGroups().size()%> cohorts with a total of
+    This study defines <%=DesignerController.getStudyDefinition(form, container).getGroups().size()%> cohorts with a total of
     <%=nParticipants%> subjects.
     <%
-        ActionURL xlUrl = HttpView.currentContext().cloneActionURL().setAction("getParticipantExcel");
+        ActionURL xlUrl = HttpView.currentContext().cloneActionURL().setAction(DesignerController.GetParticipantExcelAction.class);
     %>
     <br>
     To initiate this study, you will need to fill out an excel workbook with the subject id and cohort for each <%=h(species)%>.
     <ul>
-        <li><a href="<%=h(xlUrl)%>">Download the Excel Workbook with subjects</a></li>
+        <li><a href="#downloadSubjects" onclick="sendFormTo('getParticipantExcel.view')">Download the Excel Workbook with subjects</a></li>
         <li>Save the workbook on your computer</li>
         <li>Fill in identifiers for each subject in the study</li>
         <li>You can also add new columns to this list containing other information about each subject.</li>
@@ -156,7 +167,7 @@ else if (form.getWizardStep() == DesignerController.WizardStep.SHOW_PARTICIPANTS
 <input type="image" src="<%=PageFlowUtil.buttonSrc("Next")%>">&nbsp;&nbsp;<%=PageFlowUtil.buttonLink("Cancel", cancelUrl)%>
 <%
 }
-else if (form.getWizardStep() == DesignerController.WizardStep.UPLOAD_PARTICIPANTS)
+if (form.getWizardStep() == DesignerController.WizardStep.UPLOAD_PARTICIPANTS)
 {
 %>
     You can upload your own set of subject data by pasting spreadsheet data in the following text field. The first
@@ -172,30 +183,48 @@ else if (form.getWizardStep() == DesignerController.WizardStep.UPLOAD_PARTICIPAN
         <input type="image" src="<%=PageFlowUtil.buttonSrc("Ignore Warnings and Continue")%>" onclick="form.ignoreWarnings.value = 'true';form.submit();">
     <%}%>
 <input type="image" src="<%=PageFlowUtil.buttonSrc("Next")%>">&nbsp;&nbsp;<%=PageFlowUtil.buttonLink("Cancel", cancelUrl)%><%
-    }
-    else
-    {
-        List<GWTCohort> groups = form.getStudyDefinition().getGroups();
-        int nParticipants = 0;
-        for (GWTCohort group : groups)
-            nParticipants += group.getCount();
-        HashSet<Object> specimenPtids = new HashSet<Object>();
-    %>
-    You are about to create a study folder with the following settings:
-    <ul>
-       <li><b>Folder Name: </b><%=h(form.getFolderName())%> </li>
-        <li><b>Start Date: </b><%=h(form.getBeginDateStr())%></li>
-        <li><b>Subjects: </b><%=h(form.getParticipants().length)%> <%
-            if (nParticipants != form.getParticipants().length) { %>
-                <span class="labkey-error">Warning: Study design called for <%=nParticipants%> subjects.</span>
-            <%}
-        %></li>
-        <li><b>Specimens: </b><%=h(form.getSpecimens().length)%> </li> 
-    </ul>
-    <br>
-    <%=PageFlowUtil.buttonLink("Back", "javascript:window.history.back();")%> <input type="image" src="<%=PageFlowUtil.buttonSrc("Finish")%>">&nbsp;&nbsp;<%=PageFlowUtil.buttonLink("Cancel", cancelUrl)%>
-    <%
-    }
-    %>
+}
+if (form.getWizardStep() == DesignerController.WizardStep.CONFIRM)
+{
+    List<GWTCohort> groups = DesignerController.getStudyDefinition(form, container).getGroups();
+    int nParticipants = 0;
+    for (GWTCohort group : groups)
+        nParticipants += group.getCount();
+%>
+You are about to create a study folder with the following settings:
+<ul>
+   <li><b>Folder Name: </b><%=h(form.getFolderName())%> </li>
+    <li><b>Start Date: </b><%=h(form.getBeginDate())%></li>
+    <li><b>Subjects: </b><%=h(DesignerController.getParticipants().length)%> <%
+        if (nParticipants != DesignerController.getParticipants().length) { %>
+            <span class="labkey-error">Warning: Study design called for <%=nParticipants%> subjects.</span>
+        <%}
+    %></li>
+    <li><b>Specimens: </b><%=h(DesignerController.getSpecimens().length)%> </li>
+</ul>
+<br>
+<%=PageFlowUtil.buttonLink("Back", "javascript:window.history.back();")%> <input type="image" src="<%=PageFlowUtil.buttonSrc("Finish")%>">&nbsp;&nbsp;<%=PageFlowUtil.buttonLink("Cancel", cancelUrl)%>
+<%
+}
+
+if (form.getWizardStep() != DesignerController.WizardStep.UPLOAD_PARTICIPANTS &&
+        form.getWizardStep() != DesignerController.WizardStep.SHOW_PARTICIPANTS)
+{
+%>
+    <input type="hidden" name="participantTSV" value="<%=h(form.getParticipantTSV())%>">
+<%
+}
+%>
 
 </form>
+
+<!-- Allows us to override the form destination, so that other actions can receive the form -->
+<script type="text/javascript">
+    function sendFormTo(actionName)
+    {
+        oldActionName = document.forms.createRepositoryForm.action;
+        document.forms.createRepositoryForm.action=actionName;
+        document.forms.createRepositoryForm.submit();
+        document.forms.createRepositoryForm.action=oldActionName;
+    }
+</script>
