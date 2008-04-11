@@ -147,16 +147,6 @@ public class ActionURL extends URLHelper implements Cloneable
     }
 
     /**
-     * A convenience constructor for creating an ActionURL on the root container.
-     *
-     * @param actionClass the class of the Spring action
-     */
-    public ActionURL(Class<? extends Controller> actionClass)
-    {
-        this(actionClass, ContainerManager.getRoot());
-    }
-
-    /**
      * Old pageflow constructor
      */
     @Deprecated
