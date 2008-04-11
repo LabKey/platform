@@ -84,7 +84,7 @@ public class AdminControllerSpring extends SpringActionController
 
     public static ActionURL getShowAdminURL()
     {
-        return new ActionURL(ShowAdminAction.class);
+        return new ActionURL(ShowAdminAction.class, ContainerManager.getRoot());
     }
 
 
@@ -272,7 +272,7 @@ public class AdminControllerSpring extends SpringActionController
 
     private ActionURL getConsolidateScriptsURL(Double toVersion)
     {
-        ActionURL url = new ActionURL(ConsolidateScriptsAction.class);
+        ActionURL url = new ActionURL(ConsolidateScriptsAction.class, ContainerManager.getRoot());
 
         if (null != toVersion)
             url.addParameter("toVersion", toVersion.toString());
@@ -512,7 +512,7 @@ public class AdminControllerSpring extends SpringActionController
 
     private ActionURL getConsolidateSchemaURL(String moduleName, String schemaName, double toVersion)
     {
-        ActionURL url = new ActionURL(ConsolidateSchemaAction.class);
+        ActionURL url = new ActionURL(ConsolidateSchemaAction.class, ContainerManager.getRoot());
         url.addParameter("module", moduleName);
         url.addParameter("schema", schemaName);
         url.addParameter("toVersion", String.valueOf(toVersion));
@@ -1031,7 +1031,7 @@ public class AdminControllerSpring extends SpringActionController
     // TODO: Move to public interface
     public static ActionURL getCustomizeSiteURL()
     {
-        return new ActionURL(ShowCustomizeSiteAction.class);
+        return new ActionURL(ShowCustomizeSiteAction.class, ContainerManager.getRoot());
     }
 
 
@@ -2077,7 +2077,7 @@ public class AdminControllerSpring extends SpringActionController
 
     private static ActionURL getActionsURL()
     {
-        return new ActionURL(ActionsAction.class);
+        return new ActionURL(ActionsAction.class, ContainerManager.getRoot());
     }
 
 
@@ -2444,7 +2444,7 @@ public class AdminControllerSpring extends SpringActionController
 
     public static ActionURL getMemTrackerURL(boolean clearCaches, boolean gc)
     {
-        ActionURL url = new ActionURL(MemTrackerAction.class);
+        ActionURL url = new ActionURL(MemTrackerAction.class, ContainerManager.getRoot());
 
         if (clearCaches)
             url.addParameter(MemForm.Params.clearCaches, "1");

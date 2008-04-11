@@ -1,13 +1,11 @@
 package org.labkey.study.controllers;
 
-import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.log4j.Logger;
-import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.labkey.api.action.*;
 import org.labkey.api.audit.AuditLogEvent;
@@ -127,7 +125,7 @@ public class StudyController extends BaseStudyController
                     errors.reject("defineDatasetType", "You must supply an integer Dataset Id");
                 if (null != form.getDataSetId())
                 {
-                    DataSetDefinition dsd = StudyManager.getInstance().getDataSetDefinition(StudyManager.getInstance().getStudy(getContainer()), form.getDataSetId());
+                    DataSetDefinition dsd = StudyManager.getInstance().getDataSetDefinition(StudyManager.getInstance().getStudy(getContainer()), form.getDataSetId().intValue());
                     if (null != dsd)
                         errors.reject("defineDatasetType", "There is already a dataset with id " + form.getDataSetId());
                 }
@@ -633,13 +631,11 @@ public class StudyController extends BaseStudyController
             ViewContext context = getViewContext();
             String viewName = (String) context.get("Dataset.viewName");
             int datasetId = null == context.get(DataSetDefinition.DATASETKEY) ? 0 : Integer.parseInt((String) context.get(DataSetDefinition.DATASETKEY));
-            int reportDatasetId = datasetId;
 
             final String plotPrefix = ReportManager.getDatasetReportKeyPrefix(ReportManager.ALL_DATASETS);
             if (viewName.startsWith(plotPrefix))
             {
                 viewName = viewName.substring(plotPrefix.length());
-                reportDatasetId = ReportManager.ALL_DATASETS;
             }
 
             String previousParticipantURL = null;

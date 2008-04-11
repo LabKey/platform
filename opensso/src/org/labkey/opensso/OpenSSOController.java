@@ -10,6 +10,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.data.ContainerManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -31,7 +32,7 @@ public class OpenSSOController extends SpringActionController
 
     public static ActionURL getURL(Class<? extends Controller> actionClass, ActionURL returnURL)
     {
-        return new ActionURL(actionClass).addParameter("returnUrl", returnURL.getLocalURIString());
+        return new ActionURL(actionClass, ContainerManager.getRoot()).addParameter("returnUrl", returnURL.getLocalURIString());
     }
 
 

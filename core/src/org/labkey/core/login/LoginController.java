@@ -87,7 +87,7 @@ public class LoginController extends SpringActionController
 
     public static ActionURL getLoginURL()
     {
-        return new ActionURL(LoginAction.class);
+        return new ActionURL(LoginAction.class, ContainerManager.getRoot());
     }
 
     @RequiresPermission(ACL.PERM_NONE) @ActionNames("login, showLogin")
@@ -512,7 +512,7 @@ public class LoginController extends SpringActionController
 
     public static ActionURL getLogoutURL()
     {
-        return new ActionURL(LogoutAction.class);
+        return new ActionURL(LogoutAction.class, ContainerManager.getRoot());
     }
 
 
@@ -830,7 +830,7 @@ public class LoginController extends SpringActionController
 
     public static ActionURL getInitialUserURL()
     {
-        return new ActionURL(InitialUserAction.class);
+        return new ActionURL(InitialUserAction.class, ContainerManager.getRoot());
     }
 
 
@@ -1098,7 +1098,7 @@ public class LoginController extends SpringActionController
 
         public ActionURL getActionURL(AuthenticationProvider provider)
         {
-            ActionURL url = new ActionURL(getActionClass());
+            ActionURL url = new ActionURL(getActionClass(), ContainerManager.getRoot());
             url.addParameter("name", provider.getName());
             url.addParameter(ReturnUrlForm.Params.returnUrl, _returnURL.getLocalURIString());
             return url;
