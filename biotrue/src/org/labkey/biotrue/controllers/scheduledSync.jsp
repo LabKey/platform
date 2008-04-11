@@ -1,19 +1,19 @@
 <%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.biotrue.controllers.ServerForm" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.biotrue.controllers.BtController" %>
 <%@ page import="org.labkey.biotrue.datamodel.Server" %>
-<%@ page import="org.labkey.biotrue.objectmodel.BtServer" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <%
-    ServerForm form = (ServerForm) __form;
+    BtController.ServerUpdateForm form = (BtController.ServerUpdateForm) __form;
     Server server = form.getServer()._server;
-    String errors = PageFlowUtil.getStrutsError(request, "main");
 %>
-<span class="labkey-error"><%=errors%></span>
+<labkey:errors />
 
 
-<form action="updateScheduledSync.view" method="post">
+<form action="scheduledSync.view" method="post">
     <table class="normal">
         <input type="hidden" name="serverId" value="<%=server.getRowId()%>">
         <tr><td class=ms-vb align=center><div class="ms-searchform"><b>Scheduled Synchronization</b></div></td></tr>
@@ -30,7 +30,7 @@
             </select>
         <tr><td></td></tr>
         <tr><td>
-            <%=PageFlowUtil.buttonLink("Cancel", form.getContext().cloneActionURL().setAction("admin.view"))%>&nbsp;
+            <%=PageFlowUtil.buttonLink("Cancel", HttpView.currentContext().cloneActionURL().setAction(BtController.AdminAction.class))%>&nbsp;
             <input type="image" src="<%=PageFlowUtil.buttonSrc("Update")%>">&nbsp;
         </td></tr>
         <tr><td>&nbsp;</td></tr>

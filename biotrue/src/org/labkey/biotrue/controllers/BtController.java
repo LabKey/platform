@@ -390,23 +390,18 @@ public class BtController extends SpringActionController
     }
 
     @RequiresPermission(ACL.PERM_ADMIN)
-    public class ScheduledSyncAction extends SimpleViewAction<ServerForm>
+    public class ScheduledSyncAction extends FormViewAction<ServerUpdateForm>
     {
-        public ModelAndView getView(ServerForm form, BindException errors) throws Exception
+        public void validateCommand(ServerUpdateForm target, Errors errors)
         {
-            return FormPage.getView(BtController.class, form, "scheduledSync.jsp");
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public ModelAndView getView(ServerUpdateForm form, boolean reshow, BindException errors) throws Exception
         {
-            return root.addChild("Scheduled Synchronization Settings");
+            return FormPage.getView(BtController.class, form, errors, "scheduledSync.jsp");
         }
-    }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
-    public class UpdateScheduledSync extends SimpleViewAction<ServerUpdateForm>
-    {
-        public ModelAndView getView(ServerUpdateForm form, BindException errors) throws Exception
+        public boolean handlePost(ServerUpdateForm form, BindException errors) throws Exception
         {
             final Server server = BtManager.get().getServer(form.getServerId());
 
@@ -415,15 +410,18 @@ public class BtController extends SpringActionController
             BtManager.get().updateServer(getUser(), server);
             ScheduledTask.setTask(getUser(), server, null);
 
-            ActionURL url = getViewContext().cloneActionURL();
-            url.setAction(AdminAction.class);
+            return true;
+        }
 
-            return HttpView.redirect(url);
+        public ActionURL getSuccessURL(ServerUpdateForm serverForm)
+        {
+            ActionURL url = getViewContext().cloneActionURL();
+            return url.setAction(AdminAction.class);
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return null;
+            return root.addChild("Scheduled Synchronization Settings");
         }
     }
 
