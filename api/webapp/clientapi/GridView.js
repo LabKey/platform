@@ -658,7 +658,6 @@ LABKEY.GridView = function(config)
 
         if (!record.saveNeeded)
             return;
-        record.saveNeeded = false;
         /*
         * editEvent has the following properties:
         * grid - This grid
@@ -697,6 +696,7 @@ LABKEY.GridView = function(config)
 
         if (validRecord)
         {
+            record.saveNeeded = false;
             record.operationPendingSinceLastEdit = true;
             if (record.LABKEY$isNew) //!recordData[store.reader.jsonData.metaData.id])
             {

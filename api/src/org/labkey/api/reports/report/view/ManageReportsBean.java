@@ -4,6 +4,7 @@ import org.apache.commons.lang.StringUtils;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.springframework.validation.BindException;
@@ -54,7 +55,8 @@ public class ManageReportsBean
             beforeGetViews(_views);
             for (Report r : ReportService.get().getReports(_context.getUser(), _context.getContainer()))
             {
-                createReportRecord(r, _views);
+                if (!StringUtils.isEmpty(r.getDescriptor().getReportName()))
+                    createReportRecord(r, _views);
             }
             afterGetViews(_views);
 
@@ -80,10 +82,15 @@ public class ManageReportsBean
 
     protected void createReportRecord(Report r, Map<String, List<ReportRecord>> views)
     {
+        ActionURL displayURL = r.getRunReportURL(_context);
+        ActionURL editURL = r.getEditReportURL(_context);
+
         ReportRecordImpl rec = new ReportRecordImpl(r,
                 r.getDescriptor().getReportName(),
-                null,
+                displayURL != null ? displayURL.getLocalURIString() : null,
                 ChartUtil.getDeleteReportURL(_context, r, _context.getActionURL()).getLocalURIString());
+        if (editURL != null)
+            rec.setEditURL(editURL.getLocalURIString());
         getList(r.getTypeDescription(), views).add(rec);
     }
 

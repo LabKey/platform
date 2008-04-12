@@ -35,7 +35,7 @@ public class JarToCommandArgs extends ListToCommandArgs
         setSwitchFormat(new UnixSwitchFormat());
 
         addSwitch("client");
-        addSwitch("Xmx512M");   // TODO: Make settable
+        addSwitch("Xmx1024M");   // TODO: Make settable
         addSwitch("jar");
     }
 
