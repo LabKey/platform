@@ -26,7 +26,7 @@ public class AuditModule extends DefaultModule implements ContainerManager.Conta
 
     public AuditModule()
     {
-        super(NAME, 2.30, null, true);
+        super(NAME, 8.10, null, true);
         AuditLogService.registerProvider(new AuditLogImpl());
     }
 

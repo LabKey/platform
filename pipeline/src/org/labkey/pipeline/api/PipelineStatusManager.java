@@ -241,10 +241,8 @@ public class PipelineStatusManager
 
             PipelineProvider provider = PipelineService.get().getPipelineProvider(sf.getProvider());
             if (provider != null)
-            {
                 provider.preDeleteStatusFile(sf);
-                rowIdsDeleted.add(new Integer(rowId));
-            }
+            rowIdsDeleted.add(new Integer(rowId));
         }
 
         if (rowIdsDeleted.size() > 0)

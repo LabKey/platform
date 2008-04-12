@@ -8,8 +8,10 @@ import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
+import org.labkey.study.controllers.StudyController;
+import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.DataSetQueryView;
@@ -143,5 +145,17 @@ public class StudyQueryReport extends QueryReport
                         descriptor.getProperty(QueryParam.viewName.toString()));
             }
         };
+    }
+
+    public ActionURL getRunReportURL(ViewContext context)
+    {
+        String datasetId = getDescriptor().getProperty("showWithDataset");
+        if (datasetId != null)
+        {
+            return new ActionURL(StudyController.DatasetReportAction.class, context.getContainer()).
+                        addParameter(DataSetDefinition.DATASETKEY, datasetId).
+                        addParameter("Dataset.viewName", getDescriptor().getReportId());
+        }
+        return super.getRunReportURL(context);
     }
 }

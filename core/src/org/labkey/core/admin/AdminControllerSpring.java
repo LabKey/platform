@@ -320,7 +320,7 @@ public class AdminControllerSpring extends SpringActionController
                 }
             }
 
-            double toVersion = Math.ceil(maxToVersion * 10) / 10 - 0.01;
+            double toVersion = 0.0 != form.getToVersion() ?  form.getToVersion() : Math.ceil(maxToVersion * 10) / 10 - 0.01;
 
             for (ScriptConsolidator consolidator : consolidators)
             {

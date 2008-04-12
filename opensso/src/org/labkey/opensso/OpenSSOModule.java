@@ -17,7 +17,7 @@ public class OpenSSOModule extends DefaultModule
 
     public OpenSSOModule()
     {
-        super(NAME, 2.31, null, false);
+        super(NAME, 8.10, null, false);
         addController("opensso", OpenSSOController.class);
         AuthenticationManager.registerProvider(new OpenSSOProvider());
     }

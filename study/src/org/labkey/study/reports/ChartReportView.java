@@ -105,6 +105,18 @@ public class ChartReportView extends AbstractReportView
         return super.getRunReportView(context);
     }
 
+    public ActionURL getRunReportURL(ViewContext context)
+    {
+        String datasetId = getDescriptor().getProperty(DataSetDefinition.DATASETKEY);
+        if (datasetId != null)
+        {
+            return new ActionURL(ReportsController.DatasetReportAction.class, context.getContainer()).
+                        addParameter(DataSetDefinition.DATASETKEY, datasetId).
+                        addParameter("Dataset.viewName", getDescriptor().getReportId());
+        }
+        return super.getRunReportURL(context);
+    }
+
     public void deleteView(ViewContext context) throws SQLException
     {
     }

@@ -1812,7 +1812,7 @@ public class StudyController extends BaseStudyController
                         Container c = getContainer();
                         if (def == null)
                         {
-                            def = new DataSetDefinition(getStudy(), id, name, info.label, null, getDomainURI(c, def));
+                            def = new DataSetDefinition(getStudy(), id, name, info.label, null, getDomainURI(c, name, id));
                             def.setVisitDatePropertyName(info.visitDatePropertyName);
                             manager.createDataSetDefinition(getUser(), def);
                         }

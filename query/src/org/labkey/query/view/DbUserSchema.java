@@ -6,6 +6,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.query.persist.DbUserSchemaDef;
 import org.labkey.query.data.DbUserSchemaTable;
 import org.labkey.data.xml.TablesDocument;
@@ -16,15 +17,14 @@ import org.apache.log4j.Logger;
 import javax.servlet.ServletException;
 import java.util.Set;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.HashMap;
 
 public class DbUserSchema extends UserSchema
 {
     private Logger _log = Logger.getLogger(DbUserSchema.class);
-    private Map<String, SchemaTableInfo> _tables = new TreeMap();
+    private Map<String, SchemaTableInfo> _tables = new CaseInsensitiveHashMap<SchemaTableInfo>();
     private DbUserSchemaDef _def;
-    static Map<String, DbSchema> s_schemaMap = new HashMap();
+    static final Map<String, DbSchema> s_schemaMap = new HashMap<String, DbSchema>();
 
     public DbUserSchema(User user, Container container, DbUserSchemaDef def)
     {

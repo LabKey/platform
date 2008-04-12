@@ -13,10 +13,13 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ActionURL;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.Visit;
+import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.view.CrosstabView;
+import org.labkey.study.controllers.reports.ReportsController;
 
 import javax.servlet.http.HttpServletResponse;
 import java.sql.ResultSet;
@@ -110,5 +113,17 @@ public class StudyCrosstabReport extends AbstractReport
             return new VBox(ExceptionUtil.getErrorView(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, errorMessage, null, context.getRequest(), false));
         }
         return null;
+    }
+
+    public ActionURL getRunReportURL(ViewContext context)
+    {
+        String datasetId = getDescriptor().getProperty(DataSetDefinition.DATASETKEY);
+        if (datasetId != null)
+        {
+            return new ActionURL(ReportsController.DatasetReportAction.class, context.getContainer()).
+                        addParameter(DataSetDefinition.DATASETKEY, datasetId).
+                        addParameter("Dataset.viewName", getDescriptor().getReportId());
+        }
+        return super.getRunReportURL(context);
     }
 }

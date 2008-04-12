@@ -115,11 +115,16 @@
         for (ManageReportsBean.ReportRecord r : entry.getValue())
         {
 %>
-            <tr><td><%=h(r.getName())%></td>
+            <tr>
+<%          if (r.getDisplayURL() != null) { %>
+                <td><a href="<%=h(r.getDisplayURL())%>" <%=r.getTooltip() != null ? "title='" + h(r.getTooltip()) + "'" : ""%>><%=h(r.getName())%></a></td>
+<%          } else { %>
+                <td><%=h(r.getName())%></td>
+<%          } %>
                 <td>&nbsp;&nbsp;<%=r.getCreatedBy() != null ? r.getCreatedBy().getDisplayName(context) : ""%></td>
                 <td>&nbsp;&nbsp;<%=r.isShared() ? "yes" : "no"%></td>
 <%
-            if (context.getUser().equals(r.getCreatedBy()))
+            if (r.getReport().getDescriptor().canEdit(context))
             {
 %>
             <td>&nbsp;<%="[<a href=\"" + h(r.getDeleteURL()) + "\" onclick=\"return confirm('Permanently delete the selected view?');\">delete</a>]"%></td>
@@ -129,9 +134,11 @@
             } else {
 %>
             <td/><td/><td/>
-<%
-            }
-%>
+<%          }
+
+            if (r.getEditURL() != null) { %>
+                <td>&nbsp;<%="[<a href=\"" + r.getEditURL() + "\">edit</a>]"%></td>
+<%          } %>
             </tr>
 <%
         }
