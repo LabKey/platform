@@ -35,6 +35,7 @@ import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.common.util.Pair;
+import org.labkey.core.analytics.AnalyticsController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
@@ -105,6 +106,7 @@ public class AdminControllerSpring extends SpringActionController
             bean.addConfigurationLink("email customization", new ActionURL("admin", "customizeEmail.view", ""));
             bean.addConfigurationLink("project display order", new ActionURL("admin", "reorderFolders.view", ""));
             bean.addConfigurationLink("R view configuration", new ActionURL("reports", "configureRReport.view", ""));
+            bean.addConfigurationLink("analytics settings", new ActionURL(AnalyticsController.BeginAction.class, ContainerManager.getRoot()));
 
             // Management
             bean.addManagementLink("ms1", new ActionURL("ms1", "showAdmin.view", ""));

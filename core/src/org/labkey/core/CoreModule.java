@@ -32,6 +32,8 @@ import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.core.admin.AdminControllerSpring;
 import org.labkey.core.admin.sql.SqlScriptController;
+import org.labkey.core.analytics.AnalyticsController;
+import org.labkey.core.analytics.AnalyticsServiceImpl;
 import org.labkey.core.attachment.AttachmentServiceImpl;
 import org.labkey.core.data.DataController;
 import org.labkey.core.ftp.FtpController;
@@ -93,10 +95,12 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
         addController("core", CoreController.class);
         addController("test", TestController.class);
         addController("ftp", FtpController.class);
+        addController("analytics", AnalyticsController.class);
 
         AuthenticationManager.registerProvider(new DbLoginAuthenticationProvider());
         AuthenticationManager.registerProvider(new LdapAuthenticationProvider());
         AttachmentService.register(new AttachmentServiceImpl());
+        AnalyticsServiceImpl.register();
         FirstRequestHandler.addFirstRequestListener(this);
     }
 
