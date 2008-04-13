@@ -1,5 +1,6 @@
 <%@ page buffer="none" %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
+<%@ page import="org.labkey.api.analytics.AnalyticsService" %>
 <%@ page import="org.labkey.api.util.AppProps" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.*" %>
@@ -133,6 +134,7 @@ if (bean.showHeader())
     }
 %>
     <script type="text/javascript">LABKEY.loadScripts();</script>
+    <%=AnalyticsService.getTrackingScript()%>
     <!--<%= request.getHeader("User-Agent") %>--><%
 
     if (null != request.getAttribute(ViewServlet.REQUEST_STARTTIME))
