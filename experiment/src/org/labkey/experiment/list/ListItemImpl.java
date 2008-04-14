@@ -25,6 +25,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.HttpView;
 import org.labkey.experiment.controllers.list.ListItemAttachmentParent;
+import org.labkey.experiment.controllers.list.ListController;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -355,8 +356,9 @@ public class ListItemImpl implements ListItem
                     if (prop != null)
                     {
                         String value;
-                        if (prop.getLookup() == null)
+//                        if (prop.getLookup() == null)
                             value = ObjectUtils.toString(entry.getValue(), "");
+/*
                         else
                         {
                             if (rowMap == null)
@@ -375,6 +377,7 @@ public class ListItemImpl implements ListItem
                             }
                             value = getFieldValue(user, prop, rowMap);
                         }
+*/
                         recordChangedMap.put(prop.getName(), value);
                     }
                 }
