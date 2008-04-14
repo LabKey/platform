@@ -576,6 +576,17 @@ public class DateUtil
         {
             ;
         }
+
+        try
+        {
+            return parseDateTime(s, "ddMMMyy").getTime();
+        }
+        catch (Exception x)
+        {
+            ;
+        }
+
+
         throw new ConversionException(s);
     }
 
@@ -875,6 +886,11 @@ Parse:
             assertEquals(datetimeExpected, DateUtil.parseDateTime("2/3/2001 4:05:06.000"));
 
             assertEquals(dateExpected, DateUtil.parseDateTime("2/3/01"));
+            assertEquals(dateExpected, DateUtil.parseDateTime("3-Feb-01"));
+            assertEquals(dateExpected, DateUtil.parseDateTime("3Feb01"));
+            assertEquals(dateExpected, DateUtil.parseDateTime("3Feb2001"));
+            assertEquals(dateExpected, DateUtil.parseDateTime("03Feb01"));
+            assertEquals(dateExpected, DateUtil.parseDateTime("03Feb2001"));
             assertEquals(dateExpected, DateUtil.parseDateTime("3 Feb 01"));
             assertEquals(dateExpected, DateUtil.parseDateTime("3 Feb 2001"));
             assertEquals(dateExpected, DateUtil.parseDateTime("Feb 03 2001"));

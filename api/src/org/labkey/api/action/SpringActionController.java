@@ -272,14 +272,22 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 HttpView.throwNotFound();
                 return null;
             }
-            checkActionPermissions(action);
 
             PageConfig pageConfig = defaultPageConfig();
-            
+
             if (action instanceof HasViewContext)
                 ((HasViewContext)action).setViewContext(context);
             if (action instanceof HasPageConfig)
                 ((HasPageConfig)action).setPageConfig(pageConfig);
+
+            if (action instanceof PermissionCheckable)
+            {
+                ((PermissionCheckable)action).checkPermissions();
+            }
+            else
+            {
+                BaseViewAction.checkActionPermissions(action, context);
+            }
 
             beforeAction(action);
             ModelAndView mv = action.handleRequest(request, response);
@@ -314,44 +322,6 @@ public abstract class SpringActionController implements Controller, HasViewConte
         }
         return null;
     }
-
-
-    private void checkActionPermissions(Controller action)
-            throws ServletException
-    {
-        ViewContext context = getViewContext();
-        Container c = context.getContainer();
-        User user = context.getUser();
-
-        RequiresPermission requiresPermission = action.getClass().getAnnotation(RequiresPermission.class);
-        if (null != requiresPermission)
-        {
-            if (null == c)
-            {
-                HttpView.throwNotFound();
-                return;
-            }
-            if (!c.hasPermission(user, requiresPermission.value()))
-            {
-                HttpView.throwUnauthorized();
-                return;
-            }
-        }
-
-        RequiresSiteAdmin requiresSiteAdmin = action.getClass().getAnnotation(RequiresSiteAdmin.class);
-        if (null != requiresSiteAdmin && !user.isAdministrator())
-            HttpView.throwUnauthorized();
-
-        RequiresLogin requiresLogin = action.getClass().getAnnotation(RequiresLogin.class);
-        if (null != requiresLogin && user.isGuest())
-            HttpView.throwUnauthorized();
-
-        if (null == requiresPermission && null == requiresSiteAdmin && null == requiresLogin)
-            throw new IllegalStateException("@RequiresPermission, @RequiresSiteAdmin, or @RequiresLogin annotation is required");
-        if (!context.hasAgreedToTermsOfUse())
-            throw new TermsOfUseException(context.getActionURL());
-    }
-
 
     protected void renderInTemplate(ViewContext context, Controller action, PageConfig page, ModelAndView mv)
             throws Exception

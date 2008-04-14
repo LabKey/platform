@@ -6,30 +6,47 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.TermsOfUseException;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.util.AppProps;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.ServletException;
 
 /**
  * User: jeckels
  * Date: Jan 18, 2008
  */
-@RequiresPermission(ACL.PERM_NONE)
 public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportForm, ViewType extends QueryView> extends SimpleViewAction<Form>
 {
     protected QueryViewAction(Class<? extends Form> formClass)
     {
         super(formClass);
-        RequiresPermission permissionAnnotation = getClass().getAnnotation(RequiresPermission.class);
-        if (permissionAnnotation == null || permissionAnnotation.value() != ACL.PERM_NONE)
+    }
+
+    public void checkPermissions() throws UnauthorizedException
+    {
+        if ("excelWebQuery".equals(getViewContext().getRequest().getParameter("exportType")))
         {
-            throw new IllegalArgumentException("QueryViewAction subclasses must have a RequiresPermission annotation with ACL.PERM_NONE, " +
-                    "as the ExcelWebQuery implementation forces a permission check inside the action instead of as an annotation." +
-                    " The QueryViewAction superclass handles this check for you.");
+            try
+            {
+                super.checkPermissions();
+            }
+            catch (TermsOfUseException e)
+            {
+                // We don't enforce terms of use for access through ExcelWebQuery 
+            }
+            catch (UnauthorizedException e)
+            {
+                if (!getViewContext().getUser().isGuest())
+                    HttpView.throwUnauthorized();
+                throw new UnauthorizedException(true);
+            }
         }
+        super.checkPermissions();
     }
 
     public ModelAndView getView(Form form, BindException errors) throws Exception
@@ -48,14 +65,6 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
         }
         else if ("excelWebQuery".equals(form.getExportType()))
         {
-            if (!getViewContext().getContainer().hasPermission(getViewContext().getUser(), ACL.PERM_READ))
-            {
-                if (!getViewContext().getUser().isGuest())
-                    HttpView.throwUnauthorized();
-                getViewContext().getResponse().setHeader("WWW-Authenticate", "Basic realm=\"" + AppProps.getInstance().getSystemDescription() + "\"");
-                getViewContext().getResponse().setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                return null;
-            }
             getViewContext().requiresPermission(ACL.PERM_READ);
             createInitializedQueryView(form, errors, true, form.getExportRegion()).exportToExcelWebQuery(getViewContext().getResponse());
             return null;

@@ -650,7 +650,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     }
 
     public static Forward throwUnauthorized()
-            throws ServletException
+            throws UnauthorizedException
     {
         throw new UnauthorizedException(null, getContextURL());
     }

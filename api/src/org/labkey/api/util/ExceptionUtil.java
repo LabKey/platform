@@ -542,6 +542,8 @@ public class ExceptionUtil
             }
         }
 
+        boolean resetResponse = true;
+
         HttpView errorView;
 
         // check for unauthorized guest, go to login
@@ -552,20 +554,31 @@ public class ExceptionUtil
             //If user has not logged in or agreed to terms, not really unauthorized yet...
             if ((user.isGuest() || ex instanceof TermsOfUseException) && request.getMethod().equalsIgnoreCase("GET"))
             {
-                String currentUrl = ((UnauthorizedException) ex).getURL();
-
-                ActionURL redirect;
-                if (ex instanceof TermsOfUseException)
+                if (((UnauthorizedException)ex).isRequestBasicAuth())
                 {
-                    redirect = new ActionURL("login", "agreeToTerms", "/");
-
-                    if (null != currentUrl)
-                        redirect.addParameter("URI", currentUrl);
+                    response.setHeader("WWW-Authenticate", "Basic realm=\"" + AppProps.getInstance().getSystemDescription() + "\"");
+                    responseStatus = HttpServletResponse.SC_UNAUTHORIZED;
+                    message = "You must log in to view this content.";
+                    resetResponse = false;
+                    ex = null;
                 }
                 else
-                    redirect = AuthenticationManager.getLoginURL(currentUrl);
+                {
+                    String currentUrl = ((UnauthorizedException) ex).getURL();
 
-                return new ViewForward(redirect);
+                    ActionURL redirect;
+                    if (ex instanceof TermsOfUseException)
+                    {
+                        redirect = new ActionURL("login", "agreeToTerms", "/");
+
+                        if (null != currentUrl)
+                            redirect.addParameter("URI", currentUrl);
+                    }
+                    else
+                        redirect = AuthenticationManager.getLoginURL(currentUrl);
+
+                    return new ViewForward(redirect);
+                }
             }
         }
 
@@ -640,7 +653,10 @@ public class ExceptionUtil
         {
             try
             {
-                response.reset();
+                if (resetResponse)
+                {
+                    response.reset();
+                }
                 response.setContentType("text/html");
                 response.setStatus(responseStatus);
                 errorView.render(request, response);

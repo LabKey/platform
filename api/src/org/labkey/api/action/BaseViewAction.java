@@ -9,11 +9,19 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.TableViewForm;
+import org.labkey.api.data.Container;
 import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.TermsOfUseException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.security.User;
+import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.RequiresLogin;
 import org.springframework.beans.*;
 import org.springframework.core.MethodParameter;
 import org.springframework.validation.*;
@@ -25,6 +33,7 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.ServletException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
@@ -38,7 +47,7 @@ import java.util.Map;
  * Date: May 16, 2007
  * Time: 1:48:01 PM
  */
-public abstract class BaseViewAction<FORM> extends BaseCommandController implements Controller, HasViewContext, HasPageConfig, Validator
+public abstract class BaseViewAction<FORM> extends BaseCommandController implements Controller, HasViewContext, HasPageConfig, Validator, PermissionCheckable
 {
     ViewContext _context = null;
     PageConfig _pageConfig = null;
@@ -503,4 +512,47 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
             return convertIfNecessary(value, requiredType);
         }
     }
+
+    public void checkPermissions() throws TermsOfUseException, UnauthorizedException
+    {
+        checkActionPermissions(this, getViewContext());
+    }
+
+    public static void checkActionPermissions(Controller action, ViewContext context)
+            throws TermsOfUseException, UnauthorizedException 
+    {
+        Container c = context.getContainer();
+        User user = context.getUser();
+
+        RequiresPermission requiresPermission = action.getClass().getAnnotation(RequiresPermission.class);
+        if (null != requiresPermission)
+        {
+            if (null == c)
+            {
+                HttpView.throwNotFound();
+                return;
+            }
+            if (!c.hasPermission(user, requiresPermission.value()))
+            {
+                HttpView.throwUnauthorized();
+                return;
+            }
+        }
+
+        RequiresSiteAdmin requiresSiteAdmin = action.getClass().getAnnotation(RequiresSiteAdmin.class);
+        if (null != requiresSiteAdmin && !user.isAdministrator())
+            HttpView.throwUnauthorized();
+
+        RequiresLogin requiresLogin = action.getClass().getAnnotation(RequiresLogin.class);
+        if (null != requiresLogin && user.isGuest())
+            HttpView.throwUnauthorized();
+
+        if (null == requiresPermission && null == requiresSiteAdmin && null == requiresLogin)
+            throw new IllegalStateException("@RequiresPermission, @RequiresSiteAdmin, or @RequiresLogin annotation is required");
+        if (!context.hasAgreedToTermsOfUse())
+            throw new TermsOfUseException(context.getActionURL());
+    }
+
+
+
 }

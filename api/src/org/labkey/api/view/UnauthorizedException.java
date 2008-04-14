@@ -23,6 +23,13 @@ import javax.servlet.http.HttpServletResponse;
 public class UnauthorizedException extends ServletException
 {
     String _url = null;
+    private boolean _requestBasicAuth;
+
+    public UnauthorizedException(boolean requestBasicAuth)
+    {
+        this();
+        setRequestBasicAuth(requestBasicAuth);
+    }
 
     public UnauthorizedException()
     {
@@ -38,6 +45,16 @@ public class UnauthorizedException extends ServletException
     public UnauthorizedException(String message)
     {
         this(null, message);
+    }
+
+    public void setRequestBasicAuth(boolean requestBasicAuth)
+    {
+        _requestBasicAuth = requestBasicAuth;
+    }
+
+    public boolean isRequestBasicAuth()
+    {
+        return _requestBasicAuth;
     }
 
     public String getURL()
