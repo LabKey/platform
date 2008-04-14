@@ -23,12 +23,14 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.security.User;
 
+import java.io.Serializable;
+
 /**
  * User: migra
  * Date: Aug 15, 2005
  * Time: 2:41:47 PM
  */
-public class PropertyDescriptor implements Cloneable
+public class PropertyDescriptor implements Serializable, Cloneable
 {
     private int propertyId;
     private String propertyURI;
@@ -282,12 +284,12 @@ public class PropertyDescriptor implements Cloneable
         this.required = required;
     }
 
-    public PropertyDescriptor clone()
+    @Override
+    public final PropertyDescriptor clone()
     {
         try
         {
-            PropertyDescriptor clone = (PropertyDescriptor) super.clone();
-            return clone;
+            return (PropertyDescriptor) super.clone();
         }
         catch (CloneNotSupportedException cnse)
         {

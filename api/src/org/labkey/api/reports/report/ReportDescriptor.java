@@ -115,13 +115,8 @@ public class ReportDescriptor extends Entity
         return getProperty(Prop.reportDescription);
     }
 
-    /**
-     * @deprecated use the variant which takes a ReportProperty
-     */
     public void setProperty(String key, String value){_props.put(key, value);}
-    /**
-     * @deprecated use the variant which takes a ReportProperty
-     */
+
     public String getProperty(String key){return (String)_props.get(key);}
 
     public void setProperty(ReportProperty prop, String value)
