@@ -1,12 +1,14 @@
 package org.labkey.experiment.list;
 
 import org.apache.commons.lang.ObjectUtils;
+import org.apache.log4j.Logger;
+import org.labkey.api.announcements.DiscussionService;
+import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
@@ -18,18 +20,18 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.attachments.AttachmentParent;
-import org.labkey.api.attachments.AttachmentFile;
-import org.labkey.api.announcements.DiscussionService;
+import org.labkey.api.view.DetailsView;
+import org.labkey.api.view.HttpView;
 import org.labkey.experiment.controllers.list.ListItemAttachmentParent;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class ListItemImpl implements ListItem
 {
@@ -40,6 +42,7 @@ public class ListItemImpl implements ListItem
     Map<String, Object> _properties;
     Map<String, Object> _oldProperties;
     private static final Object _autoIncrementLock = new Object();  // Consider: Synchronize each list separately
+    private static final Logger _log = Logger.getLogger(ListItemImpl.class);
 
     public ListItemImpl(ListDefinitionImpl list, ListItm item)
     {
@@ -94,7 +97,7 @@ public class ListItemImpl implements ListItem
                 fTransaction = true;
             }
             ensureProperties();
-            addAuditEvent(user, "An existing list record was deleted", _itm.getEntityId(), _formatItemRecord(_properties, null), null);
+            addAuditEvent(user, "An existing list record was deleted", _itm.getEntityId(), _formatItemRecord(user, _properties, null, _itm.getKey()), null);
 
             SimpleFilter filter = new SimpleFilter("Key", _itm.getKey());
             filter.addCondition("ListId", _itm.getListId());
@@ -200,17 +203,15 @@ public class ListItemImpl implements ListItem
             String oldRecord = null;
             String newRecord = null;
             boolean isNew = _new;
+            Map<String, DomainProperty> dps = new HashMap<String, DomainProperty>();
+            for (DomainProperty dp : _list.getDomain().getProperties())
+            {
+                dps.put(dp.getPropertyURI(), dp);
+            }
 
+            oldRecord = _formatItemRecord(user, _oldProperties, dps, (_itmOld != null ? _itmOld.getKey() : null));
             if (_oldProperties != null)
             {
-                Map<String, DomainProperty> dps = new HashMap<String, DomainProperty>();
-                for (DomainProperty dp : _list.getDomain().getProperties())
-                {
-                    dps.put(dp.getPropertyURI(), dp);
-                }
-                oldRecord = _formatItemRecord(_oldProperties, dps);
-                newRecord = _formatItemRecord(_properties, dps);
-
                 AttachmentParent parent = new ListItemAttachmentParent(this, _list.getContainer());
                 List<AttachmentFile> newAttachments = new ArrayList<AttachmentFile>();
                 OntologyObject obj = ensureOntologyObject();
@@ -273,7 +274,7 @@ public class ListItemImpl implements ListItem
                 ExperimentService.get().commitTransaction();
                 fTransaction = false;
             }
-
+            newRecord = _formatItemRecord(user, _properties, dps, _itm.getKey());
             addAuditEvent(user, isNew ? "A new list record was inserted" : "An existing list record was modified",
                     _itm.getEntityId(), oldRecord, newRecord);
         }
@@ -332,9 +333,10 @@ public class ListItemImpl implements ListItem
             AuditLogService.get().addEvent(event);
     }
 
-    private String _formatItemRecord(Map<String, Object> props, Map<String, DomainProperty> dps)
+    private String _formatItemRecord(User user, Map<String, Object> props, Map<String, DomainProperty> dps, Object keyValue)
     {
         try {
+            Map<String, String> recordChangedMap = new HashMap<String, String>();
             if (props != null)
             {
                 if (dps == null)
@@ -345,22 +347,63 @@ public class ListItemImpl implements ListItem
                         dps.put(dp.getPropertyURI(), dp);
                     }
                 }
-                String strAnd = "";
-                StringBuffer sb = new StringBuffer();
-                Map<String, String> recordChangedMap = new HashMap<String, String>();
+                Map<String, Object> rowMap = null;
+
                 for (Map.Entry<String, Object> entry : props.entrySet())
                 {
-                    sb.append(strAnd);
                     DomainProperty prop = dps.get(entry.getKey());
                     if (prop != null)
                     {
-                        recordChangedMap.put(prop.getName(), ObjectUtils.toString(entry.getValue(), ""));
+                        String value;
+                        if (prop.getLookup() == null)
+                            value = ObjectUtils.toString(entry.getValue(), "");
+                        else
+                        {
+                            if (rowMap == null)
+                            {
+                                TableInfo table = _list.getTable(user, null);
+                                DetailsView details = new DetailsView(new TableViewForm(table));
+                                RenderContext ctx = details.getRenderContext();
+
+                                ctx.setMode(DataRegion.MODE_DETAILS);
+                                ctx.setBaseFilter(new PkFilter(table, _itm.getKey(), true));
+
+                                ResultSet rs = Table.selectForDisplay(table, table.getColumns(), ctx.getBaseFilter(), ctx.getBaseSort(), 0, 0);
+                                rs.next();
+                                rowMap = ResultSetUtil.mapRow(rs, rowMap);
+                                rs.close();
+                            }
+                            value = getFieldValue(user, prop, rowMap);
+                        }
+                        recordChangedMap.put(prop.getName(), value);
                     }
                 }
-                return ListAuditViewFactory.encodeForDataMap(recordChangedMap, true);
             }
+            // audit key changes if they are not auto-increment
+            if (keyValue != null && !_list.getKeyType().equals(ListDefinition.KeyType.AutoIncrementInteger))
+                recordChangedMap.put(_list.getKeyName(), ObjectUtils.toString(keyValue, ""));
+
+            if (!recordChangedMap.isEmpty())
+                return ListAuditViewFactory.encodeForDataMap(recordChangedMap, true);
         }
-        catch (Exception e){}
+        catch (Exception e)
+        {
+            _log.error("Unable to format the audit change record", e);
+        }
+        return "";
+    }
+
+    String getFieldValue(User user, DomainProperty property, Map<String, Object> rowMap)
+    {
+        TableInfo table = _list.getTable(user, null);
+        RenderContext ctx = new RenderContext(HttpView.currentContext());
+
+        DataColumn[] info = table.getDisplayColumns(property.getName());
+        if (info.length == 1)
+        {
+            ctx.setRow(rowMap);
+            return ObjectUtils.toString(info[0].getDisplayValue(ctx), "");
+        }
         return "";
     }
 

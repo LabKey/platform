@@ -33,10 +33,7 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.ServletException;
 import java.io.File;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -729,12 +726,22 @@ public class ReportsController extends SpringActionController
             String sessionKey = (String) getViewContext().get("sessionKey");
             String deleteFile = (String) getViewContext().get("deleteFile");
             String attachment = (String) getViewContext().get("attachment");
+            String cacheFile = (String) getViewContext().get("cacheFile");
             if (sessionKey != null)
             {
                 File file = (File) getViewContext().getRequest().getSession().getAttribute(sessionKey);
                 if (file != null && file.exists())
                 {
-                    PageFlowUtil.streamFile(getViewContext().getResponse(), file, BooleanUtils.toBoolean(attachment));
+                    Map<String, String> responseHeaders = Collections.emptyMap();
+                    if (BooleanUtils.toBoolean(cacheFile))
+                    {
+                        responseHeaders = new HashMap<String, String>();
+
+                        responseHeaders.put("Pragma", "private");
+                        responseHeaders.put("Cache-Control", "private");
+                        responseHeaders.put("Cache-Control", "max-age=3600");
+                    }
+                    PageFlowUtil.streamFile(getViewContext().getResponse(), responseHeaders, file, BooleanUtils.toBoolean(attachment));
                     if (BooleanUtils.toBoolean(deleteFile))
                         file.delete();
                     return null;
