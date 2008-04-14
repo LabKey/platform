@@ -732,7 +732,7 @@ public class RReport extends AbstractReport implements AttachmentParent, Report.
                         out.write("<img border=0 id=\"resultImage\" src=\"");
 
                         ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlStreamFile(getViewContext().getContainer());
-                        url.addParameters(PageFlowUtil.map("sessionKey", key, "deleteFile", Boolean.toString(_deleteTempFiles)));
+                        url.addParameters(PageFlowUtil.map("sessionKey", key, "deleteFile", Boolean.toString(_deleteTempFiles), "cacheFile", "true"));
 
                         out.write(url.getLocalURIString());
                         out.write("\">");

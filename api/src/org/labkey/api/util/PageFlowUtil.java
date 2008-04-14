@@ -818,7 +818,7 @@ public class PageFlowUtil
         return contentType;
     }
 
-    private static void prepareResponseForFile(HttpServletResponse response, String filename, long countOfBytes, boolean asAttachment)
+    private static void prepareResponseForFile(HttpServletResponse response, Map<String, String> responseHeaders, String filename, long countOfBytes, boolean asAttachment)
     {
         String contentType = getContentTypeFor(filename);
         response.reset();
@@ -829,17 +829,23 @@ public class PageFlowUtil
         {
             response.setHeader("Content-Disposition", "attachment; filename=" + filename);
         }
+        for (Map.Entry<String, String> entry : responseHeaders.entrySet())
+            response.setHeader(entry.getKey(), entry.getValue());
     }
 
+    public static void streamFile(HttpServletResponse response, File file, boolean asAttachment) throws IOException
+    {
+        streamFile(response, Collections.<String, String>emptyMap(), file, asAttachment);
+    }
 
     public static void streamFile(HttpServletResponse response, String fileName, boolean asAttachment) throws IOException
     {
-        streamFile(response, new File(fileName), asAttachment);
+        streamFile(response, Collections.<String, String>emptyMap(), new File(fileName), asAttachment);
     }
 
 
     // Read the file and stream it to the browser
-    public static void streamFile(HttpServletResponse response, File file, boolean asAttachment) throws IOException
+    public static void streamFile(HttpServletResponse response, Map<String, String> responseHeaders, File file, boolean asAttachment) throws IOException
     {
         // TODO: setHeader(modified)
         long length = file.length();
@@ -850,7 +856,7 @@ public class PageFlowUtil
         {
             s = new FileInputStream(file);
 
-            prepareResponseForFile(response, file.getName(), length, asAttachment);
+            prepareResponseForFile(response, responseHeaders, file.getName(), length, asAttachment);
             ServletOutputStream out = response.getOutputStream();
 
             byte[] buf = new byte[4096];
@@ -877,10 +883,9 @@ public class PageFlowUtil
 
     public static void streamFileBytes(HttpServletResponse response, String filename, byte[] bytes, boolean asAttachment) throws IOException
     {
-        prepareResponseForFile(response, filename, bytes.length, asAttachment);
+        prepareResponseForFile(response, Collections.<String, String>emptyMap(), filename, bytes.length, asAttachment);
         response.getOutputStream().write(bytes);
     }
-
 
     // Fetch the contents of a text file, and return it in a String.
     // TODO: Use getStreamContentsAsStream()
