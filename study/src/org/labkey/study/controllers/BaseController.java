@@ -30,6 +30,15 @@ public class BaseController extends ViewController
         return first.equals(second);
     }
 
+    protected boolean integersEqual(Integer first, Integer second)
+    {
+        if (first == null && second == null)
+            return true;
+        if (first == null)
+            return false;
+        return first.equals(second);
+    }
+
     protected int[] toIntArray(List<String> intStrings)
     {
         if (intStrings == null)

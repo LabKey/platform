@@ -18,7 +18,6 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.StudySchema" %>
-<%@ page import="org.labkey.study.controllers.OldStudyController" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.*" %>
 <%@ page import="org.labkey.study.reports.StudyChartQueryReport" %>
@@ -30,8 +29,8 @@
     ViewContext context = HttpView.currentContext();
     UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), "study");
     String contextPath = request.getContextPath();
-    JspView<OldStudyController.ParticipantForm> me = (org.labkey.api.view.JspView<OldStudyController.ParticipantForm>) HttpView.currentView();
-    OldStudyController.ParticipantForm bean = me.getModelBean();
+    JspView<StudyController.ParticipantForm> me = (org.labkey.api.view.JspView<StudyController.ParticipantForm>) HttpView.currentView();
+    StudyController.ParticipantForm bean = me.getModelBean();
 
     ChartDesignerBean chartBean = new ChartDesignerBean();
 
@@ -43,8 +42,8 @@
     ActionURL url = ChartUtil.getChartDesignerURL(context, chartBean);
     url.setPageFlow("Study-Reports");
 
-    Study study = bean.getStudy();
     StudyManager manager = StudyManager.getInstance();
+    Study study = manager.getStudy(context.getContainer());
     StudyManager.AllParticipantData all = manager.getAllParticpantData(study, bean.getParticipantId());
 
     Visit[] allVisits = manager.getVisits(study);
@@ -93,7 +92,7 @@
 
     User user = (User) request.getUserPrincipal();
     DataSetDefinition[] datasets = manager.getDataSetDefinitions(study);
-    Map<Integer, String> expandedMap = bean.getExpandedState();
+    Map<Integer, String> expandedMap = StudyController.getExpandedState(context, bean.getDatasetId());
     boolean updateAccess = study.getContainer().hasPermission(user, ACL.PERM_UPDATE);
 
     String shadeColor = "#EEEEEE";

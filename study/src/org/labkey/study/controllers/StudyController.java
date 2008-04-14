@@ -1,7 +1,7 @@
 package org.labkey.study.controllers;
 
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang.time.FastDateFormat;
@@ -18,18 +18,24 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.view.ChartDesignerBean;
 import org.labkey.api.reports.report.view.ChartUtil;
 import org.labkey.api.reports.report.view.RReportBean;
-import org.labkey.api.reports.report.RReport;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.assay.AssayPublishService;
-import org.labkey.api.util.*;
+import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.common.tools.TabLoader;
@@ -37,7 +43,6 @@ import org.labkey.common.util.Pair;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
-import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.reports.ReportsController;
@@ -48,9 +53,10 @@ import org.labkey.study.query.PublishedRecordQueryView;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.reports.ChartReportView;
 import org.labkey.study.reports.ReportManager;
-import org.labkey.study.reports.StudyRReport;
 import org.labkey.study.reports.StudyChartQueryReport;
+import org.labkey.study.reports.StudyRReport;
 import org.labkey.study.view.DataHeader;
+import org.labkey.study.visitmanager.VisitManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -59,6 +65,7 @@ import org.springframework.web.servlet.mvc.Controller;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
@@ -142,7 +149,7 @@ public class StudyController extends BaseStudyController
             else if (null != form.getDataSetId())
             {
                 //It's a bug in the code if this ever happens since editing a dataset
-                DataSetDefinition dsd = StudyManager.getInstance().getDataSetDefinition(StudyManager.getInstance().getStudy(getContainer()), form.getDataSetId());
+                DataSetDefinition dsd = StudyManager.getInstance().getDataSetDefinition(StudyManager.getInstance().getStudy(getContainer()), form.getDataSetId().intValue());
                 if (null == dsd)
                     errors.reject("defineDatasetType", "This dataset appears to have been deleted id=" + form.getDataSetId());
             }
@@ -161,7 +168,7 @@ public class StudyController extends BaseStudyController
                     _def = AssayPublishManager.getInstance().createAssayDataset(getUser(), getStudy(), form.getTypeName(), null, datasetId, form.isDemographicData());
             }
             else
-                _def = StudyManager.getInstance().getDataSetDefinition(getStudy(), datasetId);
+                _def = StudyManager.getInstance().getDataSetDefinition(getStudy(), datasetId.intValue());
 
             if (_def != null)
             {
@@ -192,6 +199,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ACL.PERM_ADMIN)
+    @SuppressWarnings("unchecked")
     public class EditTypeAction extends SimpleViewAction<OldStudyController.DataSetForm>
     {
         private DataSetDefinition _def;
@@ -277,7 +285,7 @@ public class StudyController extends BaseStudyController
         public Cohort getCohort()
         {
             if (_cohortId != null)
-                return StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), _cohortId);
+                return StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), _cohortId.intValue());
             else
                 return null;
         }
@@ -358,10 +366,9 @@ public class StudyController extends BaseStudyController
 
             HttpView view = reportView.renderReport(getViewContext());
             DataHeader header = new DataHeader(getViewContext().getActionURL(), null, def, false);
-            VBox vbox = new VBox(header,
-                    new OldStudyController.ReportHeader(reportView), view);
 
-            return vbox;
+            return new VBox(header,
+                    new OldStudyController.ReportHeader(reportView), view);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -524,8 +531,11 @@ public class StudyController extends BaseStudyController
             {
                 final List<String> plist = getParticipantListFromCache(getViewContext(), def.getDataSetId(), viewName, cohort);
                 Map<String, String> params = plist.size() > 0 ? Collections.singletonMap("participantId", plist.get(0)) : null;
-                createViewButton.addMenuItem("Crosstab View",
-                        getViewContext().getActionURL().relativeUrl("participantCrosstab.view", params, "Study-Reports", false));
+
+                ActionURL url = getViewContext().getActionURL().clone();
+                url.setAction(ReportsController.ParticipantCrosstabAction.class);
+                url.addParameters(params);
+                createViewButton.addMenuItem("Crosstab View", url.getLocalURIString());
             }
 
             // create chart link
@@ -568,7 +578,11 @@ public class StudyController extends BaseStudyController
                 createViewButton.addMenuItem("R View", "javascript:void(0)", "javascript:alert(\"The R Program has not been configured properly, please request that an administrator configure R in the Admin Console.\")");
 
             if (getViewContext().getUser().isAdministrator())
-                createViewButton.addMenuItem("Advanced View", getViewContext().getActionURL().relativeUrl("externalReport.view", null, "Study-Reports", false));
+            {
+                ActionURL buttonURL = getViewContext().getActionURL().clone();
+                buttonURL.setAction(ReportsController.ExternalReportAction.class);
+                createViewButton.addMenuItem("Advanced View", buttonURL.getLocalURIString());
+            }
             return createViewButton;
         }
 
@@ -621,11 +635,12 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ACL.PERM_READ)
-    public class DatasetPlotAction extends SimpleViewAction<OldStudyController.ParticipantForm>
+    public class DatasetPlotAction extends SimpleViewAction<ParticipantForm>
     {
-        OldStudyController.ParticipantForm _bean;
+        ParticipantForm _bean;
 
-        public ModelAndView getView(OldStudyController.ParticipantForm form, BindException errors) throws Exception
+        @SuppressWarnings("deprecation")
+        public ModelAndView getView(ParticipantForm form, BindException errors) throws Exception
         {
             _bean = form;
             ViewContext context = getViewContext();
@@ -667,8 +682,7 @@ public class StudyController extends BaseStudyController
 
                 ReportManager.get().deleteReport(getViewContext(), reportView);
                 ActionURL url = getViewContext().cloneActionURL();
-                url.setAction("dataset");
-                url.deleteParameter("action");
+                url.setAction(DatasetAction.class);
 
                 HttpView.redirect(url);
                 return null;
@@ -684,7 +698,7 @@ public class StudyController extends BaseStudyController
                 String prevView = (String) context.get("prevView");
                 Cohort cohort = null;
                 if (form.getCohortId() != null)
-                    cohort = StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), form.getCohortId());
+                    cohort = StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), form.getCohortId().intValue());
                 List<String> participants = getParticipantListFromCache(context, datasetId, prevView, cohort);
                 if (!participants.isEmpty())
                 {
@@ -729,24 +743,22 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ACL.PERM_READ)
-    public class ParticipantAction extends SimpleViewAction<OldStudyController.ParticipantForm>
+    public class ParticipantAction extends SimpleViewAction<ParticipantForm>
     {
-        OldStudyController.ParticipantForm _bean;
+        ParticipantForm _bean;
 
-        public ModelAndView getView(OldStudyController.ParticipantForm form, BindException errors) throws Exception
+        public ModelAndView getView(ParticipantForm form, BindException errors) throws Exception
         {
             _bean = form;
             String previousParticipantURL = null;
             String nextParticiapantURL = null;
 
-            form.study = getStudy();
-            form.expandedState = getExpandedState(getViewContext(), form.getDatasetId());
             String viewName = (String) getViewContext().get("Dataset.viewName");
 
             // display the next and previous buttons only if we have a cached participant index
             Cohort cohort = null;
             if (form.getCohortId() != null)
-                cohort = StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), form.getCohortId());
+                cohort = StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), form.getCohortId().intValue());
             List<String> participants = getParticipantListFromCache(getViewContext(), form.getDatasetId(), viewName, cohort);
             if (participants != null)
             {
@@ -770,7 +782,7 @@ public class StudyController extends BaseStudyController
                     }
                 }
             }
-            JspView<OldStudyController.ParticipantForm> view = new StudyJspView<OldStudyController.ParticipantForm>(getStudy(), "participantAll.jsp", form, errors);
+            JspView<ParticipantForm> view = new StudyJspView<ParticipantForm>(getStudy(), "participantAll.jsp", form, errors);
             OldStudyController.ParticipantNavView navView = new OldStudyController.ParticipantNavView(previousParticipantURL, nextParticiapantURL);
 
             return new VBox(navView, view);
@@ -1126,7 +1138,7 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(ManageTypesBean manageTypesBean, boolean reshow, BindException errors) throws Exception
         {
-            ModelAndView view = new StudyJspView(getStudy(), "manageTypes.jsp", this, errors);
+            ModelAndView view = new StudyJspView<ManageTypesAction>(getStudy(), "manageTypes.jsp", this, errors);
             view.addObject("errors", errors);
             return view;
         }
@@ -1434,6 +1446,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ACL.PERM_ADMIN)
+    @SuppressWarnings("deprecation")
     public class ConfirmDeleteVisitAction extends SimpleViewAction<BaseController.IdForm>
     {
         private Visit _visit;
@@ -1597,6 +1610,7 @@ public class StudyController extends BaseStudyController
         {
         }
 
+        @SuppressWarnings("deprecation")
         public ModelAndView getView(OldStudyController.ImportDataSetForm form, boolean reshow, BindException errors) throws Exception
         {
             Study study = getStudy();
@@ -1689,6 +1703,7 @@ public class StudyController extends BaseStudyController
             return view;
         }
 
+        @SuppressWarnings("unchecked")
         public boolean handlePost(BulkImportTypesForm form, BindException errors) throws Exception
         {
             TabLoader loader = new TabLoader(form.tsv, true);
@@ -1698,7 +1713,7 @@ public class StudyController extends BaseStudyController
 
             // CONSIDER: move all this into StudyManager
             ArrayList<Map<String, Object>> mapsImport = new ArrayList<Map<String, Object>>(mapsLoad.length);
-            PropertyDescriptor[] pds = null;
+            PropertyDescriptor[] pds;
 
             if (mapsLoad.length > 0)
             {
@@ -1804,7 +1819,7 @@ public class StudyController extends BaseStudyController
                     StudyManager manager = StudyManager.getInstance();
                     for (Map.Entry<Integer, DataSetImportInfo> entry : datasetInfoMap.entrySet())
                     {
-                        int id = entry.getKey();
+                        int id = entry.getKey().intValue();
                         DataSetImportInfo info = entry.getValue();
                         String name = info.name;
 
@@ -2075,7 +2090,7 @@ public class StudyController extends BaseStudyController
                     event.setIntKey1(NumberUtils.toInt(protocolId));
                     event.setComment(lsids.size() + " row(s) were deleted from the assay: " + assayName);
 
-                    Map dataMap = Collections.singletonMap("datasetId", form.getDatasetId());
+                    Map<String,Object> dataMap = Collections.<String,Object>singletonMap("datasetId", form.getDatasetId());
 
                     AssayAuditViewFactory.getInstance().ensureDomain(getUser());
                     AuditLogService.get().addEvent(event, dataMap, AuditLogService.get().getDomainURI(AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT));
@@ -2316,7 +2331,7 @@ public class StudyController extends BaseStudyController
                 {
                     public StringExpressionFactory.StringExpression getURL(ColumnInfo parent)
                     {
-                        ActionURL base = new ActionURL("Study", "participant", querySchema.getContainer());
+                        ActionURL base = new ActionURL(ParticipantAction.class, querySchema.getContainer());
                         base.addParameter(DataSetDefinition.DATASETKEY, Integer.toString(def.getDataSetId()));
 
                         // push any filter, sort params, and viewname
@@ -2330,7 +2345,7 @@ public class StudyController extends BaseStudyController
                                 base.addParameter(param.getKey(), param.getValue());
                             }
                         }
-                        Map params = new HashMap();
+                        Map<Object,ColumnInfo> params = new HashMap<Object,ColumnInfo>();
                         params.put("participantId", parent);
 
                         return new LookupURLExpression(base, params);
@@ -2361,6 +2376,7 @@ public class StudyController extends BaseStudyController
 
     private static final String PARTICIPANT_PROPS_CACHE = "Study_participants/propertyCache";
     private static final String DATASET_SORT_COLUMN_CACHE = "Study_participants/datasetSortColumnCache";
+    @SuppressWarnings("unchecked")
     private static Map<String, PropertyDescriptor[]> getParticipantPropsMap(ViewContext context)
     {
         HttpSession session = context.getRequest().getSession(true);
@@ -2385,6 +2401,7 @@ public class StudyController extends BaseStudyController
         return props;
     }
 
+    @SuppressWarnings("unchecked")
     private static Map<String, Map<String, Integer>> getDatasetSortColumnMap(ViewContext context)
     {
         HttpSession session = context.getRequest().getSession(true);
@@ -2426,8 +2443,8 @@ public class StudyController extends BaseStudyController
             else
             {
                 // there is no custom view for this dataset
-                sortMap = Collections.EMPTY_MAP;
-                map.put(dsd.getLabel(), Collections.EMPTY_MAP);
+                sortMap = Collections.emptyMap();
+                map.put(dsd.getLabel(), Collections.<String,Integer>emptyMap());
             }
         }
         return sortMap;
@@ -2451,6 +2468,7 @@ public class StudyController extends BaseStudyController
         map.put(getParticipantListCacheKey(dataset, viewName, cohort), participants);
     }
 
+    @SuppressWarnings("unchecked")
     private static Map<String, List<String>> getParticipantMapFromCache(ViewContext context)
     {
         HttpSession session = context.getRequest().getSession(true);
@@ -2463,7 +2481,8 @@ public class StudyController extends BaseStudyController
         return map;
     }
 
-    private static Map<Integer, String> getExpandedState(ViewContext viewContext, int datasetId)
+    @SuppressWarnings("unchecked")
+    public static Map<Integer, String> getExpandedState(ViewContext viewContext, int datasetId)
     {
         HttpSession session = viewContext.getRequest().getSession(true);
         Map<Integer, Map<Integer, String>> map = (Map<Integer, Map<Integer, String>>) session.getAttribute(EXPAND_CONTAINERS_KEY);
@@ -2507,7 +2526,7 @@ public class StudyController extends BaseStudyController
             {
                 try
                 {
-                    cohort = StudyManager.getInstance().getCohortForRowId(context.getContainer(), context.getUser(), Integer.getInteger(cohortIdStr));
+                    cohort = StudyManager.getInstance().getCohortForRowId(context.getContainer(), context.getUser(), Integer.parseInt(cohortIdStr));
                 }
                 catch (NumberFormatException e)
                 {
@@ -2906,11 +2925,11 @@ public class StudyController extends BaseStudyController
         {
             Integer particpantCohortDataSetId = getParticipantCohortDataSetId();
             Study study = StudyManager.getInstance().getStudy(_container);
-            if (particpantCohortDataSetId == null || particpantCohortDataSetId < 0)
+            if (particpantCohortDataSetId == null || particpantCohortDataSetId.intValue() < 0)
                 return new PropertyDescriptor[0];
             else
             {
-                DataSetDefinition dataset = StudyManager.getInstance().getDataSetDefinition(study, particpantCohortDataSetId);
+                DataSetDefinition dataset = StudyManager.getInstance().getDataSetDefinition(study, particpantCohortDataSetId.intValue());
                 return OntologyManager.getPropertiesForType(dataset.getTypeURI(), _container);
             }
         }
@@ -3079,6 +3098,137 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    // GWT Action
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class DatasetServiceAction extends GWTServiceAction
+    {
+        protected BaseRemoteService createService()
+        {
+            try
+            {
+                return new DatasetServiceImpl(getViewContext(), getStudy(), StudyManager.getInstance());
+            }
+            catch (ServletException se)
+            {
+                throw new UnexpectedException(se);
+            }
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class ResetPipelineAction extends SimpleRedirectAction
+    {
+        public ActionURL getRedirectURL(Object o) throws Exception
+        {
+            Container c = getContainer();
+            String path = (String)getViewContext().get("path");
+            String redirect = (String)getViewContext().get("redirect");
+
+            File f = null;
+
+            if (path != null)
+            {
+
+                PipeRoot root = PipelineService.get().findPipelineRoot(c);
+                if (root != null)
+                    f = root.resolvePath(path);
+            }
+
+            if (null != f && f.exists() && f.isFile() && f.getPath().endsWith(".lock"))
+            {
+                f.delete();
+            }
+
+            if (null != redirect)
+                HttpView.throwRedirect(redirect);
+            return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c);
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    /**
+     * called from the participanAll.jsp view
+     */
+    public class SavedChartAction extends SimpleViewAction<ParticipantForm>
+    {
+        ParticipantForm _bean = null;
+
+        @SuppressWarnings("deprecation")
+        public ModelAndView getView(ParticipantForm form, BindException errors) throws Exception
+        {
+            _bean = form;
+            final String participantId = form.getParticipantId();
+            final int reportId = form.getReportId();
+
+            Report report = ReportService.get().getReport(reportId);
+
+            if ("plot".equals(form.getAction()))
+            {
+                if (report != null)
+                {
+                    report.getDescriptor().setProperty("participantId", participantId);
+                    return report.renderReport(getViewContext());
+                }
+            }
+            else if ("delete".equals(form.getAction()))
+            {
+                ReportService.get().deleteReport(getViewContext(), report);
+                ActionURL url = new ActionURL(StudyController.ParticipantAction.class, getContainer());
+
+                HttpView.throwRedirect(url);
+            }
+            return null;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return _appendNavTrail(root, _bean.getDatasetId(), 0).
+                    addChild("Participant - " + _bean.getParticipantId());
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class DefaultDatasetReportAction extends SimpleRedirectAction
+    {
+        public ActionURL getRedirectURL(Object o) throws Exception
+        {
+            ViewContext context = getViewContext();
+            int datasetId = null == context.get(DataSetDefinition.DATASETKEY) ? 0 : Integer.parseInt((String) context.get(DataSetDefinition.DATASETKEY));
+
+            ActionURL url = getViewContext().cloneActionURL();
+            url.setAction(StudyController.DatasetReportAction.class);
+
+            String defaultView = OldStudyController.getDefaultView(context, datasetId);
+            if (!StringUtils.isEmpty(defaultView))
+                url.addParameter("Dataset.viewName", defaultView);
+            return url;
+        }
+    }
+
+
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class ManageUndefinedTypes extends SimpleViewAction
+    {
+        Study study;
+
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            study = getStudy();
+            return new StudyJspView<Object>(getStudy(), "manageUndefinedTypes.jsp", o, errors);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild(study.getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
+            _appendManageStudy(root);
+            _appendNavTrailDatasetAdmin(root);
+            return root.addChild("Define Dataset Schemas");
+        }
+    }
+
     private String getVisitLabel()
     {
         try
@@ -3107,6 +3257,38 @@ public class StudyController extends BaseStudyController
     private String getVisitJsp(String prefix) throws ServletException
     {
         return prefix + (getStudy().isDateBased() ? "Timepoint" : "Visit") + ".jsp";
+    }
+
+
+
+    public static class ParticipantForm
+    {
+        private String participantId;
+        private int datasetId;
+        private double sequenceNum;
+        private String action;
+        private int reportId;
+        private Integer cohortId;
+
+        public String getParticipantId(){return participantId;}
+
+        public void setParticipantId(String participantId){this.participantId = participantId;}
+
+        public int getDatasetId(){return datasetId;}
+        public void setDatasetId(int datasetId){this.datasetId = datasetId;}
+
+        public double getSequenceNum(){return sequenceNum;}
+        public void setSequenceNum(double sequenceNum){this.sequenceNum = sequenceNum;}
+
+        public String getAction(){return action;}
+        public void setAction(String action){this.action = action;}
+
+        public int getReportId(){return reportId;}
+        public void setReportId(int reportId){this.reportId = reportId;}
+
+        public Integer getCohortId(){return cohortId;}
+
+        public void setCohortId(Integer cohortId){this.cohortId = cohortId;}
     }
 
 
