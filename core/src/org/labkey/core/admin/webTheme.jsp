@@ -1,8 +1,15 @@
 <%@ page import="org.apache.commons.lang.StringUtils"%>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.WebTheme" %>
 <%@ page import="org.labkey.core.admin.AdminControllerSpring" %>
-
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%
+    HttpView<AdminControllerSpring.WebThemesBean> me = (HttpView<AdminControllerSpring.WebThemesBean>) HttpView.currentView();
+    AdminControllerSpring.WebThemesBean bean = me.getModelBean();
+    WebTheme selectedTheme = bean.selectedTheme;
+%>
 <link href="<%= request.getContextPath() %>/js_color_picker_v2.css" type="text/css" media="screen" rel="stylesheet">
 <script type="text/javascript">
     LABKEY.requiresScript('color_functions.js');
@@ -12,7 +19,7 @@
 function isValidColor(color)
 {
     if ("" == color) return false;
-    if (6!=color.length) return false;
+    if (6 != color.length) return false;
     //todo: check hex
     return true;
 }
@@ -217,11 +224,11 @@ function updateAll()
 </script>
 
 <form action="defineWebThemes.view" enctype="multipart/form-data" method="post">
-<input type="hidden" name="upgradeInProgress" value="<%=form.upgradeInProgress%>" />
+<input type="hidden" name="upgradeInProgress" value="<%=bean.form.isUpgradeInProgress()%>" />
 <table width="100%">
 <%
-String webThemeErrors = PageFlowUtil.getStrutsError(request, "web theme");
-if (webThemeErrors)
+String webThemeErrors = formatMissedErrors("form");
+if (null != webThemeErrors)
 {
 %>
 <tr><td colspan=3><%=webThemeErrors%></td></tr>
@@ -236,22 +243,22 @@ if (webThemeErrors)
 
 <table cellpadding=0>
 <%
-if (!webThemeErrors)
+if (null == webThemeErrors)
 {
 %><tr><td class="normal" colspan=2>&nbsp;</td></tr><%
     }
-    def isBuiltInTheme;
-    if (selectedTheme != null)
+    boolean isBuiltInTheme;
+    if (bean.selectedTheme != null)
     {
-        isBuiltInTheme = (selectedTheme.getFriendlyName().compareToIgnoreCase("Blue") == 0
-                || selectedTheme.getFriendlyName().compareToIgnoreCase("Brown") == 0);
+        isBuiltInTheme = (bean.selectedTheme.getFriendlyName().compareToIgnoreCase("Blue") == 0
+                || bean.selectedTheme.getFriendlyName().compareToIgnoreCase("Brown") == 0);
     }
     else
         isBuiltInTheme = false;
 
-    def disabled = isBuiltInTheme ? "disabled" : "";
+    String disabled = isBuiltInTheme ? "disabled" : "";
 
-    def helpLink = (new HelpTopic("customizeTheme", HelpTopic.Area.SERVER)).getHelpTopicLink();
+    String helpLink = (new HelpTopic("customizeTheme", HelpTopic.Area.SERVER)).getHelpTopicLink();
 %>
 <tr>
     <td class="normal" colspan=2>Choose an existing web theme or define a new one. (<a href="<%=helpLink%>" target="_new">examples...</a>)</td>
@@ -263,14 +270,14 @@ if (!webThemeErrors)
         <select name="themeName" onchange="changeTheme(this)">
             <option value="">&lt;New Theme&gt;</option>
             <%
-              def themeFound = false;
-              for (theme in Themes)
+              boolean themeFound = false;
+              for (WebTheme theme : bean.themes)
                 {
-                    if (theme == selectedTheme)
+                    if (theme == bean.selectedTheme)
                         themeFound = true;
-                    def selected = theme == selectedTheme ? "selected" : "";
+                    String selected = (theme == bean.selectedTheme ? "selected" : "");
                     %>
-                    <option value="<%=filter(theme.toString())%>" <%=selected%>><%=filter(theme.getFriendlyName())%></option>
+                    <option value="<%=h(theme.toString())%>" <%=selected%>><%=h(theme.getFriendlyName())%></option>
                 <%}
             %>
         </select>
@@ -280,49 +287,49 @@ if (!webThemeErrors)
 {%>
 <tr>
     <td class="ms-searchform">Theme Name</td>
-    <td><input type="text" name="friendlyName" size="16" maxlength="16" value="<%=((null != selectedTheme) ? selectedTheme.getFriendlyName() : StringUtils.trimToEmpty(form.getFriendlyName()))%>"></td>
+    <td><input type="text" name="friendlyName" size="16" maxlength="16" value="<%=((null != selectedTheme) ? selectedTheme.getFriendlyName() : StringUtils.trimToEmpty(bean.form.getFriendlyName()))%>"></td>
 </tr>
 <%}%>
 <tr>
     <td class="ms-searchform">Navigation Bar Color (left panel menu)</td>
     <td>
-        <input type="text" name="navBarColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getNavBarColor() : StringUtils.trimToEmpty(form.getNavBarColor()))%>" <%=disabled%> onfocus="updateNavigationColor()" onblur="updateNavigationColor()">
-        <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if (""==disabled) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.forms[0].navBarColor)"<%}%>>
+        <input type="text" name="navBarColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getNavBarColor() : StringUtils.trimToEmpty(bean.form.getNavBarColor()))%>" <%=disabled%> onfocus="updateNavigationColor()" onblur="updateNavigationColor()">
+        <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if ("".equals(disabled)) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.forms[0].navBarColor)"<%}%>>
     </td>
 </tr>
 <tr>
     <td class="ms-searchform">Left Navigation Border Color</td>
     <td>
-        <input type="text" name="headerLineColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getHeaderLineColor() : StringUtils.trimToEmpty(form.getHeaderLineColor()))%>" <%=disabled%> onfocus="updateHeaderLineColor()" onblur="updateHeaderLineColor()">
-        <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if (""==disabled) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.forms[0].headerLineColor)"<%}%>>
+        <input type="text" name="headerLineColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getHeaderLineColor() : StringUtils.trimToEmpty(bean.form.getHeaderLineColor()))%>" <%=disabled%> onfocus="updateHeaderLineColor()" onblur="updateHeaderLineColor()">
+        <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if ("".equals(disabled)) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.forms[0].headerLineColor)"<%}%>>
     </td>
 </tr>
 <tr>
     <td class="ms-searchform">Form Field Name Color</td>
     <td>
-        <input type="text" name="editFormColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getEditFormColor() : StringUtils.trimToEmpty(form.getEditFormColor()))%>" <%=disabled%> onfocus="updateFormFieldNameColor()" onblur="updateFormFieldNameColor()">
-        <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if (""==disabled) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.forms[0].editFormColor)"<%}%>>
+        <input type="text" name="editFormColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getEditFormColor() : StringUtils.trimToEmpty(bean.form.getEditFormColor()))%>" <%=disabled%> onfocus="updateFormFieldNameColor()" onblur="updateFormFieldNameColor()">
+        <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if ("".equals(disabled)) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.forms[0].editFormColor)"<%}%>>
     </td>
 </tr>
 <tr>
     <td class="ms-searchform">Full Screen Border Color</td>
     <td>
-        <input type="text" name="fullScreenBorderColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getFullScreenBorderColor() : StringUtils.trimToEmpty(form.getFullScreenBorderColor()))%>" <%=disabled%> onfocus="updateFullScreenBorderColor()" onblur="updateFullScreenBorderColor()">
-        <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if (""==disabled) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.forms[0].fullScreenBorderColor)"<%}%>>
+        <input type="text" name="fullScreenBorderColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getFullScreenBorderColor() : StringUtils.trimToEmpty(bean.form.getFullScreenBorderColor()))%>" <%=disabled%> onfocus="updateFullScreenBorderColor()" onblur="updateFullScreenBorderColor()">
+        <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if ("".equals(disabled)) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.forms[0].fullScreenBorderColor)"<%}%>>
     </td>
 </tr>
 <tr>
     <td class="ms-searchform">Title Bar Background Color</td>
     <td>
-        <input type="text" name="gradientLightColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getGradientLightString() : StringUtils.trimToEmpty(form.getGradientLightColor()))%>" <%=disabled%> onfocus="updateGradientColor()" onblur="updateGradientColor()">
-        <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if (""==disabled) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.forms[0].gradientLightColor)"<%}%>>
+        <input type="text" name="gradientLightColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getGradientLightString() : StringUtils.trimToEmpty(bean.form.getGradientLightColor()))%>" <%=disabled%> onfocus="updateGradientColor()" onblur="updateGradientColor()">
+        <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if ("".equals(disabled)) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.forms[0].gradientLightColor)"<%}%>>
     </td>
 </tr>
 <tr>
     <td class="ms-searchform">Title Bar Border Color</td>
     <td>
-        <input type="text" name="gradientDarkColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getGradientDarkString () : StringUtils.trimToEmpty(form.getGradientDarkColor()))%>" <%=disabled%> onfocus="updateGradientColor()" onblur="updateGradientColor()">
-        <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if (""==disabled) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.forms[0].gradientDarkColor)"<%}%>>
+        <input type="text" name="gradientDarkColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getGradientDarkString () : StringUtils.trimToEmpty(bean.form.getGradientDarkColor()))%>" <%=disabled%> onfocus="updateGradientColor()" onblur="updateGradientColor()">
+        <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if ("".equals(disabled)) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.forms[0].gradientDarkColor)"<%}%>>
     </td>
 </tr>
 <tr>
@@ -336,14 +343,14 @@ if (!webThemeErrors)
         {%>
              <input type="image" id="saveButton" src='<%=PageFlowUtil.buttonSrc("Save")%>' name="Define" />&nbsp;
             <%
-            if (selectedTheme != null && Themes.size() > 1)
+            if (selectedTheme != null && bean.themes.size() > 1)
             {%>
                 <input type="image" src='<%=PageFlowUtil.buttonSrc("Delete")%>' name="Delete" onClick="return confirm('Are you sure you want to delete the theme named <%=request.getParameter("themeName")%>?');" />&nbsp;
             <%}
         }
         else
             {%>
-            <%=PageFlowUtil.buttonLink("Done", AdminControllerSpring.getCustomizeSiteURL(form.upgradeInProgress))%>
+            <%=PageFlowUtil.buttonLink("Done", AdminControllerSpring.getCustomizeSiteURL(bean.form.isUpgradeInProgress()))%>
            <%}%>
     </td>
 </tr>
@@ -376,14 +383,13 @@ if (!webThemeErrors)
           <tr><td colspan="2">Changes to full-screen color preferences will be displayed here.</td></tr>
           <tr><td colspan="2">&nbsp;</td></tr>
         </table>
-      </td></tr>
+      </div></td></tr>
       <tr><td style="background-color: rgb(229, 229, 204);" height="20"><img src="login_files/_.gif" height="1" width="100%"></td></tr>
     </table>
    </td>
 </tr>
-</table>
 </form>
-
+</table>
 <!-- end of dialog preview -->
 </td>
 

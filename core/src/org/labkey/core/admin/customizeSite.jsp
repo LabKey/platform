@@ -129,13 +129,8 @@ Click the Save button at any time to accept the current settings and continue.</
                 <%}
             %>
         </select>
-        <%
-            String webThemesView = "showDefineWebThemes.view";
-            if (bean.upgradeInProgress)
-                webThemesView = "showUpgradeDefineWebThemes.view";
-        %>
 
-        [<a href="<%=webThemesView%>?upgradeInProgress=<%=bean.upgradeInProgress ? 1 : 0%>">Define Web Themes</a>]
+        [<a href="<%=AdminControllerSpring.getDefineWebThemesURL(bean.upgradeInProgress)%>">Define Web Themes</a>]
     </td>
 </tr>
 <tr>

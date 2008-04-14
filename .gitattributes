@@ -302,7 +302,7 @@ core/src/org/labkey/core/admin/AdminControllerSpring.java -text
 core/src/org/labkey/core/admin/TestNetworkDriveBean.java -text
 core/src/org/labkey/core/admin/admin.jsp -text
 core/src/org/labkey/core/admin/auditLog.jsp -text
-core/src/org/labkey/core/admin/confirmProjectMove.gm -text
+core/src/org/labkey/core/admin/confirmProjectMove.jsp -text
 core/src/org/labkey/core/admin/customizeEmail.jsp -text
 core/src/org/labkey/core/admin/customizeFolder.jsp -text
 core/src/org/labkey/core/admin/customizeSite.jsp -text
@@ -320,7 +320,7 @@ core/src/org/labkey/core/admin/sql/showRunningScripts.jsp -text
 core/src/org/labkey/core/admin/testLdap.jsp -text
 core/src/org/labkey/core/admin/testNetworkDrive.jsp -text
 core/src/org/labkey/core/admin/threads.jsp -text
-core/src/org/labkey/core/admin/webTheme.gm -text
+core/src/org/labkey/core/admin/webTheme.jsp -text
 core/src/org/labkey/core/analytics/AnalyticsController.java -text
 core/src/org/labkey/core/analytics/AnalyticsServiceImpl.java -text
 core/src/org/labkey/core/analytics/analyticsSettings.jsp -text

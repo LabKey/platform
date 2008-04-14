@@ -1,10 +1,8 @@
 package org.labkey.core.admin;
 
-import org.apache.beehive.netui.pageflow.FormData;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
-import org.apache.struts.action.ActionMapping;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
@@ -28,6 +26,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.util.*;
+import org.labkey.api.util.preferences.PreferenceService;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PageConfig.Template;
@@ -840,12 +839,12 @@ public class AdminControllerSpring extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return null;
+            return null;      // TODO: Add navtrail
         }
     }
 
 
-    public static class TestLdapForm extends FormData
+    public static class TestLdapForm
     {
         private String server;
         private String principal;
@@ -853,9 +852,9 @@ public class AdminControllerSpring extends SpringActionController
         private String message;
         private boolean authentication;
 
-        public void reset(ActionMapping actionMapping, HttpServletRequest httpServletRequest)
+        public TestLdapForm()
         {
-            User user = (User) httpServletRequest.getUserPrincipal();
+            User user = HttpView.currentContext().getUser();
             server = AppProps.getInstance().getLDAPServersArray()[0];
             authentication = AppProps.getInstance().useSASLAuthentication();
             ValidEmail email;
@@ -868,9 +867,8 @@ public class AdminControllerSpring extends SpringActionController
             {
                 throw new RuntimeException(e);
             }
-            principal = SecurityManager.emailToLdapPrincipal(email);
 
-            super.reset(actionMapping, httpServletRequest);
+            principal = SecurityManager.emailToLdapPrincipal(email);
         }
 
         public String getPrincipal()
@@ -2632,7 +2630,7 @@ public class AdminControllerSpring extends SpringActionController
     }
 
 
-    public static class ChartForm extends FormData
+    public static class ChartForm
     {
         private String _type;
 
@@ -2723,6 +2721,385 @@ public class AdminControllerSpring extends SpringActionController
             ChartUtilities.writeChartAsPNG(response.getOutputStream(), chart, showLegend ? 800 : 398, showLegend ? 100 : 70);
         }
     }
+
+
+    // TODO: Check permissions, what if guests have read perm?, different containers?
+    @RequiresPermission(ACL.PERM_READ)
+    public class SetAdminModeAction extends SimpleRedirectAction<UserPrefsForm>
+    {
+        public ActionURL getRedirectURL(UserPrefsForm form) throws Exception
+        {
+            PreferenceService.get().setProperty("adminMode", form.isAdminMode() ? Boolean.TRUE.toString() : null, getUser());
+            return new ActionURL(form.getRedir());
+        }
+    }
+
+
+    // TODO: Check permissions, what if guests have read perm?, different containers?
+    @RequiresPermission(ACL.PERM_READ)
+    public class SetShowFoldersAction extends SimpleRedirectAction<UserPrefsForm>
+    {
+        public ActionURL getRedirectURL(UserPrefsForm form) throws Exception
+        {
+            PreferenceService.get().setProperty("showFolders", Boolean.toString(form.isShowFolders()), getUser());
+            return new ActionURL(form.getRedir());
+        }
+    }
+
+
+    public static class UserPrefsForm
+    {
+        private boolean adminMode;
+        private boolean showFolders;
+        private String redir;
+
+        public boolean isAdminMode()
+        {
+            return adminMode;
+        }
+
+        public void setAdminMode(boolean adminMode)
+        {
+            this.adminMode = adminMode;
+        }
+
+        public boolean isShowFolders()
+        {
+            return showFolders;
+        }
+
+        public void setShowFolders(boolean showFolders)
+        {
+            this.showFolders = showFolders;
+        }
+
+        public String getRedir()
+        {
+            return redir;
+        }
+
+        public void setRedir(String redir)
+        {
+            this.redir = redir;
+        }
+    }
+
+
+    public static ActionURL getDefineWebThemesURL(boolean upgradeInProgress)
+    {
+        ActionURL url = new ActionURL(DefineWebThemesAction.class, ContainerManager.getRoot());
+
+        if (upgradeInProgress)
+            url.addParameter("upgradeInProgress", "1");
+
+        return url;
+    }
+
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class DefineWebThemesAction extends FormViewAction<WebThemeForm>
+    {
+        private ActionURL _successURL;
+
+        public void validateCommand(WebThemeForm target, Errors errors)
+        {
+        }
+
+        public ModelAndView getView(WebThemeForm form, boolean reshow, BindException errors) throws Exception
+        {
+            if (form.isUpgradeInProgress())
+            {
+                getPageConfig().setTemplate(Template.Dialog);
+                getPageConfig().setTitle("Web Themes");
+            }
+
+            return new DefineWebThemesView(form, errors);
+        }
+
+        public boolean handlePost(WebThemeForm form, BindException errors) throws Exception
+        {
+            String themeName = form.getThemeName();
+            String friendlyName = form.getFriendlyName();
+
+            _successURL = AdminControllerSpring.getCustomizeSiteURL(form.isUpgradeInProgress());
+
+            if (null != getViewContext().getRequest().getParameter("Delete.x"))
+            {
+                // delete the web theme
+                WebTheme.deleteWebTheme(themeName);
+            }
+            else
+            {
+                //new theme
+                if (null == themeName || 0 == themeName.length())
+                    themeName = friendlyName;
+
+                //add new theme or save existing theme
+                WebTheme.updateWebTheme (
+                    themeName
+                    , form.getNavBarColor(), form.getHeaderLineColor()
+                    , form.getEditFormColor(), form.getFullScreenBorderColor()
+                    , form.getGradientLightColor(), form.getGradientDarkColor()
+                    );
+
+                AttachmentCache.clearGradientCache();
+                ButtonServlet.resetColorScheme();
+                //parameter to use to set customize page drop-down to user's last choice on define themes page
+                _successURL.addParameter("themeName", themeName);
+            }
+
+            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
+
+            return true;
+        }
+
+        public ActionURL getSuccessURL(WebThemeForm webThemeForm)
+        {
+            return _successURL;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            // TODO: showCustomizeSite.view should be on nav trail
+
+            return appendAdminNavTrail(root, "Web Themes");
+        }
+    }
+
+
+    private static class DefineWebThemesView extends JspView<WebThemesBean>
+    {
+        public DefineWebThemesView(WebThemeForm form, BindException errors) throws SQLException
+        {
+            super("/org/labkey/core/admin/webTheme.jsp", new WebThemesBean(form), errors);
+        }
+    }
+
+
+    public static class WebThemesBean
+    {
+        public List<WebTheme> themes;
+        public WebTheme selectedTheme;
+        public WebThemeForm form;
+
+        public WebThemesBean(WebThemeForm form)
+        {
+            themes = WebTheme.getWebThemes();
+            String themeName = form.getThemeName();
+            selectedTheme = WebTheme.getTheme(themeName);
+            this.form = form;
+        }
+    }
+
+
+/*    protected Forward defineWebThemes(WebThemeForm form) throws Exception
+    {
+        String themeName = form.getThemeName();
+        String friendlyName = form.getFriendlyName();
+
+        //we should only receive posts to this method now....
+        //but do we need this anymore since page is admin only anyhow
+        if (!("POST".equalsIgnoreCase(getRequest().getMethod())))
+        {
+            throw new IllegalAccessException();
+        }
+
+        ActionURL url = AdminControllerSpring.getCustomizeSiteURL(form.isUpgradeInProgress());
+
+        if (null != getRequest().getParameter("Delete.x"))
+        {
+            // delete the web theme
+            WebTheme.deleteWebTheme (themeName);
+        }
+        else
+        {
+            //new theme
+            if (null == themeName || 0 == themeName.length())
+                themeName = friendlyName;
+
+            //add new theme or save existing theme
+            WebTheme.updateWebTheme (
+                themeName
+                , form.getNavBarColor(), form.getHeaderLineColor()
+                , form.getEditFormColor(), form.getFullScreenBorderColor()
+                , form.getGradientLightColor(), form.getGradientDarkColor()
+                );
+
+            AttachmentCache.clearGradientCache();
+            ButtonServlet.resetColorScheme();
+            //parameter to use to set customize page drop-down to user's last choice on define themes page
+            url.addParameter("themeName", themeName);
+        }
+
+        WriteableAppProps.incrementLookAndFeelRevisionAndSave();
+
+        return new ViewForward(url);
+    }
+*/
+
+    public static class WebThemeForm implements HasValidator
+    {
+        String _themeName;
+        String _friendlyName;
+        String _navBarColor;
+        String _headerLineColor;
+        String _editFormColor;
+        String _fullScreenBorderColor;
+        String _gradientLightColor;
+        String _gradientDarkColor;
+
+        private boolean upgradeInProgress;
+
+        ArrayList<String> _errorList = new ArrayList<String>();
+
+        public boolean isUpgradeInProgress()
+        {
+            return upgradeInProgress;
+        }
+
+        public void setUpgradeInProgress(boolean upgradeInProgress)
+        {
+            this.upgradeInProgress = upgradeInProgress;
+        }
+
+        public String getEditFormColor()
+        {
+            return _editFormColor;
+        }
+
+        public void setEditFormColor(String editFormColor)
+        {
+            _editFormColor = editFormColor;
+        }
+
+        public String getFriendlyName()
+        {
+            return _friendlyName;
+        }
+
+        public void setFriendlyName(String friendlyName)
+        {
+            _friendlyName = friendlyName;
+        }
+
+        public String getFullScreenBorderColor()
+        {
+            return _fullScreenBorderColor;
+        }
+
+        public void setFullScreenBorderColor(String fullScreenBorderColor)
+        {
+            _fullScreenBorderColor = fullScreenBorderColor;
+        }
+
+        public String getGradientDarkColor()
+        {
+            return _gradientDarkColor;
+        }
+
+        public void setGradientDarkColor(String gradientDarkColor)
+        {
+            _gradientDarkColor = gradientDarkColor;
+        }
+
+        public String getGradientLightColor()
+        {
+            return _gradientLightColor;
+        }
+
+        public void setGradientLightColor(String gradientLightColor)
+        {
+            _gradientLightColor = gradientLightColor;
+        }
+
+        public String getHeaderLineColor()
+        {
+            return _headerLineColor;
+        }
+
+        public void setHeaderLineColor(String headerLineColor)
+        {
+            _headerLineColor = headerLineColor;
+        }
+
+        public String getNavBarColor()
+        {
+            return _navBarColor;
+        }
+
+        public void setNavBarColor(String navBarColor)
+        {
+            _navBarColor = navBarColor;
+        }
+
+        public String getThemeName()
+        {
+            return _themeName;
+        }
+
+        public void setThemeName(String themeName)
+        {
+            _themeName = themeName;
+        }
+
+        private boolean isValidColor(String s)
+        {
+            if (s.length() != 6) return false;
+            int r = -1;
+            int g = -1;
+            int b = -1;
+            try
+            {
+              r = Integer.parseInt(s.substring(0, 2), 16);
+            }
+            catch (NumberFormatException e)
+            {
+                // fall through
+            }
+            try
+            {
+              g = Integer.parseInt(s.substring(2, 4), 16);
+            }
+            catch (NumberFormatException e)
+            {
+                // fall through
+            }
+            try
+            {
+              b = Integer.parseInt(s.substring(4, 6), 16);
+            }
+            catch (NumberFormatException e)
+            {
+                // fall through
+            }
+            if (r<0 || r>255) return false;
+            if (g<0 || g>255) return false;
+            if (b<0 || b>255) return false;
+            return true;
+        }
+
+        public void validateSpring(Errors errors)
+        {
+            //check for nulls on submit
+            if ((null == _friendlyName || "".equals(_friendlyName)) &&
+                (null == _themeName || "".equals(_themeName)))
+            {
+                errors.reject(ERROR_MSG, "Please choose a theme name.");
+            }
+
+            if (_navBarColor == null || _headerLineColor == null || _editFormColor == null ||
+                    _fullScreenBorderColor == null || _gradientLightColor == null ||
+                    _gradientDarkColor == null ||
+                    !isValidColor(_navBarColor) || !isValidColor(_headerLineColor) || !isValidColor(_editFormColor) ||
+                    !isValidColor(_fullScreenBorderColor) || !isValidColor(_gradientLightColor) ||
+                    !isValidColor(_gradientDarkColor))
+            {
+                errors.reject(ERROR_MSG, "You must provide a valid 6-character hexadecimal value for each field.");
+            }
+        }
+    }
+
+
 
 
 }

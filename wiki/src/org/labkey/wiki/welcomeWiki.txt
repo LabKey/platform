@@ -5,13 +5,13 @@ from mass spectrometers, flow cytometers, and long-term observational studies.</
 <p><b>CPAS Proteomics Users</b></p>
 <ul>
 	<li>View the
-	<a href="http://help.labkey.org/Project/home/cpas/demo/begin.view">CPAS sample
+	<a href="http://help.labkey.org/project/home/cpas/demo/begin.view">CPAS sample
 	project</a></li>
 	<li>Browse the
-	<a href="http://help.labkey.org/Project/home/cpas/documentation/begin.view">
+	<a href="http://help.labkey.org/project/home/cpas/documentation/begin.view">
 	CPAS documentation</a><br>
 	</li>
-	<li><a href="http://help.labkey.org/Project/home/cpas/support/begin.view">Ask
+	<li><a href="http://help.labkey.org/project/home/cpas/support/begin.view">Ask
 	the development team a question</a><br>
 	</li>
 </ul>
@@ -19,18 +19,18 @@ from mass spectrometers, flow cytometers, and long-term observational studies.</
 </p>
 <ul>
 	<li>Browse the
-	<a href="http://help.labkey.org/Project/home/flow/documentation/begin.view">
+	<a href="http://help.labkey.org/project/home/flow/documentation/begin.view">
 	flow cytometry documentation</a></li>
-	<li><a href="http://help.labkey.org/Project/home/flow/support/begin.view">Ask
+	<li><a href="http://help.labkey.org/project/home/flow/support/begin.view">Ask
 	the development team a question</a><br>
 	</li>
 </ul>
 <p><b>Observational Study Users</b></p>
 <ul>
 	<li>Browse the
-	<a href="http://help.labkey.org/Project/home/study/documentation/begin.view">
+	<a href="http://help.labkey.org/project/home/study/documentation/begin.view">
 	observational study documentation</a></li>
-	<li><a href="http://help.labkey.org/Project/home/study/support/begin.view">Ask
+	<li><a href="http://help.labkey.org/project/home/study/support/begin.view">Ask
 	the development team a question</a><br>
 	</li>
 </ul>
@@ -40,7 +40,7 @@ from mass spectrometers, flow cytometers, and long-term observational studies.</
 	<li><a href="../../admin/modifyFolder.view?action=create">Create a new project</a>
 	and set permissions for it<br>
 	</li>
-	<li><a href="../../Wiki/home/update.view?name=default">Edit this page</a><br>
+	<li><a href="../../wiki/home/update.view?name=default">Edit this page</a><br>
 	<br>
 	</li>
 </ul>

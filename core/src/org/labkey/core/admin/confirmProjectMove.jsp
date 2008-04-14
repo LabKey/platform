@@ -3,23 +3,27 @@
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.data.ContainerManager"%>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    AdminController.ManageFoldersForm f = form;
+    JspView<AdminController.ManageFoldersForm> view = (JspView<AdminController.ManageFoldersForm>)HttpView.currentView();
+    AdminController.ManageFoldersForm f = view.getModelBean();
     Container c = ContainerManager.getForPath(f.getFolder());  // Folder to move
     String cancelURL = ActionURL.toPathString("admin", "manageFolders", c);
 %>
 
 <form action="moveFolder.post" method="POST">
 <p>
-You are moving folder '<%=filter(c.getName())%>' from one project into another.
+You are moving folder '<%=h(c.getName())%>' from one project into another.
 This will remove all permission settings from this folder, any subfolders, and any contained objects.
 </p>
 <p>
 This action cannot be undone.
 </p>
-    <input type="hidden" name="addAlias" value="<%=filter(f.isAddAlias())%>">
-    <input type="hidden" name="folder" value="<%=filter(f.getFolder())%>">
-    <input type="hidden" name="action" value="<%=filter(f.getAction())%>">
+    <input type="hidden" name="addAlias" value="<%=h(f.isAddAlias())%>">
+    <input type="hidden" name="folder" value="<%=h(f.getFolder())%>">
+    <input type="hidden" name="action" value="<%=h(f.getAction())%>">
     <input type="hidden" name="confirmed" value="1">
     <input type="image" src="<%= PageFlowUtil.buttonSrc("Confirm Move") %>" />
     <a href="<%= cancelURL %>"><img src="<%= PageFlowUtil.buttonSrc("Cancel") %>" /></a>

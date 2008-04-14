@@ -25,42 +25,31 @@ import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
-import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartUtilities;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.plot.PlotOrientation;
-import org.jfree.data.category.DefaultCategoryDataset;
-import org.labkey.api.action.SpringActionController;
-import org.labkey.api.action.SpringActionController.ActionDescriptor;
-import org.labkey.api.action.SpringActionController.ActionResolver;
-import org.labkey.api.attachments.AttachmentCache;
-import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.jsp.FormPage;
-import org.labkey.api.module.*;
+import org.labkey.api.module.FolderType;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.util.*;
+import org.labkey.api.util.AppProps;
+import org.labkey.api.util.ContainerTree;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
-import org.labkey.api.util.preferences.PreferenceService;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.DialogTemplate;
 import org.labkey.api.view.template.HomeTemplate;
-import org.labkey.common.util.Pair;
 import org.labkey.core.login.LoginController;
-import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
-import java.beans.Introspector;
-import java.io.*;
-import java.lang.management.*;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.util.*;
 
 @Jpf.Controller(messageBundles = {@Jpf.MessageBundle(bundlePath = "messages.Validation")})
@@ -76,255 +65,11 @@ public class AdminController extends ViewController
     }
 
 
-    @Jpf.Action @RequiresSiteAdmin
-    protected Forward showDefineWebThemes(WebThemeForm form) throws Exception
-    {
-        HttpView view = new DefineWebThemesView(form);
-        // UNDONE: showCustomizeSite.view should be on nav trail
-        return _renderInTemplate(view, "Web Themes");
-    }
-
-
-    @Jpf.Action @RequiresSiteAdmin
-    protected Forward showUpgradeDefineWebThemes(WebThemeForm form) throws Exception
-    {
-        includeView(new DialogTemplate(new DefineWebThemesView(form)));
-        return null;
-    }
-
-
-    private static class DefineWebThemesView extends GroovyView
-    {
-        public DefineWebThemesView(WebThemeForm form) throws SQLException
-        {
-            super("/org/labkey/core/admin/webTheme.gm");
-            addObject("Themes", WebTheme.getWebThemes ());
-            String themeName = form.getThemeName();
-            WebTheme currentTheme = WebTheme.getTheme(themeName);
-            addObject("selectedTheme", currentTheme);
-            addObject("form", form);
-            addObject("upgradeInProgress", form.isUpgradeInProgress());
-        }
-    }
-
-    @RequiresSiteAdmin
-    @Jpf.Action(validationErrorForward = @Jpf.Forward(path = "showDefineWebThemes.do", name = "showDefineWebThemes"))
-    protected Forward defineWebThemes(WebThemeForm form) throws Exception
-    {
-        String themeName = form.getThemeName();
-        String friendlyName = form.getFriendlyName();
-
-        //we should only receive posts to this method now....
-        //but do we need this anymore since page is admin only anyhow
-        if (!("POST".equalsIgnoreCase(getRequest().getMethod())))
-        {
-            throw new IllegalAccessException();
-        }
-
-        ActionURL url = AdminControllerSpring.getCustomizeSiteURL(form.isUpgradeInProgress());
-
-        if (null != getRequest().getParameter("Delete.x"))
-        {
-            // delete the web theme
-            WebTheme.deleteWebTheme (themeName);
-        }
-        else
-        {
-            //new theme
-            if (null == themeName || 0 == themeName.length())
-                themeName = friendlyName;
-
-            //add new theme or save existing theme
-            WebTheme.updateWebTheme (
-                themeName
-                , form.getNavBarColor(), form.getHeaderLineColor()
-                , form.getEditFormColor(), form.getFullScreenBorderColor()
-                , form.getGradientLightColor(), form.getGradientDarkColor()
-                );
-
-            AttachmentCache.clearGradientCache();
-            ButtonServlet.resetColorScheme();
-            //parameter to use to set customize page drop-down to user's last choice on define themes page
-            url.addParameter("themeName", themeName);
-        }
-
-        WriteableAppProps.incrementLookAndFeelRevisionAndSave();
-
-        return new ViewForward(url);
-    }
-
-
-    public static class WebThemeForm extends FormData
-    {
-        String _themeName;
-        String _friendlyName;
-        String _navBarColor;
-        String _headerLineColor;
-        String _editFormColor;
-        String _fullScreenBorderColor;
-        String _gradientLightColor;
-        String _gradientDarkColor;
-
-        private boolean upgradeInProgress;
-
-        ArrayList<String> _errorList = new ArrayList<String>();
-
-        public boolean isUpgradeInProgress()
-        {
-            return upgradeInProgress;
-        }
-
-        public void setUpgradeInProgress(boolean upgradeInProgress)
-        {
-            this.upgradeInProgress = upgradeInProgress;
-        }
-
-        public String getEditFormColor()
-        {
-            return _editFormColor;
-        }
-
-        public void setEditFormColor(String editFormColor)
-        {
-            _editFormColor = editFormColor;
-        }
-
-        public String getFriendlyName()
-        {
-            return _friendlyName;
-        }
-
-        public void setFriendlyName(String friendlyName)
-        {
-            _friendlyName = friendlyName;
-        }
-
-        public String getFullScreenBorderColor()
-        {
-            return _fullScreenBorderColor;
-        }
-
-        public void setFullScreenBorderColor(String fullScreenBorderColor)
-        {
-            _fullScreenBorderColor = fullScreenBorderColor;
-        }
-
-        public String getGradientDarkColor()
-        {
-            return _gradientDarkColor;
-        }
-
-        public void setGradientDarkColor(String gradientDarkColor)
-        {
-            _gradientDarkColor = gradientDarkColor;
-        }
-
-        public String getGradientLightColor()
-        {
-            return _gradientLightColor;
-        }
-
-        public void setGradientLightColor(String gradientLightColor)
-        {
-            _gradientLightColor = gradientLightColor;
-        }
-
-        public String getHeaderLineColor()
-        {
-            return _headerLineColor;
-        }
-
-        public void setHeaderLineColor(String headerLineColor)
-        {
-            _headerLineColor = headerLineColor;
-        }
-
-        public String getNavBarColor()
-        {
-            return _navBarColor;
-        }
-
-        public void setNavBarColor(String navBarColor)
-        {
-            _navBarColor = navBarColor;
-        }
-
-        public String getThemeName()
-        {
-            return _themeName;
-        }
-
-        public void setThemeName(String themeName)
-        {
-            _themeName = themeName;
-        }
-
-        private boolean isValidColor(String s)
-        {
-            if (s.length() != 6) return false;
-            int r = -1;
-            int g = -1;
-            int b = -1;
-            try
-            {
-              r = Integer.parseInt(s.substring(0, 2), 16);
-            }
-            catch (NumberFormatException e)
-            {
-                // fall through
-            }
-            try
-            {
-              g = Integer.parseInt(s.substring(2, 4), 16);
-            }
-            catch (NumberFormatException e)
-            {
-                // fall through
-            }
-            try
-            {
-              b = Integer.parseInt(s.substring(4, 6), 16);
-            }
-            catch (NumberFormatException e)
-            {
-                // fall through
-            }
-            if (r<0 || r>255) return false;
-            if (g<0 || g>255) return false;
-            if (b<0 || b>255) return false;
-            return true;
-        }
-    
-        public ActionErrors validate(ActionMapping arg0, HttpServletRequest arg1)
-        {
-            ActionErrors actionErrors = new ActionErrors();
-
-            //check for nulls on submit
-            if ((null == _friendlyName || "".equals(_friendlyName)) && 
-                (null == _themeName || "".equals(_themeName)))
-            {
-                actionErrors.add("web theme", new ActionMessage("Error", "Please choose a theme name."));
-            }
-
-            if (_navBarColor == null || _headerLineColor == null || _editFormColor == null ||
-                    _fullScreenBorderColor == null || _gradientLightColor == null ||
-                    _gradientDarkColor == null || 
-                    !isValidColor(_navBarColor) || !isValidColor(_headerLineColor) || !isValidColor(_editFormColor) ||
-                    !isValidColor(_fullScreenBorderColor) || !isValidColor(_gradientLightColor) || 
-                    !isValidColor(_gradientDarkColor))
-            {
-                actionErrors.add("web theme", new ActionMessage("Error", "You must provide a valid 6-character hexadecimal value for each field."));
-            }
-            
-            return (actionErrors.size() > 0 ? actionErrors : null);
-        }
-
-    }
-
     private Forward _renderInTemplate(HttpView view, String title) throws Exception
     {
         return _renderInTemplate(view, title, false);
     }
+
 
     private Forward _renderInTemplate(HttpView view, String title, boolean navTrailEndsAtProject) throws Exception
     {
@@ -401,19 +146,6 @@ public class AdminController extends ViewController
     }
 
 
-    @Jpf.Action @RequiresSiteAdmin
-    protected Forward startupFailure() throws Throwable
-    {
-        Throwable failure = ModuleLoader.getInstance().getStartupFailure();
-        if (failure != null)
-        {
-            throw failure;
-        }
-        else
-            return new ViewForward(AppProps.getInstance().getHomePageActionURL());
-    }
-
-
     @Jpf.Action @RequiresPermission(ACL.PERM_NONE)
     protected Forward moduleStatus(UpgradeStatusForm form) throws Exception
     {
@@ -439,6 +171,7 @@ public class AdminController extends ViewController
         includeView(new DialogTemplate(vbox));
         return null;
     }
+
 
     public static class UpgradeStatusForm extends ViewForm
     {
@@ -636,8 +369,6 @@ public class AdminController extends ViewController
                         + currentUrl + "\" >here</a> to attempt recovery .");
             }
 
-
-
             contentBuffer.append("\n<br/><br/>Checking Schema consistency with tableXML...");
             Set<DbSchema> schemas = new HashSet<DbSchema>();
             List<Module> modules = ModuleLoader.getInstance().getModules();
@@ -660,8 +391,6 @@ public class AdminController extends ViewController
         HtmlView htmlView = new HtmlView("<table class=\"DataRegion\"><tr><td>" + contentBuffer.toString() + "</td></tr></table>");
         htmlView.setTitle("Database Consistency Checker");
         return _renderInTemplate(htmlView, "Database Consistency Checker");
-
-
     }
 
 
@@ -813,8 +542,8 @@ public class AdminController extends ViewController
         Container newProject = newParent.isRoot() ? c : newParent.getProject();
         if (!oldProject.getId().equals(newProject.getId()) && !form.isConfirmed())
         {
-            HttpView v = new GroovyView("/org/labkey/core/admin/confirmProjectMove.gm");
-            v.addObject("form", form);
+            HttpView v = new JspView<ManageFoldersForm>("/org/labkey/core/admin/confirmProjectMove.jsp", form);
+
             return includeView(new DialogTemplate(v));
         }
 
@@ -914,6 +643,7 @@ public class AdminController extends ViewController
         return errorForward("create", "Error: " + error + "  Please enter a different folder name (or Cancel).");
     }
 
+
     @Jpf.Action @RequiresPermission(ACL.PERM_ADMIN)
     protected Forward deleteFolder(ManageFoldersForm form) throws SQLException, ServletException, URISyntaxException
     {
@@ -940,9 +670,9 @@ public class AdminController extends ViewController
 
         // If we just deleted a project then redirect to the home page, otherwise back to managing the project folders
         if (c.isProject())
-            return new ViewForward("Project", "begin.view", "home");
+            return new ViewForward(AppProps.getInstance().getHomePageActionURL());
         else
-            return new ViewForward("admin", "manageFolders", c.getParent().getPath());
+            return new ViewForward("admin", "manageFolders", c.getParent());
     }
 
 
@@ -1301,57 +1031,6 @@ public class AdminController extends ViewController
         }
     }
 
-
-    @Jpf.Action @RequiresPermission(ACL.PERM_READ)
-    protected Forward setAdminMode(UserPrefsForm form) throws Exception
-    {
-        PreferenceService.get().setProperty("adminMode", form.isAdminMode() ? Boolean.TRUE.toString() : null, getUser());
-        return new ViewForward(form.getRedir());
-    }
-
-    @Jpf.Action @RequiresPermission(ACL.PERM_READ)
-    protected Forward setShowFolders(UserPrefsForm form) throws Exception
-    {
-        PreferenceService.get().setProperty("showFolders", Boolean.toString(form.isShowFolders()), getUser());
-        return new ViewForward(form.getRedir());
-    }
-
-    public static class UserPrefsForm extends FormData
-    {
-        private boolean adminMode;
-        private boolean showFolders;
-        private String redir;
-
-        public boolean isAdminMode()
-        {
-            return adminMode;
-        }
-
-        public void setAdminMode(boolean adminMode)
-        {
-            this.adminMode = adminMode;
-        }
-
-        public boolean isShowFolders()
-        {
-            return showFolders;
-        }
-
-        public void setShowFolders(boolean showFolders)
-        {
-            this.showFolders = showFolders;
-        }
-
-        public String getRedir()
-        {
-            return redir;
-        }
-
-        public void setRedir(String redir)
-        {
-            this.redir = redir;
-        }
-    }
 
     @Jpf.Action @RequiresSiteAdmin
     protected Forward deleteCustomEmail(CustomEmailForm form) throws Exception
