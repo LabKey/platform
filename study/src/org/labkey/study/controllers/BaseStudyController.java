@@ -12,7 +12,6 @@ import org.labkey.study.view.BaseStudyPage;
 import org.springframework.validation.BindException;
 
 import javax.servlet.ServletException;
-import java.util.List;
 import java.util.Collection;
 
 /**
@@ -31,7 +30,7 @@ public abstract class BaseStudyController extends SpringActionController
         {
             // redirect to the study home page, where admins will see a 'create study' button,
             // and non-admins will simply see a message that no study exists.
-            HttpView.throwRedirect(new ActionURL("Study", "begin", c));
+            HttpView.throwRedirect(new ActionURL(StudyController.BeginAction.class, c));
         }
         return study;
     }
@@ -65,7 +64,7 @@ public abstract class BaseStudyController extends SpringActionController
     protected NavTree _appendNavTrailDatasetAdmin(NavTree root)
     {
         _appendManageStudy(root);
-        return root.addChild("Manage Datasets", new ActionURL("Study", "manageTypes", getContainer()));
+        return root.addChild("Manage Datasets", new ActionURL(StudyController.ManageTypesAction.class, getContainer()));
     }
 
     protected NavTree _appendNavTrail(NavTree root)
@@ -80,7 +79,7 @@ public abstract class BaseStudyController extends SpringActionController
             root.addChild(study.getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
             ActionURL overviewURL = new ActionURL(StudyController.OverviewAction.class, getContainer());
             if (cohortId != null)
-                overviewURL.addParameter("cohortId", cohortId);
+                overviewURL.addParameter("cohortId", cohortId.intValue());
             root.addChild("Study Overview", overviewURL);
         }
         catch (ServletException e)
@@ -151,7 +150,7 @@ public abstract class BaseStudyController extends SpringActionController
         }
     }
 
-    protected boolean nullSafeEqual(Object first, Object second)
+    protected static <T> boolean nullSafeEqual(T first, T second)
     {
         if (first == null && second == null)
             return true;

@@ -21,23 +21,6 @@ import java.util.List;
  */
 public class BaseController extends ViewController
 {
-    protected boolean stringsEqual(String first, String second)
-    {
-        if (first == null && second == null)
-            return true;
-        if (first == null)
-            return false;
-        return first.equals(second);
-    }
-
-    protected boolean integersEqual(Integer first, Integer second)
-    {
-        if (first == null && second == null)
-            return true;
-        if (first == null)
-            return false;
-        return first.equals(second);
-    }
 
     protected int[] toIntArray(List<String> intStrings)
     {
@@ -75,7 +58,7 @@ public class BaseController extends ViewController
         {
             // redirect to the study home page, where admins will see a 'create study' button,
             // and non-admins will simply see a message that no study exists.
-            HttpView.throwRedirect(new ActionURL("Study", "begin", c));
+            HttpView.throwRedirect(new ActionURL(StudyController.BeginAction.class, c));
         }
         return study;
     }
@@ -104,6 +87,11 @@ public class BaseController extends ViewController
             trailConfig.setHelpTopic(new HelpTopic(helpTopic, HelpTopic.Area.STUDY));
         trailConfig.setExtraChildren(navtrail);
         return includeView(new HomeTemplate(getViewContext(), getContainer(), view, trailConfig));
+    }
+
+    public static <T> boolean nullSafeEqual(T first, T second)
+    {
+        return BaseStudyController.nullSafeEqual(first, second);
     }
 
     public static class IdForm extends ViewForm

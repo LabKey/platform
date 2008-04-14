@@ -543,7 +543,7 @@ public class SamplesController extends BaseController
                     int rowId = rowIds[i];
                     String label = labels[i];
                     SampleRequestActor actor = idToActor.get(rowId);
-                    if (actor != null && !stringsEqual(label, actor.getLabel()))
+                    if (actor != null && !nullSafeEqual(label, actor.getLabel()))
                     {
                         actor = actor.createMutable();
                         actor.setLabel(label);
@@ -671,7 +671,7 @@ public class SamplesController extends BaseController
                         String label = labels[i];
                         boolean isFinalState = finalStates.contains(rowId);
                         boolean specimensLocked = lockedSpecimenStates.contains(rowId);
-                        if (!stringsEqual(label, status.getLabel()) ||
+                        if (!nullSafeEqual(label, status.getLabel()) ||
                                 isFinalState != status.isFinalState() ||
                                 specimensLocked != status.isSpecimensLocked())
                         {

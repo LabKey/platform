@@ -531,7 +531,7 @@ public class OldStudyController extends BaseController
                 if (cohortId.intValue() == -1)
                     cohortId = null;
                 String label = form.getLabel()[i];
-                if (def.isShowByDefault() != show || !stringsEqual(category, def.getCategory()) || !stringsEqual(label, def.getLabel()) || !integersEqual(cohortId, def.getCohortId()))
+                if (def.isShowByDefault() != show || !nullSafeEqual(category, def.getCategory()) || !nullSafeEqual(label, def.getLabel()) || !BaseStudyController.nullSafeEqual(cohortId, def.getCohortId()))
                 {
                     def = def.createMutable();
                     def.setShowByDefault(show);
@@ -575,7 +575,7 @@ public class OldStudyController extends BaseController
                 if (cohortId.intValue() == -1)
                     cohortId = null;
                 Character type = typeStr != null && typeStr.length() > 0 ? typeStr.charAt(0) : null;
-                if (def.isShowByDefault() != show || !stringsEqual(label, def.getLabel()) || type != def.getTypeCode() || !integersEqual(cohortId, def.getCohortId()))
+                if (def.isShowByDefault() != show || !nullSafeEqual(label, def.getLabel()) || type != def.getTypeCode() || !nullSafeEqual(cohortId, def.getCohortId()))
                 {
                     def = def.createMutable();
                     def.setShowByDefault(show);
