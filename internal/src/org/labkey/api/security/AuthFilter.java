@@ -52,8 +52,6 @@ public class AuthFilter implements Filter
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse resp = new SafeFlushResponseWrapper((HttpServletResponse)response);
 
-        // TODO: get rid of getStartupFailureURL, startupFailure action, startupErrorRequest
-
         Throwable t = ModuleLoader.getInstance().getStartupFailure();
 
         if (t != null)

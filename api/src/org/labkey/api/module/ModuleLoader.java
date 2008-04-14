@@ -909,11 +909,6 @@ public class ModuleLoader implements Filter
         return ActionURL.toPathString("admin", "moduleStatus", "");
     }
 
-    private String getStartupFailureURL()
-    {
-        return ActionURL.toPathString("admin", "startupFailure", "");
-    }
-
     public boolean isStartupComplete()
     {
         return _startupComplete;
