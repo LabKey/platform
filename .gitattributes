@@ -905,6 +905,7 @@ pipeline/src/org/labkey/pipeline/api/TaskPipelineImpl.java -text
 pipeline/src/org/labkey/pipeline/api/WorkDirectoryLocal.java -text
 pipeline/src/org/labkey/pipeline/browse/BrowseViewImpl.java -text
 pipeline/src/org/labkey/pipeline/browse/browse.jsp -text
+pipeline/src/org/labkey/pipeline/cluster/ClusterJobRunner.java -text
 pipeline/src/org/labkey/pipeline/directory.jsp -text
 pipeline/src/org/labkey/pipeline/emailNotificationSetup.jsp -text
 pipeline/src/org/labkey/pipeline/mule/EPipelineContextListener.java -text

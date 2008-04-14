@@ -86,7 +86,7 @@ public class EPipelineQueueImpl implements PipelineQueue
                 Message msg = (Message) msgs.nextElement();
 
                 PipelineJob job = PipelineJobService.get().getJobStore().fromXML(((TextMessage)msg).getText());
-                data.addPendingJob(job);                    
+                data.addPendingJob(job);
             }
         }
         catch (JMSException e)
