@@ -1,4 +1,9 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.experiment.types.TypesController" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%
+    TypesController.ImportVocabularyForm form = (TypesController.ImportVocabularyForm )HttpView.currentModel();
+%>
 <h3>Upload Vocabulary</h3>
 
 <p>
@@ -25,7 +30,7 @@ Specifically it should be a tab-delimited text file with no column headers, and 
 
 <form action="importVocabulary.post" method="POST" enctype="multipart/form-data">
 <table>
-<tr><td class=ms-searchform>Thesaurus URI<br><small>e.g http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl</small></td><td><input name="name" value="<%=filter(form.name)%>"></td></tr>
+<tr><td class=ms-searchform>Thesaurus URI<br><small>e.g http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl</small></td><td><input name="name" value="<%=filter(form.getName())%>"></td></tr>
 <!--<tr><td class=ms-searchform>Short prefix<br><small>e.g NCI_Thesaurus</small></td><td><input name="prefix" value=""></td></tr> -->
 <tr><td class=ms-searchform>Upload File</td><td><input type=file name=thesaurus></td></tr>
 </table>

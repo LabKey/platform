@@ -1,20 +1,22 @@
 <%@ page import="org.labkey.experiment.types.TypesController"%>
 <%@ page import="java.util.Set"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.exp.DomainDescriptor" %>
 <%
-Set g = globals;
-Set l = locals;
+Map g = globals;
+Map l = locals;
 %><h3>global types</h3><%
-for (type in g)
+for (DomainDescriptor type : g.values())
     {
-    %><a href="typeDetails.view?type=<%=filter(PageFlowUtil.encode(type.typeName))%>"><%=filter(type.toString())%></a><br /><%
+    %><a href="typeDetails.view?type=<%=filter(PageFlowUtil.encode(type.getDomainURI()))%>"><%=filter(type.getName())%></a><br /><%
     }
 %><h3>local types</h3><%
-for (type in l)
+for (DomainDescriptor type : l.values())
     {
-    %><a href="typeDetails.view?type=<%=filter(PageFlowUtil.encode(type.typeName))%>"><%=filter(type.toString())%></a><br /><%
+    %><a href="typeDetails.view?type=<%=filter(PageFlowUtil.encode(type.getDomainURI()))%>"><%=filter(type.getName())%></a><br /><%
     }
 %>
-<p>
+<!--<p>
 [ <a href="importTypes.view">Import Types</a> ]
-</p>
+</p>-->
