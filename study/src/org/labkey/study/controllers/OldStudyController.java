@@ -112,6 +112,13 @@ public class OldStudyController extends BaseController
         }
     }
 
+    public static class RequirePipelineView extends StudyJspView<Boolean>
+    {
+        public RequirePipelineView(Study study, boolean showGoBack)
+        {
+            super(study, "requirePipeline.jsp", showGoBack);
+        }
+    }
 
     public class DatasetDetailsBean
     {
@@ -249,58 +256,6 @@ public class OldStudyController extends BaseController
                 out.print("</table>");
             }
         }
-    }
-
-    @Jpf.Action @RequiresPermission(ACL.PERM_READ)
-    protected Forward template() throws Exception
-    {
-        Study study = getStudy();
-        ViewContext context = getViewContext();
-
-        int datasetId = null == context.get(DataSetDefinition.DATASETKEY) ? 0 : Integer.parseInt((String) context.get(DataSetDefinition.DATASETKEY));
-        DataSetDefinition def = getStudyManager().getDataSetDefinition(study, datasetId);
-        if (null == def)
-            return typeNotFound(datasetId);
-        String typeURI = def.getTypeURI();
-        if (null == typeURI)
-            return typeNotFound(datasetId);
-
-        //TODO: This may unnecessarily select into temp table.
-        //Make public entry point for tableInfo without temp table
-        TableInfo tinfo = def.getTableInfo(getUser());
-
-        DataRegion dr = new DataRegion();
-        dr.setTable(tinfo);
-
-        Set<String> ignoreColumns = new CaseInsensitiveHashSet("lsid", "datasetid", "visitdate", "sourcelsid", "created", "modified", "visitrowid", "day");
-        if (study.isDateBased())
-            ignoreColumns.add("SequenceNum");
-
-        for (ColumnInfo col : tinfo.getColumns())
-        {
-            if (ignoreColumns.contains(col.getName()))
-                continue;
-            DataColumn dc = new DataColumn(col);
-            //DO NOT use friendly names. We will import this later.
-            dc.setCaption(col.getAlias());
-            dr.addColumn(dc);
-        }
-        DisplayColumn replaceColumn = new SimpleDisplayColumn();
-        replaceColumn.setCaption("replace");
-        dr.addColumn(replaceColumn);
-
-        SimpleFilter filter = new SimpleFilter();
-        filter.addWhereClause("0 = 1", new Object[]{});
-
-        RenderContext ctx = new RenderContext(getViewContext());
-        ctx.setContainer(getContainer());
-        ctx.setBaseFilter(filter);
-
-        ResultSet rs = dr.getResultSet(ctx);
-        List<DisplayColumn> cols = dr.getDisplayColumns();
-        ExcelWriter xl = new ExcelWriter(rs, cols);
-        xl.write(getResponse());
-        return null;
     }
 
     private ViewForward typeNotFound(int datasetId)
@@ -1332,109 +1287,6 @@ public class OldStudyController extends BaseController
         public void setComplete(boolean complete)
         {
             this.complete = complete;
-        }
-    }
-
-    @Jpf.Action @RequiresPermission(ACL.PERM_READ)
-    protected Forward viewPreferences() throws Exception
-    {
-        Study study = getStudy();
-        List<NavTree> navTrail = new ArrayList<NavTree>();
-
-        navTrail.add(new NavTree(study.getLabel(), forwardBegin()));
-
-        String id = getRequest().getParameter(DataSetDefinition.DATASETKEY);
-        String defaultView = getRequest().getParameter("defaultView");
-
-        if (NumberUtils.isNumber(id))
-        {
-            int dsid = NumberUtils.toInt(id);
-            DataSetDefinition def = getStudyManager().getDataSetDefinition(study, dsid);
-            if (def != null)
-            {
-                List<Pair<String, String>> views = ReportManager.get().getReportLabelsForDataset(getViewContext(), def);
-                if (defaultView != null)
-                {
-                    setDefaultView(getViewContext(), dsid, defaultView);
-                }
-                else
-                {
-                    defaultView = getDefaultView(getViewContext(), def.getDataSetId());
-                    if (!StringUtils.isEmpty(defaultView))
-                    {
-                        boolean defaultExists = false;
-                        for (Pair<String, String> view : views)
-                        {
-                            if (StringUtils.equals(view.getValue(), defaultView))
-                            {
-                                defaultExists = true;
-                                break;
-                            }
-                        }
-                        if (!defaultExists)
-                            setDefaultView(getViewContext(), dsid, "");
-                    }
-                }
-                String label = def.getLabel() != null ? def.getLabel() : "" + def.getDataSetId();
-
-                ActionURL datasetUrl = cloneActionURL();
-                datasetUrl.setAction(StudyController.DatasetAction.class);
-                navTrail.add(new NavTree(label, datasetUrl.getLocalURIString()));
-                navTrail.add(new NavTree("View Preferences"));
-
-                ViewPrefsBean bean = new ViewPrefsBean(views, def);
-                return _renderInTemplate(new StudyJspView<ViewPrefsBean>(study, "viewPreferences.jsp", bean), "Set Default View", navTrail.toArray(new NavTree[navTrail.size()]));
-            }
-        }
-        HttpView.throwNotFound("Invalid dataset ID");
-        return null;
-    }
-
-    public static class ViewPrefsBean
-    {
-        private List<Pair<String, String>> _views;
-        private DataSetDefinition _def;
-
-        public ViewPrefsBean(List<Pair<String, String>> views, DataSetDefinition def)
-        {
-            _views = views;
-            _def = def;
-        }
-
-        public List<Pair<String, String>> getViews(){return _views;}
-        public DataSetDefinition getDataSetDefinition(){return _def;}
-    }
-
-    private static final String DEFAULT_DATASET_VIEW = "Study.defaultDatasetView";
-
-    public static String getDefaultView(ViewContext context, int datasetId)
-    {
-        Map<String, String> viewMap = PropertyManager.getProperties(context.getUser().getUserId(),
-                context.getContainer().getId(), DEFAULT_DATASET_VIEW, false);
-
-        final String key = Integer.toString(datasetId);
-        if (viewMap != null && viewMap.containsKey(key))
-        {
-            return viewMap.get(key);
-        }
-        return "";
-    }
-
-    public void setDefaultView(ViewContext context, int datasetId, String view)
-    {
-        Map<String, String> viewMap = PropertyManager.getWritableProperties(context.getUser().getUserId(),
-                context.getContainer().getId(), DEFAULT_DATASET_VIEW, true);
-
-        viewMap.put(Integer.toString(datasetId), view);
-        PropertyManager.saveProperties(viewMap);
-    }
-
-
-    public static class RequirePipelineView extends StudyJspView<Boolean>
-    {
-        public RequirePipelineView(Study study, boolean showGoBack)
-        {
-            super(study, "requirePipeline.jsp", showGoBack);
         }
     }
 

@@ -1,19 +1,18 @@
 <%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page import="org.labkey.api.view.*" %>
 <%@ page import="org.labkey.common.util.Pair" %>
-<%@ page import="org.labkey.study.controllers.OldStudyController" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.util.AppProps" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 
 <%
-    JspView<OldStudyController.ViewPrefsBean> me = (JspView<OldStudyController.ViewPrefsBean>) HttpView.currentView();
-    OldStudyController.ViewPrefsBean bean = me.getModelBean();
+    JspView<StudyController.ViewPrefsBean> me = (JspView<StudyController.ViewPrefsBean>) HttpView.currentView();
+    StudyController.ViewPrefsBean bean = me.getModelBean();
     ActionURL url = HttpView.currentContext().cloneActionURL();
 
     ViewContext context = HttpView.currentContext();
-    String defaultView = OldStudyController.getDefaultView(context, bean.getDataSetDefinition().getDataSetId());
+    String defaultView = StudyController.getDefaultView(context, bean.getDataSetDefinition().getDataSetId());
 %>
 
 <table class="normal">
@@ -36,7 +35,7 @@
     <%
         }
         ActionURL doneUrl = HttpView.currentContext().cloneActionURL();
-        doneUrl.setAction("datasetReport");
+        doneUrl.setAction(StudyController.DatasetReportAction.class);
         doneUrl.deleteParameter("defaultView");
         doneUrl.replaceParameter("Dataset.viewName", defaultView);
     %>

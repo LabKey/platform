@@ -32,12 +32,10 @@ import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.assay.AssayPublishService;
-import org.labkey.api.util.CaseInsensitiveHashMap;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PrintTemplate;
+import org.labkey.api.view.template.PageConfig;
 import org.labkey.common.tools.TabLoader;
 import org.labkey.common.util.Pair;
 import org.labkey.study.SampleManager;
@@ -65,6 +63,7 @@ import org.springframework.web.servlet.mvc.Controller;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -336,7 +335,7 @@ public class StudyController extends BaseStudyController
             // is not a report (either the default grid view or a custom view)...
             if (null == reportView)
             {
-                HttpView.throwRedirect(createRedirectURLfrom(StudyController.DatasetAction.class, context));
+                HttpView.throwRedirect(createRedirectURLfrom(DatasetAction.class, context));
                 return null;
             }
 
@@ -669,7 +668,7 @@ public class StudyController extends BaseStudyController
 */
             if (null == reportView)
             {
-                HttpView.redirect(new ActionURL(StudyController.DatasetAction.class, getContainer()));
+                HttpView.redirect(new ActionURL(DatasetAction.class, getContainer()));
                 return null;
             }
             //if (!reportView.getDescriptor().canRead(getUser()))
@@ -948,7 +947,7 @@ public class StudyController extends BaseStudyController
             try {
                 Study study = getStudy();
                 if (study != null)
-                    root.addChild(study.getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
+                    root.addChild(study.getLabel(), new ActionURL(BeginAction.class, getContainer()));
             }
             catch (ServletException e)
             {
@@ -3174,7 +3173,7 @@ public class StudyController extends BaseStudyController
             else if ("delete".equals(form.getAction()))
             {
                 ReportService.get().deleteReport(getViewContext(), report);
-                ActionURL url = new ActionURL(StudyController.ParticipantAction.class, getContainer());
+                ActionURL url = new ActionURL(ParticipantAction.class, getContainer());
 
                 HttpView.throwRedirect(url);
             }
@@ -3198,9 +3197,9 @@ public class StudyController extends BaseStudyController
             int datasetId = null == context.get(DataSetDefinition.DATASETKEY) ? 0 : Integer.parseInt((String) context.get(DataSetDefinition.DATASETKEY));
 
             ActionURL url = getViewContext().cloneActionURL();
-            url.setAction(StudyController.DatasetReportAction.class);
+            url.setAction(DatasetReportAction.class);
 
-            String defaultView = OldStudyController.getDefaultView(context, datasetId);
+            String defaultView = getDefaultView(context, datasetId);
             if (!StringUtils.isEmpty(defaultView))
                 url.addParameter("Dataset.viewName", defaultView);
             return url;
@@ -3222,11 +3221,181 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild(study.getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
-            _appendManageStudy(root);
             _appendNavTrailDatasetAdmin(root);
             return root.addChild("Define Dataset Schemas");
         }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class TemplateAction extends ExportAction
+    {
+        public void export(Object o, HttpServletResponse response) throws Exception
+        {
+            Study study = getStudy();
+            ViewContext context = getViewContext();
+
+            int datasetId = null == context.get(DataSetDefinition.DATASETKEY) ? 0 : Integer.parseInt((String) context.get(DataSetDefinition.DATASETKEY));
+            DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
+            if (null == def)
+            {
+                redirectTypeNotFound(datasetId);
+                return;
+            }
+            String typeURI = def.getTypeURI();
+            if (null == typeURI)
+                redirectTypeNotFound(datasetId);
+
+            //TODO: This may unnecessarily select into temp table.
+            //Make public entry point for tableInfo without temp table
+            TableInfo tinfo = def.getTableInfo(getUser());
+
+            DataRegion dr = new DataRegion();
+            dr.setTable(tinfo);
+
+            Set<String> ignoreColumns = new CaseInsensitiveHashSet("lsid", "datasetid", "visitdate", "sourcelsid", "created", "modified", "visitrowid", "day");
+            if (study.isDateBased())
+                ignoreColumns.add("SequenceNum");
+
+            for (ColumnInfo col : tinfo.getColumns())
+            {
+                if (ignoreColumns.contains(col.getName()))
+                    continue;
+                DataColumn dc = new DataColumn(col);
+                //DO NOT use friendly names. We will import this later.
+                dc.setCaption(col.getAlias());
+                dr.addColumn(dc);
+            }
+            DisplayColumn replaceColumn = new SimpleDisplayColumn();
+            replaceColumn.setCaption("replace");
+            dr.addColumn(replaceColumn);
+
+            SimpleFilter filter = new SimpleFilter();
+            filter.addWhereClause("0 = 1", new Object[]{});
+
+            RenderContext ctx = new RenderContext(getViewContext());
+            ctx.setContainer(getContainer());
+            ctx.setBaseFilter(filter);
+
+            ResultSet rs = dr.getResultSet(ctx);
+            List<DisplayColumn> cols = dr.getDisplayColumns();
+            ExcelWriter xl = new ExcelWriter(rs, cols);
+            xl.write(response);
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class ViewPreferencesAction extends SimpleViewAction
+    {
+        Study study;
+        DataSetDefinition def;
+
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            study = getStudy();
+
+
+            String id = getViewContext().getRequest().getParameter(DataSetDefinition.DATASETKEY);
+            String defaultView = getViewContext().getRequest().getParameter("defaultView");
+
+            if (NumberUtils.isNumber(id))
+            {
+                int dsid = NumberUtils.toInt(id);
+                def = StudyManager.getInstance().getDataSetDefinition(study, dsid);
+                if (def != null)
+                {
+                    List<Pair<String, String>> views = ReportManager.get().getReportLabelsForDataset(getViewContext(), def);
+                    if (defaultView != null)
+                    {
+                        setDefaultView(getViewContext(), dsid, defaultView);
+                    }
+                    else
+                    {
+                        defaultView = getDefaultView(getViewContext(), def.getDataSetId());
+                        if (!StringUtils.isEmpty(defaultView))
+                        {
+                            boolean defaultExists = false;
+                            for (Pair<String, String> view : views)
+                            {
+                                if (StringUtils.equals(view.getValue(), defaultView))
+                                {
+                                    defaultExists = true;
+                                    break;
+                                }
+                            }
+                            if (!defaultExists)
+                                setDefaultView(getViewContext(), dsid, "");
+                        }
+                    }
+
+                    ViewPrefsBean bean = new ViewPrefsBean(views, def);
+                    return new StudyJspView<ViewPrefsBean>(study, "viewPreferences.jsp", bean, errors);
+                }
+            }
+            HttpView.throwNotFound("Invalid dataset ID");
+            return null;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            PageConfig config = getPageConfig();
+                    config.setHelpTopic(new HelpTopic("Set Default View", HelpTopic.Area.STUDY));
+
+            root.addChild(study.getLabel(), new ActionURL(BeginAction.class, getContainer()));
+
+            ActionURL datasetURL = getViewContext().getActionURL().clone();
+            datasetURL.setAction(DatasetAction.class);
+
+            String label = def.getLabel() != null ? def.getLabel() : "" + def.getDataSetId();
+            root.addChild(new NavTree(label, datasetURL.getLocalURIString()));
+            
+            root.addChild(new NavTree("View Preferences"));
+            return root;
+        }
+    }
+
+    public static class ViewPrefsBean
+    {
+        private List<Pair<String, String>> _views;
+        private DataSetDefinition _def;
+
+        public ViewPrefsBean(List<Pair<String, String>> views, DataSetDefinition def)
+        {
+            _views = views;
+            _def = def;
+        }
+
+        public List<Pair<String, String>> getViews(){return _views;}
+        public DataSetDefinition getDataSetDefinition(){return _def;}
+    }
+
+
+    private static final String DEFAULT_DATASET_VIEW = "Study.defaultDatasetView";
+
+    public static String getDefaultView(ViewContext context, int datasetId)
+    {
+        Map<String, String> viewMap = PropertyManager.getProperties(context.getUser().getUserId(),
+                context.getContainer().getId(), DEFAULT_DATASET_VIEW, false);
+
+        final String key = Integer.toString(datasetId);
+        if (viewMap != null && viewMap.containsKey(key))
+        {
+            return viewMap.get(key);
+        }
+        return "";
+    }
+
+    private void setDefaultView(ViewContext context, int datasetId, String view)
+    {
+        Map<String, String> viewMap = PropertyManager.getWritableProperties(context.getUser().getUserId(),
+                context.getContainer().getId(), DEFAULT_DATASET_VIEW, true);
+
+        viewMap.put(Integer.toString(datasetId), view);
+        PropertyManager.saveProperties(viewMap);
+    }
+
+    private void redirectTypeNotFound(int datasetId) throws RedirectException
+    {
+        HttpView.throwRedirect(new ActionURL(TypeNotFoundAction.class, getContainer()).addParameter("id", datasetId));
     }
 
     private String getVisitLabel()
