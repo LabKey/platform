@@ -596,14 +596,14 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
 
     
     public static Forward throwRedirect(ActionURL url)
-            throws ServletException
+            throws RedirectException
     {
         throw new RedirectException(url.getLocalURIString());
     }
 
 
     public static Forward throwRedirect(String url)
-            throws ServletException
+            throws RedirectException
     {
         throw new RedirectException(url);
     }
@@ -656,13 +656,13 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     }
 
     public static ModelAndView throwUnauthorizedMV()
-            throws ServletException
+            throws UnauthorizedException
     {
         throw new UnauthorizedException(null, getContextURL());
     }
 
     public static void throwUnauthorized(String message)
-            throws ServletException
+            throws UnauthorizedException
     {
         throw new UnauthorizedException(message, getContextURL());
     }
