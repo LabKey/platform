@@ -175,7 +175,7 @@ public abstract class DefaultModule implements Module
             if (null == scriptsRun)
             {
                 ActionURL returnURL = moduleContext.getContinueUpgradeURL(getVersion());
-                return SqlScriptRunner.getDefaultURL(returnURL, getName(), moduleContext.getInstalledVersion(), getVersion(), moduleContext.getExpress());
+                return PageFlowUtil.urlProvider(SqlScriptRunner.SqlScriptUrls.class).getDefaultURL(returnURL, getName(), moduleContext.getInstalledVersion(), getVersion(), moduleContext.getExpress());
             }
         }
 

@@ -1703,27 +1703,10 @@ public class PageFlowUtil
     //
 
     @Deprecated
-    static private String getPageFlowName(Enum e)
-    {
-        return ModuleLoader.getInstance().getPageFlowForPackage(e.getClass().getPackage());
-    }
-
-    @Deprecated
-    static public ActionURL urlFor(Enum action, String containerPath)
-    {
-        return new ActionURL(getPageFlowName(action), action.toString(), containerPath);
-    }
-
-    @Deprecated
     static public ActionURL urlFor(Enum action, Container container)
     {
-        return urlFor(action, container.getPath());
-    }
-
-    @Deprecated
-    static public String helpTopic(Enum action)
-    {
-        return getPageFlowName(action) + "/" + action.toString();
+        String pageFlowName = ModuleLoader.getInstance().getPageFlowForPackage(action.getClass().getPackage());
+        return new ActionURL(pageFlowName, action.toString(), container.getPath());
     }
 
     /**

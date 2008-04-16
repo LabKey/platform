@@ -536,6 +536,7 @@ public class ViewController extends PageFlowControllerFIXED
         return null;
     }
 
+    @Deprecated
     protected ActionURL urlFor(Enum action)
     {
         try

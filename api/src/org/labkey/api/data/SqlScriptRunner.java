@@ -16,9 +16,10 @@
 
 package org.labkey.api.data;
 
-import org.apache.commons.collections.MultiMap;
-import org.apache.commons.collections.map.MultiValueMap;
+import org.apache.commons.collections15.MultiMap;
+import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.log4j.Logger;
+import org.labkey.api.action.UrlProvider;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 
@@ -64,6 +65,7 @@ public class SqlScriptRunner
     // Wait indefinitely until all scripts finish running
     public static void waitForScriptsToFinish() throws InterruptedException
     {
+        //noinspection StatementWithEmptyBody
         while (!waitForScriptToFinish(0));
     }
 
@@ -85,36 +87,11 @@ public class SqlScriptRunner
     }
 
 
-    // TODO: Should move next two methods to Controller... but Controller is not accessible outside module
-    public static ActionURL getDefaultURL(ActionURL returnURL, String moduleName, double fromVersion, double toVersion, boolean express)
+    public interface SqlScriptUrls extends UrlProvider
     {
-        return getURL(returnURL, moduleName, null, fromVersion, toVersion, express);
-    }
-
-    public static ActionURL getURL(ActionURL returnURL, String moduleName, String schemaName, double fromVersion, double toVersion, boolean express)
-    {
-        ActionURL url = new ActionURL();
-
-        if (express)
-        {
-            url.setAction("runRecommended");
-            url.addParameter("finish", "1");
-        }
-        else
-            url.setAction("showList");
-
-        url.setPageFlow("admin-sql");
-        url.setExtraPath(null);
-        url.addParameter("moduleName", moduleName);
-
-        if (null != schemaName)
-            url.addParameter("schemaName", schemaName);
-
-        url.addParameter("from", String.valueOf(fromVersion));
-        url.addParameter("to", String.valueOf(toVersion));
-        url.addParameter("uri", returnURL.getLocalURIString());
-
-        return url;
+        public ActionURL getDefaultURL(ActionURL returnURL, String moduleName, double fromVersion, double toVersion, boolean express);
+        public ActionURL getRunRecommended(ActionURL returnURL, String moduleName, String schemaName, double fromVersion, double toVersion);
+        public ActionURL getShowList(ActionURL returnURL, String moduleName, String schemaName, double fromVersion, double toVersion);
     }
 
 
@@ -146,16 +123,16 @@ public class SqlScriptRunner
     public static List<SqlScript> getRecommendedScripts(SqlScriptProvider provider, String schemaName, double from, double to) throws SQLException
     {
         List<SqlScript> newScripts = getNewScripts(provider, schemaName);
-        MultiMap mm = new MultiValueMap();
+        MultiMap<String, SqlScript> mm = new MultiHashMap<String, SqlScript>();
 
         for (SqlScript script : newScripts)
             mm.put(script.getSchemaName(), script);
 
         List<SqlScript> scripts = new ArrayList<SqlScript>();
-        String[] schemaNames = ((Set<String>)mm.keySet()).toArray(new String[0]);
+        String[] schemaNames = mm.keySet().toArray(new String[mm.keySet().size()]);
         Arrays.sort(schemaNames, String.CASE_INSENSITIVE_ORDER);
         for (String name : schemaNames)
-            scripts.addAll(getRecommendedScripts((Collection<SqlScript>) mm.get(name), from, to));
+            scripts.addAll(getRecommendedScripts(mm.get(name), from, to));
 
         return scripts;
     }

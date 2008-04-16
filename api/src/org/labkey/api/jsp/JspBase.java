@@ -127,6 +127,8 @@ abstract public class JspBase extends HttpServlet implements HttpJspPage, HasVie
      * @param action an enum named to match a controller action
      * @return view url
      */
+
+    // TODO: Eliminate this once Flow is ported to Spring and the two remaining usages of this are eliminated, in favor of action class URL creation
     @Deprecated
     public ActionURL urlFor(Enum action)
     {
