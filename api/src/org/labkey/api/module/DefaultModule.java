@@ -16,7 +16,6 @@
 package org.labkey.api.module;
 
 import junit.framework.TestCase;
-import org.apache.beehive.netui.pageflow.Forward;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
@@ -31,7 +30,6 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletContext;
 import java.io.*;
-import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -160,7 +158,7 @@ public abstract class DefaultModule implements Module
      * hit the home page during upgrade.  We need to synchronize beforeSchemaUpdate and afterSchemaUpdate here.
      * SqlScriptRunner will run and synchronize the actual scripts.
      */
-    public Forward versionUpdate(ModuleContext moduleContext, ViewContext viewContext)
+    public ActionURL versionUpdate(ModuleContext moduleContext, ViewContext viewContext)
     {
         synchronized(SCHEMA_UPDATE_LOCK)
         {
@@ -176,8 +174,8 @@ public abstract class DefaultModule implements Module
 
             if (null == scriptsRun)
             {
-                String returnUrl = moduleContext.getContinueUpgradeUrl(getVersion());
-                return SqlScriptRunner.getDefaultForward(returnUrl, getName(), moduleContext.getInstalledVersion(), getVersion(), moduleContext.getExpress());
+                ActionURL returnURL = moduleContext.getContinueUpgradeURL(getVersion());
+                return SqlScriptRunner.getDefaultURL(returnURL, getName(), moduleContext.getInstalledVersion(), getVersion(), moduleContext.getExpress());
             }
         }
 
@@ -188,15 +186,7 @@ public abstract class DefaultModule implements Module
             _afterUpdateComplete = true;
         }
 
-        try
-        {
-            return new ViewForward(moduleContext.getUpgradeCompleteUrl(getVersion()));
-        }
-        catch (URISyntaxException x)
-        {
-            _log.error("Bad URI: " + moduleContext.getUpgradeCompleteUrl(getVersion()));
-            return null;
-        }
+        return moduleContext.getUpgradeCompleteURL(getVersion());
     }
 
     public void beforeSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)
@@ -211,7 +201,8 @@ public abstract class DefaultModule implements Module
 
 
     /**
-     * Start the module. Default implementation does nothing except setModuleState(Running)
+     * Start the module. Default implementation does nothing except setModuleState(Running).
+     * Overrides must call super.startup(moduleContext) to set module state correctly. 
      */
     public void startup(ModuleContext moduleContext)
     {

@@ -124,16 +124,29 @@ public class ModuleContext implements Cloneable
         this.name = name;
     }
 
-    public String getUpgradeCompleteUrl(double newVersion)
+    public ActionURL getUpgradeCompleteURL(double newVersion)
     {
-        return ActionURL.toPathString("admin", "moduleUpgrade", "") + "?moduleName=" + getName() + "&oldVersion=" + getInstalledVersion() + "&newVersion="
-                + newVersion + "&state=" + ModuleLoader.ModuleState.InstallComplete + (getExpress() ? "&express=1" : "");
+        return getUpgradeURL(getName(), getInstalledVersion(), newVersion, ModuleLoader.ModuleState.InstallComplete, getExpress());
     }
 
-    public String getContinueUpgradeUrl(double newVersion)
+    // TODO: Move to interface, with implementation in AdminController
+    public static ActionURL getUpgradeURL(String name, double oldVersion, double newVersion, ModuleLoader.ModuleState state, boolean express)
     {
-        return ActionURL.toPathString("admin", "moduleUpgrade", "") + "?moduleName=" + getName() + "&oldVersion=" + getInstalledVersion() + "&newVersion="
-                + newVersion + "&state=" + ModuleLoader.ModuleState.Installing;
+        ActionURL url = new ActionURL("admin", "moduleUpgrade", "");
+        url.addParameter("moduleName", name);
+        url.addParameter("oldVersion", String.valueOf(oldVersion));
+        url.addParameter("newVersion", String.valueOf(newVersion));
+        url.addParameter("state", state.toString());
+
+        if (express)
+            url.addParameter("express", "1");
+
+        return url;
+    }
+
+    public ActionURL getContinueUpgradeURL(double newVersion)
+    {
+        return getUpgradeURL(getName(), getInstalledVersion(), newVersion, ModuleLoader.ModuleState.Installing, false);
     }
 
     /*

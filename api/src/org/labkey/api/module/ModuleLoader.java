@@ -149,7 +149,7 @@ public class ModuleLoader implements Filter
 
     public ModuleLoader()
     {
-        assert null == _instance : "Should be only one instance of module manager";
+        assert null == _instance : "Should be only one instance of module loader";
         if (null != _instance)
             _log.error("More than one instance of module loader...");
 
@@ -825,7 +825,7 @@ public class ModuleLoader implements Filter
         }
         else
         {
-            return new HashMap(_moduleFailures);
+            return new HashMap<String, Throwable>(_moduleFailures);
         }
     }
 

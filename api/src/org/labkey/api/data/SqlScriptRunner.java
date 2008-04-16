@@ -20,7 +20,6 @@ import org.apache.commons.collections.MultiMap;
 import org.apache.commons.collections.map.MultiValueMap;
 import org.apache.log4j.Logger;
 import org.labkey.api.security.User;
-import org.labkey.api.view.ViewForward;
 import org.labkey.api.view.ActionURL;
 
 import java.sql.SQLException;
@@ -87,35 +86,35 @@ public class SqlScriptRunner
 
 
     // TODO: Should move next two methods to Controller... but Controller is not accessible outside module
-    public static ViewForward getDefaultForward(String returnUrl, String moduleName, double fromVersion, double toVersion, boolean express)
+    public static ActionURL getDefaultURL(ActionURL returnURL, String moduleName, double fromVersion, double toVersion, boolean express)
     {
-        return getForward(returnUrl, moduleName, null, fromVersion, toVersion, express);
+        return getURL(returnURL, moduleName, null, fromVersion, toVersion, express);
     }
 
-    public static ViewForward getForward(String returnUrl, String moduleName, String schemaName, double fromVersion, double toVersion, boolean express)
+    public static ActionURL getURL(ActionURL returnURL, String moduleName, String schemaName, double fromVersion, double toVersion, boolean express)
     {
-        ActionURL forwardUrl = new ActionURL();
+        ActionURL url = new ActionURL();
 
         if (express)
         {
-            forwardUrl.setAction("runRecommended");
-            forwardUrl.addParameter("finish", "1");
+            url.setAction("runRecommended");
+            url.addParameter("finish", "1");
         }
         else
-            forwardUrl.setAction("showList");
+            url.setAction("showList");
 
-        forwardUrl.setPageFlow("admin-sql");
-        forwardUrl.setExtraPath(null);
-        forwardUrl.addParameter("moduleName", moduleName);
+        url.setPageFlow("admin-sql");
+        url.setExtraPath(null);
+        url.addParameter("moduleName", moduleName);
 
         if (null != schemaName)
-            forwardUrl.addParameter("schemaName", schemaName);
+            url.addParameter("schemaName", schemaName);
 
-        forwardUrl.addParameter("from", String.valueOf(fromVersion));
-        forwardUrl.addParameter("to", String.valueOf(toVersion));
-        forwardUrl.addParameter("uri", returnUrl);
+        url.addParameter("from", String.valueOf(fromVersion));
+        url.addParameter("to", String.valueOf(toVersion));
+        url.addParameter("uri", returnURL.getLocalURIString());
 
-        return new ViewForward(forwardUrl);
+        return url;
     }
 
 

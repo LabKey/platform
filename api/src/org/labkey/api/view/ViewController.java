@@ -337,7 +337,7 @@ public class ViewController extends PageFlowControllerFIXED
         {
             viewContext = HttpView.currentContext();
         }
-        viewContext.requiresTermsOfUse();;
+        viewContext.requiresTermsOfUse();
     }
 
 

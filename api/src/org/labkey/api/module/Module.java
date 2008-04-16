@@ -16,12 +16,11 @@
 package org.labkey.api.module;
 
 import junit.framework.TestCase;
-import org.apache.beehive.netui.pageflow.Forward;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.common.util.Pair;
 
@@ -87,7 +86,7 @@ public interface Module
      * Note that if the module wishes to set up its own upgrade UI it should redirect to that
      * UI and then when complete call this method.
      */
-    public Forward versionUpdate(ModuleContext moduleContext, ViewContext viewContext);
+    public ActionURL versionUpdate(ModuleContext moduleContext, ViewContext viewContext);
 
     //TODO: Spring ApplicationContext might be good here
 

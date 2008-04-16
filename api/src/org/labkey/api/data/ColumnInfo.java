@@ -1155,7 +1155,7 @@ public class ColumnInfo
                 (sqlType == Types.BIT);
     }
 
-    /** UNDONE: move to dialect */
+    /** TODO: move to dialect */
     public static String sqlTypeNameFromSqlType(int sqlType, SqlDialect dialect)
     {
         boolean postgres = dialect instanceof SqlDialectPostgreSQL;
