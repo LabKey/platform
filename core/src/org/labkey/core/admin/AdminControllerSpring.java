@@ -35,6 +35,7 @@ import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.common.util.Pair;
 import org.labkey.core.analytics.AnalyticsController;
+import org.labkey.core.login.LoginController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
@@ -732,6 +733,7 @@ public class AdminControllerSpring extends SpringActionController
         if (!AppProps.getInstance().isDevMode())
             return null;
 
+        //noinspection unchecked
         Set<String> resources = ViewServlet.getViewServletContext().getResourcePaths(_libPath);
         List<String> filenames = new ArrayList<String>(resources.size());
 
@@ -2892,51 +2894,6 @@ public class AdminControllerSpring extends SpringActionController
     }
 
 
-/*    protected Forward defineWebThemes(WebThemeForm form) throws Exception
-    {
-        String themeName = form.getThemeName();
-        String friendlyName = form.getFriendlyName();
-
-        //we should only receive posts to this method now....
-        //but do we need this anymore since page is admin only anyhow
-        if (!("POST".equalsIgnoreCase(getRequest().getMethod())))
-        {
-            throw new IllegalAccessException();
-        }
-
-        ActionURL url = AdminControllerSpring.getCustomizeSiteURL(form.isUpgradeInProgress());
-
-        if (null != getRequest().getParameter("Delete.x"))
-        {
-            // delete the web theme
-            WebTheme.deleteWebTheme (themeName);
-        }
-        else
-        {
-            //new theme
-            if (null == themeName || 0 == themeName.length())
-                themeName = friendlyName;
-
-            //add new theme or save existing theme
-            WebTheme.updateWebTheme (
-                themeName
-                , form.getNavBarColor(), form.getHeaderLineColor()
-                , form.getEditFormColor(), form.getFullScreenBorderColor()
-                , form.getGradientLightColor(), form.getGradientDarkColor()
-                );
-
-            AttachmentCache.clearGradientCache();
-            ButtonServlet.resetColorScheme();
-            //parameter to use to set customize page drop-down to user's last choice on define themes page
-            url.addParameter("themeName", themeName);
-        }
-
-        WriteableAppProps.incrementLookAndFeelRevisionAndSave();
-
-        return new ViewForward(url);
-    }
-*/
-
     public static class WebThemeForm implements HasValidator
     {
         String _themeName;
@@ -3050,7 +3007,7 @@ public class AdminControllerSpring extends SpringActionController
             int b = -1;
             try
             {
-              r = Integer.parseInt(s.substring(0, 2), 16);
+                r = Integer.parseInt(s.substring(0, 2), 16);
             }
             catch (NumberFormatException e)
             {
@@ -3058,7 +3015,7 @@ public class AdminControllerSpring extends SpringActionController
             }
             try
             {
-              g = Integer.parseInt(s.substring(2, 4), 16);
+                g = Integer.parseInt(s.substring(2, 4), 16);
             }
             catch (NumberFormatException e)
             {
@@ -3066,7 +3023,7 @@ public class AdminControllerSpring extends SpringActionController
             }
             try
             {
-              b = Integer.parseInt(s.substring(4, 6), 16);
+                b = Integer.parseInt(s.substring(4, 6), 16);
             }
             catch (NumberFormatException e)
             {
@@ -3095,6 +3052,269 @@ public class AdminControllerSpring extends SpringActionController
                     !isValidColor(_gradientDarkColor))
             {
                 errors.reject(ERROR_MSG, "You must provide a valid 6-character hexadecimal value for each field.");
+            }
+        }
+    }
+
+
+    private static ActionURL getModuleUpgradeURL(boolean express, boolean force)
+    {
+        ActionURL url = new ActionURL(ModuleUpgradeAction.class, ContainerManager.getRoot());
+
+        if (express)
+            url.addParameter("express", "1");
+
+        if (force)
+            url.addParameter("force", "1");
+
+        return url;
+    }
+
+
+    @RequiresSiteAdmin
+    public class ModuleUpgradeAction extends SimpleRedirectAction<UpgradeStatusForm>
+    {
+        public ActionURL getRedirectURL(UpgradeStatusForm form) throws Exception
+        {
+            User u = getViewContext().getUser();
+
+            if (form.getExpress())
+                ModuleLoader.getInstance().setExpress(true);
+
+            //Make sure we are the upgrade user before upgrading...
+            User upgradeUser = ModuleLoader.getInstance().setUpgradeUser(u, form.getForce());
+            if (u.equals(upgradeUser))
+            {
+                Module module;
+                String moduleName = form.getModuleName();
+                //Already have a module to upgrade
+                if (null != moduleName)
+                {
+                    module = ModuleLoader.getInstance().getModule(moduleName);
+                    ModuleLoader.ModuleState state = ModuleLoader.ModuleState.valueOf(form.getState());
+                    ModuleContext ctx = ModuleLoader.getInstance().getModuleContext(module);
+                    if (state.equals(ModuleLoader.ModuleState.InstallComplete))
+                        ctx.upgradeComplete(form.getNewVersion());
+                    else //Continue calling until we're done
+                        return module.versionUpdate(ctx, getViewContext());
+                }
+                else
+                {
+                    //Get next available
+                    module = ModuleLoader.getInstance().getNextUpgrade();
+                    if (null != module)
+                    {
+                        ModuleContext ctx = ModuleLoader.getInstance().getModuleContext(module);
+                        ctx.setExpress(ModuleLoader.getInstance().getExpress());
+                        //Make sure we haven't started. If so, just reshow module status again
+                        return module.versionUpdate(ctx, getViewContext());
+                    }
+                }
+            }
+
+            return getModuleStatusURL(false);
+        }
+    }
+
+
+    private static ActionURL getModuleStatusURL(boolean force)
+    {
+        ActionURL url = new ActionURL(ModuleStatusAction.class, ContainerManager.getRoot());
+
+        if (force)
+            url.addParameter("force", "1");
+
+        return url;
+    }
+
+
+    @RequiresPermission(ACL.PERM_NONE)
+    public class ModuleStatusAction extends SimpleViewAction<UpgradeStatusForm>
+    {
+        public ModelAndView getView(UpgradeStatusForm form, BindException errors) throws Exception
+        {
+            //This is first UI at startup.  Create first admin account, if necessary.
+            if (UserManager.hasNoUsers())
+                HttpView.throwRedirect(LoginController.getInitialUserURL());
+
+            if (!getUser().isAdministrator())
+                HttpView.throwUnauthorized();
+
+            VBox vbox = new VBox();
+            vbox.addView(new ModuleStatusView());
+
+            if (ModuleLoader.getInstance().isUpgradeRequired())
+                vbox.addView(new StartUpgradingView(ModuleLoader.getInstance().getUpgradeUser(), form.getForce(), ModuleLoader.getInstance().isNewInstall()));
+            else
+            {
+                SqlScriptRunner.stopBackgroundThread();
+
+                ActionURL url = AdminControllerSpring.getCustomizeSiteURL(true);
+                vbox.addView(new HtmlView("All modules are up-to-date.<br><br>" +
+                        "<a href='" + url + "'><img border=0 src='" + PageFlowUtil.buttonSrc("Next") + "'></a>"));
+            }
+
+            getPageConfig().setTemplate(Template.Dialog);
+
+            return vbox;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+
+    public static class UpgradeStatusForm
+    {
+        private double oldVersion;
+        private double newVersion;
+        private String moduleName = null;
+        private String state = ModuleLoader.ModuleState.InstallRequired.name();
+        boolean force = false;
+        boolean express = false;
+
+        /**
+         * Should we force current user to become the upgrader
+         */
+        public boolean getForce()
+        {
+            return force;
+        }
+
+        public void setForce(boolean force)
+        {
+            this.force = force;
+        }
+
+        public double getOldVersion()
+        {
+            return oldVersion;
+        }
+
+        public void setOldVersion(double oldVersion)
+        {
+            this.oldVersion = oldVersion;
+        }
+
+        public double getNewVersion()
+        {
+            return newVersion;
+        }
+
+        public void setNewVersion(double newVersion)
+        {
+            this.newVersion = newVersion;
+        }
+
+        public String getModuleName()
+        {
+            return moduleName;
+        }
+
+        public void setModuleName(String moduleName)
+        {
+            this.moduleName = moduleName;
+        }
+
+        public void setState(String state)
+        {
+            this.state = state;
+        }
+
+        public String getState()
+        {
+            return state;
+        }
+
+        public boolean getExpress()
+        {
+            return express;
+        }
+
+        public void setExpress(boolean express)
+        {
+            this.express = express;
+        }
+    }
+
+
+    public static class ModuleStatusView extends HttpView
+    {
+        @Override
+        protected void renderInternal(Object model, PrintWriter out) throws Exception
+        {
+            List<Module> modules = ModuleLoader.getInstance().getModules();
+            out.write("<table><tr><td><b>Module</b></td><td><b>Status</b></td></tr>");
+            for (Module module : modules)
+            {
+                ModuleContext ctx = ModuleLoader.getInstance().getModuleContext(module);
+                out.write("<tr><td>");
+                out.write(ctx.getName());
+                out.write("</td><td>");
+                out.write(ctx.getMessage());
+                out.write("</td></tr>\n");
+            }
+            out.write("</table>");
+        }
+    }
+
+
+    public static class StartUpgradingView extends HttpView
+    {
+        User user = null;
+        boolean force = false;
+        boolean newInstall = false;
+
+        public StartUpgradingView(User currentUser, boolean force, boolean newInstall)
+        {
+            this.force = force;
+            user = currentUser;
+            this.newInstall = newInstall;
+        }
+
+        @Override
+        protected void renderInternal(Object model, PrintWriter out) throws Exception
+        {
+            ActionURL expressURL = getModuleUpgradeURL(true, force);
+            User upgradeUser = ModuleLoader.getInstance().getUpgradeUser();
+            String action = newInstall ? "Install" : "Upgrade";
+            String ing = newInstall ? "Installing" : "Upgrading";
+
+            //Upgrade is not started
+            if (null == upgradeUser || force)
+            {
+                out.write("<a href=\"" + expressURL.getEncodedLocalURIString() + "\"><img border=0 src='" + PageFlowUtil.buttonSrc("Express " + action) + "'></a>&nbsp;");
+                out.write("<a href=\"" + getModuleUpgradeURL(false, force).getEncodedLocalURIString() + "\"><img border=0 src='" + PageFlowUtil.buttonSrc("Advanced " + action) + "'></a>");
+            }
+            //I'm already upgrading upgrade next module after showing status
+            else if (getViewContext().getUser().equals(upgradeUser))
+            {
+                out.write("<script type=\"text/javascript\">var timeout = window.setTimeout(\"doRefresh()\", 1000);" +
+                        "function doRefresh() {\n" +
+                        "   window.clearTimeout(timeout);\n" +
+                        "   window.location = '" + expressURL.getEncodedLocalURIString() + "';\n" +
+                        "}\n</script>");
+                out.write("<p>");
+                out.write(ing + "...");
+                out.write("<p>This page should refresh automatically. If the page does not refresh <a href=\"");
+                out.write(expressURL.getEncodedLocalURIString());
+                out.write("\">Click Here</a>");
+            }
+            //Somebody else is installing/upgrading
+            else
+            {
+                ActionURL url = getModuleStatusURL(true);
+
+                out.print("<p>");
+                out.print(user.getEmail());
+                out.print(" is already " + ing.toLowerCase() + ". <p>");
+
+                out.print("Refresh this page to see " + action.toLowerCase() + " progress.<p>");
+                out.print("If " + action.toLowerCase() + " was cancelled, <a href='");
+                out.print(url.getEncodedLocalURIString());
+                out.print("'>Try Again</a>");
             }
         }
     }

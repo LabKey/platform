@@ -16,7 +16,6 @@
 package org.labkey.core;
 
 import junit.framework.TestCase;
-import org.apache.beehive.netui.pageflow.Forward;
 import org.apache.log4j.Logger;
 import org.fhcrc.cpas.util.NetworkDrive;
 import org.labkey.api.attachments.AttachmentService;
@@ -132,7 +131,7 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
     // Members, UsersData, etc. tables before they're created (bootstrap time) or modified (upgrade time).  This code
     // is not thread-safe -- it should be called once at startup.
     @Override
-    public Forward versionUpdate(ModuleContext moduleContext, ViewContext viewContext)
+    public ActionURL versionUpdate(ModuleContext moduleContext, ViewContext viewContext)
     {
         // TODO: PageFlowUtil.getContentsAsString()
         // TODO: Break up PG scripts into multiple executes
