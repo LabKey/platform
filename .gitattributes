@@ -1,5 +1,4 @@
 * text=auto !eol
-api/API.iml -text
 api/remotesrc/org/labkey/api/RemoteControllerProxy.java -text
 api/remotesrc/org/labkey/api/ftp/FtpConnector.java -text
 api/src/java/sql/ClientInfoStatus.java -text
@@ -1401,8 +1400,6 @@ api/webapp/ext-2.0.2/source/widgets/tree/TreeNodeUI.js -text
 api/webapp/ext-2.0.2/source/widgets/tree/TreePanel.js -text
 api/webapp/ext-2.0.2/source/widgets/tree/TreeSelectionModel.js -text
 api/webapp/ext-2.0.2/source/widgets/tree/TreeSorter.js -text
-internal/Internal.iml -text
-internal/InternalGWT.iml -text
 internal/gwtsrc/org/labkey/api/gwt/Internal.gwt.xml -text
 internal/gwtsrc/org/labkey/api/gwt/client/assay/AssayDesignerMainPanel.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/assay/AssayException.java -text
