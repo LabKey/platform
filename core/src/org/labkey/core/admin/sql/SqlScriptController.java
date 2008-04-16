@@ -19,6 +19,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -49,6 +50,47 @@ public class SqlScriptController extends SpringActionController
         page.setTemplate(PageConfig.Template.Dialog);
         return page;
     }
+
+
+    public static class SqlScriptUrls implements SqlScriptRunner.SqlScriptUrls
+    {
+        public ActionURL getDefaultURL(ActionURL returnURL, String moduleName, double fromVersion, double toVersion, boolean express)
+        {
+            if (express)
+                return getRunRecommended(returnURL, moduleName, null, fromVersion, toVersion);
+            else
+                return getShowList(returnURL, moduleName, null, fromVersion, toVersion);
+        }
+
+        public ActionURL getRunRecommended(ActionURL returnURL, String moduleName, String schemaName, double fromVersion, double toVersion)
+        {
+            ActionURL url = createURL(RunRecommendedAction.class, returnURL, moduleName, schemaName, fromVersion, toVersion);
+            url.addParameter("finish", "1");
+            return url;
+        }
+
+        public ActionURL getShowList(ActionURL returnURL, String moduleName, String schemaName, double fromVersion, double toVersion)
+        {
+            return createURL(ShowListAction.class, returnURL, moduleName, schemaName, fromVersion, toVersion);
+        }
+
+        private ActionURL createURL(Class<? extends Controller> actionClass, ActionURL returnURL, String moduleName, String schemaName, double fromVersion, double toVersion)
+        {
+            ActionURL url = new ActionURL(actionClass, ContainerManager.getRoot());
+
+            url.addParameter("moduleName", moduleName);
+
+            if (null != schemaName)
+                url.addParameter("schemaName", schemaName);
+
+            url.addParameter("from", String.valueOf(fromVersion));
+            url.addParameter("to", String.valueOf(toVersion));
+            url.addParameter("uri", returnURL.getLocalURIString());
+
+            return url;
+        }
+    }
+
 
     @RequiresSiteAdmin
     public class FinishAction extends RedirectAction<SqlScriptForm>

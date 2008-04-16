@@ -3144,7 +3144,7 @@ public class AdminControllerSpring extends SpringActionController
             vbox.addView(new ModuleStatusView());
 
             if (ModuleLoader.getInstance().isUpgradeRequired())
-                vbox.addView(new StartUpgradingView(ModuleLoader.getInstance().getUpgradeUser(), form.getForce(), ModuleLoader.getInstance().isNewInstall()));
+                vbox.addView(new UpgradeView(ModuleLoader.getInstance().getUpgradeUser(), form.getForce(), form.getExpress(), ModuleLoader.getInstance().isNewInstall()));
             else
             {
                 SqlScriptRunner.stopBackgroundThread();
@@ -3261,45 +3261,48 @@ public class AdminControllerSpring extends SpringActionController
     }
 
 
-    public static class StartUpgradingView extends HttpView
+    public static class UpgradeView extends HttpView
     {
-        User user = null;
-        boolean force = false;
-        boolean newInstall = false;
+        User _user;
+        boolean _force;
+        boolean _express;
+        boolean _newInstall;
 
-        public StartUpgradingView(User currentUser, boolean force, boolean newInstall)
+        public UpgradeView(User currentUser, boolean force, boolean express, boolean newInstall)
         {
-            this.force = force;
-            user = currentUser;
-            this.newInstall = newInstall;
+            _force = force;
+            _express = express;
+            _user = currentUser;
+            _newInstall = newInstall;
         }
 
         @Override
         protected void renderInternal(Object model, PrintWriter out) throws Exception
         {
-            ActionURL expressURL = getModuleUpgradeURL(true, force);
             User upgradeUser = ModuleLoader.getInstance().getUpgradeUser();
-            String action = newInstall ? "Install" : "Upgrade";
-            String ing = newInstall ? "Installing" : "Upgrading";
+            String action = _newInstall ? "Install" : "Upgrade";
+            String ing = _newInstall ? "Installing" : "Upgrading";
 
             //Upgrade is not started
-            if (null == upgradeUser || force)
+            if (null == upgradeUser || _force)
             {
-                out.write("<a href=\"" + expressURL.getEncodedLocalURIString() + "\"><img border=0 src='" + PageFlowUtil.buttonSrc("Express " + action) + "'></a>&nbsp;");
-                out.write("<a href=\"" + getModuleUpgradeURL(false, force).getEncodedLocalURIString() + "\"><img border=0 src='" + PageFlowUtil.buttonSrc("Advanced " + action) + "'></a>");
+                out.write("<a href=\"" + getModuleUpgradeURL(true, _force).getEncodedLocalURIString() + "\"><img border=0 src='" + PageFlowUtil.buttonSrc("Express " + action) + "'></a>&nbsp;");
+                out.write("<a href=\"" + getModuleUpgradeURL(false, _force).getEncodedLocalURIString() + "\"><img border=0 src='" + PageFlowUtil.buttonSrc("Advanced " + action) + "'></a>");
             }
-            //I'm already upgrading upgrade next module after showing status
+            //I'm already upgrading -- upgrade next module after showing status
             else if (getViewContext().getUser().equals(upgradeUser))
             {
+                ActionURL continueURL = getModuleUpgradeURL(_express, _force);
+
                 out.write("<script type=\"text/javascript\">var timeout = window.setTimeout(\"doRefresh()\", 1000);" +
                         "function doRefresh() {\n" +
                         "   window.clearTimeout(timeout);\n" +
-                        "   window.location = '" + expressURL.getEncodedLocalURIString() + "';\n" +
+                        "   window.location = '" + continueURL.getEncodedLocalURIString() + "';\n" +
                         "}\n</script>");
                 out.write("<p>");
                 out.write(ing + "...");
                 out.write("<p>This page should refresh automatically. If the page does not refresh <a href=\"");
-                out.write(expressURL.getEncodedLocalURIString());
+                out.write(continueURL.getEncodedLocalURIString());
                 out.write("\">Click Here</a>");
             }
             //Somebody else is installing/upgrading
@@ -3308,7 +3311,7 @@ public class AdminControllerSpring extends SpringActionController
                 ActionURL url = getModuleStatusURL(true);
 
                 out.print("<p>");
-                out.print(user.getEmail());
+                out.print(_user.getEmail());
                 out.print(" is already " + ing.toLowerCase() + ". <p>");
 
                 out.print("Refresh this page to see " + action.toLowerCase() + " progress.<p>");

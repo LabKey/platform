@@ -13,7 +13,7 @@
     }
 %>
 <labkey:errors />
-<form action="<%=urlFor(ListController.Action.newListDefinition)%>" method="POST">
+<form action="<%=h(urlFor(ListController.NewListDefinitionAction.class))%>" method="POST">
     <p>What is the name of your list?<br>
         <input type="text" id="ff_name" name="ff_name" value="<%=h(form.ff_name)%>"/>
     </p>

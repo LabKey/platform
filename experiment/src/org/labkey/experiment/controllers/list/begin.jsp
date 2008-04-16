@@ -43,5 +43,5 @@
     </table>
     <%} %>
 <% if (hasPermission(ACL.PERM_ADMIN)) { %>
-    <labkey:button text="Create New List" href="<%=urlFor(ListController.Action.newListDefinition)%>" />
+    <labkey:button text="Create New List" href="<%=h(urlFor(ListController.NewListDefinitionAction.class))%>" />
 <% } %>
