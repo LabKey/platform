@@ -82,7 +82,6 @@ announcements/src/org/labkey/announcements/model/SecureMessageBoardPermissions.j
 announcements/src/org/labkey/announcements/respond.jsp -text
 announcements/src/org/labkey/announcements/rss.jsp -text
 announcements/src/org/labkey/announcements/update.jsp -text
-audit/Audit.iml -text
 audit/module.properties -text
 audit/src/META-INF/audit.xml -text
 audit/src/META-INF/audit/scripts/postgresql/audit-0.00-0.01.sql -text
@@ -104,7 +103,6 @@ audit/src/org/labkey/audit/model/LogManager.java -text
 audit/src/org/labkey/audit/query/AuditLogTable.java -text
 audit/src/org/labkey/audit/query/AuditQuerySchema.java -text
 audit/src/org/labkey/audit/query/AuditQueryViewImpl.java -text
-biotrue/biotrue.iml -text
 biotrue/module.properties -text
 biotrue/src/META-INF/biotrue.xml -text
 biotrue/src/META-INF/biotrue/scripts/postgresql/biotrue-0.00-2.10.sql -text
@@ -154,7 +152,6 @@ biotrue/src/org/labkey/biotrue/task/DownloadTask.java -text
 biotrue/src/org/labkey/biotrue/task/Operation.java -text
 biotrue/src/org/labkey/biotrue/task/ScheduledTask.java -text
 cabig/build.xml -text
-cabig/caBIG.iml -text
 cabig/module.properties -text
 cabig/src/META-INF/cabig.xml -text
 cabig/src/META-INF/cabig/scripts/postgresql/cabig-0.00-2.10.sql -text
@@ -373,7 +370,6 @@ demo/src/org/labkey/demo/view/DemoWebPart.java -text
 demo/src/org/labkey/demo/view/bindTest.jsp -text
 demo/src/org/labkey/demo/view/bulkUpdate.jsp -text
 demo/src/org/labkey/demo/view/demoWebPart.jsp -text
-experiment/gwtsrc/ExperimentGWT.iml -text
 experiment/gwtsrc/org/labkey/experiment/property/Designer.gwt.xml -text
 experiment/gwtsrc/org/labkey/experiment/property/client/Designer.java -text
 experiment/gwtsrc/org/labkey/experiment/property/client/PropertyService.java -text
@@ -696,7 +692,6 @@ experiment/webapp/Experiment/unflagRun.gif -text
 experiment/webapp/WEB-INF/experiment/experimentContext.xml -text
 experiment/wsdl/deploy.wsdd -text
 experiment/wsdl/experiment.wsdl -text
-filecontent/FileContent.iml -text
 filecontent/build.xml -text
 filecontent/module.properties -text
 filecontent/src/META-INF/filecontent.xml -text
@@ -824,7 +819,6 @@ mousemodels/src/org/labkey/mousemodel/mouse/bulkUpdate.vm -text
 mousemodels/src/org/labkey/mousemodel/mouse/showPhoto.jsp -text
 mousemodels/src/org/labkey/mousemodel/sample/EnterSampleLocations.vm -text
 mousemodels/src/org/labkey/mousemodel/sample/slides.jsp -text
-opensso/OpenSSO.iml -text
 opensso/lib/amclientsdk.jar -text
 opensso/lib/opensso-src.zip -text
 opensso/module.properties -text
@@ -948,7 +942,6 @@ portal/src/org/labkey/portal/PortalModule.java -text
 portal/src/org/labkey/portal/customizeSearchWebPart.gm -text
 portal/src/org/labkey/portal/customizeWebPart.gm -text
 portal/src/org/labkey/portal/search.jsp -text
-query/gwtsrc/QueryGWT.iml -text
 query/gwtsrc/org/labkey/reports/designer/ChartDesigner.gwt.xml -text
 query/gwtsrc/org/labkey/reports/designer/client/ChartDesigner.java -text
 query/module.properties -text
@@ -1098,7 +1091,6 @@ query/webapp/query/moveup.gif -text
 query/webapp/query/queryDesigner.js -text
 query/webapp/query/sql.gif -text
 query/webapp/query/tableInfo.js -text
-study/StudyGWT.iml -text
 study/gwtsrc/org/labkey/assay/designer/AssayDesigner.gwt.xml -text
 study/gwtsrc/org/labkey/assay/designer/client/AssayDesigner.java -text
 study/gwtsrc/org/labkey/assay/upload/ListChooser.gwt.xml -text
@@ -1636,7 +1628,6 @@ wiki/src/org/labkey/wiki/view/wiki_printraw.gm -text
 wiki/src/org/labkey/wiki/view/wiki_update.gm -text
 wiki/src/org/labkey/wiki/view/wiki_version.gm -text
 wiki/src/org/labkey/wiki/welcomeWiki.txt -text
-xarassay/XarAssay.iml -text
 xarassay/build.xml -text
 xarassay/module.properties -text
 xarassay/readme.htm -text
