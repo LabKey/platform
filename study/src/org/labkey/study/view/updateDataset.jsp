@@ -1,18 +1,20 @@
-<%@ page import="org.labkey.api.data.ColumnInfo"%>
-<%@ page import="org.labkey.api.data.TableInfo"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.model.*" %>
 <%@ page import="org.springframework.validation.BindException" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.*" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DataSetDefinition> me = (JspView<DataSetDefinition>)HttpView.currentView();
     DataSetDefinition dataset = me.getModelBean();
 
-    Study study = StudyManager.getInstance().getStudy(HttpView.currentContext().getContainer());
-    Cohort[] cohorts = StudyManager.getInstance().getCohorts(me.getViewContext().getContainer(), me.getViewContext().getUser());
+    Container container = HttpView.currentContext().getContainer();
+    Study study = StudyManager.getInstance().getStudy(container);
+    Cohort[] cohorts = StudyManager.getInstance().getCohorts(container, me.getViewContext().getUser());
     Map<Integer, String> cohortMap = new HashMap<Integer, String>();
     cohortMap.put(null, "All");
     if (cohorts != null)
@@ -34,7 +36,11 @@
 %>
 </table>
 
-<form action="updateDatasetForm.post" method="POST">
+<%
+    ActionURL updateDatasetURL = new ActionURL(StudyController.UpdateDatasetFormAction.class, container);
+%>
+
+<form action="<%=updateDatasetURL.getLocalURIString()%>" method="POST">
     <table class="normal">
         <tr>
             <td>
@@ -111,7 +117,7 @@
                                 <input type="hidden" name="visitRowIds" value="<%= visit.getRowId() %>">
                                 <select name="visitStatus">
                                     <option value="<%= VisitDataSetType.NOT_ASSOCIATED.name() %>"
-                                        <%= type == VisitDataSetType.NOT_ASSOCIATED ? "selected" : ""%>></option>
+                                        <%= type == VisitDataSetType.NOT_ASSOCIATED ? "selected" : ""%>/>
                                     <option value="<%= VisitDataSetType.OPTIONAL.name() %>"
                                         <%= type == VisitDataSetType.OPTIONAL ? "selected" : ""%>>Optional</option>
                                     <option value="<%= VisitDataSetType.REQUIRED.name() %>"

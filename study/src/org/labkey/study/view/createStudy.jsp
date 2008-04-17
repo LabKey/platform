@@ -1,9 +1,12 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.study.controllers.OldStudyController" %>
 <%@ page import="org.labkey.api.security.ACL" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="java.util.Date" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    OldStudyController.StudyPropertiesForm form = (OldStudyController.StudyPropertiesForm) getModelBean();
+    StudyController.StudyPropertiesForm form = (StudyController.StudyPropertiesForm) getModelBean();
 %>
 <%=PageFlowUtil.getStrutsError(request, "main")%>
 
@@ -12,7 +15,7 @@
     {%>
         A study has not been created in this folder. Please contact an administrator.
 <%  } else { %>
-
+<labkey:errors/>
 <form action="createStudy.post" method="POST">
     <table cellspacing="3" class="normal">
         <tr>
@@ -27,7 +30,7 @@
             </tr>
         <tr>
             <th align="left">Start Date<%=helpPopup("Start Date", "A start date is required for studies that are date based.")%></th>
-            <td align="left"><input type="text" name="startDateString" value="<%=h(form.getStartDateString())%>">
+            <td align="left"><input type="text" name="startDate" value="<%=h(form.getStartDate())%>">
             </td>
         </tr>
         <tr>

@@ -22,7 +22,7 @@
     </tr>
     <tr>
         <td>Recalculate visit dates</td>
-        <td><%= textLink("Recompute Visit Dates", "updateParticipantVisits.view")%></td>
+        <td><%= textLink("Recalculate Visit Dates", "updateParticipantVisits.view")%></td>
     </tr>
     <tr>
         <td>Import a visit map to quickly define a study</td>

@@ -2,15 +2,13 @@
 <%@ page import="org.labkey.api.security.ACL"%>
 <%@ page import="org.labkey.api.util.AppProps"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.study.controllers.OldStudyController" %>
 <%@ page import="org.labkey.study.model.*" %>
 <%@ page import="java.sql.SQLException" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.view.*" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DataSetDefinition> me = (JspView<DataSetDefinition>) HttpView.currentView();
@@ -42,18 +40,34 @@
 </table>
 <% if (0 != (permissions & ACL.PERM_ADMIN))
 {
-    %><br><a href="updateDatasetForm.view?datasetId=<%=dataset.getDataSetId()%>"><%=PageFlowUtil.buttonImg("Dataset Visits")%></a><%
-    %>&nbsp;<a href="manageTypes.view"><%=PageFlowUtil.buttonImg("Done")%></a><%
-    %>&nbsp;<a href="confirmDeleteDataset.view?id=<%=dataset.getDataSetId()%>"><%=PageFlowUtil.buttonImg("Delete Dataset")%></a><%
+    ActionURL updateDatasetURL = new ActionURL(StudyController.UpdateDatasetFormAction.class, context.getContainer());
+    updateDatasetURL.addParameter("datasetId", dataset.getDataSetId());
+
+    ActionURL manageTypesURL = new ActionURL(StudyController.ManageTypesAction.class, context.getContainer());
+
+    ActionURL confirmDeleteURL = new ActionURL(StudyController.ConfirmDeleteVisitAction.class, context.getContainer());
+    confirmDeleteURL.addParameter("id", dataset.getDataSetId());
+
+    %><br><a href="<%=updateDatasetURL.getLocalURIString()%>"><%=PageFlowUtil.buttonImg("Dataset Visits")%></a><%
+    %>&nbsp;<a href="<%=manageTypesURL.getLocalURIString()%>"><%=PageFlowUtil.buttonImg("Done")%></a><%
+    %>&nbsp;<a href="<%=confirmDeleteURL.getLocalURIString()%>"><%=PageFlowUtil.buttonImg("Delete Dataset")%></a><%
 }
 if (0 != (permissions & ACL.PERM_UPDATE))
 {
     if (pipelineSet)
     {
-        %>&nbsp;<a href="showImportDataset.view?datasetId=<%=dataset.getDataSetId()%>"><%=PageFlowUtil.buttonImg("Upload Data")%></a><%
+        ActionURL showImportDatasetURL = new ActionURL(StudyController.ShowImportDatasetAction.class, context.getContainer());
+        showImportDatasetURL.addParameter("datasetId", dataset.getDataSetId());
+        %>&nbsp;<a href="<%=showImportDatasetURL.getLocalURIString()%>"><%=PageFlowUtil.buttonImg("Upload Data")%></a><%
     }
-    %>&nbsp;<a href="showUploadHistory.view?id=<%=dataset.getDataSetId()%>"><%=PageFlowUtil.buttonImg("Show Upload History")%></a><%
-    %>&nbsp;<a href="editType.view?datasetId=<%=dataset.getDataSetId()%>"><%=PageFlowUtil.buttonImg("Edit Dataset")%></a><%
+    ActionURL showHistoryURL = new ActionURL(StudyController.ShowUploadHistoryAction.class, context.getContainer());
+    showHistoryURL.addParameter("id", dataset.getDataSetId());
+
+    ActionURL editTypeURL = new ActionURL(StudyController.EditTypeAction.class, context.getContainer());
+    editTypeURL.addParameter("datasetId", dataset.getDataSetId());
+
+    %>&nbsp;<a href="<%=showHistoryURL.getLocalURIString()%>"><%=PageFlowUtil.buttonImg("Show Upload History")%></a><%
+    %>&nbsp;<a href="<%=editTypeURL.getLocalURIString()%>"><%=PageFlowUtil.buttonImg("Edit Dataset")%></a><%
 }
 if (!pipelineSet)
 {

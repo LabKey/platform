@@ -1,6 +1,5 @@
 package org.labkey.study.controllers;
 
-import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
@@ -35,12 +34,13 @@ import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PrintTemplate;
-import org.labkey.api.view.template.PageConfig;
 import org.labkey.common.tools.TabLoader;
 import org.labkey.common.util.Pair;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
+import org.labkey.study.pipeline.StudyPipeline;
+import org.labkey.study.pipeline.DatasetBatch;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.reports.ReportsController;
@@ -62,8 +62,8 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -887,16 +887,25 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ACL.PERM_ADMIN)
-    public class ShowCreateStudyAction extends SimpleViewAction<OldStudyController.StudyPropertiesForm>
+    public class ShowCreateStudyAction extends SimpleViewAction<StudyPropertiesForm>
     {
-        public ModelAndView getView(OldStudyController.StudyPropertiesForm form, BindException errors) throws Exception
+        public ModelAndView getView(StudyPropertiesForm form, BindException errors) throws Exception
         {
             if (null != getStudy(true))
             {
                 BeginAction action = (BeginAction)initAction(this, new BeginAction());
                 return action.getView(form, errors);
             }
-            return new StudyJspView<OldStudyController.StudyPropertiesForm>(null, "createStudy.jsp", form, errors);
+            // Set default values for the form
+            if (form.getLabel() == null)
+            {
+                form.setLabel(HttpView.currentContext().getContainer().getName() + " Study");
+            }
+            if (form.getStartDate() == null)
+            {
+                form.setStartDate(new Date());
+            }
+            return new StudyJspView<StudyPropertiesForm>(null, "createStudy.jsp", form, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -906,13 +915,19 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ACL.PERM_ADMIN)
-    public class CreateStudyAction extends FormHandlerAction<OldStudyController.StudyPropertiesForm>
+    public class CreateStudyAction extends FormHandlerAction<StudyPropertiesForm>
     {
-        public void validateCommand(OldStudyController.StudyPropertiesForm target, Errors errors)
+        public void validateCommand(StudyPropertiesForm target, Errors errors)
         {
+            if (target.isDateBased() && null == target.getStartDate())
+                errors.reject(ERROR_MSG, "Start date must be supplied for a date-based study.");
+
+            target.setLabel(StringUtils.trimToNull(target.getLabel()));
+            if (null == target.getLabel())
+                errors.reject(ERROR_MSG, "Please supply a label");
         }
 
-        public boolean handlePost(OldStudyController.StudyPropertiesForm form, BindException errors) throws Exception
+        public boolean handlePost(StudyPropertiesForm form, BindException errors) throws Exception
         {
             if (null == getStudy(true))
             {
@@ -928,7 +943,7 @@ public class StudyController extends BaseStudyController
             return true;
         }
 
-        public ActionURL getSuccessURL(OldStudyController.StudyPropertiesForm studyPropertiesForm)
+        public ActionURL getSuccessURL(StudyPropertiesForm studyPropertiesForm)
         {
             return new ActionURL(ManageStudyAction.class, getContainer());
         }
@@ -1004,13 +1019,19 @@ public class StudyController extends BaseStudyController
 
 
     @RequiresPermission(ACL.PERM_ADMIN)
-    public class UpdateStudyPropertiesAction extends FormHandlerAction<OldStudyController.StudyPropertiesForm>
+    public class UpdateStudyPropertiesAction extends FormHandlerAction<StudyPropertiesForm>
     {
-        public void validateCommand(OldStudyController.StudyPropertiesForm target, Errors errors)
+        public void validateCommand(StudyPropertiesForm target, Errors errors)
         {
+            if (target.isDateBased() && null == target.getStartDate())
+                errors.reject(ERROR_MSG, "Start date must be supplied for a date-based study.");
+
+            target.setLabel(StringUtils.trimToNull(target.getLabel()));
+            if (null == target.getLabel())
+                errors.reject(ERROR_MSG, "Please supply a label");
         }
 
-        public boolean handlePost(OldStudyController.StudyPropertiesForm form, BindException errors) throws Exception
+        public boolean handlePost(StudyPropertiesForm form, BindException errors) throws Exception
         {
             if (getStudy(true) != null)
             {
@@ -1021,7 +1042,7 @@ public class StudyController extends BaseStudyController
             return true;
         }
 
-        public ActionURL getSuccessURL(OldStudyController.StudyPropertiesForm studyPropertiesForm)
+        public ActionURL getSuccessURL(StudyPropertiesForm studyPropertiesForm)
         {
             try {
                 if (getStudy(true) == null)
@@ -1034,9 +1055,9 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ACL.PERM_ADMIN)
-    public class ManageStudyProperties extends SimpleViewAction<OldStudyController.StudyPropertiesForm>
+    public class ManageStudyProperties extends SimpleViewAction<StudyPropertiesForm>
     {
-        public ModelAndView getView(OldStudyController.StudyPropertiesForm form, BindException errors) throws Exception
+        public ModelAndView getView(StudyPropertiesForm form, BindException errors) throws Exception
         {
             Study study = getStudy(true);
             if (null == study)
@@ -1044,7 +1065,7 @@ public class StudyController extends BaseStudyController
                 ShowCreateStudyAction action = (ShowCreateStudyAction)initAction(this, new ShowCreateStudyAction());
                 return action.getView(form, errors);
             }
-            return new StudyJspView<OldStudyController.StudyPropertiesForm>(getStudy(), "manageStudyProperties.jsp", form, errors);
+            return new StudyJspView<StudyPropertiesForm>(getStudy(), "manageStudyProperties.jsp", form, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1055,23 +1076,10 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ACL.PERM_ADMIN)
-    public class ManageVisitsAction extends FormViewAction<OldStudyController.StudyPropertiesForm>
+    public class ManageVisitsAction extends FormViewAction<StudyPropertiesForm>
     {
-        public void validateCommand(OldStudyController.StudyPropertiesForm target, Errors errors)
+        public void validateCommand(StudyPropertiesForm target, Errors errors)
         {
-            target.setStartDateString(StringUtils.trimToNull(target.getStartDateString()));
-            if (null != target.getStartDateString())
-            {
-                try
-                {
-                    target.setStartDate((Date) ConvertUtils.convert(target.getStartDateString(), Date.class));
-                }
-                catch (ConversionException e)
-                {
-                    errors.reject(ERROR_MSG, "Start Date is not a legal date");
-                }
-            }
-
             if (target.isDateBased() && null == target.getStartDate())
                 errors.reject(ERROR_MSG, "Start date must be supplied for a date-based study.");
 
@@ -1080,7 +1088,7 @@ public class StudyController extends BaseStudyController
                 errors.reject(ERROR_MSG, "Please supply a label");
         }
 
-        public ModelAndView getView(OldStudyController.StudyPropertiesForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(StudyPropertiesForm form, boolean reshow, BindException errors) throws Exception
         {
             Study study = getStudy(true);
             if (null == study)
@@ -1088,10 +1096,10 @@ public class StudyController extends BaseStudyController
                 ShowCreateStudyAction action = (ShowCreateStudyAction)initAction(this, new ShowCreateStudyAction());
                 return action.getView(form, errors);
             }
-            return new StudyJspView<OldStudyController.StudyPropertiesForm>(getStudy(), _jspName(), form, errors);
+            return new StudyJspView<StudyPropertiesForm>(getStudy(), _jspName(), form, errors);
         }
 
-        public boolean handlePost(OldStudyController.StudyPropertiesForm form, BindException errors) throws Exception
+        public boolean handlePost(StudyPropertiesForm form, BindException errors) throws Exception
         {
             Study study = getStudy().createMutable();
             study.setStartDate(form.getStartDate());
@@ -1100,12 +1108,12 @@ public class StudyController extends BaseStudyController
             return true;
         }
 
-        public ActionURL getSuccessURL(OldStudyController.StudyPropertiesForm studyPropertiesForm)
+        public ActionURL getSuccessURL(StudyPropertiesForm studyPropertiesForm)
         {
             return new ActionURL(ManageStudyAction.class, getContainer());
         }
 
-        public ModelAndView getView(OldStudyController.StudyPropertiesForm form, BindException errors) throws Exception
+        public ModelAndView getView(StudyPropertiesForm form, BindException errors) throws Exception
         {
             Study study = getStudy(true);
             if (null == study)
@@ -1113,7 +1121,7 @@ public class StudyController extends BaseStudyController
                 ShowCreateStudyAction action = (ShowCreateStudyAction)initAction(this, new ShowCreateStudyAction());
                 return action.getView(form, errors);
             }
-            return new StudyJspView<OldStudyController.StudyPropertiesForm>(getStudy(), _jspName(), form, errors);
+            return new StudyJspView<StudyPropertiesForm>(getStudy(), _jspName(), form, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1528,7 +1536,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermission(ACL.PERM_ADMIN)
     public class UpdateDatasetFormAction extends FormViewAction<OldStudyController.DataSetForm>
     {
         DataSetDefinition _def;
@@ -3337,8 +3345,7 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            PageConfig config = getPageConfig();
-                    config.setHelpTopic(new HelpTopic("Set Default View", HelpTopic.Area.STUDY));
+            setHelpTopic(new HelpTopic("Set Default View", HelpTopic.Area.STUDY));
 
             root.addChild(study.getLabel(), new ActionURL(BeginAction.class, getContainer()));
 
@@ -3351,6 +3358,139 @@ public class StudyController extends BaseStudyController
             root.addChild(new NavTree("View Preferences"));
             return root;
         }
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class ImportStudyBatchAction extends SimpleViewAction<PipelineForm>
+    {
+        String path;
+
+        public ModelAndView getView(PipelineForm form, BindException errors) throws Exception
+        {
+            Container c = getContainer();
+            path = form.getPath();
+            File definitionFile = null;
+
+            if (path != null)
+            {
+                PipeRoot root = PipelineService.get().findPipelineRoot(c);
+                if (root != null)
+                    definitionFile = root.resolvePath(path);
+            }
+
+            if (path == null || null == definitionFile || !definitionFile.exists() || !definitionFile.isFile())
+            {
+                HttpView.throwNotFound();
+                return null;
+            }
+
+            File lockFile = StudyPipeline.lockForDataset(getStudy(), definitionFile);
+
+            if (!definitionFile.canRead())
+                errors.reject("importStudyBatch", "Can't read dataset file: " + path);
+            if (lockFile.exists())
+                errors.reject("importStudyBatch", "Lock file exists.  Delete file before running import. " + lockFile.getName());
+
+            DatasetBatch batch = new DatasetBatch(
+                    new ViewBackgroundInfo(getContainer(), getUser(), getViewContext().getActionURL()), definitionFile);
+            if (!errors.hasErrors())
+            {
+                List<String> parseErrors = new ArrayList<String>();
+                batch.prepareImport(parseErrors);
+                for (String error : parseErrors)
+                    errors.reject("importStudyBatch", error);
+            }
+
+            return new StudyJspView<ImportStudyBatchBean>(
+                    getStudy(), "importStudyBatch.jsp", new ImportStudyBatchBean(batch, form), errors);
+
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            try
+            {
+                root.addChild(getStudy().getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
+                root.addChild("Import Study Batch - " + path);
+                return root;
+            }
+            catch (ServletException se)
+            {
+                throw UnexpectedException.wrap(se);
+            }
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class SubmitStudyBatchAction extends SimpleRedirectAction<PipelineForm>
+    {
+        public ActionURL getRedirectURL(PipelineForm form) throws Exception
+        {
+            Study study = getStudy();
+            Container c = getContainer();
+            String path = form.getPath();
+            File f = null;
+
+            if (path != null)
+            {
+                PipeRoot root = PipelineService.get().findPipelineRoot(c);
+                if (root != null)
+                    f = root.resolvePath(path);
+            }
+
+            if (null == f || !f.exists() || !f.isFile())
+            {
+                HttpView.throwNotFound();
+                return null;
+            }
+
+            File lockFile = StudyPipeline.lockForDataset(study, f);
+            if (!f.canRead() || lockFile.exists())
+            {
+                // Something has changed since the user first viewed this form.
+                // Send them back to validate
+                ActionURL importURL = new ActionURL(ImportStudyBatchAction.class, getContainer());
+                importURL.addParameter("path", form.getPath());
+                return importURL;
+            }
+
+            DatasetBatch batch = new DatasetBatch(new ViewBackgroundInfo(
+                    getContainer(), getUser(), getViewContext().getActionURL()), f);
+            batch.submit();
+
+            return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c);
+        }
+    }
+
+    public static class ImportStudyBatchBean
+    {
+        private final DatasetBatch batch;
+        private final PipelineForm form;
+
+        public ImportStudyBatchBean(DatasetBatch batch, PipelineForm form)
+        {
+            this.batch = batch;
+            this.form = form;
+        }
+
+        public DatasetBatch getBatch()
+        {
+            return batch;
+        }
+
+        public PipelineForm getForm()
+        {
+            return form;
+        }
+    }
+
+    public static class PipelineForm
+    {
+        private String _path;
+
+        public String getPath() {return _path;}
+
+        public void setPath(String path) {this._path = path;}
     }
 
     public static class ViewPrefsBean
@@ -3461,4 +3601,52 @@ public class StudyController extends BaseStudyController
     }
 
 
+    public static class StudyPropertiesForm
+    {
+        private String _label;
+        private boolean _dateBased;
+        private Date _startDate;
+        private boolean _simpleRepository = true;
+
+        public String getLabel()
+        {
+            return _label;
+        }
+
+        public void setLabel(String label)
+        {
+            _label = label;
+        }
+
+        public boolean isDateBased()
+        {
+            return _dateBased;
+        }
+
+        public void setDateBased(boolean dateBased)
+        {
+            _dateBased = dateBased;
+        }
+
+        public Date getStartDate()
+        {
+            return _startDate;
+        }
+
+        public void setStartDate(Date startDate)
+        {
+            _startDate = startDate;
+        }
+
+
+        public boolean isSimpleRepository()
+        {
+            return _simpleRepository;
+        }
+
+        public void setSimpleRepository(boolean simpleRepository)
+        {
+            _simpleRepository = simpleRepository;
+        }
+    }
 }

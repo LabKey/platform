@@ -1,6 +1,5 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
-<%@ page import="org.labkey.study.controllers.OldStudyController" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.Study" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
@@ -9,7 +8,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <labkey:errors />
 <%
-    OldStudyController.StudyPropertiesForm form = (OldStudyController.StudyPropertiesForm) getModelBean();
+    StudyController.StudyPropertiesForm form = (StudyController.StudyPropertiesForm) getModelBean();
 %>
 
 <table class="normal">
@@ -34,7 +33,7 @@
            </td></tr>
         <tr>
             <th>Start Date<%=helpPopup("Start Date", "A start date is required for studies that are date based.")%></th>
-            <td><input type="text" name="startDateString" value="<%=h(form.getStartDateString())%>">
+            <td><input type="text" name="startDate" value="<%=h(form.getStartDate())%>">
             </td>
         </tr>
         <tr>
