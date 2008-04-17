@@ -3,6 +3,7 @@
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="java.util.Date" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -30,7 +31,7 @@
             </tr>
         <tr>
             <th align="left">Start Date<%=helpPopup("Start Date", "A start date is required for studies that are date based.")%></th>
-            <td align="left"><input type="text" name="startDate" value="<%=h(form.getStartDate())%>">
+            <td align="left"><input type="text" name="startDate" value="<%=h(DateUtil.formatDate(form.getStartDate()))%>">
             </td>
         </tr>
         <tr>

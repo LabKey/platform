@@ -4,6 +4,7 @@
 <%@ page import="org.labkey.study.model.Study" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.Visit" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <labkey:errors />
@@ -33,7 +34,7 @@
            </td></tr>
         <tr>
             <th>Start Date<%=helpPopup("Start Date", "A start date is required for studies that are date based.")%></th>
-            <td><input type="text" name="startDate" value="<%=h(form.getStartDate())%>">
+            <td><input type="text" name="startDate" value="<%=h(DateUtil.formatDate(form.getStartDate()))%>">
             </td>
         </tr>
         <tr>
