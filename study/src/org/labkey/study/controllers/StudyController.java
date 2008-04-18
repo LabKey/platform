@@ -3693,6 +3693,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    @RequiresPermission(ACL.PERM_ADMIN)
     public class DataSetDisplayOrderAction extends FormViewAction<ReorderForm>
     {
         public ModelAndView getView(ReorderForm form, boolean reshow, BindException errors) throws Exception
