@@ -25,6 +25,9 @@ import org.labkey.api.query.*;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.RReport;
+import org.labkey.api.reports.report.ChartQueryReport;
+import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.ChartReportDescriptor;
 import org.labkey.api.reports.report.view.ChartDesignerBean;
 import org.labkey.api.reports.report.view.ChartUtil;
 import org.labkey.api.reports.report.view.RReportBean;
@@ -34,6 +37,7 @@ import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PrintTemplate;
+import org.labkey.api.view.template.DialogTemplate;
 import org.labkey.common.tools.TabLoader;
 import org.labkey.common.util.Pair;
 import org.labkey.study.SampleManager;
@@ -367,7 +371,7 @@ public class StudyController extends BaseStudyController
             DataHeader header = new DataHeader(getViewContext().getActionURL(), null, def, false);
 
             return new VBox(header,
-                    new OldStudyController.ReportHeader(reportView), view);
+                    new ReportHeader(reportView), view);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -529,7 +533,9 @@ public class StudyController extends BaseStudyController
             if (!getViewContext().getUser().isGuest() && getViewContext().hasPermission(ACL.PERM_READ))
             {
                 final List<String> plist = getParticipantListFromCache(getViewContext(), def.getDataSetId(), viewName, cohort);
-                Map<String, String> params = plist.size() > 0 ? Collections.singletonMap("participantId", plist.get(0)) : null;
+                Map<String, String> params = plist.size() > 0 ?
+                        Collections.singletonMap("participantId", plist.get(0)) :
+                        Collections.<String,String>emptyMap();
 
                 ActionURL url = getViewContext().getActionURL().clone();
                 url.setAction(ReportsController.ParticipantCrosstabAction.class);
@@ -725,10 +731,10 @@ public class StudyController extends BaseStudyController
                         }
                     }
                 }
-                box.addView(new OldStudyController.ParticipantNavView(previousParticipantURL, nextParticiapantURL));
+                box.addView(new ParticipantNavView(previousParticipantURL, nextParticiapantURL));
             }
             box.addView(new DataHeader(getViewContext().getActionURL(), null, def, false));
-            box.addView(new OldStudyController.ReportHeader(reportView));
+            box.addView(new ReportHeader(reportView));
             box.addView(reportView.renderReport(getViewContext()));
 
             return box;
@@ -782,7 +788,7 @@ public class StudyController extends BaseStudyController
                 }
             }
             JspView<ParticipantForm> view = new StudyJspView<ParticipantForm>(getStudy(), "participantAll.jsp", form, errors);
-            OldStudyController.ParticipantNavView navView = new OldStudyController.ParticipantNavView(previousParticipantURL, nextParticiapantURL);
+            ParticipantNavView navView = new ParticipantNavView(previousParticipantURL, nextParticiapantURL);
 
             return new VBox(navView, view);
         }
@@ -1629,7 +1635,7 @@ public class StudyController extends BaseStudyController
             }
 
             if (null == PipelineService.get().findPipelineRoot(getContainer()))
-                return new OldStudyController.RequirePipelineView(getStudy(), true);
+                return new RequirePipelineView(getStudy(), true, errors);
 
             form.setContainer(study.getContainer());
             form.setTypeURI(StudyManager.getInstance().getDatasetType(getContainer(), form.getDatasetId()));
@@ -1982,9 +1988,9 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ACL.PERM_READ)
-    public class DatasetItemDetailsAction extends SimpleViewAction<OldStudyController.SourceLsidForm>
+    public class DatasetItemDetailsAction extends SimpleViewAction<SourceLsidForm>
     {
-        public ModelAndView getView(OldStudyController.SourceLsidForm form, BindException errors) throws Exception
+        public ModelAndView getView(SourceLsidForm form, BindException errors) throws Exception
         {
             String url = LsidManager.get().getDisplayURL(form.getSourceLsid());
             if (url == null)
@@ -3462,6 +3468,382 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    @RequiresPermission(ACL.PERM_DELETE)
+    public class PurgeDatasetAction extends SimpleRedirectAction
+    {
+        public ActionURL getRedirectURL(Object o) throws Exception
+        {
+            ViewContext context = getViewContext();
+            int datasetId = null == context.get(DataSetDefinition.DATASETKEY) ? 0 : Integer.parseInt((String) context.get(DataSetDefinition.DATASETKEY));
+
+            if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
+            {
+                DataSetDefinition dataset = StudyManager.getInstance().getDataSetDefinition(getStudy(), datasetId);
+                if (null == dataset)
+                {
+                    HttpView.throwNotFound();
+                    return null;
+                }
+
+                String typeURI = dataset.getTypeURI();
+                if (typeURI == null)
+                {
+                    return new ActionURL(TypeNotFoundAction.class, getContainer());
+                }
+
+                DbScope scope = StudySchema.getInstance().getSchema().getScope();
+                try
+                {
+                    scope.beginTransaction();
+                    StudyManager.getInstance().purgeDataset(getStudy(), dataset);
+                    scope.commitTransaction();
+                }
+                finally
+                {
+                    if (scope.isTransactionActive())
+                        scope.rollbackTransaction();
+                }
+                DataRegionSelection.clearAll(getViewContext());
+            }
+            ActionURL datasetURL = new ActionURL(DatasetAction.class, getContainer());
+            datasetURL.addParameter(DataSetDefinition.DATASETKEY, datasetId);
+            return datasetURL;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class UpdateParticipantVisitsAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            StudyManager.getInstance().recomputeStudyDataVisitDate(getStudy());
+            StudyManager.getInstance().getVisitManager(getStudy()).updateParticipantVisits();
+
+            TableInfo tinfoParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
+            Integer visitDates = Table.executeSingleton(StudySchema.getInstance().getSchema(),
+                    "SELECT Count(VisitDate) FROM " + tinfoParticipantVisit + "\nWHERE Container = ?",
+                    new Object[] {getContainer()}, Integer.class);
+            int count = null == visitDates ? 0 : visitDates.intValue();
+
+            HttpView view = new HtmlView(
+                    "<div class=normal>" + count + " rows were updated.<p/>" +
+                    PageFlowUtil.buttonLink("Done", "manageVisits.view") +
+                    "</div>");
+            return new DialogTemplate(view);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class VisitDisplayOrderAction extends FormViewAction<ReorderForm>
+    {
+
+        public ModelAndView getView(ReorderForm reorderForm, boolean reshow, BindException errors) throws Exception
+        {
+            return new StudyJspView<Object>(getStudy(), "visitDisplayOrder.jsp", reorderForm, errors);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            _appendManageStudy(root);
+            root.addChild("Manage Visits", new ActionURL(ManageVisitsAction.class, getContainer()));
+            root.addChild("Display Order");
+            return root;
+        }
+
+        public void validateCommand(ReorderForm target, Errors errors) {}
+
+        public boolean handlePost(ReorderForm form, BindException errors) throws Exception
+        {
+            String order = form.getOrder();
+            if (order != null && order.length() > 0)
+            {
+                String[] orderedIds = order.split(",");
+                for (int i = 0; i < orderedIds.length; i++)
+                {
+                    int id = Integer.parseInt(orderedIds[i]);
+                    Visit visit = StudyManager.getInstance().getVisitForRowId(getStudy(), id);
+                    if (visit.getDisplayOrder() != i)
+                    {
+                        visit = visit.createMutable();
+                        visit.setDisplayOrder(i);
+                        StudyManager.getInstance().updateVisit(getUser(), visit);
+                    }
+                }
+            }
+            return true;
+        }
+
+        public ActionURL getSuccessURL(ReorderForm reorderForm)
+        {
+            return new ActionURL(ManageVisitsAction.class, getContainer());
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class VisitVisibilityAction extends FormViewAction<VisitPropertyForm>
+    {
+        public ModelAndView getView(VisitPropertyForm visitPropertyForm, boolean reshow, BindException errors) throws Exception
+        {
+            return new StudyJspView<Object>(getStudy(), "visitVisibility.jsp", visitPropertyForm, errors);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            _appendManageStudy(root);
+            root.addChild("Manage Visits", new ActionURL(ManageVisitsAction.class, getContainer()));
+            root.addChild("Properties");
+            return root;
+        }
+
+        public void validateCommand(VisitPropertyForm target, Errors errors) {}
+
+        public boolean handlePost(VisitPropertyForm form, BindException errors) throws Exception
+        {
+            int[] allIds = form.getIds() == null ? new int[0] : form.getIds();
+            int[] visibleIds = form.getVisible() == null ? new int[0] : form.getVisible();
+            Set<Integer> visible = new HashSet<Integer>(visibleIds.length);
+            for (int id : visibleIds)
+                visible.add(id);
+            if (allIds.length != form.getLabel().length)
+                throw new IllegalStateException("Arrays must be the same length.");
+            for (int i = 0; i < allIds.length; i++)
+            {
+                Visit def = StudyManager.getInstance().getVisitForRowId(getStudy(), allIds[i]);
+                boolean show = visible.contains(allIds[i]);
+                String label = form.getLabel()[i];
+                String typeStr = form.getExtraData()[i];
+                Integer cohortId = form.getCohort()[i];
+                if (cohortId.intValue() == -1)
+                    cohortId = null;
+                Character type = typeStr != null && typeStr.length() > 0 ? typeStr.charAt(0) : null;
+                if (def.isShowByDefault() != show || !nullSafeEqual(label, def.getLabel()) || type != def.getTypeCode() || !nullSafeEqual(cohortId, def.getCohortId()))
+                {
+                    def = def.createMutable();
+                    def.setShowByDefault(show);
+                    def.setLabel(label);
+                    def.setCohortId(cohortId);
+                    def.setTypeCode(type);
+                    StudyManager.getInstance().updateVisit(getUser(), def);
+                }
+            }
+            return true;
+        }
+
+        public ActionURL getSuccessURL(VisitPropertyForm visitPropertyForm)
+        {
+            return new ActionURL(ManageVisitsAction.class, getContainer());
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class DataSetVisibilityAction extends FormViewAction<DatasetPropertyForm>
+    {
+        public ModelAndView getView(DatasetPropertyForm form, boolean reshow, BindException errors) throws Exception
+        {
+            return new StudyJspView<Object>(getStudy(), "dataSetVisibility.jsp", form, errors);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            _appendManageStudy(root);
+            root.addChild("Manage Datasets", new ActionURL(ManageTypesAction.class, getContainer()));
+            root.addChild("Properties");
+            return root;
+        }
+
+        public void validateCommand(DatasetPropertyForm target, Errors errors) {}
+
+        public boolean handlePost(DatasetPropertyForm form, BindException errors) throws Exception
+        {
+            int[] allIds = form.getIds();
+            int[] visibleIds = form.getVisible();
+            Set<Integer> visible = new HashSet<Integer>(visibleIds.length);
+            for (int id : visibleIds)
+                  visible.add(id);
+            for (int i = 0; i < allIds.length; i++)
+            {
+                DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getStudy(), allIds[i]);
+                boolean show = visible.contains(allIds[i]);
+                String category = form.getExtraData()[i];
+                Integer cohortId = form.getCohort()[i];
+                if (cohortId.intValue() == -1)
+                    cohortId = null;
+                String label = form.getLabel()[i];
+                if (def.isShowByDefault() != show || !nullSafeEqual(category, def.getCategory()) || !nullSafeEqual(label, def.getLabel()) || !BaseStudyController.nullSafeEqual(cohortId, def.getCohortId()))
+                {
+                    def = def.createMutable();
+                    def.setShowByDefault(show);
+                    def.setCategory(category);
+                    def.setCohortId(cohortId);
+                    def.setLabel(label);
+                    StudyManager.getInstance().updateDataSetDefinition(getUser(), def);
+                }
+            }
+            return true;
+        }
+
+        public ActionURL getSuccessURL(DatasetPropertyForm form)
+        {
+            return new ActionURL(ManageTypesAction.class, getContainer());
+        }
+    }
+
+    public class DataSetDisplayOrderAction extends FormViewAction<ReorderForm>
+    {
+        public ModelAndView getView(ReorderForm form, boolean reshow, BindException errors) throws Exception
+        {
+            return new StudyJspView<Object>(getStudy(), "dataSetDisplayOrder.jsp", form, errors);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            _appendManageStudy(root);
+            root.addChild("Manage Datasets", new ActionURL(ManageTypesAction.class, getContainer()));
+            root.addChild("Display Order");
+            return root;
+        }
+
+        public void validateCommand(ReorderForm target, Errors errors) {}
+
+        public boolean handlePost(ReorderForm form, BindException errors) throws Exception
+        {
+            String order = form.getOrder();
+            if (order != null && order.length() > 0)
+            {
+                String[] orderedIds = order.split(",");
+                for (int i = 0; i < orderedIds.length; i++)
+                {
+                    int id = Integer.parseInt(orderedIds[i]);
+                    DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getStudy(), id);
+                    if (def.getDisplayOrder() != i)
+                    {
+                        def = def.createMutable();
+                        def.setDisplayOrder(i);
+                        StudyManager.getInstance().updateDataSetDefinition(getUser(), def);
+                    }
+                }
+            }
+            return true;
+        }
+
+        public ActionURL getSuccessURL(ReorderForm visitPropertyForm)
+        {
+            return new ActionURL(ManageTypesAction.class, getContainer());
+        }
+    }
+
+    public static class DatasetPropertyForm extends PropertyForm
+    {
+        private int[] _ids;
+        private int[] _visible;
+
+        public int[] getIds()
+        {
+            return _ids;
+        }
+
+        public void setIds(int[] ids)
+        {
+            _ids = ids;
+        }
+
+        public int[] getVisible()
+        {
+            return _visible;
+        }
+
+        public void setVisible(int[] visible)
+        {
+            _visible = visible;
+        }
+    }
+
+    public static class RequirePipelineView extends StudyJspView<Boolean>
+    {
+        public RequirePipelineView(Study study, boolean showGoBack, BindException errors)
+        {
+            super(study, "requirePipeline.jsp", showGoBack, errors);
+        }
+    }
+
+    public static class VisitPropertyForm extends PropertyForm
+    {
+        private int[] _ids;
+        private int[] _visible;
+
+        public int[] getIds()
+        {
+            return _ids;
+        }
+
+        public void setIds(int[] ids)
+        {
+            _ids = ids;
+        }
+
+        public int[] getVisible()
+        {
+            return _visible;
+        }
+
+        public void setVisible(int[] visible)
+        {
+            _visible = visible;
+        }
+    }
+
+    public abstract static class PropertyForm
+    {
+        private String[] _label;
+        private String[] _extraData;
+        private int[] _cohort;
+
+        public String[] getExtraData()
+        {
+            return _extraData;
+        }
+
+        public void setExtraData(String[] extraData)
+        {
+            _extraData = extraData;
+        }
+
+        public String[] getLabel()
+        {
+            return _label;
+        }
+
+        public void setLabel(String[] label)
+        {
+            _label = label;
+        }
+
+        public int[] getCohort()
+        {
+            return _cohort;
+        }
+
+        public void setCohort(int[] cohort)
+        {
+            _cohort = cohort;
+        }
+    }
+
+
+    public static class ReorderForm
+    {
+        private String order;
+
+        public String getOrder() {return order;}
+
+        public void setOrder(String order) {this.order = order;}
+    }
+
     public static class ImportStudyBatchBean
     {
         private final DatasetBatch batch;
@@ -3647,6 +4029,134 @@ public class StudyController extends BaseStudyController
         public void setSimpleRepository(boolean simpleRepository)
         {
             _simpleRepository = simpleRepository;
+        }
+    }
+
+    public static class SourceLsidForm
+    {
+        private String _sourceLsid;
+
+        public String getSourceLsid() {return _sourceLsid;}
+
+        public void setSourceLsid(String sourceLsid) {_sourceLsid = sourceLsid;}
+    }
+
+    public static class ReportHeader extends HttpView
+    {
+        private Report _report;
+
+        public ReportHeader(Report report)
+        {
+            _report = report;
+        }
+
+        protected void renderInternal(Object model, PrintWriter out) throws Exception
+        {
+            if (!StringUtils.isEmpty(_report.getDescriptor().getReportDescription()))
+            {
+                out.print("<table class='normal'>");
+                out.print("<tr><td><span class='navPageHeader'>Report Description:</span>&nbsp;</td>");
+                out.print("<td>" + _report.getDescriptor().getReportDescription() + "</td></tr>");
+                out.print("</table>");
+            }
+        }
+    }
+
+    public static class StudyChartReport extends ChartQueryReport
+    {
+        public static final String TYPE = "Study.chartReport";
+
+        public String getType()
+        {
+            return TYPE;
+        }
+
+        private TableInfo getTable(ViewContext context, ReportDescriptor descriptor) throws Exception
+        {
+            final int datasetId = Integer.parseInt(descriptor.getProperty("datasetId"));
+            final Study study = StudyManager.getInstance().getStudy(context.getContainer());
+            DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
+
+            return def.getTableInfo(context.getUser());
+        }
+
+        public ResultSet generateResultSet(ViewContext context) throws Exception
+        {
+            ReportDescriptor descriptor = getDescriptor();
+            final String participantId = descriptor.getProperty("participantId");
+            final TableInfo tableInfo = getTable(context, descriptor);
+            DataRegion dr = new DataRegion();
+            dr.setTable(tableInfo);
+
+            SimpleFilter filter = new SimpleFilter();
+            filter.addCondition("participantId", participantId, CompareType.EQUAL);
+
+            RenderContext ctx = new RenderContext(context);
+            ctx.setContainer(context.getContainer());
+            ctx.setBaseFilter(filter);
+
+            return dr.getResultSet(ctx);
+        }
+
+        public ChartReportDescriptor.LegendItemLabelGenerator getLegendItemLabelGenerator()
+        {
+            return new ChartReportDescriptor.LegendItemLabelGenerator() {
+                public String generateLabel(ViewContext context, ReportDescriptor descriptor, String itemName) throws Exception
+                {
+                    TableInfo table = getTable(context, descriptor);
+                    if (table != null)
+                    {
+                        ColumnInfo info = table.getColumn(itemName);
+                        return info != null ? info.getCaption() : itemName;
+                    }
+                    return itemName;
+                }
+            };
+        }
+    }
+
+    /**
+     * Adds next and prev buttons to the participant view
+     */
+    public static class ParticipantNavView extends HttpView
+    {
+        private String _prevURL;
+        private String _nextURL;
+        private String _display;
+
+        public ParticipantNavView(String prevURL, String nextURL, String display)
+        {
+            _prevURL = prevURL;
+            _nextURL = nextURL;
+            _display = display;
+        }
+
+        public ParticipantNavView(String prevURL, String nextURL)
+        {
+            this(prevURL, nextURL, null);
+        }
+
+        @Override
+        protected void renderInternal(Object model, PrintWriter out) throws Exception
+        {
+            out.print("<table><tr><td align=\"left\">");
+            if (_prevURL == null)
+                out.print("[< Previous Participant]");
+            else
+                out.print("[<a href=\"" + _prevURL + "\">< Previous Participant</a>]");
+            out.print("&nbsp;");
+
+            if (_nextURL == null)
+                out.print("[Next Participant >]");
+            else
+                out.print("[<a href=\"" + _nextURL + "\">Next Participant ></a>]");
+
+            if (_display != null)
+            {
+                out.print("</td><td class=\"ms-searchform\">");
+                out.print(PageFlowUtil.filter(_display));
+            }
+            out.print("</td></tr></table>");
         }
     }
 }

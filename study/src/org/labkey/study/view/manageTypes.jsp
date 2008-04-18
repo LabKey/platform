@@ -4,9 +4,6 @@
 <%@ page import="org.labkey.api.view.WebPartView"%>
 <%@ page import="org.labkey.study.model.DataSetDefinition"%>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.springframework.validation.BindException" %>
-<%@ page import="org.springframework.validation.ObjectError" %>
-<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 

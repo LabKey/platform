@@ -4,8 +4,6 @@ import org.apache.beehive.netui.pageflow.FormData;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionMessage;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.GWTServiceAction;
@@ -1954,7 +1952,7 @@ public class ReportsController extends BaseStudyController
                 }
             }
         }
-        return new OldStudyController.ParticipantNavView(previousParticipantURL, nextParticipantURL, title);
+        return new StudyController.ParticipantNavView(previousParticipantURL, nextParticipantURL, title);
     }
 
     @RequiresPermission(ACL.PERM_READ)

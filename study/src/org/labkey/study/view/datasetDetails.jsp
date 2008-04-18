@@ -9,6 +9,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.view.*" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.springframework.validation.BindException" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DataSetDefinition> me = (JspView<DataSetDefinition>) HttpView.currentView();
@@ -71,7 +72,7 @@ if (0 != (permissions & ACL.PERM_UPDATE))
 }
 if (!pipelineSet)
 {
-    include(new OldStudyController.RequirePipelineView(study, false), out);
+    include(new StudyController.RequirePipelineView(study, false, (BindException) request.getAttribute("errors")), out);
 }
 %>
 

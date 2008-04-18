@@ -3,51 +3,31 @@ package org.labkey.study.controllers;
 import org.apache.beehive.netui.pageflow.FormData;
 import org.apache.beehive.netui.pageflow.Forward;
 import org.apache.beehive.netui.pageflow.annotations.Jpf;
-import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
-import org.labkey.api.data.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.pipeline.PipeRoot;
-import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.query.AliasManager;
-import org.labkey.api.reports.Report;
-import org.labkey.api.reports.report.ChartQueryReport;
-import org.labkey.api.reports.report.ChartReportDescriptor;
-import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.User;
 import org.labkey.api.util.CaseInsensitiveHashSet;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.DialogTemplate;
-import org.labkey.common.util.Pair;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.Visit;
-import org.labkey.study.pipeline.DatasetBatch;
-import org.labkey.study.pipeline.StudyPipeline;
-import org.labkey.study.reports.ReportManager;
 import org.labkey.study.view.BaseStudyPage;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
-import java.io.File;
-import java.io.PrintWriter;
 import java.net.URISyntaxException;
-import java.sql.ResultSet;
-import java.util.*;
 
 
 @Jpf.Controller(messageBundles = {@Jpf.MessageBundle(bundlePath = "messages.Validation")})
@@ -97,10 +77,6 @@ public class OldStudyController extends BaseController
         return new ViewForward(studyURL("manageTypes"));
     }
 
-    private ViewForward forwardManageVisits() throws Exception
-    {
-        return new ViewForward(studyURL("manageVisits"));
-    }
 
     public static class StudyJspView<T> extends JspView<T>
     {
@@ -111,35 +87,6 @@ public class OldStudyController extends BaseController
                 ((BaseStudyPage)getPage()).init(study);
         }
     }
-
-    public static class RequirePipelineView extends StudyJspView<Boolean>
-    {
-        public RequirePipelineView(Study study, boolean showGoBack)
-        {
-            super(study, "requirePipeline.jsp", showGoBack);
-        }
-    }
-
-    public class DatasetDetailsBean
-    {
-        public DatasetDetailsBean(Study study, User user, DataSetDefinition def)
-        {
-            this.study = study;
-            this.permissions = study.getContainer().getAcl().getPermissions(user);
-            this.dataset = def;
-        }
-
-        public OldStudyController controller = OldStudyController.this;
-        public Study study;
-        public int permissions;
-        public DataSetDefinition dataset;
-    }
-
-    Forward forwardDefineDatasetType(int datasetId)
-    {
-        try {return new ViewForward(studyURL("defineDatasetType", DataSetDefinition.DATASETKEY, String.valueOf(datasetId)));} catch (Exception x) {throw new RuntimeException(x);}
-    }
-
 
     public static class ImportDataSetForm extends FormData
     {
@@ -199,106 +146,10 @@ public class OldStudyController extends BaseController
         }
     }
 
-
-
-    public ViewForward forwardDataset(int datasetId)
-    {
-        try
-        {
-            return new ViewForward(studyURL("dataset", DataSetDefinition.DATASETKEY, String.valueOf(datasetId)));
-        }
-        catch (Exception x) {throw new RuntimeException(x);}
-    }
-
-
-    public ViewForward forwardDataset(int datasetId, Visit visit)
-    {
-        try
-        {
-            return new ViewForward(studyURL("dataset",
-                    DataSetDefinition.DATASETKEY, String.valueOf(datasetId),
-                    Visit.VISITKEY, "" + visit.getRowId()));
-        }
-        catch (Exception x) {throw new RuntimeException(x);}
-    }
-
-    public static class SourceLsidForm extends FormData
-    {
-        private String _sourceLsid;
-
-        public String getSourceLsid()
-        {
-            return _sourceLsid;
-        }
-
-        public void setSourceLsid(String sourceLsid)
-        {
-            _sourceLsid = sourceLsid;
-        }
-    }
-
-    public static class ReportHeader extends HttpView
-    {
-        private Report _report;
-
-        public ReportHeader(Report report)
-        {
-            _report = report;
-        }
-
-        protected void renderInternal(Object model, PrintWriter out) throws Exception
-        {
-            if (!StringUtils.isEmpty(_report.getDescriptor().getReportDescription()))
-            {
-                out.print("<table class='normal'>");
-                out.print("<tr><td><span class='navPageHeader'>Report Description:</span>&nbsp;</td>");
-                out.print("<td>" + _report.getDescriptor().getReportDescription() + "</td></tr>");
-                out.print("</table>");
-            }
-        }
-    }
-
     private ViewForward typeNotFound(int datasetId)
             throws URISyntaxException
     {
         return new ViewForward(getActionURL().relativeUrl("typeNotFound", "id=" + datasetId));
-    }
-
-
-    @Jpf.Action @RequiresPermission(ACL.PERM_DELETE)
-    public Forward purgeDataset() throws Exception
-    {
-        // UNDONE: confirm page
-        // CONSIDER: deleteDataset() that supports sequenceNum and filters
-
-        ViewContext context = getViewContext();
-        int datasetId = null == context.get(DataSetDefinition.DATASETKEY) ? 0 : Integer.parseInt((String) context.get(DataSetDefinition.DATASETKEY));
-
-        if (isPost())
-        {
-            DataSetDefinition dataset = getStudyManager().getDataSetDefinition(getStudy(), datasetId);
-            if (null == dataset)
-                return HttpView.throwNotFound();
-
-            String typeURI = dataset.getTypeURI();
-            if (typeURI == null)
-                return typeNotFound(datasetId);
-
-            DbScope scope = StudySchema.getInstance().getSchema().getScope();
-            try
-            {
-                scope.beginTransaction();
-                getStudyManager().purgeDataset(getStudy(), dataset);
-                scope.commitTransaction();
-            }
-            finally
-            {
-                if (scope.isTransactionActive())
-                    scope.rollbackTransaction();
-            }
-            DataRegionSelection.clearAll(getViewContext());
-        }
-        return forwardDataset(datasetId);
     }
 
     private ActionURL studyURL(String action, String... args) throws ServletException
@@ -322,157 +173,6 @@ public class OldStudyController extends BaseController
     {
         return StudyManager.getInstance();
     }
-
-    @Jpf.Action @RequiresPermission(ACL.PERM_ADMIN)
-    protected Forward visitDisplayOrder(ReorderForm form) throws Exception
-    {
-        if (isPost())
-        {
-            String order = form.getOrder();
-            if (order != null && order.length() > 0)
-            {
-                String[] orderedIds = order.split(",");
-                for (int i = 0; i < orderedIds.length; i++)
-                {
-                    int id = Integer.parseInt(orderedIds[i]);
-                    Visit visit = getStudyManager().getVisitForRowId(getStudy(), id);
-                    if (visit.getDisplayOrder() != i)
-                    {
-                        visit = visit.createMutable();
-                        visit.setDisplayOrder(i);
-                        getStudyManager().updateVisit(getUser(), visit);
-                    }
-                }
-            }
-            return forwardManageVisits();
-        }
-        Study study = getStudy();
-        NavTree[] navTrail = new NavTree[]{
-                new NavTree(study.getLabel(), forwardBegin()),
-                new NavTree("Manage Study", forwardManageStudy()),
-                new NavTree("Manage Visits", forwardManageVisits()),
-                new NavTree("Display Order")};
-        return _renderInTemplate(new StudyJspView<Object>(getStudy(), "visitDisplayOrder.jsp", null), "Visit Display Order", navTrail);
-    }
-
-
-    @Jpf.Action @RequiresPermission(ACL.PERM_ADMIN)
-    protected Forward dataSetDisplayOrder(ReorderForm form) throws Exception
-    {
-        if (isPost())
-        {
-            String order = form.getOrder();
-            if (order != null && order.length() > 0)
-            {
-                String[] orderedIds = order.split(",");
-                for (int i = 0; i < orderedIds.length; i++)
-                {
-                    int id = Integer.parseInt(orderedIds[i]);
-                    DataSetDefinition def = getStudyManager().getDataSetDefinition(getStudy(), id);
-                    if (def.getDisplayOrder() != i)
-                    {
-                        def = def.createMutable();
-                        def.setDisplayOrder(i);
-                        getStudyManager().updateDataSetDefinition(getUser(), def);
-                    }
-                }
-            }
-            return forwardManageTypes();
-        }
-        Study study = getStudy();
-        NavTree[] navTrail = new NavTree[]{
-                new NavTree(study.getLabel(), forwardBegin()),
-                new NavTree("Manage Study", forwardManageStudy()),
-                new NavTree("Manage Datasets", forwardManageTypes()),
-                new NavTree("Display Order")};
-        return _renderInTemplate(new StudyJspView<Object>(getStudy(), "dataSetDisplayOrder.jsp", null), "Dataset Display Order", "manageDatasets", navTrail);
-    }
-
-
-    @Jpf.Action @RequiresPermission(ACL.PERM_ADMIN)
-    protected Forward dataSetVisibility(DatasetPropertyForm form) throws Exception
-    {
-        if (isPost())
-        {
-            int[] allIds = form.getIds();
-            int[] visibleIds = form.getVisible();
-            Set<Integer> visible = new HashSet<Integer>(visibleIds.length);
-            for (int id : visibleIds)
-                  visible.add(id);
-            for (int i = 0; i < allIds.length; i++)
-            {
-                DataSetDefinition def = getStudyManager().getDataSetDefinition(getStudy(), allIds[i]);
-                boolean show = visible.contains(allIds[i]);
-                String category = form.getExtraData()[i];
-                Integer cohortId = form.getCohort()[i];
-                if (cohortId.intValue() == -1)
-                    cohortId = null;
-                String label = form.getLabel()[i];
-                if (def.isShowByDefault() != show || !nullSafeEqual(category, def.getCategory()) || !nullSafeEqual(label, def.getLabel()) || !BaseStudyController.nullSafeEqual(cohortId, def.getCohortId()))
-                {
-                    def = def.createMutable();
-                    def.setShowByDefault(show);
-                    def.setCategory(category);
-                    def.setCohortId(cohortId);
-                    def.setLabel(label);
-                    getStudyManager().updateDataSetDefinition(getUser(), def);
-                }
-            }
-            return forwardManageTypes();
-        }
-        Study study = getStudy();
-        NavTree[] navTrail = new NavTree[]{
-                new NavTree(study.getLabel(), forwardBegin()),
-                new NavTree("Manage Study", forwardManageStudy()),
-                new NavTree("Manage Datasets", forwardManageTypes()),
-                new NavTree("Properties")};
-        return _renderInTemplate(new StudyJspView<Object>(getStudy(), "dataSetVisibility.jsp", null), "Dataset Properties", "manageDatasets", navTrail);
-    }
-
-
-    @Jpf.Action @RequiresPermission(ACL.PERM_ADMIN)
-    protected Forward visitVisibility(VisitPropertyForm form) throws Exception
-    {
-        if (isPost())
-        {
-            int[] allIds = form.getIds() == null ? new int[0] : form.getIds();
-            int[] visibleIds = form.getVisible() == null ? new int[0] : form.getVisible();
-            Set<Integer> visible = new HashSet<Integer>(visibleIds.length);
-            for (int id : visibleIds)
-                visible.add(id);
-            if (allIds.length != form.getLabel().length)
-                throw new IllegalStateException("Arrays must be the same length.");
-            for (int i = 0; i < allIds.length; i++)
-            {
-                Visit def = getStudyManager().getVisitForRowId(getStudy(), allIds[i]);
-                boolean show = visible.contains(allIds[i]);
-                String label = form.getLabel()[i];
-                String typeStr = form.getExtraData()[i];
-                Integer cohortId = form.getCohort()[i];
-                if (cohortId.intValue() == -1)
-                    cohortId = null;
-                Character type = typeStr != null && typeStr.length() > 0 ? typeStr.charAt(0) : null;
-                if (def.isShowByDefault() != show || !nullSafeEqual(label, def.getLabel()) || type != def.getTypeCode() || !nullSafeEqual(cohortId, def.getCohortId()))
-                {
-                    def = def.createMutable();
-                    def.setShowByDefault(show);
-                    def.setLabel(label);
-                    def.setCohortId(cohortId);
-                    def.setTypeCode(type);
-                    getStudyManager().updateVisit(getUser(), def);
-                }
-            }
-            return forwardManageVisits();
-        }
-        Study study = getStudy();
-        NavTree[] navTrail = new NavTree[]{
-                new NavTree(study.getLabel(), forwardBegin()),
-                new NavTree("Manage Study", forwardManageStudy()),
-                new NavTree("Manage Visits", forwardManageVisits()),
-                new NavTree("Properties")};
-        return _renderInTemplate(new StudyJspView<Object>(getStudy(), "visitVisibility.jsp", null), "Visit Properties", "editVisits", navTrail);
-    }
-
 
     @Jpf.Action @RequiresPermission(ACL.PERM_ADMIN)
     protected Forward confirmDeleteDataset(IdForm form) throws Exception
@@ -519,80 +219,6 @@ public class OldStudyController extends BaseController
     public Forward fowardParticipant(String ptid)
     {
         try {return new ViewForward(studyURL("participant", "participantId", ptid));} catch (Exception x) {throw new RuntimeException(x);}
-    }
-
-    public static class StudyChartReport extends ChartQueryReport
-    {
-        public static final String TYPE = "Study.chartReport";
-
-        public String getType()
-        {
-            return TYPE;
-        }
-
-        private TableInfo getTable(ViewContext context, ReportDescriptor descriptor) throws Exception
-        {
-            final int datasetId = Integer.parseInt(descriptor.getProperty("datasetId"));
-            final Study study = StudyManager.getInstance().getStudy(context.getContainer());
-            DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
-
-            return def.getTableInfo(context.getUser());
-        }
-
-        public ResultSet generateResultSet(ViewContext context) throws Exception
-        {
-            ReportDescriptor descriptor = getDescriptor();
-            final String participantId = descriptor.getProperty("participantId");
-            final TableInfo tableInfo = getTable(context, descriptor);
-            DataRegion dr = new DataRegion();
-            dr.setTable(tableInfo);
-
-            SimpleFilter filter = new SimpleFilter();
-            filter.addCondition("participantId", participantId, CompareType.EQUAL);
-
-            RenderContext ctx = new RenderContext(context);
-            ctx.setContainer(context.getContainer());
-            ctx.setBaseFilter(filter);
-
-            return dr.getResultSet(ctx);
-        }
-
-        public ChartReportDescriptor.LegendItemLabelGenerator getLegendItemLabelGenerator()
-        {
-            return new ChartReportDescriptor.LegendItemLabelGenerator() {
-                public String generateLabel(ViewContext context, ReportDescriptor descriptor, String itemName) throws Exception
-                {
-                    TableInfo table = getTable(context, descriptor);
-                    if (table != null)
-                    {
-                        ColumnInfo info = table.getColumn(itemName);
-                        return info != null ? info.getCaption() : itemName;
-                    }
-                    return itemName;
-                }
-            };
-        }
-    }
-
-
-    @Jpf.Action @RequiresPermission(ACL.PERM_ADMIN)
-    public Forward updateParticipantVisits() throws Exception
-    {
-        getStudyManager().recomputeStudyDataVisitDate(getStudy());
-        getStudyManager().getVisitManager(getStudy()).updateParticipantVisits();
-
-        TableInfo tinfoParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
-        Integer visitDates = Table.executeSingleton(StudySchema.getInstance().getSchema(),
-                "SELECT Count(VisitDate) FROM " + tinfoParticipantVisit + "\nWHERE Container = ?",
-                new Object[] {getContainer()}, Integer.class);
-        int count = null == visitDates ? 0 : visitDates.intValue();
-
-        HttpView view = new HtmlView(
-                "<div class=normal>" + count + " rows were updated.<p/>" +
-                PageFlowUtil.buttonLink("Done", "manageVisits.view") +
-                "</div>");
-        includeView(new DialogTemplate(view));
-        return null;
     }
 
     public static class DataSetForm extends ViewForm
@@ -765,155 +391,6 @@ public class OldStudyController extends BaseController
         }
     }
 
-
-    public static class ReorderForm extends FormData
-    {
-        private String _order;
-
-        public String getOrder()
-        {
-            return _order;
-        }
-
-        public void setOrder(String order)
-        {
-            _order = order;
-        }
-    }
-
-    public abstract static class PropertyForm extends FormData
-    {
-        private String[] _label;
-        private String[] _extraData;
-        private int[] _cohort;
-
-        public String[] getExtraData()
-        {
-            return _extraData;
-        }
-
-        public void setExtraData(String[] extraData)
-        {
-            _extraData = extraData;
-        }
-
-        public String[] getLabel()
-        {
-            return _label;
-        }
-
-        public void setLabel(String[] label)
-        {
-            _label = label;
-        }
-
-        public int[] getCohort()
-        {
-            return _cohort;
-        }
-
-        public void setCohort(int[] cohort)
-        {
-            _cohort = cohort;
-        }
-    }
-
-    public static class VisitPropertyForm extends PropertyForm
-    {
-        private int[] _ids;
-        private int[] _visible;
-
-        public int[] getIds()
-        {
-            return _ids;
-        }
-
-        public void setIds(int[] ids)
-        {
-            _ids = ids;
-        }
-
-        public int[] getVisible()
-        {
-            return _visible;
-        }
-
-        public void setVisible(int[] visible)
-        {
-            _visible = visible;
-        }
-    }
-
-    public static class DatasetPropertyForm extends PropertyForm
-    {
-        private int[] _ids;
-        private int[] _visible;
-
-        public int[] getIds()
-        {
-            return _ids;
-        }
-
-        public void setIds(int[] ids)
-        {
-            _ids = ids;
-        }
-
-        public int[] getVisible()
-        {
-            return _visible;
-        }
-
-        public void setVisible(int[] visible)
-        {
-            _visible = visible;
-        }
-    }
-
-    /**
-     * Adds next and prev buttons to the participant view
-     */
-    public static class ParticipantNavView extends HttpView
-    {
-        private String _prevURL;
-        private String _nextURL;
-        private String _display;
-
-        public ParticipantNavView(String prevURL, String nextURL, String display)
-        {
-            _prevURL = prevURL;
-            _nextURL = nextURL;
-            _display = display;
-        }
-
-        public ParticipantNavView(String prevURL, String nextURL)
-        {
-            this(prevURL, nextURL, null);
-        }
-
-        @Override
-        protected void renderInternal(Object model, PrintWriter out) throws Exception
-        {
-            out.print("<table><tr><td align=\"left\">");
-            if (_prevURL == null)
-                out.print("[< Previous Participant]");
-            else
-                out.print("[<a href=\"" + _prevURL + "\">< Previous Participant</a>]");
-            out.print("&nbsp;");
-
-            if (_nextURL == null)
-                out.print("[Next Participant >]");
-            else
-                out.print("[<a href=\"" + _nextURL + "\">Next Participant ></a>]");
-
-            if (_display != null)
-            {
-                out.print("</td><td class=\"ms-searchform\">");
-                out.print(PageFlowUtil.filter(_display));
-            }
-            out.print("</td></tr></table>");
-        }
-    }
 
     @Jpf.Action @RequiresPermission(ACL.PERM_ADMIN)
     protected Forward manageSnapshot(SnapshotForm form) throws Exception
