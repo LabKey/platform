@@ -70,7 +70,7 @@ public class StringUtils
             //Character.isWhitespace() not supported in GWT
             if (c != '\t' && c != ' ')
                 newline = false;
-            else if ('\r' == c || '\n' == c)
+            if ('\r' == c || '\n' == c)
                 newline = true;
 
             switch (c)

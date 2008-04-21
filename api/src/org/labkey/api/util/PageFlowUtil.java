@@ -619,14 +619,11 @@ public class PageFlowUtil
         }
     }
 
-
-
     public static ActionErrors getActionErrors(HttpServletRequest request)
     {
         return getActionErrors(request, false);
     }
-
-
+    
     public static ActionErrors getActionErrors(HttpServletRequest request, boolean create)
     {
         ActionErrors errors = (ActionErrors) request.getAttribute(org.apache.struts.Globals.ERROR_KEY);

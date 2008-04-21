@@ -21,7 +21,6 @@ import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
-
 import java.io.File;
 import java.io.FileFilter;
 import java.net.URI;

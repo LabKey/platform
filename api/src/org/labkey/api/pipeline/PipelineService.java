@@ -21,7 +21,6 @@ import org.labkey.api.pipeline.browse.BrowseView;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -96,5 +95,16 @@ abstract public class PipelineService
 
     // TODO: This should be on PipelineProtocolFactory
     abstract public void rememberLastProtocolSetting(PipelineProtocolFactory factory, Container container,
-                                                  User user, String protocolName);
+                                                     User user, String protocolName);
+
+    abstract public String getLastSequenceDbSetting(PipelineProtocolFactory factory, Container container, User user);
+
+    abstract public void rememberLastSequenceDbSetting(PipelineProtocolFactory factory, Container container, User user,
+                                                       String sequenceDbPath, String sequenceDb);
+
+    abstract public List<String> getLastSequenceDbPathsSetting(PipelineProtocolFactory factory, Container container, User user);
+
+    abstract public void rememberLastSequenceDbPathsSetting(PipelineProtocolFactory factory, Container container,
+                                                            User user, List<String> sequenceDbPaths);
+
 }
