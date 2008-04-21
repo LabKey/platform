@@ -110,6 +110,30 @@
     padding-right:4px;
     padding-left:4px;
 }
+.ms-searchform-nowrap {
+	background-color: #<%= theme.getEditFormColor() %>;
+	font-family: verdana;
+	font-size: <%= themeFont.getNormalSize() %>;
+    padding-right:4px;
+    padding-left:4px;
+    padding-top:4px;
+    padding-bottom:4px;
+    white-space: nowrap;
+    vertical-align: top;
+    text-align: right;
+}
+.ms-top {
+    font-size: <%= themeFont.getNormalSize() %>;
+    font-family: verdana;
+    vertical-align: top;
+}
+
+.ms-top-color {
+    background-color: #<%= theme.getEditFormColor() %>;
+    font-size: <%= themeFont.getNormalSize() %>;
+    font-family: verdana;
+    vertical-align: top;
+}
 .ms-nav a {
     text-decoration: none;
     font-family: Verdana, sans-serif;
@@ -283,6 +307,19 @@ body, td, .gwt-Label
     {
 	font-size: <%= themeFont.getNormalSize() %>;
     color: red;
+    }
+
+.cpas-message
+    {
+    font-size: <%= themeFont.getNormalSize() %>;
+    color: green;
+    }
+
+.cpas-message-strong
+    {
+    font-size: <%= themeFont.getNormalSize() %>;
+    font-weight: bold;
+    color: green;
     }
 
 .cpas-completion-highlight, .labkey-completion-highlight

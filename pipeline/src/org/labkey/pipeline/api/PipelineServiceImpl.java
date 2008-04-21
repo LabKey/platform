@@ -17,7 +17,6 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.pipeline.PipelineModule;
 import org.labkey.pipeline.mule.EPipelineQueueImpl;
 import org.labkey.pipeline.browse.BrowseViewImpl;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -33,6 +32,8 @@ public class PipelineServiceImpl extends PipelineService
     public static String PROP_Mirror = "mirror-containers";
     public static String PREF_LASTPATH = "lastpath";
     public static String PREF_LASTPROTOCOL = "lastprotocol";
+    public static String PREF_LASTSEQUENCEDB = "lastsequencedb";
+    public static String PREF_LASTSEQUENCEDBPATHS = "lastsequencedbpaths";
     public static String KEY_PREFERENCES = "pipelinePreferences";
 
     private static Logger _log = Logger.getLogger(PipelineService.class);
@@ -236,6 +237,7 @@ public class PipelineServiceImpl extends PipelineService
     {
         return PREF_LASTPROTOCOL + "-" + factory.getName();
     }
+
     // TODO: This should be on PipelineProtocolFactory
     public String getLastProtocolSetting(PipelineProtocolFactory factory, Container container, User user)
     {
@@ -264,6 +266,74 @@ public class PipelineServiceImpl extends PipelineService
     }
 
 
+    public String getLastSequenceDbSetting(PipelineProtocolFactory factory, Container container, User user)
+    {
+        try
+        {
+            Map<String, String> props = PropertyManager.getProperties(user.getUserId(), container.getId(), PipelineServiceImpl.KEY_PREFERENCES, false);
+            if (props != null)
+                return props.get(PipelineServiceImpl.PREF_LASTSEQUENCEDB + "-" + factory.getName());
+        }
+        catch (Exception e)
+        {
+            _log.error("Error", e);
+        }
+        return "";
+    }
+
+    public void rememberLastSequenceDbSetting(PipelineProtocolFactory factory, Container container, User user,
+                                              String sequenceDbPath,String sequenceDb)
+    {
+        if (user.isGuest())
+            return;
+        if(sequenceDbPath == null) sequenceDbPath = "";
+        if(sequenceDbPath == null || sequenceDbPath.equals("/")) sequenceDbPath = "";
+        String fullPath = sequenceDbPath + sequenceDb;
+        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(user.getUserId(), container.getId(), 
+                PipelineServiceImpl.KEY_PREFERENCES, true);
+        map.put(PipelineServiceImpl.PREF_LASTSEQUENCEDB + "-" + factory.getName(), fullPath);
+        PropertyManager.saveProperties(map);
+    }
+
+    public List<String> getLastSequenceDbPathsSetting(PipelineProtocolFactory factory, Container container, User user)
+    {
+        try
+        {
+            Map<String, String> props = PropertyManager.getProperties(user.getUserId(), container.getId(), PipelineServiceImpl.KEY_PREFERENCES, false);
+            if (props != null)
+            {
+                String dbPaths = props.get(PipelineServiceImpl.PREF_LASTSEQUENCEDBPATHS + "-" + factory.getName());
+                return parseArray(dbPaths);
+            }
+        }
+        catch (Exception e)
+        {
+            _log.error("Error", e);
+        }
+        return null;
+    }
+
+    public void rememberLastSequenceDbPathsSetting(PipelineProtocolFactory factory, Container container, User user,
+                                                   List<String> sequenceDbPathsList)
+    {
+        if (user.isGuest())
+            return;
+        String sequenceDbPathsString = list2String(sequenceDbPathsList);
+        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(user.getUserId(), container.getId(),
+                PipelineServiceImpl.KEY_PREFERENCES, true);
+        if(sequenceDbPathsString == null || sequenceDbPathsString.length() == 0)
+        {
+            map.remove(PipelineServiceImpl.PREF_LASTSEQUENCEDBPATHS + "-" + factory.getName());
+        }
+        else
+        {
+            map.put(PipelineServiceImpl.PREF_LASTSEQUENCEDBPATHS + "-" + factory.getName(), sequenceDbPathsString);
+        }
+        PropertyManager.saveProperties(map);
+    }
+
+
+
     public PipelineStatusFile getStatusFile(String path) throws SQLException
     {
         return PipelineStatusManager.getStatusFile(path);
@@ -283,5 +353,26 @@ public class PipelineServiceImpl extends PipelineService
     public String getToolsDirectory()
     {
         return AppProps.getInstance().getPipelineToolsDirectory();
+    }
+
+    private List<String> parseArray(String dbPaths)
+    {
+        if(dbPaths == null) return null;
+        if(dbPaths.length() == 0) return new ArrayList();
+        String[] tokens = dbPaths.split("\\|");
+        ArrayList<String> dbPathsList = new ArrayList<String>(Arrays.asList(tokens));
+        return dbPathsList;
+    }
+    private String list2String(List<String> sequenceDbPathsList)
+    {
+        if(sequenceDbPathsList == null) return null;
+        StringBuilder temp = new StringBuilder();
+        for(String path:sequenceDbPathsList)
+        {
+            if(temp.length() > 0)
+                temp.append("|");
+            temp.append(path);
+        }
+        return temp.toString();
     }
 }
