@@ -17,15 +17,17 @@ package org.labkey.api.module;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.tomcat.dbcp.dbcp.BasicDataSource;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.*;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.util.*;
-import org.labkey.api.view.HttpView;
+import org.labkey.api.util.AppProps;
+import org.labkey.api.util.BreakpointThread;
+import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -37,6 +39,7 @@ import javax.servlet.Filter;
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.sql.DataSource;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -639,7 +642,7 @@ public class ModuleLoader implements Filter
             {
                 Binding o = iter.next();
                 String dsName = o.getName();
-                BasicDataSource ds = (BasicDataSource) o.getObject();
+                DataSource ds = (DataSource) o.getObject();
                 ensureDataBase(ds, dsName);
             }
         }
@@ -654,16 +657,17 @@ public class ModuleLoader implements Filter
     // then attempt to create the database.  Return true if the database existed, false if it was just created.  Throw if some
     // other exception occurs (connection fails repeatedly with something other than "database doesn't exist" or database can't
     // be created.
-    private boolean ensureDataBase(BasicDataSource ds, String dsName) throws ServletException
+    private boolean ensureDataBase(DataSource ds, String dsName) throws ServletException
     {
         Connection conn = null;
+        SqlDialect.DataSourceProperties props = new SqlDialect.DataSourceProperties(ds);
 
         // Need the dialect to:
         // 1) determine whether an exception is "no database" or something else and
         // 2) get the name of the "master" database
         //
         // Only way to get the right dialect is to look up based on the driver class name.
-        SqlDialect dialect = SqlDialect.getFromDriverClassName(ds.getDriverClassName());
+        SqlDialect dialect = SqlDialect.getFromDriverClassName(props.getDriverClassName());
 
         SQLException lastException = null;
 
@@ -672,7 +676,7 @@ public class ModuleLoader implements Filter
         {
             if (i > 0)
             {
-                _log.error("Retrying connection to \"" + dsName + "\" at " + ds.getUrl() + " in 10 seconds");
+                _log.error("Retrying connection to \"" + dsName + "\" at " + props.getUrl() + " in 10 seconds");
 
                 try
                 {
@@ -687,22 +691,22 @@ public class ModuleLoader implements Filter
             try
             {
                 // Load the JDBC driver
-                Class.forName(ds.getDriverClassName());
+                Class.forName(props.getDriverClassName());
                 // Create non-pooled connection... don't want to pool a failed connection
-                conn = DriverManager.getConnection(ds.getUrl(), ds.getUsername(), ds.getPassword());
-                _log.debug("Successful connection to \"" + dsName + "\" at " + ds.getUrl());
+                conn = DriverManager.getConnection(props.getUrl(), props.getUsername(), props.getPassword());
+                _log.debug("Successful connection to \"" + dsName + "\" at " + props.getUrl());
                 return true;        // Database already exists
             }
             catch (SQLException e)
             {
                 if (dialect.isNoDatabaseException(e))
                 {
-                    createDataBase(ds, dialect);
+                    createDataBase(props, dialect);
                     return false;   // Successfully created database
                 }
                 else
                 {
-                    _log.error("Connection to \"" + dsName + "\" at " + ds.getUrl() + " failed with the following error:");
+                    _log.error("Connection to \"" + dsName + "\" at " + props.getUrl() + " failed with the following error:");
                     _log.error("Message: " + e.getMessage() + " SQLState: " + e.getSQLState() + " ErrorCode: " + e.getErrorCode(), e);
                     lastException = e;
                 }
@@ -730,20 +734,20 @@ public class ModuleLoader implements Filter
     }
 
 
-    private void createDataBase(BasicDataSource ds, SqlDialect dialect) throws ServletException
+    private void createDataBase(SqlDialect.DataSourceProperties props, SqlDialect dialect) throws ServletException
     {
         Connection conn = null;
         PreparedStatement stmt = null;
 
-        String dbName = SqlDialect.getDatabaseName(ds);
+        String dbName = SqlDialect.getDatabaseName(props.getUrl());
 
         _log.info("Attempting to create database \"" + dbName + "\"");
 
-        String masterUrl = StringUtils.replace(ds.getUrl(), dbName, dialect.getMasterDataBaseName());
+        String masterUrl = StringUtils.replace(props.getUrl(), dbName, dialect.getMasterDataBaseName());
 
         try
         {
-            conn = DriverManager.getConnection(masterUrl, ds.getUsername(), ds.getPassword());
+            conn = DriverManager.getConnection(masterUrl, props.getUsername(), props.getPassword());
             // get version specific dialect
             dialect = SqlDialect.getFromMetaData(conn.getMetaData());
             stmt = conn.prepareStatement(dialect.getCreateDatabaseSql(dbName));

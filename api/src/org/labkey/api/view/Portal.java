@@ -17,6 +17,7 @@ package org.labkey.api.view;
 
 import org.apache.commons.collections.MultiMap;
 import org.apache.commons.collections.map.MultiValueMap;
+import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.labkey.common.util.Pair;
 import org.labkey.api.data.*;
 import org.labkey.api.module.Module;
@@ -46,7 +47,7 @@ public class Portal
     public static final int MOVE_DOWN = 1;
 
     private static HashMap<String, WebPartFactory> _viewMap = null;
-    private static MultiValueMap _regionMap = null;
+    private static MultiHashMap<String, String> _regionMap = null;
 
 
     public static String getSchemaName()
@@ -212,12 +213,6 @@ public class Portal
     }
 
 
-    static int _toInt(Integer i, int d)
-    {
-        return null == i ? d : i;
-    }
-
-
     public static class WebPartBeanLoader extends BeanObjectFactory<WebPart>
     {
         public WebPartBeanLoader()
@@ -309,7 +304,6 @@ public class Portal
      * Add a web part to the container at the specified index, with properties
      */
     public static WebPart addPart(Container c, WebPartFactory desc, String location, int partIndex, Map<String, String> properties)
-            throws SQLException
     {
         WebPart[] parts = getParts(c.getId());
 
@@ -371,11 +365,11 @@ public class Portal
     public static void saveParts(String id, WebPart[] parts)
     {
         // make sure indexes are unique
-        Arrays.sort(parts, new Comparator()
+        Arrays.sort(parts, new Comparator<WebPart>()
         {
-            public int compare(Object o, Object o1)
+            public int compare(WebPart w1, WebPart w2)
             {
-                return ((WebPart) o).index - ((WebPart) o1).index;
+                return w1.index - w2.index;
             }
         });
 
@@ -634,7 +628,7 @@ public class Portal
     }
 
 
-    private static MultiMap getRegionMap()
+    private static MultiHashMap<String, String> getRegionMap()
     {
         if (null == _regionMap)
             initMaps();
@@ -646,7 +640,7 @@ public class Portal
     private static void initMaps()
     {
         _viewMap = new HashMap<String, WebPartFactory>(20);
-        _regionMap = new MultiValueMap();
+        _regionMap = new MultiHashMap<String, String>();
 
         List<Module> modules = ModuleLoader.getInstance().getModules();
         for (Module module : modules)
@@ -666,10 +660,9 @@ public class Portal
         }
 
         //noinspection unchecked
-        for (String key : (Collection<String>)_regionMap.keySet())
+        for (String key : _regionMap.keySet())
         {
-            //noinspection unchecked
-            ArrayList<String> list = (ArrayList<String>)_regionMap.getCollection(key);
+            List<String> list = (List<String>)_regionMap.getCollection(key);
             Collections.sort(list);
         }
     }

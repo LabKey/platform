@@ -1,11 +1,10 @@
 package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
-import org.apache.tomcat.dbcp.dbcp.BasicDataSource;
 import org.labkey.api.util.Cache;
+import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.util.MemTracker;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -222,8 +221,9 @@ public class TempTableTracker extends WeakReference<Object>
                     String tempSchemaName = dialect.getGlobalTempTablePrefix();
                     if (tempSchemaName.endsWith("."))
                         tempSchemaName = tempSchemaName.substring(0,tempSchemaName.length()-1);
-                    String dbName = SqlDialect.getDatabaseName((BasicDataSource)scope.getDataSource());
+                    String dbName = SqlDialect.getDatabaseName(scope.getDataSource());
 
+                    
                     Connection conn = null;
                     ResultSet rs = null;
                     Object noref = new Object();

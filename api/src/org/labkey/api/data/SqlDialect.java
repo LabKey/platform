@@ -19,11 +19,12 @@ package org.labkey.api.data;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.tomcat.dbcp.dbcp.BasicDataSource;
 import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.util.SystemMaintenance;
 
 import javax.servlet.ServletException;
+import javax.sql.DataSource;
+import java.lang.reflect.Method;
 import java.sql.*;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -70,8 +71,21 @@ public abstract class SqlDialect
             {
                 Connection conn = null;
                 String sql = scope.getSqlDialect().getDatabaseMaintenanceSql();
-                BasicDataSource ds = (BasicDataSource)scope.getDataSource();
-                _log.info("Database maintenance on " + ds.getUrl() + " started");
+                DataSource ds = scope.getDataSource();
+
+                String url = null;
+
+                try
+                {
+                    DataSourceProperties props = new DataSourceProperties(ds);
+                    url = props.getUrl();
+                    _log.info("Database maintenance on " + url + " started");
+                }
+                catch (Exception e)
+                {
+                    // Shouldn't happen, but we can survive without the url
+                    _log.error("Exception retrieving url", e);
+                }
 
                 try
                 {
@@ -90,7 +104,8 @@ public abstract class SqlDialect
                     try {  if (null != conn) conn.close(); } catch (SQLException e) { /**/ }
                 }
 
-                _log.info("Database maintenance on " + ds.getUrl() + " complete");
+                if (null != url)
+                    _log.info("Database maintenance on " + url + " complete");
             }
         }
     }
@@ -396,9 +411,26 @@ public abstract class SqlDialect
     public abstract String getBooleanDatatype();
 
 
-    public static String getDatabaseName(BasicDataSource ds) throws ServletException
+    public static String getDatabaseName(String url) throws ServletException
     {
-        return getJdbcHelper(ds).getDatabase();
+        return getJdbcHelper(url).getDatabase();
+    }
+
+
+    public static String getDatabaseName(DataSource ds) throws ServletException
+    {
+        String url;
+        try
+        {
+            DataSourceProperties props = new DataSourceProperties(ds);
+            url = props.getUrl();
+        }
+        catch (Exception e)
+        {
+            throw new ServletException("Error retrieving url property from DataSource", e);
+        }
+
+        return getDatabaseName(url);
     }
 
 
@@ -410,10 +442,8 @@ public abstract class SqlDialect
     //
     // Currently, JdbcHelper only finds the database name.  It could be extended if we require querying
     // other components or if replacement/reassembly becomes necessary.
-    public static JdbcHelper getJdbcHelper(BasicDataSource ds) throws ServletException
+    public static JdbcHelper getJdbcHelper(String url) throws ServletException
     {
-        String url = ds.getUrl();
-
         if (url.startsWith("jdbc:jtds:sqlserver"))
             return new SqlDialectMicrosoftSQLServer.JtdsJdbcHelper(url);
         else if (url.startsWith("jdbc:postgresql"))
@@ -535,5 +565,56 @@ public abstract class SqlDialect
             ich = ichSkipPast;
         }
         return ret.toString();
+    }
+
+
+    // Trying to be DataSource implementation agnostic here.  DataSource interface doesn't provide access to any of
+    // these properties, but we don't want to cast to a specific implementation class, so use reflection to get them.
+    public static class DataSourceProperties
+    {
+        private DataSource _ds;
+
+        public DataSourceProperties(DataSource ds)
+        {
+            _ds = ds;
+        }
+
+        private String getProperty(String methodName) throws ServletException
+        {
+
+            try
+            {
+                Method getUrl = _ds.getClass().getMethod(methodName);
+                return (String)getUrl.invoke(_ds);
+            }
+            catch (Exception e)
+            {
+                throw new ServletException("Unabled to retrieve DataSource property via " + methodName, e);
+            }
+        }
+
+
+        public String getUrl() throws ServletException
+        {
+            return getProperty("getUrl");
+        }
+
+
+        public String getDriverClassName() throws ServletException
+        {
+            return getProperty("getDriverClassName");
+        }
+
+
+        public String getUsername() throws ServletException
+        {
+            return getProperty("getUsername");
+        }
+
+
+        public String getPassword() throws ServletException
+        {
+            return getProperty("getPassword");
+        }
     }
 }

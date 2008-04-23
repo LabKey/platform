@@ -6,10 +6,10 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
-import java.lang.reflect.Method;
-import java.lang.ref.WeakReference;
-import java.lang.ref.ReferenceQueue;
 import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -156,16 +156,50 @@ public class DbScope
 
     static Class classDelegatingConnection = null;
     static Method methodGetInnermostDelegate = null;
-    static
+    static boolean isDelegating = false;
+    static boolean isDelegationInitialized;
+    private static final Object delegationLock = new Object();
+
+
+    private static void ensureDelegation(Connection conn)
     {
-        try
+        synchronized (delegationLock)
         {
-            classDelegatingConnection = Class.forName("org.apache.tomcat.dbcp.dbcp.DelegatingConnection");
-            methodGetInnermostDelegate = classDelegatingConnection.getMethod("getInnermostDelegate");
-        }
-        catch (Exception x)
-        {
-            _log.info("Could not find class DelegatingConnection", x);
+            if (isDelegationInitialized)
+                return;
+
+            try
+            {
+                classDelegatingConnection = conn.getClass();
+                methodGetInnermostDelegate = classDelegatingConnection.getMethod("getInnermostDelegate");
+
+                while (true)
+                {
+                    try
+                    {
+                        // Test the method to make sure we can access it
+                        Connection test = (Connection)methodGetInnermostDelegate.invoke(conn);
+                        isDelegating = true;
+                        return;
+                    }
+                    catch (Exception e)
+                    {
+                        // Probably an IllegalAccessViolation -- ignore
+                    }
+
+                    // Try the superclass
+                    classDelegatingConnection = classDelegatingConnection.getSuperclass();
+                    methodGetInnermostDelegate = classDelegatingConnection.getMethod("getInnermostDelegate");
+                }
+            }
+            catch (Exception x)
+            {
+                _log.info("Could not find class DelegatingConnection", x);
+            }
+            finally
+            {
+                isDelegationInitialized = true;
+            }
         }
     }
 
@@ -173,7 +207,10 @@ public class DbScope
     private static Connection getDelegate(Connection conn)
     {
         Connection delegate = null;
-        if (null != classDelegatingConnection && null != methodGetInnermostDelegate && classDelegatingConnection.isAssignableFrom(conn.getClass()))
+
+        ensureDelegation(conn);
+
+        if (isDelegating && classDelegatingConnection.isAssignableFrom(conn.getClass()))
         {
             try
             {
@@ -188,7 +225,6 @@ public class DbScope
             delegate = conn;
         return delegate;
     }
-
 
     Integer spidUnknown = -1;
 

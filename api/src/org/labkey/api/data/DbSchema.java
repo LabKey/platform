@@ -20,7 +20,6 @@ import junit.framework.TestSuite;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
-import org.apache.tomcat.dbcp.dbcp.BasicDataSource;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.ms2.MS2Service;
@@ -289,7 +288,7 @@ public class DbSchema
         String ownerName = "dbo";
 
         DbScope scope = getDbScope(dsName);
-        String dbName = SqlDialect.getDatabaseName((BasicDataSource)scope.getDataSource());
+        String dbName = SqlDialect.getDatabaseName(scope.getDataSource());
 
         // Support old format that included catalog
         if (3 == schemaStrings.length)
