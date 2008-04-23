@@ -275,7 +275,6 @@ public class IssuesController extends SpringActionController
         }
     }
 
-
     @RequiresPermission(ACL.PERM_READ)
     public class DetailsAction extends SimpleViewAction<IssueIdForm>
     {
@@ -1477,7 +1476,7 @@ public class IssuesController extends SpringActionController
         }
     }
 
-    public static class EmailPrefsBean extends ViewForm
+    public static class EmailPrefsBean
     {
         private int _emailPrefs;
         private BindException _errors;
@@ -1513,7 +1512,7 @@ public class IssuesController extends SpringActionController
         }
     }
 
-    public static class EmailPrefsForm extends ViewForm
+    public static class EmailPrefsForm
     {
         private Integer[] _emailPreference = new Integer[0];
         private Integer _issueId;
@@ -1539,7 +1538,7 @@ public class IssuesController extends SpringActionController
         }
     }
 
-    public static class AdminForm extends ViewForm
+    public static class AdminForm
     {
         private int type;
         private String keyword;
@@ -1760,7 +1759,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    public static class InsertForm extends ViewForm
+    public static class InsertForm
     {
         private String _body;
         private Integer _assignedto;
@@ -1894,7 +1893,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    public static class IssuePreferenceForm extends ViewForm
+    public static class IssuePreferenceForm
     {
         private String[] _requiredFields = new String[0];
 
