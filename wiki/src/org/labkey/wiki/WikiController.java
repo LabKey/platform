@@ -42,16 +42,15 @@ import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.common.util.Pair;
-import org.labkey.wiki.model.SearchViewContext;
-import org.labkey.wiki.model.Wiki;
-import org.labkey.wiki.model.WikiVersion;
-import org.labkey.wiki.model.WikiView;
+import org.labkey.wiki.model.*;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
+import org.springframework.web.multipart.MultipartFile;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -98,7 +97,7 @@ public class WikiController extends SpringActionController
     protected ModelAndView getTemplate(ViewContext context, ModelAndView mv, Controller action, PageConfig page)
     {
         ModelAndView template = super.getTemplate(context, mv, action, page);
-        if (template instanceof HomeTemplate)
+        if (template instanceof HomeTemplate && !(action instanceof EditWikiAction))
         {
             WebPartView toc = new WikiTOC(context);
 
@@ -773,8 +772,11 @@ public class WikiController extends SpringActionController
                         errors.addError(new FieldError("wiki", "body", "", false, new String[] {"Warning"}, new Object[] {scriptError}, scriptError));
                 }
 
-                String bodyLower = form.getBody().toLowerCase();
-                hasPreTags = (bodyLower.contains("<pre>") || bodyLower.contains("<pre "));
+                if(null != form.getBody())
+                {
+                    String bodyLower = form.getBody().toLowerCase();
+                    hasPreTags = (bodyLower.contains("<pre>") || bodyLower.contains("<pre "));
+                }
             }
 
             if (!explicitUseVisualEditor && hasScript)
@@ -2855,6 +2857,398 @@ public class WikiController extends SpringActionController
             }
 
             return new ApiSimpleResponse("pages", pages);
+        }
+    }
+
+    public static class EditWikiForm
+    {
+        private String _name;
+        private String _redirect;
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
+
+        public String getRedirect()
+        {
+            return _redirect;
+        }
+
+        public void setRedirect(String redir)
+        {
+            _redirect = redir;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_UPDATE)
+    public class EditWikiAction extends SimpleViewAction<EditWikiForm>
+    {
+        public ModelAndView getView(EditWikiForm form, BindException errors) throws Exception
+        {
+            //get the wiki
+            Wiki wiki = null;
+            WikiVersion curVersion = null;
+
+            if(null != form.getName() && form.getName().length() > 0)
+            {
+                wiki = WikiManager.getWiki(getViewContext().getContainer(), form.getName());
+                if(null == wiki)
+                    throw new NotFoundException("There is no wiki in the current folder named '" + form.getName() + '!');
+
+                //get the current version
+                curVersion = wiki.latestVersion();
+                if(null == curVersion)
+                    throw new NotFoundException("Could not locate the current version of the wiki named '" + form.getName() + "'!");
+            }
+
+            WikiEditModel model = new WikiEditModel(getViewContext().getContainer(), wiki, curVersion, form.getRedirect());
+            
+            return new JspView<WikiEditModel>("/org/labkey/wiki/view/wikiEdit.jsp", model);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Edit");
+        }
+    }
+
+    public static class SaveWikiForm
+    {
+        private String _entityId;
+        private Integer _rowId = -1;
+        private String _name;
+        private String _title;
+        private String _body;
+        private Integer _parent = -1;
+        private String _rendererType;
+
+        public String getEntityId()
+        {
+            return _entityId;
+        }
+
+        public void setEntityId(String entityId)
+        {
+            _entityId = entityId;
+        }
+
+        public Integer getRowId()
+        {
+            return _rowId;
+        }
+
+        public void setRowId(Integer rowId)
+        {
+            _rowId = rowId;
+        }
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
+
+        public String getTitle()
+        {
+            return _title;
+        }
+
+        public void setTitle(String title)
+        {
+            _title = title;
+        }
+
+        public String getBody()
+        {
+            return _body;
+        }
+
+        public void setBody(String body)
+        {
+            _body = body;
+        }
+
+        public boolean isNew()
+        {
+            return null == _entityId || _entityId.length() <= 0;
+        }
+
+        public Integer getParent()
+        {
+            return _parent;
+        }
+
+        public void setParent(Integer parent)
+        {
+            _parent = parent;
+        }
+
+        public int getParentId()
+        {
+            return null == _parent ? -1 : _parent.intValue();
+        }
+
+        public String getRendererType()
+        {
+            return _rendererType;
+        }
+
+        public void setRendererType(String rendererType)
+        {
+            _rendererType = rendererType;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_UPDATE)
+    public class SaveWikiAction extends ApiAction<SaveWikiForm>
+    {
+        public ApiResponse execute(SaveWikiForm form, BindException errors) throws Exception
+        {
+            //if no entityId was passed, insert it
+            if(form.isNew())
+                return insertWiki(form, errors);
+            else
+                return updateWiki(form, errors);
+        }
+
+        public void validateForm(SaveWikiForm form, Errors errors)
+        {
+            Container container = getViewContext().getContainer();
+            String name = form.getName();
+
+            //must have a name
+            //cannot start with _ if not admin
+            //if new, must be unique
+            if(null == name || name.length() <= 0)
+                errors.rejectValue("name", ERROR_MSG, "You must provide a name for this page.");
+            else if(name.startsWith("_") && !container.hasPermission(getUser(), ACL.PERM_ADMIN))
+                errors.rejectValue("name", ERROR_MSG, "Wiki names starting with underscore are reserved for administrators.");
+            else if(form.isNew())
+            {
+                if (WikiManager.getWiki(container, name) != null)
+                    errors.rejectValue("name", ERROR_MSG, "Page '" + name + "' already exists within this folder.");
+            }
+
+            if(null == form.getBody() || form.getBody().trim().length() <= 0)
+                errors.rejectValue("body", ERROR_MSG, "The body text may not be blank.");
+        }
+
+        protected ApiResponse insertWiki(SaveWikiForm form, BindException errors) throws Exception
+        {
+            Container c = getViewContext().getContainer();
+            String wikiname = form.getName();
+
+            Wiki wiki = new Wiki(c, wikiname);
+            wiki.setParent(form.getParentId());
+
+            WikiVersion wikiversion = new WikiVersion(wikiname);
+
+            //if user has not submitted title, use page name as title
+            String title = form.getTitle() == null ? wikiname : form.getTitle();
+            wikiversion.setTitle(title);
+            wikiversion.setBody(form.getBody());
+            wikiversion.setRendererType(form.getRendererType());
+
+            //insert new wiki and new version
+            WikiManager.insertWiki(getUser(), c, wiki, wikiversion, null);
+
+/*
+        TODO: looks like this is used to reset the content of a previously-empty web part
+            String pageId = StringUtils.trimToEmpty(form.getPageId());
+            int index = form.getIndex();
+            if (pageId != null && index > 0)
+            {
+                //get web part referenced by page id and index
+                Portal.WebPart webPart = Portal.getPart(pageId, index);
+                webPart.setProperty("webPartContainer", c.getId());
+                webPart.setProperty("name", wikiname);
+                Portal.updatePart(getUser(), webPart);
+            }
+*/
+
+            //return an API response containing the current wiki and version data
+            ApiSimpleResponse resp = new ApiSimpleResponse("success", true);
+            resp.put("wikiProps", getWikiProps(wiki, wikiversion));
+            return resp;
+        }
+
+        protected HashMap<String,Object> getWikiProps(Wiki wiki, WikiVersion wikiversion)
+        {
+            HashMap<String,Object> wikiProps = new HashMap<String,Object>();
+            wikiProps.put("entityId", wiki.getEntityId());
+            wikiProps.put("rowId", wiki.getRowId());
+            wikiProps.put("name", wiki.getName());
+            wikiProps.put("title", wikiversion.getTitle());
+            wikiProps.put("body", wikiversion.getBody()); //CONSIDER: do we really need to return the body here?
+            wikiProps.put("rendererType", wikiversion.getRendererType());
+            wikiProps.put("parent", wiki.getParent());
+            return wikiProps;
+        }
+
+        protected ApiResponse updateWiki(SaveWikiForm form, BindException errors) throws Exception
+        {
+            if(null == form.getEntityId() || form.getEntityId().length() <= 0)
+                throw new IllegalArgumentException("The entityId parameter must be supplied.");
+
+            Wiki wikiUpdate = WikiManager.getWikiByEntityId(getViewContext().getContainer(), form.getEntityId());
+            if (wikiUpdate == null)
+                HttpView.throwNotFound("Could not find the wiki page matching the passed id; if it was a valid page, it may have been deleted by another user.");
+
+            BaseWikiPermissions perms = getPermissions();
+            if(!perms.allowUpdate(wikiUpdate))
+                HttpView.throwUnauthorized("You are not allowed to edit this wiki page.");
+
+            WikiVersion wikiversion = wikiUpdate.latestVersion();
+            if (wikiversion == null)
+                HttpView.throwNotFound("There is no current version associated with this wiki page; the existing page may have been deleted.");
+
+            //if title is null, use name
+            String title = form.getTitle() == null ? form.getName() : form.getTitle();
+            String currentRendererName = form.getRendererType();
+
+            //only insert new version if something has changed
+            if (StringUtils.trimToEmpty(wikiUpdate.getName()).compareTo(form.getName()) != 0 ||
+                    StringUtils.trimToEmpty(wikiversion.getTitle()).compareTo(title) != 0 ||
+                    StringUtils.trimToEmpty(wikiversion.getBody()).compareTo(StringUtils.trimToEmpty(form.getBody())) != 0 ||
+                    wikiversion.getRendererType().compareTo(currentRendererName) != 0 ||
+                    wikiUpdate.getParent() != form.getParentId())
+            {
+                wikiUpdate.setName(form.getName());
+                wikiUpdate.setParent(form.getParentId());
+                wikiversion.setTitle(title);
+                wikiversion.setBody(form.getBody());
+                wikiversion.setRendererType(currentRendererName);
+                WikiManager.updateWiki(getViewContext().getUser(), wikiUpdate, wikiversion);
+            }
+
+            //return an API response containing the current wiki and version data
+            ApiSimpleResponse resp = new ApiSimpleResponse("success", true);
+            resp.put("wikiProps", getWikiProps(wikiUpdate, wikiversion));
+            return resp;
+        }
+
+    }
+
+    public static class AttachFilesForm
+    {
+        private String _entityId;
+        private String[] _toDelete;
+
+        public String getEntityId()
+        {
+            return _entityId;
+        }
+
+        public void setEntityId(String entityId)
+        {
+            _entityId = entityId;
+        }
+
+        public String[] getToDelete()
+        {
+            return _toDelete;
+        }
+
+        public void setToDelete(String[] toDelete)
+        {
+            _toDelete = toDelete;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class AttachFilesAction extends ApiAction<AttachFilesForm>
+    {
+        public AttachFilesAction()
+        {
+            super();
+
+            //because this will typically be called from a hidden iframe
+            //we must responsd with a content-type of text/html or the
+            //browser will prompt the user to save the response, as the
+            //browser won't natively show application/json content-type
+            setContentTypeOverride("text/html");
+        }
+
+        public ApiResponse execute(AttachFilesForm form, BindException errors) throws Exception
+        {
+            if(null == form.getEntityId() || form.getEntityId().length() == 0)
+                throw new IllegalArgumentException("The entityId parameter is required!");
+
+            //get the wiki using the entity id
+            Wiki wiki = WikiManager.getWikiByEntityId(getViewContext().getContainer(), form.getEntityId());
+            if(null == wiki)
+                throw new IllegalArgumentException("Could not find the wiki with entity id '" + form.getEntityId() + "'!");
+
+            if(!(getViewContext().getRequest() instanceof MultipartHttpServletRequest))
+                throw new IllegalArgumentException("You must use the 'multipart/form-data' mimetype when posting to attachFiles.api");
+
+            AttachmentService.Service attsvc = AttachmentService.get();
+
+            //delete the attachments requested
+            if(null != form.getToDelete() && form.getToDelete().length > 0)
+            {
+                for(String name : form.getToDelete())
+                {
+                    attsvc.deleteAttachment(wiki, name);
+                }
+            }
+
+            Map<String,Object> warnings = new HashMap<String,Object>();
+
+            Map<String, MultipartFile> fileMap = (Map<String, MultipartFile>)((MultipartHttpServletRequest)getViewContext().getRequest()).getFileMap();
+            List<AttachmentFile> files = SpringAttachmentFile.createList(fileMap);
+
+            //add any files as attachments
+            if(null != files && files.size() > 0)
+            {
+                try
+                {
+                    attsvc.addAttachments(getUser(), wiki, files);
+                }
+                catch(AttachmentService.DuplicateFilenameException e)
+                {
+                    //since this is now being called ajax style with just the files, we don't
+                    //really need to generate an error in this case. Just add a warning
+                    warnings.put("files", e.getMessage());
+                }
+            }
+
+            //uncache the wikis in the current container so that
+            //changes to the attachments are reflected
+            WikiCache.uncache(getViewContext().getContainer());
+
+            //build the response
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("success", true);
+            if(warnings.size() > 0)
+                resp.put("warnings", warnings);
+
+            Wiki wikiUpdated = WikiManager.getWiki(getViewContext().getContainer(), wiki.getName());
+            assert(null != wikiUpdated);
+
+            List<Object> attachments = new ArrayList<Object>();
+            if(null != wikiUpdated.getAttachments())
+            {
+                for(Attachment att : wikiUpdated.getAttachments())
+                {
+                    Map<String,Object> attProps = new HashMap<String,Object>();
+                    attProps.put("name", att.getName());
+                    attProps.put("iconUrl", getViewContext().getContextPath() + att.getFileIcon());
+                    attachments.add(attProps);
+                }
+            }
+            resp.put("attachments", attachments);
+            return resp;
         }
     }
 }
