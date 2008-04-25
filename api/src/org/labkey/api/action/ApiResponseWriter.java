@@ -16,6 +16,7 @@
 package org.labkey.api.action;
 
 import org.labkey.api.query.QueryView;
+import org.springframework.validation.Errors;
 
 import javax.servlet.http.HttpServletResponse;
 import java.sql.ResultSet;
@@ -50,6 +51,8 @@ public abstract class ApiResponseWriter
     public abstract void write(ApiResponse response) throws Exception;
 
     public abstract void write(Throwable e) throws Exception;
+
+    public abstract void write(Errors errors) throws Exception;
 
     protected HttpServletResponse getResponse()
     {

@@ -38,6 +38,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
 {
     private ApiResponseWriter.Format _reqFormat = null;
     private ApiResponseWriter.Format _respFormat = ApiResponseWriter.Format.JSON;
+    private String _contentTypeOverride = null;
 
     public ApiAction()
     {
@@ -66,7 +67,8 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
                 _reqFormat = ApiResponseWriter.Format.JSON;
                 JSONObject jsonObj = getJsonObject();
                 form = getCommand();
-                errors = populateForm(jsonObj, form);
+                populateForm(jsonObj, form);
+                errors = new BindException(form, "form");
             }
             else
             {
@@ -74,13 +76,22 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
                 {
                     errors = defaultBindParameters(getCommand(), getPropertyValues());
                     form = (FORM)errors.getTarget();
-                    validate(form, errors);
                 }
             }
 
-            ApiResponse response = execute(form, errors);
-            if(null != response)
-                createResponseWriter().write(response);
+            //validate the form
+            validate(form, errors);
+
+            //if we had binding or validation errors,
+            //return them without calling execute.
+            if(null != errors && errors.hasErrors())
+                createResponseWriter().write((Errors)errors);
+            else
+            {
+                ApiResponse response = execute(form, errors);
+                if(null != response)
+                    createResponseWriter().write(response);
+            }
         }
         catch (Exception e)
         {
@@ -103,22 +114,26 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
         while((chars = reader.read(buf)) > 0)
             json.append(buf, 0, chars);
 
-        //deserialize the JSON
-        return new JSONObject(json.toString());
-    }
-
-    protected BindException populateForm(JSONObject jsonObj, FORM form) throws Exception
-    {
-        if(form instanceof ApiJsonForm)
-        {
-            ((ApiJsonForm)form).setJsonObject(jsonObj);
+        String jsonString = json.toString();
+        if(null == jsonString || jsonString.length() <= 0)
             return null;
-        }
-        else
-            return populateForm(jsonObj, form, null);
+
+        //deserialize the JSON
+        return new JSONObject(jsonString);
     }
 
-    protected BindException populateForm(JSONObject jsonObj, FORM form, String parentProperty) throws Exception
+    protected void populateForm(JSONObject jsonObj, FORM form) throws Exception
+    {
+        if(null == jsonObj)
+            return;
+
+        if(form instanceof ApiJsonForm)
+            ((ApiJsonForm)form).setJsonObject(jsonObj);
+        else
+            populateForm(jsonObj, form, null);
+    }
+
+    protected void populateForm(JSONObject jsonObj, FORM form, String parentProperty) throws Exception
     {
         Iterator keys = jsonObj.keys();
         while(keys.hasNext())
@@ -145,14 +160,29 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
                 if(!value.equals(JSONObject.NULL))
                     populateForm((JSONObject)value, form, beanKey);
             }
+            else if(value.equals(JSONObject.NULL))
+            {
+                BeanUtils.setProperty(form, beanKey, null);
+            }
             else
                 BeanUtils.setProperty(form, beanKey, value);
 
         }
-        return null;
     }
 
-    public void validate(Object o, Errors errors)
+    public void validate(Object form, Errors errors)
+    {
+        validateForm((FORM)form, errors);
+    }
+
+    /**
+     * Override to validate the form bean and populate the Errors collection as necessary.
+     * The default implementation does nothing, so override this method to perform validation.
+     *
+     * @param form The form bean
+     * @param errors The errors collection
+     */
+    public void validateForm(FORM form, Errors errors)
     {
     }
 
@@ -161,7 +191,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
         //for now, always return a JSON writer.
         //in the future, look at the posted content-type, or a query string param
         //to determine which format to create
-        return new ApiJsonWriter(getViewContext().getResponse());
+        return new ApiJsonWriter(getViewContext().getResponse(), getContentTypeOverride());
     }
 
     public ApiResponseWriter.Format getResponseFormat()
@@ -172,6 +202,16 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
     public ApiResponseWriter.Format getRequestFormat()
     {
         return _reqFormat;
+    }
+
+    public String getContentTypeOverride()
+    {
+        return _contentTypeOverride;
+    }
+
+    public void setContentTypeOverride(String contentTypeOverride)
+    {
+        _contentTypeOverride = contentTypeOverride;
     }
 
     public abstract ApiResponse execute(FORM form, BindException errors) throws Exception;

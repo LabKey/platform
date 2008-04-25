@@ -313,7 +313,7 @@ public class CrosstabTableInfo extends VirtualTable
             addMemberCase(sql, member, AGG_FILTERED_ALIAS, "1", "0", getMemberInstanceCountAlias(member));
             sql.append(",\n");
             addMemberCase(sql, member, AGG_FILTERED_ALIAS,
-                    String.valueOf(1 << Math.min(64, getColMembers().size() - memberIndex - 1)),
+                    (getColMembers().size() - memberIndex - 1) > 31 ? "0" : String.valueOf(1 << (getColMembers().size() - memberIndex - 1)),
                     "0", getMemberSortPatternAlias(member));
 
             for(CrosstabMeasure measure : getSettings().getMeasures())
