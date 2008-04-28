@@ -157,6 +157,11 @@ public abstract class SpringActionController implements Controller, HasViewConte
         return _viewContext;
     }
 
+    public boolean isPost()
+    {
+        return "POST".equalsIgnoreCase(getViewContext().getRequest().getMethod());
+    }
+
     protected Container getContainer()
     {
         return getViewContext().getContainer();
