@@ -37,10 +37,7 @@ import org.apache.log4j.spi.LoggerFactory;
 import org.apache.log4j.spi.LoggerRepository;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.api.util.FileType;
-import org.labkey.api.util.GUID;
-import org.labkey.api.util.JobRunner;
-import org.labkey.api.util.SafeFileAppender;
+import org.labkey.api.util.*;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ActionURL;
 
@@ -55,7 +52,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-abstract public class PipelineJob extends JobRunner.Job implements Serializable
+abstract public class PipelineJob extends Job implements Serializable
 {
     public static final FileType FT_LOG = new FileType(".log");
     public static final FileType FT_CLUSTER_STATUS = new FileType(".status");

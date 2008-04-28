@@ -42,6 +42,11 @@ public class CommandTaskFactorySettings extends AbstractTaskFactorySettings
     private Integer _pipeOutputLineInterval;
     private Boolean _preview;
 
+    public CommandTaskFactorySettings()
+    {
+        this(CommandTask.class, null);
+    }
+
     public CommandTaskFactorySettings(String name)
     {
         this(CommandTask.class, name);

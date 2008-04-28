@@ -2,11 +2,13 @@
 <!DOCTYPE web-app PUBLIC "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN" "http://java.sun.com/dtd/web-app_2_3.dtd">
 <web-app>
     <display-name>LabKey Server</display-name>
+
+    <listener>
+      <listener-class>org.apache.axis.transport.http.AxisHTTPSessionListener</listener-class>
+    </listener>
+
     <listener>
         <listener-class>org.labkey.api.util.ContextListener</listener-class>
-    </listener>
-    <listener>
-        <listener-class>org.apache.axis.transport.http.AxisHTTPSessionListener</listener-class>
     </listener>
 
     <filter>
@@ -139,6 +141,14 @@
         <url-pattern>*.post</url-pattern>
     </filter-mapping>
 
+    <servlet>
+      <servlet-name>WSRFServlet</servlet-name>
+      <display-name>WSRF Container Servlet</display-name>
+      <servlet-class>
+          org.globus.wsrf.container.AxisServlet
+      </servlet-class>
+      <load-on-startup>0</load-on-startup>
+    </servlet>
 
     <servlet>
         <servlet-name>ViewServlet</servlet-name>
@@ -196,12 +206,6 @@
     </servlet>
 
     <servlet>
-        <servlet-name>AxisServlet</servlet-name>
-        <display-name>Apache-Axis Servlet</display-name>
-        <servlet-class>org.apache.axis.transport.http.AxisServlet</servlet-class>
-    </servlet>
-
-    <servlet>
         <servlet-name>action</servlet-name>
         <servlet-class>org.apache.beehive.netui.pageflow.PageFlowActionServlet</servlet-class>
         <init-param>
@@ -227,6 +231,21 @@
             <param-value>This LabKey Server is currently down for maintenance.</param-value>
         </init-param>
     </servlet>
+
+    <servlet-mapping>
+      <servlet-name>WSRFServlet</servlet-name>
+      <url-pattern>/servlet/AxisServlet</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+      <servlet-name>WSRFServlet</servlet-name>
+      <url-pattern>*.jws</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+      <servlet-name>WSRFServlet</servlet-name>
+      <url-pattern>/services/*</url-pattern>
+    </servlet-mapping>
 
     <!-- To display a nice error message in the case of a database error, remove the
          comments around this servlet-mapping and edit the message in in the init-param
@@ -273,28 +292,6 @@
         <servlet-name>FileServlet</servlet-name>
         <url-pattern>/files/*</url-pattern>
     </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>AxisServlet</servlet-name>
-        <url-pattern>*.jws</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>AxisServlet</servlet-name>
-        <url-pattern>/services/*</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>AxisServlet</servlet-name>
-        <url-pattern>/servlet/AxisServlet</url-pattern>
-    </servlet-mapping>
-
-    <!--
-    A sample servlet mapping. A path like http://host/labkey/cgi/home/folder/test.pl
-    would first be security checked against the /home/folder for read permission
-    then the file test.pl in the cgiDir in the servlet config would be run...
-    <servlet-mapping>
-        <servlet-name>CgiServlet</servlet-name>
-        <url-pattern>/cgi/home/*</url-pattern>
-    </servlet-mapping>
-   -->
 
     <welcome-file-list>
         <welcome-file>index.html</welcome-file>

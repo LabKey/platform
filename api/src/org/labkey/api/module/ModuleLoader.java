@@ -81,6 +81,9 @@ public class ModuleLoader implements Filter
     private static final Map<Class, Class<? extends UrlProvider>> _urlProviderToImpl = new HashMap<Class, Class<? extends UrlProvider>>();
     private static CoreSchema _core = CoreSchema.getInstance();
 
+    private File _webappDir;
+    private Collection<File> _moduleDirectories;
+
     private boolean _startupComplete = false;
     private static final Object _startupLock = new Object();
 
@@ -204,15 +207,15 @@ public class ModuleLoader implements Filter
 
         List<Module> moduleList = new ArrayList<Module>();
 
-        File webappRoot = new File(servletCtx.getRealPath(".")).getCanonicalFile();
+        _webappDir = new File(servletCtx.getRealPath(".")).getCanonicalFile();
 
-        Set<File> unclaimedFiles = listCurrentFiles(webappRoot);
+        Set<File> unclaimedFiles = listCurrentFiles(_webappDir);
 
-        removeAPIFiles(unclaimedFiles, webappRoot);
+        removeAPIFiles(unclaimedFiles, _webappDir);
 
         extractModules(servletCtx, moduleList, unclaimedFiles);
 
-        File webinfDir = new File(webappRoot, "WEB-INF");
+        File webinfDir = new File(_webappDir, "WEB-INF");
         File webinfLibDir = new File(webinfDir, "lib");
         // Clean up any old files that might be from modules that are no
         // longer part of this installation
@@ -268,6 +271,16 @@ public class ModuleLoader implements Filter
         assert (ModuleState.ReadyToRun == coreCtx.getModuleState());
 
         _log.info("LabKey Server startup is complete");
+    }
+
+    public Collection<File> getModuleDirectories()
+    {
+        return _moduleDirectories;
+    }
+
+    public File getWebappDir()
+    {
+        return _webappDir;
     }
 
     private void verifyJavaVersion() throws ServletException
@@ -386,6 +399,21 @@ public class ModuleLoader implements Filter
         catch (NoSuchMethodException e)
         {
             throw new RuntimeException("Could not find getModuleFiles() method - you probably need to copy labkeyBootstrap.jar into $CATALINA_HOME/server/lib and/or edit your labkey.xml to include <Loader loaderClass=\"org.labkey.bootstrap.LabkeyServerBootstrapClassLoader\" />", e);
+        }
+        catch (InvocationTargetException e)
+        {
+            throw new RuntimeException(e);
+        }
+
+        try
+        {
+            ClassLoader webappClassLoader = getClass().getClassLoader();
+            Method m = webappClassLoader.getClass().getMethod("getModuleDirectories");
+            _moduleDirectories = (Collection<File>)m.invoke(webappClassLoader);
+        }
+        catch (NoSuchMethodException e)
+        {
+            throw new RuntimeException("Could not find getModuleDirectories() method - you probably need to copy labkeyBootstrap.jar into $CATALINA_HOME/server/lib and/or edit your labkey.xml to include <Loader loaderClass=\"org.labkey.bootstrap.LabkeyServerBootstrapClassLoader\" />", e);
         }
         catch (InvocationTargetException e)
         {
