@@ -56,6 +56,11 @@ public class CommandTaskImpl extends PipelineJob.Task implements CommandTask
             super(new TaskId(CommandTask.class));
         }
 
+        public Factory(String name)
+        {
+            super(new TaskId(CommandTask.class, name));
+        }
+
         public TaskFactory cloneAndConfigure(TaskFactorySettings settings) throws CloneNotSupportedException
         {
             Factory factory = (Factory) super.cloneAndConfigure(settings);

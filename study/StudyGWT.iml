@@ -8,8 +8,8 @@
         <setting name="runGwtCompilerOnMake" value="true" />
         <setting name="compilerMaxHeapSize" value="128" />
         <packaging>
-          <module name="org.labkey.study.designer.Designer" path="/org.labkey.study.designer.Designer" />
           <module name="org.labkey.plate.designer.TemplateDesigner" path="/org.labkey.plate.designer.TemplateDesigner" />
+          <module name="org.labkey.study.designer.Designer" path="/org.labkey.study.designer.Designer" />
           <module name="org.labkey.study.chart.StudyChartDesigner" path="/org.labkey.study.chart.StudyChartDesigner" />
           <module name="org.labkey.study.dataset.Designer" path="/org.labkey.study.dataset.Designer" />
           <module name="org.labkey.assay.designer.AssayDesigner" path="/org.labkey.assay.designer.AssayDesigner" />

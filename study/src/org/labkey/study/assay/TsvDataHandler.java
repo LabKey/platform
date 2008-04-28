@@ -120,7 +120,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler
                         }
                          catch (ConversionException e)
                         {
-                            throw new ExperimentException("There are errors in the uploaded data: " + header + " must be of type " + ColumnInfo.getFriendlyTypeName(type.getJavaType()) + ".");
+                            throw new ExperimentException("There are errors in the uploaded data: " + header + " must be of type " + ColumnInfo.getFriendlyTypeName(type.getJavaType()) + " but the value \"" + row[i].getContents() + "\" in row " + (rowIndex + 1) + " could not be converted.");
                         }
                     }
                     else

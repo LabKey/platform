@@ -112,10 +112,6 @@ public class MuleListenerHelper implements ServletContext
         {
             _muleContextListener.initialize(this);
         }
-        catch (Exception x)
-        {
-            _log.error("Failed to load mule config.", x);
-        }
         finally
         {
             ConvertUtils.register(conv, Integer.TYPE);

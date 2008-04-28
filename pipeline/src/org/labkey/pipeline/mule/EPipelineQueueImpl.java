@@ -48,6 +48,7 @@ import java.util.Map;
 public class EPipelineQueueImpl implements PipelineQueue
 {
     private static Logger _log = Logger.getLogger(EPipelineQueueImpl.class);
+    public static final String PIPELINE_QUEUE_NAME = "PipelineQueue";
 
     public PipelineJobData getJobData(Container c)
     {
@@ -148,7 +149,7 @@ public class EPipelineQueueImpl implements PipelineQueue
         try
         {
             MuleClient client = new MuleClient();
-            client.dispatch("PipelineQueue", job, null);
+            client.dispatch(PIPELINE_QUEUE_NAME, job, null);
         }
         catch (UMOException e)
         {

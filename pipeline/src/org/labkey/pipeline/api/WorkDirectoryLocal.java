@@ -64,7 +64,7 @@ public class WorkDirectoryLocal implements WorkDirectory
         }
         else
         {
-            if (!_dir.mkdir())
+            if (!_dir.mkdirs())
                 throw new IOException("Failed to create work directory " + _dir);
         }
     }
