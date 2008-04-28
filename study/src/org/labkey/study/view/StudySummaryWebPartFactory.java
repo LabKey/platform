@@ -1,10 +1,11 @@
 package org.labkey.study.view;
 
-import org.labkey.api.view.*;
 import org.labkey.api.security.ACL;
-import org.labkey.study.controllers.OldStudyController;
+import org.labkey.api.view.*;
+import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
+import org.springframework.validation.BindException;
 
 import java.lang.reflect.InvocationTargetException;
 
@@ -30,7 +31,8 @@ public class StudySummaryWebPartFactory extends WebPartFactory
 
         Study study = StudyManager.getInstance().getStudy(portalCtx.getContainer());
 
-        WebPartView v = new OldStudyController.StudyJspView<Object>(study, "studySummary.jsp", null);
+        BindException errors = (BindException) HttpView.currentRequest().getAttribute("errors");
+        WebPartView v = new BaseStudyController.StudyJspView<Object>(study, "studySummary.jsp", null, errors);
         v.setTitle(NAME);
 
         return v;

@@ -1593,7 +1593,6 @@ study/src/org/labkey/study/assay/view/tsvDataDescription.jsp -text
 study/src/org/labkey/study/controllers/BaseController.java -text
 study/src/org/labkey/study/controllers/BaseStudyController.java -text
 study/src/org/labkey/study/controllers/DatasetServiceImpl.java -text
-study/src/org/labkey/study/controllers/OldStudyController.java -text
 study/src/org/labkey/study/controllers/StudyController.java -text
 study/src/org/labkey/study/controllers/assay/AssayController.java -text
 study/src/org/labkey/study/controllers/designer/DesignerController.java -text
@@ -1791,7 +1790,7 @@ study/src/org/labkey/study/view/editTimepoint.jsp -text
 study/src/org/labkey/study/view/editVisit.jsp -text
 study/src/org/labkey/study/view/externalReportDesigner.jsp -text
 study/src/org/labkey/study/view/importDataType.jsp -text
-study/src/org/labkey/study/view/importDataset.gm -text
+study/src/org/labkey/study/view/importDataset.jsp -text
 study/src/org/labkey/study/view/importStudyBatch.jsp -text
 study/src/org/labkey/study/view/manageCohorts.jsp -text
 study/src/org/labkey/study/view/manageReports.jsp -text

@@ -2,14 +2,13 @@
 <%@ page import="org.labkey.api.security.ACL"%>
 <%@ page import="org.labkey.api.util.AppProps"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.study.controllers.OldStudyController" %>
+<%@ page import="org.labkey.api.view.*" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.*" %>
+<%@ page import="org.springframework.validation.BindException" %>
 <%@ page import="java.sql.SQLException" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.view.*" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.springframework.validation.BindException" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DataSetDefinition> me = (JspView<DataSetDefinition>) HttpView.currentView();
@@ -46,12 +45,13 @@
 
     ActionURL manageTypesURL = new ActionURL(StudyController.ManageTypesAction.class, context.getContainer());
 
-    ActionURL confirmDeleteURL = new ActionURL(StudyController.ConfirmDeleteVisitAction.class, context.getContainer());
-    confirmDeleteURL.addParameter("id", dataset.getDataSetId());
+    ActionURL deleteDatasetURL = new ActionURL(StudyController.DeleteDatasetAction.class, context.getContainer());
+    deleteDatasetURL.addParameter("id", dataset.getDataSetId());
 
     %><br><a href="<%=updateDatasetURL.getLocalURIString()%>"><%=PageFlowUtil.buttonImg("Dataset Visits")%></a><%
     %>&nbsp;<a href="<%=manageTypesURL.getLocalURIString()%>"><%=PageFlowUtil.buttonImg("Done")%></a><%
-    %>&nbsp;<a href="<%=confirmDeleteURL.getLocalURIString()%>"><%=PageFlowUtil.buttonImg("Delete Dataset")%></a><%
+    %>&nbsp;<%=buttonLink("Delete Dataset", deleteDatasetURL,
+        "return confirm('Are you sure you want to delete this dataset?  All related data and visitmap entries will also be deleted.')")%><%
 }
 if (0 != (permissions & ACL.PERM_UPDATE))
 {
@@ -80,7 +80,7 @@ if (!pipelineSet)
 <table>
 <tr>
 <td valign=top><%
-    JspView typeSummary = new OldStudyController.StudyJspView<DataSetDefinition>(study, "typeSummary.jsp", dataset);
+    JspView typeSummary = new StudyController.StudyJspView<DataSetDefinition>(study, "typeSummary.jsp", dataset, (BindException)me.getErrors());
     typeSummary.setTitle("Dataset Schema");
     typeSummary.setFrame(WebPartView.FrameType.TITLE);
     me.include(typeSummary, out);

@@ -81,7 +81,7 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
         }
         catch (Exception x)
         {
-            OldStudyController._log.error("unexpected exception", x);
+            StudyController._log.error("unexpected exception", x);
             throw x;
         }
     }
@@ -166,7 +166,7 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
         }
         catch (Exception x)
         {
-            OldStudyController._log.error("unexpected exception", x);
+            StudyController._log.error("unexpected exception", x);
             throw x;
         }
     }

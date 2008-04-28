@@ -5,6 +5,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.log4j.Logger;
+import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.labkey.api.action.*;
 import org.labkey.api.audit.AuditLogEvent;
@@ -24,10 +25,10 @@ import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ChartQueryReport;
-import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ChartReportDescriptor;
+import org.labkey.api.reports.report.RReport;
+import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ChartDesignerBean;
 import org.labkey.api.reports.report.view.ChartUtil;
 import org.labkey.api.reports.report.view.RReportBean;
@@ -36,20 +37,22 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
-import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.view.template.DialogTemplate;
+import org.labkey.api.view.template.PrintTemplate;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.common.tools.TabLoader;
 import org.labkey.common.util.Pair;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
-import org.labkey.study.pipeline.StudyPipeline;
-import org.labkey.study.pipeline.DatasetBatch;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.importer.VisitMapImporter;
 import org.labkey.study.model.*;
+import org.labkey.study.pipeline.DatasetBatch;
+import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.query.DataSetQueryView;
 import org.labkey.study.query.PublishedRecordQueryView;
 import org.labkey.study.query.StudyQuerySchema;
@@ -86,14 +89,14 @@ public class StudyController extends BaseStudyController
 {
     static Logger _log = Logger.getLogger(StudyController.class);
 
-    private static ActionResolver _actionResolver = new BeehivePortingActionResolver(OldStudyController.class, StudyController.class);
+    private static ActionResolver ACTION_RESOLVER = new DefaultActionResolver(StudyController.class);
     private static final String PARTICIPANT_CACHE_PREFIX = "Study_participants/participantCache";
-    private static final String EXPAND_CONTAINERS_KEY = OldStudyController.class.getName() + "/expandedContainers";
+    private static final String EXPAND_CONTAINERS_KEY = StudyController.class.getName() + "/expandedContainers";
 
     public StudyController()
     {
         super();
-        setActionResolver(_actionResolver);
+        setActionResolver(ACTION_RESOLVER);
     }
 
     @RequiresPermission(ACL.PERM_READ)
@@ -203,10 +206,10 @@ public class StudyController extends BaseStudyController
 
     @RequiresPermission(ACL.PERM_ADMIN)
     @SuppressWarnings("unchecked")
-    public class EditTypeAction extends SimpleViewAction<OldStudyController.DataSetForm>
+    public class EditTypeAction extends SimpleViewAction<DataSetForm>
     {
         private DataSetDefinition _def;
-        public ModelAndView getView(OldStudyController.DataSetForm form, BindException errors) throws Exception
+        public ModelAndView getView(DataSetForm form, BindException errors) throws Exception
         {
             Study study = getStudy();
             DataSetDefinition def = study.getDataSet(form.getDatasetId());
@@ -249,10 +252,10 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ACL.PERM_READ)
-    public class DatasetDetailsAction extends SimpleViewAction<BaseController.IdForm>
+    public class DatasetDetailsAction extends SimpleViewAction<IdForm>
     {
         private DataSetDefinition _def;
-        public ModelAndView getView(BaseController.IdForm form, BindException errors) throws Exception
+        public ModelAndView getView(IdForm form, BindException errors) throws Exception
         {
             _def = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getId());
             if (_def == null)
@@ -1432,13 +1435,13 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ACL.PERM_ADMIN)
-    public class DeleteVisitAction extends FormHandlerAction<BaseController.IdForm>
+    public class DeleteVisitAction extends FormHandlerAction<IdForm>
     {
-        public void validateCommand(BaseController.IdForm target, Errors errors)
+        public void validateCommand(IdForm target, Errors errors)
         {
         }
 
-        public boolean handlePost(BaseController.IdForm form, BindException errors) throws Exception
+        public boolean handlePost(IdForm form, BindException errors) throws Exception
         {
             int visitId = form.getId();
             Study study = getStudy();
@@ -1452,7 +1455,7 @@ public class StudyController extends BaseStudyController
             return false;
         }
 
-        public ActionURL getSuccessURL(BaseController.IdForm idForm)
+        public ActionURL getSuccessURL(IdForm idForm)
         {
             return new ActionURL(ManageVisitsAction.class, getContainer());
         }
@@ -1460,10 +1463,10 @@ public class StudyController extends BaseStudyController
 
     @RequiresPermission(ACL.PERM_ADMIN)
     @SuppressWarnings("deprecation")
-    public class ConfirmDeleteVisitAction extends SimpleViewAction<BaseController.IdForm>
+    public class ConfirmDeleteVisitAction extends SimpleViewAction<IdForm>
     {
         private Visit _visit;
-        public ModelAndView getView(BaseController.IdForm form, BindException errors) throws Exception
+        public ModelAndView getView(IdForm form, BindException errors) throws Exception
         {
             int visitId = form.getId();
             Study study = getStudy();
@@ -1543,15 +1546,15 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ACL.PERM_ADMIN)
-    public class UpdateDatasetFormAction extends FormViewAction<OldStudyController.DataSetForm>
+    public class UpdateDatasetFormAction extends FormViewAction<DataSetForm>
     {
         DataSetDefinition _def;
 
-        public void validateCommand(OldStudyController.DataSetForm target, Errors errors)
+        public void validateCommand(DataSetForm target, Errors errors)
         {
         }
 
-        public ModelAndView getView(OldStudyController.DataSetForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(DataSetForm form, boolean reshow, BindException errors) throws Exception
         {
             _def = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getDatasetId());
             if (_def == null)
@@ -1564,7 +1567,7 @@ public class StudyController extends BaseStudyController
             return view;
         }
 
-        public boolean handlePost(OldStudyController.DataSetForm form, BindException errors) throws Exception
+        public boolean handlePost(DataSetForm form, BindException errors) throws Exception
         {
             DataSetDefinition original = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getDatasetId());
             DataSetDefinition modified = original.createMutable();
@@ -1604,7 +1607,7 @@ public class StudyController extends BaseStudyController
             return true;
         }
 
-        public ActionURL getSuccessURL(OldStudyController.DataSetForm dataSetForm)
+        public ActionURL getSuccessURL(DataSetForm dataSetForm)
         {
             return new ActionURL(DatasetDetailsAction.class, getContainer()).addParameter("id", dataSetForm.getDatasetId());
         }
@@ -1617,14 +1620,14 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ACL.PERM_INSERT)
-    public class ShowImportDatasetAction extends FormViewAction<OldStudyController.ImportDataSetForm>
+    public class ShowImportDatasetAction extends FormViewAction<ImportDataSetForm>
     {
-        public void validateCommand(OldStudyController.ImportDataSetForm target, Errors errors)
+        public void validateCommand(ImportDataSetForm target, Errors errors)
         {
         }
 
         @SuppressWarnings("deprecation")
-        public ModelAndView getView(OldStudyController.ImportDataSetForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ImportDataSetForm form, boolean reshow, BindException errors) throws Exception
         {
             Study study = getStudy();
             DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, form.getDatasetId());
@@ -1637,20 +1640,15 @@ public class StudyController extends BaseStudyController
             if (null == PipelineService.get().findPipelineRoot(getContainer()))
                 return new RequirePipelineView(getStudy(), true, errors);
 
-            form.setContainer(study.getContainer());
             form.setTypeURI(StudyManager.getInstance().getDatasetType(getContainer(), form.getDatasetId()));
             if (form.getTypeURI() == null)
                 return HttpView.throwNotFoundMV();
             form.setKeys(StringUtils.join(def.getKeyNames(), ", "));
 
-            // GET/reshow
-            GroovyView view = new GroovyView("/org/labkey/study/view/importDataset.gm");
-            view.addObject("form", form);
-            view.addObject("errors", errors);
-            return view;
+            return new JspView<ImportDataSetForm>("/org/labkey/study/view/importDataset.jsp", form, errors);
         }
 
-        public boolean handlePost(OldStudyController.ImportDataSetForm form, BindException errors) throws Exception
+        public boolean handlePost(ImportDataSetForm form, BindException errors) throws Exception
         {
             String[] keys = new String[]{"ParticipantId", "SequenceNum"};
 
@@ -1690,7 +1688,7 @@ public class StudyController extends BaseStudyController
             return false;
         }
 
-        public ActionURL getSuccessURL(OldStudyController.ImportDataSetForm form)
+        public ActionURL getSuccessURL(ImportDataSetForm form)
         {
             return new ActionURL(DatasetAction.class, getContainer()).
                     addParameter(DataSetDefinition.DATASETKEY, form.getDatasetId());
@@ -1933,11 +1931,11 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ACL.PERM_UPDATE)
-    public class ShowUploadHistoryAction extends SimpleViewAction<BaseController.IdForm>
+    public class ShowUploadHistoryAction extends SimpleViewAction<IdForm>
     {
         String _datasetName;
 
-        public ModelAndView getView(BaseController.IdForm form, BindException errors) throws Exception
+        public ModelAndView getView(IdForm form, BindException errors) throws Exception
         {
             TableInfo tInfo = StudySchema.getInstance().getTableInfoUploadLog();
             DataRegion dr = new DataRegion();
@@ -1971,9 +1969,9 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ACL.PERM_UPDATE)
-    public class DownloadTsvAction extends SimpleViewAction<BaseController.IdForm>
+    public class DownloadTsvAction extends SimpleViewAction<IdForm>
     {
-        public ModelAndView getView(BaseController.IdForm form, BindException errors) throws Exception
+        public ModelAndView getView(IdForm form, BindException errors) throws Exception
         {
             UploadLog ul = AssayPublishManager.getInstance().getUploadLog(getContainer(), form.getId());
             PageFlowUtil.streamFile(getViewContext().getResponse(), ul.getFilePath(), true);
@@ -3738,6 +3736,230 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class DeleteDatasetAction extends SimpleViewAction<IdForm>
+    {
+        public ModelAndView getView(IdForm form, BindException errors) throws Exception
+        {
+            DataSetDefinition ds = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getId());
+            if (null == ds)
+                redirectTypeNotFound(form.getId());
+
+            DbScope scope = StudySchema.getInstance().getSchema().getScope();
+            try
+            {
+                scope.beginTransaction();
+                StudyManager.getInstance().deleteDataset(getStudy(), getUser(), ds);
+                scope.commitTransaction();
+                HttpView.throwRedirect(new ActionURL(ManageTypesAction.class, getContainer()));
+                return null;
+            }
+            finally
+            {
+                if (scope.isTransactionActive())
+                    scope.rollbackTransaction();
+            }
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class SnapshotAction extends SimpleViewAction<SnapshotForm>
+    {
+        public ModelAndView getView(SnapshotForm form, BindException errors) throws Exception
+        {
+            StudyManager.SnapshotBean snapshotBean;
+            try
+            {
+                snapshotBean = StudyManager.getInstance().getSnapshotInfo(HttpView.currentContext().getUser(), HttpView.currentContext().getContainer());
+            }
+            catch (ServletException e)
+            {
+                throw new RuntimeException(e);
+            }
+            if (!isPost())
+            {
+                // First time through, just set the bean and display the form
+                int tableCount = 0;
+                for (String category : snapshotBean.getCategories())
+                    tableCount += snapshotBean.getSourceNames(category).size();
+
+                form.setCategory(new String[tableCount]);
+                form.setDestName(new String[tableCount]);
+                form.setSourceName(new String[tableCount]);
+                StudySnapshotBean studySnapshotBean = new StudySnapshotBean(snapshotBean, form);
+                return new StudyJspView<StudySnapshotBean>(getStudy(), "snapshotData.jsp", studySnapshotBean, errors);
+            }
+            // Update the bean with the form entries
+            snapshotBean.setSchemaName(form.getSchemaName());
+
+            String[] category = form.getCategory();
+            String[] source = form.getSourceName();
+            boolean[] snapshot = form.getSnapshot();
+            String[] destName = form.getDestName();
+            for (int i = 0; i < category.length; i++)
+            {
+                snapshotBean.setSnapshot(category[i], source[i], snapshot[i]);
+                snapshotBean.setDestTableName(category[i], source[i], destName[i]);
+            }
+
+            // validate, and then process
+            String schemaName = StringUtils.trimToNull(form.getSchemaName());
+            if (null == schemaName)
+            {
+                errors.reject("manageSnapshot", "You must supply a schema name.");
+            }
+            else if (!AliasManager.isLegalName(schemaName))
+            {
+                errors.reject("manageSnapshot", "Schema name must be a legal database identifier");
+            }
+            else
+            {
+                boolean badName = false;
+                for (Module module : ModuleLoader.getInstance().getModules())
+                {
+                    for (String schema : module.getSchemaNames())
+                    {
+                        if (schemaName.equalsIgnoreCase(schema))
+                        {
+                            errors.reject("manageSnapshot", "The schema name " + schema + " is already in use by the " + module.getName() + " module. Please pick a new name");
+                            badName = true;
+                            break;
+                        }
+                    }
+                    if (badName)
+                    {
+                        break;
+                    }
+                }
+                if (schemaName.equalsIgnoreCase("temp"))
+                {
+                    errors.reject("manageSnapshot", "'Temp' is a reserved schema name. Please choose a new name");
+                }
+            }
+
+            CaseInsensitiveHashSet names = new CaseInsensitiveHashSet();
+            for (String categoryName : snapshotBean.getCategories())
+            {
+                for (String sourceName : snapshotBean.getSourceNames(categoryName))
+                {
+                    String destTableName = snapshotBean.getDestTableName(categoryName, sourceName);
+                    if (!AliasManager.isLegalName(destTableName))
+                        errors.reject("manageSnapshot", "Not a legal table name: " + destTableName);
+                    if (snapshotBean.isSaveTable(categoryName, sourceName) && !names.add(destTableName))
+                        errors.reject("manageSnapshot", "Duplicate table name: " + destTableName);
+                }
+            }
+            if (errors.hasErrors())
+            {
+                return new StudyJspView<StudySnapshotBean>(getStudy(), "snapshotData.jsp",
+                        new StudySnapshotBean(snapshotBean, form), errors);
+            }
+            // Actually process
+            StudyManager.getInstance().createSnapshot(getUser(), snapshotBean);
+            form.setComplete(true);
+
+            return new StudyJspView<StudySnapshotBean>(getStudy(), "snapshotData.jsp",
+                        new StudySnapshotBean(snapshotBean, form), errors);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            _appendManageStudy(root);
+            root.addChild("Manage Snapshot");
+            return root;
+        }
+    }
+
+    public static class StudySnapshotBean
+    {
+        private final StudyManager.SnapshotBean bean;
+        private final SnapshotForm form;
+
+        public StudySnapshotBean(StudyManager.SnapshotBean bean, SnapshotForm form)
+        {
+            this.bean = bean;
+            this.form = form;
+        }
+
+        public StudyManager.SnapshotBean getBean() {return bean;}
+        public SnapshotForm getForm() {return form;}   
+    }
+
+    public static class SnapshotForm
+    {
+        private String schemaName;
+        private boolean complete;
+        private String[] sourceName;
+        private String[] destName;
+        private String[] category;
+        private boolean[] snapshot;
+        
+        public String getSchemaName()
+        {
+            return schemaName;
+        }
+
+        public void setSchemaName(String schemaName)
+        {
+            this.schemaName = schemaName;
+        }
+
+        public String[] getSourceName()
+        {
+            return sourceName;
+        }
+
+        public void setSourceName(String[] sourceName)
+        {
+            this.sourceName = sourceName;
+        }
+
+        public String[] getDestName()
+        {
+            return destName;
+        }
+
+        public void setDestName(String[] destName)
+        {
+            this.destName = destName;
+        }
+
+        public String[] getCategory()
+        {
+            return category;
+        }
+
+        public void setCategory(String[] category)
+        {
+            this.category = category;
+        }
+
+        public boolean isComplete()
+        {
+            return complete;
+        }
+
+        public void setComplete(boolean complete)
+        {
+            this.complete = complete;
+        }
+
+        public void setSnapshot(boolean[] snapshot)
+        {
+            this.snapshot = snapshot;
+        }
+
+        public boolean[] getSnapshot()
+        {
+            return snapshot;
+        }
+    }
+
     public static class DatasetPropertyForm extends PropertyForm
     {
         private int[] _ids;
@@ -4033,6 +4255,15 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    public static class IdForm
+    {
+        private int _id;
+
+        public int getId() {return _id;}
+
+        public void setId(int id) {_id = id;}
+    }
+
     public static class SourceLsidForm
     {
         private String _sourceLsid;
@@ -4158,6 +4389,225 @@ public class StudyController extends BaseStudyController
                 out.print(PageFlowUtil.filter(_display));
             }
             out.print("</td></tr></table>");
+        }
+    }
+
+    public static class ImportDataSetForm
+    {
+        private int datasetId = 0;
+        private String typeURI;
+        private String tsv;
+        private String keys;
+
+
+        public int getDatasetId()
+        {
+            return datasetId;
+        }
+
+        public void setDatasetId(int datasetId)
+        {
+            this.datasetId = datasetId;
+        }
+
+        public String getTsv()
+        {
+            return tsv;
+        }
+
+        public void setTsv(String tsv)
+        {
+            this.tsv = tsv;
+        }
+
+        public String getKeys()
+        {
+            return keys;
+        }
+
+        public void setKeys(String keys)
+        {
+            this.keys = keys;
+        }
+
+        public String getTypeURI()
+        {
+            return typeURI;
+        }
+
+        public void setTypeURI(String typeURI)
+        {
+            this.typeURI = typeURI;
+        }
+    }
+
+    public static class DataSetForm extends ViewForm
+    {
+        private String _name;
+        private String _label;
+        private int _datasetId;
+        private String _category;
+        private boolean _showByDefault;
+        private String _visitDatePropertyName;
+        private String[] _visitStatus;
+        private int[] _visitRowIds;
+        private String _description;
+        private Integer _cohortId;
+        private boolean _demographicData;
+        private boolean _create;
+
+        public ActionErrors validate(ActionMapping actionMapping, HttpServletRequest httpServletRequest)
+        {
+            if (_datasetId < 1)
+                addActionError("DatasetId must be greater than zero.");
+            if (null == StringUtils.trimToNull(_label))
+                addActionError("Label is required.");
+            return getActionErrors();
+        }
+
+
+        public boolean isShowByDefault()
+        {
+            return _showByDefault;
+        }
+
+        public void setShowByDefault(boolean showByDefault)
+        {
+            _showByDefault = showByDefault;
+        }
+
+        public String getCategory()
+        {
+            return _category;
+        }
+
+        public void setCategory(String category)
+        {
+            _category = category;
+        }
+
+        public String getDatasetIdStr()
+        {
+            return _datasetId > 0 ? String.valueOf(_datasetId) : "";
+        }
+
+        /**
+         * Don't blow up when posting bad value
+         * @param dataSetIdStr
+         */
+        public void setDatasetIdStr(String dataSetIdStr)
+        {
+            try
+            {
+                if (null == StringUtils.trimToNull(dataSetIdStr))
+                    _datasetId = 0;
+                else
+                    _datasetId = Integer.parseInt(dataSetIdStr);
+            }
+            catch (Exception x)
+            {
+                _datasetId = 0;
+            }
+        }
+
+        public int getDatasetId()
+        {
+            return _datasetId;
+        }
+
+        public void setDatasetId(int datasetId)
+        {
+            _datasetId = datasetId;
+        }
+
+        public String getLabel()
+        {
+            return _label;
+        }
+
+        public void setLabel(String label)
+        {
+            _label = label;
+        }
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
+
+        public String[] getVisitStatus()
+        {
+            return _visitStatus;
+        }
+
+        public void setVisitStatus(String[] visitStatus)
+        {
+            _visitStatus = visitStatus;
+        }
+
+        public int[] getVisitRowIds()
+        {
+            return _visitRowIds;
+        }
+
+        public void setVisitRowIds(int[] visitIds)
+        {
+            _visitRowIds = visitIds;
+        }
+
+        public String getVisitDatePropertyName()
+        {
+            return _visitDatePropertyName;
+        }
+
+        public void setVisitDatePropertyName(String _visitDatePropertyName)
+        {
+            this._visitDatePropertyName = _visitDatePropertyName;
+        }
+
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        public void setDescription(String description)
+        {
+            _description = description;
+        }
+
+        public boolean isDemographicData()
+        {
+            return _demographicData;
+        }
+
+        public void setDemographicData(boolean demographicData)
+        {
+            _demographicData = demographicData;
+        }
+
+        public boolean isCreate()
+        {
+            return _create;
+        }
+
+        public void setCreate(boolean create)
+        {
+            _create = create;
+        }
+
+        public Integer getCohortId()
+        {
+            return _cohortId;
+        }
+
+        public void setCohortId(Integer cohortId)
+        {
+            _cohortId = cohortId;
         }
     }
 }

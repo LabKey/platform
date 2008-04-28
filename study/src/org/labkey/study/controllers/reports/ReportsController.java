@@ -5,12 +5,13 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.GWTServiceAction;
+import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
@@ -27,12 +28,10 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
-import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.common.util.Pair;
-import org.labkey.study.StudySchema;
 import org.labkey.study.StudyModule;
+import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
-import org.labkey.study.controllers.OldStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
@@ -166,7 +165,7 @@ public class ReportsController extends BaseStudyController
             StudyManageReportsBean bean = new StudyManageReportsBean(getViewContext(), true, false);
             bean.setErrors(errors);
 
-            return new OldStudyController.StudyJspView<StudyManageReportsBean>(getStudy(), "manageReports.jsp", bean);
+            return new StudyJspView<StudyManageReportsBean>(getStudy(), "manageReports.jsp", bean, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)

@@ -1,17 +1,14 @@
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.study.controllers.OldStudyController"%>
-<%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.model.StudyManager"%>
-<%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.data.Container"%>
-<%@ page import="org.labkey.api.security.User"%>
-<%@ page import="org.labkey.study.model.*"%>
-<%@ page import="org.labkey.api.view.ViewContext"%>
 <%@ page import="org.labkey.api.security.ACL"%>
-<%@ page import="java.util.*"%>
-<%@ page import="java.io.StringWriter"%>
-<%@ page import="java.io.PrintWriter"%>
-<%@ page import="org.apache.commons.lang.StringUtils" %>
+<%@ page import="org.labkey.api.security.User"%>
+<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.JspView"%>
+<%@ page import="org.labkey.api.view.ViewContext"%>
+<%@ page import="org.labkey.study.model.DataSetDefinition"%>
+<%@ page import="org.labkey.study.model.Study"%>
+<%@ page import="org.labkey.study.model.StudyManager"%>
+<%@ page import="java.util.ArrayList"%>
+<%@ page import="java.util.List"%>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
 JspView me = (JspView)HttpView.currentView();

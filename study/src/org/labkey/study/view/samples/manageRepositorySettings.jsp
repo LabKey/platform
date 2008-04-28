@@ -1,7 +1,5 @@
-<%@ page import="org.labkey.api.security.ACL" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.study.SampleManager" %>
-<%@ page import="org.labkey.study.controllers.OldStudyController" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     SampleManager.RepositorySettings settings = (SampleManager.RepositorySettings) getModelBean();

@@ -1,12 +1,11 @@
-<%@ page import="org.labkey.study.model.DataSetDefinition"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.study.controllers.OldStudyController"%>
-<%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.JspView"%>
+<%@ page import="org.labkey.study.controllers.StudyController"%>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
-    JspView<OldStudyController.DataSetForm> me = (JspView<OldStudyController.DataSetForm>) HttpView.currentView();
-    OldStudyController.DataSetForm form = me.getModelBean();
+    JspView<StudyController.DataSetForm> me = (JspView<StudyController.DataSetForm>) HttpView.currentView();
+    StudyController.DataSetForm form = me.getModelBean();
     String errors = PageFlowUtil.getStrutsError(request, "main");
 %>
 <%=errors%>

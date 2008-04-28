@@ -1,13 +1,12 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.controllers.OldStudyController"%>
+<%@ page import="org.labkey.study.controllers.StudyController"%>
 <%@ page import="org.labkey.study.model.*" %>
-<%@ page import="java.util.HashMap" %>
-<%@ page import="org.springframework.validation.ObjectError" %>
-<%@ page import="java.util.List" %>
 <%@ page import="org.springframework.validation.BindException" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.springframework.validation.ObjectError" %>
+<%@ page import="java.util.HashMap" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     JspView<StudyController.VisitSummaryBean> me = (JspView<StudyController.VisitSummaryBean>) HttpView.currentView();

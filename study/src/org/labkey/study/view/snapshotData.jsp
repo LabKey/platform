@@ -1,25 +1,26 @@
-<%@ page import="org.labkey.api.view.*" %>
-<%@ page import="org.labkey.study.controllers.OldStudyController" %>
-<%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.study.model.Study" %>
 <%@ page import="org.apache.commons.beanutils.ConvertUtils" %>
-<%@ page import="org.labkey.api.data.DbSchema" %>
-<%@ page import="org.labkey.api.data.TableInfo" %>
-<%@ page import="java.util.Set" %>
-<%@ page import="org.apache.struts.action.ActionErrors" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.model.Study" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="java.util.Set" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <%
-    JspView<OldStudyController.SnapshotForm> me = (JspView<OldStudyController.SnapshotForm>) HttpView.currentView();
-    OldStudyController.SnapshotForm form = me.getModelBean();
+    JspView<StudyController.StudySnapshotBean> me = (JspView<StudyController.StudySnapshotBean>) HttpView.currentView();
+    StudyController.StudySnapshotBean bean = me.getModelBean();
+    StudyController.SnapshotForm form = bean.getForm();
 
     ViewContext context = HttpView.currentContext();
 
     Study study = StudyManager.getInstance().getStudy(context.getContainer());
     assert null != study;
 
-    StudyManager.SnapshotBean lastSnapshot = form.getBean();
+    StudyManager.SnapshotBean lastSnapshot = bean.getBean();
     String schemaName = form.getSchemaName();
     if (schemaName == null)
         schemaName = lastSnapshot.getSchemaName();
@@ -36,7 +37,7 @@ if (form.isComplete())
     else
     {
 %>
-<%=PageFlowUtil.getStrutsError(request, "main")%>
+<labkey:errors/>
 This page allows an administrator to create a new database schema containing a snapshot of all datasets in a study.<br>
 Standard database query tools can be used to operate on the snapshot.<br>
 
@@ -48,7 +49,6 @@ NOTE: The existing schema will be completely replaced by this operation.<br><br>
 
 <br>
 <%
-    int index = 0;
     for (String category : lastSnapshot.getCategories())
     {
         Set<String> sourceNames = lastSnapshot.getSourceNames(category);
@@ -74,13 +74,12 @@ NOTE: The existing schema will be completely replaced by this operation.<br><br>
                 <td><%=h(sourceName)%></td>
                 <td><%=snapshot ? h(tableName) : "&nbsp;"%><%
              } else { %>
-                <td><input type="hidden" name="category[<%=index%>]" value="<%=h(category)%>" ><input type=checkbox name="snapshot[<%=index%>]" value="true" <%=snapshot ? "CHECKED" : ""%> ></td>
-                <td><%=h(sourceName)%><input type=hidden name="sourceName[<%=index%>]" value="<%=h(sourceName)%>" ></td>
-                <td><input type=text name="destName[<%=index%>]" value="<%=h(tableName)%>" ><%
+                <td><input type="hidden" name="category" value="<%=h(category)%>" ><input type=checkbox name="snapshot" value="true" <%=snapshot ? "CHECKED" : ""%> ></td>
+                <td><%=h(sourceName)%><input type=hidden name="sourceName" value="<%=h(sourceName)%>" ></td>
+                <td><input type=text name="destName" value="<%=h(tableName)%>" ><%
              }
                 %>
             </tr><%
-            index++;
         }%>
             </table><br><br> <%
     }
