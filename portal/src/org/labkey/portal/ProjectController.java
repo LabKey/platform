@@ -17,6 +17,7 @@
 package org.labkey.portal;
 
 import org.apache.beehive.netui.pageflow.FormData;
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.action.*;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -29,6 +30,7 @@ import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.util.AppProps;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.Search;
+import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.util.Search.SearchResultsView;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.HomeTemplate;
@@ -42,6 +44,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.beans.PropertyDescriptor;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.Map;
 
 
 public class ProjectController extends SpringActionController
@@ -676,6 +679,21 @@ public class ProjectController extends SpringActionController
         }
     }
 
+    private static CaseInsensitiveHashMap<WebPartView.FrameType> _frameTypeMap = new CaseInsensitiveHashMap<WebPartView.FrameType>();
+    {
+        _frameTypeMap.put("div", WebPartView.FrameType.DIV);
+        _frameTypeMap.put("portal", WebPartView.FrameType.PORTAL);
+        _frameTypeMap.put("none", WebPartView.FrameType.NONE);
+        _frameTypeMap.put("false", WebPartView.FrameType.NONE);
+        _frameTypeMap.put("0", WebPartView.FrameType.NONE);
+        _frameTypeMap.put("dialog", WebPartView.FrameType.DIALOG);
+        _frameTypeMap.put("left-nav", WebPartView.FrameType.LEFT_NAVIGATION);
+        _frameTypeMap.put("leftNav", WebPartView.FrameType.LEFT_NAVIGATION);
+        _frameTypeMap.put("left-navigation", WebPartView.FrameType.LEFT_NAVIGATION);
+        _frameTypeMap.put("leftNavigation", WebPartView.FrameType.LEFT_NAVIGATION);
+        _frameTypeMap.put("title", WebPartView.FrameType.TITLE);
+    }
+
     @RequiresPermission(ACL.PERM_READ)
     public class GetWebPartAction extends ApiAction
     {
@@ -703,7 +721,22 @@ public class ProjectController extends SpringActionController
             if(null == view)
                 throw new RuntimeException("Couldn't create web part view for part '" + webPartName + "'!");
 
-            
+            String frame = StringUtils.trimToEmpty(request.getParameter("webpart.frame"));
+            if(null != frame && frame.length() > 0 && _frameTypeMap.containsKey(frame))
+                view.setFrame(_frameTypeMap.get(frame));
+
+            String bodyClass = StringUtils.trimToEmpty(request.getParameter("webpart.bodyClass"));
+            if(null != bodyClass && bodyClass.length() > 0)
+                view.setBodyClass(bodyClass);
+
+            String title = StringUtils.trimToEmpty(request.getParameter("webpart.title"));
+            if(null != title && title.length() > 0)
+                view.setTitle(title);
+
+            String titleHref = StringUtils.trimToEmpty(request.getParameter("webpart.titleHref"));
+            if(null != titleHref && titleHref.length() > 0)
+                view.setTitleHref(titleHref);
+
             view.render(request, getViewContext().getResponse());
             return null;
         }
