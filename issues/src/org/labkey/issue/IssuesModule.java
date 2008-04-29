@@ -19,20 +19,16 @@ import junit.framework.TestCase;
 import org.apache.commons.collections15.MultiMap;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Search;
-import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.GUID;
+import org.labkey.api.util.*;
 import org.labkey.api.view.*;
-import org.labkey.api.exp.ExperimentException;
 import org.labkey.issue.model.IssueManager;
-import org.labkey.issue.model.Issue;
 import org.labkey.issue.query.IssuesQuerySchema;
 
 import javax.servlet.http.HttpServletResponse;
@@ -236,10 +232,16 @@ public class IssuesModule extends DefaultModule implements ContainerManager.Cont
         Table.TableResultSet rs = Table.select(tinfo, tinfo.getColumns(), null, null);
         String sql = "UPDATE " + tinfo + " SET EntityId = ? WHERE CommentId = ? AND IssueId = ?";
 
-        while (rs.next())
+        try {
+            while (rs.next())
+            {
+                Map<String, Object> row = rs.getRowMap();
+                Table.execute(tinfo.getSchema(), sql, new Object[]{GUID.makeGUID(), row.get("CommentId"), row.get("IssueId")});
+            }
+        }
+        finally
         {
-            Map<String, Object> row = rs.getRowMap();
-            Table.execute(tinfo.getSchema(), sql, new Object[]{GUID.makeGUID(), row.get("CommentId"), row.get("IssueId")});
+            ResultSetUtil.close(rs);
         }
     }
 }
