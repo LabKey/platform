@@ -34,7 +34,7 @@ import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.analytics.AnalyticsController;
 import org.labkey.core.analytics.AnalyticsServiceImpl;
 import org.labkey.core.attachment.AttachmentServiceImpl;
-import org.labkey.core.data.DataController;
+import org.labkey.core.data.SchemaController;
 import org.labkey.core.ftp.FtpController;
 import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.LoginController;
@@ -88,7 +88,7 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
         addController("admin-sql", SqlScriptController.class);
         addController("security", SecurityController.class);
         addController("user", UserController.class);
-        addController("data", DataController.class);
+        addController("data", SchemaController.class);
         addController("login", LoginController.class);
         addController("junit", JunitController.class);
         addController("core", CoreController.class);
@@ -308,7 +308,7 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
         String containerPath = c == null ? null : c.getPath();
         if (user == null)
         {
-            return new ActionURL("Project", "begin.view", "home");
+            return AppProps.getInstance().getHomePageActionURL();
         }
         else if (c != null && "/".equals(c.getPath()) && user.isAdministrator())
         {

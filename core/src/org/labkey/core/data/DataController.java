@@ -18,17 +18,17 @@ package org.labkey.core.data;
 import org.apache.beehive.netui.pageflow.Forward;
 import org.apache.beehive.netui.pageflow.annotations.Jpf;
 import org.apache.log4j.Logger;
-import org.apache.struts.action.ActionMapping;
 import org.apache.xmlbeans.XmlOptions;
-import org.labkey.api.data.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.TableXmlUtils;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.*;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewController;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.HomeTemplate;
-import org.labkey.common.util.Pair;
 import org.labkey.data.xml.TablesDocument;
-import org.springframework.validation.BindException;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.StringWriter;
 
 @Jpf.Controller(messageBundles = {@Jpf.MessageBundle(bundlePath = "messages.Validation")})
@@ -39,11 +39,6 @@ import java.io.StringWriter;
 public class DataController extends ViewController
 {
     static Logger _log = Logger.getLogger(DataController.class);
-    private String _returnURL = null;
-    public static final String RETURN_URL_PARAM = "returnURL";
-    public static final String SCHEMA_PARAM = "_schema";
-    public static final String TABLE_PARAM = "_table";
-    private static final String TINFO_SESSION_ATTRIB = "_tinfo";
 
     private static final String copyrightblock = "<!-- \n\n" +
             " * Copyright (c) 2003-2005 Fred Hutchinson Cancer Research Center\n" +
@@ -69,99 +64,11 @@ public class DataController extends ViewController
     /**
      * This method represents the point of entry into the pageflow
      */
-    protected Forward begin(TableForm form) throws Exception
+    protected Forward begin() throws Exception
    {
-        requiresAdmin();
-        if (null != form.getReturnURL())
-            _returnURL = form.getReturnURL();
-
-        DataRegion dr = new DataRegion();
-        dr.setName("DataRegion");
-        dr.setColumns(form.getTable().getUserEditableColumns());
-        dr.setShowRecordSelectors(true);
-        dr.setButtonBar(getButtonBar(DataRegion.MODE_GRID), DataRegion.MODE_GRID);
-
-        dr.getDisplayColumn(0).setURL(dr.getDetailsLink());
-        GridView gridView = new GridView(dr);
-        gridView.setContainer(form.getContainer());
-        _renderInTemplate(form.getContainer(), gridView);
-
         return null;
     }
 
-    @Jpf.Action
-    protected Forward delete(TableForm form) throws Exception
-        {
-        requiresAdmin();
-        form.doDelete();
-        return form.getForward("begin", (Pair) null, true);
-        }
-
-    @Jpf.Action(validationErrorForward = @Jpf.Forward(path="showInsert.do", name = "validate"))
-    protected Forward insert(TableForm form) throws Exception
-        {
-        requiresAdmin();
-        form.doInsert();
-        return form.getPkForward("details");
-    }
-
-    @Jpf.Action(validationErrorForward = @Jpf.Forward(path="showUpdate.do", name = "validate"))
-    protected Forward update(TableForm form) throws Exception
-        {
-        requiresAdmin();
-        form.doUpdate();
-        return form.getPkForward("details");
-    }
-
-    @Jpf.Action
-    protected Forward showInsert(TableForm form) throws Exception
-        {
-        BindException errors = null;
-        requiresAdmin();
-        if (null != form.getReturnURL())
-            _returnURL = form.getReturnURL();
-
-        DataRegion dr = new DataRegion();
-        dr.setColumns(form.getTable().getUserEditableColumns());
-        dr.setButtonBar(getButtonBar(DataRegion.MODE_INSERT), DataRegion.MODE_INSERT);
-        InsertView insertView = new InsertView(dr, form, errors);
-        _renderInTemplate(form.getContainer(), insertView);
-
-        return null;
-    }
-
-    @Jpf.Action
-    protected Forward showUpdate(TableForm form) throws Exception
-        {
-        BindException errors = null;            
-        requiresAdmin();
-        if (null != form.getReturnURL())
-            _returnURL = form.getReturnURL();
-
-        DataRegion dr = new DataRegion();
-        dr.setColumns(form.getTable().getUserEditableColumns());
-        dr.setButtonBar(getButtonBar(DataRegion.MODE_UPDATE), DataRegion.MODE_UPDATE);
-        UpdateView updateView = new UpdateView(dr, form, errors);
-        _renderInTemplate(form.getContainer(), updateView);
-
-        return null;
-    }
-
-    @Jpf.Action
-    protected Forward details(TableForm form) throws Exception
-        {
-        requiresAdmin();
-        if (null != form.getReturnURL())
-            _returnURL = form.getReturnURL();
-
-        form.refreshFromDb(false);
-        DataRegion dr = new DataRegion();
-        dr.setColumns(form.getTable().getUserEditableColumns());
-        dr.setButtonBar(getButtonBar(DataRegion.MODE_DETAILS), DataRegion.MODE_DETAILS);
-        DetailsView detailsView = new DetailsView(dr, form);
-        _renderInTemplate(form.getContainer(), detailsView);
-        return null;
-    }
 
     @Jpf.Action
     protected Forward getSchemaXmlDoc() throws Exception
@@ -171,13 +78,12 @@ public class DataController extends ViewController
 
         String dbSchemaName = getRequest().getParameter("_dbschema");
         if (null == dbSchemaName)
-            HttpView.throwNotFound();
+            HttpView.throwNotFound("Must specify _dbschema parameter");
 
         boolean bFull = false;
         String full = getRequest().getParameter("_full");
         if (null != full)
             bFull = true;
-
 
         TablesDocument tdoc = TableXmlUtils.getXmlDocumentFromMetaData(dbSchemaName, bFull);
         StringWriter sw = new StringWriter();
@@ -204,7 +110,7 @@ public class DataController extends ViewController
 
         String dbSchemaName = getRequest().getParameter("_dbschema");
         if (null == dbSchemaName)
-            HttpView.throwNotFound();
+            HttpView.throwNotFound("Must specify _dbschema parameter");
 
         TablesDocument tdoc = TableXmlUtils.getMergedXmlDocument(dbSchemaName);
         StringWriter sw = new StringWriter();
@@ -223,6 +129,7 @@ public class DataController extends ViewController
         return null;
     }
 
+
     @Jpf.Action
     protected Forward verifySchema() throws Exception
     {
@@ -233,7 +140,7 @@ public class DataController extends ViewController
 
         String dbSchemaName = getRequest().getParameter("_dbschema");
         if (null == dbSchemaName)
-            HttpView.throwNotFound();
+            HttpView.throwNotFound("Must specify _dbschema parameter");
 
         String caseSensitive = getRequest().getParameter("_caseSensitive");
         if (null != caseSensitive)
@@ -258,92 +165,4 @@ public class DataController extends ViewController
         HttpView template = new HomeTemplate(getViewContext(), c, view);
         includeView(template);
     }
-
-
-    private static TableInfo getTableInfo(HttpServletRequest request)
-    {
-        TableInfo tinfo = null;
-
-        String schemaName = request.getParameter(SCHEMA_PARAM);
-        if (null != schemaName)
-        {
-            DbSchema schema = DbSchema.get(schemaName);
-            if (null != schema)
-            {
-                String tableName = request.getParameter(TABLE_PARAM);
-                tinfo = schema.getTable(tableName);
-                if (null == tinfo)
-                    HttpView.throwNotFound();
-            }
-        }
-
-        if (null != tinfo)
-            request.getSession(true).setAttribute(TINFO_SESSION_ATTRIB, tinfo);
-        else
-            tinfo = (TableInfo) request.getSession(true).getAttribute(TINFO_SESSION_ATTRIB);
-
-        if (null == tinfo)
-            HttpView.throwNotFound();
-
-        return tinfo;
-    }
-
-
-    private ButtonBar getButtonBar(int mode)
-    {
-        ButtonBar bb = new ButtonBar();
-        switch (mode)
-        {
-            case DataRegion.MODE_DETAILS:
-                bb.add(ActionButton.BUTTON_SHOW_UPDATE);
-                bb.add(ActionButton.BUTTON_SHOW_GRID);
-                break;
-            case DataRegion.MODE_GRID:
-                bb.add(ActionButton.BUTTON_DELETE);
-                bb.add(ActionButton.BUTTON_SHOW_INSERT);
-                break;
-            case DataRegion.MODE_UPDATE:
-                bb.add(ActionButton.BUTTON_DO_UPDATE);
-                break;
-            case DataRegion.MODE_INSERT:
-                bb.add(ActionButton.BUTTON_DO_INSERT);
-                break;
-        }
-
-        if (null != _returnURL)
-        {
-            ActionButton ab = new ActionButton("Done", "Done");
-            ab.setActionType(ActionButton.Action.LINK);
-            ab.setURL(_returnURL);
-            bb.add(ab);
-        }
-
-        return bb;
-    }
-
-    public static class TableForm extends TableViewForm
-    {
-        private String _returnURL;
-
-        public String getReturnURL()
-        {
-            return _returnURL;
-        }
-
-        public void setReturnURL(String returnURL)
-        {
-            _returnURL = returnURL;
-        }
-
-        public void reset(ActionMapping arg0, HttpServletRequest request)
-        {
-            super.reset(arg0, request);
-
-            String returnURL = request.getParameter(RETURN_URL_PARAM);
-            if (null != returnURL && returnURL.length() > 0)
-                _returnURL = returnURL;
-
-            setTable(getTableInfo(request));
-            }
-        }
-    }
+}
