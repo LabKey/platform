@@ -27,6 +27,22 @@
 					"Add Web Part" drop-down menu on the portal page of the container.
  * @param {String} config.renderTo ID of the element in which the web part should be rendered. 
 					Typically this is a div.
+ * @param {String} [config.frame] The type of frame to wrap around the web part's content. This can
+                    be any one of the following:
+                    <ul>
+                        <li><b>portal</b>: (Default) Includes the standard portal frame around the web part content
+                        <li><b>title</b>: Includes a lighter frame around the web part content (title with line underneath)
+                        <li><b>left-nav</b>: Similar to the title frame, but enforces a thinner width.
+                        <li><b>div</b>: Includes the content in a simple &lt;div&gt; tag. Use the config.bodyClass parameter to set a CSS class for the div.
+                        <li><b>dialog</b>: Includes the content in a frame that looks similar to a dialog box.
+                        <li><b>none</b>: Includes no frame around the web part content
+                    </ul>
+ * @param {String} [config.bodyClass] The name of a CSS class available in the current page. This class name will be applied to the tag that
+					contains the web part's body content.
+ * @param {String} [config.title] Overrides the web part's default title.
+ *                  Note that titles are not displayed when config.frame is set to "none".
+ * @param {String} [config.titleHref] Overrides the hyperlink href around the web part's title.
+ *                  Note that titles are not displayed when config.frame is set to "none".
  * @param {Object} [config.partConfig] Object containing name/value pairs that will be sent to the server as configuration
  *               	parameters for the web part. Each web part defines its own set of config parameters. See the 
  * 					<a href= https://www.labkey.org/wiki/home/Documentation/page.view?name=webPartConfig>
@@ -71,6 +87,10 @@ LABKEY.WebPart = function(config)
     //private data
     var _renderTo = config.renderTo;
     var _partName = config.partName;
+    var _frame = config.frame;
+    var _bodyClass = config.bodyClass;
+    var _title = config.title;
+    var _titleHref = config.titleHref;
     var _partConfig = config.partConfig;
     var _errorCallback = config.errorCallback;
 
@@ -129,7 +149,15 @@ LABKEY.WebPart = function(config)
                 _partConfig = {};
 
             _partConfig["webpart.name"] = _partName;
-            
+            if(_frame)
+                _partConfig["webpart.frame"] = _frame;
+            if(_bodyClass)
+                _partConfig["webpart.bodyClass"] = _bodyClass;
+            if(_title)
+                _partConfig["webpart.title"] = _title;
+            if(_titleHref)
+                _partConfig["webpart.titleHref"] = _titleHref;
+
             if(!_errorCallback)
                 _errorCallback = handleLoadError;
 
