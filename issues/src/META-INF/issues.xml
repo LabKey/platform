@@ -19,6 +19,7 @@
 <ns:tables xsi:schemaLocation="http://labkey.org/data/xml ..\..\..\..\..\schemas\tableInfo.xsd" xmlns:ns="http://labkey.org/data/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<ns:table tableName="Comments" tableDbType="TABLE">
 		<ns:columns>
+            <ns:column columnName="EntityId"/>
 			<ns:column columnName="CommentId"/>
 			<ns:column columnName="IssueId">
 				<ns:columnTitle>Issue Id</ns:columnTitle>

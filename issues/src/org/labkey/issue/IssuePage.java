@@ -11,6 +11,9 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.DateUtil;
 import static org.labkey.api.util.PageFlowUtil.filter;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.model.IssueManager.*;
@@ -391,5 +394,44 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     {
         if (null == d) return "";
         return DateUtil.formatDate(d);
+    }
+
+    public String renderAttachments(ViewContext context, AttachmentParent parent) throws SQLException
+    {
+        Attachment[] attachments = AttachmentService.get().getAttachments(parent);
+        StringBuffer sb = new StringBuffer();
+        boolean canEdit = isEditable("attachments");
+
+        if (attachments.length > 0)
+        {
+            sb.append("<table>");
+            sb.append("<tr><td>&nbsp;</td></tr>");
+            for (Attachment a : attachments)
+            {
+                sb.append("<tr><td>");
+                if (!canEdit)
+                {
+                    sb.append("<a class=\"link\" href=\"");
+                    sb.append(PageFlowUtil.filter(a.getDownloadUrl("issues")));
+                    sb.append("\"><img border=0 src=\"");
+                    sb.append(context.getRequest().getContextPath());
+                    sb.append(PageFlowUtil.filter(a.getFileIcon()));
+                    sb.append("\">&nbsp;");
+                    sb.append(PageFlowUtil.filter(a.getName()));
+                    sb.append("</a>");
+                }
+                else
+                {
+                    sb.append("<img border=0 src=\"");
+                    sb.append(context.getRequest().getContextPath());
+                    sb.append(PageFlowUtil.filter(a.getFileIcon()));
+                    sb.append("\">&nbsp;");
+                    sb.append(PageFlowUtil.filter(a.getName()));
+                }
+                sb.append("</td></tr>");
+            }
+            sb.append("</table>");
+        }
+        return sb.toString();
     }
 }

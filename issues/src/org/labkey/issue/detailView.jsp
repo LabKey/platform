@@ -2,12 +2,11 @@
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.data.DataRegion"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.api.view.ViewContext"%>
-<%@ page import="org.labkey.api.view.ActionURL"%>
+<%@ page import="org.labkey.issue.IssuePage"%>
 <%@ page import="org.labkey.issue.IssuesController"%>
-<%@ page import="org.labkey.issue.model.Issue"%>
-<%@ page import="org.labkey.issue.IssuePage" %>
-<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.issue.model.Issue" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<IssuePage> me = (JspView<IssuePage>) HttpView.currentView();
@@ -17,7 +16,6 @@
     final Container c = context.getContainer();
     final String issueId = Integer.toString(issue.getIssueId());
     final boolean hasUpdatePerms = bean.getHasUpdatePermissions();
-
 %>
 <form name="jumpToIssue" action="jumpToIssue.view" method="get">
     <table border=0 cellspacing=2 cellpadding=2><tr>
@@ -100,6 +98,7 @@
         </b></td><td align="right" class="normal"><b>
         <%=h(comment.getCreatedByName(context))%>
         </b></td></tr></table>
-        <%=comment.getComment()%><%
+        <%=comment.getComment()%>
+        <%=bean.renderAttachments(context, comment)%><%
     }
 %>

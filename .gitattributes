@@ -698,6 +698,7 @@ issues/src/META-INF/issues/scripts/postgresql/issues-1.60-1.70.sql -text
 issues/src/META-INF/issues/scripts/postgresql/issues-1.70-2.00.sql -text
 issues/src/META-INF/issues/scripts/postgresql/issues-2.30-2.31.sql -text
 issues/src/META-INF/issues/scripts/postgresql/issues-2.30-8.10.sql -text
+issues/src/META-INF/issues/scripts/postgresql/issues-8.10-8.11.sql -text
 issues/src/META-INF/issues/scripts/postgresql/obsolete/issues-0.00-0.60.sql -text
 issues/src/META-INF/issues/scripts/postgresql/obsolete/issues-1.60-1.61.sql -text
 issues/src/META-INF/issues/scripts/postgresql/obsolete/issues-1.70-1.71.sql -text
@@ -708,6 +709,7 @@ issues/src/META-INF/issues/scripts/sql[!!-~]server/issues-1.60-1.70.sql -text
 issues/src/META-INF/issues/scripts/sql[!!-~]server/issues-1.70-2.00.sql -text
 issues/src/META-INF/issues/scripts/sql[!!-~]server/issues-2.30-2.31.sql -text
 issues/src/META-INF/issues/scripts/sql[!!-~]server/issues-2.30-8.10.sql -text
+issues/src/META-INF/issues/scripts/sql[!!-~]server/issues-8.10-8.11.sql -text
 issues/src/META-INF/issues/scripts/sql[!!-~]server/obsolete/cpas-0.00-0.58.sql -text
 issues/src/META-INF/issues/scripts/sql[!!-~]server/obsolete/cpas-0.00-0.70.sql -text
 issues/src/META-INF/issues/scripts/sql[!!-~]server/obsolete/cpas-0.00-0.81.sql -text

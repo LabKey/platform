@@ -167,7 +167,7 @@ public class IssueManager
 
     protected static void saveComments(User user, Issue issue) throws SQLException
     {
-        Collection<Issue.Comment> comments = issue.added;
+        Collection<Issue.Comment> comments = issue._added;
         if (null == comments)
             return;
         for (Issue.Comment comment : comments)
@@ -175,9 +175,10 @@ public class IssueManager
             HashMap<String, Object> m = new HashMap<String, Object>();
             m.put("issueId", new Integer(issue.getIssueId()));
             m.put("comment", comment.getComment());
+            m.put("entityId", comment.getEntityId());
             Table.insert(user, _tinfoComments, m);
         }
-        issue.added = null;
+        issue._added = null;
     }
 
     /*

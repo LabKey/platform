@@ -17,6 +17,7 @@ package org.labkey.issue.model;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Entity;
+import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.MemTracker;
@@ -28,6 +29,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 
 
 @javax.ejb.Entity
@@ -65,8 +67,8 @@ public class Issue extends Entity implements Serializable, Cloneable
     protected Integer int1;
     protected Integer int2;
 
-    protected Collection<Issue.Comment> comments = new ArrayList<Issue.Comment>();
-    protected Collection<Issue.Comment> added = null;
+    protected List<Comment> _comments = new ArrayList<Comment>();
+    protected List<Comment> _added = null;
 
     protected String _notifyList;
 
@@ -420,28 +422,27 @@ public class Issue extends Entity implements Serializable, Cloneable
     {
 //        if (null == comments)
 //            comments = new ArrayList();
-        return comments;
+        return _comments;
     }
 
     public Issue.Comment getLastComment()
     {
-        if (null == comments)
+        if (null == _comments || _comments.isEmpty())
             return null;
-        Object[] a = comments.toArray();
-        return a.length == 0 ? null : (Issue.Comment)a[a.length-1];
+
+        return _comments.get(_comments.size()-1);
     }
 
-
-
-    public boolean setComments(Collection<Issue.Comment> comments)
+    public boolean setComments(List<Issue.Comment> comments)
     {
-        boolean rval = this.comments.isEmpty();
         if (comments != null)
-            this.comments = comments;
-
-        return rval;
+        {
+            _comments = comments;
+            for (Comment comment : _comments)
+                comment.setIssue(this);
+        }
+        return _comments.isEmpty();
     }
-
 
     @Transient
     public String getModifiedByName(ViewContext context)
@@ -460,15 +461,14 @@ public class Issue extends Entity implements Serializable, Cloneable
     public Comment addComment(User user, String text)
     {
         Comment comment = new Comment();
+        comment.beforeInsert(user, getContainerId());
         comment.setIssue(this);
         comment.setComment(text);
-        comment.setCreated(new Date());
-        comment.setCreatedBy(user.getUserId());
 
-        comments.add(comment);
-        if (null == added)
-            added = new ArrayList<Issue.Comment>(1);
-        added.add(comment);
+        _comments.add(comment);
+        if (null == _added)
+            _added = new ArrayList<Issue.Comment>(1);
+        _added.add(comment);
         return comment;
     }
 
@@ -486,7 +486,7 @@ public class Issue extends Entity implements Serializable, Cloneable
 
     @javax.ejb.Entity
     @Table(name = "Comments")
-    public static class Comment implements Serializable
+    public static class Comment extends AttachmentParentEntity implements Serializable
     {
         private Issue issue;
         private int commentId;
@@ -551,6 +551,13 @@ public class Issue extends Entity implements Serializable, Cloneable
         public void setComment(String comment)
         {
             this.comment = comment;
+        }
+
+        public String getContainerId()
+        {
+            if (issue != null)
+                return issue.getContainerId();
+            return super.getContainerId();
         }
     }
 }

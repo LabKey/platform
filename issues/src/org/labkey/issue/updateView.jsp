@@ -1,15 +1,18 @@
-<%@ page import="org.labkey.issue.IssuesController"%>
-<%@ page import="org.labkey.issue.model.Issue"%>
 <%@ page import="org.apache.commons.lang.StringUtils"%>
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.data.DataRegion"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.api.view.ButtonServlet"%>
+<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.issue.IssuePage" %>
+<%@ page import="org.labkey.issue.IssuesController" %>
+<%@ page import="org.labkey.issue.model.Issue" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
+<%@ page import="org.springframework.validation.BindException" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.issue.IssuePage" %>
-<%@ page import="org.labkey.api.view.*" %>
-<%@ page import="org.springframework.validation.BindException" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<IssuePage> me = (JspView<IssuePage>) HttpView.currentView();
@@ -24,7 +27,7 @@
     BindException errors = bean.getErrors();
 %>
 
-<form style="margin:0" method="POST" action="<%=IssuesController.issueURL(context.getContainer(),bean.getAction()+".post")%>">
+<form style="margin:0" method="POST" enctype="multipart/form-data" action="<%=IssuesController.issueURL(context.getContainer(),bean.getAction()+".post")%>">
 
     <table border=0 cellspacing=2 cellpadding=0>
     <%
@@ -140,6 +143,12 @@
 <%
     }
 
+%>
+    <table>
+        <tr><td class="normal"><a href="javascript:addFilePicker('filePickerTable','filePickerLink')" id="filePickerLink"><img src="<%=context.getRequest().getContextPath()%>/_images/paperclip.gif">Attach a file</a></td></tr>
+        <tr><td class="normal"><table id="filePickerTable"></table></td></tr>
+    </table>
+<%
     if (bean.getCallbackURL() != null)
     {
 %>
@@ -156,6 +165,7 @@
         <%=h(comment.getCreatedByName(context))%>
         </b></td></tr></table>
         <%=comment.getComment()%>
+        <%=bean.renderAttachments(context, comment)%>   
 <%
     }
 %>

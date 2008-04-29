@@ -18,9 +18,7 @@ package org.labkey.issue;
 import junit.framework.TestCase;
 import org.apache.commons.collections15.MultiMap;
 import org.apache.log4j.Logger;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.*;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
@@ -29,10 +27,15 @@ import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Search;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.view.*;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.issue.model.IssueManager;
+import org.labkey.issue.model.Issue;
 import org.labkey.issue.query.IssuesQuerySchema;
 
+import javax.servlet.http.HttpServletResponse;
 import java.beans.PropertyChangeEvent;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
@@ -51,7 +54,7 @@ public class IssuesModule extends DefaultModule implements ContainerManager.Cont
 
     public IssuesModule()
     {
-        super(NAME, 8.10, "/org/labkey/issue", true, new IssuesWebPartFactory());
+        super(NAME, 8.11, "/org/labkey/issue", true, new IssuesWebPartFactory());
         addController("issues", IssuesController.class);
 
         IssuesQuerySchema.register();
@@ -204,6 +207,39 @@ public class IssuesModule extends DefaultModule implements ContainerManager.Cont
         catch (SQLException e)
         {
             _log.error(e);            
+        }
+    }
+
+    public void afterSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)
+    {
+        double version = moduleContext.getInstalledVersion();
+        if (version > 0 && version < 8.11)
+        {
+            try {
+                doPopulateCommentEntityIds();
+            }
+            catch (Exception e)
+            {
+                String msg = "Error running afterSchemaUpdate doPopulateCommentEntityIds on IssueModule, upgrade from version " + String.valueOf(version);
+                _log.error(msg + " \n Caused by " + e);
+                ExperimentException ex = new ExperimentException(msg, e);
+                //following sends an exception report to mothership if site is configured to do so, but doesn't abort schema upgrade
+                ExceptionUtil.getErrorRenderer(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg, ex, viewContext.getRequest(), false, false);
+            }
+        }
+        super.afterSchemaUpdate(moduleContext, viewContext);
+    }
+
+    private void doPopulateCommentEntityIds() throws SQLException
+    {
+        TableInfo tinfo = IssuesSchema.getInstance().getTableInfoComments();
+        Table.TableResultSet rs = Table.select(tinfo, tinfo.getColumns(), null, null);
+        String sql = "UPDATE " + tinfo + " SET EntityId = ? WHERE CommentId = ? AND IssueId = ?";
+
+        while (rs.next())
+        {
+            Map<String, Object> row = rs.getRowMap();
+            Table.execute(tinfo.getSchema(), sql, new Object[]{GUID.makeGUID(), row.get("CommentId"), row.get("IssueId")});
         }
     }
 }

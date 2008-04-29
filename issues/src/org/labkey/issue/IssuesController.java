@@ -7,6 +7,9 @@ import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.action.*;
+import org.labkey.api.attachments.AttachmentForm;
+import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.*;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.module.Module;
@@ -454,14 +457,21 @@ public class IssuesController extends SpringActionController
             _issue.Open(c, user);
             validateNotifyList(_issue, form, errors);
 
+            DbScope scope = IssuesSchema.getInstance().getSchema().getScope();
+            boolean ownsTransaction = !scope.isTransactionActive();
             try
             {
+                if (ownsTransaction)
+                    scope.beginTransaction();
                 // for new issues, the original is always the default.
                 Issue orig = new Issue();
                 orig.Open(getContainer(), getUser());
 
-                addComment(_issue, orig, user, form.getAction(), form.getComment(), getColumnCaptions(), getViewContext());
+                Issue.Comment comment = addComment(_issue, orig, user, form.getAction(), form.getComment(), getColumnCaptions(), getViewContext());
                 IssueManager.saveIssue(openSession(), user, c, _issue);
+                AttachmentService.get().addAttachments(user, comment, getAttachmentFileList());
+                if (ownsTransaction)
+                    scope.commitTransaction();
             }
             catch (Exception x)
             {
@@ -472,6 +482,11 @@ public class IssuesController extends SpringActionController
 
                 errors.addError(new ObjectError("form", null, null, error));
                 return false;
+            }
+            finally
+            {
+                if (ownsTransaction)
+                    scope.closeConnection();
             }
 
             ActionURL url = new DetailsAction(_issue).getURL();
@@ -537,8 +552,12 @@ public class IssuesController extends SpringActionController
             requiresUpdatePermission(user, issue);
             ActionURL detailsUrl;
 
+            DbScope scope = IssuesSchema.getInstance().getSchema().getScope();
+            boolean ownsTransaction = !scope.isTransactionActive();
             try
             {
+                if (ownsTransaction)
+                    scope.beginTransaction();
                 detailsUrl = new DetailsAction(issue).getURL();
 
                 if ("resolve".equals(form.getAction()))
@@ -550,13 +569,21 @@ public class IssuesController extends SpringActionController
                 else
                     issue.Change(user);
 
-                addComment(issue, (Issue)form.getOldValues(), user, form.getAction(), form.getComment(), getColumnCaptions(), getViewContext());
+                Issue.Comment comment = addComment(issue, (Issue)form.getOldValues(), user, form.getAction(), form.getComment(), getColumnCaptions(), getViewContext());
                 IssueManager.saveIssue(openSession(), user, c, issue);
+                AttachmentService.get().addAttachments(user, comment, getAttachmentFileList());
+                if (ownsTransaction)
+                    scope.commitTransaction();
             }
             catch (Exception x)
             {
                 errors.addError(new ObjectError("main", new String[] {"Error"}, new Object[] {x}, x.getMessage()));
                 return false;
+            }
+            finally
+            {
+                if (ownsTransaction)
+                    scope.closeConnection();
             }
 
             // Send update email...
@@ -586,6 +613,37 @@ public class IssuesController extends SpringActionController
         }
     }
 
+    @RequiresPermission(ACL.PERM_READ)
+    public class DownloadAction extends SimpleViewAction<AttachmentForm>
+    {
+        public ModelAndView getView(final AttachmentForm form, BindException errors) throws Exception
+        {
+            getPageConfig().setTemplate(PageConfig.Template.None);
+            final AttachmentParent parent = new IssueAttachmentParent(getContainer(), form.getEntityId());
+
+            return new HttpView()
+            {
+                protected void renderInternal(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
+                {
+                    AttachmentService.get().download(response, parent, form.getName());
+                }
+            };
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+    public class IssueAttachmentParent extends AttachmentParentEntity
+    {
+        public IssueAttachmentParent(Container c, String entityId)
+        {
+            setContainer(c.getId());
+            setEntityId(entityId);
+        }
+    }
 
     @RequiresPermission(ACL.PERM_UPDATEOWN)
     public class UpdateAction extends IssueUpdateAction
@@ -635,6 +693,7 @@ public class IssuesController extends SpringActionController
         editable.add("priority");
         editable.add("milestone");
         editable.add("comments");
+        editable.add("attachments");
 
         for (String columnName : ccc.getColumnCaptions().keySet())
             editable.add(columnName);
@@ -1313,7 +1372,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    static void addComment(Issue issue, Issue previous, User user, String action, String comment, Map<String, String> customColumns, ViewContext context)
+    static Issue.Comment addComment(Issue issue, Issue previous, User user, String action, String comment, Map<String, String> customColumns, ViewContext context)
     {
         StringBuffer sbChanges = new StringBuffer();
         if (!action.equals("insert") && !action.equals("update"))
@@ -1362,7 +1421,7 @@ public class IssuesController extends SpringActionController
         formattedComment.append(w.format(comment).getHtml());
         formattedComment.append("</div>");
 
-        issue.addComment(user, formattedComment.toString());
+        return issue.addComment(user, formattedComment.toString());
     }
 
     private static void _appendCustomColumnChange(StringBuffer sb, String field, String from, String to, Map<String, String> columnCaptions)
