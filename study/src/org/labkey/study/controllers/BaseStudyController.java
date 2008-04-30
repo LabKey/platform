@@ -2,14 +2,18 @@ package org.labkey.study.controllers;
 
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.BaseViewAction;
+import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.data.Container;
 import org.labkey.api.view.*;
+import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.ACL;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.Visit;
 import org.labkey.study.view.BaseStudyPage;
 import org.springframework.validation.BindException;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
 import java.util.Collection;
@@ -140,6 +144,11 @@ public abstract class BaseStudyController extends SpringActionController
         return root;
     }
 
+    protected void redirectTypeNotFound(int datasetId) throws RedirectException
+    {
+        HttpView.throwRedirect(new ActionURL(TypeNotFoundAction.class, getContainer()).addParameter("id", datasetId));
+    }
+
     public static class StudyJspView<T> extends JspView<T>
     {
         public StudyJspView(Study study, String name, T bean, BindException errors)
@@ -207,6 +216,20 @@ public abstract class BaseStudyController extends SpringActionController
         public void setId(int id)
         {
             _id = id;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class TypeNotFoundAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new StudyJspView<Study>(getStudy(), "typeNotFound.jsp", null, errors);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Type Not Found");
         }
     }
 }

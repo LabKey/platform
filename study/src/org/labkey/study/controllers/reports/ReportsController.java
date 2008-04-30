@@ -1903,7 +1903,7 @@ public class ReportsController extends BaseStudyController
         qs.setSchemaName(querySchema.getSchemaName());
         qs.setQueryName(queryName);
         qs.setViewName(viewName);
-        DataSetQueryView queryView = new DataSetQueryView(context, querySchema, qs, null, null);
+        DataSetQueryView queryView = new DataSetQueryView(datasetId, querySchema, qs, null, null);
 
         addParticipantListToCache(datasetId, queryView, viewName);
     }

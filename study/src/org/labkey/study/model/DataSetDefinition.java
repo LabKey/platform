@@ -453,6 +453,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             ColumnInfo[] columnsBase = studyData.getColumns("lsid","participantid","sourcelsid", "created","modified");
             for (ColumnInfo col : columnsBase)
             {
+                if (!"participantid".equals(col.getColumnName()))
+                    col.setUserEditable(false);
                 columnList.add(newDatasetColumnInfo(this, col));
             }
             ColumnInfo sequenceNumCol = newDatasetColumnInfo(this, studyData.getColumn("sequenceNum"));
@@ -471,6 +473,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             columnList.addAll(Arrays.asList(columnsLookup));
             ColumnInfo visitRowId = newDatasetColumnInfo(this, participantVisit.getColumn("VisitRowId"));
             visitRowId.setIsHidden(true);
+            visitRowId.setUserEditable(false);
             columnList.add(visitRowId);
             // HACK reset colMap
             colMap = null;

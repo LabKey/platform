@@ -455,7 +455,7 @@ public class StudyController extends BaseStudyController
             QuerySettings qs = new QuerySettings(url, DataSetQueryView.DATAREGION);
             qs.setSchemaName(querySchema.getSchemaName());
             qs.setQueryName(def.getLabel());
-            DataSetQueryView queryView = new DataSetQueryView(context, querySchema, qs, visit, cohort);
+            DataSetQueryView queryView = new DataSetQueryView(_datasetId, querySchema, qs, visit, cohort);
             setColumnURL(url, queryView, querySchema, def);
 
             // clear the property map cache and the sort map cache
@@ -597,20 +597,6 @@ public class StudyController extends BaseStudyController
         public NavTree appendNavTrail(NavTree root)
         {
             return _appendNavTrail(root, _datasetId, _visitId,  _cohortId != null ? _cohortId.intValue() : -1);
-        }
-    }
-
-    @RequiresPermission(ACL.PERM_READ)
-    public class TypeNotFoundAction extends SimpleViewAction
-    {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            return new StudyJspView<Study>(getStudy(), "typeNotFound.jsp", null, errors);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Type Not Found");
         }
     }
 
@@ -2044,7 +2030,7 @@ public class StudyController extends BaseStudyController
                 deleteRows.setActionType(ActionButton.Action.GET);
                 deleteRows.setDisplayPermission(ACL.PERM_DELETE);
 
-                PublishedRecordQueryView qv = new PublishedRecordQueryView(context, querySchema, qs, sourceLsid,
+                PublishedRecordQueryView qv = new PublishedRecordQueryView(datasetId, querySchema, qs, sourceLsid,
                         NumberUtils.toInt(protocolId), NumberUtils.toInt(recordCount));
                 qv.setButtons(Collections.singletonList(deleteRows));
                 view.addView(qv);
@@ -2565,7 +2551,7 @@ public class StudyController extends BaseStudyController
             QuerySettings qs = new QuerySettings(context.getActionURL(), DataSetQueryView.DATAREGION);
             qs.setSchemaName(querySchema.getSchemaName());
             qs.setQueryName(def.getLabel());
-            DataSetQueryView queryView = new DataSetQueryView(context, querySchema, qs, visit, cohort);
+            DataSetQueryView queryView = new DataSetQueryView(datasetId, querySchema, qs, visit, cohort);
             return generateParticipantList(queryView);
         }
         catch (Exception e)
@@ -4129,11 +4115,6 @@ public class StudyController extends BaseStudyController
 
         viewMap.put(Integer.toString(datasetId), view);
         PropertyManager.saveProperties(viewMap);
-    }
-
-    private void redirectTypeNotFound(int datasetId) throws RedirectException
-    {
-        HttpView.throwRedirect(new ActionURL(TypeNotFoundAction.class, getContainer()).addParameter("id", datasetId));
     }
 
     private String getVisitLabel()

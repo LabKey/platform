@@ -8,7 +8,6 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.view.DataView;
-import org.labkey.api.view.ViewContext;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -26,9 +25,9 @@ public class PublishedRecordQueryView extends DataSetQueryView
     private int _protocolId;
     private int _recordCount;
 
-    public PublishedRecordQueryView(ViewContext context, UserSchema schema, QuerySettings settings, String sourceLsid, int protocolId, int recordCount)
+    public PublishedRecordQueryView(int datasetId, UserSchema schema, QuerySettings settings, String sourceLsid, int protocolId, int recordCount)
     {
-        super(context, schema, settings, null, null);
+        super(datasetId, schema, settings, null, null);
         _sourceLsid = sourceLsid;
         _protocolId = protocolId;
         _recordCount = recordCount;

@@ -679,7 +679,6 @@ public class StudyManager
     public void deleteDatasetRows(Study study, DataSetDefinition dataset, List<String> rowLSIDs)
     {
         Container c = study.getContainer();
-        int count;
 
         TableInfo data = StudySchema.getInstance().getTableInfoStudyData();
         SimpleFilter filter = new SimpleFilter();
@@ -696,7 +695,7 @@ public class StudyManager
 
             char sep = ' ';
             StringBuilder sb = new StringBuilder();
-            for (String rowLSID : rowLSIDs)
+            for (int i=0;i<rowLSIDs.size();i++)
             {
                 sb.append(sep);
                 sb.append('?');

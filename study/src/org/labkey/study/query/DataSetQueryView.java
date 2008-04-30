@@ -4,12 +4,15 @@ import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.report.view.ChartUtil;
 import org.labkey.api.reports.report.view.RReportBean;
-import org.labkey.api.view.DataView;
-import org.labkey.api.view.ViewContext;
+import org.labkey.api.security.ACL;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DataView;
+import org.labkey.study.controllers.DatasetController;
+import org.labkey.study.controllers.StudyController;
+import org.labkey.study.model.Cohort;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.Visit;
-import org.labkey.study.model.Cohort;
 import org.labkey.study.reports.StudyRReport;
 
 import java.io.IOException;
@@ -17,8 +20,8 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: brittp
@@ -27,21 +30,18 @@ import java.util.Map;
  */
 public class DataSetQueryView extends QueryView
 {
+    private final int _datasetId;
     private List<ActionButton> _buttons;
-    private Visit _visit;
-    private Cohort _cohort;
+    private final Visit _visit;
+    private final Cohort _cohort;
     private boolean _showSourceLinks;
     public static final String DATAREGION = "Dataset";
 
-    public DataSetQueryView(QueryForm form)
-    {
-        super(form);
-    }
-
-    public DataSetQueryView(ViewContext context, UserSchema schema, QuerySettings settings, Visit visit, Cohort cohort)
+    public DataSetQueryView(int datasetId, UserSchema schema, QuerySettings settings, Visit visit, Cohort cohort)
     {
         super(schema, settings);
-        this._visit = visit;
+        _datasetId = datasetId;
+        _visit = visit;
         _cohort = cohort;
     }
 
@@ -64,7 +64,7 @@ public class DataSetQueryView extends QueryView
             view.getDataRegion().setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
         view.getDataRegion().setShadeAlternatingRows(true);
         view.getDataRegion().setShowColumnSeparators(true);
-        view.getDataRegion().setRecordSelectorValueColumns(new String[] {"lsid"} );
+        view.getDataRegion().setRecordSelectorValueColumns("lsid");
         if (null != _visit)
         {
             SimpleFilter filter = (SimpleFilter) view.getRenderContext().getBaseFilter();
@@ -102,6 +102,14 @@ public class DataSetQueryView extends QueryView
                         sourceLsidCol));
             }
         }
+        // Only show link to edit for editors
+        // TODO: work in progress. For now, disable this function
+        if (getViewContext().hasPermission(ACL.PERM_UPDATE) && false)
+        {
+            TableInfo tableInfo = view.getDataRegion().getTable();
+            ColumnInfo lsidColumn = tableInfo.getColumn("lsid");
+            view.getDataRegion().addColumn(0, new DatasetEditColumn(view.getRenderContext().getContainer(), lsidColumn));
+        }
         return view;
     }
 
@@ -110,7 +118,7 @@ public class DataSetQueryView extends QueryView
         private ColumnInfo _sourceLsidColumn;
         public DatasetDetailsColumn(Container container, ColumnInfo sourceLsidCol)
         {
-            super(new LookupURLExpression(new ActionURL("Study", "datasetItemDetails", container),
+            super(new LookupURLExpression(new ActionURL(StudyController.DatasetItemDetailsAction.class, container),
                     Collections.singletonMap("sourceLsid", sourceLsidCol)));
             _sourceLsidColumn = sourceLsidCol;
         }
@@ -128,6 +136,37 @@ public class DataSetQueryView extends QueryView
         public void addQueryColumns(Set<ColumnInfo> set)
         {
             set.add(_sourceLsidColumn);
+        }
+    }
+
+    private class DatasetEditColumn extends SimpleDisplayColumn
+    {
+        private final Container container;
+        private final ColumnInfo lsidColumn;
+
+        public DatasetEditColumn(Container container, ColumnInfo lsidColumn)
+        {
+            super();
+            this.container = container;
+            this.lsidColumn = lsidColumn;
+        }
+
+        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        {
+            out.write("[<a href=\"");
+
+            ActionURL actionURL = new ActionURL(DatasetController.UpdateAction.class, container);
+
+            String lsid = lsidColumn.getValue(ctx).toString();
+            actionURL.addParameter("lsid", lsid);
+
+            actionURL.addParameter("datasetId", _datasetId);
+            
+
+            out.write(PageFlowUtil.filter(actionURL.getLocalURIString()));
+            out.write("\">");
+            out.write("edit");
+            out.write("</a>]");
         }
     }
 

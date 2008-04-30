@@ -31,6 +31,7 @@ import org.labkey.study.assay.*;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.assay.query.AssaySchema;
 import org.labkey.study.controllers.StudyController;
+import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.controllers.designer.DesignerController;
 import org.labkey.study.controllers.plate.PlateController;
@@ -88,6 +89,7 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
         addController("study-designer", DesignerController.class);
         addController("plate", PlateController.class);
         addController("assay", AssayController.class);
+        addController("dataset", DatasetController.class);
 
         PlateService.register(new PlateManager());
         AssayService.setInstance(new AssayManager());
