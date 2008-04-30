@@ -1,12 +1,9 @@
 package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.util.Cache;
-import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.ResultSetUtil;
-
+import org.labkey.api.util.*;
 import javax.servlet.ServletException;
+import javax.servlet.ServletContextEvent;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.ref.Reference;
@@ -18,6 +15,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by IntelliJ IDEA.
@@ -330,17 +328,28 @@ public class TempTableTracker extends WeakReference<Object>
     }
 
 
-    static final Thread tempTableThread = new Thread("Temp table cleanup")
+    static final Thread tempTableThread = new TempTableThread();
+
+    static class TempTableThread extends Thread  implements ShutdownListener
     {
+        AtomicBoolean _shutdown = new AtomicBoolean(false);
+        
+        TempTableThread()
+        {
+            super("Temp table cleanup");
+            setDaemon(true);
+            ContextListener.addShutdownListener(this);
+        }
+
         public void run()
         {
-            //noinspection InfiniteLoopStatement
             while (true)
             {
-                //noinspection EmptyCatchBlock
                 try
                 {
-                    Reference<? extends Object> r = cleanupQueue.remove();
+                    Reference<?> r = _shutdown.get() ? cleanupQueue.poll() : cleanupQueue.remove();
+                    if (_shutdown.get() && r == null)
+                        return;
                     //noinspection RedundantCast
                     TempTableTracker t = (TempTableTracker)(Object)r;
                     t.delete();
@@ -355,5 +364,17 @@ public class TempTableTracker extends WeakReference<Object>
                 }
             }
         }
-    };
+
+        public void shutdownStarted(ServletContextEvent servletContextEvent)
+        {
+            _shutdown.set(true);
+            interrupt();
+            try
+            {
+                join(5000);
+            }
+            catch (InterruptedException e) {}
+            synchronizeLog(false);
+        }
+    }
 }
