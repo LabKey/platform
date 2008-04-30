@@ -35,6 +35,11 @@ public class ResultSetCollapser extends Table.ResultSetImpl
         return _tableRS.isComplete();
     }
 
+    public String getTruncationMessage(int maxRows)
+    {
+        return _tableRS.getTruncationMessage(maxRows);
+    }
+
     public boolean next() throws SQLException
     {
         while(super.next())

@@ -1722,6 +1722,8 @@ public class Table
         public Map<String,Object> getRowMap() throws SQLException;
 
         public Iterator<Map> iterator();
+
+        String getTruncationMessage(int maxRows);
     }
 
 
@@ -1816,6 +1818,11 @@ public class Table
         public Iterator<Map> iterator()
         {
             return new ResultSetIterator(this);
+        }
+
+        public String getTruncationMessage(int maxRows)
+        {
+            return "Displaying only the first " + maxRows + " rows.";
         }
 
         public Map<String, Object> getRowMap()

@@ -115,6 +115,14 @@ public class GroupedResultSet extends Table.ResultSetImpl
         }
     }
 
+    public String getTruncationMessage(int maxRows)
+    {
+        if (_lastRow != 0)
+        {
+            return "Displaying only the first " + _groupCount + " results.";
+        }
+        return super.getTruncationMessage(maxRows);
+    }
 
     private boolean innerNext() throws SQLException
     {
@@ -224,9 +232,17 @@ public class GroupedResultSet extends Table.ResultSetImpl
             if (0 == _rowOffset)
                 super.beforeFirst();
             else
-                absolute(_rowOffset);
+                super.absolute(_rowOffset);
         }
 
+        public boolean absolute(int i) throws SQLException
+        {
+            if (i < 0)
+            {
+                throw new UnsupportedOperationException("NestedResultSets do not yet support negative offsets for absolute()");
+            }
+            return super.absolute(i + _rowOffset);
+        } 
 
         public int getRow() throws SQLException
         {

@@ -668,6 +668,17 @@ public class DataRegion extends DisplayElement
                 out.write("</span><br>");
             }
 
+            if (!_showPagination && rs instanceof Table.TableResultSet)
+            {
+                Table.TableResultSet tableRS = (Table.TableResultSet) rs;
+                if (!tableRS.isComplete())
+                {
+                    out.write("<span class=normal style=\"color:#008000\">");
+                    out.write(tableRS.getTruncationMessage(_maxRows));
+                    out.write("</span>");
+                }
+            }
+
             renderGridStart(ctx, out, renderers);
 
             renderGridHeaders(ctx, out, renderers);

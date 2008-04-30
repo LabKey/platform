@@ -54,7 +54,7 @@
   *                 is optional. Further, if you do provide it, you take responsibility for
   *                 providing a valid and complete config object.  If you do not set the
   *                 Store config, LabKey Server will use a default configuration option.
-  * @param {Function(columnModel)} [config.columnModeListener] Callback function that allows 
+  * @param {Function(columnModel)} [config.columnModelListener] Callback function that allows
   *					you to adjust the column 
   *					model without providing a full GridPanel config.  The columnModel 
   *					element/object contains information about how one may interact with 
@@ -132,7 +132,7 @@ LABKEY.GridView = function(config)
     // private member variables:
     var _ds;
     var _myReader;
-    var _columnModelListener;
+    var _columnModelListener = config.columnModelListener;
 	var _gridCustomizeCallback = config.gridCustomizeCallback;
     var _pageLimit = 20;
     var _grid;

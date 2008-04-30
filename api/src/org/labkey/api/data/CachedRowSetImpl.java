@@ -1063,6 +1063,11 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
         return _isComplete;
     }
 
+    public String getTruncationMessage(int maxRows)
+    {
+        return "Displaying only the first " + maxRows + " rows.";
+    }
+
     public Map<String, Object> getRowMap() throws SQLException
     {
         if (_row >= _maps.length)

@@ -893,7 +893,11 @@ Parse:
             assertEquals(dateExpected, DateUtil.parseDateTime("03Feb2001"));
             assertEquals(dateExpected, DateUtil.parseDateTime("3 Feb 01"));
             assertEquals(dateExpected, DateUtil.parseDateTime("3 Feb 2001"));
-            assertEquals(dateExpected, DateUtil.parseDateTime("Feb 03 2001"));
+            assertEquals(dateExpected, DateUtil.parseDateTime("3-Feb-01"));
+            assertEquals(dateExpected, DateUtil.parseDateTime("3Feb01"));
+            assertEquals(dateExpected, DateUtil.parseDateTime("3Feb2001"));
+            assertEquals(dateExpected, DateUtil.parseDateTime("03Feb01"));
+            assertEquals(dateExpected, DateUtil.parseDateTime("03Feb2001"));            assertEquals(dateExpected, DateUtil.parseDateTime("Feb 03 2001"));
             assertEquals(dateExpected, DateUtil.parseDateTime("February 3, 2001"));
 // TODO: assertEquals(dateExpected, DateUtil.parseDateTime(ConvertUtils.convert(new Date(dateExpected))));
 

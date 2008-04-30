@@ -61,6 +61,11 @@
   * @param {Bool} [config.verticalOrientation='false'] If showMultipleCharts is 'true' this
   *                 option controls whether charts are plotted vertically or
   *                 horizontally (the default).
+  * @param {Function} [config.imageMapCallback] Javascript function that will be used in the URL's of the generated image map.
+  *                 The specified function will be invoked with a single argument, a JSON object with : key, x, and y as fields. If
+  *                 no function is specified, then the image map will show only tooltips.
+  * @param {String|[String]} [config.imageMapCallbackColumns] Name(s) of additional columns whose names and values should be added
+    *               To the JSON object for the config.imageMapCallback function.
   * @example Example #1 uses the "Physical Exam" dataset in the <a href = "https://www.labkey.org/Project/home/Study/demo/start.view?">Demo Study</a>
   * to plot a simple chart with one y-value:
 <pre name="code" class="xml">&lt;script type="text/javascript"&gt;
@@ -98,6 +103,32 @@ Example #2 demonstrates plotting of multiple y-values:
     chart.render();
 &lt;/script&gt;
 &lt;div id="chartDiv2"&gt;&lt;/div&gt;
+
+Example #3 demonstrates image map support:
+
+&lt;script type="text/javascript"&gt;
+	LABKEY.requiresClientAPI();
+
+    var chartConfig = {
+        schemaName: 'study',
+        queryName: 'Physical Exam',
+        renderTo: 'chartDiv3',
+        renderImageMapTo: 'imageDiv',
+        chartType: LABKEY.Chart.XY,
+        columnXName: 'APXbpsys',
+        columnYName: 'APXbpdia',
+        imageMapCallback: 'showInfo'
+    };
+    var chart = new LABKEY.Chart(chartConfig);
+    chart.render();
+
+    function showInfo(info)
+    {
+        alert("key: " + info.key + "x: " + info.x + "y: " + info.y);
+    }
+&lt;/script&gt;
+&lt;div id="chartDiv3"&gt;&lt;/div&gt;
+&lt;div id="imageDiv"&gt;&lt;/div&gt;
 </pre>
   */
 
