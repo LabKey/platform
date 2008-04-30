@@ -1,13 +1,12 @@
 package org.labkey.api.view;
 
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.security.User;
-import org.labkey.api.data.Container;
 import org.apache.commons.lang.StringUtils;
+import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
+import org.labkey.api.util.PageFlowUtil;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Class for rendering a series of steps involved with setting something up.
@@ -66,11 +65,12 @@ public class Overview
         public String toString()
         {
             StringBuilder ret = new StringBuilder("<li");
+            ret.append(" class=\"step");
             if (_status == Status.disabled)
             {
-                ret.append(" class=\"step-disabled\"");
+                ret.append(" step-disabled");
             }
-            ret.append(">");
+            ret.append("\">");
             ret.append("<b>");
             ret.append(h(_title));
             ret.append("</b>");
@@ -131,6 +131,7 @@ public class Overview
         public String toString()
         {
             StringBuilder ret = new StringBuilder();
+            ret.append("<span class=\"action\">");
             if (!StringUtils.isEmpty(_explanatoryHTML))
             {
                 ret.append("<i>");
@@ -142,6 +143,7 @@ public class Overview
                 ret.append(_descriptionHTML);
                 ret.append("<br>");
             }
+            ret.append("<span class=\"action-label\">");
             if (_url != null)
             {
                 ret.append("[<a href=\"" + h(_url) + "\">" + h(_label) + "</a>]");
@@ -150,6 +152,7 @@ public class Overview
             {
                 ret.append(_label);
             }
+            ret.append("</span></span>");
             return ret.toString();
         }
     }
@@ -162,7 +165,7 @@ public class Overview
     public String toString()
     {
         StringBuilder ret = new StringBuilder();
-        ret.append("<style>.step-disabled, .step-disabled a:link, .step-disabled a:visited { color: silver; }</style>");
+        ret.append("<div class=\"overview\">\n");
         if (!StringUtils.isEmpty(_title))
         {
             ret.append("<b>");
@@ -195,6 +198,7 @@ public class Overview
             ret.append(miscAction);
             ret.append("<br>");
         }
+        ret.append("</div>");
         return ret.toString();
     }
 
