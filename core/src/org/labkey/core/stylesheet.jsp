@@ -398,6 +398,18 @@ TEXTAREA, .gwt-TextArea
     margin-right: 5px;
 }
 
+.overview .step
+{
+    padding-bottom: 0.5em;
+    padding-left: 1em;
+    text-indent: -1em;
+}
+
+.overview .step-disabled, .overview .step-disabled a:link, .overview .step-disabled a:visited
+{
+    color: silver;
+}
+
 <%--
 //
 // used by wiki (TODO: combine with cpas-webPart styles)
