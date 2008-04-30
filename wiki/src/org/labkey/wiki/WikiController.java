@@ -43,6 +43,7 @@ import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.common.util.Pair;
 import org.labkey.wiki.model.*;
+import org.labkey.wiki.renderer.RadeoxRenderer;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
@@ -2889,6 +2890,8 @@ public class WikiController extends SpringActionController
     @RequiresPermission(ACL.PERM_UPDATE)
     public class EditWikiAction extends SimpleViewAction<EditWikiForm>
     {
+        private WikiVersion _wikiVer = null;
+
         public ModelAndView getView(EditWikiForm form, BindException errors) throws Exception
         {
             //get the wiki
@@ -2908,13 +2911,19 @@ public class WikiController extends SpringActionController
             }
 
             WikiEditModel model = new WikiEditModel(getViewContext().getContainer(), wiki, curVersion, form.getRedirect());
-            
+
+            //cache the wiki so we can build the nav trail
+            _wikiVer = curVersion;
+
             return new JspView<WikiEditModel>("/org/labkey/wiki/view/wikiEdit.jsp", model);
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Edit");
+            ActionURL pageUrl = new ActionURL(WikiController.PageAction.class, getViewContext().getContainer());
+            pageUrl.addParameter("name", _wikiVer.getName());
+
+            return root.addChild(_wikiVer.getTitle(), pageUrl).addChild("Edit");
         }
     }
 
@@ -3250,5 +3259,138 @@ public class WikiController extends SpringActionController
             resp.put("attachments", attachments);
             return resp;
         }
+    }
+
+    public static class TransformWikiForm
+    {
+        private String _name;
+        private String _body;
+        private String _fromFormat;
+        private String _toFormat;
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
+
+        public String getBody()
+        {
+            return _body;
+        }
+
+        public void setBody(String body)
+        {
+            _body = body;
+        }
+
+        public String getFromFormat()
+        {
+            return _fromFormat;
+        }
+
+        public void setFromFormat(String fromFormat)
+        {
+            _fromFormat = fromFormat;
+        }
+
+        public String getToFormat()
+        {
+            return _toFormat;
+        }
+
+        public void setToFormat(String toFormat)
+        {
+            _toFormat = toFormat;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class TransformWikiAction extends ApiAction<TransformWikiForm>
+    {
+        public ApiResponse execute(TransformWikiForm form, BindException errors) throws Exception
+        {
+            if(null == form.getName() || form.getName().length() <= 0)
+                throw new IllegalArgumentException("The name parameter must be provided.");
+            
+            Container container = getViewContext().getContainer();
+            Wiki wiki = WikiManager.getWiki(container, form.getName());
+            if(null == wiki)
+                throw new NotFoundException("The wiki page named '" + form.getName() + "' was not found on the server. It may have been deleted by another user.");
+            
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            String newBody = form.getBody();
+
+            //currently, we can only transform from wiki to HTML
+            if(WikiRendererType.RADEOX.name().equals(form.getFromFormat())
+                    && WikiRendererType.HTML.name().equals(form.getToFormat()))
+            {
+                WikiVersion ver = wiki.latestVersion();
+                if(null != form.getBody())
+                    ver.setBody(form.getBody());
+                ver.setRendererType(form.getFromFormat());
+                newBody = ver.getHtml(container, wiki);
+            }
+
+            response.put("name", form.getName());
+            response.put("toFormat", form.getToFormat());
+            response.put("fromFormat", form.getFromFormat());
+            response.put("body", newBody);
+
+            return response;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class GetWikiTocAction extends ApiAction
+    {
+        public ApiResponse execute(Object form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            Container container = getViewContext().getContainer();
+            List<Wiki> pages = WikiManager.getWikisByParentId(container.getId(), -1);
+            response.put("pages", getChildrenProps(pages));
+
+            //include info about the current container
+            Map<String,Object> containerProps = new HashMap<String,Object>();
+            containerProps.put("name", container.getName());
+            containerProps.put("id", container.getId());
+            containerProps.put("path", container.getPath());
+            response.put("container", containerProps);
+            
+            return response;
+        }
+
+        public List<Object> getChildrenProps(List<Wiki> pages)
+        {
+            List<Object> ret = new ArrayList<Object>();
+            for(Wiki wiki : pages)
+            {
+                Map<String,Object> props = new HashMap<String,Object>();
+                props.put("name", wiki.getName());
+                props.put("pageLink", wiki.getPageLink());
+                props.put("entityId", wiki.getEntityId());
+                props.put("rowId", wiki.getRowId());
+                props.put("depth", wiki.getDepth());
+
+                WikiVersion version = wiki.latestVersion();
+                if(null != version)
+                    props.put("title", wiki.latestVersion().getTitle());
+
+                List<Wiki> children = wiki.getChildren();
+                if(null != children && children.size() > 0)
+                    props.put("children", getChildrenProps(children));
+
+                ret.add(props);
+            }
+            return ret;
+        }
+
+
     }
 }

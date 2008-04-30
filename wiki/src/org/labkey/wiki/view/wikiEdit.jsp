@@ -9,21 +9,17 @@
     JspView<WikiEditModel> me = (JspView<WikiEditModel>) HttpView.currentView();
     WikiEditModel model = me.getModelBean();
     final String ID_PREFIX = "wiki-input-";
+    String sep;
 %>
 
 <script type="text/javascript">
     LABKEY.requiresScript('tiny_mce/tiny_mce.js');
-    LABKEY.requiresScript('tiny_mce/init_tiny_mce.js');
 </script>
 <script type="text/javascript">
     LABKEY.requiresClientAPI();
 </script>
 
 <script type="text/javascript">
-
-    //TODO: delay init of tinyMCE if rendererType is not HTML
-    InitTinyMCE();
-
     //page-level variables
     var _idPrefix = <%=PageFlowUtil.jsString(ID_PREFIX)%>;
     var _wikiProps = {
@@ -41,7 +37,7 @@
         <%
         if(model.hasAttachments())
         {
-            String sep = "";
+            sep = "";
             for(Attachment att : model.getWiki().getAttachments())
             {
                 %>
@@ -52,29 +48,86 @@
         }
         %>
     ];
-
+    var _formats = {
+        <%
+            sep = "";
+            for(WikiRendererType format : WikiRendererType.values())
+            {
+        %>
+            <%=sep%>
+            <%=format.name()%>: <%=PageFlowUtil.jsString(format.getDisplayName())%>
+        <%
+                sep = ",";
+            }
+        %>
+    };
     var _redirUrl = <%=model.getRedir()%>;
     var _finished = false;
     var _newAttachmentIndex = 0;
+    var _doingSave = false;
 
-    function onReady()
-    {
+    //you must init the tinyMCE before the page finishes loading
+    //if you don't, you'll get a blank page an an error
+    //seems to be a limitation of the tinyMCE.
+    tinyMCE.init({
+        mode : "none",
+        theme : "advanced",
+        entity_encoding : "named",
+        entities : "160,nbsp,60,lt,62,gt,38,amp",
+        relative_urls : "true",
+        document_base_url : "",
+        plugins : "table,advhr,advlink,searchreplace,contextmenu,fullscreen,nonbreaking,cleanup",
+        theme_advanced_buttons1_add : "fontselect,fontsizeselect",
+        theme_advanced_buttons2_add : "separator,forecolor,backcolor",
+        theme_advanced_buttons2_add_before: "cut,copy,paste,separator,search,replace,separator",
+        theme_advanced_buttons3_add_before : "tablecontrols,separator",
+        theme_advanced_buttons3_add : "advhr,nonbreaking,separator,fullscreen",
+        theme_advanced_disable : "image,code,hr,removeformat,visualaid",
+        theme_advanced_layout_manager: "SimpleLayout",
+        width: "100%",
+        nonbreaking_force_tab : true,
+        fullscreen_new_window : false,
+        fullscreen_settings : {
+        theme_advanced_path_location : "top"},
+        theme_advanced_toolbar_location : "top",
+        theme_advanced_toolbar_align : "left",
+        theme_advanced_path_location : "bottom",
+        apply_source_formatting : true,
+        extended_valid_elements : "a[name|href|target|title|onclick],img[class|src|border=0|alt|title|hspace|vspace|width|height|align|onmouseover|onmouseout|name],hr[class|width|size|noshade],font[face|size|color|style],span[class|align|style]",
+        external_link_list_url : "example_data/example_link_list.js",
+        external_image_list_url : "example_data/example_image_list.js",
+        theme_advanced_statusbar_location: "bottom",
+        fix_list_elements : true
+        });
+
+    //the onReady function will execute after all elements
+    //have been loaded and parsed into the DOM
+    Ext.onReady(function(){
         updateControls(_wikiProps);
         updateExistingAttachments(_attachments);
         addNewAttachmentInput();
-    }
+        enableDeleteButton(null != _wikiProps.entityId);
 
-    Ext.onReady(onReady);
+        //if the format is HTML
+        //switch to visual or source if there are problemmatic elements
+        if(_wikiProps.rendererType == "HTML")
+        {
+            if(textContainsNonVisualElements(_wikiProps.body))
+            {
+                switchToSource();
+                setStatus("Switching to source editing mode because your page has elements that are not supported by the visual editor.", true);
+            }
+            else
+                switchToVisual();
+        }
+    });
 
     function onSave()
     {
-        if(!isDirty())
-        {
-            setStatus("Saved.");
-            onAfterSave();
+        if(_doingSave)
             return;
-        }
 
+        _doingSave = true;
         var wikiDataNew = gatherProps();
         
         setStatus("Saving...");
@@ -102,6 +155,11 @@
             Ext.Msg.confirm("Confirm Cancel", "Are you sure you want to cancel all your changes?", onCancelConfirmed);
         else
             window.location.href = _redirUrl;
+    }
+
+    function onDeletePage()
+    {
+        window.location.href = LABKEY.ActionURL.buildURL("wiki", "delete") + "?name=" + _wikiProps.name + "&rowId=" + _wikiProps.rowId;
     }
 
     function onCancelConfirmed(btn)
@@ -134,7 +192,7 @@
     }
 
 
-    function onSuccess(response, options)
+    function onSuccess(response)
     {
         //parse the response JSON
         var respJson = Ext.util.JSON.decode(response.responseText);
@@ -163,27 +221,29 @@
             else
             {
                 //no attachments to save
-                setStatus("Saved");
-                onAfterSave();
+                onSaveComplete();
             }
         }
         else
         {
+            _doingSave = false;
             //report validaton errors
             if(respJson.errors)
             {
-                var msg = "Unable to save changes due to the following validation errors:<ul>";
+                var msg = "Unable to save changes due to the following validation errors:<span style='text-align:left'><ul>";
                 for(var err in respJson.errors)
                     msg += "<li>" + respJson.errors[err] + "</li>";
-                msg += "</ul>";
+                msg += "</ul></span>";
                 setError(msg);
             }
             else
+            {
                 setError("Unable to save changes for an unknown reason.");
+            }
         }
     }
 
-    function onAttachmentSuccess(response, options)
+    function onAttachmentSuccess(response)
     {
         //parse the response JSON
         var respJson = Ext.util.JSON.decode(response.responseText);
@@ -197,19 +257,18 @@
         var status = "Saved."
         if(respJson.warnings)
         {
-            status = "Your changes were saved but the following warnings were returned:<ul>";
+            status = "Your changes were saved but the following warnings were returned:<span style='text-align:left'><ul>";
             for(var warning in respJson.warnings)
                 status += "<li>" + respJson.warnings[warning] + "</li>";
 
-            status += "</ul>";
+            status += "</ul></span>";
         }
-        setStatus(status);
-
-        onAfterSave();
+        onSaveComplete(status);
     }
 
-    function onAttachmentFailure(response, options)
+    function onAttachmentFailure(response)
     {
+        _doingSave = false;
         //parse the response JSON
         var respJson = Ext.util.JSON.decode(response.responseText);
         if(respJson.exception)
@@ -218,8 +277,9 @@
             setError("Unable to save attachments: " + response.statusText);
     }
 
-    function onError(response, options)
+    function onError(response)
     {
+        _doingSave = false;
         //parse the response JSON
         var respJson = Ext.util.JSON.decode(response.responseText);
         if(respJson.exception)
@@ -228,8 +288,15 @@
             setError("There was a problem while saving: " + response.statusText);
     }
 
-    function onAfterSave()
+    function onSaveComplete(statusMessage)
     {
+        _doingSave = false;
+        if(!statusMessage)
+            statusMessage = "Saved.";
+
+        setStatus(statusMessage, true);
+        enableDeleteButton(true);
+
         if(_finished)
             window.location.href = _redirUrl;
     }
@@ -291,13 +358,14 @@
         elem.setVisible(true);
     }
 
-    function setStatus(msg)
+    function setStatus(msg, autoClear)
     {
         var elem = Ext.get("status");
         elem.update(msg);
         elem.dom.className = "status-info";
         elem.setVisible(true);
-        setTimeout("clearStatus();", 5000);
+        if(autoClear)
+            setTimeout("clearStatus();", 5000);
     }
 
     function clearStatus()
@@ -309,22 +377,59 @@
 
     function switchToSource()
     {
+        setTabStripVisible(true);
+        document.getElementById("wiki-tab-visual").className = "tab-inactive";
+        document.getElementById("wiki-tab-source").className = "tab-active";
         if(tinyMCE.getEditorId("body"))
-        {
             tinyMCE.removeMCEControl(tinyMCE.getEditorId("body"));
-            document.getElementById("wiki-tab-visual").className = "tab-inactive";
-            document.getElementById("wiki-tab-source").className = "tab-active";
+    }
+
+    function switchToVisual(confirmOverride)
+    {
+        //check for elements that get mangled by the visual editor
+        if(!confirmOverride && textContainsNonVisualElements(Ext.get("<%=ID_PREFIX%>body").getValue()))
+        {
+            Ext.Msg.show({
+                title: "Warning",
+                msg: "Your page contains elements that are not supported by the visual editor and will thus be removed. Are you sure you want to switch to the visual editor?",
+                buttons: Ext.Msg.YESNO,
+                animEl: "wiki-tab-visual",
+                icon: Ext.Msg.QUESTION,
+                fn: function(btn){
+                    if(btn=="yes")
+                        switchToVisual(true);
+                }
+            });
+        }
+        else
+        {
+            setTabStripVisible(true);
+            document.getElementById("wiki-tab-visual").className = "tab-active";
+            document.getElementById("wiki-tab-source").className = "tab-inactive";
+            if(!tinyMCE.getEditorId("body"))
+                tinyMCE.addMCEControl(document.getElementById(_idPrefix + "body"), "body");
         }
     }
 
-    function switchToVisual()
+    function textContainsNonVisualElements(content)
     {
-        if(!tinyMCE.getEditorId("body"))
-        {
-            tinyMCE.addMCEControl(document.getElementById(_idPrefix + "body"), "body");
-            document.getElementById("wiki-tab-visual").className = "tab-active";
-            document.getElementById("wiki-tab-source").className = "tab-inactive";
-        }
+        var bodyText = new String(content);
+        bodyText.toLowerCase();
+
+        //look for pre, form, and script tags
+        return null != bodyText.match(/<pre[\s>]/) ||
+                null != bodyText.match(/<script[\s>]/) ||
+                null != bodyText.match(/<form[\s>]/)
+
+    }
+
+    function setTabStripVisible(isVisible)
+    {
+        Ext.get("wiki-tab-strip").setDisplayed(isVisible);
+        if(isVisible)
+            Ext.get("wiki-tab-content").addClass("tab-content");
+        else
+            Ext.get("wiki-tab-content").removeClass("tab-content");
     }
 
     function updateExistingAttachments(attachments)
@@ -339,10 +444,12 @@
         //clear the table
         table.innerHTML = "";
 
+        var row;
+        var cell;
         if(null == attachments || attachments.length == 0)
         {
-            var row = table.insertRow(0);
-            var cell = row.insertCell(0);
+            row = table.insertRow(0);
+            cell = row.insertCell(0);
             cell.innerHTML = "[none]";
         }
         else
@@ -350,18 +457,18 @@
             //add a row for each attachment
             for(var idx = 0; idx < attachments.length; ++idx)
             {
-                var newRow = table.insertRow(idx);
-                newRow.id = "wiki-ea-" + idx;
-                var cell = newRow.insertCell(0);
+                row = table.insertRow(idx);
+                row.id = "wiki-ea-" + idx;
+                cell = row.insertCell(0);
                 cell.id = "wiki-ea-icon-" + idx;
                 cell.innerHTML = "<img src='" + attachments[idx].iconUrl + "' id='wiki-ea-icon-img-" + idx + "'/>";
 
-                cell = newRow.insertCell(1);
+                cell = row.insertCell(1);
                 cell.id = "wiki-ea-name-" + idx;
                 //append name as a text node so that it gets HTML encoded
                 cell.appendChild(document.createTextNode(attachments[idx].name));
 
-                cell = newRow.insertCell(2);
+                cell = row.insertCell(2);
                 cell.id = "wiki-ea-del-" + idx;
                 cell.innerHTML = "[<a href='javascript:{}' onclick='onDeleteAttachment(" + idx + ")'>delete</a>]";
             }
@@ -490,12 +597,118 @@
         (tinyMCE.getEditorId("body") && tinyMCE.getInstanceById(tinyMCE.getEditorId("body")).isDirty());
     }
 
+    var _convertWin;
+    function showConvertWindow()
+    {
+        //initialize the from and possible to formats
+        Ext.get("<%=ID_PREFIX%>window-change-format-from").update(_formats[_wikiProps.rendererType]);
+        var toSelect = Ext.get("<%=ID_PREFIX%>window-change-format-to").dom;
+        toSelect.innerHTML = "";
+        for(var fmt in _formats)
+        {
+            if(fmt != _wikiProps.rendererType)
+            {
+                var opt = document.createElement("option");
+                opt.value = fmt;
+                opt.text = _formats[fmt];
+                toSelect.add(opt, null);
+            }
+        }
+
+        if(!_convertWin)
+        {
+            _convertWin = new Ext.Window({
+                animateTarget: "<%=ID_PREFIX%>button-change-format",
+                contentEl: "<%=ID_PREFIX%>window-change-format",
+                title: "Change Format",
+                width: 400,
+                autoHeight: true,
+                modal: true,
+                resizable: false,
+                closeAction: 'hide'
+            });
+        }
+        _convertWin.show("<%=ID_PREFIX%>button-change-format");
+    }
+
+    function convertFormat()
+    {
+        var newType = Ext.get("<%=ID_PREFIX%>window-change-format-to").getValue();
+        var transData = {name: _wikiProps.name, fromFormat: _wikiProps.rendererType, toFormat: newType};
+
+        updateSourceFromVisual();
+        transData.body = Ext.get("<%=ID_PREFIX%>body").getValue();
+
+        setStatus("Converting Format...");
+        Ext.Ajax.request({
+            url : LABKEY.ActionURL.buildURL("wiki", "transformWiki"),
+            method : 'POST',
+            success: onConvertSuccess,
+            failure: onConvertError,
+            jsonData : transData,
+            headers : {
+                'Content-Type' : 'application/json'
+            }
+        });
+    }
+
+    function onConvertSuccess(response)
+    {
+        var respJson = Ext.util.JSON.decode(response.responseText);
+
+        _wikiProps.rendererType = respJson.toFormat;
+
+        //if the new type is not html, switch to source and hide the tab strip
+        if(respJson.toFormat != "HTML")
+        {
+            switchToSource();
+            setTabStripVisible(false);
+            updateControl("body", respJson.body);
+        }
+        else if(respJson.toFormat == "HTML")
+        {
+            updateControl("body", respJson.body);
+            //if the new type is HTML, switch to visual
+            switchToVisual();
+        }
+
+        setWikiDirty();
+
+        //hide the convert window
+        _convertWin.hide();
+
+        setStatus("Converted.", true);
+    }
+
+    function onConvertError(response)
+    {
+        var respJson = Ext.util.JSON.decode(response.responseText);
+        if(respJson.exception)
+            setError("Unable to convert your page to the new format for the following reason:<br/>" + respJson.exception);
+        else
+            setError("Unable to convert your page to the new format: " + response.statusText);
+    }
+
+    function cancelConvertFormat()
+    {
+        if(_convertWin)
+            _convertWin.hide();
+    }
+
+    function enableDeleteButton(enable)
+    {
+        var src = enable ? <%=PageFlowUtil.jsString(PageFlowUtil.buttonSrc("Delete Page"))%> : <%=PageFlowUtil.jsString(PageFlowUtil.buttonSrc("Delete Page", "disabled"))%>;
+        var elem = document.getElementById(_idPrefix+"button-delete");
+        if(elem)
+            elem.src = src;
+    }
+
 </script>
 
 <style type="text/css">
     .status-info
     {
-        width: 100%;
+        width: 99%;
         text-align: center;
         background-color: #FFDF8C;
         border: 1px solid #FFAD6A;
@@ -504,30 +717,39 @@
     }
     .status-error
     {
-        width: 100%;
+        width: 99%;
         text-align: center;
-        background-color: #E42217;
+        background-color: #FF5A7A;
         border: 1px solid #C11B17;
         color: #FFFFFF;
         font-weight: bold;
     }
     table.form-layout
     {
-        width: 100%;
+        width: 99%;
     }
     .stretch-input
     {
-        width: 100%;
+        width: 99%;
     }
     .button-bar
     {
         padding: 4px;
-        vertical-align: middle;
+        width: 99%;
+    }
+    .button-bar-right
+    {
+        text-align: right;
+        width: 50%;
+    }
+    .button-bar-left
+    {
+        text-align: left;
+        width: 50%
     }
     .tab-container
     {
-        width: 100%;
-        border-spacing: 0;
+        
     }
     .tab-active
     {
@@ -569,29 +791,41 @@
 
 <div id="status" class="status-info" style="visibility: hidden;">(status)</div>
 
-<div class="button-bar">
-    <a href="javascript:{}" onclick="onSave()"><%=PageFlowUtil.buttonImg("Save")%></a>
-    <a href="javascript:{}" onclick="onFinish()"><%=PageFlowUtil.buttonImg("Save and Finish")%></a>
-    <a href="javascript:{}" onclick="onCancel()"><%=PageFlowUtil.buttonImg("Cancel")%></a>
-</div>
+<table class="button-bar">
+    <tr>
+        <td class="button-bar-left">
+            <%=PageFlowUtil.buttonLink("Save", "javascript:{}", "onSave()")%>
+            <%=PageFlowUtil.buttonLink("Save and Finish", "javascript:{}", "onFinish()")%>
+            <%=PageFlowUtil.buttonLink("Cancel", "javascript:{}", "onCancel()")%>
+        </td>
+        <td class="button-bar-right">
+            <a href="javascript:{}" onclick="showConvertWindow()">
+                <img id="<%=ID_PREFIX%>button-change-format" src="<%=PageFlowUtil.buttonSrc("Convert To...")%>" alt="Convert To..."/>
+            </a>
+            <a href="javascript:{}" onclick="onDeletePage()">
+                <img id="<%=ID_PREFIX%>button-delete" src="<%=PageFlowUtil.buttonSrc("Delete Page", "disabled")%>" alt="Delete Page"/>
+            </a>
+        </td>
+    </tr>
+</table>
 
 <table class="form-layout">
     <tr>
         <td class="ms-searchform">Name</td>
         <td class="field-content">
-            <input type="text" name="name" id="<%=ID_PREFIX%>name" class="stretch-input" onchange="onChangeName()"/>
+            <input type="text" name="name" id="<%=ID_PREFIX%>name" size="80" onchange="onChangeName()"/>
         </td>
     </tr>
     <tr>
         <td class="ms-searchform">Title</td>
         <td class="field-content">
-            <input type="text" name="name" id="<%=ID_PREFIX%>title" class="stretch-input" onchange="setWikiDirty()"/>
+            <input type="text" name="name" id="<%=ID_PREFIX%>title" size="80" onchange="setWikiDirty()"/>
         </td>
     </tr>
     <tr>
         <td class="ms-searchform">Parent</td>
         <td class="field-content">
-            <select name="parent" id="<%=ID_PREFIX%>parent" class="stretch-input" onchange="setWikiDirty()">
+            <select name="parent" id="<%=ID_PREFIX%>parent" onchange="setWikiDirty()">
                 <option <%= model.getParent() == -1 ? "selected='1'" : "" %> value="-1">[none]</option>
                 <%
                     for (Wiki possibleParent : model.getPossibleParents())
@@ -611,14 +845,14 @@
         <td class="ms-searchform">Body</td>
         <td class="field-content">
             <table class="tab-container" cellspacing="0">
-                <tr>
+                <tr id="wiki-tab-strip" style="display:none">
                     <td class="tab-blank">&nbsp;</td>
                     <td id="wiki-tab-visual" class="tab-active"><a href="javascript:{}" onclick="switchToVisual()">Visual</a></td>
                     <td id="wiki-tab-source" class="tab-inactive"><a href="javascript:{}" onclick="switchToSource()">Source</a></td>
                     <td class="tab-blank" style="width:100%">&nbsp;</td>
                 </tr>
                 <tr>
-                    <td colspan="4" class="tab-content">
+                    <td colspan="4" id="wiki-tab-content">
                         <textarea rows="30" cols="80" class="stretch-input" id="<%=ID_PREFIX%>body"
                                   name="body" onchange="setWikiDirty()"></textarea>
                     </td>
@@ -649,9 +883,46 @@
     </tr>
 </table>
 
-<div class="button-bar">
-    <a href="javascript:{}" onclick="onSave()"><%=PageFlowUtil.buttonImg("Save")%></a>
-    <a href="javascript:{}" onclick="onFinish()"><%=PageFlowUtil.buttonImg("Save and Finish")%></a>
-    <a href="javascript:{}" onclick="onCancel()"><%=PageFlowUtil.buttonImg("Cancel")%></a>
-</div>
+<table class="button-bar">
+    <tr>
+        <td class="button-bar-left">
+            <%=PageFlowUtil.buttonLink("Save", "javascript:{}", "onSave()")%>
+            <%=PageFlowUtil.buttonLink("Save and Finish", "javascript:{}", "onFinish()")%>
+            <%=PageFlowUtil.buttonLink("Cancel", "javascript:{}", "onCancel()")%>
+        </td>
+        <td class="button-bar-right">
+            <a href="javascript:{}" onclick="showConvertWindow()"><%=PageFlowUtil.buttonImg("Convert To...")%></a>
+            <%=PageFlowUtil.buttonLink("Delete Page", "javascript:{}", "onDeletePage()")%>
+        </td>
+    </tr>
+</table>
 
+<div id="<%=ID_PREFIX%>window-change-format" class="x-hidden">
+    <table cellpadding="2">
+        <tr>
+            <td>
+                <span style="font-weight:bold;color:#FF0000">WARNING:</span>
+                Changing the format of your page will change the way
+                your page is interpreted, causing it to appear at least differently,
+                if not incorrectly. In most cases, manual adjustment to the
+                page content will be necessary. You should not perform this
+                operation unless you know what you are doing.
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Convert page format from
+                <b id="<%=ID_PREFIX%>window-change-format-from">(from)</b>
+                to
+                <select id="<%=ID_PREFIX%>window-change-format-to">
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right">
+                <%=PageFlowUtil.buttonLink("Convert", "javascript:{}", "convertFormat()")%>
+                <%=PageFlowUtil.buttonLink("Cancel", "javascript:{}", "cancelConvertFormat()")%>
+            </td>
+        </tr>
+    </table>
+</div>
