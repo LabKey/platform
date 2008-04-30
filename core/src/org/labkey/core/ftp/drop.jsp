@@ -54,6 +54,7 @@ LABKEY.writeApplet({
     params:{
         scheme:<%=PageFlowUtil.jsString(dropPage.getScheme())%>,
         host:<%=PageFlowUtil.jsString(dropPage.getHost())%>,
+        port:<%=PageFlowUtil.jsString(dropPage.getPort())%>,
         user:<%=PageFlowUtil.jsString(context.getUser().getEmail())%>,
         password:<%=PageFlowUtil.jsString(sessionId)%>,
         defaultDirectory:<%=PageFlowUtil.jsString(dropPage.getPath(context.getContainer()))%>,

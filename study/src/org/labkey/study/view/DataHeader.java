@@ -69,8 +69,8 @@ public class DataHeader extends HttpView
 
     public void setSelectedCohort(Cohort selectedCohort)
     {
-        if (selectedCohort != null && !StudyManager.getInstance().showCohorts(getViewContext().getContainer(), getViewContext().getUser()))
-            throw new IllegalStateException("User does not have permissions to view cohort information.");
+        if (selectedCohort != null)
+            StudyManager.getInstance().assertCohortsViewable(getViewContext().getContainer(), getViewContext().getUser());
         _selectedCohort = selectedCohort;
     }
 

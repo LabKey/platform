@@ -1265,7 +1265,7 @@ public class SpringSpecimenController extends BaseStudyController
                 }
             }
             SimpleFilter filter = null;
-            if (!context.getUser().isAdministrator())
+            if (!context.getContainer().hasPermission(context.getUser(), ACL.PERM_ADMIN))
             {
                 if (!SampleManager.getInstance().isSpecimenShoppingCartEnabled(context.getContainer()))
                     HttpView.throwUnauthorized();

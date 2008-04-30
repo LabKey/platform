@@ -1,0 +1,1 @@
+alter table query.customview alter column queryname type varchar(200);

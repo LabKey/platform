@@ -1,5 +1,6 @@
 package org.labkey.study.reports;
 
+import org.labkey.api.data.DataRegion;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.QueryReport;
@@ -135,14 +136,17 @@ public class StudyQueryReport extends QueryReport
             view.delete(context.getUser(), context.getRequest());
     }
 
-    public CrosstabReportDescriptor.QueryViewGenerator getQueryViewGenerator()
+    public QueryReportDescriptor.QueryViewGenerator getQueryViewGenerator()
     {
-        return new CrosstabReportDescriptor.QueryViewGenerator() {
+        return new QueryReportDescriptor.QueryViewGenerator() {
             public ReportQueryView generateQueryView(ViewContext context, ReportDescriptor descriptor) throws Exception
             {
-                return ReportQueryViewFactory.get().generateQueryView(context, descriptor, 
-                        descriptor.getProperty(QueryParam.queryName.toString()),
-                        descriptor.getProperty(QueryParam.viewName.toString()));
+                ReportQueryView view = ReportQueryViewFactory.get().generateQueryView(context, descriptor,
+                        descriptor.getProperty(ReportDescriptor.Prop.queryName),
+                        descriptor.getProperty(ReportDescriptor.Prop.viewName));
+                view.setShowRReportButton(false);
+                view.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
+                return view;
             }
         };
     }

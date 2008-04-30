@@ -191,8 +191,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
 
     protected void addCohortFilter(SimpleFilter filter, Integer cohortId)
     {
-        if (!StudyManager.getInstance().showCohorts(getContainer(), getUser()))
-            throw new IllegalStateException("User does not have permissions to view cohort information.");
+        StudyManager.getInstance().assertCohortsViewable(getContainer(), getUser());
         if (cohortId != null)
         {
             filter.addWhereClause("ptid IN\n" +

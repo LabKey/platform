@@ -33,7 +33,6 @@
 <%= buttonImg("Done", "document.manageCohorts.reshowPage.value='false'; return true;")%>
 <%= buttonLink("Cancel", new ActionURL(StudyController.ManageStudyAction.class, me.getViewContext().getContainer()))%>
 <input type="hidden" name="reshowPage" value="true">
-<input type="hidden" name="refreshParticipants" value="false">
 <input type="hidden" name="clearParticipants" value="false">
 <%
     WebPartView.startTitleFrame(out, "Currently Defined Cohorts", null, null, null);
@@ -136,7 +135,7 @@
         <tr>
             <td>&nbsp;</td>
             <td>
-                <%= buttonImg("Update Assignments", "if (confirm('Refreshing will update cohort information for all participants.  Continue?')) { document.manageCohorts.refreshParticipants.value='true'; return true; } else return false;")%>
+                <%= buttonImg("Update Assignments")%>
                 <%= buttonImg("Clear Assignments", "if (confirm('Refreshing will clear cohort information for all participants.  Continue?')) { document.manageCohorts.clearParticipants.value='true'; return true; } else return false;")%>
             </td>
         </tr>

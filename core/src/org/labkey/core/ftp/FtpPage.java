@@ -5,6 +5,7 @@ import org.labkey.api.ftp.FtpConnector;
 import org.labkey.api.security.User;
 import org.labkey.api.util.AppProps;
 import org.labkey.api.util.PageFlowUtil;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Created by IntelliJ IDEA.
@@ -28,7 +29,7 @@ public class FtpPage
 
     public String getPort()
     {
-        return AppProps.getInstance().getPipelineFTPPort();
+        return StringUtils.defaultIfEmpty(AppProps.getInstance().getPipelineFTPPort(),"21");
     }
 
     // encoded path

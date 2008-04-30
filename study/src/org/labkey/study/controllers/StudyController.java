@@ -2800,7 +2800,6 @@ public class StudyController extends BaseStudyController
         private Integer _participantCohortDataSetId;
         private String _participantCohortProperty;
         private boolean _reshowPage;
-        private boolean _refreshParticipants;
         private boolean _clearParticipants;
 
         public int[] getIds()
@@ -2861,16 +2860,6 @@ public class StudyController extends BaseStudyController
         public void setReshowPage(boolean reshowPage)
         {
             _reshowPage = reshowPage;
-        }
-
-        public boolean isRefreshParticipants()
-        {
-            return _refreshParticipants;
-        }
-
-        public void setRefreshParticipants(boolean refreshParticipants)
-        {
-            _refreshParticipants = refreshParticipants;
         }
 
         public boolean isClearParticipants()
@@ -2974,9 +2963,6 @@ public class StudyController extends BaseStudyController
     {
         public void validateCommand(ManageCohortsForm form, Errors errors)
         {
-            if (form.isClearParticipants() && form.isRefreshParticipants())
-                throw new IllegalStateException("cannot clear and update cohorts simultaneously.");
-
             Set<String> labels = new HashSet<String>();
             if (form.getLabels() != null)
             {
@@ -3024,26 +3010,31 @@ public class StudyController extends BaseStudyController
             }
 
             Study study = StudyManager.getInstance().getStudy(getContainer());
-            if (!nullSafeEqual(study.getParticipantCohortProperty(), form.getParticipantCohortProperty()) ||
-                    !nullSafeEqual(study.getParticipantCohortDataSetId(), form.getParticipantCohortDataSetId()))
+            if (!form.isClearParticipants() && 
+                    (!nullSafeEqual(study.getParticipantCohortProperty(), form.getParticipantCohortProperty()) ||
+                    !nullSafeEqual(study.getParticipantCohortDataSetId(), form.getParticipantCohortDataSetId())))
             {
                 study = study.createMutable();
                 study.setParticipantCohortDataSetId(form.getParticipantCohortDataSetId());
                 study.setParticipantCohortProperty(form.getParticipantCohortProperty());
                 StudyManager.getInstance().updateStudy(getUser(), study);
+                StudyManager.getInstance().updateParticipantCohorts(getUser(), study);
             }
 
-            if (form.isRefreshParticipants())
-                StudyManager.getInstance().updateParticipantCohorts(getUser(), study);
-            else if (form.isClearParticipants())
+            if (form.isClearParticipants())
             {
                 study = study.createMutable();
                 study.setParticipantCohortDataSetId(null);
                 study.setParticipantCohortProperty(null);
                 StudyManager.getInstance().updateStudy(getUser(), study);
-                StudyManager.getInstance().clearParticipantCohorts(getUser(), study);
             }
 
+            if (form.isClearParticipants() ||
+                    form.getParticipantCohortProperty() == null || 
+                    form.getParticipantCohortDataSetId() == null)
+            {
+                StudyManager.getInstance().clearParticipantCohorts(getUser(), study);
+            }
             return true;
         }
 
@@ -3668,8 +3659,10 @@ public class StudyController extends BaseStudyController
                 DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getStudy(), allIds[i]);
                 boolean show = visible.contains(allIds[i]);
                 String category = form.getExtraData()[i];
-                Integer cohortId = form.getCohort()[i];
-                if (cohortId.intValue() == -1)
+                Integer cohortId = null;
+                if (form.getCohort() != null)
+                    cohortId = form.getCohort()[i];
+                if (cohortId != null && cohortId.intValue() == -1)
                     cohortId = null;
                 String label = form.getLabel()[i];
                 if (def.isShowByDefault() != show || !nullSafeEqual(category, def.getCategory()) || !nullSafeEqual(label, def.getLabel()) || !BaseStudyController.nullSafeEqual(cohortId, def.getCohortId()))

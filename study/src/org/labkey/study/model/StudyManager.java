@@ -373,10 +373,10 @@ public class StudyManager
 
     public boolean showCohorts(Container container, User user)
     {
-        if (user.isAdministrator())
-            return true;
         Study study = StudyManager.getInstance().getStudy(container);
         Integer cohortDatasetId = study.getParticipantCohortDataSetId();
+        if (user.isAdministrator())
+            return cohortDatasetId != null;
         if (cohortDatasetId != null)
         {
             DataSetDefinition def = getDataSetDefinition(study, cohortDatasetId);
@@ -386,10 +386,27 @@ public class StudyManager
         return false;
     }
 
+    public void assertCohortsViewable(Container container, User user)
+    {
+        if (!user.isAdministrator())
+        {
+            Study study = StudyManager.getInstance().getStudy(container);
+            Integer cohortDatasetId = study.getParticipantCohortDataSetId();
+            if (cohortDatasetId != null)
+            {
+                DataSetDefinition def = getDataSetDefinition(study, cohortDatasetId);
+                if (def != null)
+                {
+                    if (!def.canRead(user))
+                        throw new IllegalStateException("User does not have permissions to view cohort information.");
+                }
+            }
+        }
+    }
+
     public Cohort[] getCohorts(Container container, User user)
     {
-        if (!showCohorts(container, user))
-            throw new IllegalStateException("User does not have permission to see cohort information.");
+        assertCohortsViewable(container, user);
         try
         {
             SimpleFilter filter = new SimpleFilter("Container", container);
@@ -403,8 +420,7 @@ public class StudyManager
 
     public Cohort getCohortForParticipant(Container container, User user, String participantId) throws SQLException
     {
-        if (!showCohorts(container, user))
-            throw new IllegalStateException("User does not have permission to see cohort information.");
+        assertCohortsViewable(container, user);
         Participant participant = getParticipant(getStudy(container), participantId);
         if (participant != null && participant.getCohortId() != null)
             return getCohortForRowId(container, user, participant.getCohortId());
@@ -413,8 +429,7 @@ public class StudyManager
 
     public Cohort getCohortForRowId(Container container, User user, int rowId)
     {
-        if (!showCohorts(container, user))
-            throw new IllegalStateException("User does not have permission to see cohort information.");
+        assertCohortsViewable(container, user);
         Cohort cohort = Table.selectObject(StudySchema.getInstance().getTableInfoCohort(), rowId, Cohort.class);
         if (cohort != null && !container.equals(cohort.getContainer()))
             return null;

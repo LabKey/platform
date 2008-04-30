@@ -28,7 +28,7 @@ public class QueryModule extends DefaultModule
     public static final String NAME = "Query";
     public QueryModule()
     {
-        super(NAME, 8.10, null, true, new QueryWebPartFactory(), new ReportsWebPartFactory());
+        super(NAME, 8.11, null, true, new QueryWebPartFactory(), new ReportsWebPartFactory());
         addController("query", QueryControllerSpring.class);
         addController("reports", ReportsController.class);
         addController("dbuserschema", DbUserSchemaController.class);
