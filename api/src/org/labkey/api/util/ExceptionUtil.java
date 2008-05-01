@@ -166,9 +166,16 @@ public class ExceptionUtil
                 report.addServerSessionParams();
                 if (originalURL != null)
                 {
-                    ActionURL url = new ActionURL(originalURL);
-                    report.addParam("pageflowName", url.getPageFlow());
-                    report.addParam("pageflowAction", url.getAction());
+                    try
+                    {
+                        ActionURL url = new ActionURL(originalURL);
+                        report.addParam("pageflowName", url.getPageFlow());
+                        report.addParam("pageflowAction", url.getAction());
+                    }
+                    catch (IllegalArgumentException x)
+                    {
+                        // fall through
+                    }
                 }
                 if (level == ExceptionReportingLevel.MEDIUM || level == ExceptionReportingLevel.HIGH)
                 {

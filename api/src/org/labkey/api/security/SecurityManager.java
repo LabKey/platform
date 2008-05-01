@@ -211,7 +211,7 @@ public class SecurityManager
     {
         synchronized (_listeners)
         {
-            return _listeners.toArray(new GroupListener[0]);
+            return _listeners.toArray(new GroupListener[_listeners.size()]);
         }
     }
 
@@ -400,7 +400,7 @@ public class SecurityManager
             User sessionUser = null;
             Integer userId = (Integer) request.getSession(true).getAttribute(User.class.getName() + "$userId");
             if (null != userId)
-                sessionUser = UserManager.getUser(userId);
+                sessionUser = UserManager.getUser(userId.intValue());
             if (null != sessionUser)
             {
                 // We want groups membership to be calculated on every request (but just once)
@@ -415,13 +415,15 @@ public class SecurityManager
         if (null == u)
         {
             // Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
-            // NOTE: we don't optimize this case, the user is not cached anywhere
             String authorization = request.getHeader("Authorization");
             if (null != authorization && authorization.startsWith("Basic"))
             {
                 u = authenticateBasic(authorization.substring("Basic".length()).trim());
                 if (null != u)
+                {
                     request.setAttribute(AUTHENTICATION_METHOD, "Basic");
+                    SecurityManager.setAuthenticatedUser(request, u);
+                }
             }
         }
         return null == u || u.isGuest() ? null : u;

@@ -112,13 +112,17 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
         return findEntry(key.hashCode(), key);
     }
 
+    protected boolean eq(Object a, Object b)
+    {
+        return a.equals(b);
+    }
 
     protected Entry<K,V> findEntry(int hash, Object key)
     {
         Entry e = buckets[bucketIndex(hash)];
         while (null != e)
         {
-            if (hash == e.hash && key.equals(e.getKey()))
+            if (hash == e.hash && eq(key, e.getKey()))
                 break;
             e = e.overflow;
         }
@@ -168,7 +172,7 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
         Entry e = buckets[h];
         while (null != e)
         {
-            if (hash == e.hash && key.equals(e.getKey()))
+            if (hash == e.hash && eq(key,e.getKey()))
                 break;
             prev = e;
             e = e.overflow;

@@ -205,6 +205,11 @@
         <servlet-class>org.labkey.api.attachments.ImageServlet</servlet-class>
     </servlet>
 
+	<servlet>
+		<servlet-name>webdav</servlet-name>
+		<servlet-class>org.labkey.core.webdav.WebdavServlet</servlet-class>
+	</servlet>
+
     <servlet>
         <servlet-name>action</servlet-name>
         <servlet-class>org.apache.beehive.netui.pageflow.PageFlowActionServlet</servlet-class>
@@ -291,6 +296,11 @@
     <servlet-mapping>
         <servlet-name>FileServlet</servlet-name>
         <url-pattern>/files/*</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>webdav</servlet-name>
+        <url-pattern>/webdav/*</url-pattern>
     </servlet-mapping>
 
     <welcome-file-list>

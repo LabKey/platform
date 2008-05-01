@@ -61,6 +61,18 @@ public class ContainerManager
     public static final String HOME_PROJECT_PATH = "/home";
     public static final String CONTAINER_AUDIT_EVENT = "ContainerAuditEvent";
 
+
+    // enum of properties you can see in property change events
+    public enum Property
+    {
+        Name,
+        Parent,
+        ACL,
+        WebRoot,
+        AttachmentDirectory,
+        PipelineRoot
+    }
+
     private static Cache getCache()
     {
         return Cache.getShared();
@@ -994,7 +1006,11 @@ public class ContainerManager
     {
         Container c = getForId(id);
         if (null != c)
+        {
             _removeFromCache(c);
+            ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(c, Property.ACL, null, null);
+            firePropertyChangeEvent(evt);
+        }
     }
 
 
@@ -1197,12 +1213,23 @@ public class ContainerManager
 
     public interface ContainerListener extends PropertyChangeListener
     {
-        //void wantsToDelete(Container c, List<String> messages);
         void containerCreated(Container c);
 
         void containerDeleted(Container c, User user);
     }
 
+    public static class ContainerPropertyChangeEvent extends PropertyChangeEvent
+    {
+        public final Property property;
+        public final Container container;
+        
+        public ContainerPropertyChangeEvent(Container c, Property p, Object oldValue, Object newValue)
+        {
+            super(c, p.name(), oldValue, newValue);
+            container = c;
+            property = p;
+        }
+    }
 
     static final ArrayList<ContainerListener> _listeners = new ArrayList<ContainerListener>();
 
@@ -1258,29 +1285,24 @@ public class ContainerManager
         }
         return errors;
     }
-    
+
 
     protected static void fireRenameContainer(Container c, String oldValue)
     {
-        PropertyChangeEvent evt = new PropertyChangeEvent(c, "Name", oldValue, c.getName());
-        ContainerListener[] list = getListeners();
-        for (ContainerListener l : list)
-        {
-            try
-            {
-                l.propertyChange(evt);
-            }
-            catch (Throwable t)
-            {
-                _log.error("fireRenameContainer", t);
-            }
-        }
+        ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(c, Property.Name, oldValue, c.getName());
+        firePropertyChangeEvent(evt);
     }
 
 
     protected static void fireMoveContainer(Container c, Container oldParent)
     {
-        PropertyChangeEvent evt = new PropertyChangeEvent(c, "Parent", oldParent, c.getParent());
+        ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(c, Property.Parent, oldParent, c.getParent());
+        firePropertyChangeEvent(evt);
+    }
+
+
+    public static void firePropertyChangeEvent(ContainerPropertyChangeEvent evt)
+    {
         ContainerListener[] list = getListeners();
         for (ContainerListener l : list)
         {
@@ -1294,6 +1316,7 @@ public class ContainerManager
             }
         }
     }
+
 
     public static Container getDefaultSupportContainer()
     {
