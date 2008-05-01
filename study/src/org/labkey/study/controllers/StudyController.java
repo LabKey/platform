@@ -456,6 +456,7 @@ public class StudyController extends BaseStudyController
             qs.setSchemaName(querySchema.getSchemaName());
             qs.setQueryName(def.getLabel());
             DataSetQueryView queryView = new DataSetQueryView(_datasetId, querySchema, qs, visit, cohort);
+            queryView.setForExport(export != null);
             setColumnURL(url, queryView, querySchema, def);
 
             // clear the property map cache and the sort map cache
@@ -472,6 +473,7 @@ public class StudyController extends BaseStudyController
             }
 
             List<ActionButton> buttonBar = new ArrayList<ActionButton>();
+
             MenuButton exportMenuButton = new MenuButton("Export");
 
             exportMenuButton.addMenuItem("Export all to Excel (.xls)", url.getEncodedLocalURIString() + "&amp;export=xls");
@@ -479,9 +481,21 @@ public class StudyController extends BaseStudyController
             exportMenuButton.addMenuItem("Excel Web Query (.iqy)", queryView.urlFor(QueryAction.excelWebQueryDefinition).getLocalURIString());
             buttonBar.add(exportMenuButton);
 
+            ActionURL insertURL = new ActionURL(DatasetController.InsertAction.class, getContainer());
+            insertURL.addParameter("datasetId", _datasetId);
+            ActionButton insertButton = new ActionButton(insertURL.getLocalURIString(), "Insert New", DataRegion.MODE_GRID, ActionButton.Action.LINK);
+            buttonBar.add(insertButton);
+
             ActionButton uploadButton = new ActionButton("showImportDataset.view?datasetId=" + _datasetId, "Import Data", DataRegion.MODE_GRID, ActionButton.Action.LINK);
             uploadButton.setDisplayPermission(ACL.PERM_INSERT);
             buttonBar.add(uploadButton);
+
+            ActionButton deleteRows = new ActionButton("button", "Delete Selected");
+            String deleteRowsURL = ActionURL.toPathString("Study", "deleteDatasetRows", getContainer()) + "?datasetId=" + _datasetId;
+            deleteRows.setScript("return confirm(\"Delete selected rows of this dataset?\") && verifySelected(this.form, \"" + deleteRowsURL + "\", \"post\", \"rows\")");
+            deleteRows.setActionType(ActionButton.Action.GET);
+            deleteRows.setDisplayPermission(ACL.PERM_DELETE);
+            buttonBar.add(deleteRows);
 
             if (null == visit)
             {
@@ -491,13 +505,6 @@ public class StudyController extends BaseStudyController
                 purgeButton.setActionType(ActionButton.Action.GET);
                 buttonBar.add(purgeButton);
             }
-
-            ActionButton deleteRows = new ActionButton("button", "Delete Selected");
-            String deleteRowsURL = ActionURL.toPathString("Study", "deleteDatasetRows", getContainer()) + "?datasetId=" + _datasetId;
-            deleteRows.setScript("return confirm(\"Delete selected rows of this dataset?\") && verifySelected(this.form, \"" + deleteRowsURL + "\", \"post\", \"rows\")");
-            deleteRows.setActionType(ActionButton.Action.GET);
-            deleteRows.setDisplayPermission(ACL.PERM_DELETE);
-            buttonBar.add(deleteRows);
 
             ActionButton viewSamples = new ActionButton("button", "View Specimens");
             String viewSamplesURL = ActionURL.toPathString("Study-Samples", "selectedSamples", getContainer());

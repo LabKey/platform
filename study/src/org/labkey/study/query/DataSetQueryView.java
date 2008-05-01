@@ -35,6 +35,7 @@ public class DataSetQueryView extends QueryView
     private final Visit _visit;
     private final Cohort _cohort;
     private boolean _showSourceLinks;
+    private boolean _forExport;
     public static final String DATAREGION = "Dataset";
 
     public DataSetQueryView(int datasetId, UserSchema schema, QuerySettings settings, Visit visit, Cohort cohort)
@@ -103,8 +104,7 @@ public class DataSetQueryView extends QueryView
             }
         }
         // Only show link to edit for editors
-        // TODO: work in progress. For now, disable this function
-        if (getViewContext().hasPermission(ACL.PERM_UPDATE) && false)
+        if (!_forExport && getViewContext().hasPermission(ACL.PERM_ADMIN))
         {
             TableInfo tableInfo = view.getDataRegion().getTable();
             ColumnInfo lsidColumn = tableInfo.getColumn("lsid");
@@ -147,6 +147,7 @@ public class DataSetQueryView extends QueryView
         public DatasetEditColumn(Container container, ColumnInfo lsidColumn)
         {
             super();
+            setWidth(null);
             this.container = container;
             this.lsidColumn = lsidColumn;
         }
@@ -219,5 +220,10 @@ public class DataSetQueryView extends QueryView
     public void setShowSourceLinks(boolean showSourceLinks)
     {
         _showSourceLinks = showSourceLinks;
+    }
+
+    public void setForExport(boolean forExport)
+    {
+        _forExport = forExport;
     }
 }
