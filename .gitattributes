@@ -1042,6 +1042,10 @@ pipeline/webapp/WEB-INF/classes/share/schema/wsrf/servicegroup/WS-ServiceGroup.w
 pipeline/webapp/WEB-INF/classes/share/schema/wsrf/servicegroup/WS-ServiceGroup.xsd -text
 pipeline/webapp/WEB-INF/classes/share/schema/wsrf/servicegroup/WS-ServiceGroup_bindings.wsdl -text
 pipeline/webapp/WEB-INF/classes/share/schema/wsrf/servicegroup/WS-ServiceGroup_service.wsdl -text
+pipeline/webapp/WEB-INF/etc/globus_wsrf_core/client-server-config.wsdd -text
+pipeline/webapp/WEB-INF/etc/globus_wsrf_core/global_security_descriptor.xml -text
+pipeline/webapp/WEB-INF/etc/globus_wsrf_core/server-config.wsdd -text
+pipeline/webapp/WEB-INF/etc/globus_wsrf_core_registry/server-config.wsdd -text
 pipeline/webapp/WEB-INF/pipeline/pipelineContext.xml -text
 pipeline/webapp/WEB-INF/schema/core/management/shutdown_bindings.wsdl -text
 pipeline/webapp/WEB-INF/schema/core/management/shutdown_port_type.wsdl -text
