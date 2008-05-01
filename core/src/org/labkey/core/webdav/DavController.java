@@ -317,47 +317,62 @@ public class DavController extends SpringActionController
 
         public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception
         {
-            _log.debug(request.getMethod() + " " + getResourcePath());
-
-            assertMethod();
-            WebdavStatus ret = doMethod();
-
-            if (null != ret && ret != WebdavStatus.SC_OK && null == getResponse().getStatus())
+            try
             {
-                if (200 <= ret.code && ret.code < 300)
+                _log.debug(request.getMethod() + " " + getResourcePath());
+                assertMethod();
+                WebdavStatus ret = doMethod();
+
+                if (null != ret && ret != WebdavStatus.SC_OK && null == getResponse().getStatus())
                 {
-                    getResponse().setStatus(ret);
-                }
-                else if (ret == WebdavStatus.SC_UNAUTHORIZED)
-                {
-                    WebdavResolver.Resource resource = getResponse()._unauthorizedResource;
-                    assert null != resource;
-                    if (!getUser().isGuest())
+                    if (200 <= ret.code && ret.code < 300)
                     {
-                        getResponse().sendError(WebdavStatus.SC_FORBIDDEN, resource.getPath());
+                        getResponse().setStatus(ret);
                     }
-                    else if (resource.isCollection() && isBrowser() && "GET".equals(method))
+                    else if (ret == WebdavStatus.SC_UNAUTHORIZED)
                     {
-                        getResponse().setStatus(WebdavStatus.SC_MOVED_PERMANENTLY);
-                        response.setHeader("Location", getLoginURL());
+                        WebdavResolver.Resource resource = getResponse()._unauthorizedResource;
+                        assert null != resource;
+                        if (!getUser().isGuest())
+                        {
+                            getResponse().sendError(WebdavStatus.SC_FORBIDDEN, resource.getPath());
+                        }
+                        else if (resource.isCollection() && isBrowser() && "GET".equals(method))
+                        {
+                            getResponse().setStatus(WebdavStatus.SC_MOVED_PERMANENTLY);
+                            response.setHeader("Location", getLoginURL());
+                        }
+                        else
+                        {
+                            getResponse().setRealm(AppProps.getInstance().getSystemDescription());
+                            getResponse().sendError(WebdavStatus.SC_UNAUTHORIZED, resource.getPath());
+                        }
                     }
                     else
                     {
-                        getResponse().setRealm(AppProps.getInstance().getSystemDescription());
-                        getResponse().sendError(WebdavStatus.SC_UNAUTHORIZED, resource.getPath());
+                        getResponse().sendError(ret);
                     }
                 }
-                else
-                {
-                    getResponse().sendError(ret);
-                }
-            }
 
-            if (getResponse().sbLogResponse.length() > 0)
-                _log.debug(getResponse().sbLogResponse);
-            WebdavStatus status = getResponse().getStatus();
-            String message = getResponse().getMessage();
-            _log.debug("" + (status != null ? status.code : 0) + ": " + message);
+                if (getResponse().sbLogResponse.length() > 0)
+                    _log.debug(getResponse().sbLogResponse);
+                WebdavStatus status = getResponse().getStatus();
+                String message = getResponse().getMessage();
+                _log.debug("" + (status != null ? status.code : 0) + ": " + message);
+            }
+            catch (IOException ex)
+            {
+                if (ex.getMessage() != null && ex.getMessage().indexOf("Broken pipe") >= 0)
+                {
+                    // ignore
+                }
+                else if (ex.getClass().getName().contains("ClientAbortException"))
+                {
+                    // ignore
+                }
+                else
+                    throw ex;
+            }
 
             return null;
         }
@@ -398,30 +413,19 @@ public class DavController extends SpringActionController
         {
             _log.debug("Translate: " + getRequest().getHeader("Translate"));
             _log.debug("user-agent: " + getRequest().getHeader("user-agent"));
-            try
-            {
-                WebdavResolver.Resource resource = resolvePath();
-                if (null == resource)
-                    return notFound();
-                if (!resource.canRead(getUser()))
-                    return unauthorized(resource);
-                if (!resource.exists())
-                    return notFound(resource.getPath());
 
-                if (resource.isCollection())
-                    serveCollection(resource, true);
-                else
-                    serveResource(resource, true);
-            }
-            catch (IOException ex)
-            {
-                if (ex.getMessage() != null && ex.getMessage().indexOf("Broken pipe") >= 0)
-                {
-                    // ignore it.
-                    return null;
-                }
-                throw ex;
-            }
+            WebdavResolver.Resource resource = resolvePath();
+            if (null == resource)
+                return notFound();
+            if (!resource.canRead(getUser()))
+                return unauthorized(resource);
+            if (!resource.exists())
+                return notFound(resource.getPath());
+
+            if (resource.isCollection())
+                serveCollection(resource, true);
+            else
+                serveResource(resource, true);
             return null;
         }
     }
@@ -710,6 +714,8 @@ public class DavController extends SpringActionController
                 return WebdavStatus.SC_LOCKED;
 
             WebdavResolver.Resource resource = resolvePath();
+            if (resource == null)
+                return WebdavStatus.SC_FORBIDDEN;
             boolean result = true;
             boolean exists = resource.exists();
 

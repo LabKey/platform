@@ -310,8 +310,12 @@ public class WebdavResolverImpl implements WebdavResolver
             Set<String> set = new TreeSet<String>();
             if (_file != null && _file.isDirectory())
             {
-                for (File f: _file.listFiles())
-                    set.add(f.getName());
+                File[] list = _file.listFiles();
+                if (null != list)
+                {
+                    for (File f: list)
+                        set.add(f.getName());
+                }
             }
             String[] subfolders = getWebFoldersNames(null);
             set.addAll(Arrays.asList(subfolders));
