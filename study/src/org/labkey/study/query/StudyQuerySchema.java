@@ -39,6 +39,8 @@ public class StudyQuerySchema extends UserSchema
         ret.add("SpecimenRequest");
         ret.add("SpecimenRequestStatus");
         ret.add("ParticipantVisit");
+        ret.add("DataSets");
+        ret.add("DataSetColumns");
         ret.addAll(getDataSetDefinitions().keySet());
         return ret;
     }
@@ -138,6 +140,18 @@ public class StudyQuerySchema extends UserSchema
         if ("Visit".equals(name))
         {
             VisitTable ret = new VisitTable(this);
+            ret.setAlias(alias);
+            return ret;
+        }
+        if ("DataSets".equals(name))
+        {
+            DataSetsTable ret = new DataSetsTable(this);
+            ret.setAlias(alias);
+            return ret;
+        }
+        if ("DataSetColumns".equals(name))
+        {
+            DataSetColumnsTable ret = new DataSetColumnsTable(this);
             ret.setAlias(alias);
             return ret;
         }

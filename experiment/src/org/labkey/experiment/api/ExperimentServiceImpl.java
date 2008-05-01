@@ -813,6 +813,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return getExpSchema().getTable("ProtocolActionPredecessorLSIDView");
     }
 
+    public TableInfo getTinfoPropertyDescriptor()
+    {
+        return getExpSchema().getTable("PropertyDescriptor");
+    }
+
     public TableInfo getTinfoRunList ()
     {
         return getExpSchema().getTable("RunList");
