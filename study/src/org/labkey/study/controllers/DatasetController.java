@@ -1,14 +1,17 @@
 package org.labkey.study.controllers;
 
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UpdateView;
-import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
@@ -18,7 +21,10 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: jgarms
@@ -109,7 +115,8 @@ public class DatasetController extends BaseStudyController
 
         public boolean handlePost(EditDatasetRowForm form, BindException errors) throws Exception
         {
-            DataSetDefinition ds = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getDatasetId());
+            int datasetId = form.getDatasetId();
+            DataSetDefinition ds = StudyManager.getInstance().getDataSetDefinition(getStudy(), datasetId);
             if (null == ds)
             {
                 redirectTypeNotFound(form.getDatasetId());
@@ -123,74 +130,47 @@ public class DatasetController extends BaseStudyController
             if (errors.hasErrors())
                 return false;
 
-            // Delete the existing row if we have one, and then insert a new one. This guarantees
-            // that our new lsid is correct, since it is a concatenation of dataset row data
-            Study study = getStudy();
-            String lsid = form.getLsid();
+            // The form we have stores our new values in a map with "quf_" as a prefix. Clean that up,
+            // and only use those fields. This excludes read-only data.
+            Map<String,Object> data = getDataMap(updateForm);
+            List<String> importErrors = new ArrayList<String>();
 
-            // Start a transaction, so that we can rollback if our insert fails
-            DbScope scope =  StudySchema.getInstance().getSchema().getScope();
-            scope.beginTransaction();
-            boolean inTransaction = true;
-            try
+            if (isInsert())
             {
-                if (!isInsert())
-                {
-                    StudyManager.getInstance().deleteDatasetRows(study, ds, Collections.singletonList(lsid));
-                }
-
-                // The form we have stores our new values in a map with "quf_" as a prefix. Clean that up,
-                // and only use those fields. This excludes read-only data.
-                String tsv = createTSV(updateForm);
-                List<String> importErrors = new ArrayList<String>();
-                StudyManager.getInstance().importDatasetTSV(study, ds, tsv, System.currentTimeMillis(),
-                        Collections.<String,String>emptyMap(), importErrors, true);
-                if (importErrors.size() > 0)
-                {
-                    for (String error : importErrors)
-                    {
-                        errors.reject("update", error);
-                    }
-                    return false;
-                }
-                scope.commitTransaction();
-                inTransaction = false;
+                StudyService.get().insertDatasetRow(getContainer(), datasetId, data, importErrors);
             }
-            finally
+            else
             {
-                if (inTransaction)
-                {
-                    scope.rollbackTransaction();
-                }
+                StudyService.get().updateDatasetRow(getContainer(), datasetId, form.getLsid(), data, importErrors);
             }
 
+            if (importErrors.size() > 0)
+            {
+                for (String error : importErrors)
+                {
+                    errors.reject("update", error);
+                }
+                return false;
+            }
 
             return true;
-            
         }
 
-        private String createTSV(DatasetQueryUpdateForm form)
+        // query update forms have all user data stored with the prefix "quf_".
+        // Clear that off and return only the user data
+        private Map<String,Object> getDataMap(DatasetQueryUpdateForm form)
         {
-            Map<String,Object> map = new LinkedHashMap<String,Object>();
-            StringBuilder sb = new StringBuilder();
-
+            Map<String,Object> data = new HashMap<String,Object>();
             for (Map.Entry<String,Object> entry : form.getTypedValues().entrySet())
             {
                 String key = entry.getKey();
                 if (key.startsWith("quf_"))
                 {
                     key = key.substring(4);
-                    map.put(key, entry.getValue());
-                    sb.append(key).append('\t');
+                    data.put(key, entry.getValue());
                 }
             }
-            sb.append(System.getProperty("line.separator"));
-
-            for (Object val : map.values())
-            {
-                sb.append(val).append('\t');
-            }
-            return sb.toString();
+            return data;
         }
 
         public ActionURL getSuccessURL(EditDatasetRowForm form)

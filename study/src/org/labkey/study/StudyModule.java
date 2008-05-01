@@ -22,6 +22,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.study.PlateService;
 import org.labkey.api.study.SpecimenService;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.PageFlowUtil;
@@ -30,8 +31,8 @@ import org.labkey.api.wiki.WikiService;
 import org.labkey.study.assay.*;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.assay.query.AssaySchema;
-import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.DatasetController;
+import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.controllers.designer.DesignerController;
 import org.labkey.study.controllers.plate.PlateController;
@@ -93,6 +94,7 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
 
         PlateService.register(new PlateManager());
         AssayService.setInstance(new AssayManager());
+        StudyService.register(new StudyServiceImpl());
         DefaultSchema.registerProvider("study", new StudySchemaProvider());
         DefaultSchema.registerProvider("plate", new PlateSchema.Provider());
         DefaultSchema.registerProvider("assay", new AssaySchema.Provider());
