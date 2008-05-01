@@ -88,7 +88,6 @@ public class Table
         _logDebug(sql, parameters, conn);
         ResultSet rs;
 
-        long s=System.currentTimeMillis();
         if (null == parameters || 0 == parameters.length)
         {
             Statement statement = conn.createStatement(scrollable ? ResultSet.TYPE_SCROLL_INSENSITIVE : ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
@@ -120,8 +119,6 @@ public class Table
         {
             asyncRequest.setStatement(null);
         }
-        long e=System.currentTimeMillis();
-        _log.debug("execute: " + (e-s) + "ms");
 
         assert MemTracker.put(rs);
         return rs;
