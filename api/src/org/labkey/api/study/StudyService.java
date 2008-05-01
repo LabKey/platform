@@ -19,6 +19,12 @@ public class StudyService
     public interface Service
     {
         /**
+         * Returns the dataset id of the requested dataset definition name,
+         * or -1 if no such dataset by that name exists
+         */
+        public int getDatasetId(Container c, String datasetName);
+
+        /**
          * Delete a single dataset row
          */
         public void deleteDatasetRow(Container c, int datasetId, String lsid) throws SQLException;
