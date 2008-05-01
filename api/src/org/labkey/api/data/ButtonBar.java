@@ -58,6 +58,14 @@ public class ButtonBar extends DisplayElement
         assert MemTracker.remove(BUTTON_BAR_EMPTY);
     }
 
+    public ButtonBar() {}
+
+    // cloning constructor
+    public ButtonBar(ButtonBar original)
+    {
+        _elementList = new ArrayList<DisplayElement>(original.getList());
+    }
+
     public List<DisplayElement> getList()
     {
         return _elementList;
