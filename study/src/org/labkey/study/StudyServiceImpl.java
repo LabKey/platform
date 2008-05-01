@@ -21,6 +21,15 @@ import java.util.Map;
  */
 public class StudyServiceImpl implements StudyService.Service
 {
+    public int getDatasetId(Container c, String datasetName)
+    {
+        Study study = StudyManager.getInstance().getStudy(c);
+        DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetName);
+        if (def == null)
+            return -1;
+        return def.getDataSetId();
+    }
+
     public String updateDatasetRow(Container c, int datasetId, String lsid, Map<String, Object> data, List<String> errors)
             throws SQLException
     {
