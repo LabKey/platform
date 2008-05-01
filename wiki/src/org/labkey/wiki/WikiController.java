@@ -3390,7 +3390,5 @@ public class WikiController extends SpringActionController
             }
             return ret;
         }
-
-
     }
 }

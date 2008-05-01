@@ -5,6 +5,7 @@
 <%@ page import="org.labkey.api.wiki.WikiRendererType" %>
 <%@ page import="org.labkey.wiki.model.Wiki" %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
+<%@ page import="org.labkey.api.util.HelpTopic" %>
 <%
     JspView<WikiEditModel> me = (JspView<WikiEditModel>) HttpView.currentView();
     WikiEditModel model = me.getModelBean();
@@ -65,6 +66,7 @@
     var _finished = false;
     var _newAttachmentIndex = 0;
     var _doingSave = false;
+    var _editor = "source";
 
     //you must init the tinyMCE before the page finishes loading
     //if you don't, you'll get a blank page an an error
@@ -120,6 +122,8 @@
             else
                 switchToVisual();
         }
+
+        showEditingHelp(_wikiProps.rendererType);
     });
 
     function onSave()
@@ -297,6 +301,8 @@
         setStatus(statusMessage, true);
         enableDeleteButton(true);
 
+        setClean();
+
         if(_finished)
             window.location.href = _redirUrl;
     }
@@ -382,6 +388,8 @@
         document.getElementById("wiki-tab-source").className = "tab-active";
         if(tinyMCE.getEditorId("body"))
             tinyMCE.removeMCEControl(tinyMCE.getEditorId("body"));
+        _editor = "source";
+        showEditingHelp(_wikiProps.rendererType);
     }
 
     function switchToVisual(confirmOverride)
@@ -408,6 +416,8 @@
             document.getElementById("wiki-tab-source").className = "tab-inactive";
             if(!tinyMCE.getEditorId("body"))
                 tinyMCE.addMCEControl(document.getElementById(_idPrefix + "body"), "body");
+            _editor = "visual";
+            showEditingHelp(_wikiProps.rendererType);
         }
     }
 
@@ -591,6 +601,22 @@
         _wikiProps.isDirty = true;
     }
 
+    function setClean()
+    {
+        _wikiProps.isDirty = false;
+        _attachments.isDirty = false;
+
+        //hack: tinyMCE doesn't have a proper API for resetting the dirty flag
+        //but I found this at
+        //http://www.bram.us/2007/06/15/my-tinymce-ajax-implementation-autosave-plugin-vs-isdirty-aka-fixing-the-tweak/
+        var inst = tinyMCE.getInstanceById(tinyMCE.getEditorId("body"));
+        if(inst)
+        {
+            inst.startContent = tinyMCE.trim(inst.getBody().innerHTML);
+            inst.isNotDirty = true;
+        }
+    }
+
     function isDirty()
     {
         return _wikiProps.isDirty || _attachments.isDirty ||
@@ -678,6 +704,7 @@
         _convertWin.hide();
 
         setStatus("Converted.", true);
+        showEditingHelp(_wikiProps.rendererType);
     }
 
     function onConvertError(response)
@@ -701,6 +728,32 @@
         var elem = document.getElementById(_idPrefix+"button-delete");
         if(elem)
             elem.src = src;
+    }
+
+    function showEditingHelp(format)
+    {
+        //hide all
+        for(var fmt in _formats)
+        {
+            setEditingHelpDisplayed("wiki-help-" + fmt, false);
+            setEditingHelpDisplayed("wiki-help-" + fmt + "-visual", false);
+            setEditingHelpDisplayed("wiki-help-" + fmt + "-source", false);
+        }
+
+        //show the proper one
+        setEditingHelpDisplayed("wiki-help-" + format + "-" + _editor, true);
+    }
+
+    function setEditingHelpDisplayed(id, isDisplayed)
+    {
+        var div = Ext.get(id);
+        if(div)
+            div.setDisplayed(isDisplayed);
+    }
+
+    window.onbeforeunload = function(){
+        if(isDirty())
+            return "You have made changes that are not yet saved. Leaving this page now will abandon those changes.";
     }
 
 </script>
@@ -896,6 +949,82 @@
         </td>
     </tr>
 </table>
+<div id="wiki-help-HTML-visual" style="display:none">
+    <table>
+        <tr>
+            <td colspan=2><b>Formatting Guide:</b></td>
+        </tr>
+        <tr>
+            <td>Link to a wiki page</td>
+            <td>Select text and right click. Then select "Insert/edit link."
+             Type the name of the wiki page in "Link URL" textbox.</td>
+        </tr>
+        <tr>
+            <td>Link to an attachment</td>
+            <td>Select text and right click. Then select "Insert/edit link."
+             Type the name of the attachment with the file extension in "Link URL" textbox.</td>
+        </tr>
+    </table>
+</div>
+<div id="wiki-help-HTML-source" style="display:none">
+    <table>
+        <tr>
+            <td colspan=2><b>Formatting Guide:</b></td>
+        </tr>
+        <tr>
+            <td>Link to a wiki page</td>
+            <td>&lt;a href="pageName"&gt;My Page&lt;/a&gt;</td>
+        </tr>
+        <tr>
+            <td>Link to an attachment</td>
+            <td>&lt;a href="attachment.doc"&gt;My Document&lt;/a&gt;</td>
+        </tr>
+        <tr>
+            <td>Show an attached image</td>
+            <td>&lt;img src="imageName.jpg"&gt;</td>
+        </tr>
+    </table>
+</div>
+
+<div id="wiki-help-RADEOX-source" style="display:none">
+    <table>
+        <tr>
+            <td colspan=2><b>Formatting Guide</b> (<a target="_blank" href="<%=(new HelpTopic("wikiSyntax", HelpTopic.Area.SERVER)).getHelpTopicLink()%>">more help</a>):</td>
+        </tr>
+        <tr>
+            <td>link to page in this wiki&nbsp;&nbsp;</td>
+            <td>[pagename] or [Display text|pagename]</td>
+        </tr>
+        <tr>
+            <td>external link</td>
+            <td>http://www.google.com or {link:Display text|http://www.google.com}</td>
+        </tr>
+        <tr>
+            <td>picture</td>
+            <td>[attach.jpg] or {image:http://www.website.com/somepic.jpg}</td>
+        </tr>
+        <tr>
+            <td>bold</td>
+            <td>**like this**</td>
+        </tr>
+        <tr>
+            <td>italics</td>
+            <td>~~like this~~</td>
+        </tr>
+        <tr>
+            <td>bulleted list</td>
+            <td>- list item</td>
+        </tr>
+        <tr>
+            <td>numbered List</td>
+            <td>1. list item</td>
+        </tr>
+        <tr>
+            <td>line break (&lt;br&gt;)</td>
+            <td>\\</td>
+        </tr>
+    </table>
+</div>
 
 <div id="<%=ID_PREFIX%>window-change-format" class="x-hidden">
     <table cellpadding="2">
