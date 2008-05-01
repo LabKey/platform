@@ -8,7 +8,7 @@
 
 <p>
 Use this form to upload a vocabulary or dictionary of concepts.  The file format is compatible with
-the flat file format used by NCICB, except column headers are required. see <a href="http://ncicb.nci.nih.gov/core/EVS/">http://ncicb.nci.nih.gov/core/EVS/</a>.
+the flat file format used by NCICB, except column headers are required. see <a href="http://ncicb.nci.nih.gov/NCICB/infrastructure/cacore_overview/vocabulary">http://ncicb.nci.nih.gov/NCICB/infrastructure/cacore_overview/vocabulary</a>.
 </p>
 <p>
 Specifically it should be a tab-delimited text file with no column headers, and these columns.
