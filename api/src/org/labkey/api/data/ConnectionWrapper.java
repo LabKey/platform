@@ -1955,7 +1955,7 @@ public class ConnectionWrapper implements java.sql.Connection
             for ( ; i<ste.length ; i++)
             {
                 String line = ste[i].toString();
-                if (!line.startsWith("org.labkey.api.data."))
+                if (!(line.startsWith("org.labkey.api.data.") || line.startsWith("java.lang.Thread")))
                     break;
             }
             int last = Math.min(ste.length,i+count);
