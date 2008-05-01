@@ -138,6 +138,7 @@ public class ExperimentService
         TableInfo getTinfoExperiment();
         TableInfo getTinfoExperimentRun();
         TableInfo getTinfoData();
+        TableInfo getTinfoPropertyDescriptor();
         ExpSampleSet ensureDefaultSampleSet() throws SQLException;
         ExpSampleSet ensureActiveSampleSet(Container container) throws SQLException;
         public String getDefaultSampleSetLsid();
