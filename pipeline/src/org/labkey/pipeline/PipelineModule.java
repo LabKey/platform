@@ -79,13 +79,10 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         PipelineService.setInstance(ps);
 
         // Set up default PipelineJobServiceImpl, which may be overriden by Spring config.
-        PipelineJobServiceImpl pjs = new PipelineJobServiceImpl();
+        PipelineJobServiceImpl pjs = PipelineJobServiceImpl.initDefaults();
         pjs.setStatusWriter(ps);
         pjs.setAppProperties(ps);
-        pjs.setJobStore(new PipelineJobStoreImpl());
-        pjs.setWorkDirFactory(new WorkDirectoryLocal.Factory());
-        PipelineJobService.setInstance(pjs);
-        
+
         addController("pipeline", PipelineController.class);
         addController("pipeline-status", StatusController.class);
         addController("pipeline-analysis", AnalysisController.class);

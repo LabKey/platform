@@ -2,16 +2,16 @@ package org.labkey.pipeline.cluster;
 
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.pipeline.api.PipelineJobServiceImpl;
-import org.labkey.pipeline.api.PipelineJobStoreImpl;
-import org.labkey.pipeline.api.WorkDirectoryLocal;
 import org.labkey.pipeline.xstream.PathMapper;
+import org.labkey.pipeline.api.PipelineJobServiceImpl;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
+import org.springframework.beans.factory.ListableBeanFactory;
 
 import java.io.*;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
  * User: jeckels
@@ -19,13 +19,8 @@ import java.util.Collections;
  */
 public class ClusterJobRunner
 {
-    public void run(List<File> springConfigFiles, String[] args) throws IOException
+    public void run(List<File> springConfigFiles, String[] args) throws IOException, URISyntaxException
     {
-        PipelineJobServiceImpl pjs = new PipelineJobServiceImpl();
-        pjs.setJobStore(new PipelineJobStoreImpl());
-        pjs.setWorkDirFactory(new WorkDirectoryLocal.Factory());
-        PipelineJobService.setInstance(pjs);
-
         List<String> configURIs = new ArrayList<String>();
         for (File file : springConfigFiles)
         {
@@ -39,18 +34,20 @@ public class ClusterJobRunner
             }
         }
 
-        // Initialize the Spring context
-        new FileSystemXmlApplicationContext(configURIs.toArray(new String[configURIs.size()]));
+        // Set up the PipelineJobService so that Spring can configure it
+        PipelineJobServiceImpl.initDefaults();
 
-        // Hack up the PathMapper for now
-        PathMapper.getInstance().setPathMap(Collections.singletonMap("file:/Z:/", "file:///home/"));
+        // Initialize the Spring context
+        FileSystemXmlApplicationContext context = new FileSystemXmlApplicationContext(configURIs.toArray(new String[configURIs.size()]));
 
         if (args.length < 1)
         {
-            throw new IllegalArgumentException("First arg should be XML file path");
+            throw new IllegalArgumentException("First arg should be URI to XML file, based on the web server's file system");
         }
 
-        File file = new File(args[0]);
+        String localFile = PathMapper.getInstance().remoteToLocal(args[0]);
+
+        File file = new File(new URI(localFile));
         if (!file.isFile())
         {
             throw new IllegalArgumentException("Could not find file " + file.getAbsolutePath());
@@ -59,9 +56,20 @@ public class ClusterJobRunner
         StringBuilder xml = readFile(file);
 
         PipelineJob job = PipelineJobService.get().getJobStore().fromXML(xml.toString());
-        System.out.println("Starting to run job " + job);
+        System.out.println("Starting to run task for job " + job);
         job.runActiveTask();
-        System.out.println("Finished running job");
+        System.out.println("Finished running task for job " + job);
+
+        if (job.getActiveTaskStatus() == PipelineJob.TaskStatus.error)
+        {
+            job.error("Task failed");
+            System.exit(1);
+        }
+        else if (job.getActiveTaskStatus() != PipelineJob.TaskStatus.complete)
+        {
+            job.error("Task finished running but was not marked as complete - it was in state " + job.getActiveTaskStatus());
+            System.exit(1);
+        }
     }
 
     private StringBuilder readFile(File file) throws IOException

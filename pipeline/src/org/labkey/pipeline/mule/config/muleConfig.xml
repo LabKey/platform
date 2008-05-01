@@ -133,6 +133,16 @@
 
             <threading-profile maxThreadsActive="4" maxThreadsIdle="0" threadTTL="100"/>
             <pooling-profile maxActive="4" maxIdle="0" initialisationPolicy="INITIALISE_NONE"/>
+
+            <properties>
+                <property name="javaPath" value="/usr/bin/java" />
+                <property name="labkeyDir" value="/usr/local/labkey" />
+                <property name="globusEndpoint" value="https://140.107.154.30:8443/wsrf/services/ManagedJobFactoryService" />
+                <map name="pathMapping">
+                    <property name="file:///home/edi" value="file:/T:/edi"/>
+                    <property name="file:///data" value="file:/T:/data"/>
+                </map>
+            </properties>
         </mule-descriptor>
 
         <mule-descriptor name="PipelineProgressionRunnerUMO"

@@ -827,6 +827,9 @@ pipeline/lib/cog-axis.jar -text
 pipeline/lib/cog-jglobus-1.2-060802.jar -text
 pipeline/lib/commonj.jar -text
 pipeline/lib/concurrent.jar -text
+pipeline/lib/cryptix-asn1.jar -text
+pipeline/lib/cryptix.LICENSE -text
+pipeline/lib/cryptix32.jar -text
 pipeline/lib/globus_delegation_service.jar -text
 pipeline/lib/globus_delegation_stubs.jar -text
 pipeline/lib/globus_wsrf_rft_stubs.jar -text
@@ -834,6 +837,8 @@ pipeline/lib/gram-client.jar -text
 pipeline/lib/gram-stubs.jar -text
 pipeline/lib/gram-utils.jar -text
 pipeline/lib/jce-jdk13-131.jar -text
+pipeline/lib/puretls.LICENSE -text
+pipeline/lib/puretls.jar -text
 pipeline/lib/wsrf_core.jar -text
 pipeline/lib/wsrf_core_registry.jar -text
 pipeline/lib/wsrf_core_registry_stubs.jar -text
@@ -911,6 +916,7 @@ pipeline/src/org/labkey/pipeline/api/WorkDirectoryLocal.java -text
 pipeline/src/org/labkey/pipeline/browse/BrowseViewImpl.java -text
 pipeline/src/org/labkey/pipeline/browse/browse.jsp -text
 pipeline/src/org/labkey/pipeline/cluster/ClusterJobRunner.java -text
+pipeline/src/org/labkey/pipeline/cluster/SpringApplicationProperties.java -text
 pipeline/src/org/labkey/pipeline/directory.jsp -text
 pipeline/src/org/labkey/pipeline/emailNotificationSetup.jsp -text
 pipeline/src/org/labkey/pipeline/mule/EPipelineContextListener.java -text
@@ -945,6 +951,10 @@ pipeline/src/org/labkey/pipeline/xstream/PathMapper.java -text
 pipeline/src/org/labkey/pipeline/xstream/TaskIdXStreamConverter.java -text
 pipeline/src/org/labkey/pipeline/xstream/URIXStreamConverter.java -text
 pipeline/webapp/WEB-INF/classes/client-config.wsdd -text
+pipeline/webapp/WEB-INF/classes/etc/globus_wsrf_core/client-server-config.wsdd -text
+pipeline/webapp/WEB-INF/classes/etc/globus_wsrf_core/global_security_descriptor.xml -text
+pipeline/webapp/WEB-INF/classes/etc/globus_wsrf_core/server-config.wsdd -text
+pipeline/webapp/WEB-INF/classes/etc/globus_wsrf_core_registry/server-config.wsdd -text
 pipeline/webapp/WEB-INF/classes/share/schema/core/management/shutdown_bindings.wsdl -text
 pipeline/webapp/WEB-INF/classes/share/schema/core/management/shutdown_port_type.wsdl -text
 pipeline/webapp/WEB-INF/classes/share/schema/core/management/shutdown_service.wsdl -text
@@ -1026,10 +1036,6 @@ pipeline/webapp/WEB-INF/classes/share/schema/wsrf/servicegroup/WS-ServiceGroup.w
 pipeline/webapp/WEB-INF/classes/share/schema/wsrf/servicegroup/WS-ServiceGroup.xsd -text
 pipeline/webapp/WEB-INF/classes/share/schema/wsrf/servicegroup/WS-ServiceGroup_bindings.wsdl -text
 pipeline/webapp/WEB-INF/classes/share/schema/wsrf/servicegroup/WS-ServiceGroup_service.wsdl -text
-pipeline/webapp/WEB-INF/etc/globus_wsrf_core/client-server-config.wsdd -text
-pipeline/webapp/WEB-INF/etc/globus_wsrf_core/global_security_descriptor.xml -text
-pipeline/webapp/WEB-INF/etc/globus_wsrf_core/server-config.wsdd -text
-pipeline/webapp/WEB-INF/etc/globus_wsrf_core_registry/server-config.wsdd -text
 pipeline/webapp/WEB-INF/pipeline/pipelineContext.xml -text
 pipeline/webapp/WEB-INF/schema/core/management/shutdown_bindings.wsdl -text
 pipeline/webapp/WEB-INF/schema/core/management/shutdown_port_type.wsdl -text

@@ -274,4 +274,13 @@ public class PipelineJobServiceImpl extends PipelineJobService
         }
         return new File(javaBin, "java").toString();
     }
+
+    public static PipelineJobServiceImpl initDefaults()
+    {
+        PipelineJobServiceImpl pjs = new PipelineJobServiceImpl();
+        pjs.setJobStore(new PipelineJobStoreImpl());
+        pjs.setWorkDirFactory(new WorkDirectoryLocal.Factory());
+        PipelineJobService.setInstance(pjs);
+        return pjs;
+    }
 }

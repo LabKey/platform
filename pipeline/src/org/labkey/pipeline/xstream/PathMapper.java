@@ -19,6 +19,8 @@ import org.mule.MuleManager;
 import org.mule.umo.manager.ObjectNotFoundException;
 import org.mule.umo.manager.UMOContainerContext;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 
 import java.util.Map;
 
@@ -46,6 +48,7 @@ public class PathMapper
             }
             catch (ObjectNotFoundException e)
             {
+                BeanFactory factory = new DefaultListableBeanFactory();
                 // Not in context, so just use an empty mapper.
                 instance = new PathMapper();
             }
@@ -66,8 +69,22 @@ public class PathMapper
     private boolean _remoteIgnoreCase;
     private boolean _localIgnoreCase;
 
+    public static PathMapper createMapper()
+    {
+        return new PathMapper(false);
+    }
+
     private PathMapper()
     {
+        this(true);
+    }
+
+    private PathMapper(boolean registerIfFirst)
+    {
+        if (instance == null)
+        {
+            instance = this;
+        }
     }
 
     public Map<String, String> getPathMap()
