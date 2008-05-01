@@ -9,11 +9,6 @@
         <webroots>
           <root url="file://$MODULE_DIR$/webapp" relative="/" />
         </webroots>
-        <sourceRoots>
-          <root url="file://$MODULE_DIR$/../../build/gensrc/xmlbeanSrc" />
-          <root url="file://$MODULE_DIR$/remotesrc" />
-          <root url="file://$MODULE_DIR$/src" />
-        </sourceRoots>
         <building>
           <setting name="EXPLODED_URL" value="file://" />
           <setting name="EXPLODED_ENABLED" value="false" />
@@ -632,7 +627,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/web/wsdl4j.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/web/axis.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -641,12 +636,10 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/web/axis.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/web/wsdl4j.jar!/" />
         </CLASSES>
         <JAVADOC />
-        <SOURCES>
-          <root url="file://$MODULE_DIR$/../../../JavaAPIs/axis1.2rc2/java/src" />
-        </SOURCES>
+        <SOURCES />
       </library>
     </orderEntry>
     <orderEntryProperties />

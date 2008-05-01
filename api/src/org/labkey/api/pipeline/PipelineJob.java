@@ -83,6 +83,27 @@ abstract public class PipelineJob extends Job implements Serializable
         {
             return _job;
         }
+
+        protected String getExecutablePath(String executable)
+        {
+            String toolsDir = PipelineJobService.get().getAppProperties().getToolsDirectory();
+            if (toolsDir != null && !toolsDir.endsWith(File.separator))
+            {
+                toolsDir = toolsDir + File.separatorChar;
+            }
+
+            if (toolsDir == null)
+            {
+                return executable;
+            }
+            File f = new File(toolsDir);
+            if (!f.isDirectory())
+            {
+                return executable;
+            }
+
+            return toolsDir + executable;
+        }
     }
 
     /*
@@ -301,6 +322,22 @@ abstract public class PipelineJob extends Job implements Serializable
             name = name.substring(0, index);
         }
         return new File(statusFile.getParentFile(), name + ".job.ser");
+    }
+
+    public static File getClusterOutputFile(File statusFile)
+    {
+        if (statusFile == null)
+        {
+            return null;
+        }
+
+        String name = statusFile.getName();
+        int index = name.indexOf('.');
+        if (index != -1)
+        {
+            name = name.substring(0, index);
+        }
+        return new File(statusFile.getParentFile(), name + ".job.log");
     }
 
     public File getStatusFile()
@@ -585,6 +622,13 @@ abstract public class PipelineJob extends Job implements Serializable
             {
                 error("Could not create the " + outputFile + " file.",e);
                 throw new RunProcessException(e);
+            }
+
+            String toolDir = PipelineJobService.get().getAppProperties().getToolsDirectory();
+            if (toolDir != null)
+            {
+                String path = (System.getenv("PATH") == null ? "" : File.pathSeparatorChar + System.getenv("PATH")) + toolDir;
+                pb.environment().put("PATH", path);
             }
 
             try
@@ -896,6 +940,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public void error(String message, Throwable t)
     {
+        setErrors(getErrors() + 1);
         if (getLogger() != null)
             getLogger().error(message, t);
     }
