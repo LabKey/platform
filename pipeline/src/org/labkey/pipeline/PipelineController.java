@@ -21,6 +21,7 @@ import org.apache.struts.action.ActionError;
 import org.labkey.api.action.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.*;
@@ -527,7 +528,12 @@ public class PipelineController extends SpringActionController
                         acl.setPermission(groupId.intValue(), perm.intValue());
                     }
                 }
+
+                // UNDONE: move setACL() to PipelineManager
                 SecurityManager.updateACL(c, pipeRoot.getEntityId(), acl);
+                ContainerManager.ContainerPropertyChangeEvent evt = new ContainerManager.ContainerPropertyChangeEvent(
+                        c, ContainerManager.Property.PipelineRoot, pipeRoot, pipeRoot);
+                ContainerManager.firePropertyChangeEvent(evt);
             }
 
             return true;

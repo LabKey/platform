@@ -181,7 +181,8 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         else if (null == getMappedDirectory(c, false))
             return null;
 
-        FileSystemAttachmentParent parent = new FileSystemAttachmentParent(c);
+        FileSystemAttachmentParent parent;
+        parent = new FileSystemAttachmentParent(c);
         return parent;
     }
 
@@ -235,10 +236,13 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         //We do this because insert does not return new fields
         parent.setEntityid(GUID.makeGUID());
 
-
         try
         {
-            return Table.insert(HttpView.currentContext().getUser(), coreTables().getMappedDirectories(), parent);
+            FileSystemAttachmentParent ret = Table.insert(HttpView.currentContext().getUser(), coreTables().getMappedDirectories(), parent);
+            ContainerManager.ContainerPropertyChangeEvent evt = new ContainerManager.ContainerPropertyChangeEvent(
+                    c, ContainerManager.Property.AttachmentDirectory, null, ret);
+            ContainerManager.firePropertyChangeEvent(evt);
+            return ret;
         } catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
@@ -253,6 +257,9 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         try
         {
             Table.delete(coreTables().getMappedDirectories(), filter);
+            ContainerManager.ContainerPropertyChangeEvent evt = new ContainerManager.ContainerPropertyChangeEvent(
+                    c, ContainerManager.Property.AttachmentDirectory, parent, null);
+            ContainerManager.firePropertyChangeEvent(evt);
         }
         catch (SQLException e)
         {
@@ -698,13 +705,19 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
     public void propertyChange(PropertyChangeEvent propertyChangeEvent)
     {
-        if ("Name".equals(propertyChangeEvent.getPropertyName()))
+        ContainerManager.ContainerPropertyChangeEvent evt = (ContainerManager.ContainerPropertyChangeEvent)propertyChangeEvent;
+        Container c = evt.container;
+
+        switch (evt.property)
+        {
+        case Name:
         {
             String oldValue = (String) propertyChangeEvent.getOldValue();
             String newValue = (String) propertyChangeEvent.getNewValue();
-            Container c = (Container) propertyChangeEvent.getSource();
 
             File location = getMappedDirectory(c, false);
+            if (location == null)
+                return;
             //Don't rely on container object. Seems not to point to the
             //new location even AFTER rename. Just construct new file paths
             File parentDir = location.getParentFile();
@@ -715,11 +728,11 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
             if (oldLocation.exists())
                 oldLocation.renameTo(newLocation);
+            break;
         }
-        else if ("Parent".equals(propertyChangeEvent.getPropertyName()))
+        case Parent:
         {
             Container oldParent = (Container) propertyChangeEvent.getOldValue();
-            Container c = (Container) propertyChangeEvent.getSource();
             File oldParentFile = getMappedDirectory(oldParent, false);
             if (null == oldParentFile)
                 return;
@@ -733,6 +746,8 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                moveToDeleted(newDir);
 
             oldDir.renameTo(newDir);
+            break;
+        }
         }
     }
 
@@ -750,9 +765,11 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         return null == m.get("root") ? null : new File(m.get("root"));
     }
 
+
     public void setWebRoot(Container c, File root)
     {
         Map<String,String> m = PropertyManager.getWritableProperties(0, c.getProject().getId(), "staticFile", true);
+        String oldValue = m.get("root");
         try
         {
             if (null == root)
@@ -764,8 +781,14 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         {
             throw new RuntimeException(e);
         }
+        String newValue = m.get("root");
         PropertyManager.saveProperties(m);
+        
+        ContainerManager.ContainerPropertyChangeEvent evt = new ContainerManager.ContainerPropertyChangeEvent(
+                c, ContainerManager.Property.WebRoot, oldValue, newValue);
+        ContainerManager.firePropertyChangeEvent(evt);
     }
+
 
     private File getMappedDirectory(Container c, boolean create)
     {

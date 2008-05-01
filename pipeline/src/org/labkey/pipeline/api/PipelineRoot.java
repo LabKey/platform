@@ -27,6 +27,17 @@ public class PipelineRoot extends Entity
     String _path;
     String _type;
 
+    public PipelineRoot()
+    {
+    }
+
+    public PipelineRoot(PipelineRoot root)
+    {
+        this._pipelineRootId = root._pipelineRootId;
+        this._path = root._path;
+        this._type = root._type;
+    }
+
     public void setPipelineRootId(int id)
     {
         _pipelineRootId = id;

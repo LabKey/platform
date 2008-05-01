@@ -45,6 +45,7 @@ import org.labkey.core.query.UserAuditViewFactory;
 import org.labkey.core.security.SecurityController;
 import org.labkey.core.test.TestController;
 import org.labkey.core.user.UserController;
+import org.labkey.core.webdav.WebdavResolverImpl;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -411,7 +412,8 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
             SecurityController.TestCase.class,
             AttachmentServiceImpl.TestCase.class,
             BooleanFormat.TestCase.class,
-            XMLWriterTest.TestCase.class
+            XMLWriterTest.TestCase.class,
+            WebdavResolverImpl.TestCase.class
         )
         );
     }

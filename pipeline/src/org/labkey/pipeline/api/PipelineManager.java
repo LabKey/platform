@@ -122,30 +122,41 @@ public class PipelineManager
         return rootsList.toArray(new PipelineRoot[rootsList.size()]);
     }
 
+
     static public void setPipelineRoot(User user, Container container, String path, String type) throws SQLException
     {
-        PipelineRoot root = getPipelineRootObject(container, type);
+        PipelineRoot oldValue = getPipelineRootObject(container, type);
+        PipelineRoot newValue = null;
+
         if (path == null || path.length() == 0)
         {
-            if (root != null)
-                Table.delete(PipelineSchema.getInstance().getTableInfoPipelineRoots(), root.getPipelineRootId(), null);
+            if (oldValue != null)
+            {
+                Table.delete(PipelineSchema.getInstance().getTableInfoPipelineRoots(), oldValue.getPipelineRootId(), null);
+            }
         }
-        else if (root == null)
+        else if (oldValue == null)
         {
-            root = new PipelineRoot();
-            root.setPath(path);
-            root.setContainerId(container.getId());
-            root.setType(type);
-            Table.insert(user, pipeline.getTableInfoPipelineRoots(), root);
+            newValue = new PipelineRoot();
+            newValue.setPath(path);
+            newValue.setContainerId(container.getId());
+            newValue.setType(type);
+            Table.insert(user, pipeline.getTableInfoPipelineRoots(), newValue);
         }
         else
         {
-            root.setPath(path);
-            root.setType(type);
-            Table.update(user, pipeline.getTableInfoPipelineRoots(), root, root.getPipelineRootId(), null);
+            newValue = new PipelineRoot(oldValue);
+            newValue.setPath(path);
+            newValue.setType(type);
+            Table.update(user, pipeline.getTableInfoPipelineRoots(), newValue, newValue.getPipelineRootId(), null);
+            // should use clone
         }
+
+        ContainerManager.firePropertyChangeEvent(new ContainerManager.ContainerPropertyChangeEvent(
+                container, ContainerManager.Property.PipelineRoot, oldValue, newValue));
     }
 
+    
     static public void purge(Container container)
     {
         try

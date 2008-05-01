@@ -1,11 +1,8 @@
 package org.labkey.core.ftp;
 
-import org.apache.log4j.Logger;
 import org.labkey.api.action.InterfaceAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.attachments.AttachmentDirectory;
-import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.ftp.FtpConnector;
@@ -13,13 +10,13 @@ import org.labkey.api.module.DefaultModule;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.*;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.GroovyView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.core.webdav.WebdavResolver;
+import org.labkey.core.webdav.WebdavResolverImpl;
 import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.servlet.ModelAndView;
@@ -27,11 +24,8 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
-import java.net.URI;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -64,35 +58,33 @@ public class FtpController extends SpringActionController
 
         public FtpConnector getInstance(int version)
         {
-            return new FtpConnectorImpl(getViewContext().getRequest());
+            return new FtpConnectorImpl(getViewContext().getUser());
         }
     }
 
-    private static class FtpConnectorImpl implements FtpConnector
+    public static class FtpConnectorImpl implements FtpConnector
     {
-        HttpServletRequest _request = null;
+        //HttpServletRequest _request = null;
+        User _user = null;
+        WebdavResolver _resolver = WebdavResolverImpl.get();
         
-        FtpConnectorImpl(HttpServletRequest request)
+        public FtpConnectorImpl(User user)
         {
-             _request = request;
+             _user = user;
         }
-
 
         public int userid(String username, String password) throws Exception
         {
-            User user;
-            
             // first see if we are already authenticated (e.g. sessionid, or basic auth)
-            if (null != _request)
+            if (null != _user)
             {
-                user = (User)_request.getUserPrincipal();
-                if (null != user && user.getEmail().equalsIgnoreCase(username))
-                    return user.getUserId();
+                if (_user.getEmail().equalsIgnoreCase(username))
+                    return _user.getUserId();
             }
 
             // authenticate with password
-            user = AuthenticationManager.authenticate(username, password);
-            return user == null ? -1 : user.getUserId();
+            _user = AuthenticationManager.authenticate(username, password);
+            return _user == null ? -1 : _user.getUserId();
         }
 
 
@@ -122,94 +114,34 @@ public class FtpController extends SpringActionController
         }
 
 
-        public WebFolderInfo getFolderInfo(int userid, String folder)
+        public WebFolderInfo getFolderInfo(int userid, String path)
         {
             User user = UserManager.getUser(userid);
             if (user == null)
                 return null;
-            if (folder == null)
+            if (path == null)
                 return null;
 
-            boolean isPipelineLink = false;
-            if (folder.endsWith("/"))
-                folder = folder.substring(0,folder.length()-1);
-            if (folder.endsWith("/" + PIPELINE_LINK))
-            {
-                isPipelineLink = true;
-                folder = folder.substring(0, folder.length()- PIPELINE_LINK.length()-1);
-            }
-            
-            Container c = ContainerManager.getForPath(folder);
-            if (null == c)
+            WebdavResolverImpl.ResourceImpl  resource = (WebdavResolverImpl.ResourceImpl)_resolver.lookup(path);
+            if (!resource.isWebFolder())
                 return null;
 
-            FileSystemRoot fsRoot = null;
-            int permFolder = c.getAcl().getPermissions(user);
-            FileSystemRoot pipelineRoot = null;
-            int permPipeline = 0;
-
-            AttachmentDirectory dir = null;
-            try
-            {
-                dir = AttachmentService.get().getMappedAttachmentDirectory(c, true);
-            }
-            catch (AttachmentService.UnsetRootDirectoryException x)
-            {
-                /* */
-            }
-            if (null != dir)
-            {
-                if (c.getId().equals(dir.getContainerId()))
-                    fsRoot = initFileSystemRoot(dir.getFileSystemDirectory());
-                // UNDONE: no separate permissions yet.  Just use folder permissions
-            }
-
-            try
-            {
-                PipeRoot root = PipelineService.get().findPipelineRoot(c);
-                URI uriRoot = (root != null) ? root.getUri(c) : null;
-                if (uriRoot != null)
-                {
-                    ACL acl = SecurityManager.getACL(c, root.getEntityId());
-                    if (null != acl)
-                        permPipeline = acl.getPermissions(user);
-                    pipelineRoot = initFileSystemRoot(new File(uriRoot));
-                }
-            }
-            catch (SQLException x)
-            {
-                Logger.getLogger(FtpController.class).error("unexpected exception", x);
-            }
-
-            String[] names;
-            if (isPipelineLink)
-            {
-                names = new String[0];
-            }
-            else
-            {
-                List<Container> children = ContainerManager.getChildren(c, user, ACL.PERM_READ);
-                names = new String[children.size() + ((pipelineRoot!=null)?1:0)];
-                int i=0;
-                for (Container child : children)
-                    names[i++] = child.getName();
-                if (null != pipelineRoot)
-                    names[i] = PIPELINE_LINK;
-            }
-
-            ActionURL url = new ActionURL(isPipelineLink ? "Pipeline" : "Project", "begin", c);
+            path = resource.getPath();
+            boolean isPipelineLink = path.endsWith("/" + PIPELINE_LINK);
+            String folder = isPipelineLink ? path.substring(0, path.length()-("/"+PIPELINE_LINK).length()) : path;
+            ActionURL url = new ActionURL(isPipelineLink ? "Pipeline" : "Project", "begin", folder);
 
             WebFolderInfo info = new WebFolderInfo();
             info.url = url.getURIString();
-            info.name = c.getName();
-            info.path = isPipelineLink ? c.getPath() + "/" + PIPELINE_LINK : c.getPath();
-            info.created = c.getCreated() == null ? 0 : c.getCreated().getTime();
-            info.fsRoot = isPipelineLink ? pipelineRoot : fsRoot;
-            info.perm = isPipelineLink ? permPipeline : permFolder;
-            info.subfolders = names;
+            info.name = resource.getName();
+            info.path = resource.getPath();
+            info.created = resource.getCreation();
+            info.fsRoot = resource.getFile() == null ? null : initFileSystemRoot(resource.getFile());
+            info.perm = resource.getPermissions(user);
+            info.subfolders = resource.getWebFoldersNames(user);
             return info;
         }
-    }
+    }        
 
 
     static FtpConnector.FileSystemRoot initFileSystemRoot(File f)
