@@ -20,6 +20,7 @@ import junit.framework.TestSuite;
 import org.apache.commons.collections.ArrayStack;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.FieldKey;
@@ -62,7 +63,7 @@ public class ActionURL extends URLHelper implements Cloneable
 
 
     // ActionURL always uses the AppProps settings for scheme, host, and port.  We defer setting these since we
-    // almost always generate local URLs and don't care about these properties.
+    // only need them when generating absolute URLs (which are rare).
     private void ensureBaseServerProps()
     {
         if (_baseServerPropsInitialized)
@@ -92,23 +93,6 @@ public class ActionURL extends URLHelper implements Cloneable
         ensureBaseServerProps();
         return super.getHost();
     }
-
-    public static String toPathString(String pageFlow, String action, Container c)
-    {
-        return toPathString(pageFlow, action, c.getPath());
-    }
-    
-
-    public static String toPathString(String pageFlow, String action, String extraPath)
-    {
-        String[] parts = new String[4];
-        parts[indexContextPath] = AppProps.getInstance().getContextPath(); //request.getContextPath();
-        parts[indexPageFlow] = pageFlow;
-        parts[indexExtraPath] = (null == extraPath ? "" : extraPath);  // Allow extraPath == null
-        parts[indexAction] = action;
-        return _viewParser.toPathString(parts, true, true);
-    }
-
 
     private static String getBaseServerURL(String scheme, String host, int port)
     {
@@ -147,6 +131,25 @@ public class ActionURL extends URLHelper implements Cloneable
         this(SpringActionController.getPageFlowName(actionClass), SpringActionController.getActionName(actionClass), container);
     }
 
+    @Deprecated
+    public static String toPathString(String pageFlow, String action, Container c)
+    {
+        return toPathString(pageFlow, action, c.getPath());
+    }
+
+
+    @Deprecated
+    public static String toPathString(String pageFlow, String action, String extraPath)
+    {
+        String[] parts = new String[4];
+        parts[indexContextPath] = AppProps.getInstance().getContextPath(); //request.getContextPath();
+        parts[indexPageFlow] = pageFlow;
+        parts[indexExtraPath] = (null == extraPath ? "" : extraPath);  // Allow extraPath == null
+        parts[indexAction] = action;
+        return _viewParser.toPathString(parts, true, true);
+    }
+
+
     /**
      * Old pageflow constructor
      */
@@ -166,6 +169,88 @@ public class ActionURL extends URLHelper implements Cloneable
         setPageFlow(pageFlow);
         setExtraPath(extraPath);
         setAction(actionName);
+    }
+
+
+    public ActionURL setPageFlow(String pageFlow)
+    {
+        if (_readOnly) throw new java.lang.IllegalStateException();
+        _arraySet(_path, indexPageFlow, pageFlow);
+
+        return this;
+    }
+
+
+    /**
+     * Create a url based on the container in this URL
+     *
+     * @param action   New action. No encoding or substitution will occur
+     * @param params   New params. All old params will be deleted. No encoding will occur so that substitution using
+     *                 ${} will work properly
+     * @param pageFlow Name of the pageflow to redirect to
+     */
+    @Deprecated
+    public String relativeUrl(String action, String params, String pageFlow)
+    {
+        String pathString = toPathString(pageFlow, action, getExtraPath());
+        return pathString + "?" + (null == params ? "" : params);
+    }
+
+    /**
+     * Return a string URL based on the container in this URL.
+     * param map will be placed in params. No encoding will be done on param values of the
+     * form ${substExpression}  Other param values will be encoded.
+     *
+     * @param action       The page flow action. Cannot be null
+     * @param params       Params will be "replaced" on URL. Don't use duplicate params here.
+     * @param pageFlow     current pageflow if null
+     * @param deleteParams delete parameters before replacing
+     */
+    @Deprecated
+    public String relativeUrl(String action, Map params, String pageFlow, boolean deleteParams)
+    {
+        assert null != action;
+        String paramStr;
+
+        ActionURL url = this.clone();
+        if (deleteParams)
+            url.deleteParameters();
+
+        if (null != params)
+        {
+            Collection<Map.Entry<String, String>> entries = params.entrySet();
+
+            for (Map.Entry entry : entries)
+                url.replaceParameter(entry.getKey().toString(), entry.getValue().toString());
+        }
+
+        //NOTE. Don't encode parameters cause we'll use for subst later
+        StringBuffer sb = new StringBuffer();
+        for (Pair<String, String> parameter : url._parameters)
+        {
+            sb.append("&").append(parameter.getKey()).append("=");
+            String value = parameter.getValue();
+            if (null != value && value.length() >= 3 && value.charAt(0) == '$' && value.charAt(1) == '{' && value.charAt(value.length() - 1) == '}')
+                sb.append(value);
+            else
+                sb.append(PageFlowUtil.encode(value));
+        }
+        paramStr = sb.toString();
+
+        return relativeUrl(action, paramStr, pageFlow != null ? pageFlow : getPageFlow());
+    }
+
+    /**
+     * Create a url based on the container in this URL and pageFlow
+     *
+     * @param action New action. No encoding or substitution will occur
+     * @param params New params. All old params will be deleted. No encoding will occur so that substitution using
+     *               ${} will work properly
+     */
+    @Deprecated
+    public String relativeUrl(String action, String params)
+    {
+        return relativeUrl(action, params, getPageFlow());
     }
 
     /**
@@ -278,6 +363,13 @@ public class ActionURL extends URLHelper implements Cloneable
     }
 
 
+    // Add returnURL as a parameter using standard parameter name
+    public ActionURL addReturnURL(ActionURL returnURL)
+    {
+        return addParameter(ReturnUrlForm.Params.returnUrl, returnURL.getLocalURIString());
+    }
+
+
     public ActionURL(String url)
     {
         this();
@@ -343,15 +435,6 @@ public class ActionURL extends URLHelper implements Cloneable
     }
 
 
-    public ActionURL setPageFlow(String pageFlow)
-    {
-        if (_readOnly) throw new java.lang.IllegalStateException();
-        _arraySet(_path, indexPageFlow, pageFlow);
-
-        return this;
-    }
-
-
     public String getPageFlow()
     {
         return _path.size() > indexPageFlow ? (String) _path.get(indexPageFlow) : null;
@@ -379,78 +462,6 @@ public class ActionURL extends URLHelper implements Cloneable
         return _path.size() > indexAction ? (String) _path.get(indexAction) : null;
     }
 
-
-    /**
-     * Create a url based on the container in this URL
-     *
-     * @param action   New action. No encoding or substitution will occur
-     * @param params   New params. All old params will be deleted. No encoding will occur so that substitution using
-     *                 ${} will work properly
-     * @param pageFlow Name of the pageflow to redirect to
-     */
-    @Deprecated
-    public String relativeUrl(String action, String params, String pageFlow)
-    {
-        String pathString = toPathString(pageFlow, action, getExtraPath());
-        return pathString + "?" + (null == params ? "" : params);
-    }
-
-    /**
-     * Create a url based on the container in this URL and pageFlow
-     *
-     * @param action New action. No encoding or substitution will occur
-     * @param params New params. All old params will be deleted. No encoding will occur so that substitution using
-     *               ${} will work properly
-     */
-    @Deprecated
-    public String relativeUrl(String action, String params)
-    {
-        return relativeUrl(action, params, getPageFlow());
-    }
-
-    /**
-     * Return a string URL based on the container in this URL.
-     * param map will be placed in params. No encoding will be done on param values of the
-     * form ${substExpression}  Other param values will be encoded.
-     *
-     * @param action       The page flow action. Cannot be null
-     * @param params       Params will be "replaced" on URL. Don't use duplicate params here.
-     * @param pageFlow     current pageflow if null
-     * @param deleteParams delete parameters before replacing
-     */
-    @Deprecated
-    public String relativeUrl(String action, Map params, String pageFlow, boolean deleteParams)
-    {
-        assert null != action;
-        String paramStr;
-
-        ActionURL url = this.clone();
-        if (deleteParams)
-            url.deleteParameters();
-
-        if (null != params)
-        {
-            Collection<Map.Entry<String, String>> entries = params.entrySet();
-
-            for (Map.Entry entry : entries)
-                url.replaceParameter(entry.getKey().toString(), entry.getValue().toString());
-        }
-
-        //NOTE. Don't encode parameters cause we'll use for subst later
-        StringBuffer sb = new StringBuffer();
-        for (Pair<String, String> parameter : url._parameters)
-        {
-            sb.append("&").append(parameter.getKey()).append("=");
-            String value = parameter.getValue();
-            if (null != value && value.length() >= 3 && value.charAt(0) == '$' && value.charAt(1) == '{' && value.charAt(value.length() - 1) == '}')
-                sb.append(value);
-            else
-                sb.append(PageFlowUtil.encode(value));
-        }
-        paramStr = sb.toString();
-
-        return relativeUrl(action, paramStr, pageFlow != null ? pageFlow : getPageFlow());
-    }
 
     private static boolean _isEmpty(String s)
     {

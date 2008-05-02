@@ -82,7 +82,7 @@ public class ModuleContext implements Cloneable
     public String getMessage()
     {
         double targetVersion = ModuleLoader.getInstance().getModule(name).getVersion();
-        return moduleState.describeModuleState(installedVersion, targetVersion);
+        return getModuleState().describeModuleState(installedVersion, targetVersion);
     }
 
     private static DecimalFormat df2 = new DecimalFormat("0.00#");
@@ -110,7 +110,7 @@ public class ModuleContext implements Cloneable
     public void upgradeComplete(double version)
     {
         installedVersion = version;
-        moduleState = ModuleLoader.ModuleState.ReadyToRun;
+        setModuleState(ModuleLoader.ModuleState.ReadyToRun);
         ModuleLoader.getInstance().saveModuleContext(this);
     }
 
