@@ -30,6 +30,7 @@ import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Search;
+import org.labkey.api.util.SearchHit;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
@@ -55,6 +56,9 @@ public class AnnouncementModule extends DefaultModule implements Search.Searchab
     public static final String NAME = "Announcements";
 
     public static final String WEB_PART_NAME = "Messages";
+    public static final String SEARCH_DOMAIN = "messages";
+    public static final String SEARCH_RESULT_TYPE = "labkey/message";
+    public static final String SEARCH_RESULT_TYPE_DESCR = "Message";
 
     private static Logger _log = Logger.getLogger(AnnouncementModule.class);
 
@@ -227,15 +231,19 @@ public class AnnouncementModule extends DefaultModule implements Search.Searchab
         }
     }
 
-    public MultiMap<String, String> search(Collection<String> containerIds, Search.SearchTermParser parser)
+    public int search(Search.SearchTermParser parser, Set<Container> containers, List<SearchHit> hits)
     {
-        return AnnouncementManager.search(containerIds, parser);
+        return AnnouncementManager.search(parser, containers, hits);
     }
-
 
     public String getSearchResultName()
     {
-        return "Message";
+        return SEARCH_RESULT_TYPE_DESCR;
+    }
+
+    public String getDomainName()
+    {
+        return SEARCH_DOMAIN;
     }
 
 

@@ -47,6 +47,9 @@ public class IssuesModule extends DefaultModule implements ContainerManager.Cont
     private static final Logger _log = Logger.getLogger(IssuesModule.class);
 
     public static final String NAME = "Issues";
+    public static final String SEARCH_DOMAIN = "issues";
+    public static final String SEARCH_RESULT_TYPE = "labkey/issue";
+    public static final String SEARCH_RESULT_TYPE_DESCR = "Issue";
 
     public IssuesModule()
     {
@@ -155,15 +158,20 @@ public class IssuesModule extends DefaultModule implements ContainerManager.Cont
         return url;
     }
 
-    public MultiMap<String, String> search(Collection<String> containerIds, Search.SearchTermParser parser)
+    public int search(Search.SearchTermParser parser, Set<Container> containers, List<SearchHit> hits)
     {
-        return IssueManager.search(containerIds, parser);
+        return IssueManager.search(parser, containers, hits);
     }
 
 
     public String getSearchResultName()
     {
-        return "Issue";
+        return SEARCH_RESULT_TYPE_DESCR;
+    }
+
+    public String getDomainName()
+    {
+        return SEARCH_DOMAIN;
     }
 
 

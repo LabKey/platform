@@ -175,7 +175,7 @@
     <tr>
         <td width="1%">Get&nbsp;Url:</td>
         <td width="98%"><input type="text" id="txtUrlGet" style="width:100%"
-                               value="<%=defGetUrl.getLocalURIString()%>"/>
+                               value=""/>
         </td>
         <td width="1%">
             <input type="button" value="Get" id="btnGet" onclick="getUrl()"/>
@@ -184,7 +184,7 @@
     <tr>
         <td width="1%">Post&nbsp;Url:</td>
         <td width="98%"><input type="text" id="txtUrlPost" style="width:100%"
-                               value="<%=defPostUrl.getLocalURIString()%>"/>
+                               value=""/>
         </td>
         <td width="1%">
             <input type="button" value="Post" id="btnPost" onclick="postUrl()"/>

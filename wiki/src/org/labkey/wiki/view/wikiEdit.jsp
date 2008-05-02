@@ -703,7 +703,7 @@
         //hide the convert window
         _convertWin.hide();
 
-        setStatus("Converted.", true);
+        setStatus("Converted. Click Save to save the converted content, or Cancel to abandon all your changes and exit.", true);
         showEditingHelp(_wikiProps.rendererType);
     }
 

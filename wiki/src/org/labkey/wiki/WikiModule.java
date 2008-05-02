@@ -27,6 +27,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Search;
+import org.labkey.api.util.SearchHit;
 import org.labkey.api.view.*;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
@@ -51,6 +52,7 @@ public class WikiModule extends DefaultModule implements ContainerManager.Contai
 {
     public static final String NAME = "Wiki";
     public static final String WEB_PART_NAME = "Wiki";
+    public static final String SEARCH_DOMAIN = "wiki";
 
     private boolean _newInstall = false;
     private User _installerUser = null;
@@ -263,15 +265,20 @@ public class WikiModule extends DefaultModule implements ContainerManager.Contai
     }
 
 
-    public MultiMap<String, String> search(Collection<String> containerIds, Search.SearchTermParser parser)
+    public int search(Search.SearchTermParser parser, Set<Container> containers, List<SearchHit> hits)
     {
-        return WikiManager.search(containerIds, parser);
+        return WikiManager.search(parser, containers, hits);
     }
 
 
     public String getSearchResultName()
     {
         return "Wiki Page";
+    }
+
+    public String getDomainName()
+    {
+        return SEARCH_DOMAIN;
     }
 
 

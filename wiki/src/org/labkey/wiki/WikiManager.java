@@ -53,6 +53,8 @@ public class WikiManager
     private static CoreSchema core = CoreSchema.getInstance();
 
     private static final int LATEST = -1;
+    private static final String SEARCH_HIT_TYPE = "labkey/wiki";
+    private static final String SEARCH_HIT_TYPE_PAGE = "Wiki Page";
 
 //    private static SessionFactory _sessionFactory = DataSourceSessionFactory.create(_schema,
 //            new Class[]{Wiki.class, Attachment.class},
@@ -400,14 +402,15 @@ public class WikiManager
     }
 
 
-    public static MultiMap<String, String> search(Collection<String> containerIds, Search.SearchTermParser parser)
+    public static int search(Search.SearchTermParser parser, Set<Container> containers, List<SearchHit> hits)
     {
+        int startSize = hits.size();
+
         String fromClause = comm.getTableInfoPages() + " p INNER JOIN " + comm.getTableInfoPageVersions() + " v ON p.EntityId = v.PageEntityId";
         String maxVersionWhere = "v.RowId IN (SELECT MAX(RowId) FROM " + comm.getTableInfoPageVersions() + " GROUP BY PageEntityId)";
         SimpleFilter versionFilter = new SimpleFilter().addWhereClause(maxVersionWhere, null);
-        SQLFragment fragment = Search.getSQLFragment("Container, Title, Name", "Container, Title, Name", fromClause, "Container", versionFilter, containerIds, parser, comm.getSchema().getSqlDialect(), "Title", "Body");
+        SQLFragment fragment = Search.getSQLFragment("Container, Title, Name", "Container, Title, Name", fromClause, "Container", versionFilter, containers, parser, comm.getSchema().getSqlDialect(), "Title", "Body");
 
-        MultiMap<String, String> map = new MultiHashMap<String, String>();
         ResultSet rs = null;
 
         try
@@ -418,16 +421,13 @@ public class WikiManager
             {
                 String containerId = rs.getString(1);
                 Container c = ContainerManager.getForId(containerId);
-                ActionURL url = new ActionURL("Wiki", "page", c.getPath());
+                ActionURL url = new ActionURL(WikiController.PageAction.class, c);
                 url.addParameter("name", rs.getString(3));
 
-                StringBuilder link = new StringBuilder("<a href=\"");
-                link.append(url.getEncodedLocalURIString());
-                link.append("\">");
-                link.append(PageFlowUtil.filter(rs.getString(2)));
-                link.append("</a>");
+                SimpleSearchHit hit = new SimpleSearchHit(WikiModule.SEARCH_DOMAIN, c.getPath(),
+                        rs.getString(2), url.getLocalURIString(), SEARCH_HIT_TYPE, SEARCH_HIT_TYPE_PAGE);
 
-                map.put(rs.getString(1), link.toString());
+                hits.add(hit);
             }
         }
         catch(SQLException e)
@@ -439,9 +439,8 @@ public class WikiManager
             ResultSetUtil.close(rs);
         }
 
-        return map;
+        return hits.size() - startSize;
     }
-
 
     private static Map<String, Wiki> generatePageMap(Container c) throws SQLException
     {

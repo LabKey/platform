@@ -28,7 +28,9 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.*;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ActionURL;
 import org.labkey.issue.IssuesController;
+import org.labkey.issue.IssuesModule;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -575,12 +577,13 @@ public class IssueManager
         return message;
     }
 
-
-    public static MultiMap<String, String> search(Collection<String> containerIds, Search.SearchTermParser parser)
+    public static int search(Search.SearchTermParser parser, Set<Container> containers, List<SearchHit> hits)
     {
+        int startCount = hits.size();
+
         SqlDialect dialect = _issuesSchema.getSchema().getSqlDialect();
         String from = _tinfoIssues + " i LEFT OUTER JOIN " + _tinfoComments + " c ON i.IssueId = c.IssueId";
-        SQLFragment searchSql = Search.getSQLFragment("Container, Title, IssueId", "Container, Title, i.IssueId", from, "Container", null, containerIds, parser, dialect, "Comment"); // No need to search title since it ends up in the comment
+        SQLFragment searchSql = Search.getSQLFragment("Container, Title, IssueId", "Container, Title, i.IssueId", from, "Container", null, containers, parser, dialect, "Comment"); // No need to search title since it ends up in the comment
         MultiMap<String, String> map = new MultiHashMap<String, String>();
         ResultSet rs = null;
 
@@ -593,13 +596,14 @@ public class IssueManager
                 String containerId = rs.getString(1);
                 Container c = ContainerManager.getForId(containerId);
 
-                StringBuilder link = new StringBuilder("<a href=\"");
-                link.append(IssuesController.issueURL(c, "details").addParameter("issueId",rs.getString(3)));
-                link.append("\">");
-                link.append(PageFlowUtil.filter(rs.getString(2)));
-                link.append("</a>");
+                ActionURL url = IssuesController.issueURL(c, "details");
+                url.addParameter("issueId",rs.getString(3));
 
-                map.put(rs.getString(1), link.toString());
+                SimpleSearchHit hit = new SimpleSearchHit(IssuesModule.SEARCH_DOMAIN, c.getPath(), rs.getString(2),
+                        url.getLocalURIString(), IssuesModule.SEARCH_RESULT_TYPE,
+                        IssuesModule.SEARCH_RESULT_TYPE_DESCR);
+
+                hits.add(hit);
             }
         }
         catch(SQLException e)
@@ -611,7 +615,7 @@ public class IssueManager
             ResultSetUtil.close(rs);
         }
 
-        return map;
+        return hits.size() - startCount;
     }
 
     public static String getRequiredIssueFields(Container container)

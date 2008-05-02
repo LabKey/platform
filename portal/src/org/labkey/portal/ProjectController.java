@@ -18,6 +18,7 @@ package org.labkey.portal;
 
 import org.apache.beehive.netui.pageflow.FormData;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.collections15.MultiMap;
 import org.labkey.api.action.*;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -27,10 +28,7 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
-import org.labkey.api.util.AppProps;
-import org.labkey.api.util.HelpTopic;
-import org.labkey.api.util.Search;
-import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.util.*;
 import org.labkey.api.util.Search.SearchResultsView;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.HomeTemplate;
@@ -42,9 +40,7 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import java.beans.PropertyDescriptor;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Map;
+import java.util.*;
 
 
 public class ProjectController extends SpringActionController
@@ -545,12 +541,12 @@ public class ProjectController extends SpringActionController
 
     public static ActionURL getSearchUrl(Container c)
     {
-        return new ActionURL(SearchAction.class, c);
+        return new ActionURL(SearchResultsAction.class, c);
     }
 
 
     @RequiresPermission(ACL.PERM_READ)
-    public class SearchAction extends SimpleViewAction
+    public class SearchResultsAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
@@ -739,6 +735,100 @@ public class ProjectController extends SpringActionController
 
             view.render(request, getViewContext().getResponse());
             return null;
+        }
+    }
+
+    public static class SearchForm
+    {
+        private String _terms;
+        private String _domains;
+        private boolean _includeSubfolders;
+
+        public String getTerms()
+        {
+            return _terms;
+        }
+
+        public void setTerms(String terms)
+        {
+            _terms = terms;
+        }
+
+        public String getDomains()
+        {
+            return _domains;
+        }
+
+        public void setDomains(String domains)
+        {
+            _domains = domains;
+        }
+
+        public boolean isIncludeSubfolders()
+        {
+            return _includeSubfolders;
+        }
+
+        public void setIncludeSubfolders(boolean includeSubfolders)
+        {
+            _includeSubfolders = includeSubfolders;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class SearchAction extends ApiAction<SearchForm>
+    {
+        public ApiResponse execute(SearchForm form, BindException errors) throws Exception
+        {
+            //determine the set of containers to search
+            //if includeSubfolders is true, get all children in which the user has read permission
+            Set<Container> containers = form.isIncludeSubfolders() ?
+                    ContainerManager.getAllChildren(getViewContext().getContainer(), getViewContext().getUser(), ACL.PERM_READ) :
+                    Collections.singleton(getViewContext().getContainer());
+
+            //determine the set of searchables to search based on the list of domains
+            List<Search.Searchable> searchables = getSearchables(form);
+
+            //parse the search terms
+            Search.SearchTermParser parser = new Search.SearchTermParser(form.getTerms());
+            List<SearchHit> hits = new ArrayList<SearchHit>();
+            if(parser.hasTerms())
+            {
+                //perform the searches
+                for(Search.Searchable src : searchables)
+                {
+                    src.search(parser, containers, hits);
+                }
+            }
+
+            //sort the results
+            Collections.sort(hits, new SearchHitComparator());
+
+            //build the results
+            ApiSimpleResponse resp = new ApiSimpleResponse("hitCount", hits.size());
+            resp.putBeanList("hits", hits);
+            resp.putBean("search", form);
+
+            return resp;
+        }
+
+        protected List<Search.Searchable> getSearchables(SearchForm form)
+        {
+            if(null == form.getDomains() || form.getDomains().length() == 0)
+                return Search.ALL_SEARCHABLES;
+
+            List<Search.Searchable> searchables = new ArrayList<Search.Searchable>();
+            String[] domains = form.getDomains().split(",");
+            if(null != domains)
+            {
+                for(String dom : domains)
+                {
+                    Search.Searchable src = Search.getDomain(dom);
+                    if(null != src)
+                        searchables.add(src);
+                }
+            }
+            return searchables;
         }
     }
 }

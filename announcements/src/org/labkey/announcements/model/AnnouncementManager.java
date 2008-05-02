@@ -34,6 +34,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.common.util.Pair;
+import org.labkey.announcements.AnnouncementsController;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -861,13 +862,13 @@ public class AnnouncementManager
         }
     }
 
-
-    public static MultiMap<String, String> search(Collection<String> containerIds, Search.SearchTermParser parser)
+    public static int search(Search.SearchTermParser parser, Set<Container> containers, List<SearchHit> hits)
     {
+        int startCount = hits.size();
+
         SqlDialect dialect = _comm.getSchema().getSqlDialect();
         String from = _comm.getTableInfoThreads() + " t LEFT OUTER JOIN " + _comm.getTableInfoAnnouncements() + " a ON ((a.parent IS NULL AND t.RowId = a.RowId) OR (t.EntityId = a.Parent))";
-        SQLFragment searchSql = Search.getSQLFragment("Container, Title, RowId", "t.Container, t.Title, t.RowId", from, "t.Container", null, containerIds, parser, dialect, "a.Title", "a.Body");
-        MultiMap<String, String> map = new MultiHashMap<String, String>();
+        SQLFragment searchSql = Search.getSQLFragment("Container, Title, RowId", "t.Container, t.Title, t.RowId", from, "t.Container", null, containers, parser, dialect, "a.Title", "a.Body");
         ResultSet rs = null;
 
         try
@@ -879,15 +880,13 @@ public class AnnouncementManager
                 String containerId = rs.getString(1);
                 Container c = ContainerManager.getForId(containerId);
 
-                StringBuilder link = new StringBuilder("<a href=\"");
-                link.append(ActionURL.toPathString("announcements", "thread", c.getPath()));
-                link.append("?rowId=");
-                link.append(rs.getString(3));
-                link.append("\">");
-                link.append(PageFlowUtil.filter(rs.getString(2)));
-                link.append("</a>");
+                ActionURL url = new ActionURL(AnnouncementsController.ThreadAction.class, c);
+                url.addParameter("rowId", rs.getString(3));
 
-                map.put(rs.getString(1), link.toString());
+                SimpleSearchHit hit = new SimpleSearchHit(AnnouncementModule.SEARCH_DOMAIN, c.getPath(),
+                        rs.getString(2), url.getLocalURIString(), AnnouncementModule.SEARCH_RESULT_TYPE,
+                        AnnouncementModule.SEARCH_RESULT_TYPE_DESCR);
+                hits.add(hit);
             }
         }
         catch(SQLException e)
@@ -899,7 +898,7 @@ public class AnnouncementManager
             ResultSetUtil.close(rs);
         }
 
-        return map;
+        return hits.size() - startCount;
     }
 
     public static class EmailPref
