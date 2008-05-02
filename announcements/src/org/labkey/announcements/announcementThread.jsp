@@ -10,6 +10,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.action.ReturnUrlForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <!--ANNOUNCEMENTS-->
 <%
@@ -256,7 +257,7 @@ if (!bean.isResponse && !bean.print)
         }
         else
         {
-            ActionURL respond = announcementURL(context, "respond", "parentId", announcement.getEntityId(), "returnUrl", context.getActionURL().getEncodedLocalURIString());
+            ActionURL respond = announcementURL(context, "respond", "parentId", announcement.getEntityId(), ReturnUrlForm.Params.returnUrl.toString(), context.getActionURL().getEncodedLocalURIString());
             %>
         <a href="<%=h(respond.getLocalURIString())%>"><img src='<%=PageFlowUtil.buttonSrc("Post Response")%>' border="0" alt="[post response]"></a>&nbsp;<%
         }
@@ -268,11 +269,11 @@ if (!bean.isResponse && !bean.print)
         if (embedded)
         {
             ActionURL redirect = context.cloneActionURL().deleteScopeParameters("discussion");
-            deleteThread.addParameter("returnUrl", redirect.getLocalURIString());
+            deleteThread.addReturnURL(redirect);
         }
         else
         {
-            deleteThread.addParameter("returnUrl", bean.messagesURL.getLocalURIString());
+            deleteThread.addReturnURL(bean.messagesURL);
         }
         %>
         <a href="<%=deleteThread.getEncodedLocalURIString()%>"><img src='<%=PageFlowUtil.buttonSrc("Delete " + settings.getConversationName())%>' border="0" alt="[delete <%=h(settings.getConversationName().toLowerCase())%>]"></a>&nbsp;<%

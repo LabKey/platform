@@ -3,13 +3,15 @@
 <%@ page import="org.labkey.announcements.model.AnnouncementManager.Settings.SortOrder" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.action.ReturnUrlForm" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<CustomizeBean> me = (HttpView<CustomizeBean>) HttpView.currentView();
     CustomizeBean bean = me.getModelBean();
     Settings settings = bean.settings;
 
 %><form action="customize.post" method="post">
-<input type="hidden" name="returnUrl" value="<%=bean.returnUrl.getEncodedLocalURIString()%>">
+<input type="hidden" name="<%=ReturnUrlForm.Params.returnUrl%>" value="<%=h(bean.returnURL)%>">
 <table>
     <tr>
         <td class="ms-searchform">Board name</td>
@@ -86,7 +88,7 @@
     </tr>
     <tr>
         <td colspan=2><input type="image" src="<%=PageFlowUtil.buttonSrc("Save")%>"/>
-        <%=PageFlowUtil.buttonLink("Cancel", bean.returnUrl)%></td>
+        <%=PageFlowUtil.buttonLink("Cancel", bean.returnURL)%></td>
     </tr>
 </table>
 </form>

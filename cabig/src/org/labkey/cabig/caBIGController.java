@@ -37,10 +37,10 @@ public class caBIGController extends SpringActionController
     }
 
 
-    public static ActionURL getCaBigUrl(String action, Container c, ActionURL returnUrl)
+    public static ActionURL getCaBigURL(String action, Container c, ActionURL returnURL)
     {
         ActionURL url = new ActionURL("cabig", action, c);
-        return url.addParameter("returnUrl", returnUrl.getLocalURIString());
+        return url.addReturnURL(returnURL);
     }
 
 
@@ -49,7 +49,7 @@ public class caBIGController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return HttpView.redirect(getCaBigUrl("admin", getContainer(), SecurityManager.getPermissionsUrl(getContainer())));
+            return HttpView.redirect(getCaBigURL("admin", getContainer(), SecurityManager.getPermissionsUrl(getContainer())));
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -267,7 +267,7 @@ public class caBIGController extends SpringActionController
             else
             {
                 boolean isPublished = isPublished(c);
-                ActionURL publishUrl = getCaBigUrl(isPublished ? "unpublish" : "publish", c, returnUrl);
+                ActionURL publishUrl = getCaBigURL(isPublished ? "unpublish" : "publish", c, returnUrl);
                 html.append(PageFlowUtil.buttonLink(isPublished ? "Unpublish" : "Publish", publishUrl));
             }
         }

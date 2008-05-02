@@ -15,10 +15,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.AdminUrls;
-import org.labkey.api.module.DefaultModule;
-import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleContext;
-import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.*;
 import org.labkey.api.ms2.MS2Service;
 import org.labkey.api.ms2.SearchClient;
 import org.labkey.api.pipeline.PipelineStatusUrls;
@@ -104,7 +101,7 @@ public class AdminControllerSpring extends SpringActionController
 
             // Configuration
             bean.addConfigurationLink("site settings", new ActionURL("admin", "showCustomizeSite.view", ""));
-            bean.addConfigurationLink("authentication", new ActionURL("login", "configure.view", "").addParameter("returnUrl", getViewContext().getActionURL().getLocalURIString()));
+            bean.addConfigurationLink("authentication", new ActionURL("login", "configure.view", "").addReturnURL(getViewContext().getActionURL()));
             bean.addConfigurationLink("flow cytometry", new ActionURL("Flow", "flowAdmin.view", ""));
             bean.addConfigurationLink("email customization", new ActionURL("admin", "customizeEmail.view", ""));
             bean.addConfigurationLink("project display order", new ActionURL("admin", "reorderFolders.view", ""));
@@ -3403,24 +3400,18 @@ public class AdminControllerSpring extends SpringActionController
 
 
     @RequiresPermission(ACL.PERM_ADMIN)
-    public class FolderAliasesAction extends SimpleViewAction
+    public class FolderAliasesAction extends FormViewAction<FolderAliasesForm>
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public void validateCommand(FolderAliasesForm target, Errors errors)
+        {
+        }
+
+        public ModelAndView getView(FolderAliasesForm form, boolean reshow, BindException errors) throws Exception
         {
             return new JspView<ViewContext>("/org/labkey/core/admin/folderAliases.jsp");
         }
 
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return appendAdminNavTrail(root, "Folder Aliases: " + getViewContext().getContainer().getPath());
-        }
-    }
-
-
-    @RequiresPermission(ACL.PERM_ADMIN)
-    public class SaveAliasesAction extends SimpleRedirectAction<UpdateAliasesForm>
-    {
-        public ActionURL getRedirectURL(UpdateAliasesForm form) throws Exception
+        public boolean handlePost(FolderAliasesForm form, BindException errors) throws Exception
         {
             List<String> aliases = new ArrayList<String>();
             if (form.getAliases() != null)
@@ -3441,15 +3432,26 @@ public class AdminControllerSpring extends SpringActionController
                 }
             }
             ContainerManager.saveAliasesForContainer(getContainer(), aliases);
+
+            return true;
+        }
+
+        public ActionURL getSuccessURL(FolderAliasesForm form)
+        {
             ActionURL url = getViewContext().cloneActionURL();
             url.setAction("manageFolders.view");
 
             return url;
         }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return appendAdminNavTrail(root, "Folder Aliases: " + getContainer().getPath());
+        }
     }
 
 
-    public static class UpdateAliasesForm extends ViewForm
+    public static class FolderAliasesForm extends ViewForm
     {
         private String _aliases;
 
@@ -3498,7 +3500,7 @@ public class AdminControllerSpring extends SpringActionController
                 template.setBody(form.getEmailMessage());
 
                 String[] errorStrings = new String[1];
-                if (template.isValid(errorStrings))  // TODO: Pass in errors collection directly?
+                if (template.isValid(errorStrings))  // TODO: Pass in errors collection directly?  Should also build a list of all validation errors and display them all.
                     EmailTemplateService.get().saveEmailTemplate(template);
                 else
                     errors.reject(ERROR_MSG, errorStrings[0]);
@@ -3550,5 +3552,193 @@ public class AdminControllerSpring extends SpringActionController
         public void setEmailMessage(String body){_emailMessage = body;}
         public String getEmailMessage(){return _emailMessage;}
     }
+
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class CustomizeAction extends FormViewAction<UpdateFolderForm>
+    {
+        private ActionURL _successURL;
+
+        public void validateCommand(UpdateFolderForm form, Errors errors)
+        {
+            boolean fEmpty = true;
+            for (String module : form.activeModules)
+            {
+                if (module != null)
+                {
+                    fEmpty = false;
+                    break;
+                }
+            }
+            if (fEmpty && "None".equals(form.getFolderType()))
+            {
+                errors.reject(ERROR_MSG, "Error: Please select at least one tab to display.");
+            }
+        }
+
+        public ModelAndView getView(UpdateFolderForm form, boolean reshow, BindException errors) throws Exception
+        {
+            Container c = getContainer();
+            if (c.isRoot())
+                HttpView.throwNotFound();
+
+            return new JspView<UpdateFolderForm>("/org/labkey/core/admin/customizeFolder.jsp", form, errors);
+        }
+
+        public boolean handlePost(UpdateFolderForm form, BindException errors) throws Exception
+        {
+            Container c = getContainer();
+            if (c.isRoot())
+                HttpView.throwNotFound();
+
+            String[] modules = form.getActiveModules();
+            Set<Module> activeModules = new HashSet<Module>();
+            for (String moduleName : modules)
+            {
+                Module module = ModuleLoader.getInstance().getModule(moduleName);
+                if (module != null)
+                    activeModules.add(module);
+            }
+
+            if (null == StringUtils.trimToNull(form.getFolderType()) || FolderType.NONE.getName().equals(form.getFolderType()))
+            {
+                c.setFolderType(FolderType.NONE, activeModules);
+                Module defaultModule = ModuleLoader.getInstance().getModule(form.getDefaultModule());
+                c.setDefaultModule(defaultModule);
+            }
+            else
+            {
+                FolderType folderType= ModuleLoader.getInstance().getFolderType(form.getFolderType());
+                c.setFolderType(folderType, activeModules);
+            }
+
+            if (form.isWizard())
+            {
+                _successURL = new ActionURL("Security", "container", c);
+                _successURL.addParameter("wizard", Boolean.TRUE.toString());
+            }
+            else
+                _successURL = c.getFolderType().getStartURL(c, getUser());
+
+            return true;
+        }
+
+        public ActionURL getSuccessURL(UpdateFolderForm updateFolderForm)
+        {
+            return _successURL;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild("Customize folder " + getContainer().getPath());
+            return root;
+        }
+    }
+
+
+/*    @Jpf.Action @RequiresPermission(ACL.PERM_ADMIN)
+    protected Forward customize(UpdateFolderForm form) throws Exception
+    {
+        Container c = getContainer();
+        if (c.isRoot())
+            HttpView.throwNotFound();
+
+        JspView<UpdateFolderForm> view = new JspView<UpdateFolderForm>("/org/labkey/core/admin/customizeFolder.jsp", form);
+        NavTrailConfig config = new NavTrailConfig(getViewContext()).setTitle("Customize folder " + c.getPath());
+        HttpView template = new HomeTemplate(getViewContext(), c, view, config);
+        includeView(template);
+        return null;
+    }
+*/
+/*
+    @Jpf.Action(validationErrorForward = @Jpf.Forward(path = "customize.do", name = "customize"))
+    @RequiresPermission(ACL.PERM_ADMIN)
+    protected Forward updateFolder(UpdateFolderForm form) throws Exception
+    {
+        Container c = getContainer();
+        if (c.isRoot())
+            HttpView.throwNotFound();
+
+        String[] modules = form.getActiveModules();
+        Set<Module> activeModules = new HashSet<Module>();
+        for (String moduleName : modules)
+        {
+            Module module = ModuleLoader.getInstance().getModule(moduleName);
+            if (module != null)
+                activeModules.add(module);
+        }
+
+        if (null == StringUtils.trimToNull(form.getFolderType()) || FolderType.NONE.getName().equals(form.getFolderType()))
+        {
+            c.setFolderType(FolderType.NONE, activeModules);
+            Module defaultModule = ModuleLoader.getInstance().getModule(form.getDefaultModule());
+            c.setDefaultModule(defaultModule);
+        }
+        else
+        {
+            FolderType folderType= ModuleLoader.getInstance().getFolderType(form.getFolderType());
+            c.setFolderType(folderType, activeModules);
+        }
+
+        ActionURL url;
+        if (form.isWizard())
+        {
+            url = new ActionURL("Security", "container", c);
+            url.addParameter("wizard", Boolean.TRUE.toString());
+        }
+        else
+            url = c.getFolderType().getStartURL(c, getUser());
+
+        return new ViewForward(url);
+    }
+*/
+    public static class UpdateFolderForm
+    {
+        private String[] activeModules = new String[ModuleLoader.getInstance().getModules().size()];
+        private String defaultModule;
+        private String folderType;
+        private boolean wizard;
+
+        public String[] getActiveModules()
+        {
+            return activeModules;
+        }
+
+        public void setActiveModules(String[] activeModules)
+        {
+            this.activeModules = activeModules;
+        }
+
+        public String getDefaultModule()
+        {
+            return defaultModule;
+        }
+
+        public void setDefaultModule(String defaultModule)
+        {
+            this.defaultModule = defaultModule;
+        }
+
+        public String getFolderType()
+        {
+            return folderType;
+        }
+
+        public void setFolderType(String folderType)
+        {
+            this.folderType = folderType;
+        }
+
+        public boolean isWizard()
+        {
+            return wizard;
+        }
+
+        public void setWizard(boolean wizard)
+        {
+            this.wizard = wizard;
+        }
+    }
+
 
 }

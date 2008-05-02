@@ -7,16 +7,19 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.core.admin.AdminControllerSpring" %>
 <%@ page import="java.util.*" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+
+<%=formatMissedErrors("form")%>
+
 <script>
 var requiredModules = new Object();
 var defaultModules = new Object();
 <% //Generate javascript objects...
 final ViewContext context = HttpView.currentContext();
 Container c = context.getContainer();
-AdminController.UpdateFolderForm form = (AdminController.UpdateFolderForm) HttpView.currentModel();
+AdminControllerSpring.UpdateFolderForm form = (AdminControllerSpring.UpdateFolderForm) HttpView.currentModel();
 Collection<FolderType> allFolderTypes = ModuleLoader.getInstance().getFolderTypes();
 List<Module> allModules = new ArrayList<Module>(ModuleLoader.getInstance().getModules());
 Collections.sort(allModules, new Comparator<Module>()
@@ -158,7 +161,7 @@ function validate()
     return false;    up
 }
 </script>
-<form name="folderModules" method=POST action=updateFolder.post onsubmit="return validate();">
+<form name="folderModules" method=POST action=customize.post onsubmit="return validate();">
     <table width="100%">
         <tr>
             <td valign="top"><%WebPartView.startTitleFrame(out, "Folder Type", null, "100%", null);%>

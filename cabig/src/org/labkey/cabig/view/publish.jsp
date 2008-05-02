@@ -9,8 +9,8 @@
 <%
     ViewContext ctx = HttpView.currentContext();
     boolean isPublished = caBIGManager.get().isPublished(ctx.getContainer());
-    String publishButton = PageFlowUtil.buttonLink(isPublished ? "Unpublish" : "Publish", caBIGController.getCaBigUrl(isPublished ? "unpublish" : "publish", ctx.getContainer(), ctx.getActionURL()));
-    ActionURL adminUrl = caBIGController.getCaBigUrl("admin", ctx.getContainer(), ctx.getActionURL());
+    String publishButton = PageFlowUtil.buttonLink(isPublished ? "Unpublish" : "Publish", caBIGController.getCaBigURL(isPublished ? "unpublish" : "publish", ctx.getContainer(), ctx.getActionURL()));
+    ActionURL adminUrl = caBIGController.getCaBigURL("admin", ctx.getContainer(), ctx.getActionURL());
 
     if (isPublished)
     {

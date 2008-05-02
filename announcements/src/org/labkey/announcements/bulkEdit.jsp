@@ -2,6 +2,7 @@
 <%@ page import="org.labkey.announcements.model.AnnouncementManager"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.action.ReturnUrlForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<BulkEditBean> me = (HttpView<BulkEditBean>) HttpView.currentView();
@@ -93,6 +94,6 @@
     <td colspan="5"></td>
 </tr>
 </table>
-<input type="hidden" name="returnUrl" value="<%=bean.returnUrl%>">
+<input type="hidden" name="<%=ReturnUrlForm.Params.returnUrl%>" value="<%=bean.returnURL%>">
 <input type="image" src="<%=PageFlowUtil.submitSrc()%>">&nbsp;<input type=image src="<%=PageFlowUtil.buttonSrc("Cancel")%>" value="Cancel" onclick="javascript:window.history.back(); return false;">
 </form>

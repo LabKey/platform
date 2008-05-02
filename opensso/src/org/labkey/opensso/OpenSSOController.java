@@ -32,7 +32,7 @@ public class OpenSSOController extends SpringActionController
 
     public static ActionURL getURL(Class<? extends Controller> actionClass, ActionURL returnURL)
     {
-        return new ActionURL(actionClass, ContainerManager.getRoot()).addParameter("returnUrl", returnURL.getLocalURIString());
+        return new ActionURL(actionClass, ContainerManager.getRoot()).addReturnURL(returnURL);
     }
 
 
@@ -61,7 +61,7 @@ public class OpenSSOController extends SpringActionController
             Map<String, String> props = new HashMap<String, String>(getViewContext().getExtendedProperties());
             props.remove("x");
             props.remove("y");
-            props.remove("returnUrl");
+            props.remove(ReturnUrlForm.Params.returnUrl.toString());
 
             OpenSSOManager.get().writeSystemSettings(props);
             OpenSSOManager.get().initialize();

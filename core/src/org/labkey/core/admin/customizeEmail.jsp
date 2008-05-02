@@ -6,14 +6,15 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminControllerSpring" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AdminControllerSpring.CustomEmailForm> me = (JspView<AdminControllerSpring.CustomEmailForm>) HttpView.currentView();
     AdminControllerSpring.CustomEmailForm bean = me.getModelBean();
 
     EmailTemplate[] emailTemplates = EmailTemplateService.get().getEmailTemplates();
-    String errors = PageFlowUtil.getStrutsError(request, "main");
+    String errorHTML = formatMissedErrors("form");
 %>
-<span class="labkey-error"><%=errors%></span>
+<%=errorHTML%>
 
 <script type="text/javascript">LABKEY.requiresYahoo("yahoo");</script>
 <script type="text/javascript">LABKEY.requiresYahoo("event");</script>
@@ -128,7 +129,7 @@
         }
     }
 <%
-    if (StringUtils.isEmpty(errors))
+    if (StringUtils.isEmpty(errorHTML))
         out.write("YAHOO.util.Event.addListener(window, \"load\", changeEmailTemplate)");
     else
         out.write("YAHOO.util.Event.addListener(window, \"load\", changeValidSubstitutions)");

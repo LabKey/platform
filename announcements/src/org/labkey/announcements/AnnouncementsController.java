@@ -182,10 +182,10 @@ public class AnnouncementsController extends SpringActionController
         }
     }
 
-    public static ActionURL getAdminEmailURL(Container c, ActionURL returnUrl)
+    public static ActionURL getAdminEmailURL(Container c, ActionURL returnURL)
     {
         ActionURL url = new ActionURL(AdminEmailAction.class, c);
-        url.addParameter("returnUrl", returnUrl.getLocalURIString());
+        url.addReturnURL(returnURL);
         return url;
     }
 
@@ -405,9 +405,9 @@ public class AnnouncementsController extends SpringActionController
         {
             public List<EmailPref> emailPrefList;
             public String folderEmailOption;
-            public ActionURL returnUrl;
+            public ActionURL returnURL;
 
-            private BulkEditBean(Container c, List<EmailPref> emailPrefList, ActionURL returnUrl) throws SQLException
+            private BulkEditBean(Container c, List<EmailPref> emailPrefList, ActionURL returnURL) throws SQLException
             {
                 EmailOption[] emailOptions = AnnouncementManager.getEmailOptions();
                 int defaultEmailOptionId = AnnouncementManager.getDefaultEmailOption(c);
@@ -422,7 +422,7 @@ public class AnnouncementsController extends SpringActionController
                 }
 
                 this.emailPrefList = emailPrefList;
-                this.returnUrl = returnUrl;
+                this.returnURL = returnURL;
             }
         }
     }
@@ -586,7 +586,7 @@ public class AnnouncementsController extends SpringActionController
     {
         ActionURL url = new ActionURL(DeleteResponseAction.class, c);
         url.addParameter("entityId", entityId);
-        url.addParameter("returnUrl", returnUrl.getLocalURIString());
+        url.addReturnURL(returnUrl);
 
         return url;
     }
@@ -870,7 +870,7 @@ public class AnnouncementsController extends SpringActionController
     public static ActionURL getCustomizeURL(Container c, ActionURL returnUrl)
     {
         ActionURL url = new ActionURL(CustomizeAction.class, c);
-        url.addParameter("returnUrl", returnUrl.getLocalURIString());
+        url.addReturnURL(returnUrl);
         return url;
     }
 
@@ -888,7 +888,7 @@ public class AnnouncementsController extends SpringActionController
             CustomizeBean bean = new CustomizeBean();
 
             bean.settings = getSettings();
-            bean.returnUrl = getReturnUrl();
+            bean.returnURL = getReturnUrl();
             bean.assignedToSelect = getAssignedToSelect(getContainer(), bean.settings.getDefaultAssignedTo(), "defaultAssignedTo", getViewContext());
 
             if (hasEditorPerm(Group.groupGuests))
@@ -923,7 +923,7 @@ public class AnnouncementsController extends SpringActionController
     public static class CustomizeBean
     {
         public Settings settings;
-        public ActionURL returnUrl;
+        public ActionURL returnURL;
         public String securityWarning;
         public String assignedToSelect;
     }
@@ -1288,7 +1288,7 @@ public class AnnouncementsController extends SpringActionController
 
     private static ActionURL getInsertURL(Container c, ActionURL returnURL)
     {
-        return new ActionURL(InsertAction.class, c).addParameter("returnURL", returnURL.getLocalURIString());
+        return new ActionURL(InsertAction.class, c).addReturnURL(returnURL);
     }
 
 
@@ -1406,7 +1406,7 @@ public class AnnouncementsController extends SpringActionController
     {
         ActionURL url = new ActionURL(UpdateAction.class, c);
         url.addParameter("entityId", threadId);
-        url.addParameter("returnUrl", returnUrl.getLocalURIString());
+        url.addReturnURL(returnUrl);
         return url;
     }
 
