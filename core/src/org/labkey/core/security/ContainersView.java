@@ -1,0 +1,80 @@
+package org.labkey.core.security;
+
+import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.data.Container;
+import org.labkey.api.security.ACL;
+import org.labkey.api.security.User;
+import org.labkey.api.util.ContainerTreeSelected;
+import org.labkey.api.util.PageFlowUtil;
+
+import javax.servlet.ServletException;
+import java.io.PrintWriter;
+import java.io.IOException;
+
+/**
+ * User: jeckels
+* Date: May 1, 2008
+*/ //
+// VIEWS
+//
+public class ContainersView extends WebPartView
+{
+    Container _c;
+
+    public ContainersView(Container c)
+    {
+        setTitle("Folders in project " + c.getName());
+        setBodyClass("normal");
+        _c = c;
+    }
+
+
+    public void renderView(Object model, PrintWriter out) throws IOException, ServletException
+    {
+        ActionURL url = new ActionURL("Security", "container", "");
+        PermissionsContainerTree ct = new PermissionsContainerTree(_c.getPath(), getViewContext().getUser(), ACL.PERM_ADMIN, url);
+        ct.setCurrent(getViewContext().getContainer());
+        StringBuilder html = new StringBuilder("<table class=\"dataRegion\">");
+        ct.render(html);
+        html.append("</table><br>");
+        ActionURL manageFoldersURL = getViewContext().cloneActionURL();
+        manageFoldersURL.setAction("manageFolders").setPageFlow("admin");
+        html.append("*Indicates that this folder's permissions are inherited from the parent folder<br><br>");
+        html.append("[<a href=\"").append(manageFoldersURL.getURIString()).append("\">manage folders</a>]");
+
+        out.println(html.toString());
+    }
+
+    public static class PermissionsContainerTree extends ContainerTreeSelected
+    {
+        public PermissionsContainerTree(String rootPath, User user, int perm, ActionURL url)
+        {
+            super(rootPath, user, perm, url);
+        }
+
+        protected void renderCellContents(StringBuilder html, Container c, ActionURL url)
+        {
+            if (c.equals(current))
+                html.append("<span class=\"labkey-navtree-selected\">");
+
+            if (null != url)
+            {
+                html.append("<a href=\"");
+                url.setExtraPath(c.getPath());
+                html.append(url.getEncodedLocalURIString());
+                html.append("\">");
+                if (c.isInheritedAcl())
+                    html.append('*');
+                html.append(PageFlowUtil.filter(c.getName()));
+                html.append("</a>");
+            }
+            else
+            {
+                html.append(PageFlowUtil.filter(c.getName()));
+            }
+            if (c.equals(current))
+                html.append("</span>");
+        }
+    }
+}

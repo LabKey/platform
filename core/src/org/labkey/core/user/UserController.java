@@ -538,7 +538,30 @@ public class UserController extends SpringActionController
 
         public ModelAndView getView(UserForm form, BindException errors) throws Exception
         {
-            _userId = Integer.valueOf(form.getUserId());
+            String email = form.getNewEmail();
+            if (email != null)
+            {
+                try
+                {
+                    User user = UserManager.getUser(new ValidEmail(email));
+                    if (user != null)
+                    {
+                        _userId = user.getUserId();
+                    }
+                    else
+                    {
+                        HttpView.throwNotFound();
+                    }
+                }
+                catch (ValidEmail.InvalidEmailException e)
+                {
+                    HttpView.throwNotFound();
+                }
+            }
+            if (_userId == null)
+            {
+                _userId = Integer.valueOf(form.getUserId());
+            }
             User requestedUser = UserManager.getUser(_userId);
             if (requestedUser == null)
                 return HttpView.throwNotFoundMV();

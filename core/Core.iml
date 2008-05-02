@@ -58,6 +58,7 @@
       </library>
     </orderEntry>
     <orderEntry type="module" module-name="Internal" />
+    <orderEntry type="module" module-name="API" />
     <orderEntryProperties />
   </component>
   <component name="copyright">

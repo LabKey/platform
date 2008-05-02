@@ -7,20 +7,18 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.core.security.SecurityController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<SecurityController.GroupsBean> me = (JspView<SecurityController.GroupsBean>) org.labkey.api.view.HttpView.currentView();
     SecurityController.GroupsBean groupsBean = me.getModelBean();
     Container container = groupsBean.getContainer();
     for (String message : groupsBean.getMessages())
     {
-%><b><%= message %></b><br><%
-    }
-    for (String error : groupsBean.getErrors())
-    {
-        %><b><%= error %></b><br><%
-    }
-%>
+%><b><%= message %></b><br>
+<% } %>
+<labkey:errors />
 
 <script type="text/javascript">
 LABKEY.requiresScript('completion.js');

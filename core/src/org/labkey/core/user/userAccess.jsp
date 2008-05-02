@@ -7,6 +7,7 @@
 <%@ page import="org.labkey.api.data.ContainerManager"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<UserController.AccessDetail> me =
             (JspView<UserController.AccessDetail>) HttpView.currentView();
@@ -19,6 +20,7 @@
     String styleTD = "border-right:solid 1px " + borderColor + ";";
     int cellPadding = 3;
 %>
+<labkey:errors />
 <table class="normal" cellspacing="0" cellpadding="<%= cellPadding %>" style="border-bottom:solid 2px <%=borderColor%>;">
     <tr>
         <th style="border-left:solid 1px <%= borderColor %>;<%=styleTH%>">Container</th>

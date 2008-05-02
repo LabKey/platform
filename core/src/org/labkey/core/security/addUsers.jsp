@@ -1,5 +1,10 @@
 <%@ page import="org.labkey.api.util.AppProps" %>
-<%@ page extends="org.labkey.api.security.AddUsersPage" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.core.user.UserController" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+
 <script type="text/javascript">LABKEY.requiresScript('completion.js');</script>
 <script type="text/javascript">
     var permissionLink_hide = "<a href=\"#blank\" style=\"display:none\" onclick=\"showUserAccess();\">[permissions]</a>";
@@ -30,7 +35,7 @@
         {
             if (textElem.value != null && textElem.value.length > 0)
             {
-                var target = "userAccess.view?newEmail=" + textElem.value;
+                var target = "<%= new ActionURL(UserController.UserAccessAction.class, ContainerManager.getRoot())%>newEmail=" + textElem.value;
                 window.open(target, "permissions", "height=450,width=500,scrollbars=yes,status=yes,toolbar=no,menubar=no,location=no,resizable=yes");
             }
         }
@@ -38,9 +43,7 @@
 </script>
 
 <form action="addUsers.post" method=post>
-<%if(getMessage() != null) { %>
-<%=getMessage()%><br>
-<% } %>
+    <labkey:errors />
 
     <table border=0 cellspacing=2 cellpadding=0>
         <tr>
@@ -70,8 +73,8 @@
         </td></tr>
         <tr>
             <td>
-                <%=buttonImg("Add Users")%>
-                <%=buttonLink("Show Grid", request.getContextPath() + "/User/showUsers.view?.lastFilter=true")%>
+                <labkey:button text="Add Users" />
+                <%=PageFlowUtil.buttonLink("Show Grid", request.getContextPath() + "/User/showUsers.view?.lastFilter=true")%>
             </td>
         </tr>
     </table>

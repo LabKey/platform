@@ -4,9 +4,11 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.common.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.core.security.GroupView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    SecurityController.GroupBean bean = ((JspView<SecurityController.GroupBean>)HttpView.currentView()).getModelBean();
+    GroupView.GroupBean bean = ((JspView<GroupView.GroupBean>)HttpView.currentView()).getModelBean();
 %>
 <script type="text/javascript">
     LABKEY.requiresScript('completion.js');
@@ -59,27 +61,9 @@ if (bean.messages.size() > 0)
     </div><br>
     <%
     }
-
-
-
-if (bean.errors.size() > 0)
-    {
-    %>
-    <div id="errors" class="labkey-error">
-    Errors occurred modifying group membership:<br>
-    <%
-    for (String message : bean.errors)
-        {
-        %>
-        <%= message %><br>
-        <%
-        }
-    %>
-    </div><br>
-    <%
-    }
-
-
+%>
+<labkey:errors />
+<%
 if (bean.members.size() <= 0)
     {
     %><p>This group currently has no members.</p><%
