@@ -33,7 +33,6 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.ServletException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
@@ -515,16 +514,12 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
 
     public void checkPermissions() throws TermsOfUseException, UnauthorizedException
     {
-        checkActionPermissions(this, getViewContext());
+        checkPermissionsAndTermsOfUse(getClass(), getViewContext());
     }
 
-    public static void checkActionPermissions(Controller action, ViewContext context)
-            throws TermsOfUseException, UnauthorizedException 
+    public static void checkActionPermissions(Class<? extends Controller> actionClass, Container c, User user) throws UnauthorizedException
     {
-        Container c = context.getContainer();
-        User user = context.getUser();
-
-        RequiresPermission requiresPermission = action.getClass().getAnnotation(RequiresPermission.class);
+        RequiresPermission requiresPermission = actionClass.getAnnotation(RequiresPermission.class);
         if (null != requiresPermission)
         {
             if (null == c)
@@ -539,16 +534,26 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
             }
         }
 
-        RequiresSiteAdmin requiresSiteAdmin = action.getClass().getAnnotation(RequiresSiteAdmin.class);
+        RequiresSiteAdmin requiresSiteAdmin = actionClass.getAnnotation(RequiresSiteAdmin.class);
         if (null != requiresSiteAdmin && !user.isAdministrator())
             HttpView.throwUnauthorized();
 
-        RequiresLogin requiresLogin = action.getClass().getAnnotation(RequiresLogin.class);
+        RequiresLogin requiresLogin = actionClass.getAnnotation(RequiresLogin.class);
         if (null != requiresLogin && user.isGuest())
             HttpView.throwUnauthorized();
 
         if (null == requiresPermission && null == requiresSiteAdmin && null == requiresLogin)
             throw new IllegalStateException("@RequiresPermission, @RequiresSiteAdmin, or @RequiresLogin annotation is required");
+    }
+
+    public static void checkPermissionsAndTermsOfUse(Class<? extends Controller> actionClass, ViewContext context)
+            throws TermsOfUseException, UnauthorizedException 
+    {
+        Container c = context.getContainer();
+        User user = context.getUser();
+
+        checkActionPermissions(actionClass, context.getContainer(), context.getUser());
+
         if (!context.hasAgreedToTermsOfUse())
             throw new TermsOfUseException(context.getActionURL());
     }

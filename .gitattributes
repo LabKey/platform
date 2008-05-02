@@ -44,6 +44,7 @@ api/src/org/labkey/api/action/HasPageConfig.java -text
 api/src/org/labkey/api/action/HasValidator.java -text
 api/src/org/labkey/api/action/HasViewContext.java -text
 api/src/org/labkey/api/action/InterfaceAction.java -text
+api/src/org/labkey/api/action/LabkeyError.java -text
 api/src/org/labkey/api/action/NavTrailAction.java -text
 api/src/org/labkey/api/action/PermissionCheckable.java -text
 api/src/org/labkey/api/action/QueryViewAction.java -text
@@ -1490,7 +1491,6 @@ internal/src/org/labkey/api/sample/MouseModelManager.java -text
 internal/src/org/labkey/api/sample/MouseSchema.java -text
 internal/src/org/labkey/api/sample/SampleManager.java -text
 internal/src/org/labkey/api/sample/Slide.java -text
-internal/src/org/labkey/api/security/AddUsersPage.java -text
 internal/src/org/labkey/api/security/UserComparator.java -text
 internal/src/org/labkey/api/util/BeanQuery.java -text
 internal/src/org/labkey/api/util/ContainerTree.java -text

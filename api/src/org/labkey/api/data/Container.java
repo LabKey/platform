@@ -94,7 +94,7 @@ public class Container implements Serializable
 
     synchronized ACL computeAcl()
     {
-        ACL acl = SecurityManager.getACL(_id);
+        ACL acl = SecurityManager.getACL(this);
         _inheritedAcl = false;
         if (null == acl || acl.isEmpty())
         {

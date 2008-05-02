@@ -2,9 +2,7 @@ package org.labkey.api.query;
 
 import org.labkey.api.security.User;
 import org.labkey.api.data.*;
-import org.labkey.api.query.FilteredTable;
-import org.labkey.api.query.QuerySchema;
-import org.labkey.api.query.AbstractSchema;
+import org.labkey.api.util.CaseInsensitiveHashMap;
 
 import java.util.*;
 
@@ -17,7 +15,7 @@ final public class DefaultSchema extends AbstractSchema
     {
         abstract public QuerySchema getSchema(DefaultSchema schema);
     }
-    static final Map<String, SchemaProvider> _providers = Collections.synchronizedMap(new HashMap());
+    static final Map<String, SchemaProvider> _providers = Collections.synchronizedMap(new CaseInsensitiveHashMap<SchemaProvider>());
 
     static public void registerProvider(String name, SchemaProvider provider)
     {
@@ -58,7 +56,7 @@ final public class DefaultSchema extends AbstractSchema
     private DefaultSchema(User user, Container container)
     {
         super(CoreSchema.getInstance().getSchema(), user, container);
-        _schemas = new HashMap();
+        _schemas = new CaseInsensitiveHashMap<QuerySchema>();
     }
 
     public TableInfo getTable(String name, String alias)
@@ -81,14 +79,14 @@ final public class DefaultSchema extends AbstractSchema
 
     public Set<String> getSchemaNames()
     {
-        Set<String> ret = new TreeSet(_providers.keySet());
+        Set<String> ret = new TreeSet<String>(_providers.keySet());
         ret.addAll(QueryService.get().getDbUserSchemas(this).keySet());
         return Collections.unmodifiableSet(ret);
     }
 
     public Set<String> getUserSchemaNames()
     {
-        Set<String> ret = new TreeSet();
+        Set<String> ret = new TreeSet<String>();
         for (String schemaName : getSchemaNames())
         {
             QuerySchema schema = getSchema(schemaName);
@@ -106,6 +104,6 @@ final public class DefaultSchema extends AbstractSchema
 
     public Set<String> getTableAndQueryNames()
     {
-        return Collections.EMPTY_SET;
+        return Collections.emptySet();
     }
 }

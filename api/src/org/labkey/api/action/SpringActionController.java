@@ -291,7 +291,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             }
             else
             {
-                BaseViewAction.checkActionPermissions(action, context);
+                BaseViewAction.checkPermissionsAndTermsOfUse(action.getClass(), context);
             }
 
             beforeAction(action);

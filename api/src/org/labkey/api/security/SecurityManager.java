@@ -1521,13 +1521,6 @@ public class SecurityManager
     private static String _aclPrefix = "ACL/";
 
 
-    @Deprecated
-    public static ACL getACL(String objectID)
-    {
-        return getACL(objectID, objectID);
-    }
-
-
     public static ACL getACL(Container c)
     {
         return getACL(c.getId(), c.getId());
