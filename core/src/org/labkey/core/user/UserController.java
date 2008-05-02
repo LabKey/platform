@@ -709,7 +709,7 @@ public class UserController extends SpringActionController
     public static ActionURL getUpdateURL(ActionURL returnURL)
     {
         ActionURL url = getUserURL("showUpdate");
-        url.addParameter(ReturnUrlForm.Params.returnUrl, returnURL.getLocalURIString());
+        url.addReturnURL(returnURL);
         return url;
     }
 

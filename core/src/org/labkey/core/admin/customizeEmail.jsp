@@ -1,14 +1,14 @@
 <%@ page import="org.apache.commons.lang.StringUtils" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="org.labkey.api.util.emailTemplate.EmailTemplate" %>
-<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.util.emailTemplate.EmailTemplate" %>
 <%@ page import="org.labkey.api.util.emailTemplate.EmailTemplateService" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.core.admin.AdminControllerSpring" %>
 <%
-    JspView<AdminController.CustomEmailForm> me = (JspView<AdminController.CustomEmailForm>) HttpView.currentView();
-    AdminController.CustomEmailForm bean = me.getModelBean();
+    JspView<AdminControllerSpring.CustomEmailForm> me = (JspView<AdminControllerSpring.CustomEmailForm>) HttpView.currentView();
+    AdminControllerSpring.CustomEmailForm bean = me.getModelBean();
 
     EmailTemplate[] emailTemplates = EmailTemplateService.get().getEmailTemplates();
     String errors = PageFlowUtil.getStrutsError(request, "main");
@@ -135,7 +135,7 @@
 %>
 </script>
 
-<form action="updateCustomEmail.view" method="post">
+<form action="customizeEmail.view" method="post">
     <table class="normal">
         <tr class="wpHeader"><th colspan=2 align=center>Custom Emails</th></tr>
         <tr><td class=normal colspan=2>Customize user emails:</td></tr>

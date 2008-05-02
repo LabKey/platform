@@ -292,7 +292,7 @@ public class AnnouncementsController extends SpringActionController
     public ActionURL getBulkEditURL(ActionURL returnURL)
     {
         ActionURL url = new ActionURL(BulkEditAction.class, getContainer());
-        url.addParameter(ReturnUrlForm.Params.returnUrl, returnURL.getLocalURIString());
+        url.addReturnURL(returnURL);
         return url;
     }
 

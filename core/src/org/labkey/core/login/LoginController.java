@@ -1100,7 +1100,7 @@ public class LoginController extends SpringActionController
         {
             ActionURL url = new ActionURL(getActionClass(), ContainerManager.getRoot());
             url.addParameter("name", provider.getName());
-            url.addParameter(ReturnUrlForm.Params.returnUrl, _returnURL.getLocalURIString());
+            url.addReturnURL(_returnURL);
             return url;
         }
 

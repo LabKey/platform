@@ -21,26 +21,22 @@ import org.apache.beehive.netui.pageflow.Forward;
 import org.apache.beehive.netui.pageflow.annotations.Jpf;
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.TableXmlUtils;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.jsp.FormPage;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.security.*;
+import org.labkey.api.security.ACL;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.User;
 import org.labkey.api.util.AppProps;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.emailTemplate.EmailTemplate;
-import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.DialogTemplate;
 import org.labkey.api.view.template.HomeTemplate;
@@ -55,19 +51,10 @@ import java.util.*;
 @Jpf.Controller(messageBundles = {@Jpf.MessageBundle(bundlePath = "messages.Validation")})
 public class AdminController extends ViewController
 {
-    private static Logger _log = Logger.getLogger(AdminController.class);
-
-
     @Jpf.Action @RequiresPermission(ACL.PERM_NONE)
     protected Forward begin() throws Exception
     {
         return new ViewForward(AdminControllerSpring.getShowAdminURL());
-    }
-
-
-    private Forward _renderInTemplate(HttpView view, String title) throws Exception
-    {
-        return _renderInTemplate(view, title, false);
     }
 
 
@@ -91,72 +78,6 @@ public class AdminController extends ViewController
         template.setTitle(title);
         includeView(template);
         return null;
-    }
-
-
-    @Jpf.Action @RequiresSiteAdmin
-    protected Forward dbChecker() throws Exception
-    {
-        ActionURL currentUrl = cloneActionURL();
-        String fixRequested = currentUrl.getParameter("_fix");
-        StringBuffer contentBuffer = new StringBuffer();
-
-        if (null != fixRequested)
-        {
-            String sqlcheck=null;
-            if (fixRequested.equalsIgnoreCase("container"))
-                   sqlcheck = DbSchema.checkAllContainerCols(true);
-            if (fixRequested.equalsIgnoreCase("descriptor"))
-                   sqlcheck = OntologyManager.doProjectColumnCheck(true);
-            contentBuffer.append(sqlcheck);
-        }
-        else
-        {
-            contentBuffer.append("\n<br/><br/>Checking Container Column References...");
-            String strTemp = DbSchema.checkAllContainerCols(false);
-            if (strTemp.length() > 0)
-            {
-                contentBuffer.append(strTemp);
-                currentUrl = cloneActionURL();
-                currentUrl.addParameter("_fix", "container");
-                contentBuffer.append("<br/><br/>&nbsp;&nbsp;&nbsp;&nbsp; click <a href=\"");
-                contentBuffer.append(currentUrl.getEncodedLocalURIString());
-                contentBuffer.append("\" >here</a> to attempt recovery .");
-            }
-            
-            contentBuffer.append("\n<br/><br/>Checking PropertyDescriptor and DomainDescriptor consistency...");
-            strTemp = OntologyManager.doProjectColumnCheck(false);
-            if (strTemp.length() > 0)
-            {
-                contentBuffer.append(strTemp);
-                currentUrl = cloneActionURL();
-                currentUrl.addParameter("_fix", "descriptor");
-                contentBuffer.append("<br/><br/>&nbsp;&nbsp;&nbsp;&nbsp; click <a href=\""
-                        + currentUrl + "\" >here</a> to attempt recovery .");
-            }
-
-            contentBuffer.append("\n<br/><br/>Checking Schema consistency with tableXML...");
-            Set<DbSchema> schemas = new HashSet<DbSchema>();
-            List<Module> modules = ModuleLoader.getInstance().getModules();
-            String sOut=null;
-
-             for (Module module : modules)
-                 schemas.addAll(module.getSchemasToTest());
-
-            for (DbSchema schema : schemas)
-            {
-                sOut = TableXmlUtils.compareXmlToMetaData(schema.getName(), false, false);
-                if (null!=sOut)
-                    contentBuffer.append("<br/>&nbsp;&nbsp;&nbsp;&nbsp;ERROR: Inconsistency in Schema "+ schema.getName()
-                            + "<br/>"+ sOut);
-            }
-
-            contentBuffer.append("\n<br/><br/>Database Consistency checker complete");
-
-        }
-        HtmlView htmlView = new HtmlView("<table class=\"DataRegion\"><tr><td>" + contentBuffer.toString() + "</td></tr></table>");
-        htmlView.setTitle("Database Consistency Checker");
-        return _renderInTemplate(htmlView, "Database Consistency Checker");
     }
 
 
@@ -706,123 +627,5 @@ public class AdminController extends ViewController
         {
             this.recurse = recurse;
         }
-    }
-
-
-    @Jpf.Action @RequiresSiteAdmin
-    protected Forward customizeEmail(CustomEmailForm form) throws Exception
-    {
-        JspView<CustomEmailForm> view = new JspView<CustomEmailForm>("/org/labkey/core/admin/customizeEmail.jsp", form);
-
-        NavTree[] navTrail = new NavTree[] {
-                new NavTree("Admin Console", new ActionURL("admin", "begin", getViewContext().getContainer())),
-                new NavTree("Customize Email")};
-
-        NavTrailConfig config = new NavTrailConfig(getViewContext());
-
-        config.setTitle("Customize Email", false);
-        config.setExtraChildren(navTrail);
-
-        return _renderInTemplate(view, "Customize Email");
-    }
-
-
-    @Jpf.Action @RequiresSiteAdmin
-    protected Forward updateCustomEmail(CustomEmailForm form) throws Exception
-    {
-        if (form.getTemplateClass() != null)
-        {
-            EmailTemplate template = EmailTemplateService.get().createTemplate(form.getTemplateClass());
-
-            template.setSubject(form.getEmailSubject());
-            template.setBody(form.getEmailMessage());
-
-            String[] errors = new String[1];
-            if (template.isValid(errors))
-                EmailTemplateService.get().saveEmailTemplate(template);
-            else
-                PageFlowUtil.getActionErrors(getRequest(), true).add("main", new ActionMessage("Error", errors[0]));
-        }
-        return customizeEmail(form);
-    }
-
-    @Jpf.Action
-    @RequiresPermission(ACL.PERM_ADMIN)
-    protected Forward folderAliases() throws Exception
-    {
-        JspView<ViewContext> view = new JspView<ViewContext>("/org/labkey/core/admin/folderAliases.jsp");
-        return _renderInTemplate(view, "Folder Aliases: " + getViewContext().getContainer().getPath());
-    }
-
-    @Jpf.Action @RequiresPermission(ACL.PERM_ADMIN)
-    protected Forward saveAliases(UpdateAliasesForm form) throws Exception
-    {
-        List<String> aliases = new ArrayList<String>();
-        if (form.getAliases() != null)
-        {
-            StringTokenizer st = new StringTokenizer(form.getAliases(), "\n\r", false);
-            while (st.hasMoreTokens())
-            {
-                String alias = st.nextToken().trim();
-                if (!alias.startsWith("/"))
-                {
-                    alias = "/" + alias;
-                }
-                while (alias.endsWith("/"))
-                {
-                    alias = alias.substring(0, alias.lastIndexOf('/'));
-                }
-                aliases.add(alias);
-            }
-        }
-        ContainerManager.saveAliasesForContainer(getContainer(), aliases);
-        ActionURL url = cloneActionURL();
-        url.setAction("manageFolders.view");
-        return new ViewForward(url);
-    }
-
-    public static class UpdateAliasesForm extends ViewForm
-    {
-        private String _aliases;
-
-
-        public String getAliases()
-        {
-            return _aliases;
-        }
-
-        public void setAliases(String aliases)
-        {
-            _aliases = aliases;
-        }
-    }
-
-
-    @Jpf.Action @RequiresSiteAdmin
-    protected Forward deleteCustomEmail(CustomEmailForm form) throws Exception
-    {
-        if (form.getTemplateClass() != null)
-        {
-            EmailTemplate template = EmailTemplateService.get().createTemplate(form.getTemplateClass());
-            template.setSubject(form.getEmailSubject());
-            template.setBody(form.getEmailMessage());
-
-            EmailTemplateService.get().deleteEmailTemplate(template);
-        }
-        return customizeEmail(form);
-    }
-
-    public static class CustomEmailForm extends ViewForm
-    {
-        private String _templateClass;
-        private String _emailSubject;
-        private String _emailMessage;
-
-        public void setTemplateClass(String name){_templateClass = name;}
-        public String getTemplateClass(){return _templateClass;}
-        public void setEmailSubject(String subject){_emailSubject = subject;}
-        public String getEmailSubject(){return _emailSubject;}
-        public void setEmailMessage(String body){_emailMessage = body;}
-        public String getEmailMessage(){return _emailMessage;}
     }
 }

@@ -13,6 +13,7 @@ import org.labkey.api.attachments.*;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.AdminUrls;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
@@ -26,6 +27,8 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.util.*;
+import org.labkey.api.util.emailTemplate.EmailTemplate;
+import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.util.preferences.PreferenceService;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
@@ -3323,6 +3326,229 @@ public class AdminControllerSpring extends SpringActionController
     }
 
 
+    @RequiresSiteAdmin
+    public class DbCheckerAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            ActionURL currentUrl = getViewContext().cloneActionURL();
+            String fixRequested = currentUrl.getParameter("_fix");
+            StringBuffer contentBuffer = new StringBuffer();
 
+            if (null != fixRequested)
+            {
+                String sqlcheck=null;
+                if (fixRequested.equalsIgnoreCase("container"))
+                       sqlcheck = DbSchema.checkAllContainerCols(true);
+                if (fixRequested.equalsIgnoreCase("descriptor"))
+                       sqlcheck = OntologyManager.doProjectColumnCheck(true);
+                contentBuffer.append(sqlcheck);
+            }
+            else
+            {
+                contentBuffer.append("\n<br/><br/>Checking Container Column References...");
+                String strTemp = DbSchema.checkAllContainerCols(false);
+                if (strTemp.length() > 0)
+                {
+                    contentBuffer.append(strTemp);
+                    currentUrl = getViewContext().cloneActionURL();
+                    currentUrl.addParameter("_fix", "container");
+                    contentBuffer.append("<br/><br/>&nbsp;&nbsp;&nbsp;&nbsp; click <a href=\"");
+                    contentBuffer.append(currentUrl.getEncodedLocalURIString());
+                    contentBuffer.append("\" >here</a> to attempt recovery .");
+                }
+
+                contentBuffer.append("\n<br/><br/>Checking PropertyDescriptor and DomainDescriptor consistency...");
+                strTemp = OntologyManager.doProjectColumnCheck(false);
+                if (strTemp.length() > 0)
+                {
+                    contentBuffer.append(strTemp);
+                    currentUrl = getViewContext().cloneActionURL();
+                    currentUrl.addParameter("_fix", "descriptor");
+                    contentBuffer.append("<br/><br/>&nbsp;&nbsp;&nbsp;&nbsp; click <a href=\"");
+                    contentBuffer.append(currentUrl);
+                    contentBuffer.append("\" >here</a> to attempt recovery .");
+                }
+
+                contentBuffer.append("\n<br/><br/>Checking Schema consistency with tableXML...");
+                Set<DbSchema> schemas = new HashSet<DbSchema>();
+                List<Module> modules = ModuleLoader.getInstance().getModules();
+
+                for (Module module : modules)
+                     schemas.addAll(module.getSchemasToTest());
+
+                for (DbSchema schema : schemas)
+                {
+                    String sOut = TableXmlUtils.compareXmlToMetaData(schema.getName(), false, false);
+                    if (null!=sOut)
+                    {
+                        contentBuffer.append("<br/>&nbsp;&nbsp;&nbsp;&nbsp;ERROR: Inconsistency in Schema ");
+                        contentBuffer.append(schema.getName());
+                        contentBuffer.append("<br/>");
+                        contentBuffer.append(sOut);
+                    }
+                }
+
+                contentBuffer.append("\n<br/><br/>Database Consistency checker complete");
+            }
+
+            return new HtmlView("<table class=\"DataRegion\"><tr><td>" + contentBuffer.toString() + "</td></tr></table>");
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return appendAdminNavTrail(root, "Database Consistency Checker");
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class FolderAliasesAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new JspView<ViewContext>("/org/labkey/core/admin/folderAliases.jsp");
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return appendAdminNavTrail(root, "Folder Aliases: " + getViewContext().getContainer().getPath());
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class SaveAliasesAction extends SimpleRedirectAction<UpdateAliasesForm>
+    {
+        public ActionURL getRedirectURL(UpdateAliasesForm form) throws Exception
+        {
+            List<String> aliases = new ArrayList<String>();
+            if (form.getAliases() != null)
+            {
+                StringTokenizer st = new StringTokenizer(form.getAliases(), "\n\r", false);
+                while (st.hasMoreTokens())
+                {
+                    String alias = st.nextToken().trim();
+                    if (!alias.startsWith("/"))
+                    {
+                        alias = "/" + alias;
+                    }
+                    while (alias.endsWith("/"))
+                    {
+                        alias = alias.substring(0, alias.lastIndexOf('/'));
+                    }
+                    aliases.add(alias);
+                }
+            }
+            ContainerManager.saveAliasesForContainer(getContainer(), aliases);
+            ActionURL url = getViewContext().cloneActionURL();
+            url.setAction("manageFolders.view");
+
+            return url;
+        }
+    }
+
+
+    public static class UpdateAliasesForm extends ViewForm
+    {
+        private String _aliases;
+
+        public String getAliases()
+        {
+            return _aliases;
+        }
+
+        public void setAliases(String aliases)
+        {
+            _aliases = aliases;
+        }
+    }
+
+
+    public ActionURL getCustomizeEmailURL(String templateClassName)
+    {
+        ActionURL url = new ActionURL(CustomizeEmailAction.class, getContainer());
+
+        if (null != templateClassName)
+            url.addParameter("templateClassName", templateClassName);
+
+        return url;
+    }
+
+
+    @RequiresSiteAdmin
+    public class CustomizeEmailAction extends FormViewAction<CustomEmailForm>
+    {
+        public void validateCommand(CustomEmailForm target, Errors errors)
+        {
+        }
+
+        public ModelAndView getView(CustomEmailForm form, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView<CustomEmailForm>("/org/labkey/core/admin/customizeEmail.jsp", form, errors);
+        }
+
+        public boolean handlePost(CustomEmailForm form, BindException errors) throws Exception
+        {
+            if (form.getTemplateClass() != null)
+            {
+                EmailTemplate template = EmailTemplateService.get().createTemplate(form.getTemplateClass());
+
+                template.setSubject(form.getEmailSubject());
+                template.setBody(form.getEmailMessage());
+
+                String[] errorStrings = new String[1];
+                if (template.isValid(errorStrings))  // TODO: Pass in errors collection directly?
+                    EmailTemplateService.get().saveEmailTemplate(template);
+                else
+                    errors.reject(ERROR_MSG, errorStrings[0]);
+            }
+
+            return false;
+        }
+
+        public ActionURL getSuccessURL(CustomEmailForm customEmailForm)
+        {
+            return null;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return appendAdminNavTrail(root, "Customize Email");
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class DeleteCustomEmailAction extends SimpleRedirectAction<CustomEmailForm>
+    {
+        public ActionURL getRedirectURL(CustomEmailForm form) throws Exception
+        {
+            if (form.getTemplateClass() != null)
+            {
+                EmailTemplate template = EmailTemplateService.get().createTemplate(form.getTemplateClass());
+                template.setSubject(form.getEmailSubject());
+                template.setBody(form.getEmailMessage());
+
+                EmailTemplateService.get().deleteEmailTemplate(template);
+            }
+            return getCustomizeEmailURL(form.getTemplateClass());
+        }
+    }
+
+
+    public static class CustomEmailForm
+    {
+        private String _templateClass;
+        private String _emailSubject;
+        private String _emailMessage;
+
+        public void setTemplateClass(String name){_templateClass = name;}
+        public String getTemplateClass(){return _templateClass;}
+        public void setEmailSubject(String subject){_emailSubject = subject;}
+        public String getEmailSubject(){return _emailSubject;}
+        public void setEmailMessage(String body){_emailMessage = body;}
+        public String getEmailMessage(){return _emailMessage;}
+    }
 
 }
