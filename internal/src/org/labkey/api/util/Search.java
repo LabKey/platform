@@ -29,6 +29,19 @@ public class Search
         _searchables.add(searchable);
     }
 
+    public static Searchable getDomain(String domain)
+    {
+        //since all calls to register are done only once during module startup,
+        //we don't need to lock the _searchables list while iterating
+        assert(null != domain);
+        for(Searchable src : _searchables)
+        {
+            if(domain.equalsIgnoreCase(src.getDomainName()))
+                return src;
+        }
+        return null;
+    }
+
 
     public static String getSearchResultNames(List<Searchable> searchables)
     {
@@ -66,6 +79,14 @@ public class Search
         return result;
     }
 
+    public static SQLFragment getSQLFragment(String selectColumnNames, String innerSelectColumnNames, String fromClause, String containerColumnName, SimpleFilter whereFilter, Set<Container> containers, SearchTermParser parser, SqlDialect dialect, String... searchColumnNames)
+    {
+        List<String> containerIds = new ArrayList<String>(containers.size());
+        for(Container c : containers)
+            containerIds.add(c.getId());
+
+        return getSQLFragment(selectColumnNames, innerSelectColumnNames, fromClause, containerColumnName, whereFilter, containerIds, parser, dialect, searchColumnNames);
+    }
 
     public static SQLFragment getSQLFragment(String selectColumnNames, String innerSelectColumnNames, String fromClause, String containerColumnName, SimpleFilter whereFilter, Collection<String> containerIds, SearchTermParser parser, SqlDialect dialect, String... searchColumnNames)
     {
@@ -166,12 +187,31 @@ public class Search
 
     public interface Searchable
     {
-        // Takes a collection of container ids and a collection of search terms and returns a MultiMap of <container id> -> <List of links>.
-        // Links point to each details page where the content contained all the specified search terms.  Container list has been filtered
-        // for read permissions already; implementors should query & return content only in these containers (although we'd never display
-        // content outside this list... just the link text; but the user would click on links that resulted in unauthorized exceptions).
-        MultiMap<String, String> search(Collection<String> containerIds, SearchTermParser parser);
+        /**
+         * Perform the search given a set of search terms. Append search hits to
+         * the list provided as the hits parameter. This list may already contain
+         * hits from previous search providers, so do not clear it. Simple append
+         * your hits to the end.
+         * @param parser The term parser
+         * @param containers The set of containers to search in
+         * @param hits List of hits to append to
+         * @return The number of hits added to the hits list
+         */
+        int search(SearchTermParser parser, Set<Container> containers, List<SearchHit> hits);
+
+        /**
+         * Returns a static string used to classify the search results to the user
+         * For example "Wiki Page" or "Issue".
+         * @return The type of search results returned from this provier
+         */
         String getSearchResultName();
+
+        /**
+         * Returns a name used to programmatically identify the search domain.
+         * This may be used by clients to restrict searches to specific domains.
+         * @return The name of your search domain (e.g., "wiki")
+         */
+        String getDomainName();
     }
 
 
@@ -232,118 +272,101 @@ public class Search
             @Override
             protected void renderView(Object model, PrintWriter out) throws Exception
             {
-                Set<Container> containers;
+                //determine the set of containers to search
+                //if includeSubfolders is true, get all children in which the user has read permission
+                Set<Container> containers = _includeSubfolders ?
+                        ContainerManager.getAllChildren(_root, getViewContext().getUser(), ACL.PERM_READ) :
+                        Collections.singleton(_root);
 
-                if (_includeSubfolders)
+                //parse the search terms
+                Search.SearchTermParser parser = new Search.SearchTermParser(_searchTerm);
+                List<SearchHit> hits = new ArrayList<SearchHit>();
+                if(parser.hasTerms())
                 {
-                    // Sort containers by full container path
-                    containers = new TreeSet<Container>(new Comparator<Container>()
+                    //perform the searches
+                    for(Search.Searchable src : _searchables)
                     {
-                        public int compare(Container a, Container b)
-                        {
-                            return a.getPath().compareToIgnoreCase(b.getPath());
-                        }
-                    });
-
-                    MultiMap<Container, Container> mm = ContainerManager.prune(ContainerManager.getContainerTree(), _root);
-                    containers.addAll(ContainerManager.getContainerSet(mm, _user, ACL.PERM_READ));
-
-                    if (0 == containers.size())
-                        out.println("You don't have permission to search these folders.");
-                }
-                else
-                {
-                    if (_root.hasPermission(_user, ACL.PERM_READ))
-                        containers = PageFlowUtil.set(_root);
-                    else
-                    {
-                        containers = Collections.emptySet();
-                        out.println("You don't have permission to search this folder.");
+                        src.search(parser, containers, hits);
                     }
                 }
 
-                Collection<String> containerIds = new ArrayList<String>(containers.size());
+                //sort the results
+                Collections.sort(hits, new SearchHitComparator());
 
-                for (Container c : containers)
-                    containerIds.add(c.getId());
-
-                SearchTermParser parser = new SearchTermParser(_searchTerm);
-
-                Map<String, MultiMap<String, String>> results = new TreeMap<String, MultiMap<String, String>>();
-
-                if (parser.hasTerms())
-                {
-                    for(Searchable searchable : _searchables)
-                        results.put(searchable.getSearchResultName(), searchable.search(containerIds, parser));
-                }
-
-                // Count the results
-                int resultCount = 0;
-                int folderCount = containers.size();
-
-                for(MultiMap moduleResults : results.values())
-                    resultCount += moduleResults.values().size();
-
+                //start the output
                 out.print("Searched ");
-                //out.print(getSearchResultNames(_searchables)); //per Geroge and 4678
                 out.print("in ");
-                out.print(folderCount);
+                out.print(containers.size());
                 out.print(" folder");
-                if (folderCount > 1)
+                if (containers.size() > 1)
                     out.print('s');
                 out.print(" for \"");
                 out.print(PageFlowUtil.filter(_searchTerm));
                 out.print("\" and found ");
 
-                if (0 == resultCount)
+                if (0 == hits.size())
                 {
                     out.println("no results.");
                     return;
                 }
 
-                out.print(resultCount);
+                out.print(hits.size());
                 out.print(" result");
-                if (resultCount > 1)
+                if (hits.size() > 1)
                     out.print('s');
                 out.println(".<br>");
+
+                //output the hits themselves
+                writeHits(hits, out);
+            }
+
+            protected void writeHits(List<SearchHit> hits, PrintWriter out)
+            {
+                //the hits are sorted by path, type, title
+                String curPath = "";
+
                 out.println("<table class=\"dataRegion\">");
 
-                for(Container c : containers)
+                for(SearchHit hit : hits)
                 {
-                    boolean hasOutputContainerPath = false;
-
-                    for (Searchable module : _searchables)
+                    if(!curPath.equals(hit.getContainerPath()))
                     {
-                        MultiMap<String, String> map = results.get(module.getSearchResultName());
-
-                        if (null != map && map.size() > 0)
-                        {
-                            Collection<String> links = map.get(c.getId());
-
-                            if (null != links)
-                            {
-                                if (!hasOutputContainerPath)
-                                {
-                                    out.print("<tr><td colspan=2><br><b>");
-                                    out.print(c.getPath());
-                                    out.println("</b><br></td></tr>");
-                                    hasOutputContainerPath = true;
-                                }
-
-                                for (String link : links)
-                                {
-                                    out.print("<tr><td></td><td>");
-                                    out.print(module.getSearchResultName());
-                                    out.print(": ");
-                                    out.print(link);
-                                    out.println("</td></tr>");
-                                }
-                            }
-                        }
+                        out.println("<tr><td colspan=\"2\"><br/><b>");
+                        out.println(hit.getContainerPath());
+                        out.println("</b></td></tr>");
+                        curPath = hit.getContainerPath();
                     }
+                    
+                    writeHit(hit, out);
                 }
 
                 out.println("</table>");
+            }
+
+            protected void writeHit(SearchHit hit, PrintWriter out)
+            {
+                out.println("<tr><td>&nbsp;</td><td>");
+                if(null != hit.getTypeDescription() && hit.getTypeDescription().length() > 0)
+                {
+                    out.println(hit.getTypeDescription());
+                    out.println(": ");
+                }
+                out.println("<a href=\"");
+                out.println(hit.getHref());
+                out.println("\">");
+                out.println(hit.getTitle());
+                out.println("</a>");
+
+                String context = hit.getDetails();
+                if(null != context && context.length() > 0)
+                {
+                    out.println("<div style=\"color: #565051;padding-left: 2em\">");
+                    out.println(context);
+                    out.println("</div>");
+                }
+
+                //close the table cell and row
+                out.println("</td></tr>");
             }
         }
     }
@@ -354,7 +377,7 @@ public class Search
         List<SearchTerm> _andTerms = new ArrayList<SearchTerm>();
         List<SearchTerm> _orTerms = new ArrayList<SearchTerm>();
 
-        private SearchTermParser(String query)
+        public SearchTermParser(String query)
         {
             Pattern searchTermPattern = Pattern.compile("\\s*((-?)((\"(.+?)\")|([^\"\\s]+)))");
             Matcher searchTermMatcher = searchTermPattern.matcher(query);

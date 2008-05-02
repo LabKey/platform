@@ -15,8 +15,15 @@
  */
 package org.labkey.api.action;
 
+import org.apache.commons.beanutils.BeanUtils;
+import org.labkey.api.data.BeanObjectFactory;
+import org.labkey.api.data.ObjectFactory;
+
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * Use this for simple responses from Api actions.
@@ -50,5 +57,38 @@ public class ApiSimpleResponse extends HashMap<String,Object> implements ApiResp
     public Map<String, Object> getProperties()
     {
         return this;
+    }
+
+    public <T> void putBean(String key, T bean, String... props) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException
+    {
+        put(key, getBeanMap(bean, props));
+    }
+
+    public <T> void putBeanList(String key, List<T> beans, String... props) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException
+    {
+        List<Map> beanMaps = new ArrayList<Map>();
+        for(Object bean : beans)
+            beanMaps.add(getBeanMap(bean, props));
+        put(key, beanMaps);
+    }
+
+    protected <T> Map<String,Object> getBeanMap(T bean, String... props) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException
+    {
+        if(null == props || props.length == 0)
+        {
+            Map<String, Object> map;
+            //noinspection unchecked
+            ObjectFactory<T> f = ObjectFactory.Registry.getFactory((Class<T>)bean.getClass());
+            if (null == f)
+                throw new IllegalArgumentException("Cound not find a matching object factory.");
+            return f.toMap(bean, null);
+        }
+        else
+        {
+            Map<String,Object> map = new HashMap<String,Object>(props.length);
+            for(String prop : props)
+                map.put(prop, BeanUtils.getProperty(bean, prop));
+            return map;
+        }
     }
 }
