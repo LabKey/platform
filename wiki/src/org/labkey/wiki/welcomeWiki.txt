@@ -37,7 +37,7 @@ from mass spectrometers, flow cytometers, and long-term observational studies.</
 <p><b>All Users</b><br>
 </p>
 <ul>
-	<li><a href="../../admin/modifyFolder.view?action=create">Create a new project</a>
+	<li><a href="../../admin/createFolder.view">Create a new project</a>
 	and set permissions for it<br>
 	</li>
 	<li><a href="../../wiki/home/update.view?name=default">Edit this page</a><br>

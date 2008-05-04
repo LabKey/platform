@@ -19,7 +19,7 @@ var defaultModules = new Object();
 <% //Generate javascript objects...
 final ViewContext context = HttpView.currentContext();
 Container c = context.getContainer();
-AdminControllerSpring.UpdateFolderForm form = (AdminControllerSpring.UpdateFolderForm) HttpView.currentModel();
+AdminControllerSpring.CustomizeFolderForm form = (AdminControllerSpring.CustomizeFolderForm) HttpView.currentModel();
 Collection<FolderType> allFolderTypes = ModuleLoader.getInstance().getFolderTypes();
 List<Module> allModules = new ArrayList<Module>(ModuleLoader.getInstance().getModules());
 Collections.sort(allModules, new Comparator<Module>()
@@ -158,7 +158,7 @@ function validate()
             }
         }
     alert("Error: Please select at least one tab to display.");
-    return false;    up
+    return false;
 }
 </script>
 <form name="folderModules" method=POST action=customize.post onsubmit="return validate();">

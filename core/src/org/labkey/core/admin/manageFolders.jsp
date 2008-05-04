@@ -1,27 +1,24 @@
-<%@ page import="org.labkey.core.admin.AdminController"%>
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.data.ContainerManager"%>
 <%@ page import="org.labkey.api.security.ACL"%>
 <%@ page import="org.labkey.api.util.ContainerTreeSelected"%>
+<%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.ViewContext"%>
-<%@ page import="org.labkey.api.view.ActionURL"%>
-<%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.core.admin.AdminControllerSpring.*"%>
+<%@ page import="java.util.List"%>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <%
-    final AdminController.ManageFoldersForm form = (AdminController.ManageFoldersForm) __form;
+    final ManageFoldersForm form = (ManageFoldersForm) __form;
     final Container c = getContainer();
     final ViewContext context = HttpView.currentContext();
     final ActionURL currentUrl = context.cloneActionURL();
     final ContainerTreeSelected ct = new ContainerTreeSelected(form.getProjectName(), getUser(), ACL.PERM_ADMIN, currentUrl, "managefolders");
     Container parent = c.getParent();
     List<Container> siblings = parent == null ? null : parent.getChildren();
-    boolean hasSiblings = siblings != null  && siblings.size() > 1;
-    List<Container> children = c.getChildren();
-    boolean hasChildren = children != null && children.size() > 0;
+    boolean hasSiblings = siblings != null && siblings.size() > 1;
 
     ct.setCurrent(c);
     ct.setInitialLevel(1);
@@ -35,13 +32,12 @@
 
 <table border=0 cellspacing=2 cellpadding=0><tr>
 <%
-    ActionURL modify = new ActionURL("admin", "modifyFolder", context.getContainer());
-    ActionURL rename = modify.clone().addParameter("action", "rename");
-    ActionURL move   = modify.clone().addParameter("action", "move");
-    ActionURL create = modify.clone().addParameter("action", "create");
-    ActionURL delete = modify.clone().addParameter("action", "delete");
-    ActionURL reorder = modify.clone().setAction("reorderFolders");
-    ActionURL aliases = modify.clone().setAction("folderAliases");
+    ActionURL rename  = urlFor(RenameFolderAction.class);
+    ActionURL move    = urlFor(ShowMoveFolderTreeAction.class);
+    ActionURL create  = urlFor(CreateFolderAction.class);
+    ActionURL delete  = urlFor(DeleteFolderAction.class);
+    ActionURL reorder = urlFor(ReorderFoldersAction.class);
+    ActionURL aliases = urlFor(FolderAliasesAction.class);
 
     if (!ContainerManager.getHomeContainer().equals(c) && !ContainerManager.getSharedContainer().equals(c))
     {

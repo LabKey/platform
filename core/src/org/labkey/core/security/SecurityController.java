@@ -16,40 +16,37 @@
 
 package org.labkey.core.security;
 
+import junit.framework.Test;
+import junit.framework.TestSuite;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.labkey.api.action.*;
+import org.labkey.api.audit.AuditLogEvent;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.data.*;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.data.*;
-import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.audit.AuditLogEvent;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.GUID;
-import org.labkey.api.util.TestContext;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.common.util.Pair;
 import org.labkey.core.query.GroupAuditViewFactory;
 import org.labkey.core.user.UserController;
-import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.mvc.Controller;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
-import org.apache.beehive.netui.pageflow.FormData;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
 
-import java.util.*;
-import java.sql.SQLException;
-import java.io.Writer;
-
-import junit.framework.Test;
-import junit.framework.TestSuite;
-
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.ServletException;
 import javax.mail.MessagingException;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.Writer;
+import java.sql.SQLException;
+import java.util.*;
 
 public class SecurityController extends SpringActionController
 {
@@ -105,7 +102,7 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    public static class GroupForm extends FormData
+    public static class GroupForm
     {
         private String group;
 
@@ -313,8 +310,7 @@ public class SecurityController extends SpringActionController
     }
 
 
-
-    public static class PermissionsForm extends FormData
+    public static class PermissionsForm
     {
         private boolean _wizard;
         private String _inherit;
@@ -409,7 +405,7 @@ public class SecurityController extends SpringActionController
         AuditLogService.get().addEvent(event);
     }
 
-    public static class NewGroupForm extends FormData
+    public static class NewGroupForm
     {
         private String _name;
 
@@ -568,7 +564,7 @@ public class SecurityController extends SpringActionController
         public String mailPrefix;
     }
 
-    public static class UpdateMembersForm extends FormData
+    public static class UpdateMembersForm
     {
         private String names;
         private String group;
@@ -594,7 +590,6 @@ public class SecurityController extends SpringActionController
         {
             this.names = names;
         }
-
 
         public String getNames()
         {
@@ -651,6 +646,7 @@ public class SecurityController extends SpringActionController
             this.quickUI = quickUI;
         }
     }
+
 
     private NavTree addGroupNavTrail(NavTree root, String group)
     {
@@ -709,7 +705,7 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    public static class CompleteUserForm extends FormData
+    public static class CompleteUserForm
     {
         private String _prefix;
 

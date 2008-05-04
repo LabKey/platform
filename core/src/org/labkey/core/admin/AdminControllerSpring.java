@@ -1,5 +1,6 @@
 package org.labkey.core.admin;
 
+import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
@@ -15,6 +16,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.AdminUrls;
+import org.labkey.api.jsp.FormPage;
 import org.labkey.api.module.*;
 import org.labkey.api.ms2.MS2Service;
 import org.labkey.api.ms2.SearchClient;
@@ -65,7 +67,7 @@ import java.util.regex.Pattern;
  */
 public class AdminControllerSpring extends SpringActionController
 {
-    private static DefaultActionResolver _actionResolver = new BeehivePortingActionResolver(AdminController.class, AdminControllerSpring.class);
+    private static DefaultActionResolver _actionResolver = new DefaultActionResolver(AdminControllerSpring.class);
     private static long _errorMark = 0;
     private static NumberFormat formatInteger = DecimalFormat.getIntegerInstance();
 
@@ -73,6 +75,16 @@ public class AdminControllerSpring extends SpringActionController
     {
         super();
         setActionResolver(_actionResolver);
+    }
+
+
+    @RequiresPermission(ACL.PERM_NONE)
+    public class BeginAction extends SimpleRedirectAction
+    {
+        public ActionURL getRedirectURL(Object o) throws Exception
+        {
+            return getShowAdminURL();
+        }
     }
 
 
@@ -579,9 +591,9 @@ public class AdminControllerSpring extends SpringActionController
 
 
     @RequiresPermission(ACL.PERM_NONE)
-    public class MaintenanceAction extends SimpleViewAction<AdminController>
+    public class MaintenanceAction extends SimpleViewAction
     {
-        public ModelAndView getView(AdminController adminController, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             getPageConfig().setTemplate(Template.Dialog);
             WikiRenderer formatter = WikiService.get().getRenderer(WikiRendererType.RADEOX);
@@ -3438,10 +3450,7 @@ public class AdminControllerSpring extends SpringActionController
 
         public ActionURL getSuccessURL(FolderAliasesForm form)
         {
-            ActionURL url = getViewContext().cloneActionURL();
-            url.setAction("manageFolders.view");
-
-            return url;
+            return getManageFoldersURL();
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -3554,12 +3563,434 @@ public class AdminControllerSpring extends SpringActionController
     }
 
 
+    public static ActionURL getManageFoldersURL(Container c)
+    {
+        return new ActionURL(ManageFoldersAction.class, c);
+    }
+
+
+    private ActionURL getManageFoldersURL()
+    {
+        return getManageFoldersURL(getContainer());
+    }
+
+
     @RequiresPermission(ACL.PERM_ADMIN)
-    public class CustomizeAction extends FormViewAction<UpdateFolderForm>
+    public class ManageFoldersAction extends SimpleViewAction<ManageFoldersForm>
+    {
+        public ModelAndView getView(ManageFoldersForm form, BindException errors) throws Exception
+        {
+            if (getContainer().isRoot())
+                HttpView.throwNotFound();
+
+            return FormPage.getView(AdminControllerSpring.class, form, "manageFolders.jsp");
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild("Manage Folders", getManageFoldersURL());
+            return root;
+        }
+    }
+
+
+    public static class ManageFoldersForm extends ViewForm
+    {
+        private String name;
+        private String folder;
+        private String target;
+        private String folderType;
+        private boolean showAll;
+        private boolean confirmed = false;
+        private boolean addAlias = false;
+        private boolean recurse = false;
+
+
+        public boolean isShowAll()
+        {
+            return showAll;
+        }
+
+        public void setShowAll(boolean showAll)
+        {
+            this.showAll = showAll;
+        }
+
+        public String getFolder()
+        {
+            return folder;
+        }
+
+        public void setFolder(String folder)
+        {
+            this.folder = folder;
+        }
+
+        public String getName()
+        {
+            return name;
+        }
+
+        public void setName(String name)
+        {
+            this.name = name;
+        }
+
+        public String getProjectName()
+        {
+            String extraPath = getContainer().getPath();
+
+            int i = extraPath.indexOf("/", 1);
+
+            if (-1 == i)
+                return extraPath;
+            else
+                return extraPath.substring(0, i);
+        }
+
+        public boolean isConfirmed()
+        {
+            return confirmed;
+        }
+
+        public void setConfirmed(boolean confirmed)
+        {
+            this.confirmed = confirmed;
+        }
+
+        public String getFolderType()
+        {
+            return folderType;
+        }
+
+        public void setFolderType(String folderType)
+        {
+            this.folderType = folderType;
+        }
+
+        public boolean isAddAlias()
+        {
+            return addAlias;
+        }
+
+        public void setAddAlias(boolean addAlias)
+        {
+            this.addAlias = addAlias;
+        }
+
+        public boolean getRecurse()
+        {
+            return recurse;
+        }
+
+        public void setRecurse(boolean recurse)
+        {
+            this.recurse = recurse;
+        }
+
+        public String getTarget()
+        {
+            return target;
+        }
+
+        public void setTarget(String target)
+        {
+            this.target = target;
+        }
+    }
+
+
+    private String getTitle(String action)
+    {
+        return action + " " + (getContainer().isProject() ? "Project" : "Folder");
+    }
+
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class RenameFolderAction extends FormViewAction<ManageFoldersForm>
+    {
+        public void validateCommand(ManageFoldersForm target, Errors errors)
+        {
+        }
+
+        public ModelAndView getView(ManageFoldersForm form, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView<ManageFoldersForm>("/org/labkey/core/admin/renameFolder.jsp", form, errors);
+        }
+
+        public boolean handlePost(ManageFoldersForm form, BindException errors) throws Exception
+        {
+            Container c = getContainer();
+            String folderName = form.getName();
+            StringBuffer error = new StringBuffer();
+
+            if (Container.isLegalName(folderName, error))
+            {
+                if (c.getParent().hasChild(folderName))
+                    error.append("The parent folder already has a folder with this name.");
+                else
+                {
+                    ContainerManager.rename(c, folderName);
+                    if (form.isAddAlias())
+                    {
+                        String[] originalAliases = ContainerManager.getAliasesForContainer(c);
+                        List<String> newAliases = new ArrayList<String>(Arrays.asList(originalAliases));
+                        newAliases.add(c.getPath());
+                        ContainerManager.saveAliasesForContainer(c, newAliases);
+                    }
+                    getViewContext().setContainer(ContainerManager.getForId(c.getId()));  // Reload container to populate new name
+                    return true;
+                }
+            }
+
+            errors.reject(ERROR_MSG, "Error: " + error + "  Please enter a different folder name (or Cancel).");
+            return false;
+        }
+
+        public ActionURL getSuccessURL(ManageFoldersForm form)
+        {
+            return getManageFoldersURL();
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            getPageConfig().setFocusId("name");
+            return appendAdminNavTrail(root, getTitle("Rename"));
+        }
+    }
+
+
+    public static ActionURL getShowMoveFolderTreeURL(Container c, boolean addAlias, boolean showAll)
+    {
+        ActionURL url = new ActionURL(ShowMoveFolderTreeAction.class, c);
+
+        if (addAlias)
+            url.addParameter("addAlias", "1");
+
+        if (showAll)
+            url.addParameter("showAll", "1");
+
+        return url;
+    }
+
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class ShowMoveFolderTreeAction extends SimpleViewAction<ManageFoldersForm>
+    {
+        public ModelAndView getView(ManageFoldersForm form, BindException errors) throws Exception
+        {
+            return new MoveFolderTreeView(form, errors);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return appendAdminNavTrail(root, getTitle("Move"));
+        }
+    }
+
+
+    public static class MoveFolderTreeView extends JspView<ManageFoldersForm>
+    {
+        private MoveFolderTreeView(ManageFoldersForm form, BindException errors)
+        {
+            super("/org/labkey/core/admin/moveFolder.jsp", form, errors);
+        }
+    }
+
+
+    public static ActionURL getMoveFolderURL(Container c, boolean addAlias)
+    {
+        ActionURL url = new ActionURL(MoveFolderAction.class, c);
+
+        if (addAlias)
+            url.addParameter("addAlias", "1");
+
+        return url;
+    }
+
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class MoveFolderAction extends SimpleViewAction<ManageFoldersForm>
+    {
+        public ModelAndView getView(ManageFoldersForm form, BindException errors) throws Exception
+        {
+            Container c = getContainer();
+            Container newParent =  ContainerManager.getForPath(form.getTarget());
+
+            if (c.isRoot())
+                return HttpView.throwNotFoundMV("Can't move the root folder.");  // Don't show move tree from root
+
+            if (null == newParent)
+            {
+                errors.reject(ERROR_MSG, "Target '" + form.getTarget() + "' folder does not exist.");
+                return new MoveFolderTreeView(form, errors);    // Redisplay the move folder tree
+            }
+
+            if (!newParent.hasPermission(getUser(), ACL.PERM_ADMIN))
+                HttpView.throwUnauthorized();
+
+            if (newParent.hasChild(c.getName()))
+            {
+                errors.reject(ERROR_MSG, "Error: The selected folder already has a folder with that name.  Please select a different location (or Cancel).");
+                return new MoveFolderTreeView(form, errors);    // Redisplay the move folder tree
+            }
+
+            assert !errors.hasErrors();
+
+            Container oldProject = c.getProject();
+            Container newProject = newParent.isRoot() ? c : newParent.getProject();
+            if (!oldProject.getId().equals(newProject.getId()) && !form.isConfirmed())
+            {
+                getPageConfig().setTemplate(Template.Dialog);
+                return new JspView<ManageFoldersForm>("/org/labkey/core/admin/confirmProjectMove.jsp", form);
+            }
+
+            ContainerManager.move(c, newParent);
+
+            if (form.isAddAlias())
+            {
+                String[] originalAliases = ContainerManager.getAliasesForContainer(c);
+                List<String> newAliases = new ArrayList<String>(Arrays.asList(originalAliases));
+                newAliases.add(c.getPath());
+                ContainerManager.saveAliasesForContainer(c, newAliases);
+            }
+
+            c = ContainerManager.getForId(c.getId());      // Reload container to populate new location
+
+            return HttpView.redirect(getManageFoldersURL(c));
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class ConfirmProjectMoveAction extends SimpleViewAction<ManageFoldersForm>
+    {
+        public ModelAndView getView(ManageFoldersForm form, BindException errors) throws Exception
+        {
+            getPageConfig().setTemplate(Template.Dialog);
+            return new JspView<ManageFoldersForm>("/org/labkey/core/admin/confirmProjectMove.jsp", form);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class CreateFolderAction extends FormViewAction<ManageFoldersForm>
     {
         private ActionURL _successURL;
 
-        public void validateCommand(UpdateFolderForm form, Errors errors)
+        public void validateCommand(ManageFoldersForm target, Errors errors)
+        {
+        }
+
+        public ModelAndView getView(ManageFoldersForm form, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView<ManageFoldersForm>("/org/labkey/core/admin/createFolder.jsp", form, errors);
+        }
+
+        public boolean handlePost(ManageFoldersForm form, BindException errors) throws Exception
+        {
+            Container parent = getContainer();
+            String folderName = form.getName();
+            StringBuffer error = new StringBuffer();
+
+            if (Container.isLegalName(folderName, error))
+            {
+                if (parent.hasChild(folderName))
+                    error.append("The parent folder already has a folder with this name.");
+                else
+                {
+                    Container c = ContainerManager.createContainer(parent, folderName);
+                    String folderType = form.getFolderType();
+                    assert null != folderType;
+                    FolderType type = ModuleLoader.getInstance().getFolderType(folderType);
+                    c.setFolderType(type);
+
+                    if (c.isProject())
+                    {
+                        SecurityManager.createNewProjectGroups(c);
+                        _successURL = new ActionURL("Security", "project", c);
+                    }
+                    else
+                    {
+                        //If current user is NOT a site or folder admin, we'll inherit permissions (otherwise they would not be able to see the folder)
+                        Integer adminGroupId = null;
+                        if (null != c.getProject())
+                            adminGroupId = SecurityManager.getGroupId(c.getProject(), "Administrators", false);
+                        boolean isProjectAdmin = (null != adminGroupId) && getUser().isInGroup(adminGroupId.intValue());
+                        if (!isProjectAdmin && !getUser().isAdministrator())
+                            SecurityManager.setInheritPermissions(c);
+
+                        if (type.equals(FolderType.NONE))
+                            _successURL = getCustomizeURL(c);
+                        else
+                            _successURL = new ActionURL("Security", "container", c);
+                    }
+                    _successURL.addParameter("wizard", Boolean.TRUE.toString());
+
+                    return true;
+                }
+            }
+
+            errors.reject(ERROR_MSG, "Error: " + error + "  Please enter a different folder name (or Cancel).");
+            return false;
+        }
+
+        public ActionURL getSuccessURL(ManageFoldersForm form)
+        {
+            return _successURL;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            getPageConfig().setFocusId("name");
+            return appendAdminNavTrail(root, getTitle("Create"));
+        }
+    }
+
+
+    // For backward compatibility only -- old welcomeWiki text has link to admin/modifyFolder.view?action=create 
+
+    @RequiresPermission(ACL.PERM_NONE)
+    public class ModifyFolderAction extends SimpleRedirectAction
+    {
+        public ActionURL getRedirectURL(Object o) throws Exception
+        {
+            if ("create".equalsIgnoreCase(getViewContext().getActionURL().getParameter("action")))
+                return new ActionURL(CreateFolderAction.class, getContainer());
+
+            throw new NotFoundException();
+        }
+    }
+
+
+    private ActionURL getCustomizeURL()
+    {
+        return getCustomizeURL(getContainer());
+    }
+
+
+    private ActionURL getCustomizeURL(Container c)
+    {
+        return new ActionURL(CustomizeAction.class, c);
+    }
+
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class CustomizeAction extends FormViewAction<CustomizeFolderForm>
+    {
+        private ActionURL _successURL;
+
+        public void validateCommand(CustomizeFolderForm form, Errors errors)
         {
             boolean fEmpty = true;
             for (String module : form.activeModules)
@@ -3576,16 +4007,16 @@ public class AdminControllerSpring extends SpringActionController
             }
         }
 
-        public ModelAndView getView(UpdateFolderForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(CustomizeFolderForm form, boolean reshow, BindException errors) throws Exception
         {
             Container c = getContainer();
             if (c.isRoot())
                 HttpView.throwNotFound();
 
-            return new JspView<UpdateFolderForm>("/org/labkey/core/admin/customizeFolder.jsp", form, errors);
+            return new JspView<CustomizeFolderForm>("/org/labkey/core/admin/customizeFolder.jsp", form, errors);
         }
 
-        public boolean handlePost(UpdateFolderForm form, BindException errors) throws Exception
+        public boolean handlePost(CustomizeFolderForm form, BindException errors) throws Exception
         {
             Container c = getContainer();
             if (c.isRoot())
@@ -3623,7 +4054,7 @@ public class AdminControllerSpring extends SpringActionController
             return true;
         }
 
-        public ActionURL getSuccessURL(UpdateFolderForm updateFolderForm)
+        public ActionURL getSuccessURL(CustomizeFolderForm form)
         {
             return _successURL;
         }
@@ -3636,63 +4067,7 @@ public class AdminControllerSpring extends SpringActionController
     }
 
 
-/*    @Jpf.Action @RequiresPermission(ACL.PERM_ADMIN)
-    protected Forward customize(UpdateFolderForm form) throws Exception
-    {
-        Container c = getContainer();
-        if (c.isRoot())
-            HttpView.throwNotFound();
-
-        JspView<UpdateFolderForm> view = new JspView<UpdateFolderForm>("/org/labkey/core/admin/customizeFolder.jsp", form);
-        NavTrailConfig config = new NavTrailConfig(getViewContext()).setTitle("Customize folder " + c.getPath());
-        HttpView template = new HomeTemplate(getViewContext(), c, view, config);
-        includeView(template);
-        return null;
-    }
-*/
-/*
-    @Jpf.Action(validationErrorForward = @Jpf.Forward(path = "customize.do", name = "customize"))
-    @RequiresPermission(ACL.PERM_ADMIN)
-    protected Forward updateFolder(UpdateFolderForm form) throws Exception
-    {
-        Container c = getContainer();
-        if (c.isRoot())
-            HttpView.throwNotFound();
-
-        String[] modules = form.getActiveModules();
-        Set<Module> activeModules = new HashSet<Module>();
-        for (String moduleName : modules)
-        {
-            Module module = ModuleLoader.getInstance().getModule(moduleName);
-            if (module != null)
-                activeModules.add(module);
-        }
-
-        if (null == StringUtils.trimToNull(form.getFolderType()) || FolderType.NONE.getName().equals(form.getFolderType()))
-        {
-            c.setFolderType(FolderType.NONE, activeModules);
-            Module defaultModule = ModuleLoader.getInstance().getModule(form.getDefaultModule());
-            c.setDefaultModule(defaultModule);
-        }
-        else
-        {
-            FolderType folderType= ModuleLoader.getInstance().getFolderType(form.getFolderType());
-            c.setFolderType(folderType, activeModules);
-        }
-
-        ActionURL url;
-        if (form.isWizard())
-        {
-            url = new ActionURL("Security", "container", c);
-            url.addParameter("wizard", Boolean.TRUE.toString());
-        }
-        else
-            url = c.getFolderType().getStartURL(c, getUser());
-
-        return new ViewForward(url);
-    }
-*/
-    public static class UpdateFolderForm
+    public static class CustomizeFolderForm
     {
         private String[] activeModules = new String[ModuleLoader.getInstance().getModules().size()];
         private String defaultModule;
@@ -3741,4 +4116,164 @@ public class AdminControllerSpring extends SpringActionController
     }
 
 
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class DeleteFolderAction extends FormViewAction<ManageFoldersForm>
+    {
+        public void validateCommand(ManageFoldersForm target, Errors errors)
+        {
+        }
+
+        public ModelAndView getView(ManageFoldersForm form, boolean reshow, BindException errors) throws Exception
+        {
+            getPageConfig().setTemplate(Template.Dialog);
+            return new JspView<ManageFoldersForm>("/org/labkey/core/admin/deleteFolder.jsp", form);
+        }
+
+        public boolean handlePost(ManageFoldersForm form, BindException errors) throws Exception
+        {
+            Container c = getContainer();
+
+            // Must be site admin to delete a project
+            if (c.isProject() && !getUser().isAdministrator())
+                HttpView.throwUnauthorized();
+
+            if (form.getRecurse())
+            {
+                ContainerManager.deleteAll(c, getUser());
+            }
+            else
+            {
+                if (c.getChildren().isEmpty())
+                    ContainerManager.delete(c, getUser());
+                else
+                    throw new IllegalStateException("This container has children");  // UI should prevent this case
+            }
+
+            return true;
+        }
+
+        public ActionURL getSuccessURL(ManageFoldersForm form)
+        {
+            // If we just deleted a project then redirect to the home page, otherwise back to managing the project folders
+            Container c = getContainer();
+
+            if (c.isProject())
+                return AppProps.getInstance().getHomePageActionURL();
+            else
+                return getManageFoldersURL(c.getParent());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class ReorderFoldersAction extends FormViewAction<FolderReorderForm>
+    {
+        public void validateCommand(FolderReorderForm target, Errors errors)
+        {
+        }
+
+        public ModelAndView getView(FolderReorderForm folderReorderForm, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView<ViewContext>("/org/labkey/core/admin/reorderFolders.jsp");
+        }
+
+        public boolean handlePost(FolderReorderForm form, BindException errors) throws Exception
+        {
+            Container parent = getContainer().isRoot() ? getContainer() : getContainer().getParent();
+            if (form.isResetToAlphabetical())
+                ContainerManager.setChildOrderToAlphabetical(parent);
+            else if (form.getOrder() != null)
+            {
+                List<Container> children = parent.getChildren();
+                String[] order = form.getOrder().split(";");
+                Map<String, Container> nameToContainer = new HashMap<String, Container>();
+                for (Container child : children)
+                    nameToContainer.put(child.getName(), child);
+                List<Container> sorted = new ArrayList<Container>(children.size());
+                for (String childName : order)
+                {
+                    Container child = nameToContainer.get(childName);
+                    sorted.add(child);
+                }
+                ContainerManager.setChildOrder(parent, sorted);
+            }
+
+            return true;
+        }
+
+        public ActionURL getSuccessURL(FolderReorderForm folderReorderForm)
+        {
+            if (getContainer().isRoot())
+                return getShowAdminURL();
+            else
+                return getManageFoldersURL();
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return appendAdminNavTrail(root, "Reorder " + (getContainer().isRoot() || getContainer().getParent().isRoot() ? "Projects" : "Folders"));
+        }
+    }
+
+
+    public static class FolderReorderForm
+    {
+        private String _order;
+        private boolean _resetToAlphabetical;
+
+        public String getOrder()
+        {
+            return _order;
+        }
+
+        public void setOrder(String order)
+        {
+            _order = order;
+        }
+
+        public boolean isResetToAlphabetical()
+        {
+            return _resetToAlphabetical;
+        }
+
+        public void setResetToAlphabetical(boolean resetToAlphabetical)
+        {
+            _resetToAlphabetical = resetToAlphabetical;
+        }
+    }
+
+
+    public static class MoveContainerTree extends ContainerTree
+    {
+        private Container ignore;
+
+        public MoveContainerTree(String rootPath, User user, int perm, ActionURL url)
+        {
+            super(rootPath, user, perm, url);
+        }
+
+        public void setIgnore(Container c)
+        {
+            ignore = c;
+        }
+
+        @Override
+        protected boolean renderChildren(StringBuilder html, MultiMap<Container, Container> mm, Container parent, int level)
+        {
+            if (!parent.equals(ignore))
+                return super.renderChildren(html, mm, parent, level);
+            else
+                return false;
+        }
+
+        protected void addContainerToURL(ActionURL url, Container c)
+        {
+            url.replaceParameter("target", c.getPath());
+        }
+    }
 }

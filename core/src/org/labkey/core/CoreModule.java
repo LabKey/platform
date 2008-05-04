@@ -313,7 +313,7 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
         }
         else if (c != null && "/".equals(c.getPath()) && user.isAdministrator())
         {
-            return new ActionURL("admin", "begin.view", "");
+            return new ActionURL("admin", "showAdmin.view", "");
         }
         else if (c != null && c.hasPermission(user, ACL.PERM_ADMIN))
         {
