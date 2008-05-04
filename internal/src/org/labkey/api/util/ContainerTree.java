@@ -165,8 +165,8 @@ public class ContainerTree
     {
         if (null != url)
         {
+            addContainerToURL(url, c);
             html.append("<a href=\"");
-            url.setExtraPath(c.getPath());
             html.append(url.getEncodedLocalURIString()).append("\"");
             if (getPurpose() != null)
             {
@@ -180,5 +180,11 @@ public class ContainerTree
         {
             html.append(PageFlowUtil.filter(c.getName()));
         }
+    }
+
+
+    protected void addContainerToURL(ActionURL url, Container c)
+    {
+        url.setExtraPath(c.getPath());
     }
 }

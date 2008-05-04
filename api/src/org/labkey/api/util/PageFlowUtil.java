@@ -1665,14 +1665,14 @@ public class PageFlowUtil
     }
 
 
-    public static Forward sendAjaxCompletions(HttpServletResponse response, List completions) throws IOException
+    public static Forward sendAjaxCompletions(HttpServletResponse response, List<AjaxCompletion> completions) throws IOException
     {
         response.setContentType("text/xml");
         response.setHeader("Cache-Control", "no-cache");
         Writer writer = response.getWriter();
         writer.write("<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>\n");
         writer.write("<completions>");
-        for (Map.Entry<String,String> completion : (List<Map.Entry<String,String>>)completions)
+        for (AjaxCompletion completion : completions)
         {
             writer.write("<completion>\n");
             writer.write("    <display>" + filter(completion.getKey()) + "</display>");

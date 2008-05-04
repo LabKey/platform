@@ -764,7 +764,7 @@ public class ContainerManager
 
 
     // Move a container to another part of the container tree.  Careful: this method DOES NOT prevent you from orphaning
-    // an entire tree (e.g., by setting a container's parent to one of its children); the UI in ProjectController does this.
+    // an entire tree (e.g., by setting a container's parent to one of its children); the UI in AdminController does this.
     // Lock the class to ensure the old version of this container doesn't sneak into the cache after clearing but before the move.
     //
     // NOTE: Beware side-effect of changing ACLs and GROUPS if a container changes projects

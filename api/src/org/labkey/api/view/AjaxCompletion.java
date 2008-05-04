@@ -7,7 +7,7 @@ import org.labkey.common.util.Pair;
  * Date: Sep 23, 2007
  * Time: 5:43:55 PM
  */
-public final class AjaxCompletion extends Pair<String,String>
+public final class AjaxCompletion extends Pair<String, String>
 {
     public AjaxCompletion(String display, String insert)
     {
