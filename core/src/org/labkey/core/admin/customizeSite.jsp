@@ -2,7 +2,7 @@
 <%@ page import="org.labkey.api.util.SystemMaintenance" %>
 <%@ page import="org.labkey.api.util.FolderDisplayMode" %>
 <%@ page import="org.labkey.api.util.AppProps" %>
-<%@ page import="org.labkey.core.admin.AdminControllerSpring" %>
+<%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.WebTheme" %>
@@ -12,7 +12,7 @@
 
 <%=formatMissedErrors("form")%>
 <%
-    AdminControllerSpring.CustomizeSiteBean bean = ((JspView<AdminControllerSpring.CustomizeSiteBean>)HttpView.currentView()).getModelBean();
+    AdminController.CustomizeSiteBean bean = ((JspView<AdminController.CustomizeSiteBean>)HttpView.currentView()).getModelBean();
     AppProps appProps = AppProps.getInstance();
 %>
 <script type="text/javascript">
@@ -130,7 +130,7 @@ Click the Save button at any time to accept the current settings and continue.</
             %>
         </select>
 
-        [<a href="<%=AdminControllerSpring.getDefineWebThemesURL(bean.upgradeInProgress)%>">Define Web Themes</a>]
+        [<a href="<%=AdminController.getDefineWebThemesURL(bean.upgradeInProgress)%>">Define Web Themes</a>]
     </td>
 </tr>
 <tr>

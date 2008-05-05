@@ -1,6 +1,5 @@
 <%@ page import="org.labkey.announcements.AnnouncementsController"%>
-<%@ page import="org.labkey.announcements.AnnouncementsController.AnnouncementForm" %>
-<%@ page import="org.labkey.announcements.AnnouncementsController.BaseInsertView" %>
+<%@ page import="org.labkey.announcements.AnnouncementsController.*" %>
 <%@ page import="org.labkey.announcements.model.AnnouncementManager" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>

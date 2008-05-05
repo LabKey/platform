@@ -4,11 +4,11 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.common.util.Pair" %>
-<%@ page import="org.labkey.core.admin.AdminControllerSpring" %>
+<%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    HttpView<AdminControllerSpring.AdminBean> me = (HttpView<AdminControllerSpring.AdminBean>) HttpView.currentView();
-    AdminControllerSpring.AdminBean bean = me.getModelBean();
+    HttpView<AdminController.AdminBean> me = (HttpView<AdminController.AdminBean>) HttpView.currentView();
+    AdminController.AdminBean bean = me.getModelBean();
 
     ViewContext context = HttpView.currentContext();
     org.labkey.api.security.User user = context.getUser();

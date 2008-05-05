@@ -18,7 +18,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
-import org.labkey.core.admin.AdminControllerSpring;
+import org.labkey.core.admin.AdminController;
 import org.labkey.core.user.UserController;
 import org.mule.MuleManager;
 import org.springframework.validation.BindException;
@@ -1149,7 +1149,7 @@ public class LoginController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild("Admin Console", AdminControllerSpring.getShowAdminURL()).addChild("Authentication Providers");
+            root.addChild("Admin Console", AdminController.getShowAdminURL()).addChild("Authentication Providers");
             return root;
         }
     }

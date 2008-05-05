@@ -3,11 +3,11 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.WebTheme" %>
-<%@ page import="org.labkey.core.admin.AdminControllerSpring" %>
+<%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    HttpView<AdminControllerSpring.WebThemesBean> me = (HttpView<AdminControllerSpring.WebThemesBean>) HttpView.currentView();
-    AdminControllerSpring.WebThemesBean bean = me.getModelBean();
+    HttpView<AdminController.WebThemesBean> me = (HttpView<AdminController.WebThemesBean>) HttpView.currentView();
+    AdminController.WebThemesBean bean = me.getModelBean();
     WebTheme selectedTheme = bean.selectedTheme;
 %>
 <link href="<%= request.getContextPath() %>/js_color_picker_v2.css" type="text/css" media="screen" rel="stylesheet">
@@ -350,7 +350,7 @@ if (null == webThemeErrors)
         }
         else
             {%>
-            <%=PageFlowUtil.buttonLink("Done", AdminControllerSpring.getCustomizeSiteURL(bean.form.isUpgradeInProgress()))%>
+            <%=PageFlowUtil.buttonLink("Done", AdminController.getCustomizeSiteURL(bean.form.isUpgradeInProgress()))%>
            <%}%>
     </td>
 </tr>

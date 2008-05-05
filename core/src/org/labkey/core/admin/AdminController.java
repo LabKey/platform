@@ -65,13 +65,13 @@ import java.util.regex.Pattern;
  * User: Karl Lum
  * Date: Feb 27, 2008
  */
-public class AdminControllerSpring extends SpringActionController
+public class AdminController extends SpringActionController
 {
-    private static DefaultActionResolver _actionResolver = new DefaultActionResolver(AdminControllerSpring.class);
+    private static DefaultActionResolver _actionResolver = new DefaultActionResolver(AdminController.class);
     private static long _errorMark = 0;
     private static NumberFormat formatInteger = DecimalFormat.getIntegerInstance();
 
-    public AdminControllerSpring() throws Exception
+    public AdminController() throws Exception
     {
         super();
         setActionResolver(_actionResolver);
@@ -2835,7 +2835,7 @@ public class AdminControllerSpring extends SpringActionController
             String themeName = form.getThemeName();
             String friendlyName = form.getFriendlyName();
 
-            _successURL = AdminControllerSpring.getCustomizeSiteURL(form.isUpgradeInProgress());
+            _successURL = AdminController.getCustomizeSiteURL(form.isUpgradeInProgress());
 
             if (null != getViewContext().getRequest().getParameter("Delete.x"))
             {
@@ -3161,7 +3161,7 @@ public class AdminControllerSpring extends SpringActionController
             {
                 SqlScriptRunner.stopBackgroundThread();
 
-                ActionURL url = AdminControllerSpring.getCustomizeSiteURL(true);
+                ActionURL url = AdminController.getCustomizeSiteURL(true);
                 vbox.addView(new HtmlView("All modules are up-to-date.<br><br>" +
                         "<a href='" + url + "'><img border=0 src='" + PageFlowUtil.buttonSrc("Next") + "'></a>"));
             }
@@ -3583,7 +3583,7 @@ public class AdminControllerSpring extends SpringActionController
             if (getContainer().isRoot())
                 HttpView.throwNotFound();
 
-            return FormPage.getView(AdminControllerSpring.class, form, "manageFolders.jsp");
+            return FormPage.getView(AdminController.class, form, "manageFolders.jsp");
         }
 
         public NavTree appendNavTrail(NavTree root)

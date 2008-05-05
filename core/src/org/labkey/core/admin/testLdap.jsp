@@ -1,9 +1,9 @@
-<%@ page import="org.labkey.core.admin.AdminControllerSpring" %>
+<%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%
-    JspView<AdminControllerSpring.TestLdapForm> me = (JspView<AdminControllerSpring.TestLdapForm>)HttpView.currentView();
-    AdminControllerSpring.TestLdapForm form = me.getModelBean();
+    JspView<AdminController.TestLdapForm> me = (JspView<AdminController.TestLdapForm>)HttpView.currentView();
+    AdminController.TestLdapForm form = me.getModelBean();
 
     // TODO: Use Spring error handling?
     if (null != form.getMessage() && 0 != form.getMessage().length())

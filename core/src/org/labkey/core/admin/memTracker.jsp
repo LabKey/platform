@@ -4,8 +4,8 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.common.util.Pair" %>
-<%@ page import="org.labkey.core.admin.AdminControllerSpring" %>
-<%@ page import="org.labkey.core.admin.AdminControllerSpring.MemBean" %>
+<%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.core.admin.AdminController.MemBean" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<MemBean> me = (JspView<MemBean>)HttpView.currentView();
@@ -15,9 +15,9 @@
 
     String contextPath = AppProps.getInstance().getContextPath();
 %>
-<a href="<%=h(AdminControllerSpring.getMemTrackerURL(true, true))%>">[Clear Caches, GC and Refresh]</a>
-<a href="<%=h(AdminControllerSpring.getMemTrackerURL(false, true))%>">[GC and Refresh]</a>
-<a href="<%=h(AdminControllerSpring.getMemTrackerURL(false, false))%>">[Refresh]</a><br><hr size="1">
+<a href="<%=h(AdminController.getMemTrackerURL(true, true))%>">[Clear Caches, GC and Refresh]</a>
+<a href="<%=h(AdminController.getMemTrackerURL(false, true))%>">[GC and Refresh]</a>
+<a href="<%=h(AdminController.getMemTrackerURL(false, false))%>">[Refresh]</a><br><hr size="1">
 <%
     int i = 0;
     for (String graphName : bean.graphNames)

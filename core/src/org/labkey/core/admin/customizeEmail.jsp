@@ -5,11 +5,11 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.core.admin.AdminControllerSpring" %>
+<%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<AdminControllerSpring.CustomEmailForm> me = (JspView<AdminControllerSpring.CustomEmailForm>) HttpView.currentView();
-    AdminControllerSpring.CustomEmailForm bean = me.getModelBean();
+    JspView<AdminController.CustomEmailForm> me = (JspView<AdminController.CustomEmailForm>) HttpView.currentView();
+    AdminController.CustomEmailForm bean = me.getModelBean();
 
     EmailTemplate[] emailTemplates = EmailTemplateService.get().getEmailTemplates();
     String errorHTML = formatMissedErrors("form");

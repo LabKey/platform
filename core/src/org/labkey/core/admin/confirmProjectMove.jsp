@@ -3,14 +3,14 @@
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.core.admin.AdminControllerSpring" %>
-<%@ page import="org.labkey.core.admin.AdminControllerSpring.*" %>
+<%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.core.admin.AdminController.*" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ManageFoldersForm> view = (JspView<ManageFoldersForm>)HttpView.currentView();
     ManageFoldersForm f = view.getModelBean();
     Container c = view.getViewContext().getContainer();
-    ActionURL cancelURL = AdminControllerSpring.getManageFoldersURL(c);
+    ActionURL cancelURL = AdminController.getManageFoldersURL(c);
 %>
 
 <form action="moveFolder.post" method="post">

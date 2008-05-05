@@ -29,7 +29,7 @@ import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
-import org.labkey.core.admin.AdminControllerSpring;
+import org.labkey.core.admin.AdminController;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.analytics.AnalyticsController;
 import org.labkey.core.analytics.AnalyticsServiceImpl;
@@ -85,7 +85,11 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
                 }
             });
 
-        addController("admin", AdminControllerSpring.class);
+        SqlDialect.register(new SqlDialectPostgreSQL());
+        SqlDialect.register(new SqlDialectMicrosoftSQLServer());
+        SqlDialect.register(new SqlDialectMicrosoftSQLServer9());
+
+        addController("admin", AdminController.class);
         addController("admin-sql", SqlScriptController.class);
         addController("security", SecurityController.class);
         addController("user", UserController.class);

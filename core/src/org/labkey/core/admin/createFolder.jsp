@@ -4,11 +4,11 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.core.admin.AdminControllerSpring" %>
+<%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<AdminControllerSpring.ManageFoldersForm> me = (JspView<AdminControllerSpring.ManageFoldersForm>) HttpView.currentView();
-    AdminControllerSpring.ManageFoldersForm form = me.getModelBean();
+    JspView<AdminController.ManageFoldersForm> me = (JspView<AdminController.ManageFoldersForm>) HttpView.currentView();
+    AdminController.ManageFoldersForm form = me.getModelBean();
     Container c = me.getViewContext().getContainer();
 
     String name = form.getName();

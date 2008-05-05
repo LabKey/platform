@@ -7,7 +7,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
-<%@ page import="org.labkey.core.admin.AdminControllerSpring" %>
+<%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="java.util.*" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
@@ -19,7 +19,7 @@ var defaultModules = new Object();
 <% //Generate javascript objects...
 final ViewContext context = HttpView.currentContext();
 Container c = context.getContainer();
-AdminControllerSpring.CustomizeFolderForm form = (AdminControllerSpring.CustomizeFolderForm) HttpView.currentModel();
+AdminController.CustomizeFolderForm form = (AdminController.CustomizeFolderForm) HttpView.currentModel();
 Collection<FolderType> allFolderTypes = ModuleLoader.getInstance().getFolderTypes();
 List<Module> allModules = new ArrayList<Module>(ModuleLoader.getInstance().getModules());
 Collections.sort(allModules, new Comparator<Module>()

@@ -854,27 +854,26 @@ public class UserController extends SpringActionController
         public ModelAndView getView(UserForm form, boolean reshow, BindException errors) throws Exception
         {
             _userId = Integer.valueOf(form.getUserId());
-            ModelAndView view = new GroovyView("/org/labkey/core/user/changeEmail.gm");
-            view.addObject("userId", _userId);
-            String currentEmail = UserManager.getEmailForId(_userId);
-            view.addObject("currentEmail", currentEmail);
-            view.addObject("message", form.getMessage());
-            view.addObject("errors", errors);
 
-            return view;
+            return new JspView<ChangeEmailBean>("/org/labkey/core/user/changeEmail.jsp", new ChangeEmailBean(_userId, form.getMessage()), errors);
         }
 
         public boolean handlePost(UserForm form, BindException errors) throws Exception
         {
-            try {
+            try
+            {
                 User user = UserManager.getUser(Integer.parseInt(form.getUserId()));
-                form.setMessage(UserManager.changeEmail(user.getUserId(), new ValidEmail(user.getEmail()), new ValidEmail(form.getNewEmail()), getUser()));
+
+                String message = UserManager.changeEmail(user.getUserId(), new ValidEmail(user.getEmail()), new ValidEmail(form.getNewEmail()), getUser());
+
+                if (message.length() > 0)
+                    errors.reject(ERROR_MSG, message);
             }
             catch (ValidEmail.InvalidEmailException e)
             {
-                form.setMessage("failed to change email: Invalid Email Exception");
+                errors.reject(ERROR_MSG, "Invalid email address");
             }
-            return form.getMessage() == null;
+            return !errors.hasErrors();
         }
 
         public ActionURL getSuccessURL(UserForm form)
@@ -891,6 +890,22 @@ public class UserController extends SpringActionController
             return root.addChild("Change Email Address: " + UserManager.getEmailForId(_userId));
         }
     }
+
+
+    public static class ChangeEmailBean
+    {
+        public Integer userId;
+        public String currentEmail;
+        public String message;
+
+        private ChangeEmailBean(Integer userId, String message)
+        {
+            this.userId = userId;
+            this.currentEmail  = UserManager.getEmailForId(userId);
+            this.message = message;
+        }
+    }
+
 
     public static class UpdateForm extends TableViewForm
     {
