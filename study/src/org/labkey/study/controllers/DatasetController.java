@@ -135,13 +135,14 @@ public class DatasetController extends BaseStudyController
             Map<String,Object> data = getDataMap(updateForm);
             List<String> importErrors = new ArrayList<String>();
 
+            String newLsid;
             if (isInsert())
             {
-                StudyService.get().insertDatasetRow(getContainer(), datasetId, data, importErrors);
+                newLsid = StudyService.get().insertDatasetRow(getContainer(), datasetId, data, importErrors);
             }
             else
             {
-                StudyService.get().updateDatasetRow(getContainer(), datasetId, form.getLsid(), data, importErrors);
+                newLsid = StudyService.get().updateDatasetRow(getContainer(), datasetId, form.getLsid(), data, importErrors);
             }
 
             if (importErrors.size() > 0)
@@ -151,6 +152,13 @@ public class DatasetController extends BaseStudyController
                     errors.reject("update", error);
                 }
                 return false;
+            }
+            // If this results in a change to participant ID or the visit itself,
+            // we need to recompute the participant-visit map
+            if (isInsert() || !newLsid.equals(form.getLsid()))
+            {
+                StudyManager.getInstance().recomputeStudyDataVisitDate(getStudy());
+                StudyManager.getInstance().getVisitManager(getStudy()).updateParticipantVisits();
             }
 
             return true;

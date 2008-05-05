@@ -5,8 +5,15 @@
 <%
     JspView me = (JspView) HttpView.currentView();
     ActionURL defGetUrl = new ActionURL(QueryControllerSpring.GetQueryAction.class, me.getViewContext().getContainer());
-    defGetUrl.addParameter("schemaName", "**schema**");
-    defGetUrl.addParameter("query.queryName", "**query**");
+    String schemaName = HttpView.currentRequest().getParameter("schemaName");
+    if (schemaName == null)
+        schemaName = "**schema**";
+    defGetUrl.addParameter("schemaName", schemaName);
+
+    String queryName = HttpView.currentRequest().getParameter("query.queryName");
+    if (queryName == null)
+        queryName = "**query**";
+    defGetUrl.addParameter("query.queryName", queryName);
 
     ActionURL defPostUrl = new ActionURL(QueryControllerSpring.UpdateRowsAction.class, me.getViewContext().getContainer());
 %>

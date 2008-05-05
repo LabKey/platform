@@ -3,7 +3,6 @@ package org.labkey.study.query;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.OORDisplayColumnFactory;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.query.*;
@@ -12,7 +11,6 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.Cohort;
 
 import javax.servlet.ServletException;
 import java.util.*;
@@ -103,9 +101,9 @@ public class DataSetTable extends FilteredTable
                     defaultVisibleCols.add(FieldKey.fromParts(col.getName()));
             }
         }
-        getColumn("ParticipantID").setKeyField(true);
-        getColumn("SequenceNum").setKeyField(true);
-        getColumn("LSID").setIsHidden(true);
+        ColumnInfo lsidColumn = getColumn("LSID");
+        lsidColumn.setIsHidden(true);
+        lsidColumn.setKeyField(true);
         getColumn("SourceLSID").setIsHidden(true);
         setDefaultVisibleColumns(defaultVisibleCols);
     }
