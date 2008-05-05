@@ -87,7 +87,7 @@ abstract public class PipelineJob extends Job implements Serializable
         protected String getExecutablePath(String executable)
         {
             String toolsDir = PipelineJobService.get().getAppProperties().getToolsDirectory();
-            if (toolsDir != null && !toolsDir.endsWith(File.separator))
+            if (toolsDir != null && (!toolsDir.equals("")) && !toolsDir.endsWith(File.separator))
             {
                 toolsDir = toolsDir + File.separatorChar;
             }
