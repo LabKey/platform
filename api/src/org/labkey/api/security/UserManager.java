@@ -659,7 +659,7 @@ public class UserManager
             return newEmail + " already exists.";
 
         if (SecurityManager.isLdapEmail(oldEmail) != SecurityManager.isLdapEmail(newEmail))
-            return "Can't switch between LDAP and non-LDAP users yet.";
+            return "Can't switch between LDAP and non-LDAP users.";
 
         try
         {

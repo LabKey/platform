@@ -220,7 +220,7 @@ public class ExceptionUtil
             this.status = status;
             this.message = message;
             this.exception = x;
-            this.startupFailure = startupFailure;
+            this.startupFailure = unwrap(startupFailure);
         }
 
         public void renderStart(Map model, PrintWriter out)
@@ -503,12 +503,8 @@ public class ExceptionUtil
     {
         DbSchema.rollbackAllTransactions();
 
-        // First get rid of wrappers
-        if (null != ex && (ex.getClass() == RuntimeException.class || ex.getClass() == InvocationTargetException.class))
-        {
-            if (ex.getCause() != null)
-                ex = ex.getCause();
-        }
+        // First, get rid of RuntimeException and InvocationTargetException wrappers
+        ex = unwrap(ex);
 
         if (isClientAbortException(ex))
         {
@@ -631,7 +627,7 @@ public class ExceptionUtil
         }
         else
         {
-            _log.error("Unhandled exception caught in Global.app: " + (null == message ? "" : message), ex);
+            _log.error("Unhandled exception: " + (null == message ? "" : message), ex);
         }
 
         if (response.isCommitted())
@@ -680,6 +676,20 @@ public class ExceptionUtil
 
         return null;
     }
+
+
+    public static Throwable unwrap(Throwable ex)
+    {
+        // First get rid of wrappers
+        if (null != ex && (ex.getClass() == RuntimeException.class || ex.getClass() == InvocationTargetException.class))
+        {
+            if (ex.getCause() != null)
+                return ex.getCause();
+        }
+
+        return ex;
+    }
+
 
     public static void doErrorRedirect(HttpServletResponse response, String url)
     {

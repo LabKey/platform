@@ -36,16 +36,9 @@ import java.util.regex.Pattern;
 public class SqlDialectMicrosoftSQLServer extends SqlDialect
 {
     protected String _tempTablePrefix = "##";
-    private static SqlDialectMicrosoftSQLServer _instance = new SqlDialectMicrosoftSQLServer();
-
-    public static SqlDialectMicrosoftSQLServer getInstance()
-    {
-        return _instance;
-    }
 
     public SqlDialectMicrosoftSQLServer()
     {
-        super();
         reservedWordSet = new CaseInsensitiveHashSet(PageFlowUtil.set(
             "ADD", "ALL", "ALTER", "AND", "ANY", "AS", "ASC", "AUTHORIZATION", "BACKUP", "BEGIN", "BETWEEN", "BREAK", "BROWSE", "BULK",
             "BY", "CASCADE", "CASE", "CHECK", "CHECKPOINT", "CLOSE", "CLUSTERED", "COALESCE", "COLLATE", "COLUMN", "COMMIT", "COMPUTE",
@@ -64,6 +57,16 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
             "UPDATE", "UPDATETEXT", "USE", "USER", "VALUES", "VARYING", "VIEW", "WAITFOR", "WHEN", "WHERE", "WHILE", "WITH",
             "WRITETEXT"
         ));
+    }
+
+    protected boolean claimsDriverClassName(String driverClassName)
+    {
+        return "net.sourceforge.jtds.jdbc.Driver".equals(driverClassName);
+    }
+
+    protected boolean claimsProductNameAndVersion(String dataBaseProductName, int majorVersion, int minorVersion)
+    {
+        return dataBaseProductName.equals("Microsoft SQL Server") && (majorVersion < 9);
     }
 
     public String getProductName()

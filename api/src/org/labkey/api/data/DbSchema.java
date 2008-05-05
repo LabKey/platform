@@ -116,8 +116,7 @@ public class DbSchema
             }
             catch (Exception e)
             {
-                _log.log(Level.ERROR, "Exception loading schema " + schemaName, e);
-                return null;
+                throw new RuntimeException(e);  // Changed from "return null" to "throw runtimeexception" so admin is made aware of the cause of the problem
             }
             finally
             {
@@ -317,7 +316,7 @@ public class DbSchema
 
     private static DatabaseMetaData _dbmdLast;
 
-    private static DbSchema createFromMetaData(String name, DbScope scope, String catalogName, String schemaName) throws SQLException
+    private static DbSchema createFromMetaData(String name, DbScope scope, String catalogName, String schemaName) throws SQLException, SqlDialect.SqlDialectNotSupportedException
     {
         Connection conn = null;
         DbSchema schema = new DbSchema(name);

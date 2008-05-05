@@ -381,6 +381,18 @@ abstract public class JspBase extends HttpServlet implements HttpJspPage, HasVie
         return _formatErrorList(l, true);
     }
 
+    // If errors exist, returns formatted errors in a <tr> with the specified colspan (or no colspan, for 0 or 1) followed by a blank line
+    // If no errors, returns an empty string
+    public String formatMissedErrorsInTable(String bean, int colspan)
+    {
+        String errorHTML = formatMissedErrors(bean);
+
+        if (0 == errorHTML.length())
+            return "";
+        else
+            return "\n<tr><td" + (colspan > 1 ? "colspan=" + colspan : "") + ">" + errorHTML + "</td></tr>\n<tr><td" + (colspan > 1 ? "colspan=" + colspan : "") + ">&nbsp;</td></tr>";
+    }
+
     protected String _formatErrorList(List<ObjectError> l, boolean fieldNames)
     {
         if (l.size() == 0)

@@ -40,7 +40,7 @@ import java.util.regex.Pattern;
 public abstract class SqlDialect
 {
     protected static final Logger _log = Logger.getLogger(SqlDialect.class);
-    private static Map<String, SqlDialect> _dialects = new HashMap<String, SqlDialect>(10);
+    private static List<SqlDialect> _dialects = new ArrayList<SqlDialect>();
 
     public static final String GENERIC_ERROR_MESSAGE = "The database experienced an unexpected problem. Please check your input and try again.";
     public static final String INPUT_TOO_LONG_ERROR_MESSAGE = "The input you provided was too long.";
@@ -49,6 +49,12 @@ public abstract class SqlDialect
     static final private Pattern s_patStringLiteral = Pattern.compile("\\'([^\\']|(\'\'))*\\'");
     static final private Pattern s_patQuotedIdentifier = Pattern.compile("\\\"([^\\\"]|(\\\"\\\"))*\\\"");
     static final private Pattern s_patParameter = Pattern.compile("\\?");
+
+    public static void register(SqlDialect dialect)
+    {
+        _dialects.add(dialect);
+    }
+
 
     static
     {
@@ -116,50 +122,48 @@ public abstract class SqlDialect
         return null;
     }
 
+
+    public static class SqlDialectNotSupportedException extends ServletException
+    {
+        private SqlDialectNotSupportedException(String message)
+        {
+            super(message);
+        }
+    }
+
+
     /**
      * Getting the SqlDialect from the driver class name won't return the version
      * specific dialect -- use getFromMetaData() if possible.
      */
-    public static SqlDialect getFromDriverClassName(String driverClassName)
+    public static SqlDialect getFromDriverClassName(String driverClassName) throws SqlDialectNotSupportedException
     {
-        if ("org.postgresql.Driver".equals(driverClassName))
-            return getFromProductName("PostgreSQL", 0, 0);
+        for (SqlDialect dialect : _dialects)
+            if (dialect.claimsDriverClassName(driverClassName))
+                return dialect;
 
-        if ("net.sourceforge.jtds.jdbc.Driver".equals(driverClassName))
-            return getFromProductName("Microsoft SQL Server", 0, 0);
-
-        return null;
+        throw new SqlDialectNotSupportedException("Driver class name: " + driverClassName);
     }
 
-    public static SqlDialect getFromMetaData(DatabaseMetaData md) throws SQLException
+
+    public static SqlDialect getFromMetaData(DatabaseMetaData md) throws SQLException, SqlDialectNotSupportedException
     {
         return getFromProductName(md.getDatabaseProductName(), md.getDatabaseMajorVersion(), md.getDatabaseMinorVersion());
     }
 
-    public static SqlDialect getFromProductName(String dataBaseProductName, int majorVersion, int minorVersion)
+
+    private static SqlDialect getFromProductName(String dataBaseProductName, int majorVersion, int minorVersion) throws SqlDialectNotSupportedException
     {
-        if (dataBaseProductName.equals("PostgreSQL"))
-        {
-            return SqlDialectPostgreSQL.getInstance();
-        }
-        else if (dataBaseProductName.equals("Microsoft SQL Server"))
-        {
-            if (majorVersion >= 9)
-            {
-                return SqlDialectMicrosoftSQLServer9.getInstance();
-            }
-            else
-            {
-                return SqlDialectMicrosoftSQLServer.getInstance();
-            }
-        }
-        _log.error("SqlDialect: no dialect for " + dataBaseProductName + " (" + majorVersion + "." + minorVersion + ")");
-        return null;
+        for (SqlDialect dialect : _dialects)
+            if (dialect.claimsProductNameAndVersion(dataBaseProductName, majorVersion, minorVersion))
+                return dialect;
+
+        throw new SqlDialectNotSupportedException("Product name and version: " + dataBaseProductName + " " + majorVersion + "." + minorVersion);
     }
 
-    public SqlDialect()
-    {
-    }
+    protected abstract boolean claimsDriverClassName(String driverClassName);
+
+    protected abstract boolean claimsProductNameAndVersion(String dataBaseProductName, int majorVersion, int minorVersion);
 
     // Do dialect-specific work after schema load
     public abstract void prepareNewDbSchema(DbSchema schema);

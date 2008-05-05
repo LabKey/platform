@@ -8,13 +8,6 @@ import org.labkey.api.util.PageFlowUtil;
  */
 public class SqlDialectMicrosoftSQLServer9 extends SqlDialectMicrosoftSQLServer
 {
-    private static SqlDialectMicrosoftSQLServer9 _instance = new SqlDialectMicrosoftSQLServer9();
-
-    public static SqlDialectMicrosoftSQLServer getInstance()
-    {
-        return _instance;
-    }
-    
     public SqlDialectMicrosoftSQLServer9()
     {
         super();
@@ -22,6 +15,22 @@ public class SqlDialectMicrosoftSQLServer9 extends SqlDialectMicrosoftSQLServer
            "EXTERNAL", "PIVOT", "REVERT", "SECURITYAUDIT", "TABLESAMPLE", "UNPIVOT"
         ));
     }
+
+
+    // JTDS driver always gets mapped to base SQL Server dialect, not this one
+    @Override
+    protected boolean claimsDriverClassName(String driverClassName)
+    {
+        return false;
+    }
+
+
+    @Override
+    protected boolean claimsProductNameAndVersion(String dataBaseProductName, int majorVersion, int minorVersion)
+    {
+        return dataBaseProductName.equals("Microsoft SQL Server") && (majorVersion >= 9);
+    }
+
 
     @Override
     public boolean supportOffset()
