@@ -824,8 +824,10 @@ public class ProjectController extends SpringActionController
                 for(String dom : domains)
                 {
                     Search.Searchable src = Search.getDomain(dom);
-                    if(null != src)
-                        searchables.add(src);
+                    if(null == src)
+                        throw new IllegalArgumentException("'" + dom + "' is not a valid search domain!");
+
+                    searchables.add(src);
                 }
             }
             return searchables;

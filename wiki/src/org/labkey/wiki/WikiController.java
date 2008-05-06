@@ -2920,10 +2920,14 @@ public class WikiController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            ActionURL pageUrl = new ActionURL(WikiController.PageAction.class, getViewContext().getContainer());
-            pageUrl.addParameter("name", _wikiVer.getName());
-
-            return root.addChild(_wikiVer.getTitle(), pageUrl).addChild("Edit");
+            if(null != _wikiVer)
+            {
+                ActionURL pageUrl = new ActionURL(WikiController.PageAction.class, getViewContext().getContainer());
+                pageUrl.addParameter("name", _wikiVer.getName());
+                return root.addChild(_wikiVer.getTitle(), pageUrl).addChild("Edit");
+            }
+            else
+                return root.addChild("New Page");
         }
     }
 

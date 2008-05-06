@@ -67,6 +67,7 @@
     var _newAttachmentIndex = 0;
     var _doingSave = false;
     var _editor = "source";
+    var _tocTree;
 
     //you must init the tinyMCE before the page finishes loading
     //if you don't, you'll get a blank page an an error
@@ -124,7 +125,92 @@
         }
 
         showEditingHelp(_wikiProps.rendererType);
+        loadToc();
     });
+
+    function loadToc()
+    {
+        //kick off a request to get the wiki toc
+        Ext.Ajax.request({
+            url: LABKEY.ActionURL.buildURL('wiki', 'getWikiToc'),
+            success: onTocSuccess,
+            failure: onTocError
+        });
+    }
+
+    function onTocSuccess(response)
+    {
+        var json = Ext.util.JSON.decode(response.responseText);
+        if(json.pages)
+            createTocTree(json.pages);
+    }
+
+    function onTocError(response)
+    {
+        var json = Ext.util.JSON.decode(response.responseText);
+        if(!json.exception)
+            json.exception = response.statusText;
+        
+        setError()("Unable to load the wiki table of contents for this folder: " + json.exception);
+    }
+
+    function createTocTree(pages)
+    {
+        var root = new Ext.tree.TreeNode({
+            expanded: true,
+            text: <%=PageFlowUtil.jsString(me.getViewContext().getContainer().getName())%>,
+            id: 'root'
+        });
+
+        if(!_tocTree)
+        {
+            loadChildren(root, pages);
+
+            _tocTree = new Ext.tree.TreePanel({
+                renderTo: 'wiki-toc-tree',
+                width: 300,
+                autoScroll: true,
+                root: root
+            });
+
+            _tocTree.render();
+        }
+        else
+        {
+            clearTocBranch(_tocTree.root);
+            loadChildren(_tocTree.root, pages);
+            _tocTree.root.expand(false, false);
+        }
+    }
+
+    function clearTocBranch(node)
+    {
+        while(node.firstChild)
+            node.removeChild(node.firstChild);
+    }
+
+    function loadChildren(node, pages)
+    {
+        for(var idx in pages)
+        {
+            if(typeof(pages[idx]) != "object")
+                continue;
+
+            var page = pages[idx];
+            var childNode = new Ext.tree.TreeNode({
+                id: page.name,
+                text: page.title + " (" + page.name + ")",
+                leaf: (null == page.children),
+                singleClickExpand: true,
+                icon: LABKEY.contextPath + "/_images/page.png"
+            });
+
+            if(page.children)
+                loadChildren(childNode, page.children);
+
+            node.appendChild(childNode);
+        }
+    }
 
     function onSave()
     {
@@ -305,6 +391,8 @@
 
         if(_finished)
             window.location.href = _redirUrl;
+        else
+            loadToc();
     }
 
     function gatherProps()
@@ -751,6 +839,13 @@
             div.setDisplayed(isDisplayed);
     }
 
+    function showHideToc()
+    {
+        var elem = Ext.get("wiki-toc-tree");
+        if(elem)
+            elem.setDisplayed(!elem.isDisplayed());
+    }
+
     window.onbeforeunload = function(){
         if(isDirty())
             return "You have made changes that are not yet saved. Leaving this page now will abandon those changes.";
@@ -787,7 +882,8 @@
     }
     .button-bar
     {
-        padding: 4px;
+        padding-top: 4px;
+        padding-bottom: 4px;
         width: 99%;
     }
     .button-bar-right
@@ -846,109 +942,110 @@
 
 <table class="button-bar">
     <tr>
-        <td class="button-bar-left">
+        <td class="button-bar-left" nowrap="true">
             <%=PageFlowUtil.buttonLink("Save", "javascript:{}", "onSave()")%>
             <%=PageFlowUtil.buttonLink("Save and Finish", "javascript:{}", "onFinish()")%>
             <%=PageFlowUtil.buttonLink("Cancel", "javascript:{}", "onCancel()")%>
         </td>
-        <td class="button-bar-right">
-            <a href="javascript:{}" onclick="showConvertWindow()">
-                <img id="<%=ID_PREFIX%>button-change-format" src="<%=PageFlowUtil.buttonSrc("Convert To...")%>" alt="Convert To..."/>
-            </a>
+        <td class="button-bar-right" nowrap="true">
             <a href="javascript:{}" onclick="onDeletePage()">
                 <img id="<%=ID_PREFIX%>button-delete" src="<%=PageFlowUtil.buttonSrc("Delete Page", "disabled")%>" alt="Delete Page"/>
             </a>
+            <a href="javascript:{}" onclick="showConvertWindow()">
+                <img id="<%=ID_PREFIX%>button-change-format" src="<%=PageFlowUtil.buttonSrc("Convert To...")%>" alt="Convert To..."/>
+            </a>
+            <a href="javascript:{}" onclick="showHideToc()">
+            <img src="<%=me.getViewContext().getContextPath()%>/_images/toc.png"
+                 alt="Show/Hide Table of Contents" title="Show/Hide Table of Contents"/>
+            </a>
+            
         </td>
     </tr>
 </table>
 
-<table class="form-layout">
+<table style="width:99%" cellpadding="0" cellspacing="0">
     <tr>
-        <td class="ms-searchform">Name</td>
-        <td class="field-content">
-            <input type="text" name="name" id="<%=ID_PREFIX%>name" size="80" onchange="onChangeName()"/>
-        </td>
-    </tr>
-    <tr>
-        <td class="ms-searchform">Title</td>
-        <td class="field-content">
-            <input type="text" name="name" id="<%=ID_PREFIX%>title" size="80" onchange="setWikiDirty()"/>
-        </td>
-    </tr>
-    <tr>
-        <td class="ms-searchform">Parent</td>
-        <td class="field-content">
-            <select name="parent" id="<%=ID_PREFIX%>parent" onchange="setWikiDirty()">
-                <option <%= model.getParent() == -1 ? "selected='1'" : "" %> value="-1">[none]</option>
-                <%
-                    for (Wiki possibleParent : model.getPossibleParents())
-                        {
-                        String indent = "";
-                        int depth = possibleParent.getDepth();
-                        String parentTitle = possibleParent.latestVersion().getTitle();
-                        while (depth-- > 0)
-                          indent = indent + "&nbsp;&nbsp;";
-                        %><option <%= possibleParent.getRowId() == model.getParent() ? "selected" : "" %> value="<%= possibleParent.getRowId() %>"><%= indent %><%= parentTitle %> (<%= possibleParent.getName() %>)</option><%
-                        }
-                %>
-            </select>
-        </td>
-    </tr>
-    <tr>
-        <td class="ms-searchform">Body</td>
-        <td class="field-content">
-            <table class="tab-container" cellspacing="0">
-                <tr id="wiki-tab-strip" style="display:none">
-                    <td class="tab-blank">&nbsp;</td>
-                    <td id="wiki-tab-visual" class="tab-active"><a href="javascript:{}" onclick="switchToVisual()">Visual</a></td>
-                    <td id="wiki-tab-source" class="tab-inactive"><a href="javascript:{}" onclick="switchToSource()">Source</a></td>
-                    <td class="tab-blank" style="width:100%">&nbsp;</td>
+        <td style="width:99%">
+            <table class="form-layout">
+                <tr>
+                    <td class="ms-searchform">Name</td>
+                    <td class="field-content">
+                        <input type="text" name="name" id="<%=ID_PREFIX%>name" size="80" onchange="onChangeName()"/>
+                    </td>
                 </tr>
                 <tr>
-                    <td colspan="4" id="wiki-tab-content">
-                        <textarea rows="30" cols="80" class="stretch-input" id="<%=ID_PREFIX%>body"
-                                  name="body" onchange="setWikiDirty()"></textarea>
+                    <td class="ms-searchform">Title</td>
+                    <td class="field-content">
+                        <input type="text" name="name" id="<%=ID_PREFIX%>title" size="80" onchange="setWikiDirty()"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="ms-searchform">Parent</td>
+                    <td class="field-content">
+                        <select name="parent" id="<%=ID_PREFIX%>parent" onchange="setWikiDirty()">
+                            <option <%= model.getParent() == -1 ? "selected='1'" : "" %> value="-1">[none]</option>
+                            <%
+                                for (Wiki possibleParent : model.getPossibleParents())
+                                    {
+                                    String indent = "";
+                                    int depth = possibleParent.getDepth();
+                                    String parentTitle = possibleParent.latestVersion().getTitle();
+                                    while (depth-- > 0)
+                                      indent = indent + "&nbsp;&nbsp;";
+                                    %><option <%= possibleParent.getRowId() == model.getParent() ? "selected" : "" %> value="<%= possibleParent.getRowId() %>"><%= indent %><%= parentTitle %> (<%= possibleParent.getName() %>)</option><%
+                                    }
+                            %>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="ms-searchform">Body</td>
+                    <td class="field-content">
+                        <table class="tab-container" cellspacing="0">
+                            <tr id="wiki-tab-strip" style="display:none">
+                                <td class="tab-blank">&nbsp;</td>
+                                <td id="wiki-tab-visual" class="tab-active"><a href="javascript:{}" onclick="switchToVisual()">Visual</a></td>
+                                <td id="wiki-tab-source" class="tab-inactive"><a href="javascript:{}" onclick="switchToSource()">Source</a></td>
+                                <td class="tab-blank" style="width:100%">&nbsp;</td>
+                            </tr>
+                            <tr>
+                                <td colspan="4" id="wiki-tab-content">
+                                    <textarea rows="30" cols="80" class="stretch-input" id="<%=ID_PREFIX%>body"
+                                              name="body" onchange="setWikiDirty()"></textarea>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="ms-searchform">Files</td>
+                    <td class="field-content">
+                        <form action="attachFiles.post" method="POST" enctype="multipart/form-data" id="form-files">
+                            <table width="100%">
+                                <tr>
+                                    <td class="tab-blank"><img src="<%=me.getViewContext().getContextPath()%>/_images/paperclip.gif" alt="Clip"/>Existing Attachments</td>
+                                </tr>
+                            </table>
+                            <table id="wiki-existing-attachments">
+                            </table>
+                            <table width="100%">
+                                <tr>
+                                    <td class="tab-blank"><img src="<%=me.getViewContext().getContextPath()%>/_images/paperclip.gif" alt="Clip"/>Add Attachments</td>
+                                </tr>
+                            </table>
+                            <table id="wiki-new-attachments">
+                            </table>
+                        </form>
                     </td>
                 </tr>
             </table>
         </td>
-    </tr>
-    <tr>
-        <td class="ms-searchform">Files</td>
-        <td class="field-content">
-            <form action="attachFiles.post" method="POST" enctype="multipart/form-data" id="form-files">
-                <table width="100%">
-                    <tr>
-                        <td class="tab-blank"><img src="<%=me.getViewContext().getContextPath()%>/_images/paperclip.gif" alt="Clip"/>Existing Attachments</td>
-                    </tr>
-                </table>
-                <table id="wiki-existing-attachments">
-                </table>
-                <table width="100%">
-                    <tr>
-                        <td class="tab-blank"><img src="<%=me.getViewContext().getContextPath()%>/_images/paperclip.gif" alt="Clip"/>Add Attachments</td>
-                    </tr>
-                </table>
-                <table id="wiki-new-attachments">
-                </table>
-            </form>
+        <td style="width:1%;vertical-align:top;">
+            <div id="wiki-toc-tree" class="extContainer" style="display:none"/>
         </td>
     </tr>
 </table>
 
-<table class="button-bar">
-    <tr>
-        <td class="button-bar-left">
-            <%=PageFlowUtil.buttonLink("Save", "javascript:{}", "onSave()")%>
-            <%=PageFlowUtil.buttonLink("Save and Finish", "javascript:{}", "onFinish()")%>
-            <%=PageFlowUtil.buttonLink("Cancel", "javascript:{}", "onCancel()")%>
-        </td>
-        <td class="button-bar-right">
-            <a href="javascript:{}" onclick="showConvertWindow()"><%=PageFlowUtil.buttonImg("Convert To...")%></a>
-            <%=PageFlowUtil.buttonLink("Delete Page", "javascript:{}", "onDeletePage()")%>
-        </td>
-    </tr>
-</table>
 <div id="wiki-help-HTML-visual" style="display:none">
     <table>
         <tr>
