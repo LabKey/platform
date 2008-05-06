@@ -39,6 +39,7 @@ import org.labkey.study.controllers.plate.PlateController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.study.controllers.security.SecurityController;
+import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.designer.view.StudyDesignsWebPart;
 import org.labkey.study.model.DatasetDomainKind;
 import org.labkey.study.model.Study;
@@ -157,6 +158,7 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
         AssayService.get().registerAssayProvider(new TsvAssayProvider());
         ExperimentService.get().registerExperimentDataHandler(new TsvDataHandler());
         AuditLogService.get().addAuditViewFactory(AssayAuditViewFactory.getInstance());
+        AuditLogService.get().addAuditViewFactory(DatasetAuditViewFactory.getInstance());
 
         ReportService.get().registerReport(new StudyController.StudyChartReport());
         ReportService.get().registerReport(new EnrollmentReport());

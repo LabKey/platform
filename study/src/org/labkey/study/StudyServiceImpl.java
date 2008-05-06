@@ -1,9 +1,12 @@
 package org.labkey.study;
 
-import org.labkey.api.data.Container;
-import org.labkey.api.data.DbScope;
+import org.labkey.api.audit.AuditLogEvent;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.data.*;
+import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
@@ -11,10 +14,7 @@ import org.labkey.study.model.StudyManager;
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * User: jgarms
@@ -30,7 +30,7 @@ public class StudyServiceImpl implements StudyService.Service
         return def.getDataSetId();
     }
 
-    public String updateDatasetRow(Container c, int datasetId, String lsid, Map<String, Object> data, List<String> errors)
+    public String updateDatasetRow(User u, Container c, int datasetId, String lsid, Map<String, Object> data, List<String> errors)
             throws SQLException
     {
         Study study = StudyManager.getInstance().getStudy(c);
@@ -46,7 +46,8 @@ public class StudyServiceImpl implements StudyService.Service
         }
         try
         {
-            deleteDatasetRow(c, datasetId, lsid);
+            Map<String,Object> oldData = getDatasetRow(u, c, datasetId, lsid);
+            StudyManager.getInstance().deleteDatasetRows(study, def, Collections.singletonList(lsid));
             // TODO: switch from using a TSV to a map, so that strange characters like quotes don't throw off the data
             String[] result = StudyManager.getInstance().importDatasetTSV(study,def, tsv, System.currentTimeMillis(),
                 Collections.<String,String>emptyMap(), errors, true);
@@ -59,6 +60,9 @@ public class StudyServiceImpl implements StudyService.Service
             // Successfully updated
             if (startedTransaction)
                 scope.commitTransaction();
+
+            addDatasetAuditEvent(u, c, def, oldData, data);
+
             return result[0];
         }
         catch (IOException ioe)
@@ -76,7 +80,37 @@ public class StudyServiceImpl implements StudyService.Service
         }
     }
 
-    public String insertDatasetRow(Container c, int datasetId, Map<String, Object> data, List<String> errors) throws SQLException
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> getDatasetRow(User u, Container c, int datasetId, String lsid) throws SQLException
+    {
+        Study study = StudyManager.getInstance().getStudy(c);
+        DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
+        try
+        {
+            TableInfo tInfo = def.getTableInfo(u);
+            Map<String,Object> data = Table.selectObject(tInfo, lsid, Map.class);
+
+            // Need to remove extraneous columns
+            data.remove("_row");
+            ColumnInfo[] columns = tInfo.getColumns();
+            for (ColumnInfo col : columns)
+            {
+                // special handling for lsid -- it's not user-editable,
+                // but we want to display it
+                if (col.getName().equals("lsid"))
+                    continue;
+                if (!col.isUserEditable())
+                    data.remove(col.getName());
+            }
+            return data;
+        }
+        catch (ServletException se)
+        {
+            throw UnexpectedException.wrap(se);
+        }
+    }
+
+    public String insertDatasetRow(User u, Container c, int datasetId, Map<String, Object> data, List<String> errors) throws SQLException
     {
         Study study = StudyManager.getInstance().getStudy(c);
         DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
@@ -88,7 +122,15 @@ public class StudyServiceImpl implements StudyService.Service
                 Collections.<String,String>emptyMap(), errors, true);
 
             if (result.length > 0)
+            {
+                // Log to the audit log
+                Map<String,Object> auditDataMap = new HashMap<String,Object>();
+                auditDataMap.putAll(data);
+                auditDataMap.put("lsid", result[0]);
+                addDatasetAuditEvent(u, c, def, null, auditDataMap);
+
                 return result[0];
+            }
 
             // Update failed
             return null;
@@ -103,11 +145,17 @@ public class StudyServiceImpl implements StudyService.Service
         }
     }
 
-    public void deleteDatasetRow(Container c, int datasetId, String lsid)
+    public void deleteDatasetRow(User u, Container c, int datasetId, String lsid) throws SQLException
     {
         Study study = StudyManager.getInstance().getStudy(c);
         DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
+
+        // Need to fetch the old item in order to log the deletion
+        Map<String,Object> oldData = getDatasetRow(u, c, datasetId, lsid);
+
         StudyManager.getInstance().deleteDatasetRows(study, def, Collections.singletonList(lsid));
+
+        addDatasetAuditEvent(u, c, def, oldData, null);
     }
 
     private String createTSV(Map<String,Object> data)
@@ -128,5 +176,61 @@ public class StudyServiceImpl implements StudyService.Service
             sb.append(data.get(key)).append('\t');
         }
         return sb.toString();
+    }
+
+    /**
+     * if oldRecord is null, it's an insert, if newRecord is null, it's delete,
+     * if both are set, it's an edit
+     */
+    private void addDatasetAuditEvent(User u, Container c, DataSetDefinition def, Map<String,Object>oldRecord, Map<String,Object> newRecord)
+    {
+        AuditLogEvent event = new AuditLogEvent();
+        event.setCreatedBy(u.getUserId());
+
+        event.setContainerId(c.getId());
+        if (c.getProject() != null)
+            event.setProjectId(c.getProject().getId());
+
+        event.setIntKey1(def.getDataSetId());
+
+        event.setEventType(DatasetAuditViewFactory.DATASET_AUDIT_EVENT);
+        DatasetAuditViewFactory.getInstance().ensureDomain(u);
+
+        String comment;
+        String oldRecordString = null;
+        String newRecordString = null;
+        if (oldRecord == null)
+        {
+            comment = "A new dataset record was inserted";
+            newRecordString = encodeAuditMap(newRecord);
+        }
+        else if (newRecord == null)
+        {
+            comment = "A dataset record was deleted";
+            oldRecordString = encodeAuditMap(oldRecord);
+        }
+        else
+        {
+            comment = "A dataset record was modified";
+        }
+
+        event.setComment(comment);
+
+        Map<String,Object> dataMap = new HashMap<String,Object>();
+        if (oldRecordString != null) dataMap.put("oldRecordMap", oldRecordString);
+        if (newRecordString != null) dataMap.put("newRecordMap", newRecordString);
+
+        AuditLogService.get().addEvent(event, dataMap, AuditLogService.get().getDomainURI(DatasetAuditViewFactory.DATASET_AUDIT_EVENT));
+    }
+
+    private String encodeAuditMap(Map<String,Object> data)
+    {
+        // encoding requires all strings, so convert our map
+        Map<String,String> stringMap = new HashMap<String,String>();
+        for (Map.Entry<String,Object> entry :  data.entrySet())
+        {
+            stringMap.put(entry.getKey(), entry.getValue().toString());
+        }
+        return DatasetAuditViewFactory.encodeForDataMap(stringMap, true);
     }
 }

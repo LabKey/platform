@@ -94,6 +94,12 @@ public class DatasetController extends BaseStudyController
             ButtonBar buttonBar = dataRegion.getButtonBar(DataRegion.MODE_UPDATE);
             buttonBar = new ButtonBar(buttonBar); // need to copy since the original is read-only
             buttonBar.add(1, new ActionButton(cancelURL.getLocalURIString(), "Cancel", DataRegion.MODE_UPDATE, ActionButton.Action.GET));
+            if (isInsert())
+            {
+                // Need to update the URL to be the insert action
+                buttonBar.getList().remove(0);
+                buttonBar.add(0, ActionButton.BUTTON_DO_INSERT);
+            }
             dataRegion.setButtonBar(buttonBar);
 
             return view;
@@ -106,6 +112,7 @@ public class DatasetController extends BaseStudyController
                 Study study = getStudy();
                 root.addChild(study.getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
                 root.addChild("Study Overview", new ActionURL(StudyController.OverviewAction.class, getContainer()));
+                appendExtraNavTrail(root);
             }
             catch (ServletException e) {}
             return root;
@@ -138,11 +145,11 @@ public class DatasetController extends BaseStudyController
             String newLsid;
             if (isInsert())
             {
-                newLsid = StudyService.get().insertDatasetRow(getContainer(), datasetId, data, importErrors);
+                newLsid = StudyService.get().insertDatasetRow(getUser(), getContainer(), datasetId, data, importErrors);
             }
             else
             {
-                newLsid = StudyService.get().updateDatasetRow(getContainer(), datasetId, form.getLsid(), data, importErrors);
+                newLsid = StudyService.get().updateDatasetRow(getUser(), getContainer(), datasetId, form.getLsid(), data, importErrors);
             }
 
             if (importErrors.size() > 0)

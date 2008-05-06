@@ -19,6 +19,8 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
@@ -34,13 +36,12 @@ import org.labkey.api.reports.report.view.ChartUtil;
 import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.DialogTemplate;
 import org.labkey.api.view.template.PrintTemplate;
-import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.common.tools.TabLoader;
 import org.labkey.common.util.Pair;
 import org.labkey.study.SampleManager;
@@ -491,8 +492,10 @@ public class StudyController extends BaseStudyController
             buttonBar.add(uploadButton);
 
             ActionButton deleteRows = new ActionButton("button", "Delete Selected");
-            String deleteRowsURL = ActionURL.toPathString("Study", "deleteDatasetRows", getContainer()) + "?datasetId=" + _datasetId;
-            deleteRows.setScript("return confirm(\"Delete selected rows of this dataset?\") && verifySelected(this.form, \"" + deleteRowsURL + "\", \"post\", \"rows\")");
+            ActionURL deleteRowsURL = new ActionURL(DeleteDatasetRowsAction.class, getContainer());
+            deleteRowsURL.addParameter("datasetId", _datasetId);
+
+            deleteRows.setScript("return confirm(\"Delete selected rows of this dataset?\") && verifySelected(this.form, \"" + deleteRowsURL.getLocalURIString() + "\", \"post\", \"rows\")");
             deleteRows.setActionType(ActionButton.Action.GET);
             deleteRows.setDisplayPermission(ACL.PERM_DELETE);
             buttonBar.add(deleteRows);
@@ -2147,11 +2150,28 @@ public class StudyController extends BaseStudyController
             if (null == dataset)
                 HttpView.throwNotFound();
 
-            Set<String> lsids = DataRegionSelection.getSelected(getViewContext(), true);
-            List<String> lsidList = new ArrayList<String>(lsids);
-            StudyManager.getInstance().deleteDatasetRows(getStudy(), dataset, lsidList);
+            // Operate on each individually for audit logging purposes, but transact the whole thing
+            DbScope scope =  StudySchema.getInstance().getSchema().getScope();
+            scope.beginTransaction();
+            boolean inTransaction = true;
 
-            return true;
+            try
+            {
+                Set<String> lsids = DataRegionSelection.getSelected(getViewContext(), true);
+                for (String lsid : lsids)
+                {
+                    StudyService.get().deleteDatasetRow(getUser(), getContainer(), datasetId, lsid);
+                }
+
+                scope.commitTransaction();
+                inTransaction = false;
+                return true;
+            }
+            finally
+            {
+                if (inTransaction)
+                    scope.rollbackTransaction();
+            }
         }
 
         public ActionURL getSuccessURL(DeleteDatasetRowsForm form)
