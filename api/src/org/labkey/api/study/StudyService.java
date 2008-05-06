@@ -1,6 +1,7 @@
 package org.labkey.api.study;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -27,30 +28,33 @@ public class StudyService
         /**
          * Delete a single dataset row
          */
-        public void deleteDatasetRow(Container c, int datasetId, String lsid) throws SQLException;
+        public void deleteDatasetRow(User u, Container c, int datasetId, String lsid) throws SQLException;
 
         /**
          * Update a single dataset row
          * @return the new lsid for the updated row
+         * @param u the user performing the update
          * @param c container the dataset is in
          * @param datasetId the dataset defition id
          * @param lsid the lsid of the dataset row
          * @param data the data to be updated
          * @param errors any errors during update will be added to this list
          */
-        public String updateDatasetRow(Container c, int datasetId, String lsid, Map<String,Object> data, List<String> errors)
+        public String updateDatasetRow(User u, Container c, int datasetId, String lsid, Map<String,Object> data, List<String> errors)
                 throws SQLException;
 
         /**
          * Insert a single dataset row
          * @return the lsid for the new dataset row
+         * @param u the user performing the insert
          * @param c container the dataset is in
          * @param datasetId the dataset defition id
          * @param data the data to be updated
          * @param errors any errors during update will be added to this list
          */
-        public String insertDatasetRow(Container c, int datasetId, Map<String,Object> data, List<String> errors)
+        public String insertDatasetRow(User u, Container c, int datasetId, Map<String,Object> data, List<String> errors)
                 throws SQLException;
+
     }
 
     public static void register(Service serviceImpl)
