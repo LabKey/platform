@@ -535,47 +535,14 @@ public class DataRegion extends DisplayElement
         }
 
         Aggregate[] aggregates = _aggregates;
-        boolean countExists = false;
-        String countColumnName = null;
-
         boolean countAggregate = _maxRows > 0 && !_complete && _showPagination && _showPaginationCount;
         if (countAggregate)
         {
-            // find a Count aggregate if it already exists
-            if (_aggregates != null)
-            {
-                for (Aggregate aggregate : _aggregates)
-                {
-                    if (aggregate.getType() == Aggregate.Type.COUNT)
-                    {
-                        countColumnName = aggregate.getColumnName();
-                        countExists = true;
-                        break;
-                    }
-                }
-            }
-
-            // if none found, add a new Count aggregate over the first ColumnInfo
-            if (countColumnName == null)
-            {
-                List<Aggregate> newAggregates = new LinkedList<Aggregate>();
-                if (_aggregates != null)
-                    newAggregates.addAll(Arrays.asList(_aggregates));
-
-                ColumnInfo column = null;
-                for (DisplayColumn displayColumn : _displayColumns)
-                {
-                    column = displayColumn.getColumnInfo();
-                    if (column != null)
-                        break;
-                }
-
-                if (column != null && (null != (countColumnName = column.getAlias())))
-                {
-                    newAggregates.add(Aggregate.createCountStar());
-                    aggregates = newAggregates.toArray(new Aggregate[newAggregates.size()]);
-                }
-            }
+            List<Aggregate> newAggregates = new LinkedList<Aggregate>();
+            if (aggregates != null)
+                newAggregates.addAll(Arrays.asList(aggregates));
+            newAggregates.add(Aggregate.createCountStar());
+            aggregates = newAggregates.toArray(new Aggregate[newAggregates.size()]);
         }
 
         _aggregateResults =  ctx.getAggregates(_displayColumns, getTable(), getName(), aggregates, false);
