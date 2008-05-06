@@ -1,9 +1,9 @@
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.pipeline.browse.BrowseFile" %>
-<%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.pipeline.browse.BrowseForm.Param" %>
-<%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="org.labkey.api.pipeline.browse.FileFilter" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="java.util.LinkedHashMap" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.pipeline.browse.BrowseViewImpl.Page" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib"%>
 <% if (getForm().getFileFilterOptions().size() > 1)
@@ -21,9 +21,9 @@
 <table cellspacing="2" cellpadding="0">
     <%
         ActionURL urlBrowse = getUrlBrowsePath();
-        String urlOpenFolder = request.getContextPath() + "/Pipeline/images/folder_open.gif";
-        String urlClosedFolder = request.getContextPath() + "/Pipeline/images/folder.gif";
-        String urlFile = request.getContextPath() + "/Pipeline/images/file.gif";
+        String urlOpenFolder = request.getContextPath() + "/pipeline/images/folder_open.gif";
+        String urlClosedFolder = request.getContextPath() + "/pipeline/images/folder.gif";
+        String urlFile = request.getContextPath() + "/pipeline/images/file.gif";
         for (int i = 0; i < parents.size(); i++)
         {
             Map.Entry<String, BrowseFile> entry = parents.get(i);
