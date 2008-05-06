@@ -28,11 +28,6 @@ import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
 
 import javax.naming.*;
 import javax.servlet.Filter;
@@ -40,12 +35,6 @@ import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.*;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -364,16 +353,16 @@ public class ModuleLoader implements Filter
 
     private void extractModules(ServletContext context, List<Module> moduleList, Set<File> unclaimedFiles) throws ServletException, IllegalAccessException, InstantiationException, ClassNotFoundException
     {
-        File deploymentFile;
-        try
-        {
-            deploymentFile = copyWSDD(context.getRealPath("/WEB-INF"));
-        }
-        catch (IOException e)
-        {
-            throw new ServletException(e);
-        }
-        unclaimedFiles.remove(deploymentFile);
+//        File deploymentFile;
+//        try
+//        {
+//            deploymentFile = copyWSDD(context.getRealPath("/WEB-INF"));
+//        }
+//        catch (IOException e)
+//        {
+//            throw new ServletException(e);
+//        }
+//        unclaimedFiles.remove(deploymentFile);
 
         File webappContentDir;
         File webInfJspDir;
@@ -471,10 +460,10 @@ public class ModuleLoader implements Filter
                         {
                             extractEntry(jarFile, entry, entry.getName().substring("meta-inf/".length()), webInfClassesDir, unclaimedFiles);
                         }
-                        else if (name.equals("meta-inf/deploy.wsdd"))
-                        {
-                            appendWebService(jarFile, entry, deploymentFile);
-                        }
+//                        else if (name.equals("meta-inf/deploy.wsdd"))
+//                        {
+//                            appendWebService(jarFile, entry, deploymentFile);
+//                        }
                         else if (name.startsWith("meta-inf/jsp/") && name.endsWith("_jsp.jar"))
                         {
                             extractEntry(jarFile, entry, entry.getName().substring("meta-inf/jsp/".length()), webInfJspDir, unclaimedFiles);
@@ -505,7 +494,7 @@ public class ModuleLoader implements Filter
         }
     }
 
-    private File copyWSDD(String realPath) throws IOException
+/*    private File copyWSDD(String realPath) throws IOException
     {
         FileInputStream fIn = null;
         FileOutputStream fOut = null;
@@ -592,7 +581,7 @@ public class ModuleLoader implements Filter
             throw new ServletException(e);
         }
     }
-
+*/
     private void extractEntry(JarFile jarFile, JarEntry entry, String directory, File destinationDirectory, Set<File> unclaimedFiles) throws IOException
     {
         InputStream in = jarFile.getInputStream(entry);

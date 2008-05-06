@@ -600,7 +600,6 @@ api/webapp/WEB-INF/applicationContext.xml -text
 api/webapp/WEB-INF/beehive-netui-config.xml -text
 api/webapp/WEB-INF/beehive-netui-validator-rules.xml -text
 api/webapp/WEB-INF/labkey.tld -text
-api/webapp/WEB-INF/server-config-original.wsdd -text
 api/webapp/WEB-INF/spring-form.tld -text
 api/webapp/WEB-INF/spring.tld -text
 api/webapp/clientapi/ActionURL.js -text
