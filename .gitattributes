@@ -963,10 +963,6 @@ pipeline/src/org/labkey/pipeline/xstream/PathMapper.java -text
 pipeline/src/org/labkey/pipeline/xstream/TaskIdXStreamConverter.java -text
 pipeline/src/org/labkey/pipeline/xstream/URIXStreamConverter.java -text
 pipeline/webapp/WEB-INF/classes/client-config.wsdd -text
-pipeline/webapp/WEB-INF/classes/etc/globus_wsrf_core/client-server-config.wsdd -text
-pipeline/webapp/WEB-INF/classes/etc/globus_wsrf_core/global_security_descriptor.xml -text
-pipeline/webapp/WEB-INF/classes/etc/globus_wsrf_core/server-config.wsdd -text
-pipeline/webapp/WEB-INF/classes/etc/globus_wsrf_core_registry/server-config.wsdd -text
 pipeline/webapp/WEB-INF/classes/share/schema/core/management/shutdown_bindings.wsdl -text
 pipeline/webapp/WEB-INF/classes/share/schema/core/management/shutdown_port_type.wsdl -text
 pipeline/webapp/WEB-INF/classes/share/schema/core/management/shutdown_service.wsdl -text

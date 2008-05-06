@@ -144,7 +144,9 @@
             value="org.globus.axis.providers.RPCProvider"/>
         <parameter name="className" 
             value="org.globus.wsrf.impl.notification.NotificationConsumerProvider"/>
+        <parameter name="loadOnStartup" value="true"/>
         <wsdlFile>share/schema/core/notification/notification_consumer_service.wsdl</wsdlFile>
+        <namespace>http://docs.oasis-open.org/wsn/2004/06/wsn-WS-BaseNotification-1.2-draft-01.xsd</namespace>
         <typeMapping
             deserializer=
             "org.apache.axis.encoding.ser.ElementDeserializerFactory"

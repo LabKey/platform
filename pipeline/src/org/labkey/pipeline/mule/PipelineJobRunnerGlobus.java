@@ -20,13 +20,20 @@ import org.apache.axis.message.addressing.EndpointReferenceType;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.util.AppProps;
 import org.labkey.pipeline.xstream.PathMapper;
 import org.globus.exec.client.GramJobListener;
 import org.globus.exec.client.GramJob;
 import org.globus.exec.generated.*;
 import org.globus.exec.utils.client.ManagedJobFactoryClientHelper;
 import org.globus.exec.utils.ManagedJobFactoryConstants;
+import org.globus.exec.utils.ManagedJobConstants;
 import org.globus.axis.util.Util;
+import org.globus.wsrf.NotificationConsumerManager;
+import org.globus.wsrf.impl.notification.ServerNotificationConsumerManager;
+import org.globus.wsrf.impl.security.descriptor.GSITransportAuthMethod;
+import org.globus.wsrf.impl.security.descriptor.ResourceSecurityDescriptor;
+import org.globus.wsrf.impl.security.authorization.Authorization;
 import org.mule.extras.client.MuleClient;
 import org.mule.umo.UMOException;
 import org.mule.umo.UMOEventContext;
@@ -34,10 +41,15 @@ import org.mule.umo.lifecycle.Callable;
 import org.oasis.wsrf.faults.BaseFaultTypeDescription;
 import org.oasis.wsrf.faults.BaseFaultType;
 
+import javax.xml.namespace.QName;
 import java.io.*;
 import java.net.URL;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.MalformedURLException;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 
 public class PipelineJobRunnerGlobus implements Callable
 {
@@ -49,6 +61,7 @@ public class PipelineJobRunnerGlobus implements Callable
     private String _modulesDir;
     private String _webappDir;
     private String _globusEndpoint;
+    private String _jobFactoryType = ManagedJobFactoryConstants.FACTORY_TYPE.FORK;
 
     private PathMapper _pathMapper = PathMapper.createMapper();
 
@@ -61,8 +74,7 @@ public class PipelineJobRunnerGlobus implements Callable
         {
             File webappDir = new File(ModuleLoader.getServletContext().getRealPath("/"));
             File webinfDir = new File(webappDir, "WEB-INF"); 
-            File classesDir = new File(webinfDir, "classes"); 
-            System.setProperty(GLOBUS_LOCATION, classesDir.getAbsolutePath());
+            System.setProperty(GLOBUS_LOCATION, webinfDir.getAbsolutePath());
         }
     }
 
@@ -114,6 +126,16 @@ public class PipelineJobRunnerGlobus implements Callable
     public String getConfigDir(boolean enforceSetting)
     {
         return getDir(_configDir, "config", enforceSetting);
+    }
+
+    public String getJobFactoryType()
+    {
+        return _jobFactoryType;
+    }
+
+    public void setJobFactoryType(String jobFactoryType)
+    {
+        _jobFactoryType = jobFactoryType;
     }
 
     private String getDir(String override, String defaultSubDir, boolean enforceSetting)
@@ -193,52 +215,45 @@ public class PipelineJobRunnerGlobus implements Callable
             {
                 if (fOut != null) { try { fOut.close(); } catch (IOException e) {} }
             }
-            
-            // Set up the job description
-            JobDescriptionType jobDescription = new JobDescriptionType();
-            jobDescription.setExecutable(_javaPath);
-
-            // Transform an output file path to something that's useful on the cluster node
-            File localOutputFile = PipelineJob.getClusterOutputFile(job.getStatusFile());
-            String clusterOutputURI = _pathMapper.localToRemote(localOutputFile.toURI().toString());
-            File clusterOutputFile = new File(new URI(clusterOutputURI));
-            String clusterOutputPath = clusterOutputFile.toString().replace('\\', '/');
-            jobDescription.setStdout(clusterOutputPath);
-            jobDescription.setStderr(clusterOutputPath);
-
-            String[] jobArgs =
-                {
-                    "-Xdebug",
-                    "-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=5005",
-                    "-cp",
-                    _labkeyDir + "/labkeyBootstrap.jar",
-                    "org.labkey.bootstrap.ClusterBootstrap",
-                    "-modulesdir=" + getModulesDir(true),
-                    "-webappdir=" + getWebappDir(true),
-                    "-configdir=" + getConfigDir(true),
-                    _pathMapper.localToRemote(serializedJobFile.getAbsoluteFile().toURI().toString())
-                };
-            jobDescription.setArgument(jobArgs);
+            JobDescriptionType jobDescription = createJobDescription(job, serializedJobFile);
 
             // Figure out where to send the job
             URL factoryUrl = ManagedJobFactoryClientHelper.getServiceURL(_globusEndpoint).getURL();
-            EndpointReferenceType factoryEndpoint = ManagedJobFactoryClientHelper.getFactoryEndpoint(factoryUrl, ManagedJobFactoryConstants.FACTORY_TYPE.FORK);
-/*
-            ManagedJobFactoryPortType factoryPort = ManagedJobFactoryClientHelper.getPort(factoryEndpoint);
+            EndpointReferenceType factoryEndpoint = ManagedJobFactoryClientHelper.getFactoryEndpoint(factoryUrl, _jobFactoryType);
 
-            // Load the proxy file
-            ExtendedGSSManager manager = (ExtendedGSSManager)ExtendedGSSManager.getInstance();
-            GSSCredential cred = manager.createCredential(GSSCredential.INITIATE_AND_ACCEPT);
+            String jobURI = "uuid:" + jobId + "/" + job.getActiveTaskId().getNamespaceClass().getName() + "/" + job.getActiveTaskId().getName();
 
-            // Set up the security
-            ClientSecurityDescriptor secDesc = new ClientSecurityDescriptor();
-            secDesc.setGSITransport(Constants.ENCRYPTION);
-            secDesc.setAuthz(new NoAuthorization());
-            secDesc.setGSSCredential(cred);
-            ((Stub) factoryPort)._setProperty(Constants.CLIENT_DESCRIPTOR, secDesc);
-*/
+            NotificationConsumerManager notifConsumerManager = new ServerNotificationConsumerManager()
+            {
+                public URL getURL()
+                {
+                    try
+                    {
+                        String url = AppProps.getInstance().getBaseServerUrl();
+                        return new URL(url + AppProps.getInstance().getContextPath() + "/services/");
+                    }
+                    catch (MalformedURLException e)
+                    {
+                        throw new RuntimeException(e);
+                    }
+                }
+            };
+
+            notifConsumerManager.startListening();
+            List<QName> topicPath = new ArrayList<QName>();
+            topicPath.add(ManagedJobConstants.RP_STATE);
+
+            ResourceSecurityDescriptor resourceSecDesc = new ResourceSecurityDescriptor();
+            resourceSecDesc.setAuthz(Authorization.AUTHZ_NONE);
+
+            List<GSITransportAuthMethod> authMethods = new ArrayList<GSITransportAuthMethod>();
+            resourceSecDesc.setAuthMethods(authMethods);
 
             GramJob gramJob = new GramJob(jobDescription);
+            
+            EndpointReferenceType notificationConsumerEndpoint = notifConsumerManager.createNotificationConsumer(topicPath, gramJob, resourceSecDesc);
+
+            gramJob.setNotificationConsumerEPR(notificationConsumerEndpoint);
             gramJob.addListener(new GramJobListener()
             {
                 public void stateChanged(GramJob gramJob)
@@ -279,8 +294,6 @@ public class PipelineJobRunnerGlobus implements Callable
                 }
             });
 
-            String jobURI = "uuid:" + jobId + "/" + job.getActiveTaskId().getNamespaceClass().getName() + "/" + job.getActiveTaskId().getName();
-
             gramJob.submit(factoryEndpoint, false, false, jobURI);
             submitted = true;
         }
@@ -297,6 +310,37 @@ public class PipelineJobRunnerGlobus implements Callable
             }
         }
         return null;
+    }
+
+    private JobDescriptionType createJobDescription(PipelineJob job, File serializedJobFile)
+            throws URISyntaxException
+    {
+        // Set up the job description
+        JobDescriptionType jobDescription = new JobDescriptionType();
+        jobDescription.setExecutable(_javaPath);
+
+        // Transform an output file path to something that's useful on the cluster node
+        File localOutputFile = PipelineJob.getClusterOutputFile(job.getStatusFile());
+        String clusterOutputURI = _pathMapper.localToRemote(localOutputFile.toURI().toString());
+        File clusterOutputFile = new File(new URI(clusterOutputURI));
+        String clusterOutputPath = clusterOutputFile.toString().replace('\\', '/');
+        jobDescription.setStdout(clusterOutputPath);
+        jobDescription.setStderr(clusterOutputPath);
+
+        String[] jobArgs =
+            {
+//                "-Xdebug",
+//                "-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=5005",
+                "-cp",
+                _labkeyDir + "/labkeyBootstrap.jar",
+                "org.labkey.bootstrap.ClusterBootstrap",
+                "-modulesdir=" + getModulesDir(true),
+                "-webappdir=" + getWebappDir(true),
+                "-configdir=" + getConfigDir(true),
+                _pathMapper.localToRemote(serializedJobFile.getAbsoluteFile().toURI().toString())
+            };
+        jobDescription.setArgument(jobArgs);
+        return jobDescription;
     }
 
     private void logFault(BaseFaultType fault, PipelineJob job)

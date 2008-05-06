@@ -135,6 +135,7 @@
             <pooling-profile maxActive="4" maxIdle="0" initialisationPolicy="INITIALISE_NONE"/>
 
             <properties>
+                <property name="jobFactoryType" value="Fork" />
                 <property name="javaPath" value="/usr/bin/java" />
                 <property name="labkeyDir" value="/usr/local/labkey" />
                 <property name="globusEndpoint" value="https://140.107.154.30:8443/wsrf/services/ManagedJobFactoryService" />
