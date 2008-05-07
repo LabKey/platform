@@ -283,7 +283,7 @@ quickScan:
                 if (start < i)
                 {
                     String part = str.substring(start, i);
-                    if (part.isEmpty() || equals(part,'.'))
+                    if (part.length()==0 || equals(part,'.'))
                     {
                     }
                     else if (part.equals(".."))
