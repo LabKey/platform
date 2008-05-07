@@ -55,6 +55,22 @@ public class StudyService
         public String insertDatasetRow(User u, Container c, int datasetId, Map<String,Object> data, List<String> errors)
                 throws SQLException;
 
+
+        /**
+         * Fetches a single row from a dataset given an LSID
+         * @param u The user
+         * @param c The container
+         * @param datasetId The dataset Id
+         * @param lsid The row LSID
+         * @return A map of the dataset row columns
+         * @throws SQLException Thrown if there's a database error
+         */
+        public Map<String, Object> getDatasetRow(User u, Container c, int datasetId, String lsid) throws SQLException;
+
+        public void beginTransaction() throws SQLException;
+        public void commitTransaction() throws SQLException;
+        public void rollbackTransaction();
+        public boolean isTransactionActive();
     }
 
     public static void register(Service serviceImpl)
