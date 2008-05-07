@@ -6,6 +6,7 @@ import org.labkey.api.security.User;
 import java.io.File;
 import java.io.InputStream;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -37,9 +38,9 @@ public interface WebdavResolver
 
         File getFile();
 
-        String[] listNames();
+        List<String> listNames();
 
-        Resource[] list();
+        List<Resource> list();
 
         Resource parent();
 

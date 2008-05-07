@@ -73,8 +73,8 @@ BODY, TD, TH { font-family: arial sans-serif; color: black; }
 <tr><%
     TreeMap<String, WebdavResolver.Resource> dirs = new TreeMap<String, WebdavResolver.Resource>();
     TreeMap<String, WebdavResolver.Resource> files = new TreeMap<String, WebdavResolver.Resource>();
-    if (resource.parent() != null)
-        dirs.put("..", resource.parent());
+    WebdavResolver.Resource parent = resource.parent();
+
     if (resource.canRead(user))
     {
         for (WebdavResolver.Resource info : resource.list())
@@ -89,6 +89,19 @@ BODY, TD, TH { font-family: arial sans-serif; color: black; }
     }
 
     boolean shade = true;
+    if (parent != null)
+    {
+        String name = "..";
+        WebdavResolver.Resource info = parent;
+        shade = !shade;
+        long modified = info.getLastModified();
+        if (!"..".equals(name) && !".".equals(name))
+            name += "/";
+        %><tr bgcolor="<%=shade?"#ffffff":"#eeeeee"%>"><td align="left"><a href="<%=h(info.getLocalHref(context))%>"><%=h(name)%></a></td><%
+        %><td align="right">&nbsp;</td><%
+        %><td align="right" nowrap><%=modified==0?"&nbsp;":dateFormat.format(new Date(modified))%></td></tr><%
+        out.println();
+    }
     for (Map.Entry<String, WebdavResolver.Resource> entry : dirs.entrySet())
     {
         String name = entry.getKey();
