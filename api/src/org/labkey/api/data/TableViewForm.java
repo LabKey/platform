@@ -526,7 +526,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasValidator
 
     public void set(String arg0, Object arg1)
     {
-        _stringValues.put(arg0, (String) arg1);
+        _stringValues.put(arg0, arg1 == null ? null : arg1.toString());
         _values = null;
     }
 

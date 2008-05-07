@@ -83,27 +83,6 @@ abstract public class PipelineJob extends Job implements Serializable
         {
             return _job;
         }
-
-        protected String getExecutablePath(String executable)
-        {
-            String toolsDir = PipelineJobService.get().getAppProperties().getToolsDirectory();
-            if (toolsDir != null && (!toolsDir.equals("")) && !toolsDir.endsWith(File.separator))
-            {
-                toolsDir = toolsDir + File.separatorChar;
-            }
-
-            if (toolsDir == null)
-            {
-                return executable;
-            }
-            File f = new File(toolsDir);
-            if (!f.isDirectory())
-            {
-                return executable;
-            }
-
-            return toolsDir + executable;
-        }
     }
 
     /*
@@ -625,9 +604,18 @@ abstract public class PipelineJob extends Job implements Serializable
             }
 
             String toolDir = PipelineJobService.get().getAppProperties().getToolsDirectory();
-            if (toolDir != null)
+            if (toolDir != null && !"".equals(toolDir))
             {
-                String path = (System.getenv("PATH") == null ? "" : File.pathSeparatorChar + System.getenv("PATH")) + toolDir;
+                String path = System.getenv("PATH");
+                if (path == null)
+                {
+                    path = toolDir;
+                }
+                else
+                {
+                    path = toolDir + File.pathSeparatorChar + path;
+                }
+
                 pb.environment().put("PATH", path);
             }
 
