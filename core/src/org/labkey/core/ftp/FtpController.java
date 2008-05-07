@@ -26,6 +26,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -138,7 +139,8 @@ public class FtpController extends SpringActionController
             info.created = resource.getCreation();
             info.fsRoot = resource.getFile() == null ? null : initFileSystemRoot(resource.getFile());
             info.perm = resource.getPermissions(user);
-            info.subfolders = resource.getWebFoldersNames(user);
+            List<String> webFoldersNames = resource.getWebFoldersNames(user);
+            info.subfolders = webFoldersNames.toArray(new String[webFoldersNames.size()]);
             return info;
         }
     }        
