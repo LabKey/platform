@@ -4,6 +4,9 @@ import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
+import org.apache.beehive.netui.pageflow.annotations.Jpf;
+import org.apache.beehive.netui.pageflow.Forward;
+import org.apache.xmlbeans.XmlOptions;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
@@ -38,6 +41,7 @@ import org.labkey.api.wiki.WikiService;
 import org.labkey.common.util.Pair;
 import org.labkey.core.analytics.AnalyticsController;
 import org.labkey.core.login.LoginController;
+import org.labkey.data.xml.TablesDocument;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
@@ -3340,6 +3344,22 @@ public class AdminController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
+            return new JspView<DataCheckForm>("/org/labkey/core/admin/checkDatabase.jsp", new DataCheckForm());
+        }
+
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return appendAdminNavTrail(root, "Database Check Tools");
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class DoCheckAction extends SimpleViewAction<DataCheckForm>
+    {
+        public ModelAndView getView(DataCheckForm form, BindException errors) throws Exception
+        {
             ActionURL currentUrl = getViewContext().cloneActionURL();
             String fixRequested = currentUrl.getParameter("_fix");
             StringBuffer contentBuffer = new StringBuffer();
@@ -3406,7 +3426,45 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendAdminNavTrail(root, "Database Consistency Checker");
+            return appendAdminNavTrail(root, "Database Tools");
+        }
+    }
+
+
+    public static class DataCheckForm
+    {
+        private String _dbSchema = "";
+
+        public List<Module> modules = ModuleLoader.getInstance().getModules();
+        public DataCheckForm(){}
+
+        public List<Module> getModules() { return modules;  }
+        public String getDbSchema() { return _dbSchema; }
+        public void setDbSchema(String dbSchema){ _dbSchema = dbSchema; }
+    }
+
+
+    @RequiresSiteAdmin
+    public class GetSchemaXmlDocAction extends ExportAction<DataCheckForm>
+    {
+        public void export(DataCheckForm form, HttpServletResponse response) throws Exception
+        {
+            String dbSchemaName = form.getDbSchema();
+            if (null == dbSchemaName)
+                HttpView.throwNotFound("Must specify dbSchema parameter");
+
+            boolean bFull = false;    // TODO: Pass in via form?
+
+            TablesDocument tdoc = TableXmlUtils.getXmlDocumentFromMetaData(dbSchemaName, bFull);
+            StringWriter sw = new StringWriter();
+
+            XmlOptions xOpt = new XmlOptions();
+            xOpt.setSavePrettyPrint();
+
+            tdoc.save(sw, xOpt);
+
+            sw.flush();
+            PageFlowUtil.streamFileBytes(response, dbSchemaName + ".xml", sw.toString().getBytes(), true);
         }
     }
 

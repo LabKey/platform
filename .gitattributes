@@ -298,6 +298,7 @@ core/src/org/labkey/core/admin/AdminController.java -text
 core/src/org/labkey/core/admin/TestNetworkDriveBean.java -text
 core/src/org/labkey/core/admin/admin.jsp -text
 core/src/org/labkey/core/admin/auditLog.jsp -text
+core/src/org/labkey/core/admin/checkDatabase.jsp -text
 core/src/org/labkey/core/admin/confirmProjectMove.jsp -text
 core/src/org/labkey/core/admin/createFolder.jsp -text
 core/src/org/labkey/core/admin/customizeEmail.jsp -text
@@ -328,7 +329,6 @@ core/src/org/labkey/core/attachment/DatabaseAttachmentFile.java -text
 core/src/org/labkey/core/attachment/confirmDelete.jsp -text
 core/src/org/labkey/core/attachment/refreshParent.jsp -text
 core/src/org/labkey/core/attachment/showErrors.jsp -text
-core/src/org/labkey/core/data/SchemaController.java -text
 core/src/org/labkey/core/filters/SetCharacterEncodingFilter.java -text
 core/src/org/labkey/core/ftp/FtpController.java -text
 core/src/org/labkey/core/ftp/FtpPage.java -text
