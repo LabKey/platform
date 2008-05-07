@@ -317,6 +317,7 @@
         else
         {
             _doingSave = false;
+            _finished = false;
             //report validaton errors
             if(respJson.errors)
             {
@@ -359,6 +360,7 @@
     function onAttachmentFailure(response)
     {
         _doingSave = false;
+        _finished = false;
         //parse the response JSON
         var respJson = Ext.util.JSON.decode(response.responseText);
         if(respJson.exception)

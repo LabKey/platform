@@ -40,13 +40,15 @@ public class WikiEditModel
     private WikiVersion _wikiVersion;
     private String _redir;
     private Container _container;
+    private String _format;
 
-    public WikiEditModel(Container container, Wiki wiki, WikiVersion wikiVersion, String redir)
+    public WikiEditModel(Container container, Wiki wiki, WikiVersion wikiVersion, String redir, String format)
     {
         _container = container;
         _wiki = wiki;
         _wikiVersion = wikiVersion;
         _redir = redir;
+        _format = format;
     }
     
     public Wiki getWiki()
@@ -114,9 +116,11 @@ public class WikiEditModel
 
     public String getRendererType()
     {
-        return null == _wikiVersion ? 
-                PageFlowUtil.jsString(ServiceImpl.get().getDefaultWikiRendererType().name()) :
-                PageFlowUtil.jsString(_wikiVersion.getRendererType());
+        if(null == _wikiVersion)
+            return _format != null ? PageFlowUtil.jsString(_format)
+                    : PageFlowUtil.jsString(ServiceImpl.get().getDefaultWikiRendererType().name());
+        else
+            return PageFlowUtil.jsString(_wikiVersion.getRendererType());
     }
 
     public boolean isCurrentRendererType(WikiRendererType type)

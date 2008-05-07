@@ -2865,6 +2865,7 @@ public class WikiController extends SpringActionController
     {
         private String _name;
         private String _redirect;
+        private String _format;
 
         public String getName()
         {
@@ -2884,6 +2885,16 @@ public class WikiController extends SpringActionController
         public void setRedirect(String redir)
         {
             _redirect = redir;
+        }
+
+        public String getFormat()
+        {
+            return _format;
+        }
+
+        public void setFormat(String format)
+        {
+            _format = format;
         }
     }
 
@@ -2910,7 +2921,7 @@ public class WikiController extends SpringActionController
                     throw new NotFoundException("Could not locate the current version of the wiki named '" + form.getName() + "'!");
             }
 
-            WikiEditModel model = new WikiEditModel(getViewContext().getContainer(), wiki, curVersion, form.getRedirect());
+            WikiEditModel model = new WikiEditModel(getViewContext().getContainer(), wiki, curVersion, form.getRedirect(), form.getFormat());
 
             //cache the wiki so we can build the nav trail
             _wikiVer = curVersion;
@@ -3393,6 +3404,20 @@ public class WikiController extends SpringActionController
                 ret.add(props);
             }
             return ret;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class NewPageAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new JspView("/org/labkey/wiki/view/wikiChooseFormat.jsp");
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("New Page");
         }
     }
 }
