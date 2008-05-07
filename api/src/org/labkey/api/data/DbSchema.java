@@ -669,7 +669,7 @@ public class DbSchema
              String sOut = TableXmlUtils.compareXmlToMetaData(schema.getName(), false, false);
 
              assertNull("<div>Errors in schema " + schema.getName()
-                     + ".xml  <a href=\"" + AppProps.getInstance().getContextPath() + "/data/home/getMergedSchemaXmlDoc.view?_dbschema="
+                     + ".xml  <a href=\"" + AppProps.getInstance().getContextPath() + "/admin/getSchemaXmlDoc.view?dbSchema="
                      + schema.getName() + "\">&nbsp;&nbsp;&nbsp;Click here for an XML doc with fixes. </a> "
                      + "<br/>"
                      + sOut + "</div>", sOut);
