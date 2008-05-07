@@ -16,6 +16,7 @@ import org.labkey.api.util.PageFlowUtil;
 import java.util.*;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.io.IOException;
 
 public class UploadSamplesHelper
 {
@@ -58,7 +59,7 @@ public class UploadSamplesHelper
         return _form.getContainer();
     }
 
-    public MaterialSource uploadMaterials() throws Exception
+    public MaterialSource uploadMaterials() throws SQLException, IOException, ExperimentException
     {
         MaterialSource source;
         try
@@ -73,11 +74,13 @@ public class UploadSamplesHelper
             TabLoader.ColumnDescriptor[] columns = tl.getColumns();
             Map<String, PropertyDescriptor> descriptorsByName = new LinkedHashMap<String, PropertyDescriptor>();
             Map<String, PropertyDescriptor> descriptorsByCaption = new HashMap<String, PropertyDescriptor>();
+            Map<String, PropertyDescriptor> descriptorsByURI = new HashMap<String, PropertyDescriptor>();
 
             PropertyDescriptor[] pds = OntologyManager.getPropertiesForType(materialSourceLsid, getContainer());
             for (PropertyDescriptor pd : pds)
             {
                 descriptorsByName.put(pd.getName(), pd);
+                descriptorsByURI.put(pd.getPropertyURI(), pd);
                 if (pd.getLabel() == null)
                 {
                     descriptorsByCaption.put(ColumnInfo.captionFromName(pd.getName()), pd);
@@ -118,6 +121,7 @@ public class UploadSamplesHelper
                     pd.setContainer(_form.getContainer());
                     //Change name to be fully qualified string for property
                     pd = OntologyManager.insertOrUpdatePropertyDescriptor(pd, dd);
+                    descriptorsByURI.put(pd.getPropertyURI(), pd);
                     descriptorsByName.put(pd.getName(), pd);
                 }
                 cd.name = pd.getPropertyURI();
@@ -174,9 +178,17 @@ public class UploadSamplesHelper
             }
             else
             {
+                if (maps.length > 0)
+                {
+                    Set<String> uploadedPropertyURIs = maps[0].keySet();
+                    if (!uploadedPropertyURIs.containsAll(idColPropertyURIs))
+                    {
+                        throw new ExperimentException("Your upload must contain the original id columns");
+                    }
+                }
                 if (_form.getOverwriteChoiceEnum() == OverwriteChoice.ignore)
                 {
-                    List<Map<String, Object>> newMaps = new ArrayList();
+                    List<Map<String, Object>> newMaps = new ArrayList<Map<String, Object>>();
                     for (Map<String, Object> map : maps)
                     {
                         String lsid = source.getMaterialLSIDPrefix() + decideName(map, idColPropertyURIs);
@@ -208,7 +220,7 @@ public class UploadSamplesHelper
                 }
 
             }
-            insertTabDelimitedMaterial(maps, descriptorsByName.values().toArray(new PropertyDescriptor[0]), idColPropertyURIs, source.getMaterialLSIDPrefix(), source.getLSID(), reusedMaterialLSIDs);
+            insertTabDelimitedMaterial(maps, descriptorsByURI.values().toArray(new PropertyDescriptor[descriptorsByURI.size()]), idColPropertyURIs, source.getMaterialLSIDPrefix(), source.getLSID(), reusedMaterialLSIDs);
             _form.getSampleSet().onSamplesChanged(_form.getUser(), null);
             ExperimentService.get().getSchema().getScope().commitTransaction();
         }

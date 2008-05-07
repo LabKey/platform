@@ -15,8 +15,6 @@
  */
 package org.labkey.experiment.api;
 
-import org.labkey.experiment.api.IdentifiableEntity;
-
 /**
  * User: migra
  * Date: Aug 15, 2005
@@ -27,8 +25,11 @@ public class MaterialSource extends IdentifiableEntity
     private int rowId;
     private String materialLSIDPrefix;
     private String description;
+    /** PropertyURI */
     private String _idCol1;
+    /** PropertyURI */
     private String _idCol2;
+    /** PropertyURI */
     private String _idCol3;
 
     public int getRowId()
@@ -61,31 +62,37 @@ public class MaterialSource extends IdentifiableEntity
         this.description = description;
     }
 
+    /** @return PropertyURI for first id column */
     public String getIdCol1()
     {
         return _idCol1;
     }
 
+    /** @param idCol1 PropertyURI for first id column */
     public void setIdCol1(String idCol1)
     {
         _idCol1 = idCol1;
     }
 
+    /** @return PropertyURI for second id column */
     public String getIdCol2()
     {
         return _idCol2;
     }
 
+    /** @param idCol2 PropertyURI for second id column */
     public void setIdCol2(String idCol2)
     {
         _idCol2 = idCol2;
     }
 
+    /** @return PropertyURI for third id column */
     public String getIdCol3()
     {
         return _idCol3;
     }
 
+    /** @param idCol3 PropertyURI for third id column */
     public void setIdCol3(String idCol3)
     {
         _idCol3 = idCol3;

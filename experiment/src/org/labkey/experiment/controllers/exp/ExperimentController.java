@@ -286,19 +286,22 @@ public class ExperimentController extends SpringActionController
                 {
                     super.populateButtonBar(view, bar);
 
-                    ActionURL deleteMaterialUrl = new ActionURL(DeleteMaterialByRowIdAction.class, getContainer());
-                    ActionButton deleteMaterial = new ActionButton("", "Delete Selected");
-                    deleteMaterial.setScript("return verifySelected(this.form, \"" + deleteMaterialUrl.getLocalURIString() + "\", \"post\", \"Samples\")");
-                    deleteMaterial.setActionType(ActionButton.Action.POST);
-                    deleteMaterial.setDisplayPermission(ACL.PERM_DELETE);
-                    bar.add(deleteMaterial);
+                        ActionURL deleteMaterialUrl = new ActionURL(DeleteMaterialByRowIdAction.class, getContainer());
+                        ActionButton deleteMaterial = new ActionButton("", "Delete Selected");
+                        deleteMaterial.setScript("return verifySelected(this.form, \"" + deleteMaterialUrl.getLocalURIString() + "\", \"post\", \"Samples\")");
+                        deleteMaterial.setActionType(ActionButton.Action.POST);
+                        deleteMaterial.setDisplayPermission(ACL.PERM_DELETE);
+                        bar.add(deleteMaterial);
 
-                    ActionURL urlUploadSamples = new ActionURL(ShowUploadMaterialsAction.class, getContainer());
-                    urlUploadSamples.addParameter("name", sourceName);
-                    urlUploadSamples.addParameter("nameReadOnly", "true");
-                    ActionButton uploadButton = new ActionButton(urlUploadSamples.toString(), "Import More Samples", DataRegion.MODE_ALL, ActionButton.Action.LINK);
-                    uploadButton.setDisplayPermission(ACL.PERM_UPDATE);
-                    bar.add(uploadButton);
+                    if (_source.canImportMoreSamples())
+                    {
+                        ActionURL urlUploadSamples = new ActionURL(ShowUploadMaterialsAction.class, getContainer());
+                        urlUploadSamples.addParameter("name", sourceName);
+                        urlUploadSamples.addParameter("nameReadOnly", "true");
+                        ActionButton uploadButton = new ActionButton(urlUploadSamples.toString(), "Import More Samples", DataRegion.MODE_ALL, ActionButton.Action.LINK);
+                        uploadButton.setDisplayPermission(ACL.PERM_UPDATE);
+                        bar.add(uploadButton);
+                    }
 
                     ActionURL urlDeriveSamples = new ActionURL(DeriveSamplesChooseTargetAction.class, getContainer());
                     ActionButton deriveButton = new ActionButton("", "Derive Samples");
@@ -1489,13 +1492,13 @@ public class ExperimentController extends SpringActionController
     {
         public ModelAndView getView(UploadMaterialSetForm form, BindException errors) throws Exception
         {
-            if ("post".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
+            if (isPost())
             {
                 boolean hasErrors = false;
                 if (StringUtils.isEmpty(form.getName()))
                 {
                     hasErrors = true;
-                    errors.rejectValue(ERROR_MSG, "You must supply name for the sameple set");
+                    errors.rejectValue(ERROR_MSG, "You must supply name for the sample set");
                 }
 
                 String materialSourceLsid = ExperimentService.get().getSampleSetLsid(form.getName(), getContainer()).toString();
@@ -1508,15 +1511,22 @@ public class ExperimentController extends SpringActionController
                 
                 if (!hasErrors)
                 {
-                    UploadSamplesHelper helper = new UploadSamplesHelper(form);
-                    MaterialSource newSource = helper.uploadMaterials();
-
-                    ExpSampleSet activeSampleSet = ExperimentService.get().lookupActiveSampleSet(getContainer());
-                    if (activeSampleSet == null)
+                    try
                     {
-                        ExperimentService.get().setActiveSampleSet(getContainer(), ExperimentService.get().getSampleSet(newSource.getRowId()));
+                        UploadSamplesHelper helper = new UploadSamplesHelper(form);
+                        MaterialSource newSource = helper.uploadMaterials();
+
+                        ExpSampleSet activeSampleSet = ExperimentService.get().lookupActiveSampleSet(getContainer());
+                        if (activeSampleSet == null)
+                        {
+                            ExperimentService.get().setActiveSampleSet(getContainer(), ExperimentService.get().getSampleSet(newSource.getRowId()));
+                        }
+                        HttpView.throwRedirect(ExperimentUrlsImpl.get().getShowSampleSetURL(ExperimentService.get().getSampleSet(newSource.getRowId())));
                     }
-                    HttpView.throwRedirect(ExperimentUrlsImpl.get().getShowSampleSetURL(ExperimentService.get().getSampleSet(newSource.getRowId())));
+                    catch (ExperimentException e)
+                    {
+                        errors.reject(ERROR_MSG, e.getMessage());
+                    }
                 }
             }
             return new JspView<UploadMaterialSetForm>("/org/labkey/experiment/uploadMaterials.jsp", form, errors);
@@ -2257,7 +2267,9 @@ public class ExperimentController extends SpringActionController
                     materialsWithRoles.put(material, null);
                 }
 
-                DeriveSamplesChooseTargetBean bean = new DeriveSamplesChooseTargetBean(ExperimentService.get().getSampleSets(c, true), materialsWithRoles, form.getOutputCount(), materialInputRoles, null);
+                List<ExpSampleSet> sampleSets = getUploadableSampleSets();
+                
+                DeriveSamplesChooseTargetBean bean = new DeriveSamplesChooseTargetBean(sampleSets, materialsWithRoles, form.getOutputCount(), materialInputRoles, null);
                 view = new JspView<DeriveSamplesChooseTargetBean>("/org/labkey/experiment/deriveSamplesChooseTarget.jsp", bean);
             }
             return view;
@@ -2266,7 +2278,7 @@ public class ExperimentController extends SpringActionController
 
     public static class DeriveSamplesChooseTargetBean
     {
-        private ExpSampleSet[] _sampleSets;
+        private List<ExpSampleSet> _sampleSets;
         private Map<ExpMaterial, String> _sourceMaterials;
         private final int _sampleCount;
         private final Collection<String> _inputRoles;
@@ -2274,7 +2286,7 @@ public class ExperimentController extends SpringActionController
 
         public static final String CUSTOM_ROLE = "--CUSTOM--";
 
-        public DeriveSamplesChooseTargetBean(ExpSampleSet[] sampleSets, Map<ExpMaterial, String> sourceMaterials, int sampleCount, Collection<String> inputRoles, DerivedSamplePropertyHelper helper)
+        public DeriveSamplesChooseTargetBean(List<ExpSampleSet> sampleSets, Map<ExpMaterial, String> sourceMaterials, int sampleCount, Collection<String> inputRoles, DerivedSamplePropertyHelper helper)
         {
             _sampleSets = sampleSets;
             _sourceMaterials = sourceMaterials;
@@ -2298,7 +2310,7 @@ public class ExperimentController extends SpringActionController
             return _sourceMaterials;
         }
 
-        public ExpSampleSet[] getSampleSets()
+        public List<ExpSampleSet> getSampleSets()
         {
             return _sampleSets;
         }
@@ -2309,6 +2321,21 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+    private List<ExpSampleSet> getUploadableSampleSets()
+    {
+        List<ExpSampleSet> sampleSets = new ArrayList<ExpSampleSet>(Arrays.asList(ExperimentService.get().getSampleSets(getContainer(), true)));
+        Iterator<ExpSampleSet> iter = sampleSets.iterator();
+        while (iter.hasNext())
+        {
+            ExpSampleSet sampleSet = iter.next();
+            if (!sampleSet.canImportMoreSamples())
+            {
+                iter.remove();
+            }
+        }
+        return sampleSets;
+    }
+    
     @RequiresPermission(ACL.PERM_INSERT)
     public class DescribeDerivedSamplesAction extends SimpleViewAction<DeriveMaterialForm>
     {
@@ -2353,7 +2380,7 @@ public class ExperimentController extends SpringActionController
                 materialsWithRoles.put(materials.get(i), form.determineLabel(i));
             }
 
-            DeriveSamplesChooseTargetBean bean = new DeriveSamplesChooseTargetBean(ExperimentService.get().getSampleSets(c, true), materialsWithRoles, form.getOutputCount(), Collections.<String>emptyList(), helper);
+            DeriveSamplesChooseTargetBean bean = new DeriveSamplesChooseTargetBean(getUploadableSampleSets(), materialsWithRoles, form.getOutputCount(), Collections.<String>emptyList(), helper);
             JspView<DeriveSamplesChooseTargetBean> view = new JspView<DeriveSamplesChooseTargetBean>("/org/labkey/experiment/summarizeMaterialInputs.jsp", bean);
             view.setTitle("Input Samples");
 

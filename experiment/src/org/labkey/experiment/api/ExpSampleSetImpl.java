@@ -65,6 +65,11 @@ public class ExpSampleSetImpl extends ExpIdentifiableBaseImpl<MaterialSource> im
         return _object.getDescription();
     }
 
+    public boolean canImportMoreSamples()
+    {
+        return getIdCol1() != null;        
+    }
+
     private PropertyDescriptor getIdCol(String uri)
     {
         if (uri == null)
@@ -97,6 +102,17 @@ public class ExpSampleSetImpl extends ExpIdentifiableBaseImpl<MaterialSource> im
             result.add(idCol3);
         }
         return result;
+    }
+
+    public void setIdCols(List<PropertyDescriptor> pds)
+    {
+        if (pds.size() > 3)
+        {
+            throw new IllegalArgumentException("A maximum of three id columns is supported, but tried to set " + pds.size() + " of them");
+        }
+        _object.setIdCol1(pds.size() > 0 ? pds.get(0).getPropertyURI() : null);
+        _object.setIdCol1(pds.size() > 1 ? pds.get(1).getPropertyURI() : null);
+        _object.setIdCol1(pds.size() > 2 ? pds.get(2).getPropertyURI() : null);
     }
 
     public PropertyDescriptor getIdCol1()
@@ -193,7 +209,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableBaseImpl<MaterialSource> im
 
     }
 
-    public void onSamplesChanged(User user, List<Material> materials) throws Exception
+    public void onSamplesChanged(User user, List<Material> materials) throws SQLException
     {
         ExpProtocol[] protocols = getProtocols();
         if (protocols.length == 0)
