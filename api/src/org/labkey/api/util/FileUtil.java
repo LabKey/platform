@@ -222,78 +222,102 @@ public class FileUtil
     }
 
 
+    /**
+     * always returns path starting with /.  Tries to leave trailing '/' as is
+     * (unless ends with /. or /..)
+     * 
+     * @param path path to normalize
+     * @return cleaned path or null if path goes outside of 'root'
+     */
     public static String normalize(String path)
     {
-        if (path == null)
+        if (path == null || equals(path,'/'))
+            return path;
+
+        String str = path;
+        if (str.indexOf('\\') >= 0)
+            str = str.replace('\\', '/');
+        if (!startsWith(str,'/'))
+            str = "/" + str;
+        int len = str.length();
+
+        // quick scan, look for /. or //
+quickScan:
         {
+            for (int i=0 ; i<len-1 ; i++)
+            {
+                char c0 = str.charAt(i);
+                if (c0 != '/') continue;
+                char c1 = str.charAt(i+1);
+                if (c1 == '.' || c1 == '/')
+                    break quickScan;
+                i++;    //already looked at c1
+            }
+            return str;
+        }
+
+        ArrayList<String> list = normalizeSplit(str);
+        if (null == list)
             return null;
-        }
-
-        // Create a place for the normalized path
-        String normalized = path;
-
-        if (normalized.equals("/."))
-        {
+        if (list.isEmpty())
             return "/";
-        }
-
-        // Normalize the slashes and add leading slash if necessary
-        if (normalized.indexOf('\\') >= 0)
+        StringBuilder sb = new StringBuilder(str.length()+2);
+        for (String name : list)
         {
-            normalized = normalized.replace('\\', '/');
+            sb.append('/');
+            sb.append(name);
         }
-
-        if (!normalized.startsWith("/"))
-        {
-            normalized = "/" + normalized;
-        }
-
-        // Resolve occurrences of "//" in the normalized path
-        while (true)
-        {
-            int index = normalized.indexOf("//");
-            if (index < 0)
-            {
-                break;
-            }
-            normalized = normalized.substring(0, index) +
-                    normalized.substring(index + 1);
-        }
-
-        // Resolve occurrences of "/./" in the normalized path
-        while (true)
-        {
-            int index = normalized.indexOf("/./");
-            if (index < 0)
-            {
-                break;
-            }
-            normalized = normalized.substring(0, index) +
-                    normalized.substring(index + 2);
-        }
-
-        // Resolve occurrences of "/../" in the normalized path
-        while (true)
-        {
-            int index = normalized.indexOf("/../");
-            if (index < 0)
-            {
-                break;
-            }
-            if (index == 0)
-            {
-                return (null);  // Trying to go outside our context
-            }
-
-            int index2 = normalized.lastIndexOf('/', index - 1);
-            normalized = normalized.substring(0, index2) +
-                    normalized.substring(index + 3);
-        }
-
-        // Return the normalized path that we have completed
-        return (normalized);
+        return sb.toString();
     }
 
+
+    public static ArrayList<String> normalizeSplit(String str)
+    {
+        int len = str.length();
+        ArrayList<String> list = new ArrayList<String>();
+        int start = 0;
+        for (int i=0 ; i<=len ; i++)
+        {
+            if (i==len || str.charAt(i) == '/')
+            {
+                if (start < i)
+                {
+                    String part = str.substring(start, i);
+                    if (part.isEmpty() || equals(part,'.'))
+                    {
+                    }
+                    else if (part.equals(".."))
+                    {
+                        if (list.isEmpty())
+                            return null;
+                        list.remove(list.size()-1);
+                    }
+                    else
+                    {
+                        list.add(part);
+                    }
+                }
+                start=i+1;
+            }
+        }
+        return list;
+    }
+
+
+    static boolean startsWith(String s, char ch)
+    {
+        return s.length() > 0 && s.charAt(0) == ch;
+    }
+
+    static boolean endsWith(String s, char ch)
+    {
+        return s.length() > 0 && s.charAt(s.length()-1) == ch;
+    }
+
+    static boolean equals(String s, char ch)
+    {
+        return s.length() == 1 && s.charAt(0) == ch;
+    }
 
     public static String relativePath(String dir, String filePath)
     {

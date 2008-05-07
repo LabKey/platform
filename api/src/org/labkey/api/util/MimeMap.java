@@ -72,6 +72,9 @@ public class MimeMap implements FileNameMap
         defaultMap.put("ico", new MimeType("image/vnd.microsoft.icon"));
         defaultMap.put("iqy", new MimeType("text/x-ms-iqy"));
         defaultMap.put("java", new MimeType("text/plain"));
+        defaultMap.put("properties", new MimeType("text/plain"));
+        defaultMap.put("sql", new MimeType("text/plain"));
+        defaultMap.put("Log", new MimeType("text/plain"));
         defaultMap.put("body", new MimeType("text/html"));
         defaultMap.put("rtx", new MimeType("text/richtext"));
         defaultMap.put("tsv", new MimeType("text/tab-separated-values"));
@@ -160,6 +163,24 @@ public class MimeMap implements FileNameMap
         defaultMap.put("wmls", new MimeType("text/vnd.wap.wmlscript"));
         defaultMap.put("wmlscriptc", new MimeType("application/vnd.wap.wmlscriptc"));
         defaultMap.put("mzxml", new MimeType("application/mzxml"));
+
+        /* open office */
+
+        defaultMap.put("odt", new MimeType("application/vnd.oasis.opendocument.text"));
+        defaultMap.put("ott", new MimeType("application/vnd.oasis.opendocument.text-template ott"));
+        defaultMap.put("oth", new MimeType("application/vnd.oasis.opendocument.text-web"));
+        defaultMap.put("odm", new MimeType("application/vnd.oasis.opendocument.text-master"));
+        defaultMap.put("odg", new MimeType("application/vnd.oasis.opendocument.graphics odg"));
+        defaultMap.put("otg", new MimeType("application/vnd.oasis.opendocument.graphics-template"));
+        defaultMap.put("odp", new MimeType("application/vnd.oasis.opendocument.presentation"));
+        defaultMap.put("otp", new MimeType("application/vnd.oasis.opendocument.presentation-template"));
+        defaultMap.put("ods", new MimeType("application/vnd.oasis.opendocument.spreadsheet"));
+        defaultMap.put("ots", new MimeType("application/vnd.oasis.opendocument.spreadsheet-template"));
+        defaultMap.put("odc", new MimeType("application/vnd.oasis.opendocument.chart"));
+        defaultMap.put("odf", new MimeType("application/vnd.oasis.opendocument.formula"));
+        defaultMap.put("odb", new MimeType("application/vnd.oasis.opendocument.database"));
+        defaultMap.put("odi", new MimeType("application/vnd.oasis.opendocument.image"));
+        defaultMap.put("oxt", new MimeType("application/vnd.openofficeorg.extension"));
 
         // mime.types
         try
