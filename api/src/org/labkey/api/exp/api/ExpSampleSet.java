@@ -18,6 +18,12 @@ public interface ExpSampleSet extends ExpObject
 
     public String getDescription();
 
+    /**
+     * Some sample sets shouldn't be updated through the standard import or derived samples
+     * UI, as they don't have any properties. Study specimens are an example.
+     */
+    public boolean canImportMoreSamples();
+
     public PropertyDescriptor getIdCol1();
     public PropertyDescriptor getIdCol2();
     public PropertyDescriptor getIdCol3();
@@ -29,4 +35,6 @@ public interface ExpSampleSet extends ExpObject
     void insert(User user);
 
     List<PropertyDescriptor> getIdCols();
+
+    void setIdCols(List<PropertyDescriptor> pds);
 }

@@ -1,6 +1,8 @@
 package org.labkey.api.exp.api;
 
 import java.util.List;
+import java.sql.SQLException;
+
 import org.labkey.api.security.User;
 
 public class ProtocolImplementation
@@ -23,7 +25,7 @@ public class ProtocolImplementation
      * is the sampleset that these samples came from.
      * @param materials materials that were modified.
      */
-    public void onSamplesChanged(User user, ExpProtocol protocol, ExpMaterial[] materials) throws Exception
+    public void onSamplesChanged(User user, ExpProtocol protocol, ExpMaterial[] materials) throws SQLException
     {
 
     }
