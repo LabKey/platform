@@ -47,6 +47,7 @@ import org.labkey.common.util.Pair;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
+import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.reports.ReportsController;
@@ -1673,8 +1674,15 @@ public class StudyController extends BaseStudyController
                 List<String> errorList = new LinkedList<String>();
 
                 DataSetDefinition dsd = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getDatasetId());
-                /* UploadLog ul = */ AssayPublishManager.getInstance().importDatasetTSV(getUser(), getStudy(), dsd, form.getTsv(), columnMap, errorList);
+                Pair<String[],UploadLog> result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), getStudy(), dsd, form.getTsv(), columnMap, errorList);
 
+                if (result.getKey().length > 0)
+                {
+                    // Log the import
+                    String comment = "Dataset data imported. " + result.getKey().length + " rows imported";
+                    StudyServiceImpl.addDatasetAuditEvent(
+                            getUser(), getContainer(), dsd, comment, result.getValue());
+                }
                 for (String error : errorList)
                 {
                     errors.reject("showImportDataset", error);
@@ -3497,8 +3505,12 @@ public class StudyController extends BaseStudyController
                 try
                 {
                     scope.beginTransaction();
-                    StudyManager.getInstance().purgeDataset(getStudy(), dataset);
+                    int numRowsDeleted = StudyManager.getInstance().purgeDataset(getStudy(), dataset);
                     scope.commitTransaction();
+
+                    // Log the purge
+                    String comment = "Dataset purged. " + numRowsDeleted + " rows deleted";
+                    StudyServiceImpl.addDatasetAuditEvent(getUser(), getContainer(), dataset, comment, null);
                 }
                 finally
                 {

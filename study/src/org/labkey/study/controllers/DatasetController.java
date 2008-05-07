@@ -1,17 +1,20 @@
 package org.labkey.study.controllers;
 
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.data.ActionButton;
-import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.audit.AuditLogEvent;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.data.*;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.NavTree;
-import org.labkey.api.view.UpdateView;
+import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.*;
+import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
@@ -21,10 +24,8 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.PrintWriter;
+import java.util.*;
 
 /**
  * User: jgarms
@@ -197,6 +198,155 @@ public class DatasetController extends BaseStudyController
 
     }
 
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class DatasetAuditHistoryAction extends SimpleViewAction<DatasetAuditHistoryForm>
+    {
+        public ModelAndView getView(DatasetAuditHistoryForm form, BindException errors) throws Exception
+        {
+            int auditRowId = form.getAuditRowId();
+            AuditLogEvent event = AuditLogService.get().getEvent(auditRowId);
+            if (event == null)
+            {
+                HttpView.throwNotFound("Could not find event " + auditRowId + " to display.");
+                return null;
+            }
+            VBox view = new VBox();
+
+            Map<String, Object> dataMap = OntologyManager.getProperties(ContainerManager.getSharedContainer().getId(), event.getLsid());
+            String oldRecord = (String)dataMap.get(AuditLogService.get().getPropertyURI(DatasetAuditViewFactory.DATASET_AUDIT_EVENT, "oldRecordMap"));
+            String newRecord = (String)dataMap.get(AuditLogService.get().getPropertyURI(DatasetAuditViewFactory.DATASET_AUDIT_EVENT, "newRecordMap"));
+
+            Map<String,String> oldData = null;
+            Map<String,String> newData = null;
+            // If the record was deleted, newRecord will be null. Otherwise we might be able to find it
+            if (newRecord != null)
+            {
+                newData = DatasetAuditViewFactory.decodeFromDataMap(newRecord);
+                String lsid = newData.get("lsid");
+                if (lsid != null)
+                {
+                    // If we have a current record, display it
+                    int datasetId = event.getIntKey1();
+                    DataSetDefinition ds = StudyManager.getInstance().getDataSetDefinition(getStudy(), datasetId);
+                    if (null != ds)
+                    {
+                        TableInfo datasetTable = ds.getTableInfo(getUser());
+
+                        TableViewForm objForm = new TableViewForm(datasetTable);
+                        objForm.set("lsid", lsid);
+                        objForm.set("datasetId", datasetId);
+
+                        DetailsView objView = new DetailsView(objForm);
+                        objView.getDataRegion().setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
+
+                        view.addView(objView);
+                    }
+                }
+            }
+            if (oldRecord != null)
+            {
+                oldData = DatasetAuditViewFactory.decodeFromDataMap(oldRecord);
+            }
+            if (oldData != null || newData != null)
+            {
+                DiffDetailsView diffView = new DiffDetailsView(event, oldData, newData);
+                view.addView(diffView);
+            }
+
+            return view;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            try
+            {
+                Study study = getStudy();
+                root.addChild(study.getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
+                root.addChild("Study Overview", new ActionURL(StudyController.OverviewAction.class, getContainer()));
+                root.addChild("Dataset Entry History");
+                return root;
+            }
+            catch (ServletException se) {throw UnexpectedException.wrap(se);}
+        }
+    }
+
+    private class DiffDetailsView extends WebPartView
+    {
+        private final AuditLogEvent event;
+        private final Map<String,String> oldData;
+        private final Map<String,String> newData;
+
+        public DiffDetailsView(AuditLogEvent event, Map<String,String> oldData, Map<String,String> newData)
+        {
+            this.event = event;
+            if (oldData != null)
+            {
+                this.oldData = new CaseInsensitiveHashMap<String>(oldData);
+            }
+            else
+            {
+                this.oldData = Collections.emptyMap();
+            }
+            if (newData != null)
+            {
+                this.newData = new CaseInsensitiveHashMap<String>(newData);
+            }
+            else
+            {
+                this.newData = Collections.emptyMap();
+            }
+        }
+
+        @Override
+        protected void renderView(Object model, PrintWriter out) throws Exception
+        {
+            int modified = 0;
+
+            out.write("<table>\n");
+            out.write("<tr class=\"wpHeader\"><th colspan=\"2\" class=\"wpTitle\" align=\"left\">Item Changes</th></tr>");
+            out.write("<tr><td colspan=\"2\">Comment:&nbsp;<i>" + PageFlowUtil.filter(event.getComment()) + "</i></td></tr>");
+            out.write("<tr><td/>\n");
+
+            for (Map.Entry<String, String> entry : oldData.entrySet())
+            {
+                out.write("<tr><td class=\"ms-searchform\">");
+                out.write(entry.getKey());
+                out.write("</td><td>");
+
+                StringBuffer sb = new StringBuffer();
+                sb.append(entry.getValue());
+
+                String newValue = newData.remove(entry.getKey());
+                if (newValue != null && !newValue.equals(entry.getValue()))
+                {
+                    modified++;
+                    sb.append("&nbsp;&raquo;&nbsp;");
+                    sb.append(newValue);
+                }
+                out.write(sb.toString());
+                out.write("</td></tr>\n");
+            }
+
+            for (Map.Entry<String, String> entry : newData.entrySet())
+            {
+                modified++;
+                out.write("<tr><td class=\"ms-searchform\">");
+                out.write(entry.getKey());
+                out.write("</td><td>");
+
+                StringBuffer sb = new StringBuffer();
+                sb.append("&nbsp;&raquo;&nbsp;");
+                sb.append(entry.getValue());
+                out.write(sb.toString());
+                out.write("</td></tr>\n");
+            }
+            out.write("<tr><td/>\n");
+            out.write("<tr><td colspan=\"2\">Summary:&nbsp;<i>");
+            out.write(modified + " field(s) were modified</i></td></tr>");
+            out.write("</table>\n");
+        }
+    }
+
     public static class EditDatasetRowForm
     {
         private String lsid;
@@ -214,6 +364,16 @@ public class DatasetController extends BaseStudyController
         {
             super(table, request);
         }
+    }
+
+    public static class DatasetAuditHistoryForm
+    {
+        private int auditRowId;
+
+        public int getAuditRowId() {return auditRowId;}
+
+        public void setAuditRowId(int auditRowId) {this.auditRowId = auditRowId;}
+
     }
 
 }

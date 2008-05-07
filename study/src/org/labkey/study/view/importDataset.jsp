@@ -27,7 +27,7 @@
         <tr><td colspan=2><textarea id=tsv name=tsv rows=25 cols=80  wrap=off ><%=h(form.getTsv())%></textarea></td></tr>
     </table>
 	<input type=hidden name=datasetId value="<%=form.getDatasetId()%>">
-	<input type=image src="<%=PageFlowUtil.buttonSrc("Submit","large")%>">
+	<input type=image src="<%=PageFlowUtil.buttonSrc("Submit")%>">
 
 
     <br>&nbsp;

@@ -13,7 +13,9 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
@@ -26,6 +28,10 @@ import java.util.List;
 import java.util.Set;
 
 /**
+ * IntKey1 is the dataset row id
+ * IntKey2 is 0 if no details are available
+ * Key1 is the UploadLog path (if set)
+ *
  * User: jgarms
  */
 public class DatasetAuditViewFactory extends SimpleAuditViewFactory
@@ -67,6 +73,7 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
         return view;
     }
 
+    @Override
     public void setupTable(final TableInfo table)
     {
         final ColumnInfo containerColumn = table.getColumn("ContainerId");
@@ -93,13 +100,21 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
                             return;
 
                         Container container = ContainerManager.getForId(containerId.toString());
+                        if (container == null)
+                        {
+                            return;
+                        }
+
                         Study study = StudyManager.getInstance().getStudy(container);
+                        if (study == null)
+                        {
+                            return;
+                        }
+
                         DataSetDefinition def = StudyManager.getInstance().
                                 getDataSetDefinition(study,datasetId.intValue());
-
                         if (def == null)
                         {
-                            out.write(datasetId.toString());
                             return;
                         }
 
@@ -117,6 +132,16 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
                 };
             }
         });
+    }
+
+    @Override
+    public void setupView(DataView view)
+    {
+        TableInfo table = view.getTable();
+        ColumnInfo detailBitCol = table.getColumn("IntKey2");
+        ColumnInfo containerCol = table.getColumn("ContainerId");
+        ColumnInfo rowCol = table.getColumn("RowId");
+        view.getDataRegion().addColumn(0, new DetailsColumn(rowCol, containerCol, detailBitCol));
     }
 
     public List<FieldKey> getDefaultVisibleColumns()
@@ -167,6 +192,61 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
             {
                 LOG.error(e);
             }
+        }
+    }
+
+    private static class DetailsColumn extends DataColumn
+    {
+        private final ColumnInfo containerCol;
+        private final ColumnInfo rowCol;
+
+        public DetailsColumn(ColumnInfo rowCol, ColumnInfo containerCol, ColumnInfo detailBitCol)
+        {
+            super(detailBitCol);
+            this.containerCol = containerCol;
+            this.rowCol = rowCol;
+        }
+
+        public void renderTitle(RenderContext ctx, Writer out) throws IOException
+        {
+            out.write("&nbsp;");
+        }
+        
+        public boolean isFilterable()
+        {
+            return false;
+        }
+
+        public void addQueryColumns(Set<ColumnInfo> columns)
+        {
+            columns.add(containerCol);
+            columns.add(rowCol);
+            super.addQueryColumns(columns);
+        }
+
+        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        {
+            Integer detailBit = (Integer)getValue(ctx);
+            if (detailBit == null || detailBit.intValue() == 0)
+            {
+                // No details
+                return;
+            }
+
+            Integer rowId = (Integer)rowCol.getValue(ctx);
+            String containerId = containerCol.getValue(ctx).toString();
+
+            Container c = ContainerManager.getForId(containerId);
+            if (c == null)
+                return;
+
+            ActionURL url = new ActionURL(DatasetController.DatasetAuditHistoryAction.class, c);
+            url.addParameter("auditRowId", rowId.intValue());
+
+            out.write("[<a href=\"");
+            out.write(PageFlowUtil.filter(url.getLocalURIString()));
+            out.write("\">details</a>]");
+
         }
     }
 }

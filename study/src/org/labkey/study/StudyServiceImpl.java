@@ -10,6 +10,7 @@ import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.UploadLog;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -54,6 +55,10 @@ public class StudyServiceImpl implements StudyService.Service
             // Successfully updated
             if(isTransactionActive())
                 commitTransaction();
+
+            // lsid is not in the updated map by default since it is not editable,
+            // however it can be changed by the update
+            data.put("lsid", result[0]);
 
             addDatasetAuditEvent(u, c, def, oldData, data);
 
@@ -187,6 +192,9 @@ public class StudyServiceImpl implements StudyService.Service
 
         event.setIntKey1(def.getDataSetId());
 
+        // IntKey2 is non-zero because we have details (a previous or new datamap)
+        event.setIntKey2(1);
+
         event.setEventType(DatasetAuditViewFactory.DATASET_AUDIT_EVENT);
         DatasetAuditViewFactory.getInstance().ensureDomain(u);
 
@@ -206,6 +214,8 @@ public class StudyServiceImpl implements StudyService.Service
         else
         {
             comment = "A dataset record was modified";
+            oldRecordString = encodeAuditMap(oldRecord);
+            newRecordString = encodeAuditMap(newRecord);
         }
 
         event.setComment(comment);
@@ -215,6 +225,32 @@ public class StudyServiceImpl implements StudyService.Service
         if (newRecordString != null) dataMap.put("newRecordMap", newRecordString);
 
         AuditLogService.get().addEvent(event, dataMap, AuditLogService.get().getDomainURI(DatasetAuditViewFactory.DATASET_AUDIT_EVENT));
+    }
+
+    public static void addDatasetAuditEvent(User u, Container c, DataSetDefinition def, String comment, UploadLog ul /*optional*/)
+    {
+        AuditLogEvent event = new AuditLogEvent();
+        event.setCreatedBy(u.getUserId());
+
+        event.setContainerId(c.getId());
+        if (c.getProject() != null)
+            event.setProjectId(c.getProject().getId());
+
+        event.setIntKey1(def.getDataSetId());
+
+        event.setEventType(DatasetAuditViewFactory.DATASET_AUDIT_EVENT);
+        DatasetAuditViewFactory.getInstance().ensureDomain(u);
+
+        event.setComment(comment);
+
+        if (ul != null)
+        {
+            event.setKey1(ul.getFilePath());
+        }
+
+        AuditLogService.get().addEvent(event,
+                Collections.<String,Object>emptyMap(),
+                AuditLogService.get().getDomainURI(DatasetAuditViewFactory.DATASET_AUDIT_EVENT));
     }
 
     private String encodeAuditMap(Map<String,Object> data)

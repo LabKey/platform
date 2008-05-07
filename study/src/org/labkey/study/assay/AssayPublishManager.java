@@ -15,6 +15,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
+import org.labkey.common.util.Pair;
 import org.labkey.study.StudySchema;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.StudyController;
@@ -414,13 +415,18 @@ public class AssayPublishManager implements AssayPublishService.Service
         return domainLsid.toString();
     }
 
-    public UploadLog importDatasetTSV(User user, Study study, DataSetDefinition dsd, String tsv, Map<String, String> columnMap, List<String> errors) throws SQLException, ServletException
+    /**
+     * Return an array of LSIDs from the newly created dataset entries,
+     * along with the upload log.
+     */
+    public Pair<String[],UploadLog> importDatasetTSV(User user, Study study, DataSetDefinition dsd, String tsv, Map<String, String> columnMap, List<String> errors) throws SQLException, ServletException
     {
         UploadLog ul = null;
+        String[] lsids = new String[0];
         try
         {
             ul = saveUploadData(user, dsd, tsv);
-            StudyManager.getInstance().importDatasetTSV(study, dsd, tsv, ul.getCreated().getTime(), columnMap, errors, true);
+            lsids = StudyManager.getInstance().importDatasetTSV(study, dsd, tsv, ul.getCreated().getTime(), columnMap, errors, true);
             if (errors.size() == 0)
                 StudyManager.getInstance().getVisitManager(study).updateParticipantVisits();
         }
@@ -435,7 +441,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                 try
                 {
                     ul = Table.update(user, StudySchema.getInstance().getTableInfoUploadLog(), ul, ul.getRowId(), null);
-                    return ul;
+                    return Pair.of(lsids, ul);
                 }
                 catch (SQLException s)
                 {
@@ -464,7 +470,7 @@ public class AssayPublishManager implements AssayPublishService.Service
             ul.setDescription(sb.toString());
             ul = Table.update(user, getTinfoUpdateLog(), ul, ul.getRowId(), null);
         }
-        return ul;
+        return Pair.of(lsids,ul);
     }
 
     public UploadLog getUploadLog(Container c, int id) throws SQLException
