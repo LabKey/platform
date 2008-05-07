@@ -13,13 +13,14 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.jsp.FormPage;
 import org.labkey.api.query.*;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
-import org.labkey.api.security.ActionNames;
 import org.labkey.api.util.AppProps;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.study.StudyService;
 import org.labkey.query.CustomViewImpl;
 import org.labkey.query.QueryDefinitionImpl;
 import org.labkey.query.data.Query;
@@ -37,7 +38,10 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class QueryControllerSpring extends SpringActionController
 {
@@ -1216,11 +1220,11 @@ public class QueryControllerSpring extends SpringActionController
         }
     }
 
-    protected enum SaveAction
+    protected enum SaveTarget
     {
-        INSERT,
-        UPDATE,
-        DELETE
+        List,
+        DbUserSchema,
+        StudyDataset
     }
 
     /**
@@ -1228,15 +1232,9 @@ public class QueryControllerSpring extends SpringActionController
      */
     public abstract class SaveRowsAction extends ApiAction<ApiSaveRowsForm>
     {
-        private SaveAction _action = null;
         private static final String PROP_SCHEMA_NAME = "schemaName";
         private static final String PROP_QUERY_NAME = "queryName";
         private static final String PROP_ROWS = "rows";
-
-        public SaveRowsAction(SaveAction action)
-        {
-            _action = action;
-        }
 
         public ApiResponse execute(ApiSaveRowsForm form, BindException errors) throws Exception
         {
@@ -1258,14 +1256,28 @@ public class QueryControllerSpring extends SpringActionController
             if(null == rows || rows.length() < 1)
                 throw new Exception("No 'rows' array supplied!");
 
+            SaveTarget target = null;
+            Container container = getViewContext().getContainer();
             ListDefinition listDef = null;
             DbUserSchema schema = null;
             TableInfo userTable = null;
             TableInfo dbTable = null;
+            int datasetId = -1;
             if(schemaName.equalsIgnoreCase("lists"))
+            {
+                target = SaveTarget.List;
                 listDef = getListDef(queryName);
+            }
+            else if(schemaName.equalsIgnoreCase("study"))
+            {
+                target = SaveTarget.StudyDataset;
+                datasetId = StudyService.get().getDatasetId(container, queryName);
+                if(datasetId < 0)
+                    throw new IllegalArgumentException("The dataset '" + queryName + "' does not exist within the container '" + container.getPath() + "'!");
+            }
             else
             {
+                target = SaveTarget.DbUserSchema;
                 schema = getSchema(schemaName);
                 userTable = schema.getTable(queryName, null);
                 dbTable = getTable(schema, queryName);
@@ -1278,14 +1290,14 @@ public class QueryControllerSpring extends SpringActionController
             //begin a transaction if there are more than one rows
             //if schema is null, this will start a transaction on lists
             if(transacted)
-                beginTransaction(schema);
+                beginTransaction(target, schema);
 
             //setup the response, providing the schema name, query name, and operation
             //so that the client can sort out which request this response belongs to
             //(clients often submit these async)
             response.put(PROP_SCHEMA_NAME, schemaName);
             response.put(PROP_QUERY_NAME, queryName);
-            addOperation(response);
+            response.put("command", getSaveCommandName());
 
             ArrayList<Object> responseRows = new ArrayList<Object>();
             response.put("rows", responseRows);
@@ -1301,43 +1313,27 @@ public class QueryControllerSpring extends SpringActionController
                     if(null != userTable)
                         stripReadOnlyCols(userTable, rowMap);
 
-                    if(null != row)
+                    if(null != rowMap)
                     {
-                        switch(_action)
-                        {
-                            case UPDATE:
-                                if(null != listDef)
-                                    updateListItem(listDef, rowMap, responseRows);
-                                else
-                                    updateTableRow(dbTable, rowMap, responseRows);
-                                break;
-                            case INSERT:
-                                if(null != listDef)
-                                    insertListItem(listDef, rowMap, responseRows);
-                                else
-                                    insertTableRow(dbTable, rowMap, responseRows);
-                                break;
-                            case DELETE:
-                                if(null != listDef)
-                                    deleteListItem(listDef, rowMap, responseRows);
-                                else
-                                    deleteTableRow(dbTable, rowMap, responseRows);
-
-                                break;
-                        }
+                        if(null != listDef)
+                            saveListItem(listDef, rowMap, responseRows);
+                        else if(datasetId >= 0)
+                            saveDatasetRow(datasetId, rowMap, responseRows);
+                        else
+                            saveTableRow(dbTable, rowMap, responseRows);
 
                         ++rowsAffected;
                     }
                 }
 
                 if(transacted)
-                    commitTransaction(schema);
+                    commitTransaction(target, schema);
             }
             finally
             {
                 //will only rollback if transaction is still active
                 if(transacted)
-                    rollbackTransaction(schema);
+                    rollbackTransaction(target, schema);
             }
 
             response.put("rowsAffected", rowsAffected);
@@ -1345,61 +1341,62 @@ public class QueryControllerSpring extends SpringActionController
             return response;
         }
 
-        protected void updateListItem(ListDefinition listDef, Map row, ArrayList<Object> responseRows) throws Exception {}
-        protected void updateTableRow(TableInfo table, Map row, ArrayList<Object> responseRows) throws Exception {}
-        protected void insertListItem(ListDefinition listDef, Map row, ArrayList<Object> responseRows) throws Exception {}
-        protected void insertTableRow(TableInfo table, Map row, ArrayList<Object> responseRows) throws Exception {}
-        protected void deleteListItem(ListDefinition listDef, Map row, ArrayList<Object> responseRows) throws Exception {}
-        protected void deleteTableRow(TableInfo table, Map row, ArrayList<Object> responseRows) throws Exception {}
+        protected abstract void saveListItem(ListDefinition listDef, Map row, ArrayList<Object> responseRows) throws Exception;
+        protected abstract void saveTableRow(TableInfo table, Map row, ArrayList<Object> responseRows) throws Exception;
+        protected abstract void saveDatasetRow(int datasetId, Map row, ArrayList<Object> responseRows) throws Exception;
 
-        protected void addOperation(ApiSimpleResponse response)
+        protected abstract String getSaveCommandName(); //unfortunatley, getCommandName() is already defined in Spring action classes
+
+        protected void beginTransaction(SaveTarget target, DbUserSchema schema) throws Exception
         {
-            switch(_action)
+            switch(target)
             {
-                case INSERT:
-                    response.put("command", "insert");
+                case List:
+                    ListService.get().beginTransaction();
                     break;
-                case UPDATE:
-                    response.put("command", "update");
+                case DbUserSchema:
+                    schema.getDbSchema().getScope().beginTransaction();
                     break;
-                case DELETE:
-                    response.put("command", "delete");
-                    break;
+                case StudyDataset:
+                    StudyService.get().beginTransaction();
             }
         }
 
-        protected void beginTransaction(DbUserSchema schema) throws Exception
+        protected void commitTransaction(SaveTarget target, DbUserSchema schema) throws Exception
         {
-            if(null != schema)
-                schema.getDbSchema().getScope().beginTransaction();
-            else
-                ListService.get().beginTransaction(); //for lists
-        }
-
-        protected void commitTransaction(DbUserSchema schema) throws Exception
-        {
-            if(null != schema)
-                schema.getDbSchema().getScope().commitTransaction();
-            else
-                ListService.get().commitTransaction(); //for lists
-        }
-
-        protected void rollbackTransaction(DbUserSchema schema)
-        {
-            if(null != schema)
+            switch(target)
             {
-                DbScope scope = schema.getDbSchema().getScope();
-                if(scope.isTransactionActive())
-                    scope.rollbackTransaction();
-            }
-            else
-            {
-                ListService.Interface svc = ListService.get();
-                if(svc.isTransactionActive())
-                    svc.rollbackTransaction();
+                case List:
+                    ListService.get().commitTransaction();
+                    break;
+                case DbUserSchema:
+                    schema.getDbSchema().getScope().commitTransaction();
+                    break;
+                case StudyDataset:
+                    StudyService.get().commitTransaction();
             }
         }
 
+        protected void rollbackTransaction(SaveTarget target, DbUserSchema schema)
+        {
+            switch(target)
+            {
+                case List:
+                    ListService.Interface lsvc = ListService.get();
+                    if(lsvc.isTransactionActive())
+                        lsvc.rollbackTransaction();
+                    break;
+                case DbUserSchema:
+                    DbScope scope = schema.getDbSchema().getScope();
+                    if(scope.isTransactionActive())
+                        scope.rollbackTransaction();
+                    break;
+                case StudyDataset:
+                    StudyService.Service ssvc = StudyService.get();
+                    if(ssvc.isTransactionActive())
+                        ssvc.rollbackTransaction();
+            }
+        }
 
         protected ListDefinition getListDef(String listName)
         {
@@ -1517,17 +1514,39 @@ public class QueryControllerSpring extends SpringActionController
             
             return map;
         }
+
+        protected String getLSID(Map row)
+        {
+            String lsid = (String)row.get("lsid");
+            if(null == lsid || lsid.length() <= 0)
+                throw new IllegalArgumentException("You must supply a value for the LSID column!");
+            return lsid;
+        }
+
+        protected void throwDatasetErrors(String lsid, List<String> errors)
+        {
+            String sep = "";
+            StringBuilder msg = new StringBuilder("Errors while saving the study dataset row with LSID " + lsid + ": ");
+            for(String err : errors)
+            {
+                msg.append(sep);
+                msg.append(err);
+                sep = "; ";
+            }
+
+            throw new IllegalArgumentException(msg.toString());
+        }
     }
 
     @RequiresPermission(ACL.PERM_UPDATE)
     public class UpdateRowsAction extends SaveRowsAction
     {
-        public UpdateRowsAction()
+        protected String getSaveCommandName()
         {
-            super(SaveAction.UPDATE);
+            return "update";
         }
 
-        protected void updateListItem(ListDefinition listDef, Map row, ArrayList<Object> responseRows) throws Exception
+        protected void saveListItem(ListDefinition listDef, Map row, ArrayList<Object> responseRows) throws Exception
         {
             ListItem item = getListItem(row, listDef);
 
@@ -1547,7 +1566,7 @@ public class QueryControllerSpring extends SpringActionController
             responseRows.add(getListItemAsMap(listDef, item));
         }
 
-        protected void updateTableRow(TableInfo table, Map row, ArrayList<Object> responseRows) throws Exception
+        protected void saveTableRow(TableInfo table, Map row, ArrayList<Object> responseRows) throws Exception
         {
             Table.update(getUser(), table, row, getRowId(table, row), null);
 
@@ -1557,17 +1576,33 @@ public class QueryControllerSpring extends SpringActionController
 
             responseRows.add(row);
         }
+
+        protected void saveDatasetRow(int datasetId, Map row, ArrayList<Object> responseRows) throws Exception
+        {
+            StudyService.Service svc = StudyService.get();
+            Container container = getViewContext().getContainer();
+            User user = getViewContext().getUser();
+
+            List<String> errors = new ArrayList<String>();
+            String lsid = svc.updateDatasetRow(user, container, datasetId, getLSID(row), row, errors);
+            if(errors.size() > 0)
+                throwDatasetErrors(getLSID(row), errors);
+
+            Map<String,Object> responseRow = svc.getDatasetRow(user, container, datasetId, lsid);
+            assert null != responseRow : "Could not refetch the dataset row with LSID '" + lsid + "' from dataset id " + String.valueOf(datasetId);
+            responseRows.add(responseRow);
+        }
     }
 
     @RequiresPermission(ACL.PERM_INSERT)
     public class InsertRowsAction extends SaveRowsAction
     {
-        public InsertRowsAction()
+        protected String getSaveCommandName()
         {
-            super(SaveAction.INSERT);
+            return "insert";
         }
 
-        protected void insertListItem(ListDefinition listDef, Map row, ArrayList<Object> responseRows) throws Exception
+        protected void saveListItem(ListDefinition listDef, Map row, ArrayList<Object> responseRows) throws Exception
         {
             ListItem item = listDef.createListItem();
 
@@ -1590,7 +1625,7 @@ public class QueryControllerSpring extends SpringActionController
             responseRows.add(getListItemAsMap(listDef, item));
         }
 
-        protected void insertTableRow(TableInfo table, Map row, ArrayList<Object> responseRows) throws Exception
+        protected void saveTableRow(TableInfo table, Map row, ArrayList<Object> responseRows) throws Exception
         {
             row = Table.insert(getUser(), table, row);
 
@@ -1600,17 +1635,35 @@ public class QueryControllerSpring extends SpringActionController
 
             responseRows.add(row);
         }
+
+        protected void saveDatasetRow(int datasetId, Map row, ArrayList<Object> responseRows) throws Exception
+        {
+            StudyService.Service svc = StudyService.get();
+            Container container = getViewContext().getContainer();
+            User user = getViewContext().getUser();
+
+            List<String> errors = new ArrayList<String>();
+            String lsid = svc.insertDatasetRow(user, container, datasetId, row, errors);
+            if(errors.size() > 0)
+                throwDatasetErrors(lsid, errors);
+
+            //fetch the row to send back in the response
+            Map<String,Object> responseRow = svc.getDatasetRow(user, container, datasetId, lsid);
+            assert null != responseRow : "Could not refetch the dataset row with LSID '" + lsid + "' from dataset id " + String.valueOf(datasetId);
+            responseRows.add(responseRow);
+        }
     }
 
+    @ActionNames("deleteRows, delRows")
     @RequiresPermission(ACL.PERM_DELETE)
     public class DeleteRowsAction extends SaveRowsAction
     {
-        public DeleteRowsAction()
+        protected String getSaveCommandName()
         {
-            super(SaveAction.DELETE);
+            return "delete";
         }
 
-        protected void deleteListItem(ListDefinition listDef, Map row, ArrayList<Object> responseRows) throws Exception
+        protected void saveListItem(ListDefinition listDef, Map row, ArrayList<Object> responseRows) throws Exception
         {
             ListItem item = getListItem(row, listDef);
             item.delete(getUser(), getViewContext().getContainer());
@@ -1619,7 +1672,7 @@ public class QueryControllerSpring extends SpringActionController
             responseRows.add(responseRow);
         }
 
-        protected void deleteTableRow(TableInfo table, Map row, ArrayList<Object> responseRows) throws Exception
+        protected void saveTableRow(TableInfo table, Map row, ArrayList<Object> responseRows) throws Exception
         {
             Table.delete(table, getRowId(table, row), null);
 
@@ -1633,15 +1686,14 @@ public class QueryControllerSpring extends SpringActionController
 
             responseRows.add(responseRow);
         }
-    }
 
-    //alias
-    @RequiresPermission(ACL.PERM_DELETE)
-    public class DelRowsAction extends DeleteRowsAction
-    {
-        public DelRowsAction()
+        protected void saveDatasetRow(int datasetId, Map row, ArrayList<Object> responseRows) throws Exception
         {
-            super();
+            StudyService.get().deleteDatasetRow(getViewContext().getUser(), getViewContext().getContainer(), 
+                    datasetId, getLSID(row));
+            Map<String,Object> responseRow = new HashMap<String,Object>();
+            responseRow.put("lsid", getLSID(row));
+            responseRows.add(responseRow);
         }
     }
 

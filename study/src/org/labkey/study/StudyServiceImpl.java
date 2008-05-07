@@ -37,13 +37,7 @@ public class StudyServiceImpl implements StudyService.Service
         DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
         String tsv = createTSV(data);
         // Start a transaction, so that we can rollback if our insert fails
-        DbScope scope =  StudySchema.getInstance().getSchema().getScope();
-        boolean startedTransaction = false;
-        if (!scope.isTransactionActive())
-        {
-            scope.beginTransaction();
-            startedTransaction = true;
-        }
+        beginTransaction();
         try
         {
             Map<String,Object> oldData = getDatasetRow(u, c, datasetId, lsid);
@@ -58,8 +52,8 @@ public class StudyServiceImpl implements StudyService.Service
                 return null;
             }
             // Successfully updated
-            if (startedTransaction)
-                scope.commitTransaction();
+            if(isTransactionActive())
+                commitTransaction();
 
             addDatasetAuditEvent(u, c, def, oldData, data);
 
@@ -75,13 +69,13 @@ public class StudyServiceImpl implements StudyService.Service
         }
         finally
         {
-            if (startedTransaction && scope.isTransactionActive())
-                scope.rollbackTransaction();
+            if(isTransactionActive())
+                rollbackTransaction();
         }
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, Object> getDatasetRow(User u, Container c, int datasetId, String lsid) throws SQLException
+    public Map<String, Object> getDatasetRow(User u, Container c, int datasetId, String lsid) throws SQLException
     {
         Study study = StudyManager.getInstance().getStudy(c);
         DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
@@ -233,4 +227,31 @@ public class StudyServiceImpl implements StudyService.Service
         }
         return DatasetAuditViewFactory.encodeForDataMap(stringMap, true);
     }
+
+    public void beginTransaction() throws SQLException
+    {
+        DbScope scope = StudySchema.getInstance().getSchema().getScope();
+        if(!scope.isTransactionActive())
+            scope.beginTransaction();
+    }
+
+    public void commitTransaction() throws SQLException
+    {
+        DbScope scope = StudySchema.getInstance().getSchema().getScope();
+        if(scope.isTransactionActive())
+            scope.commitTransaction();
+    }
+
+    public void rollbackTransaction()
+    {
+        DbScope scope = StudySchema.getInstance().getSchema().getScope();
+        if(scope.isTransactionActive())
+            scope.rollbackTransaction();
+    }
+
+    public boolean isTransactionActive()
+    {
+        return StudySchema.getInstance().getSchema().getScope().isTransactionActive();
+    }
+
 }
