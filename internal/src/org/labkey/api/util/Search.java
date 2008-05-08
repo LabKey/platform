@@ -1,14 +1,16 @@
 package org.labkey.api.util;
 
 import org.labkey.api.data.*;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.SimpleFilter.*;
+import org.labkey.api.data.SimpleFilter.OperationClause;
+import org.labkey.api.data.SimpleFilter.OrClause;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
-import org.labkey.api.view.*;
-import org.apache.commons.collections15.MultiMap;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.VBox;
+import org.labkey.api.view.WebPartView;
 
-import java.io.*;
+import java.io.PrintWriter;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -197,7 +199,7 @@ public class Search
          * @param hits List of hits to append to
          * @return The number of hits added to the hits list
          */
-        int search(SearchTermParser parser, Set<Container> containers, List<SearchHit> hits);
+        void search(SearchTermParser parser, Set<Container> containers, List<SearchHit> hits);
 
         /**
          * Returns a static string used to classify the search results to the user
@@ -374,11 +376,14 @@ public class Search
 
     public static class SearchTermParser
     {
-        List<SearchTerm> _andTerms = new ArrayList<SearchTerm>();
-        List<SearchTerm> _orTerms = new ArrayList<SearchTerm>();
+        private final String _query;
+        private final List<SearchTerm> _andTerms = new ArrayList<SearchTerm>();
+        private final List<SearchTerm> _orTerms = new ArrayList<SearchTerm>();
 
         public SearchTermParser(String query)
         {
+            _query = query;
+
             Pattern searchTermPattern = Pattern.compile("\\s*((-?)((\"(.+?)\")|([^\"\\s]+)))");
             Matcher searchTermMatcher = searchTermPattern.matcher(query);
             List<SearchTerm> terms = new ArrayList<SearchTerm>();
@@ -428,6 +433,12 @@ public class Search
                 _andTerms.add(terms.get(terms.size() - 1));
         }
 
+        @Override
+        public String toString()
+        {
+            return _query;
+        }
+
         public List<SearchTerm> getAndTerms()
         {
             return _andTerms;
@@ -441,6 +452,53 @@ public class Search
         public boolean hasTerms()
         {
             return !_andTerms.isEmpty() || !_orTerms.isEmpty();
+        }
+
+        /**
+         * Returns true if the terms match the provided text,
+         * handling NOT, AND and OR correctly. This matching is
+         * case-insensitive.
+         */
+        public boolean matches(String text)
+        {
+            if (!hasTerms())
+                return false;
+            if (text == null)
+                return false;
+
+            text = text.toLowerCase();
+
+            for (SearchTerm term : _andTerms)
+            {
+                String termString = term.getTerm().toLowerCase();
+
+                if (term.isNot() && text.contains(termString))
+                    return false;
+
+                else if (!text.contains(termString))
+                    return false;
+
+            }
+
+            // If we had some AND terms, then they must have matched.
+            // No need to check the OR terms
+            if (!_andTerms.isEmpty())
+                return true;
+
+            for (SearchTerm term : _orTerms)
+            {
+                String termString = term.getTerm().toLowerCase();
+                if (term.isNot() && !text.contains(termString))
+                    return true;
+
+                else if (text.contains(termString))
+                    return true;
+            }
+
+            // We must have gotten through all of our OR terms,
+            // without matching.
+            return false;
+
         }
     }
 
