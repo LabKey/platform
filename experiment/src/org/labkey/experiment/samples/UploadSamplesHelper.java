@@ -59,7 +59,7 @@ public class UploadSamplesHelper
         return _form.getContainer();
     }
 
-    public MaterialSource uploadMaterials() throws SQLException, IOException, ExperimentException
+    public MaterialSource uploadMaterials() throws Exception
     {
         MaterialSource source;
         try

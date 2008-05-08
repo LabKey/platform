@@ -209,7 +209,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableBaseImpl<MaterialSource> im
 
     }
 
-    public void onSamplesChanged(User user, List<Material> materials) throws SQLException
+    public void onSamplesChanged(User user, List<Material> materials) throws Exception
     {
         ExpProtocol[] protocols = getProtocols();
         if (protocols.length == 0)
