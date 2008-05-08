@@ -17,8 +17,6 @@ package org.labkey.wiki;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
-import org.apache.commons.collections15.MultiMap;
-import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.Attachment;
@@ -402,10 +400,8 @@ public class WikiManager
     }
 
 
-    public static int search(Search.SearchTermParser parser, Set<Container> containers, List<SearchHit> hits)
+    public static void search(Search.SearchTermParser parser, Set<Container> containers, List<SearchHit> hits)
     {
-        int startSize = hits.size();
-
         String fromClause = comm.getTableInfoPages() + " p INNER JOIN " + comm.getTableInfoPageVersions() + " v ON p.EntityId = v.PageEntityId";
         String maxVersionWhere = "v.RowId IN (SELECT MAX(RowId) FROM " + comm.getTableInfoPageVersions() + " GROUP BY PageEntityId)";
         SimpleFilter versionFilter = new SimpleFilter().addWhereClause(maxVersionWhere, null);
@@ -438,8 +434,6 @@ public class WikiManager
         {
             ResultSetUtil.close(rs);
         }
-
-        return hits.size() - startSize;
     }
 
     private static Map<String, Wiki> generatePageMap(Container c) throws SQLException

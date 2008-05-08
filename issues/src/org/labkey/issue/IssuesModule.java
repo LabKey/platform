@@ -16,7 +16,6 @@
 package org.labkey.issue;
 
 import junit.framework.TestCase;
-import org.apache.commons.collections15.MultiMap;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.ExperimentException;
@@ -158,9 +157,9 @@ public class IssuesModule extends DefaultModule implements ContainerManager.Cont
         return url;
     }
 
-    public int search(Search.SearchTermParser parser, Set<Container> containers, List<SearchHit> hits)
+    public void search(Search.SearchTermParser parser, Set<Container> containers, List<SearchHit> hits)
     {
-        return IssueManager.search(parser, containers, hits);
+        IssueManager.search(parser, containers, hits);
     }
 
 

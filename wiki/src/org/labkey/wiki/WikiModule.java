@@ -16,7 +16,6 @@
 package org.labkey.wiki;
 
 import junit.framework.TestCase;
-import org.apache.commons.collections15.MultiMap;
 import org.apache.log4j.Logger;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
@@ -265,9 +264,9 @@ public class WikiModule extends DefaultModule implements ContainerManager.Contai
     }
 
 
-    public int search(Search.SearchTermParser parser, Set<Container> containers, List<SearchHit> hits)
+    public void search(Search.SearchTermParser parser, Set<Container> containers, List<SearchHit> hits)
     {
-        return WikiManager.search(parser, containers, hits);
+        WikiManager.search(parser, containers, hits);
     }
 
 

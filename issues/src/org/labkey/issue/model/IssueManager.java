@@ -577,10 +577,8 @@ public class IssueManager
         return message;
     }
 
-    public static int search(Search.SearchTermParser parser, Set<Container> containers, List<SearchHit> hits)
+    public static void search(Search.SearchTermParser parser, Set<Container> containers, List<SearchHit> hits)
     {
-        int startCount = hits.size();
-
         SqlDialect dialect = _issuesSchema.getSchema().getSqlDialect();
         String from = _tinfoIssues + " i LEFT OUTER JOIN " + _tinfoComments + " c ON i.IssueId = c.IssueId";
         SQLFragment searchSql = Search.getSQLFragment("Container, Title, IssueId", "Container, Title, i.IssueId", from, "Container", null, containers, parser, dialect, "Comment"); // No need to search title since it ends up in the comment
@@ -614,8 +612,6 @@ public class IssueManager
         {
             ResultSetUtil.close(rs);
         }
-
-        return hits.size() - startCount;
     }
 
     public static String getRequiredIssueFields(Container container)

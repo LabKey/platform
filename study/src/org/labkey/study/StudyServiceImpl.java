@@ -259,7 +259,8 @@ public class StudyServiceImpl implements StudyService.Service
         Map<String,String> stringMap = new HashMap<String,String>();
         for (Map.Entry<String,Object> entry :  data.entrySet())
         {
-            stringMap.put(entry.getKey(), entry.getValue().toString());
+            Object value = entry.getValue();
+            stringMap.put(entry.getKey(), value == null ? null : value.toString());
         }
         return DatasetAuditViewFactory.encodeForDataMap(stringMap, true);
     }

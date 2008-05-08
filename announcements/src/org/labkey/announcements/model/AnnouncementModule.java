@@ -17,7 +17,6 @@ package org.labkey.announcements.model;
 
 import junit.framework.TestCase;
 import org.apache.log4j.Logger;
-import org.apache.commons.collections15.MultiMap;
 import org.labkey.announcements.AnnouncementsController;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
@@ -231,9 +230,9 @@ public class AnnouncementModule extends DefaultModule implements Search.Searchab
         }
     }
 
-    public int search(Search.SearchTermParser parser, Set<Container> containers, List<SearchHit> hits)
+    public void search(Search.SearchTermParser parser, Set<Container> containers, List<SearchHit> hits)
     {
-        return AnnouncementManager.search(parser, containers, hits);
+        AnnouncementManager.search(parser, containers, hits);
     }
 
     public String getSearchResultName()

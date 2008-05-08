@@ -19,9 +19,8 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.collections15.MultiMap;
-import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.log4j.Logger;
+import org.labkey.announcements.AnnouncementsController;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
@@ -30,11 +29,10 @@ import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.*;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.ActionURL;
 import org.labkey.common.util.Pair;
-import org.labkey.announcements.AnnouncementsController;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -862,10 +860,8 @@ public class AnnouncementManager
         }
     }
 
-    public static int search(Search.SearchTermParser parser, Set<Container> containers, List<SearchHit> hits)
+    public static void search(Search.SearchTermParser parser, Set<Container> containers, List<SearchHit> hits)
     {
-        int startCount = hits.size();
-
         SqlDialect dialect = _comm.getSchema().getSqlDialect();
         String from = _comm.getTableInfoThreads() + " t LEFT OUTER JOIN " + _comm.getTableInfoAnnouncements() + " a ON ((a.parent IS NULL AND t.RowId = a.RowId) OR (t.EntityId = a.Parent))";
         SQLFragment searchSql = Search.getSQLFragment("Container, Title, RowId", "t.Container, t.Title, t.RowId", from, "t.Container", null, containers, parser, dialect, "a.Title", "a.Body");
@@ -897,8 +893,6 @@ public class AnnouncementManager
         {
             ResultSetUtil.close(rs);
         }
-
-        return hits.size() - startCount;
     }
 
     public static class EmailPref

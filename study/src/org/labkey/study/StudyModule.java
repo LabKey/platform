@@ -26,6 +26,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Search;
 import org.labkey.api.view.*;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.study.assay.*;
@@ -102,6 +103,8 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
 
         PropertyService.get().registerDomainKind(new DatasetDomainKind());
         PropertyService.get().registerDomainKind(new AssayDomainKind());
+
+        Search.register(new StudySearch());
     }
 
     public void containerCreated(Container c)
