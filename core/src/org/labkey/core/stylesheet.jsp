@@ -110,6 +110,10 @@
     padding-right:4px;
     padding-left:4px;
 }
+.ms-strong
+{
+    font-weight: bold;
+}
 .ms-searchform-nowrap {
 	background-color: #<%= theme.getEditFormColor() %>;
 	font-family: verdana;
@@ -122,6 +126,16 @@
     vertical-align: top;
     text-align: right;
 }
+.ms-readonly {
+	font-family: verdana;
+	font-size: <%= themeFont.getNormalSize() %>;
+    padding-right:4px;
+    padding-left:4px;
+    padding-top:4px;
+    padding-bottom:4px;
+    vertical-align: top;
+    text-align: left;
+}
 .ms-top {
     font-size: <%= themeFont.getNormalSize() %>;
     font-family: verdana;
@@ -133,6 +147,7 @@
     font-size: <%= themeFont.getNormalSize() %>;
     font-family: verdana;
     vertical-align: top;
+    text-align: right;
 }
 .ms-nav a {
     text-decoration: none;
