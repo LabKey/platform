@@ -139,3 +139,4 @@ LABKEY.Filter = new function()
 * @methodOf LABKEY.Filter.FilterDefinition
 * @type Boolean
 */
+

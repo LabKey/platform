@@ -175,3 +175,4 @@ LABKEY.Assay.AssayDesign = new function() {};
 * @property {String} lookupQuery If this domain field object is a lookup, lookupQuery holds the String
            name of the lookup query.  Undefined otherwise.
 */ LABKEY.Assay.DomainFieldObject = new function() {};
+

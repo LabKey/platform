@@ -67,3 +67,4 @@ LABKEY.NavTrail.setTrail("People View",
         }
     }
 }
+
