@@ -73,6 +73,7 @@ LABKEY.ActionURL = new function()
 		* Builds a URL from a controller and an action.  Uses the current container and context path.
 		* @param {String} controller The controller to use in building the URL
 		* @param {String} action The action to use in building the URL
+		* @param {String} [containerPath] The container path to use (defaults to the current container)
 		* @example Examples:
 
 1. Build the URL for the 'plotChartAPI' action in the 'reports' controller within 
@@ -82,12 +83,25 @@ the current container:
 2.  Build the URL for the 'getWebPart' action in the 'reports' controller within 
 the current container:
 	var url = LABKEY.ActionURL.buildURL("project", "getWebPart");
-		* @return {String} URL constructed from the current container and context path, 
+
+3.  Build the URL for the 'updateRows' action in the 'query' controller within
+the container "My Project/My Folder":
+	var url = LABKEY.ActionURL.buildURL("query", "updateRows", "My Project/My Folder");
+		* @return {String} URL constructed from the current container and context path,
 					plus the specified controller and action.
 		*/
-        buildURL : function(controller, action)
+        buildURL : function(controller, action, containerPath)
         {
-            return this.getContextPath() + "/" + controller + this.getContainer() + "/" + action + ".view";
+            if(!containerPath)
+                containerPath = this.getContainer();
+
+            //ensure that container path begins and ends with a /
+            if(containerPath.charAt(0) != "/")
+                containerPath = "/" + containerPath;
+            if(containerPath.charAt(containerPath.length - 1) != "/")
+                containerPath = containerPath + "/";
+
+            return this.getContextPath() + "/" + controller + containerPath + action + ".view";
         }
     }
 };

@@ -36,17 +36,30 @@ LABKEY.Query = new function()
     function sendJsonQueryRequest(schemaName, queryName, action,
                                   rowDataArray, successCallback, errorCallback)
     {
+        var config = {};
+        if(typeof(schemaName) == 'object')
+            config = schemaName;
+        else
+        {
+            config.schemaName = schemaName;
+            config.queryName = queryName;
+            config.action = action;
+            config.rowDataArray = rowDataArray;
+            config.successCallback = successCallback;
+            config.errorCallback = errorCallback;
+        }
+
         var dataObject = {
-            schemaName : schemaName,
-            queryName : queryName,
-            rows : rowDataArray
+            schemaName : config.schemaName,
+            queryName : config.queryName,
+            rows : config.rowDataArray
         };
 
         Ext.Ajax.request({
-            url : LABKEY.ActionURL.buildURL("query", action),
+            url : LABKEY.ActionURL.buildURL("query", config.action, config.containerPath),
             method : 'POST',
-            success: getCallbackWrapper(successCallback),
-            failure: getCallbackWrapper(errorCallback),
+            success: getCallbackWrapper(config.successCallback),
+            failure: getCallbackWrapper(config.errorCallback),
             jsonData : dataObject,
             headers : {
                 'Content-Type' : 'application/json'
@@ -108,29 +121,48 @@ LABKEY.Query = new function()
 		*/
         selectRows : function(schemaName, queryName, successCallback, errorCallback, filterArray, sort, viewName)
         {
-            var dataObject = {};
-            dataObject['query.queryName'] = queryName;
-            dataObject['schemaName'] = schemaName;
-            if (sort)
-                dataObject['query.sort'] = sort;
-
-            if (filterArray)
+            var config = {};
+            if(typeof(schemaName) == 'object')
+                config = schemaName;
+            else
             {
-                for (var i = 0; i < filterArray.length; i++)
+                config.schemaName = schemaName;
+                config.queryName = queryName;
+                config.successCallback = successCallback;
+                config.errorCallback = errorCallback;
+                config.filterArray = filterArray;
+                config.sort = sort;
+                config.viewName = viewName;
+            }
+
+            if(!config.schemaName)
+                throw "You must specify a schemaName!";
+            if(!config.queryName)
+                throw "You must specify a queryName!";
+
+            var dataObject = {};
+            dataObject['query.queryName'] = config.queryName;
+            dataObject['schemaName'] = config.schemaName;
+            if (config.sort)
+                dataObject['query.sort'] = config.sort;
+
+            if (config.filterArray)
+            {
+                for (var i = 0; i < config.filterArray.length; i++)
                 {
-                    var filter = filterArray[i];
+                    var filter = config.filterArray[i];
                     dataObject[filter.getURLParameterName()] = filter.getURLParameterValue();
                 }
             }
 
-            if(viewName)
-                dataObject['query.viewName'] = viewName;
+            if(config.viewName)
+                dataObject['query.viewName'] = config.viewName;
 
             Ext.Ajax.request({
-                url : LABKEY.ActionURL.buildURL('query', 'getQuery'),
+                url : LABKEY.ActionURL.buildURL('query', 'getQuery', config.containerPath),
                 method : 'GET',
-                success: getCallbackWrapper(successCallback),
-                failure: getCallbackWrapper(errorCallback),
+                success: getCallbackWrapper(config.successCallback),
+                failure: getCallbackWrapper(config.errorCallback),
                 params : dataObject
             });
         },

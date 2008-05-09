@@ -105,13 +105,20 @@ public class ApiJsonWriter extends ApiResponseWriter
         JSONObject jsonErrors = new JSONObject();
         for(ObjectError error : (List<ObjectError>)errors.getAllErrors())
         {
+            String msg = error.getDefaultMessage();
+            String key = error.getObjectName();
+
             if(error instanceof FieldError)
             {
                 FieldError ferror = (FieldError)error;
-                jsonErrors.put(ferror.getField(), ferror.getDefaultMessage());
+                key = ferror.getField();
+                msg = ferror.getDefaultMessage();
+
+                if(jsonErrors.has(ferror.getField()))
+                    msg = jsonErrors.get(ferror.getField()) + "; " + ferror.getDefaultMessage();
             }
-            else //if we don't know the field name, use the object name instead
-                jsonErrors.put(error.getObjectName(), error.getDefaultMessage());
+
+            jsonErrors.put(key, msg);
         }
 
         JSONObject root = new JSONObject();
