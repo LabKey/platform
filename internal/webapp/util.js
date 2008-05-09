@@ -286,13 +286,10 @@ function getHelpDiv()
     return _helpDiv;
 }
 
-if (navigator.userAgent.toLowerCase().indexOf("httpunit") < 0)
-{
-    LABKEY.requiresYahoo('yahoo', false);
-    LABKEY.requiresYahoo('dom', false);
-    LABKEY.requiresYahoo('event', false);
-    LABKEY.requiresYahoo('dragdrop', false);
-}
+LABKEY.requiresYahoo('yahoo', false);
+LABKEY.requiresYahoo('dom', false);
+LABKEY.requiresYahoo('event', false);
+LABKEY.requiresYahoo('dragdrop', false);
 
 function showHelpDiv(elem, titleText, bodyText, width)
 {

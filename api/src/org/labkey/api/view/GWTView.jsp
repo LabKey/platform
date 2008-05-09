@@ -14,7 +14,7 @@ String jsPath = bean.getModuleName() + "/" + bean.getModuleName() + ".nocache.js
 
 %>
 <script type="text/javascript">
-    LABKEY.requiresScript("<%=jsPath%>", false);
+    LABKEY.requiresScript("<%=jsPath%>", <%= bean.isImmediateLoad()%>);
     
     <%= GWTView.PROPERTIES_OBJECT_NAME %> = new Object();
 <%
