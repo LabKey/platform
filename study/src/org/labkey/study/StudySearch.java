@@ -113,7 +113,7 @@ def:    for (DataSetDefinition def : defs)
             // Now search column names
             try
             {
-                TableInfo table = def.getTableInfo(HttpView.currentContext().getUser());
+                TableInfo table = def.getTableInfo(HttpView.currentContext().getUser(), false, false);
                 ColumnInfo[] columns = table.getColumns();
                 for (ColumnInfo column : columns)
                 {
