@@ -6,6 +6,7 @@
 <%@ page import="org.labkey.wiki.model.Wiki" %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
+<%@ page import="org.labkey.api.security.ACL" %>
 <%
     JspView<WikiEditModel> me = (JspView<WikiEditModel>) HttpView.currentView();
     WikiEditModel model = me.getModelBean();
@@ -31,6 +32,8 @@
         body: <%=model.getBody()%>,
         parent: <%=model.getParent()%>,
         rendererType: <%=model.getRendererType()%>,
+        pageId: <%=model.getPageId()%>,
+        index: <%=model.getIndex()%>,
         isDirty: <%=null==model.getWiki() ? "true" : "false"%>
     };
     var _editableProps = ['name', 'title', 'body', 'parent']
@@ -382,6 +385,7 @@
 
     function onSaveComplete(statusMessage)
     {
+        setClean();
         _doingSave = false;
         if(!statusMessage)
             statusMessage = "Saved.";
@@ -389,10 +393,13 @@
         setStatus(statusMessage, true);
         enableDeleteButton(true);
 
-        setClean();
-
         if(_finished)
+        {
+            if(!_redirUrl || _redirUrl.length == 0)
+                _redirUrl = LABKEY.ActionURL.buildURL("wiki", "page") + "?name=" + _wikiProps.name;
+
             window.location.href = _redirUrl;
+        }
         else
             loadToc();
     }
@@ -950,21 +957,21 @@
             <%=PageFlowUtil.buttonLink("Cancel", "javascript:{}", "onCancel()")%>
         </td>
         <td class="button-bar-right" nowrap="true">
+            <% if(model.canUserDelete()) { %>
             <a href="javascript:{}" onclick="onDeletePage()">
                 <img id="<%=ID_PREFIX%>button-delete" src="<%=PageFlowUtil.buttonSrc("Delete Page", "disabled")%>" alt="Delete Page"/>
             </a>
+            <% } %>
             <a href="javascript:{}" onclick="showConvertWindow()">
                 <img id="<%=ID_PREFIX%>button-change-format" src="<%=PageFlowUtil.buttonSrc("Convert To...")%>" alt="Convert To..."/>
             </a>
             <a href="javascript:{}" onclick="showHideToc()">
-            <img src="<%=me.getViewContext().getContextPath()%>/_images/toc.png"
-                 alt="Show/Hide Table of Contents" title="Show/Hide Table of Contents"/>
+                <%=PageFlowUtil.buttonLink("Other Pages", "javascript:{}", "showHideToc()")%>
             </a>
             
         </td>
     </tr>
 </table>
-
 <table style="width:99%" cellpadding="0" cellspacing="0">
     <tr>
         <td style="width:99%">
@@ -978,7 +985,7 @@
                 <tr>
                     <td class="ms-searchform">Title</td>
                     <td class="field-content">
-                        <input type="text" name="name" id="<%=ID_PREFIX%>title" size="80" onchange="setWikiDirty()"/>
+                        <input type="text" name="title" id="<%=ID_PREFIX%>title" size="80" onchange="setWikiDirty()"/>
                     </td>
                 </tr>
                 <tr>
@@ -1012,8 +1019,10 @@
                             </tr>
                             <tr>
                                 <td colspan="4" id="wiki-tab-content">
+                                    <form action="">
                                     <textarea rows="30" cols="80" class="stretch-input" id="<%=ID_PREFIX%>body"
                                               name="body" onchange="setWikiDirty()"></textarea>
+                                    </form>
                                 </td>
                             </tr>
                         </table>
@@ -1047,7 +1056,6 @@
         </td>
     </tr>
 </table>
-
 <div id="wiki-help-HTML-visual" style="display:none">
     <table>
         <tr>

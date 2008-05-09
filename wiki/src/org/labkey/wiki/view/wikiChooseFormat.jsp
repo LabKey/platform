@@ -1,6 +1,27 @@
 <%@ page import="org.labkey.api.wiki.WikiRendererType" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.wiki.WikiController" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%
+    JspView<WikiController.NewPageForm> me = (JspView<WikiController.NewPageForm>) HttpView.currentView();
+    WikiController.NewPageForm model = me.getModelBean();
+%>
+
 <form action="editWiki.view" method="GET" id="wiki-format-form">
+    <% if(null != model.getRedirect()) { %>
+    <input type="hidden" name="redirect" value="<%=PageFlowUtil.filter(model.getRedirect())%>"/>
+    <% } %>
+    <% if(null != model.getName()) { %>
+    <input type="hidden" name="defName" value="<%=PageFlowUtil.filter(model.getName())%>"/>
+    <% } %>
+    <% if(null != model.getPageId()) { %>
+    <input type="hidden" name="pageId" value="<%=PageFlowUtil.filter(model.getPageId())%>"/>
+    <% } %>
+    <% if(model.getIndex() > 0) { %>
+    <input type="hidden" name="index" value="<%=model.getIndex()%>"/>
+    <% } %>
+
     <p>Which format would you like to use for your new page?</p>
 
     <input type="radio" name="format" value="<%=WikiRendererType.HTML.name()%>" id="rbHtml" checked="1"><label for="rbHtml">HTML Format</label>

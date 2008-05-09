@@ -20,9 +20,12 @@ import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.api.data.Container;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.security.User;
+import org.labkey.api.security.ACL;
 import org.labkey.wiki.ServiceImpl;
 import org.labkey.wiki.WikiManager;
 import org.labkey.wiki.WikiController;
+import org.labkey.wiki.BaseWikiPermissions;
 
 import java.util.List;
 
@@ -41,14 +44,26 @@ public class WikiEditModel
     private String _redir;
     private Container _container;
     private String _format;
+    private String _defName;
+    private boolean _useVisualEditor = false;
+    private String _pageId;
+    private int _index;
+    private User _user;
 
-    public WikiEditModel(Container container, Wiki wiki, WikiVersion wikiVersion, String redir, String format)
+    public WikiEditModel(Container container, Wiki wiki, WikiVersion wikiVersion, String redir,
+                         String format, String defName, boolean useVisualEditor,
+                         String pageId, int index, User user)
     {
         _container = container;
         _wiki = wiki;
         _wikiVersion = wikiVersion;
         _redir = redir;
         _format = format;
+        _defName = defName;
+        _useVisualEditor = useVisualEditor;
+        _pageId = pageId;
+        _index = index;
+        _user = user;
     }
     
     public Wiki getWiki()
@@ -73,10 +88,7 @@ public class WikiEditModel
 
     public String getRedir()
     {
-        if(null == _redir || _redir.length() == 0)
-            return PageFlowUtil.jsString(new ActionURL(WikiController.BeginAction.class, _container).getLocalURIString());
-        else
-            return PageFlowUtil.jsString(_redir);
+        return PageFlowUtil.jsString(_redir);
     }
 
     public void setRedir(String redir)
@@ -91,7 +103,7 @@ public class WikiEditModel
 
     public String getName()
     {
-        return null == _wiki ? "null" : PageFlowUtil.jsString(_wiki.getName());
+        return null == _wiki ? getDefName() : PageFlowUtil.jsString(_wiki.getName());
     }
 
     public String getTitle()
@@ -155,5 +167,36 @@ public class WikiEditModel
     public boolean hasAttachments()
     {
         return null != _wiki && null != _wiki.getAttachments() && _wiki.getAttachments().size() > 0;
+    }
+
+    public String getDefName()
+    {
+        return null == _defName ? "null" : PageFlowUtil.jsString(_defName);
+    }
+
+    public boolean useVisualEditor()
+    {
+        return _useVisualEditor;
+    }
+
+    public String getPageId()
+    {
+        return null == _pageId ? "null" : PageFlowUtil.jsString(_pageId);
+    }
+
+    public int getIndex()
+    {
+        return _index;
+    }
+
+    public boolean canUserDelete()
+    {
+        if(null == _wiki)
+            return _container.hasPermission(_user, ACL.PERM_DELETE);
+        else
+        {
+            BaseWikiPermissions perms = new BaseWikiPermissions(_user, _container);
+            return perms.allowDelete(_wiki);
+        }
     }
 }

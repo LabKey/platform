@@ -43,7 +43,6 @@ import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.common.util.Pair;
 import org.labkey.wiki.model.*;
-import org.labkey.wiki.renderer.RadeoxRenderer;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
@@ -2520,7 +2519,7 @@ public class WikiController extends SpringActionController
             if (bHasInsert)
             {
                 out.print("[<a class=\"link\" href=\"");
-                out.print(PageFlowUtil.filter(ActionURL.toPathString("Wiki", "insert", cToc.getPath())));
+                out.print(new ActionURL(NewPageAction.class, cToc).getLocalURIString());
                 out.print("\">new page</a>]&nbsp;");
             }
             if (bHasCopy)
@@ -2866,6 +2865,9 @@ public class WikiController extends SpringActionController
         private String _name;
         private String _redirect;
         private String _format;
+        private String _defName;
+        private String _pageId;
+        private int _index;
 
         public String getName()
         {
@@ -2896,9 +2898,39 @@ public class WikiController extends SpringActionController
         {
             _format = format;
         }
+
+        public String getDefName()
+        {
+            return _defName;
+        }
+
+        public void setDefName(String defName)
+        {
+            _defName = defName;
+        }
+
+        public String getPageId()
+        {
+            return _pageId;
+        }
+
+        public void setPageId(String pageId)
+        {
+            _pageId = pageId;
+        }
+
+        public int getIndex()
+        {
+            return _index;
+        }
+
+        public void setIndex(int index)
+        {
+            _index = index;
+        }
     }
 
-    @RequiresPermission(ACL.PERM_UPDATE)
+    @RequiresPermission(ACL.PERM_READ) //will check below
     public class EditWikiAction extends SimpleViewAction<EditWikiForm>
     {
         private WikiVersion _wikiVer = null;
@@ -2921,7 +2953,31 @@ public class WikiController extends SpringActionController
                     throw new NotFoundException("Could not locate the current version of the wiki named '" + form.getName() + "'!");
             }
 
-            WikiEditModel model = new WikiEditModel(getViewContext().getContainer(), wiki, curVersion, form.getRedirect(), form.getFormat());
+            //check permissions
+            Container container = getViewContext().getContainer();
+            User user = getViewContext().getUser();
+            BaseWikiPermissions perms = new BaseWikiPermissions(user, container);
+            if(null == wiki)
+            {
+                //if no wiki, this is an insert, so user must have insert perms
+                if(!container.hasPermission(user, ACL.PERM_INSERT))
+                    throw new UnauthorizedException("You do not have permissions to create new wiki pages in this folder!");
+            }
+            else
+            {
+                //updating wiki--use BaseWikiPermissions
+                if(!perms.allowUpdate(wiki))
+                    throw new UnauthorizedException("You do not have permissions to edit this wiki page!");
+            }
+
+            //get the user's editor preference
+            Map properties = PropertyManager.getProperties(getUser().getUserId(),
+                    getContainer().getId(), "editorPreference", true);
+            boolean useVisualEditor = "true".equalsIgnoreCase((String)properties.get("useVisualEditor"));
+
+            WikiEditModel model = new WikiEditModel(container, wiki, curVersion,
+                    form.getRedirect(), form.getFormat(), form.getDefName(), useVisualEditor,
+                    form.getPageId(), form.getIndex(), user);
 
             //cache the wiki so we can build the nav trail
             _wikiVer = curVersion;
@@ -2951,6 +3007,8 @@ public class WikiController extends SpringActionController
         private String _body;
         private Integer _parent = -1;
         private String _rendererType;
+        private String _pageId;
+        private int _index = -1;
 
         public String getEntityId()
         {
@@ -3031,9 +3089,29 @@ public class WikiController extends SpringActionController
         {
             _rendererType = rendererType;
         }
+
+        public String getPageId()
+        {
+            return _pageId;
+        }
+
+        public void setPageId(String pageId)
+        {
+            _pageId = pageId;
+        }
+
+        public int getIndex()
+        {
+            return _index;
+        }
+
+        public void setIndex(int index)
+        {
+            _index = index;
+        }
     }
 
-    @RequiresPermission(ACL.PERM_UPDATE)
+    @RequiresPermission(ACL.PERM_READ) //will check below
     public class SaveWikiAction extends ApiAction<SaveWikiForm>
     {
         public ApiResponse execute(SaveWikiForm form, BindException errors) throws Exception
@@ -3070,6 +3148,10 @@ public class WikiController extends SpringActionController
         protected ApiResponse insertWiki(SaveWikiForm form, BindException errors) throws Exception
         {
             Container c = getViewContext().getContainer();
+            User user = getViewContext().getUser();
+            if(!c.hasPermission(user, ACL.PERM_INSERT))
+                throw new UnauthorizedException("You do not have permissions to create a new wiki page in this folder!");
+
             String wikiname = form.getName();
 
             Wiki wiki = new Wiki(c, wikiname);
@@ -3086,8 +3168,6 @@ public class WikiController extends SpringActionController
             //insert new wiki and new version
             WikiManager.insertWiki(getUser(), c, wiki, wikiversion, null);
 
-/*
-        TODO: looks like this is used to reset the content of a previously-empty web part
             String pageId = StringUtils.trimToEmpty(form.getPageId());
             int index = form.getIndex();
             if (pageId != null && index > 0)
@@ -3098,7 +3178,6 @@ public class WikiController extends SpringActionController
                 webPart.setProperty("name", wikiname);
                 Portal.updatePart(getUser(), webPart);
             }
-*/
 
             //return an API response containing the current wiki and version data
             ApiSimpleResponse resp = new ApiSimpleResponse("success", true);
@@ -3407,12 +3486,60 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
-    public class NewPageAction extends SimpleViewAction
+    public static class NewPageForm
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        private String _redirect;
+        private String _name;
+        private String _pageId;
+        private int _index;
+
+        public String getRedirect()
         {
-            return new JspView("/org/labkey/wiki/view/wikiChooseFormat.jsp");
+            return _redirect;
+        }
+
+        public void setRedirect(String redirect)
+        {
+            _redirect = redirect;
+        }
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
+
+        public String getPageId()
+        {
+            return _pageId;
+        }
+
+        public void setPageId(String pageId)
+        {
+            _pageId = pageId;
+        }
+
+        public int getIndex()
+        {
+            return _index;
+        }
+
+        public void setIndex(int index)
+        {
+            _index = index;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class NewPageAction extends SimpleViewAction<NewPageForm>
+    {
+        public ModelAndView getView(NewPageForm form, BindException errors) throws Exception
+        {
+            return new JspView<NewPageForm>("/org/labkey/wiki/view/wikiChooseFormat.jsp", form);
         }
 
         public NavTree appendNavTrail(NavTree root)

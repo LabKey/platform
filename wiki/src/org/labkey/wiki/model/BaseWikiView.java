@@ -138,7 +138,7 @@ abstract class BaseWikiView extends GroovyView
 
         if (perms.allowInsert())
         {
-            ActionURL insertLink = _wiki.getWikiLink("showInsert", null);
+            ActionURL insertLink = new ActionURL(WikiController.NewPageAction.class, c); //_wiki.getWikiLink("showInsert", null);
 
             if (isInWebPart)
             {
@@ -154,7 +154,11 @@ abstract class BaseWikiView extends GroovyView
 
         if (perms.allowUpdate(_wiki))
         {
-            ActionURL updateContentLink = _wiki.getUpdateContentLink();
+            ActionURL updateContentLink = null == _wiki.getEntityId()
+                ? new ActionURL(WikiController.NewPageAction.class, c)
+                : new ActionURL(WikiController.EditWikiAction.class, c);
+
+            updateContentLink.addParameter("name", _wiki.getName());
             updateContentLink.addParameter("redirect", url.getLocalURIString());
             context.put("updateContentLink", updateContentLink);
         }
