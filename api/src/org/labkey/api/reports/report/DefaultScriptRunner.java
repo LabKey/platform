@@ -4,16 +4,17 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TSVGridWriter;
-import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.report.r.ParamReplacement;
+import org.labkey.api.reports.report.r.ParamReplacementSvc;
+import org.labkey.api.reports.report.r.view.ConsoleOutput;
 import org.labkey.api.reports.report.view.ChartUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
-import org.labkey.common.util.Pair;
 
 import javax.servlet.ServletException;
 import java.io.*;
@@ -22,8 +23,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by IntelliJ IDEA.
@@ -39,7 +40,7 @@ public class DefaultScriptRunner extends AbstractScriptRunner
         super(report, context);
     }
 
-    public boolean runScript(VBox view, List<Pair<String, String>> outputSubst)
+    public boolean runScript(VBox view, List<ParamReplacement> outputSubst)
     {
         File inputFile = _data;
         try {
@@ -58,7 +59,7 @@ public class DefaultScriptRunner extends AbstractScriptRunner
         }
     }
 
-    private boolean runScript(VBox view, File inputFile, List<Pair<String, String>> outputSubst, List<String> errors) throws Exception
+    private boolean runScript(VBox view, File inputFile, List<ParamReplacement> outputSubst, List<String> errors) throws Exception
     {
         String script = _report.getDescriptor().getProperty(RReportDescriptor.Prop.script);
         boolean ret = true;
@@ -94,7 +95,13 @@ public class DefaultScriptRunner extends AbstractScriptRunner
             {
                 File consoleFile = RReport.getFile(_report, RReport.reportFile.console, null);
                 if (consoleFile.exists())
-                    outputSubst.add(new Pair<String,String>(consoleFile.getAbsolutePath(), RReport.ConsoleOutputView._type));
+                {
+                    ParamReplacement param = ParamReplacementSvc.get().getHandlerInstance(ConsoleOutput.ID);
+                    param.setName("console");
+                    param.setFile(consoleFile);
+
+                    outputSubst.add(param);
+                }
             }
         }
         catch (IOException e)
@@ -119,7 +126,7 @@ public class DefaultScriptRunner extends AbstractScriptRunner
         return ret;
     }
 
-    protected File processScript(String script, File inputFile, List<Pair<String, String>> outputSubst) throws Exception
+    protected File processScript(String script, File inputFile, List<ParamReplacement> outputSubst) throws Exception
     {
         // process the primary script
         File scriptFile = RReport.getFile(_report, RReport.reportFile.script, null);
@@ -160,7 +167,7 @@ public class DefaultScriptRunner extends AbstractScriptRunner
         return false;
     }
 
-    protected void createScript(String script, File scriptFile, File inputFile, List<Pair<String, String>> outputSubst) throws Exception
+    protected void createScript(String script, File scriptFile, File inputFile, List<ParamReplacement> outputSubst) throws Exception
     {
         if (!StringUtils.isEmpty(script))
         {

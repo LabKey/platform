@@ -3,8 +3,10 @@ package org.labkey.api.reports.report;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.reports.report.r.ParamReplacement;
+import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.common.util.Pair;
 
 import java.io.File;
@@ -75,15 +77,35 @@ public abstract class AbstractScriptRunner implements RScriptRunner
 
     protected String labkeyObjectProlog()
     {
-        String labkey =
-            "labkey.data <- read.table(\"${input_data}\", header=TRUE, sep=\"\\t\", quote=\"\", comment.char=\"\")\n" +
+        StringBuffer labkey = new StringBuffer();
+        labkey.append("labkey.data <- read.table(\"${input_data}\", header=TRUE, sep=\"\\t\", quote=\"\", comment.char=\"\")\n" +
             "labkey.url <- function (controller, action, list){paste(labkey.url.base,controller,labkey.url.path,action,\".view?\",paste(names(list),list,sep=\"=\",collapse=\"&\"),sep=\"\")}\n" +
-            "labkey.resolveLSID <- function(lsid){paste(labkey.url.base,\"experiment/resolveLSID.view?lsid=\",lsid,sep=\"\");}\n";
-        labkey += "labkey.user.email=\"" + _context.getUser().getEmail() + "\"\n";
+            "labkey.resolveLSID <- function(lsid){paste(labkey.url.base,\"experiment/resolveLSID.view?lsid=\",lsid,sep=\"\");}\n");
+        labkey.append("labkey.user.email=\"" + _context.getUser().getEmail() + "\"\n");
+
         ActionURL url = _context.getActionURL();
-        labkey += "labkey.url.path=\"" + url.getExtraPath() + "/\"\n";
-        labkey += "labkey.url.base=\"" + url.getBaseServerURI() + _context.getContextPath() + "/\"\n";
-        return labkey;
+        labkey.append("labkey.url.path=\"" + url.getExtraPath() + "/\"\n");
+        labkey.append("labkey.url.base=\"" + url.getBaseServerURI() + _context.getContextPath() + "/\"\n");
+
+        // url parameters
+        Pair<String, String>[] params = url.getParameters();
+        if (params.length > 0)
+        {
+            String sep = "";
+            labkey.append("labkey.url.params <- list(");
+            for (Pair<String, String> param : params)
+            {
+                labkey.append(sep);
+                labkey.append(param.getKey());
+                labkey.append("=");
+                labkey.append("\"");
+                labkey.append(param.getValue());
+                labkey.append("\"");
+                sep = ",";
+            }
+            labkey.append(")\n");
+        }
+        return labkey.toString();
     }
 
 
@@ -106,79 +128,9 @@ public abstract class AbstractScriptRunner implements RScriptRunner
         return script;
     }
 
-    protected String processOutputReplacements(String script, List<Pair<String, String>> replacements) throws IOException
+    protected String processOutputReplacements(String script, List<ParamReplacement> replacements) throws Exception
     {
-        Matcher m = RReport.scriptPattern.matcher(script);
-        File resultFile;
-        String resultFileName;
-
-        while (m.find())
-        {
-            String value = m.group(1);
-
-            Pair<String, String> info = getReplacementInfo(value);
-            if (info != null)
-            {
-                replacements.add(info);
-                script = m.replaceFirst(info.getKey());
-                m = RReport.scriptPattern.matcher(script);
-            }
-        }
-        return script;
-    }
-
-    protected Pair<String, String> getReplacementInfo(String token) throws IOException
-    {
-        File resultFile = null;
-        String viewType = null;
-
-        if (token.startsWith(RReport.OUTPUT_FILE_TXT))
-        {
-            resultFile = File.createTempFile(RReport.FILE_PREFIX, "Result.txt", _report.getReportDir());
-            viewType = RReport.TextOutputView._type;
-        }
-        else if (token.startsWith(RReport.OUTPUT_FILE_TSV))
-        {
-            resultFile = File.createTempFile(RReport.FILE_PREFIX, "Result.tsv", _report.getReportDir());
-            viewType = RReport.TabReportView._type;
-        }
-        else if (token.startsWith(RReport.OUTPUT_FILE_IMG))
-        {
-            resultFile = File.createTempFile(RReport.FILE_PREFIX, "Result.jpg", _report.getReportDir());
-            viewType = RReport.ImgReportView._type;
-        }
-        else if (token.startsWith(RReport.OUTPUT_FILE_PDF))
-        {
-            String name = token.substring(RReport.OUTPUT_FILE_PDF.length(), token.length()).concat(".pdf");
-            resultFile = new File(_report.getReportDir(), name);
-            viewType = RReport.PdfReportView._type;
-        }
-        else if (token.startsWith(RReport.OUTPUT_FILE_FILE))
-        {
-            String name = token.substring(RReport.OUTPUT_FILE_FILE.length(), token.length()).concat(".txt");
-            resultFile = new File(_report.getReportDir(), name);
-            viewType = RReport.FileoutReportView._type;
-        }
-        else if (token.startsWith(RReport.OUTPUT_FILE_POSTSCRIPT))
-        {
-            String name = token.substring(RReport.OUTPUT_FILE_POSTSCRIPT.length(), token.length()).concat(".ps");
-            resultFile = new File(_report.getReportDir(), name);
-            viewType = RReport.PostscriptReportView._type;
-        }
-        else if (token.startsWith(RReport.OUTPUT_FILE_HTML))
-        {
-            resultFile = File.createTempFile(RReport.FILE_PREFIX, "Result.txt", _report.getReportDir());
-            viewType = RReport.HtmlReportView._type;
-        }
-
-        if (resultFile != null)
-        {
-            String resultFileName = resultFile.getAbsolutePath();
-            resultFileName = resultFileName.replaceAll("\\\\", "/");
-
-            return new Pair(resultFileName, viewType);
-        }
-        return null;
+        return ParamReplacementSvc.get().processParamReplacement(script, _report.getReportDir(), replacements);
     }
 
     protected boolean isDebug()

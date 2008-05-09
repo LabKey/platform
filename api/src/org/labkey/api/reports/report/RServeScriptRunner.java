@@ -1,27 +1,24 @@
 package org.labkey.api.reports.report;
 
 import org.apache.commons.lang.StringUtils;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
-import org.labkey.common.util.Pair;
+import org.labkey.api.reports.report.r.ParamReplacement;
 import org.rosuda.REngine.REXP;
 import org.rosuda.REngine.REXPDouble;
 import org.rosuda.REngine.REXPMismatchException;
 import org.rosuda.REngine.Rserve.RConnection;
 import org.rosuda.REngine.Rserve.RserveException;
 
-import javax.servlet.ServletException;
 import java.io.File;
-import java.io.PrintWriter;
 import java.io.IOException;
-import java.sql.SQLException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.StringTokenizer;
 import java.util.Map;
+import java.util.StringTokenizer;
 
 /**
  * Created by IntelliJ IDEA.
@@ -36,7 +33,7 @@ public class RServeScriptRunner extends AbstractScriptRunner
         super(report, context);
     }
 
-    public boolean runScript(VBox view, List<Pair<String, String>> outputSubst)
+    public boolean runScript(VBox view, List<ParamReplacement> outputSubst)
     {
         File inputFile = _data;
         try {
@@ -60,7 +57,7 @@ public class RServeScriptRunner extends AbstractScriptRunner
         }
     }
 
-    private boolean runScript(VBox view, File inputFile, List<Pair<String, String>> outputSubst, List<String> errors) throws Exception
+    private boolean runScript(VBox view, File inputFile, List<ParamReplacement> outputSubst, List<String> errors) throws Exception
     {
         boolean ret = true;
         RConnection connection = null;
@@ -174,7 +171,7 @@ public class RServeScriptRunner extends AbstractScriptRunner
         }
     }
 
-    protected String processScript(String script, File inputFile, List<Pair<String, String>> outputSubst) throws Exception
+    protected String processScript(String script, File inputFile, List<ParamReplacement> outputSubst) throws Exception
     {
         // process the primary script
         String processedScript = createScript(script, inputFile, outputSubst);
@@ -198,7 +195,7 @@ public class RServeScriptRunner extends AbstractScriptRunner
         return processedScript;
     }
 
-    protected String createScript(String script, File inputFile, List<Pair<String, String>> outputSubst) throws Exception
+    protected String createScript(String script, File inputFile, List<ParamReplacement> outputSubst) throws Exception
     {
         if (!StringUtils.isEmpty(script))
         {

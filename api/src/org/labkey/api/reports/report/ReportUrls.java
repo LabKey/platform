@@ -18,4 +18,5 @@ public interface ReportUrls extends UrlProvider
     ActionURL urlDesignChart(Container c);
     ActionURL urlCreateRReport(Container c);
     ActionURL urlStreamFile(Container c);
+    ActionURL urlReportSections(Container c);
 }

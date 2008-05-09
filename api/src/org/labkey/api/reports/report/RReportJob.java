@@ -5,14 +5,14 @@ import org.apache.log4j.Logger;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.report.r.ParamReplacement;
+import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.view.RReportBean;
-import org.labkey.api.reports.report.view.ChartUtil;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.util.DateUtil;
-import org.labkey.common.util.Pair;
 
 import java.io.*;
 import java.sql.SQLException;
@@ -112,7 +112,7 @@ public class RReportJob extends PipelineJob implements Serializable
             File inputFile = RReport.getFile(report, RReport.reportFile.inputData, null);
             if (inputFile != null && inputFile.exists())
             {
-                List<Pair<String, String>> outputSubst = new ArrayList();
+                List<ParamReplacement> outputSubst = new ArrayList();
                 List<String> errors = new ArrayList();
 
                 RScriptRunner runner = RReport.createScriptRunner(report, new ViewContext(getInfo()));
@@ -122,20 +122,8 @@ public class RReportJob extends PipelineJob implements Serializable
 
                 if (outputSubst.size() > 0)
                 {
-                    File substitutionFile = RReport.getFile(report, RReport.reportFile.substitutionMap, null);
-                    BufferedWriter bw = null;
-                    try {
-                        bw = new BufferedWriter(new FileWriter(substitutionFile));
-                        for (Pair<String, String> output : outputSubst)
-                        {
-                            bw.write(output.getKey() + '\t' + output.getValue() + '\n');
-                        }
-                    }
-                    finally
-                    {
-                        if (bw != null)
-                            try {bw.close();} catch (IOException ioe) {}
-                    }
+                    File file = RReport.getFile(report, RReport.reportFile.substitutionMap, null);
+                    ParamReplacementSvc.get().toFile(outputSubst, file);
                 }
 
                 File console = RReport.getFile(report, RReport.reportFile.console, null);

@@ -99,4 +99,11 @@ public interface Report
          */
         public String generateImageMap(ViewContext context, String id, String imageMapCallback, String[] callbackParams) throws Exception;
     }
+
+    enum renderParam {
+        reportWebPart,
+        reportId,
+        showTabs,
+        showSection,
+    }
 }

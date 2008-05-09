@@ -4,6 +4,8 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.RReportJob;
+import org.labkey.api.reports.report.r.ParamReplacement;
+import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.VBox;
 import org.labkey.common.util.Pair;
@@ -41,26 +43,7 @@ public class RenderBackgroundRReportView extends HttpView
 
                     if (substitutionMap != null && substitutionMap.exists())
                     {
-                        BufferedReader br = null;
-                        List<Pair<String, String>> outputSubst = new ArrayList();
-
-                        try {
-                            br = new BufferedReader(new FileReader(substitutionMap));
-                            String l;
-                            while ((l = br.readLine()) != null)
-                            {
-                                String[] parts = l.split("\\t");
-                                if (parts.length == 2)
-                                {
-                                    outputSubst.add(new Pair(parts[0], parts[1]));
-                                }
-                            }
-                        }
-                        finally
-                        {
-                            if (br != null)
-                                try {br.close();} catch(IOException ioe) {}
-                        }
+                        List<ParamReplacement> outputSubst = ParamReplacementSvc.get().fromFile(substitutionMap);
                         VBox view = new VBox();
                         RReport.renderViews(_report, view, outputSubst, false);
 

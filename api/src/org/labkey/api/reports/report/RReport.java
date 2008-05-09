@@ -14,17 +14,19 @@ import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.Report;
-import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.reports.report.view.ChartUtil;
+import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.reports.report.view.RunRReportView;
+import org.labkey.api.reports.report.r.ParamReplacement;
+import org.labkey.api.reports.report.r.ParamReplacementSvc;
+import org.labkey.api.reports.report.r.view.*;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.*;
 import org.labkey.common.tools.TabLoader;
-import org.labkey.common.util.Pair;
 
 import java.io.*;
 import java.sql.ResultSet;
@@ -45,13 +47,6 @@ public class RReport extends AbstractReport implements AttachmentParent, Report.
     public static final String REPORT_DIR = "Reports";
     public static final String SUBSTITUTION_MAP = "substitutionMap.txt";
 
-    public static final String OUTPUT_FILE_TXT = "txtout:";
-    public static final String OUTPUT_FILE_TSV = "tsvout:";
-    public static final String OUTPUT_FILE_IMG = "imgout:";
-    public static final String OUTPUT_FILE_PDF = "pdfout:";
-    public static final String OUTPUT_FILE_POSTSCRIPT = "psout:";
-    public static final String OUTPUT_FILE_FILE = "fileout:";
-    public static final String OUTPUT_FILE_HTML = "htmlout:";
     public static final String INPUT_FILE_TSV = "input_data";
 
     public static final String DATA_FILE_SUFFIX = "Data.tsv";
@@ -63,6 +58,17 @@ public class RReport extends AbstractReport implements AttachmentParent, Report.
     private static final String R_TEMP_FOLDER = "RReport.TempFolder";
     private static final String R_EDIT_PERMISSIONS = "RReport.EditPermissions";
     private static final String R_SCRIPT_HANDLER = "RReport.ScriptHandler";
+
+    static {
+        ParamReplacementSvc.get().registerHandler(new ConsoleOutput());
+        ParamReplacementSvc.get().registerHandler(new TextOutput());
+        ParamReplacementSvc.get().registerHandler(new HtmlOutput());
+        ParamReplacementSvc.get().registerHandler(new TsvOutput());
+        ParamReplacementSvc.get().registerHandler(new ImageOutput());
+        ParamReplacementSvc.get().registerHandler(new PdfOutput());
+        ParamReplacementSvc.get().registerHandler(new FileOutput());
+        ParamReplacementSvc.get().registerHandler(new PostscriptOutput());
+    }
 
     public enum reportFile {
         script,
@@ -181,13 +187,12 @@ public class RReport extends AbstractReport implements AttachmentParent, Report.
             return view;
         }
         RScriptRunner runner = createScriptRunner(this, viewContext);
-        List<Pair<String, String>> outputSubst = new ArrayList<Pair<String, String>>();
+        List<ParamReplacement> outputSubst = new ArrayList<ParamReplacement>();
         runner.runScript(view, outputSubst);
         renderViews(this, view, outputSubst, false);
 
         return view;
     }
-
 
     public void beforeDelete(ViewContext context)
     {
@@ -203,38 +208,39 @@ public class RReport extends AbstractReport implements AttachmentParent, Report.
         }
     }
 
-    public static void renderViews(RReport report, VBox view, List<Pair<String, String>> outputs, boolean deleteTempFiles)
+    public static void renderViews(RReport report, VBox view, List<ParamReplacement> parameters, boolean deleteTempFiles)
     {
-        for (Pair<String, String> info : outputs)
+        String sections = (String)HttpView.currentContext().get(renderParam.showSection.name());
+        List<String> sectionNames = Collections.emptyList();
+        if (sections != null)
+            sectionNames = Arrays.asList(sections.split("&"));
+
+        ViewContext context = HttpView.currentContext();
+        for (ParamReplacement param : parameters)
         {
-            File data = new File(info.getKey());
-            if (data.exists())
+            if (isViewable(param, sectionNames))
             {
-                if (TextOutputView._type.equals(info.getValue()))
-                    view.addView(new TextOutputView(data, deleteTempFiles));
-                else if (TabReportView._type.equals(info.getValue()))
-                    view.addView(new TabReportView(data, deleteTempFiles));
-                else if (ImgReportView._type.equals(info.getValue()))
-                    view.addView(new ImgReportView(data, true));
-                else if (PdfReportView._type.equals(info.getValue()))
-                    view.addView(new PdfReportView(report, data, deleteTempFiles));
-                else if (ConsoleOutputView._type.equals(info.getValue()))
-                {
-                    ConsoleOutputView console = new ConsoleOutputView(data, deleteTempFiles);
-                    if (HttpView.currentContext().get("reportWebPart") != null)
-                        console.setCollapse(true);
-                    view.addView(console);
-                }
-                else if (FileoutReportView._type.equals(info.getValue()))
-                    view.addView(new FileoutReportView(report, data, deleteTempFiles));
-                else if (PostscriptReportView._type.equals(info.getValue()))
-                    view.addView(new PostscriptReportView(report, data, deleteTempFiles));
-                else if (HtmlReportView._type.equals(info.getValue()))
-                    view.addView(new HtmlReportView(data, deleteTempFiles));
+                // don't show headers if not all sections are being rendered
+                if (!sectionNames.isEmpty())
+                    param.setHeaderVisible(false);
+                param.setReport(report);
+                view.addView(param.render(context));
             }
         }
         if (!BooleanUtils.toBoolean(report.getDescriptor().getProperty(RReportDescriptor.Prop.runInBackground)))
             view.addView(new TempFileCleanup(report.getReportDir().getAbsolutePath()));
+    }
+
+    private static boolean isViewable(ParamReplacement param, List<String> sectionNames)
+    {
+        File data = param.getFile();
+        if (data.exists())
+        {
+            if (!sectionNames.isEmpty())
+                return sectionNames.contains(param.getName());
+            return true;
+        }
+        return false;
     }
 
     public HttpView renderDataView(ViewContext context) throws Exception
@@ -293,15 +299,8 @@ public class RReport extends AbstractReport implements AttachmentParent, Report.
     private boolean isValidReplacement(String value)
     {
         if (INPUT_FILE_TSV.equals(value)) return true;
-        if (value.startsWith(OUTPUT_FILE_TXT)) return true;
-        if (value.startsWith(OUTPUT_FILE_TSV)) return true;
-        if (value.startsWith(OUTPUT_FILE_IMG)) return true;
-        if (value.startsWith(OUTPUT_FILE_PDF)) return true;
-        if (value.startsWith(OUTPUT_FILE_FILE)) return true;
-        if (value.startsWith(OUTPUT_FILE_POSTSCRIPT)) return true;
-        if (value.startsWith(OUTPUT_FILE_HTML)) return true;
 
-        return false;
+        return ParamReplacementSvc.get().getHandler(value) != null;
     }
 
     public static File getFile(RReport report, RReport.reportFile type, String name)
@@ -454,476 +453,6 @@ public class RReport extends AbstractReport implements AttachmentParent, Report.
             return ChartUtil.getRunReportURL(context, this).addParameter(TabStripView.TAB_PARAM, RunRReportView.TAB_SOURCE);
         }
         return null;
-    }
-
-    public abstract static class ROutputView extends HttpView
-    {
-        private String _label;
-        private boolean _collapse;
-
-        public String getLabel()
-        {
-            return _label;
-        }
-
-        public void setLabel(String label)
-        {
-            _label = label;
-        }
-
-        public boolean isCollapse()
-        {
-            return _collapse;
-        }
-
-        public void setCollapse(boolean collapse)
-        {
-            _collapse = collapse;
-        }
-
-        protected void renderTitle(Object model, PrintWriter out) throws Exception
-        {
-            StringBuffer sb = new StringBuffer();
-
-            sb.append("<tr class=\"wpHeader\"><th colspan=2 align=left>");
-            sb.append("   <a href=\"#\" onclick=\"return toggleLink(this, false);\">");
-            sb.append("   <img border=\"0\" src=\"");
-            sb.append(getViewContext().getContextPath());
-            sb.append("/_images/");
-            sb.append(_collapse ? "plus.gif" : "minus.gif");
-            sb.append("\"></a>&nbsp;");
-            sb.append(PageFlowUtil.filter(_label));
-            sb.append("</th></tr>");
-
-            out.write(sb.toString());
-        }
-    }
-
-    public static class TextOutputView extends ROutputView
-    {
-        public static final String _type = "Text";
-        protected File _file;
-        protected boolean _deleteTempFiles;
-
-        public TextOutputView(File file, boolean deleteTempFiles)
-        {
-            _file = file;
-            _deleteTempFiles = deleteTempFiles;
-            setLabel("Text output");
-        }
-
-        @Override
-        protected void renderInternal(Object model, PrintWriter out) throws Exception
-        {
-            if (_file != null && _file.exists() && (_file.length() > 0))
-            {
-                out.write("<table width=\"100%\" cellspacing=\"0\" cellpadding=\"1\">");
-                renderTitle(model, out);
-                if (isCollapse())
-                    out.write("<tr style=\"display:none\"><td><pre>");
-                else
-                    out.write("<tr><td><pre>");
-                out.write(PageFlowUtil.filter(PageFlowUtil.getFileContentsAsString(_file), false, true));
-                out.write("</pre></td></tr>");
-                out.write("</table>");
-            }
-            if (_deleteTempFiles && null != _file)
-                _file.delete();
-        }
-    }
-
-    public static class ConsoleOutputView extends TextOutputView
-    {
-        public static final String _type = "Console";
-
-        public ConsoleOutputView(File file, boolean deleteTempFiles)
-        {
-            super(file, deleteTempFiles);
-            setLabel("Console output");
-        }
-    }
-
-    public static class HtmlReportView extends TextOutputView
-    {
-        public static final String _type = "Html";
-
-        public HtmlReportView(File file, boolean deleteTempFiles)
-        {
-            super(file, deleteTempFiles);
-            setLabel("HTML output");
-        }
-
-        @Override
-        protected void renderInternal(Object model, PrintWriter out) throws Exception
-        {
-            if (_file != null && _file.exists() && (_file.length() > 0))
-            {
-                out.write("<table width=\"100%\" cellspacing=\"0\" cellpadding=\"1\">");
-                renderTitle(model, out);
-                if (isCollapse())
-                    out.write("<tr style=\"display:none\"><td>");
-                else
-                    out.write("<tr><td>");
-                out.write(PageFlowUtil.getFileContentsAsString(_file));
-                out.write("</td></tr>");
-                out.write("</table>");
-            }
-            if (_deleteTempFiles && null != _file)
-                _file.delete();
-        }
-    }
-
-    public static class TabReportView extends ROutputView
-    {
-        public static final String _type = "Tab";
-        File _file;
-        boolean _deleteTempFiles;
-
-        TabReportView(File file, boolean deleteTempFiles)
-        {
-            _file = file;
-            _deleteTempFiles = deleteTempFiles;
-            setLabel("TSV output");
-        }
-
-        @Override
-        protected void renderInternal(Object model, PrintWriter out) throws Exception
-        {
-            if (_file != null && _file.exists() && (_file.length() > 0))
-            {
-                TabLoader tabLoader = new TabLoader(_file);
-                tabLoader.setParseQuotes(true);
-                TabLoader.ColumnDescriptor[] cols = tabLoader.getColumns();
-                Map[] data = (Map[]) tabLoader.load();
-
-                List<TabLoader.ColumnDescriptor> display = new ArrayList<TabLoader.ColumnDescriptor>();
-                HashMap<String, TabLoader.ColumnDescriptor> hrefs = new HashMap<String, TabLoader.ColumnDescriptor>(tabLoader.getColumns().length * 2);
-                HashMap<String, TabLoader.ColumnDescriptor> styles = new HashMap<String, TabLoader.ColumnDescriptor>(tabLoader.getColumns().length * 2);
-
-                for (TabLoader.ColumnDescriptor col : cols)
-                    hrefs.put(col.name, null);
-
-                for (TabLoader.ColumnDescriptor col : cols)
-                {
-                    if (col.name.endsWith(".href"))
-                    {
-                        String name = col.name.substring(0,col.name.length()-".href".length());
-                        if (hrefs.containsKey(name))
-                        {
-                            hrefs.put(name,col);
-                            continue;
-                        }
-                    }
-                    if (col.name.endsWith(".style"))
-                    {
-                        String name = col.name.substring(0,col.name.length()-".style".length());
-                        if (hrefs.containsKey(name))
-                        {
-                            styles.put(name,col);
-                            continue;
-                        }
-                    }
-                    display.add(col);
-                }
-
-                int row = 0;
-                out.write("<table width=\"100%\" class=\"dataRegion\" cellspacing=\"0\" cellpadding=\"1\">");
-                renderTitle(model, out);
-                if (isCollapse())
-                    out.write("<tr style=\"display:none\"><td><table>");
-                else
-                    out.write("<tr><td><table>");
-                out.write("<tr>");
-                for (TabLoader.ColumnDescriptor col : display)
-                {
-                    if (Number.class.isAssignableFrom(col.getClass()))
-                        out.write("<td class='header' align='right'>");
-                    else
-                        out.write("<td class='header'>");
-                    out.write(PageFlowUtil.filter(col.name, true, true));
-                    out.write("</td>");
-                    row++;
-                }
-                out.write("</tr>");
-
-                for (Map m : data)
-                {
-                    if (row % 2 == 0)
-                        out.write("<tr bgcolor=#f0f0f0>");
-                    else
-                        out.write("<tr bgcolor=#ffffff>");
-                    for (TabLoader.ColumnDescriptor col : display)
-                    {
-                        Object colVal = m.get(col.name);
-                        if ("NA".equals(colVal))
-                            colVal = null;
-                        TabLoader.ColumnDescriptor hrefCol = hrefs.get(col.name);
-                        String href = hrefCol == null ? null : ConvertUtils.convert((m.get(hrefCol.name)));
-                        TabLoader.ColumnDescriptor styleCol = styles.get(col.name);
-                        String style = styleCol == null ? null : ConvertUtils.convert((m.get(styleCol.name)));
-
-                        out.write("<td class='ms-vb'");
-                        if (Number.class.isAssignableFrom(col.clazz))
-                            out.write(" align='right'");
-                        if (null != style)
-                        {
-                            out.write(" style=\"");
-                            out.write(PageFlowUtil.filter(style));
-                            out.write("\"");
-                        }
-                        out.write(">");
-                        if (null != href)
-                        {
-                            out.write("<a href=\"");
-                            out.write(PageFlowUtil.filter(href));
-                            out.write("\">");
-                        }
-                        if (null == colVal)
-                            out.write("&nbsp");
-                        else
-                            out.write(PageFlowUtil.filter(ConvertUtils.convert(colVal), true, true));
-                        if (null != href)
-                            out.write("</a>");
-                        out.write("</td>");
-                    }
-                    out.write("</tr>");
-                    row++;
-                }
-                out.write("</table></td></tr>");
-                out.write("</table>");
-            }
-            if (_deleteTempFiles && null != _file)
-                _file.delete();
-        }
-    }
-
-    public static class ImgReportView extends ROutputView
-    {
-        public static final String _type = "Image";
-        File _file;
-        boolean _deleteTempFiles;
-
-        ImgReportView(File file, boolean deleteTempFiles)
-        {
-            _file = file;
-            _deleteTempFiles = deleteTempFiles;
-            setLabel("Image output");
-        }
-
-        @Override
-        protected void renderInternal(Object model, PrintWriter out) throws Exception
-        {
-            if (_file != null && _file.exists())
-            {
-                if (_file.length() > 0)
-                {
-                    File imgFile = moveToTemp(_file);
-                    if (imgFile != null)
-                    {
-                        String key = "temp:" + GUID.makeGUID();
-                        getViewContext().getRequest().getSession(true).setAttribute(key, imgFile);
-
-                        out.write("<table width=\"100%\" cellspacing=\"0\" cellpadding=\"1\">");
-                        renderTitle(model, out);
-                        if (isCollapse())
-                            out.write("<tr style=\"display:none\"><td>");
-                        else
-                            out.write("<tr><td>");
-                        out.write("<img border=0 id=\"resultImage\" src=\"");
-
-                        ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlStreamFile(getViewContext().getContainer());
-                        url.addParameters(PageFlowUtil.map("sessionKey", key, "deleteFile", Boolean.toString(_deleteTempFiles), "cacheFile", "true"));
-
-                        out.write(url.getLocalURIString());
-                        out.write("\">");
-                        out.write("</td></tr>");
-                        out.write("</table>");
-                    }
-                }
-                else
-                    _file.delete();
-            }
-        }
-
-        private File moveToTemp(File file)
-        {
-            try {
-                File newFile = File.createTempFile("RReportImg", "tmp");
-                newFile.delete();
-
-                if (file.renameTo(newFile))
-                    return newFile;
-            }
-            catch (IOException ioe)
-            {
-                throw new RuntimeException(ioe);
-            }
-            return null;
-        }
-    }
-
-    public static class PdfReportView extends DownloadReportView
-    {
-        public static final String _type = "PDF";
-
-        PdfReportView(RReport report, File file, boolean deleteTempFiles)
-        {
-            super(report, file, deleteTempFiles, "PDF");
-        }
-    }
-
-    public static class FileoutReportView extends DownloadReportView
-    {
-        public static final String _type = "Fileout";
-
-        FileoutReportView(RReport report, File file, boolean deleteTempFiles)
-        {
-            super(report, file, deleteTempFiles, "Text");
-        }
-    }
-
-    public static class PostscriptReportView extends DownloadReportView
-    {
-        public static final String _type = "Postscript";
-
-        PostscriptReportView(RReport report, File file, boolean deleteTempFiles)
-        {
-            super(report, file, deleteTempFiles, "Postscript");
-        }
-    }
-
-    public static abstract class DownloadReportView extends ROutputView
-    {
-        File _file;
-        boolean _deleteTempFiles;
-        String _fileType;
-        RReport _report;
-
-        DownloadReportView(RReport report, File file, boolean deleteTempFiles, String fileType)
-        {
-            _report = report;
-            _file = file;
-            _deleteTempFiles = deleteTempFiles;
-            _fileType = fileType;
-            setLabel("View output");
-        }
-
-        @Override
-        protected void renderInternal(Object model, PrintWriter out) throws Exception
-        {
-            if (_file != null && _file.exists() && (_file.length() > 0))
-            {
-                if (_report != null && _report.getEntityId() != null)
-                {
-                    MimeMap mimeMap = new MimeMap();
-                    DownloadFormFile form = new DownloadFormFile(_file);
-                    form.setContentType(mimeMap.getContentTypeFor(_file.getName()));
-                    AttachmentService.get().deleteAttachment(_report, _file.getName());
-                    AttachmentService.get().addAttachments(getViewContext().getUser(), _report, Collections.singletonList((AttachmentFile)new StrutsAttachmentFile(form)));
-                }
-
-                String key = "temp:" + GUID.makeGUID();
-                getViewContext().getRequest().getSession(true).setAttribute(key, _file);
-
-                out.write("<table width=\"100%\" cellspacing=\"0\" cellpadding=\"1\">");
-                renderTitle(model, out);
-                if (isCollapse())
-                    out.write("<tr style=\"display:none\"><td>");
-                else
-                    out.write("<tr><td>");
-
-                if (_report != null && _report.getEntityId() != null)
-                {
-                    for (Attachment a : AttachmentService.get().getAttachments(_report))
-                    {
-                        if (_file.getName().equals(a.getName()))
-                        {
-                            out.write("<a href=\"");
-                            out.write(a.getDownloadUrl("reports"));
-                            out.write("\">");
-                            out.write(_fileType);
-                            out.write(" output file (click to download)</a>");
-                            break;
-                        }
-                    }
-                }
-                else
-                {
-                    // file hasn't been saved yet
-                    out.write("<a href=\"");
-                    out.write(getViewContext().getActionURL().relativeUrl("streamFile", PageFlowUtil.map("sessionKey", key, "deleteFile", "false", "attachment", "true"), "reports", true));
-                    out.write("\">");
-                    out.write(_fileType);
-                    out.write(" output file (click to download)</a>");
-                }
-                out.write("</td></tr>");
-                out.write("</table>");
-            }
-        }
-    }
-
-    public static class DownloadFormFile implements FormFile
-    {
-        private File _file;
-        private byte[] _contentData;
-        private String _contentType = "text/plain";
-
-        public DownloadFormFile(File file)
-        {
-            _file = file;
-            try {
-                _contentData = PageFlowUtil.getStreamContentsAsString(new FileInputStream(file)).getBytes();
-            }
-            catch (FileNotFoundException fnf)
-            {
-                _contentData = new byte[0];
-            }
-        }
-        
-        public String getContentType()
-        {
-            return _contentType;
-        }
-
-        public void setContentType(String contentType)
-        {
-            _contentType = contentType;
-        }
-
-        public int getFileSize()
-        {
-            return _contentData.length;
-        }
-
-        public void setFileSize(int i)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        public String getFileName()
-        {
-            return _file.getName();
-        }
-
-        public void setFileName(String string)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        public byte[] getFileData() throws IOException
-        {
-            return _contentData;
-        }
-
-        public InputStream getInputStream() throws IOException
-        {
-            return new BufferedInputStream(new ByteArrayInputStream(_contentData));
-        }
-
-        public void destroy()
-        {
-            throw new UnsupportedOperationException();
-        }
     }
 
     protected static class TempFileCleanup extends HttpView

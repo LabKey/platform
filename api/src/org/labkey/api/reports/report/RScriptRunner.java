@@ -1,11 +1,11 @@
 package org.labkey.api.reports.report;
 
-import org.labkey.api.view.ViewContext;
+import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.view.VBox;
-import org.labkey.common.util.Pair;
+import org.labkey.api.view.ViewContext;
 
-import java.util.List;
 import java.io.File;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -36,6 +36,6 @@ public interface RScriptRunner
      * @return
      * @throws Exception
      */
-    public boolean runScript(VBox view, List<Pair<String, String>> outputSubstitutions);
+    public boolean runScript(VBox view, List<ParamReplacement> outputSubstitutions);
 }
 
