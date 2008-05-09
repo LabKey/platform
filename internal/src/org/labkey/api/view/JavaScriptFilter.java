@@ -5,6 +5,7 @@ import org.labkey.api.module.ModuleLoader;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 
 public class JavaScriptFilter implements Filter
@@ -21,6 +22,7 @@ public class JavaScriptFilter implements Filter
         {
             HttpServletRequest request = (HttpServletRequest)servletRequest;
             File file = ModuleLoader.searchModuleSourceForFile(AppProps.getInstance().getProjectRoot(), "/webapp" + request.getServletPath());
+            ((HttpServletResponse)servletResponse).setHeader("cache-control", "private");
 
             if (null != file)
             {
