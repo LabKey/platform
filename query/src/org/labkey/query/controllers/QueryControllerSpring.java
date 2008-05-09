@@ -1298,6 +1298,7 @@ public class QueryControllerSpring extends SpringActionController
             response.put(PROP_SCHEMA_NAME, schemaName);
             response.put(PROP_QUERY_NAME, queryName);
             response.put("command", getSaveCommandName());
+            response.put("containerPath", container.getPath());
 
             ArrayList<Object> responseRows = new ArrayList<Object>();
             response.put("rows", responseRows);

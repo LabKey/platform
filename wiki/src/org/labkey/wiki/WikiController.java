@@ -2972,8 +2972,8 @@ public class WikiController extends SpringActionController
 
             //get the user's editor preference
             Map properties = PropertyManager.getProperties(getUser().getUserId(),
-                    getContainer().getId(), "editorPreference", true);
-            boolean useVisualEditor = "true".equalsIgnoreCase((String)properties.get("useVisualEditor"));
+                    getContainer().getId(), SetEditorPreferenceAction.CAT_EDITOR_PREFERENCE, true);
+            boolean useVisualEditor = !("false".equalsIgnoreCase((String)properties.get(SetEditorPreferenceAction.PROP_USE_VISUAL_EDITOR)));
 
             WikiEditModel model = new WikiEditModel(container, wiki, curVersion,
                     form.getRedirect(), form.getFormat(), form.getDefName(), useVisualEditor,
@@ -3141,8 +3141,21 @@ public class WikiController extends SpringActionController
                     errors.rejectValue("name", ERROR_MSG, "Page '" + name + "' already exists within this folder.");
             }
 
+            //must have a body, and if HTML, must be valid according to tidy
             if(null == form.getBody() || form.getBody().trim().length() <= 0)
                 errors.rejectValue("body", ERROR_MSG, "The body text may not be blank.");
+            else if(null == form.getRendererType() || WikiRendererType.valueOf(form.getRendererType()) == WikiRendererType.HTML)
+            {
+                String body = form.getBody();
+                ArrayList<String> tidyErrors = new ArrayList<String>();
+                User user = getViewContext().getUser();
+
+                boolean allowMaliciousContent = user.isAdministrator() || container.hasPermission(user, ACL.PERM_ADMIN);
+                PageFlowUtil.validateHtml(body, tidyErrors, allowMaliciousContent);
+
+                for(String err : tidyErrors)
+                    errors.rejectValue("body", ERROR_MSG, err);
+            }
         }
 
         protected ApiResponse insertWiki(SaveWikiForm form, BindException errors) throws Exception
@@ -3545,6 +3558,40 @@ public class WikiController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("New Page");
+        }
+    }
+
+    public static class SetEditorPreferenceForm
+    {
+        public boolean _useVisual;
+
+        public boolean isUseVisual()
+        {
+            return _useVisual;
+        }
+
+        public void setUseVisual(boolean useVisual)
+        {
+            _useVisual = useVisual;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_NONE)
+    public class SetEditorPreferenceAction extends ApiAction<SetEditorPreferenceForm>
+    {
+        public static final String CAT_EDITOR_PREFERENCE = "editorPreference";
+        public static final String PROP_USE_VISUAL_EDITOR = "useVisualEditor";
+
+        public ApiResponse execute(SetEditorPreferenceForm form, BindException errors) throws Exception
+        {
+            //save user's editor preference
+            PropertyManager.PropertyMap properties = PropertyManager.getWritableProperties(
+                    getViewContext().getUser().getUserId(), getViewContext().getContainer().getId(),
+                    CAT_EDITOR_PREFERENCE, true);
+            properties.put(PROP_USE_VISUAL_EDITOR, String.valueOf(form.isUseVisual()));
+            PropertyManager.saveProperties(properties);
+
+            return new ApiSimpleResponse("success", true);
         }
     }
 }

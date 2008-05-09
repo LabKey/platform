@@ -123,8 +123,10 @@
                 switchToSource();
                 setStatus("Switching to source editing mode because your page has elements that are not supported by the visual editor.", true);
             }
-            else
+            else if(<%=model.useVisualEditor()%>)
                 switchToVisual();
+            else
+                switchToSource();
         }
 
         showEditingHelp(_wikiProps.rendererType);
@@ -487,6 +489,7 @@
             tinyMCE.removeMCEControl(tinyMCE.getEditorId("body"));
         _editor = "source";
         showEditingHelp(_wikiProps.rendererType);
+        saveEditorPreference(_editor);
     }
 
     function switchToVisual(confirmOverride)
@@ -515,7 +518,38 @@
                 tinyMCE.addMCEControl(document.getElementById(_idPrefix + "body"), "body");
             _editor = "visual";
             showEditingHelp(_wikiProps.rendererType);
+            saveEditorPreference(_editor);
         }
+    }
+
+    function saveEditorPreference(editor)
+    {
+        var params = {useVisual: (editor == "visual")};
+        Ext.Ajax.request({
+            url : LABKEY.ActionURL.buildURL("wiki", "setEditorPreference"),
+            method : 'POST',
+            success: onSaveEditorPrefSuccess,
+            failure: onSaveEditorPrefError,
+            jsonData : params,
+            headers : {
+                'Content-Type' : 'application/json'
+            }
+        });
+    }
+
+    function onSaveEditorPrefSuccess(response)
+    {
+        //for now, do nothing
+    }
+
+    function onSaveEditorPrefError(response)
+    {
+        //parse the response JSON and display the error
+        var respJson = Ext.util.JSON.decode(response.responseText);
+        if(respJson.exception)
+            setError("There was a problem while saving your editor preference: " + respJson.exception);
+        else
+            setError("There was a problem while saving your editor preference: " + response.statusText);
     }
 
     function textContainsNonVisualElements(content)
