@@ -19,6 +19,8 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.*;
+import org.labkey.api.reports.report.r.ParamReplacementSvc;
+import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.view.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
@@ -83,6 +85,11 @@ public class ReportsController extends SpringActionController
         public ActionURL urlStreamFile(Container c)
         {
             return new ActionURL(StreamFileAction.class, c);
+        }
+        
+        public ActionURL urlReportSections(Container c)
+        {
+            return new ActionURL(ReportSectionsAction.class, c);
         }
     }
 
@@ -951,6 +958,49 @@ public class ReportsController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class ReportSectionsAction extends ApiAction
+    {
+        public ApiResponse execute(Object o, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            int reportId = NumberUtils.toInt((String)getViewContext().get(ReportDescriptor.Prop.reportId.name()), -1);
+            String sections = (String)getViewContext().get(Report.renderParam.showSection.name());
+            if (reportId != -1)
+            {
+                Report report = ReportService.get().getReport(reportId);
+
+                // may need a better way to determine sections, do we want to add to the interface?
+                response.put("success", true);
+                if (report instanceof RReport)
+                {
+                    List<String> sectionNames = Collections.emptyList();
+                    if (sections != null)
+                    {
+                        sections = PageFlowUtil.decode(sections);
+                        sectionNames = Arrays.asList(sections.split("&"));
+                    }
+                    String script = report.getDescriptor().getProperty(RReportDescriptor.Prop.script);
+                    StringBuffer sb = new StringBuffer();
+                    for (ParamReplacement param : ParamReplacementSvc.get().getParamReplacements(script))
+                    {
+                        sb.append("<option value=\"");
+                        sb.append(PageFlowUtil.filter(param.getName()));
+                        if (sectionNames.contains(param.getName()))
+                            sb.append("\" selected>");
+                        else
+                            sb.append("\">");
+                        sb.append(PageFlowUtil.filter(param.toString()));
+                        sb.append("</option>");
+                    }
+                    if (sb.length() > 0)
+                        response.put("sectionNames", sb.toString());
+                }
+            }
+            return response;
         }
     }
 

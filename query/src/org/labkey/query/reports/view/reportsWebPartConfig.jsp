@@ -1,13 +1,16 @@
-<%@ page import="org.labkey.api.view.Portal" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="java.util.LinkedHashMap" %>
+<%@ page import="org.apache.commons.lang.BooleanUtils" %>
+<%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page import="org.labkey.api.reports.Report" %>
 <%@ page import="org.labkey.api.reports.ReportService" %>
+<%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
+<%@ page import="org.labkey.api.reports.report.ReportUrls" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.apache.commons.lang.StringUtils" %>
-<%@ page import="org.apache.commons.lang.BooleanUtils" %>
+<%@ page import="java.util.LinkedHashMap" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -31,6 +34,10 @@
     }
 %>
 
+<script type="text/javascript">LABKEY.requiresYahoo("yahoo");</script>
+<script type="text/javascript">LABKEY.requiresYahoo("event");</script>
+<script type="text/javascript">LABKEY.requiresYahoo("connection");</script>
+
 <form name="frmCustomize" method="post" action="<%=h(webPart.getCustomizePostURL(context.getContainer()))%>">
     <table>
         <tr>
@@ -40,16 +47,89 @@
         <tr>
             <td class="ms-searchform">Report or View:</td>
             <td>
-                <select name="reportId">
-                    <labkey:options value="<%=pm.get("reportId")%>" map="<%=reportMap%>" />
+                <select id="reportId" name="<%=Report.renderParam.reportId.name()%>" onchange="getSectionNames(this);">
+                    <labkey:options value="<%=pm.get(Report.renderParam.reportId.name())%>" map="<%=reportMap%>" />
                 </select>
             </td>
         </tr>
-        <td class="ms-searchform">Show View Tabs:</td>
-        <td><input type="checkbox" name="showTabs" <%=BooleanUtils.toBoolean(pm.get("showTabs")) ? "checked" : ""%>></td>
+        <tr>
+            <td class="ms-searchform">Show View Tabs:<%=PageFlowUtil.helpPopup("Show tabs",
+                    "Some views may be rendered with multiple tabs showing. Select this option to only show the primary view.")%></td>
+            <td><input type="checkbox" name="<%=Report.renderParam.showTabs.name()%>" <%=BooleanUtils.toBoolean(pm.get(Report.renderParam.showTabs.name())) ? "checked" : ""%>></td>
+        </tr>
+        <tr id="visibleSections">
+            <td class="ms-searchform">Visible Report Sections:<%=PageFlowUtil.helpPopup("Show Report sections",
+                    "Some views contain mutiple sections such as: images, text, console output. For these types of views, you can select which section(s) to " +
+                            "display by selecting them from the list.")%></td>
+            <td><select id="showSection" multiple="true" onchange="selectSection()"></select></td>
+        </tr>
         <tr>
             <td/>
             <td><labkey:button text="Submit" /></td>
         </tr>
     </table>
+    <input type="hidden" name="<%=Report.renderParam.showSection.name()%>" id="showSectionHidden">
 </form>
+
+<script type="text/javascript">
+
+    function getSectionNames(element)
+    {
+        // ajax call to get report section names
+        if (element)
+        {
+            var url = "<%=PageFlowUtil.urlProvider(ReportUrls.class).urlReportSections(context.getContainer())%>";
+
+            url = url.concat("&<%=ReportDescriptor.Prop.reportId.name()%>=");
+            url = url.concat(element.value);
+            url = url.concat("&<%=Report.renderParam.showSection.name()%>=<%=PageFlowUtil.encode(pm.get(Report.renderParam.showSection.name()))%>")
+
+            YAHOO.util.Connect.asyncRequest("GET", url, {success : handleSuccess});
+        }
+    }
+
+    function handleSuccess(o)
+    {
+        if(o.responseText !== undefined)
+        {
+            var status = eval("(" + o.responseText + ')');
+            var row = document.getElementById('visibleSections');
+            row.deleteCell(1);
+            var td = row.insertCell(1);
+
+            if (status && status.sectionNames)
+            {
+                // build the selection for visible report sections
+                var select = "<select id=\"showSection\" width=\"150px\" multiple=\"true\" onchange=\"selectSection()\">";
+                select = select.concat(status.sectionNames);
+                select = select.concat("</select>");
+
+                td.innerHTML = select;
+            }
+        }
+    }
+
+    function selectSection()
+    {
+        document.getElementById("showSectionHidden").value = "";
+        var element = document.getElementById("showSection");
+        if (element)
+        {
+            var length = element.options.length;
+            var params = [];
+
+            for (var i=0; i < length; i++)
+            {
+                var option = element.options[i];
+                if (option.selected)
+                    params.push(option.value);
+            }
+
+            if (params.length > 0)
+                document.getElementById("showSectionHidden").value = params.join("&");
+        }
+    }
+
+    YAHOO.util.Event.addListener(window, "load", getSectionNames(document.getElementById('reportId')));
+
+</script>

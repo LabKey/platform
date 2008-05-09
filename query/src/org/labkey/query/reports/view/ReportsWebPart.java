@@ -34,9 +34,13 @@ public class ReportsWebPart extends WebPartView
     protected void renderView(Object model, PrintWriter out) throws Exception
     {
         Map<String, String> properties = _webPart.getPropertyMap();
-        String reportId = properties.get("reportId");
-        boolean showTabs = BooleanUtils.toBoolean(properties.get("showTabs"));
-        getViewContext().put("reportWebPart", "true");
+        String reportId = properties.get(Report.renderParam.reportId.name());
+        boolean showTabs = BooleanUtils.toBoolean(properties.get(Report.renderParam.showTabs.name()));
+        getViewContext().put(Report.renderParam.reportWebPart.name(), "true");
+
+        if (properties.containsKey(Report.renderParam.showSection.name()))
+            getViewContext().put(Report.renderParam.showSection.name(), properties.get(Report.renderParam.showSection.name()));
+
         if (reportId != null)
         {
             Report report = ReportService.get().getReport( NumberUtils.toInt(reportId));
