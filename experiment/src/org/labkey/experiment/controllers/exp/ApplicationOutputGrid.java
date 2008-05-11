@@ -4,6 +4,8 @@ import org.labkey.api.view.GridView;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.*;
 
+import java.util.List;
+
 /**
  * User: jeckels
 * Date: Dec 19, 2007
@@ -13,7 +15,7 @@ public class ApplicationOutputGrid extends GridView
     public ApplicationOutputGrid(Container c, Integer rowIdPA, TableInfo ti)
     {
         super(new DataRegion());
-        ColumnInfo[] cols = ti.getColumns("RowId,Name,LSID");
+        List<ColumnInfo> cols = ti.getColumns("RowId,Name,LSID");
         getDataRegion().setColumns(cols);
         getDataRegion().getDisplayColumn(0).setVisible(false);
         getDataRegion().getDisplayColumn(1).setURL(ActionURL.toPathString("Experiment", "resolveLSID", c.getPath()) + "?lsid=${LSID}");

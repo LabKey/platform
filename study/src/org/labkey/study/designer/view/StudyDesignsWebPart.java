@@ -37,7 +37,7 @@ public class StudyDesignsWebPart extends GridView
         dr.getDisplayColumn("Container").setVisible(false);
         dr.getDisplayColumn("Active").setVisible(false);
         final ActionURL studyFolderUrl = PageFlowUtil.urlProvider(ProjectUrls.class).urlStart(ctx.getContainer());
-        dr.addColumn(new DataColumn(table.getColumn("Active")) {
+        dr.addDisplayColumn(new DataColumn(table.getColumn("Active")) {
             @Override
             public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
             {

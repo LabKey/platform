@@ -91,7 +91,7 @@ public class StudyServiceImpl implements StudyService.Service
 
             // Need to remove extraneous columns
             data.remove("_row");
-            ColumnInfo[] columns = tInfo.getColumns();
+            List<ColumnInfo> columns = tInfo.getColumnsList();
             for (ColumnInfo col : columns)
             {
                 // special handling for lsid -- it's not user-editable,

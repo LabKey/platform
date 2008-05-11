@@ -269,7 +269,7 @@ public class AssayPublishManager implements AssayPublishService.Service
             propertyNamesToUris.put(pd.getName(), pd.getPropertyURI());
 
         // add hard columns to our return map
-        for (ColumnInfo col : dataset.getTableInfo(user).getColumns())
+        for (ColumnInfo col : dataset.getTableInfo(user).getColumnsList())
             propertyNamesToUris.put(col.getName(), col.getPropertyURI());
 
         // create a set of all columns that will be required, so we can detect

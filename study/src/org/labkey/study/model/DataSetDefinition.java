@@ -319,7 +319,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         {
             // NOTE: any PropetyDescriptor we hold onto will look like a leak
             // CONSIDER: make MemTracker aware of this cache
-            for (ColumnInfo col : tinfoFrom.getColumns())
+            for (ColumnInfo col : tinfoFrom.getColumnsList())
             {
                 if (col instanceof PropertyColumn)
                     assert MemTracker.remove(((PropertyColumn)col).getPropertyDescriptor());
@@ -450,7 +450,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             TableInfo studyData = StudySchema.getInstance().getTableInfoStudyData();
             TableInfo participantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
             // StudyData columns
-            ColumnInfo[] columnsBase = studyData.getColumns("lsid","participantid","sourcelsid", "created","modified");
+            List<ColumnInfo> columnsBase = studyData.getColumns("lsid","participantid","sourcelsid", "created","modified");
             for (ColumnInfo col : columnsBase)
             {
                 if (!"participantid".equals(col.getColumnName()))
@@ -524,7 +524,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             if (standardPropertySet.isEmpty())
             {
                 TableInfo info = StudySchema.getInstance().getTableInfoStudyData();
-                for (ColumnInfo col : info.getColumns())
+                for (ColumnInfo col : info.getColumnsList())
                 {
                     String propertyURI = col.getPropertyURI();
                     if (propertyURI == null)

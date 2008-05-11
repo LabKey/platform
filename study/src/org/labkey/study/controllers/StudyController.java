@@ -1952,7 +1952,7 @@ public class StudyController extends BaseStudyController
                     out.write("[<a href=\"downloadTsv.view?id=" + ctx.get("RowId") + "\">Download&nbsp;Data&nbsp;File</a>]");
                 }
             };
-            dr.addColumn(dc);
+            dr.addDisplayColumn(dc);
             dr.setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
 
             SimpleFilter filter = new SimpleFilter("container", getContainer().getId());
@@ -3280,18 +3280,18 @@ public class StudyController extends BaseStudyController
             if (study.isDateBased())
                 ignoreColumns.add("SequenceNum");
 
-            for (ColumnInfo col : tinfo.getColumns())
+            for (ColumnInfo col : tinfo.getColumnsList())
             {
                 if (ignoreColumns.contains(col.getName()))
                     continue;
                 DataColumn dc = new DataColumn(col);
                 //DO NOT use friendly names. We will import this later.
                 dc.setCaption(col.getAlias());
-                dr.addColumn(dc);
+                dr.addDisplayColumn(dc);
             }
             DisplayColumn replaceColumn = new SimpleDisplayColumn();
             replaceColumn.setCaption("replace");
-            dr.addColumn(replaceColumn);
+            dr.addDisplayColumn(replaceColumn);
 
             SimpleFilter filter = new SimpleFilter();
             filter.addWhereClause("0 = 1", new Object[]{});

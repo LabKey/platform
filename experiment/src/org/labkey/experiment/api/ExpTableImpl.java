@@ -59,7 +59,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
 
     public ColumnInfo getColumn(C column)
     {
-        for (ColumnInfo info : getColumns())
+        for (ColumnInfo info : getColumnsList())
         {
             if (info instanceof ExprColumn && info.getAlias().equals(column.toString()))
             {

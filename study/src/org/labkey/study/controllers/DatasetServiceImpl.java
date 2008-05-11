@@ -64,7 +64,7 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
 
             Map<String, String> visitDateMap = new HashMap<String, String>();
             TableInfo tinfo = dd.getTableInfo(null, false, false);
-            for (ColumnInfo col : tinfo.getColumns())
+            for (ColumnInfo col : tinfo.getColumnsList())
             {
                 if (!Date.class.isAssignableFrom(col.getJavaClass()))
                     continue;

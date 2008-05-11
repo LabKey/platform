@@ -97,7 +97,7 @@ public class PipelineWebPart extends WebPartView
         col.setVisible(false);
         col = new DescriptionDisplayColumn(uriRoot);
         col.setWidth("500");
-        rgn.addColumn(col);
+        rgn.addDisplayColumn(col);
 
         String referer = PipelineController.RefererValues.protal.toString();
         ButtonBar bb = new ButtonBar();

@@ -79,13 +79,13 @@ public class QQuery extends QExpr
             return;
         }
         builder.append("(");
-        builder.append(Table.getSelectSQL(table, table.getColumns(), null, null));
+        builder.append(Table.getSelectSQL(table, table.getColumnsList(), null, null));
         builder.append(")");
     }
 
     public void syntaxCheck(List<? super QueryParseException> errors)
     {
-        List<QNode> children = new LinkedList();
+        List<QNode> children = new LinkedList<QNode>();
         children.add(this);
         while (!children.isEmpty())
         {

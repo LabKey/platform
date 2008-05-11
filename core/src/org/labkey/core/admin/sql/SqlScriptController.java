@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -309,7 +308,7 @@ public class SqlScriptController extends SpringActionController
             DataRegion rgn = new DataRegion();
             rgn.setSelectionKey(DataRegionSelection.getSelectionKey(SqlScriptManager.getTableInfo().getSchema().getName(), SqlScriptManager.getTableInfo().getName(), null, "OldScriptsView"));
             rgn.setShowRecordSelectors(true);
-            rgn.setDisplayColumns(new ArrayList<DisplayColumn>(Arrays.asList(SqlScriptManager.getTableInfo().getDisplayColumns("FileName, Modified, ModifiedBy"))));
+            rgn.setColumns(SqlScriptManager.getTableInfo().getColumns("FileName, Modified, ModifiedBy"));
             rgn.getDisplayColumn(0).setURL(cloneUrl.setAction("showScript").getLocalURIString() + "&fileName=${FileName}");
 
             ActionButton deleteAll = new ActionButton("deleteAll", "Mark All As \"New\"");

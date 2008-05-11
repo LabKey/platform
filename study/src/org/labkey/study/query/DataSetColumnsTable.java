@@ -52,7 +52,7 @@ public class DataSetColumnsTable extends FilteredTable
         defaultCols.add(FieldKey.fromParts("DataSet", "Name"));
         defaultCols.add(FieldKey.fromParts("DataSet", "Label"));
 
-        for (ColumnInfo baseColumn : _rootTable.getColumns())
+        for (ColumnInfo baseColumn : _rootTable.getColumnsList())
         {
             String name = baseColumn.getName();
             if ("Container".equalsIgnoreCase(name) || "EntityId".equalsIgnoreCase(name))

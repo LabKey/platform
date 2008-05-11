@@ -442,7 +442,7 @@ public class SpecimenUtils
         DataColumn commentsColumn = (DataColumn) rgn.getDisplayColumn("Comments");
         commentsColumn.setWidth("50%");
         commentsColumn.setPreserveNewlines(true);
-        rgn.addColumn(new AttachmentDisplayColumn(request));
+        rgn.addDisplayColumn(new AttachmentDisplayColumn(request));
         rgn.setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
         GridView grid = new GridView(rgn);
         grid.setFilter(filter);

@@ -5,6 +5,7 @@
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page import="java.sql.SQLException" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<IssuesController.IssuesPreference> me = (JspView<IssuesController.IssuesPreference>) HttpView.currentView();
@@ -15,10 +16,10 @@
         <tr><td class=normal colspan=2 align=center><div class="ms-searchform"><b>Required Fields for Issues</b></div></td></tr>
         <tr><td class=normal colspan=2>Select fields to be required when entering or updating an issue:</td></tr>
     <%
-        ColumnInfo[] columns = bean.getColumns();
-        for (int i = 0; i < columns.length; i++)
+        List<ColumnInfo> columns = bean.getColumns();
+        for (int i = 0; i < columns.size(); i++)
         {
-            ColumnInfo info = columns[i];
+            ColumnInfo info = columns.get(i);
             boolean startNewRow = i % 2 == 0;
             if (startNewRow)
             {

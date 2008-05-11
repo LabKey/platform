@@ -197,7 +197,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             case RowId:
             {
                 ColumnInfo ret = wrapColumn(alias, _rootTable.getColumn("RowId"));
-                if (getPkColumns().length == 0)
+                if (getPkColumns().isEmpty())
                     ret.setKeyField(true);
                 ret.setFk(new RowIdForeignKey(ret));
                 ret.setIsHidden(true);

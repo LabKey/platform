@@ -5,6 +5,8 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.*;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
+import java.util.List;
+
 /**
  * User: jeckels
 * Date: Jan 24, 2008
@@ -44,14 +46,14 @@ public class GraphMoreGrid extends GridView
         else
             runIdParam="?rowId=${RunId}";
 
-        ColumnInfo[] cols = ti.getColumns("RowId,Name,LSID,RunId");
+        List<ColumnInfo> cols = ti.getColumns("RowId,Name,LSID,RunId");
         getDataRegion().setColumns(cols);
         getDataRegion().getDisplayColumn(0).setVisible(false);
         getDataRegion().getDisplayColumn(1).setURL(ActionURL.toPathString("Experiment", "resolveLSID", c.getPath()) + "?lsid=${LSID}");
         getDataRegion().getDisplayColumn(2).setVisible(false);
         getDataRegion().getDisplayColumn(3).setVisible(false);
 
-        getDataRegion().addColumn(new SimpleDisplayColumn("[Lineage Graph]"));
+        getDataRegion().addDisplayColumn(new SimpleDisplayColumn("[Lineage Graph]"));
         getDataRegion().getDisplayColumn(4).setWidth("200px");
         getDataRegion().getDisplayColumn(4).setURL(ActionURL.toPathString("Experiment", "showRunGraphDetail", c.getPath())
                 + runIdParam + "&detail=true&focus=" + objectType + "${rowId}");

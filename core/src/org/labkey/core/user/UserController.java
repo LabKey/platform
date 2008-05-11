@@ -86,7 +86,7 @@ public class UserController extends SpringActionController
         boolean isAdministrator = user.isAdministrator();
         SiteUserDataRegion rgn = new SiteUserDataRegion();
 
-        ColumnInfo[] cols = CoreSchema.getInstance().getTableInfoUsers().getColumns(getUserColumnNames(user));
+        List<ColumnInfo> cols = CoreSchema.getInstance().getTableInfoUsers().getColumns(getUserColumnNames(user));
         List<DisplayColumn> displayColumns = new ArrayList<DisplayColumn>();
         final String requiredFields = UserManager.getRequiredUserFields();
         for (ColumnInfo col : cols)
@@ -104,14 +104,14 @@ public class UserController extends SpringActionController
         SimpleDisplayColumn accountDetails = new SimpleDisplayColumn("[Details]");
         accountDetails.setURL(ActionURL.toPathString("User", "details.view", "") + "?userId=${UserId}");
         accountDetails.setDisplayModes(DataRegion.MODE_GRID);
-        rgn.addColumn(0, accountDetails);
+        rgn.addDisplayColumn(0, accountDetails);
 
         if (isAdministrator)
         {
             SimpleDisplayColumn securityDetails = new SimpleDisplayColumn("[Permissions]");
             securityDetails.setURL(ActionURL.toPathString("User", "userAccess.view", "") + "?userId=${UserId}");
             securityDetails.setDisplayModes(DataRegion.MODE_GRID);
-            rgn.addColumn(1, securityDetails);
+            rgn.addDisplayColumn(1, securityDetails);
         }
 
         ButtonBar gridButtonBar = new ButtonBar();
@@ -357,7 +357,7 @@ public class UserController extends SpringActionController
                 if (isValidRequiredField(name))
                     columnNames.add(name);
             }
-            ColumnInfo[] cols = CoreSchema.getInstance().getTableInfoUsers().getColumns(columnNames.toArray(new String[0]));
+            List<ColumnInfo> cols = CoreSchema.getInstance().getTableInfoUsers().getColumns(columnNames.toArray(new String[0]));
             UserPreference bean = new UserPreference(cols, UserManager.getRequiredUserFields());
             JspView<UserPreference> view = new JspView<UserPreference>("/org/labkey/core/user/userPreferences.jsp", bean);
 
@@ -461,16 +461,16 @@ public class UserController extends SpringActionController
 
     public static class UserPreference
     {
-        private ColumnInfo[] _columns;
+        private List<ColumnInfo> _columns;
         private String _requiredFields;
 
-        public UserPreference(ColumnInfo[] columns, String requiredFields)
+        public UserPreference(List<ColumnInfo> columns, String requiredFields)
         {
             _columns = columns;
             _requiredFields = requiredFields;
         }
 
-        public ColumnInfo[] getColumns(){return _columns;}
+        public List<ColumnInfo> getColumns(){return _columns;}
         public String getRequiredFields(){return _requiredFields;}
     }
 
@@ -816,14 +816,14 @@ public class UserController extends SpringActionController
         if (user != null && required != null && required.length() > 0)
         {
             DataRegion rgn = new DataRegion();
-            ColumnInfo[] columns = CoreSchema.getInstance().getTableInfoUsers().getColumns(getUserColumnNames(null));
+            List<ColumnInfo> columns = CoreSchema.getInstance().getTableInfoUsers().getColumns(getUserColumnNames(null));
             rgn.setColumns(columns);
 
             TableInfo info = rgn.getTable();
             SimpleFilter filter = new SimpleFilter();
             filter.addCondition("userId", user.getUserId(), CompareType.EQUAL);
 
-            Table.TableResultSet trs = Table.select(info, columns, filter, null );
+            Table.TableResultSet trs = Table.select(info, columns, filter, null);
             try {
                 // this should really only return one row
                 if (trs.next())

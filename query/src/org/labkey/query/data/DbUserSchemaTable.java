@@ -2,17 +2,17 @@ package org.labkey.query.data;
 
 import org.labkey.api.data.*;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryUpdateForm;
-import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.security.User;
-import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.TableType;
 import org.labkey.query.controllers.dbuserschema.DbUserSchemaController;
 import org.labkey.query.view.DbUserSchema;
 
 import java.util.Arrays;
+import java.util.List;
 
 public class DbUserSchemaTable extends FilteredTable
 {
@@ -35,7 +35,7 @@ public class DbUserSchemaTable extends FilteredTable
 
     protected void resetFks()
     {
-        for(ColumnInfo col : getColumns())
+        for(ColumnInfo col : getColumnsList())
         {
             //if the column has an fk AND if the fk table comes from the same schema
             //reset the fk so that it creates the table through the schema, thus returning
@@ -54,8 +54,8 @@ public class DbUserSchemaTable extends FilteredTable
                 String pkColName = null;
                 if(col.getFk() instanceof ColumnInfo.SchemaForeignKey)
                     pkColName = ((ColumnInfo.SchemaForeignKey)col.getFk()).getColumnName();
-                if(null == pkColName && col.getFkTableInfo().getPkColumnNames().length == 1)
-                    pkColName = col.getFkTableInfo().getPkColumnNames()[0];
+                if(null == pkColName && col.getFkTableInfo().getPkColumnNames().size() == 1)
+                    pkColName = col.getFkTableInfo().getPkColumnNames().get(0);
 
                 if(null != pkColName)
                 {
@@ -75,9 +75,9 @@ public class DbUserSchemaTable extends FilteredTable
     {
         if (!_schema.areTablesEditable())
             return false;
-        ColumnInfo[] columns = getPkColumns();
+        List<ColumnInfo> columns = getPkColumns();
         // Consider: allow multi-column keys
-        if (columns.length != 1)
+        if (columns.size() != 1)
         {
             return false;
         }
@@ -105,9 +105,9 @@ public class DbUserSchemaTable extends FilteredTable
     public ActionURL delete(User user, ActionURL srcURL, QueryUpdateForm form) throws Exception
     {
         String[] ids = form.getRequest().getParameterValues(DataRegion.SELECT_CHECKBOX_NAME);
-        ColumnInfo[] pk = getPkColumns();
-        if (pk.length != 1)
-            throw new IllegalStateException("Primary key must have 1 column in it, found: " + pk.length);
+        List<ColumnInfo> pk = getPkColumns();
+        if (pk.size() != 1)
+            throw new IllegalStateException("Primary key must have 1 column in it, found: " + pk.size());
 
 
         SimpleFilter filter = new SimpleFilter();
@@ -115,7 +115,7 @@ public class DbUserSchemaTable extends FilteredTable
         {
             filter.addCondition("container", _containerId);
         }
-        filter.addInClause(pk[0].getName(), Arrays.asList(ids));
+        filter.addInClause(pk.get(0).getName(), Arrays.asList(ids));
         Table.delete(getRealTable(), filter);
         return srcURL;
     }

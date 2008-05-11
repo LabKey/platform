@@ -357,7 +357,6 @@ core/src/org/labkey/core/test/TestController.java -text
 core/src/org/labkey/core/test/complex.jsp -text
 core/src/org/labkey/core/test/form.jsp -text
 core/src/org/labkey/core/test/tags.jsp -text
-core/src/org/labkey/core/user/changeEmail.gm -text
 core/src/org/labkey/core/user/changeEmail.jsp -text
 core/src/org/labkey/core/user/userAccess.jsp -text
 core/src/org/labkey/core/user/userPreferences.jsp -text

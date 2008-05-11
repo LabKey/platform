@@ -9,16 +9,15 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.report.AbstractReport;
-import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
 import org.labkey.common.tools.TabLoader;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
@@ -162,7 +161,7 @@ public class ExternalReport extends AbstractReport
 //                QuerySchema schema = QueryService.get().getUserSchema(viewContext.getUser(), viewContext.getContainer(),  "study");
                 UserSchema schema = getStudyQuerySchema(viewContext.getUser(), ACL.PERM_READ, viewContext);
                 TableInfo mainTable = schema.getTable(getQueryName(), "Dataset");
-                rs = Table.select(mainTable, mainTable.getColumns(), null, null);
+                rs = Table.select(mainTable, mainTable.getColumnsList(), null, null);
             }
 
             TSVGridWriter tsv = new TSVGridWriter(rs);

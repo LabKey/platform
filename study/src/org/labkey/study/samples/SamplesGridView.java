@@ -212,7 +212,7 @@ public class SamplesGridView extends GridView
         if (allowRegionLinks)
         {
             String eventsBase = ActionURL.toPathString("Study-Samples", "sampleEvents", container.getPath());
-            rgn.addColumn(0, new SimpleDisplayColumn(
+            rgn.addDisplayColumn(0, new SimpleDisplayColumn(
                     "<a href=\"" + eventsBase + "?id=${rowid}\">[history]</a>"));
         }
         rgn.setSortable(allowRegionLinks);

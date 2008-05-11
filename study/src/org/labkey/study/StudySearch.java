@@ -114,7 +114,7 @@ def:    for (DataSetDefinition def : defs)
             try
             {
                 TableInfo table = def.getTableInfo(HttpView.currentContext().getUser(), false, false);
-                ColumnInfo[] columns = table.getColumns();
+                List<ColumnInfo> columns = table.getColumnsList();
                 for (ColumnInfo column : columns)
                 {
                     if (!column.isHidden() && parser.matches(column.getCaption()))

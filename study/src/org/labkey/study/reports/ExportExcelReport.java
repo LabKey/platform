@@ -157,8 +157,8 @@ public class ExportExcelReport extends RedirectReport
             String label = def.getLabel() != null ? def.getLabel() : String.valueOf(def.getDataSetId());
 
             // Filter out labkey-specific columns, lsid and sourcelsid
-            ColumnInfo[] columns = tinfo.getColumns();
-            List<ColumnInfo> destColumns = new ArrayList<ColumnInfo>(columns.length - 2);
+            List<ColumnInfo> columns = tinfo.getColumnsList();
+            List<ColumnInfo> destColumns = new ArrayList<ColumnInfo>(columns.size() - 2);
             for (ColumnInfo column : columns)
             {
                 String name = column.getName();
@@ -168,7 +168,7 @@ public class ExportExcelReport extends RedirectReport
                 }
             }
 
-            writer.setColumns(destColumns.toArray(new ColumnInfo[destColumns.size()]));
+            writer.setColumns(destColumns);
             renderSheet(workbook, writer, label, rs);
         }
 

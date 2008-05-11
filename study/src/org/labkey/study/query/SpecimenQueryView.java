@@ -466,7 +466,7 @@ public class SpecimenQueryView extends StudyQueryView
             {
                 rgn.setRecordSelectorValueColumns("RowId");
                 String eventsBase = ActionURL.toPathString("Study-Samples", "sampleEvents", getContainer().getPath());
-                rgn.addColumn(0, new SimpleDisplayColumn("<a href=\"" + eventsBase + "?selected=" +
+                rgn.addDisplayColumn(0, new SimpleDisplayColumn("<a href=\"" + eventsBase + "?selected=" +
                         Boolean.toString(_participantVisitFiltered) + "&id=${rowid}\">[history]</a>"));
             }
             rgn.setAggregates(new Aggregate(getTable().getColumn("Volume"), Aggregate.Type.SUM),
@@ -507,7 +507,7 @@ public class SpecimenQueryView extends StudyQueryView
                 boolean zeroVialIndicator = settings.getZeroVialsEnum() == SampleManager.DisplaySettings.DisplayOption.ALL_USERS ||
                         (settings.getZeroVialsEnum() == SampleManager.DisplaySettings.DisplayOption.ADMINS_ONLY &&
                                 getUser().isAdministrator());
-                rgn.addColumn(0, new LastSpecimenDisplayColumn(getTable(), zeroVialIndicator, oneVialIndicator));
+                rgn.addDisplayColumn(0, new LastSpecimenDisplayColumn(getTable(), zeroVialIndicator, oneVialIndicator));
             }
             catch (SQLException e)
             {

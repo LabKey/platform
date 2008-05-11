@@ -1223,7 +1223,7 @@ public class IssuesController extends SpringActionController
             {
                 DataRegion r = new DataRegion();
                 TableInfo tinfo = IssuesSchema.getInstance().getTableInfoIssues();
-                ColumnInfo[] cols = tinfo.getColumns("IssueId,Created,Area,Title,AssignedTo,Priority,Status,Milestone");
+                List<ColumnInfo> cols = tinfo.getColumns("IssueId,Created,Area,Title,AssignedTo,Priority,Status,Milestone");
                 r.addColumns(cols);
 
                 rs = r.getResultSet(new RenderContext(getViewContext()));
@@ -1462,7 +1462,7 @@ public class IssuesController extends SpringActionController
             List<String> columnNames = new ArrayList<String>();
             columnNames.addAll(Arrays.asList(REQUIRED_FIELDS_COLUMNS.split(",")));
             columnNames.addAll(IssuesTable.getCustomColumnCaptions(c).keySet());
-            ColumnInfo[] cols = IssuesSchema.getInstance().getTableInfoIssues().getColumns(columnNames.toArray(new String[0]));
+            List<ColumnInfo> cols = IssuesSchema.getInstance().getTableInfoIssues().getColumns(columnNames.toArray(new String[0]));
 
             IssuesController.IssuesPreference bean = new IssuesController.IssuesPreference(cols, IssueManager.getRequiredIssueFields(c));
             _requiredFieldsView = new JspView<IssuesController.IssuesPreference>("/org/labkey/issue/requiredFields.jsp", bean);
@@ -1938,16 +1938,16 @@ public class IssuesController extends SpringActionController
 
     public static class IssuesPreference
     {
-        private ColumnInfo[] _columns;
+        private List<ColumnInfo> _columns;
         private String _requiredFields;
 
-        public IssuesPreference(ColumnInfo[] columns, String requiredFields)
+        public IssuesPreference(List<ColumnInfo> columns, String requiredFields)
         {
             _columns = columns;
             _requiredFields = requiredFields;
         }
 
-        public ColumnInfo[] getColumns(){return _columns;}
+        public List<ColumnInfo> getColumns(){return _columns;}
         public String getRequiredFields(){return _requiredFields;}
     }
 

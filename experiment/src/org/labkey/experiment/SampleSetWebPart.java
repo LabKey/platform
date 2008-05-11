@@ -51,7 +51,7 @@ public class SampleSetWebPart extends WebPartView<Object>
     {
         DataRegion result = getMaterialSourceRegion(model, ExperimentServiceImpl.get().getTinfoMaterialSourceWithProject());
         ActionURL url = new ActionURL("Experiment", "listMaterialSources", "dummyContainer");
-        result.addColumn(new ContainerDisplayColumn(ExperimentServiceImpl.get().getTinfoMaterialSourceWithProject().getColumn("Container"), url));
+        result.addDisplayColumn(new ContainerDisplayColumn(ExperimentServiceImpl.get().getTinfoMaterialSourceWithProject().getColumn("Container"), url));
 
         if (_narrow)
         {
@@ -86,7 +86,7 @@ public class SampleSetWebPart extends WebPartView<Object>
         url.setPageFlow("Experiment");
         dr.getDisplayColumn(1).setURL(url.relativeUrl("showMaterialSource", "rowId=${RowId}"));
         dr.setShowRecordSelectors(model.hasPermission(ACL.PERM_DELETE) || model.hasPermission(ACL.PERM_UPDATE));
-        dr.addColumn(0, new ActiveSampleSetColumn(model.getContainer()));
+        dr.addDisplayColumn(0, new ActiveSampleSetColumn(model.getContainer()));
 
         ButtonBar bb = new ButtonBar();
 

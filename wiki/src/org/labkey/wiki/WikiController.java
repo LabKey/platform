@@ -1738,18 +1738,18 @@ public class WikiController extends SpringActionController
 
             //version url
             DataColumn versionData = new DataColumn(tinfoVersions.getColumn("Version"));
-            dr.addColumn(versionData);
+            dr.addDisplayColumn(versionData);
 
-            dr.addColumn(new DataColumn(tinfoVersions.getColumn("Title")));
+            dr.addDisplayColumn(new DataColumn(tinfoVersions.getColumn("Title")));
             dr.addColumn(entityIdLookup);
-            dr.addColumn(containerData);
+            dr.addDisplayColumn(containerData);
 
             ColumnInfo colCreatedBy = tinfoVersions.getColumn("CreatedBy");
             // Set a custom renderer for the CreatedBy column
             DisplayColumn dc = new DisplayColumnCreatedBy(colCreatedBy);
-            dr.addColumn(dc);
+            dr.addDisplayColumn(dc);
 
-            dr.addColumn(new DataColumn(tinfoVersions.getColumn("Created")));
+            dr.addDisplayColumn(new DataColumn(tinfoVersions.getColumn("Created")));
 
             //url displays version
             ActionURL urlVersion = wikiURL("version", "name", wikiname);

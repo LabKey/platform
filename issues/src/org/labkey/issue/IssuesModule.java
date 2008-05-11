@@ -236,7 +236,7 @@ public class IssuesModule extends DefaultModule implements ContainerManager.Cont
     private void doPopulateCommentEntityIds() throws SQLException
     {
         TableInfo tinfo = IssuesSchema.getInstance().getTableInfoComments();
-        Table.TableResultSet rs = Table.select(tinfo, tinfo.getColumns(), null, null);
+        Table.TableResultSet rs = Table.select(tinfo, tinfo.getColumnsList(), null, null);
         String sql = "UPDATE " + tinfo + " SET EntityId = ? WHERE CommentId = ? AND IssueId = ?";
 
         try {

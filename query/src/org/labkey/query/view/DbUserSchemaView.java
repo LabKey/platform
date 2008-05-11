@@ -1,18 +1,17 @@
 package org.labkey.query.view;
 
-import org.labkey.api.query.QueryView;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.DetailsURL;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.DataView;
 import org.labkey.api.data.*;
+import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.security.ACL;
-import org.labkey.query.data.DbUserSchemaTable;
+import org.labkey.api.view.DataView;
 import org.labkey.query.controllers.dbuserschema.DbUserSchemaController;
+import org.labkey.query.data.DbUserSchemaTable;
 
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 public class DbUserSchemaView extends QueryView
 {
@@ -38,14 +37,14 @@ public class DbUserSchemaView extends QueryView
 
     public List<DisplayColumn> getDisplayColumns()
     {
-        List<DisplayColumn> ret = new ArrayList(super.getDisplayColumns());
+        List<DisplayColumn> ret = new ArrayList<DisplayColumn>(super.getDisplayColumns());
         TableInfo table = getTable();
         if (table instanceof DbUserSchemaTable)
         {
             DbUserSchemaTable dbUserSchemaTable = (DbUserSchemaTable) table;
             if (table.hasPermission(getUser(), ACL.PERM_UPDATE) && !isPrintView() && !isExportView())
             {
-                DetailsURL durl = new DetailsURL(dbUserSchemaTable.urlFor(DbUserSchemaController.Action.update), Collections.singletonMap("pk", dbUserSchemaTable.getPkColumns()[0].getName()));
+                DetailsURL durl = new DetailsURL(dbUserSchemaTable.urlFor(DbUserSchemaController.Action.update), Collections.singletonMap("pk", dbUserSchemaTable.getPkColumns().get(0).getName()));
                 ret.add(0, new UrlColumn(durl.getURL(Table.createColumnMap(getTable(), null)), "edit"));
 
             }

@@ -71,11 +71,11 @@ public class AuditQueryViewImpl extends AuditLogQueryView
             view.getRenderContext().setBaseSort(_sort);
 
         for (DisplayColumn dc : _displayColumns)
-            view.getDataRegion().addColumn(dc);
+            view.getDataRegion().addDisplayColumn(dc);
 
         for (Map.Entry<Integer, DisplayColumn> entry : _indexedColumns.entrySet())
         {
-            view.getDataRegion().addColumn(entry.getKey(), entry.getValue());
+            view.getDataRegion().addDisplayColumn(entry.getKey(), entry.getValue());
         }
 
         setupView(view);

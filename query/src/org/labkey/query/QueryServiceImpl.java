@@ -126,8 +126,8 @@ public class QueryServiceImpl extends QueryService
 
             if (ret != null && key.getName().equals(table.getTitleColumn()) && ret.getURL() == null)
             {
-                ColumnInfo[] pkColumns = table.getPkColumns();
-                Map<String, ColumnInfo> pkColumnMap = new HashMap();
+                List<ColumnInfo> pkColumns = table.getPkColumns();
+                Map<String, ColumnInfo> pkColumnMap = new HashMap<String, ColumnInfo>();
                 for (ColumnInfo column : pkColumns)
                 {
                     pkColumnMap.put(column.getName(), column);
@@ -286,7 +286,7 @@ public class QueryServiceImpl extends QueryService
 
     public Map<String, UserSchema> getDbUserSchemas(DefaultSchema folderSchema)
     {
-        Map<String, UserSchema> ret = new HashMap();
+        Map<String, UserSchema> ret = new HashMap<String, UserSchema>();
         DbUserSchemaDef[] defs = QueryManager.get().getDbUserSchemaDefs(folderSchema.getContainer());
         for (DbUserSchemaDef def : defs)
         {
@@ -295,9 +295,9 @@ public class QueryServiceImpl extends QueryService
         return ret;
     }
 
-    public List<FieldKey> getDefaultVisibleColumns(ColumnInfo[] columns)
+    public List<FieldKey> getDefaultVisibleColumns(List<ColumnInfo> columns)
     {
-        List<FieldKey> ret = new ArrayList();
+        List<FieldKey> ret = new ArrayList<FieldKey>();
         for (ColumnInfo column : columns)
         {
             if (column.isHidden())
@@ -313,6 +313,6 @@ public class QueryServiceImpl extends QueryService
     {
         List<ColumnInfo> lstColumns = new ArrayList(Arrays.asList(columns));
         ensureRequiredColumns(table, lstColumns, filter, sort, null);
-        return Table.selectForDisplay(table, lstColumns.toArray(new ColumnInfo[0]), filter, sort, 0, 0);
+        return Table.selectForDisplay(table, lstColumns, filter, sort, 0, 0);
     }
 }

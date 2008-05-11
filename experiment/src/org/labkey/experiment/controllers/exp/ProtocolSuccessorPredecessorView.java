@@ -9,6 +9,7 @@ import org.labkey.experiment.api.ExperimentServiceImpl;
 
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * User: jeckels
@@ -22,10 +23,10 @@ public class ProtocolSuccessorPredecessorView extends GridView
     {
         super(new DataRegion());
         TableInfo ti = ExperimentServiceImpl.get().getTinfoProtocolActionPredecessorLSIDView();
-        ColumnInfo[] cols = ti.getColumns(lsidSelectColumn, sequenceSelectColumn);
+        List<ColumnInfo> cols = ti.getColumns(lsidSelectColumn, sequenceSelectColumn);
         getDataRegion().setColumns(cols);
-        getDataRegion().addColumn(0, new ProtocolNameDisplayColumn(lsidSelectColumn, _protocolCache, "Name"));
-        getDataRegion().addColumn(new ProtocolDescriptionDisplayColumn(lsidSelectColumn, _protocolCache));
+        getDataRegion().addDisplayColumn(0, new ProtocolNameDisplayColumn(lsidSelectColumn, _protocolCache, "Name"));
+        getDataRegion().addDisplayColumn(new ProtocolDescriptionDisplayColumn(lsidSelectColumn, _protocolCache));
         getDataRegion().getDisplayColumn(0).setURL(ActionURL.toPathString("Experiment", "protocolPredecessors", c.getPath()) + "?ParentLSID=" + parentProtocolLSID + "&Sequence=${" + sequenceSelectColumn + "}");
         getDataRegion().getDisplayColumn(0).setTextAlign("left");
 

@@ -563,7 +563,7 @@ public class StatusController extends SpringActionController
             DataRegion rgn = new DataRegion();
 
             rgn.setColumns(getTableInfo().getColumns("Created, Modified, Job, Provider, Email, Status, Info, FilePath, DataUrl"));
-            rgn.addColumn(new FileDisplayColumn());
+            rgn.addDisplayColumn(new FileDisplayColumn());
             DisplayColumn col = rgn.getDisplayColumn("Job");
             col.setVisible(false);
             col = rgn.getDisplayColumn("Provider");
@@ -765,7 +765,7 @@ public class StatusController extends SpringActionController
 
             col.setVisible(false);
             col = new DescriptionDisplayColumn(uriRoot);
-            rgn.addColumn(col);
+            rgn.addDisplayColumn(col);
         }
 
         // Make table layout faster on IE
@@ -818,7 +818,7 @@ public class StatusController extends SpringActionController
             bb.add(showQueue);
         }
 
-        rgn.addColumn(new HideShowRetryColumn(bb));
+        rgn.addDisplayColumn(new HideShowRetryColumn(bb));
 
         rgn.setButtonBar(bb, DataRegion.MODE_GRID);
         rgn.setShowRecordSelectors(true);
@@ -832,7 +832,7 @@ public class StatusController extends SpringActionController
         DataRegion rgn = new DataRegion();
 
         rgn.setColumns(getTableInfo().getColumns("Created, Modified, Job, Provider, Email, Status, Info, FilePath, DataUrl"));
-        rgn.addColumn(new FileDisplayColumn());
+        rgn.addDisplayColumn(new FileDisplayColumn());
         DisplayColumn col = rgn.getDisplayColumn("Job");
         col.setVisible(false);
         col = rgn.getDisplayColumn("Provider");

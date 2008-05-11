@@ -750,7 +750,7 @@ public class SecurityController extends SpringActionController
             List<Pair<Integer, String>> members = SecurityManager.getGroupMemberNamesAndIds(group);
 
             DataRegion rgn = new DataRegion();
-            ColumnInfo[] columns = CoreSchema.getInstance().getTableInfoUsers().getColumns(UserController.getUserColumnNames(getUser()));
+            List<ColumnInfo> columns = CoreSchema.getInstance().getTableInfoUsers().getColumns(UserController.getUserColumnNames(getUser()));
             rgn.setColumns(columns);
             RenderContext ctx = new RenderContext(getViewContext());
             List<Integer> userIds = new ArrayList<Integer>();

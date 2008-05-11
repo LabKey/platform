@@ -271,7 +271,7 @@ public class ReportManager
         columns.addAll(Arrays.asList(propertyColumns));
 
         ResultSet rs;
-        rs = Table.selectForDisplay(tinfo, columns.toArray(new ColumnInfo[0]), filter, null, 0, 0);
+        rs = Table.selectForDisplay(tinfo, columns, filter, null, 0, 0);
         return rs;
     }
 

@@ -1241,7 +1241,7 @@ public class SampleManager
         if (specimen == null)
             return new Integer[0];
         SimpleFilter filter = new SimpleFilter("SpecimenGlobalUniqueId", specimen.getGlobalUniqueId());
-        ColumnInfo[] cols = new ColumnInfo[] { _tableInfoRequestSpecimen.getColumn("SampleRequestId") };
+        List<ColumnInfo> cols = Arrays.asList(_tableInfoRequestSpecimen.getColumn("SampleRequestId"));
         Table.TableResultSet rs = Table.select(_tableInfoRequestSpecimen, cols, filter, null);
         List<Integer> rowIdList = new ArrayList<Integer>();
         while (rs.next())
@@ -1349,7 +1349,7 @@ public class SampleManager
                 try
                 {
                     if (isLookup)
-                        rs = Table.select(tinfo, new ColumnInfo[]{tinfo.getColumn(tinfo.getTitleColumn())}, null,
+                        rs = Table.select(tinfo, Arrays.asList(tinfo.getColumn(tinfo.getTitleColumn())), null,
                                 new Sort(tinfo.getTitleColumn()));
                     else
                     {

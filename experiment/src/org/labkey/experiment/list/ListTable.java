@@ -87,7 +87,7 @@ public class ListTable extends FilteredTable
 
         // Do separate pass for safety -- we must wait until column initialization is complete (FKs are set, etc.) to
         // check getInputType(), otherwise it may stash an incorrect, intermediate result.
-        for (ColumnInfo col : getColumns())
+        for (ColumnInfo col : getColumnsList())
         {
             if ("file".equals(col.getInputType()))
             {
@@ -119,7 +119,7 @@ public class ListTable extends FilteredTable
         }
 
         // Title column setting is <AUTO> -- select the first string column
-        for (ColumnInfo column : getColumns())
+        for (ColumnInfo column : getColumnsList())
             if (column.isStringType())
                 return column.getName();
 

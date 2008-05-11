@@ -99,7 +99,7 @@ public class DataSetQueryView extends QueryView
                 sourceLsidDisplayCol.setVisible(false);
             if (_showSourceLinks)
             {
-                view.getDataRegion().addColumn(0, new DatasetDetailsColumn(view.getRenderContext().getContainer(),
+                view.getDataRegion().addDisplayColumn(0, new DatasetDetailsColumn(view.getRenderContext().getContainer(),
                         sourceLsidCol));
             }
         }
@@ -108,7 +108,7 @@ public class DataSetQueryView extends QueryView
         {
             TableInfo tableInfo = view.getDataRegion().getTable();
             ColumnInfo lsidColumn = tableInfo.getColumn("lsid");
-            view.getDataRegion().addColumn(0, new DatasetEditColumn(view.getRenderContext().getContainer(), lsidColumn));
+            view.getDataRegion().addDisplayColumn(0, new DatasetEditColumn(view.getRenderContext().getContainer(), lsidColumn));
         }
         return view;
     }

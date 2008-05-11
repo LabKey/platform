@@ -21,6 +21,7 @@ import org.labkey.api.security.ACL;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
 import java.io.PrintWriter;
+import java.util.List;
 
 /**
  * User: jeckels
@@ -49,7 +50,7 @@ public class ProtocolWebPart extends WebPartView
 
         DataRegion dr = new DataRegion();
         TableInfo ti = ExperimentServiceImpl.get().getTinfoProtocol();
-        ColumnInfo[] cols = ti.getColumns("RowId,Name,LSID");
+        List<ColumnInfo> cols = ti.getColumns("RowId,Name,LSID");
         dr.setColumns(cols);
         dr.getDisplayColumn(0).setVisible(false);
         dr.getDisplayColumn(1).setURL(ActionURL.toPathString("Experiment", "protocolDetails", c.getPath()) + "?rowId=${RowId}");

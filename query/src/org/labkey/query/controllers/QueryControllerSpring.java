@@ -1453,14 +1453,14 @@ public class QueryControllerSpring extends SpringActionController
 
         protected Object getRowId(TableInfo table, Map row)
         {
-            ColumnInfo[] pkCols = table.getPkColumns();
-            if(1 == pkCols.length)
-                return row.get(pkCols[0].getName());
+            List<ColumnInfo> pkCols = table.getPkColumns();
+            if (1 == pkCols.size())
+                return row.get(pkCols.get(0).getName());
             else
             {
-                Object[] pkVals = new Object[pkCols.length];
+                Object[] pkVals = new Object[pkCols.size()];
                 for(int idx = 0; idx < pkVals.length; ++idx)
-                    pkVals[idx] = row.get(pkCols[idx].getName());
+                    pkVals[idx] = row.get(pkCols.get(idx).getName());
                 return pkVals;
             }
         }
@@ -1485,7 +1485,7 @@ public class QueryControllerSpring extends SpringActionController
             //strip all read-only columns from the row map so that we don't get database
             //errors on insert/update. The Ext grid sends all column values during update
             //and other clients may do the same.
-            for(ColumnInfo col : userTable.getColumns())
+            for(ColumnInfo col : userTable.getColumnsList())
             {
                 //don't strip the PK, which will be read-only if it's auto-incr
                 if(!col.isKeyField() && isColReadOnly(col))
@@ -1679,7 +1679,7 @@ public class QueryControllerSpring extends SpringActionController
 
             //for delete, just include the key column value(s) in the reply
             Map<String,Object> responseRow = new HashMap<String,Object>();
-            for(ColumnInfo col : table.getColumns())
+            for(ColumnInfo col : table.getColumnsList())
             {
                 if(col.isKeyField())
                     responseRow.put(col.getName(), row.get(col.getName()));

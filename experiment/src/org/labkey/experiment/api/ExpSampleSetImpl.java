@@ -5,7 +5,10 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.api.*;
+import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ProtocolImplementation;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -16,7 +19,6 @@ import org.labkey.api.view.ActionURL;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class ExpSampleSetImpl extends ExpIdentifiableBaseImpl<MaterialSource> implements ExpSampleSet
@@ -190,11 +192,11 @@ public class ExpSampleSetImpl extends ExpIdentifiableBaseImpl<MaterialSource> im
             whereClause.appendStringLiteral(getLSID());
             SimpleFilter filter = new SimpleFilter();
             filter.addWhereClause(whereClause.getSQL(), whereClause.getParams().toArray());
-            List<ColumnInfo> selectColumns = new ArrayList();
-            selectColumns.addAll(Arrays.asList(tinfoProtocol.getColumns()));
+            List<ColumnInfo> selectColumns = new ArrayList<ColumnInfo>();
+            selectColumns.addAll(tinfoProtocol.getColumnsList());
             selectColumns.add(colSampleLSID);
             Protocol[] protocols = Table.select(tinfoProtocol,
-                    selectColumns.toArray(new ColumnInfo[0]), filter, null, Protocol.class);
+                    selectColumns, filter, null, Protocol.class);
             ExpProtocol[] ret = new ExpProtocol[protocols.length];
             for (int i = 0; i < protocols.length; i ++)
             {

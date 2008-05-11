@@ -181,7 +181,7 @@ public class SpecimenRequestQueryView extends StudyQueryView
             RequestOptionDisplayColumn optionCol =
                     new RequestOptionDisplayColumn(getViewContext(), _showOptionLinks, getTable().getColumn("CreatedBy"),
                             getTable().getColumn("Status"), _extraLinks);
-            rgn.addColumn(0, optionCol);
+            rgn.addDisplayColumn(0, optionCol);
         }
         rgn.setSortable(_allowSortAndFilter);
         rgn.setShowFilters(_allowSortAndFilter);

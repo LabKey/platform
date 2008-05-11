@@ -400,11 +400,11 @@ public class ExperimentController extends SpringActionController
             dr.addColumns(ExperimentServiceImpl.get().getTinfoMaterial().getUserEditableColumns());
             dr.removeColumns("RowId", "RunId", "SourceProtocolLSID", "SourceApplicationId");
             //dr.addColumns(extraProps);
-            dr.addColumn(new ExperimentRunDisplayColumn(run, "Source Experiment Run"));
-            dr.addColumn(new ProtocolDisplayColumn(sourceProtocol, "Source Protocol"));
-            dr.addColumn(new ProtocolApplicationDisplayColumn(sourceProtocolApplication, "Source Protocol Application"));
-            dr.addColumn(new LineageGraphDisplayColumn(_material, run));
-            dr.addColumn(new SampleSetDisplayColumn(_material));
+            dr.addDisplayColumn(new ExperimentRunDisplayColumn(run, "Source Experiment Run"));
+            dr.addDisplayColumn(new ProtocolDisplayColumn(sourceProtocol, "Source Protocol"));
+            dr.addDisplayColumn(new ProtocolApplicationDisplayColumn(sourceProtocolApplication, "Source Protocol Application"));
+            dr.addDisplayColumn(new LineageGraphDisplayColumn(_material, run));
+            dr.addDisplayColumn(new SampleSetDisplayColumn(_material));
 
             ButtonBar bb = new ButtonBar();
             //TODO: Can't yet edit materials uploaded from a material source
@@ -778,11 +778,11 @@ public class ExperimentController extends SpringActionController
             DataRegion dr = new DataRegion();
             dr.addColumns(ExperimentServiceImpl.get().getTinfoData().getUserEditableColumns());
             dr.removeColumns("DataFileUrl", "RowId", "RunId", "SourceProtocolLSID", "SourceApplicationId");
-            dr.addColumn(new DataFileURLDisplayColumn(_data, relativePath));
-            dr.addColumn(new ExperimentRunDisplayColumn(run, "Source Experiment Run"));
-            dr.addColumn(new ProtocolDisplayColumn(sourceProtocol, "Source Protocol"));
-            dr.addColumn(new ProtocolApplicationDisplayColumn(sourceProtocolApplication, "Source Protocol Application"));
-            dr.addColumn(new LineageGraphDisplayColumn(_data, run));
+            dr.addDisplayColumn(new DataFileURLDisplayColumn(_data, relativePath));
+            dr.addDisplayColumn(new ExperimentRunDisplayColumn(run, "Source Experiment Run"));
+            dr.addDisplayColumn(new ProtocolDisplayColumn(sourceProtocol, "Source Protocol"));
+            dr.addDisplayColumn(new ProtocolApplicationDisplayColumn(sourceProtocolApplication, "Source Protocol Application"));
+            dr.addDisplayColumn(new LineageGraphDisplayColumn(_data, run));
             DetailsView detailsView = new DetailsView(dr, _data.getRowId());
             detailsView.setTitle("Standard Properties");
             dr.setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
@@ -859,9 +859,9 @@ public class ExperimentController extends SpringActionController
             dr.addColumns(ExperimentServiceImpl.get().getTinfoProtocolApplication().getUserEditableColumns());
             DetailsView detailsView = new DetailsView(dr, form);
             dr.removeColumns("RunId", "ProtocolLSID");
-            dr.addColumn(new ExperimentRunDisplayColumn(_run));
-            dr.addColumn(new ProtocolDisplayColumn(protocol));
-            dr.addColumn(new LineageGraphDisplayColumn(_app, _run));
+            dr.addDisplayColumn(new ExperimentRunDisplayColumn(_run));
+            dr.addDisplayColumn(new ProtocolDisplayColumn(protocol));
+            dr.addDisplayColumn(new LineageGraphDisplayColumn(_app, _run));
             detailsView.setTitle("ProtocolApplication");
             dr.setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
 

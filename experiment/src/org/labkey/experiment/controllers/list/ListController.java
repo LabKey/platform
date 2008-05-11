@@ -312,7 +312,7 @@ public class ListController extends SpringActionController
                 }
                 Object oldKey = item.getKey();
                 Domain domain = list.getDomain();
-                for (ColumnInfo column : tableForm.getTable().getColumns())
+                for (ColumnInfo column : tableForm.getTable().getColumnsList())
                 {
                     if (!tableForm.hasTypedValue(column))
                         continue;

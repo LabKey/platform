@@ -2034,7 +2034,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             int runId = expRun.getRowId();
             SimpleFilter filt = new SimpleFilter("RunId", runId);
             Sort sort = new Sort("ActionSequence, RowId");
-            ExpProtocolApplicationImpl[] protocolSteps = ExpProtocolApplicationImpl.fromProtocolApplications(Table.select(getTinfoProtocolApplication(), getTinfoProtocolApplication().getColumns(), filt, sort, ProtocolApplication.class));
+            ExpProtocolApplicationImpl[] protocolSteps = ExpProtocolApplicationImpl.fromProtocolApplications(Table.select(getTinfoProtocolApplication(), getTinfoProtocolApplication().getColumnsList(), filt, sort, ProtocolApplication.class));
             expRun.setProtocolApplications(protocolSteps);
             Map<Integer, ExpProtocolApplication> protStepMap = new HashMap<Integer, ExpProtocolApplication>(protocolSteps.length);
             for (ExpProtocolApplicationImpl protocolStep : protocolSteps)
@@ -2048,7 +2048,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             sort = new Sort("RowId");
 
-            ExpMaterial[] materials = ExpMaterialImpl.fromMaterials(Table.select(getTinfoMaterial(), getTinfoMaterial().getColumns(), filt, sort, Material.class));
+            ExpMaterial[] materials = ExpMaterialImpl.fromMaterials(Table.select(getTinfoMaterial(), getTinfoMaterial().getColumnsList(), filt, sort, Material.class));
             Map<Integer, ExpMaterial> runMaterialMap = new HashMap<Integer, ExpMaterial>(materials.length);
             for (ExpMaterial mat : materials)
             {
@@ -2062,7 +2062,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 mat.storeSuccessorRunIdList(new ArrayList<Integer>());
             }
 
-            ExpDataImpl[] datas = ExpDataImpl.fromDatas(Table.select(getTinfoData(), getTinfoData().getColumns(), filt, sort, Data.class));
+            ExpDataImpl[] datas = ExpDataImpl.fromDatas(Table.select(getTinfoData(), getTinfoData().getColumnsList(), filt, sort, Data.class));
             Map<Integer, ExpDataImpl> runDataMap = new HashMap<Integer, ExpDataImpl>(datas.length);
             for (ExpDataImpl dat : datas)
             {

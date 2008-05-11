@@ -20,14 +20,10 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.HttpView;
 import org.labkey.experiment.controllers.list.ListItemAttachmentParent;
-import org.labkey.experiment.controllers.list.ListController;
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -401,12 +397,15 @@ public class ListItemImpl implements ListItem
         TableInfo table = _list.getTable(user, null);
         RenderContext ctx = new RenderContext(HttpView.currentContext());
 
-        DataColumn[] info = table.getDisplayColumns(property.getName());
-        if (info.length == 1)
+        ColumnInfo col = table.getColumn(property.getName());
+
+        if (null != col)
         {
+            DataColumn dc = new DataColumn(col); 
             ctx.setRow(rowMap);
-            return ObjectUtils.toString(info[0].getDisplayValue(ctx), "");
+            return ObjectUtils.toString(dc.getDisplayValue(ctx), "");
         }
+
         return "";
     }
 

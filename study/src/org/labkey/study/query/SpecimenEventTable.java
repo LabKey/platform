@@ -36,7 +36,7 @@ public class SpecimenEventTable extends StudyTable
     {
         super(schema, StudySchema.getInstance().getTableInfoSpecimenEvent());
 
-        for (ColumnInfo baseColumn : _rootTable.getColumns())
+        for (ColumnInfo baseColumn : _rootTable.getColumnsList())
         {
             String name = baseColumn.getName();
             if ("Container".equalsIgnoreCase(name) ||

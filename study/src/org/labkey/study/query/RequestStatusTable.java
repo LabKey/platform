@@ -14,7 +14,7 @@ public class RequestStatusTable extends StudyTable
     public RequestStatusTable(StudyQuerySchema schema)
     {
         super(schema, StudySchema.getInstance().getTableInfoSampleRequestStatus());
-        for (ColumnInfo baseColumn : _rootTable.getColumns())
+        for (ColumnInfo baseColumn : _rootTable.getColumnsList())
         {
             String name = baseColumn.getName();
             if ("Container".equalsIgnoreCase(name) || "EntityId".equalsIgnoreCase(name))

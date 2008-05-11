@@ -6,6 +6,8 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.data.*;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
+import java.util.List;
+
 /**
  * User: jeckels
 * Date: Dec 18, 2007
@@ -16,7 +18,7 @@ public class ProtocolListView extends GridView
     {
         super(new DataRegion());
         TableInfo ti = ExperimentServiceImpl.get().getTinfoProtocolActionDetails();
-        ColumnInfo[] cols = ti.getColumns("RowId,Name,LSID,ActionSequence,ProtocolDescription");
+        List<ColumnInfo> cols = ti.getColumns("RowId,Name,LSID,ActionSequence,ProtocolDescription");
         getDataRegion().setColumns(cols);
         getDataRegion().getDisplayColumn(0).setVisible(false);
         getDataRegion().getDisplayColumn(1).setURL(ActionURL.toPathString("Experiment", "protocolPredecessors", c.getPath()) + "?ParentLSID=" + protocol.getLSID() + "&Sequence=${ActionSequence}");

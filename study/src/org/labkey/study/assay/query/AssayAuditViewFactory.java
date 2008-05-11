@@ -147,7 +147,7 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
             params.put("protocolId", view.getTable().getColumn("IntKey1"));
             ColumnInfo containerId = view.getTable().getColumn("Key1");
 
-            view.getDataRegion().addColumn(0, new PublishDetailsColumn(params, containerId));
+            view.getDataRegion().addDisplayColumn(0, new PublishDetailsColumn(params, containerId));
         }
     }
 

@@ -1111,7 +1111,7 @@ public class MothershipController extends SpringActionController
 
             getDataRegion().addColumns(MothershipManager.get().getTableInfoExceptionSummary(), "ExceptionStackTraceId,Instances,StackTrace,MinSVNRevision,MaxSVNRevision,FirstReport,LastReport,BugNumber,AssignedTo");
             getDataRegion().removeColumns("StackTrace");
-            getDataRegion().addColumn(new StackTraceDisplayColumn(MothershipManager.get().getTableInfoExceptionSummary().getColumn("StackTrace")));
+            getDataRegion().addDisplayColumn(new StackTraceDisplayColumn(MothershipManager.get().getTableInfoExceptionSummary().getColumn("StackTrace")));
             getDataRegion().getDisplayColumn("ExceptionStackTraceId").setURL(getViewContext().getActionURL().relativeUrl("showStackTraceDetail", "exceptionStackTraceId=${ExceptionStackTraceId}"));
             getDataRegion().getDisplayColumn("ExceptionStackTraceId").setCaption("Exception");
             getDataRegion().getDisplayColumn("ExceptionStackTraceId").setFormatString("'#'0");
@@ -1156,7 +1156,7 @@ public class MothershipController extends SpringActionController
             {
                 aggregates.add(new Aggregate(getTable().getColumn("ExceptionCount"), Aggregate.Type.AVG));
             }
-            result.setAggregates(aggregates.toArray(new Aggregate[aggregates.size()]));
+            result.setAggregates(aggregates);
             return result;
         }
     }
@@ -1211,7 +1211,7 @@ public class MothershipController extends SpringActionController
         {
             super(new DataRegion());
             getDataRegion().addColumns(MothershipManager.get().getTableInfoExceptionReportSummary(), "ExceptionStackTraceId,Created,URL,Username,Browser");
-            getDataRegion().addColumn(new StackTraceDisplayColumn(MothershipManager.get().getTableInfoExceptionReportSummary().getColumn("StackTrace")));
+            getDataRegion().addDisplayColumn(new StackTraceDisplayColumn(MothershipManager.get().getTableInfoExceptionReportSummary().getColumn("StackTrace")));
             getDataRegion().getDisplayColumn("URL").setURL("${URL}");
             getDataRegion().getDisplayColumn("ExceptionStackTraceId").setURL("showStackTraceDetail.view?exceptionStackTraceId=${ExceptionStackTraceId}");
             getDataRegion().getDisplayColumn("ExceptionStackTraceId").setCaption("Exception");
@@ -1292,7 +1292,7 @@ public class MothershipController extends SpringActionController
 
             replacementServerInstallationColumn.setCaption("Server Installation");
             replacementServerInstallationColumn.setURL("showInstallationDetail.view?serverInstallationId=${ServerInstallationId}");
-            getDataRegion().addColumn(3, replacementServerInstallationColumn);
+            getDataRegion().addDisplayColumn(3, replacementServerInstallationColumn);
 
             ButtonBar bb = new ButtonBar();
             getDataRegion().setButtonBar(bb);
@@ -1314,10 +1314,10 @@ public class MothershipController extends SpringActionController
 
             getDataRegion().setTable(MothershipManager.get().getTableInfoExceptionStackTrace());
             getDataRegion().addColumns(MothershipManager.get().getTableInfoExceptionStackTrace(), "ExceptionStackTraceId,StackTrace,BugNumber,Comments");
-            getDataRegion().addColumn(new AssignedToDisplayColumn(MothershipManager.get().getTableInfoExceptionStackTrace().getColumn("AssignedTo"), c));
+            getDataRegion().addDisplayColumn(new AssignedToDisplayColumn(MothershipManager.get().getTableInfoExceptionStackTrace().getColumn("AssignedTo"), c));
             getDataRegion().getDisplayColumn(1).setVisible(false);
-            getDataRegion().addColumn(new CreateIssueDisplayColumn(MothershipManager.get().getTableInfoExceptionStackTrace().getColumn("StackTrace"), b));
-            getDataRegion().addColumn(new StackTraceDisplayColumn(MothershipManager.get().getTableInfoExceptionStackTrace().getColumn("StackTrace")));
+            getDataRegion().addDisplayColumn(new CreateIssueDisplayColumn(MothershipManager.get().getTableInfoExceptionStackTrace().getColumn("StackTrace"), b));
+            getDataRegion().addDisplayColumn(new StackTraceDisplayColumn(MothershipManager.get().getTableInfoExceptionStackTrace().getColumn("StackTrace")));
 
             // Everyone can see the form to update this exception, but we only
             // allow users with real update permissions to save the updates.

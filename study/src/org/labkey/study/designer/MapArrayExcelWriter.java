@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.io.Writer;
 import java.io.IOException;
@@ -34,7 +33,7 @@ public class MapArrayExcelWriter extends ExcelWriter
         for (String key : maps[0].keySet())
             cols.add(new MapArrayDisplayColumn(key, null != maps[0].get(key) ? maps[0].get(key).getClass() : Object.class));
 
-        setColumns(cols);
+        setDisplayColumns(cols);
     }
 
     public MapArrayExcelWriter(Map<String,Object>[] maps, TabLoader.ColumnDescriptor[] cols)
@@ -44,7 +43,7 @@ public class MapArrayExcelWriter extends ExcelWriter
         for (TabLoader.ColumnDescriptor col : cols)
             xlcols.add(new MapArrayDisplayColumn(col.name, col.clazz));
 
-        setColumns(xlcols);
+        setDisplayColumns(xlcols);
     }
 
     @Override

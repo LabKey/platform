@@ -240,7 +240,7 @@ public class AnnouncementsController extends SpringActionController
 
             DisplayColumn colGroupMembership = new GroupMembershipDisplayColumn(c);
             colGroupMembership.setCaption("Project&nbsp;Member?");
-            rgn.addColumn(colGroupMembership);
+            rgn.addDisplayColumn(colGroupMembership);
 
             DisplayColumn colFirstName = rgn.getDisplayColumn("FirstName");
             if (colFirstName != null)
@@ -2348,7 +2348,7 @@ public class AnnouncementsController extends SpringActionController
             TableInfo tinfo = _comm.getTableInfoThreads();
             DisplayColumn title = new DataColumn(tinfo.getColumn("Title"));
             title.setURL(url.relativeUrl("thread", "rowId=${RowId}", "announcements"));
-            rgn.addColumn(title);
+            rgn.addDisplayColumn(title);
 
             if (settings.hasStatus())
                 rgn.addColumn(tinfo.getColumn("Status"));
@@ -2356,7 +2356,7 @@ public class AnnouncementsController extends SpringActionController
             if (settings.hasAssignedTo())
             {
                 DisplayColumn dc = new UserIdRenderer(tinfo.getColumn("AssignedTo"));
-                rgn.addColumn(dc);
+                rgn.addDisplayColumn(dc);
             }
 
             if (settings.hasExpires())
@@ -2364,26 +2364,26 @@ public class AnnouncementsController extends SpringActionController
 
             ColumnInfo colCreatedBy = tinfo.getColumn("CreatedBy"); // TODO: setRenderClass?
             DisplayColumn dc = new UserIdRenderer(colCreatedBy);
-            rgn.addColumn(dc);
+            rgn.addDisplayColumn(dc);
 
             if (perm.includeGroups())
             {
                 DisplayColumn createGroups = new GroupColumn(colCreatedBy);
                 createGroups.setCaption("Groups");
-                rgn.addColumn(createGroups);
+                rgn.addDisplayColumn(createGroups);
             }
 
             rgn.addColumn(tinfo.getColumn("Created"));
 
             ColumnInfo colResponseCreatedBy = tinfo.getColumn("ResponseCreatedBy"); // TODO: setRenderClass?
             DisplayColumn lastDc = new UserIdRenderer(colResponseCreatedBy);
-            rgn.addColumn(lastDc);
+            rgn.addDisplayColumn(lastDc);
 
             if (perm.includeGroups())
             {
                 DisplayColumn responseGroups = new GroupColumn(colResponseCreatedBy);
                 responseGroups.setCaption("Groups");
-                rgn.addColumn(responseGroups);
+                rgn.addDisplayColumn(responseGroups);
             }
 
             rgn.addColumn(tinfo.getColumn("ResponseCreated"));

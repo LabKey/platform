@@ -143,7 +143,7 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
         params.put("rowId", view.getTable().getColumn("RowId"));
         ColumnInfo containerId = view.getTable().getColumn("ContainerId");
 
-        view.getDataRegion().addColumn(0, new ListItemDetailsColumn(params, containerId));
+        view.getDataRegion().addDisplayColumn(0, new ListItemDetailsColumn(params, containerId));
     }
 
     public AuditLogQueryView createListHistoryView(ViewContext context, ListDefinition def)

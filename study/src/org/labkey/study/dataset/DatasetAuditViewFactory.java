@@ -141,7 +141,7 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
         ColumnInfo detailBitCol = table.getColumn("IntKey2");
         ColumnInfo containerCol = table.getColumn("ContainerId");
         ColumnInfo rowCol = table.getColumn("RowId");
-        view.getDataRegion().addColumn(0, new DetailsColumn(rowCol, containerCol, detailBitCol));
+        view.getDataRegion().addDisplayColumn(0, new DetailsColumn(rowCol, containerCol, detailBitCol));
     }
 
     public List<FieldKey> getDefaultVisibleColumns()
