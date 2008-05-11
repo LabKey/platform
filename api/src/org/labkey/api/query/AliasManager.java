@@ -1,20 +1,19 @@
 package org.labkey.api.query;
 
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SqlDialect;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.util.CaseInsensitiveHashMap;
 
-import java.util.Set;
-import java.util.Map;
 import java.util.Collection;
-import java.util.Arrays;
+import java.util.Map;
+import java.util.Set;
 
 public class AliasManager
 {
     SqlDialect _dialect;
-    Map<String, String> _aliases = new CaseInsensitiveHashMap();
+    Map<String, String> _aliases = new CaseInsensitiveHashMap<String>();
 
     public AliasManager(DbSchema schema)
     {
@@ -24,7 +23,7 @@ public class AliasManager
     public AliasManager(TableInfo table, Collection<ColumnInfo> columns)
     {
         this(table.getSchema());
-        claimAliases(Arrays.asList(table.getColumns()));
+        claimAliases(table.getColumnsList());
         if (columns != null)
             claimAliases(columns);
     }

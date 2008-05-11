@@ -2,13 +2,11 @@ package org.labkey.api.util;
 
 import org.apache.beehive.netui.pageflow.ActionNotFoundException;
 import org.apache.beehive.netui.pageflow.Forward;
-import org.apache.beehive.netui.pageflow.annotations.Jpf;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SqlDialect;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.User;
 import org.labkey.api.view.*;
@@ -128,9 +126,9 @@ public class ExceptionUtil
             logExceptionToMothership(request, ex);
 
         if (isPart)
-            return new WebPartErrorRenderer(responseStatus, message, ex, ModuleLoader.getInstance().getStartupFailure());
+            return new WebPartErrorRenderer(responseStatus, message, ex, isStartupFailure);
         else
-            return new ErrorRenderer(responseStatus, message, ex, ModuleLoader.getInstance().getStartupFailure());
+            return new ErrorRenderer(responseStatus, message, ex, isStartupFailure);
     }
 
     /** request may be null if this is coming from a background thread */
@@ -213,35 +211,32 @@ public class ExceptionUtil
         final int status;
         final String message;
         final Throwable exception;
-        final Throwable startupFailure;
+        final boolean isStartupFailure;
 
-        ErrorRenderer(int status, String message, Throwable x, Throwable startupFailure)
+        ErrorRenderer(int status, String message, Throwable x, boolean isStartupFailure)
         {
             this.status = status;
             this.message = message;
             this.exception = x;
-            this.startupFailure = unwrap(startupFailure);
+            this.isStartupFailure = isStartupFailure;
         }
 
-        public void renderStart(Map model, PrintWriter out)
+        public void renderStart(PrintWriter out)
         {
             out.println("<table cellpadding=4 style=\"width:100%; height:100%\"><tr><td style=\"background-color:#ffffff;\" valign=top align=left>");
         }
 
-        public void renderEnd(Map model, PrintWriter out)
+        public void renderEnd(PrintWriter out)
         {
             out.println("</td></tr></table>");
         }
 
-        public void renderContent(Map model, PrintWriter out, HttpServletRequest request) throws IOException, ServletException
+        public void renderContent(PrintWriter out, HttpServletRequest request) throws IOException, ServletException
         {
-            boolean isStartupFailure = (null != startupFailure);
-
-            if (null != exception || isStartupFailure)
+            if (null != exception)
             {
                 boolean showDetails = AppProps.getInstance().isDevMode() || isStartupFailure;
 
-                Throwable messageThrowable = startupFailure == null ? exception : startupFailure;
                 String exceptionMessage = null;
                 if (isStartupFailure)
                 {
@@ -251,7 +246,7 @@ public class ExceptionUtil
                 {
                     try
                     {
-                        exceptionMessage = messageThrowable.getMessage();
+                        exceptionMessage = exception.getMessage();
                     }
                     catch (Throwable x)
                     {
@@ -272,14 +267,7 @@ public class ExceptionUtil
                             "<div id=\"contentPanel\" style=\"display:none;\">");
                 }
 
-                renderException(startupFailure, out);
-                if (startupFailure != exception)
-                {
-                    // The startup failure may be the same thing as the current
-                    // exception the startupFailure() action in AdminController
-                    // just rethrows the original failure.
-                    renderException(exception, out);
-                }
+                renderException(exception, out);
                 String s;
 
                 // Show the request attributes and database details, but only if it's not a startup failure
@@ -354,24 +342,24 @@ public class ExceptionUtil
 
     static class WebPartErrorRenderer extends ErrorRenderer
     {
-        WebPartErrorRenderer(int status, String message, Throwable x, Throwable startupFailure)
+        WebPartErrorRenderer(int status, String message, Throwable x, boolean isStartupFailure)
         {
-            super(status, message, x, startupFailure);
+            super(status, message, x, isStartupFailure);
         }
 
-        public void renderStart(Map model, PrintWriter out)
+        public void renderStart(PrintWriter out)
         {
             out.println("<div style=\"height:200px; overflow:scroll;\">");
             if (null != this.message)
             {
                 out.println("<h3 style=\"color:red;\">" + this.message + "</h3>");
             }
-            super.renderStart(model, out);
+            super.renderStart(out);
         }
 
-        public void renderEnd(Map model, PrintWriter out)
+        public void renderEnd(PrintWriter out)
         {
-            super.renderEnd(model, out);
+            super.renderEnd(out);
             out.println("</div>");
         }
     }
@@ -389,11 +377,10 @@ public class ExceptionUtil
         @Override
         protected void renderView(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
         {
-            ViewContext context = getViewContext();
             PrintWriter out = response.getWriter();
-            _renderer.renderStart(context, out);
-            _renderer.renderContent(context, out, request);
-            _renderer.renderEnd(context, out);
+            _renderer.renderStart(out);
+            _renderer.renderContent(out, request);
+            _renderer.renderEnd(out);
         }
     }
 
@@ -424,8 +411,8 @@ public class ExceptionUtil
             PrintWriter out = response.getWriter();
 
             doStartTag(context, out);
-            _renderer.renderContent(context, out, request);
-            doEndTag(context, out);
+            _renderer.renderContent(out, request);
+            doEndTag(out);
         }
 
 
@@ -438,7 +425,7 @@ public class ExceptionUtil
                 title += " -- " + _renderer.message;
             out.println("<title>" + PageFlowUtil.filter(title) + "</title>");
             out.println("</head><body style=\"margin:40px; background-color:#336699\">");
-            _renderer.renderStart(context, out);
+            _renderer.renderStart(out);
             if (null != _renderer.message)
             {
                 out.println("<h3 style=\"color:red;\">" + _renderer.message + "</h3>");
@@ -467,19 +454,13 @@ public class ExceptionUtil
             }
         }
 
-        public void doEndTag(Map model, PrintWriter out)
+        public void doEndTag(PrintWriter out)
         {
-            _renderer.renderEnd(model, out);
+            _renderer.renderEnd(out);
             out.println("</body></html>");
         }
     }
 
-
-    @Jpf.Action
-    public Forward npe()
-    {
-        throw new NullPointerException("test");
-    }
 
     private static boolean isClientAbortException(Throwable ex)
     {
@@ -503,8 +484,8 @@ public class ExceptionUtil
     {
         DbSchema.rollbackAllTransactions();
 
-        // First, get rid of RuntimeException and InvocationTargetException wrappers
-        ex = unwrap(ex);
+        // First, get rid of RuntimeException, InvocationTargetException, etc. wrappers
+        ex = unwrapException(ex);
 
         if (isClientAbortException(ex))
         {
@@ -675,19 +656,6 @@ public class ExceptionUtil
         }
 
         return null;
-    }
-
-
-    public static Throwable unwrap(Throwable ex)
-    {
-        // First get rid of wrappers
-        if (null != ex && (ex.getClass() == RuntimeException.class || ex.getClass() == InvocationTargetException.class))
-        {
-            if (ex.getCause() != null)
-                return ex.getCause();
-        }
-
-        return ex;
     }
 
 

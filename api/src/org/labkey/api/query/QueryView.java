@@ -922,11 +922,11 @@ public class QueryView extends WebPartView<Object>
             DataRegion rgn = view.getDataRegion();
 
             //force the pk column into the default list of columns
-            ColumnInfo[] pkCols = table.getPkColumns();
-            if(null != pkCols && pkCols.length == 1)
+            List<ColumnInfo> pkCols = table.getPkColumns();
+            if (null != pkCols && pkCols.size() == 1)
             {
-                if(null == rgn.getDisplayColumn(pkCols[0].getName()))
-                    rgn.addColumn(pkCols[0]);
+                if (null == rgn.getDisplayColumn(pkCols.get(0).getName()))
+                    rgn.addColumn(pkCols.get(0));
             }
 
             ResultSet rs = null;

@@ -16,6 +16,8 @@
 
 package org.labkey.api.data;
 
+import java.util.List;
+
 /**
  * User: arauch
  * Date: Jan 11, 2005
@@ -26,13 +28,13 @@ public class PkFilter extends SimpleFilter
     public PkFilter(TableInfo tinfo, Object pkVal, boolean forDisplay)
     {
         super();
-        ColumnInfo[] columnPK = tinfo.getPkColumns();
+        List<ColumnInfo> columnPK = tinfo.getPkColumns();
         Object[] pkVals;
 
         assert null != columnPK;
-        assert columnPK.length == 1 || ((Object[]) pkVal).length == columnPK.length;
+        assert columnPK.size() == 1 || ((Object[]) pkVal).length == columnPK.size();
 
-        if (columnPK.length == 1 && !pkVal.getClass().isArray())
+        if (columnPK.size() == 1 && !pkVal.getClass().isArray())
             pkVals = new Object[]{pkVal};
         else
             pkVals = (Object[]) pkVal;
@@ -42,11 +44,11 @@ public class PkFilter extends SimpleFilter
             String name;
             if (forDisplay)
             {
-                name = columnPK[i].getAlias();
+                name = columnPK.get(i).getAlias();
             }
             else
             {
-                name = columnPK[i].getValueSql().toString();
+                name = columnPK.get(i).getValueSql().toString();
             }
             addCondition(name, pkVals[i]);
         }

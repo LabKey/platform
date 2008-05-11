@@ -541,7 +541,7 @@ public class Table
     public static <K> K[] executeArray(TableInfo table, ColumnInfo col, Filter filter, Sort sort, Class<K> c)
             throws SQLException
     {
-        SQLFragment sql = getSelectSQL(table, new ColumnInfo[] { col }, filter, sort);
+        SQLFragment sql = getSelectSQL(table, Collections.singletonList(col), filter, sort);
         return executeArray(table.getSchema(), sql.getSQL(), sql.getParams().toArray(), c);
     }
 
@@ -642,8 +642,8 @@ public class Table
         if (fields.containsKey("containerId"))
             fields.put("container", fields.get("containerId"));
 
-        ColumnInfo[] columns = table.getColumns();
-        Map<String, Object> m = new CaseInsensitiveHashMap<Object>(columns.length * 2);
+        List<ColumnInfo> columns = table.getColumnsList();
+        Map<String, Object> m = new CaseInsensitiveHashMap<Object>(columns.size() * 2);
 
         for (ColumnInfo column : columns)
         {
@@ -856,7 +856,7 @@ public class Table
         _insertSpecialFields(user, table, fields, date);
         _updateSpecialFields(user, table, fields, date);
 
-        ColumnInfo[] columns = table.getColumns();
+        List<ColumnInfo> columns = table.getColumnsList();
         for (ColumnInfo column : columns)
         {
             if (column.isAutoIncrement())
@@ -965,21 +965,21 @@ public class Table
 
         // NOTE: no multi-column primary keys?
         // UNDONE -- rowVersion
-        ColumnInfo[] columnPK = table.getPkColumns();
+        List<ColumnInfo> columnPK = table.getPkColumns();
         Object[] pkVals;
 
         assert null != columnPK;
-        assert columnPK.length == 1 || ((Object[]) rowId).length == columnPK.length;
+        assert columnPK.size() == 1 || ((Object[]) rowId).length == columnPK.size();
 
-        if (columnPK.length == 1 && !rowId.getClass().isArray())
+        if (columnPK.size() == 1 && !rowId.getClass().isArray())
             pkVals = new Object[]{rowId};
         else
             pkVals = (Object[]) rowId;
 
-        for (int i = 0; i < columnPK.length; i++)
+        for (int i = 0; i < columnPK.size(); i++)
         {
             whereSQL.append(whereAND);
-            whereSQL.append(columnPK[i].getSelectName());
+            whereSQL.append(columnPK.get(i).getSelectName());
             whereSQL.append("=?");
             parametersWhere.add(pkVals[i]);
             whereAND = " AND ";
@@ -1001,7 +1001,7 @@ public class Table
         java.sql.Timestamp date = new java.sql.Timestamp(System.currentTimeMillis());
         _updateSpecialFields(user, table, fields, date);
 
-        ColumnInfo[] columns = table.getColumns();
+        List<ColumnInfo> columns = table.getColumnsList();
         for (ColumnInfo column : columns)
         {
             if (!fields.containsKey(column.getName()))
@@ -1066,20 +1066,20 @@ public class Table
     {
         _previous(table, rowId, rowVersion);
 
-        ColumnInfo[] columnPK = table.getPkColumns();
+        List<ColumnInfo> columnPK = table.getPkColumns();
         Object[] pkVals;
 
         assert null != columnPK;
-        assert columnPK.length == 1 || ((Object[]) rowId).length == columnPK.length;
+        assert columnPK.size() == 1 || ((Object[]) rowId).length == columnPK.size();
 
-        if (columnPK.length == 1 && !rowId.getClass().isArray())
+        if (columnPK.size() == 1 && !rowId.getClass().isArray())
             pkVals = new Object[]{rowId};
         else
             pkVals = (Object[]) rowId;
 
         SimpleFilter filter = new SimpleFilter();
         for (int i = 0; i < pkVals.length; i++)
-            filter.addCondition(columnPK[i].getSelectName(), pkVals[i]);
+            filter.addCondition(columnPK.get(i).getSelectName(), pkVals[i]);
 
         // UNDONE -- rowVersion
         delete(table, filter);
@@ -1109,7 +1109,7 @@ public class Table
     public static <K> K selectObject(TableInfo table, Object pk, Class<K> clss)
     {
         SimpleFilter filter = new SimpleFilter();
-        ColumnInfo[] pkColumns = table.getPkColumns();
+        List<ColumnInfo> pkColumns = table.getPkColumns();
         Object[] pks;
 
         if (pk.getClass().isArray())
@@ -1117,10 +1117,10 @@ public class Table
         else
             pks = new Object[]{pk};
 
-        assert pks.length == pkColumns.length : "Wrong number of primary keys specified";
+        assert pks.length == pkColumns.size() : "Wrong number of primary keys specified";
 
-        for (int i = 0; i < pkColumns.length; i++)
-            filter.addCondition(pkColumns[i].getSelectName(), pks[i]);
+        for (int i = 0; i < pkColumns.size(); i++)
+            filter.addCondition(pkColumns.get(i).getSelectName(), pks[i]);
 
         try
         {
@@ -1173,14 +1173,14 @@ public class Table
         return rowcount;
     }
 
-    public static SQLFragment getFullSelectSQL(TableInfo table, ColumnInfo[] select, Filter filter, Sort sort)
+    public static SQLFragment getFullSelectSQL(TableInfo table, List<ColumnInfo> select, Filter filter, Sort sort)
     {
-        List<ColumnInfo> allColumns = new ArrayList<ColumnInfo>(Arrays.asList(select));
+        List<ColumnInfo> allColumns = new ArrayList<ColumnInfo>(select);
         QueryService.get().ensureRequiredColumns(table, allColumns, filter, sort, null);
-        return getDisplaySelectSQL(table, allColumns.toArray(new ColumnInfo[allColumns.size()]), filter, sort, 0, 0);
+        return getDisplaySelectSQL(table, allColumns, filter, sort, 0, 0);
     }
 
-    public static SQLFragment getSelectSQL(TableInfo table, ColumnInfo[] columns, Filter filter, Sort sort)
+    public static SQLFragment getSelectSQL(TableInfo table, List<ColumnInfo> columns, Filter filter, Sort sort)
     {
         return getSelectSQL(table, columns, filter, sort, 0, 0);
     }
@@ -1189,7 +1189,7 @@ public class Table
     /**
      * Returns the sql for a select.
      */
-    public static SQLFragment getSelectSQL(TableInfo table, ColumnInfo[] columns, Filter filter, Sort sort, int rowCount, long offset)
+    public static SQLFragment getSelectSQL(TableInfo table, List<ColumnInfo> columns, Filter filter, Sort sort, int rowCount, long offset)
     {
         SqlDialect dialect = table.getSqlDialect();
         Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
@@ -1237,7 +1237,7 @@ public class Table
     /**
      * Returns the sql for a select.
      */
-    private static SQLFragment getDisplaySelectSQL(TableInfo table, ColumnInfo[] columns, Filter filter, Sort sort, int rowCount, long offset)
+    private static SQLFragment getDisplaySelectSQL(TableInfo table, List<ColumnInfo> columns, Filter filter, Sort sort, int rowCount, long offset)
     {
         SqlDialect dialect = table.getSqlDialect();
         SQLFragment selectFrag = new SQLFragment("SELECT *");
@@ -1267,7 +1267,7 @@ public class Table
         return dialect.limitRows(selectFrag, fromFrag, filterFrag, orderBy, rowCount, offset);
     }
 
-    private static Sort createDefaultSort(ColumnInfo[] columns)
+    private static Sort createDefaultSort(List<ColumnInfo> columns)
     {
         Sort sort = new Sort();
         addSortableColumns(sort, columns, true);
@@ -1280,7 +1280,7 @@ public class Table
         return sort;
     }
 
-    private static void addSortableColumns(Sort sort, ColumnInfo[] columns, boolean usePrimaryKey)
+    private static void addSortableColumns(Sort sort, List<ColumnInfo> columns, boolean usePrimaryKey)
     {
         for (ColumnInfo column : columns)
         {
@@ -1298,11 +1298,11 @@ public class Table
     public static ResultSet select(TableInfo table, Set<String> select, Filter filter, Sort sort)
             throws SQLException
     {
-        return select(table, columnInfos(table, select), filter, sort);
+        return select(table, columnInfosList(table, select), filter, sort);
     }
 
 
-    public static TableResultSet select(TableInfo table, ColumnInfo[] columns, Filter filter, Sort sort)
+    public static TableResultSet select(TableInfo table, List<ColumnInfo> columns, Filter filter, Sort sort)
             throws SQLException
     {
         SQLFragment sql = getSelectSQL(table, columns, filter, sort);
@@ -1320,17 +1320,17 @@ public class Table
     public static <K> K[] select(TableInfo table, Set<String> select, Filter filter, Sort sort, Class<K> clss, int rowCount, long offset)
             throws SQLException
     {
-        return select(table, columnInfos(table, select), filter, sort, clss, rowCount, offset);
+        return select(table, columnInfosList(table, select), filter, sort, clss, rowCount, offset);
     }
 
 
-    public static <K> K[] select(TableInfo table, ColumnInfo[] columns, Filter filter, Sort sort, Class<K> clss)
+    public static <K> K[] select(TableInfo table, List<ColumnInfo> columns, Filter filter, Sort sort, Class<K> clss)
             throws SQLException
     {
         return select(table, columns, filter, sort, clss, 0, 0);
     }
 
-    public static <K> K[] select(TableInfo table, ColumnInfo[] columns, Filter filter, Sort sort, Class<K> clss, int rowCount, long offset)
+    public static <K> K[] select(TableInfo table, List<ColumnInfo> columns, Filter filter, Sort sort, Class<K> clss, int rowCount, long offset)
             throws SQLException
     {
         long queryOffset = offset, scrollOffset = 0;
@@ -1373,27 +1373,27 @@ public class Table
     public static TableResultSet selectForDisplay(TableInfo table, Set<String> select, Filter filter, Sort sort, int rowCount, long offset)
             throws SQLException
     {
-        return selectForDisplay(table, columnInfos(table, select), filter, sort, rowCount, offset);
+        return selectForDisplay(table, columnInfosList(table, select), filter, sort, rowCount, offset);
     }
 
 
-    public static TableResultSet selectForDisplay(TableInfo table, ColumnInfo[] select, Filter filter, Sort sort, int rowCount, long offset)
+    public static TableResultSet selectForDisplay(TableInfo table, List<ColumnInfo> select, Filter filter, Sort sort, int rowCount, long offset)
             throws SQLException
     {
         return selectForDisplay(table, select, filter, sort, rowCount, offset, true);
     }
 
-    public static Map<String, Aggregate.Result> selectAggregatesForDisplay(TableInfo table, Aggregate[] aggregates, ColumnInfo[] select, Filter filter, boolean cache) throws SQLException
+    public static Map<String, Aggregate.Result> selectAggregatesForDisplay(TableInfo table, List<Aggregate> aggregates, List<ColumnInfo> select, Filter filter, boolean cache) throws SQLException
     {
         return selectAggregatesForDisplay(table, aggregates, select, filter, cache, null);
     }
 
-    private static Map<String, Aggregate.Result> selectAggregatesForDisplay(TableInfo table, Aggregate[] aggregates, ColumnInfo[] select, Filter filter, boolean cache, AsyncQueryRequest asyncRequest)
+    private static Map<String, Aggregate.Result> selectAggregatesForDisplay(TableInfo table, List<Aggregate> aggregates, List<ColumnInfo> select, Filter filter, boolean cache, AsyncQueryRequest asyncRequest)
             throws SQLException
     {
-        Map<String, ColumnInfo> columns = getDisplayColumns(select);
+        Map<String, ColumnInfo> columns = getDisplayColumnsList(select);
         ensureRequiredColumns(table, columns, filter, null);
-        SQLFragment innerSql = getDisplaySelectSQL(table, columns.values().toArray(new ColumnInfo[0]), filter, null, 0, 0);
+        SQLFragment innerSql = getDisplaySelectSQL(table, new ArrayList<ColumnInfo>(columns.values()), filter, null, 0, 0);
 
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT ");
@@ -1434,10 +1434,10 @@ public class Table
         }
     }
 
-    public static Map<String, Aggregate.Result> selectAggregatesForDisplayAsync(final TableInfo table, final Aggregate[] aggregates, final ColumnInfo[] select, final Filter filter, final boolean cache, HttpServletResponse response)
+    public static Map<String, Aggregate.Result> selectAggregatesForDisplayAsync(final TableInfo table, final List<Aggregate> aggregates, final List<ColumnInfo> select, final Filter filter, final boolean cache, HttpServletResponse response)
             throws SQLException, IOException
     {
-        final AsyncQueryRequest<Map<String, Aggregate.Result>> asyncRequest = new AsyncQueryRequest(response);
+        final AsyncQueryRequest<Map<String, Aggregate.Result>> asyncRequest = new AsyncQueryRequest<Map<String, Aggregate.Result>>(response);
         return asyncRequest.waitForResult(new Callable<Map<String, Aggregate.Result>>() {
             public Map<String, Aggregate.Result> call() throws Exception
             {
@@ -1447,18 +1447,17 @@ public class Table
     }
 
 
-
-    public static TableResultSet selectForDisplay(TableInfo table, ColumnInfo[] select, Filter filter, Sort sort, int rowCount, long offset, boolean cache)
+    public static TableResultSet selectForDisplay(TableInfo table, List<ColumnInfo> select, Filter filter, Sort sort, int rowCount, long offset, boolean cache)
             throws SQLException
     {
         return selectForDisplay(table, select, filter, sort, rowCount, offset, cache, null, null);
     }
 
 
-    private static TableResultSet selectForDisplay(TableInfo table, ColumnInfo[] select, Filter filter, Sort sort, int rowCount, long offset, boolean cache, AsyncQueryRequest asyncRequest, Logger log)
+    private static TableResultSet selectForDisplay(TableInfo table, List<ColumnInfo> select, Filter filter, Sort sort, int rowCount, long offset, boolean cache, AsyncQueryRequest asyncRequest, Logger log)
             throws SQLException
     {
-        Map<String, ColumnInfo> columns = getDisplayColumns(select);
+        Map<String, ColumnInfo> columns = getDisplayColumnsList(select);
         ensureRequiredColumns(table, columns, filter, sort);
 
         long queryOffset = offset, scrollOffset = 0;
@@ -1470,12 +1469,12 @@ public class Table
             queryRowCount = rowCount + (int)offset;
         }
 
-        SQLFragment sql = getDisplaySelectSQL(table, columns.values().toArray(new ColumnInfo[0]), filter, sort, decideRowCount(queryRowCount, null), queryOffset);
+        SQLFragment sql = getDisplaySelectSQL(table, new ArrayList<ColumnInfo>(columns.values()), filter, sort, decideRowCount(queryRowCount, null), queryOffset);
         return (Table.TableResultSet)executeQuery(table.getSchema(), sql.getSQL(), sql.getParams().toArray(), rowCount, scrollOffset, cache, !cache, asyncRequest, log);
     }
 
 
-    public static TableResultSet selectForDisplayAsync(final TableInfo table, final ColumnInfo[] select, final Filter filter, final Sort sort, final int rowCount, final long offset, final boolean cache, HttpServletResponse response) throws SQLException, IOException
+    public static TableResultSet selectForDisplayAsync(final TableInfo table, final List<ColumnInfo> select, final Filter filter, final Sort sort, final int rowCount, final long offset, final boolean cache, HttpServletResponse response) throws SQLException, IOException
     {
         final Logger log = ConnectionWrapper.getConnectionLogger();
         final AsyncQueryRequest<TableResultSet> asyncRequest = new AsyncQueryRequest(response);
@@ -1491,43 +1490,44 @@ public class Table
     public static <K> K[] selectForDisplay(TableInfo table, Set<String> select, Filter filter, Sort sort, Class<K> clss)
             throws SQLException
     {
-        return selectForDisplay(table, columnInfos(table, select), filter, sort, clss);
+        return selectForDisplay(table, columnInfosList(table, select), filter, sort, clss);
     }
 
 
-    public static <K> K[] selectForDisplay(TableInfo table, ColumnInfo[] select, Filter filter, Sort sort, Class<K> clss)
+    public static <K> K[] selectForDisplay(TableInfo table, List<ColumnInfo> select, Filter filter, Sort sort, Class<K> clss)
             throws SQLException
     {
-        Map<String, ColumnInfo> columns = getDisplayColumns(select);
+        Map<String, ColumnInfo> columns = getDisplayColumnsList(select);
         ensureRequiredColumns(table, columns, filter, sort);
-        SQLFragment sql = getDisplaySelectSQL(table, columns.values().toArray(new ColumnInfo[0]), filter, sort, 0, 0);
+        SQLFragment sql = getDisplaySelectSQL(table, new ArrayList<ColumnInfo>(columns.values()), filter, sort, 0, 0);
         return internalExecuteQueryArray(table.getSchema(), sql.getSQL(), sql.getParams().toArray(), clss, 0);
     }
 
 
-    private static ColumnInfo[] columnInfos(TableInfo table, Set<String> select)
+    private static List<ColumnInfo> columnInfosList(TableInfo table, Set<String> select)
     {
-        ColumnInfo[] allColumns = table.getColumns();
-        ColumnInfo[] selectColumns;
+        List<ColumnInfo> allColumns = table.getColumnsList();
+        List<ColumnInfo> selectColumns;
 
         if (select == ALL_COLUMNS)
             selectColumns = allColumns;
         else
         {
             select = new CaseInsensitiveHashSet(select);
-            List<ColumnInfo> selectList = new ArrayList<ColumnInfo>();
+            List<ColumnInfo> selectList = new ArrayList<ColumnInfo>();      // TODO: Just use selectColumns
             for (ColumnInfo column : allColumns)
             {
                 if (select != ALL_COLUMNS && !select.contains(column.getName()) && !select.contains(column.getPropertyName()))
                     continue;
                 selectList.add(column);
             }
-            selectColumns = selectList.toArray(new ColumnInfo[selectList.size()]);
+            selectColumns = selectList;
         }
         return selectColumns;
     }
 
-    private static Map<String,ColumnInfo> getDisplayColumns(ColumnInfo[] arrColumns)
+
+    private static Map<String,ColumnInfo> getDisplayColumnsList(List<ColumnInfo> arrColumns)
     {
         Map<String, ColumnInfo> columns = new LinkedHashMap<String, ColumnInfo>();
         for (ColumnInfo column : arrColumns)
@@ -1545,7 +1545,7 @@ public class Table
 
     public static void ensureRequiredColumns(TableInfo table, Map<String, ColumnInfo> cols, Filter filter, Sort sort)
     {
-        ColumnInfo[] allColumns = table.getColumns();
+        List<ColumnInfo> allColumns = table.getColumnsList();
         Set<String> requiredColumns = new CaseInsensitiveHashSet();
 
         if (null != filter)
@@ -1592,7 +1592,7 @@ public class Table
             return sb.toString();
         }
 
-        public TempTableInfo(DbSchema parentSchema, String name, List<ColumnInfo> cols, String[] pk)
+        public TempTableInfo(DbSchema parentSchema, String name, List<ColumnInfo> cols, List<String> pk)
         {
             super(parentSchema);
 
@@ -1606,7 +1606,7 @@ public class Table
                 col.setParentTable(this);
             columnList.addAll(cols);
             if (pk != null)
-                _pkColumnNames = pk;
+                _pkColumnNames = pk.toArray(new String[]{});    // TODO: Temporary -- convert _pkColumnNames to List and eliminate this
         }
 
         public SQLFragment getFromSQL()
@@ -1650,7 +1650,7 @@ public class Table
         //
 
         ArrayList<ColumnInfo> cols = new ArrayList<ColumnInfo>();
-        for (ColumnInfo col : tinfo.getColumns())
+        for (ColumnInfo col : tinfo.getColumnsList())
         {
             ColumnInfo colDirect = new ColumnInfo(col.getAlias());
             colDirect.copyAttributesFrom(col);
@@ -1684,7 +1684,7 @@ public class Table
     public static void snapshot(TableInfo tinfo, String tableName)
             throws SQLException
     {
-        SQLFragment sqlSelect = Table.getSelectSQL(tinfo, tinfo.getColumns(), null, null);
+        SQLFragment sqlSelect = Table.getSelectSQL(tinfo, tinfo.getColumnsList(), null, null);
         SQLFragment sqlSelectInto = new SQLFragment();
         sqlSelectInto.append("SELECT * INTO ").append(tableName).append(" FROM (");
         sqlSelectInto.append(sqlSelect);
@@ -2202,7 +2202,7 @@ public class Table
         }
     }
 
-    static public Map<String, ColumnInfo> createColumnMap(TableInfo table, ColumnInfo[] columns)
+    static public Map<String, ColumnInfo> createColumnMap(TableInfo table, List<ColumnInfo> columns)
     {
         // TODO: instead of creating a map with all the known entries, we should return a map implementation that defers to TableInfo.getColumn()
         CaseInsensitiveHashMap<ColumnInfo> ret = new CaseInsensitiveHashMap<ColumnInfo>();

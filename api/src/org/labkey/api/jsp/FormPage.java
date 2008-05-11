@@ -38,7 +38,7 @@ abstract public class FormPage<FROM extends ViewForm> extends ContextPage
 
     public void setForm(FROM form)
     {
-        setViewContext(form.getContext());
+        setViewContext(form.getViewContext());
         __form = form;
     }
 

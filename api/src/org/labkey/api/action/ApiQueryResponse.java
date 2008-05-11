@@ -34,7 +34,7 @@ import java.text.SimpleDateFormat;
  */
 public class ApiQueryResponse implements ApiResponse
 {
-    private Map<String,Object> _props = new HashMap<String,Object>();
+    private Map<String, Object> _props = new HashMap<String, Object>();
     private TableInfo _tinfo = null;
     private ResultSet _rs = null;
     private List<DisplayColumn> _displayColumns = null;
@@ -118,9 +118,9 @@ public class ApiQueryResponse implements ApiResponse
         }
         
         //include an id property set to the pk column name if there is one (and only one)
-        ColumnInfo[] pkCols = _tinfo.getPkColumns();
-        if(null != pkCols && 1 == pkCols.length)
-            mdata.put("id", pkCols[0].getName());
+        List<ColumnInfo> pkCols = _tinfo.getPkColumns();
+        if (null != pkCols && 1 == pkCols.size())
+            mdata.put("id", pkCols.get(0).getName());
         
         mdata.put("fields", fields);
 
@@ -138,7 +138,7 @@ public class ApiQueryResponse implements ApiResponse
         return ret;
     }
 
-    protected Map<String,Object> getMetaData(DisplayColumn dc) throws Exception
+    protected Map<String, Object> getMetaData(DisplayColumn dc) throws Exception
     {
         HashMap<String,Object> fmdata = new HashMap<String,Object>();
         fmdata.put("name", dc.getColumnInfo().getName());
@@ -147,14 +147,15 @@ public class ApiQueryResponse implements ApiResponse
         if(isLookup(dc))
         {
             TableInfo lookupTable = dc.getColumnInfo().getFkTableInfo();
-            if(null != lookupTable && lookupTable.getPkColumns().length == 1)
+
+            if (null != lookupTable && lookupTable.getPkColumns().size() == 1)
             {
                 Map<String,Object> lookupInfo = new HashMap<String,Object>();
                 
                 lookupInfo.put("table", lookupTable.getPublicName());
                 lookupInfo.put("schema", lookupTable.getPublicSchemaName());
                 lookupInfo.put("displayColumn", lookupTable.getTitleColumn());
-                lookupInfo.put("keyColumn", lookupTable.getPkColumns()[0].getName());
+                lookupInfo.put("keyColumn", lookupTable.getPkColumns().get(0).getName());
 
                 fmdata.put("lookup", lookupInfo);
             }

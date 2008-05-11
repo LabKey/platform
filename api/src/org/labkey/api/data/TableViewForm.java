@@ -206,13 +206,13 @@ public class TableViewForm extends ViewForm implements DynaBean, HasValidator
     {
         assert null != getPkVals();
 
-        ActionURL urlhelp = getContext().cloneActionURL();
+        ActionURL urlhelp = getViewContext().cloneActionURL();
         urlhelp.setAction(action);
         urlhelp.deleteParameters();
-        ColumnInfo[] pkCols = _tinfo.getPkColumns();
+        List<ColumnInfo> pkCols = _tinfo.getPkColumns();
         Object[] pkVals = getPkVals();
-        for (int i = 0; i < pkCols.length; i++)
-            urlhelp.replaceParameter(pkCols[i].getPropertyName(), pkVals[i].toString());
+        for (int i = 0; i < pkCols.size(); i++)
+            urlhelp.replaceParameter(pkCols.get(i).getPropertyName(), pkVals[i].toString());
         return new ViewForward(urlhelp);
     }
 
@@ -266,35 +266,35 @@ public class TableViewForm extends ViewForm implements DynaBean, HasValidator
      */
     public String getPkName()
     {
-        assert _tinfo.getPkColumns().length == 1;
+        assert _tinfo.getPkColumns().size() == 1;
 
-        return _tinfo.getPkColumnNames()[0];
+        return _tinfo.getPkColumnNames().get(0);
     }
 
-    public String[] getPkNames()
+    public List<String> getPkNamesList()
     {
         return _tinfo.getPkColumnNames();
     }
 
     public void setPkVal(String str)
     {
-        assert _tinfo.getPkColumns().length == 1;
+        assert _tinfo.getPkColumns().size() == 1;
 
         set(getPkName(), str);
     }
 
     public void setPkVal(Object o)
     {
-        assert _tinfo.getPkColumns().length == 1;
+        assert _tinfo.getPkColumns().size() == 1;
 
         setTypedValue(getPkName(), o);
     }
 
     public void setPkVals(Object[] o)
     {
-        String[] pkNames = getPkNames();
-        for (int i = 0; i < pkNames.length; i++)
-            setTypedValue(pkNames[i], o[i]);
+        List<String> pkNames = getPkNamesList();
+        for (int i = 0; i < pkNames.size(); i++)
+            setTypedValue(pkNames.get(i), o[i]);
     }
 
     public void setPkVals(String s)
@@ -304,9 +304,9 @@ public class TableViewForm extends ViewForm implements DynaBean, HasValidator
 
     public void setPkVals(String[] s)
     {
-        String[] pkNames = getPkNames();
-        for (int i = 0; i < pkNames.length; i++)
-            set(pkNames[i], s[i]);
+        List<String> pkNames = getPkNamesList();
+        for (int i = 0; i < pkNames.size(); i++)
+            set(pkNames.get(i), s[i]);
     }
 
     /**
@@ -314,20 +314,20 @@ public class TableViewForm extends ViewForm implements DynaBean, HasValidator
      */
     public Object getPkVal()
     {
-        assert _tinfo.getPkColumns().length == 1;
+        assert _tinfo.getPkColumns().size() == 1;
 
         return getPkVals()[0];
     }
 
     public Object[] getPkVals()
     {
-        String[] pkNames = getPkNames();
-        Object[] pkVals = new Object[pkNames.length];
+        List<String> pkNames = getPkNamesList();
+        Object[] pkVals = new Object[pkNames.size()];
 
-        for (int i = 0; i < pkNames.length; i++)
+        for (int i = 0; i < pkNames.size(); i++)
         {
-            String pkName = pkNames[i];
-            Object pkVal = null;
+            String pkName = pkNames.get(i);
+            Object pkVal;
             pkVal = getTypedValues().get(pkName);
             if (null == pkVal)
             {

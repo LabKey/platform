@@ -30,19 +30,19 @@ abstract public class AbstractTableInfo implements TableInfo
     private Map<String, MethodInfo> _methodMap;
     protected String _name;
     protected String _alias = "unnamed";
-    private List<DetailsURL> _detailsURLs = new ArrayList(0);
+    private List<DetailsURL> _detailsURLs = new ArrayList<DetailsURL>(0);
 
-    public ColumnInfo[] getPkColumns()
+    public List<ColumnInfo> getPkColumns()
     {
-        List<ColumnInfo> ret = new ArrayList();
-        for (ColumnInfo column : getColumns())
+        List<ColumnInfo> ret = new ArrayList<ColumnInfo>();
+        for (ColumnInfo column : getColumnsList())
         {
             if (column.isKeyField())
             {
                 ret.add(column);
             }
         }
-        return ret.toArray(new ColumnInfo[0]);
+        return ret;
     }
 
     public String getRowTitle(Object pk) throws SQLException
@@ -61,9 +61,9 @@ abstract public class AbstractTableInfo implements TableInfo
     {
         if (isCaseSensitive())
         {
-            return new LinkedHashMap();
+            return new LinkedHashMap<String, ColumnInfo>();
         }
-        return new CaseInsensitiveMap(new LinkedHashMap());
+        return new CaseInsensitiveMap<ColumnInfo>(new LinkedHashMap<String, ColumnInfo>());
     }
 
     protected boolean isCaseSensitive()
@@ -86,14 +86,14 @@ abstract public class AbstractTableInfo implements TableInfo
         return getFromSQL(getAliasName());
     }
 
-    public String[] getPkColumnNames()
+    public List<String> getPkColumnNames()
     {
-        List<String> ret = new ArrayList();
+        List<String> ret = new ArrayList<String>();
         for (ColumnInfo col : getPkColumns())
         {
             ret.add(col.getName());
         }
-        return ret.toArray(new String[0]);
+        return ret;
     }
 
     public ColumnInfo getVersionColumn()
@@ -114,24 +114,25 @@ abstract public class AbstractTableInfo implements TableInfo
     public NamedObjectList getSelectList()
     {
         NamedObjectList ret = new NamedObjectList();
-        ColumnInfo[] pkColumns = getPkColumns();
-        if (pkColumns.length != 1)
+        List<ColumnInfo> pkColumns = getPkColumns();
+        if (pkColumns.size() != 1)
             return ret;
         ColumnInfo titleColumn = getColumn(getTitleColumn());
         if (titleColumn == null)
             return ret;
         try
         {
-            ColumnInfo[] cols;
+            ColumnInfo firstColumn = pkColumns.get(0);
+            List<ColumnInfo> cols;
             int titleIndex;
-            if (pkColumns[0] == titleColumn)
+            if (firstColumn == titleColumn)
             {
-                cols = new ColumnInfo[] { pkColumns[0] };
+                cols = Arrays.asList(firstColumn);
                 titleIndex = 1;
             }
             else
             {
-                cols = new ColumnInfo[] { pkColumns[0], titleColumn };
+                cols = Arrays.asList(firstColumn, titleColumn);
                 titleIndex = 2;
             }
 
@@ -149,53 +150,33 @@ abstract public class AbstractTableInfo implements TableInfo
         return ret;
     }
 
-    public ColumnInfo[] getUserEditableColumns()
+    public List<ColumnInfo> getUserEditableColumns()
     {
-        List<ColumnInfo> ret = new ArrayList();
-        for (ColumnInfo col : getColumns())
+        List<ColumnInfo> ret = new ArrayList<ColumnInfo>();
+        for (ColumnInfo col : getColumnsList())
         {
             if (col.isUserEditable())
             {
                 ret.add(col);
             }
         }
-        return ret.toArray(new ColumnInfo[0]);
+        return ret;
     }
 
-    public ColumnInfo[] getColumns(String colNames)
+    public List<ColumnInfo> getColumns(String colNames)
     {
         String[] colNameArray = colNames.split(",");
         return getColumns(colNameArray);
     }
 
-    public ColumnInfo[] getColumns(String... colNameArray)
+    public List<ColumnInfo> getColumns(String... colNameArray)
     {
-        List<ColumnInfo> ret = new ArrayList();
+        List<ColumnInfo> ret = new ArrayList<ColumnInfo>(colNameArray.length);
         for (String name : colNameArray)
         {
-            ret.add(getColumn(name));
+            ret.add(getColumn(name.trim()));
         }
-        return ret.toArray(new ColumnInfo[0]);
-    }
-
-    public DataColumn[] getDisplayColumns(String colNames)
-    {
-        return getDisplayColumns(getColumns(colNames));
-    }
-
-    public DataColumn[] getDisplayColumns(String[] colNames)
-    {
-        return getDisplayColumns(getColumns(colNames));
-    }
-
-    public DataColumn[] getDisplayColumns(ColumnInfo[] columns)
-    {
-        List<DataColumn> ret = new ArrayList();
-        for (ColumnInfo col : columns)
-        {
-            ret.add(new DataColumn(col));
-        }
-        return ret.toArray(new DataColumn[0]);
+        return ret;
     }
 
     public String getSequence()
@@ -226,10 +207,9 @@ abstract public class AbstractTableInfo implements TableInfo
         return null;
     }
 
-    public ColumnInfo[] getColumns()
+    public List<ColumnInfo> getColumnsList()
     {
-        Collection<ColumnInfo> col = _columnMap.values();
-        return col.toArray(new ColumnInfo[col.size()]);
+        return new ArrayList<ColumnInfo>(_columnMap.values());
     }
 
     public Set<String> getColumnNameSet()
@@ -268,7 +248,7 @@ abstract public class AbstractTableInfo implements TableInfo
     {
         if (_methodMap == null)
         {
-            _methodMap = new HashMap();
+            _methodMap = new HashMap<String, MethodInfo>();
         }
         _methodMap.put(name, method);
     }
@@ -354,7 +334,7 @@ abstract public class AbstractTableInfo implements TableInfo
             }
             return Collections.unmodifiableList(ret);
         }
-        return QueryService.get().getDefaultVisibleColumns(getColumns());
+        return QueryService.get().getDefaultVisibleColumns(getColumnsList());
     }
 
     public boolean safeAddColumn(ColumnInfo column)

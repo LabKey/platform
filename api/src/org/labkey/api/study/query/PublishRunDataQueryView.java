@@ -106,7 +106,7 @@ public class PublishRunDataQueryView extends RunDataQueryView
             }
             if (captionMatchColName != null)
                 dr.removeColumns(captionMatchColName);
-            dr.addColumn(idx++, extra);
+            dr.addDisplayColumn(idx++, extra);
         }
         Set<String> hiddenCols = getHiddenColumnCaptions();
         for (Iterator<DisplayColumn> it = dr.getDisplayColumns().iterator(); it.hasNext();)

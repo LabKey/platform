@@ -22,6 +22,7 @@ import org.labkey.api.util.CaseInsensitiveHashMap;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 
 /**
  * Creates a DynaClass for a table where all of the properties are
@@ -35,7 +36,7 @@ public class TableWrapperDynaClass extends StringWrapperDynaClass
     private TableWrapperDynaClass(TableInfo tinfo)
     {
         _tinfo = tinfo;
-        ColumnInfo[] cols = tinfo.getColumns();
+        List<ColumnInfo> cols = tinfo.getColumnsList();
         Map<String, Class> propMap = new CaseInsensitiveHashMap<Class>();
         for (ColumnInfo col : cols)
             propMap.put(col.getPropertyName(), col.getJavaClass());

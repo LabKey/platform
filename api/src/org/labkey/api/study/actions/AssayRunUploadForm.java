@@ -327,10 +327,10 @@ public class AssayRunUploadForm extends ProtocolIdForm implements AssayRunUpload
             TableInfo lookupTable = lookupKey.getLookupTableInfo();
             if (lookupTable != null)
             {
-                ColumnInfo[] pks = lookupTable.getPkColumns();
-                if (pks.length == 1)
+                List<ColumnInfo> pks = lookupTable.getPkColumns();
+                if (pks.size() == 1)
                 {
-                    SimpleFilter filter = new SimpleFilter(pks[0].getName(), value);
+                    SimpleFilter filter = new SimpleFilter(pks.get(0).getName(), value);
                     try
                     {
                         Map[] maps =  Table.selectForDisplay(lookupTable, Collections.singleton(lookupTable.getTitleColumn()), filter, null, Map.class);

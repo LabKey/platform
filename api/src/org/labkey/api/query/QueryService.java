@@ -54,5 +54,5 @@ abstract public class QueryService
 
     abstract public Map<String, UserSchema> getDbUserSchemas(DefaultSchema folderSchema);
 
-    abstract public List<FieldKey> getDefaultVisibleColumns(ColumnInfo[] columns);
+    abstract public List<FieldKey> getDefaultVisibleColumns(List<ColumnInfo> columns);
 }

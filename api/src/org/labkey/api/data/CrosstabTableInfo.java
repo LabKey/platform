@@ -350,13 +350,11 @@ public class CrosstabTableInfo extends VirtualTable
         GroupTableInfo groupTable = getGroupTable();
         Filter aggFilter = getAggregateFilter();
 
-        List<ColumnInfo> reqCols = new ArrayList<ColumnInfo>(Arrays.asList(groupTable.getColumns()));
+        List<ColumnInfo> reqCols = new ArrayList<ColumnInfo>(groupTable.getColumnsList());    // Make a copy
         QueryService.get().ensureRequiredColumns(groupTable, reqCols, aggFilter, null, null);
-        ColumnInfo[] cols = new ColumnInfo[reqCols.size()];
-        cols = reqCols.toArray(cols);
 
         sql.append("SELECT * FROM (\n");
-        sql.append(Table.getSelectSQL(groupTable, cols, null, null));
+        sql.append(Table.getSelectSQL(groupTable, reqCols, null, null));
         sql.append("\n) AS ");
         sql.append(AGG_ALIAS);
 

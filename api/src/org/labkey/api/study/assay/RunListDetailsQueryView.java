@@ -50,7 +50,7 @@ public class RunListDetailsQueryView extends RunListQueryView
     {
         DataView view = super.createDataView();
         DataRegion rgn = view.getDataRegion();
-        rgn.addColumn(0, new SimpleDisplayColumn()
+        rgn.addDisplayColumn(0, new SimpleDisplayColumn()
         {
             public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
             {

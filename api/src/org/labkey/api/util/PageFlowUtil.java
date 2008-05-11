@@ -431,8 +431,7 @@ public class PageFlowUtil
     public static <T> Set<T> set(T... args)
     {
         HashSet<T> s = new HashSet<T>();
-        for (T arg : args)
-            s.add(arg);
+        s.addAll(Arrays.asList(args));
         return s;
     }
 

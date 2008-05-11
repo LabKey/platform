@@ -176,7 +176,7 @@ public class CrosstabSettings
      *
      * @return Distinct set of ColumnInfo objects
      */
-    public ColumnInfo[] getDistinctColumns()
+    public List<ColumnInfo> getDistinctColumns()
     {
         Set<ColumnInfo> cols = new HashSet<ColumnInfo>();
         for(CrosstabDimension dim : getColumnAxis().getDimensions())
@@ -186,8 +186,7 @@ public class CrosstabSettings
         for(CrosstabMeasure measure : getMeasures())
             cols.add(measure.getSourceColumn());
 
-        ColumnInfo[] ret = new ColumnInfo[cols.size()];
-        return cols.toArray(ret);
+        return new ArrayList<ColumnInfo>(cols);
     }
 
     /**

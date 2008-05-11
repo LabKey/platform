@@ -111,8 +111,7 @@ public class CrosstabDimension
             sql.append(" AS Value,");
             sql.append(captionCol.getAlias());
             sql.append(" AS Caption FROM (");
-            sql.append(Table.getSelectSQL(sourceCol.getParentTable(),
-                    new ColumnInfo[]{sourceCol, captionCol}, null, null));
+            sql.append(Table.getSelectSQL(sourceCol.getParentTable(), Arrays.asList(sourceCol, captionCol), null, null));
 
             sql.append(") as x ORDER BY ");
             sql.append(sourceCol.getAlias());

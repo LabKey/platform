@@ -44,7 +44,7 @@ public class PdLookupForeignKey implements ForeignKey
         TableInfo table = schema.getTable(_pd.getLookupQuery(), null);
         if (table == null)
             return null;
-        if (table.getPkColumns().length != 1)
+        if (table.getPkColumns().size() != 1)
         {
             return null;
         }
@@ -62,7 +62,7 @@ public class PdLookupForeignKey implements ForeignKey
         }
         if (displayField == null)
             return null;
-        return LookupColumn.create(parent, table.getPkColumns()[0], table.getColumn(displayField), true);
+        return LookupColumn.create(parent, table.getPkColumns().get(0), table.getColumn(displayField), true);
     }
 
     public StringExpressionFactory.StringExpression getURL(ColumnInfo parent)
@@ -70,6 +70,6 @@ public class PdLookupForeignKey implements ForeignKey
         TableInfo lookupTable = getLookupTableInfo();
         if (lookupTable == null)
             return null;
-        return lookupTable.getDetailsURL(Collections.singletonMap(lookupTable.getPkColumnNames()[0], parent));
+        return lookupTable.getDetailsURL(Collections.singletonMap(lookupTable.getPkColumnNames().get(0), parent));
     }
 }

@@ -15,7 +15,7 @@ public class QueryWrapperDynaClass extends StringWrapperDynaClass
         _form = form;
 
         Map<String, Class> propMap = new CaseInsensitiveHashMap<Class>();
-        for (ColumnInfo column : _form.getTable().getColumns())
+        for (ColumnInfo column : _form.getTable().getColumnsList())
         {
             propMap.put(_form.getFormFieldName(column), column.getJavaClass());
         }

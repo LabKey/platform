@@ -39,9 +39,9 @@ public interface TableInfo
     /** getSchema().getSqlDialect() */
     SqlDialect getSqlDialect();
 
-    String[] getPkColumnNames();
+    List<String> getPkColumnNames();
 
-    ColumnInfo[] getPkColumns();
+    List<ColumnInfo> getPkColumns();
 
     ColumnInfo getVersionColumn();
 
@@ -60,20 +60,13 @@ public interface TableInfo
 
     ColumnInfo getColumnFromPropertyURI(String propertyURI);
 
-    ColumnInfo[] getColumns();
+    List<ColumnInfo> getColumnsList();
 
-    ColumnInfo[] getUserEditableColumns();
+    List<ColumnInfo> getUserEditableColumns();
 
-    ColumnInfo[] getColumns(String colNames);
+    List<ColumnInfo> getColumns(String colNames);
 
-    ColumnInfo[] getColumns(String... colNameArray);
-
-    /**
-     * Returns a set of display columns to be used
-     */
-    DataColumn[] getDisplayColumns(String colNames);
-
-    DataColumn[] getDisplayColumns(String[] colNames);
+    List<ColumnInfo> getColumns(String... colNameArray);
 
     Set<String> getColumnNameSet();
 

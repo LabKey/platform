@@ -96,16 +96,16 @@ public class DomainEditorServiceBase extends BaseRemoteService
                 return null;
 
             UserSchema schema = (UserSchema) qSchema;
-            Map<String, String> availableQueries = new HashMap();  //  GWT: TreeMap does not work
+            Map<String, String> availableQueries = new HashMap<String, String>();  //  GWT: TreeMap does not work
             for (String name : schema.getTableAndQueryNames(false))
             {
                 TableInfo table = schema.getTable(name, null);
                 if (table == null)
                     continue;
-                ColumnInfo[] pkColumns = table.getPkColumns();
-                if (pkColumns.length != 1)
+                List<ColumnInfo> pkColumns = table.getPkColumns();
+                if (pkColumns.size() != 1)
                     continue;
-                availableQueries.put(name, pkColumns[0].getName());
+                availableQueries.put(name, pkColumns.get(0).getName());
             }
             return availableQueries;
         }

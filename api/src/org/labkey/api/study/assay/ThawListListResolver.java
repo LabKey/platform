@@ -14,6 +14,7 @@ import java.sql.SQLException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 
 /**
  * User: jeckels
@@ -44,10 +45,10 @@ public class ThawListListResolver extends AbstractParticipantVisitResolver
 
     protected ParticipantVisit resolveParticipantVisit(String specimenID, String participantID, Double visitID, Date date)
     {
-        String[] pkNames = _tableInfo.getPkColumnNames();
-        assert pkNames.length == 1;
-        ColumnInfo col = _tableInfo.getColumn(pkNames[0]);
-        Object convertedID = null;
+        List<String> pkNames = _tableInfo.getPkColumnNames();
+        assert pkNames.size() == 1;
+        ColumnInfo col = _tableInfo.getColumn(pkNames.get(0));
+        Object convertedID;
         try
         {
             convertedID = ConvertUtils.convert(specimenID, col.getJavaObjectClass());
@@ -60,7 +61,7 @@ public class ThawListListResolver extends AbstractParticipantVisitResolver
 
         try
         {
-            Map<String, Object>[] rows = Table.selectForDisplay(_tableInfo, Table.ALL_COLUMNS, new SimpleFilter(pkNames[0], convertedID), null, Map.class);
+            Map<String, Object>[] rows = Table.selectForDisplay(_tableInfo, Table.ALL_COLUMNS, new SimpleFilter(pkNames.get(0), convertedID), null, Map.class);
             assert rows.length <= 1;
             if (rows.length == 0)
             {

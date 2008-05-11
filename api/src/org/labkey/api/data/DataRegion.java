@@ -47,7 +47,7 @@ public class DataRegion extends DisplayElement
     static Logger _log = Logger.getLogger(DataRegion.class);
     private List<DisplayColumn> _displayColumns = new ArrayList<DisplayColumn>();
     private List<DisplayColumnGroup> _groups = new ArrayList<DisplayColumnGroup>();
-    private Aggregate[] _aggregates = null;
+    private List<Aggregate> _aggregates = null;
     private Map<String, Aggregate.Result> _aggregateResults = null;
     private boolean _aggregateRowFirst = false;
     private boolean _aggregateRowLast = true;
@@ -64,7 +64,7 @@ public class DataRegion extends DisplayElement
     private ButtonBar _updateButtonBar = ButtonBar.BUTTON_BAR_UPDATE;
     private ButtonBar _detailsButtonBar = ButtonBar.BUTTON_BAR_DETAILS;
     private String _inputPrefix = null;
-    private String[] _recordSelectorValueColumns;
+    private List<String> _recordSelectorValueColumns;
     private boolean _fixedWidthColumns;
     private int _maxRows = 0;   // Display all rows by default
     private long _offset = 0;
@@ -100,18 +100,24 @@ public class DataRegion extends DisplayElement
     protected static final String COLUMN_SEPARATOR_STYLE_ARRIBS = "border-right:solid 1px " + COLUMN_SEPARATOR_COLOR;
     protected static final String ALTERNATING_ROW_COLOR = "#EEEEEE";
 
-    public void addColumn(DisplayColumn col)
+    public void addDisplayColumn(DisplayColumn col)
     {
         _displayColumns.add(col);
         if (null != _inputPrefix)
             col.setInputPrefix(_inputPrefix);
     }
 
-    public void addColumn(int index, DisplayColumn col)
+    public void addDisplayColumn(int index, DisplayColumn col)
     {
         _displayColumns.add(index, col);
         if (null != _inputPrefix)
             col.setInputPrefix(_inputPrefix);
+    }
+
+    public void addDisplayColumns(List<DisplayColumn> displayColumns)
+    {
+        for (DisplayColumn displayColumn : displayColumns)
+            addDisplayColumn(displayColumn);
     }
 
     public List<DisplayColumn> getDisplayColumns()
@@ -131,29 +137,23 @@ public class DataRegion extends DisplayElement
 
     public void addColumn(ColumnInfo col)
     {
-        addColumn(col.getRenderer());
+        addDisplayColumn(col.getRenderer());
     }
 
     public void addColumn(int index, ColumnInfo col)
     {
-        addColumn(index, col.getRenderer());
+        addDisplayColumn(index, col.getRenderer());
     }
 
-    public void addColumns(List<DisplayColumn> displayColumns)
-    {
-        for (DisplayColumn displayColumn : displayColumns)
-            addColumn(displayColumn);
-    }
-
-    public void addColumns(ColumnInfo[] cols)
+    public void addColumns(List<ColumnInfo> cols)
     {
         for (ColumnInfo col : cols)
-            addColumn(col.getRenderer());
+            addDisplayColumn(col.getRenderer());
     }
 
     public void addColumns(TableInfo tinfo, String colNames)
     {
-        ColumnInfo[] cols = tinfo.getColumns(colNames);
+        List<ColumnInfo> cols = tinfo.getColumns(colNames);
         addColumns(cols);
     }
 
@@ -198,7 +198,16 @@ public class DataRegion extends DisplayElement
         removeColumns(eachCol);
     }
 
+    @Deprecated
     public void setColumns(ColumnInfo[] cols)
+    {
+        clearColumns();
+
+        for (ColumnInfo column : cols)
+            addColumn(column);
+    }
+
+    public void setColumns(List<ColumnInfo> cols)
     {
         clearColumns();
 
@@ -226,7 +235,7 @@ public class DataRegion extends DisplayElement
             if (name.equalsIgnoreCase(_displayColumns.get(i).getName()))
             {
                 _displayColumns.remove(i);
-                addColumn(i, replacement);
+                addDisplayColumn(i, replacement);
                 return;
             }
         }
@@ -254,7 +263,7 @@ public class DataRegion extends DisplayElement
 
     public String getDetailsLink()
     {
-        String[] pkColNames = getPkColumnName();
+        List<String> pkColNames = getPkColumnNames();
         if (null == getTable() || null == pkColNames)
             return null;
 
@@ -273,14 +282,13 @@ public class DataRegion extends DisplayElement
     }
 
 
-    public ColumnInfo[] getSelectColumns()
+    public List<ColumnInfo> getSelectColumns()
     {
-        List<ColumnInfo> selectColumns = RenderContext.getSelectColumns(getDisplayColumns(), getTable());
-        return selectColumns.toArray(new ColumnInfo[selectColumns.size()]);
+        return RenderContext.getSelectColumns(getDisplayColumns(), getTable());
     }
 
 
-    private String[] getPkColumnName()
+    private List<String> getPkColumnNames()
     {
         return null == getTable() ? null : getTable().getPkColumnNames();
     }
@@ -534,24 +542,23 @@ public class DataRegion extends DisplayElement
             _complete = tableRS.isComplete();
         }
 
-        Aggregate[] aggregates = _aggregates;
         boolean countAggregate = _maxRows > 0 && !_complete && _showPagination && _showPaginationCount;
         if (countAggregate)
         {
             List<Aggregate> newAggregates = new LinkedList<Aggregate>();
-            if (aggregates != null)
-                newAggregates.addAll(Arrays.asList(aggregates));
+            if (_aggregates != null)
+                newAggregates.addAll(_aggregates);
             newAggregates.add(Aggregate.createCountStar());
-            aggregates = newAggregates.toArray(new Aggregate[newAggregates.size()]);
-        }
 
-        _aggregateResults =  ctx.getAggregates(_displayColumns, getTable(), getName(), aggregates, false);
+            _aggregateResults =  ctx.getAggregates(_displayColumns, getTable(), getName(), newAggregates, false);
 
-        if (countAggregate)
-        {
             Aggregate.Result result = _aggregateResults.remove(Aggregate.STAR);
             if (result != null)
                 _totalRows = (Long)result.getValue();
+        }
+        else
+        {
+            _aggregateResults =  ctx.getAggregates(_displayColumns, getTable(), getName(), _aggregates, false);
         }
 
         // TODO: Move this into RenderContext?
@@ -1128,10 +1135,10 @@ public class DataRegion extends DisplayElement
 
     public void setRecordSelectorValueColumns(String... columns)
     {
-        _recordSelectorValueColumns = columns;
+        _recordSelectorValueColumns = Arrays.asList(columns);
     }
 
-    public String[] getRecordSelectorValueColumns()
+    public List<String> getRecordSelectorValueColumns()
     {
         return _recordSelectorValueColumns;
     }
@@ -1266,7 +1273,7 @@ public class DataRegion extends DisplayElement
         }
         else
         {
-            ColumnInfo[] cols = getSelectColumns();
+            List<ColumnInfo> cols = getSelectColumns();
             rs = Table.selectForDisplay(tinfoMain, cols, ctx.getBaseFilter(), ctx.getBaseSort(), _maxRows, _offset);
             ctx.setResultSet(rs);
         }
@@ -1276,7 +1283,7 @@ public class DataRegion extends DisplayElement
     {
         if (null != rowMap)
         {
-            ColumnInfo[] pkCols = getTable().getPkColumns();
+            List<ColumnInfo> pkCols = getTable().getPkColumns();
 
             for (ColumnInfo pkCol : pkCols)
             {
@@ -1597,7 +1604,7 @@ public class DataRegion extends DisplayElement
         //Make sure all pks are included
         if (action == MODE_UPDATE)
         {
-            String[] pkColNames = getTable().getPkColumnNames();
+            List<String> pkColNames = getTable().getPkColumnNames();
             for (String pkColName : pkColNames)
             {
                 if (!renderedColumns.contains(pkColName)) {
@@ -1807,6 +1814,11 @@ public class DataRegion extends DisplayElement
     }
 
     public void setAggregates(Aggregate... aggregates)
+    {
+        setAggregates(Arrays.asList(aggregates));
+    }
+
+    public void setAggregates(List<Aggregate> aggregates)
     {
         _aggregates = aggregates;
     }

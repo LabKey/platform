@@ -83,9 +83,9 @@ public class JsonWriter
         mdata.put("totalProperty", "rowCount");
 
         //include an id property set to the pk column name if there is one (and only one)
-        String[] pkCols = _tinfo.getPkColumnNames();
-        if(null != pkCols && 1 == pkCols.length)
-            mdata.put("id", pkCols[0]);
+        List<String> pkColNames = _tinfo.getPkColumnNames();
+        if(null != pkColNames && 1 == pkColNames.size())
+            mdata.put("id", pkColNames.get(0));
         
         mdata.put("fields", fields);
 

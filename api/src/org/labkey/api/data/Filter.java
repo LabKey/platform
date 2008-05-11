@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import java.util.Set;
 import java.util.Map;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -27,7 +28,7 @@ import java.util.Map;
  */
 public interface Filter
 {
-    public SQLFragment getSQLFragment(TableInfo tableInfo, ColumnInfo[] colInfos);
+    public SQLFragment getSQLFragment(TableInfo tableInfo, List<ColumnInfo> colInfos);
     public SQLFragment getSQLFragment(SqlDialect dialect, Map<String, ? extends ColumnInfo> columnMap);
     public Set<String> getWhereParamNames();
 

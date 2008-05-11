@@ -44,7 +44,7 @@ public class SchemaTableInfo implements TableInfo
     String title = null;
     String titleColumn = null;
     protected String [] _pkColumnNames = _emptyStringAray;
-    ColumnInfo [] _pkColumns;
+    List<ColumnInfo> _pkColumns;
     protected ArrayList<ColumnInfo> columnList = new ArrayList<ColumnInfo>();
     protected Map<String, ColumnInfo> colMap = null;
     DbSchema parentSchema;
@@ -134,31 +134,27 @@ public class SchemaTableInfo implements TableInfo
     */
 
 
-    public String[] getPkColumnNames()
+    public List<String> getPkColumnNames()
     {
-        return _pkColumnNames;
+        return Arrays.asList(_pkColumnNames);
     }
 
 
-    private String getPkColumnName(int i)
-    {
-        return getPkColumnNames()[i];
-    }
-
-
-    public ColumnInfo[] getPkColumns()
+    public List<ColumnInfo> getPkColumns()
     {
         if (null == _pkColumnNames)
             return null;
 
-        if (null != _pkColumns)
-            return _pkColumns;
+        if (null == _pkColumns)
+        {
+            List<ColumnInfo> cols = new ArrayList<ColumnInfo>(_pkColumnNames.length);
 
-        ColumnInfo[] cols = new ColumnInfo[_pkColumnNames.length];
-        for (int i = 0; i < _pkColumnNames.length; i++)
-            cols[i] = getColumn(_pkColumnNames[i]);
+            for (String name : _pkColumnNames)
+                cols.add(getColumn(name));
 
-        _pkColumns = cols;
+            _pkColumns = cols;
+        }
+
         return _pkColumns;
     }
 
@@ -252,10 +248,10 @@ public class SchemaTableInfo implements TableInfo
         String titleColumn = getTitleColumn();
         StringBuffer pkColumnSelect = new StringBuffer();
         String sep = "";
-        for (int i = 0; i < getPkColumnNames().length; i++)
+        for (String pkColumnName : getPkColumnNames())
         {
             pkColumnSelect.append(sep);
-            pkColumnSelect.append(getPkColumnName(i));
+            pkColumnSelect.append(pkColumnName);
             sep = "+','+";
         }
 
@@ -353,65 +349,36 @@ public class SchemaTableInfo implements TableInfo
         columnList.add(column);
     }
 
-    public ColumnInfo[] getColumns()
+    public List<ColumnInfo> getColumnsList()
     {
-        return columnList.toArray(new ColumnInfo[columnList.size()]);
+        return columnList;
     }
 
-    public ColumnInfo[] getUserEditableColumns()
+    public List<ColumnInfo> getUserEditableColumns()
     {
         ArrayList<ColumnInfo> userEditableColumns = new ArrayList<ColumnInfo>(columnList.size());
-        for (ColumnInfo aColumnList : columnList)
-            if (aColumnList.isUserEditable())
-                userEditableColumns.add(aColumnList);
+        for (ColumnInfo col : columnList)
+            if (col.isUserEditable())
+                userEditableColumns.add(col);
 
-        return userEditableColumns.toArray(new ColumnInfo[userEditableColumns.size()]);
+        return userEditableColumns;
     }
 
 
-    public ColumnInfo[] getColumns(String colNames)
+    public List<ColumnInfo> getColumns(String colNames)
     {
         String[] colNameArray = colNames.split(",");
         return getColumns(colNameArray);
     }
 
-    public ColumnInfo[] getColumns(String... colNameArray)
+    public List<ColumnInfo> getColumns(String... colNameArray)
     {
-        ColumnInfo[] colList = new ColumnInfo[colNameArray.length];
-
-        for (int i = 0; i < colNameArray.length; i++)
+        List<ColumnInfo> ret = new ArrayList<ColumnInfo>(colNameArray.length);
+        for (String name : colNameArray)
         {
-            ColumnInfo colInfo = getColumn(colNameArray[i].trim());
-            assert colInfo != null : "Could not find column " + colNameArray[i];
-            colList[i] = colInfo;
+            ret.add(getColumn(name.trim()));
         }
-
-        return colList;
-
-    }
-
-    /**
-     * Returns a set of display columns to be used
-     */
-    public DataColumn[] getDisplayColumns(String colNames)
-    {
-        return getDisplayColumns(getColumns(colNames));
-    }
-
-
-    public DataColumn[] getDisplayColumns(String[] colNames)
-    {
-        return getDisplayColumns(getColumns(colNames));
-    }
-
-
-    public DataColumn[] getDisplayColumns(ColumnInfo[] cols)
-    {
-        DataColumn[] displayCols = new DataColumn[cols.length];
-        for (int i = 0; i < cols.length; i++)
-            displayCols[i] = new DataColumn(cols[i]);
-
-        return displayCols;
+        return ret;
     }
 
 
@@ -705,7 +672,7 @@ public class SchemaTableInfo implements TableInfo
 
     public List<FieldKey> getDefaultVisibleColumns()
     {
-        return QueryService.get().getDefaultVisibleColumns(getColumns());
+        return QueryService.get().getDefaultVisibleColumns(getColumnsList());
     }
 
     public boolean isPublic()

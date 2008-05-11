@@ -121,7 +121,7 @@ public class GroupTableInfo extends VirtualTable
         return _groupByCols;
     }
 
-    protected ColumnInfo[] getDistinctColumns()
+    protected List<ColumnInfo> getDistinctColumns()
     {
         Set<ColumnInfo> cols = new HashSet<ColumnInfo>();
         for(ColumnInfo col : getGroupByColumns())
@@ -129,8 +129,7 @@ public class GroupTableInfo extends VirtualTable
         for(CrosstabMeasure measure : getMeasures())
             cols.add(measure.getSourceColumn());
 
-        ColumnInfo[] ret = new ColumnInfo[cols.size()];
-        return cols.toArray(ret);
+        return new ArrayList<ColumnInfo>(cols);
     }
 
     public List<CrosstabMeasure> getMeasures()

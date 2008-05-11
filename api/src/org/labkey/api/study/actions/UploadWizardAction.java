@@ -16,8 +16,6 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.action.SpringActionController;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionMessage;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.ConversionException;
 
@@ -304,11 +302,11 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
         {
             newRunForm.clearUploadedData();
         }
-        insertView.getDataRegion().addColumn(new AssayDataCollectorDisplayColumn(newRunForm));
+        insertView.getDataRegion().addDisplayColumn(new AssayDataCollectorDisplayColumn(newRunForm));
 
         if (warnings)
         {
-            insertView.getDataRegion().addColumn(0, new AssayWarningsDisplayColumn(newRunForm));
+            insertView.getDataRegion().addDisplayColumn(0, new AssayWarningsDisplayColumn(newRunForm));
         }
 
         ButtonBar bbar = new ButtonBar();

@@ -17,7 +17,6 @@ package org.labkey.api.data;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
 import org.labkey.api.module.Module;
@@ -201,10 +200,15 @@ public class DbSchema
     }
 
 
-    public static String[] getNames()
+    public static Set<String> getNames()
     {
         Properties props = getDbSchemaProperties();
-        return props.keySet().toArray(new String[props.size()]);
+        Set<String> set = new HashSet<String>(props.size());
+
+        for (Object key : props.keySet())
+            set.add((String)key);
+
+        return set;
     }
 
     private static Properties getDbSchemaProperties()
@@ -864,24 +868,26 @@ public class DbSchema
         {
             if (t.getTableType()!= TableInfo.TABLE_TYPE_TABLE)
                 continue;
-            ColumnInfo[] ca = t.getColumns();
-            for (ColumnInfo c : ca)
+            for (ColumnInfo col : t.getColumnsList())
             {
-                if (c.getName().equalsIgnoreCase("Container"))
+                if (col.getName().equalsIgnoreCase("Container"))
                 {
                     sbSql.append( " INSERT INTO "+ tempTableName );
                     sbSql.append(" SELECT " + String.valueOf(++row) + " AS rowId, '" + t.getFromSQL() + "' AS TableName, ");
-                    if (t.getPkColumnNames().length == 1)
+                    List<String> pkColumnNames = t.getPkColumnNames();
+
+                    if (pkColumnNames.size() == 1)
                     {
-                        sbSql.append(" '" + t.getPkColumnNames()[0]);
+                        String pkColumnName = pkColumnNames.get(0);
+                        sbSql.append(" '" + pkColumnName);
                         sbSql.append("' AS FirstPKColName, ");
-                        sbSql.append(" CAST( " + t.getFromSQL() + "." + t.getPkColumnNames()[0] + " AS VARCHAR(100)) "
+                        sbSql.append(" CAST( " + t.getFromSQL() + "." + pkColumnName + " AS VARCHAR(100)) "
                                 + " AS FirstPKValue ,");
                     }
                     else
                     {
                         String tmp = "unknown PK";
-                        if (t.getPkColumnNames().length>1)
+                        if (pkColumnNames.size() > 1)
                             tmp = "multiCol PK ";
                         if(t.getName().equals("ACLs"))
                             tmp = "objectid ";
@@ -889,7 +895,7 @@ public class DbSchema
                         sbSql.append(" NULL AS FirstPKValue ,");
                     }
                     sbSql.append(" '" + moduleName + "' AS ModuleName, ");
-                    sbSql.append(" CAST( " + t.getFromSQL() + "." + c.getName() + " AS VARCHAR(100)) AS OrphanedContainer ");
+                    sbSql.append(" CAST( " + t.getFromSQL() + "." + col.getName() + " AS VARCHAR(100)) AS OrphanedContainer ");
                     sbSql.append(" FROM " + t.getFromSQL());
                     sbSql.append( " LEFT OUTER JOIN " + " core.Containers C ");
                     sbSql.append(" ON (" + t.getFromSQL() + ".Container = C.EntityId ) ");
@@ -931,7 +937,7 @@ public class DbSchema
         col.setNullable(false);
         listColInfos.add(col);
 
-        Table.TempTableInfo tTemplate = new Table.TempTableInfo(coreSchema, "cltmp",listColInfos, new String[]{"RowId"} );
+        Table.TempTableInfo tTemplate = new Table.TempTableInfo(coreSchema, "cltmp", listColInfos, Collections.singletonList("RowId"));
         String tempTableName = tTemplate.getTempTableName();
 
         String createTempTableSql =

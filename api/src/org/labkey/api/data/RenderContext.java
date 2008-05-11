@@ -43,14 +43,14 @@ public class RenderContext extends BoundMap // extends ViewContext
     private DataRegion _currentRegion;
     private Filter _baseFilter;
     private ResultSet _rs;
-    private Map _row;
+    private Map<String, Object> _row;
     private Sort _baseSort;
     private int _mode = DataRegion.MODE_NONE;
     private boolean _cache = true;
     private Set<String> _ignoredColumnFilters = new LinkedHashSet<String>();
     private Set<String> _selected = null;
     private ShowRows _showRows = ShowRows.DEFAULT;
-    private String [] _recordSelectorValueColumns;
+    private List<String> _recordSelectorValueColumns;
 
     public RenderContext(ViewContext context)
     {
@@ -167,7 +167,7 @@ public class RenderContext extends BoundMap // extends ViewContext
     {
         Set<ColumnInfo> ret = new LinkedHashSet<ColumnInfo>();
         if (null == displayColumns || displayColumns.size() == 0)
-            ret.addAll(Arrays.asList(tinfo.getColumns()));
+            ret.addAll(tinfo.getColumnsList());
         else
         {
             for (DisplayColumn displayColumn : displayColumns)
@@ -175,11 +175,11 @@ public class RenderContext extends BoundMap // extends ViewContext
                 displayColumn.addQueryColumns(ret);
             }
 
-            ColumnInfo[] pkColumns = tinfo.getPkColumns();
+            List<ColumnInfo> pkColumns = tinfo.getPkColumns();
             if (null != pkColumns)
             {
                 //always need to select pks
-                ret.addAll(Arrays.asList(tinfo.getPkColumns()));
+                ret.addAll(pkColumns);
             }
 
             String versionCol = tinfo.getVersionColumnName();
@@ -227,12 +227,12 @@ public class RenderContext extends BoundMap // extends ViewContext
         if (null != QueryService.get())
             QueryService.get().ensureRequiredColumns(tinfo, cols, filter, sort, _ignoredColumnFilters);
 
-        return selectForDisplay(tinfo, cols.toArray(new ColumnInfo[0]), filter, sort, maxRows, offset, async);
+        return selectForDisplay(tinfo, cols, filter, sort, maxRows, offset, async);
     }
     
-    public Map<String, Aggregate.Result> getAggregates(List<DisplayColumn> displayColumns, TableInfo tinfo, String dataRegionName, Aggregate[] aggregatesIn, boolean async) throws SQLException, IOException
+    public Map<String, Aggregate.Result> getAggregates(List<DisplayColumn> displayColumns, TableInfo tinfo, String dataRegionName, List<Aggregate> aggregatesIn, boolean async) throws SQLException, IOException
     {
-        if (aggregatesIn == null || aggregatesIn.length == 0)
+        if (aggregatesIn == null || aggregatesIn.isEmpty())
             return Collections.emptyMap();
 
         Set<String> ignoredAggregateFilters = new HashSet<String>();
@@ -263,13 +263,12 @@ public class RenderContext extends BoundMap // extends ViewContext
         }
         if (!aggregates.isEmpty())
         {
-            Aggregate[] visibleAggregates = aggregates.toArray(new Aggregate[aggregates.size()]);
             if (async)
             {
-                return Table.selectAggregatesForDisplayAsync(tinfo, visibleAggregates, cols.toArray(new ColumnInfo[0]), filter, getCache(), getViewContext().getResponse());
+                return Table.selectAggregatesForDisplayAsync(tinfo, aggregates, cols, filter, getCache(), getViewContext().getResponse());
             }
 
-            return Table.selectAggregatesForDisplay(tinfo, visibleAggregates, cols.toArray(new ColumnInfo[0]), filter, getCache());
+            return Table.selectAggregatesForDisplay(tinfo, aggregates, cols, filter, getCache());
         }
         return Collections.emptyMap();
     }
@@ -307,16 +306,16 @@ public class RenderContext extends BoundMap // extends ViewContext
 
     protected void buildSelectedFilter(SimpleFilter filter, TableInfo tinfo)
     {
-        String[] selectorColumns = getRecordSelectorValueColumns();
+        List<String> selectorColumns = getRecordSelectorValueColumns();
         if (selectorColumns == null)
         {
             selectorColumns = tinfo.getPkColumnNames();
         }
 
         Set<String> selected = getAllSelected();
-        if (selectorColumns.length == 1 || selected.isEmpty())
+        if (selectorColumns.size() == 1 || selected.isEmpty())
         {
-            SimpleFilter.InClause clause = new SimpleFilter.InClause(selectorColumns[0], selected, true);
+            SimpleFilter.InClause clause = new SimpleFilter.InClause(selectorColumns.get(0), selected, true);
             filter.addClause(clause);
         }
         else
@@ -326,10 +325,10 @@ public class RenderContext extends BoundMap // extends ViewContext
             {
                 SimpleFilter.AndClause clause = new SimpleFilter.AndClause();
                 String[] parts = row.split(",");
-                assert parts.length == selectorColumns.length : "Selected item and columns don't match in length: " + row;
+                assert parts.length == selectorColumns.size() : "Selected item and columns don't match in length: " + row;
                 for (int i = 0; i < parts.length; i++)
                 {
-                    clause.addClause(CompareType.EQUAL.createFilterClause(selectorColumns[i], parts[i]));
+                    clause.addClause(CompareType.EQUAL.createFilterClause(selectorColumns.get(i), parts[i]));
                 }
                 or.addClause(clause);
             }
@@ -337,7 +336,7 @@ public class RenderContext extends BoundMap // extends ViewContext
         }
     }
 
-    protected ResultSet selectForDisplay(TableInfo table, ColumnInfo[] columns, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async) throws SQLException, IOException
+    protected ResultSet selectForDisplay(TableInfo table, List<ColumnInfo> columns, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async) throws SQLException, IOException
     {
         if (async)
         {
@@ -454,10 +453,10 @@ public class RenderContext extends BoundMap // extends ViewContext
     @Override
     public Set keySet()
     {
-        Set keySet = super.keySet();
+        Set<String> keySet = super.keySet();
         if (null != _row)
         {
-            keySet = new HashSet(keySet);
+            keySet = new HashSet<String>(keySet);
             keySet.addAll(_row.keySet());
         }
 
@@ -545,7 +544,7 @@ public class RenderContext extends BoundMap // extends ViewContext
     {
         if (null != _errors)
         {
-            List list = null;
+            List list;
             if ("main".equals(paramName))
                 list = _errors.getGlobalErrors();
             else
@@ -577,7 +576,7 @@ public class RenderContext extends BoundMap // extends ViewContext
         return getErrors(getForm().getFormFieldName(column));
     }
 
-    public String[] getRecordSelectorValueColumns()
+    public List<String> getRecordSelectorValueColumns()
     {
         return _recordSelectorValueColumns;
     }

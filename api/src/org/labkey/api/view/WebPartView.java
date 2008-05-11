@@ -212,9 +212,9 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
         int status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
         String message = "An unexpected error occurred";
         ExceptionUtil.ErrorRenderer renderer = ExceptionUtil.getErrorRenderer(status, message, t, request, true, false);
-        renderer.renderStart(getViewContext(), response.getWriter());
-        renderer.renderContent(getViewContext(), response.getWriter(), request);
-        renderer.renderEnd(getViewContext(), response.getWriter());
+        renderer.renderStart(response.getWriter());
+        renderer.renderContent(response.getWriter(), request);
+        renderer.renderEnd(response.getWriter());
     }
 
 

@@ -450,7 +450,7 @@ public class SimpleFilter implements Filter
     */
 
 
-    public SQLFragment getSQLFragment(TableInfo tableInfo, ColumnInfo[] colInfos)
+    public SQLFragment getSQLFragment(TableInfo tableInfo, List<ColumnInfo> colInfos)
     {
         if (null == _clauses || 0 == _clauses.size())
         {
@@ -493,11 +493,11 @@ public class SimpleFilter implements Filter
 
     public List<Object> getWhereParams(TableInfo tableInfo)
     {
-        return getWhereParams(tableInfo, tableInfo.getColumns());
+        return getWhereParams(tableInfo, tableInfo.getColumnsList());
     }
 
 
-    public List<Object> getWhereParams(TableInfo tableInfo, ColumnInfo[] colInfos)
+    public List<Object> getWhereParams(TableInfo tableInfo, List<ColumnInfo> colInfos)
     {
         SQLFragment frag = getSQLFragment(tableInfo, colInfos);
         return frag.getParams();

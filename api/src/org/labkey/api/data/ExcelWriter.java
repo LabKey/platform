@@ -83,14 +83,7 @@ public class ExcelWriter
     public ExcelWriter(ResultSet rs, List<DisplayColumn> displayColumns)
     {
         setResultSet(rs);
-        addColumns(displayColumns);
-    }
-
-
-    public ExcelWriter(ResultSet rs, ColumnInfo[] cols)
-    {
-    setResultSet(rs);
-        addColumns(cols);
+        addDisplayColumns(displayColumns);
     }
 
 
@@ -104,12 +97,13 @@ public class ExcelWriter
 
     public void createColumns(ResultSetMetaData md) throws SQLException
     {
-        ColumnInfo cols[] = new ColumnInfo[md.getColumnCount()];
+        int columnCount = md.getColumnCount();
+        List<ColumnInfo> cols = new ArrayList<ColumnInfo>(columnCount);
 
-        for (int i = 0; i < cols.length; i++)
+        for (int i = 0; i < columnCount; i++)
         {
             int sqlColumn = i + 1;
-            cols[i] = new ColumnInfo(md, sqlColumn);
+            cols.add(new ColumnInfo(md, sqlColumn));
         }
 
         setColumns(cols);
@@ -242,28 +236,28 @@ public class ExcelWriter
     }
 
 
-    private void addColumns(List<DisplayColumn> columns)
+    private void addDisplayColumns(List<DisplayColumn> columns)
     {
         for (DisplayColumn column : columns)
             addColumn(column);
     }
 
 
-    private void addColumns(ColumnInfo[] cols)
+    private void addColumns(List<ColumnInfo> cols)
     {
         for (ColumnInfo col : cols)
             addColumn(new DataColumn(col));
     }
 
 
-    public void setColumns(List<DisplayColumn> columns)
+    public void setDisplayColumns(List<DisplayColumn> columns)
     {
         _columns = new ArrayList<ExcelColumn>(10);
-        addColumns(columns);
+        addDisplayColumns(columns);
     }
 
 
-    public void setColumns(ColumnInfo[] columns)
+    public void setColumns(List<ColumnInfo> columns)
     {
         _columns = new ArrayList<ExcelColumn>(10);
         addColumns(columns);
