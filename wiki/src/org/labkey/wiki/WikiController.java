@@ -680,7 +680,7 @@ public class WikiController extends SpringActionController
         public void validateCommand(WikiInsertForm wikiInsertForm, Errors errors)
         {
             if(!wikiInsertForm.isReshow())
-                wikiInsertForm.validate(errors, getUser().isAdministrator());
+                wikiInsertForm.validate(errors, UserManager.mayWriteScript(getUser(), getContainer()));
         }
 
         public ActionURL getSuccessURL(WikiInsertForm wikiInsertForm)
@@ -755,24 +755,22 @@ public class WikiController extends SpringActionController
             }
 
             List<String> warnings = new ArrayList<String>();
+            List<String> scriptErrors = new ArrayList<String>();
             if (currentRendererType == WikiRendererType.HTML)
             {
-                PageFlowUtil.validateHtml(form.getBody(), warnings, true);
+                PageFlowUtil.validateHtml(form.getBody(), warnings, scriptErrors);
             }
-            boolean hasScript = false;
+            boolean hasScript = !scriptErrors.isEmpty();
             boolean hasPreTags = false;
             if (currentRendererType == WikiRendererType.HTML)
             {
-                List<String> scriptErrors = new ArrayList<String>();
-                PageFlowUtil.validateHtml(form.getBody(), scriptErrors, false);
-                hasScript = scriptErrors.size() > warnings.size();
-                if (!getContainer().hasPermission(getUser(), ACL.PERM_ADMIN))
+                if (!UserManager.mayWriteScript(getUser(), getContainer()))
                 {
                     for (String scriptError : scriptErrors)
                         errors.addError(new FieldError("wiki", "body", "", false, new String[] {"Warning"}, new Object[] {scriptError}, scriptError));
                 }
 
-                if(null != form.getBody())
+                if (null != form.getBody())
                 {
                     String bodyLower = form.getBody().toLowerCase();
                     hasPreTags = (bodyLower.contains("<pre>") || bodyLower.contains("<pre "));
@@ -892,7 +890,7 @@ public class WikiController extends SpringActionController
         public void validateCommand(WikiDataForm wikiDataForm, Errors errors)
         {
             if (!wikiDataForm.isReshow())
-                wikiDataForm.validate(errors, getUser().isAdministrator());
+                wikiDataForm.validate(errors, UserManager.mayWriteScript(getUser(), getContainer()));
         }
 
         public ActionURL getSuccessURL(WikiDataForm wikiDataForm)
@@ -2139,10 +2137,10 @@ public class WikiController extends SpringActionController
                     if (renderer == WikiRendererType.HTML)
                         body = PageFlowUtil.validateHtml(body, tidyErrors, allowMaliciousContent);
 
-                    for(String err : tidyErrors)
+                    for (String err : tidyErrors)
                         errors.rejectValue("body", ERROR_MSG, err);
 
-                    if(tidyErrors.isEmpty())
+                    if (tidyErrors.isEmpty())
                     {
                         // uncomment to replace with tidy output
                         // setBody(body);
@@ -3150,7 +3148,7 @@ public class WikiController extends SpringActionController
                 ArrayList<String> tidyErrors = new ArrayList<String>();
                 User user = getViewContext().getUser();
 
-                boolean allowMaliciousContent = user.isAdministrator() || container.hasPermission(user, ACL.PERM_ADMIN);
+                boolean allowMaliciousContent = UserManager.mayWriteScript(user, container);
                 PageFlowUtil.validateHtml(body, tidyErrors, allowMaliciousContent);
 
                 for(String err : tidyErrors)

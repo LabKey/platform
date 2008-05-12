@@ -13,6 +13,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
@@ -304,7 +305,7 @@ public class FileContentController extends SpringActionController
        public boolean handlePost(AttachmentForm form, BindException errors) throws Exception
        {
            Map<String, MultipartFile> fileMap = getFileMap();
-           if (fileMap.size() > 0 && !getUser().isAdministrator())
+           if (fileMap.size() > 0 && !UserManager.mayWriteScript(getUser(), getContainer()))
            {
                for (MultipartFile formFile : fileMap.values())
                {
@@ -314,11 +315,11 @@ public class FileContentController extends SpringActionController
                        //This relies on storing whole file in memory. Generally OK for text files like this.
                        String html = new String(formFile.getBytes(),"UTF-8");
                        List<String> validateErrors = new ArrayList<String>();
-                       PageFlowUtil.validateHtml(html, validateErrors, false);
-                       if (validateErrors.size() > 0)
+                       List<String> safetyWarnings = new ArrayList<String>();
+                       PageFlowUtil.validateHtml(html, validateErrors, safetyWarnings);
+                       if (safetyWarnings.size() > 0)
                        {
-                           String msg = "HTML Pages cannot contain script unless uploaded by a site administrator.";
-                           addError(errors, msg);
+                           addError(errors, "HTML Pages cannot contain script unless uploaded by a site administrator.");
                            //                            ActionURL reshow = getViewContext().cloneActionURL().setAction("showAddAttachment.view").replaceParameter("entityId", form.getEntityId());
                            //                            sb.append(PageFlowUtil.buttonLink("Try Again", reshow));
                            //                            return includeView(new DialogTemplate(new HtmlView(sb.toString())));

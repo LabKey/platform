@@ -2017,7 +2017,7 @@ public class AnnouncementsController extends SpringActionController
             if ("HTML".equals(bean.getRendererType()))
             {
                 Collection<String> validateErrors = new LinkedList<String>();
-                PageFlowUtil.validateHtml(bean.getBody(), validateErrors, getUser().isAdministrator());
+                PageFlowUtil.validateHtml(bean.getBody(), validateErrors, UserManager.mayWriteScript(getUser(), getContainer()));
                 for (String err : validateErrors)
                     errors.reject(ERROR_MSG, err);
             }
