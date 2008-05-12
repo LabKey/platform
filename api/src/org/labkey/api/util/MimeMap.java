@@ -182,6 +182,26 @@ public class MimeMap implements FileNameMap
         defaultMap.put("odi", new MimeType("application/vnd.oasis.opendocument.image"));
         defaultMap.put("oxt", new MimeType("application/vnd.openofficeorg.extension"));
 
+        /* office 2007 */
+
+        defaultMap.put("docm", new MimeType("application/vnd.ms-word.document.macroEnabled.12"));
+        defaultMap.put("docx", new MimeType("application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
+        defaultMap.put("dotm", new MimeType("application/vnd.ms-word.template.macroEnabled.12"));
+        defaultMap.put("dotx", new MimeType("application/vnd.openxmlformats-officedocument.wordprocessingml.template"));
+        defaultMap.put("potm", new MimeType("application/vnd.ms-powerpoint.template.macroEnabled.12"));
+        defaultMap.put("potx", new MimeType("application/vnd.openxmlformats-officedocument.presentationml.template"));
+        defaultMap.put("ppam", new MimeType("application/vnd.ms-powerpoint.addin.macroEnabled.12"));
+        defaultMap.put("ppsm", new MimeType("application/vnd.ms-powerpoint.slideshow.macroEnabled.12"));
+        defaultMap.put("ppsx", new MimeType("application/vnd.openxmlformats-officedocument.presentationml.slideshow"));
+        defaultMap.put("pptm", new MimeType("application/vnd.ms-powerpoint.presentation.macroEnabled.12"));
+        defaultMap.put("pptx", new MimeType("application/vnd.openxmlformats-officedocument.presentationml.presentation"));
+        defaultMap.put("xlam", new MimeType("application/vnd.ms-excel.addin.macroEnabled.12"));
+        defaultMap.put("xlsb", new MimeType("application/vnd.ms-excel.sheet.binary.macroEnabled.12"));
+        defaultMap.put("xlsm", new MimeType("application/vnd.ms-excel.sheet.macroEnabled.12"));
+        defaultMap.put("xlsx", new MimeType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        defaultMap.put("xltm", new MimeType("application/vnd.ms-excel.template.macroEnabled.12"));
+        defaultMap.put("xltx", new MimeType("application/vnd.openxmlformats-officedocument.spreadsheetml.template"));
+
         // mime.types
         try
         {
