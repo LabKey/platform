@@ -1587,6 +1587,7 @@ study/src/META-INF/study/scripts/sql[!!-~]server/study-2.30-8.10.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-2.31-2.32.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-2.32-2.33.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-2.33-2.34.sql -text
+study/src/META-INF/study/scripts/sql[!!-~]server/study-8.10-8.11.sql -text
 study/src/org/labkey/study/QueryHelper.java -text
 study/src/org/labkey/study/SampleManager.java -text
 study/src/org/labkey/study/SpecimenServiceImpl.java -text
