@@ -808,4 +808,11 @@ public class UserManager
 
         return completions;
     }
+
+    public static boolean mayWriteScript(User user, Container c)
+    {
+//        return user.isAdministrator();
+//        return user.isAdministrator() || c.hasPermission(user, ACL.PERM_ADMIN);
+        return false;
+    }
 }

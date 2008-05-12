@@ -1416,10 +1416,17 @@ public class PageFlowUtil
     }
 
 
-    /** validate an html fragment */
-    public static String validateHtml(String html, Collection<String> errors, boolean allowMaliciousContent)
+    /** use this version if you don't care which errors are html parsing errors and which are safety warnings */
+    public static String validateHtml(String html, Collection<String> errors, boolean scriptAsErrors)
     {
-        if (errors.size() > 0)
+        return validateHtml(html, errors, scriptAsErrors ? null : errors);
+    }
+
+
+    /** validate an html fragment */
+    public static String validateHtml(String html, Collection<String> errors, Collection<String> scriptWarnings)
+    {
+        if (errors.size() > 0 || (null != scriptWarnings && scriptWarnings.size() > 0))
             throw new IllegalArgumentException("empty errors collection expected");
 
         if (StringUtils.trimToEmpty(html).length() == 0)
@@ -1430,7 +1437,7 @@ public class PageFlowUtil
         if (errors.size() > 0)
             return null;
 
-        if (!allowMaliciousContent)
+        if (null != scriptWarnings)
         {
             try
             {
@@ -1446,7 +1453,7 @@ public class PageFlowUtil
                 parserSetFeature(parser, "http://apache.org/xml/features/validation/dynamic", false);
                 parserSetFeature(parser, "http://apache.org/xml/features/continue-after-fatal-error", false);
 
-                parser.setContentHandler(new ValidateHandler(errors));
+                parser.setContentHandler(new ValidateHandler(scriptWarnings));
                 parser.parse(new InputSource(new StringReader(xml)));
             }
             catch (UnsupportedEncodingException e)
@@ -1466,7 +1473,7 @@ public class PageFlowUtil
             }
         }
 
-        if (errors.size() > 0)
+        if (errors.size() > 0 || (null != scriptWarnings && scriptWarnings.size() > 0))
             return null;
         
         // let's return html not xhtml
