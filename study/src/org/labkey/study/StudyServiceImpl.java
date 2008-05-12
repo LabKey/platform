@@ -5,6 +5,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.model.DataSetDefinition;
@@ -36,15 +37,27 @@ public class StudyServiceImpl implements StudyService.Service
     {
         Study study = StudyManager.getInstance().getStudy(c);
         DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
-        String tsv = createTSV(data);
+
         // Start a transaction, so that we can rollback if our insert fails
         beginTransaction();
         try
         {
             Map<String,Object> oldData = getDatasetRow(u, c, datasetId, lsid);
+
+            Map<String,Object> newData = new CaseInsensitiveHashMap<Object>(data);
+            // If any fields aren't included, use the old values
+            for (Map.Entry<String,Object> oldField : oldData.entrySet())
+            {
+                if (oldField.getKey().equals("lsid"))
+                    continue;
+                if (!newData.containsKey(oldField.getKey()))
+                    newData.put(oldField.getKey(), oldField.getValue());
+            }
+
             StudyManager.getInstance().deleteDatasetRows(study, def, Collections.singletonList(lsid));
-            // TODO: switch from using a TSV to a map, so that strange characters like quotes don't throw off the data
-            String[] result = StudyManager.getInstance().importDatasetTSV(study,def, tsv, System.currentTimeMillis(),
+
+            String tsv = createTSV(newData);
+            String[] result = StudyManager.getInstance().importDatasetTSV(study, def, tsv, System.currentTimeMillis(),
                 Collections.<String,String>emptyMap(), errors, true);
 
             if (errors.size() > 0)
@@ -58,9 +71,9 @@ public class StudyServiceImpl implements StudyService.Service
 
             // lsid is not in the updated map by default since it is not editable,
             // however it can be changed by the update
-            data.put("lsid", result[0]);
+            newData.put("lsid", result[0]);
 
-            addDatasetAuditEvent(u, c, def, oldData, data);
+            addDatasetAuditEvent(u, c, def, oldData, newData);
 
             return result[0];
         }
@@ -80,7 +93,7 @@ public class StudyServiceImpl implements StudyService.Service
     }
 
     @SuppressWarnings("unchecked")
-    public Map<String, Object> getDatasetRow(User u, Container c, int datasetId, String lsid) throws SQLException
+    public Map<String,Object> getDatasetRow(User u, Container c, int datasetId, String lsid) throws SQLException
     {
         Study study = StudyManager.getInstance().getStudy(c);
         DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
@@ -94,9 +107,9 @@ public class StudyServiceImpl implements StudyService.Service
             List<ColumnInfo> columns = tInfo.getColumnsList();
             for (ColumnInfo col : columns)
             {
-                // special handling for lsid -- it's not user-editable,
-                // but we want to display it
-                if (col.getName().equals("lsid"))
+                // special handling for lsids -- they're not user-editable,
+                // but we want to display them
+                if (col.getName().equals("lsid") || col.getName().equals("sourcelsid"))
                     continue;
                 if (!col.isUserEditable())
                     data.remove(col.getName());
@@ -116,7 +129,6 @@ public class StudyServiceImpl implements StudyService.Service
         String tsv = createTSV(data);
         try
         {
-            // TODO: switch from using a TSV to a map, so that strange characters like quotes don't throw off the data
             String[] result = StudyManager.getInstance().importDatasetTSV(study,def, tsv, System.currentTimeMillis(),
                 Collections.<String,String>emptyMap(), errors, true);
 
@@ -172,7 +184,18 @@ public class StudyServiceImpl implements StudyService.Service
 
         for (String key:keyList)
         {
-            sb.append(data.get(key)).append('\t');
+            Object valueObj = data.get(key);
+            if (valueObj != null)
+            {
+                // Since we're creating a TSV, we can't use tabs.
+                // Replace them with 4 spaces.
+                valueObj = valueObj.toString().replaceAll("\t", "    ");
+            }
+            else
+            {
+                valueObj = "";
+            }
+            sb.append(valueObj).append('\t');
         }
         return sb.toString();
     }

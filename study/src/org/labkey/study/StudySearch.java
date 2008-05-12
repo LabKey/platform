@@ -22,7 +22,6 @@ import java.util.Set;
  */
 public class StudySearch implements Search.Searchable
 {
-    private static final String SEARCH_RESULT = "Study";
     private static final String SEARCH_DOMAIN = "study";
     private static final String SEARCH_HIT_TYPE = "labkey/study";
 

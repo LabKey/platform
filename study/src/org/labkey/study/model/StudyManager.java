@@ -1476,21 +1476,25 @@ public class StudyManager
 
     private static final String CONVERSION_ERROR = "Conversion Error";
 
-    Map<String, Object>[] parseTSV(Study study, DataSetDefinition def, String tsv, Map<String,String> columnMap, List<String> errors) throws ServletException, IOException
+    Map<String, Object>[] parseTSV(DataSetDefinition def,
+                                   String tsv,
+                                   Map<String, String> columnMap,
+                                   List<String> errors)
+            throws ServletException, IOException
     {
         TableInfo tinfo = def.getTableInfo(null, false, false);
 
-        Map<String,ColumnInfo> colMap = new CaseInsensitiveHashMap<ColumnInfo>();
+        Map<String,ColumnInfo> propName2Col = new CaseInsensitiveHashMap<ColumnInfo>();
         for (ColumnInfo col : tinfo.getColumnsList())
         {
-            colMap.put(col.getName(), col);
+            propName2Col.put(col.getName(), col);
             String uri = col.getPropertyURI();
             if (null != uri)
             {
-                colMap.put(col.getPropertyURI(), col);
+                propName2Col.put(col.getPropertyURI(), col);
                 String propName = uri.substring(uri.lastIndexOf('#')+1);
-                if (!colMap.containsKey(propName))
-                    colMap.put(propName,col);
+                if (!propName2Col.containsKey(propName))
+                    propName2Col.put(propName,col);
             }
         }
 
@@ -1517,7 +1521,7 @@ public class StudyManager
             if (columnMap.containsKey(name))
                 name = columnMap.get(name);
 
-            ColumnInfo matchedCol = colMap.get(name);
+            ColumnInfo matchedCol = propName2Col.get(name);
             if (null == matchedCol)
                 continue;
 
@@ -1614,12 +1618,15 @@ public class StudyManager
             Map<String, String> columnMap, List<String> errors, boolean checkDuplicates)
             throws IOException, ServletException, SQLException
     {
-        Map<String, Object>[] dataMaps = parseTSV(study, def, tsv, columnMap, errors);
-        return importDatasetTSV(study, def, dataMaps, lastModified, columnMap, errors, checkDuplicates);
+        Map<String, Object>[] dataMaps = parseTSV(def, tsv, columnMap, errors);
+        return importDatasetData(study, def, dataMaps, lastModified, errors, checkDuplicates);
     }
 
-    public String[] importDatasetTSV(Study study, DataSetDefinition def, Map<String, Object>[] dataMaps, long lastModified,
-            Map<String,String> columnMap, List<String> errors, boolean checkDuplicates)
+    /**
+     * dataMaps must have strings which are property URIs
+     */
+    public String[] importDatasetData(Study study, DataSetDefinition def, Map<String, Object>[] dataMaps, long lastModified,
+                                      List<String> errors, boolean checkDuplicates)
             throws IOException, ServletException, SQLException
     {
         Container c = study.getContainer();

@@ -242,7 +242,16 @@ public class DatasetController extends BaseStudyController
                         view.addView(objView);
                     }
                 }
+                else
+                {
+                    view.addView(new NoRecordView());
+                }
             }
+            else
+            {
+                view.addView(new NoRecordView());
+            }
+
             if (oldRecord != null)
             {
                 oldData = DatasetAuditViewFactory.decodeFromDataMap(oldRecord);
@@ -254,6 +263,14 @@ public class DatasetController extends BaseStudyController
             }
 
             return view;
+        }
+
+        private class NoRecordView extends HttpView
+        {
+            protected void renderInternal(Object model, PrintWriter out) throws Exception
+            {
+                out.write("<p>No current record found</p>");
+            }
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -314,10 +331,15 @@ public class DatasetController extends BaseStudyController
                 out.write("</td><td>");
 
                 StringBuffer sb = new StringBuffer();
-                sb.append(entry.getValue());
+                String oldValue = entry.getValue();
+                if (oldValue == null)
+                    oldValue = "";
+                sb.append(oldValue);
 
                 String newValue = newData.remove(entry.getKey());
-                if (newValue != null && !newValue.equals(entry.getValue()))
+                if (newValue == null)
+                    newValue = "";
+                if (!newValue.equals(oldValue))
                 {
                     modified++;
                     sb.append("&nbsp;&raquo;&nbsp;");
@@ -336,7 +358,10 @@ public class DatasetController extends BaseStudyController
 
                 StringBuffer sb = new StringBuffer();
                 sb.append("&nbsp;&raquo;&nbsp;");
-                sb.append(entry.getValue());
+                String newValue = entry.getValue();
+                if (newValue == null)
+                    newValue = "";
+                sb.append(newValue);
                 out.write(sb.toString());
                 out.write("</td></tr>\n");
             }

@@ -161,7 +161,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                 scope.commitTransaction();
             // unfortunately, the actual import cannot happen within our transaction: we eventually hit the
             // IllegalStateException in ContainerManager.ensureContainer.
-            String[] lsids = StudyManager.getInstance().importDatasetTSV(targetStudy, dataset, convertedDataMaps, new Date().getTime(), null, errors, true);
+            String[] lsids = StudyManager.getInstance().importDatasetData(targetStudy, dataset, convertedDataMaps, new Date().getTime(), errors, true);
             if (lsids.length > 0 && protocol != null)
             {
                 for (Map.Entry<String, int[]> entry : getSourceLSID(dataMaps).entrySet())
