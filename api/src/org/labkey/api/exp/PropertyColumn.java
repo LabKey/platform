@@ -67,6 +67,9 @@ public class PropertyColumn extends LookupColumn
         String format = StringUtils.trimToNull(pd.getFormat());
         if (null != format)
             setFormatString(format);
+        
+        setInputType(pd.getPropertyType().getInputType());
+
         this.containerId = containerId;
     }
 
