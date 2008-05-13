@@ -1572,7 +1572,7 @@ public class PageFlowUtil
             if ((e.startsWith("?") || _illegalElements.contains(e)) && !_reported.contains(e))
             {
                 _reported.add(e);
-                _errors.add("Illegal element <" + qName + ">.");
+                _errors.add("Illegal element <" + qName + ">. For permissions to use this element, contact your system administrator.");
             }
 
             for (int i = 0; i < attributes.getLength(); i++)

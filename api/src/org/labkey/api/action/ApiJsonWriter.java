@@ -115,7 +115,7 @@ public class ApiJsonWriter extends ApiResponseWriter
                 msg = ferror.getDefaultMessage();
 
                 if(jsonErrors.has(ferror.getField()))
-                    msg = jsonErrors.get(ferror.getField()) + "; " + ferror.getDefaultMessage();
+                    msg = jsonErrors.get(ferror.getField()) + " " + ferror.getDefaultMessage();
             }
 
             jsonErrors.put(key, msg);

@@ -623,6 +623,7 @@ api/webapp/clientapi/Filter.js -text
 api/webapp/clientapi/GridView.js -text
 api/webapp/clientapi/NavTrail.js -text
 api/webapp/clientapi/Query.js -text
+api/webapp/clientapi/Utils.js -text
 api/webapp/clientapi/WebPart.js -text
 api/webapp/clientapi/chartsample.html -text
 api/webapp/clientapi/gridsample.html -text
