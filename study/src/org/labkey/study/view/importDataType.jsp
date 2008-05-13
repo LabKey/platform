@@ -144,7 +144,7 @@ Paste in a tab delimited file with the following fields.  Additional fields will
             </td>
         </tr> --%>
         <tr>
-            <td colspan=5><input type=image src="<%=PageFlowUtil.buttonSrc("Next","large")%>">&nbsp;<%= buttonLink("Cancel", "manageTypes.view") %></td>
+            <td colspan=5><input type=image src="<%=PageFlowUtil.buttonSrc("Next")%>">&nbsp;<%= buttonLink("Cancel", "manageTypes.view") %></td>
         </tr>
     </table>
 </form>

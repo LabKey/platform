@@ -1466,7 +1466,6 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ACL.PERM_ADMIN)
-    @SuppressWarnings("deprecation")
     public class ConfirmDeleteVisitAction extends SimpleViewAction<IdForm>
     {
         private Visit _visit;
@@ -1478,10 +1477,7 @@ public class StudyController extends BaseStudyController
             if (null == _visit)
                 return HttpView.throwNotFoundMV();
 
-            GroovyView view = new GroovyView("/org/labkey/study/view/confirmDeleteVisit.gm");
-            view.addObject("study", study);
-            view.addObject("visit", _visit);
-
+            ModelAndView view = new StudyJspView<Visit>(study, "confirmDeleteVisit.jsp", _visit, errors);
             return view;
         }
 
@@ -1761,13 +1757,27 @@ public class StudyController extends BaseStudyController
                         continue;
                     }
 
+                    boolean isHidden = false;
+                    String hiddenValue = (String)props.get("hidden");
+                    if ("true".equalsIgnoreCase(hiddenValue))
+                        isHidden = true;
+
                     Integer typeId = (Integer) typeIdObj;
                     DataSetImportInfo info = datasetInfoMap.get(typeId);
-                    if (info != null && !info.name.equals(typeName))
+                    if (info != null)
                     {
-                        errors.reject("bulkImportDataTypes", "Type ID " + typeName + " is associated with multiple " +
-                                "type names ('" + typeName + "' and '" + info.name + "').");
-                        return false;
+                        if (!info.name.equals(typeName))
+                        {
+                            errors.reject("bulkImportDataTypes", "Type ID " + typeName + " is associated with multiple " +
+                                    "type names ('" + typeName + "' and '" + info.name + "').");
+                            return false;
+                        }
+                        if (!info.isHidden == isHidden)
+                        {
+                            errors.reject("bulkImportDataTypes", "Type ID " + typeName + " is set as both hidden and "
+                            + "not hidden in different fields.");
+                            return false;
+                        }
                     }
 
                     // we've got a good entry
@@ -1775,6 +1785,8 @@ public class StudyController extends BaseStudyController
                     {
                         info = new DataSetImportInfo(typeName);
                         info.label = (String) props.get(form.getLabelColumn());
+
+                        info.isHidden = isHidden;
                         datasetInfoMap.put((Integer) typeIdObj, info);
                     }
 
@@ -1787,7 +1799,9 @@ public class StudyController extends BaseStudyController
                             "VisitDate".equalsIgnoreCase(propName) ||
                             "SiteId".equalsIgnoreCase(propName) ||
                             "Created".equalsIgnoreCase(propName) ||
-                            "Modified".equalsIgnoreCase(propName))
+                            "Modified".equalsIgnoreCase(propName) ||
+                            "Key".equalsIgnoreCase(propName) ||
+                            "Hidden".equalsIgnoreCase(propName))
                         continue;
 
                     // look for visitdate column
@@ -1805,6 +1819,20 @@ public class StudyController extends BaseStudyController
                         else
                         {
                             errors.reject("bulkImportDataTypes", "Type ID " + typeName + " has multiple visitdate fields (" + info.visitDatePropertyName + " and " + propName+").");
+                            return false;
+                        }
+                    }
+
+                    // Deal with extra key field
+                    Integer keyField = (Integer)props.get("key");
+                    if (keyField != null && keyField.intValue() == 1)
+                    {
+                        if (info.keyPropertyName == null)
+                            info.keyPropertyName = propName;
+                        else
+                        {
+                            // It's already been set
+                            errors.reject("bulkImportDataTypes", "Type ID " + typeName + " has multiple fields with key set to 1.");
                             return false;
                         }
                     }
@@ -1851,6 +1879,8 @@ public class StudyController extends BaseStudyController
                         {
                             def = new DataSetDefinition(getStudy(), id, name, info.label, null, getDomainURI(c, name, id));
                             def.setVisitDatePropertyName(info.visitDatePropertyName);
+                            def.setShowByDefault(!info.isHidden);
+                            def.setKeyPropertyName(info.keyPropertyName);
                             manager.createDataSetDefinition(getUser(), def);
                         }
                         else
@@ -1861,6 +1891,8 @@ public class StudyController extends BaseStudyController
                             def.setName(name);
                             def.setTypeURI(getDomainURI(c, def));
                             def.setVisitDatePropertyName(info.visitDatePropertyName);
+                            def.setShowByDefault(!info.isHidden);
+                            def.setKeyPropertyName(info.keyPropertyName);
                             manager.updateDataSetDefinition(getUser(), def);
                         }
                     }
@@ -1939,6 +1971,8 @@ public class StudyController extends BaseStudyController
         String label;
         String visitDatePropertyName;
         String startDatePropertyName;
+        boolean isHidden;
+        String keyPropertyName;
     }
 
     @RequiresPermission(ACL.PERM_UPDATE)

@@ -93,7 +93,7 @@ public class StudySearch implements Search.Searchable
         DataSetDefinition[] defs = study.getDataSets();
 def:    for (DataSetDefinition def : defs)
         {
-            if (parser.matches(def.getName()) || parser.matches(def.getLabel()))
+            if (parser.matches(def.getName()) || parser.matches(def.getLabel()) || parser.matches(def.getDescription()))
             {
                 ActionURL url = new ActionURL(StudyController.DatasetAction.class, study.getContainer());
                 url.addParameter("datasetId", def.getDataSetId());
@@ -116,7 +116,11 @@ def:    for (DataSetDefinition def : defs)
                 List<ColumnInfo> columns = table.getColumnsList();
                 for (ColumnInfo column : columns)
                 {
-                    if (!column.isHidden() && parser.matches(column.getCaption()))
+                    if (!column.isHidden() && (
+                            parser.matches(column.getName()) ||
+                            parser.matches(column.getCaption()) ||
+                            parser.matches(column.getDescription())
+                    ))
                     {
                         ActionURL url = new ActionURL(StudyController.DatasetAction.class, study.getContainer());
                         url.addParameter("datasetId", def.getDataSetId());
@@ -155,7 +159,7 @@ def:    for (DataSetDefinition def : defs)
                     study.getLabel(),
                     url.getLocalURIString(),
                     SEARCH_HIT_TYPE,
-                    "Visit in Study"
+                    "Study"
                 ));
             }
         }
@@ -176,7 +180,7 @@ def:    for (DataSetDefinition def : defs)
                     study.getLabel(),
                     url.getLocalURIString(),
                     SEARCH_HIT_TYPE,
-                    "Cohort in study"
+                    "Study"
                 ));
 
                 return;

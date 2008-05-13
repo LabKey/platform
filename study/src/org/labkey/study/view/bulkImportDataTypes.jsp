@@ -55,6 +55,16 @@ name and type id.  Additional columns will just be ignored.
         <td valign=top><code>xsd:int</code></td>
     </tr>
     <tr>
+        <th align=left valign=top nowrap>Key</th>
+        <td valign=top>Indicates if this column is an extra key (max 1 per dataset)</td>
+        <td valign=top><code>0</code></td>
+    </tr>
+    <tr>
+        <th align=left valign=top nowrap>Hidden</th>
+        <td valign=top>Indicates whether this dataset should be hidden</td>
+        <td valign=top><code>true</code></td>
+    </tr>
+    <tr>
         <th align="left" colspan="3"><span style="color:red;">*Required</span></th>
     </tr>
 </table>
@@ -62,19 +72,19 @@ name and type id.  Additional columns will just be ignored.
 <form action="bulkImportDataTypes.post" method="POST" enctype="multipart/form-data">
     <table cellspacing="0" cellpadding="2">
         <tr>
-            <td class=ms-searchform>Column containing dataset Name</td>
+            <td class=ms-searchform>Column containing dataset Name<span style="color:red;">*</span></td>
         </tr>
         <tr>
             <td><input name="typeNameColumn" style="width:100%" value="<%=h(bean.getTypeNameColumn())%>"></td>
         </tr>
         <tr>
-            <td class=ms-searchform>Column containing dataset Label</td>
+            <td class=ms-searchform>Column containing dataset Label<span style="color:red;">*</span></td>
         </tr>
         <tr>
             <td><input name="labelColumn" style="width:100%" value="<%=h(bean.getLabelColumn())%>"></td>
         </tr>
         <tr>
-            <td class=ms-searchform>Column containing dataset Id</td>
+            <td class=ms-searchform>Column containing dataset Id<span style="color:red;">*</span></td>
         </tr>
         <tr>
             <td><input name="typeIdColumn" style="width:100%" value="<%=h(bean.getTypeIdColumn())%>"></td>

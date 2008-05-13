@@ -1804,7 +1804,7 @@ study/src/org/labkey/study/view/StudySummaryWebPartFactory.java -text
 study/src/org/labkey/study/view/bulkImportDataTypes.jsp -text
 study/src/org/labkey/study/view/columnPicker.gm -text
 study/src/org/labkey/study/view/confirmDeleteStudy.jsp -text
-study/src/org/labkey/study/view/confirmDeleteVisit.gm -text
+study/src/org/labkey/study/view/confirmDeleteVisit.jsp -text
 study/src/org/labkey/study/view/createCrosstabReport.jsp -text
 study/src/org/labkey/study/view/createDataSet.jsp -text
 study/src/org/labkey/study/view/createQueryReport.jsp -text

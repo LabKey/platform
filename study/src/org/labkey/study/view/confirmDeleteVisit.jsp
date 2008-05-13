@@ -1,29 +1,32 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.study.controllers.BaseStudyController" %>
 <%@ page import="org.labkey.study.model.Study" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.Visit" %>
 <%@ page import="org.labkey.study.model.VisitMapKey" %>
-<%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.study.visitmanager.VisitManager" %>
+<%@ page import="java.util.Map" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
-    Visit visit = currentContext.get("visit");
-    Study study = currentContext.get("study");
-    String errors = PageFlowUtil.getStrutsError(request, "main");
-    if (null != errors)
-    {
-%><div style="color:red"><%=errors%></div><%
-    }
+    BaseStudyController.StudyJspView<Visit> me = (BaseStudyController.StudyJspView<Visit>) HttpView.currentView();
+    Visit visit = me.getModelBean();
+    Study study = getStudy();
+
     StudyManager manager = StudyManager.getInstance();
     VisitManager visitManager = manager.getVisitManager(study);
-    Map summaryMap = visitManager.getVisitSummary(null);
+    Map<VisitMapKey,Integer> summaryMap = visitManager.getVisitSummary(null);
     int count = 0;
-    for (Map.Entry e : summaryMap.entrySet())
+    for (Map.Entry<VisitMapKey,Integer> e : summaryMap.entrySet())
     {
-        VisitMapKey key = (VisitMapKey)e.getKey();
+        VisitMapKey key = e.getKey();
         if (key.visitRowId == visit.getRowId())
-            count += (Integer)e.getValue();
+            count += e.getValue().intValue();
     }
 %>
+<labkey:errors/>
+
 <form action="deleteVisit.view" method=POST>
     Do you want to delete <%=visitManager.getLabel() %> <b><%=visit.getDisplayString()%></b>?<p/>
     <%if (count != 0)
