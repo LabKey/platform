@@ -2,7 +2,7 @@
  * @fileOverview
  * @author <a href="https://www.labkey.org">LabKey Software</a> (<a href="mailto:support@labkey.com">support@labkey.com</a>)
  * @version 8.1
- * @license Copyright (c) 2008 LabKey Software Foundation
+ * @license Copyright (c) 2008 LabKey Corporation
  * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
