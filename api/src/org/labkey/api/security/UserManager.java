@@ -809,10 +809,9 @@ public class UserManager
         return completions;
     }
 
-    public static boolean mayWriteScript(User user, Container c)
+    public static boolean mayWriteScript(User user)
     {
-        return user.isAdministrator();
-//        return user.isAdministrator() || c.hasPermission(user, ACL.PERM_ADMIN);
-//        return false;
+        //user may write script if user is a site admin or inthe developers group
+        return user.isAdministrator() || user.isDeveloper();
     }
 }

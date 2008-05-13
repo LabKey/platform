@@ -26,6 +26,7 @@ public class Group extends UserPrincipal
     public static final int groupAdministrators = -1;
     public static final int groupUsers = -2;
     public static final int groupGuests = -3;
+    public static final int groupDevelopers = -4;
 
     private String ownerId;
     private String container;

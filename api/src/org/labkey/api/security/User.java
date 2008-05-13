@@ -178,6 +178,10 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         return isInGroup(Group.groupAdministrators);
     }
 
+    public boolean isDeveloper()
+    {
+        return isInGroup(Group.groupDevelopers);
+    }
 
     public boolean isInGroup(int group)
     {
