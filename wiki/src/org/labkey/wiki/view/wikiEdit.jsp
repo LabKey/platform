@@ -328,7 +328,7 @@
             {
                 var msg = "Unable to save changes due to the following validation errors:<span style='text-align:left'><ul>";
                 for(var err in respJson.errors)
-                    msg += "<li>" + respJson.errors[err] + "</li>";
+                    msg += "<li>" + LABKEY.Utils.encodeHtml(respJson.errors[err]) + "</li>";
                 msg += "</ul></span>";
                 setError(msg);
             }
@@ -740,11 +740,14 @@
         //hack: tinyMCE doesn't have a proper API for resetting the dirty flag
         //but I found this at
         //http://www.bram.us/2007/06/15/my-tinymce-ajax-implementation-autosave-plugin-vs-isdirty-aka-fixing-the-tweak/
-        var inst = tinyMCE.getInstanceById(tinyMCE.getEditorId("body"));
-        if(inst)
+        if(tinyMCE.getEditorId("body"))
         {
-            inst.startContent = tinyMCE.trim(inst.getBody().innerHTML);
-            inst.isNotDirty = true;
+            var inst = tinyMCE.getInstanceById(tinyMCE.getEditorId("body"));
+            if(inst)
+            {
+                inst.startContent = tinyMCE.trim(inst.getBody().innerHTML);
+                inst.isNotDirty = true;
+            }
         }
     }
 
