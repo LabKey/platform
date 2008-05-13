@@ -41,6 +41,8 @@ public interface FtpConnector
     // return a list of all folders below this folder (list includes path)
     String[] getAllChildren(String path);
 
+    void audit(int userid, String path, String msg);
+
     // This class describes the labkey web server state
     // it is not meant to indicate the existance or non-existance of file system directories
     // NOTE: fsRoot and pipelineRoot are non-null only if explictly set for this folder

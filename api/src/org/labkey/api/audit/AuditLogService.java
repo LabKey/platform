@@ -63,8 +63,10 @@ public class AuditLogService
         public boolean isViewable();
 
         public AuditLogEvent addEvent(ViewContext context, String eventType, String key, String message);
+        public AuditLogEvent addEvent(ViewContext context, String eventType, String key1, String key2, String message);
         public AuditLogEvent addEvent(ViewContext context, String eventType, int key, String message);
         public AuditLogEvent addEvent(User user, Container c, String eventType, String key, String message);
+        public AuditLogEvent addEvent(User user, Container c, String eventType, String key1, String key2, String message);
         public AuditLogEvent addEvent(User user, Container c, String eventType, int key, String message);
         public AuditLogEvent addEvent(AuditLogEvent event);
 

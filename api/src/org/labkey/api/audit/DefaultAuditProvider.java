@@ -50,8 +50,10 @@ public class DefaultAuditProvider implements AuditLogService.I, AuditLogService.
     public AuditLogEvent addEvent(AuditLogEvent event){return new AuditLogEvent();}
 
     public AuditLogEvent addEvent(ViewContext context, String eventType, String key, String message){return new AuditLogEvent();}
+    public AuditLogEvent addEvent(ViewContext context, String eventType, String key1, String key2, String message){return new AuditLogEvent();}
     public AuditLogEvent addEvent(ViewContext context, String eventType, int key, String message){return new AuditLogEvent();}
     public AuditLogEvent addEvent(User user, Container c, String eventType, String key, String message){return new AuditLogEvent();}
+    public AuditLogEvent addEvent(User user, Container c, String eventType, String key1, String key2, String message){return new AuditLogEvent();}
     public AuditLogEvent addEvent(User user, Container c, String eventType, int key, String message){return new AuditLogEvent();}
 
     public List<AuditLogEvent> getEvents(String eventType, String key)
