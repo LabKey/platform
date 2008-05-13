@@ -811,8 +811,8 @@ public class UserManager
 
     public static boolean mayWriteScript(User user, Container c)
     {
-//        return user.isAdministrator();
+        return user.isAdministrator();
 //        return user.isAdministrator() || c.hasPermission(user, ACL.PERM_ADMIN);
-        return false;
+//        return false;
     }
 }
