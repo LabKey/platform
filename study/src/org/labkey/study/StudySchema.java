@@ -173,4 +173,9 @@ public class StudySchema
     {
         return getSchema().getTable("Cohort");
     }
+
+    public TableInfo getTableInfoParticipantView()
+    {
+        return getSchema().getTable("ParticipantView");
+    }
 }

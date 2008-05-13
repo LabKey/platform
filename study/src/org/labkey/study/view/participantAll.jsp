@@ -29,8 +29,8 @@
     ViewContext context = HttpView.currentContext();
     UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), "study");
     String contextPath = request.getContextPath();
-    JspView<StudyController.ParticipantForm> me = (org.labkey.api.view.JspView<StudyController.ParticipantForm>) HttpView.currentView();
-    StudyController.ParticipantForm bean = me.getModelBean();
+    JspView<StudyManager.ParticipantViewConfig> me = (org.labkey.api.view.JspView<StudyManager.ParticipantViewConfig>) HttpView.currentView();
+    StudyManager.ParticipantViewConfig bean = me.getModelBean();
 
     ChartDesignerBean chartBean = new ChartDesignerBean();
 
@@ -38,10 +38,13 @@
     chartBean.setSchemaName(schema.getSchemaName());
     chartBean.addParam("isParticipantChart", "true");
     chartBean.addParam("participantId", bean.getParticipantId());
+    String currentUrl = bean.getRedirectUrl();
+    if (currentUrl == null)
+        currentUrl = context.getActionURL().getLocalURIString();
 
     ActionURL url = ChartUtil.getChartDesignerURL(context, chartBean);
     url.setPageFlow("Study-Reports");
-
+    url.addParameter("returnUrl", currentUrl);
     StudyManager manager = StudyManager.getInstance();
     Study study = manager.getStudy(context.getContainer());
     StudyManager.AllParticipantData all = manager.getAllParticpantData(study, bean.getParticipantId());
@@ -186,7 +189,7 @@
                 {
                 %>
                 <tr style="<%=expanded ? "" : "display:none"%>">
-                    <td><a href="<%=new ActionURL("Study", "savedChart", study.getContainer()).addParameter("participantId", bean.getParticipantId()).addParameter("datasetId", Integer.toString(pdKey.datasetId)).addParameter("action", "delete").addParameter("reportId", String.valueOf(report.getDescriptor().getReportId()))%>">[remove]</a></td>
+                    <td><a href="<%=new ActionURL("Study", "savedChart", study.getContainer()).addParameter("participantId", bean.getParticipantId()).addParameter("datasetId", Integer.toString(pdKey.datasetId)).addParameter("action", "delete").addParameter("redirectUrl", currentUrl).addParameter("reportId", String.valueOf(report.getDescriptor().getReportId()))%>">[remove]</a></td>
                 </tr>
                 <%
                 }

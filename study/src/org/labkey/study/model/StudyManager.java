@@ -18,15 +18,18 @@ import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.query.*;
 import org.labkey.common.tools.TabLoader;
 import org.labkey.common.util.CPUTimer;
 import org.labkey.study.*;
+import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.visitmanager.DateVisitManager;
 import org.labkey.study.visitmanager.SequenceVisitManager;
 import org.labkey.study.designer.StudyDesignManager;
 import org.labkey.study.reports.ReportManager;
+import org.springframework.validation.BindException;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -885,6 +888,8 @@ public class StudyManager
             assert deletedTables.add(_tableInfoParticipant);
             Table.delete(StudySchema.getInstance().getTableInfoCohort(), containerFilter);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoCohort());
+            Table.delete(StudySchema.getInstance().getTableInfoParticipantView(), containerFilter);
+            assert deletedTables.add(StudySchema.getInstance().getTableInfoParticipantView());
 
             //
             // plate service
@@ -1017,13 +1022,19 @@ public class StudyManager
 
     public String[] getParticipantIds(Study study)
     {
+        return getParticipantIds(study, -1);
+    }
+
+    public String[] getParticipantIds(Study study, int rowLimit)
+    {
         try
         {
             DbSchema schema = StudySchema.getInstance().getSchema();
             TableInfo table = _tableInfoParticipant;
-            return Table.executeArray(schema,
-                    "SELECT ParticipantId FROM " + table + " WHERE Container = ?",
-                    new Object[]{study.getContainer().getId()}, String.class);
+            SQLFragment sql = new SQLFragment("SELECT ParticipantId FROM " + table + " WHERE Container = ?", study.getContainer().getId());
+            if (rowLimit > 0)
+                sql = schema.getSqlDialect().limitRows(sql, rowLimit);
+            return Table.executeArray(schema, sql, String.class);
         }
         catch (SQLException x)
         {
@@ -2263,6 +2274,46 @@ public class StudyManager
                     scope.rollbackTransaction();
             }
         }
+    }
+
+    public CustomParticipantView getCustomParticipantView(Study study) throws SQLException
+    {
+        SimpleFilter containerFilter = new SimpleFilter("Container", study.getContainer().getId());
+        return Table.selectObject(StudySchema.getInstance().getTableInfoParticipantView(), Table.ALL_COLUMNS,
+                containerFilter, null, CustomParticipantView.class);
+    }
+
+    public CustomParticipantView saveCustomParticipantView(Study study, User user, CustomParticipantView view) throws SQLException
+    {
+        if (view.getRowId() == null)
+        {
+            view.beforeInsert(user, study.getContainer().getId());
+            return Table.insert(user, StudySchema.getInstance().getTableInfoParticipantView(), view);
+        }
+        else
+        {
+            view.beforeUpdate(user);
+            return Table.update(user, StudySchema.getInstance().getTableInfoParticipantView(), view, view.getRowId(), null);
+        }
+    }
+
+    public interface ParticipantViewConfig
+    {
+        String getParticipantId();
+
+        int getDatasetId();
+
+        String getRedirectUrl();
+    }
+
+    public WebPartView<ParticipantViewConfig> getParticipantView(Container container, ParticipantViewConfig config)
+    {
+        return getParticipantView(container, config, null);
+    }
+
+    public WebPartView<ParticipantViewConfig> getParticipantView(Container container, ParticipantViewConfig config, BindException errors)
+    {
+        return new BaseStudyController.StudyJspView<ParticipantViewConfig>(getStudy(container), "participantAll.jsp", config, errors);
     }
 
     public static class StudyTestCase extends junit.framework.TestCase

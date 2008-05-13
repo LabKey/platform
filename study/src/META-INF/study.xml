@@ -498,6 +498,18 @@
       <ns:column columnName="Day"/>
     </ns:columns>
   </ns:table>
+  <ns:table tableName="participantview" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="rowid"/>
+      <ns:column columnName="container"/>
+      <ns:column columnName="createdby"/>
+      <ns:column columnName="created"/>
+      <ns:column columnName="modifiedby"/>
+      <ns:column columnName="modified"/>
+      <ns:column columnName="body"/>
+      <ns:column columnName="active"/>
+    </ns:columns>
+  </ns:table>
   <ns:table tableName="Plate" tableDbType="TABLE">
     <ns:columns>
       <ns:column columnName="RowId"/>

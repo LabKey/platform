@@ -51,10 +51,7 @@ import org.labkey.study.plate.query.PlateSchema;
 import org.labkey.study.query.StudySchemaProvider;
 import org.labkey.study.reports.*;
 import org.labkey.study.samples.SamplesWebPart;
-import org.labkey.study.view.AssayDetailsWebPartFactory;
-import org.labkey.study.view.AssayListWebPartFactory;
-import org.labkey.study.view.DatasetsWebPartView;
-import org.labkey.study.view.StudySummaryWebPartFactory;
+import org.labkey.study.view.*;
 
 import java.beans.PropertyChangeEvent;
 import java.lang.reflect.InvocationTargetException;
@@ -77,13 +74,14 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
     public static final WebPartFactory studyDesignSummaryWebPartFactory = new StudyDesignSummaryWebPartFactory();
     public static final WebPartFactory assayListWebPartFactory = new AssayListWebPartFactory();
     public static final WebPartFactory assayDetailsWebPartFactory = new AssayDetailsWebPartFactory();
+    public static final WebPartFactory participantWebPartFactory = new ParticipantWebPartFactory();
 
     public StudyModule()
     {
-        super(NAME, 8.11, "/org/labkey/study", true, reportsPartFactory, reportsWidePartFactory, samplesPartFactory,
+        super(NAME, 8.12, "/org/labkey/study", true, reportsPartFactory, reportsWidePartFactory, samplesPartFactory,
                 samplesWidePartFactory, datasetsPartFactory, manageStudyPartFactory,
                 enrollmentChartPartFactory, studyDesignsWebPartFactory, studyDesignSummaryWebPartFactory,
-                assayListWebPartFactory, assayDetailsWebPartFactory);
+                assayListWebPartFactory, assayDetailsWebPartFactory, participantWebPartFactory);
 
         addController("study", StudyController.class);
         addController("study-reports", ReportsController.class);

@@ -731,7 +731,7 @@ public class StudyController extends BaseStudyController
                         }
                     }
                 }
-                box.addView(new ParticipantNavView(previousParticipantURL, nextParticiapantURL));
+                box.addView(new ParticipantNavView(previousParticipantURL, nextParticiapantURL, form.getParticipantId()));
             }
             box.addView(new DataHeader(getViewContext().getActionURL(), null, def, false));
             box.addView(new ReportHeader(reportView));
@@ -787,10 +787,17 @@ public class StudyController extends BaseStudyController
                     }
                 }
             }
-            JspView<ParticipantForm> view = new StudyJspView<ParticipantForm>(getStudy(), "participantAll.jsp", form, errors);
-            ParticipantNavView navView = new ParticipantNavView(previousParticipantURL, nextParticiapantURL);
 
-            return new VBox(navView, view);
+            CustomParticipantView customParticipantView = StudyManager.getInstance().getCustomParticipantView(StudyManager.getInstance().getStudy(getContainer()));
+            HttpView participantView;
+            if (customParticipantView != null && customParticipantView.isActive())
+                participantView = new HtmlView(customParticipantView.getBody());
+            else
+                participantView = StudyManager.getInstance().getParticipantView(getContainer(), form, errors);
+
+            ParticipantNavView navView = new ParticipantNavView(previousParticipantURL, nextParticiapantURL, form.getParticipantId());
+
+            return new VBox(navView, participantView);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -3197,8 +3204,11 @@ public class StudyController extends BaseStudyController
             else if ("delete".equals(form.getAction()))
             {
                 ReportService.get().deleteReport(getViewContext(), report);
-                ActionURL url = new ActionURL(ParticipantAction.class, getContainer());
-
+                ActionURL url;
+                if (form.getRedirectUrl() == null)
+                    url = new ActionURL(ParticipantAction.class, getContainer());
+                else
+                    url = new ActionURL(form.getRedirectUrl());
                 HttpView.throwRedirect(url);
             }
             return null;
@@ -3893,6 +3903,160 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    private static final String DEFAULT_PARTICIPANT_VIEW_SOURCE =
+            "<script type=\"text/javascript\">\n" +
+            "   /* Include all headers necessary for client API usage: */\n" +
+            "   LABKEY.requiresClientAPI();\n" +
+            "</script>\n" +
+            "\n" +
+            "<div id=\"participantData\">Loading...</div>\n" +
+            "\n" +
+            "<script type=\"text/javascript\">\n" +
+            "    /* get the participant id from the request URL: this parameter is required. */\n" +
+            "    var participantId = LABKEY.ActionURL.getParameter('participantId');\n" +
+            "    /* get the dataset id from the request URL: this is used to remember expand/collapse\n" +
+            "       state per-dataset.  This parameter is optional; we use -1 if it isn't provided. */\n" +
+            "    var datasetId = LABKEY.ActionURL.getParameter('datasetId');\n" +
+            "    if (!datasetId)\n" +
+            "        datasetId = -1;\n" +
+            "\n" +
+            "    /* create the participant details webpart: */\n" +
+            "    var participantWebPart = new LABKEY.WebPart({\n" +
+            "    partName: 'Participant Details',\n" +
+            "    renderTo: 'participantData',\n" +
+            "    frame : 'false',\n" +
+            "    partConfig: {\n" +
+            "        participantId: participantId,\n" +
+            "        datasetId: datasetId,\n" +
+            "        currentUrl: '' + window.location\n" +
+            "        }\n" +
+            "    });\n" +
+            "\n" +
+            "    /* place the webpart into the 'participantData' div: */\n" +
+            "    participantWebPart.render();\n" +
+            "</script>";
+    
+    public static class CustomizeParticipantViewForm
+    {
+        private String _returnUrl;
+        private String _customScript;
+        private String _participantId;
+        private boolean _useCustomView;
+        private boolean _reshow;
+
+        public String getReturnUrl()
+        {
+            return _returnUrl;
+        }
+
+        public void setReturnUrl(String returnUrl)
+        {
+            _returnUrl = returnUrl;
+        }
+
+        public String getCustomScript()
+        {
+            return _customScript;
+        }
+
+        public String getDefaultScript()
+        {
+            return DEFAULT_PARTICIPANT_VIEW_SOURCE;
+        }
+
+        public void setCustomScript(String customScript)
+        {
+            _customScript = customScript;
+        }
+
+        public String getParticipantId()
+        {
+            return _participantId;
+        }
+
+        public void setParticipantId(String participantId)
+        {
+            _participantId = participantId;
+        }
+
+        public boolean isReshow()
+        {
+            return _reshow;
+        }
+
+        public void setReshow(boolean reshow)
+        {
+            _reshow = reshow;
+        }
+
+        public boolean isUseCustomView()
+        {
+            return _useCustomView;
+        }
+
+        public void setUseCustomView(boolean useCustomView)
+        {
+            _useCustomView = useCustomView;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class CustomizeParticipantViewAction extends FormViewAction<CustomizeParticipantViewForm>
+    {
+        public void validateCommand(CustomizeParticipantViewForm target, Errors errors)
+        {
+        }
+
+        public ModelAndView getView(CustomizeParticipantViewForm form, boolean reshow, BindException errors) throws Exception
+        {
+            Study study = getStudy();
+            CustomParticipantView view = StudyManager.getInstance().getCustomParticipantView(study);
+            if (view != null)
+            {
+                form.setCustomScript(view.getBody());
+                form.setUseCustomView(view.isActive());
+            }
+
+            return new JspView<CustomizeParticipantViewForm>("/org/labkey/study/view/customizeParticipantView.jsp", form);
+        }
+
+        public boolean handlePost(CustomizeParticipantViewForm form, BindException errors) throws Exception
+        {
+            Study study = getStudy();
+            CustomParticipantView view = StudyManager.getInstance().getCustomParticipantView(study);
+            if (view == null)
+                view = new CustomParticipantView();
+            view.setBody(form.getCustomScript());
+            view.setActive(form.isUseCustomView());
+            view = StudyManager.getInstance().saveCustomParticipantView(study, getUser(), view);
+            return view != null;
+        }
+
+        public ActionURL getSuccessURL(CustomizeParticipantViewForm form)
+        {
+            if (form.isReshow())
+            {
+                ActionURL reshowURL = new ActionURL(CustomizeParticipantViewAction.class, getContainer());
+                if (form.getParticipantId() != null && form.getParticipantId().length() > 0)
+                    reshowURL.addParameter("participantId", form.getParticipantId());
+                if (form.getReturnUrl() != null && form.getReturnUrl().length() > 0)
+                    reshowURL.addParameter("returnUrl", form.getReturnUrl());
+                return reshowURL;
+            }
+            else if (form.getReturnUrl() != null && form.getReturnUrl().length() > 0)
+                return new ActionURL(form.getReturnUrl());
+            else
+                return new ActionURL(ReportsController.ManageReportsAction.class, getContainer());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            _appendManageStudy(root);
+            root.addChild("Manage Reports and Views", new ActionURL(ReportsController.ManageReportsAction.class, getContainer()));
+            return root.addChild("Customize Participant View");
+        }
+    }
+
     public static class StudySnapshotBean
     {
         private final StudyManager.SnapshotBean bean;
@@ -4186,9 +4350,7 @@ public class StudyController extends BaseStudyController
         return prefix + (getStudy().isDateBased() ? "Timepoint" : "Visit") + ".jsp";
     }
 
-
-
-    public static class ParticipantForm
+    public static class ParticipantForm implements StudyManager.ParticipantViewConfig
     {
         private String participantId;
         private int datasetId;
@@ -4196,6 +4358,7 @@ public class StudyController extends BaseStudyController
         private String action;
         private int reportId;
         private Integer cohortId;
+        private String _redirectUrl;
 
         public String getParticipantId(){return participantId;}
 
@@ -4216,6 +4379,10 @@ public class StudyController extends BaseStudyController
         public Integer getCohortId(){return cohortId;}
 
         public void setCohortId(Integer cohortId){this.cohortId = cohortId;}
+
+        public String getRedirectUrl() { return _redirectUrl; }
+
+        public void setRedirectUrl(String redirectUrl) { _redirectUrl = redirectUrl; }
     }
 
 
@@ -4368,17 +4535,19 @@ public class StudyController extends BaseStudyController
         private String _prevURL;
         private String _nextURL;
         private String _display;
+        private String _currentParticipantId;
 
-        public ParticipantNavView(String prevURL, String nextURL, String display)
+        public ParticipantNavView(String prevURL, String nextURL, String currentPartitipantId, String display)
         {
             _prevURL = prevURL;
             _nextURL = nextURL;
             _display = display;
+            _currentParticipantId = currentPartitipantId;
         }
 
-        public ParticipantNavView(String prevURL, String nextURL)
+        public ParticipantNavView(String prevURL, String nextURL, String currentPartitipantId)
         {
-            this(prevURL, nextURL, null);
+            this(prevURL, nextURL, currentPartitipantId,  null);
         }
 
         @Override
@@ -4395,6 +4564,16 @@ public class StudyController extends BaseStudyController
                 out.print("[Next Participant >]");
             else
                 out.print("[<a href=\"" + _nextURL + "\">Next Participant ></a>]");
+
+            Container container = getViewContext().getContainer();
+            if (container.hasPermission(getViewContext().getUser(), ACL.PERM_ADMIN))
+            {
+                ActionURL customizeURL = new ActionURL(CustomizeParticipantViewAction.class, container);
+                customizeURL.addParameter("returnUrl", getViewContext().getActionURL().getLocalURIString());
+                customizeURL.addParameter("participantId", _currentParticipantId);
+                out.print("</td><td>");
+                out.print(PageFlowUtil.textLink("Customize View", customizeURL));
+            }
 
             if (_display != null)
             {

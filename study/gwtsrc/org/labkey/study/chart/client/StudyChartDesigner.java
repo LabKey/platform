@@ -29,7 +29,7 @@ public class StudyChartDesigner extends AbstractChartPanel implements EntryPoint
 {
     private RootPanel _root = null;
     private Label _loading = null;
-    private String _returnURL;
+    private String _redirectUrl;
     private String _datasetId;
     private String _participantId;
     private boolean _isParticipantChart;
@@ -43,7 +43,7 @@ public class StudyChartDesigner extends AbstractChartPanel implements EntryPoint
     {
         _root = RootPanel.get("org.labkey.study.chart.StudyChartDesigner-Root");
 
-        _returnURL = PropertyUtil.getServerProperty("returnURL");
+        _redirectUrl = PropertyUtil.getServerProperty("redirectUrl");
         _datasetId = PropertyUtil.getServerProperty("datasetId");
         _participantId = PropertyUtil.getServerProperty("participantId");
         String participantChart = PropertyUtil.getServerProperty("isParticipantChart");
@@ -195,8 +195,8 @@ public class StudyChartDesigner extends AbstractChartPanel implements EntryPoint
 
                         public void onSuccess(Object result)
                         {
-                            if (result instanceof String)
-                                _returnURL = (String)result;
+                            if (_redirectUrl == null && result instanceof String)
+                                _redirectUrl = (String)result;
 
                             cancelForm();
                         }
@@ -227,10 +227,10 @@ public class StudyChartDesigner extends AbstractChartPanel implements EntryPoint
 
     private void cancelForm()
     {
-        if (null == _returnURL || _returnURL.length() == 0)
+        if (null == _redirectUrl || _redirectUrl.length() == 0)
             back();
         else
-            navigate(_returnURL);
+            navigate(_redirectUrl);
     }
 
 
@@ -363,7 +363,7 @@ public class StudyChartDesigner extends AbstractChartPanel implements EntryPoint
                             public void onSuccess(Object result)
                             {
                                 if (result instanceof String)
-                                    _returnURL = (String)result;
+                                    _redirectUrl = (String)result;
 
                                 cancelForm();
                             }

@@ -21,6 +21,7 @@ import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.DataSetQueryView;
 import org.labkey.study.reports.*;
+import org.labkey.study.controllers.StudyController;
 
 import java.util.*;
 
@@ -137,6 +138,17 @@ public class StudyManageReportsBean extends ManageReportsBean
                 return o1.compareTo(o2);
             }
         });
+    }
+
+    public ActionURL getCustomizeParticipantViewURL()
+    {
+        ActionURL customizeParticipantURL = new ActionURL(StudyController.CustomizeParticipantViewAction.class, _study.getContainer());
+        // add a sample participant to our URL so that users can see the results of their customization.  This needs to be on the URL
+        // since the default custom script reads the participant ID parameter from the URL:
+        String[] participantIds = StudyManager.getInstance().getParticipantIds(_study, 1);
+        if (participantIds != null && participantIds.length > 0)
+            customizeParticipantURL.addParameter("participantId", participantIds[0]);
+        return customizeParticipantURL;
     }
 
     protected void createReportRecord(Report r, Map<String, List<ReportRecord>> views)

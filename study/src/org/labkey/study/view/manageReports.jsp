@@ -12,6 +12,8 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 
 <link rel="stylesheet" href="<%=request.getContextPath()%>/_yui/build/container/assets/container.css" type="text/css"/>
@@ -252,6 +254,7 @@
             &nbsp;[<a href="<%= h(url.relativeUrl("createCrosstabReport.view", null, "Study-Reports")) %>">new crosstab view</a>]
             &nbsp;[<a href="<%=h(url.relativeUrl("exportExcelConfigure.view", null, "Study-Reports"))%>">export to workbook (.xls)</a>]
             &nbsp;[<a href="<%=h(url.relativeUrl("showUploadReport", null, "Study-Reports"))%>">upload new static report</a>]
+            &nbsp;[<a href="<%=h(bean.getCustomizeParticipantViewURL())%>">customize participant view</a>]
             </td></tr>
         </table>
 <%
