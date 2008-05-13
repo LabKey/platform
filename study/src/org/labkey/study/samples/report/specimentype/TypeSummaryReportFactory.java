@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Collections;
 
 /**
- * Copyright (c) 2007 LabKey Software Foundation
+ * Copyright (c) 2008 LabKey Corporation
 * <p/>
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
