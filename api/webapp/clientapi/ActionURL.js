@@ -27,6 +27,21 @@ LABKEY.ActionURL = new function()
     // private member variables
 
     // private functions
+    function buildParameterMap()
+    {
+        var paramString = window.location.search;
+        if (paramString.charAt(0) == '?')
+            paramString = paramString.substring(1, paramString.length);
+        var paramArray = paramString.split('&');
+        var parameters = {};
+        for (var i = 0; i < paramArray.length; i++)
+        {
+            var nameValue = paramArray[i].split('=');
+            if (nameValue.length == 2)
+                parameters[decodeURI(nameValue[0])] = decodeURI(nameValue[1]);
+        }
+        return parameters;
+    }
 
     /** @scope LABKEY.ActionURL.prototype */
     return {
@@ -36,7 +51,6 @@ LABKEY.ActionURL = new function()
         * Gets the current context path.  The default context path for LabKey Server is '/labkey'.
 		* @return {String} Current context path.
 		*/
-
         getContextPath : function()
         {
             return LABKEY.contextPath;
@@ -46,7 +60,6 @@ LABKEY.ActionURL = new function()
 		* Gets the current action
 		* @return {String} Current action.
 		*/
-
         getAction : function()
         {
             var path = window.location.pathname;
@@ -60,7 +73,6 @@ LABKEY.ActionURL = new function()
 		* Gets the current container
 		* @return {String} Current container.
 		*/
-
         getContainer : function()
         {
             var path = window.location.pathname;
@@ -69,11 +81,31 @@ LABKEY.ActionURL = new function()
             return path.substring(start, end);
         },
 
-		/**
+        /**
+        * Gets a URL parameteter by name
+        * @return {String} The value of the named parameter, or undefined of the parameter is not present.
+        */
+        getParameter : function(parameterName)
+        {
+            return buildParameterMap()[parameterName];
+        },
+
+        /**
+        * Returns an object mapping URL parameter names to parameter values.
+        * @return {Object} Map of parameter names to values.
+        */
+        getParameters : function()
+        {
+            return buildParameterMap();
+        },
+
+        /**
 		* Builds a URL from a controller and an action.  Uses the current container and context path.
 		* @param {String} controller The controller to use in building the URL
 		* @param {String} action The action to use in building the URL
 		* @param {String} [containerPath] The container path to use (defaults to the current container)
+		* @param {Object} [parameters] An object with properties corresponding to GET parameters to append to the URL.
+		* Parameters will be encoded automatically. (Defaults to no parameters)
 		* @example Examples:
 
 1. Build the URL for the 'plotChartAPI' action in the 'reports' controller within 
@@ -90,7 +122,7 @@ the container "My Project/My Folder":
 		* @return {String} URL constructed from the current container and context path,
 					plus the specified controller and action.
 		*/
-        buildURL : function(controller, action, containerPath)
+        buildURL : function(controller, action, containerPath, parameters)
         {
             if(!containerPath)
                 containerPath = this.getContainer();
@@ -101,7 +133,15 @@ the container "My Project/My Folder":
             if(containerPath.charAt(containerPath.length - 1) != "/")
                 containerPath = containerPath + "/";
 
-            return this.getContextPath() + "/" + controller + containerPath + action + ".view";
+            var newUrl = this.getContextPath() + "/" + controller + containerPath + "/" + action + ".view";
+            if (parameters)
+            {
+                newUrl += '?';
+                for (var parameter in parameters)
+                    newUrl += encodeURI(parameter) + '=' + encodeURI(parameters[parameter]) + '&';
+                newUrl = newUrl.substring(0, newUrl.length - 1);
+            }
+            return newUrl;
         }
     }
 };
