@@ -1516,7 +1516,6 @@ study/src/META-INF/study/scripts/postgresql/study-2.30-8.10.sql -text
 study/src/META-INF/study/scripts/postgresql/study-2.31-2.32.sql -text
 study/src/META-INF/study/scripts/postgresql/study-2.32-2.33.sql -text
 study/src/META-INF/study/scripts/postgresql/study-2.33-2.34.sql -text
-study/src/META-INF/study/scripts/postgresql/study-8.10-8.11.sql -text
 study/src/META-INF/study/scripts/postgresql/study-8.11-8.12.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/obsolete/study-0.00-1.11.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/obsolete/study-0.00-1.25.sql -text
