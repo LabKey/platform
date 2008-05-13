@@ -23,10 +23,10 @@
 */
 LABKEY.Assay = new function()
 {
-    function getAssays(successCallback, failureCallback, parameters)
+    function getAssays(successCallback, failureCallback, parameters, containerPath)
     {
         Ext.Ajax.request({
-            url : LABKEY.ActionURL.buildURL("assay", "assayList"),
+            url : LABKEY.ActionURL.buildURL("assay", "assayList", containerPath),
             method : 'GET',
             success: successCallback,
             failure: failureCallback,
@@ -54,6 +54,8 @@ LABKEY.Assay = new function()
 			"getAll" function executes successfully.  Will be called with the argument: 
 			{@link LABKEY.Assay.AssayDesign[]}.
 	* @param {Function} [failureCallback] Function called when execution of the "getAll" function fails.
+	* @param {String} [containerPath] The container path in which the requested Assays are defined.
+	*       If not supplied, the current container path will be used.
 	* @example Example:
 <pre name="code" class="xml">
 &lt;script type="text/javascript"&gt;
@@ -95,20 +97,22 @@ LABKEY.Assay = new function()
 </pre>
 	  * @see LABKEY.Assay.AssayDesign
 	  */
-        getAll : function(successCallback, failureCallback)
+        getAll : function(successCallback, failureCallback, containerPath)
         {
-            getAssays(getSuccessCallbackWrapper(successCallback), failureCallback, {});
+            getAssays(getSuccessCallbackWrapper(successCallback), failureCallback, {}, containerPath);
         },
 	  /**
 	  * Gets an assay by name.
 	  * @param {Function(LABKEY.Assay.AssayDesign[])} successCallback Function called when the "getByName" function executes successfully.
 	  * @param {Function} [failureCallback] Function called when execution of the "getByName" function fails.
 	  * @param {String} name String name of the assay.
+	  * @param {String} [containerPath] The container path in which the requested Assay is defined.
+	  *       If not supplied, the current container path will be used.
 	  * @see LABKEY.Assay.AssayDesign
 	  */
-        getByName : function(successCallback, failureCallback, name)
+        getByName : function(successCallback, failureCallback, name, containerPath)
         {
-            getAssays(getSuccessCallbackWrapper(successCallback), failureCallback, { name : name});
+            getAssays(getSuccessCallbackWrapper(successCallback), failureCallback, { name : name}, containerPath);
         },
 
 	  /**
@@ -117,11 +121,13 @@ LABKEY.Assay = new function()
 				when the "getByType" function executes successfully.
 	  * @param {Function} [failureCallback] Function called when execution of the "getByType" function fails.
 	  * @param {String} type String name of the assay type.  "ELISpot", for example.
+	  * @param {String} [containerPath] The container path in which the requested Assays are defined.
+	  *       If not supplied, the current container path will be used.
  	  * @see LABKEY.Assay.AssayDesign
 	  */
-        getByType : function(successCallback, failureCallback, type)
+        getByType : function(successCallback, failureCallback, type, containerPath)
         {
-            getAssays(getSuccessCallbackWrapper(successCallback), failureCallback, { type : type });
+            getAssays(getSuccessCallbackWrapper(successCallback), failureCallback, { type : type }, containerPath);
         },
 
 	 /**
@@ -130,11 +136,13 @@ LABKEY.Assay = new function()
 				when the "getById" function executes successfully.
 	 * @param {Function} [failureCallback] Function called when execution of the "getById" function fails.
 	 * @param {Integer} id Unique integer ID for the assay.
+	  * @param {String} [containerPath] The container path in which the requested Assay is defined.
+	  *       If not supplied, the current container path will be used.
 	 * @see LABKEY.Assay.AssayDesign
 	 */
-        getById : function(successCallback, failureCallback, id)
+        getById : function(successCallback, failureCallback, id, containerPath)
         {
-            getAssays(getSuccessCallbackWrapper(successCallback), failureCallback, { id : id });
+            getAssays(getSuccessCallbackWrapper(successCallback), failureCallback, { id : id }, containerPath);
         }
     }
 };

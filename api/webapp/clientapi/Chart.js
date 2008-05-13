@@ -65,7 +65,9 @@
   *                 The specified function will be invoked with a single argument, a JSON object with : key, x, and y as fields. If
   *                 no function is specified, then the image map will show only tooltips.
   * @param {String|[String]} [config.imageMapCallbackColumns] Name(s) of additional columns whose names and values should be added
-    *               To the JSON object for the config.imageMapCallback function.
+  *               To the JSON object for the config.imageMapCallback function.
+  * @param {String} [config.containerPath] The container path in which the data for this chart is defined. If not supplied,
+  *                  the current container path will be used.
   * @example Example #1 uses the "Physical Exam" dataset in the <a href = "https://www.labkey.org/Project/home/Study/demo/start.view?">Demo Study</a>
   * to plot a simple chart with one y-value:
 <pre name="code" class="xml">&lt;script type="text/javascript"&gt;
@@ -140,6 +142,7 @@ LABKEY.Chart = function(config)
 
     var chartDivName = config.renderTo;
     var imageDivName = config.renderImageMapTo;
+    var containerPath = config.containerPath;
 
     // private methods:
     var handleLoadError = function(args, config)
@@ -194,7 +197,7 @@ LABKEY.Chart = function(config)
                 config.errorCallback = handleLoadError;
 
             Ext.Ajax.request({
-                url: LABKEY.ActionURL.buildURL("reports", "plotChartApi"),
+                url: LABKEY.ActionURL.buildURL("reports", "plotChartApi", containerPath),
                 success: renderChartInternal,
                 failure: config.errorCallback,
                 params: config

@@ -68,6 +68,8 @@
   *					any method on the <a href="http://extjs.com/deploy/dev/docs/?class=Ext.grid.GridPanel">
   *                 Ext GridPanel object</a>.  The function passed as this config property 
   *					should look like this: 
+  * @param {String} [config.containerPath] The container path in which the schemaName and queryName are defined.
+  *                 If not supplied, the current container path will be used.
 <pre><code>
 function onGridCustomize(grid) 
 { 
@@ -142,6 +144,7 @@ LABKEY.GridView = function(config)
         "sort" : "query.sort",
         "dir" : "query.sortdir"
         }
+    var _containerPath = config.containerPath;
 
 
     // private methods:
@@ -717,7 +720,7 @@ LABKEY.GridView = function(config)
     {
         var proxy = new Ext.data.HttpProxy(new Ext.data.Connection({
                 //where to retrieve data
-                url: LABKEY.ActionURL.buildURL("query", "getQuery"), //url to data object (server side script)
+                url: LABKEY.ActionURL.buildURL("query", "selectRows", _containerPath), //url to data object (server side script)
                 method: 'GET'
             }));
 

@@ -118,7 +118,8 @@ the current container:
 
 3.  Build the URL for the 'updateRows' action in the 'query' controller within
 the container "My Project/My Folder":
-	var url = LABKEY.ActionURL.buildURL("query", "updateRows", "My Project/My Folder");
+	var url = LABKEY.ActionURL.buildURL("query", "updateRows",
+	                         "My Project/My Folder");
 		* @return {String} URL constructed from the current container and context path,
 					plus the specified controller and action.
 		*/

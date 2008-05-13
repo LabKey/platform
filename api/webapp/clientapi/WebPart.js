@@ -51,6 +51,8 @@
  *                  should have two parameters: response and partConfig. The response parameter is the XMLHttpResponse
  *                  object, which can be used to determine the error code and obtain the error text if desired.
  *                  The partConfig parameter will contain all the parameters sent to the server.
+ * @param {String} [config.containerPath] The container path in which this web part is defined. If not supplied,
+ *                  the current container path will be used.
  * @example Examples: <pre name="code" class="xml">For a Wiki Web Part:
  &lt;script type="text/javascript"&gt;
 	LABKEY.requiresClientAPI();
@@ -93,6 +95,7 @@ LABKEY.WebPart = function(config)
     var _titleHref = config.titleHref;
     var _partConfig = config.partConfig;
     var _errorCallback = config.errorCallback;
+    var _containerPath = config.containerPath;
 
     //validate config
     if(!_partName)
@@ -162,7 +165,7 @@ LABKEY.WebPart = function(config)
                 _errorCallback = handleLoadError;
 
             Ext.Ajax.request({
-                url: LABKEY.ActionURL.buildURL("project", "getWebPart"),
+                url: LABKEY.ActionURL.buildURL("project", "getWebPart", _containerPath),
                 success: renderPart,
                 failure: _errorCallback,
                 method: 'GET',

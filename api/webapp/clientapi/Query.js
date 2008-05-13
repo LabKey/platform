@@ -82,22 +82,29 @@ LABKEY.Query = new function()
 
 		/**
         * Select rows.
-        * @param {String} schemaName Name of a schema defined within the current container. See also: <a class="link"
+        * @param {Object} config An object which contains the following configuration properties.
+        * @param {String} config.schemaName Name of a schema defined within the current container. See also: <a class="link"
 					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
-        * @param {String} queryName Name of a query table associated with the chosen schema. See also: <a class="link"
+        * @param {String} config.queryName Name of a query table associated with the chosen schema. See also: <a class="link"
 					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
-        * @param {Function} successCallback
+        * @param {Function} config.successCallback
 				Function called when the "selectRows" function executes successfully. Will be called with arguments:
 				{@link LABKEY.Query.SelectRowsResults} and (optionally) {@link LABKEY.Query.SelectRowsOptions}
-        * @param {Function} [errorCallback] Function called when execution of the "selectRows" function fails.
-        * @param {Array} [filterArray] Array of objects created by {@link LABKEY.Filter#create}.
-        * @param {String} [sort]  String description of the sort.  It includes the column names
+        * @param {Function} [config.errorCallback] Function called when execution of the "selectRows" function fails.
+        * @param {Array} [config.filterArray] Array of objects created by {@link LABKEY.Filter#create}.
+        * @param {String} [config.sort]  String description of the sort.  It includes the column names
         *       listed in the URL of a sorted data region (with an optional minus prefix to indicate
         *       descending order). In the case of a multi-column sort, up to three column names can be
         *       included, separated by commas.
-        * @param {String} [viewName] The name of a custom view saved on the server for the specified query.
+        * @param {String} [config.viewName] The name of a custom view saved on the server for the specified query.
+        * @param {String} [config.containerPath] The path to the container in which the schema and query are defined,
+        *       if different than the current container. If not supplied, the current container's path will be used.
+        * @param {Integer} [config.maxRows] The maximum number of rows to return from the server (defaults to 100).
+        *        If you want to return all possible rows, set this config property to -1.
+        * @param {Integer} [config.offset] The index of the first row to return from the server (defaults to 0).
+        *        Use this along with the maxRows config property to request pages of data.
         * @example Example: <pre name="code" class="xml">
 &lt;script type="text/javascript"&gt;
 	LABKEY.requiresClientAPI();
@@ -113,8 +120,9 @@ LABKEY.Query = new function()
 	    alert("Success! " + responseObj.rowCount + " rows returned."); 
 	} 
 
-	LABKEY.Query.selectRows('lists', 'People', successHandler, failureHandler, 
-			[ LABKEY.Filter.create('FirstName', 'Johny')]); 
+	LABKEY.Query.selectRows({schemaName: 'lists', queryName: 'People',
+	         successCallback: successHandler, errorCallback: failureHandler,
+			[ LABKEY.Filter.create('FirstName', 'Johny')]}); 
 &lt;/script&gt; </pre>
 		* @see LABKEY.Query.SelectRowsOptions
 		* @see LABKEY.Query.SelectRowsResults
@@ -145,6 +153,15 @@ LABKEY.Query = new function()
             dataObject['schemaName'] = config.schemaName;
             if (config.sort)
                 dataObject['query.sort'] = config.sort;
+            if(config.offset)
+                dataObject['query.offset'] = config.offset;
+            if(config.maxRows)
+            {
+                if(config.maxRows < 0)
+                    dataObject['query.showAllRows'] = true;
+                else
+                    dataObject['query.maxRows'] = config.maxRows;
+            }
 
             if (config.filterArray)
             {
@@ -169,19 +186,22 @@ LABKEY.Query = new function()
 
         /**
         * Update rows.
-        * @param {String} schemaName Name of a schema defined within the current container. See also: <a class="link"
+        * @param {Object} config An object which contains the following configuration properties.
+        * @param {String} config.schemaName Name of a schema defined within the current container. See also: <a class="link"
 					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
-        * @param {String} queryName Name of a query table associated with the chosen schema.  See also: <a class="link"
+        * @param {String} config.queryName Name of a query table associated with the chosen schema.  See also: <a class="link"
 					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
-        * @param {Function} successCallback Function called when the "updateRows" function executes successfully.
+        * @param {Function} config.successCallback Function called when the "updateRows" function executes successfully.
 						Will be called with arguments: {@link LABKEY.Query.ModifyRowsResults} and (optionally)
 						{@link LABKEY.Query.ModifyRowsOptions}.
-        * @param {Function} [errorCallback] Function called when execution of the "updateRows" function fails.
-        * @param {Array} rowDataArray Array of record objects in which each object has a property for each field.
+        * @param {Function} [config.errorCallback] Function called when execution of the "updateRows" function fails.
+        * @param {Array} config.rowDataArray Array of record objects in which each object has a property for each field.
         *               The row array must include the primary key column values and values for
         *               other columns you wish to update.
+        * @param {String} [config.containerPath] The container path in which the schema and query name are defined.
+         *              If not supplied, the current container path will be used.
 		* @see LABKEY.Query.ModifyRowsResults
 		* @see LABKEY.Query.ModifyRowsOptions
         */
@@ -192,20 +212,23 @@ LABKEY.Query = new function()
 
         /**
         * Insert rows.
-        * @param {String} schemaName Name of a schema defined within the current container.  See also: <a class="link"
+        * @param {Object} config An object which contains the following configuration properties.
+        * @param {String} config.schemaName Name of a schema defined within the current container.  See also: <a class="link"
 					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
-        * @param {String} queryName Name of a query table associated with the chosen schema. See also: <a class="link"
+        * @param {String} config.queryName Name of a query table associated with the chosen schema. See also: <a class="link"
 					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
-        * @param {Function} successCallback Function called when the "insertRows" function executes successfully.
+        * @param {Function} config.successCallback Function called when the "insertRows" function executes successfully.
 						Will be called with arguments: {@link LABKEY.Query.ModifyRowsResults} and (optionally)
 						{@link LABKEY.Query.ModifyRowsOptions}.
-		* @param {Function} [errorCallback]  Function called when execution of the "insertRows" function fails.
-        * @param {Array} rowDataArray Array of record objects in which each object has a property for each field.
+		* @param {Function} [config.errorCallback]  Function called when execution of the "insertRows" function fails.
+        * @param {Array} config.rowDataArray Array of record objects in which each object has a property for each field.
         *                  The row data array must include all column values except for the primary key column.
         *                  However, you will need to include the primary key column values if you defined
         *                  them yourself instead of relying on auto-number.
+        * @param {String} [config.containerPath] The container path in which the schema and query name are defined.
+         *              If not supplied, the current container path will be used.
 		* @see LABKEY.Query.ModifyRowsResults
 		* @see LABKEY.Query.ModifyRowsOptions
         */
@@ -216,18 +239,21 @@ LABKEY.Query = new function()
 
         /**
         * Delete rows.
-        * @param {String} schemaName Name of a schema defined within the current container. See also: <a class="link"
+        * @param {Object} config An object which contains the following configuration properties.
+        * @param {String} config.schemaName Name of a schema defined within the current container. See also: <a class="link"
 					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
-        * @param {String} queryName Name of a query table associated with the chosen schema. See also: <a class="link"
+        * @param {String} config.queryName Name of a query table associated with the chosen schema. See also: <a class="link"
 					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
-        * @param {Function} successCallback Function called when the "deleteRows" function executes successfully.
+        * @param {Function} config.successCallback Function called when the "deleteRows" function executes successfully.
         			Will be called with arguments: {@link LABKEY.Query.ModifyRowsResults} and (optionally)
 				    {@link LABKEY.Query.ModifyRowsOptions}.
-		* @param {Function} [errorCallback] Function called when execution of the "deleteRows" function fails.
-        * @param {Array} rowDataArray Array of record objects in which each object has a property for each field.
+		* @param {Function} [config.errorCallback] Function called when execution of the "deleteRows" function fails.
+        * @param {Array} config.rowDataArray Array of record objects in which each object has a property for each field.
         *                  The row data array needs to include only the primary key column value, not all columns.
+        * @param {String} [config.containerPath] The container path in which the schema and query name are defined.
+         *              If not supplied, the current container path will be used.
 		* @see LABKEY.Query.ModifyRowsResults
 		* @see LABKEY.Query.ModifyRowsOptions
         */
