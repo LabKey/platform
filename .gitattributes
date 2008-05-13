@@ -361,6 +361,7 @@ core/src/org/labkey/core/user/changeEmail.jsp -text
 core/src/org/labkey/core/user/userAccess.jsp -text
 core/src/org/labkey/core/user/userPreferences.jsp -text
 core/src/org/labkey/core/webdav/DavController.java -text
+core/src/org/labkey/core/webdav/FileSystemAuditViewFactory.java -text
 core/src/org/labkey/core/webdav/WebdavResolver.java -text
 core/src/org/labkey/core/webdav/WebdavResolverImpl.java -text
 core/src/org/labkey/core/webdav/WebdavServlet.java -text

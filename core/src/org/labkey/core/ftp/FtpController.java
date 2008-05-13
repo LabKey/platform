@@ -31,11 +31,15 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.core.webdav.WebdavResolver;
 import org.labkey.core.webdav.WebdavResolverImpl;
+import org.labkey.core.webdav.FileSystemAuditViewFactory;
 import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.servlet.ModelAndView;
+import org.apache.log4j.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -90,6 +94,7 @@ public class FtpController extends SpringActionController
              _user = user;
         }
 
+
         public int userid(String username, String password) throws Exception
         {
             // first see if we are already authenticated (e.g. sessionid, or basic auth)
@@ -102,6 +107,23 @@ public class FtpController extends SpringActionController
             // authenticate with password
             _user = AuthenticationManager.authenticate(username, password);
             return _user == null ? -1 : _user.getUserId();
+        }
+
+
+        public void audit(int userid, String path, String msg)
+        {
+            try
+            {
+                User user = UserManager.getUser(userid);
+                File f = new File(path);
+                String dir = StringUtils.trimToEmpty(f.getParent());
+                String name = StringUtils.trimToEmpty(f.getName());
+                AuditLogService.get().addEvent(user, ContainerManager.getRoot(), FileSystemAuditViewFactory.EVENT_TYPE, dir, name, msg);
+            }
+            catch (Exception x)
+            {
+                Logger.getInstance(FtpController.class).error("audit", x);
+            }
         }
 
 

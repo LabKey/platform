@@ -71,6 +71,17 @@ public class AuditLogImpl implements AuditLogService.I
         return _addEvent(context.getUser(), event);
     }
 
+    public AuditLogEvent addEvent(ViewContext context, String eventType, String key1, String key2, String message)
+    {
+        AuditLogEvent event = _createEvent(context);
+        event.setEventType(eventType);
+        event.setKey1(key1);
+        event.setKey2(key2);
+        event.setComment(message);
+
+        return _addEvent(context.getUser(), event);
+    }
+
     public AuditLogEvent addEvent(ViewContext context, String eventType, int key, String message)
     {
         AuditLogEvent event = _createEvent(context);
@@ -91,6 +102,17 @@ public class AuditLogImpl implements AuditLogService.I
         return _addEvent(user, event);
     }
 
+    public AuditLogEvent addEvent(User user, Container c, String eventType, String key1, String key2, String message)
+    {
+        AuditLogEvent event = _createEvent(user, c);
+        event.setEventType(eventType);
+        event.setKey1(key1);
+        event.setKey2(key2);
+        event.setComment(message);
+
+        return _addEvent(user, event);
+    }
+    
     public AuditLogEvent addEvent(User user, Container c, String eventType, int key, String message)
     {
         AuditLogEvent event = _createEvent(user, c);

@@ -28,6 +28,7 @@ import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.DialogTemplate;
 import org.labkey.core.query.AttachmentAuditViewFactory;
+import org.labkey.core.webdav.FileSystemAuditViewFactory;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartFile;
@@ -144,21 +145,31 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         }
         if (user != null)
         {
+            {
             AuditLogEvent event = new AuditLogEvent();
-
             event.setEventType(AttachmentService.ATTACHMENT_AUDIT_EVENT);
             event.setCreatedBy(user.getUserId());
             event.setEntityId(parent.getEntityId());
             event.setContainerId(parent.getContainerId());
             event.setKey1(filename);
-
             Container c = ContainerManager.getForId(parent.getContainerId());
             if (c != null && c.getProject() != null)
                 event.setProjectId(c.getProject().getId());
-
             event.setComment(comment);
-
             AuditLogService.get().addEvent(event);
+            }
+
+            if (parent instanceof AttachmentDirectory)
+            {
+                AuditLogEvent event = new AuditLogEvent();
+                event.setEventType(FileSystemAuditViewFactory.EVENT_TYPE);
+                event.setCreatedBy(user.getUserId());
+                event.setContainerId(parent.getContainerId());
+                event.setKey1(((AttachmentDirectory)parent).getFileSystemDirectory().getPath());
+                event.setKey2(filename);
+                event.setComment(comment);
+                AuditLogService.get().addEvent(event);
+            }
         }
     }
 

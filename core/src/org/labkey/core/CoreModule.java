@@ -45,6 +45,7 @@ import org.labkey.core.security.SecurityController;
 import org.labkey.core.test.TestController;
 import org.labkey.core.user.UserController;
 import org.labkey.core.webdav.WebdavResolverImpl;
+import org.labkey.core.webdav.FileSystemAuditViewFactory;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -280,6 +281,7 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
         AuditLogService.get().addAuditViewFactory(GroupAuditViewFactory.getInstance());
         AuditLogService.get().addAuditViewFactory(AttachmentAuditViewFactory.getInstance());
         AuditLogService.get().addAuditViewFactory(ContainerAuditViewFactory.getInstance());
+        AuditLogService.get().addAuditViewFactory(FileSystemAuditViewFactory.getInstance());
 
         if (null != getBuildPath())
         {
