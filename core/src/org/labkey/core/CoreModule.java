@@ -76,7 +76,7 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
 
     public CoreModule()
     {
-        super(NAME, 8.10, "/org/labkey/core", false,
+        super(NAME, 8.11, "/org/labkey/core", false,
             new WebPartFactory("Contacts")
             {
                 public WebPartView getWebPartView(ViewContext ctx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
@@ -226,6 +226,9 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
                 throw new RuntimeException(e);
             }
         }
+
+        if (installedVersion < 8.11)
+            GroupManager.bootstrapGroup(Group.groupDevelopers, "Developers");
 
         super.afterSchemaUpdate(moduleContext, viewContext);
     }

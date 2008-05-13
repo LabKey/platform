@@ -680,7 +680,7 @@ public class WikiController extends SpringActionController
         public void validateCommand(WikiInsertForm wikiInsertForm, Errors errors)
         {
             if(!wikiInsertForm.isReshow())
-                wikiInsertForm.validate(errors, UserManager.mayWriteScript(getUser(), getContainer()));
+                wikiInsertForm.validate(errors, UserManager.mayWriteScript(getUser()));
         }
 
         public ActionURL getSuccessURL(WikiInsertForm wikiInsertForm)
@@ -764,7 +764,7 @@ public class WikiController extends SpringActionController
             boolean hasPreTags = false;
             if (currentRendererType == WikiRendererType.HTML)
             {
-                if (!UserManager.mayWriteScript(getUser(), getContainer()))
+                if (!UserManager.mayWriteScript(getUser()))
                 {
                     for (String scriptError : scriptErrors)
                         errors.addError(new FieldError("wiki", "body", "", false, new String[] {"Warning"}, new Object[] {scriptError}, scriptError));
@@ -890,7 +890,7 @@ public class WikiController extends SpringActionController
         public void validateCommand(WikiDataForm wikiDataForm, Errors errors)
         {
             if (!wikiDataForm.isReshow())
-                wikiDataForm.validate(errors, UserManager.mayWriteScript(getUser(), getContainer()));
+                wikiDataForm.validate(errors, UserManager.mayWriteScript(getUser()));
         }
 
         public ActionURL getSuccessURL(WikiDataForm wikiDataForm)
@@ -3148,7 +3148,7 @@ public class WikiController extends SpringActionController
                 ArrayList<String> tidyErrors = new ArrayList<String>();
                 User user = getViewContext().getUser();
 
-                boolean allowMaliciousContent = UserManager.mayWriteScript(user, container);
+                boolean allowMaliciousContent = UserManager.mayWriteScript(user);
                 PageFlowUtil.validateHtml(body, tidyErrors, allowMaliciousContent);
 
                 for(String err : tidyErrors)
