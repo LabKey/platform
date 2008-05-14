@@ -39,6 +39,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.sql.SQLException;
 
 /**
@@ -203,17 +204,30 @@ public class ChartUtil
         return getReportKey(schemaName, queryName);
     }
 
+    private static final Pattern toPattern = Pattern.compile("/");
+    private static final Pattern fromPattern = Pattern.compile("%2F");
+
     public static String getReportKey(String schema, String query)
     {
         if (StringUtils.isEmpty(schema))
             return " ";
         
-        StringBuilder sb = new StringBuilder(schema);
+        StringBuilder sb = new StringBuilder(toPattern.matcher(schema).replaceAll("%2F"));
         if (!StringUtils.isEmpty(query))
-            sb.append('/').append(query);
+            sb.append('/').append(toPattern.matcher(query).replaceAll("%2F"));
 
         return sb.toString();
     }
+
+    public static String[] splitReportKey(String key)
+    {
+        String[] parts = key.split("/");
+
+        for (int i=0; i < parts.length; i++)
+            parts[i] = fromPattern.matcher(parts[i]).replaceAll("/");
+        return parts;
+    }
+
 
     public static void renderErrorImage(OutputStream outputStream, Report r, String errorMessage) throws IOException
     {
