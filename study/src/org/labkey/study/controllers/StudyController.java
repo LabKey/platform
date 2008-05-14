@@ -3227,52 +3227,6 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ACL.PERM_READ)
-    /**
-     * called from the participanAll.jsp view
-     */
-    public class SavedChartAction extends SimpleViewAction<ParticipantForm>
-    {
-        ParticipantForm _bean = null;
-
-        @SuppressWarnings("deprecation")
-        public ModelAndView getView(ParticipantForm form, BindException errors) throws Exception
-        {
-            _bean = form;
-            final String participantId = form.getParticipantId();
-            final int reportId = form.getReportId();
-
-            Report report = ReportService.get().getReport(reportId);
-
-            if ("plot".equals(form.getAction()))
-            {
-                if (report != null)
-                {
-                    report.getDescriptor().setProperty("participantId", participantId);
-                    return report.renderReport(getViewContext());
-                }
-            }
-            else if ("delete".equals(form.getAction()))
-            {
-                ReportService.get().deleteReport(getViewContext(), report);
-                ActionURL url;
-                if (form.getRedirectUrl() == null)
-                    url = new ActionURL(ParticipantAction.class, getContainer());
-                else
-                    url = new ActionURL(form.getRedirectUrl());
-                HttpView.throwRedirect(url);
-            }
-            return null;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return _appendNavTrail(root, _bean.getDatasetId(), 0).
-                    addChild("Participant - " + _bean.getParticipantId());
-        }
-    }
-
-
-    @RequiresPermission(ACL.PERM_READ)
     public class DefaultDatasetReportAction extends SimpleRedirectAction
     {
         public ActionURL getRedirectURL(Object o) throws Exception

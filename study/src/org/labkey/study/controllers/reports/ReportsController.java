@@ -121,7 +121,7 @@ public class ReportsController extends BaseStudyController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            String reportId = getRequest().getParameter("reportId");
+            String reportId = getRequest().getParameter(ReportDescriptor.Prop.reportId.name());
             Report report = null;
 
             if (reportId != null)
@@ -131,7 +131,11 @@ public class ReportsController extends BaseStudyController
             {
                 ReportManager.get().deleteReport(getViewContext(), report);
             }
-            return HttpView.redirect(new ActionURL("Study-Reports", "manageReports.view", getContainer()));
+            String redirectUrl = getRequest().getParameter(ReportDescriptor.Prop.redirectUrl.name());
+            if (redirectUrl != null)
+                return HttpView.redirect(redirectUrl);
+            else
+                return HttpView.redirect(new ActionURL(ManageReportsAction.class, getContainer()));
         }
 
         public NavTree appendNavTrail(NavTree root)

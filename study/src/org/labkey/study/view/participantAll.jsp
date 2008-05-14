@@ -23,6 +23,8 @@
 <%@ page import="org.labkey.study.reports.StudyChartQueryReport" %>
 <%@ page import="java.sql.ResultSet" %>
 <%@ page import="java.util.*" %>
+<%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
+<%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
@@ -189,13 +191,13 @@
                 {
                 %>
                 <tr style="<%=expanded ? "" : "display:none"%>">
-                    <td><a href="<%=new ActionURL("Study", "savedChart", study.getContainer()).addParameter("participantId", bean.getParticipantId()).addParameter("datasetId", Integer.toString(pdKey.datasetId)).addParameter("action", "delete").addParameter("redirectUrl", currentUrl).addParameter("reportId", String.valueOf(report.getDescriptor().getReportId()))%>">[remove]</a></td>
+                    <td><a href="<%=new ActionURL(ReportsController.DeleteReportAction.class, study.getContainer()).addParameter(ReportDescriptor.Prop.redirectUrl.name(), currentUrl).addParameter(ReportDescriptor.Prop.reportId.name(), report.getDescriptor().getReportId())%>">[remove]</a></td>
                 </tr>
                 <%
                 }
                 %>
                 <tr style="<%=expanded ? "" : "display:none"%>">
-                    <td colspan="<%=totalSeqKeyCount%>"><img border=0 src="<%=new ActionURL("Study", "savedChart", study.getContainer()).addParameter("participantId", bean.getParticipantId()).addParameter("datasetId", Integer.toString(pdKey.datasetId)).addParameter("action", "plot").addParameter("reportId", Integer.toString(report.getDescriptor().getReportId()))%>"></td>
+                    <td colspan="<%=totalSeqKeyCount%>"><img border=0 src="<%=new ActionURL(ReportsController.PlotChartAction.class, study.getContainer()).addParameter("participantId", bean.getParticipantId()).addParameter(ReportDescriptor.Prop.reportId.name(), report.getDescriptor().getReportId())%>"></td>
                 </tr>
                 <%
             }
