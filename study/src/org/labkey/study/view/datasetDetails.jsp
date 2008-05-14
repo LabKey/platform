@@ -59,7 +59,7 @@ if (0 != (permissions & ACL.PERM_UPDATE))
     {
         ActionURL showImportDatasetURL = new ActionURL(StudyController.ShowImportDatasetAction.class, context.getContainer());
         showImportDatasetURL.addParameter("datasetId", dataset.getDataSetId());
-        %>&nbsp;<a href="<%=showImportDatasetURL.getLocalURIString()%>"><%=PageFlowUtil.buttonImg("Upload Data")%></a><%
+        %>&nbsp;<a href="<%=showImportDatasetURL.getLocalURIString()%>"><%=PageFlowUtil.buttonImg("Import Data")%></a><%
     }
     ActionURL showHistoryURL = new ActionURL(StudyController.ShowUploadHistoryAction.class, context.getContainer());
     showHistoryURL.addParameter("id", dataset.getDataSetId());
@@ -67,7 +67,7 @@ if (0 != (permissions & ACL.PERM_UPDATE))
     ActionURL editTypeURL = new ActionURL(StudyController.EditTypeAction.class, context.getContainer());
     editTypeURL.addParameter("datasetId", dataset.getDataSetId());
 
-    %>&nbsp;<a href="<%=showHistoryURL.getLocalURIString()%>"><%=PageFlowUtil.buttonImg("Show Upload History")%></a><%
+    %>&nbsp;<a href="<%=showHistoryURL.getLocalURIString()%>"><%=PageFlowUtil.buttonImg("Show Import History")%></a><%
     %>&nbsp;<a href="<%=editTypeURL.getLocalURIString()%>"><%=PageFlowUtil.buttonImg("Edit Dataset")%></a><%
 }
 if (!pipelineSet)

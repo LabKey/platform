@@ -131,6 +131,7 @@
 
         showEditingHelp(_wikiProps.rendererType);
         loadToc();
+        Ext.get("<%=ID_PREFIX%>name").focus();
     });
 
     function loadToc()
@@ -583,7 +584,8 @@
             return;
 
         //clear the table
-        table.innerHTML = "";
+        while(table.hasChildNodes())
+            table.removeChild(table.childNodes[0]);
 
         var row;
         var cell;
@@ -665,7 +667,9 @@
     function clearNewAttachments()
     {
         var table = getNewAttachmentsTable();
-        table.innerHTML = "";
+        while(table.hasChildNodes())
+            table.removeChild(table.childNodes[0]);
+
         addNewAttachmentInput();
     }
 
@@ -763,7 +767,9 @@
         //initialize the from and possible to formats
         Ext.get("<%=ID_PREFIX%>window-change-format-from").update(_formats[_wikiProps.rendererType]);
         var toSelect = Ext.get("<%=ID_PREFIX%>window-change-format-to").dom;
-        toSelect.innerHTML = "";
+        while(toSelect.hasChildNodes())
+            toSelect.removeChild(toSelect.childNodes[0]);
+
         for(var fmt in _formats)
         {
             if(fmt != _wikiProps.rendererType)
