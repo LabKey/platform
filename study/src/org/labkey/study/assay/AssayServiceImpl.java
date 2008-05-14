@@ -16,32 +16,33 @@
 
 package org.labkey.study.assay;
 
-import org.labkey.api.view.ViewContext;
+import com.google.gwt.user.client.rpc.SerializableException;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.*;
-import org.labkey.api.exp.xar.LsidUtils;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.property.DomainEditorServiceBase;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainEditorServiceBase;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.xar.LsidUtils;
+import org.labkey.api.gwt.client.assay.AssayException;
+import org.labkey.api.gwt.client.assay.AssayService;
+import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.study.assay.AbstractAssayProvider;
+import org.labkey.api.security.ACL;
+import org.labkey.api.security.User;
 import org.labkey.api.study.PlateService;
 import org.labkey.api.study.PlateTemplate;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.Container;
-import org.labkey.api.security.User;
-import org.labkey.api.security.ACL;
-import org.labkey.api.gwt.client.assay.AssayService;
-import org.labkey.api.gwt.client.assay.AssayException;
-import org.labkey.api.gwt.client.assay.model.GWTProtocol;
+import org.labkey.api.study.assay.AbstractAssayProvider;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.ViewContext;
 import org.labkey.common.util.Pair;
-import com.google.gwt.user.client.rpc.SerializableException;
 
-import java.util.*;
 import java.sql.SQLException;
+import java.util.*;
 
 /**
  * User: brittp
@@ -284,7 +285,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
 
                 return assay;
             }
-            catch (ChangePropertyDescriptorException e)
+            catch (UnexpectedException e)
             {
                 throw new AssayException(e);
             }
@@ -301,7 +302,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             throw new AssayException("Only replaceIfExisting == true is supported.");
     }
 
-    private List updateDomainDescriptor(GWTDomain domain, String protocolName, Container protocolContainer) throws ChangePropertyDescriptorException
+    private List updateDomainDescriptor(GWTDomain domain, String protocolName, Container protocolContainer)
     {
         GWTDomain previous = getDomainDescriptor(domain.getDomainURI(), protocolContainer);
         for (GWTPropertyDescriptor prop : (List<GWTPropertyDescriptor>)domain.getPropertyDescriptors())
@@ -312,6 +313,18 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             }
         }
         return updateDomainDescriptor(previous, domain);
+    }
+
+    public List updateDomainDescriptor(GWTDomain orig, GWTDomain update)
+    {
+        try
+        {
+            return super.updateDomainDescriptor(orig, update);
+        }
+        catch (ChangePropertyDescriptorException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
     }
 
     public boolean canUpdate(User user, Domain domain)

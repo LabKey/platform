@@ -16,22 +16,19 @@
 
 package org.labkey.study.designer;
 
-import org.labkey.api.gwt.server.BaseRemoteService;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.UnauthorizedException;
+import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
+import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.security.ACL;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.ViewContext;
+import org.labkey.study.controllers.designer.DesignerController;
 import org.labkey.study.designer.client.StudyDefinitionService;
+import org.labkey.study.designer.client.model.GWTAssayDefinition;
 import org.labkey.study.designer.client.model.GWTStudyDefinition;
 import org.labkey.study.designer.client.model.GWTStudyDesignVersion;
-import org.labkey.study.designer.client.model.GWTAssayDefinition;
-import org.labkey.study.designer.StudyDesignVersion;
 import org.labkey.study.xml.StudyDesignDocument;
-import org.labkey.study.xml.StudyDesign;
-import org.labkey.study.controllers.designer.DesignerController;
-import org.apache.log4j.Logger;
 
 import java.sql.SQLException;
 
@@ -82,48 +79,76 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
 
     }
 
-    public GWTStudyDefinition getBlank() throws Exception
+    public GWTStudyDefinition getBlank()
     {
-        GWTStudyDefinition def = DesignerController.getTemplate(getUser(), getContainer());
-        //Lock the assays
-        for (int i = 0; i < def.getAssays().size(); i++)
-            ((GWTAssayDefinition) def.getAssays().get(i)).setLocked(true);
-        def.setCavdStudyId(0);
-        def.setRevision(0);
-        def.setStudyName(null);
+        try
+        {
+            GWTStudyDefinition def = DesignerController.getTemplate(getUser(), getContainer());
+            //Lock the assays
+            for (int i = 0; i < def.getAssays().size(); i++)
+                ((GWTAssayDefinition) def.getAssays().get(i)).setLocked(true);
+            def.setCavdStudyId(0);
+            def.setRevision(0);
+            def.setStudyName(null);
 
-        return def;
+            return def;
+        }
+        catch (Exception e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
     }
 
-    public GWTStudyDefinition getRevision(int studyId, int revision) throws Exception
+    public GWTStudyDefinition getRevision(int studyId, int revision)
     {
-        Container container = getContainer();
-        StudyDesignVersion version;
-        if (revision >= 0)
-            version = StudyDesignManager.get().getStudyDesignVersion(container, studyId, revision);
-        else
-            version = StudyDesignManager.get().getStudyDesignVersion(container, studyId);
-        
-        GWTStudyDefinition template = getTemplate();
-        GWTStudyDefinition def = XMLSerializer.fromXML(version.getXML(), template.getCavdStudyId() == studyId ? null : template);
-        def.setCavdStudyId(version.getStudyId());
-        def.setRevision(version.getRevision());
-        return def;
+        try
+        {
+            Container container = getContainer();
+            StudyDesignVersion version;
+            if (revision >= 0)
+                version = StudyDesignManager.get().getStudyDesignVersion(container, studyId, revision);
+            else
+                version = StudyDesignManager.get().getStudyDesignVersion(container, studyId);
+
+            GWTStudyDefinition template = getTemplate();
+            GWTStudyDefinition def = XMLSerializer.fromXML(version.getXML(), template.getCavdStudyId() == studyId ? null : template);
+            def.setCavdStudyId(version.getStudyId());
+            def.setRevision(version.getRevision());
+            return def;
+        }
+        catch (Exception e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
     }
 
-    public GWTStudyDefinition getTemplate() throws Exception
+    public GWTStudyDefinition getTemplate()
     {
-        return DesignerController.getTemplate(getUser(), getContainer());
+        try
+        {
+            return DesignerController.getTemplate(getUser(), getContainer());
+        }
+        catch (Exception e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
     }
 
-    public GWTStudyDesignVersion[] getVersions(int studyId) throws Exception
+    public GWTStudyDesignVersion[] getVersions(int studyId)
     {
-        StudyDesignVersion[] versions = StudyDesignManager.get().getStudyDesignVersions(getContainer(), studyId);
-        GWTStudyDesignVersion[] gwtVersions = new GWTStudyDesignVersion[versions.length];
-        for (int i = 0; i < versions.length; i++)
-            gwtVersions[i] = versions[i].toGWTVersion(_context);
+        try
+        {
+            StudyDesignVersion[] versions = StudyDesignManager.get().getStudyDesignVersions(getContainer(), studyId);
+            GWTStudyDesignVersion[] gwtVersions = new GWTStudyDesignVersion[versions.length];
+            for (int i = 0; i < versions.length; i++)
+                gwtVersions[i] = versions[i].toGWTVersion(_context);
 
-        return gwtVersions;
+            return gwtVersions;
+        }
+        catch (SQLException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
     }
 
 }

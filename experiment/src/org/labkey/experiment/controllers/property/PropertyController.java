@@ -16,19 +16,25 @@
 
 package org.labkey.experiment.controllers.property;
 
-import org.labkey.api.view.*;
-import org.labkey.api.exp.property.*;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.action.GWTServiceAction;
+import org.labkey.api.exp.ChangePropertyDescriptorException;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainEditorServiceBase;
+import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.security.ACL;
+import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.*;
 import org.labkey.experiment.controllers.exp.ExperimentController;
-import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
+import org.springframework.web.servlet.ModelAndView;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class PropertyController extends SpringActionController
 {
@@ -85,6 +91,18 @@ public class PropertyController extends SpringActionController
         public PropertyServiceImpl(ViewContext context)
         {
             super(context);
+        }
+
+        public List updateDomainDescriptor(GWTDomain orig, GWTDomain update)
+        {
+            try
+            {
+                return super.updateDomainDescriptor(orig, update);
+            }
+            catch (ChangePropertyDescriptorException e)
+            {
+                throw UnexpectedException.wrap(e);
+            }
         }
     }
 }

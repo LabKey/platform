@@ -36,17 +36,18 @@ import org.labkey.api.reports.chart.ChartRendererFactory;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ChartDesignerBean;
 import org.labkey.api.reports.report.view.ChartUtil;
-import org.labkey.api.view.ViewContext;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 import org.labkey.common.util.Pair;
 import org.labkey.study.chart.client.StudyChartService;
 import org.labkey.study.chart.client.model.GWTPair;
+import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.reports.ChartReportView;
 import org.labkey.study.reports.ReportManager;
-import org.labkey.study.controllers.StudyController;
 
 import javax.servlet.ServletException;
 import java.util.ArrayList;
@@ -71,12 +72,12 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
         _isParticipantChart = BooleanUtils.toBoolean(ObjectUtils.toString(context.get("isParticipantChart")));
     }
 
-    public GWTChart getChart(int id) throws Exception
+    public GWTChart getChart(int id)
     {
         return null;
     }
 
-    public List getStudyDatasets() throws Exception
+    public List getStudyDatasets()
     {
         List<GWTPair> datasets = new ArrayList<GWTPair>();
         final Study study = StudyManager.getInstance().getStudy(_context.getContainer());
@@ -93,31 +94,42 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
         return datasets;
     }
 
-    public List saveCharts(GWTChart[] charts, Map properties) throws Exception
+    public List saveCharts(GWTChart[] charts, Map properties)
     {
         List<String> errors = new ArrayList<String>();
 
         return errors.isEmpty() ? null : errors;
     }
 
-    public String saveChart(GWTChart chart) throws Exception
+    public String saveChart(GWTChart chart) throws SerializableException
     {
-        if (getUser().isGuest())
-            throw new SerializableException("Unable to save report, you must be logged in");
-
-        ChartDesignerBean bean = new ChartDesignerBean();
-        PropertyUtils.copyProperties(bean, chart);
-
-        Report report = bean.getReport();
-        if (report != null)
+        try
         {
-            if (_isParticipantChart)
-                return saveParticipantChart(chart, report);
+            if (getUser().isGuest())
+                throw new SerializableException("Unable to save report, you must be logged in");
+
+            ChartDesignerBean bean = new ChartDesignerBean();
+            PropertyUtils.copyProperties(bean, chart);
+
+            Report report = bean.getReport();
+            if (report != null)
+            {
+                if (_isParticipantChart)
+                    return saveParticipantChart(chart, report);
+                else
+                    return saveDatasetChart(chart, report);
+            }
             else
-                return saveDatasetChart(chart, report);
+                throw new SerializableException("Unable to save report, the report could not be instantiated");
         }
-        else
-            throw new SerializableException("Unable to save report, the report could not be instantiated");
+        catch (SerializableException se)
+        {
+            throw se;
+        }
+        catch (Exception e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
     }
 
     private String saveDatasetChart(GWTChart chart, Report report) throws Exception
@@ -212,7 +224,7 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
         }
     }
 
-    public GWTChartRenderer[] getChartRenderers(GWTChart chart) throws Exception
+    public GWTChartRenderer[] getChartRenderers(GWTChart chart)
     {
         UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), chart.getSchemaName());
         QuerySettings qs = new QuerySettings(_context.getActionURL(), null);
@@ -237,10 +249,17 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
         return gwtRenderers.toArray(new GWTChartRenderer[0]);
     }
 
-    public String getDisplayURL(GWTChart chart) throws Exception
+    public String getDisplayURL(GWTChart chart)
     {
         ChartDesignerBean bean = new ChartDesignerBean();
-        PropertyUtils.copyProperties(bean, chart);
+        try
+        {
+            PropertyUtils.copyProperties(bean, chart);
+        }
+        catch (Exception e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
         ActionURL url = new ActionURL("reports", "plotChart", _context.getContainer());
 
         for (Pair<String, String> param : bean.getParameters())

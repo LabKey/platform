@@ -29,8 +29,8 @@ import org.labkey.study.designer.client.model.GWTStudyDesignVersion;
 public interface StudyDefinitionService extends RemoteService
 {
     public GWTStudyDesignVersion save(GWTStudyDefinition def);
-    public GWTStudyDefinition getBlank() throws Exception;
-    public GWTStudyDefinition getRevision(int studyId, int revision) throws Exception;
-    public GWTStudyDesignVersion[] getVersions(int studyId) throws Exception;
-    public GWTStudyDefinition getTemplate() throws Exception;
+    public GWTStudyDefinition getBlank();
+    public GWTStudyDefinition getRevision(int studyId, int revision);
+    public GWTStudyDesignVersion[] getVersions(int studyId);
+    public GWTStudyDefinition getTemplate();
 }

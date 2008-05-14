@@ -20,7 +20,8 @@ import com.google.gwt.user.client.rpc.RemoteService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.study.dataset.client.model.GWTDataset;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -30,7 +31,7 @@ import java.util.*;
  */
 public interface DatasetService extends RemoteService //, PropertiesEditorService
 {
-    public GWTDataset getDataset(int id) throws Exception;
+    public GWTDataset getDataset(int id);
 
     /**
      * @param ds  Dataset this domain belongs to
@@ -40,10 +41,10 @@ public interface DatasetService extends RemoteService //, PropertiesEditorServic
      * @throws Exception
      * @gwt.typeArgs <java.lang.String>
      */
-    public List updateDatasetDefinition(GWTDataset ds, GWTDomain orig, GWTDomain dd) throws Exception;
-    public List updateDatasetDefinition(GWTDataset ds, GWTDomain orig, String schema) throws Exception;
-    public GWTDomain getDomainDescriptor(String typeURI, String domainContainerId) throws Exception;
-    public GWTDomain getDomainDescriptor(String typeURI) throws Exception;
+    public List updateDatasetDefinition(GWTDataset ds, GWTDomain orig, GWTDomain dd);
+    public List updateDatasetDefinition(GWTDataset ds, GWTDomain orig, String schema);
+    public GWTDomain getDomainDescriptor(String typeURI, String domainContainerId);
+    public GWTDomain getDomainDescriptor(String typeURI);
 
     // PropertiesEditor.LookupService
     /**

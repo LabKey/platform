@@ -33,8 +33,9 @@ import org.labkey.api.reports.chart.ChartRenderer;
 import org.labkey.api.reports.chart.ChartRendererFactory;
 import org.labkey.api.reports.report.view.ChartDesignerBean;
 import org.labkey.api.reports.report.view.ChartUtil;
-import org.labkey.api.view.ViewContext;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 import org.labkey.common.util.Pair;
 
 import java.util.ArrayList;
@@ -52,38 +53,47 @@ public class ChartServiceImpl extends BaseRemoteService implements ChartService
         super(context);
     }
 
-    public GWTChart getChart(int id) throws Exception
+    public GWTChart getChart(int id)
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
-    public String saveChart(GWTChart chart) throws Exception
+    public String saveChart(GWTChart chart) throws SerializableException
     {
-        List<String> errors = new ArrayList<String>();
-
-        if (getUser().isGuest())
-            throw new SerializableException("Unable to save report, you must be logged in");
-
-        ChartDesignerBean bean = new ChartDesignerBean();
-        PropertyUtils.copyProperties(bean, chart);
-        if (!chart.isShared())
-            bean.setOwner(_context.getUser().getUserId());
-
-        Report report = bean.getReport();
-        if (report != null)
+        try
         {
-            final String key = ChartUtil.getReportQueryKey(report.getDescriptor());
-            if (!reportNameExists(_context, chart.getReportName(), key))
+            if (getUser().isGuest())
+                throw new SerializableException("Unable to save report, you must be logged in");
+
+            ChartDesignerBean bean = new ChartDesignerBean();
+            PropertyUtils.copyProperties(bean, chart);
+            if (!chart.isShared())
+                bean.setOwner(_context.getUser().getUserId());
+
+            Report report = bean.getReport();
+            if (report != null)
             {
-                ReportService.get().saveReport(_context, key, report);
+                final String key = ChartUtil.getReportQueryKey(report.getDescriptor());
+                if (!reportNameExists(_context, chart.getReportName(), key))
+                {
+                    ReportService.get().saveReport(_context, key, report);
+                }
+                else
+                    throw new SerializableException("There is already a report with the name of: '" + report.getDescriptor().getReportName() +
+                            "'. Please specify a different name.");
             }
             else
-                throw new SerializableException("There is already a report with the name of: '" + report.getDescriptor().getReportName() +
-                        "'. Please specify a different name.");
+                throw new RuntimeException("Unable to save report, the report could not be instantiated");
+            return null;
         }
-        else
-            throw new SerializableException("Unable to save report, the report could not be instantiated");
-        return null;
+        catch (SerializableException se)
+        {
+            throw se;
+        }
+        catch (Exception e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
     }
 
     private boolean reportNameExists(ViewContext context, String reportName, String key)
@@ -102,7 +112,7 @@ public class ChartServiceImpl extends BaseRemoteService implements ChartService
         }
     }
 
-    public GWTChartRenderer[] getChartRenderers(GWTChart chart) throws Exception
+    public GWTChartRenderer[] getChartRenderers(GWTChart chart)
     {
         UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), chart.getSchemaName());
         QuerySettings qs = new QuerySettings(_context.getActionURL(), null);
@@ -126,10 +136,17 @@ public class ChartServiceImpl extends BaseRemoteService implements ChartService
         return gwtRenderers.toArray(new GWTChartRenderer[0]);
     }
 
-    public String getDisplayURL(GWTChart chart) throws Exception
+    public String getDisplayURL(GWTChart chart)
     {
         ChartDesignerBean bean = new ChartDesignerBean();
-        PropertyUtils.copyProperties(bean, chart);
+        try
+        {
+            PropertyUtils.copyProperties(bean, chart);
+        }
+        catch (Exception e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
 
         ActionURL url = new ActionURL("reports", "plotChart", _context.getContainer());
 

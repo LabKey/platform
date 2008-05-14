@@ -17,11 +17,10 @@
 package org.labkey.experiment.property.client;
 
 import com.google.gwt.user.client.rpc.RemoteService;
+import org.labkey.api.gwt.client.model.GWTDomain;
 
 import java.util.List;
 import java.util.Map;
-
-import org.labkey.api.gwt.client.model.GWTDomain;
 
 /**
  * Created by IntelliJ IDEA.
@@ -32,8 +31,8 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 public interface PropertyService extends RemoteService //, PropertiesEditorService
 {
     /** @gwt.typeArgs <java.lang.String> */
-    public List updateDomainDescriptor(GWTDomain orig, GWTDomain dd) throws Exception;
-    public GWTDomain getDomainDescriptor(String typeURI) throws Exception;
+    public List updateDomainDescriptor(GWTDomain orig, GWTDomain dd);
+    public GWTDomain getDomainDescriptor(String typeURI);
 
     // PropertiesEditor.LookupService
     /** @gwt.typeArgs <java.lang.String> */

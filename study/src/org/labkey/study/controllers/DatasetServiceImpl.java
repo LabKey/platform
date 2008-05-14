@@ -16,27 +16,31 @@
 
 package org.labkey.study.controllers;
 
-import org.labkey.api.exp.property.DomainEditorServiceBase;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.data.TableInfo;
+import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.beanutils.PropertyUtils;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.ChangePropertyDescriptorException;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainEditorServiceBase;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.security.ACL;
+import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.ViewContext;
+import org.labkey.common.tools.TabLoader;
 import org.labkey.study.dataset.client.DatasetService;
 import org.labkey.study.dataset.client.model.GWTDataset;
+import org.labkey.study.model.Cohort;
+import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.Cohort;
-import org.labkey.common.tools.TabLoader;
-import org.apache.commons.beanutils.PropertyUtils;
-import org.apache.commons.beanutils.BeanUtils;
 
+import java.io.IOException;
+import java.sql.SQLException;
 import java.util.*;
 
 /**
@@ -57,7 +61,7 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
     }
 
 
-    public GWTDataset getDataset(int id) throws Exception
+    public GWTDataset getDataset(int id)
     {
         try
         {
@@ -97,45 +101,51 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
         }
         catch (Exception x)
         {
-            StudyController._log.error("unexpected exception", x);
-            throw x;
+            throw UnexpectedException.wrap(x);
         }
     }
 
 
-    public List updateDatasetDefinition(GWTDataset ds, GWTDomain orig, GWTDomain update) throws Exception
+    public List updateDatasetDefinition(GWTDataset ds, GWTDomain orig, GWTDomain update)
     {
-        assert orig.getDomainURI().equals(update.getDomainURI());
-        List<String> errors = new ArrayList<String>();
-
-        if (!getContainer().hasPermission(getUser(), ACL.PERM_ADMIN))
+        try
         {
-            errors.add("Unauthorized");
-            return errors;
-        }
+            assert orig.getDomainURI().equals(update.getDomainURI());
+            List<String> errors = new ArrayList<String>();
 
-        Domain d = PropertyService.get().getDomain(getContainer(), update.getDomainURI());
-        if (null == d)
+            if (!getContainer().hasPermission(getUser(), ACL.PERM_ADMIN))
+            {
+                errors.add("Unauthorized");
+                return errors;
+            }
+
+            Domain d = PropertyService.get().getDomain(getContainer(), update.getDomainURI());
+            if (null == d)
+            {
+                errors.add("Domain not found: " + update.getDomainURI());
+                return errors;
+            }
+
+            if (!ds.getTypeURI().equals(orig.getDomainURI()) ||
+                !ds.getTypeURI().equals(update.getDomainURI()))
+            {
+                errors.add("Illegal Argument");
+                return errors;
+            }
+
+            errors = updateDomainDescriptor(orig, update);
+            if (errors == null)
+                errors = updateDataset(ds, orig.getDomainURI());
+
+            return errors.isEmpty() ? null : errors;
+        }
+        catch (ChangePropertyDescriptorException e)
         {
-            errors.add("Domain not found: " + update.getDomainURI());
-            return errors;
+            throw UnexpectedException.wrap(e);
         }
-
-        if (!ds.getTypeURI().equals(orig.getDomainURI()) ||
-            !ds.getTypeURI().equals(update.getDomainURI()))
-        {
-            errors.add("Illegal Argument");
-            return errors;
-        }
-
-        errors = updateDomainDescriptor(orig, update);
-        if (errors == null)
-            errors = updateDataset(ds, orig.getDomainURI());
-
-        return errors.isEmpty() ? null : errors;
     }
 
-    private List updateDataset(GWTDataset ds, String domainURI) throws Exception
+    private List updateDataset(GWTDataset ds, String domainURI)
     {
         try
         {
@@ -182,36 +192,46 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
         }
         catch (Exception x)
         {
-            StudyController._log.error("unexpected exception", x);
-            throw x;
+            throw UnexpectedException.wrap(x);
         }
     }
 
-    public List updateDatasetDefinition(GWTDataset ds, GWTDomain domain, String tsv) throws Exception
+    public List updateDatasetDefinition(GWTDataset ds, GWTDomain domain, String tsv)
     {
-        List<String> errors = new ArrayList<String>();
-
-        if (!getContainer().hasPermission(getUser(), ACL.PERM_ADMIN))
+        try
         {
-            errors.add("Unauthorized");
-            return errors;
-        }
+            List<String> errors = new ArrayList<String>();
 
-        Map[] maps = null;
-        if (null != tsv && tsv.length() > 0)
+            if (!getContainer().hasPermission(getUser(), ACL.PERM_ADMIN))
+            {
+                errors.add("Unauthorized");
+                return errors;
+            }
+
+            Map[] maps = null;
+            if (null != tsv && tsv.length() > 0)
+            {
+                TabLoader loader = new TabLoader(tsv, true);
+                loader.setLowerCaseHeaders(true);
+                maps = (Map[]) loader.load();
+            }
+
+            PropertyDescriptor[] pds = OntologyManager.importOneType(domain.getDomainURI(), maps, errors, getContainer());
+            if (pds == null || pds.length == 0)
+                errors.add("No properties were successfully imported.");
+
+            if (errors.isEmpty())
+                errors = updateDataset(ds, domain.getDomainURI());
+
+            return errors.isEmpty() ? null : errors;
+        }
+        catch (IOException e)
         {
-            TabLoader loader = new TabLoader(tsv, true);
-            loader.setLowerCaseHeaders(true);
-            maps = (Map[]) loader.load();
+            throw UnexpectedException.wrap(e);
         }
-
-        PropertyDescriptor[] pds = OntologyManager.importOneType(domain.getDomainURI(), maps, errors, getContainer());
-        if (pds == null || pds.length == 0)
-            errors.add("No properties were successfully imported.");
-
-        if (errors.isEmpty())
-            errors = updateDataset(ds, domain.getDomainURI());
-
-        return errors.isEmpty() ? null : errors;
+        catch (SQLException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
     }
 }

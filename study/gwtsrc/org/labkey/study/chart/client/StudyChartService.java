@@ -34,12 +34,12 @@ public interface StudyChartService extends ChartService
      *
      * @gwt.typeArgs <org.labkey.study.chart.client.model.GWTPair>
      */
-    public List getStudyDatasets() throws Exception;
+    public List getStudyDatasets();
     
     /**
      * @return a list of errors
      *
      * @gwt.typeArgs <java.lang.String>
      */
-    public List saveCharts(GWTChart[] chart, Map properties) throws Exception;
+    public List saveCharts(GWTChart[] chart, Map properties);
 }
