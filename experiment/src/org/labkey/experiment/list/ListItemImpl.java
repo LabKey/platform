@@ -37,10 +37,14 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.DetailsView;
+import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.experiment.controllers.list.ListItemAttachmentParent;
 
 import java.sql.SQLException;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -368,28 +372,26 @@ public class ListItemImpl implements ListItem
                     if (prop != null)
                     {
                         String value;
-//                        if (prop.getLookup() == null)
+                        if (prop.getLookup() == null)
                             value = ObjectUtils.toString(entry.getValue(), "");
-/*
                         else
                         {
                             if (rowMap == null)
                             {
                                 TableInfo table = _list.getTable(user, null);
-                                DetailsView details = new DetailsView(new TableViewForm(table));
+                                DetailsView details = new DetailsView(new QueryUpdateForm(table, HttpView.currentRequest()));
                                 RenderContext ctx = details.getRenderContext();
 
                                 ctx.setMode(DataRegion.MODE_DETAILS);
                                 ctx.setBaseFilter(new PkFilter(table, _itm.getKey(), true));
 
-                                ResultSet rs = Table.selectForDisplay(table, table.getColumns(), ctx.getBaseFilter(), ctx.getBaseSort(), 0, 0);
+                                ResultSet rs = Table.selectForDisplay(table, table.getColumnsList(), ctx.getBaseFilter(), ctx.getBaseSort(), 0, 0);
                                 rs.next();
                                 rowMap = ResultSetUtil.mapRow(rs, rowMap);
                                 rs.close();
                             }
                             value = getFieldValue(user, prop, rowMap);
                         }
-*/
                         recordChangedMap.put(prop.getName(), value);
                     }
                 }

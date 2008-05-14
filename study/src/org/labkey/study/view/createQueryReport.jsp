@@ -85,11 +85,11 @@
                         DataSetDefinition def = datasetMap.get(name);
                         if (def != null) {
                 %>
-                        <option value="<%= h(paramStart + '&' + QueryParam.queryName.toString() + '=' + name + "&datasetId=" + def.getDataSetId()) %>" <%= name.equals(bean.getQueryName()) ? "SELECTED" : "" %>><%= h(name) %></option>
+                        <option value="<%= h(paramStart + '&' + QueryParam.queryName.toString() + '=' + u(name) + "&datasetId=" + def.getDataSetId()) %>" <%= name.equals(bean.getQueryName()) ? "SELECTED" : "" %>><%= h(name) %></option>
                 <%
                         } else {
                 %>
-                        <option value="<%= h(paramStart + '&' + QueryParam.queryName.toString() + '=' + name) %>" <%= name.equals(bean.getQueryName()) ? "SELECTED" : "" %>><%= h(name) %></option>
+                        <option value="<%= h(paramStart + '&' + QueryParam.queryName.toString() + '=' + u(name)) %>" <%= name.equals(bean.getQueryName()) ? "SELECTED" : "" %>><%= h(name) %></option>
                 <%
                         }
                     }

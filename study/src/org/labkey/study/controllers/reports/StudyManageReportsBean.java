@@ -211,7 +211,7 @@ public class StudyManageReportsBean extends ManageReportsBean
         {
             // dataset report key encoding is: <schemaName>/<queryName>/<viewName>
             String key = r.getDescriptor().getReportKey();
-            String[] parts = key.split("/");
+            String[] parts = ChartUtil.splitReportKey(key);
 
             if (ReportManager.ALL_DATASETS_KEY.equals(key))
             {
