@@ -45,7 +45,7 @@ public interface AssayService extends RemoteService
      * @throws Exception
      * @gwt.typeArgs <java.lang.String>
      */
-    List updateDomainDescriptor(GWTDomain orig, GWTDomain update) throws Exception;
+    List updateDomainDescriptor(GWTDomain orig, GWTDomain update) throws AssayException;
     
     // PropertiesEditor.LookupService
     /**

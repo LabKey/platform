@@ -28,6 +28,10 @@ public class ExceptionUtil
 {
     public static SerializableException convertToSerializable(Throwable t)
     {
+        if (t instanceof SerializableException)
+        {
+            return (SerializableException) t;
+        }
         return new SerializableException(t.toString() + ": " + t.getMessage());
     }
 

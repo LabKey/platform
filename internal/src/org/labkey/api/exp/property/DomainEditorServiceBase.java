@@ -159,12 +159,12 @@ public class DomainEditorServiceBase extends BaseRemoteService
         return defSchema;
     }
 
-    public GWTDomain getDomainDescriptor(String typeURI) throws Exception
+    public GWTDomain getDomainDescriptor(String typeURI)
     {
         return getDomainDescriptor(typeURI, getContainer());
     }
 
-    public GWTDomain getDomainDescriptor(String typeURI, String domainContainerId) throws Exception
+    public GWTDomain getDomainDescriptor(String typeURI, String domainContainerId)
     {
         Container domainContainer = ContainerManager.getForId(domainContainerId);
         return getDomainDescriptor(typeURI, domainContainer);

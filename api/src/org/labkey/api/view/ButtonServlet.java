@@ -246,7 +246,20 @@ public class ButtonServlet extends HttpServlet
 
             // TODO: use 8-bit image type?
             BufferedImage bi = new BufferedImage(1000, 40, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g = bi.createGraphics();
+            Graphics2D g;
+            try
+            {
+                g = bi.createGraphics(); // If there's no X server on Linux, this explodes
+            }
+            catch (InternalError ie)
+            {
+                // Let's create a friendlier message so the user might be able to fix the problem
+                throw new RuntimeException(ie.toString() + "\nPlease Edit tomcat's catalina.sh file, and add the following line near the top of the file:\n" +
+                        "\n" +
+                        "CATALINA_OPTS=\"-Djava.awt.headless=true\"\n" +
+                        "\n" +
+                        "Then restart tomcat.");
+            }
 
             if (null != _sizingFont)
                 g.setFont(_sizingFont);
