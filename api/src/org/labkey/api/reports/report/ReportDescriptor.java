@@ -72,6 +72,7 @@ public class ReportDescriptor extends Entity
         queryName,
         viewName,
         dataRegionName,
+        redirectUrl,
     }
 
     public ReportDescriptor()
