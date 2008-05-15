@@ -1171,16 +1171,6 @@ public class QueryControllerSpring extends SpringActionController
         {
             _dir = dir;
         }
-
-        public boolean isLookups()
-        {
-            return _lookups;
-        }
-
-        public void setLookups(boolean lookups)
-        {
-            _lookups = lookups;
-        }
     }
 
 
@@ -1203,9 +1193,19 @@ public class QueryControllerSpring extends SpringActionController
                 form.getQuerySettings().setSortFilterURL(sortFilterURL); //this isn't working!
             }
 
+            //split the column list into a list of field keys
+            List<FieldKey> fieldKeys = new ArrayList<FieldKey>();
+            String columns = getViewContext().getRequest().getParameter("query.columns");
+            if(null != columns && columns.length() > 0)
+            {
+                String[] cols = columns.split(",");
+                for(String col : cols)
+                    fieldKeys.add(FieldKey.fromString(col));
+            }
+
             QueryView view = QueryView.create(form);
             return new ApiQueryResponse(view, getViewContext(), isSchemaEditable(form.getSchema()), true,
-                    form.getSchemaName(), form.getQueryName(), form.getQuerySettings().getOffset());
+                    form.getSchemaName(), form.getQueryName(), form.getQuerySettings().getOffset(), fieldKeys);
         }
     }
 
