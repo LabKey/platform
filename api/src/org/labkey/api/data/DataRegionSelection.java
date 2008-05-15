@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.util.AppProps;
 
 import javax.servlet.http.HttpSession;
 import java.util.*;
@@ -37,15 +38,20 @@ public class DataRegionSelection
     {
         if (key == null)
             key = getSelectionKeyFromRequest(context);
-        key = context.getContainer().getPath() + key + SELECTED_VALUES;
-        HttpSession session = context.getRequest().getSession(false);
-        Set<String> result = (Set<String>)session.getAttribute(key);
-        if (result == null && create)
+
+        if (key != null)
         {
-            result = new LinkedHashSet<String>();
-            session.setAttribute(key, result);
+            key = context.getContainer().getPath() + key + SELECTED_VALUES;
+            HttpSession session = context.getRequest().getSession(false);
+            Set<String> result = (Set<String>)session.getAttribute(key);
+            if (result == null && create)
+            {
+                result = new LinkedHashSet<String>();
+                session.setAttribute(key, result);
+            }
+            return result;
         }
-        return result;
+        return Collections.emptySet();
     }
 
     /**
@@ -79,7 +85,7 @@ public class DataRegionSelection
     public static String getSelectionKeyFromRequest(ViewContext context)
     {
         String selectionKey = context.getRequest().getParameter(DATA_REGION_SELECTION_KEY);
-        assert selectionKey != null : "Could not find " + DATA_REGION_SELECTION_KEY + " in request parameters";
+        assert !(AppProps.getInstance().isDevMode() && selectionKey == null) : "Could not find " + DATA_REGION_SELECTION_KEY + " in request parameters";
         return selectionKey;
     }
 
