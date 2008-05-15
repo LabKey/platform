@@ -838,7 +838,7 @@ public class DavController extends SpringActionController
                     os = new FileOutputStream(resource.getFile());
                     assert track(os);
                     copyData(is, os);
-//                    os.getFD().sync();
+                    os.getFD().sync();
                     if (exists)
                         audit(resource, "created");
                     else
