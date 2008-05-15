@@ -55,6 +55,11 @@
     cursor:pointer;
 }
 
+#headerpanel
+{
+    height: 56px;
+}
+
 .leftNavBox
 {
     background-color: white;

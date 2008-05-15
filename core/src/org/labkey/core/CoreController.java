@@ -53,8 +53,7 @@ public class CoreController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
-    @RequiresPermission(ACL.PERM_NONE)
-    public class StylesheetAction extends ExportAction
+    abstract class BaseStylesheetAction extends ExportAction
     {
         public void export(Object o, HttpServletResponse response) throws Exception
         {
@@ -64,7 +63,7 @@ public class CoreController extends SpringActionController
             Integer dependsOn = AppProps.getInstance().getLookAndFeelRevision();
             if (null == c || !dependsOn.equals(c.dependencies) || null != request.getParameter("nocache") || AppProps.getInstance().isDevMode())
             {
-                JspView view = new JspView("/org/labkey/core/stylesheet.jsp");
+                JspView view = new JspView(getCssPageName());
                 view.setFrame(WebPartView.FrameType.NONE);
                 c = PageFlowUtil.getViewContent(view, request, response);
                 c.dependencies = dependsOn;
@@ -84,6 +83,26 @@ public class CoreController extends SpringActionController
             {
                 response.getWriter().write(c.content);
             }
+        }
+
+        abstract String getCssPageName();
+    }
+
+    @RequiresPermission(ACL.PERM_NONE)
+    public class StylesheetAction extends BaseStylesheetAction
+    {
+        String getCssPageName()
+        {
+            return "/org/labkey/core/stylesheet.jsp";
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_NONE)
+    public class PrintstyleAction extends BaseStylesheetAction
+    {
+        String getCssPageName()
+        {
+            return "/org/labkey/core/printstyle.jsp";
         }
     }
 
