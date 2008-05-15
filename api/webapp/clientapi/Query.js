@@ -99,6 +99,12 @@ LABKEY.Query = new function()
         *       descending order). In the case of a multi-column sort, up to three column names can be
         *       included, separated by commas.
         * @param {String} [config.viewName] The name of a custom view saved on the server for the specified query.
+        * @param {String} [config.columns] A comma-delimited list of column names you wish to select from the specified
+        *       query. By default, selectRows will return the set of columns defined in the default value for this query,
+        *       as defined via the Customize View user interface on the server. You can override this by specifying a list
+        *       of column names in this parameter, separated by commas. The names can also include references to related
+        *       tables (e.g., 'RelatedPeptide/Peptide' where 'RelatedPeptide is the name of a foreign key column in the
+        *       base query, and 'Peptide' is the name of a column in the related table).
         * @param {String} [config.containerPath] The path to the container in which the schema and query are defined,
         *       if different than the current container. If not supplied, the current container's path will be used.
         * @param {Integer} [config.maxRows] The maximum number of rows to return from the server (defaults to 100).
@@ -174,6 +180,9 @@ LABKEY.Query = new function()
 
             if(config.viewName)
                 dataObject['query.viewName'] = config.viewName;
+
+            if(config.columns)
+                dataObject['query.columns'] = config.columns;
 
             Ext.Ajax.request({
                 url : LABKEY.ActionURL.buildURL('query', 'getQuery', config.containerPath),

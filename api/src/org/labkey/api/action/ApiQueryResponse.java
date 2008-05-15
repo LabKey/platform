@@ -17,6 +17,7 @@ package org.labkey.api.action;
 
 import org.labkey.api.data.*;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.util.ResultSetUtil;
 
@@ -47,9 +48,10 @@ public class ApiQueryResponse implements ApiResponse
     private String _queryName = null;
     private long _offset = 0;                   //starting offset row number
     private long _numRespRows = 0;              //number of response rows
+    private List<FieldKey> _fieldKeys = null;
 
     public ApiQueryResponse(QueryView view, ViewContext viewContext, boolean schemaEditable, boolean includeLookupInfo,
-                            String schemaName, String queryName, long offset) throws Exception
+                            String schemaName, String queryName, long offset, List<FieldKey> fieldKeys) throws Exception
     {
         _viewContext = viewContext;
         _schemaEditable = schemaEditable;
@@ -57,12 +59,18 @@ public class ApiQueryResponse implements ApiResponse
         _schemaName = schemaName;
         _queryName = queryName;
         _offset = offset;
+        _fieldKeys = fieldKeys;
         view.exportToApiResponse(this);
     }
 
     public Map<String, Object> getProperties()
     {
         return _props;
+    }
+
+    public List<FieldKey> getFieldKeys()
+    {
+        return _fieldKeys;
     }
 
     public void populate(ResultSet rs, TableInfo table, List<DisplayColumn> displayColumns, Long rowCount) throws Exception

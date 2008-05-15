@@ -937,12 +937,40 @@ public class QueryView extends WebPartView<Object>
             DataView view = createDataView();
             DataRegion rgn = view.getDataRegion();
 
-            //force the pk column into the default list of columns
-            List<ColumnInfo> pkCols = table.getPkColumns();
-            if (null != pkCols && pkCols.size() == 1)
+            //adjust the set of display columns if the user requested a specific list
+            if(null != response.getFieldKeys() && response.getFieldKeys().size() > 0)
             {
-                if (null == rgn.getDisplayColumn(pkCols.get(0).getName()))
-                    rgn.addColumn(pkCols.get(0));
+                //clear the default set of columns
+                rgn.clearColumns();
+
+                List<FieldKey> keys = response.getFieldKeys();
+                FieldKey starKey = FieldKey.fromParts("*");
+
+                //special-case: if one of the keys is *, add all columns from the
+                //TableInfo and remove the * so that Query doesn't choke on it
+                if(keys.contains(starKey))
+                {
+                    rgn.addColumns(table.getColumnsList());
+                    keys.remove(starKey);
+                }
+
+                if(keys.size() > 0)
+                {
+                    Map<FieldKey,ColumnInfo> selectedCols = QueryService.get().getColumns(table, keys);
+                    for(ColumnInfo col : selectedCols.values())
+                        rgn.addColumn(col);
+                }
+            }
+
+            //force the pk column(s) into the default list of columns
+            List<ColumnInfo> pkCols = table.getPkColumns();
+            if (null != pkCols)
+            {
+                for(ColumnInfo pkCol : pkCols)
+                {
+                    if (null == rgn.getDisplayColumn(pkCol.getName()))
+                        rgn.addColumn(pkCol);
+                }
             }
 
             ResultSet rs = null;
