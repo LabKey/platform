@@ -427,7 +427,7 @@ public class WebdavResolverImpl implements WebdavResolver
 
         public String getLocalHref(ViewContext context)
         {
-            String href = context.getContextPath() + "/webdav" + PageFlowUtil.encodePath(_path);
+            String href = context.getContextPath() + DavController.SERVLETPATH + PageFlowUtil.encodePath(_path);
             if (isCollection() && !href.endsWith("/"))
                 href += "/";
             return href;
@@ -806,7 +806,7 @@ public class WebdavResolverImpl implements WebdavResolver
             assertTrue(rTest.canRead(guest));
 
             ContainerManager.rename(cTest, "webdav");
-            String pathNew = junit.getPath() + "/webdav";
+            String pathNew = junit.getPath() + DavController.SERVLETPATH;
 //            Container cTestNew = ContainerManager.getForPath(pathNew);
             assertFalse(resolver.lookup(pathTest).exists());
             assertNotNull(resolver.lookup(pathNew));

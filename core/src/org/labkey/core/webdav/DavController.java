@@ -22,13 +22,8 @@ import org.apache.log4j.Category;
 import org.apache.log4j.Logger;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.AuthenticationManager;
-import org.labkey.api.util.AppProps;
-import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.GUID;
+import org.labkey.api.security.*;
+import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.audit.AuditLogService;
@@ -56,6 +51,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.*;
 
+
 /**
  * Created by IntelliJ IDEA.
  * User: matthewb
@@ -66,6 +62,7 @@ import java.util.*;
  */
 public class DavController extends SpringActionController
 {
+    public static final String SERVLETPATH="/webdav";
     public static final String name = "_dav_";
     public static final String mimeSeparation = "_dav_" + GUID.makeHash() + "_separator_";
 
@@ -146,6 +143,12 @@ public class DavController extends SpringActionController
             _log.error("unexpected exception", e);
             _webdavresponse.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR, e);
         }
+        for (Map.Entry e : closables.entrySet())
+        {
+            Closeable c = (Closeable) e.getKey();
+            Throwable t = (Throwable)e.getValue();
+            _log.warn(c.getClass().getName(), t);
+        }
         return null;
     }
 
@@ -224,6 +227,11 @@ public class DavController extends SpringActionController
             return _message;
         }
 
+        void setContentDisposition(String value)
+        {
+            response.setHeader("Content-Disposition", value);
+        }
+
         void  setContentType(String contentType)
         {
             response.setContentType(contentType);
@@ -290,25 +298,54 @@ public class DavController extends SpringActionController
         {
             if (!_log.isDebugEnabled())
                 return response.getWriter();
-            final Writer responseWriter = response.getWriter();
-            return new Writer()
+            Writer responseWriter = response.getWriter();
+            assert track(responseWriter);
+            
+            FilterWriter f = new java.io.FilterWriter(responseWriter)
             {
+                @Override
+                public void write(int c) throws IOException
+                {
+                    super.write(c);
+                    sbLogResponse.append(c);
+                }
+
+                @Override
+                public void write(String str, int off, int len) throws IOException
+                {
+                    super.write(str, off, len);
+                    sbLogResponse.append(str, off, len);
+                }
+
+                @Override
+                public void write(char cbuf[]) throws IOException
+                {
+                    super.write(cbuf);
+                    sbLogResponse.append(cbuf);
+                }
+
+                @Override
+                public void write(String str) throws IOException
+                {
+                    super.write(str);
+                    sbLogResponse.append(str);
+                }
+
                 public void write(char cbuf[], int off, int len) throws IOException
                 {
-                    responseWriter.write(cbuf,off,len);
+                    super.write(cbuf,off,len);
                     sbLogResponse.append(cbuf,off,len);
                 }
 
-                public void flush() throws IOException
-                {
-                    responseWriter.flush();
-                }
-
+                @Override
                 public void close() throws IOException
                 {
-                    responseWriter.close();
+                    super.close();
+                    assert untrack(out);
                 }
             };
+            assert track(f);
+            return f;
         }
     }
 
@@ -423,22 +460,44 @@ public class DavController extends SpringActionController
             if (null != getRequest().getParameter("davmount"))
                 return mountResource(resource);
             else if (resource.isCollection())
-                return serveCollection(resource, true);
+                return serveCollection(resource, !"HEAD".equals(method));
             else
-                return serveResource(resource, true);
+                return serveResource(resource, !"HEAD".equals(method));
         }
     }
 
-    WebdavStatus mountResource(WebdavResolver.Resource resource) throws IOException
-    {
-        getResponse().setContentType("application/davmount+xml");
-        Writer os = getResponse().getWriter();
 
-        os.write(
-          "<dm:mount xmlns:dm=\"http://purl.org/NET/webdav/mount\">" +
-            "<dm:url>");os.write(PageFlowUtil.filter(resource.getHref(getViewContext())));os.write("</dm:url>" +
-            "<dm:open>inbox/</dm:open>" +
-          "</dm:mount>");
+    @RequiresPermission(ACL.PERM_NONE)
+    public class HeadAction extends GetAction
+    {
+        public HeadAction()
+        {
+            super("HEAD");
+        }
+    }
+
+
+    WebdavStatus mountResource(WebdavResolver.Resource resource) throws DavException, IOException
+    {
+        StringBuilder sb = new StringBuilder();
+        String root = resolvePath("/").getHref(getViewContext());
+        if (!root.endsWith("/")) root += "/";
+        if (resource.isFile())
+            resource = resource.parent();
+        String path = resource.getHref(getViewContext());
+        if (!path.endsWith("/")) path += "/";
+        String open = path.substring(root.length());
+
+        sb.append("<dm:mount xmlns:dm=\"http://purl.org/NET/webdav/mount\">\n");
+        sb.append("  <dm:url>").append(PageFlowUtil.filter(root)).append("</dm:url>\n");
+        if (open.length() > 0)
+        sb.append("  <dm:open>").append(PageFlowUtil.filter(open)).append("</dm:open>\n");
+        sb.append("</dm:mount>");
+
+
+        getResponse().setContentType("application/davmount+xml");
+        getResponse().setContentDisposition("attachment; filename=\"" + resource.getName() + ".davmount\"");
+        getResponse().getWriter().write(sb.toString());
         return WebdavStatus.SC_OK;
     }
 
@@ -481,21 +540,21 @@ public class DavController extends SpringActionController
 
             Node propNode = null;
 
-            ReadAheadBufferedInputStream is = new ReadAheadBufferedInputStream(getRequest().getInputStream());
-            if (is.available() > 0)
+            ReadAheadInputStream is = new ReadAheadInputStream(getRequest().getInputStream());
+            try
             {
-                DocumentBuilder documentBuilder;
-                try
+                if (is.available() > 0)
                 {
-                    documentBuilder = getDocumentBuilder();
-                }
-                catch (ServletException ex)
-                {
-                    throw new DavException(ex.getCause());   
-                }
+                    DocumentBuilder documentBuilder;
+                    try
+                    {
+                        documentBuilder = getDocumentBuilder();
+                    }
+                    catch (ServletException ex)
+                    {
+                        throw new DavException(ex.getCause());
+                    }
 
-                try
-                {
                     Document document = documentBuilder.parse(is);
 
                     // Get the root element of the document
@@ -524,13 +583,19 @@ public class DavController extends SpringActionController
                                     type = Find.FIND_ALL_PROP;
                                 }
                                 break;
+                            default:
+                                break;
                         }
                     }
                 }
-                catch (Exception e)
-                {
-                    throw new DavException(WebdavStatus.SC_BAD_REQUEST);
-                }
+            }
+            catch (Exception e)
+            {
+                throw new DavException(WebdavStatus.SC_BAD_REQUEST);
+            }
+            finally
+            {
+                close(is, "propfind request stream");
             }
 
             if (type == Find.FIND_BY_PROPERTY)
@@ -567,13 +632,15 @@ public class DavController extends SpringActionController
             getResponse().setContentType("text/xml; charset=UTF-8");
 
             // Create multistatus object
-            XMLWriter generatedXML = new XMLWriter(getResponse().getWriter());
+            Writer writer = getResponse().getWriter();
+            assert track(writer);
+            XMLWriter generatedXML = new XMLWriter(writer);
             generatedXML.writeXMLHeader();
             generatedXML.writeElement(null, "multistatus"+ generateNamespaceDeclarations(), XMLWriter.OPENING);
 
             if (depth == 0)
             {
-                parseProperties(generatedXML, resource, type, properties);
+                writeProperties(generatedXML, resource, type, properties);
             }
             else
             {
@@ -592,7 +659,7 @@ public class DavController extends SpringActionController
                     if (null == resource || !resource.canRead(getUser()))
                         continue;
                     
-                    parseProperties(generatedXML, resource, type, properties);
+                    writeProperties(generatedXML, resource, type, properties);
 
                     if (resource.isCollection() && depth > 0)
                     {
@@ -635,17 +702,8 @@ public class DavController extends SpringActionController
 
             generatedXML.writeElement(null, "multistatus", XMLWriter.CLOSING);
             generatedXML.sendData();
+            close(writer, "respose writer");
             return WebdavStatus.SC_MULTI_STATUS;
-        }
-    }
-
-
-    @RequiresPermission(ACL.PERM_NONE)
-    public class HeadAction extends GetAction
-    {
-        public HeadAction()
-        {
-            super("HEAD");
         }
     }
 
@@ -680,7 +738,7 @@ public class DavController extends SpringActionController
                 throw new DavException(WebdavStatus.SC_METHOD_NOT_ALLOWED);
             }
 
-            BufferedInputStream is = new ReadAheadBufferedInputStream(getRequest().getInputStream());
+            InputStream is = new ReadAheadInputStream(getRequest().getInputStream());
             if (is.available() > 0)
             {
                  DocumentBuilder documentBuilder;
@@ -746,14 +804,18 @@ public class DavController extends SpringActionController
                 return unauthorized(resource);
 
             Range range = parseContentRange();
-            InputStream resourceInputStream = null;
-            RandomAccessFile resourceOutputData = null;
+            InputStream is = null;
+            RandomAccessFile raf = null;
+            FileOutputStream os = null;
 
             try
             {
-                resourceInputStream = getRequest().getInputStream();
-                resource.getFile().createNewFile();
-                resourceOutputData = new RandomAccessFile(resource.getFile(),"rw");
+                is = getRequest().getInputStream();
+                if (!resource.getFile().exists())
+                {
+                    if (!resource.getFile().createNewFile())
+                        throw new DavException(WebdavStatus.SC_INTERNAL_SERVER_ERROR, "could not create file");
+                }
 
                 // Append data specified in ranges to existing content for this
                 // resource - create a temp. file on the local filesystem to
@@ -761,25 +823,22 @@ public class DavController extends SpringActionController
                 // Assume just one range is specified for now
                 if (range != null)
                 {
-                    if (range.start > resourceOutputData.length())
+                    raf = new RandomAccessFile(resource.getFile(),"rw");
+                    assert track(raf);
+                    if (range.start > raf.length())
                         throw new DavException(WebdavStatus.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
-                    resourceOutputData.seek(range.start);
-                }
-                else
-                {
-                }
-
-                if (range != null)
-                {
+                    raf.seek(range.start);
                     // UNDONE: use temp file to reduce likelyhood of botched write?
-                    copyData(resourceInputStream, resourceOutputData, range.end-range.start);
-                    resourceOutputData.getFD().sync();
+                    copyData(is, raf, range.end-range.start);
+                    raf.getFD().sync();
                     audit(resource, "modified range " + range.toString());
                 }
                 else
                 {
-                    copyData(resourceInputStream, resourceOutputData);
-                    resourceOutputData.getFD().sync();
+                    os = new FileOutputStream(resource.getFile());
+                    assert track(os);
+                    copyData(is, os);
+//                    os.getFD().sync();
                     if (exists)
                         audit(resource, "created");
                     else
@@ -788,24 +847,9 @@ public class DavController extends SpringActionController
             }
             finally
             {
-                try
-                {
-                    if (null != resourceInputStream)
-                        resourceInputStream.close();
-                }
-                catch (Exception e)
-                {
-                    log("DavController.PutAction: couldn't close InputStream", e);
-                }
-                try
-                {
-                    if (null != resourceOutputData)
-                        resourceOutputData.close();
-                }
-                catch (Exception e)
-                {
-                    log("DavController.PutAction: couldn't close OutputStream", e);
-                }
+                close(is, "put action inputstream");
+                close(os, "put action outputstream");
+                close(raf, "put action outputdata");
             }
 
             lockNullResources.remove(resource.getPath());
@@ -976,7 +1020,7 @@ public class DavController extends SpringActionController
 
         Writer writer = response.getWriter();
         writer.write(generatedXML.toString());
-        writer.close();
+        close(writer, "response writer");
         return WebdavStatus.SC_MULTI_STATUS;
     }
     
@@ -1063,6 +1107,15 @@ public class DavController extends SpringActionController
                 return WebdavStatus.SC_NO_CONTENT;
             }
 
+            // Don't allow creating text/html via rename (circumventing script checking)
+            if (src.isFile() && !UserManager.mayWriteScript(getUser()))
+            {
+                String contentTypeSrc = StringUtils.defaultString(src.getContentType(),"");
+                String contentTypeDest = StringUtils.defaultString(dest.getContentType(),"");
+                if (contentTypeDest.equals("text/html") && !contentTypeDest.equals(contentTypeSrc))
+                    throw new DavException(WebdavStatus.SC_FORBIDDEN, "Cannot create 'text/html' file using move.");
+            }
+
             if (exists)
             {
                 if (!overwrite)
@@ -1082,7 +1135,7 @@ public class DavController extends SpringActionController
             {
                 if (dest.getFile().exists())
                 {
-                    tmp = new File(dest.parent().getFile(), dest.getName() + "." + GUID.makeHash() + ".rename");
+                    tmp = new File(dest.parent().getFile(), "~rename" + GUID.makeHash() + "~" + dest.getName());
                     tmp.deleteOnExit();
                     if (!dest.getFile().renameTo(tmp))
                         throw new DavException(WebdavStatus.SC_INTERNAL_SERVER_ERROR, "Could not remove destination: " + dest.getPath());
@@ -1287,7 +1340,7 @@ public class DavController extends SpringActionController
         }
         finally
         {
-            close(istream);
+            close(istream, "copy InputStream");
         }
     }
 
@@ -1311,7 +1364,7 @@ public class DavController extends SpringActionController
         }
         finally
         {
-            close(istream);
+            close(istream, "copy InputStream");
         }
     }
 
@@ -1321,7 +1374,10 @@ public class DavController extends SpringActionController
         while (ranges.hasNext())
         {
             InputStream resourceInputStream = resource.getInputStream();
+            assert track(resourceInputStream);
             InputStream istream = new BufferedInputStream(resourceInputStream, 16*1024);
+            assert track(istream);
+
             Range currentRange = (Range) ranges.next();
 
             // Writing MIME header.
@@ -1354,11 +1410,13 @@ public class DavController extends SpringActionController
         stream.write(s.getBytes());
     }
 
+
     protected void copy(InputStream istream, Writer writer) throws IOException
     {
+        Reader reader = new InputStreamReader(istream);
         try
         {
-            Reader reader = new InputStreamReader(istream);
+            assert track(reader);
             char buffer[] = new char[8*1024];
             int len;
             while (-1 < (len = reader.read(buffer)))
@@ -1366,20 +1424,8 @@ public class DavController extends SpringActionController
         }
         finally
         {
-            close(istream);
-        }
-    }
-
-
-    void close(InputStream istream)
-    {
-        try
-        {
-            if (null != istream)
-                istream.close();
-        }
-        catch (IOException x)
-        {
+            close(reader, "reader");
+            close(istream, "input stream");
         }
     }
 
@@ -1404,7 +1450,7 @@ public class DavController extends SpringActionController
         }
         else
         {
-            methodsAllowed.append("OPTIONS, GET, HEAD, POST, DELETE, TRACE, COPY, MOVE"); // PROPPATCH
+            methodsAllowed.append("OPTIONS, GET, HEAD, POST, DELETE, COPY, MOVE"); // TRACE PROPPATCH
             if (_locking)
                 methodsAllowed.append(", LOCK, UNLOCK");
             if (_listings)
@@ -1424,7 +1470,7 @@ public class DavController extends SpringActionController
      * @param propertiesVector If the propfind type is find properties by
      *                         name, then this Vector contains those properties
      */
-    private void parseProperties(XMLWriter generatedXML, WebdavResolver.Resource resource, Find type,
+    private void writeProperties(XMLWriter generatedXML, WebdavResolver.Resource resource, Find type,
             List<String> propertiesVector)
     {
         generatedXML.writeElement(null, "response", XMLWriter.OPENING);
@@ -1476,18 +1522,18 @@ public class DavController extends SpringActionController
 
                 generatedXML.writeProperty(null, "source", "");
 
-                String supportedLocks = "<lockentry>"
-                        + "<lockscope><exclusive/></lockscope>"
-                        + "<locktype><write/></locktype>"
-                        + "</lockentry>" + "<lockentry>"
-                        + "<lockscope><shared/></lockscope>"
-                        + "<locktype><write/></locktype>"
-                        + "</lockentry>";
-                generatedXML.writeElement(null, "supportedlock", XMLWriter.OPENING);
-                generatedXML.writeText(supportedLocks);
-                generatedXML.writeElement(null, "supportedlock", XMLWriter.CLOSING);
+//                String supportedLocks = "<lockentry>"
+//                        + "<lockscope><exclusive/></lockscope>"
+//                        + "<locktype><write/></locktype>"
+//                        + "</lockentry>" + "<lockentry>"
+//                        + "<lockscope><shared/></lockscope>"
+//                        + "<locktype><write/></locktype>"
+//                        + "</lockentry>";
+//                generatedXML.writeElement(null, "supportedlock", XMLWriter.OPENING);
+//                generatedXML.writeText(supportedLocks);
+//                generatedXML.writeElement(null, "supportedlock", XMLWriter.CLOSING);
 
-                generateLockDiscovery(resource.getPath(), generatedXML);
+//                generateLockDiscovery(resource.getPath(), generatedXML);
 
                 generatedXML.writeElement(null, "prop", XMLWriter.CLOSING);
                 generatedXML.writeElement(null, "status", XMLWriter.OPENING);
@@ -1504,7 +1550,7 @@ public class DavController extends SpringActionController
 
                 generatedXML.writeElement(null, "creationdate", XMLWriter.NO_CONTENT);
                 generatedXML.writeElement(null, "displayname", XMLWriter.NO_CONTENT);
-                if (!resource.exists())
+                if (resource.exists())
                 {
                     generatedXML.writeElement(null, "getcontentlanguage", XMLWriter.NO_CONTENT);
                     generatedXML.writeElement(null, "getcontentlength", XMLWriter.NO_CONTENT);
@@ -1514,7 +1560,7 @@ public class DavController extends SpringActionController
                 }
                 generatedXML.writeElement(null, "resourcetype", XMLWriter.NO_CONTENT);
                 generatedXML.writeElement(null, "source", XMLWriter.NO_CONTENT);
-                generatedXML.writeElement(null, "lockdiscovery", XMLWriter.NO_CONTENT);
+//                generatedXML.writeElement(null, "lockdiscovery", XMLWriter.NO_CONTENT);
 
                 generatedXML.writeElement(null, "prop", XMLWriter.CLOSING);
                 generatedXML.writeElement(null, "status", XMLWriter.OPENING);
@@ -1624,23 +1670,45 @@ public class DavController extends SpringActionController
                     {
                         generatedXML.writeProperty(null, "source", "");
                     }
-                    else if (property.equals("supportedlock"))
+//                    else if (property.equals("supportedlock"))
+//                    {
+//                        supportedLocks = "<lockentry>"
+//                                + "<lockscope><exclusive/></lockscope>"
+//                                + "<locktype><write/></locktype>"
+//                                + "</lockentry>" + "<lockentry>"
+//                                + "<lockscope><shared/></lockscope>"
+//                                + "<locktype><write/></locktype>"
+//                                + "</lockentry>";
+//                        generatedXML.writeElement(null, "supportedlock", XMLWriter.OPENING);
+//                        generatedXML.writeText(supportedLocks);
+//                        generatedXML.writeElement(null, "supportedlock", XMLWriter.CLOSING);
+//                    }
+//                    else if (property.equals("lockdiscovery"))
+//                    {
+//                        if (!generateLockDiscovery(resource.getPath(), generatedXML))
+//                            propertiesNotFound.add(property);
+//                    }
+                    else if (property.equals("md5sum"))
                     {
-                        supportedLocks = "<lockentry>"
-                                + "<lockscope><exclusive/></lockscope>"
-                                + "<locktype><write/></locktype>"
-                                + "</lockentry>" + "<lockentry>"
-                                + "<lockscope><shared/></lockscope>"
-                                + "<locktype><write/></locktype>"
-                                + "</lockentry>";
-                        generatedXML.writeElement(null, "supportedlock", XMLWriter.OPENING);
-                        generatedXML.writeText(supportedLocks);
-                        generatedXML.writeElement(null, "supportedlock", XMLWriter.CLOSING);
-                    }
-                    else if (property.equals("lockdiscovery"))
-                    {
-                        if (!generateLockDiscovery(resource.getPath(), generatedXML))
-                            propertiesNotFound.add(property);
+                        String md5sum = null;
+                        try
+                        {
+                            md5sum = FileUtil.md5sum(resource.getFile());
+                        }
+                        catch (IOException x)
+                        {
+                            /* */
+                        }
+                        if (null == md5sum)
+                        {
+                            generatedXML.writeElement(null, "md5sum", XMLWriter.NO_CONTENT);
+                        }
+                        else
+                        {
+                            generatedXML.writeElement(null, "md5sum", XMLWriter.OPENING);
+                            generatedXML.writeText(md5sum);
+                            generatedXML.writeElement(null, "md5sum", XMLWriter.CLOSING);
+                        }
                     }
                     else
                     {
@@ -1733,18 +1801,18 @@ public class DavController extends SpringActionController
 
                 generatedXML.writeProperty(null, "source", "");
 
-                String supportedLocks = "<lockentry>"
-                        + "<lockscope><exclusive/></lockscope>"
-                        + "<locktype><write/></locktype>"
-                        + "</lockentry>" + "<lockentry>"
-                        + "<lockscope><shared/></lockscope>"
-                        + "<locktype><write/></locktype>"
-                        + "</lockentry>";
-                generatedXML.writeElement(null, "supportedlock", XMLWriter.OPENING);
-                generatedXML.writeText(supportedLocks);
-                generatedXML.writeElement(null, "supportedlock", XMLWriter.CLOSING);
+//                String supportedLocks = "<lockentry>"
+//                        + "<lockscope><exclusive/></lockscope>"
+//                        + "<locktype><write/></locktype>"
+//                        + "</lockentry>" + "<lockentry>"
+//                        + "<lockscope><shared/></lockscope>"
+//                        + "<locktype><write/></locktype>"
+//                        + "</lockentry>";
+//                generatedXML.writeElement(null, "supportedlock", XMLWriter.OPENING);
+//                generatedXML.writeText(supportedLocks);
+//                generatedXML.writeElement(null, "supportedlock", XMLWriter.CLOSING);
 
-                generateLockDiscovery(path, generatedXML);
+//                generateLockDiscovery(path, generatedXML);
 
                 generatedXML.writeElement(null, "prop", XMLWriter.CLOSING);
                 generatedXML.writeElement(null, "status", XMLWriter.OPENING);
@@ -1768,7 +1836,7 @@ public class DavController extends SpringActionController
                 generatedXML.writeElement(null, "getlastmodified", XMLWriter.NO_CONTENT);
                 generatedXML.writeElement(null, "resourcetype", XMLWriter.NO_CONTENT);
                 generatedXML.writeElement(null, "source", XMLWriter.NO_CONTENT);
-                generatedXML.writeElement(null, "lockdiscovery", XMLWriter.NO_CONTENT);
+//                generatedXML.writeElement(null, "lockdiscovery", XMLWriter.NO_CONTENT);
 
                 generatedXML.writeElement(null, "prop", XMLWriter.CLOSING);
                 generatedXML.writeElement(null, "status", XMLWriter.OPENING);
@@ -1829,24 +1897,24 @@ public class DavController extends SpringActionController
                     {
                         generatedXML.writeProperty(null, "source", "");
                     }
-                    else if (property.equals("supportedlock"))
-                    {
-                        supportedLocks = "<lockentry>"
-                                + "<lockscope><exclusive/></lockscope>"
-                                + "<locktype><write/></locktype>"
-                                + "</lockentry>" + "<lockentry>"
-                                + "<lockscope><shared/></lockscope>"
-                                + "<locktype><write/></locktype>"
-                                + "</lockentry>";
-                        generatedXML.writeElement(null, "supportedlock", XMLWriter.OPENING);
-                        generatedXML.writeText(supportedLocks);
-                        generatedXML.writeElement(null, "supportedlock", XMLWriter.CLOSING);
-                    }
-                    else if (property.equals("lockdiscovery"))
-                    {
-                        if (!generateLockDiscovery(path, generatedXML))
-                            propertiesNotFound.add(property);
-                    }
+//                    else if (property.equals("supportedlock"))
+//                    {
+//                        supportedLocks = "<lockentry>"
+//                                + "<lockscope><exclusive/></lockscope>"
+//                                + "<locktype><write/></locktype>"
+//                                + "</lockentry>" + "<lockentry>"
+//                                + "<lockscope><shared/></lockscope>"
+//                                + "<locktype><write/></locktype>"
+//                                + "</lockentry>";
+//                        generatedXML.writeElement(null, "supportedlock", XMLWriter.OPENING);
+//                        generatedXML.writeText(supportedLocks);
+//                        generatedXML.writeElement(null, "supportedlock", XMLWriter.CLOSING);
+//                    }
+//                    else if (property.equals("lockdiscovery"))
+//                    {
+//                        if (!generateLockDiscovery(path, generatedXML))
+//                            propertiesNotFound.add(property);
+//                    }
                     else
                     {
                         propertiesNotFound.add(property);
@@ -1882,8 +1950,7 @@ public class DavController extends SpringActionController
     }
 
 
-    private boolean generateLockDiscovery
-            (String path, XMLWriter generatedXML)
+    private boolean generateLockDiscovery(String path, XMLWriter generatedXML)
     {
         boolean wroteStart = false;
 
@@ -3040,20 +3107,70 @@ public class DavController extends SpringActionController
     private static final String DEFAULT_NAMESPACE = "DAV:";
 
 
-    private class ReadAheadBufferedInputStream extends BufferedInputStream
+    /** This class is just to make .available() work as expected above */
+    private class ReadAheadInputStream extends FilterInputStream
     {
-        ReadAheadBufferedInputStream(InputStream is) throws IOException
+        ByteArrayOutputStream bos = null;
+        InputStream is = null;
+        
+        ReadAheadInputStream(InputStream is) throws IOException
         {
-            super(is);
-            assert markSupported();
+            super(is instanceof BufferedInputStream ? is : new BufferedInputStream(is));
+            this.is = is;
+            assert super.markSupported();
             byte[] buf = new byte[1024];
-            mark(1025);
-            int r = read(buf);
-            reset();
+            super.mark(1025);
+            int r = super.read(buf);
+            super.reset();
             assert r <= 0 || available() > 0;
+            if (_log.isDebugEnabled())
+                bos = new ByteArrayOutputStream();
+
+            assert track(this.is);  // InputStream
+            assert track(in);       // BufferedInputStream
+            assert track(this);
+        }
+
+        @Override
+        public int read() throws IOException
+        {
+            int i = super.read();
+            if (null != bos)
+                bos.write(i);
+            return i;
+        }
+
+        @Override
+        public int read(byte b[]) throws IOException
+        {
+            int r = super.read(b);
+            if (null != bos && r > 0)
+                bos.write(b, 0, r);
+            return r;
+        }
+
+        @Override
+        public int read(byte b[], int off, int len) throws IOException
+        {
+            int r = super.read(b, off, len);
+            if (null != bos && r > 0)
+                bos.write(b, off, r);
+            return r;
+        }
+
+        @Override
+        public void close() throws IOException
+        {
+            super.close();
+            if (null != bos)
+                _log.debug(bos.toString());
+            bos = null;
+
+            assert untrack(in);     // BufferedInputStream
+            assert untrack(is);     // InputStream
+            assert untrack(this);   // FilterStream
         }
     }
-
 
 
     enum WebdavStatus
@@ -3210,5 +3327,37 @@ public class DavController extends SpringActionController
     {
         if (isLocked(getRequest()))
             throw new DavException(WebdavStatus.SC_LOCKED);
+    }
+
+
+    Map<Closeable,Throwable> closables = new IdentityHashMap<Closeable,Throwable>();
+
+    boolean track(Closeable c)
+    {
+        closables.put(c, new Throwable());
+        return true;
+    }
+
+    boolean untrack(Closeable c)
+    {
+        if (null != c)
+            closables.remove(c);
+        return true;
+    }
+
+    private void close(Closeable c, String msg)
+    {
+        try
+        {
+            if (null != c)
+            {
+                c.close();
+                assert untrack(c);
+            }
+        }
+        catch (Exception e)
+        {
+            log(msg, e);
+        }
     }
 }

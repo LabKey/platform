@@ -5,6 +5,8 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.WebTheme" %>
 <%@ page import="org.labkey.core.ftp.FtpPage" %>
+<%@ page import="org.labkey.core.webdav.DavController" %>
+<%@ page import="org.labkey.api.util.GUID" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView me = HttpView.currentView();
@@ -47,17 +49,20 @@ LABKEY.requiresScript("dropApplet.js",true);
     <td valign="top" width=200 height=100%><div id="appletDiv" style="border:solid 1px <%=border%>; padding:2px; margin:1px; width:200px; height:200px;"><script type="text/javascript">
 LABKEY.writeApplet({
     id:"dropApplet",
-    archive:"<%=request.getContextPath()%>/_applets/applets-1.jar?guid=<%=AppProps.getInstance().getServerSessionGUID()%>",
+    archive:"<%=request.getContextPath()%>/_applets/applets-8.2.jar?guid=<%=GUID.makeHash()%><%=AppProps.getInstance().getServerSessionGUID()%>",
     code:"org.labkey.applets.drop.DropApplet",
     width:200,
     height:200,
     params:{
-        scheme:<%=PageFlowUtil.jsString(dropPage.getScheme())%>,
-        host:<%=PageFlowUtil.jsString(dropPage.getHost())%>,
-        port:<%=PageFlowUtil.jsString(dropPage.getPort())%>,
+        <%-- TODO switch applet to use URL which encodes more info --%>
+        url:<%=PageFlowUtil.jsString(dropPage.getURL(context.getContainer()))%>,                                     
+          scheme:<%=PageFlowUtil.jsString(dropPage.getScheme())%>,
+          host:<%=PageFlowUtil.jsString(dropPage.getHost())%>,
+          port:<%=PageFlowUtil.jsString(dropPage.getPort())%>,
+          path:<%=PageFlowUtil.jsString(dropPage.getPath(context.getContainer()))%>,
+          webdavPrefix:<%=PageFlowUtil.jsString(contextPath + DavController.SERVLETPATH)%>,
         user:<%=PageFlowUtil.jsString(context.getUser().getEmail())%>,
         password:<%=PageFlowUtil.jsString(sessionId)%>,
-        defaultDirectory:<%=PageFlowUtil.jsString(dropPage.getPath(context.getContainer()))%>,
         updateEvent:"dropApplet_Update",
         dragEnterEvent:"dropApplet_DragEnter",
         dragExitEvent:"dropApplet_DragExit",

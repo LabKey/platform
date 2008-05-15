@@ -21,6 +21,9 @@ import org.labkey.api.ftp.FtpConnector;
 import org.labkey.api.security.User;
 import org.labkey.api.util.AppProps;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.action.HasViewContext;
+import org.labkey.api.view.ViewContext;
+import org.labkey.core.webdav.DavController;
 import org.apache.commons.lang.StringUtils;
 
 /**
@@ -29,23 +32,49 @@ import org.apache.commons.lang.StringUtils;
  * Date: Jan 27, 2008
  * Time: 2:21:42 PM
  */
-public class FtpPage
+public class FtpPage implements HasViewContext
 {
+    ViewContext context = null;
     public String pipeline = null;
+    boolean useFTP = false;
+
+    public FtpPage()
+    {
+        useFTP = null != StringUtils.trimToNull(AppProps.getInstance().getPipelineFTPHost());
+    }
+
+    public void setViewContext(ViewContext context)
+    {
+        this.context = context;
+    }
+
+    public ViewContext getViewContext()
+    {
+        return context;
+    }
 
     public String getScheme()
     {
-        return AppProps.getInstance().isPipelineFTPSecure() ? "ftps" : "ftp";
+        if (useFTP)
+            return AppProps.getInstance().isPipelineFTPSecure() ? "ftps" : "ftp";
+        else
+            return getViewContext().getRequest().getScheme();
     }
     
     public String getHost()
     {
-        return AppProps.getInstance().getPipelineFTPHost();
+        if (useFTP)
+            return AppProps.getInstance().getPipelineFTPHost();
+        else
+            return getViewContext().getRequest().getServerName();
     }
 
     public String getPort()
     {
-        return StringUtils.defaultIfEmpty(AppProps.getInstance().getPipelineFTPPort(),"21");
+        if (useFTP)
+            return StringUtils.defaultIfEmpty(AppProps.getInstance().getPipelineFTPPort(),"21");
+        else
+            return "" + getViewContext().getRequest().getServerPort();
     }
 
     // encoded path
@@ -84,6 +113,8 @@ public class FtpPage
         path.append(getHost());
         if (getPort().length() != 0)
             path.append(":").append(getPort());
+        if (!useFTP)
+            path.append(getViewContext().getContextPath()).append(DavController.SERVLETPATH);
         path.append(getPath(c));
         return path.toString();
     }

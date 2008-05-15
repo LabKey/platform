@@ -108,10 +108,7 @@
 {
     // UNDONE: use yahoo dialog to avoid pop-under
     %>[<a href="#uploadFiles" onclick="window.open('<%=addAttachmentUrl%>','uploadFiles','height=200,width=550,resizable=yes', false);">Upload&nbsp;File</a>]&nbsp;<%
-    if (StringUtils.trimToNull(AppProps.getInstance().getPipelineFTPHost()) != null)
-    {
-        %>[<a href="<%=h((new ActionURL("ftp","drop", context.getContainer()).getLocalURIString()))%>" target=_blank>Upload Multiple Files (ftp)</a>]&nbsp;<%
-    }
+    %>[<a href="<%=h((new ActionURL("ftp","drop", context.getContainer()).getLocalURIString()))%>" target=_blank>Upload Multiple Files</a>]&nbsp;<%
 }
 if (context.hasPermission(ACL.PERM_UPDATE))
 {

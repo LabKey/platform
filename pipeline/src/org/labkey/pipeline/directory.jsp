@@ -200,10 +200,10 @@
         %><a href="<%=actionToggle.getLocalURIString()%>"><%=PageFlowUtil.buttonImg("Browse All Files")%></a>&nbsp;<%
     }
 
-    if (null != StringUtils.trimToNull(AppProps.getInstance().getPipelineFTPHost()) && pipeRoot.getACL().hasPermission(context.getUser(), ACL.PERM_INSERT))
+    if (pipeRoot.getACL().hasPermission(context.getUser(), ACL.PERM_INSERT))
     {
         ActionURL dropUrl = (new ActionURL("ftp","drop",context.getContainer())).addParameter("pipeline",StringUtils.defaultString(form.getPath(),"/"));
-        %><a href="<%=h(dropUrl.getLocalURIString())%>" target=_blank><%=PageFlowUtil.buttonImg("Upload files (ftp)")%></a>&nbsp;<%
+        %><a href="<%=h(dropUrl.getLocalURIString())%>" target=_blank><%=PageFlowUtil.buttonImg("Upload files")%></a>&nbsp;<%
     }
 %><a href="returnToReferer.view"><%=PageFlowUtil.buttonImg("Cancel")%></a>
 
