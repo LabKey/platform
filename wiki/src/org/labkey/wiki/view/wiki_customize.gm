@@ -160,7 +160,7 @@ function restoreDefaultPage()
         Folder containing the page to display:
         </td>
         <td width="80%">
-        <select name="webPartContainer" onChange="updatePageList();">
+        <select name="webPartContainer" onkeyup="updatePageList();" onchange="updatePageList();">
             <%
             for (container in containerList)
             {

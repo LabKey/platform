@@ -1554,10 +1554,9 @@ public class WikiController extends SpringActionController
 
             if (isPrint())
             {
-                GroovyView v = new GroovyView("/org/labkey/wiki/view/wiki_print.gm");
-                v.setFrame(WebPartView.FrameType.NONE);
-                v.addObject("wiki", _wiki);
-                return v;
+                JspView<Wiki> view = new JspView<Wiki>("/org/labkey/wiki/view/wikiPrint.jsp", _wiki);
+                view.setFrame(WebPartView.FrameType.NONE);
+                return view;
             }
             else
             {

@@ -19,6 +19,7 @@ package org.labkey.wiki.model;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.NotFoundException;
 
 import javax.servlet.ServletException;
 import java.util.Map;
@@ -39,6 +40,8 @@ public class WikiWebPart extends BaseWikiView
         // webPartContainer and name will be null in the new webpart case
         String containerId = props.get("webPartContainer");
         Container c = (null != containerId ? ContainerManager.getForId(props.get("webPartContainer")) : getViewContext().getContainer());
+        if(null == c)
+            throw new NotFoundException("The requested wiki page does not exist in the specified container!");
 
         String name = props.get("name");
         name = (name != null) ? name : "default";

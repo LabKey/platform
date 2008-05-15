@@ -1908,6 +1908,7 @@ wiki/src/org/labkey/wiki/view/wiki.gm -text
 wiki/src/org/labkey/wiki/view/wikiChooseFormat.jsp -text
 wiki/src/org/labkey/wiki/view/wikiEdit.jsp -text
 wiki/src/org/labkey/wiki/view/wikiHtmlHelp.jsp -text
+wiki/src/org/labkey/wiki/view/wikiPrint.jsp -text
 wiki/src/org/labkey/wiki/view/wikiRadeoxHelp.jsp -text
 wiki/src/org/labkey/wiki/view/wikiSearch.jsp -text
 wiki/src/org/labkey/wiki/view/wiki_attachments.gm -text
@@ -1916,7 +1917,6 @@ wiki/src/org/labkey/wiki/view/wiki_customize.gm -text
 wiki/src/org/labkey/wiki/view/wiki_customizetoc.gm -text
 wiki/src/org/labkey/wiki/view/wiki_delete.gm -text
 wiki/src/org/labkey/wiki/view/wiki_manage.gm -text
-wiki/src/org/labkey/wiki/view/wiki_print.gm -text
 wiki/src/org/labkey/wiki/view/wiki_printall.gm -text
 wiki/src/org/labkey/wiki/view/wiki_printraw.gm -text
 wiki/src/org/labkey/wiki/view/wiki_update.gm -text
