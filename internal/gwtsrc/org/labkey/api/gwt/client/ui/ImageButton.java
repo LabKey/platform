@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-public class ImageButton extends Image implements ClickListener
+public class ImageButton extends PushButton implements ClickListener
 {
     private List _clickListeners = new ArrayList();
     private boolean _enabled = true;
@@ -39,7 +39,7 @@ public class ImageButton extends Image implements ClickListener
 
     public ImageButton(String text)
     {
-        super(PropertyUtil.getContextPath() + "/" + URL.encodeComponent(text) + ".button");
+        super(new Image(PropertyUtil.getContextPath() + "/" + URL.encodeComponent(text) + ".button"));
 
         addClickListener(this);
 
@@ -72,21 +72,21 @@ public class ImageButton extends Image implements ClickListener
         _clickListeners.remove(listener);
     }
 
-    public void setEnabled(boolean enabled)
-    {
-        if (_enabled != enabled)
-        {
-            _enabled = enabled;
-            if (_enabled)
-            {
-                setUrl(PropertyUtil.getContextPath() + "/" + URL.encodeComponent(_text) + ".button");
-            }
-            else
-            {
-                setUrl(PropertyUtil.getContextPath() + "/" + URL.encodeComponent(_text) + ".button?style=disabled");
-            }
-        }
-    }
+//    public void setEnabled(boolean enabled)
+//    {
+//        if (_enabled != enabled)
+//        {
+//            _enabled = enabled;
+//            if (_enabled)
+//            {
+//                setUrl(PropertyUtil.getContextPath() + "/" + URL.encodeComponent(_text) + ".button");
+//            }
+//            else
+//            {
+//                setUrl(PropertyUtil.getContextPath() + "/" + URL.encodeComponent(_text) + ".button?style=disabled");
+//            }
+//        }
+//    }
     
     public String getText()
     {

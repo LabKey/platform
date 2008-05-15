@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.util.ExceptionUtil;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.ServletException;
@@ -232,8 +233,11 @@ public class TSVWriter
         }
         catch(IOException e)
         {
-            _log.error("close", e);
-            throw new ServletException(e);
+            if (!ExceptionUtil.isClientAbortException(e))
+            {
+                _log.error("close", e);
+                throw new ServletException(e);
+            }
         }
     }
 

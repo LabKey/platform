@@ -183,7 +183,14 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
             catch (Throwable t)
             {
                 exceptionToRender = ExceptionUtil.unwrapException(t);
-                Logger.getLogger(WebPartView.class).error("renderView() exception", exceptionToRender);
+                if (ExceptionUtil.isClientAbortException(exceptionToRender))
+                {
+                    exceptionToRender = null;
+                }
+                else
+                {
+                    Logger.getLogger(WebPartView.class).error("renderView() exception", exceptionToRender);
+                }
             }
         }
 

@@ -46,6 +46,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
     {
         private String _viewType;
         private String _dataRegionSelectionKey;
+        private String _returnURL;
 
         public String getViewType()
         {
@@ -66,9 +67,19 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
         {
             _dataRegionSelectionKey = dataRegionSelectionKey;
         }
+
+        public String getReturnURL()
+        {
+            return _returnURL;
+        }
+
+        public void setReturnURL(String returnURL)
+        {
+            _returnURL = returnURL;
+        }
     }
 
-    public static class PublishBean
+    public class PublishBean
     {
         private List<Integer> _ids;
         private AssayProvider _provider;
@@ -77,10 +88,11 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
         private boolean _nullStudies;
         private boolean _insufficientPermissions;
         private String _dataRegionSelectionKey;
+        private final String _returnURL;
 
         public PublishBean(AssayProvider provider, ExpProtocol protocol,
                            List<Integer> ids, String dataRegionSelectionKey,
-                           Set<Container> studies, boolean nullStudies, boolean insufficientPermissions)
+                           Set<Container> studies, boolean nullStudies, boolean insufficientPermissions, String returnURL)
         {
             _insufficientPermissions = insufficientPermissions;
             _provider = provider;
@@ -89,6 +101,16 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
             _nullStudies = nullStudies;
             _ids = ids;
             _dataRegionSelectionKey = dataRegionSelectionKey;
+            _returnURL = returnURL;
+        }
+
+        public String getReturnURL()
+        {
+            if (_returnURL != null)
+            {
+                return _returnURL;
+            }
+            return AssayService.get().getAssayRunsURL(getViewContext().getContainer(), getProtocol()).addParameter("clearCataRegionSelectionKey", getDataRegionSelectionKey()).toString();
         }
 
         public List<Integer> getIds()
@@ -149,7 +171,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
         }
 
         return new JspView<PublishBean>("/org/labkey/study/assay/view/publishChooseStudy.jsp",
-                new PublishBean(provider, _protocol, ids, publishForm.getDataRegionSelectionKey(), containers, nullsFound, insufficientPermissions));
+                new PublishBean(provider, _protocol, ids, publishForm.getDataRegionSelectionKey(), containers, nullsFound, insufficientPermissions, publishForm.getReturnURL()));
     }
 
     public NavTree appendNavTrail(NavTree root)

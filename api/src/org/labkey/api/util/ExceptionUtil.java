@@ -478,7 +478,7 @@ public class ExceptionUtil
     }
 
 
-    private static boolean isClientAbortException(Throwable ex)
+    public static boolean isClientAbortException(Throwable ex)
     {
         if (ex != null)
         {

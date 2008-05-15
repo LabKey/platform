@@ -50,6 +50,7 @@ public class PropertiesEditor implements LookupListener
     private VerticalPanel _noColumnsPanel;
     private FlexTable _table;
     private ImageButton _addButtonNoProps;
+    private HorizontalPanel _addButtonPanelProps;
     private ImageButton _addButtonProps;
     private String _mode;
     private LookupServiceAsync _lookupService;
@@ -109,6 +110,8 @@ public class PropertiesEditor implements LookupListener
         };
         _addButtonNoProps = new ImageButton("Add Field", addListener);
         _addButtonProps = new ImageButton("Add Field", addListener);
+        _addButtonPanelProps = new HorizontalPanel();
+        _addButtonPanelProps.add(_addButtonProps);
 
         _noColumnsPanel = new VerticalPanel();
         _noColumnsPanel.add(new HTML("<br/>No fields have been defined.<br/>&nbsp;"));
@@ -221,7 +224,7 @@ public class PropertiesEditor implements LookupListener
             refreshRow(row.edit);
         }
 
-        _table.setWidget(_table.getRowCount(), 3, _addButtonProps);
+        _table.setWidget(_table.getRowCount(), 3, _addButtonPanelProps);
 
         select(_selectedPD);
     }
@@ -640,7 +643,7 @@ public class PropertiesEditor implements LookupListener
         if (mode.equals(_mode))
             return;
         _mode = mode;
-        _addButtonProps.setVisible(!_mode.equals(modeRead));
+        _addButtonPanelProps.setVisible(!_mode.equals(modeRead));
         _addButtonNoProps.setVisible(!_mode.equals(modeRead));
         refresh();
     }

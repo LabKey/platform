@@ -39,6 +39,7 @@ public class CrosstabView extends QueryView
     public CrosstabView(UserSchema schema)
     {
         super(schema);
+        setShowRReportButton(false);
     }
 
     protected DataRegion createDataRegion()

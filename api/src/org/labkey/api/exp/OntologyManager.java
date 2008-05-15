@@ -97,8 +97,9 @@ public class OntologyManager
 		return m;
 	}
 
+    public static final int MAX_PROPS_IN_BATCH = 10000;
 
-	public static String[] insertTabDelimited(Container c, Integer ownerObjectId, ImportHelper helper, PropertyDescriptor[] descriptors, Map[] rows, boolean ensureObjects) throws SQLException
+    public static String[] insertTabDelimited(Container c, Integer ownerObjectId, ImportHelper helper, PropertyDescriptor[] descriptors, Map[] rows, boolean ensureObjects) throws SQLException
     {
 		CPUTimer total  = new CPUTimer("insertTabDelimited");
 		CPUTimer before = new CPUTimer("beforeImport");
@@ -108,7 +109,8 @@ public class OntologyManager
 		assert total.start();
 		assert getExpSchema().getScope().isTransactionActive();
 		ArrayList<String> lsidList = new ArrayList<String>(rows.length);
-		ArrayList<PropertyRow> propsToInsert = new ArrayList<PropertyRow>(rows.length * descriptors.length);
+        // Make sure we have enough rows to hande the overflow of the current row so we don't have to resize the list
+        List<PropertyRow> propsToInsert = new ArrayList<PropertyRow>(MAX_PROPS_IN_BATCH + descriptors.length);
 
 		try
 		{
@@ -156,7 +158,15 @@ public class OntologyManager
                     PropertyRow row = new PropertyRow(objectId, pd.getPropertyId(), value, propertyTypes[i]);
 					propsToInsert.add(row);
 				}
-			}
+
+                if (propsToInsert.size() > MAX_PROPS_IN_BATCH)
+                {
+                    assert insert.start();
+                    insertPropertiesBulk(propsToInsert);
+                    assert insert.stop();
+                    propsToInsert = new ArrayList<PropertyRow>(MAX_PROPS_IN_BATCH + descriptors.length);
+                }
+            }
 
 			assert insert.start();
 			insertPropertiesBulk(propsToInsert);
@@ -1356,7 +1366,7 @@ public class OntologyManager
         clearPropertyCache();
     }
 
-    //todo get rid of this version of the method
+    @Deprecated
     public static void deleteProperty(String containerId, String objectURI, String propertyURI)
     {
         Container c = ContainerManager.getForId(containerId);

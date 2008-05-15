@@ -36,7 +36,6 @@ public interface ExpObject extends Identifiable
     void setContainer(Container container);
 
     void setProperty(User user, PropertyDescriptor pd, Object value) throws SQLException;
-    boolean logPropertyChange(User user, String propertyURI, Object oldValue, Object newValue);
     Object getProperty(PropertyDescriptor pd);
 
     String getComment();

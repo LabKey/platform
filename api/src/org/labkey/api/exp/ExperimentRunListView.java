@@ -100,10 +100,6 @@ public class ExperimentRunListView extends QueryView
 
     private ExpExperiment getExperiment()
     {
-        if (getRunTable().getExperiment() == null)
-        {
-            throw new IllegalStateException("Cannot remove from an experiment without an experiment set");
-        }
         return getRunTable().getExperiment();
     }
 
@@ -177,7 +173,7 @@ public class ExperimentRunListView extends QueryView
         {
             ActionURL exportUrl = PageFlowUtil.urlProvider(ExperimentUrls.class).getExportRunsOptionsURL(context.getContainer(), getExperiment());
 
-            ActionButton exportXAR = new ActionButton("", "Export XAR...");
+            ActionButton exportXAR = new ActionButton("", "Export XAR");
             exportXAR.setScript("return verifySelected(this.form, \"" + exportUrl.getLocalURIString() + "\", \"post\", \"experiment run\")");
             exportXAR.setActionType(ActionButton.Action.POST);
             bar.add(exportXAR);

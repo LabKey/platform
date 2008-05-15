@@ -80,6 +80,16 @@ public abstract class AbstractAssayProvider implements AssayProvider
         registerLsidHandler();
     }
 
+    protected void addStandardRunPublishProperties(Container study, Collection<PropertyDescriptor> types, Map<String, Object> dataMap, ExpRun run)
+    {
+        addProperty(study, "Run Assay Id", run.getProtocol().getRowId(), dataMap, types);
+        addProperty(study, "Run Name", run.getName(), dataMap, types);
+        addProperty(study, "Run Comments", run.getComments(), dataMap, types);
+        addProperty(study, "Run CreatedOn", run.getCreated(), dataMap, types);
+        User createdBy = run.getCreatedBy();
+        addProperty(study, "Run CreatedBy", createdBy == null ? null : createdBy.getDisplayName(HttpView.currentContext()), dataMap, types);
+    }
+
     protected void registerLsidHandler()
     {
         LsidManager.get().registerHandler(_runLSIDPrefix, new LsidManager.LsidHandler()

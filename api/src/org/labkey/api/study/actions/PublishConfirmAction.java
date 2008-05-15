@@ -62,6 +62,17 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         private boolean _attemptPublish;
         private boolean _validate;
         private String _dataRegionSelectionKey;
+        private String _returnURL;
+
+        public String getReturnURL()
+        {
+            return _returnURL;
+        }
+
+        public void setReturnURL(String returnURL)
+        {
+            _returnURL = returnURL;
+        }
 
         public String getDataRegionSelectionKey()
         {
@@ -249,9 +260,17 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         PublishRunDataQueryView view = new PublishRunDataQueryView(_protocol, context, settings,
                 objectIds, targetStudy, postedVisits, postedPtids);
         List<ActionButton> buttons = new ArrayList<ActionButton>();
-        ActionURL runListLink = getSummaryLink(_protocol);
-        runListLink.addParameter("clearCataRegionSelectionKey", publishConfirmForm.getDataRegionSelectionKey());
-        ActionButton cancelButton = new ActionButton("Cancel", runListLink);
+        String returnURL;
+        if (publishConfirmForm.getReturnURL() != null)
+        {
+            returnURL = publishConfirmForm.getReturnURL();
+        }
+        else
+        {
+            returnURL = getSummaryLink(_protocol).addParameter("clearCataRegionSelectionKey", publishConfirmForm.getDataRegionSelectionKey()).toString();
+        }
+        ActionButton cancelButton = new ActionButton("Cancel");
+        cancelButton.setURL(returnURL);
         buttons.add(cancelButton);
         ActionURL publishURL = getPublishHandlerURL(_protocol, provider);
         publishURL.replaceParameter("validate", "true");

@@ -134,7 +134,7 @@ public class ExperimentService
         void commitTransaction() throws SQLException;
         void rollbackTransaction();
 
-        QueryView createExperimentRunWebPart(ViewContext context, ExperimentRunFilter filter, boolean moveButton);
+        QueryView createExperimentRunWebPart(ViewContext context, ExperimentRunFilter filter, boolean moveButton, boolean exportXARButton);
 
         public DbSchema getSchema();
 

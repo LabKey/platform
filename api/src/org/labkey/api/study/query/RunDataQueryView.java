@@ -48,6 +48,7 @@ public class RunDataQueryView extends AssayBaseQueryView
         DataView view = super.createDataView();
         view.getRenderContext().setBaseSort(new Sort(AssayService.get().getProvider(_protocol).getDataRowIdFieldKey().toString()));
         view.getDataRegion().addHiddenFormField("rowId", "" + _protocol.getRowId());
+        view.getDataRegion().addHiddenFormField("returnURL", getViewContext().getActionURL().toString());
         if (showControls())
         {
             if (!AssayPublishService.get().getValidPublishTargets(getUser(), ACL.PERM_INSERT).isEmpty())
