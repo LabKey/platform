@@ -820,7 +820,7 @@ public class DavController extends SpringActionController
 
                 if (range != null)
                 {
-                    if ("text/html".equals(resource.getContentType()) && !UserManager.mayWriteScript(getUser()))
+                    if (resource.getContentType().startsWith("text/html") && !UserManager.mayWriteScript(getUser()))
                         throw new DavException(WebdavStatus.SC_FORBIDDEN, "Partial writing of html files is not allowed");
                     if (range.start > raf.length() || (range.end - range.start) > Integer.MAX_VALUE)
                         throw new DavException(WebdavStatus.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
@@ -838,7 +838,7 @@ public class DavController extends SpringActionController
                 }
                 else
                 {
-                    if ("text/html".equals(resource.getContentType()) && !UserManager.mayWriteScript(getUser()))
+                    if (resource.getContentType().startsWith("text/html") && !UserManager.mayWriteScript(getUser()))
                     {
                         _ByteArrayOutputStream bos = new _ByteArrayOutputStream(4*1025);
                         copyData(is, bos);
@@ -1125,13 +1125,8 @@ public class DavController extends SpringActionController
             }
 
             // Don't allow creating text/html via rename (circumventing script checking)
-            if (src.isFile() && !UserManager.mayWriteScript(getUser()))
-            {
-                String contentTypeSrc = StringUtils.defaultString(src.getContentType(),"");
-                String contentTypeDest = StringUtils.defaultString(dest.getContentType(),"");
-                if (contentTypeDest.equals("text/html") && !contentTypeDest.equals(contentTypeSrc))
-                    throw new DavException(WebdavStatus.SC_FORBIDDEN, "Cannot create 'text/html' file using move.");
-            }
+            if (!isSafeCopy(src,dest))
+                throw new DavException(WebdavStatus.SC_FORBIDDEN, "Cannot create 'text/html' file using move.");
 
             if (exists)
             {
@@ -1180,6 +1175,20 @@ public class DavController extends SpringActionController
             
             return exists ? WebdavStatus.SC_OK : WebdavStatus.SC_CREATED;
         }
+    }
+
+
+    boolean isSafeCopy(WebdavResolver.Resource src, WebdavResolver.Resource dest)
+    {
+        // Don't allow creating text/html via rename (circumventing script checking)
+        if (src.isFile() && !UserManager.mayWriteScript(getUser()))
+        {
+            String contentTypeSrc = StringUtils.defaultString(src.getContentType(),"");
+            String contentTypeDest = StringUtils.defaultString(dest.getContentType(),"");
+            if (contentTypeDest.startsWith("text/html") && !contentTypeDest.equals(contentTypeSrc))
+                return false;
+        }
+        return true;
     }
 
 
@@ -2756,6 +2765,10 @@ public class DavController extends SpringActionController
                     return ret;
             }
         }
+
+        // Don't allow creating text/html via copy/rename (circumventing script checking)
+        if (!isSafeCopy(resource,destination))
+            throw new DavException(WebdavStatus.SC_FORBIDDEN, "Cannot create 'text/html' file using copy.");
 
         // Copying source to destination
         Hashtable<String,WebdavStatus> errorList = new Hashtable<String,WebdavStatus>();

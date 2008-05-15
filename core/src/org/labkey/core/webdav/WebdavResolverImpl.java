@@ -398,8 +398,8 @@ public class WebdavResolverImpl implements WebdavResolver
 
         public String getContentType()
         {
-            if (!isFile())
-                return "text/html;charset=UTF-8";
+            if (isCollection())
+                return "text/html";
             return PageFlowUtil.getContentTypeFor(_path);
         }
 
