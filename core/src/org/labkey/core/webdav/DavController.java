@@ -296,11 +296,12 @@ public class DavController extends SpringActionController
 
         Writer getWriter() throws IOException
         {
-            if (!_log.isDebugEnabled())
-                return response.getWriter();
             Writer responseWriter = response.getWriter();
             assert track(responseWriter);
-            
+
+            if (!_log.isDebugEnabled())
+                return responseWriter;
+
             FilterWriter f = new java.io.FilterWriter(responseWriter)
             {
                 @Override
@@ -817,24 +818,40 @@ public class DavController extends SpringActionController
                         throw new DavException(WebdavStatus.SC_INTERNAL_SERVER_ERROR, "could not create file");
                 }
 
-                // Append data specified in ranges to existing content for this
-                // resource - create a temp. file on the local filesystem to
-                // perform this operation
-                // Assume just one range is specified for now
                 if (range != null)
                 {
+                    if ("text/html".equals(resource.getContentType()) && !UserManager.mayWriteScript(getUser()))
+                        throw new DavException(WebdavStatus.SC_FORBIDDEN, "Partial writing of html files is not allowed");
+                    if (range.start > raf.length() || (range.end - range.start) > Integer.MAX_VALUE)
+                        throw new DavException(WebdavStatus.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
+                    // CONSIDER: use temp file
+                    _ByteArrayOutputStream bos = new _ByteArrayOutputStream((int)(range.end-range.start));
+                    copyData(is, bos);
+                    if (bos.size() != range.end-range.start)
+                        throw new DavException(WebdavStatus.SC_BAD_REQUEST);
                     raf = new RandomAccessFile(resource.getFile(),"rw");
                     assert track(raf);
-                    if (range.start > raf.length())
-                        throw new DavException(WebdavStatus.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
                     raf.seek(range.start);
-                    // UNDONE: use temp file to reduce likelyhood of botched write?
-                    copyData(is, raf, range.end-range.start);
+                    bos.writeTo(raf);
                     raf.getFD().sync();
                     audit(resource, "modified range " + range.toString());
                 }
                 else
                 {
+                    if ("text/html".equals(resource.getContentType()) && !UserManager.mayWriteScript(getUser()))
+                    {
+                        _ByteArrayOutputStream bos = new _ByteArrayOutputStream(4*1025);
+                        copyData(is, bos);
+                        byte[] buf = bos.toByteArray();
+                        String html = new String(buf, "UTF-8");
+                        List<String> errors = new ArrayList<String>();
+                        List<String> script = new ArrayList<String>();
+                        PageFlowUtil.validateHtml(html, errors, script);
+                        if (!script.isEmpty())
+                            throw new DavException(WebdavStatus.SC_FORBIDDEN, "User is not allowed to save script in html files.");
+                        is = new ByteArrayInputStream(buf);
+                    }
+
                     os = new FileOutputStream(resource.getFile());
                     assert track(os);
                     copyData(is, os);
@@ -3358,6 +3375,19 @@ public class DavController extends SpringActionController
         catch (Exception e)
         {
             log(msg, e);
+        }
+    }
+
+    class _ByteArrayOutputStream extends ByteArrayOutputStream
+    {
+        _ByteArrayOutputStream(int len)
+        {
+            super(len);
+        }
+
+        public synchronized void writeTo(DataOutput out) throws IOException
+        {
+            out.write(buf);
         }
     }
 }
