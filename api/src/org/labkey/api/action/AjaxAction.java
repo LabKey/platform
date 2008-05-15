@@ -23,9 +23,10 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.AjaxResponse;
 
 /**
- * User: kevink
- * Date: Jan 4, 2008 12:18:02 PM
+ * Use ApiAction istead.
+ * @see ApiAction
  */
+@Deprecated()
 public abstract class AjaxAction<FORM> extends SimpleViewAction<FORM>
 {
     public AjaxAction()
