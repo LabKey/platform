@@ -16,6 +16,10 @@
 
 package org.labkey.api.util;
 
+import org.labkey.api.security.Crypt;
+import org.apache.log4j.Logger;
+import org.apache.commons.io.IOUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.FileInputStream;
@@ -23,6 +27,10 @@ import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.security.MessageDigest;
+import java.security.DigestInputStream;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * User: jeckels
@@ -217,23 +225,42 @@ public class FileUtil
     }
 
 
+    // FileUtil.copyFile() does not use transferTo() or sync()
     public static void copyFile(File src, File dst) throws IOException
     {
         dst.createNewFile();
+        FileInputStream is = null;
+        FileOutputStream os = null;
         FileChannel in = null;
+        FileLock lockIn = null;
         FileChannel out = null;
+        FileLock lockOut = null;
         try
         {
-            in = new FileInputStream(src).getChannel();
-            out = new FileOutputStream(dst).getChannel();
+            is = new FileInputStream(src);
+            in = is.getChannel();
+            lockIn = in.lock(0L, Long.MAX_VALUE, true);
+            os = new FileOutputStream(dst); 
+            out = os.getChannel();
+            lockOut = out.lock();
             in.transferTo(0, in.size(), out);
+            os.getFD().sync();
+            dst.setLastModified(src.lastModified());
         }
         finally
         {
+            if (null != lockIn)
+                lockIn.release();
+            if (null != lockOut)
+                lockOut.release();
             if (null != in)
                 in.close();
             if (null != out)
                 out.close();
+            if (null != os)
+                os.close();
+            if (null != is)
+                is.close();
         }
     }
 
@@ -349,5 +376,33 @@ quickScan:
         if (relPath.startsWith("/"))
             return relPath.substring(1);
         return null;
+    }
+
+
+    public static String md5sum(File file) throws IOException
+    {
+        FileInputStream fis = null;
+        try
+        {
+            MessageDigest digest = MessageDigest.getInstance("MD5");
+            fis = new FileInputStream(file);
+            DigestInputStream is = new DigestInputStream(fis, digest);
+            byte[] buf = new byte[8*1024];
+            while (-1 != (is.read(buf)))
+            {
+               /* */
+            }
+            IOUtils.closeQuietly(is);
+            return Crypt.encodeHex(digest.digest());
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            Logger.getInstance(FileUtil.class).error("unexpected error", e);
+            return null;
+        }
+        finally
+        {
+            IOUtils.closeQuietly(fis);
+        }
     }
 }
