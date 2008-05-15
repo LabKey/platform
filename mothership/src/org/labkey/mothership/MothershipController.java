@@ -1152,7 +1152,6 @@ public class MothershipController extends SpringActionController
             super(schema, settings);
         }
 
-
         protected DataView createDataView()
         {
             DataView result = super.createDataView();
@@ -1177,20 +1176,16 @@ public class MothershipController extends SpringActionController
         }
     }
 
-    private DataRegion createReleaseDataRegion()
-    {
-        DataRegion result = new DataRegion();
-        result.addColumns(MothershipManager.get().getTableInfoSoftwareRelease(), "SVNRevision,Description");
-        result.getDisplayColumn("SVNRevision").setURL("showUpdate.view?releaseId=${ReleaseId}");
-        result.setShowRecordSelectors(true);
-        return result;
-    }
-
     public class ReleaseGridView extends GridView
     {
         public ReleaseGridView()
         {
-            super(createReleaseDataRegion());
+            super(new DataRegion());
+            getRenderContext().setBaseSort(new Sort("SVNRevision"));
+            DataRegion region = getDataRegion();
+            region.addColumns(MothershipManager.get().getTableInfoSoftwareRelease(), "SVNRevision,Description");
+            region.getDisplayColumn("SVNRevision").setURL("showUpdate.view?releaseId=${ReleaseId}");
+            region.setShowRecordSelectors(true);
         }
     }
 

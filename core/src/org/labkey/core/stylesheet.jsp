@@ -633,6 +633,14 @@ td.wikitopic
   background-color: #<%=theme.getHeaderLineColor()%>;
 }
 
+.gwt-PushButton-up-disabled
+{
+	filter:alpha(opacity=50);
+	-moz-opacity:0.5;
+	-khtml-opacity: 0.5;
+	opacity: 0.5;
+}
+
 .gwt-TabPanelBottom {
   border: 1px solid #<%=theme.getHeaderLineColor()%>;
 }

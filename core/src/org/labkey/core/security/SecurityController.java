@@ -739,7 +739,7 @@ public class SecurityController extends SpringActionController
     @RequiresPermission(ACL.PERM_ADMIN)
     public class GroupExportAction extends ExportAction<GroupForm>
     {
-        public void export(GroupForm form, HttpServletResponse response) throws Exception
+        public void export(GroupForm form, HttpServletResponse response, BindException errors) throws Exception
         {
             String group = form.getGroup();
             if (group.startsWith("/"))

@@ -20,8 +20,6 @@ import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
-import org.apache.beehive.netui.pageflow.annotations.Jpf;
-import org.apache.beehive.netui.pageflow.Forward;
 import org.apache.xmlbeans.XmlOptions;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartUtilities;
@@ -651,7 +649,7 @@ public class AdminController extends SpringActionController
     @RequiresPermission(ACL.PERM_NONE)
     public class GuidAction extends ExportAction
     {
-        public void export(Object o, HttpServletResponse response) throws Exception
+        public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
             response.getWriter().write(GUID.makeGUID());
         }
@@ -2054,7 +2052,7 @@ public class AdminController extends SpringActionController
     @RequiresSiteAdmin
     public class ShowErrorsSinceMarkAction extends ExportAction
     {
-        public void export(Object o, HttpServletResponse response) throws Exception
+        public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
             showErrors(response, _errorMark);
         }
@@ -2064,7 +2062,7 @@ public class AdminController extends SpringActionController
     @RequiresSiteAdmin
     public class ShowAllErrorsAction extends ExportAction
     {
-        public void export(Object o, HttpServletResponse response) throws Exception
+        public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
             showErrors(response, 0);
         }
@@ -2710,7 +2708,7 @@ public class AdminController extends SpringActionController
     @RequiresSiteAdmin
     public class MemoryChartAction extends ExportAction<ChartForm>
     {
-        public void export(ChartForm form, HttpServletResponse response) throws Exception
+        public void export(ChartForm form, HttpServletResponse response, BindException errors) throws Exception
         {
             MemoryUsage usage = null;
             boolean showLegend = false;
@@ -3463,7 +3461,7 @@ public class AdminController extends SpringActionController
     @RequiresSiteAdmin
     public class GetSchemaXmlDocAction extends ExportAction<DataCheckForm>
     {
-        public void export(DataCheckForm form, HttpServletResponse response) throws Exception
+        public void export(DataCheckForm form, HttpServletResponse response, BindException errors) throws Exception
         {
             String dbSchemaName = form.getDbSchema();
             if (null == dbSchemaName)

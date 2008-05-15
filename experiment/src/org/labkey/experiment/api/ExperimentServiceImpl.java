@@ -538,12 +538,13 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         getExpSchema().getScope().rollbackTransaction();
     }
 
-    public QueryView createExperimentRunWebPart(ViewContext context, ExperimentRunFilter filter, boolean moveButton)
+    public QueryView createExperimentRunWebPart(ViewContext context, ExperimentRunFilter filter, boolean moveButton, boolean exportXARButton)
     {
         ExperimentRunListView view = ExperimentRunListView.createView(context, filter, false);
         view.setShowDeleteButton(true);
         view.setShowAddToRunGroupButton(true);
         view.setShowMoveRunsButton(moveButton);
+        view.setShowExportXARButton(exportXARButton);
         view.setTitle("Experiment Runs");
         ActionURL url = context.getActionURL().clone();
         url.setPageFlow("Experiment");

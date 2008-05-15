@@ -115,7 +115,7 @@ public class MoveRunsPipelineJob extends PipelineJob
                 ExperimentRun experimentRun = ExperimentServiceImpl.get().getExperimentRun(runId);
                 if (experimentRun != null)
                 {
-                    exporter.addExperimentRun(experimentRun, null);
+                    exporter.addExperimentRun(experimentRun);
 
                     ByteArrayOutputStream bOut = new ByteArrayOutputStream();
                     exporter.dumpXML(bOut);

@@ -30,6 +30,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.WebPartView;
+import org.springframework.validation.BindException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -55,7 +56,7 @@ public class CoreController extends SpringActionController
 
     abstract class BaseStylesheetAction extends ExportAction
     {
-        public void export(Object o, HttpServletResponse response) throws Exception
+        public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
             // This action gets called a LOT, so cache the generated .css
             PageFlowUtil.Content c = _cssContent.get();

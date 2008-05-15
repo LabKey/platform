@@ -3267,7 +3267,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(ACL.PERM_READ)
     public class TemplateAction extends ExportAction
     {
-        public void export(Object o, HttpServletResponse response) throws Exception
+        public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
             Study study = getStudy();
             ViewContext context = getViewContext();

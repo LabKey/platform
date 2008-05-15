@@ -106,6 +106,7 @@ public class MothershipSchema extends UserSchema
         result.addColumn(durationCol);
 
         ExprColumn exceptionCountCol = new ExprColumn(result, "ExceptionCount", new SQLFragment("(SELECT COUNT(*) FROM " + MothershipManager.get().getTableInfoExceptionReport() + " WHERE ServerSessionId = " + ExprColumn.STR_TABLE_ALIAS + ".ServerSessionId)"), Types.INTEGER);
+        exceptionCountCol.setFormatString("#.#");
         result.addColumn(exceptionCountCol);
 
         List<FieldKey> defaultCols = new ArrayList<FieldKey>();
@@ -157,7 +158,9 @@ public class MothershipSchema extends UserSchema
         exceptionCount.append(" er WHERE ss.ServerInstallationId = ");
         exceptionCount.append(ExprColumn.STR_TABLE_ALIAS);
         exceptionCount.append(".ServerInstallationId AND ss.serversessionid = er.serversessionid)");
-        result.addColumn(new ExprColumn(result, "ExceptionCount", exceptionCount, Types.INTEGER));
+        ExprColumn exceptionCountCol = new ExprColumn(result, "ExceptionCount", exceptionCount, Types.INTEGER);
+        exceptionCountCol.setFormatString("#.#");
+        result.addColumn(exceptionCountCol);
 
         SqlDialect dialect = MothershipManager.get().getSchema().getSqlDialect();
 
@@ -168,7 +171,9 @@ public class MothershipSchema extends UserSchema
         daysActive.append(" ss WHERE ss.ServerInstallationId = ");
         daysActive.append(ExprColumn.STR_TABLE_ALIAS);
         daysActive.append(".ServerInstallationId)");
-        result.addColumn(new ExprColumn(result, "DaysActive", daysActive, Types.INTEGER));
+        ExprColumn daysActiveColumn = new ExprColumn(result, "DaysActive", daysActive, Types.INTEGER);
+        daysActiveColumn.setFormatString("#.#");
+        result.addColumn(daysActiveColumn);
 
         SQLFragment versionCount = new SQLFragment("(SELECT COUNT(DISTINCT(svnrevision)) FROM ");
         versionCount.append(MothershipManager.get().getTableInfoServerSession());

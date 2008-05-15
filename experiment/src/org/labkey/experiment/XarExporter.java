@@ -24,10 +24,7 @@ import org.fhcrc.cpas.exp.xml.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.*;
-import org.labkey.api.exp.api.ExpProtocolApplication;
-import org.labkey.api.exp.api.ExpSampleSet;
-import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.ExpExperiment;
+import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -65,7 +62,7 @@ public class XarExporter
      * As we export objects to XML, we may transform the LSID so we need to remember the
      * original LSIDs
      */
-    private Set<String> _experimentLSIDs = new HashSet<String>();
+    private Map<String, Set<String>> _experimentLSIDToRunLSIDs = new HashMap<String, Set<String>>();
     private Set<String> _experimentRunLSIDs = new HashSet<String>();
     private Set<String> _protocolLSIDs = new HashSet<String>();
     private Set<String> _inputDataLSIDs = new HashSet<String>();
@@ -111,7 +108,7 @@ public class XarExporter
         this._xarXmlFileName = fileName;
     }
 
-    public void addExperimentRun(ExperimentRun run, ExpExperiment exp) throws SQLException, ExperimentException
+    public void addExperimentRun(ExperimentRun run) throws SQLException, ExperimentException
     {
         if (_experimentRunLSIDs.contains(run.getLSID()))
         {
@@ -126,9 +123,17 @@ public class XarExporter
         }
         ExperimentRunType xRun = runs.addNewExperimentRun();
         xRun.setAbout(_lsidRelativizer.relativize(run.getLSID(), _relativizedLSIDs));
-        
-        if (null!=exp)
-            xRun.setExperimentLSID(_lsidRelativizer.relativize(exp.getLSID(), _relativizedLSIDs));
+
+        // The XAR schema only supports one experiment (run group) association per run, so choose the first one that it belongs to
+        // At the moment, the UI only lets you export one experiment (run group) at a time anyway
+        for (Map.Entry<String,Set<String>> entry : _experimentLSIDToRunLSIDs.entrySet())
+        {
+            if (entry.getValue().contains(run.getLSID()))
+            {
+                xRun.setExperimentLSID(_lsidRelativizer.relativize(entry.getKey(), _relativizedLSIDs));
+                break;
+            }
+        }
 
         if (run.getComments() != null)
         {
@@ -146,17 +151,6 @@ public class XarExporter
         if (protocol != null)
         {
             addProtocol(protocol, true);
-        }
-
-        if (exp != null)
-        {
-            Experiment experiment= ExperimentServiceImpl.get().getExperiment(exp.getLSID());
-            if (experiment == null)
-            {
-                throw new ExperimentException("Could not find an experiment with RowId " + exp.getLSID());
-            }
-
-            addExperiment(experiment);
         }
 
         List<Data> inputData = ExperimentServiceImpl.get().getRunInputData(run.getLSID());
@@ -660,14 +654,20 @@ public class XarExporter
         addProtocol(protocol, true);
     }
 
-    public void addExperiment(Experiment experiment) throws ExperimentException, SQLException
+    public void addExperiment(ExpExperimentImpl exp) throws ExperimentException, SQLException
     {
-        if (_experimentLSIDs.contains(experiment.getLSID()))
+        Experiment experiment = exp.getDataObject();
+        if (_experimentLSIDToRunLSIDs.containsKey(experiment.getLSID()))
         {
             return;
         }
         logProgress("Adding experiment " + experiment.getLSID());
-        _experimentLSIDs.add(experiment.getLSID());
+        Set<String> runLsids = new HashSet<String>();
+        for (ExpRun expRun : exp.getRuns())
+        {
+            runLsids.add(expRun.getLSID());
+        }
+        _experimentLSIDToRunLSIDs.put(experiment.getLSID(), runLsids);
 
         ExperimentType xExperiment = _archive.addNewExperiment();
         xExperiment.setAbout(_lsidRelativizer.relativize(experiment.getLSID(), _relativizedLSIDs));

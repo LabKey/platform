@@ -240,7 +240,6 @@ public class ExperimentController extends SpringActionController
             ExperimentRunListView runListView = ExperimentRunListView.createView(getViewContext(), bean.getSelectedFilter(), true);
             runListView.getRunTable().setExperiment(_experiment);
             runListView.setShowRemoveFromExperimentButton(true);
-            runListView.setShowExportXARButton(true);
             chooserView.setTitle("Experiment Runs");
             vbox.addView(chooserView);
             vbox.addView(runListView);
@@ -1665,7 +1664,7 @@ public class ExperimentController extends SpringActionController
         private final String _fileName;
         private final String _dataRegionSelectionKey;
         private final String _error;
-        private final int _expRowId;
+        private final Integer _expRowId;
         private final Integer _protocolId;
         private final ActionURL _postURL;
 
@@ -1716,7 +1715,7 @@ public class ExperimentController extends SpringActionController
             return _protocolId;
         }
 
-        public int getExpRowId()
+        public Integer getExpRowId()
         {
             return _expRowId;
         }
@@ -1957,7 +1956,8 @@ public class ExperimentController extends SpringActionController
             {
                 ids[i] = protocols.get(i).getRowId();
             }
-            XarExportSelection selection = new XarExportSelection(ids);
+            XarExportSelection selection = new XarExportSelection();
+            selection.addProtocolIds(ids);
 
             ActionURL errorURL = new ActionURL(ExportProtocolsOptionsAction.class, getContainer());
             errorURL.addParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY, form.getDataRegionSelectionKey());
@@ -2026,15 +2026,23 @@ public class ExperimentController extends SpringActionController
                     }
                 }
 
-                ExpExperiment experiment = ExperimentService.get().getExpExperiment(form.getExpRowId());
-                if (experiment == null || !experiment.getContainer().equals(getContainer()))
+                XarExportSelection selection = new XarExportSelection();
+                if (form.getExpRowId() != null)
                 {
-                    HttpView.throwNotFoundMV("Experiment" + form.getExpRowId());
+                    ExpExperiment experiment = ExperimentService.get().getExpExperiment(form.getExpRowId());
+                    if (experiment != null && !experiment.getContainer().equals(getContainer()))
+                    {
+                        HttpView.throwNotFoundMV("Experiment " + form.getExpRowId());
+                    }
+                    selection.addExperimentIds(experiment.getRowId());
                 }
-                XarExportSelection selection = new XarExportSelection(form.getExpRowId(), ids);
+                selection.addRunIds(ids);
 
                 ActionURL errorURL = new ActionURL(ExportRunsOptionsAction.class, getContainer());
-                errorURL.addParameter("expRowId", form.getExpRowId());
+                if (form.getExpRowId() != null)
+                {
+                    errorURL.addParameter("expRowId", form.getExpRowId().intValue());
+                }
                 errorURL.addParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY, form.getDataRegionSelectionKey());
                 _resultURL = exportXAR(selection, form.getLsidOutputType(), form.getExportType(), form.getFileName(), errorURL);
                 return true;
@@ -2050,7 +2058,7 @@ public class ExperimentController extends SpringActionController
     public static class ExperimentRunListForm implements DataRegionSelection.DataSelectionKeyForm
     {
         private String _dataRegionSelectionKey;
-        private int _expRowId;
+        private Integer _expRowId;
 
         public String getDataRegionSelectionKey()
         {
@@ -2062,19 +2070,19 @@ public class ExperimentController extends SpringActionController
             _dataRegionSelectionKey = key;
         }
 
-        public int getExpRowId()
+        public Integer getExpRowId()
         {
             return _expRowId;
         }
 
-        public void setExpRowId(int expRowId)
+        public void setExpRowId(Integer expRowId)
         {
             _expRowId = expRowId;
         }
 
         public ExpExperiment lookupExperiment()
         {
-            return ExperimentService.get().getExpExperiment(getExpRowId());
+            return getExpRowId() == null ? null : ExperimentService.get().getExpExperiment(getExpRowId());
         }
     }
 
@@ -3119,7 +3127,12 @@ public class ExperimentController extends SpringActionController
 
         public ActionURL getExportRunsOptionsURL(Container container, ExpExperiment experiment)
         {
-            return new ActionURL(ExportRunsOptionsAction.class, container).addParameter("expRowId", experiment.getRowId());
+            ActionURL result = new ActionURL(ExportRunsOptionsAction.class, container);
+            if (experiment != null)
+            {
+                result.addParameter("expRowId", experiment.getRowId());
+            }
+            return result;
         }
 
         public ActionURL getExportProtocolOptionsURL(Container container, ExpProtocol protocol)

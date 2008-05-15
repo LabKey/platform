@@ -17,7 +17,6 @@
 package org.labkey.experiment.xar;
 
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.api.ExperimentRun;
 import org.labkey.experiment.api.ExperimentServiceImpl;
@@ -25,6 +24,8 @@ import org.labkey.experiment.api.Protocol;
 
 import java.sql.SQLException;
 import java.io.Serializable;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * User: jeckels
@@ -32,29 +33,47 @@ import java.io.Serializable;
  */
 public class XarExportSelection implements Serializable
 {
-    private int _expRowId;
-    private int[] _runIds = new int[0];
-    private int[] _protocolIds = new int[0];
+    private List<Integer> _expIds = new ArrayList<Integer>();
+    private List<Integer> _runIds = new ArrayList<Integer>();
+    private List<Integer> _protocolIds = new ArrayList<Integer>();
 
-    public XarExportSelection(int expRowId, int[] runIds)
+    public void addExperimentIds(int... expIds)
     {
-        _expRowId = expRowId;
-        _runIds = runIds;
-        assert _runIds.length == 0 || _expRowId != 0;
+        for (int expId : expIds)
+        {
+            _expIds.add(expId);
+        }
     }
 
-    public XarExportSelection(int[] protocolIds)
+    public void addRunIds(int... runIds)
     {
-        _protocolIds = protocolIds;
+        for (int runId : runIds)
+        {
+            _runIds.add(runId);
+        }
+    }
+
+    public void addProtocolIds(int... protocolIds)
+    {
+        for (int protocolId : protocolIds)
+        {
+            _protocolIds.add(protocolId);
+        }
     }
 
     public void addContent(XarExporter exporter) throws SQLException, ExperimentException
     {
+        for (int expId : _expIds)
+        {
+            exporter.addExperiment(ExperimentServiceImpl.get().getExpExperiment(expId));
+        }
+
         for (int runId : _runIds)
         {
             ExperimentRun run = ExperimentServiceImpl.get().getExperimentRun(runId);
-            exporter.addExperimentRun(run, ExperimentService.get().getExpExperiment(_expRowId));
+            exporter.addExperimentRun(run);
         }
+        
         for (int protocolId : _protocolIds)
         {
             Protocol protocol = ExperimentServiceImpl.get().getProtocol(protocolId);

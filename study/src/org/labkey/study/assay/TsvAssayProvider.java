@@ -184,11 +184,9 @@ public class TsvAssayProvider extends AbstractAssayProvider
                 }
                 dataMap.put("SourceLSID", run.getLSID());
                 dataMap.put(getDataRowIdFieldKey().toString(), publishKey.getDataId());
-                addProperty(study, "Run Name", run.getName(), dataMap, typeList);
-                addProperty(study, "Run Comments", run.getComments(), dataMap, typeList);
-                addProperty(study, "Run CreatedOn", run.getCreated(), dataMap, typeList);
-                User createdBy = run.getCreatedBy();
-                addProperty(study, "Run CreatedBy", createdBy == null ? null : createdBy.getDisplayName(HttpView.currentContext()), dataMap, typeList);
+
+                addStandardRunPublishProperties(study, typeList, dataMap, run);
+
                 dataMaps[rowIndex++] = dataMap;
             }
             return AssayPublishService.get().publishAssayData(user, sourceContainer, study, protocol.getName(), protocol,

@@ -54,6 +54,7 @@
     {
 %>
     <input type="hidden" name="<%= parameter.getKey() %>" value="<%= h(parameter.getValue()) %>">
+    <input type="hidden" name="returnURL" value="<%= h(bean.getReturnURL()) %>">
 <%
     }
     for (Integer id : bean.getIds())
@@ -107,7 +108,7 @@
     </tr>
     <tr>
         <td colspan="2">
-            <%= buttonLink("Cancel", AssayService.get().getAssayRunsURL(getViewContext().getContainer(), bean.getProtocol()).addParameter("clearCataRegionSelectionKey", bean.getDataRegionSelectionKey()))%>
+            <%= buttonLink("Cancel", bean.getReturnURL())%>
             <%= buttonImg("Next") %>
         </td>
     </tr>

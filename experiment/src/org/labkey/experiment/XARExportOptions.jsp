@@ -47,8 +47,11 @@ ExperimentController.ExportBean bean = me.getModelBean();
 <% for (String selectIds : request.getParameterValues(DataRegion.SELECT_CHECKBOX_NAME) == null ? new String[0] : request.getParameterValues(DataRegion.SELECT_CHECKBOX_NAME))
 { %>
     <input type="hidden" name="<%= DataRegion.SELECT_CHECKBOX_NAME %>" value="<%= h(selectIds)%>" />
+<% }
+if (bean.getExpRowId() != null)
+{ %>
+    <input type="hidden" name="expRowId" value="<%= bean.getExpRowId() %>" />
 <% } %>
-<input type="hidden" name="expRowId" value="<%= bean.getExpRowId() %>" />
 <input type="hidden" name="protocolId" value="<%= bean.getProtocolId() == null ? "" : bean.getProtocolId() %>" />
 <%= buttonImg("Export") %>
 </form>

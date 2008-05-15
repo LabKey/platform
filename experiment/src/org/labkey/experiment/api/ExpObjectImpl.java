@@ -78,7 +78,7 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
         catch (SQLException e)
         {
             _log.error("Error", e);
-            return Collections.EMPTY_MAP;
+            return Collections.emptyMap();
         }
     }
 
@@ -124,7 +124,6 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
                 fTrans = true;
             }
 
-            Object oldValue = getProperty(pd);
             OntologyManager.deleteProperty(getLSID(), pd.getPropertyURI(), getContainer(), pd.getContainer());
 
             if (value != null)
@@ -133,7 +132,6 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
                 oprop.setPropertyId(pd.getPropertyId());
                 OntologyManager.insertProperty(getContainerId(), oprop, getOwnerObjectLSID());
             }
-            logPropertyChange(user, pd.getPropertyURI(), oldValue, value);
             if (fTrans)
             {
                 ExperimentService.get().commitTransaction();
@@ -148,11 +146,6 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
             }
         }
 
-    }
-
-    public boolean logPropertyChange(User user, String propertyURI, Object oldValue, Object newValue)
-    {
-        return false;
     }
 
     public String urlFlag(boolean flagged)
@@ -182,7 +175,7 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
         }
     }
 
-    public ExpChildObject createPropertyObject(User user, PropertyDescriptor pd) throws Exception
+    public ExpChildObject createPropertyObject(PropertyDescriptor pd) throws Exception
     {
         if (pd.getPropertyType() != PropertyType.RESOURCE)
             throw new IllegalArgumentException("Not a child object property.");

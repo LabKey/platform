@@ -248,7 +248,7 @@ public class DesignerController extends SpringActionController
     @RequiresPermission(ACL.PERM_ADMIN)
     public class GetParticipantExcelAction extends ExportAction<CreateRepositoryForm>
     {
-        public void export(CreateRepositoryForm form, HttpServletResponse response) throws Exception
+        public void export(CreateRepositoryForm form, HttpServletResponse response, BindException errors) throws Exception
         {
             List<Map<String,Object>> participantList = new ArrayList<Map<String,Object>>();
             int participantNum = 1;
@@ -279,7 +279,7 @@ public class DesignerController extends SpringActionController
     @RequiresPermission(ACL.PERM_READ)
     public class GetSpecimenExcelAction extends ExportAction<CreateRepositoryForm>
     {
-        public void export(CreateRepositoryForm form, HttpServletResponse response) throws Exception
+        public void export(CreateRepositoryForm form, HttpServletResponse response, BindException errors) throws Exception
         {
             Container c = getContainer();
             //Search for a template in all folders up to root.
