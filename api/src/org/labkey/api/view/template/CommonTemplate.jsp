@@ -67,7 +67,7 @@ if (bean.showHeader())
 {
     String headerLineColor = "#" + WebTheme.getTheme().getHeaderLineColor();
 %>
-        <tr style="height:56px;">
+        <tr id="headerpanel">
             <td colspan=3>
                 <!-- HEADER -->
                 <% me.include(me.getView("header"),out); %>

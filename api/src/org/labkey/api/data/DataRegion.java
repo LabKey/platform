@@ -685,7 +685,7 @@ public class DataRegion extends DisplayElement
         if (renderButtons)
             renderFormHeader(out, MODE_GRID);
 
-        out.write("<table id=\"" + PageFlowUtil.filter("dataregion_header_" + getName()) + "\">\n");
+        out.write("<table class=\"dataregion_header\" id=\"" + PageFlowUtil.filter("dataregion_header_" + getName()) + "\">\n");
         out.write("<tr><td nowrap>\n");
         if (renderButtons)
         {
@@ -705,7 +705,7 @@ public class DataRegion extends DisplayElement
 
     protected void renderFooter(RenderContext ctx, Writer out, Integer resultSetSize, boolean renderButtons) throws IOException
     {
-        out.write("<table id=\"" + PageFlowUtil.filter("dataregion_footer_" + getName()) + "\">\n");
+        out.write("<table class=\"dataregion_footer\" id=\"" + PageFlowUtil.filter("dataregion_footer_" + getName()) + "\">\n");
         out.write("<tr><td nowrap>\n");
         if (renderButtons && _buttonBarPosition.atBottom())
         {
@@ -885,7 +885,7 @@ public class DataRegion extends DisplayElement
         out.write(" cellspacing=\"0\" cellpadding=\"1\">\n");
         out.write("<colgroup>");
         if (_showRecordSelectors)
-            out.write("<col width=\"35\"/>");
+            out.write("<col class=\"selectors\" width=\"35\"/>");
         for (DisplayColumn renderer : renderers)
         {
             if (renderer.getVisible(ctx))
@@ -896,24 +896,24 @@ public class DataRegion extends DisplayElement
 
     protected void renderGridHeaders(RenderContext ctx, Writer out, List<DisplayColumn> renderers) throws SQLException, IOException
     {
+        out.write("\n<thead>");
         out.write("\n<tr>");
 
         if (_showRecordSelectors)
         {
+            out.write("<td class=\"header selectors\"");
             if (_showColumnSeparators)
             {
                 String style = "border: solid 1px " + COLUMN_SEPARATOR_COLOR;
-                out.write("<td style='" + style + "'>");
+                out.write(" style='" + style + "'");
             }
             else if (_showHeaderSeparator)
             {
                 String style = "border-bottom: solid 1px " + COLUMN_SEPARATOR_COLOR;
-                out.write("<td style='" + style + "'>");
+                out.write(" style='" + style + "'");
             }
-            else
-            {
-                out.write("<td>");
-            }
+            out.write(">");
+
             out.write("<input type=checkbox title='Check/uncheck all' name='");
             out.write(TOGGLE_CHECKBOX_NAME);
             out.write("' onClick='sendCheckboxes(this, " + PageFlowUtil.filterQuote(getSelectionKey()) + ", this.checked);'");
@@ -939,6 +939,7 @@ public class DataRegion extends DisplayElement
         }
 
         out.write("</tr>\n");
+        out.write("</thead>\n");
     }
 
     protected void renderGridEnd(RenderContext ctx, Writer out) throws IOException
@@ -969,10 +970,10 @@ public class DataRegion extends DisplayElement
             out.write("<tr style=\"border-top:solid 1px;background-color:#" + WebTheme.getTheme().getNavBarColor() + "\">");
             if (_showRecordSelectors)
             {
+                out.write("<td class='selectors'");
                 if (tdStyle.length() > 0)
-                    out.write("<td style=\"" + tdStyle.toString() + "\">");
-                else
-                    out.write("<td>");
+                    out.write(" style=\"" + tdStyle.toString() + "\"");
+                out.write(">");
                 if (singleAggregateType != null)
                     out.write(singleAggregateType.getFriendlyName() + ":");
                 else
@@ -989,10 +990,11 @@ public class DataRegion extends DisplayElement
             {
                 if (renderer.getVisible(ctx))
                 {
+                    out.write("<td");
+                    if (renderer.getGridCellClass() == null)
+                        out.write(" class='" + renderer.getGridCellClass() + "'");
                     if (renderer.getTextAlign() != null)
-                        out.write("<td align='" + renderer.getTextAlign() + "'");
-                    else
-                        out.write("<td");
+                        out.write(" align='" + renderer.getTextAlign() + "'");
 
                     if (tdStyle.length() > 0)
                         out.write(" style='" + tdStyle.toString() + "'");
@@ -1146,7 +1148,7 @@ public class DataRegion extends DisplayElement
     protected void renderRecordSelector(RenderContext ctx, Writer out) throws IOException
     {
         Map rowMap = ctx.getRow();
-        out.write("<td nowrap>");
+        out.write("<td class='selectors' nowrap>");
         out.write("<input type=checkbox name='");
         out.write(SELECT_CHECKBOX_NAME);
         out.write("' value=\"");

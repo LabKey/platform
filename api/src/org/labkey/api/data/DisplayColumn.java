@@ -27,9 +27,7 @@ import java.io.Writer;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.Format;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public abstract class DisplayColumn extends RenderColumn
 {
@@ -257,6 +255,26 @@ public abstract class DisplayColumn extends RenderColumn
         return _textAlign;
     }
 
+    public void setGridHeaderClass(String headerClass)
+    {
+        _gridHeaderClass = headerClass;
+    }
+
+    public String getGridHeaderClass()
+    {
+        return _gridHeaderClass;
+    }
+
+    public void setGridCellClass(String cellClass)
+    {
+        _gridCellClass = cellClass;
+    }
+
+    public String getGridCellClass()
+    {
+        return _gridCellClass;
+    }
+
     public void renderColTag(Writer out) throws IOException
     {
         out.write("<col ");
@@ -298,7 +316,7 @@ public abstract class DisplayColumn extends RenderColumn
     public void renderGridHeaderCell(RenderContext ctx, Writer out, String styleAttributes) throws IOException, SQLException
     {
         out.write("\n<th class='");
-        out.write(_gridHeaderClass);
+        out.write(getGridHeaderClass());
         out.write("' ");
         if (styleAttributes != null)
         {
@@ -405,10 +423,15 @@ public abstract class DisplayColumn extends RenderColumn
 
     public void renderGridDataCell(RenderContext ctx, Writer out, String style) throws IOException, SQLException
     {
+        out.write("<td");
+        if (getGridCellClass() != null)
+        {
+            out.write(" class='");
+            out.write(getGridCellClass());
+            out.write("'");
+        }
         if ("right".equals(_textAlign))
-            out.write("<td align=right");
-        else
-            out.write("<td");
+            out.write(" align=right");
         if (style != null)
         {
             out.write(" style='");

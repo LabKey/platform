@@ -1404,16 +1404,24 @@ public class PageFlowUtil
         sb.append("/favicon.image?revision=");
         sb.append(lookAndFeelRevision);
         sb.append("\" />\n");
+
         sb.append("    <link rel=\"icon\" href=\"");
         sb.append(contextPath);
         sb.append("/favicon.image?revision=");
         sb.append(lookAndFeelRevision);
         sb.append("\" />\n");
+
         sb.append("    <link href=\"");
         sb.append(contextPath);
         sb.append("/core/stylesheet.view?revision=");
         sb.append(lookAndFeelRevision);
         sb.append("\" type=\"text/css\" rel=\"stylesheet\"/>");
+
+        sb.append("    <link href=\"");
+        sb.append(contextPath);
+        sb.append("/core/printstyle.view?revision=");
+        sb.append(lookAndFeelRevision);
+        sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\"/>");
         return sb.toString();
     }
 
