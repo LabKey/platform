@@ -19,7 +19,7 @@ LABKEY.requiresClientAPI(); //for Ext AJAX object
 ${construct}
 
 //store current container id on client
-var currentContainerId = "${currentContainer.getId()}";
+var currentContainerId = "${currentContainer ? currentContainer.getId() : null}";
 
 function updatePageList()
 {
@@ -137,6 +137,9 @@ function onError(response, config)
 
 function restoreDefaultPage()
 {
+    if(!currentContainerId)
+        return;
+    
     //set webPartContainer select value to current container
     document.forms[0].webPartContainer.value = currentContainerId;
     updatePageList();
