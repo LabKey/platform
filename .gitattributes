@@ -558,6 +558,7 @@ api/src/org/labkey/api/util/UsageReportingLevel.java -text
 api/src/org/labkey/api/util/WriteableAppProps.java -text
 api/src/org/labkey/api/util/emailTemplate/EmailTemplate.java -text
 api/src/org/labkey/api/util/emailTemplate/EmailTemplateService.java -text
+api/src/org/labkey/api/util/mime.txt -text
 api/src/org/labkey/api/util/preferences/PreferenceService.java -text
 api/src/org/labkey/api/view/AbstractView.java -text
 api/src/org/labkey/api/view/ActionErrorsView.java -text
