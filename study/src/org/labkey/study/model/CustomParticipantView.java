@@ -3,7 +3,7 @@ package org.labkey.study.model;
 import org.labkey.api.data.Entity;
 
 /**
- * Copyright (c) 2007 LabKey Corporation
+ * Copyright (c) 2008 LabKey Corporation
  * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
