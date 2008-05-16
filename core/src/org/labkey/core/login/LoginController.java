@@ -20,8 +20,8 @@ import org.apache.log4j.Logger;
 import org.labkey.api.action.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.Project;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
@@ -1105,18 +1105,10 @@ public class LoginController extends SpringActionController
 
     private static abstract class ConfigURLFactory implements AuthenticationManager.URLFactory
     {
-        private ActionURL _returnURL;
-
-        private ConfigURLFactory(ActionURL returnURL)
-        {
-            _returnURL = returnURL;
-        }
-
         public ActionURL getActionURL(AuthenticationProvider provider)
         {
             ActionURL url = new ActionURL(getActionClass(), ContainerManager.getRoot());
             url.addParameter("name", provider.getName());
-            url.addReturnURL(_returnURL);
             return url;
         }
 
@@ -1126,9 +1118,9 @@ public class LoginController extends SpringActionController
 
     private static class EnableURLFactory extends ConfigURLFactory
     {
-        private EnableURLFactory(ActionURL returnURL)
+        private EnableURLFactory()
         {
-            super(returnURL);
+            super();
         }
 
         protected Class<? extends Controller> getActionClass()
@@ -1140,14 +1132,25 @@ public class LoginController extends SpringActionController
 
     private static class DisableURLFactory extends ConfigURLFactory
     {
-        private DisableURLFactory(ActionURL returnURL)
-        {
-            super(returnURL);
-        }
-
         protected Class<? extends Controller> getActionClass()
         {
             return DisableAction.class;
+        }
+    }
+
+
+
+    public static class LoginUrlsImpl implements LoginUrls
+    {
+        public NavTree appendAuthenticationNavTrail(NavTree root)
+        {
+            root.addChild("Admin Console", AdminController.getShowAdminURL()).addChild("Authentication", getConfigureURL());
+            return root;
+        }
+
+        public ActionURL getConfigureURL()
+        {
+            return new ActionURL(ConfigureAction.class, ContainerManager.getRoot());
         }
     }
 
@@ -1157,17 +1160,19 @@ public class LoginController extends SpringActionController
     {
         public ModelAndView getView(ReturnUrlForm form, BindException errors) throws Exception
         {
-            ActionURL currentURL = getViewContext().getActionURL();
-            ActionURL returnURL = form.getReturnActionURL();
-
-            return AuthenticationManager.getConfigurationView(currentURL, returnURL, new EnableURLFactory(currentURL), new DisableURLFactory(currentURL));
+            return AuthenticationManager.getConfigurationView(new EnableURLFactory(), new DisableURLFactory());
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild("Admin Console", AdminController.getShowAdminURL()).addChild("Authentication Providers");
-            return root;
+            return getUrls().appendAuthenticationNavTrail(root);
         }
+    }
+
+
+    private static LoginUrls getUrls()
+    {
+        return PageFlowUtil.urlProvider(LoginUrls.class);
     }
 
 
@@ -1176,7 +1181,7 @@ public class LoginController extends SpringActionController
     {
         public ActionURL getSuccessURL(ProviderConfigurationForm form)
         {
-            return form.getReturnActionURL();
+            return getUrls().getConfigureURL();
         }
 
         public boolean doAction(ProviderConfigurationForm form, BindException errors) throws Exception
@@ -1196,7 +1201,7 @@ public class LoginController extends SpringActionController
     {
         public ActionURL getSuccessURL(ProviderConfigurationForm form)
         {
-            return form.getReturnActionURL();
+            return getUrls().getConfigureURL();
         }
 
         public boolean doAction(ProviderConfigurationForm form, BindException errors) throws Exception
@@ -1211,7 +1216,7 @@ public class LoginController extends SpringActionController
     }
 
 
-    public static class ProviderConfigurationForm extends ReturnUrlForm
+    public static class ProviderConfigurationForm
     {
         String _name;
 

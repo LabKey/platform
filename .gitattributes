@@ -323,7 +323,6 @@ core/src/org/labkey/core/admin/sql/SqlScriptController.java -text
 core/src/org/labkey/core/admin/sql/errors.gm -text
 core/src/org/labkey/core/admin/sql/header.gm -text
 core/src/org/labkey/core/admin/sql/showRunningScripts.jsp -text
-core/src/org/labkey/core/admin/testLdap.jsp -text
 core/src/org/labkey/core/admin/testNetworkDrive.jsp -text
 core/src/org/labkey/core/admin/threads.jsp -text
 core/src/org/labkey/core/admin/webTheme.jsp -text

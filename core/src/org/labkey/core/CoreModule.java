@@ -58,10 +58,7 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * User: migra
@@ -76,7 +73,7 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
 
     public CoreModule()
     {
-        super(NAME, 8.11, "/org/labkey/core", false,
+        super(NAME, 8.12, "/org/labkey/core", false,
             new WebPartFactory("Contacts")
             {
                 public WebPartView getWebPartView(ViewContext ctx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
@@ -86,8 +83,6 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
             });
 
         SqlDialect.register(new SqlDialectPostgreSQL());
-        SqlDialect.register(new SqlDialectMicrosoftSQLServer());
-        SqlDialect.register(new SqlDialectMicrosoftSQLServer9());
 
         addController("admin", AdminController.class);
         addController("admin-sql", SqlScriptController.class);
@@ -101,7 +96,6 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
         addController("analytics", AnalyticsController.class);
 
         AuthenticationManager.registerProvider(new DbLoginAuthenticationProvider());
-        AuthenticationManager.registerProvider(new LdapAuthenticationProvider());
         AttachmentService.register(new AttachmentServiceImpl());
         AnalyticsServiceImpl.register();
         FirstRequestHandler.addFirstRequestListener(this);
@@ -230,7 +224,41 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
         if (installedVersion < 8.11)
             GroupManager.bootstrapGroup(Group.groupDevelopers, "Developers");
 
+        if (installedVersion > 0 && installedVersion < 8.12)
+            migrateLdapSettings();
+
         super.afterSchemaUpdate(moduleContext, viewContext);
+    }
+
+    private void migrateLdapSettings()
+    {
+        try
+        {
+            Map<String, String> props = PropertyManager.getSiteConfigProperties();
+            String domain = props.get("LDAPDomain");
+
+            if (null != domain && domain.trim().length() > 0)
+            {
+                PropertyManager.PropertyMap map = PropertyManager.getWritableProperties("LDAPAuthentication", true);
+                map.put("Servers", props.get("LDAPServers"));
+                map.put("Domain", props.get("LDAPDomain"));
+                map.put("PrincipalTemplate", props.get("LDAPPrincipalTemplate"));
+                map.put("SASL", props.get("LDAPAuthentication"));
+                PropertyManager.saveProperties(map);
+            }
+            else
+            {
+                PropertyManager.PropertyMap map = PropertyManager.getWritableProperties("Authentication", true);
+                String activeAuthProviders = map.get("Authentication");
+                String disableLdap = activeAuthProviders.replaceFirst("LDAP:", "").replaceFirst(":LDAP", "").replaceFirst("LDAP", "");
+                map.put("Authentication", disableLdap);
+                PropertyManager.saveProperties(map);
+            }
+        }
+        catch (SQLException e)
+        {
+            ExceptionUtil.logExceptionToMothership(null, e);
+        }
     }
 
     private void upgradeTo174() throws NamingException, SQLException

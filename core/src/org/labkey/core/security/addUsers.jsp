@@ -3,6 +3,7 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.core.user.UserController" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <script type="text/javascript">LABKEY.requiresScript('completion.js');</script>
@@ -64,7 +65,7 @@
         </tr>
         <tr><td colspan="3">
             <input type=checkbox name="sendMail" id="sendMail" checked><label for="sendmail">Send notification emails to all new<%
-            String LDAPDomain = AppProps.getInstance().getLDAPDomain();
+            String LDAPDomain = AuthenticationManager.getLdapDomain();
             if (LDAPDomain != null && LDAPDomain.length() > 0)
             {
                 %>, non-<%=LDAPDomain%><%

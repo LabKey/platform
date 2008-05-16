@@ -351,30 +351,6 @@ Click the Save button at any time to accept the current settings and continue.</
     <td class="ms-searchform">SSL port number (specified in server config file)</td>
     <td class="normal"><input type="text" name="sslPort" value="<%=appProps.getSSLPort()%>" size="6"></td>
 </tr>
-<tr>
-    <td class="normal">&nbsp;</td>
-</tr>
-
-<tr>
-    <td class="normal" colspan=2>Configure LDAP settings (<%=bean.helpLink%>)</td>
-</tr>
-<tr style="height:1;"><td colspan=3 class=ms-titlearealine><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
-<tr>
-    <td class="ms-searchform">LDAP servers</td>
-    <td class="normal"><input type="text" name="LDAPServers" size="50" value="<%= h(StringUtils.join(appProps.getLDAPServersArray(), ";")) %>"></td>
-</tr>
-<tr>
-    <td class="ms-searchform">LDAP domain</td>
-    <td class="normal"><input type="text" name="LDAPDomain" size="50" value="<%= h(appProps.getLDAPDomain()) %>"></td>
-</tr>
-<tr>
-    <td class="ms-searchform">LDAP principal template</td>
-    <td class="normal"><input type="text" name="LDAPPrincipalTemplate" size="50" value="<%= h(appProps.getLDAPPrincipalTemplate()) %>"></td>
-</tr>
-<tr>
-    <td class="ms-searchform">Use SASL authentication</td>
-    <td class="normal"><input type="checkbox" name="LDAPAuthentication" <%=appProps.useSASLAuthentication() ? "checked" : ""%>></td>
-</tr>
 
 <tr>
     <td class="normal">&nbsp;</td>

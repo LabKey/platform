@@ -1,7 +1,6 @@
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.action.ReturnUrlForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<AuthenticationManager.AuthLogoBean> me = (HttpView<AuthenticationManager.AuthLogoBean>) HttpView.currentView();
@@ -9,13 +8,7 @@
 %><form action="pickAuthLogo.post" enctype="multipart/form-data" method="post">
 <table >
 <tr>
-    <td colspan="2"><input type="hidden" name="name" value="<%=h(bean.name)%>"><input type="hidden" name="<%=ReturnUrlForm.Params.returnUrl%>" value="<%=h(bean.returnUrl)%>"></td>
-</tr>
-<tr>
-    <td colspan="2">Configure a URL and logos for <%=h(bean.name)%></td>
-</tr>
-<tr>
-    <td colspan="2">&nbsp;</td>
+    <td colspan="2"><input type="hidden" name="name" value="<%=h(bean.name)%>"></td>
 </tr>
 <tr>
     <td class="ms-searchform">Pick a logo for the page header</td>
@@ -30,7 +23,10 @@
     <td><input type="text" name="url" size="130" value="<%=h(bean.url)%>"></td>
 </tr>
 <tr>
-    <td colspan="2"><input type="image" src="<%=PageFlowUtil.buttonSrc("Save")%>">&nbsp;<%=PageFlowUtil.buttonLink(bean.reshow ? "Done" : "Cancel", bean.returnUrl)%></td>
+    <td colspan="2">&nbsp;</td>
+</tr>
+<tr>
+    <td colspan="2"><input type="image" src="<%=PageFlowUtil.buttonSrc("Save")%>">&nbsp;<%=PageFlowUtil.buttonLink(bean.reshow ? "Done" : "Cancel", bean.returnURL)%></td>
 </tr>
 </table>
 </form>

@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.labkey.core.admin;
 
 import org.apache.commons.collections15.MultiMap;
@@ -32,7 +31,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.api.AdminUrls;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.jsp.FormPage;
 import org.labkey.api.module.*;
 import org.labkey.api.ms2.MS2Service;
@@ -47,7 +46,6 @@ import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.util.preferences.PreferenceService;
 import org.labkey.api.view.*;
-import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
@@ -131,8 +129,8 @@ public class AdminController extends SpringActionController
 
             // Configuration
             bean.addConfigurationLink("site settings", new ActionURL("admin", "showCustomizeSite.view", ""));
-            bean.addConfigurationLink("authentication", new ActionURL("login", "configure.view", "").addReturnURL(getViewContext().getActionURL()));
-            bean.addConfigurationLink("flow cytometry", new ActionURL("Flow", "flowAdmin.view", ""));
+            bean.addConfigurationLink("authentication", PageFlowUtil.urlProvider(LoginUrls.class).getConfigureURL());
+            bean.addConfigurationLink("flow cytometry", new ActionURL("flow", "flowAdmin.view", ""));
             bean.addConfigurationLink("email customization", new ActionURL("admin", "customizeEmail.view", ""));
             bean.addConfigurationLink("project display order", new ActionURL("admin", "reorderFolders.view", ""));
             bean.addConfigurationLink("R view configuration", new ActionURL("reports", "configureRReport.view", ""));
@@ -145,7 +143,7 @@ public class AdminController extends SpringActionController
             bean.addManagementLink("pipeline", url);
             url = PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(c);
             bean.addManagementLink("pipeline email notification", url);
-            bean.addManagementLink("protein databases", new ActionURL("MS2", "showProteinAdmin.view", ""));
+            bean.addManagementLink("protein databases", new ActionURL("ms2", "showProteinAdmin.view", ""));
             if (AuditLogService.get().isViewable())
                 bean.addManagementLink("audit log", new ActionURL("admin", "showAuditLog.view", ""));
 
@@ -158,7 +156,6 @@ public class AdminController extends SpringActionController
             bean.addDiagnosticsLink("view all site errors", new ActionURL("admin", "showAllErrors.view", ""));
             bean.addDiagnosticsLink("view all site errors since reset", new ActionURL("admin", "showErrorsSinceMark.view", ""));
             bean.addDiagnosticsLink("reset site errors", new ActionURL("admin", "resetErrorMark.view", ""));
-            bean.addDiagnosticsLink("test ldap", new ActionURL("admin", "testLdap.view", ""));
             bean.addDiagnosticsLink("check database", new ActionURL("admin", "dbChecker.view", ""));
             bean.addDiagnosticsLink("credits", new ActionURL("admin", "credits.view", ""));
 
@@ -295,9 +292,14 @@ public class AdminController extends SpringActionController
 
     public static class AdminUrlsImpl implements AdminUrls
     {
-        public ActionURL getModuleErrorsUrl(Container container)
+        public ActionURL getModuleErrorsURL(Container container)
         {
             return new ActionURL(ShowModuleErrors.class, container);
+        }
+
+        public ActionURL getAdminConsoleURL()
+        {
+            return getShowAdminURL();
         }
     }
 
@@ -833,129 +835,6 @@ public class AdminController extends SpringActionController
 
 
     @RequiresSiteAdmin
-    public class TestLdapAction extends FormViewAction<TestLdapForm>
-    {
-        public void validateCommand(TestLdapForm target, Errors errors)
-        {
-        }
-
-        public ModelAndView getView(TestLdapForm form, boolean reshow, BindException errors) throws Exception
-        {
-            HttpView view = new JspView<TestLdapForm>("/org/labkey/core/admin/testLdap.jsp", form, errors);
-            PageConfig page = new PageConfig();
-            if (null == form.getMessage() || form.getMessage().length() < 200)
-                page.setFocusId("server");
-            page.setTemplate(Template.Dialog);
-            return view;
-        }
-
-        public boolean handlePost(TestLdapForm form, BindException errors) throws Exception
-        {
-            try
-            {
-                boolean success = SecurityManager.LDAPConnect(form.getServer(), form.getPrincipal(), form.getPassword(), form.getAuthentication());
-                form.setMessage("<b>Connected to server.  Authentication " + (success ? "succeeded" : "failed") + ".</b>");
-            }
-            catch(Exception e)
-            {
-                String message = "<b>Failed to connect with these settings.  Error was:</b><br>" + ExceptionUtil.renderException(e);
-                form.setMessage(message);
-            }
-            return false;
-        }
-
-        public ActionURL getSuccessURL(TestLdapForm testLdapAction)
-        {
-            return null;   // Always reshow form
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;      // TODO: Add navtrail
-        }
-    }
-
-
-    public static class TestLdapForm
-    {
-        private String server;
-        private String principal;
-        private String password;
-        private String message;
-        private boolean authentication;
-
-        public TestLdapForm()
-        {
-            User user = HttpView.currentContext().getUser();
-            server = AppProps.getInstance().getLDAPServersArray()[0];
-            authentication = AppProps.getInstance().useSASLAuthentication();
-            ValidEmail email;
-
-            try
-            {
-                email = new ValidEmail(user.getEmail());
-            }
-            catch(ValidEmail.InvalidEmailException e)
-            {
-                throw new RuntimeException(e);
-            }
-
-            principal = SecurityManager.emailToLdapPrincipal(email);
-        }
-
-        public String getPrincipal()
-        {
-            return (null == principal ? "" : principal);
-        }
-
-        public void setPrincipal(String principal)
-        {
-            this.principal = principal;
-        }
-
-        public String getPassword()
-        {
-            return (null == password ? "" : password);
-        }
-
-        public void setPassword(String password)
-        {
-            this.password = password;
-        }
-
-        public String getServer()
-        {
-            return (null == server ? "" : server);
-        }
-
-        public void setServer(String server)
-        {
-            this.server = server;
-        }
-
-        public boolean getAuthentication()
-        {
-            return authentication;
-        }
-
-        public void setAuthentication(boolean authentication)
-        {
-            this.authentication = authentication;
-        }
-
-        public String getMessage()
-        {
-            return message;
-        }
-
-        public void setMessage(String message)
-        {
-            this.message = message;
-        }
-    }
-
-
-    @RequiresSiteAdmin
     public class ResetFaviconAction extends SimpleRedirectAction
     {
         public ActionURL getRedirectURL(Object o) throws Exception
@@ -1226,10 +1105,6 @@ public class AdminController extends SpringActionController
             props.setCompanyName(form.getCompanyName());
             props.setDefaultDomain(form.getDefaultDomain());
             props.setDefaultLsidAuthority(form.getDefaultLsidAuthority());
-            props.setLDAPDomain(form.getLDAPDomain());
-            props.setLDAPPrincipalTemplate(form.getLDAPPrincipalTemplate());
-            props.setLDAPServers(form.getLDAPServers());
-            props.setLDAPAuthentication(form.useSASLAuthentication());
             props.setLogoHref(form.getLogoHref());
             props.setReportAProblemPath(form.getReportAProblemPath());
             props.setSystemDescription(form.getSystemDescription());
@@ -1405,10 +1280,6 @@ public class AdminController extends SpringActionController
         private String _companyName;
         private String _systemShortName;
         private String _logoHref;
-        private String _LDAPServers;
-        private String _LDAPDomain;
-        private String _LDAPPrincipalTemplate;
-        private boolean _LDAPAuthentication;
         private String _systemEmailAddress;
         private String _defaultDomain;
         private String _defaultLsidAuthority;
@@ -1474,46 +1345,6 @@ public class AdminController extends SpringActionController
         public void setLogoHref(String logoHref)
         {
             _logoHref = logoHref;
-        }
-
-        public String getLDAPServers()
-        {
-            return _LDAPServers;
-        }
-
-        public void setLDAPServers(String LDAPServers)
-        {
-            _LDAPServers = LDAPServers;
-        }
-
-        public String getLDAPDomain()
-        {
-            return _LDAPDomain;
-        }
-
-        public void setLDAPDomain(String LDAPDomain)
-        {
-            _LDAPDomain = LDAPDomain;
-        }
-
-        public String getLDAPPrincipalTemplate()
-        {
-            return _LDAPPrincipalTemplate;
-        }
-
-        public void setLDAPPrincipalTemplate(String LDAPPrincipalTemplate)
-        {
-            _LDAPPrincipalTemplate = LDAPPrincipalTemplate;
-        }
-
-        public boolean useSASLAuthentication()
-        {
-            return _LDAPAuthentication;
-        }
-
-        public void setLDAPAuthentication(boolean LDAPAuthentication)
-        {
-            _LDAPAuthentication = LDAPAuthentication;
         }
 
         public String getMascotServer()

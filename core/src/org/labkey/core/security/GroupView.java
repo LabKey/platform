@@ -19,6 +19,7 @@ package org.labkey.core.security;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.AppProps;
+import org.labkey.api.security.AuthenticationManager;
 import org.labkey.common.util.Pair;
 import org.springframework.validation.BindException;
 
@@ -40,7 +41,7 @@ public class GroupView extends JspView<GroupView.GroupBean>
         bean.members = members;
         bean.messages = messages;
         bean.isGlobalGroup = globalGroup;
-        bean.ldapDomain = AppProps.getInstance().getLDAPDomain();
+        bean.ldapDomain = AuthenticationManager.getLdapDomain();
         bean.basePermissionsURL = ActionURL.toPathString("User", "userAccess", getViewContext().getContainer()) + "?userId=";
     }
 
