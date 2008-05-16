@@ -105,7 +105,6 @@ audit/src/org/labkey/audit/query/AuditQuerySchema.java -text
 audit/src/org/labkey/audit/query/AuditQueryViewImpl.java -text
 authentication/lib/amclientsdk.jar -text
 authentication/lib/opensso-src.zip -text
-authentication/module.properties -text
 authentication/src/org/labkey/opensso/AMClient.properties -text
 authentication/src/org/labkey/opensso/OpenSSOController.java -text
 authentication/src/org/labkey/opensso/OpenSSOManager.java -text
