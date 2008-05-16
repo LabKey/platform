@@ -2572,8 +2572,9 @@ public class WikiController extends SpringActionController
 
                 if (showExpandOption)
                 {
-                    String sCommand = (isAllExpanded(getElements())) ? "collapse all" : "expand all";
-                    out.println("[<a class=\"link\" onclick=\"toggleAll(this, 'NavTree-"+getId()+"', true)\" href=\"javascript:;\">"+sCommand+"</a>]");
+                    out.println("</td></tr><tr><td>&nbsp;</td></tr><tr><td>");
+                    out.println("[<a class=\"link\" onclick=\"adjustAllTocEntries('NavTree-"+getId()+"', true, true)\" href=\"javascript:;\">expand&nbsp;all</a>]");
+                    out.println("[<a class=\"link\" onclick=\"adjustAllTocEntries('NavTree-"+getId()+"', true, false)\" href=\"javascript:;\">collapse&nbsp;all</a>]");
                 }
                 out.println("</td>\n</tr>\n</table>");
             }
