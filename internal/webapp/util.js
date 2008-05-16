@@ -214,6 +214,15 @@ function toggleDisplay(elem)
     return false;
  }
 
+function adjustAllTocEntries(parentId, notify, expand)
+{
+    var tocParent = document.getElementById (parentId);
+    var tocTable = tocParent.childNodes.item(0);
+    while (tocTable && tocTable.nodeName != "TABLE")
+         { tocTable = tocTable.nextSibling; }
+    if (tocTable)
+        toggleTable(tocTable, expand, notify);
+}
 
  function getNextRow(rowElem)
  {
