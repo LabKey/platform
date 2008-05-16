@@ -160,7 +160,6 @@ public class OpenSSOController extends SpringActionController
             return getCurrentSettingsURL();
         }
 
-        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return appendConfigNavTrail(root, "Configure OpenSSO URL and logos");

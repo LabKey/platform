@@ -46,6 +46,7 @@ import org.labkey.core.test.TestController;
 import org.labkey.core.user.UserController;
 import org.labkey.core.webdav.WebdavResolverImpl;
 import org.labkey.core.webdav.FileSystemAuditViewFactory;
+import org.labkey.api.security.AuthenticationManager.*;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -95,7 +96,7 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
         addController("ftp", FtpController.class);
         addController("analytics", AnalyticsController.class);
 
-        AuthenticationManager.registerProvider(new DbLoginAuthenticationProvider());
+        AuthenticationManager.registerProvider(new DbLoginAuthenticationProvider(), Priority.Low);
         AttachmentService.register(new AttachmentServiceImpl());
         AnalyticsServiceImpl.register();
         FirstRequestHandler.addFirstRequestListener(this);
@@ -250,9 +251,13 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
             {
                 PropertyManager.PropertyMap map = PropertyManager.getWritableProperties("Authentication", true);
                 String activeAuthProviders = map.get("Authentication");
-                String disableLdap = activeAuthProviders.replaceFirst("LDAP:", "").replaceFirst(":LDAP", "").replaceFirst("LDAP", "");
-                map.put("Authentication", disableLdap);
-                PropertyManager.saveProperties(map);
+
+                if (null != activeAuthProviders)
+                {
+                    String disableLdap = activeAuthProviders.replaceFirst("LDAP:", "").replaceFirst(":LDAP", "").replaceFirst("LDAP", "");
+                    map.put("Authentication", disableLdap);
+                    PropertyManager.saveProperties(map);
+                }
             }
         }
         catch (SQLException e)

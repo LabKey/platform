@@ -24,6 +24,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.AuthenticationManager;
+import org.labkey.api.security.AuthenticationManager.*;
 import org.labkey.api.view.ViewContext;
 import org.labkey.authentication.opensso.OpenSSOController;
 import org.labkey.authentication.opensso.OpenSSOProvider;
@@ -40,8 +41,8 @@ public class AuthenticationModule extends DefaultModule
         super(NAME, 8.10, null, false);
         addController("opensso", OpenSSOController.class);
         addController("ldap", LdapController.class);
-        AuthenticationManager.registerProvider(new OpenSSOProvider());
-        AuthenticationManager.registerProvider(new LdapAuthenticationProvider());
+        AuthenticationManager.registerProvider(new OpenSSOProvider(), Priority.High);
+        AuthenticationManager.registerProvider(new LdapAuthenticationProvider(), Priority.High);
     }
 
     public TabDisplayMode getTabDisplayMode()
