@@ -125,6 +125,7 @@ bigiron/BigIron.iml -text
 bigiron/build.xml -text
 bigiron/module.properties -text
 bigiron/src/org/labkey/api/data/SqlDialectMicrosoftSQLServer.java -text
+bigiron/src/org/labkey/api/data/SqlDialectMicrosoftSQLServer2.java -text
 bigiron/src/org/labkey/api/data/SqlDialectMicrosoftSQLServer9.java -text
 bigiron/src/org/labkey/bigiron/BigIronModule.java -text
 biotrue/module.properties -text
