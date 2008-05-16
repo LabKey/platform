@@ -107,7 +107,7 @@ public class URLHelper implements Cloneable, Serializable
         StringBuilder serverBuilder = new StringBuilder();
         serverBuilder.append(scheme).append("://").append(host);
         // we need to append a port number for http connections not on port 80, and for https connections not on 443
-        if ((port != 80 && "http".equals(scheme)) || (port != 443 && "https".equals(scheme)))
+        if (port != -1 && ((port != 80 && "http".equals(scheme)) || (port != 443 && "https".equals(scheme))))
         {
             serverBuilder.append(":").append(port);
         }
@@ -176,7 +176,7 @@ public class URLHelper implements Cloneable, Serializable
     protected void _setURI(URI uri)
     {
         setHost(uri.getHost());
-        setPort(uri.getPort());
+        setPort(uri.getPort());       // TODO: Don't store -1 if port is not specified -- use scheme to save default ports
         _parsePath(uri.getPath());
         _parseQuery(uri.getRawQuery());
         setScheme(uri.getScheme());

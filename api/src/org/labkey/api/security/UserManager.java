@@ -511,10 +511,7 @@ public class UserManager
         {
             Map<String, Object> m = new HashMap<String, Object>();
             m.put("UserId", userId);
-            // By default, use just the username portion of an email address
-            // for the display name. Users can change it when they log in for
-            // the first time.
-            m.put("DisplayName", email.getEmailAddress());
+            m.put("DisplayName", null == email.getPersonal() ? email.getEmailAddress() : email.getPersonal());
             Table.insert(null, _core.getTableInfoUsersData(), m);
         }
         catch (SQLException x)

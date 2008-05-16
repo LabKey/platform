@@ -439,11 +439,14 @@ public class SecurityManager
     }
 
 
-    public static ActionURL createVerificationUrl(Container c, String email, String verification)
+    public static ActionURL createVerificationUrl(Container c, String email, String verification, Pair<String, String>[] extraParameters)
     {
         ActionURL url = new ActionURL("login", "setPassword", c);
         url.addParameter("verification", verification);
         url.addParameter("email", email);
+
+        if (null != extraParameters)
+            url.addParameters(extraParameters);
 
         return url;
     }
@@ -1716,6 +1719,10 @@ public class SecurityManager
             testEmail("dots.dots@dots.co.uk", true);
             testEmail("funny_chars#that%are^allowed&in*email!addresses@that.com", true);
 
+            String displayName = "Personal Name";
+            ValidEmail email = testEmail(displayName + " <personal@name.com>", true);
+            assertTrue("Display name: expected '" + displayName + "' but was '" + email.getPersonal() + "'", displayName.equals(email.getPersonal()));
+
             String defaultDomain = ValidEmail.getDefaultDomain();
             // If default domain is defined this should succeed; if it's not defined, this should fail.
             testEmail("foo", defaultDomain != null && defaultDomain.length() > 0);
@@ -1725,20 +1732,25 @@ public class SecurityManager
             testEmail(null, false);
             testEmail("", false);
             testEmail("<@bar.com", false);
+            testEmail(displayName + " <personal>", false);  // Can't combine personal name with default domain
         }
 
 
-        private void testEmail(String rawEmail, boolean valid)
+        private ValidEmail testEmail(String rawEmail, boolean valid)
         {
+            ValidEmail email = null;
+
             try
             {
-                new ValidEmail(rawEmail);
+                email = new ValidEmail(rawEmail);
                 assertTrue(rawEmail, valid);
             }
             catch(ValidEmail.InvalidEmailException e)
             {
                 assertFalse(rawEmail, valid);
             }
+
+            return email;
         }
 
 
@@ -1813,7 +1825,7 @@ public class SecurityManager
     /**
      * @return null if the user already existed, or a message indicating success/failure
      */
-    public static String addUser(ViewContext context, ValidEmail email, boolean sendMail, String mailPrefix) throws Exception
+    public static String addUser(ViewContext context, ValidEmail email, boolean sendMail, String mailPrefix, Pair<String, String>[] extraParameters) throws Exception
     {
         if (SecurityManager.loginExists(email))
         {
@@ -1839,7 +1851,7 @@ public class SecurityManager
                 mailContentURL = actionURL.getLocalURIString();
 
                 String verificationUrl = SecurityManager.createVerificationUrl(context.getContainer(), email.getEmailAddress(),
-                        newUserBean.getVerification()).getURIString();
+                        newUserBean.getVerification(), extraParameters).getURIString();
 
                 SecurityManager.sendEmail(currentUser, getRegistrationMessage(mailPrefix, false),
                         email.getEmailAddress(), verificationUrl);
@@ -1867,7 +1879,7 @@ public class SecurityManager
             else
             {
                 String href = "<a href=\"" + SecurityManager.createVerificationUrl(context.getContainer(),
-                        email.getEmailAddress(), newUserBean.getVerification()).getURIString() + "\" target=\"" + email.getEmailAddress() + "\">here</a>";
+                        email.getEmailAddress(), newUserBean.getVerification(), extraParameters).getURIString() + "\" target=\"" + email.getEmailAddress() + "\">here</a>";
                 message.append(email.getEmailAddress()).append(" added as a new user to the sytem, but no email was sent.  Click ");
                 message.append(href).append(" to change the password from the random one that was assigned.");
                 UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system and the administrator chose not to send a verification email.");

@@ -42,6 +42,9 @@ public class ValidEmail
                 // Checks for valid email address.  Must follow RFC 822 and be in form name@domain
                 _internetAddress = new InternetAddress(normalizedEmail);
 
+                // Email addresses are always lowercase.  Convert here (vs. normalize) so we don't touch the personal name.
+                _internetAddress.setAddress(_internetAddress.getAddress().toLowerCase());
+
                 if (hasNameAndDomain())
                     return;
             }
@@ -79,7 +82,7 @@ public class ValidEmail
     }
 
 
-    // Normalize an email address entered in the UI -- trim whitespace, add default domain, and lower case
+    // Normalize an email address entered in the UI -- trim whitespace and add default domain
     private String normalize(String rawEmail)
     {
         if (null == rawEmail)
@@ -97,8 +100,7 @@ public class ValidEmail
                 sb.append("@").append(domain);
         }
 
-        // Convert to all lowercase
-        return sb.toString().toLowerCase();
+        return sb.toString();
     }
 
 

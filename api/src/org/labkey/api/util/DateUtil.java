@@ -585,8 +585,6 @@ public class DateUtil
         {
             ;
         }
-
-
         throw new ConversionException(s);
     }
 
