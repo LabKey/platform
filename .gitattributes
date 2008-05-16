@@ -103,6 +103,12 @@ audit/src/org/labkey/audit/model/LogManager.java -text
 audit/src/org/labkey/audit/query/AuditLogTable.java -text
 audit/src/org/labkey/audit/query/AuditQuerySchema.java -text
 audit/src/org/labkey/audit/query/AuditQueryViewImpl.java -text
+bigiron/BigIron.iml -text
+bigiron/build.xml -text
+bigiron/module.properties -text
+bigiron/src/org/labkey/api/data/SqlDialectMicrosoftSQLServer.java -text
+bigiron/src/org/labkey/api/data/SqlDialectMicrosoftSQLServer9.java -text
+bigiron/src/org/labkey/bigiron/BigIronModule.java -text
 biotrue/module.properties -text
 biotrue/src/META-INF/biotrue.xml -text
 biotrue/src/META-INF/biotrue/scripts/postgresql/biotrue-0.00-2.10.sql -text
