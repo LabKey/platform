@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.opensso;
+package org.labkey.authentication.opensso;
 
 import com.iplanet.am.util.SystemProperties;
 import org.labkey.api.data.PropertyManager;
@@ -39,7 +39,7 @@ public class OpenSSOManager
     }
 
 
-    public void initialize() throws Exception
+    public void activate() throws Exception
     {
         Properties props = loadProps("AMClient.properties");
         replaceDefaults(props, getSystemSettings());  // System settings will replace values in static properties file

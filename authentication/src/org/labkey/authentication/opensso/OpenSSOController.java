@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
-package org.labkey.opensso;
+package org.labkey.authentication.opensso;
 
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.AuthenticationManager;
+import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.data.ContainerManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.mvc.Controller;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -46,15 +46,27 @@ public class OpenSSOController extends SpringActionController
     }
 
 
-    public static ActionURL getURL(Class<? extends Controller> actionClass, ActionURL returnURL)
+    public NavTree appendConfigNavTrail(NavTree root, String title)
     {
-        return new ActionURL(actionClass, ContainerManager.getRoot()).addReturnURL(returnURL);
+        NavTree auth = PageFlowUtil.urlProvider(LoginUrls.class).appendAuthenticationNavTrail(root);
+
+        if (null != title)
+        {
+            auth.addChild("Configure OpenSSO", getCurrentSettingsURL());
+            auth.addChild(title);
+        }
+        else
+        {
+            auth.addChild("Configure OpenSSO");
+        }
+
+        return root;
     }
 
 
-    public static ActionURL getConfigureURL(ActionURL returnURL)
+    public static ActionURL getConfigureURL()
     {
-        return getURL(ConfigureAction.class, returnURL);
+        return new ActionURL(ConfigureAction.class, ContainerManager.getRoot());
     }
 
 
@@ -63,13 +75,13 @@ public class OpenSSOController extends SpringActionController
     {
         public ActionURL getSuccessURL(ConfigProperties form)
         {
-            return new ActionURL(form.getReturnUrl());
+            return getCurrentSettingsURL();
         }
 
         public ModelAndView getView(ConfigProperties form, boolean reshow, BindException errors) throws Exception
         {
             form.props = OpenSSOManager.get().getSystemSettings();
-            return new JspView<ConfigProperties>("/org/labkey/opensso/view/configure.jsp", form);
+            return new JspView<ConfigProperties>("/org/labkey/authentication/opensso/view/configure.jsp", form);
         }
 
         public boolean handlePost(ConfigProperties form, BindException errors) throws Exception
@@ -77,10 +89,9 @@ public class OpenSSOController extends SpringActionController
             Map<String, String> props = new HashMap<String, String>(getViewContext().getExtendedProperties());
             props.remove("x");
             props.remove("y");
-            props.remove(ReturnUrlForm.Params.returnUrl.toString());
 
             OpenSSOManager.get().writeSystemSettings(props);
-            OpenSSOManager.get().initialize();
+            OpenSSOManager.get().activate();
 
             return true;
         }
@@ -91,14 +102,15 @@ public class OpenSSOController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            PageFlowUtil.urlProvider(LoginUrls.class).appendAuthenticationNavTrail(root).addChild("Configure OpenSSO");
             return root;
         }
     }
 
 
-    public static ActionURL getCurrentSettingsURL(ActionURL returnUrl)
+    public static ActionURL getCurrentSettingsURL()
     {
-        return getURL(CurrentSettingsAction.class, returnUrl);
+        return new ActionURL(CurrentSettingsAction.class, ContainerManager.getRoot());
     }
 
 
@@ -108,40 +120,29 @@ public class OpenSSOController extends SpringActionController
         public ModelAndView getView(ConfigProperties form, BindException errors) throws Exception
         {
             form.props = OpenSSOManager.get().getSystemSettings();
-            form.authLogoURL = getPickAuthLogoURL(getViewContext().getActionURL());
-            form.pickRefererPrefixURL = getPickReferrerURL(getViewContext().getActionURL());
-            return new JspView<ConfigProperties>("/org/labkey/opensso/view/currentSettings.jsp", form);
+            form.authLogoURL = getPickAuthLogoURL();
+            form.pickRefererPrefixURL = getPickReferrerURL();
+            return new JspView<ConfigProperties>("/org/labkey/authentication/opensso/view/currentSettings.jsp", form);
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root;
+            return appendConfigNavTrail(root, null);
         }
     }
 
 
     public static class ConfigProperties
     {
-        public String returnUrl;
         public Map<String, String> props;
         public ActionURL authLogoURL;
         public ActionURL pickRefererPrefixURL;
-
-        public String getReturnUrl()
-        {
-            return returnUrl;
-        }
-
-        public void setReturnUrl(String returnUrl)
-        {
-            this.returnUrl = returnUrl;
-        }
     }
 
 
-    public static ActionURL getPickAuthLogoURL(ActionURL returnUrl)
+    public static ActionURL getPickAuthLogoURL()
     {
-        return getURL(PickAuthLogoAction.class, returnUrl);
+        return new ActionURL(PickAuthLogoAction.class, ContainerManager.getRoot());
     }
 
 
@@ -153,12 +154,23 @@ public class OpenSSOController extends SpringActionController
         {
             return OpenSSOProvider.NAME;
         }
+
+        protected ActionURL getReturnURL()
+        {
+            return getCurrentSettingsURL();
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return appendConfigNavTrail(root, "Configure OpenSSO URL and logos");
+        }
     }
 
 
-    public static ActionURL getPickReferrerURL(ActionURL returnURL)
+    public static ActionURL getPickReferrerURL()
     {
-        return getURL(PickReferrerAction.class, returnURL);
+        return new ActionURL(PickReferrerAction.class, ContainerManager.getRoot());
     }
 
 
@@ -172,7 +184,7 @@ public class OpenSSOController extends SpringActionController
         public ModelAndView getView(PickReferrerForm form, boolean reshow, BindException errors) throws Exception
         {
             form.setPrefix(OpenSSOManager.get().getReferrerPrefix());
-            return new JspView<PickReferrerForm>("/org/labkey/opensso/view/referrerPrefix.jsp", form);
+            return new JspView<PickReferrerForm>("/org/labkey/authentication/opensso/view/referrerPrefix.jsp", form);
         }
 
         public boolean handlePost(PickReferrerForm form, BindException errors) throws Exception
@@ -183,17 +195,17 @@ public class OpenSSOController extends SpringActionController
 
         public ActionURL getSuccessURL(PickReferrerForm form)
         {
-            return form.getReturnActionURL();
+            return getCurrentSettingsURL();
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root;
+            return appendConfigNavTrail(root, "Configure Referrer URL Prefix");
         }
     }
 
 
-    public static class PickReferrerForm extends ReturnUrlForm
+    public static class PickReferrerForm
     {
         private String _prefix;
 

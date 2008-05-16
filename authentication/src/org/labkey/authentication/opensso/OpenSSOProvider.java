@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.opensso;
+package org.labkey.authentication.opensso;
 
 import com.iplanet.sso.SSOException;
 import com.iplanet.sso.SSOToken;
@@ -44,9 +44,13 @@ public class OpenSSOProvider implements AuthenticationProvider.RequestAuthentica
         return false;
     }
 
-    public void initialize() throws Exception
+    public void activate() throws Exception
     {
-        OpenSSOManager.get().initialize();
+        OpenSSOManager.get().activate();
+    }
+
+    public void deactivate() throws Exception
+    {
     }
 
     public String getName()
@@ -54,9 +58,9 @@ public class OpenSSOProvider implements AuthenticationProvider.RequestAuthentica
         return NAME;
     }
 
-    public ActionURL getConfigurationLink(ActionURL returnUrl)
+    public ActionURL getConfigurationLink()
     {
-        return OpenSSOController.getCurrentSettingsURL(returnUrl);
+        return OpenSSOController.getCurrentSettingsURL();
     }
 
     public ValidEmail authenticate(HttpServletRequest request, HttpServletResponse response) throws ValidEmail.InvalidEmailException, RedirectException

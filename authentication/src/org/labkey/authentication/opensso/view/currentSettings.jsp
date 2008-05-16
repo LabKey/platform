@@ -1,8 +1,9 @@
+<%@ page import="org.labkey.api.security.LoginUrls" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.opensso.OpenSSOController" %>
-<%@ page import="org.labkey.opensso.OpenSSOController.ConfigProperties" %>
+<%@ page import="org.labkey.authentication.opensso.OpenSSOController" %>
+<%@ page import="org.labkey.authentication.opensso.OpenSSOController.*" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ConfigProperties> me = (JspView<ConfigProperties>)HttpView.currentView();
@@ -22,5 +23,5 @@
     }
 %>
 </table><br>
-<%=PageFlowUtil.buttonLink("Update", OpenSSOController.getConfigureURL(getViewContext().getActionURL()))%>
-<%=PageFlowUtil.buttonLink("Done", bean.getReturnUrl())%>
+<%=PageFlowUtil.buttonLink("Update", OpenSSOController.getConfigureURL())%>
+<%=PageFlowUtil.buttonLink("Done", PageFlowUtil.urlProvider(LoginUrls.class).getConfigureURL())%>
