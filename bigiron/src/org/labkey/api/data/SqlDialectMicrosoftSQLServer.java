@@ -19,7 +19,10 @@ package org.labkey.api.data;
 import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.util.PageFlowUtil;
 
+import javax.servlet.ServletException;
 import java.sql.SQLException;
+import java.sql.Connection;
+import java.sql.Statement;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.regex.Matcher;
@@ -67,6 +70,11 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
     protected boolean claimsProductNameAndVersion(String dataBaseProductName, int majorVersion, int minorVersion)
     {
         return dataBaseProductName.equals("Microsoft SQL Server") && (majorVersion < 9);
+    }
+
+    public boolean isSqlServer()
+    {
+        return true;
     }
 
     public String getProductName()
@@ -447,6 +455,13 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         return "master";
     }
 
+
+    public JdbcHelper getJdbcHelper(String url) throws ServletException
+    {
+        return new JtdsJdbcHelper(url);
+    }
+
+
     /*  jTDS example connection URLs we need to parse:
 
         jdbc:jtds:sqlserver://host:1433/database
@@ -455,8 +470,11 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
     */
     public static class JtdsJdbcHelper extends JdbcHelper
     {
-        protected JtdsJdbcHelper(String url)
+        protected JtdsJdbcHelper(String url) throws ServletException
         {
+            if (!url.startsWith("jdbc:jtds:sqlserver"))
+                throw new ServletException("Unsupported connection url: " + url);
+
             int dbEnd = url.indexOf(';');
             if (-1 == dbEnd)
                 dbEnd = url.length();
@@ -492,5 +510,12 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
     public boolean allowSortOnSubqueryWithoutLimit()
     {
         return false;
+    }
+
+    public void initializeConnection(Connection conn) throws SQLException
+    {
+        Statement stmt = conn.createStatement();
+        stmt.execute("SET ARITHABORT ON");
+        stmt.close();
     }
 }
