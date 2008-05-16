@@ -107,6 +107,12 @@ authentication/Authentication.iml -text
 authentication/lib/amclientsdk.jar -text
 authentication/lib/opensso-src.zip -text
 authentication/module.properties -text
+authentication/src/org/labkey/authentication/AuthenticationModule.java -text
+authentication/src/org/labkey/authentication/ldap/LdapAuthenticationManager.java -text
+authentication/src/org/labkey/authentication/ldap/LdapAuthenticationProvider.java -text
+authentication/src/org/labkey/authentication/ldap/LdapController.java -text
+authentication/src/org/labkey/authentication/ldap/configure.jsp -text
+authentication/src/org/labkey/authentication/ldap/testLdap.jsp -text
 authentication/src/org/labkey/authentication/opensso/AMClient.properties -text
 authentication/src/org/labkey/authentication/opensso/OpenSSOController.java -text
 authentication/src/org/labkey/authentication/opensso/OpenSSOManager.java -text
