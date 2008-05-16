@@ -137,7 +137,6 @@ api/src/org/labkey/api/data/SQLFragment.java -text
 api/src/org/labkey/api/data/ShowRows.java -text
 api/src/org/labkey/api/data/SimpleFilter.java -text
 api/src/org/labkey/api/data/SqlDialect.java -text
-api/src/org/labkey/api/data/SqlDialectMicrosoftSQLServer2.java -text
 api/src/org/labkey/api/data/SqlDialectPostgreSQL.java -text
 api/src/org/labkey/api/data/SqlScriptManager.java -text
 api/src/org/labkey/api/data/SqlScriptRunner.java -text
