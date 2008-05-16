@@ -27,7 +27,6 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.*;
 
 /**
@@ -256,15 +255,11 @@ public class DbScope
 
         if (null == spid)
         {
-            if (_dialect instanceof SqlDialectMicrosoftSQLServer)
+            if (null != _dialect)
             {
-                Statement stmt = conn.createStatement();
-                stmt.execute("SET ARITHABORT ON");
-                stmt.close();
-            }
-            
-            if (_dialect != null)
+                _dialect.initializeConnection(conn);
                 spid = _dialect.getSPID(delegate);
+            }
 
             _initializedConnections.put(delegate, spid == null ? spidUnknown : spid);
         }

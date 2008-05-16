@@ -415,26 +415,9 @@ public abstract class SqlDialect
     public abstract String getBooleanDatatype();
 
 
-    public static String getDatabaseName(String url) throws ServletException
+    public String getDatabaseName(String url) throws ServletException
     {
         return getJdbcHelper(url).getDatabase();
-    }
-
-
-    public static String getDatabaseName(DataSource ds) throws ServletException
-    {
-        String url;
-        try
-        {
-            DataSourceProperties props = new DataSourceProperties(ds);
-            url = props.getUrl();
-        }
-        catch (Exception e)
-        {
-            throw new ServletException("Error retrieving url property from DataSource", e);
-        }
-
-        return getDatabaseName(url);
     }
 
 
@@ -446,15 +429,40 @@ public abstract class SqlDialect
     //
     // Currently, JdbcHelper only finds the database name.  It could be extended if we require querying
     // other components or if replacement/reassembly becomes necessary.
-    public static JdbcHelper getJdbcHelper(String url) throws ServletException
+
+    public static String getDatabaseName2(DataSource ds) throws ServletException
     {
-        if (url.startsWith("jdbc:jtds:sqlserver"))
-            return new SqlDialectMicrosoftSQLServer.JtdsJdbcHelper(url);
-        else if (url.startsWith("jdbc:postgresql"))
-            return new SqlDialectPostgreSQL.PostgreSQLJdbcHelper(url);
-        else
-            throw new ServletException("Unsupported connection url: " + url);
+        try
+        {
+            DataSourceProperties props = new DataSourceProperties(ds);
+            SqlDialect dialect = getFromDriverClassName(props.getDriverClassName());
+            String url = props.getUrl();
+
+            return dialect.getDatabaseName(url);
+        }
+        catch (Exception e)
+        {
+            throw new ServletException("Error retrieving url property from DataSource", e);
+        }
     }
+
+
+    public String getDatabaseName(DataSource ds) throws ServletException
+    {
+        try
+        {
+            DataSourceProperties props = new DataSourceProperties(ds);
+            String url = props.getUrl();
+            return getDatabaseName(url);
+        }
+        catch (Exception e)
+        {
+            throw new ServletException("Error retrieving url property from DataSource", e);
+        }
+    }
+
+
+    public abstract JdbcHelper getJdbcHelper(String url) throws ServletException;
 
     public static abstract class JdbcHelper
     {
@@ -621,4 +629,7 @@ public abstract class SqlDialect
             return getProperty("getPassword");
         }
     }
+
+    public abstract void initializeConnection(Connection conn) throws SQLException;
+    public abstract boolean isSqlServer();
 }

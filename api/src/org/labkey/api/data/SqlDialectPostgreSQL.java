@@ -25,6 +25,7 @@ import org.labkey.api.query.AliasManager;
 import javax.servlet.ServletException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Connection;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.regex.Pattern;
@@ -62,6 +63,11 @@ public class SqlDialectPostgreSQL extends SqlDialect
     protected boolean claimsProductNameAndVersion(String dataBaseProductName, int majorVersion, int minorVersion)
     {
         return getProductName().equals(dataBaseProductName);
+    }
+
+    public boolean isSqlServer()
+    {
+        return false;
     }
 
     public String getProductName()
@@ -481,6 +487,12 @@ public class SqlDialectPostgreSQL extends SqlDialect
     }
 
 
+    public JdbcHelper getJdbcHelper(String url) throws ServletException
+    {
+        return new PostgreSQLJdbcHelper(url);
+    }
+
+
     /*  PostgreSQL example connection URLs we need to parse:
 
         jdbc:postgresql:database
@@ -493,8 +505,11 @@ public class SqlDialectPostgreSQL extends SqlDialect
     */
     public static class PostgreSQLJdbcHelper extends JdbcHelper
     {
-        protected PostgreSQLJdbcHelper(String url)
+        protected PostgreSQLJdbcHelper(String url) throws ServletException
         {
+            if (!url.startsWith("jdbc:postgresql"))
+                throw new ServletException("Unsupported connection url: " + url);
+
             int dbEnd = url.indexOf('?');
             if (-1 == dbEnd)
                 dbEnd = url.length();
@@ -555,5 +570,9 @@ public class SqlDialectPostgreSQL extends SqlDialect
     protected String quoteStringLiteral(String str)
     {
         return "'" + StringUtils.replace(StringUtils.replace(str, "\\", "\\\\"), "'", "''") + "'";
+    }
+
+    public void initializeConnection(Connection conn) throws SQLException
+    {
     }
 }

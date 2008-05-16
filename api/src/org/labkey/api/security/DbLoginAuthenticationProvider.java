@@ -36,7 +36,11 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
         return true;
     }
 
-    public void initialize() throws Exception
+    public void activate() throws Exception
+    {
+    }
+
+    public void deactivate() throws Exception
     {
     }
 
@@ -62,7 +66,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
     }
 
 
-    public ActionURL getConfigurationLink(ActionURL returnUrl)
+    public ActionURL getConfigurationLink()
     {
         return null;
     }

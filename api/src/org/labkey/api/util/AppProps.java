@@ -53,13 +53,9 @@ public class AppProps
     private static ActionURL _homePageURL = null;
 
     protected static final String DEFAULT_DOMAIN_PROP = "defaultDomain";
-    protected static final String LDAP_DOMAIN_PROP = "LDAPDomain";
     protected static final String COMPANY_NAME_PROP = "companyName";
     protected static final String LOGO_HREF_PROP = "logoHref";
     protected static final String LOOK_AND_FEEL_REVISION = "logoRevision";
-    protected static final String LDAP_SERVERS_PROP = "LDAPServers";
-    protected static final String LDAP_PRINCIPALS_TEMPLATE_PROP = "LDAPPrincipalTemplate";
-    protected static final String LDAP_AUTHENTICATION = "LDAPAuthentication";
     protected static final String REPORT_A_PROBLEM_PATH_PROP = "reportAProblemPath";
     protected static final String BASE_SERVER_URL_PROP = "baseServerURL";
     protected static final String SYSTEM_DESCRIPTION_PROP = "systemDescription";
@@ -335,11 +331,6 @@ public class AppProps
         return _homePageURL;
     }
 
-    public String getLDAPDomain()
-    {
-        return lookupStringValue(LDAP_DOMAIN_PROP, "");
-    }
-
     public String getCompanyName()
     {
         return lookupStringValue(COMPANY_NAME_PROP, "Demo Installation");
@@ -348,26 +339,6 @@ public class AppProps
     public String getLogoHref()
     {
         return lookupStringValue(LOGO_HREF_PROP, getHomePageUrl());
-    }
-
-    private String getLDAPServers()
-    {
-        return lookupStringValue(LDAP_SERVERS_PROP, "");
-    }
-
-    public String[] getLDAPServersArray()
-    {
-        return getLDAPServers().split(";");
-    }
-
-    public String getLDAPPrincipalTemplate()
-    {
-        return lookupStringValue(LDAP_PRINCIPALS_TEMPLATE_PROP, "${email}");
-    }
-    
-    public boolean useSASLAuthentication()
-    {
-        return lookupBooleanValue(LDAP_AUTHENTICATION, false);
     }
 
     public String getUnsubstitutedReportAProblemPath()

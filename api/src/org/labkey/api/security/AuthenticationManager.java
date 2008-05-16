@@ -19,6 +19,7 @@ package org.labkey.api.security;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.*;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.ContainerManager;
@@ -39,8 +40,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * User: adam
@@ -61,6 +62,19 @@ public class AuthenticationManager
     private static Map<String, LinkFactory> _linkFactories = new HashMap<String, LinkFactory>();
     public static final String HEADER_LOGO_PREFIX = "auth_header_logo_";
     public static final String LOGIN_PAGE_LOGO_PREFIX = "auth_login_page_logo_";
+
+    // TODO: Replace this with a generic domain-claiming mechanism
+    public static String _ldapDomain = "";
+
+    public static String getLdapDomain()
+    {
+        return _ldapDomain;
+    }
+
+    public static void setLdapDomain(String ldapDomain)
+    {
+        _ldapDomain = ldapDomain;
+    }
 
     public interface LoginURLFactory
     {
@@ -193,7 +207,7 @@ public class AuthenticationManager
         AuthenticationProvider provider = getProvider(name);
         try
         {
-            provider.initialize();
+            provider.activate();
         }
         catch (Exception e)
         {
@@ -205,9 +219,10 @@ public class AuthenticationManager
     }
 
 
-    public static void disableProvider(String name)
+    public static void disableProvider(String name) throws Exception
     {
         AuthenticationProvider provider = getProvider(name);
+        provider.deactivate();
         _activeProviders.remove(provider);
 
         saveActiveProviders();
@@ -313,7 +328,7 @@ public class AuthenticationManager
     {
         try
         {
-            provider.initialize();
+            provider.activate();
             providers.add(provider);
         }
         catch (Exception e)
@@ -402,12 +417,24 @@ public class AuthenticationManager
     }
 
 
-    public static HttpView getConfigurationView(ActionURL currentUrl, ActionURL returnUrl, URLFactory enable, URLFactory disable)
+    public static boolean isActive(String providerName)
+    {
+        AuthenticationProvider provider = getProvider(providerName);
+
+        return null != provider && isActive(provider);
+    }
+
+
+    private static boolean isActive(AuthenticationProvider authProvider)
+    {
+        return getActiveProviders().contains(authProvider);
+    }
+
+
+    public static HttpView getConfigurationView(URLFactory enable, URLFactory disable)
     {
         StringBuilder sb = new StringBuilder("These are the installed authentication providers:<br><br>\n");
         sb.append("<table>\n");
-
-        List<AuthenticationProvider> activeProviders = getActiveProviders();
 
         for (AuthenticationProvider authProvider : _allProviders)
         {
@@ -417,7 +444,7 @@ public class AuthenticationManager
             {
                 sb.append("<td>&nbsp</td>");
             }
-            else if (activeProviders.contains(authProvider))
+            else if (isActive(authProvider))
             {
                 sb.append("<td>[<a href=\"");
                 sb.append(disable.getActionURL(authProvider).getEncodedLocalURIString());
@@ -434,7 +461,7 @@ public class AuthenticationManager
                 sb.append("</a>]</td>");
             }
 
-            ActionURL url = authProvider.getConfigurationLink(currentUrl);
+            ActionURL url = authProvider.getConfigurationLink();
 
             if (null != url)
             {
@@ -449,7 +476,7 @@ public class AuthenticationManager
         }
 
         sb.append("</table><br>\n");
-        sb.append(PageFlowUtil.buttonLink("Done", returnUrl));
+        sb.append(PageFlowUtil.buttonLink("Done", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL()));
 
         return new HtmlView(sb.toString());
     }
@@ -458,6 +485,7 @@ public class AuthenticationManager
     public abstract static class PickAuthLogoAction extends FormViewAction<AuthLogoForm>
     {
         abstract protected String getProviderName();
+        abstract protected ActionURL getReturnURL();
 
         public void validateCommand(AuthLogoForm target, Errors errors)
         {
@@ -465,7 +493,7 @@ public class AuthenticationManager
 
         public ModelAndView getView(AuthLogoForm form, boolean reshow, BindException errors) throws Exception
         {
-            return new JspView<AuthLogoBean>("/org/labkey/core/login/pickAuthLogo.jsp", new AuthLogoBean(getProviderName(), form.getReturnUrl(), reshow));
+            return new JspView<AuthLogoBean>("/org/labkey/core/login/pickAuthLogo.jsp", new AuthLogoBean(getProviderName(), getReturnURL(), reshow));
         }
 
         public boolean handlePost(AuthLogoForm form, BindException errors) throws Exception
@@ -515,27 +543,22 @@ public class AuthenticationManager
         {
             return null;  // Should never get here
         }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root;
-        }
     }
 
 
     public static class AuthLogoBean
     {
         public String name;
-        public String returnUrl;
+        public ActionURL returnURL;
         public String url;
         public String headerLogo;
         public String loginPageLogo;
         public boolean reshow;
 
-        private AuthLogoBean(String name, String returnUrl, boolean reshow)
+        private AuthLogoBean(String name, ActionURL returnURL, boolean reshow)
         {
             this.name = name;
-            this.returnUrl = returnUrl;
+            this.returnURL = returnURL;
             this.reshow = reshow;
             url = getAuthLogoURLs().get(name);
             headerLogo = AuthenticationManager.getAuthLogoHtml(name, HEADER_LOGO_PREFIX);
@@ -544,20 +567,9 @@ public class AuthenticationManager
     }
 
 
-    public static class AuthLogoForm extends ViewForm
+    public static class AuthLogoForm
     {
-        private String _returnUrl;
         private String _url;
-
-        public String getReturnUrl()
-        {
-            return _returnUrl;
-        }
-
-        public void setReturnUrl(String returnUrl)
-        {
-            _returnUrl = returnUrl;
-        }
 
         public String getUrl()
         {

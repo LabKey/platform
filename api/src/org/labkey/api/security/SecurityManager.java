@@ -25,9 +25,9 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.*;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.common.util.Pair;
 
@@ -36,11 +36,7 @@ import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
-import javax.naming.AuthenticationException;
-import javax.naming.Context;
 import javax.naming.NamingException;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.InitialDirContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.beans.PropertyChangeEvent;
@@ -341,27 +337,6 @@ public class SecurityManager
     }
 
 
-/*    public static User authenticate(ValidEmail email, String password)
-    {
-        boolean authenticated = false;
-        boolean isLdap = isLdapEmail(email);
-
-        // If email has LDAP domain then try authenticating against LDAP first
-        if (isLdap)
-            authenticated = LDAPLogin(email, password);
-
-        // If that didn't work (either it's not LDAP domain or LDAP failed) then try database authentication
-        // We support emails with LDAP domains in the Logins database, but suppress the error message if it's not found.
-        if (!authenticated)
-            authenticated = DBLogin(email, password, !isLdap);
-
-        if (authenticated)
-            return createUserIfNecessary(email);
-        else
-            return null;
-    }
-*/
-
     // This user has been authenticated, but may not exist (if user was added to the database and is visiting for the first
     //  time or user authenticated using LDAP, SSO, etc.)
     public static User createUserIfNecessary(ValidEmail email)
@@ -447,42 +422,6 @@ public class SecurityManager
         HttpSession s = request.getSession();
         if (null != s)
             s.invalidate();
-    }
-
-
-    public static String emailToLdapPrincipal(ValidEmail email)
-    {
-        String emailAddress = email.getEmailAddress();
-        int index = emailAddress.indexOf('@');
-        String uid = emailAddress.substring(0, index);     // Note: ValidEmail guarantees an @ will be present
-        StringExpressionFactory.StringExpression se = StringExpressionFactory.create(AppProps.getInstance().getLDAPPrincipalTemplate());
-        return se.eval(PageFlowUtil.map("email", email, "uid", uid));
-    }
-
-
-    // Careful... blank principal or password will switch to "anonymous bind", meaning it will always succeed
-    public static boolean LDAPConnect(String url, String principal, String password, boolean saslAuthentication) throws NamingException
-    {
-        boolean authenticated = false;
-
-        try
-        {
-            Hashtable<String, String> env = new Hashtable<String, String>();
-            env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-            env.put(Context.PROVIDER_URL, url);
-            env.put(Context.SECURITY_AUTHENTICATION, saslAuthentication ? "DIGEST-MD5 CRAM-MD5 GSSAPI" : "simple");
-            env.put(Context.SECURITY_PRINCIPAL, principal);
-            env.put(Context.SECURITY_CREDENTIALS, password);
-            DirContext ctx = new InitialDirContext(env);
-            authenticated = true;
-            ctx.close();
-        }
-        catch (AuthenticationException e)
-        {
-            _log.debug("LDAPAuthenticate: Invalid login. server=" + url + ", security principal=" + principal);
-        }
-
-        return authenticated;
     }
 
 
@@ -1494,7 +1433,7 @@ public class SecurityManager
     // CONSIDER: Support multiple LDAP domains?
     public static boolean isLdapEmail(ValidEmail email)
     {
-        String ldapDomain = AppProps.getInstance().getLDAPDomain();
+        String ldapDomain = AuthenticationManager.getLdapDomain();
         return ldapDomain != null && email.getEmailAddress().endsWith("@" + ldapDomain.toLowerCase());
     }
 

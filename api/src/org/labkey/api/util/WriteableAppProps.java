@@ -153,26 +153,6 @@ public class WriteableAppProps extends AppProps
         storeStringValue(THEME_NAME_PROP, themeName);
     }
 
-    public void setLDAPDomain(String ldapDomain)
-    {
-        storeStringValue(LDAP_DOMAIN_PROP, ldapDomain);
-    }
-
-    public void setLDAPPrincipalTemplate(String ldapPrincipalTemplate)
-    {
-        storeStringValue(LDAP_PRINCIPALS_TEMPLATE_PROP, ldapPrincipalTemplate);
-    }
-
-    public void setLDAPServers(String ldapServers)
-    {
-        storeStringValue(LDAP_SERVERS_PROP, ldapServers);
-    }
-    
-    public void setLDAPAuthentication(boolean LDAPAuthentication)
-    {
-        storeBooleanValue(LDAP_AUTHENTICATION, LDAPAuthentication);
-    }
-
     public void setLogoHref(String logoHref)
     {
         storeStringValue(LOGO_HREF_PROP, logoHref);
@@ -218,7 +198,6 @@ public class WriteableAppProps extends AppProps
     /**
      * Sets the database prop.properties for the value of SequestServer
      * @param sequestServer   name of sequest HTTP server.
-     * @throws SQLException
      */
     public void setSequestServer(String sequestServer)
     {

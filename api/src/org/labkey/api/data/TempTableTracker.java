@@ -235,8 +235,7 @@ public class TempTableTracker extends WeakReference<Object>
                     String tempSchemaName = dialect.getGlobalTempTablePrefix();
                     if (tempSchemaName.endsWith("."))
                         tempSchemaName = tempSchemaName.substring(0,tempSchemaName.length()-1);
-                    String dbName = SqlDialect.getDatabaseName(scope.getDataSource());
-
+                    String dbName = dialect.getDatabaseName(scope.getDataSource());
                     
                     Connection conn = null;
                     ResultSet rs = null;

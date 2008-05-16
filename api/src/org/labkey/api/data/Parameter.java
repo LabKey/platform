@@ -152,7 +152,7 @@ public class Parameter
                     dialect = ((ConnectionWrapper)conn).getDialect();
             }
 
-            if (dialect instanceof SqlDialectMicrosoftSQLServer)
+            if (dialect.isSqlServer())
             {
                 try
                 {

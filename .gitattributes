@@ -60,6 +60,8 @@ api/src/org/labkey/api/action/SpringActionController.java -text
 api/src/org/labkey/api/action/UrlProvider.java -text
 api/src/org/labkey/api/action/confirmWrapper.jsp -text
 api/src/org/labkey/api/action/simpleErrorView.jsp -text
+api/src/org/labkey/api/admin/AdminConsole.java -text
+api/src/org/labkey/api/admin/AdminUrls.java -text
 api/src/org/labkey/api/analytics/AnalyticsService.java -text
 api/src/org/labkey/api/attachments/AttachmentCache.java -text
 api/src/org/labkey/api/attachments/AttachmentDirectory.java -text
@@ -135,8 +137,6 @@ api/src/org/labkey/api/data/SQLFragment.java -text
 api/src/org/labkey/api/data/ShowRows.java -text
 api/src/org/labkey/api/data/SimpleFilter.java -text
 api/src/org/labkey/api/data/SqlDialect.java -text
-api/src/org/labkey/api/data/SqlDialectMicrosoftSQLServer.java -text
-api/src/org/labkey/api/data/SqlDialectMicrosoftSQLServer9.java -text
 api/src/org/labkey/api/data/SqlDialectPostgreSQL.java -text
 api/src/org/labkey/api/data/SqlScriptManager.java -text
 api/src/org/labkey/api/data/SqlScriptRunner.java -text
@@ -179,7 +179,6 @@ api/src/org/labkey/api/exp/XarContext.java -text
 api/src/org/labkey/api/exp/XarFormatException.java -text
 api/src/org/labkey/api/exp/XarSource.java -text
 api/src/org/labkey/api/exp/api/AbstractExperimentDataHandler.java -text
-api/src/org/labkey/api/exp/api/AdminUrls.java -text
 api/src/org/labkey/api/exp/api/DataType.java -text
 api/src/org/labkey/api/exp/api/DefaultExperimentDataHandler.java -text
 api/src/org/labkey/api/exp/api/ExpChildObject.java -text
@@ -432,7 +431,7 @@ api/src/org/labkey/api/security/AuthenticationProvider.java -text
 api/src/org/labkey/api/security/DbLoginAuthenticationProvider.java -text
 api/src/org/labkey/api/security/Group.java -text
 api/src/org/labkey/api/security/GroupManager.java -text
-api/src/org/labkey/api/security/LdapAuthenticationProvider.java -text
+api/src/org/labkey/api/security/LoginUrls.java -text
 api/src/org/labkey/api/security/PermissionsMap.java -text
 api/src/org/labkey/api/security/RequiresLogin.java -text
 api/src/org/labkey/api/security/RequiresPermission.java -text

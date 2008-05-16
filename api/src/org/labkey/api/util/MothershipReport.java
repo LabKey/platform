@@ -21,6 +21,7 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.security.AuthenticationManager;
 
 import javax.mail.internet.ContentType;
 import javax.net.ssl.HttpsURLConnection;
@@ -204,9 +205,8 @@ public class MothershipReport implements Runnable
         addParam("runtimeOS", System.getProperty("os.name"));
         addParam("javaVersion", System.getProperty("java.version"));
         addParam("enterprisePipelineEnabled", AppProps.getInstance().hasPipelineCluster());
-        String[] ldapServers = AppProps.getInstance().getLDAPServersArray();
-        String ldapDomain = AppProps.getInstance().getLDAPDomain();
-        boolean ldapEnabled = ldapServers.length > 0 && ldapServers[0].trim().length() > 0 && ldapDomain != null && ldapDomain.trim().length() > 0;
+
+        boolean ldapEnabled = AuthenticationManager.getActiveProviders().contains("LDAP");  // TODO: Send back all active auth providers (OpenSSO, LDAP, etc.)
         addParam("ldapEnabled", ldapEnabled);
 
         DbSchema schema = CoreSchema.getInstance().getSchema();

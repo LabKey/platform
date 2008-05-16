@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.exp.api;
+package org.labkey.api.admin;
 
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.view.ActionURL;
@@ -26,5 +26,6 @@ import org.labkey.api.data.Container;
  */
 public interface AdminUrls extends UrlProvider
 {
-    ActionURL getModuleErrorsUrl(Container container);
+    ActionURL getModuleErrorsURL(Container container);
+    ActionURL getAdminConsoleURL();
 }

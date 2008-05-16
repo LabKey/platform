@@ -756,7 +756,7 @@ public class ModuleLoader implements Filter
         Connection conn = null;
         PreparedStatement stmt = null;
 
-        String dbName = SqlDialect.getDatabaseName(props.getUrl());
+        String dbName = dialect.getDatabaseName(props.getUrl());
 
         _log.info("Attempting to create database \"" + dbName + "\"");
 

@@ -291,7 +291,7 @@ public class DbSchema
         String ownerName = "dbo";
 
         DbScope scope = getDbScope(dsName);
-        String dbName = SqlDialect.getDatabaseName(scope.getDataSource());
+        String dbName = SqlDialect.getDatabaseName2(scope.getDataSource());
 
         // Support old format that included catalog
         if (3 == schemaStrings.length)

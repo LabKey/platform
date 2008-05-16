@@ -29,10 +29,11 @@ import javax.servlet.http.HttpServletResponse;
  */
 public abstract interface AuthenticationProvider
 {
-    public ActionURL getConfigurationLink(ActionURL returnUrl);
+    public ActionURL getConfigurationLink();
     public String getName();
     public void logout(HttpServletRequest request);
-    public void initialize() throws Exception;
+    public void activate() throws Exception;
+    public void deactivate() throws Exception;
     public boolean isPermanent();
 
     public static interface RequestAuthenticationProvider extends AuthenticationProvider

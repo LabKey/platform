@@ -4,7 +4,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.exp.api.AdminUrls" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     TemplateHeaderView.TemplateHeaderBean bean = ((TemplateHeaderView) HttpView.currentView()).getModelBean();
@@ -58,7 +58,7 @@ if (bean.containerLinks != null)
     %><tr><td>&nbsp;</td><td class="ms-nav"style="padding:5px;">
     <p class="labkey-error">There were errors loading the following modules during server startup:</p>
     <%= bean.moduleFailures.keySet() %>
-    <p><a href="<%=PageFlowUtil.urlProvider(AdminUrls.class).getModuleErrorsUrl(currentContext.getContainer()) %>">Error details</a></p>
+    <p><a href="<%=PageFlowUtil.urlProvider(AdminUrls.class).getModuleErrorsURL(currentContext.getContainer()) %>">Error details</a></p>
 </td></tr><%
     }
 
