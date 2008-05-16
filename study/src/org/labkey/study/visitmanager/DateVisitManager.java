@@ -1,7 +1,9 @@
 package org.labkey.study.visitmanager;
 
-import org.labkey.api.data.*;
-import org.labkey.api.security.User;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.Cohort;
@@ -11,7 +13,10 @@ import org.labkey.study.model.VisitMapKey;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Copyright (c) 2008 LabKey Corporation
@@ -184,7 +189,7 @@ public class DateVisitManager extends VisitManager
                 " WHERE ParticipantVisit.Day BETWEEN V.SequenceNumMin AND V.SequenceNumMax AND\n" +
                 "   V.Container=?\n" +
                 " )\n";
-        if (schema.getSqlDialect() instanceof SqlDialectMicrosoftSQLServer) // for SQL Server 2000
+        if (schema.getSqlDialect().isSqlServer()) // for SQL Server 2000
             sqlUpdateVisitRowId += "FROM " + tableParticipantVisit + " ParticipantVisit\n";
         sqlUpdateVisitRowId += "WHERE Container=?";
         Table.execute(schema, sqlUpdateVisitRowId,

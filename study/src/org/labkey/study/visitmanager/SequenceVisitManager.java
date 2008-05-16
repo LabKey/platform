@@ -201,7 +201,7 @@ public class SequenceVisitManager extends VisitManager
                     "   SD.ParticipantId = ParticipantVisit.ParticipantId AND SD.SequenceNum = ParticipantVisit.SequenceNum AND\n" +    // 'join' SD
                     "   SD.DatasetId = V.VisitDateDatasetId AND SD.Container=? AND V.Container=?\n" +
                     " )\n";
-            if (schema.getSqlDialect() instanceof SqlDialectMicrosoftSQLServer) // for SQL Server 2000
+            if (schema.getSqlDialect().isSqlServer()) // for SQL Server 2000
                 sqlUpdateVisitDates += "FROM " + tableParticipantVisit + " ParticipantVisit\n";
             sqlUpdateVisitDates += "WHERE Container=?";
             Table.execute(schema, sqlUpdateVisitDates,
@@ -247,7 +247,7 @@ public class SequenceVisitManager extends VisitManager
                 " WHERE ParticipantVisit.SequenceNum BETWEEN V.SequenceNumMin AND V.SequenceNumMax AND\n" +
                 "   V.Container=?\n" +
                 " )\n";
-        if (schema.getSqlDialect() instanceof SqlDialectMicrosoftSQLServer) // for SQL Server 2000
+        if (schema.getSqlDialect().isSqlServer()) // for SQL Server 2000
             sqlUpdateVisitRowId += "FROM " + tableParticipantVisit + " ParticipantVisit\n";
         sqlUpdateVisitRowId += "WHERE Container=?";
         Table.execute(schema, sqlUpdateVisitRowId,

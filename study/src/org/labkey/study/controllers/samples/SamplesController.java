@@ -252,7 +252,7 @@ public class SamplesController extends BaseController
             _site = site;
             _members = members;
             _messages = message;
-            _ldapDomain = AppProps.getInstance().getLDAPDomain();
+            _ldapDomain = AuthenticationManager.getLdapDomain();
             _returnUrl = returnUrl;
         }
 
