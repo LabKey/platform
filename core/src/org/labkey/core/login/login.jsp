@@ -5,6 +5,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.core.login.LoginController.LoginBean" %>
 <%@ page import="org.labkey.core.login.LoginController.LoginForm" %>
+<%@ page import="org.labkey.api.action.ReturnUrlForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<LoginBean> me = (HttpView<LoginBean>) HttpView.currentView();
@@ -64,6 +65,15 @@
         <tr><td></td><td><%=h(bean.termsOfUseHtml)%></td></tr>
         <tr><td></td><td><input type=checkbox name="approvedTermsOfUse" id="approvedTermsOfUse"<%=bean.termsOfUseChecked ? " checked" : ""%>><label for="approvedTermsOfUse">I agree to these terms</label></td></tr><%
     } %>
-        <tr><td></td><td style="height:50px"><input type="hidden" name="URI" value="<%=h(returnURI)%>"><input type="image" src="<%=PageFlowUtil.buttonSrc(bean.agreeOnly ? "Agree" : "Sign In")%>" value="Sign in" name="SUBMIT"></td></tr>
+        <tr><td></td><td style="height:50px">
+            <input type="hidden" name="URI" value="<%=h(returnURI)%>"><%
+
+            if (bean.form.getSkipProfile())
+            { %>
+            <input type=hidden name=skipProfile value="1"><%
+            }
+            %>
+            <input type="image" src="<%=PageFlowUtil.buttonSrc(bean.agreeOnly ? "Agree" : "Sign In")%>" value="Sign in" name="SUBMIT">
+        </td></tr>
     </table>
 </form>

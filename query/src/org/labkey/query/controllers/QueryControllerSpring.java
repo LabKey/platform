@@ -333,7 +333,11 @@ public class QueryControllerSpring extends SpringActionController
 
             QueryView queryView = QueryView.create(form);
             queryView.setShowRReportButton(true);
-            queryView.setPrintView(isPrint());
+            if (isPrint())
+            {
+                queryView.setPrintView(true);
+                getPageConfig().setTemplate(PageConfig.Template.Print);
+            }
             queryView.setShadeAlternatingRows(true);
             queryView.setShowColumnSeparators(true);
             return queryView;

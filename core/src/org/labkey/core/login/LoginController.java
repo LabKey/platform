@@ -95,9 +95,19 @@ public class LoginController extends SpringActionController
     }
 
 
-    private static ActionURL getLoginURL(ActionURL returnURL, String email)
+    private static ActionURL getLoginURL(String email, boolean skipProfile, String returnURL)
     {
-        return addReturnURL(getLoginURL(), returnURL).addParameter("email", email);
+        ActionURL url = getLoginURL();
+
+        url.addParameter("email", email);
+
+        if (skipProfile)
+            url.addParameter("skipProfile", "1");
+
+        if (null != returnURL)
+            url.addParameter("URI", returnURL);
+
+        return url;
     }
 
 
@@ -234,7 +244,7 @@ public class LoginController extends SpringActionController
         private String getSuccessURLAsString(LoginForm form) throws SQLException, ServletException
         {
             // If this is user's first log in or some required field isn't filled in then go to update page
-            if (_user.isFirstLogin() || UserController.requiresUpdate(_user))
+            if (!form.getSkipProfile() && (_user.isFirstLogin() || UserController.requiresUpdate(_user)))
             {
                 return UserController.getUpdateURL(form.getReturnActionURL()).getLocalURIString();  // TODO: Add the redirect param so user eventually gets back to requested page
             }
@@ -454,6 +464,7 @@ public class LoginController extends SpringActionController
         private String password;
         private String URI;       // TODO: Remove this once we convert URI -> returnURL
         private boolean approvedTermsOfUse;
+        private boolean skipProfile;
 
         public void setEmail(String email)
         {
@@ -522,6 +533,16 @@ public class LoginController extends SpringActionController
         public void setApprovedTermsOfUse(boolean approvedTermsOfUse)
         {
             this.approvedTermsOfUse = approvedTermsOfUse;
+        }
+
+        public boolean getSkipProfile()
+        {
+            return skipProfile;
+        }
+
+        public void setSkipProfile(boolean skipProfile)
+        {
+            this.skipProfile = skipProfile;
         }
     }
 
@@ -676,7 +697,7 @@ public class LoginController extends SpringActionController
 
         public ActionURL getSuccessURL(VerifyForm form)
         {
-            return getLoginURL(null, _email.getEmailAddress());
+            return getLoginURL(_email.getEmailAddress(), form.getSkipProfile(), form.getReturnUrl());
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -689,20 +710,21 @@ public class LoginController extends SpringActionController
     public static class VerifyBean
     {
         public String email;
-        public String verification;
+        public VerifyForm form;
 
         private VerifyBean(ValidEmail email, VerifyForm form)
         {
             this.email = (null != email ? email.getEmailAddress() : form.getEmail());
-            verification = form.verification;
+            this.form = form;
         }
     }
 
 
-    public static class VerifyForm
+    public static class VerifyForm extends ReturnUrlForm
     {
         private String verification;
         private String email;
+        private boolean _skipProfile = false;
 
         public void setEmail(String email)
         {
@@ -722,6 +744,16 @@ public class LoginController extends SpringActionController
         public String getVerification()
         {
             return verification;
+        }
+
+        public boolean getSkipProfile()
+        {
+            return _skipProfile;
+        }
+
+        public void setSkipProfile(boolean skipProfile)
+        {
+            _skipProfile = skipProfile;
         }
     }
 
@@ -799,7 +831,7 @@ public class LoginController extends SpringActionController
                     final SecurityMessage message = SecurityManager.getResetMessage(false);
                     message.setHideContact(true);
                     String verificationUrl = SecurityManager.createVerificationUrl(getContainer(), _email.getEmailAddress(),
-                            verification).getURIString();
+                            verification, null).getURIString();
 
                     final User system = new User(AppProps.getInstance().getSystemEmailAddress(), 0);
                     system.setFirstName(AppProps.getInstance().getCompanyName());
@@ -910,7 +942,7 @@ public class LoginController extends SpringActionController
                 }
                 appProps.save();
 
-                _verificationUrl = SecurityManager.createVerificationUrl(getContainer(), newUserBean.getEmail(), newUserBean.getVerification());
+                _verificationUrl = SecurityManager.createVerificationUrl(getContainer(), newUserBean.getEmail(), newUserBean.getVerification(), null);
 
                 return true;
             }

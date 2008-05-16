@@ -61,6 +61,7 @@ LABKEY.writeApplet({
           port:<%=PageFlowUtil.jsString(dropPage.getPort())%>,
           path:<%=PageFlowUtil.jsString(dropPage.getPath(context.getContainer()))%>,
           webdavPrefix:<%=PageFlowUtil.jsString(contextPath + DavController.SERVLETPATH)%>,
+        port:<%=PageFlowUtil.jsString(dropPage.getPort())%>,
         user:<%=PageFlowUtil.jsString(context.getUser().getEmail())%>,
         password:<%=PageFlowUtil.jsString(sessionId)%>,
         updateEvent:"dropApplet_Update",

@@ -517,7 +517,7 @@ public class SecurityController extends SpringActionController
                     // add new users
                     for (ValidEmail email : addEmails)
                     {
-                        String addMessage = SecurityManager.addUser(getViewContext(), email, form.getSendEmail(), form.getMailPrefix());
+                        String addMessage = SecurityManager.addUser(getViewContext(), email, form.getSendEmail(), form.getMailPrefix(), null);
                         if (addMessage != null)
                             messages.add(addMessage);
                     }
@@ -981,6 +981,8 @@ public class SecurityController extends SpringActionController
         private boolean sendMail;
         private String newUsers;
         private String _cloneUser;
+        private boolean _skipProfile;
+        private String _returnUrl;
 
         public void setNewUsers(String newUsers)
         {
@@ -1004,6 +1006,26 @@ public class SecurityController extends SpringActionController
 
         public void setCloneUser(String cloneUser){_cloneUser = cloneUser;}
         public String getCloneUser(){return _cloneUser;}
+
+        public boolean isSkipProfile()
+        {
+            return _skipProfile;
+        }
+
+        public void setSkipProfile(boolean skipProfile)
+        {
+            _skipProfile = skipProfile;
+        }
+
+        public String getReturnUrl()
+        {
+            return _returnUrl;
+        }
+
+        public void setReturnUrl(String returnUrl)
+        {
+            _returnUrl = returnUrl;
+        }
     }
 
 
@@ -1057,9 +1079,15 @@ public class SecurityController extends SpringActionController
                     errors.addError(new LabkeyError("Failed to create user " + rawEmail.trim() + ": Invalid email address<br>"));
             }
 
+            List<Pair<String, String>> extraParams = new ArrayList<Pair<String, String>>(2);
+            if (form.isSkipProfile())
+                extraParams.add(new Pair<String, String>("skipProfile", "1"));
+            if (null != form.getReturnUrl())
+                extraParams.add(new Pair<String, String>(ReturnUrlForm.Params.returnUrl.toString(), form.getReturnUrl()));
+
             for (ValidEmail email : emails)
             {
-                String result = SecurityManager.addUser(getViewContext(), email, form.getSendMail(), null);
+                String result = SecurityManager.addUser(getViewContext(), email, form.getSendMail(), null, extraParams.<Pair<String, String>>toArray(new Pair[extraParams.size()]));
 
                 if (result == null)
                 {
@@ -1146,7 +1174,7 @@ public class SecurityController extends SpringActionController
             {
                 String verification = SecurityManager.getVerification(email);
                 String verificationUrl = SecurityManager.createVerificationUrl(getContainer(), email.getEmailAddress(),
-                        verification).getURIString();
+                        verification, null).getURIString();
                 SecurityManager.renderEmail(getUser(), message, email.getEmailAddress(), verificationUrl, out);
             }
             return null;
@@ -1218,7 +1246,7 @@ public class SecurityController extends SpringActionController
                     try
                     {
                         String verificationUrl = SecurityManager.createVerificationUrl(getContainer(), email.getEmailAddress(),
-                                verification).getURIString();
+                                verification, null).getURIString();
 
                         SecurityManager.sendEmail(user, SecurityManager.getResetMessage(false), email.getEmailAddress(),
                                 verificationUrl);

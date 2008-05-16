@@ -57,7 +57,8 @@ public class StudyQueryView extends QueryView
         else
             filter = _filter;
         view.getRenderContext().setBaseFilter(filter);
-        view.getRenderContext().setBaseSort(_sort);
+        if (view.getRenderContext().getBaseSort() == null)
+            view.getRenderContext().setBaseSort(_sort);
         if (_buttons != null)
         {
             ButtonBar bbar = view.getDataRegion().getButtonBar(DataRegion.MODE_GRID);

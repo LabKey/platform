@@ -1314,7 +1314,7 @@ public class SpringSpecimenController extends BaseStudyController
             if (!SampleManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()))
                 requiresAdmin();
             Specimen[] requestedSamples = null;
-            if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
+            if (getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY) != null)
             {
                 if (form.isFromGroupedView())
                     requestedSamples = getUtils().getSpecimensFromSamples(DataRegionSelection.getSelected(getViewContext(), true));

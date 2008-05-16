@@ -130,7 +130,7 @@ public class SpecimenUtils
                     String addToRequestURL = urlFor(SpringSpecimenController.ShowAddToSampleRequestAction.class);
                     requestMenuButton.addMenuItem("Add To Existing Request", addToRequestURL,
                             "if (verifySelected(document.forms[\"" + dataRegionName + "\"], \"" + addToRequestURL +
-                            "\", \"post\", \"rows\")) document.forms[\"" + dataRegionName + "\"].submit(); return false;");
+                            "\", \"get\", \"rows\")) document.forms[\"" + dataRegionName + "\"].submit(); return false;");
                 }
             }
             buttons.add(requestMenuButton);

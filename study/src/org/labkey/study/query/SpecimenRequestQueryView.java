@@ -162,7 +162,7 @@ public class SpecimenRequestQueryView extends StudyQueryView
     
     private static Sort createDefaultSort()
     {
-        return new Sort("RequestId");
+        return new Sort("-Created");
     }
 
     private static SimpleFilter addFilterClauses(ViewContext context, SimpleFilter filter)

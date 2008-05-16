@@ -186,7 +186,7 @@ public class SamplesController extends BaseController
                 {
                     if (getUser().isAdministrator())
                     {
-                        String result = SecurityManager.addUser(getViewContext(), email, form.isSendEmail(), null);
+                        String result = SecurityManager.addUser(getViewContext(), email, form.isSendEmail(), null, null);
                         if (result != null)
                             message.append(result).append("<br>");
                         newMembers.add(UserManager.getUser(email));

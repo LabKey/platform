@@ -50,6 +50,7 @@ import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ChartDesignerBean;
 import org.labkey.api.reports.report.view.ChartUtil;
 import org.labkey.api.reports.report.view.RReportBean;
+import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.StudyService;
@@ -343,19 +344,31 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ACL.PERM_READ)
-    public class DatasetReportAction extends SimpleViewAction<CohortForm>
+    public class DatasetReportAction extends QueryViewAction<QueryViewAction.QueryExportForm, QueryView>
     {
         StringBuilder _label;
 
-        public ModelAndView getView(CohortForm form, BindException errors) throws Exception
+        public DatasetReportAction()
         {
-            ViewContext context = getViewContext();
-            String viewName = (String) context.get("Dataset.viewName");
-            int datasetId = null == context.get(DataSetDefinition.DATASETKEY) ? 0 : Integer.parseInt((String) context.get(DataSetDefinition.DATASETKEY));
+            super(QueryExportForm.class);
+        }
 
-            Report reportView = null;
+        private Report getReport() throws Exception
+        {
+            String viewName = (String)getViewContext().get("Dataset.viewName");
+
             if (NumberUtils.isDigits(viewName))
-                reportView = ReportManager.get().getReport(context.getContainer(), NumberUtils.toInt(viewName));
+                return ReportManager.get().getReport(getContainer(), NumberUtils.toInt(viewName));
+
+            return null;
+        }
+
+        protected ModelAndView getHtmlView(QueryViewAction.QueryExportForm form, BindException errors) throws Exception
+        {
+            getViewContext().requiresPermission(ACL.PERM_READ);
+
+            ViewContext context = getViewContext();
+            Report reportView = getReport();
 
             // is not a report (either the default grid view or a custom view)...
             if (null == reportView)
@@ -364,6 +377,7 @@ public class StudyController extends BaseStudyController
                 return null;
             }
 
+            int datasetId = null == context.get(DataSetDefinition.DATASETKEY) ? 0 : Integer.parseInt((String) context.get(DataSetDefinition.DATASETKEY));
             DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getStudy(), datasetId);
 
             final String type = reportView.getDescriptor().getReportType();
@@ -393,6 +407,16 @@ public class StudyController extends BaseStudyController
 
             return new VBox(header,
                     new ReportHeader(reportView), view);
+        }
+
+        protected QueryView createQueryView(QueryExportForm form, BindException errors, boolean forExport, String dataRegion) throws Exception
+        {
+            Report report = getReport();
+            if (report instanceof QueryReport)
+            {
+                return ((QueryReport)report).getQueryViewGenerator().generateQueryView(getViewContext(), report.getDescriptor());                
+            }
+            return null;
         }
 
         public NavTree appendNavTrail(NavTree root)
