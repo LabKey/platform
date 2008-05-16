@@ -62,6 +62,7 @@ public class AuthenticationManager
     private static Map<String, LinkFactory> _linkFactories = new HashMap<String, LinkFactory>();
     public static final String HEADER_LOGO_PREFIX = "auth_header_logo_";
     public static final String LOGIN_PAGE_LOGO_PREFIX = "auth_login_page_logo_";
+    public enum Priority { High, Low }
 
     // TODO: Replace this with a generic domain-claiming mechanism
     public static String _ldapDomain = "";
@@ -188,9 +189,12 @@ public class AuthenticationManager
     }
 
 
-    public static void registerProvider(AuthenticationProvider authProvider)
+    public static void registerProvider(AuthenticationProvider authProvider, Priority priority)
     {
-        _allProviders.add(0, authProvider);
+        if (Priority.High == priority)
+            _allProviders.add(0, authProvider);
+        else
+            _allProviders.add(authProvider);
     }
 
 
