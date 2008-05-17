@@ -22,8 +22,9 @@ import org.labkey.api.query.*;
 
 import java.io.Writer;
 import java.io.IOException;
+import java.util.Set;
 
- public class SpecimenDetailTable extends StudyTable
+public class SpecimenDetailTable extends StudyTable
 {
     public SpecimenDetailTable(StudyQuerySchema schema)
     {
@@ -101,12 +102,13 @@ import java.io.IOException;
         });
         addColumn(derivativeTypeColumn);
 
+        final ColumnInfo inRequestColumn = addWrapColumn(_rootTable.getColumn("LockedInRequest"));
         ColumnInfo siteNameColumn = addWrapColumn(_rootTable.getColumn("SiteName"));
         siteNameColumn.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
-                return new SiteNameDisplayColumn(colInfo);
+                return new SiteNameDisplayColumn(colInfo, inRequestColumn);
             }
         });
         ColumnInfo originatingSiteCol = new AliasedColumn(this, "Clinic", _rootTable.getColumn("OriginatingLocationId"));
@@ -121,7 +123,6 @@ import java.io.IOException;
 
         addWrapColumn(_rootTable.getColumn("SiteLdmsCode"));
         addWrapColumn(_rootTable.getColumn("DrawTimestamp"));
-        addWrapColumn(_rootTable.getColumn("LockedInRequest"));
         addWrapColumn(_rootTable.getColumn("AtRepository"));
         ColumnInfo availableColumn = addWrapColumn(_rootTable.getColumn("Available"));
         availableColumn.setKeyField(true);
@@ -129,26 +130,43 @@ import java.io.IOException;
         addWrapColumn(_rootTable.getColumn("ClassId"));
         addWrapColumn(_rootTable.getColumn("ProtocolNumber"));
         addWrapColumn(_rootTable.getColumn("SubAdditiveDerivative"));
+/*
         addWrapColumn(_rootTable.getColumn("fr_container"));
         addWrapColumn(_rootTable.getColumn("fr_level1"));
         addWrapColumn(_rootTable.getColumn("fr_level2"));
         addWrapColumn(_rootTable.getColumn("fr_position"));
-        addWrapColumn(_rootTable.getColumn("freezer"));
+        addWrapColumn(_rootTable.getColumn("freezer"));*/
     }
 
     public static class SiteNameDisplayColumn extends DataColumn
     {
         private static final String NO_SITE_DISPLAY_VALUE = "In Transit";
-        public SiteNameDisplayColumn(ColumnInfo col)
+        private ColumnInfo _inRequestColumn;
+        public SiteNameDisplayColumn(ColumnInfo siteColumn, ColumnInfo inRequestColumn)
         {
-            super(col);
+            super(siteColumn);
+            _inRequestColumn = inRequestColumn;
+        }
+
+        public void addQueryColumns(Set<ColumnInfo> columns)
+        {
+            super.addQueryColumns(columns);
+            columns.add(_inRequestColumn);
+        }
+
+        private String getNoSiteText(RenderContext ctx)
+        {
+            Object inRequest = _inRequestColumn.getValue(ctx);
+            boolean requested = (inRequest instanceof Boolean && ((Boolean) inRequest).booleanValue()) ||
+                (inRequest instanceof Integer && ((Integer) inRequest).intValue() == 1);
+            return NO_SITE_DISPLAY_VALUE + (requested ? ": Requested" : "");
         }
 
         public Object getDisplayValue(RenderContext ctx)
         {
             Object value = getBoundColumn().getValue(ctx);
             if (value == null)
-                return NO_SITE_DISPLAY_VALUE;
+                return getNoSiteText(ctx);
             else
                 return super.getDisplayValue(ctx);
         }
@@ -157,7 +175,7 @@ import java.io.IOException;
         {
             Object value = getBoundColumn().getValue(ctx);
             if (value == null)
-                out.write(NO_SITE_DISPLAY_VALUE);
+                out.write(getNoSiteText(ctx));
             else
                 super.renderGridCellContents(ctx, out);
         }

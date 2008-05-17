@@ -153,7 +153,7 @@ Source: {link:Sun Developer Network|http://java.sun.com/j2se/desktopjava/jre/ind
 
 Provides the Java Virtual Machine, libraries, and other components to run LabKey Server on Windows PCs and servers.
 
-1 PostgreSQL 8.2.5
+1 PostgreSQL 8.2.7
 
 Developer: {link:PostgreSQL|http://www.postgresql.org/}\\
 License: {link:BSD|http://www.postgresql.org/about/licence}\\

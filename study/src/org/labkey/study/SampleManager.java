@@ -239,9 +239,26 @@ public class SampleManager
 
     public Site getCurrentSite(Specimen specimen) throws SQLException
     {
+        Integer siteId = getCurrentSiteId(specimen);
+        if (siteId != null)
+            return StudyManager.getInstance().getSite(specimen.getContainer(), siteId.intValue());
+        return null;
+    }
+
+    public Integer getCurrentSiteId(Specimen specimen) throws SQLException
+    {
         List<SpecimenEvent> events = getDateOrderedEventList(specimen);
         if (!events.isEmpty())
-            return StudyManager.getInstance().getSite(specimen.getContainer(), events.get(events.size() - 1).getLabId());
+        {
+            SpecimenEvent lastEvent = events.get(events.size() - 1);
+
+            if (lastEvent.getShipDate() == null &&
+                    (lastEvent.getShipBatchNumber() == null || lastEvent.getShipBatchNumber().intValue() == 0) &&
+                    (lastEvent.getShipFlag() == null || lastEvent.getShipFlag().intValue() == 0))
+            {
+                return lastEvent.getLabId();
+            }
+        }
         return null;
     }
 

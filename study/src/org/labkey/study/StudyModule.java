@@ -68,6 +68,7 @@ import org.labkey.study.query.StudySchemaProvider;
 import org.labkey.study.reports.*;
 import org.labkey.study.samples.SamplesWebPart;
 import org.labkey.study.view.*;
+import org.labkey.study.importer.SpecimenImporter;
 
 import java.beans.PropertyChangeEvent;
 import java.lang.reflect.InvocationTargetException;
@@ -94,7 +95,7 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
 
     public StudyModule()
     {
-        super(NAME, 8.12, "/org/labkey/study", true, reportsPartFactory, reportsWidePartFactory, samplesPartFactory,
+        super(NAME, 8.13, "/org/labkey/study", true, reportsPartFactory, reportsWidePartFactory, samplesPartFactory,
                 samplesWidePartFactory, datasetsPartFactory, manageStudyPartFactory,
                 enrollmentChartPartFactory, studyDesignsWebPartFactory, studyDesignSummaryWebPartFactory,
                 assayListWebPartFactory, assayDetailsWebPartFactory, participantWebPartFactory);
@@ -250,6 +251,18 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
         {
             ReportManager.UpgradeReport_22_23 upgrade = new ReportManager.UpgradeReport_22_23(moduleContext, viewContext);
             upgrade.upgradeStudyReports();
+        }
+
+        if (moduleContext.getInstalledVersion() >= 1.3 && moduleContext.getInstalledVersion() < 8.13)
+        {
+            try
+            {
+                SpecimenImporter.updateAllSpecimenLocations(viewContext.getUser());
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
         }
     }
 

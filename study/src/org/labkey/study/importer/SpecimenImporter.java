@@ -20,6 +20,8 @@ import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.Study;
+import org.labkey.study.model.Specimen;
+import org.labkey.study.model.Site;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.Lsid;
@@ -54,6 +56,7 @@ public class SpecimenImporter
     CPUTimer cpuMergeTable = new CPUTimer("mergeTable");
     CPUTimer cpuCreateTempTable = new CPUTimer("createTempTable");
     CPUTimer cpuPopulateTempTable = new CPUTimer("populateTempTable");
+    CPUTimer cpuCurrentLocations = new CPUTimer("updateCurrentLocations");
 
 
     private static class ImportableColumn
@@ -166,6 +169,7 @@ public class SpecimenImporter
     {
         private TargetTable _targetTable;
         private String _fkTable;
+        private String _joinType;
         private String _fkColumn;
 
         public SpecimenColumn(String tsvColumnName, String dbColumnName, String databaseType, TargetTable eventColumn, boolean unique)
@@ -182,9 +186,16 @@ public class SpecimenImporter
         public SpecimenColumn(String tsvColumnName, String dbColumnName, String databaseType,
                               TargetTable eventColumn, String fkTable, String fkColumn)
         {
+            this(tsvColumnName, dbColumnName, databaseType, eventColumn, fkTable, fkColumn, "INNER");
+        }
+
+        public SpecimenColumn(String tsvColumnName, String dbColumnName, String databaseType,
+                              TargetTable eventColumn, String fkTable, String fkColumn, String joinType)
+        {
             this(tsvColumnName, dbColumnName, databaseType, eventColumn, false);
             _fkColumn = fkColumn;
             _fkTable = fkTable;
+            _joinType = joinType;
         }
 
         public TargetTable getTargetTable()
@@ -200,6 +211,11 @@ public class SpecimenImporter
         public String getFkTable()
         {
             return _fkTable;
+        }
+
+        public String getJoinType()
+        {
+            return _joinType;
         }
 
         public String getDbType()
@@ -242,7 +258,7 @@ public class SpecimenImporter
             new SpecimenColumn("record_source", "RecordSource", "VARCHAR(10)", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn(GLOBAL_UNIQUE_ID_TSV_COL, "GlobalUniqueId", "VARCHAR(20)", TargetTable.SPECIMENS),
             new SpecimenColumn(LAB_ID_TSV_COL, "LabId", "INT", TargetTable.IGNORED, "Site", "ScharpId"),
-            new SpecimenColumn("originating_location", "OriginatingLocationId", "INT", TargetTable.SPECIMENS, "Site", "ScharpId"),
+            new SpecimenColumn("originating_location", "OriginatingLocationId", "INT", TargetTable.SPECIMENS, "Site", "ScharpId", "LEFT OUTER"),
             new SpecimenColumn("unique_specimen_id", "UniqueSpecimenId", "VARCHAR(20)", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("ptid", "Ptid", "VARCHAR(32)", TargetTable.SPECIMENS),
             new SpecimenColumn("parent_specimen_id", "ParentSpecimenId", "INT", TargetTable.SPECIMEN_EVENTS),
@@ -353,7 +369,7 @@ public class SpecimenImporter
                     getContents(fileMap.get("derivatives")), false);
             replaceTable(schema, container, "SpecimenPrimaryType", PRIMARYTYPE_COLUMNS,
                     getContents(fileMap.get("primary_types")), false);
-            populateSpecimenTables(schema, container, loadInfo);
+            populateSpecimenTables(schema, user, container, loadInfo);
 
             Study study = StudyManager.getInstance().getStudy(container);
             StudyManager.getInstance().getVisitManager(study).updateParticipantVisits();
@@ -394,7 +410,7 @@ public class SpecimenImporter
                     tsvMap.get("derivatives"), false);
             replaceTable(schema, container, "SpecimenPrimaryType", PRIMARYTYPE_COLUMNS,
                     tsvMap.get("primary_types"), false);
-            populateSpecimenTables(schema, container, loadInfo);
+            populateSpecimenTables(schema, user, container, loadInfo);
 
             Study study = StudyManager.getInstance().getStudy(container);
             StudyManager.getInstance().getVisitManager(study).updateParticipantVisits();
@@ -443,7 +459,7 @@ public class SpecimenImporter
     }
 
 
-    private void populateSpecimenTables(DbSchema schema, Container container, SpecimenLoadInfo info) throws SQLException, IOException
+    private void populateSpecimenTables(DbSchema schema, User user, Container container, SpecimenLoadInfo info) throws SQLException, IOException
     {
         SimpleFilter containerFilter = new SimpleFilter("Container", container.getId());
         info("Deleting old data from Specimen Event table...");
@@ -456,6 +472,72 @@ public class SpecimenImporter
         populateMaterials(schema, container, info);
         populateSpecimens(schema, container, info);
         populateSpecimenEvents(schema, container, info);
+
+        cpuCurrentLocations.start();
+        updateSpecimenLocations(container, user);
+        cpuCurrentLocations.stop();
+        info("Time to determine locations: " + cpuCurrentLocations.toString());
+
+    }
+
+    private static final int CURRENT_SITE_UPDATE_SIZE = 1000;
+
+    private static boolean safeIntegerEqual(Integer a, Integer b)
+    {
+        if (a == null && b == null)
+            return true;
+        if (a == null || b == null)
+            return false;
+        return a.intValue() == b.intValue();
+    }
+
+    public static void updateAllSpecimenLocations(User user) throws SQLException
+    {
+        DbSchema schema = StudySchema.getInstance().getSchema();
+        DbScope scope = schema.getScope();
+        boolean transactionOwner = !scope.isTransactionActive();
+        Study[] studies = StudyManager.getInstance().getAllStudies();
+        for (Study study : studies)
+        {
+            try
+            {
+                if (transactionOwner)
+                    scope.beginTransaction();
+                updateSpecimenLocations(study.getContainer(), user);
+                if (transactionOwner)
+                    scope.commitTransaction();
+            }
+            finally
+            {
+                if (transactionOwner)
+                    scope.closeConnection();
+            }
+        }
+    }
+
+    private static void updateSpecimenLocations(Container container, User user) throws SQLException
+    {
+        // clear caches before determining current sites:
+        SimpleFilter containerFilter = new SimpleFilter("Container", container.getId());
+        SampleManager.getInstance().clearCaches(container);
+        Specimen[] specimens;
+        int offset = 0;
+        do
+        {
+            specimens = Table.select(StudySchema.getInstance().getTableInfoSpecimen(), Table.ALL_COLUMNS,
+                    containerFilter, null, Specimen.class, CURRENT_SITE_UPDATE_SIZE, offset);
+            for (Specimen specimen : specimens)
+            {
+                Integer currentLocation = SampleManager.getInstance().getCurrentSiteId(specimen);
+                if (!safeIntegerEqual(currentLocation, specimen.getCurrentLocation()))
+                {
+                    specimen.setCurrentLocation(currentLocation);
+                    Table.update(user, StudySchema.getInstance().getTableInfoSpecimen(), specimen, specimen.getRowId(), null);
+                }
+            }
+            offset += CURRENT_SITE_UPDATE_SIZE;
+        }
+        while (specimens.length > 0);
     }
 
     private String getContents(File file) throws IOException
@@ -759,8 +841,13 @@ public class SpecimenImporter
         {
             if (col.getTargetTable() == TargetTable.SPECIMENS && col.getFkTable() != null)
             {
-                insertSql.append("\n    JOIN study.").append(col.getFkTable()).append(" ON ");
-                insertSql.append("(").append(info.getTempTableName()).append(".").append(col.getDbColumnName()).append(" = ").append(" study.").append(col.getFkTable()).append(".").append(col.getFkColumn());
+                insertSql.append("\n    ");
+                if (col.getJoinType() != null)
+                    insertSql.append(col.getJoinType()).append(" ");
+                insertSql.append("JOIN study.").append(col.getFkTable()).append(" ON ");
+                insertSql.append("(").append(info.getTempTableName()).append(".");
+                insertSql.append(col.getDbColumnName()).append(" = ").append(" study.");
+                insertSql.append(col.getFkTable()).append(".").append(col.getFkColumn());
                 insertSql.append(" AND study.").append(col.getFkTable()).append(".Container").append(" = ?)");
                 insertSql.add(container.getId());
             }

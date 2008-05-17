@@ -51,12 +51,12 @@ public class QueryHelper<K extends StudyCachable>
         return get(c, null, sortString);
     }
 
-    public K[] get(Container c, Filter filter) throws SQLException
+    public K[] get(Container c, SimpleFilter filter) throws SQLException
     {
         return get(c, filter, null);
     }
 
-    public K[] get(Container c, Filter filter, String sortString) throws SQLException
+    public K[] get(Container c, SimpleFilter filter, String sortString) throws SQLException
     {
         String cacheId = getCacheId(filter);
         if (sortString != null)
@@ -66,6 +66,8 @@ public class QueryHelper<K extends StudyCachable>
         {
             if (filter == null)
                 filter = new SimpleFilter("Container", c.getId());
+            else if (!filter.hasContainerEqualClause())
+                filter.addCondition("Container", c.getId());
             Sort sort = null;
             if (sortString != null)
                 sort = new Sort(sortString);

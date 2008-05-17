@@ -109,7 +109,7 @@ public class SpecimenBatch extends StudyBatch implements Serializable
             catch (Exception e)
             {
                 status = PipelineJob.ERROR_STATUS;
-                error("Unexpected processing specimen archive", e);
+                error("Unexpected error processing specimen archive", e);
             }
         }
         finally

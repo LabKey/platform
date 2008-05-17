@@ -298,6 +298,7 @@
       <ns:column columnName="AdditiveTypeId"/>
       <ns:column columnName="originatinglocationid"/>
       <ns:column columnName="requestable"/>
+      <ns:column columnName="CurrentLocation" />
     </ns:columns>
   </ns:table>
   <ns:table tableName="SpecimenSummary" tableDbType="VIEW">
@@ -397,11 +398,7 @@
       <ns:column columnName="lockedinrequest"/>
       <ns:column columnName="originatinglocationid"/>
       <ns:column columnName="requestable"/>
-      <ns:column columnName="fr_container"/>
-      <ns:column columnName="fr_level1"/>
-      <ns:column columnName="fr_level2"/>
-      <ns:column columnName="fr_position"/>
-      <ns:column columnName="freezer"/>
+      <ns:column columnName="CurrentLocation" />
     </ns:columns>
   </ns:table>
   <ns:table tableName="SpecimenAdditive" tableDbType="TABLE">

@@ -45,6 +45,7 @@ public class Specimen extends AbstractStudyCachable<Specimen>
     private Integer _derivativeTypeId; // INT,
     private Integer _additiveTypeId; // INT,
     private Integer _originatingLocationId;
+    private Integer _currentLocation;
 
     public Integer getAdditiveTypeId()
     {
@@ -246,6 +247,16 @@ public class Specimen extends AbstractStudyCachable<Specimen>
     public void setOriginatingLocationId(Integer originatingLocationId)
     {
         _originatingLocationId = originatingLocationId;
+    }
+
+    public Integer getCurrentLocation()
+    {
+        return _currentLocation;
+    }
+
+    public void setCurrentLocation(Integer currentLocation)
+    {
+        _currentLocation = currentLocation;
     }
 
     public String getSampleDescription()

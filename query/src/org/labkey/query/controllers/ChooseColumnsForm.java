@@ -30,7 +30,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.TreeMap;
 
-public class ChooseColumnsForm extends DesignForm
+public class  ChooseColumnsForm extends DesignForm
 {
     public LinkedHashSet<FieldKey> ff_selectedColumns = new LinkedHashSet();
     private String _dataRegionName;

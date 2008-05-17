@@ -164,6 +164,10 @@ public class StudyManager
         }
     }
 
+    public Study[] getAllStudies() throws SQLException
+    {
+        return Table.select(StudySchema.getInstance().getTableInfoStudy(), Table.ALL_COLUMNS, null, null, Study.class);
+    }
 
     private Study createStudy(User user, Container container, String label) throws SQLException
     {
