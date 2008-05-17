@@ -555,6 +555,22 @@ public class SimpleFilter implements Filter
         return dialect.substituteParameters(fragment);
     }
 
+    public boolean hasContainerEqualClause()
+    {
+        for (FilterClause clause : _clauses)
+        {
+            if (clause instanceof CompareClause)
+            {
+                CompareClause compClause = (CompareClause) clause;
+                if (compClause.getComparison() == CompareType.EQUAL &&
+                        compClause.getColumnNames().size() == 1 &&
+                        "container".equalsIgnoreCase(compClause.getColumnNames().get(0)))
+                    return true;
+            }
+        }
+        return false;
+    }
+
     // Take care of column name artifacts
     public static class ColumnNameFormatter
     {

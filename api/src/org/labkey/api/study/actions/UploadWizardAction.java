@@ -310,7 +310,12 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
             }
         }
 
-        insertView.getDataRegion().addColumn(0, ExperimentService.get().getTinfoExperimentRun().getColumn("Name"));
+        ColumnInfo nameCol = new ColumnInfo(ExperimentService.get().getTinfoExperimentRun().getColumn("Name"));
+        nameCol.copyAttributesFrom(ExperimentService.get().getTinfoExperimentRun().getColumn("Name"));
+        nameCol.setCaption("Assay Id");
+        nameCol.setDescription("The assay/experiment ID that uniquely identifies this assay run.");
+
+        insertView.getDataRegion().addColumn(0, nameCol);
         insertView.getDataRegion().addColumn(1, ExperimentService.get().getTinfoExperimentRun().getColumn("Comments"));
 
         addSampleInputColumns(getProtocol(newRunForm), insertView);

@@ -276,6 +276,11 @@ public enum CompareType
             }
             return fragment;
         }
+
+        public CompareType getComparison()
+        {
+            return _comparison;
+        }
     }
 
     // Converts parameter value to the proper type based on the SQL type of the ColumnInfo

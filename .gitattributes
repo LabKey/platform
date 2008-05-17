@@ -467,7 +467,6 @@ api/src/org/labkey/api/study/actions/DeleteAction.java -text
 api/src/org/labkey/api/study/actions/DesignerAction.java -text
 api/src/org/labkey/api/study/actions/ParticipantVisitResolverChooser.java -text
 api/src/org/labkey/api/study/actions/ProtocolIdForm.java -text
-api/src/org/labkey/api/study/actions/PublishAction.java -text
 api/src/org/labkey/api/study/actions/PublishConfirmAction.java -text
 api/src/org/labkey/api/study/actions/PublishStartAction.java -text
 api/src/org/labkey/api/study/actions/TemplateAction.java -text
@@ -625,9 +624,6 @@ api/webapp/clientapi/NavTrail.js -text
 api/webapp/clientapi/Query.js -text
 api/webapp/clientapi/Utils.js -text
 api/webapp/clientapi/WebPart.js -text
-api/webapp/clientapi/chartsample.html -text
-api/webapp/clientapi/gridsample.html -text
-api/webapp/clientapi/webpartsample.html -text
 api/webapp/ext-2.0.2/CHANGES.txt -text
 api/webapp/ext-2.0.2/INCLUDE_ORDER.txt -text
 api/webapp/ext-2.0.2/LICENSE.txt -text
