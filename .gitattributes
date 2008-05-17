@@ -574,7 +574,7 @@ api/src/org/labkey/api/view/NavTrailConfig.java -text
 api/src/org/labkey/api/view/NavTreeManager.java -text
 api/src/org/labkey/api/view/Overview.java -text
 api/src/org/labkey/api/view/PopupAdminView.java -text
-api/src/org/labkey/api/view/PopupMenu.jsp -text
+api/src/org/labkey/api/view/PopupMenu.java -text
 api/src/org/labkey/api/view/PopupMenuView.java -text
 api/src/org/labkey/api/view/ServletView.java -text
 api/src/org/labkey/api/view/SimpleTextDisplayElement.java -text
@@ -1545,6 +1545,7 @@ internal/webapp/_icons/gif.gif -text
 internal/webapp/_icons/gz.gif -text
 internal/webapp/_icons/htm.gif -text
 internal/webapp/_icons/html.gif -text
+internal/webapp/_icons/iqy.gif -text
 internal/webapp/_icons/jar.gif -text
 internal/webapp/_icons/jpeg.gif -text
 internal/webapp/_icons/jpg.gif -text

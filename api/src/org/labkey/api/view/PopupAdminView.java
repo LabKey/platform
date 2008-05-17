@@ -29,12 +29,10 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.exp.list.ListService;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.Comparator;
-import java.io.Writer;
+import java.io.PrintWriter;
 
 /**
  * Created by IntelliJ IDEA.
@@ -48,17 +46,15 @@ public class PopupAdminView extends PopupMenuView
     private ActionURL adminURL;
     private boolean canAdmin;
 
-    @Override
-    protected void renderView(NavTree model, HttpServletRequest request, HttpServletResponse response) throws Exception
+    protected void renderInternal(PopupMenu model, PrintWriter out) throws Exception
     {
-        if ("post".equals(request.getMethod().toLowerCase()))
+        if ("post".equals(getViewContext().getRequest().getMethod().toLowerCase()))
             return;
 
         if (adminMode)
-            super.renderView(model, request, response);
+            super.renderInternal(model, out);    //To change body of overridden methods use File | Settings | File Templates.
         else
         {
-            Writer out = response.getWriter();
             if (canAdmin)
                 out.write("<a class=\"wpTitle\" href=\"" + PageFlowUtil.filter(adminURL.toString()) + "\">Show Admin</a>");
             else
@@ -68,8 +64,6 @@ public class PopupAdminView extends PopupMenuView
 
     public PopupAdminView(final ViewContext context, PageConfig page)
     {
-        super("adminMenu", null);
-
         adminMode = context.isAdminMode();
         adminURL = MenuService.get().getSwitchAdminModeURL(context);
         canAdmin = context.hasPermission(ACL.PERM_ADMIN);
@@ -137,9 +131,10 @@ public class PopupAdminView extends PopupMenuView
         }
         navTree.addChild(goToModuleMenu);
 
-        navTree.addChild(NavTree.MENU_SEPARATOR);
+        navTree.setId("adminMenu");
         setNavTree(navTree);
-        setAlign(Align.RIGHT);
+        setAlign(PopupMenu.Align.RIGHT);
+        setButtonStyle(PopupMenu.ButtonStyle.BOLDTEXT);
     }
 
 

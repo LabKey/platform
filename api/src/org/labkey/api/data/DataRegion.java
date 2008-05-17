@@ -1916,8 +1916,9 @@ public class DataRegion extends DisplayElement
         _horizontalGroups = horizontalGroups;
     }
 
-    public String getJavascriptFormReference()
+    public String getJavascriptFormReference(boolean htmlEncode)
     {
-        return "document.forms[" + PageFlowUtil.filterQuote(getName()) + "]";
+        String name = htmlEncode ? PageFlowUtil.filterQuote(getName()) : PageFlowUtil.jsString(getName());
+        return "document.forms[" + name + "]";
     }
 }

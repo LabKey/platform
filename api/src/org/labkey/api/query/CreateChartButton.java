@@ -20,6 +20,7 @@ import org.apache.commons.lang.BooleanUtils;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.MenuButton;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ChartQueryReport;
@@ -40,7 +41,7 @@ import java.io.Writer;
  * User: Karl Lum
  * Date: Mar 28, 2007
  */
-public class CreateChartButton extends ActionButton
+public class CreateChartButton extends MenuButton
 {
     private boolean _showCreateChart;
     private boolean _showCreateRReport;
@@ -51,7 +52,8 @@ public class CreateChartButton extends ActionButton
 
     public CreateChartButton(String actionName, boolean showCreateChart, boolean showCreateRReport, String schemaName, String queryName, String viewName, String reportType)
     {
-        super(actionName, "Views", DataRegion.MODE_GRID, ActionButton.Action.LINK);
+        super("Views");
+        setActionName(actionName);
 
         _showCreateChart = showCreateChart;
         _showCreateRReport = showCreateRReport;
@@ -75,59 +77,46 @@ public class CreateChartButton extends ActionButton
 
         ActionURL url = ChartUtil.getChartDesignerURL(HttpView.currentContext(), chartBean);
 
-        out.write("<a href='javascript:void(0)' onclick=\"showMenu(this, 'reportMenu');\">");
-        out.write("<img border=0 src='" + PageFlowUtil.buttonSrc(getCaption(ctx), "shadedMenu") + "'>");
-        out.write("</a>");
+        Integer reportId = (Integer)ctx.get("reportId");
 
-        if (!BooleanUtils.toBoolean((String)ctx.get("RReportMenuRendered")))
+        if (_showCreateChart && reportId == null)
+            addMenuItem("Create Chart", url);
+
+        if (_showCreateRReport)
         {
-            ctx.put("RReportMenuRendered", "true");
-            Integer reportId = (Integer)ctx.get("reportId");
-
-            out.write("<div style=\"display:none\" id=\"reportMenu\" class=\"yuimenu\">");
-            out.write("<div class=\"bd\">");
-            out.write("<ul class=\"first-of-type\">");
-            if (_showCreateChart && reportId == null)
-                out.write("<li class=\"yuimenuitem\"><a href=\"" + url + "\">Create Chart</a></li>");
-
-            if (_showCreateRReport)
+            if (reportId == null)
             {
-                if (reportId == null)
-                {
-                    if (RReport.isValidConfiguration())
-                    {
-                        int perms = RReport.getEditPermissions();
-                        if (ctx.getViewContext().hasPermission(perms))
-                            out.write("<li class=\"yuimenuitem\"><a href=\"" + this.getActionName(ctx) + "\">Create R View</a></li>");
-                        else
-                            out.write("<li class=\"yuimenuitem\"><a href=\"javascript:alert('You do not have the required authorization to create R Views.')\">Create R View</a></li>");
-                    }
-                    else
-                        out.write("<li class=\"yuimenuitem\"><a href=\"javascript:alert('The R Program has not been configured properly, please request that an administrator configure R in the Admin Console.')\">Create R View</a></li>");
-
-                    //out.write("</ul><ul>");
-                }
-
                 if (RReport.isValidConfiguration())
                 {
-                    try {
-                        ViewContext context = ctx.getViewContext();
-                        Report[] reports = ReportService.get().getReports(context.getUser(), context.getContainer(),
-                                ChartUtil.getReportKey(_schemaName, _queryName));
+                    int perms = RReport.getEditPermissions();
+                    if (ctx.getViewContext().hasPermission(perms))
+                        addMenuItem("Create R View",  this.getActionName(ctx));
+                    else
+                        addMenuItem("Create R View", null, "alert('You do not have the required authorization to create R Views.')");
+                }
+                else
+                    addMenuItem("Create R View", null, "alert('The R Program has not been configured properly, please request that an administrator configure R in the Admin Console.')");
+            }
 
-                        if (reports.length > 0)
-                        {
-                            out.write("<li class=\"yuimenuitem\"><a href=\"" + new ActionURL("reports", "manageViews", ctx.getContainer()) + "\">Manage Views</a></li>");
-                        }
-                    }
-                    catch (Exception e)
+            if (RReport.isValidConfiguration())
+            {
+                try {
+                    ViewContext context = ctx.getViewContext();
+                    Report[] reports = ReportService.get().getReports(context.getUser(), context.getContainer(),
+                            ChartUtil.getReportKey(_schemaName, _queryName));
+
+                    if (reports.length > 0)
                     {
-                        throw new RuntimeException("An error occurred retrieving the saved reports", e);
+                        addMenuItem("Manage Views", new ActionURL("reports", "manageViews", ctx.getContainer()));
                     }
                 }
+                catch (Exception e)
+                {
+                    throw new RuntimeException("An error occurred retrieving the saved reports", e);
+                }
             }
-            out.write("</ul></div></div>");
         }
+        super.render(ctx, out);
     }
 
     protected String getShowReportMenuItem(RenderContext context, Report report)

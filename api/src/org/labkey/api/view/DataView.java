@@ -129,8 +129,8 @@ public abstract class DataView extends WebPartView<RenderContext>
         }
     }
 
-    public String createVerifySelectedScript(ActionURL url, String objectsDescription)
+    public String createVerifySelectedScript(ActionURL url, String objectsDescription, boolean htmlEncode)
     {
-        return "javascript: if (verifySelected(" + getDataRegion().getJavascriptFormReference() + ", \"" + url.getLocalURIString() + "\", \"post\", \"" + objectsDescription + "\")) { " + getDataRegion().getJavascriptFormReference() + ".submit(); }";
+        return "javascript: if (verifySelected(" + getDataRegion().getJavascriptFormReference(htmlEncode) + ", \"" + url.getLocalURIString() + "\", \"post\", \"" + objectsDescription + "\")) { " + getDataRegion().getJavascriptFormReference(htmlEncode) + ".submit(); }";
     }
 }

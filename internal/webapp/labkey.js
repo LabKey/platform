@@ -124,39 +124,11 @@ LABKEY.requiresClientAPI = function(immediate)
     LABKEY.requiresScript('clientapi/clientapi' + (LABKEY.devMode ? '.js' : '.min.js'), immediate);
 }
 
-LABKEY.requiresButtonBarMenu = function()
-{
-    if (!LABKEY.buttonBarMenu)
-    {
-        LABKEY.requiresMenu();
 
-        YAHOO.util.Event.addListener(window, "load", initButtonBarMenu);
-        LABKEY.buttonBarMenu = true;
-    }
-}
-
-function initButtonBarMenu() {
-    var elements = YAHOO.util.Dom.getElementsByClassName('yuimenu', 'div');
-    for (i = 0; i < elements.length; i++) {
-        var menu = new YAHOO.widget.Menu(elements[i].id, { constraintoviewport: true });
-        menu.render();
-    }
-}
-
-function showMenu(parent, menuElementId) {
-    var menuDiv = YAHOO.util.Dom.get(menuElementId);
-    menuDiv.style.display = "";
-    var menu = new YAHOO.widget.Menu(menuElementId, { constraintoviewport: true });
-    var x = YAHOO.util.Dom.getX(parent);
-    var y = YAHOO.util.Dom.getY(parent) + parent.offsetHeight;
-    var region = YAHOO.util.Dom.getRegion(menuElementId);
-    menu.render();
-    menu.moveTo(x, y);
-    menu.show();
-    if (region.bottom > document.body.scrollTop + YAHOO.util.Dom.getViewportHeight())
-    {
-        document.body.scrollTop = region.bottom - YAHOO.util.Dom.getViewportHeight();
-    }
+function showMenu(parent, menuElementId, align) {
+    if (!align)
+        align = "tl-bl?";
+    Ext.menu.MenuMgr.get(menuElementId).show(parent, align);
 }
 
 LABKEY.requiresMenu = function()

@@ -29,6 +29,7 @@ public class NavTree extends Pair<String, String> implements Collapsible
     private boolean _selected = false;
     private boolean _collapsed = false;
     private boolean _canCollapse = true;
+    private String _script;
     private String _id = "";
 
     private ArrayList<NavTree> children = null;
@@ -266,6 +267,16 @@ public class NavTree extends Pair<String, String> implements Collapsible
     public boolean isSelected()
     {
         return _selected;
+    }
+
+    public String getScript()
+    {
+        return _script;
+    }
+
+    public void setScript(String script)
+    {
+        _script = script;
     }
 }
 

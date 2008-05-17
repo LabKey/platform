@@ -140,9 +140,9 @@ public class ExperimentRunListView extends QueryView
             MenuButton addToExperimentButton = new MenuButton("Add to run group");
 
             ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getCreateRunGroupURL(getViewContext().getContainer(), getViewContext().getActionURL(), true);
-            String javascript = "javascript: " + view.getDataRegion().getJavascriptFormReference() + ".method = \"POST\";\n " +
-                    view.getDataRegion().getJavascriptFormReference() + ".action = " + PageFlowUtil.filterQuote(url + "&noPost=true") + ";\n " +
-                    view.getDataRegion().getJavascriptFormReference() + ".submit();";
+            String javascript = "javascript: " + view.getDataRegion().getJavascriptFormReference(false) + ".method = \"POST\";\n " +
+                    view.getDataRegion().getJavascriptFormReference(false) + ".action = " + PageFlowUtil.jsString(url + "&noPost=true") + ";\n " +
+                    view.getDataRegion().getJavascriptFormReference(false) + ".submit();";
             addToExperimentButton.addMenuItem("Create new run group...", javascript);
 
             ExpExperiment[] experiments = ExperimentService.get().getExperiments(c);
@@ -154,7 +154,7 @@ public class ExperimentRunListView extends QueryView
             for (ExpExperiment exp : experiments)
             {
                 ActionURL addRunUrl = PageFlowUtil.urlProvider(ExperimentUrls.class).getAddRunsToExperimentURL(getContainer(), exp);
-                addToExperimentButton.addMenuItem(exp.getName(), "javascript: if (verifySelected(" + view.getDataRegion().getJavascriptFormReference() + ", \"" + addRunUrl.getLocalURIString() + "\", \"post\", \"run\")) { " + view.getDataRegion().getJavascriptFormReference() + ".submit(); }");
+                addToExperimentButton.addMenuItem(exp.getName(), null, "if (verifySelected(" + view.getDataRegion().getJavascriptFormReference(false) + ", \"" + addRunUrl.getLocalURIString() + "\", \"post\", \"run\")) { " + view.getDataRegion().getJavascriptFormReference(false) + ".submit(); }");
             }
             bar.add(addToExperimentButton);
         }

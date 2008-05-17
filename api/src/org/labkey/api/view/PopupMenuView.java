@@ -16,59 +16,60 @@
 
 package org.labkey.api.view;
 
+import java.io.PrintWriter;
+
 /**
  * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Jun 20, 2007
  * Time: 9:25:42 PM
  */
-public class PopupMenuView extends JspView<NavTree>
+public class PopupMenuView extends HttpView<PopupMenu>
 {
-    public enum Align
+
+    public PopupMenuView()
     {
-        LEFT,
-        RIGHT
+        super(new PopupMenu());
     }
-
-    private NavTree navTree;
-    private String elementId;
-    private Align align = Align.LEFT;
-
-    public PopupMenuView(String elementId, NavTree navTree)
+    
+    public PopupMenuView(NavTree navTree)
     {
-        super("/org/labkey/api/view/PopupMenu.jsp", navTree);
-        this.elementId = elementId;
-        this.navTree = navTree;
+        super(new PopupMenu(navTree));
     }
-
 
     public NavTree getNavTree()
     {
-        return navTree;
+        return getModelBean().getNavTree();
     }
 
     public void setNavTree(NavTree navTree)
     {
-        this.navTree = navTree;
+        getModelBean().setNavTree(navTree);
     }
 
-    public String getElementId()
+    public PopupMenu.Align getAlign()
     {
-        return elementId;
+        return getModelBean().getAlign();
     }
 
-    public void setElementId(String elementId)
+    public void setAlign(PopupMenu.Align align)
     {
-        this.elementId = elementId;
+        getModelBean().setAlign(align);
     }
 
-    public Align getAlign()
+    public PopupMenu.ButtonStyle getButtonStyle()
     {
-        return align;
+        return getModelBean().getButtonStyle();
     }
 
-    public void setAlign(Align align)
+    public void setButtonStyle(PopupMenu.ButtonStyle buttonStyle)
     {
-        this.align = align;
+        getModelBean().setButtonStyle(buttonStyle);
+    }
+
+
+    protected void renderInternal(PopupMenu model, PrintWriter out) throws Exception
+    {
+       model.render(out);
     }
 }

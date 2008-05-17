@@ -172,7 +172,14 @@ public class NavTreeMenu extends WebPartView implements Collapsible
                 out.print(filter(nav.getKey()));
             else
             {
-                out.printf("<a href=\"%s\" style=\"%s\">", filter(link), selected ? "font-weight:bold;font-style:italic" : "");
+                out.printf("<a href=\"%s\" style=\"%s\"", filter(link), selected ? "font-weight:bold;font-style:italic" : "");
+                if (null != nav.getScript())
+                {
+                    out.print(" onclick=\"");
+                    out.print(filter(nav.getScript()));
+                    out.print("\"");
+                }
+                out.print(">");
                 out.print(filter(nav.getKey()));
                 out.print("</a>");
                 if (selected)

@@ -587,18 +587,18 @@ public class QueryView extends WebPartView<Object>
             }
         }
 
-        String regionName = PageFlowUtil.filterQuote(getDataRegionName());
+        String regionName = getDataRegionName();
         for (Integer pageSize : sizes)
         {
             boolean checked = pageSize.intValue() == maxRows;
             pageSizeMenu.addMenuItem(String.valueOf(pageSize) + " per page", "#",
-                    "javascript:setMaxRows(" + regionName + ", " + String.valueOf(pageSize) + ")", checked);
+                    "setMaxRows(" + PageFlowUtil.jsString(regionName) + ", " + String.valueOf(pageSize) + ")", checked);
         }
         pageSizeMenu.addSeparator();
         pageSizeMenu.addMenuItem("Show Selected", "#",
-                "javascript:setShowSelected(" + regionName + ")", showingSelected);
+                "setShowSelected(" + PageFlowUtil.jsString(regionName) + ")", showingSelected);
         pageSizeMenu.addMenuItem("Show All", "#",
-                "javascript:setShowAll(" + regionName + ")", showingAll);
+                "setShowAll(" + PageFlowUtil.jsString(regionName) + ")", showingAll);
 
         return pageSizeMenu;
     }

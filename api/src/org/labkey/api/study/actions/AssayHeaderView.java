@@ -76,7 +76,7 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
             }
 
             if (manageMenu.getChildCount() > 0)
-                _managePopupView = new PopupMenuView("manageMenu", manageMenu);
+                _managePopupView = new PopupMenuView(manageMenu);
 
             _links.put("view all runs", AssayService.get().getAssayRunsURL(getViewContext().getContainer(), _protocol));
             _links.put("view all data", AssayService.get().getAssayDataURL(getViewContext().getContainer(), _protocol));

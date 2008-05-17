@@ -299,17 +299,29 @@ public class NavTrailView extends HttpView
 
     private String formatLink(String display, String href)
     {
+        return formatLink(display, href, null);
+    }
+
+    private String formatLink(String display, String href, String script)
+    {
         if (null == display)
             display = href;
+        if (href == null && script != null)
+            href = "#";
         if (href == null && display == null)
             return "";
+
         if (href == null)
             return filter(display);
         else
         {
             StringBuilder sb = new StringBuilder();
-            sb.append("<a href=\"").append(filter(href)).append("\">").append(filter(display)).append("</a>");
+            sb.append("<a href=\"").append(filter(href)).append("\"");
+            if (script != null)
+                sb.append(" onclick=\"").append(filter(script)).append("\"");
+            sb.append(">").append(filter(display)).append("</a>");
             return sb.toString();
         }
     }
+
 }
