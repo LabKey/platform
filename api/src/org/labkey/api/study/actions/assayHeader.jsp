@@ -4,6 +4,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.view.PopupMenu" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AssayHeaderView> me = (JspView<AssayHeaderView>) HttpView.currentView();
@@ -30,9 +31,7 @@
                 <%
                     if (bean.getManagePopupView() != null)
                     {
-                %>
-                [<a id="manageMenu" href="javascript: void(0);">manage assay design >></a>]
-                <%
+                        me.include(bean.getManagePopupView(), out);
                     }
                     for (Map.Entry<String, ActionURL> entry : bean.getLinks().entrySet())
                     {
@@ -45,7 +44,3 @@
         </td>
     </tr>
 </table>
-<%
-    if (bean.getManagePopupView() != null)
-        me.include(bean.getManagePopupView(), out);
-%>

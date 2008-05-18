@@ -51,7 +51,7 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
         _protocol = protocol;
         _provider = provider;
 
-        NavTree manageMenu = new NavTree();
+        NavTree manageMenu = new NavTree("manage assay design");
         if (!minimizeLinks)
         {
             if (_protocol.getContainer().equals(getViewContext().getContainer()))
@@ -76,7 +76,10 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
             }
 
             if (manageMenu.getChildCount() > 0)
+            {
                 _managePopupView = new PopupMenuView(manageMenu);
+                _managePopupView.setButtonStyle(PopupMenu.ButtonStyle.TEXTBUTTON);
+            }
 
             _links.put("view all runs", AssayService.get().getAssayRunsURL(getViewContext().getContainer(), _protocol));
             _links.put("view all data", AssayService.get().getAssayDataURL(getViewContext().getContainer(), _protocol));

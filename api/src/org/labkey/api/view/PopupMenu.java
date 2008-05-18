@@ -87,10 +87,17 @@ public class PopupMenu
         if (null == _navTree.getKey())
             return;
 
+        if (_buttonStyle == ButtonStyle.TEXTBUTTON)
+            out.append("[");
         out.append("<a href='javascript:void(0)'");
         out.append("onclick=\"showMenu(this, '").append(getId()).append("','").append(_align.getExtPosition()).append("');\">");
-        out.append("<img border=0 src='").append(PageFlowUtil.buttonSrc(_navTree.getKey(), _buttonStyle.getStyleText())).append("'>");
+        if (_buttonStyle == ButtonStyle.TEXTBUTTON)
+            out.append(PageFlowUtil.filter(_navTree.getKey())).append(" &gt;&gt;");
+        else
+            out.append("<img border=0 src='").append(PageFlowUtil.buttonSrc(_navTree.getKey(), _buttonStyle.getStyleText())).append("'>");
         out.append("</a>");
+        if (_buttonStyle == ButtonStyle.TEXTBUTTON)
+            out.append("]");
     }
 
     public void renderMenuScript(Writer out)
@@ -184,7 +191,7 @@ public class PopupMenu
             extPosition = position;
         }
 
-        String getExtPosition()
+        public String getExtPosition()
         {
             return extPosition;
         }
@@ -193,7 +200,8 @@ public class PopupMenu
     public enum ButtonStyle
     {
         MENUBUTTON("shadedMenu"),
-        BOLDTEXT("boldMenu");
+        BOLDTEXT("boldMenu"),
+        TEXTBUTTON(null);
 
         private String _styleText;
         ButtonStyle(String buttonStyle)
