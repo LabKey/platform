@@ -95,7 +95,7 @@ public class QQuery extends QExpr
             return;
         }
         builder.append("(");
-        builder.append(Table.getSelectSQL(table, table.getColumnsList(), null, null));
+        builder.append(Table.getSelectSQL(table, table.getColumns(), null, null));
         builder.append(")");
     }
 

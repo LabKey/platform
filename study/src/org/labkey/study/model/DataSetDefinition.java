@@ -335,7 +335,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         {
             // NOTE: any PropetyDescriptor we hold onto will look like a leak
             // CONSIDER: make MemTracker aware of this cache
-            for (ColumnInfo col : tinfoFrom.getColumnsList())
+            for (ColumnInfo col : tinfoFrom.getColumns())
             {
                 if (col instanceof PropertyColumn)
                     assert MemTracker.remove(((PropertyColumn)col).getPropertyDescriptor());
@@ -471,7 +471,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             {
                 if (!"participantid".equals(col.getColumnName()))
                     col.setUserEditable(false);
-                columnList.add(newDatasetColumnInfo(this, col));
+                columns.add(newDatasetColumnInfo(this, col));
             }
             ColumnInfo sequenceNumCol = newDatasetColumnInfo(this, studyData.getColumn("sequenceNum"));
             if (study.isDateBased())
@@ -480,21 +480,21 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 ColumnInfo visitDateCol = newDatasetColumnInfo(this, studyData.getColumn("_visitDate"));
                 visitDateCol.setName("Date");
                 visitDateCol.setNullable(false);
-                columnList.add(visitDateCol);
-                columnList.add(newDatasetColumnInfo(this, participantVisit.getColumn("Day")));
+                columns.add(visitDateCol);
+                columns.add(newDatasetColumnInfo(this, participantVisit.getColumn("Day")));
             }
-            columnList.add(sequenceNumCol);
+            columns.add(sequenceNumCol);
             // Property columns
             ColumnInfo[] columnsLookup = OntologyManager.getColumnsForType(typeURI, this, c);
-            columnList.addAll(Arrays.asList(columnsLookup));
+            columns.addAll(Arrays.asList(columnsLookup));
             ColumnInfo visitRowId = newDatasetColumnInfo(this, participantVisit.getColumn("VisitRowId"));
             visitRowId.setIsHidden(true);
             visitRowId.setUserEditable(false);
-            columnList.add(visitRowId);
+            columns.add(visitRowId);
             // HACK reset colMap
             colMap = null;
 
-            _pkColumnNames = new String[] { "LSID" };
+            _pkColumnNames = Arrays.asList("LSID");
 
 //          <UNDONE> just add a lookup column to the columnlist for VisitDate
             selectName = new SQLFragment(
@@ -540,7 +540,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             if (standardPropertySet.isEmpty())
             {
                 TableInfo info = StudySchema.getInstance().getTableInfoStudyData();
-                for (ColumnInfo col : info.getColumnsList())
+                for (ColumnInfo col : info.getColumns())
                 {
                     String propertyURI = col.getPropertyURI();
                     if (propertyURI == null)

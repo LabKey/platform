@@ -61,7 +61,7 @@ public class DataSetTable extends FilteredTable
         for (PropertyDescriptor pd :  DataSetDefinition.getStandardPropertiesSet())
             standardURIs.add(pd.getPropertyURI());
 
-        for (ColumnInfo baseColumn : getRealTable().getColumnsList())
+        for (ColumnInfo baseColumn : getRealTable().getColumns())
         {
             String name = baseColumn.getName();
             if ("ParticipantId".equalsIgnoreCase(name))

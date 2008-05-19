@@ -385,7 +385,7 @@ public class ListItemImpl implements ListItem
                                 ctx.setMode(DataRegion.MODE_DETAILS);
                                 ctx.setBaseFilter(new PkFilter(table, _itm.getKey(), true));
 
-                                ResultSet rs = Table.selectForDisplay(table, table.getColumnsList(), ctx.getBaseFilter(), ctx.getBaseSort(), 0, 0);
+                                ResultSet rs = Table.selectForDisplay(table, table.getColumns(), ctx.getBaseFilter(), ctx.getBaseSort(), 0, 0);
                                 rs.next();
                                 rowMap = ResultSetUtil.mapRow(rs, rowMap);
                                 rs.close();

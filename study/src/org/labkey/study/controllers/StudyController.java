@@ -3318,7 +3318,7 @@ public class StudyController extends BaseStudyController
             if (study.isDateBased())
                 ignoreColumns.add("SequenceNum");
 
-            for (ColumnInfo col : tinfo.getColumnsList())
+            for (ColumnInfo col : tinfo.getColumns())
             {
                 if (ignoreColumns.contains(col.getName()))
                     continue;

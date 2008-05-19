@@ -57,7 +57,7 @@ public class  ChooseColumnsForm extends DesignForm
             TableInfo table = getQueryDef().getTable(null, getSchema(), null);
             if (table != null)
             {
-                for (ColumnInfo column : table.getColumnsList())
+                for (ColumnInfo column : table.getColumns())
                 {
                     if (!column.isHidden() && !CustomViewImpl.isUnselectable(column))
                     {

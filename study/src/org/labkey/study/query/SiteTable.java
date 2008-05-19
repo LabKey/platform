@@ -32,7 +32,7 @@ public class SiteTable extends StudyTable
     {
         super(schema, StudySchema.getInstance().getTableInfoSite());
         _schema = schema;
-        for (ColumnInfo baseColumn : _rootTable.getColumnsList())
+        for (ColumnInfo baseColumn : _rootTable.getColumns())
         {
             String name = baseColumn.getName();
             if ("Container".equalsIgnoreCase(name) || "EntityId".equalsIgnoreCase(name))

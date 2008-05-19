@@ -209,7 +209,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableBaseImpl<MaterialSource> im
             SimpleFilter filter = new SimpleFilter();
             filter.addWhereClause(whereClause.getSQL(), whereClause.getParams().toArray());
             List<ColumnInfo> selectColumns = new ArrayList<ColumnInfo>();
-            selectColumns.addAll(tinfoProtocol.getColumnsList());
+            selectColumns.addAll(tinfoProtocol.getColumns());
             selectColumns.add(colSampleLSID);
             Protocol[] protocols = Table.select(tinfoProtocol,
                     selectColumns, filter, null, Protocol.class);

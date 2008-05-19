@@ -129,7 +129,7 @@ public class DbUserSchemaController extends ViewController
             return null;
 
         Map<String, Object> values = new HashMap<String, Object>();
-        for (ColumnInfo column : dbUserSchemaTable.getColumnsList())
+        for (ColumnInfo column : dbUserSchemaTable.getColumns())
         {
             if (form.hasTypedValue(column))
             {

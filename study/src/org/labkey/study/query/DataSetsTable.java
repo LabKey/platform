@@ -27,7 +27,7 @@ public class DataSetsTable extends FilteredTable
     public DataSetsTable(StudyQuerySchema schema)
     {
         super(StudySchema.getInstance().getTableInfoDataSet(), schema.getContainer());
-        for (ColumnInfo baseColumn : _rootTable.getColumnsList())
+        for (ColumnInfo baseColumn : _rootTable.getColumns())
         {
             String name = baseColumn.getName();
             if ("Container".equalsIgnoreCase(name) || "EntityId".equalsIgnoreCase(name))

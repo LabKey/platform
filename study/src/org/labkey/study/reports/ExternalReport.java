@@ -175,7 +175,7 @@ public class ExternalReport extends AbstractReport
 //                QuerySchema schema = QueryService.get().getUserSchema(viewContext.getUser(), viewContext.getContainer(),  "study");
                 UserSchema schema = getStudyQuerySchema(viewContext.getUser(), ACL.PERM_READ, viewContext);
                 TableInfo mainTable = schema.getTable(getQueryName(), "Dataset");
-                rs = Table.select(mainTable, mainTable.getColumnsList(), null, null);
+                rs = Table.select(mainTable, mainTable.getColumns(), null, null);
             }
 
             TSVGridWriter tsv = new TSVGridWriter(rs);

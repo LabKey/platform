@@ -23,7 +23,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
@@ -173,7 +172,7 @@ public class ExportExcelReport extends RedirectReport
             String label = def.getLabel() != null ? def.getLabel() : String.valueOf(def.getDataSetId());
 
             // Filter out labkey-specific columns, lsid and sourcelsid
-            List<ColumnInfo> columns = tinfo.getColumnsList();
+            List<ColumnInfo> columns = tinfo.getColumns();
             List<ColumnInfo> destColumns = new ArrayList<ColumnInfo>(columns.size() - 2);
             for (ColumnInfo column : columns)
             {

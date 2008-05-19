@@ -1,14 +1,9 @@
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="java.util.List" %>
-<%@ page import="org.labkey.demo.model.Person" %>
-<%@ page import="org.labkey.demo.view.BulkUpdatePage" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.springframework.validation.BindException" %>
+<%@ page import="org.labkey.demo.model.Person"%>
+<%@ page import="org.springframework.validation.BindException"%>
 <%@ page import="org.springframework.validation.ObjectError" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="java.util.Set" %>
 <%@ page import="java.util.HashSet" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Set" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     /*

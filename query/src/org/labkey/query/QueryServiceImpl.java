@@ -325,10 +325,9 @@ public class QueryServiceImpl extends QueryService
         return ret;
     }
 
-    public ResultSet select(TableInfo table, ColumnInfo[] columns, Filter filter, Sort sort) throws SQLException
+    public ResultSet select(TableInfo table, List<ColumnInfo> columns, Filter filter, Sort sort) throws SQLException
     {
-        List<ColumnInfo> lstColumns = new ArrayList(Arrays.asList(columns));
-        ensureRequiredColumns(table, lstColumns, filter, sort, null);
-        return Table.selectForDisplay(table, lstColumns, filter, sort, 0, 0);
+        ensureRequiredColumns(table, columns, filter, sort, null);
+        return Table.selectForDisplay(table, columns, filter, sort, 0, 0);
     }
 }

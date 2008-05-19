@@ -129,7 +129,7 @@ def:    for (DataSetDefinition def : defs)
             try
             {
                 TableInfo table = def.getTableInfo(HttpView.currentContext().getUser(), false, false);
-                List<ColumnInfo> columns = table.getColumnsList();
+                List<ColumnInfo> columns = table.getColumns();
                 for (ColumnInfo column : columns)
                 {
                     if (!column.isHidden() && (

@@ -1516,7 +1516,7 @@ public class StudyManager
         TableInfo tinfo = def.getTableInfo(null, false, false);
 
         Map<String,ColumnInfo> propName2Col = new CaseInsensitiveHashMap<ColumnInfo>();
-        for (ColumnInfo col : tinfo.getColumnsList())
+        for (ColumnInfo col : tinfo.getColumns())
         {
             propName2Col.put(col.getName(), col);
             String uri = col.getPropertyURI();
@@ -1669,7 +1669,7 @@ public class StudyManager
         // Try not to be too repetative, stop each loop after one error
         //
 
-        for (ColumnInfo col : tinfo.getColumnsList())
+        for (ColumnInfo col : tinfo.getColumns())
         {
             // lsid is generated
             if (col.getName().equalsIgnoreCase("lsid"))
@@ -1998,7 +1998,7 @@ public class StudyManager
 
             String visitDatePropertyURI = null;
             String keyPropertyURI = null;
-            for (ColumnInfo col : dataset.getTableInfo(null, false, false).getColumnsList())
+            for (ColumnInfo col : dataset.getTableInfo(null, false, false).getColumns())
             {
                 if (col.getName().equalsIgnoreCase(dataset.getVisitDatePropertyName()))
                     visitDatePropertyURI = col.getPropertyURI();

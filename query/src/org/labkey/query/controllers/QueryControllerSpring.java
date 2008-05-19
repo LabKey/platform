@@ -1505,7 +1505,7 @@ public class QueryControllerSpring extends SpringActionController
             //strip all read-only columns from the row map so that we don't get database
             //errors on insert/update. The Ext grid sends all column values during update
             //and other clients may do the same.
-            for(ColumnInfo col : userTable.getColumnsList())
+            for(ColumnInfo col : userTable.getColumns())
             {
                 //don't strip the PK, which will be read-only if it's auto-incr
                 if(!col.isKeyField() && isColReadOnly(col))
@@ -1699,7 +1699,7 @@ public class QueryControllerSpring extends SpringActionController
 
             //for delete, just include the key column value(s) in the reply
             Map<String,Object> responseRow = new HashMap<String,Object>();
-            for(ColumnInfo col : table.getColumnsList())
+            for(ColumnInfo col : table.getColumns())
             {
                 if(col.isKeyField())
                     responseRow.put(col.getName(), row.get(col.getName()));

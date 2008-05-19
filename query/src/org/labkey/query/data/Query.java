@@ -197,7 +197,7 @@ public class Query
             {
                 if (field.getParent() != null)
                     continue;
-                List<String> parts = new ArrayList();
+                List<String> parts = new ArrayList<String>();
                 parts.add(key.getName());
                 parts.addAll(field.getParts());
                 QFieldKey qfield = QFieldKey.of(FieldKey.fromParts(parts));

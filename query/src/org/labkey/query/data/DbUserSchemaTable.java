@@ -51,7 +51,7 @@ public class DbUserSchemaTable extends FilteredTable
 
     protected void resetFks()
     {
-        for(ColumnInfo col : getColumnsList())
+        for(ColumnInfo col : getColumns())
         {
             //if the column has an fk AND if the fk table comes from the same schema
             //reset the fk so that it creates the table through the schema, thus returning

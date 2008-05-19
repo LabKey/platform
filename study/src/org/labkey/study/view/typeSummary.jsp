@@ -13,7 +13,7 @@
 
     ViewContext context = HttpView.currentContext();
     int permissions = context.getContainer().getAcl().getPermissions(context.getUser());
-    List<ColumnInfo> cols = dataset.getTableInfo(context.getUser(), true, false).getColumnsList();
+    List<ColumnInfo> cols = dataset.getTableInfo(context.getUser(), true, false).getColumns();
 
 // UNDONE: clean way to get count of system fields???
     int systemCount = 6;

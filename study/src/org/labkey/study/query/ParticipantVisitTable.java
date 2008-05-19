@@ -46,7 +46,7 @@ public class ParticipantVisitTable extends FilteredTable
         keyPV.setIsHidden(true);
         keyPV.setIsUnselectable(true);
         addColumn(keyPV);
-        for (ColumnInfo col : _rootTable.getColumnsList())
+        for (ColumnInfo col : _rootTable.getColumns())
         {
             if ("Container".equalsIgnoreCase(col.getName()))
                 continue;

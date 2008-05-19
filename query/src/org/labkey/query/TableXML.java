@@ -25,7 +25,6 @@ import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.FieldKey;
 
 import java.util.Collection;
-import java.util.Arrays;
 import java.util.Collections;
 
 public class TableXML
@@ -77,7 +76,7 @@ public class TableXML
 
     static public void initTable(TableType xbTable, TableInfo table, FieldKey key)
     {
-        initTable(xbTable, table, key, table == null ? Collections.<ColumnInfo>emptyList() : table.getColumnsList());
+        initTable(xbTable, table, key, table == null ? Collections.<ColumnInfo>emptyList() : table.getColumns());
     }
 
 }

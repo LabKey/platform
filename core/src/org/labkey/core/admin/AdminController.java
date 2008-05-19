@@ -1110,7 +1110,7 @@ public class AdminController extends SpringActionController
             props.setSystemDescription(form.getSystemDescription());
 
             // Need to strip out any extraneous characters from the email address.
-            // E.g. "Labkey <support@labkey.com>" -> "support@labkey.com"
+            // E.g. "LabKey <info@labkey.com>" -> "info@labkey.com"
             try
             {
                 String address = form.getSystemEmailAddress().trim();

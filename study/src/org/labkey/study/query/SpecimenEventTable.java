@@ -52,7 +52,7 @@ public class SpecimenEventTable extends StudyTable
     {
         super(schema, StudySchema.getInstance().getTableInfoSpecimenEvent());
 
-        for (ColumnInfo baseColumn : _rootTable.getColumnsList())
+        for (ColumnInfo baseColumn : _rootTable.getColumns())
         {
             String name = baseColumn.getName();
             if ("Container".equalsIgnoreCase(name) ||
