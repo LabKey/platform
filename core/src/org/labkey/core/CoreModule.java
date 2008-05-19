@@ -334,6 +334,9 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
                 }
             }
         }
+
+        ContextListener.addStartupListener(TempTableTracker.getStartupListener());
+        ContextListener.addShutdownListener(TempTableTracker.getShutdownListener());
     }
 
     @Override
@@ -546,7 +549,6 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
         AuthenticationManager.setLogoutURL(LoginController.getLogoutURL());
         AuthenticationManager.initialize();
         UserManager.registerUserDetailsURLFactory(new UserController.DetailsURLFactoryImpl());
-        TempTableTracker.init();
     }
 
 

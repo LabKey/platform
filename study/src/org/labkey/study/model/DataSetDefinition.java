@@ -26,8 +26,10 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.Cache;
 import org.labkey.api.view.HttpView;
 import org.labkey.study.StudySchema;
+import org.apache.log4j.Logger;
 
 import javax.servlet.ServletException;
 import java.sql.SQLException;
@@ -234,21 +236,41 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     /**
      * materializedCache is a cache of the _LAST_ temp table that was materialized for this DatasetDefinition.
-     *
-     * DatasetDefinitions may get thrown out of mememory even though there is a perfectly good
-     * materialized dataset in the database.  Since these are expensive, try to hook them up again.
-     *
-     * There may also be temp tables floating around waiting to be garbage collected, we don't care about those
-     * (see TempTableTracker).
+     * There may also be temp tables floating around waiting to be garbage collected (see TempTableTracker).
      */
     private static class MaterializedLockObject
     {
-        final Object materializeLock = new Object();
-        TableInfo tinfoFrom = null;    // for debugging
-        TableInfo tinfoMat = null;
-    }
-    private static final Map<String, MaterializedLockObject> materializedCache = new HashMap<String,MaterializedLockObject>();
+        Table.TempTableInfo tinfoMat = null;
+        // for debugging
+        TableInfo tinfoFrom = null;
+        long lastVerify = 0;
 
+        void verify()
+        {
+            synchronized (this)
+            {
+                long now = System.currentTimeMillis();
+                if (null == tinfoMat || lastVerify + 5* Cache.MINUTE > now)
+                    return;
+                lastVerify = now;
+                boolean ok = tinfoMat.verify();
+                if (ok)
+                    return;
+                tinfoMat = null;
+                tinfoFrom = null;
+            }
+            // cache is not OK
+            // Since this should never happen let's preemptively assume the entire dataset temptable cache is tofu
+            synchronized (materializedCache)
+            {
+                materializedCache.clear();
+            }
+            Logger.getInstance(DataSetDefinition.class).error("TempTable disappeared? " +  tinfoMat.getTempTableName());
+        }
+    }
+
+
+    private static final Map<String, MaterializedLockObject> materializedCache = new HashMap<String,MaterializedLockObject>();
 
     private synchronized TableInfo getMaterializedTempTableInfo()
     {
@@ -259,43 +281,44 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
         String tempName = getCacheString();
 
-        MaterializedLockObject p;
+        MaterializedLockObject mlo;
 
         // if we're in a trasaction we don't want to pollute the cache (can't tell whether this user
         // is changing dataset data or not)
 
         if (getScope().isTransactionActive())
         {
-            p = new MaterializedLockObject();
+            mlo = new MaterializedLockObject();
         }
         else
         {
             synchronized(materializedCache)
             {
-                p = materializedCache.get(tempName);
-                if (null == p)
+                mlo = materializedCache.get(tempName);
+                if (null == mlo)
                 {
-                    p = new MaterializedLockObject();
-                    materializedCache.put(tempName, p);
+                    mlo = new MaterializedLockObject();
+                    materializedCache.put(tempName, mlo);
                 }
             }
         }
 
         // prevent multiple threads from materializing the same dataset
-        synchronized(p.materializeLock)
+        synchronized(mlo)
         {
             try
             {
-                TableInfo tinfoProp = p.tinfoFrom;
-                Table.TempTableInfo tinfoMat = (Table.TempTableInfo)p.tinfoMat;
+                mlo.verify();
+                TableInfo tinfoProp = mlo.tinfoFrom;
+                Table.TempTableInfo tinfoMat = (Table.TempTableInfo)mlo.tinfoMat;
 
                 if (tinfoMat == null)
                 {
                     TableInfo tinfoFrom = getJoinTableInfo();
                     tinfoMat = materialize(tinfoFrom, tempName);
 
-                    p.tinfoFrom = tinfoFrom;
-                    p.tinfoMat = tinfoMat;
+                    mlo.tinfoFrom = tinfoFrom;
+                    mlo.tinfoMat = tinfoMat;
                 }
                 else
                 {
@@ -303,7 +326,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     if (debug)
                     {
                         TableInfo tinfoFrom = getJoinTableInfo();
-                        assert tinfoProp.getColumnNameSet().equals( tinfoFrom.getColumnNameSet());
+                        assert tinfoProp.getColumnNameSet().equals(tinfoFrom.getColumnNameSet());
                     }
                 }
                 return tinfoMat;
@@ -347,20 +370,27 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     public void unmaterialize()
     {
-        final String tempName = getCacheString();
-        DbScope scope = getScope();
-
         Runnable task = new Runnable()
         {
             public void run()
             {
+                MaterializedLockObject mlo;
                 synchronized(materializedCache)
                 {
-                    materializedCache.remove(tempName);
+                    String tempName = getCacheString();
+                    mlo = materializedCache.get(tempName);
+                }
+                if (null == mlo)
+                    return;
+                synchronized (mlo)
+                {
+                    mlo.tinfoFrom = null;
+                    mlo.tinfoMat = null;
                 }
             }
         };
 
+        DbScope scope = getScope();
         if (scope.isTransactionActive())
             scope.addCommitTask(task);
         else

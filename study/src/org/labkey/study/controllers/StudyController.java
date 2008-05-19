@@ -2482,7 +2482,7 @@ public class StudyController extends BaseStudyController
         }
         finally
         {
-            if (rs != null) try { rs.close(); } catch (SQLException e) {}
+            ResultSetUtil.close(rs);
         }
         return false;
     }

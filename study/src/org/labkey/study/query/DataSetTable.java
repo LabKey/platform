@@ -19,6 +19,7 @@ package org.labkey.study.query;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.OORDisplayColumnFactory;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.query.*;
@@ -27,6 +28,7 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.controllers.StudyController;
 
 import javax.servlet.ServletException;
 import java.util.*;
@@ -72,7 +74,7 @@ public class DataSetTable extends FilteredTable
                 column.setFk(new QueryForeignKey(_schema, "Participant", "ParticipantId", "ParticipantId")
                 {
                     public StringExpressionFactory.StringExpression getURL(ColumnInfo parent) {
-                        ActionURL base = new ActionURL("Study", "participant", _schema.getContainer());
+                        ActionURL base = new ActionURL(StudyController.ParticipantAction.class, _schema.getContainer());
                         base.addParameter(DataSetDefinition.DATASETKEY, Integer.toString(_dsd.getDataSetId()));
 
                         Map params = new HashMap();
