@@ -38,14 +38,13 @@ import java.util.*;
 public class SchemaTableInfo implements TableInfo
 {
     private static Logger _log = Logger.getLogger(SchemaTableInfo.class);
-    private static final String[] _emptyStringAray = new String[0];
 
     String name;
     String title = null;
     String titleColumn = null;
-    protected String [] _pkColumnNames = _emptyStringAray;
+    protected List<String> _pkColumnNames = new ArrayList<String>();
     List<ColumnInfo> _pkColumns;
-    protected ArrayList<ColumnInfo> columnList = new ArrayList<ColumnInfo>();
+    protected ArrayList<ColumnInfo> columns = new ArrayList<ColumnInfo>();
     protected Map<String, ColumnInfo> colMap = null;
     DbSchema parentSchema;
     private int _tableType = TABLE_TYPE_NOT_IN_DB;
@@ -124,19 +123,9 @@ public class SchemaTableInfo implements TableInfo
     }
 
 
-    /*
-    public String getTitle()
-    {
-        if (null == title)
-            title = ColumnInfo.captionFromName(name);
-        return title;
-    }
-    */
-
-
     public List<String> getPkColumnNames()
     {
-        return Arrays.asList(_pkColumnNames);
+        return _pkColumnNames;
     }
 
 
@@ -147,12 +136,12 @@ public class SchemaTableInfo implements TableInfo
 
         if (null == _pkColumns)
         {
-            List<ColumnInfo> cols = new ArrayList<ColumnInfo>(_pkColumnNames.length);
+            List<ColumnInfo> cols = new ArrayList<ColumnInfo>(_pkColumnNames.size());
 
             for (String name : _pkColumnNames)
                 cols.add(getColumn(name));
 
-            _pkColumns = cols;
+            _pkColumns = Collections.unmodifiableList(cols);
         }
 
         return _pkColumns;
@@ -196,17 +185,17 @@ public class SchemaTableInfo implements TableInfo
     {
         if (null == titleColumn)
         {
-            int i;
-            ColumnInfo[] columns = columnList.toArray(new ColumnInfo[columnList.size()]);
-            for (i = 0; i < columns.length; i++)
-                if (columns[i].isStringType() && !columns[i].getSqlTypeName().equalsIgnoreCase("entityid"))
+            for (ColumnInfo column : columns)
+            {
+                if (column.isStringType() && !column.getSqlTypeName().equalsIgnoreCase("entityid"))
                 {
                     //TODO: What's the equivalent of this under pg?
-                    titleColumn = columns[i].getName();
+                    titleColumn = column.getName();
                     break;
                 }
-            if (i == columns.length)
-                titleColumn = columns[0].getName();
+            }
+            if (null == titleColumn)
+                titleColumn = columns.get(0).getName();
         }
 
         return titleColumn;
@@ -306,13 +295,13 @@ public class SchemaTableInfo implements TableInfo
             return null;
 
         // HACK: need to invalidate in case of addition (doesn't handle mixed add/delete, but I don't think we delete
-        if (colMap != null && columnList.size() != colMap.size())
+        if (colMap != null && columns.size() != colMap.size())
             colMap = null;
 
         if (null == colMap)
         {
             HashMap<String, ColumnInfo> m = new CaseInsensitiveHashMap<ColumnInfo>();
-            for (ColumnInfo colInfo : columnList)
+            for (ColumnInfo colInfo : columns)
             {
                 m.put(colInfo.getName(), colInfo);
             }
@@ -338,7 +327,7 @@ public class SchemaTableInfo implements TableInfo
 
     public ColumnInfo getColumnFromPropertyURI(String propertyURI)
     {
-        for(ColumnInfo col : columnList)
+        for(ColumnInfo col : columns)
             if (col.getPropertyURI().equals(propertyURI))
                 return col;
         return null;
@@ -346,22 +335,22 @@ public class SchemaTableInfo implements TableInfo
 
     public void addColumn(ColumnInfo column)
     {
-        columnList.add(column);
+        columns.add(column);
     }
 
-    public List<ColumnInfo> getColumnsList()
+    public List<ColumnInfo> getColumns()
     {
-        return columnList;
+        return Collections.unmodifiableList(columns);
     }
 
     public List<ColumnInfo> getUserEditableColumns()
     {
-        ArrayList<ColumnInfo> userEditableColumns = new ArrayList<ColumnInfo>(columnList.size());
-        for (ColumnInfo col : columnList)
+        ArrayList<ColumnInfo> userEditableColumns = new ArrayList<ColumnInfo>(columns.size());
+        for (ColumnInfo col : columns)
             if (col.isUserEditable())
                 userEditableColumns.add(col);
 
-        return userEditableColumns;
+        return Collections.unmodifiableList(userEditableColumns);
     }
 
 
@@ -378,19 +367,19 @@ public class SchemaTableInfo implements TableInfo
         {
             ret.add(getColumn(name.trim()));
         }
-        return ret;
+        return Collections.unmodifiableList(ret);
     }
 
 
     public Set<String> getColumnNameSet()
     {
         Set<String> nameSet = new HashSet<String>();
-        for (ColumnInfo aColumnList : columnList)
+        for (ColumnInfo aColumnList : columns)
         {
             nameSet.add(aColumnList.getName());
         }
 
-        return nameSet;
+        return Collections.unmodifiableSet(nameSet);
     }
 
 
@@ -399,6 +388,8 @@ public class SchemaTableInfo implements TableInfo
     {
         loadColumnsFromMetaData(dbmd, catalogName, schemaName);
         ResultSet rs = dbmd.getPrimaryKeys(catalogName, schemaName, metaDataName); // PostgreSQL change: use metaDataName
+
+        // TODO: Change this to add directly to list
 
         String[] pkColArray = new String[5]; //Assume no more than 5
         int maxKeySeq = 0;
@@ -416,14 +407,17 @@ public class SchemaTableInfo implements TableInfo
             //    colInfo.setAutoIncrement(true);
         }
         rs.close();
-        _pkColumnNames = new String[maxKeySeq];
-        System.arraycopy(pkColArray, 0, _pkColumnNames, 0, maxKeySeq);
+
+        String[] pkColumnNames = new String[maxKeySeq];
+        System.arraycopy(pkColArray, 0, pkColumnNames, 0, maxKeySeq);
+
+        _pkColumnNames = Arrays.asList(pkColumnNames);
     }
 
 
     private void loadColumnsFromMetaData(DatabaseMetaData dbmd, String catalogName, String schemaName) throws SQLException
     {
-        columnList = ColumnInfo.createFromDatabaseMetaData(dbmd, catalogName, schemaName, this);
+        columns = ColumnInfo.createFromDatabaseMetaData(dbmd, catalogName, schemaName, this);
     }
 
 
@@ -444,7 +438,7 @@ public class SchemaTableInfo implements TableInfo
             // default calculation applied by the getter
             if (null != title)
                 xmlTable.setTableTitle(title);
-            if (null != _pkColumnNames && _pkColumnNames.length > 0)
+            if (null != _pkColumnNames && _pkColumnNames.size() > 0)
                 xmlTable.setPkColumnName(StringUtils.join(_pkColumnNames, ','));
             if (null != titleColumn)
                 xmlTable.setTitleColumn(titleColumn);
@@ -454,7 +448,7 @@ public class SchemaTableInfo implements TableInfo
 
         org.labkey.data.xml.TableType.Columns xmlColumns = xmlTable.addNewColumns();
         org.labkey.data.xml.ColumnType xmlCol;
-        for (ColumnInfo columnInfo : columnList)
+        for (ColumnInfo columnInfo : columns)
         {
             xmlCol = xmlColumns.addNewColumn();
             columnInfo.copyToXml(xmlCol, bFull);
@@ -465,12 +459,12 @@ public class SchemaTableInfo implements TableInfo
     void loadFromXml(TableType xmlTable, boolean merge)
     {
         //If merging with DB MetaData, don't overwrite pk
-        if (!merge || null == _pkColumnNames || 0 == _pkColumnNames.length)
+        if (!merge || null == _pkColumnNames || _pkColumnNames.isEmpty())
         {
             String pkColumnName = xmlTable.getPkColumnName();
             if (null != pkColumnName && pkColumnName.length() > 0)
             {
-                _pkColumnNames = pkColumnName.split(",");
+                _pkColumnNames = Arrays.asList(pkColumnName.split(","));
                 //Make sure they are lower-cased.
                 //REMOVED:  Assume names in xml are correctly formed
 /*                for (int i = 0; i < _pkColumnNames.length; i++)
@@ -493,7 +487,7 @@ public class SchemaTableInfo implements TableInfo
         ColumnType[] xmlColumnArray = xmlTable.getColumns().getColumnArray();
 
         if (!merge)
-            columnList = new ArrayList<ColumnInfo>();
+            columns = new ArrayList<ColumnInfo>();
 
         for (ColumnType xmlColumn : xmlColumnArray)
         {
@@ -506,7 +500,7 @@ public class SchemaTableInfo implements TableInfo
 
             if (null == colInfo) {
                 colInfo = new ColumnInfo(xmlColumn.getColumnName(), this);
-                columnList.add(colInfo);
+                columns.add(colInfo);
                 colInfo.loadFromXml(xmlColumn, false);
             }
         }
@@ -518,7 +512,7 @@ public class SchemaTableInfo implements TableInfo
         out.write("CREATE TABLE ");
         out.write(name);
         out.write(" (\n");
-        ColumnInfo[] columns = columnList.toArray(new ColumnInfo[columnList.size()]);
+        ColumnInfo[] columns = this.columns.toArray(new ColumnInfo[this.columns.size()]);
         for (int i = 0; i < columns.length; i++)
         {
             if (i > 0)
@@ -538,7 +532,7 @@ public class SchemaTableInfo implements TableInfo
 
     public void writeCreateConstraintsSql(Writer out) throws IOException
     {
-        ColumnInfo[] columns = columnList.toArray(new ColumnInfo[columnList.size()]);
+        ColumnInfo[] columns = this.columns.toArray(new ColumnInfo[this.columns.size()]);
 
         SqlDialect dialect = getSchema().getSqlDialect();
         for (ColumnInfo col : columns) {
@@ -573,10 +567,10 @@ public class SchemaTableInfo implements TableInfo
         out.write(getName());
         out.write("\n\t{\n");
 
-        String[] methNames = new String[columnList.size()];
-        String[] typeNames = new String[columnList.size()];
-        String[] memberNames = new String[columnList.size()];
-        ColumnInfo[] columns = columnList.toArray(new ColumnInfo[columnList.size()]);
+        String[] methNames = new String[columns.size()];
+        String[] typeNames = new String[columns.size()];
+        String[] memberNames = new String[columns.size()];
+        ColumnInfo[] columns = this.columns.toArray(new ColumnInfo[this.columns.size()]);
         for (int i = 0; i < columns.length; i++)
         {
             ColumnInfo col = columns[i];
@@ -586,7 +580,6 @@ public class SchemaTableInfo implements TableInfo
                 methName = Character.toUpperCase(methName.charAt(0)) + methName.substring(1);
             methNames[i] = methName;
             typeNames[i] = ColumnInfo.javaTypeFromSqlType(col.getSqlTypeInt(), col.isNullable());
-
         }
 
         for (int i = 0; i < columns.length; i++)
@@ -672,7 +665,7 @@ public class SchemaTableInfo implements TableInfo
 
     public List<FieldKey> getDefaultVisibleColumns()
     {
-        return QueryService.get().getDefaultVisibleColumns(getColumnsList());
+        return Collections.unmodifiableList(QueryService.get().getDefaultVisibleColumns(getColumns()));
     }
 
     public boolean isPublic()

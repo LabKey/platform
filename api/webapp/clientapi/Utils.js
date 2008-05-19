@@ -1,6 +1,6 @@
 /**
  * @fileOverview
- * @author <a href="https://www.labkey.org">LabKey Software</a> (<a href="mailto:support@labkey.com">support@labkey.com</a>)
+ * @author <a href="https://www.labkey.org">LabKey Software</a> (<a href="mailto:info@labkey.com">info@labkey.com</a>)
  * @version 8.2
  * @license Copyright (c) 2008 LabKey Corporation
  * <p/>

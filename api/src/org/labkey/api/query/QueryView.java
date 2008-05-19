@@ -950,7 +950,7 @@ public class QueryView extends WebPartView<Object>
                 //TableInfo and remove the * so that Query doesn't choke on it
                 if(keys.contains(starKey))
                 {
-                    rgn.addColumns(table.getColumnsList());
+                    rgn.addColumns(table.getColumns());
                     keys.remove(starKey);
                 }
 

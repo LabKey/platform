@@ -642,7 +642,7 @@ public class Table
         if (fields.containsKey("containerId"))
             fields.put("container", fields.get("containerId"));
 
-        List<ColumnInfo> columns = table.getColumnsList();
+        List<ColumnInfo> columns = table.getColumns();
         Map<String, Object> m = new CaseInsensitiveHashMap<Object>(columns.size() * 2);
 
         for (ColumnInfo column : columns)
@@ -856,7 +856,7 @@ public class Table
         _insertSpecialFields(user, table, fields, date);
         _updateSpecialFields(user, table, fields, date);
 
-        List<ColumnInfo> columns = table.getColumnsList();
+        List<ColumnInfo> columns = table.getColumns();
         for (ColumnInfo column : columns)
         {
             if (column.isAutoIncrement())
@@ -1001,7 +1001,7 @@ public class Table
         java.sql.Timestamp date = new java.sql.Timestamp(System.currentTimeMillis());
         _updateSpecialFields(user, table, fields, date);
 
-        List<ColumnInfo> columns = table.getColumnsList();
+        List<ColumnInfo> columns = table.getColumns();
         for (ColumnInfo column : columns)
         {
             if (!fields.containsKey(column.getName()))
@@ -1506,7 +1506,7 @@ public class Table
 
     private static List<ColumnInfo> columnInfosList(TableInfo table, Set<String> select)
     {
-        List<ColumnInfo> allColumns = table.getColumnsList();
+        List<ColumnInfo> allColumns = table.getColumns();
         List<ColumnInfo> selectColumns;
 
         if (select == ALL_COLUMNS)
@@ -1545,7 +1545,7 @@ public class Table
 
     public static void ensureRequiredColumns(TableInfo table, Map<String, ColumnInfo> cols, Filter filter, Sort sort)
     {
-        List<ColumnInfo> allColumns = table.getColumnsList();
+        List<ColumnInfo> allColumns = table.getColumns();
         Set<String> requiredColumns = new CaseInsensitiveHashSet();
 
         if (null != filter)
@@ -1604,9 +1604,9 @@ public class Table
             selectName = new SQLFragment(getSqlDialect().getTableSelectName(_tempTableName) + " " + name);
             for (ColumnInfo col : cols)
                 col.setParentTable(this);
-            columnList.addAll(cols);
+            columns.addAll(cols);
             if (pk != null)
-                _pkColumnNames = pk.toArray(new String[]{});    // TODO: Temporary -- convert _pkColumnNames to List and eliminate this
+                _pkColumnNames = pk;
         }
 
         public SQLFragment getFromSQL()
@@ -1650,7 +1650,7 @@ public class Table
         //
 
         ArrayList<ColumnInfo> cols = new ArrayList<ColumnInfo>();
-        for (ColumnInfo col : tinfo.getColumnsList())
+        for (ColumnInfo col : tinfo.getColumns())
         {
             ColumnInfo colDirect = new ColumnInfo(col.getAlias());
             colDirect.copyAttributesFrom(col);
@@ -1684,7 +1684,7 @@ public class Table
     public static void snapshot(TableInfo tinfo, String tableName)
             throws SQLException
     {
-        SQLFragment sqlSelect = Table.getSelectSQL(tinfo, tinfo.getColumnsList(), null, null);
+        SQLFragment sqlSelect = Table.getSelectSQL(tinfo, tinfo.getColumns(), null, null);
         SQLFragment sqlSelectInto = new SQLFragment();
         sqlSelectInto.append("SELECT * INTO ").append(tableName).append(" FROM (");
         sqlSelectInto.append(sqlSelect);

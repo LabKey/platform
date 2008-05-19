@@ -76,7 +76,7 @@ public interface TableInfo
 
     ColumnInfo getColumnFromPropertyURI(String propertyURI);
 
-    List<ColumnInfo> getColumnsList();
+    List<ColumnInfo> getColumns();
 
     List<ColumnInfo> getUserEditableColumns();
 
@@ -85,6 +85,8 @@ public interface TableInfo
     List<ColumnInfo> getColumns(String... colNameArray);
 
     Set<String> getColumnNameSet();
+
+    List<FieldKey> getDefaultVisibleColumns();
 
     String getSequence();
 
@@ -110,8 +112,6 @@ public interface TableInfo
      * language.  Most tables do not have methods. 
      */
     MethodInfo getMethod(String name);
-
-    List<FieldKey> getDefaultVisibleColumns();
 
     public boolean isPublic();
 

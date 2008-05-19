@@ -493,7 +493,7 @@ public class SimpleFilter implements Filter
 
     public List<Object> getWhereParams(TableInfo tableInfo)
     {
-        return getWhereParams(tableInfo, tableInfo.getColumnsList());
+        return getWhereParams(tableInfo, tableInfo.getColumns());
     }
 
 

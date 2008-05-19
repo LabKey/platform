@@ -36,7 +36,7 @@ public class TableWrapperDynaClass extends StringWrapperDynaClass
     private TableWrapperDynaClass(TableInfo tinfo)
     {
         _tinfo = tinfo;
-        List<ColumnInfo> cols = tinfo.getColumnsList();
+        List<ColumnInfo> cols = tinfo.getColumns();
         Map<String, Class> propMap = new CaseInsensitiveHashMap<Class>();
         for (ColumnInfo col : cols)
             propMap.put(col.getPropertyName(), col.getJavaClass());

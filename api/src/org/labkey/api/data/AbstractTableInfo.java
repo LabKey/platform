@@ -51,14 +51,14 @@ abstract public class AbstractTableInfo implements TableInfo
     public List<ColumnInfo> getPkColumns()
     {
         List<ColumnInfo> ret = new ArrayList<ColumnInfo>();
-        for (ColumnInfo column : getColumnsList())
+        for (ColumnInfo column : getColumns())
         {
             if (column.isKeyField())
             {
                 ret.add(column);
             }
         }
-        return ret;
+        return Collections.unmodifiableList(ret);
     }
 
     public String getRowTitle(Object pk) throws SQLException
@@ -109,7 +109,7 @@ abstract public class AbstractTableInfo implements TableInfo
         {
             ret.add(col.getName());
         }
-        return ret;
+        return Collections.unmodifiableList(ret);
     }
 
     public ColumnInfo getVersionColumn()
@@ -169,14 +169,14 @@ abstract public class AbstractTableInfo implements TableInfo
     public List<ColumnInfo> getUserEditableColumns()
     {
         List<ColumnInfo> ret = new ArrayList<ColumnInfo>();
-        for (ColumnInfo col : getColumnsList())
+        for (ColumnInfo col : getColumns())
         {
             if (col.isUserEditable())
             {
                 ret.add(col);
             }
         }
-        return ret;
+        return Collections.unmodifiableList(ret);
     }
 
     public List<ColumnInfo> getColumns(String colNames)
@@ -192,7 +192,7 @@ abstract public class AbstractTableInfo implements TableInfo
         {
             ret.add(getColumn(name.trim()));
         }
-        return ret;
+        return Collections.unmodifiableList(ret);
     }
 
     public String getSequence()
@@ -223,14 +223,14 @@ abstract public class AbstractTableInfo implements TableInfo
         return null;
     }
 
-    public List<ColumnInfo> getColumnsList()
+    public List<ColumnInfo> getColumns()
     {
-        return new ArrayList<ColumnInfo>(_columnMap.values());
+        return Collections.unmodifiableList(new ArrayList<ColumnInfo>(_columnMap.values()));
     }
 
     public Set<String> getColumnNameSet()
     {
-        return _columnMap.keySet();
+        return Collections.unmodifiableSet(_columnMap.keySet());
     }
 
     public String getName()
@@ -350,7 +350,7 @@ abstract public class AbstractTableInfo implements TableInfo
             }
             return Collections.unmodifiableList(ret);
         }
-        return QueryService.get().getDefaultVisibleColumns(getColumnsList());
+        return Collections.unmodifiableList(QueryService.get().getDefaultVisibleColumns(getColumns()));
     }
 
     public boolean safeAddColumn(ColumnInfo column)

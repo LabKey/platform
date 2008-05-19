@@ -350,7 +350,7 @@ public class CrosstabTableInfo extends VirtualTable
         GroupTableInfo groupTable = getGroupTable();
         Filter aggFilter = getAggregateFilter();
 
-        List<ColumnInfo> reqCols = new ArrayList<ColumnInfo>(groupTable.getColumnsList());    // Make a copy
+        List<ColumnInfo> reqCols = new ArrayList<ColumnInfo>(groupTable.getColumns());    // Make a copy
         QueryService.get().ensureRequiredColumns(groupTable, reqCols, aggFilter, null, null);
 
         sql.append("SELECT * FROM (\n");
@@ -614,7 +614,7 @@ public class CrosstabTableInfo extends VirtualTable
     {
         //if they've already been set, just return the super's implementation
         //(which returns an unmodifiable version)
-        if(null != _defaultVisibleColumns)
+        if (null != _defaultVisibleColumns)
             return super.getDefaultVisibleColumns();
 
         //need to return a list of field keys similar to what query will
@@ -630,6 +630,6 @@ public class CrosstabTableInfo extends VirtualTable
         for(CrosstabMeasure measure : getSettings().getMeasures())
             defaultCols.add(measure.getFieldKey());
         
-        return defaultCols;
+        return Collections.unmodifiableList(defaultCols);
     }
 } //CrosstabTableInfo

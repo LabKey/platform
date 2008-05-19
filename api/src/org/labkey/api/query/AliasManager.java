@@ -39,7 +39,7 @@ public class AliasManager
     public AliasManager(TableInfo table, Collection<ColumnInfo> columns)
     {
         this(table.getSchema());
-        claimAliases(table.getColumnsList());
+        claimAliases(table.getColumns());
         if (columns != null)
             claimAliases(columns);
     }

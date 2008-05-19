@@ -167,7 +167,7 @@ public class RenderContext extends BoundMap // extends ViewContext
     {
         Set<ColumnInfo> ret = new LinkedHashSet<ColumnInfo>();
         if (null == displayColumns || displayColumns.size() == 0)
-            ret.addAll(tinfo.getColumnsList());
+            ret.addAll(tinfo.getColumns());
         else
         {
             for (DisplayColumn displayColumn : displayColumns)

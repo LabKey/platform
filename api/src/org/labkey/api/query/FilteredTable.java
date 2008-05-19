@@ -49,7 +49,7 @@ public class FilteredTable extends AbstractTableInfo
 
     public void wrapAllColumns(boolean preserveHidden)
     {
-        for (ColumnInfo col : getRealTable().getColumnsList())
+        for (ColumnInfo col : getRealTable().getColumns())
         {
             ColumnInfo newCol = addWrapColumn(col);
             if (preserveHidden && col.isHidden())
@@ -183,7 +183,7 @@ public class FilteredTable extends AbstractTableInfo
         }
 
         SQLFragment ret = new SQLFragment("(");
-        ret.append(Table.getSelectSQL(getFromTable(), getFromTable().getColumnsList(), _filter, null));
+        ret.append(Table.getSelectSQL(getFromTable(), getFromTable().getColumns(), _filter, null));
         ret.append(")");
         ret.append(" AS " + alias);
         return ret;

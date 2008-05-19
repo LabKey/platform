@@ -868,7 +868,7 @@ public class DbSchema
         {
             if (t.getTableType()!= TableInfo.TABLE_TYPE_TABLE)
                 continue;
-            for (ColumnInfo col : t.getColumnsList())
+            for (ColumnInfo col : t.getColumns())
             {
                 if (col.getName().equalsIgnoreCase("Container"))
                 {

@@ -72,7 +72,7 @@ public abstract class ExperimentRunFilter implements Comparable<ExperimentRunFil
         UserSchema schema = QueryService.get().getUserSchema(user, c, _schemaName);
         TableInfo table = schema.getTable(_tableName, null);
         SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM (");
-        sql.append(Table.getSelectSQL(table, table.getColumnsList(), null, null));
+        sql.append(Table.getSelectSQL(table, table.getColumns(), null, null));
         sql.append(") x");
         try
         {

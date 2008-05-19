@@ -63,7 +63,7 @@ abstract public class QueryService
      * involve unresolved columns, and <code>unresolvedColumns</code> will contain the names of the unresolved columns.
      */
     abstract public void ensureRequiredColumns(TableInfo table, List<ColumnInfo> columns, Filter filter, Sort sort, Set<String> unresolvedColumns);
-    abstract public ResultSet select(TableInfo table, ColumnInfo[] columns, Filter filter, Sort sort) throws SQLException;
+    abstract public ResultSet select(TableInfo table, List<ColumnInfo> columns, Filter filter, Sort sort) throws SQLException;
 
     abstract public String[] getAvailableWebPartNames(UserSchema schema);
     abstract public WebPartView[] getWebParts(UserSchema schema, String location); 

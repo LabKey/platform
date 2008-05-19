@@ -23,7 +23,6 @@ import java.io.Writer;
 import java.util.Set;
 
 /**
- * Copyright (C) 2004 Fred Hutchinson Cancer Research Center. All Rights Reserved.
  * User: migra
  * Date: Dec 5, 2005
  * Time: 4:14:54 PM
