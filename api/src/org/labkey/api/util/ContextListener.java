@@ -77,9 +77,9 @@ public class ContextListener implements ServletContextListener
         }
     }
 
-    public static void moduleStartuComplete(ServletContext servletContext)
+    public static void moduleStartupComplete(ServletContext servletContext)
     {
-        synchronized (_shutdownListeners)
+        synchronized (_startupListeners)
         {
             for (StartupListener listener : _startupListeners)
                 listener.moduleStartupComplete(servletContext);

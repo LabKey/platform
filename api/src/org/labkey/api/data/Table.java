@@ -1640,6 +1640,19 @@ public class Table
         {
             _ttt.delete();
         }
+
+        public boolean verify()
+        {
+            try
+            {
+                isEmpty(this);
+                return true;
+            }
+            catch (SQLException e)
+            {
+                return false;
+            }
+        }
     }
 
 

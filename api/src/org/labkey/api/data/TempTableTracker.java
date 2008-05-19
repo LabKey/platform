@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.util.*;
 import javax.servlet.ServletException;
 import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContext;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.ref.Reference;
@@ -65,7 +66,7 @@ public class TempTableTracker extends WeakReference<Object>
         super(ref, cleanupQueue);
         this.schemaName = schema;
         this.tableName = name;
-    }
+    } 
 
     static final Object initlock = new Object();
     static boolean initialized=false;
@@ -247,7 +248,9 @@ public class TempTableTracker extends WeakReference<Object>
                         while (rs.next())
                         {
                             String table = rs.getString("TABLE_NAME");
-                            track("core", dialect.getGlobalTempTablePrefix() + table, noref);
+                            String tempName = dialect.getGlobalTempTablePrefix() + table;
+                            if (!createdTableNames.containsKey(tempName))
+                                track("core", tempName, noref);
                         }
                     }
                     finally
@@ -328,8 +331,11 @@ public class TempTableTracker extends WeakReference<Object>
                 //
                 tempTableLog.seek(0);
                 tempTableLog.setLength(0);
-                for (String s : createdTableNames.keySet())
-                    appendToLog("+" + s + "\n");
+                for (TempTableTracker ttt : createdTableNames.values())
+                {
+                    if (!ttt.deleted)
+                        appendToLog("+" + ttt.tableName + "\n");
+                }
             }
             catch (IOException x)
             {
@@ -343,7 +349,7 @@ public class TempTableTracker extends WeakReference<Object>
     }
 
 
-    static final Thread tempTableThread = new TempTableThread();
+    static final TempTableThread tempTableThread = new TempTableThread();
 
     static class TempTableThread extends Thread  implements ShutdownListener
     {
@@ -353,7 +359,6 @@ public class TempTableTracker extends WeakReference<Object>
         {
             super("Temp table cleanup");
             setDaemon(true);
-            ContextListener.addShutdownListener(this);
         }
 
         public void run()
@@ -382,6 +387,15 @@ public class TempTableTracker extends WeakReference<Object>
 
         public void shutdownStarted(ServletContextEvent servletContextEvent)
         {
+            synchronized(createdTableNames)
+            {
+                for (TempTableTracker ttt : createdTableNames.values())
+                {
+                    ttt.sqlDelete();
+                    ttt.deleted = true;
+                }
+            }
+
             _shutdown.set(true);
             interrupt();
             try
@@ -391,5 +405,22 @@ public class TempTableTracker extends WeakReference<Object>
             catch (InterruptedException e) {}
             synchronizeLog(false);
         }
+    }
+
+
+    public static StartupListener getStartupListener()
+    {
+        return new StartupListener()
+        {
+            public void moduleStartupComplete(ServletContext servletContext)
+            {
+                init();
+            }
+        };
+    }
+
+    public static ShutdownListener getShutdownListener()
+    {
+        return tempTableThread;
     }
 }

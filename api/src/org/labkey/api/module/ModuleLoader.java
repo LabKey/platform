@@ -746,7 +746,7 @@ public class ModuleLoader implements Filter
             }
         }
 
-        _log.error("Attempted to connect three times... giving up.");
+        _log.error("Attempted to connect three times... giving up.", lastException);
         throw(new ServletException("Can't connect to datasource \"" + dsName + "\", be sure that webapp configuration xml is configured correctly for your database and that the database server is running.", lastException));
     }
 
@@ -959,7 +959,7 @@ public class ModuleLoader implements Filter
                 }
             }
 
-            ContextListener.moduleStartuComplete(_servletContext);
+            ContextListener.moduleStartupComplete(_servletContext);
 
             _startupComplete = true;
         }
