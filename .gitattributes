@@ -122,7 +122,6 @@ authentication/src/org/labkey/authentication/opensso/view/configure.jsp -text
 authentication/src/org/labkey/authentication/opensso/view/currentSettings.jsp -text
 authentication/src/org/labkey/authentication/opensso/view/referrerPrefix.jsp -text
 bigiron/BigIron.iml -text
-bigiron/build.xml -text
 bigiron/module.properties -text
 bigiron/src/org/labkey/api/data/SqlDialectMicrosoftSQLServer.java -text
 bigiron/src/org/labkey/api/data/SqlDialectMicrosoftSQLServer9.java -text
@@ -175,7 +174,6 @@ biotrue/src/org/labkey/biotrue/task/BtThreadPool.java -text
 biotrue/src/org/labkey/biotrue/task/DownloadTask.java -text
 biotrue/src/org/labkey/biotrue/task/Operation.java -text
 biotrue/src/org/labkey/biotrue/task/ScheduledTask.java -text
-cabig/build.xml -text
 cabig/module.properties -text
 cabig/src/META-INF/cabig.xml -text
 cabig/src/META-INF/cabig/scripts/postgresql/cabig-0.00-2.10.sql -text
@@ -716,7 +714,6 @@ experiment/webapp/Experiment/images/graphIcon.gif -text
 experiment/webapp/Experiment/unflagDefault.gif -text
 experiment/webapp/Experiment/unflagRun.gif -text
 experiment/webapp/WEB-INF/experiment/experimentContext.xml -text
-filecontent/build.xml -text
 filecontent/module.properties -text
 filecontent/src/META-INF/filecontent.xml -text
 filecontent/src/org/labkey/filecontent/CustomizeFilesWebPartView.java -text
