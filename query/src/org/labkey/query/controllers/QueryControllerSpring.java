@@ -395,6 +395,16 @@ public class QueryControllerSpring extends SpringActionController
 
 
     @RequiresPermission(ACL.PERM_READ)
+    public class ExportExcelTemplateAction extends _ExportQuery
+    {
+        void _export(QueryForm form, QueryView view) throws Exception
+        {
+            view.exportToExcelTemplate(getViewContext().getResponse());
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_READ)
     public class ExportRowsTsvAction extends _ExportQuery
     {
         void _export(QueryForm form, QueryView view) throws Exception

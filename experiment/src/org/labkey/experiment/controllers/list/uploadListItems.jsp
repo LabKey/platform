@@ -17,19 +17,23 @@
 %>
 <%@ page import="org.labkey.experiment.controllers.list.ListController" %>
 <%@ page import="org.labkey.experiment.controllers.list.UploadListItemsForm" %>
-<%@page extends="org.labkey.api.jsp.FormPage"%>
+<%@ page import="org.labkey.api.query.QueryAction" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page extends="org.labkey.api.jsp.FormPage"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <labkey:errors />
-<% UploadListItemsForm form = (UploadListItemsForm) __form;%>
+<%
+    UploadListItemsForm form = (UploadListItemsForm) __form;
+    ActionURL templateURL = new ActionURL("query", QueryAction.exportExcelTemplate.name(), getContainer()).addParameter("query.queryName", form.getList().getName()).addParameter("schemaName", "lists");
+%>
 <form action="<%=h(form.getList().urlFor(ListController.Action.uploadListItems))%>" method="POST">
     <table>
         <tr>
             <td class="ms-searchform" nowrap="true">List Data</td>
             <td class="ms-vb">
-                Import data must formatted as tab separated values (TSV). Copy/paste from Microsoft Excel works well.<br>
-                The first row should contain field names; subsequent rows should contain the data.<br>
-                If your data includes rows with keys that already exist in the list then the rows will be replaced with the new data.<br>
-
+                Import data must be formatted as tab separated values (TSV). The first row should contain field names; subsequent rows should contain the data.<br>
+                Copy/paste from Microsoft Excel works well; <a href="<%=h(templateURL)%>">click here to download an Excel template</a> you can use to import to this list.<br>
+                If your data includes rows with keys that already exist in the list then those rows will be replaced with the new data.<br>
                 <textarea rows="25" style="width: 100%" cols="150" name="ff_data" wrap="off"><%=h(form.ff_data)%></textarea><br>
             </td>
         </tr>
