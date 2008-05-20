@@ -1781,6 +1781,7 @@ internal/webapp/designer/demo.xml -text
 internal/webapp/designer/designer.js -text
 internal/webapp/designer/wand.gif -text
 internal/webapp/index.html -text
+internal/webapp/index.jsp -text
 internal/webapp/js_color_picker_v2.css -text
 internal/webapp/js_color_picker_v2.js -text
 internal/webapp/labkey.js -text
