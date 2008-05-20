@@ -49,8 +49,8 @@
     <tr><td>Title Field:</td><td><select name="ff_titleColumn"><labkey:options value="<%=list.getTitleColumn()%>" map="<%=titleColumnOptions%>" /></select></td></tr>
     <tr><td>Discussion Links:</td><td>
         <input type="radio" name="ff_discussionSetting" value="<%=DiscussionSetting.None.getValue()%>"<%=(DiscussionSetting.None == form.ff_discussionSetting ? " checked" : "")%>><%=DiscussionSetting.None.getText()%>
-        <input type="radio" name="ff_discussionSetting" value="<%=DiscussionSetting.OnePerRow.getValue()%>"<%=(DiscussionSetting.OnePerRow == form.ff_discussionSetting ? " checked" : "")%>><%=DiscussionSetting.OnePerRow.getText()%>
-        <input type="radio" name="ff_discussionSetting" value="<%=DiscussionSetting.ManyPerRow.getValue()%>"<%=(DiscussionSetting.ManyPerRow == form.ff_discussionSetting ? " checked" : "")%>><%=DiscussionSetting.ManyPerRow.getText()%>
+        <input type="radio" name="ff_discussionSetting" value="<%=DiscussionSetting.OnePerItem.getValue()%>"<%=(DiscussionSetting.OnePerItem == form.ff_discussionSetting ? " checked" : "")%>><%=DiscussionSetting.OnePerItem.getText()%>
+        <input type="radio" name="ff_discussionSetting" value="<%=DiscussionSetting.ManyPerItem.getValue()%>"<%=(DiscussionSetting.ManyPerItem == form.ff_discussionSetting ? " checked" : "")%>><%=DiscussionSetting.ManyPerItem.getText()%>
     </td></tr>
     <tr><td>Allow Delete:</td><td><input type="checkbox" name="ff_allowDelete"<%=form.ff_allowDelete ? " checked" : ""%>></td></tr>
     <tr><td>Allow Import:</td><td><input type="checkbox" name="ff_allowUpload"<%=form.ff_allowUpload ? " checked" : ""%>></td></tr>

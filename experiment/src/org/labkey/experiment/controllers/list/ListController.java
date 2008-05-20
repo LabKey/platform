@@ -490,11 +490,11 @@ public class ListController extends SpringActionController
 
                 DomainProperty titleProperty = _list.getDomain().getPropertyByName(_list.getTitleColumn());
                 Object title = (null != titleProperty ? item.getProperty(titleProperty) : null);
-                String discussionTitle = (null != title ? title.toString() : "Row " + tableForm.getPkVal());
+                String discussionTitle = (null != title ? title.toString() : "Item " + tableForm.getPkVal());
 
                 ActionURL linkBackUrl = _list.urlFor(Action.resolve).addParameter("entityId", entityId);
                 DiscussionService.Service service = DiscussionService.get();
-                boolean multiple = _list.getDiscussionSetting() == ListDefinition.DiscussionSetting.ManyPerRow;
+                boolean multiple = _list.getDiscussionSetting() == ListDefinition.DiscussionSetting.ManyPerItem;
 
                 // Display discussion by default in single-discussion case, #4529
                 DiscussionService.DiscussionView discussion = service.getDisussionArea(getViewContext(), entityId, linkBackUrl, discussionTitle, multiple, !multiple);

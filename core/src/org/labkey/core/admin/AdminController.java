@@ -3612,6 +3612,8 @@ public class AdminController extends SpringActionController
     @RequiresPermission(ACL.PERM_ADMIN)
     public class RenameFolderAction extends FormViewAction<ManageFoldersForm>
     {
+        private ActionURL _returnURL;
+
         public void validateCommand(ManageFoldersForm target, Errors errors)
         {
         }
@@ -3641,7 +3643,8 @@ public class AdminController extends SpringActionController
                         newAliases.add(c.getPath());
                         ContainerManager.saveAliasesForContainer(c, newAliases);
                     }
-                    getViewContext().setContainer(ContainerManager.getForId(c.getId()));  // Reload container to populate new name
+                    c = ContainerManager.getForId(c.getId());     // Reload container to populate new name
+                    _returnURL = getManageFoldersURL(c);
                     return true;
                 }
             }
@@ -3652,7 +3655,7 @@ public class AdminController extends SpringActionController
 
         public ActionURL getSuccessURL(ManageFoldersForm form)
         {
-            return getManageFoldersURL();
+            return _returnURL;
         }
 
         public NavTree appendNavTrail(NavTree root)

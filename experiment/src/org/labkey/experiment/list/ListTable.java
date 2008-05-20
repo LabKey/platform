@@ -82,6 +82,7 @@ public class ListTable extends FilteredTable
             column.setAlias(aliasManager.decideAlias(column.getName()));
             column.setScale(property.getScale());
             column.setInputType(property.getInputType());
+            column.setDescription(property.getDescription());
             property.initColumn(user, column);
             safeAddColumn(column);
             defaultVisible.add(FieldKey.fromParts(column.getName()));
