@@ -28,6 +28,7 @@ public enum QueryAction
     deleteQuery,
     propertiesQuery,
     exportRowsExcel,
+    exportExcelTemplate,
     exportRowsTsv,
     printRows,
     deleteQueryRows,

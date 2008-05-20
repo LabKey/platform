@@ -900,13 +900,33 @@ public class QueryView extends WebPartView<Object>
         return new ExcelWriter(rs, getExportColumns(rgn.getDisplayColumns()));
     }
 
+    // Set up an ExcelWriter that exports no data -- used to export templates on upload pages
+    protected ExcelWriter getExcelTemplateWriter() throws Exception
+    {
+        DataView view = createDataView();
+        DataRegion rgn = view.getDataRegion();
+        return new ExcelWriter(null, getExportColumns(rgn.getDisplayColumns()));
+    }
+
     public Forward exportToExcel(HttpServletResponse response) throws Exception
+    {
+        return exportToExcel(response, false);
+    }
+
+    // Export with no data rows -- just captions
+    public Forward exportToExcelTemplate(HttpServletResponse response) throws Exception
+    {
+        return exportToExcel(response, true);
+    }
+
+    private Forward exportToExcel(HttpServletResponse response, boolean templateOnly) throws Exception
     {
         _exportView = true;
         TableInfo table = getTable();
         if (table != null)
         {
-            getExcelWriter().write(response);
+            ExcelWriter ew = templateOnly ? getExcelTemplateWriter() : getExcelWriter();
+            ew.write(response);
         }
         return null;
     }
