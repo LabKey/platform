@@ -70,8 +70,8 @@ public interface ListDefinition
     enum DiscussionSetting
     {
         None(0, "None"),
-        OnePerRow(1, "Allow one discussion per row"),
-        ManyPerRow(2, "Allow multiple discussions per row");
+        OnePerItem(1, "Allow one discussion per item"),
+        ManyPerItem(2, "Allow multiple discussions per item");
 
         private final int _value;
         private final String _text;

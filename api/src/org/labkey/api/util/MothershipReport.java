@@ -206,7 +206,7 @@ public class MothershipReport implements Runnable
         addParam("javaVersion", System.getProperty("java.version"));
         addParam("enterprisePipelineEnabled", AppProps.getInstance().hasPipelineCluster());
 
-        boolean ldapEnabled = AuthenticationManager.getActiveProviders().contains("LDAP");  // TODO: Send back all active auth providers (OpenSSO, LDAP, etc.)
+        boolean ldapEnabled = AuthenticationManager.isActive("LDAP");  // TODO: Send back all active auth providers (OpenSSO, LDAP, etc.)
         addParam("ldapEnabled", ldapEnabled);
 
         DbSchema schema = CoreSchema.getInstance().getSchema();
