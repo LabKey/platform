@@ -17,7 +17,7 @@ if ("GET".equals(request.getMethod()))
     </body>
     </html><%
     return;
-    }
+}
 
 if ("OPTIONS".equals(request.getMethod()))
 {
@@ -29,17 +29,20 @@ if ("OPTIONS".equals(request.getMethod()))
 
 if ("PROPFIND".equals(request.getMethod()))
 {
+    String resourcePath = request.getContextPath();
+    if (!resourcePath.endsWith("/"))
+        resourcePath += "/";
     response.setStatus(207);
     response.setContentType("text/xml; charset=UTF-8");
     %><?xml version="1.0" encoding="utf-8" ?>
     <multistatus xmlns="DAV:">
-    <response><href><%=request.getContextPath()%></href><propstat>
+    <response><href><%=resourcePath%></href><propstat>
         <prop><getcontentlength>0</getcontentlength>
         <resourcetype><collection/></resourcetype>
         </prop>
         <status>HTTP/1.1 200 OK</status>
      </propstat></response>
-        <response><href><%=request.getContextPath()%>/webdav/</href><propstat>
+        <response><href><%=resourcePath%>webdav/</href><propstat>
             <prop><getcontentlength>0</getcontentlength>
             <resourcetype><collection/></resourcetype>
             </prop>
