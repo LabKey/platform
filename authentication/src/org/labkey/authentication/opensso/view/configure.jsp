@@ -36,6 +36,6 @@
     }
 %>
     </table><br>
-    <input type=image src="<%=PageFlowUtil.submitSrc()%>" value="Configure">
+    <input type="image" src="<%=PageFlowUtil.buttonSrc("Save")%>" />
     <%=PageFlowUtil.buttonLink("Cancel", OpenSSOController.getCurrentSettingsURL())%>
 </form>

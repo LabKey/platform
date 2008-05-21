@@ -28,12 +28,12 @@
     <td colspan="2"><input type="hidden" name="name" value="<%=h(bean.name)%>"></td>
 </tr>
 <tr>
-    <td class="ms-searchform">Pick a logo for the page header</td>
-    <td><input type="file" name="<%=AuthenticationManager.HEADER_LOGO_PREFIX%>file" size="60">&nbsp;&nbsp;<%=bean.headerLogo%></td>
+    <td class="ms-searchform">Page header logo</td>
+    <%=bean.headerLogo%>
 </tr>
 <tr>
-    <td class="ms-searchform">Pick a logo for the login page</td>
-    <td><input type="file" name="<%=AuthenticationManager.LOGIN_PAGE_LOGO_PREFIX%>file" size="60">&nbsp;&nbsp;<%=bean.loginPageLogo%></td>
+    <td class="ms-searchform">Login page logo</td>
+    <%=bean.loginPageLogo%>
 </tr>
 <tr>
     <td class="ms-searchform">Enter a URL<%=PageFlowUtil.helpPopup("URL Instructions", "Include <code>%returnURL%</code> as the redirect parameter within the URL.  <code>%returnURL%</code> will be replaced with a link to the login page including the current page as a redirect parameter.  Examples:<br><br>http://localhost:8080/openfm/UI/Login?service=adminconsoleservice&goto=%returnURL%<br>https://machine.domain.org:8443/openfm/WSFederationServlet/metaAlias/wsfedsp?wreply=%returnURL%", true, 700)%></td>

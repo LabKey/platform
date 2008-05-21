@@ -34,7 +34,7 @@
         <tr><td class="ms-searchform">URL prefix</td><td><input type="text" name="prefix" value="<%=h(bean.getPrefix())%>" style="width:400px;"></td></tr>
         <tr><td colspan="2">&nbsp;</td></tr>
         <tr><td colspan="2">
-            <input type=image src="<%=PageFlowUtil.submitSrc()%>" value="Set">
+            <input type="image" src="<%=PageFlowUtil.buttonSrc("Save")%>"/>
             <%=PageFlowUtil.buttonLink("Cancel", OpenSSOController.getCurrentSettingsURL())%>
         </td></tr>
     </table><br>

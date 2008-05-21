@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.labkey.authentication.ldap;
 
 import org.apache.commons.lang.StringUtils;
@@ -45,9 +44,14 @@ public class LdapController extends SpringActionController
     }
 
 
-    public static ActionURL getConfigureURL()
+    public static ActionURL getConfigureURL(boolean reshow)
     {
-        return new ActionURL(ConfigureAction.class, ContainerManager.getRoot());
+        ActionURL url = new ActionURL(ConfigureAction.class, ContainerManager.getRoot());
+
+        if (reshow)
+            url.addParameter("reshow", "1");
+
+        return url;
     }
 
 
@@ -78,7 +82,7 @@ public class LdapController extends SpringActionController
 
         public ActionURL getSuccessURL(Config config)
         {
-            return getConfigureURL();  // Redirect to same action -- want to reload props from database
+            return getConfigureURL(true);  // Redirect to same action -- want to reload props from database
         }
     }
 
@@ -86,6 +90,7 @@ public class LdapController extends SpringActionController
     public static class Config extends ReturnUrlForm
     {
         public String helpLink = "<a href=\"" + (new HelpTopic("configLdap", HelpTopic.Area.SERVER)).getHelpTopicLink() + "\" target=\"labkey\">More information about LDAP authentication</a>";
+        public boolean reshow = false;
 
         private String servers = StringUtils.join(LdapAuthenticationManager.getServers(), ";");
         private String domain = LdapAuthenticationManager.getDomain();
@@ -130,6 +135,16 @@ public class LdapController extends SpringActionController
         public void setSASL(boolean useSASL)
         {
             this.useSASL = useSASL;
+        }
+
+        public boolean isReshow()
+        {
+            return reshow;
+        }
+
+        public void setReshow(boolean reshow)
+        {
+            this.reshow = reshow;
         }
     }
 
@@ -204,6 +219,9 @@ public class LdapController extends SpringActionController
             }
 
             principal = LdapAuthenticationManager.emailToLdapPrincipal(email);
+
+            if ("null".equals(principal))
+                principal = null;
         }
 
         public String getPrincipal()

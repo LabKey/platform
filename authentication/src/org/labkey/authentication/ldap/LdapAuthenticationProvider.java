@@ -51,7 +51,7 @@ public class LdapAuthenticationProvider implements AuthenticationProvider.LoginF
 
     public ActionURL getConfigurationLink()
     {
-        return LdapController.getConfigureURL();
+        return LdapController.getConfigureURL(false);
     }
 
     // id and password will not be blank (not null, not empty, not whitespace only)

@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.authentication.ldap.LdapController.*" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.action.ReturnUrlForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<TestLdapForm> me = (JspView<TestLdapForm>)HttpView.currentView();
@@ -48,9 +49,9 @@ client browser.
     <tr><td>Password:</td><td><input id="password" type="password" name="password" style="width:400;" value="<%=h(form.getPassword())%>"></td></tr>
     <tr><td>Use SASL Authentication:</td><td><input id="SASL" type="checkbox" name="SASL" <%=form.getSASL() ? "checked" : ""%>></td></tr>
     <tr><td colspan=2 align=center style="height:50">
-        <input type="hidden" name="returnUrl" value="<%=form.getReturnUrl()%>">
-        <input type=image src="<%=PageFlowUtil.submitSrc()%>" value="Configure">
-        <%=PageFlowUtil.buttonLink("Cancel", form.getReturnUrl())%>
+        <input type="hidden" name="<%=ReturnUrlForm.Params.returnUrl%>" value="<%=form.getReturnUrl()%>">
+        <input type="image" src="<%=PageFlowUtil.buttonSrc("Test")%>" />
+        <%=PageFlowUtil.buttonLink("Done", form.getReturnUrl())%>
     </td></tr>
 </table>
 </form>
