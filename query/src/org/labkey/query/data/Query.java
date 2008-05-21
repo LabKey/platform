@@ -648,10 +648,13 @@ loop:
         {
             return true;
         }
-        for (QColumn column : _columns)
+        if (null != _columns)
         {
-            if (column.getField().isAggregate())
-                return true;
+            for (QColumn column : _columns)
+            {
+                if (column.getField().isAggregate())
+                    return true;
+            }
         }
         return false;
     }

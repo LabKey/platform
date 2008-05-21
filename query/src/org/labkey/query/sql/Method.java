@@ -19,6 +19,7 @@ package org.labkey.query.sql;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.*;
 import org.labkey.api.query.AbstractMethodInfo;
+import org.labkey.api.query.ExprColumn;
 
 import java.sql.Types;
 
@@ -97,11 +98,28 @@ public enum Method
                 @Override
                 public MethodInfo getMethodInfo()
                 {
-                    return new TimestampDiffInfo(Types.INTEGER);
+                    return new TimestampDiffInfo();
                 }
             },
 
     ifnull(Types.OTHER),
+    convert(Types.OTHER)
+            {
+                @Override
+                public MethodInfo getMethodInfo()
+                {
+                    return new ConvertInfo();
+                }
+            },
+    coalesce(Types.OTHER)
+            {
+                @Override
+                public MethodInfo getMethodInfo()
+                {
+                    return new PassthroughInfo(this);
+                }
+            }
+
     ;
 
     int _sqlType;
@@ -152,9 +170,9 @@ public enum Method
 
     class TimestampDiffInfo extends MethodInfoImpl
     {
-        public TimestampDiffInfo(int sqlType)
+        public TimestampDiffInfo()
         {
-            super(sqlType);
+            super(Types.INTEGER);
         }
 
         public SQLFragment getSQL(DbSchema schema, SQLFragment[] argumentsIN)
@@ -194,81 +212,142 @@ public enum Method
         SQL_TSI_YEAR
     }
 
-//    class ConvertInfo extends MethodInfoImpl
-//    {
-//        public ConvertInfo(int sqlType)
-//        {
-//            super(sqlType);
-//        }
-//
-//        @Override
-//        public ColumnInfo createColumnInfo(TableInfo parentTable, ColumnInfo[] arguments, String alias)
-//        {
-//            ColumnInfo col = super.createColumnInfo(parentTable, arguments, alias);
-//            return col;
-//        }
-//
-//        public SQLFragment getSQL(DbSchema schema, SQLFragment[] argumentsIN)
-//        {
-//            SQLFragment[] arguments = argumentsIN.clone();
-//            if (arguments.length >= 2)
-//            {
-//                String type = StringUtils.trimToEmpty(arguments[1].getSQL());
-//                if (type.length() >= 2 && type.startsWith("'") && type.endsWith("'"))
-//                    type = type.substring(1,type.length()-1);
-//                if (!type.startsWith("SQL_"))
-//                    type = "SQL_" + type;
-//                try
-//                {
-//                    ConvertType t = ConvertType.valueOf(type);
-//                    if (t != null)
-//                        arguments[1] = new SQLFragment(t.name());
-//                }
-//                catch (IllegalArgumentException x)
-//                {
-//                }
-//            }
-//            return super.getSQL(schema, arguments);
-//        }
-//    }
-//    
-//    enum ConvertType
-//    {
-//        SQL_BIGINT,
-//        SQL_BINARY,
-//        SQL_BIT,
-//        SQL_CHAR,
-//        SQL_DECIMAL,
-//        SQL_DOUBLE,
-//        SQL_FLOAT,
-//        SQL_GUID,
-//        SQL_INTEGER,
-//        SQL_INTERVAL_MONTH,
-//        SQL_INTERVAL_YEAR,
-//        SQL_INTERVAL_YEAR_TO_MONTH,
-//        SQL_INTERVAL_DAY,
-//        SQL_INTERVAL_HOUR,
-//        SQL_INTERVAL_MINUTE,
-//        SQL_INTERVAL_SECOND,
-//        SQL_INTERVAL_DAY_TO_HOUR,
-//        SQL_INTERVAL_DAY_TO_MINUTE,
-//        SQL_INTERVAL_DAY_TO_SECOND,
-//        SQL_INTERVAL_HOUR_TO_MINUTE,
-//        SQL_INTERVAL_HOUR_TO_SECOND,
-//        SQL_INTERVAL_MINUTE_TO_SECOND,
-//        SQL_LONGVARBINARY,
-//        SQL_LONGVARCHAR,
-//        SQL_NUMERIC,
-//        SQL_REAL,
-//        SQL_SMALLINT,
-//        SQL_DATE,
-//        SQL_TIME,
-//        SQL_TIMESTAMP,
-//        SQL_TINYINT,
-//        SQL_VARBINARY,
-//        SQL_VARCHAR,
-//        SQL_WCHAR,
-//        SQL_WLONGVARCHAR,
-//        SQL_WVARCHAR
-//    }
+
+    class ConvertInfo extends MethodInfoImpl
+    {
+        public ConvertInfo()
+        {
+            super(Types.OTHER);
+        }
+
+        @Override
+        public ColumnInfo createColumnInfo(TableInfo parentTable, ColumnInfo[] arguments, String alias)
+        {
+            SQLFragment[] fragments = getSQLFragments(arguments);
+            if (fragments.length >= 2)
+            {
+                String sqlEscapeTypeName = getTypeArgument(fragments);
+                String typeName = sqlEscapeTypeName;
+                try
+                {
+                    _sqlType = ConvertType.valueOf(sqlEscapeTypeName).type;
+                    typeName = ColumnInfo.sqlTypeNameFromSqlType(_sqlType,parentTable.getSchema().getSqlDialect());
+                }
+                catch (IllegalArgumentException x)
+                {
+                    /* */
+                }
+                fragments[1] = new SQLFragment(typeName);
+            }
+            return new ExprColumn(parentTable, alias, getSQL(parentTable.getSchema(), fragments), _sqlType);
+        }
+
+        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+        {
+            SQLFragment ret = new SQLFragment();
+            ret.append("CAST(");
+            if (arguments.length > 0)
+                ret.append(arguments[0]);
+            if (arguments.length > 1)
+            {
+                ret.append(" AS ");
+                ret.append(arguments[1]);
+            }
+            ret.append(")");
+            return ret;
+        }
+
+        String getTypeArgument(SQLFragment[] argumentsIN) throws IllegalArgumentException
+        {
+            if (argumentsIN.length < 2)
+                return "SQL_VARCHAR";
+            String typeName = StringUtils.trimToEmpty(argumentsIN[1].getSQL());
+            if (typeName.length() >= 2 && typeName.startsWith("'") && typeName.endsWith("'"))
+                typeName = typeName.substring(1,typeName.length()-1);
+            if (typeName.startsWith("SQL_"))
+                typeName = typeName.substring(4);
+            return typeName;
+        }
+    }
+
+    class PassthroughInfo extends MethodInfoImpl
+    {
+        Method _method;
+
+        public PassthroughInfo(Method method)
+        {
+            super(Types.OTHER);
+            _method = method;
+        }
+
+        @Override
+        public ColumnInfo createColumnInfo(TableInfo parentTable, ColumnInfo[] arguments, String alias)
+        {
+            _sqlType = arguments.length > 0 ? arguments[0].getSqlTypeInt() : Types.VARCHAR;
+            return super.createColumnInfo(parentTable, arguments, alias);
+        }
+
+        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+        {
+            SQLFragment ret = new SQLFragment();
+            ret.append(_method.name()).append("(");
+            String comma = "";
+            for (SQLFragment arg : arguments)
+            {
+                ret.append(comma);
+                ret.append(arg);
+                comma = ",";
+            }
+            ret.append(")");
+            return ret;
+        }
+    }
+
+
+    enum ConvertType
+    {
+        BIGINT(Types.BIGINT),
+        BINARY(Types.BINARY),
+        BIT(Types.BIT),
+        CHAR(Types.CHAR),
+        DECIMAL(Types.DECIMAL),
+        DOUBLE(Types.DOUBLE),
+        FLOAT(Types.FLOAT),
+        GUID(Types.VARCHAR),
+        INTEGER(Types.INTEGER),
+        INTERVAL_MONTH(Types.INTEGER),
+        INTERVAL_YEAR(Types.INTEGER),
+        INTERVAL_YEAR_TO_MONTH(Types.INTEGER),
+        INTERVAL_DAY(Types.INTEGER),
+        INTERVAL_HOUR(Types.INTEGER),
+        INTERVAL_MINUTE(Types.INTEGER),
+        INTERVAL_SECOND(Types.INTEGER),
+//        INTERVAL_DAY_TO_HOUR,
+//        INTERVAL_DAY_TO_MINUTE,
+//        INTERVAL_DAY_TO_SECOND,
+//        INTERVAL_HOUR_TO_MINUTE,
+//        INTERVAL_HOUR_TO_SECOND,
+//        INTERVAL_MINUTE_TO_SECOND,
+        LONGVARBINARY(Types.LONGVARBINARY),
+        LONGVARCHAR(Types.LONGVARCHAR),
+        NUMERIC(Types.NUMERIC),
+        REAL(Types.REAL),
+        SMALLINT(Types.SMALLINT),
+        DATE(Types.DATE),
+        TIME(Types.TIME),
+        TIMESTAMP(Types.TIMESTAMP),
+        TINYINT(Types.TINYINT),
+        VARBINARY(Types.VARBINARY),
+        VARCHAR(Types.VARCHAR)
+//        WCHAR(Types.CHAR),
+//        WLONGVARCHAR(Types.LONGVARCHAR),
+//        WVARCHAR(Types.LONGVARCHAR)
+         ;
+
+        int type;
+        ConvertType(int type)
+        {
+            this.type = type;
+        }
+    }
 }
