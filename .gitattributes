@@ -1499,11 +1499,6 @@ internal/src/org/labkey/api/issues/IssuesSchema.java -text
 internal/src/org/labkey/api/module/DefaultFolderType.java -text
 internal/src/org/labkey/api/pipeline/PipelinePerlClusterSupport.java -text
 internal/src/org/labkey/api/query/ComparisonCrosstabView.java -text
-internal/src/org/labkey/api/sample/Location.java -text
-internal/src/org/labkey/api/sample/MouseModelManager.java -text
-internal/src/org/labkey/api/sample/MouseSchema.java -text
-internal/src/org/labkey/api/sample/SampleManager.java -text
-internal/src/org/labkey/api/sample/Slide.java -text
 internal/src/org/labkey/api/security/UserComparator.java -text
 internal/src/org/labkey/api/util/BeanQuery.java -text
 internal/src/org/labkey/api/util/ContainerTree.java -text

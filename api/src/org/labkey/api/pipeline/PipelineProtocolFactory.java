@@ -82,7 +82,7 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
                     doc.getPipelineProtocolProps();
             String type = ppp.getType();
 
-            if (type.startsWith("org.fhcrc.cpas.ms.2"))
+            if (type.startsWith("org.fhcrc.cpas.ms2."))
             {
                 type = type.replace("org.fhcrc.cpas.ms2.", "org.labkey.ms2.");
             }

@@ -23,6 +23,9 @@ import java.net.URLEncoder;
 import java.net.URLDecoder;
 import java.io.UnsupportedEncodingException;
 
+import junit.framework.Test;
+import junit.framework.TestSuite;
+
 
 /**
  * User: migra
@@ -47,17 +50,16 @@ public class Lsid
     public Lsid(String lsid)
     {
         src = lsid;
-        lsid = decode(lsid);
 
         Matcher m = LSID_REGEX.matcher(lsid);
 
         if (!m.matches())
             return;
 
-        authority = m.group(1).toLowerCase();
-        namespace = m.group(2);
-        objectId = m.group(3);
-        version = m.group(4);
+        authority = decodePart(m.group(1).toLowerCase());
+        namespace = decodePart(m.group(2));
+        objectId = decodePart(m.group(3));
+        version = decodePart(m.group(4));
         valid = true;
         resetPrefix();
     }
@@ -66,8 +68,8 @@ public class Lsid
     {
         valid = true;
         this.authority = AppProps.getInstance().getDefaultLsidAuthority();
-        this.namespace = decode(namespace);
-        this.objectId = decode(objectId);
+        this.namespace = namespace;
+        this.objectId = objectId;
         resetPrefix();
     }
 
@@ -75,17 +77,19 @@ public class Lsid
     {
         valid = true;
         this.authority = AppProps.getInstance().getDefaultLsidAuthority();
-        this.namespace = decode(namespacePrefix + "." + namespaceSuffix);
-        this.objectId = decode(objectId);
-        this.prefix = decode(namespacePrefix);
-        this.suffix = decode(namespaceSuffix);
+        this.namespace = namespacePrefix + "." + namespaceSuffix;
+        this.objectId = objectId;
+        this.prefix = namespacePrefix;
+        this.suffix = namespaceSuffix;
     }
 
-    private String encode(String original)
+    private String encodePart(String original)
     {
         try
         {
-            return URLEncoder.encode(original, "UTF-8");
+            String result = URLEncoder.encode(original, "UTF-8");
+            result = result.replace(":", "%3A");
+            return result;
         }
         catch (UnsupportedEncodingException e)
         {
@@ -93,8 +97,13 @@ public class Lsid
         }
     }
 
-    private String decode(String original)
+    private String decodePart(String original)
     {
+        if (original == null)
+        {
+            return null;
+        }
+        
         try
         {
             return URLDecoder.decode(original, "UTF-8");
@@ -150,10 +159,10 @@ public class Lsid
         if (!valid)
             return src;
 
-        String encodedAuthority = encode(authority);
-        String encodedNamespace = encode(namespace);
-        String encodedObjectId = encode(objectId);
-        String encodedVersion = version == null ? null : encode(version);
+        String encodedAuthority = encodePart(authority);
+        String encodedNamespace = encodePart(namespace);
+        String encodedObjectId = encodePart(objectId);
+        String encodedVersion = version == null ? null : encodePart(version);
 
         String result = "urn:lsid:" + encodedAuthority + ":" + encodedNamespace + ":" + encodedObjectId + (null == encodedVersion ? "" : ":" + encodedVersion);
         // Need to not encode the last '#' since property descriptors use that in their URIs
@@ -257,5 +266,120 @@ public class Lsid
     static public String namespaceFilter(String columnName, String namespace)
     {
         return columnName + " LIKE '" + namespaceLikeString(namespace) + "'";
+    }
+
+    public static class TestCase extends junit.framework.TestCase
+    {
+        public void testSimpleDecode()
+        {
+            Lsid simpleLsid = new Lsid("urn:lsid:labkey.com:SampleSet.Folder-4:ReproSet");
+            assertEquals("urn:lsid:labkey.com:SampleSet.Folder-4:ReproSet", simpleLsid.toString());
+            assertEquals("labkey.com", simpleLsid.getAuthority());
+            assertEquals("SampleSet", simpleLsid.getNamespacePrefix());
+            assertEquals("Folder-4", simpleLsid.getNamespaceSuffix());
+            assertEquals("ReproSet", simpleLsid.getObjectId());
+            assertEquals(null, simpleLsid.getVersion());
+        }
+
+        public void testSimpleEncode()
+        {
+            Lsid simpleLsid = new Lsid("SampleSet.Folder-4", "ReproSet");
+            assertEquals("urn:lsid:labkey.com:SampleSet.Folder-4:ReproSet", simpleLsid.toString());
+            assertEquals("labkey.com", simpleLsid.getAuthority());
+            assertEquals("SampleSet", simpleLsid.getNamespacePrefix());
+            assertEquals("Folder-4", simpleLsid.getNamespaceSuffix());
+            assertEquals("ReproSet", simpleLsid.getObjectId());
+            assertEquals(null, simpleLsid.getVersion());
+        }
+
+        public void testDecodeWithColon()
+        {
+            Lsid lsid = new Lsid("urn:lsid:labkey.com:SampleSet.Folder-4:Repro%3ASet");
+            assertEquals("urn:lsid:labkey.com:SampleSet.Folder-4:Repro%3ASet", lsid.toString());
+            assertEquals("labkey.com", lsid.getAuthority());
+            assertEquals("SampleSet", lsid.getNamespacePrefix());
+            assertEquals("Folder-4", lsid.getNamespaceSuffix());
+            assertEquals("Repro:Set", lsid.getObjectId());
+            assertEquals(null, lsid.getVersion());
+        }
+
+        public void testEncodeWithColon()
+        {
+            Lsid lsid = new Lsid("SampleSet.Folder-4", "Repro:Set");
+            assertEquals("urn:lsid:labkey.com:SampleSet.Folder-4:Repro%3ASet", lsid.toString());
+            assertEquals("labkey.com", lsid.getAuthority());
+            assertEquals("SampleSet", lsid.getNamespacePrefix());
+            assertEquals("Folder-4", lsid.getNamespaceSuffix());
+            assertEquals("Repro:Set", lsid.getObjectId());
+            assertEquals(null, lsid.getVersion());
+        }
+
+        public void testDecodeWithPercent()
+        {
+            Lsid lsid = new Lsid("urn:lsid:labkey.com:SampleSet.Folder-4:Repro%25Set");
+            assertEquals("urn:lsid:labkey.com:SampleSet.Folder-4:Repro%25Set", lsid.toString());
+            assertEquals("labkey.com", lsid.getAuthority());
+            assertEquals("SampleSet", lsid.getNamespacePrefix());
+            assertEquals("Folder-4", lsid.getNamespaceSuffix());
+            assertEquals("Repro%Set", lsid.getObjectId());
+            assertEquals(null, lsid.getVersion());
+        }
+
+        public void testDecodeWithSpace()
+        {
+            Lsid lsid = new Lsid("urn:lsid:labkey.com:SampleSet.Folder-4:Repro%20Set");
+            assertEquals("urn:lsid:labkey.com:SampleSet.Folder-4:Repro+Set", lsid.toString());
+            assertEquals("labkey.com", lsid.getAuthority());
+            assertEquals("SampleSet", lsid.getNamespacePrefix());
+            assertEquals("Folder-4", lsid.getNamespaceSuffix());
+            assertEquals("Repro Set", lsid.getObjectId());
+            assertEquals(null, lsid.getVersion());
+
+            lsid = new Lsid("urn:lsid:labkey.com:SampleSet.Folder-4:Repro+Set");
+            assertEquals("urn:lsid:labkey.com:SampleSet.Folder-4:Repro+Set", lsid.toString());
+            assertEquals("labkey.com", lsid.getAuthority());
+            assertEquals("SampleSet", lsid.getNamespacePrefix());
+            assertEquals("Folder-4", lsid.getNamespaceSuffix());
+            assertEquals("Repro Set", lsid.getObjectId());
+            assertEquals(null, lsid.getVersion());
+        }
+
+        public void testEncodeWithSpace()
+        {
+            Lsid lsid = new Lsid("SampleSet.Folder-4", "Repro Set");
+            assertEquals("urn:lsid:labkey.com:SampleSet.Folder-4:Repro+Set", lsid.toString());
+            assertEquals("labkey.com", lsid.getAuthority());
+            assertEquals("SampleSet", lsid.getNamespacePrefix());
+            assertEquals("Folder-4", lsid.getNamespaceSuffix());
+            assertEquals("Repro Set", lsid.getObjectId());
+            assertEquals(null, lsid.getVersion());
+        }
+
+        public void testDecodeWithPlus()
+        {
+            Lsid lsid = new Lsid("urn:lsid:labkey.com:SampleSet.Folder-4:Repro%2BSet");
+            assertEquals("urn:lsid:labkey.com:SampleSet.Folder-4:Repro%2BSet", lsid.toString());
+            assertEquals("labkey.com", lsid.getAuthority());
+            assertEquals("SampleSet", lsid.getNamespacePrefix());
+            assertEquals("Folder-4", lsid.getNamespaceSuffix());
+            assertEquals("Repro+Set", lsid.getObjectId());
+            assertEquals(null, lsid.getVersion());
+        }
+
+        public void testEncodeWithPlus()
+        {
+            Lsid lsid = new Lsid("SampleSet.Folder-4", "Repro+Set");
+            assertEquals("urn:lsid:labkey.com:SampleSet.Folder-4:Repro%2BSet", lsid.toString());
+            assertEquals("labkey.com", lsid.getAuthority());
+            assertEquals("SampleSet", lsid.getNamespacePrefix());
+            assertEquals("Folder-4", lsid.getNamespaceSuffix());
+            assertEquals("Repro+Set", lsid.getObjectId());
+            assertEquals(null, lsid.getVersion());
+        }
+
+        public static Test suite()
+        {
+            return new TestSuite(TestCase.class);
+        }
     }
 }

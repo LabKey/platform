@@ -163,7 +163,7 @@ public class ExperimentService
         List<ExpRun> getRunsUsingDatas(List<ExpData> datas) throws SQLException;
 
         ExpRun getCreatingRun(File file, Container c) throws IOException;
-        List<ExpRun> getExpRunsForProtocolIds(boolean protocolIds, int... rowIds) throws SQLException;
+        List<ExpRun> getExpRunsForProtocolIds(boolean includeRelated, int... rowIds) throws SQLException;
         ExpRun[] getRunsUsingSampleSets(ExpSampleSet... sampleSets) throws SQLException;
 
         /**

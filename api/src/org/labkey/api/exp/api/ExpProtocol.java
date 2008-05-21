@@ -43,7 +43,6 @@ public interface ExpProtocol extends ExpObject
 
     String getContact();
 
-
     enum ApplicationType
     {
         ExperimentRun,
@@ -62,6 +61,8 @@ public interface ExpProtocol extends ExpObject
     void setMaxInputDataPerInstance(Integer i);
 
     public ExpProtocolAction addStep(User user, ExpProtocol childProtocol, int actionSequence) throws Exception;
+
+    public ExpProtocol[] getParentProtocols();
 
     public void setApplicationType(ApplicationType type);
     public void setDescription(String description);
