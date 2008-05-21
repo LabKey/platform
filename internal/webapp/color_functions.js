@@ -1,3 +1,8 @@
+/*
+    Copyright (C) October 2005,  DHTMLGoodies.com, Alf Magne Kalleland
+
+    Licensed under GNU LGPL along with js_color_picker_v2.js.
+*/
 function baseConverter (number,ob,nb) {
 	number = number + "";
 	number = number.toUpperCase();
