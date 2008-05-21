@@ -49,6 +49,11 @@ public class LdapAuthenticationProvider implements AuthenticationProvider.LoginF
         return "LDAP";
     }
 
+    public String getDescription()
+    {
+        return "Uses the LDAP protocol to authenticate against an institution's directory server";
+    }
+
     public ActionURL getConfigurationLink()
     {
         return LdapController.getConfigureURL(false);

@@ -58,6 +58,11 @@ public class OpenSSOProvider implements AuthenticationProvider.RequestAuthentica
         return NAME;
     }
 
+    public String getDescription()
+    {
+        return "Connects to OpenSSO, an open-source authentication server, enabling single sign-on solutions with one or more other web sites";
+    }
+
     public ActionURL getConfigurationLink()
     {
         return OpenSSOController.getCurrentSettingsURL();
