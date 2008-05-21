@@ -451,56 +451,10 @@ public class ViewController extends PageFlowControllerFIXED
         return "POST".equalsIgnoreCase(getRequest().getMethod());
     }
 
-    @Jpf.Action
-    protected Forward collapseExpand(CollapseExpandForm form) throws Exception
-    {
-        NavTreeManager.expandCollapsePath(getViewContext(), form.getTreeId(), form.getPath(), form.isCollapse());
-        return null;
-    }
-
-
     protected Forward sendAjaxCompletions(List<AjaxCompletion> completions) throws IOException
     {
         PageFlowUtil.sendAjaxCompletions(getResponse(), completions);
         return null;
-    }
-
-
-    public static class CollapseExpandForm extends FormData
-    {
-        private boolean collapse;
-        private String path;
-        private String treeId;
-
-        public boolean isCollapse()
-        {
-            return collapse;
-        }
-
-        public void setCollapse(boolean collapse)
-        {
-            this.collapse = collapse;
-        }
-
-        public String getTreeId()
-        {
-            return treeId;
-        }
-
-        public void setTreeId(String treeId)
-        {
-            this.treeId = treeId;
-        }
-
-        public String getPath()
-        {
-            return path;
-        }
-
-        public void setPath(String path)
-        {
-            this.path = path;
-        }
     }
 
     // kevink: support data region selection on Beehive controllers
