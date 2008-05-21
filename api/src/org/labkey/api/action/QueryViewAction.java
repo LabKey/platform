@@ -110,7 +110,8 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
     protected final ViewType createInitializedQueryView(Form form, BindException errors, boolean forExport, String dataRegion) throws Exception
     {
         ViewType result = createQueryView(form, errors, forExport, dataRegion);
-        result.setUseQueryViewActionExportURLs(true);
+        if (null != result)
+            result.setUseQueryViewActionExportURLs(true);
         return result;
     }
 
