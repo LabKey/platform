@@ -1,7 +1,8 @@
 {table}
 Library|Version|Source|License|Dev|Purpose
-YUI|0.12.0|{link:YUI|http://developer.yahoo.com/yui/}|{link:BSD|http://developer.yahoo.com/yui/license.txt}|matthewb|Browser User Interface Library
-TinyMCE|2.0.9|{link:TinyMCE|http://tinymce.moxiecode.com/}|{link:LGPL|http://wiki.moxiecode.com/index.php/TinyMCE:License}|tamram|HTML WYSIWYG editor
+js_color_picker|v2|{link:dhtmlgoodies.com|http://www.dhtmlgoodies.com/index.html?whichScript=js_color_picker_v2}|{link:LGPL|http://www.dhtmlgoodies.com/index.html?page=termsOfUse}||Color picker for web themes
 Slider|1.0|{link:Slider|http://webfx.eae.net/dhtml/slider/slider.html}|{link:Apache 2.0|http://webfx.eae.net/license/asl2}|daves|Basis for the range slider used for m/z range filter
+TinyMCE|2.0.9|{link:TinyMCE|http://tinymce.moxiecode.com/}|{link:LGPL|http://wiki.moxiecode.com/index.php/TinyMCE:License}|daves|HTML WYSIWYG editor
+YUI|0.12.0|{link:YUI|http://developer.yahoo.com/yui/}|{link:BSD|http://developer.yahoo.com/yui/license.txt}|matthewb|Browser User Interface Library
 {table}
 
