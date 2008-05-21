@@ -104,9 +104,12 @@ public class AdminController extends SpringActionController
     }
 
 
-    public NavTree appendAdminNavTrail(NavTree root, String childTitle)
+    public NavTree appendAdminNavTrail(NavTree root, String childTitle, Class<? extends Controller> action)
     {
-        root.addChild("Admin Console", getShowAdminURL()).addChild(childTitle);
+        if (null == action)
+            root.addChild("Admin Console", getShowAdminURL()).addChild(childTitle);
+        else
+            root.addChild("Admin Console", getShowAdminURL()).addChild(childTitle, new ActionURL(action, getContainer()));
         return root;
     }
 
@@ -255,7 +258,7 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendAdminNavTrail(root, "Audit Log");
+            return appendAdminNavTrail(root, "Audit Log", this.getClass());
         }
     }
 
@@ -280,7 +283,7 @@ public class AdminController extends SpringActionController
     {
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendAdminNavTrail(root, "Module Errors");
+            return appendAdminNavTrail(root, "Module Errors", this.getClass());
         }
 
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -318,9 +321,11 @@ public class AdminController extends SpringActionController
     @RequiresSiteAdmin
     public class ConsolidateScriptsAction extends SimpleViewAction<ConsolidateForm>
     {
+        ConsolidateForm _form;
+        
         public ModelAndView getView(ConsolidateForm form, BindException errors) throws Exception
         {
-            StringBuilder html = new StringBuilder();
+            _form = form;
             List<Module> modules = ModuleLoader.getInstance().getModules();
             List<ScriptConsolidator> consolidators = new ArrayList<ScriptConsolidator>();
 
@@ -339,7 +344,7 @@ public class AdminController extends SpringActionController
 
                         for (String schemaName : schemaNames)
                         {
-                            ScriptConsolidator consolidator = new ScriptConsolidator(provider, schemaName);
+                            ScriptConsolidator consolidator = new ScriptConsolidator(provider, schemaName, form.getAll());
 
                             if (!consolidator.getScripts().isEmpty())
                             {
@@ -354,7 +359,14 @@ public class AdminController extends SpringActionController
                 }
             }
 
+
+            StringBuilder html = new StringBuilder();
             double toVersion = 0.0 != form.getToVersion() ?  form.getToVersion() : Math.ceil(maxToVersion * 10) / 10 - 0.01;
+
+            if (form.getAll())
+                html.append("[<a href='?all=false'>consolidate incremental</a>]<p/>");
+            else
+                html.append("[<a href='?all=true'>consolidate all</a>]<p/>");
 
             for (ScriptConsolidator consolidator : consolidators)
             {
@@ -366,6 +378,8 @@ public class AdminController extends SpringActionController
                     continue;  // No consolidation to do on this schema
 
                 ActionURL url = getConsolidateSchemaURL(consolidator.getModuleName(), consolidator.getSchemaName(), toVersion);
+                if (form.getAll())
+                    url.addParameter("all","true");
                 html.append("<b>Schema ").append(consolidator.getSchemaName()).append("</b><br>\n");
 
                 for (SqlScript script : scripts)
@@ -383,7 +397,12 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Consolidate Scripts");
+            new ScriptsAction().appendNavTrail(root);
+            if (_form.getAll())
+                root.addChild("Consolidate All Scripts");
+            else
+                root.addChild("Consolidate Incremental Scripts");
+            return root;
         }
     }
 
@@ -395,7 +414,7 @@ public class AdminController extends SpringActionController
         private List<SqlScript> _scripts = new ArrayList<SqlScript>();
         private double sharedToVersion = -1;
 
-        private ScriptConsolidator(FileSqlScriptProvider provider, String schemaName) throws SqlScriptRunner.SqlScriptException
+        private ScriptConsolidator(FileSqlScriptProvider provider, String schemaName, boolean consolidateAll) throws SqlScriptRunner.SqlScriptException
         {
             _provider = provider;
             _schemaName = schemaName;
@@ -404,7 +423,7 @@ public class AdminController extends SpringActionController
 
             for (SqlScript script : recommendedScripts)
             {
-                if (isIncrementalScript(script))
+                if (consolidateAll || isIncrementalScript(script))
                     _scripts.add(script);
                 else
                     _scripts.clear();
@@ -436,12 +455,18 @@ public class AdminController extends SpringActionController
 
         private double getFromVersion()
         {
-            return _scripts.get(0).getFromVersion();
+            double fromVersion = 0.00;
+            if (!_scripts.isEmpty())
+                fromVersion = _scripts.get(0).getFromVersion();
+            return fromVersion;
         }
 
         private double getToVersion()
         {
-            return Math.max(_scripts.get(_scripts.size() - 1).getToVersion(), getSharedToVersion());
+            double toVersion = 0.00;
+            if (!_scripts.isEmpty())
+                toVersion = _scripts.get(_scripts.size() - 1).getToVersion();
+            return Math.max(toVersion, getSharedToVersion());
         }
 
         private String getFilename()
@@ -508,6 +533,7 @@ public class AdminController extends SpringActionController
 
     public static class ConsolidateForm
     {
+        private boolean _all = false;
         private String _module;
         private String _schema;
         private double _toVersion;
@@ -540,6 +566,16 @@ public class AdminController extends SpringActionController
         public void setToVersion(double toVersion)
         {
             _toVersion = toVersion;
+        }
+
+        public boolean getAll()
+        {
+            return _all;
+        }
+
+        public void setAll(boolean all)
+        {
+            _all = all;
         }
     }
 
@@ -602,7 +638,7 @@ public class AdminController extends SpringActionController
         {
             DefaultModule module = (DefaultModule)ModuleLoader.getInstance().getModule(form.getModule());
             FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
-            ScriptConsolidator consolidator = new ScriptConsolidator(provider, form.getSchema());
+            ScriptConsolidator consolidator = new ScriptConsolidator(provider, form.getSchema(), form.getAll());
             consolidator.setSharedToVersion(form.getToVersion());
 
             return consolidator;
@@ -674,7 +710,7 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendAdminNavTrail(root, "Credits");
+            return appendAdminNavTrail(root, "Credits", this.getClass());
         }
     }
 
@@ -971,7 +1007,7 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendAdminNavTrail(root, "Customize Site");
+            return appendAdminNavTrail(root, "Customize Site", this.getClass());
         }
 
         public void validateCommand(SiteAdminForm target, Errors errors)
@@ -1739,7 +1775,7 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendAdminNavTrail(root, "Current Threads");
+            return appendAdminNavTrail(root, "Current Threads", this.getClass());
         }
     }
 
@@ -1954,7 +1990,7 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendAdminNavTrail(root, "Spring Actions");
+            return appendAdminNavTrail(root, "Spring Actions", this.getClass());
         }
     }
 
@@ -2138,7 +2174,7 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendAdminNavTrail(root, "System Maintenance");
+            return appendAdminNavTrail(root, "System Maintenance", this.getClass());
         }
     }
 
@@ -2210,7 +2246,7 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendAdminNavTrail(root, "Groovy Templates");
+            return appendAdminNavTrail(root, "Groovy Templates", this.getClass());
         }
     }
 
@@ -2228,7 +2264,10 @@ public class AdminController extends SpringActionController
                 if (isIncrementalScript(filename))
                     incrementalRun.add(filename);
 
-            StringBuilder html = new StringBuilder("<table><tr><td colspan=2>Scripts that have run on this server</td><td colspan=2>Scripts that have not run on this server</td></tr>");
+            StringBuilder html = new StringBuilder();
+            if (AppProps.getInstance().isDevMode())
+                html.append("[<a href='consolidateScripts.view'>consolidate scripts</a>]<p/>");
+            html.append("<table><tr><td colspan=2>Scripts that have run on this server</td><td colspan=2>Scripts that have not run on this server</td></tr>");
             html.append("<tr><td>All</td><td>Incremental</td><td>All</td><td>Incremental</td></tr>");
 
             html.append("<tr valign=top>");
@@ -2272,7 +2311,7 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendAdminNavTrail(root, "SQL Scripts");
+            return appendAdminNavTrail(root, "SQL Scripts", this.getClass());
         }
     }
 
@@ -2338,7 +2377,7 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendAdminNavTrail(root, "Memory usage -- " + DateUtil.formatDateTime());
+            return appendAdminNavTrail(root, "Memory usage -- " + DateUtil.formatDateTime(), this.getClass());
         }
     }
 
@@ -2725,7 +2764,7 @@ public class AdminController extends SpringActionController
         {
             // TODO: showCustomizeSite.view should be on nav trail
 
-            return appendAdminNavTrail(root, "Web Themes");
+            return appendAdminNavTrail(root, "Web Themes", this.getClass());
         }
     }
 
@@ -3195,7 +3234,7 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendAdminNavTrail(root, "Database Check Tools");
+            return appendAdminNavTrail(root, "Database Check Tools", this.getClass());
         }
     }
 
@@ -3271,7 +3310,7 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendAdminNavTrail(root, "Database Tools");
+            return appendAdminNavTrail(root, "Database Tools", this.getClass());
         }
     }
 
@@ -3358,7 +3397,7 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendAdminNavTrail(root, "Folder Aliases: " + getContainer().getPath());
+            return appendAdminNavTrail(root, "Folder Aliases: " + getContainer().getPath(), this.getClass());
         }
     }
 
@@ -3428,7 +3467,7 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendAdminNavTrail(root, "Customize Email");
+            return appendAdminNavTrail(root, "Customize Email", this.getClass());
         }
     }
 
@@ -3661,7 +3700,7 @@ public class AdminController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             getPageConfig().setFocusId("name");
-            return appendAdminNavTrail(root, getTitle("Rename"));
+            return appendAdminNavTrail(root, getTitle("Rename"), this.getClass());
         }
     }
 
@@ -3690,7 +3729,7 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendAdminNavTrail(root, getTitle("Move"));
+            return appendAdminNavTrail(root, getTitle("Move"), this.getClass());
         }
     }
 
@@ -3859,7 +3898,7 @@ public class AdminController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             getPageConfig().setFocusId("name");
-            return appendAdminNavTrail(root, getTitle("Create"));
+            return appendAdminNavTrail(root, getTitle("Create"), this.getClass());
         }
     }
 
@@ -4122,7 +4161,8 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendAdminNavTrail(root, "Reorder " + (getContainer().isRoot() || getContainer().getParent().isRoot() ? "Projects" : "Folders"));
+            String title = "Reorder " + (getContainer().isRoot() || getContainer().getParent().isRoot() ? "Projects" : "Folders");
+            return appendAdminNavTrail(root, title, this.getClass());
         }
     }
 
