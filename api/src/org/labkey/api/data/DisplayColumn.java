@@ -310,14 +310,14 @@ public abstract class DisplayColumn extends RenderColumn
 
     public void renderGridHeaderCell(RenderContext ctx, Writer out) throws IOException, SQLException
     {
-        renderGridHeaderCell(ctx, out, "");
+        renderGridHeaderCell(ctx, out, null);
     }
 
     public void renderGridHeaderCell(RenderContext ctx, Writer out, String styleAttributes) throws IOException, SQLException
     {
         out.write("\n<th class='");
         out.write(getGridHeaderClass());
-        out.write("' ");
+        out.write("'");
         if (styleAttributes != null)
         {
             styleAttributes = styleAttributes + "; " + getDefaultHeaderStyle();
@@ -345,10 +345,10 @@ public abstract class DisplayColumn extends RenderColumn
 
         if (isSortable() && ctx.getCurrentRegion().isSortable())
         {
-            out.write("<a ");
+            out.write("<a");
             if (null == getDescription())
-                out.write("title=\"Sort\"");
-            out.write("href='");
+                out.write(" title=\"Sort\"");
+            out.write(" href='");
             renderSortHref(ctx, out);
             out.write("'>");
             renderTitle(ctx, out);
