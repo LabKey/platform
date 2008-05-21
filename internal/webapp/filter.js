@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2004-2008 Fred Hutchinson Cancer Research Center
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+ */
 var _tableName = "";
 var _fieldName = "";
 var _fieldType = "text";

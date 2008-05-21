@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2007-2008 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+ */
 /**
  * A Dialog box widget that extends the yahoo Panel class in order to show the dialog box with
  * special animation effects like fading and adjusting the opacity of the background.
