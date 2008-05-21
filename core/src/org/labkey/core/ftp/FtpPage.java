@@ -18,7 +18,6 @@ package org.labkey.core.ftp;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.ftp.FtpConnector;
-import org.labkey.api.security.User;
 import org.labkey.api.util.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.action.HasViewContext;
@@ -88,10 +87,11 @@ public class FtpPage implements HasViewContext
         return this.pipeline;
     }
 
-    public String getPath(Container c)
+    public String getPath()
     {
+        Container c = getViewContext().getContainer();
         StringBuilder path = new StringBuilder(100);
-        path.append(c.getPath());
+        path.append(c.getEncodedPath());
         if (null != pipeline && pipeline.length() > 0)
         {
             String subdir = PageFlowUtil.decode(pipeline);
@@ -102,12 +102,12 @@ public class FtpPage implements HasViewContext
             path.append(FtpConnector.PIPELINE_LINK);
             if (!subdir.startsWith("/"))
                 path.append('/');
-            path.append(subdir);
+            path.append(PageFlowUtil.encodePath(subdir));
         }
         return path.toString();
     }
 
-    private String _getHostPath(Container c)
+    private String _getHostPath()
     {
         StringBuilder path = new StringBuilder(100);
         path.append(getHost());
@@ -115,18 +115,18 @@ public class FtpPage implements HasViewContext
             path.append(":").append(getPort());
         if (!useFTP)
             path.append(getViewContext().getContextPath()).append(DavController.SERVLETPATH);
-        path.append(getPath(c));
+        path.append(getPath());
         return path.toString();
     }
     
-    public String getURL(Container c, User user)
+    public String getUserURL()
     {
-        String ftpUser = user.getEmail();
-        return getScheme()+"://"+PageFlowUtil.encode(ftpUser)+"@"+_getHostPath(c);
+        String ftpUser = getViewContext().getUser().getEmail();
+        return getScheme()+"://"+PageFlowUtil.encode(ftpUser)+"@"+_getHostPath();
     }
 
-    public String getURL(Container c)
+    public String getURL()
     {
-        return getScheme()+"://"+_getHostPath(c);
+        return getScheme()+"://"+_getHostPath();
     }
 }

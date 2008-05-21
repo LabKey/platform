@@ -60,7 +60,7 @@ LABKEY.requiresScript("applet.js",true);
 LABKEY.requiresScript("dropApplet.js",true);
 </script>
 <div><h3 class="ms-announcementtitle">
-    <a id="ftpLocation" href="<%=h(dropPage.getURL(context.getContainer(), context.getUser()))%>"><%=dropPage.getURL(context.getContainer())%></a>
+    <a id="ftpLocation" href="<%=h(dropPage.getUserURL())%>"><%=dropPage.getURL()%></a>
 </h3></div>
 <table id=ftpOuterTable width="100%"><tr>
     <td valign="top" width=200 height=100%><div id="appletDiv" style="border:solid 1px <%=border%>; padding:2px; margin:1px; width:200px; height:200px;"><script type="text/javascript">
@@ -72,11 +72,11 @@ LABKEY.writeApplet({
     height:200,
     params:{
         <%-- TODO switch applet to use URL which encodes more info --%>
-        url:<%=PageFlowUtil.jsString(dropPage.getURL(context.getContainer()))%>,                                     
+        url:<%=PageFlowUtil.jsString(dropPage.getURL())%>,                                     
           scheme:<%=PageFlowUtil.jsString(dropPage.getScheme())%>,
           host:<%=PageFlowUtil.jsString(dropPage.getHost())%>,
           port:<%=PageFlowUtil.jsString(dropPage.getPort())%>,
-          path:<%=PageFlowUtil.jsString(dropPage.getPath(context.getContainer()))%>,
+          path:<%=PageFlowUtil.jsString(dropPage.getPath())%>,
           webdavPrefix:<%=PageFlowUtil.jsString(contextPath + DavController.SERVLETPATH)%>,
         port:<%=PageFlowUtil.jsString(dropPage.getPort())%>,
         user:<%=PageFlowUtil.jsString(context.getUser().getEmail())%>,

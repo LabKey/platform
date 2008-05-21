@@ -35,7 +35,7 @@ div.content { margin:10px; }
 <!--
 function openftp()
 {
-    window.open("<%=dropPage.getURL(context.getContainer(), context.getUser())%>","ftpwindow",
+    window.open("<%=dropPage.getUserURL()%>","ftpwindow",
         "width=800,height=600,location=yes,menubar=yes,resizeable=yes,scrollbars=yes,status=yes,titlebar=yes,toolbar=yes");
 }
 //-->
@@ -44,7 +44,7 @@ function openftp()
 <body onload="document.getElementById('username').select();">
 <div class="content">
 Use the following FTP URL to upload files:<br/>
-<a target="ftpwindow" href="<%=dropPage.getURL(context.getContainer(), context.getUser())%>" onclick="openftp(); return false"><%=dropPage.getURL(context.getContainer())%></a><br/><br/>
+<a target="ftpwindow" href="<%=dropPage.getUserURL()%>" onclick="openftp(); return false"><%=dropPage.getURL()%></a><br/><br/>
 
 If you are prompted for a username, enter:<br/>
 <input id="username" type="text" readonly="true" value="<%=PageFlowUtil.filter(context.getUser().getEmail())%>" size="60"><br/><br/>
