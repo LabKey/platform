@@ -180,12 +180,12 @@ LABKEY.Chart = function(config)
         {
             if (!config.schemaName || !config.queryName)
             {
-                alert("config.schemaName and config.queryName are required parameters");
+                Ext.Msg.alert("Configuration Error", "config.schemaName and config.queryName are required parameters");
                 return;
             }
             if (!chartDivName)
             {
-                alert("config.renderTo is a required parameter.");
+                Ext.Msg.alert("Configuration Error", "config.renderTo is a required parameter.");
                 return;
             }
             if (imageDivName)

@@ -117,7 +117,7 @@ LABKEY.GridView = function(config)
 
     if (!config.schemaName || !config.queryName)
     {
-        alert("config.schemaName and config.queryName are required parameters");
+        Ext.Msg.alert("Configuration Error", "config.schemaName and config.queryName are required parameters");
         return;
     }
 
@@ -151,7 +151,8 @@ LABKEY.GridView = function(config)
     function handleLoadError(This, o, arg, e)
     {
         var error;
-        if (arg && arg.responseText)
+        if (arg && arg.responseText
+                && arg.getResponseHeader['Content-Type'] && arg.getResponseHeader['Content-Type'].indexOf('application/json') >= 0)
         {
             var jsonResponse = Ext.util.JSON.decode(arg.responseText);
             if (jsonResponse && jsonResponse.exception)
@@ -648,10 +649,10 @@ LABKEY.GridView = function(config)
         _errorsInGridData = true;
         if (jsonResponse && jsonResponse.exception)
         {
-            alert("Update failed: " + jsonResponse.exception + "\n(Exception class " + jsonResponse.exceptionClass + ")")
+            Ext.Msg.alert("Update Failed", jsonResponse.exception + "\n(Exception class " + jsonResponse.exceptionClass + ")")
         }
         else
-            alert("Update failed: " + jsonResponse.statusText + " (Response code " + jsonResponse.status + ")");
+            Ext.Msg.alert("Update Failed", jsonResponse.statusText + " (Response code " + jsonResponse.status + ")");
     }
 
     function updateDB(record)

@@ -71,8 +71,17 @@ LABKEY.Query = new function()
     {
         return function(response, options)
         {
-            var data = Ext.util.JSON.decode(response.responseText);
-            callbackFn(data, options);
+            var data = null;
+
+            //The response object is not actually the XMLHttpRequest object
+            //it's a 'synthesized' object provided by Ext to help on IE 6
+            //http://extjs.com/forum/showthread.php?t=27190&highlight=getResponseHeader
+            var contentType = response.getResponseHeader['Content-Type'];
+
+            if(contentType && contentType.indexOf('application/json') >= 0)
+                data = Ext.util.JSON.decode(response.responseText)
+
+            callbackFn(data, options, response);
         }
     }
 
@@ -128,7 +137,9 @@ LABKEY.Query = new function()
 
 	LABKEY.Query.selectRows({schemaName: 'lists', queryName: 'People',
 	         successCallback: successHandler, errorCallback: failureHandler,
-			[ LABKEY.Filter.create('FirstName', 'Johny')]}); 
+			filterArray: [
+			    LABKEY.Filter.create('FirstName', 'Johny')
+			    ] });
 &lt;/script&gt; </pre>
 		* @see LABKEY.Query.SelectRowsOptions
 		* @see LABKEY.Query.SelectRowsResults
