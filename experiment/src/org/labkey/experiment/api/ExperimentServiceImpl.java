@@ -1226,9 +1226,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public Lsid getSampleSetLsid(String sourceName, Container container)
     {
-        String setName = PageFlowUtil.encode(sourceName);
-
-        return new Lsid("SampleSet", "Folder-" + String.valueOf(container.getRowId()), setName);
+        return new Lsid("SampleSet", "Folder-" + String.valueOf(container.getRowId()), sourceName);
     }
 
     public void deleteExperimentByRowIds(Container container, int... selectedExperimentIds) throws SQLException, ExperimentException
@@ -3274,6 +3272,21 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         {
             if (transactionOwner)
                 getSchema().getScope().closeConnection();
+        }
+    }
+
+    public ExpProtocolImpl[] getParentProtocols(int childProtocolRowId)
+    {
+        try
+        {
+            String sql = "SELECT P.* FROM " + getTinfoProtocol() + " P, " + getTinfoProtocolAction() + " PA "
+                    + " WHERE P.RowId = PA.ParentProtocolID AND PA.ChildProtocolId = ?" ;
+
+            return ExpProtocolImpl.fromProtocols(Table.executeQuery(getExpSchema(), sql, new Object[]{childProtocolRowId}, Protocol.class));
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
         }
     }
 }

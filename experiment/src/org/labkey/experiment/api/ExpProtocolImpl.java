@@ -163,6 +163,11 @@ public class ExpProtocolImpl extends ExpIdentifiableBaseImpl<Protocol> implement
         return new ExpProtocolActionImpl(action);
     }
 
+    public ExpProtocol[] getParentProtocols()
+    {
+        return ExperimentServiceImpl.get().getParentProtocols(getRowId());        
+    }
+
     public void setContainerId(String containerId)
     {
         _object.setContainer(containerId);

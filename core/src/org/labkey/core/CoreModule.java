@@ -456,7 +456,8 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
             AttachmentServiceImpl.TestCase.class,
             BooleanFormat.TestCase.class,
             XMLWriterTest.TestCase.class,
-            WebdavResolverImpl.TestCase.class
+            WebdavResolverImpl.TestCase.class,
+            org.labkey.api.exp.Lsid.TestCase.class
         )
         );
     }

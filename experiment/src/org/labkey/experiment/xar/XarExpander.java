@@ -208,6 +208,11 @@ public class XarExpander extends AbstractXarImporter
                 dataLSID.setStringValue(predecessorDataOutput.get(k));
             }
 
+            if (inputRefs.getDataLSIDArray().length + inputRefs.getMaterialLSIDArray().length == 0)
+            {
+                throw new XarFormatException("No inputs found for protocol step " + pbStep.stepProtocolLSID + ", instance " + (i + 1) + " of " + instanceCnt);
+            }
+
             context.addSubstitution("InputInstance", Integer.toString(i));
             createProtAppInstance(pbStep, context, step, details, xbRun, fileResolver);
             fileResolver.advance();

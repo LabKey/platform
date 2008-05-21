@@ -213,6 +213,13 @@ public class XarReader extends AbstractXarImporter
             {
                 deleteExistingExperimentRuns(experimentRuns);
             }
+
+            ExperimentArchiveType.ProtocolActionDefinitions actionDefs = _experimentArchive.getProtocolActionDefinitions();
+            if (actionDefs != null)
+            {
+                deleteUniqueActions(actionDefs.getProtocolActionSetArray());
+            }
+
             ExperimentArchiveType.ProtocolDefinitions protocolDefs = _experimentArchive.getProtocolDefinitions();
             if (protocolDefs != null)
             {
@@ -255,7 +262,6 @@ public class XarReader extends AbstractXarImporter
                 _log.info("");
             }
 
-            ExperimentArchiveType.ProtocolActionDefinitions actionDefs = _experimentArchive.getProtocolActionDefinitions();
             if (actionDefs != null)
             {
                 for (ProtocolActionSetType actionSet : actionDefs.getProtocolActionSetArray())
@@ -465,11 +471,11 @@ public class XarReader extends AbstractXarImporter
         return domain;
     }
 
-    private void deleteUniqueProtocols(ProtocolBaseType[] protocolDefs) throws SQLException, ExperimentException
+    private void deleteUniqueActions(ProtocolActionSetType[] actionDefs) throws ExperimentException, SQLException
     {
-        for (ProtocolBaseType protocol : protocolDefs)
+        for (ProtocolActionSetType actionDef : actionDefs)
         {
-            String protocolLSID = LsidUtils.resolveLsidFromTemplate(protocol.getAbout(), _xarContext, "Protocol");
+            String protocolLSID = LsidUtils.resolveLsidFromTemplate(actionDef.getParentProtocolLSID(), _xarContext, "Protocol");
             Protocol existingProtocol = ExperimentServiceImpl.get().getProtocol(protocolLSID);
 
             if (existingProtocol != null)
@@ -477,6 +483,29 @@ public class XarReader extends AbstractXarImporter
                 // First make sure it isn't in use by some run that's not part of this file
                 if (ExperimentService.get().getExpProtocolApplicationsForProtocolLSID(protocolLSID).length == 0 &&
                     ExperimentService.get().getExpRunsForProtocolIds(false, existingProtocol.getRowId()).isEmpty())
+                {
+                    _log.info("Deleting existing action set with parent protocol LSID '" + protocolLSID + "' so that the protocol specified in the file can be uploaded");
+                    ExperimentService.get().deleteProtocolByRowIds(_container, getUser(), existingProtocol.getRowId());
+                }
+                else
+                {
+                    _log.info("Existing action set with parent protocol LSID '" + protocolLSID + "' is referenced by other experiment runs, so it cannot be updated");
+                }
+            }
+        }
+    }
+
+    private void deleteUniqueProtocols(ProtocolBaseType[] protocolDefs) throws SQLException, ExperimentException
+    {
+        for (ProtocolBaseType protocol : protocolDefs)
+        {
+            String protocolLSID = LsidUtils.resolveLsidFromTemplate(protocol.getAbout(), _xarContext, "Protocol");
+            ExpProtocol existingProtocol = ExperimentService.get().getExpProtocol(protocolLSID);
+
+            if (existingProtocol != null)
+            {
+                // Delete any protocols from the XAR that are in the database but aren't referenced as part of a ProtocolActionSet
+                if (existingProtocol.getParentProtocols().length == 0)
                 {
                     _log.info("Deleting existing protocol with LSID '" + protocolLSID + "' so that the protocol specified in the file can be uploaded");
                     ExperimentService.get().deleteProtocolByRowIds(_container, getUser(), existingProtocol.getRowId());

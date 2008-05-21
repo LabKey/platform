@@ -28,6 +28,7 @@ import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.CaseInsensitiveHashSet;
 
 import java.util.*;
 import java.sql.SQLException;
@@ -176,6 +177,17 @@ public class UploadSamplesHelper
             }
 
             Map<String, Object>[] maps = (Map<String, Object>[]) tl.load();
+
+            Set<String> newNames = new CaseInsensitiveHashSet();
+            for (Map<String, Object> map : maps)
+            {
+                String name = decideName(map, idColPropertyURIs);
+                if (!newNames.add(name))
+                {
+                    throw new ExperimentException("Duplicate material: " + name);
+                }
+            }
+
             Set<String> reusedMaterialLSIDs = new HashSet<String>();
             if (source == null)
             {
@@ -207,13 +219,12 @@ public class UploadSamplesHelper
                     List<Map<String, Object>> newMaps = new ArrayList<Map<String, Object>>();
                     for (Map<String, Object> map : maps)
                     {
-                        String lsid = source.getMaterialLSIDPrefix() + decideName(map, idColPropertyURIs);
+                        String lsid = new Lsid(source.getMaterialLSIDPrefix() + decideName(map, idColPropertyURIs)).toString();
                         Material material = ExperimentServiceImpl.get().getMaterial(lsid);
                         if (material == null)
                         {
                             newMaps.add(map);
                         }
-
                     }
                     maps = newMaps.toArray(new Map[0]);
                 }
@@ -221,7 +232,7 @@ public class UploadSamplesHelper
                 {
                     for (Map<String, Object> map : maps)
                     {
-                        String lsid = source.getMaterialLSIDPrefix() + decideName(map, idColPropertyURIs);
+                        String lsid = new Lsid(source.getMaterialLSIDPrefix() + decideName(map, idColPropertyURIs)).toString();
                         Material material = ExperimentServiceImpl.get().getMaterial(lsid);
                         if (material != null)
                         {
@@ -234,7 +245,6 @@ public class UploadSamplesHelper
                         }
                     }
                 }
-
             }
             insertTabDelimitedMaterial(maps, descriptorsByURI.values().toArray(new PropertyDescriptor[descriptorsByURI.size()]), idColPropertyURIs, source.getMaterialLSIDPrefix(), source.getLSID(), reusedMaterialLSIDs);
             _form.getSampleSet().onSamplesChanged(_form.getUser(), null);
