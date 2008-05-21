@@ -1187,7 +1187,7 @@ public class ColumnInfo
                 return "DISTINCT";
             case Types.DOUBLE:
             case Types.FLOAT:
-                return postgres ? "DOUBLE" : "FLOAT";
+                return postgres ? "DOUBLE PRECISION" : "FLOAT";
             case Types.INTEGER:
                 return "INTEGER";
             case Types.JAVA_OBJECT:
