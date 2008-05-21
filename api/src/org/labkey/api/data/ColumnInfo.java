@@ -1242,6 +1242,7 @@ public class ColumnInfo
         sqlTypeNameMap.put("DECIMAL", Types.DECIMAL);
         sqlTypeNameMap.put("DISTINCT", Types.DISTINCT);
         sqlTypeNameMap.put("DOUBLE", Types.DOUBLE);
+        sqlTypeNameMap.put("DOUBLE PRECISION", Types.DOUBLE);
         sqlTypeNameMap.put("FLOAT", Types.FLOAT);
         sqlTypeNameMap.put("INTEGER", Types.INTEGER);
         sqlTypeNameMap.put("JAVA_OBJECT", Types.JAVA_OBJECT);
