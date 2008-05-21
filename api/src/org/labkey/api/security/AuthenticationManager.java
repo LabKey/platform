@@ -286,22 +286,14 @@ public class AuthenticationManager
     {
         Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_SET, true);
         String activeProviderProp = props.get(PROVIDERS_KEY);
-        String[] providerNames = (null != activeProviderProp ? activeProviderProp.split(PROP_SEPARATOR) : new String[0]);
-
+        List<String> activeNames = Arrays.asList(null != activeProviderProp ? activeProviderProp.split(PROP_SEPARATOR) : new String[0]);
         List<AuthenticationProvider> activeProviders = new ArrayList<AuthenticationProvider>(_allProviders.size());
 
-        // Add all the saved providers in order
-        for (String name : providerNames)
-        {
-            AuthenticationProvider provider = getProvider(name);
+        // For now, auth providers are always handled in order of registration: LDAP, OpenSSO, DB.  TODO: Provide admin with mechanism for ordering
 
-            if (null != provider)
-                addProvider(activeProviders, provider);
-        }
-
-        // Now add any permanent providers that haven't been included yet
+        // Add all permanent & active providers to the activeProviders list
         for (AuthenticationProvider provider : _allProviders)
-            if (provider.isPermanent() && !activeProviders.contains(provider))
+            if (provider.isPermanent() || activeNames.contains(provider.getName()))
                 addProvider(activeProviders, provider);
 
         props = getAuthLogoURLs();
@@ -425,8 +417,9 @@ public class AuthenticationManager
 
     public static HttpView getConfigurationView(URLFactory enable, URLFactory disable)
     {
-        StringBuilder sb = new StringBuilder("These are the installed authentication providers:<br><br>\n");
+        StringBuilder sb = new StringBuilder();
         sb.append("<table>\n");
+        sb.append("<tr><td colspan=\"4\">These are the installed authentication providers:<br><br></td></tr>\n");
 
         for (AuthenticationProvider authProvider : _allProviders)
         {
@@ -434,28 +427,35 @@ public class AuthenticationManager
 
             if (authProvider.isPermanent())
             {
-                sb.append("<td>&nbsp</td>");
-            }
-            else if (isActive(authProvider))
-            {
-                sb.append("<td>[<a href=\"");
-                sb.append(disable.getActionURL(authProvider).getEncodedLocalURIString());
-                sb.append("\">");
-                sb.append("disable");
-                sb.append("</a>]</td>");
+                sb.append("<td>&nbsp;</td>");
             }
             else
             {
-                sb.append("<td>[<a href=\"");
-                sb.append(enable.getActionURL(authProvider).getEncodedLocalURIString());
-                sb.append("\">");
-                sb.append("enable");
-                sb.append("</a>]</td>");
+                if (isActive(authProvider))
+                {
+                    sb.append("<td>[<a href=\"");
+                    sb.append(disable.getActionURL(authProvider).getEncodedLocalURIString());
+                    sb.append("\">");
+                    sb.append("disable");
+                    sb.append("</a>]</td>");
+                }
+                else
+                {
+                    sb.append("<td>[<a href=\"");
+                    sb.append(enable.getActionURL(authProvider).getEncodedLocalURIString());
+                    sb.append("\">");
+                    sb.append("enable");
+                    sb.append("</a>]</td>");
+                }
             }
 
             ActionURL url = authProvider.getConfigurationLink();
 
-            if (null != url)
+            if (null == url)
+            {
+                sb.append("<td>&nbsp;</td>");
+            }
+            else
             {
                 sb.append("<td>[<a href=\"");
                 sb.append(url.getEncodedLocalURIString());
@@ -464,11 +464,17 @@ public class AuthenticationManager
                 sb.append("</a>]</td>");
             }
 
+            sb.append("<td>");
+            sb.append(authProvider.getDescription());
+            sb.append("</td>");            
+
             sb.append("</tr>\n");
         }
 
-        sb.append("</table><br>\n");
+        sb.append("<tr><td colspan=\"4\">&nbsp;</td></tr>");
+        sb.append("<tr><td colspan=\"4\">");
         sb.append(PageFlowUtil.buttonLink("Done", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL()));
+        sb.append("</td></tr></table>\n");
 
         return new HtmlView(sb.toString());
     }

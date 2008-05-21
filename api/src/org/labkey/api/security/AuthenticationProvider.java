@@ -31,6 +31,7 @@ public abstract interface AuthenticationProvider
 {
     public ActionURL getConfigurationLink();
     public String getName();
+    public String getDescription();
     public void logout(HttpServletRequest request);
     public void activate() throws Exception;
     public void deactivate() throws Exception;

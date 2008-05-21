@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.labkey.api.security;
 
 import org.labkey.api.security.AuthenticationProvider.*;
@@ -47,6 +46,11 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
     public String getName()
     {
         return "Database";
+    }
+
+    public String getDescription()
+    {
+        return "Stores user names and passwords in the LabKey database";
     }
 
     // id and password will not be blank (not null, not empty, not whitespace only)
