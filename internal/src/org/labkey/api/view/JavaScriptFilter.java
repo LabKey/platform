@@ -38,7 +38,6 @@ public class JavaScriptFilter implements Filter
         {
             HttpServletRequest request = (HttpServletRequest)servletRequest;
             File file = ModuleLoader.searchModuleSourceForFile(AppProps.getInstance().getProjectRoot(), "/webapp" + request.getServletPath());
-            ((HttpServletResponse)servletResponse).setHeader("cache-control", "private");
 
             if (null != file)
             {

@@ -20,6 +20,7 @@ import org.labkey.api.util.AppProps;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 
 public class StaticContentCachingFilter implements Filter
@@ -32,10 +33,17 @@ public class StaticContentCachingFilter implements Filter
 
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException
     {
-        if (_cachingAllowed)
+        HttpServletRequest request = (HttpServletRequest)servletRequest;
+        String path = null != request.getServletPath() ? request.getServletPath().toLowerCase() : "";
+        boolean cachableJsFile = path.contains("/ext-")
+                                || path.contains("/_yui/")
+                                || path.contains("/tiny_mce/");
+
+        if (cachableJsFile || _cachingAllowed)
         {
             HttpServletResponse response = (HttpServletResponse)servletResponse;
             response.setDateHeader("Expires", System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 5);
+            response.setHeader("Cache-Control", "private");
         }
 
         filterChain.doFilter(servletRequest, servletResponse);
