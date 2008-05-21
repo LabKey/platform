@@ -282,18 +282,6 @@ public class AuthenticationManager
     }
 
 
-    public static String getAuthLogoHtml(String name, String prefix)
-    {
-        LinkFactory factory = new LinkFactory("", name);
-        String logo = factory.getImg(prefix);
-
-        if (null == logo)
-            return "Logo is not set";
-        else
-            return "Current logo: " + logo;
-    }
-
-
     private static void loadProperties()
     {
         Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_SET, true);
@@ -504,11 +492,12 @@ public class AuthenticationManager
         {
             Map<String, MultipartFile> fileMap = getFileMap();
 
-            // Using inclusive OR to avoid short-circuiting
-            boolean newLogo = handleLogo(fileMap, HEADER_LOGO_PREFIX) | handleLogo(fileMap, LOGIN_PAGE_LOGO_PREFIX);
+            boolean changedLogos = deleteLogos(form);
+            changedLogos |= handleLogo(fileMap, HEADER_LOGO_PREFIX);
+            changedLogos |= handleLogo(fileMap, LOGIN_PAGE_LOGO_PREFIX);
 
             // If user changed one or both logos then...
-            if (newLogo)
+            if (changedLogos)
             {
                 // Clear the image cache so the web server sends the new logo
                 AttachmentCache.clearAuthLogoCache();
@@ -522,25 +511,33 @@ public class AuthenticationManager
             return false;  // Always reshow the page so user can view updates.  After post, second button will change to "Done".
         }
 
-        // Returns true if a new logo has been saved
+        // Returns true if a new logo is saved
         private boolean handleLogo(Map<String, MultipartFile> fileMap, String prefix) throws IOException, SQLException
         {
             MultipartFile file = fileMap.get(prefix + "file");
 
-            if (!file.isEmpty())
-            {
-                AttachmentFile aFile = new SpringAttachmentFile(file);
-                String logoName = prefix + getProviderName();
-                aFile.setFilename(logoName);
+            if (null == file || file.isEmpty())
+                return false;
 
-                // Delete logo if it already exists
+            AttachmentFile aFile = new SpringAttachmentFile(file);
+            aFile.setFilename(prefix + getProviderName());
+            AttachmentService.get().add(getViewContext().getUser(), ContainerManager.RootContainer.get(), Arrays.asList(aFile));
+
+            return true;
+        }
+
+        // Returns true is a logo is deleted
+        public boolean deleteLogos(AuthLogoForm form) throws SQLException
+        {
+            String[] deletedLogos = form.getDeletedLogos();
+
+            if (null == deletedLogos)
+                return false;
+
+            for (String logoName : deletedLogos)
                 AttachmentService.get().delete(getViewContext().getUser(), ContainerManager.RootContainer.get(), logoName);
-                AttachmentService.get().add(getViewContext().getUser(), ContainerManager.RootContainer.get(), Arrays.asList(aFile));
 
-                return true;
-            }
-
-            return false;
+            return true;
         }
 
         public ActionURL getSuccessURL(AuthLogoForm form)
@@ -565,8 +562,31 @@ public class AuthenticationManager
             this.returnURL = returnURL;
             this.reshow = reshow;
             url = getAuthLogoURLs().get(name);
-            headerLogo = AuthenticationManager.getAuthLogoHtml(name, HEADER_LOGO_PREFIX);
-            loginPageLogo = AuthenticationManager.getAuthLogoHtml(name, LOGIN_PAGE_LOGO_PREFIX);
+            headerLogo = getAuthLogoHtml(name, HEADER_LOGO_PREFIX);
+            loginPageLogo = getAuthLogoHtml(name, LOGIN_PAGE_LOGO_PREFIX);
+        }
+
+        public String getAuthLogoHtml(String name, String prefix)
+        {
+            LinkFactory factory = new LinkFactory("", name);
+            String filePicker = "<input name=\"" + prefix + "file\" type=\"file\" size=\"60\">";
+            String logo = factory.getImg(prefix);
+
+            if (null == logo)
+            {
+                return "<td>" + filePicker + "</td>";
+            }
+            else
+            {
+                StringBuilder html = new StringBuilder();
+                html.append("<td><div id=\"").append(prefix).append("id\">");
+                html.append(logo);
+                String innerHtml = filePicker + "<input type=\"hidden\" name=\"deletedLogos\" value=\"" + prefix + name + "\">";
+                html.append("&nbsp;[<a href=\"javascript:{}\" onClick=\"document.getElementById('").append(prefix).append("id').innerHTML = '").append(innerHtml.replaceAll("\"", "&quot;")).append("'\">delete</a>]");
+                html.append("</div></td>\n");
+
+                return html.toString();
+            }
         }
     }
 
@@ -574,6 +594,7 @@ public class AuthenticationManager
     public static class AuthLogoForm
     {
         private String _url;
+        private String[] _deletedLogos;
 
         public String getUrl()
         {
@@ -583,6 +604,16 @@ public class AuthenticationManager
         public void setUrl(String url)
         {
             _url = url;
+        }
+
+        public String[] getDeletedLogos()
+        {
+            return _deletedLogos;
+        }
+
+        public void setDeletedLogos(String[] deletedLogos)
+        {
+            _deletedLogos = deletedLogos;
         }
     }
 
