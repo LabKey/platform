@@ -1037,7 +1037,7 @@
         <td style="width:99%">
             <table class="form-layout">
                 <tr>
-                    <td class="ms-searchform" title="This field is required"><span class="labkey-error">*</span>Name</td>
+                    <td class="ms-searchform" title="This field is required">Name<span class="labkey-error">*</span></td>
                     <td class="field-content">
                         <input type="text" name="name" id="<%=ID_PREFIX%>name" size="80" onchange="onChangeName()"/>
                     </td>
@@ -1068,7 +1068,7 @@
                     </td>
                 </tr>
                 <tr>
-                    <td class="ms-searchform" title="This field is required"><span class="labkey-error">*</span>Body</td>
+                    <td class="ms-searchform" title="This field is required">Body<span class="labkey-error">*</span></td>
                     <td class="field-content">
                         <table class="tab-container" cellspacing="0">
                             <tr id="wiki-tab-strip" style="display:none">
