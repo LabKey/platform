@@ -18,6 +18,7 @@ package org.labkey.study.dataset.client;
 
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.WindowCloseListener;
 import com.google.gwt.user.client.rpc.AsyncCallback;
@@ -27,12 +28,10 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.*;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.ServiceUtil;
+import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.study.dataset.client.model.GWTDataset;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Iterator;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -90,20 +89,6 @@ public class Designer implements EntryPoint
 
         _root.add(_loading);
 
-/*        Button b = new Button("show", new ClickListener()
-        {
-            public void onClick(Widget sender)
-            {
-                String s = "";
-                for (int i=0 ; i<_propTable.getPropertyCount(); i++)
-                {
-                    GWTPropertyDescriptor p = _propTable.getPropertyDescriptor(i);
-                    s += p.debugString() + "\n";
-                }
-                Window.alert(s);
-            }
-        });
-        _root.add(b); */
 
         // NOTE for now we're displaying dataset info w/ static HTML
         asyncGetDataset(_datasetId);
@@ -242,10 +227,7 @@ public class Designer implements EntryPoint
             }
         };
 
-        if (_schemaPanel.getUseSchemaTsv())
-            getService().updateDatasetDefinition(_dataset, _domain, _schemaPanel.getSchemaTsv(), callback);
-        else
-            getService().updateDatasetDefinition(_dataset, _domain, _propTable.getDomainUpdates(), callback);
+        getService().updateDatasetDefinition(_dataset, _domain, _propTable.getDomainUpdates(), callback);
     }
 
 
@@ -490,6 +472,19 @@ public class Designer implements EntryPoint
 
     private class BoundListBox extends ListBox
     {
+        public BoundListBox(final WidgetUpdatable updatable)
+        {
+            super();
+            addChangeListener(new ChangeListener()
+            {
+                public void onChange(Widget sender)
+                {
+                    updatable.update(sender);
+                    setDirty(true);
+                }
+            });
+        }
+
         public BoundListBox(Map columns, String selected, final WidgetUpdatable updatable)
         {
             super();
@@ -506,6 +501,11 @@ public class Designer implements EntryPoint
                     setDirty(true);
                 }
             });
+        }
+
+        public String getSelectedValue()
+        {
+            return getValue(getSelectedIndex());
         }
 
         public void setColumns(Map columns)
@@ -536,6 +536,8 @@ public class Designer implements EntryPoint
     private class DatasetProperties extends FlexTable
     {
         GWTDataset _dataset;
+        RadioButton _noneButton;
+
         public DatasetProperties(GWTDataset dataset)
         {
             super();
@@ -545,6 +547,9 @@ public class Designer implements EntryPoint
 
         private void createPanel()
         {
+            String labelStyleName="ms-searchform"; // Pretty yellow background for labels
+            CellFormatter cellFormatter = getCellFormatter();
+
             int row = 0;
 
             BoundTextBox dsName = new BoundTextBox("dsName", _dataset.getName(), new WidgetUpdatable()
@@ -558,6 +563,7 @@ public class Designer implements EntryPoint
             panel.add(new Label("Dataset Name"));
             panel.add(new HelpPopup("Name", "Short unique name, e.g. 'DEM1'"));
             setWidget(row, 0, panel);
+            cellFormatter.setStyleName(row, 0, labelStyleName);
             setWidget(row, 1, dsName);
 
             TextBox dsId = new TextBox();
@@ -565,6 +571,7 @@ public class Designer implements EntryPoint
             dsId.setEnabled(false);
 
             setHTML(row, 2, "Dataset Id");
+            cellFormatter.setStyleName(row, 2, labelStyleName);
             setWidget(row++, 3, dsId);
 
             BoundTextBox dsLabel = new BoundTextBox("dsLabel", _dataset.getLabel(), new WidgetUpdatable()
@@ -579,6 +586,7 @@ public class Designer implements EntryPoint
             panel.add(new HelpPopup("Label", "Descriptive label, e.g. 'Demographics form 1'"));
 
             setWidget(row, 0, panel);
+            cellFormatter.setStyleName(row, 0, labelStyleName);
             setWidget(row, 1, dsLabel);
 
             BoundTextBox dsCategory = new BoundTextBox("dsCategory", _dataset.getCategory(), new WidgetUpdatable()
@@ -592,6 +600,7 @@ public class Designer implements EntryPoint
             panel.add(new Label("Dataset Category"));
             panel.add(new HelpPopup("Dataset Category", "Datasets with the same category name are shown together in the study navigator and dataset list."));
             setWidget(row, 2, panel);
+            cellFormatter.setStyleName(row, 2, labelStyleName);
             setWidget(row++, 3, dsCategory);
 
             String selection = null;
@@ -615,6 +624,8 @@ public class Designer implements EntryPoint
             panel = new HorizontalPanel();
             panel.add(new Label("Cohort"));
             setWidget(row, 0, panel);
+            cellFormatter.setStyleName(row, 0, labelStyleName);
+
             if (!_dataset.getCohortMap().isEmpty())
                 setWidget(row, 1, dsCohort);
             else
@@ -637,23 +648,125 @@ public class Designer implements EntryPoint
                 panel.add(new Label("Visit Date Column"));
                 panel.add(new HelpPopup("Visit Date Column", "If the official 'Visit Date' for a visit can come from this dataset, choose the date column to represent it. Note that since datasets can include data from many visits, each visit must also indicate the official 'VisitDate' dataset."));
                 setWidget(row, 2, panel);
+                cellFormatter.setStyleName(row, 2, labelStyleName);
                 setWidget(row++, 3, dsVisitDate);
             }
             else
                 row++;
 
-            BoundTextBox keyField = new BoundTextBox("dsKeyField", _dataset.getKeyPropertyName(), new WidgetUpdatable()
+            panel = new HorizontalPanel();
+            panel.add(new Label("Additional Key"));
+            panel.add(new HelpPopup("Additional Key",
+                    "If dataset has more than one row per participant/visit, " +
+                            "an additional key field must be provided. There " +
+                            "can be at most one row in the dataset for each " +
+                            "combination of participant, visit and key. " +
+                            "<ul><li>None: No additional key</li>" +
+                            "<li>Data Field: A user-managed key field</li>" +
+                            "<li>Managed Field: A numeric field defined below will be managed" +
+                            "by the server to make each new entry unique</li>" +
+                            "</ul>"));
+
+            cellFormatter.setStyleName(row, 0, labelStyleName);
+            setWidget(row, 0, panel);
+
+            VerticalPanel vPanel = new VerticalPanel();
+            panel = new HorizontalPanel();
+
+            _noneButton = new RadioButton("additionalKey", "None");
+            _noneButton.setChecked(_dataset.getKeyPropertyName() == null);
+            DOM.setElementAttribute(_noneButton.getElement(), "id", "button_none");
+            panel.add(_noneButton);
+            vPanel.add(panel);
+
+
+
+            panel = new HorizontalPanel();
+            panel.setVerticalAlignment(HasVerticalAlignment.ALIGN_MIDDLE);
+            final RadioButton dataFieldButton = new RadioButton("additionalKey", "Data Field ");
+            DOM.setElementAttribute(dataFieldButton.getElement(), "id", "button_dataField");
+            dataFieldButton.setChecked(_dataset.getKeyPropertyName() != null && !_dataset.getKeyPropertyManaged());
+            panel.add(dataFieldButton);
+
+            final BoundListBox dataFieldsBox = new BoundListBox(new WidgetUpdatable()
             {
                 public void update(Widget widget)
                 {
-                    _dataset.setKeyPropertyName(((TextBox)widget).getText());
+                    _dataset.setKeyPropertyManaged(false);
+                    _dataset.setKeyPropertyName(((BoundListBox)widget).getSelectedValue());
                 }
             });
+            DOM.setElementAttribute(dataFieldsBox.getElement(), "id", "list_dataField");
+            dataFieldsBox.setEnabled(!_dataset.getKeyPropertyManaged() && _dataset.getKeyPropertyName() != null);
+
+            panel.add(dataFieldsBox);
+            vPanel.add(panel);
+
             panel = new HorizontalPanel();
-            panel.add(new Label("Additional Key Field"));
-            panel.add(new HelpPopup("Additional Key Field", "If dataset has more than one row per participant/visit, an additional key field must be provided. There can be at most one row in the dataset for each combination of participant, visit and key. The name of the key field must match one of your field names exactly."));
-            setWidget(row, 0, panel);
-            setWidget(row++, 1, keyField);
+            panel.setVerticalAlignment(HasVerticalAlignment.ALIGN_MIDDLE);
+            final RadioButton managedButton = new RadioButton("additionalKey", "Managed Field");
+            DOM.setElementAttribute(managedButton.getElement(), "id", "button_managedField");
+            managedButton.setChecked(_dataset.getKeyPropertyManaged());
+            panel.add(managedButton);
+
+            final BoundListBox managedFieldsBox = new BoundListBox(new WidgetUpdatable()
+            {
+                public void update(Widget widget)
+                {
+                    _dataset.setKeyPropertyManaged(true);
+                    _dataset.setKeyPropertyName(((BoundListBox)widget).getSelectedValue());
+                }
+            });
+            DOM.setElementAttribute(managedFieldsBox.getElement(), "id", "list_managedField");
+            managedFieldsBox.setEnabled(_dataset.getKeyPropertyManaged());
+
+            panel.add(managedFieldsBox);
+            vPanel.add(panel);
+            setWidget(row++, 1, vPanel);
+
+            // Listen to the list of properties
+            _propTable.addChangeListener(new ChangeListener()
+            {
+                public void onChange(Widget sender)
+                {
+                    resetKeyListBoxes(dataFieldsBox, managedFieldsBox);
+                }
+            });
+
+            ClickListener buttonListener = new ClickListener()
+            {
+                public void onClick(Widget sender)
+                {
+                    if (sender == _noneButton)
+                    {
+                        _dataset.setKeyPropertyName(null);
+                        _dataset.setKeyPropertyManaged(false);
+                        dataFieldsBox.setEnabled(false);
+                        managedFieldsBox.setEnabled(false);
+                    }
+                    else if (sender == dataFieldButton)
+                    {
+                        _dataset.setKeyPropertyName(dataFieldsBox.getSelectedValue());
+                        _dataset.setKeyPropertyManaged(false);
+                        dataFieldsBox.setEnabled(true);
+                        managedFieldsBox.setEnabled(false);
+
+                    }
+                    else if (sender == managedButton)
+                    {
+                        _dataset.setKeyPropertyName(managedFieldsBox.getSelectedValue());
+                        _dataset.setKeyPropertyManaged(true);
+                        dataFieldsBox.setEnabled(false);
+                        managedFieldsBox.setEnabled(true);
+                    }
+                }
+            };
+            _noneButton.addClickListener(buttonListener);
+            dataFieldButton.addClickListener(buttonListener);
+            managedButton.addClickListener(buttonListener);
+
+            resetKeyListBoxes(dataFieldsBox, managedFieldsBox);
+
 
             BoundCheckBox demographicData = new BoundCheckBox("", _dataset.getDemographicData(), new WidgetUpdatable()
             {
@@ -666,6 +779,7 @@ public class Designer implements EntryPoint
             panel.add(new Label("Demographic Data"));
             panel.add(new HelpPopup("Demographic Data", "Demographic data appears only once for each participant in the study."));
             setWidget(row, 0, panel);
+            cellFormatter.setStyleName(row, 0, labelStyleName);
             setWidget(row++, 1, demographicData);
 
             BoundCheckBox showByDefault = new BoundCheckBox("", _dataset.getShowByDefault(), new WidgetUpdatable()
@@ -679,6 +793,7 @@ public class Designer implements EntryPoint
             panel.add(new Label("Show In Overview"));
             panel.add(new HelpPopup("Show In Overview", "When this item is checked, this dataset will show in the overview grid by default. It can be unhidden by clicking 'Show Hidden Data.'"));
             setWidget(row, 0, panel);
+            cellFormatter.setStyleName(row, 0, labelStyleName);
             setWidget(row++, 1, showByDefault);
 
             BoundTextArea description = new BoundTextArea(_dataset.getDescription(), new WidgetUpdatable()
@@ -691,23 +806,101 @@ public class Designer implements EntryPoint
             panel = new HorizontalPanel();
             panel.add(new Label("Description"));
             setWidget(row, 0, panel);
+            cellFormatter.setStyleName(row, 0, labelStyleName);
             setWidget(row, 1, description);
             getFlexCellFormatter().setColSpan(row++, 1, 3);
+        }
+
+        private void resetKeyListBoxes(BoundListBox dataFieldsBox, BoundListBox managedFieldsBox)
+        {
+            // Need to look up what properties have been defined
+            // to populate the drop-down boxes for additional keys
+
+            List/*<GWTPropertyDescriptor>*/ descriptors = new ArrayList();
+            for (int i=0; i<_propTable.getPropertyCount(); i++)
+            {
+                descriptors.add(_propTable.getPropertyDescriptor(i));
+            }
+            Map/*<String,String>*/ fields = new HashMap();
+            Map/*<String,String>*/ numericFields = new HashMap();
+
+            // Need to add empty items for both for no selection
+            //fields.put("","");
+            //numericFields.put("","");
+
+            for (Iterator iter = descriptors.iterator(); iter.hasNext();)
+            {
+                GWTPropertyDescriptor descriptor = (GWTPropertyDescriptor)iter.next();
+
+                // Don't add deleted properties
+                if (_propTable.getStatus(descriptor).equals(PropertiesEditor.statusDeleted))
+                    continue;
+
+                String label = descriptor.getLabel();
+                String name = descriptor.getName();
+                if (label == null)
+                    label = "";
+                if (name == null)
+                    name = "";
+                fields.put(label, name);
+
+                String rangeURI = descriptor.getRangeURI();
+                if (rangeURI.endsWith("int") || rangeURI.endsWith("double"))
+                {
+                    numericFields.put(label, name);
+                }
+            }
+            if (fields.size() == 0)
+                fields.put("","");
+            if (numericFields.size() == 0)
+                numericFields.put("","");
+
+            dataFieldsBox.setColumns(fields);
+            managedFieldsBox.setColumns(numericFields);
+
+            String keyName = _dataset.getKeyPropertyName();
+            if (keyName != null)
+            {
+                if (_dataset.getKeyPropertyManaged())
+                {
+                    managedFieldsBox.selectItem(keyName);
+
+                    // It may not be there anymore; update
+                    String selected = managedFieldsBox.getSelectedValue();
+                    if (!keyName.equals(selected))
+                    {
+                        _dataset.setKeyPropertyName(selected);
+                    }
+                }
+                else
+                {
+                    dataFieldsBox.selectItem(keyName);
+                    // It may not be there anymore; update
+                    String selected = dataFieldsBox.getSelectedValue();
+                    if (!keyName.equals(selected))
+                    {
+                        _dataset.setKeyPropertyName(selected);
+                    }
+                }
+            }
         }
 
         public void validate(List errors)
         {
             if (_dataset.getName() == null || _dataset.getName().length() == 0)
-                errors.add("Dataset name cannot be empty");
+                errors.add("Dataset name cannot be empty.");
+
+            if ("".equals(_dataset.getKeyPropertyName()))
+                errors.add("Please select a field name for the additional key.");
+
+            if ( (!_noneButton.isChecked()) && _dataset.getKeyPropertyName() == null )
+                errors.add("Please select a field name for the additional key.");
         }
     }
 
     private class DatasetSchema extends FlexTable
     {
         private PropertiesEditor _propEdit;
-        private Widget _propTable;
-        private Widget _description;
-        private BoundTextArea _schemaTsv;
         private boolean _create;
 
         public DatasetSchema(PropertiesEditor propEdit, boolean create)
@@ -720,130 +913,147 @@ public class Designer implements EntryPoint
 
         private void createPanel()
         {
-            _propTable = _propEdit.getWidget();
+            Widget propTable = _propEdit.getWidget();
 
             int row = 0;
             if (_create)
             {
-                BoundCheckBox importSchema = new BoundCheckBox("Import schema from spreadsheet", false, new WidgetUpdatable()
+                ImageButton importButton = new ImageButton("Import Schema", new ClickListener()
                 {
-                    public void update(Widget widget)
+                    public void onClick(Widget sender)
                     {
-                        setUseSchemaTsv(((CheckBox)widget).isChecked());
+                        final TsvPopup popup = new TsvPopup();
+                        popup.setText("Import Schema");
+                        popup.center();
                     }
                 });
-                importSchema.setName("noscript");
-                setWidget(row++, 0, importSchema);
-
-                _description = new HTML("<br><b>Paste tab delimited text with the following column headers and one row for each field</b><br>\n" +
-                        "                    <b>Property</b> - Required. Field name. Must start with a character and include only characters and numbers<br>\n" +
-                        "                    <b >RangeURI</b> - Required. Values: xsd:int, xsd:string, xsd:double, xsd:boolean, xsd:dateTime<br>\n" +
-                        "                    <b >Label</b> - Optional. Name that users will see for the field<br>\n" +
-                        "                    <b >NotNull</b> - Optional. Set to TRUE if this value is required.<br>\n" +
-                        "                    <b >Description</b> - Optional. Description of the field<br>");
-                _description.setVisible(false);
-                setWidget(row++, 0, _description);
-
-                _schemaTsv = new BoundTextArea();
-                _schemaTsv.setCharacterWidth(80);
-                _schemaTsv.setHeight("300px");
-                _schemaTsv.setVisible(false);
-                _schemaTsv.setName("tsv");
-
-                setWidget(row++, 0, _schemaTsv);
+                setWidget(row++, 0, importButton);
             }
 
-            setWidget(row++, 0, _propTable);
+            setWidget(row++, 0, propTable);
         }
 
-        public void setUseSchemaTsv(boolean useTsv)
+        private class TsvPopup extends DialogBox
         {
-            if (_create)
+            private BoundTextArea schemaTsv;
+
+            private TsvPopup()
             {
-                _propTable.setVisible(!useTsv);
-                _description.setVisible(useTsv);
-                _schemaTsv.setVisible(useTsv);
+                super(false, true);
+                VerticalPanel vPanel = new VerticalPanel();
+                vPanel.setSpacing(5);
+                HTML html = new HTML(
+                        "<b>NOTE: This will replace any existing fields you have defined.</b>" +
+                        "<p><b>Paste tab-delimited text with the following column headers and one row for each field</b><br>\n" +
+                        "<b>Property</b> - Required. Field name. Must start with a character and include only characters and numbers<br>\n" +
+                        "<b>RangeURI</b> - Required. Values: xsd:int, xsd:string, xsd:double, xsd:boolean, xsd:dateTime<br>\n" +
+                        "<b>Label</b> - Optional. Name that users will see for the field<br>\n" +
+                        "<b>NotNull</b> - Optional. Set to TRUE if this value is required.<br>\n" +
+                        "<b>Description</b> - Optional. Description of the field</p>");
+                vPanel.add(html);
+
+                schemaTsv = new BoundTextArea();
+                schemaTsv.setCharacterWidth(80);
+                schemaTsv.setHeight("300px");
+                schemaTsv.setName("tsv");
+                DOM.setElementAttribute(schemaTsv.getElement(), "id", "schemaImportBox");
+                vPanel.add(schemaTsv);
+
+                HorizontalPanel buttonPanel = new HorizontalPanel();
+                buttonPanel.setSpacing(5);
+                buttonPanel.add(new ImageButton("Import", new ClickListener()
+                {
+                    public void onClick(Widget sender)
+                    {
+                        processTsv();
+                    }
+                }));
+                buttonPanel.add(new ImageButton("Cancel", new ClickListener()
+                {
+                    public void onClick(Widget sender)
+                    {
+                        TsvPopup.this.hide();
+                    }
+                }));
+                vPanel.add(buttonPanel);
+
+                HorizontalPanel mainPanel = new HorizontalPanel();
+                mainPanel.setSpacing(10);
+                mainPanel.add(vPanel);
+
+                setWidget(mainPanel);
             }
-        }
 
-        public boolean getUseSchemaTsv()
-        {
-            return !_propTable.isVisible();
-        }
+            private void processTsv()
+            {
+                String tsv = StringUtils.trimToNull(schemaTsv.getText());
+                if (tsv == null)
+                {
+                    Window.alert("Please enter some tab-delimited text");
+                    return;
+                }
+                GWTTabLoader loader = new GWTTabLoader(schemaTsv.getText());
+                Map[] data = loader.getData();
 
-        public String getSchemaTsv()
-        {
-            return _schemaTsv.getText();
+                if (data.length == 0)
+                {
+                    Window.alert("Unable to parse the tab-delimited text");
+                    return;
+                }
+
+                System.out.println(data);
+
+                // Insert the new properties
+                List properties = new ArrayList();
+                for (int i=0;i<data.length;i++)
+                {
+                    GWTPropertyDescriptor prop = new GWTPropertyDescriptor();
+                    prop.setName((String)data[i].get("property"));
+                    prop.setLabel((String)data[i].get("label"));
+                    prop.setDescription((String)data[i].get("description"));
+                    prop.setRequired(isRequired(data[i]));
+                    prop.setRangeURI(getRangeURI(data[i]));
+                    properties.add(prop);
+                }
+                _propEdit.setPropertyDescriptors(properties);
+
+                // done, hide ourselves
+                TsvPopup.this.hide();
+            }
+
+            private boolean isRequired(Map map)
+            {
+                String reqString = (String)map.get("notnull");
+                return reqString != null && reqString.equalsIgnoreCase("TRUE");
+            }
+
+            private String getRangeURI(Map map)
+            {
+                String rangeString = (String)map.get("rangeuri");
+                if (rangeString != null)
+                {
+                    if (rangeString.equalsIgnoreCase("xsd:int"))
+                        return "xsd:int";
+                    if (rangeString.equalsIgnoreCase("xsd:double"))
+                        return "xsd:double";
+                    if (rangeString.equalsIgnoreCase("xsd:boolean"))
+                        return "xsd:boolean";
+                    if (rangeString.equalsIgnoreCase("xsd:dateTime"))
+                        return "xsd:dateTime";
+                }
+
+                // Default to string
+                return "xsd:string";
+            }
         }
 
         public void validate(List errors)
         {
-            if (_propTable.isVisible())
-            {
-                List error = _propEdit.validate();
-                if (error != null)
-                    errors.addAll(error);
-            }
-            else
-            {
-                String text = _schemaTsv.getText();
-                if (text == null || text.length() == 0)
-                    errors.add("Dataset schema cannot be blank");
-            }
+            List error = _propEdit.validate();
+            if (error != null)
+                errors.addAll(error);
         }
+
     }
 
-
-//    void asyncTestLookup()
-//    {
-//        getService().getContainers(new AsyncCallback()
-//        {
-//            public void onFailure(Throwable caught)
-//            {
-//                Window.alert(caught.getMessage());
-//            }
-//
-//            public void onSuccess(Object result)
-//            {
-//                Map containers = (Map)result;
-//                String c = (String)containers.values().iterator().next();
-//                asyncTestGetSchemas(c);
-//            }
-//        });
-//    }
-//
-//    void asyncTestGetSchemas(final String c)
-//    {
-//        getService().getSchemas(c, new AsyncCallback()
-//        {
-//            public void onFailure(Throwable caught)
-//            {
-//                Window.alert(caught.getMessage());
-//            }
-//
-//            public void onSuccess(Object result)
-//            {
-//                List list = (List)result;
-//                String name = (String)list.get(0);
-//                asyncTestLookupTables(c, name);
-//            }
-//        });
-//    }
-//
-//    void asyncTestLookupTables(String c, String schema)
-//    {
-//        getService().getTablesForLookup(c, schema, new AsyncCallback()
-//        {
-//            public void onFailure(Throwable caught)
-//            {
-//                Window.alert(caught.getMessage());
-//            }
-//
-//            public void onSuccess(Object result)
-//            {
-//                Map m = (Map)result;
-//                String name = (String)m.keySet().iterator().next();
-//            }
-//        });
-//    }
 }

@@ -1841,7 +1841,8 @@ public class StudyController extends BaseStudyController
                             "Created".equalsIgnoreCase(propName) ||
                             "Modified".equalsIgnoreCase(propName) ||
                             "Key".equalsIgnoreCase(propName) ||
-                            "Hidden".equalsIgnoreCase(propName))
+                            "Hidden".equalsIgnoreCase(propName) ||
+                            "AutoKey".equalsIgnoreCase(propName))
                         continue;
 
                     // look for visitdate column
@@ -1873,6 +1874,26 @@ public class StudyController extends BaseStudyController
                         {
                             // It's already been set
                             errors.reject("bulkImportDataTypes", "Type ID " + typeName + " has multiple fields with key set to 1.");
+                            return false;
+                        }
+                    }
+
+                    // Deal with managed key field
+                    Boolean managedKey = (Boolean)props.get("autokey");
+                    if (managedKey != null && managedKey.booleanValue())
+                    {
+                        if (!info.keyManaged)
+                            info.keyManaged = true;
+                        else
+                        {
+                            // It's already been set
+                            errors.reject("bulkImportDataTypes", "Type ID " + typeName + " has multiple fields set to AutoKey.");
+                            return false;
+                        }
+                        // Check that our key is the key field as well
+                        if (!propName.equals(info.keyPropertyName))
+                        {
+                            errors.reject("bulkImportDataTypes", "Type ID " + typeName + " is set to AutoKey, but is not a key");
                             return false;
                         }
                     }
@@ -2013,6 +2034,7 @@ public class StudyController extends BaseStudyController
         String startDatePropertyName;
         boolean isHidden;
         String keyPropertyName;
+        boolean keyManaged;
     }
 
     @RequiresPermission(ACL.PERM_UPDATE)
@@ -3317,6 +3339,11 @@ public class StudyController extends BaseStudyController
             Set<String> ignoreColumns = new CaseInsensitiveHashSet("lsid", "datasetid", "visitdate", "sourcelsid", "created", "modified", "visitrowid", "day");
             if (study.isDateBased())
                 ignoreColumns.add("SequenceNum");
+            if (def.isKeyPropertyManaged())
+            {
+                // Do not include a server-managed key field
+                ignoreColumns.add(def.getKeyPropertyName());
+            }
 
             for (ColumnInfo col : tinfo.getColumns())
             {

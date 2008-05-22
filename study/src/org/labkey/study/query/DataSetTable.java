@@ -19,7 +19,6 @@ package org.labkey.study.query;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.OORDisplayColumnFactory;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.Container;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.query.*;
@@ -27,8 +26,8 @@ import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
-import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.controllers.StudyController;
+import org.labkey.study.model.DataSetDefinition;
 
 import javax.servlet.ServletException;
 import java.util.*;
@@ -129,6 +128,8 @@ public class DataSetTable extends FilteredTable
     private static final Set<String> defaultHiddenCols = new CaseInsensitiveHashSet("VisitRowId", "Created", "Modified", "lsid");
     private boolean isVisibleByDefault(ColumnInfo col)
     {
+        if (_dsd.isKeyPropertyManaged() && col.getName().equals(_dsd.getKeyPropertyName()))
+            return false;
         return (!col.isHidden() && !col.isUnselectable() && !defaultHiddenCols.contains(col.getName()));
     }
 

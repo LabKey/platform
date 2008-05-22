@@ -26,25 +26,31 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
-import org.labkey.api.exp.list.ListService;
-import org.labkey.api.exp.list.ListDefinition;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExpObject;
-import org.labkey.api.security.*;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.list.ListDefinition;
+import org.labkey.api.exp.list.ListService;
+import org.labkey.api.query.AliasManager;
+import org.labkey.api.security.ACL;
+import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.User;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.query.*;
 import org.labkey.common.tools.TabLoader;
 import org.labkey.common.util.CPUTimer;
-import org.labkey.study.*;
+import org.labkey.study.QueryHelper;
+import org.labkey.study.SampleManager;
+import org.labkey.study.StudyCache;
+import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
-import org.labkey.study.visitmanager.VisitManager;
-import org.labkey.study.visitmanager.DateVisitManager;
-import org.labkey.study.visitmanager.SequenceVisitManager;
 import org.labkey.study.designer.StudyDesignManager;
 import org.labkey.study.reports.ReportManager;
+import org.labkey.study.visitmanager.DateVisitManager;
+import org.labkey.study.visitmanager.SequenceVisitManager;
+import org.labkey.study.visitmanager.VisitManager;
 import org.springframework.validation.BindException;
 
 import javax.servlet.ServletException;
@@ -59,6 +65,7 @@ public class StudyManager
     private static Logger _log = Logger.getLogger(StudyManager.class);
     
     private static StudyManager _instance;
+    private static final Object MANAGED_KEY_LOCK = new Object();
     private static final String SCHEMA_NAME = "study";
     private final TableInfo _tableInfoVisitMap;
     private final TableInfo _tableInfoParticipant;
@@ -1695,13 +1702,13 @@ public class StudyManager
         if (errors.size() > 0)
             return imported;
 
+        String keyPropertyURI = null;
         if (checkDuplicates)
         {
             String participantIdURI = DataSetDefinition.getParticipantIdURI();
             String visitSequenceNumURI = DataSetDefinition.getSequenceNumURI();
             String visitDateURI = DataSetDefinition.getVisitDateURI();
             String keyPropertyName = def.getKeyPropertyName();
-            String keyPropertyURI = null;
             if (keyPropertyName != null)
             {
                 ColumnInfo col = tinfo.getColumn(keyPropertyName);
@@ -1754,27 +1761,54 @@ public class StudyManager
 
         try
         {
-            if (!scope.isTransactionActive())
+            // If additional keys are managed by the server, we need to synchronize around
+            // increments, as we're imitating a sequence. If they aren't managed, no need for
+            // synchro, so we'll use a new object.
+            Object lock = MANAGED_KEY_LOCK;
+            if (!def.isKeyPropertyManaged())
+                lock = new Object();
+
+            synchronized (lock)
             {
-                startedTransaction = true;
-                scope.beginTransaction();
-            }
+                if (!scope.isTransactionActive())
+                {
+                    startedTransaction = true;
+                    scope.beginTransaction();
+                }
 
-            //
-            // Use OntologyManager for bulk insert
-            //
-            // CONSIDER: it would nice if we could use the Table/TableInfo methods here
-            //
+                //
+                // Use OntologyManager for bulk insert
+                //
+                // CONSIDER: it would nice if we could use the Table/TableInfo methods here
 
-            String typeURI = def.getTypeURI();
-            PropertyDescriptor[] pds = OntologyManager.getPropertiesForType(typeURI, c);
-            helper = new DatasetImportHelper(scope.getConnection(), c, def, lastModified);
-            imported = OntologyManager.insertTabDelimited(c, null, helper, pds, dataMaps, true);
+                // Need to generate keys if the server manages them
+                if (def.isKeyPropertyManaged())
+                {
+                    int currentKey = getMaxKeyValue(def);
+                    // Sadly, may have to create new maps, since TabLoader's aren't modifyable
+                    for (int i=0;i<dataMaps.length;i++)
+                    {
+                        // Only insert if there isn't already a value
+                        if (dataMaps[i].get(keyPropertyURI) == null)
+                        {
+                            currentKey++;
+                            Map data = new HashMap(dataMaps[i]);
+                            data.put(keyPropertyURI, currentKey);
+                            dataMaps[i] = data;
+                        }
+                    }
+                }
 
-            if (startedTransaction)
-            {
-                scope.commitTransaction();
-                startedTransaction = false;
+                String typeURI = def.getTypeURI();
+                PropertyDescriptor[] pds = OntologyManager.getPropertiesForType(typeURI, c);
+                helper = new DatasetImportHelper(scope.getConnection(), c, def, lastModified);
+                imported = OntologyManager.insertTabDelimited(c, null, helper, pds, dataMaps, true);
+
+                if (startedTransaction)
+                {
+                    scope.commitTransaction();
+                    startedTransaction = false;
+                }
             }
             _dataSetHelper.clearCache(def);
         }
@@ -1789,6 +1823,30 @@ public class StudyManager
             }
         }
         return imported;
+    }
+
+    /**
+     * Gets the current highest key value for a server-managed key field.
+     * If no data is returned, this method returns 0.
+     */
+    private int getMaxKeyValue(DataSetDefinition dataset) throws SQLException
+    {
+        TableInfo tInfo;
+        try
+        {
+            tInfo = dataset.getTableInfo(HttpView.currentContext().getUser());
+        }
+        catch (ServletException se)
+        {
+            throw new SQLException("Could not get tableInfo: " + se.getMessage());
+        }
+        String keyName = tInfo.getColumn(dataset.getKeyPropertyName()).getSelectName();
+        Integer newKey = Table.executeSingleton(tInfo.getSchema(),
+                "SELECT COALESCE(MAX(" + keyName + "), 0) FROM " + tInfo,
+                new Object[0],
+                Integer.class
+                );
+        return newKey.intValue();
     }
 
 
@@ -2053,7 +2111,7 @@ public class StudyManager
             return uri;
         }
 
-        
+
         public String beforeImportObject(Map map) throws SQLException
         {
             if (null == _stmt)
@@ -2084,7 +2142,7 @@ public class StudyManager
 
             _stmt.setString(3, ptid);
             _stmt.setDouble(4, visit);
-            _stmt.setString(5, uri);
+            _stmt.setString(5, uri); // LSID
             _stmt.setTimestamp(6, null == visitDate ? null : new Timestamp(visitDate));
             _stmt.setTimestamp(7, null == timeCreated ? null : new Timestamp(timeCreated));
             _stmt.setTimestamp(8, null == timeModified ? null : new Timestamp(timeModified));

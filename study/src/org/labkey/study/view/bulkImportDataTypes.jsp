@@ -73,8 +73,13 @@ name and type id.  Additional columns will just be ignored.
     </tr>
     <tr>
         <th align=left valign=top nowrap>Key</th>
-        <td valign=top>Indicates if this column is an extra key (max 1 per dataset)</td>
+        <td valign=top>Indicates that this column is an extra key (int, max 1 per dataset)</td>
         <td valign=top><code>0</code></td>
+    </tr>
+    <tr>
+        <th align=left valign=top nowrap>AutoKey</th>
+        <td valign=top>Indicates that this extra key column should be auto-incrementing, and managed by the server</td>
+        <td valign=top><code>false</code></td>
     </tr>
     <tr>
         <th align=left valign=top nowrap>Hidden</th>
@@ -107,7 +112,7 @@ name and type id.  Additional columns will just be ignored.
             <td><input name="typeIdColumn" style="width:100%" value="<%=h(bean.getTypeIdColumn())%>"></td>
         </tr>
         <tr>
-            <td class=ms-searchform>Type Definition (tab delimited)</td>
+            <td class=ms-searchform>Type Definition<span style="color:red;">*</span> (tab delimited)</td>
         </tr>
         <tr>
             <td><textarea name=tsv rows=25 cols=80><%=h(bean.getTsv())%></textarea></td>

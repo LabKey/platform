@@ -83,6 +83,7 @@
       <ns:column columnName="entityid"/>
       <ns:column columnName="VisitDatePropertyName"/>
       <ns:column columnName="KeyPropertyName"/>
+      <ns:column columnName="KeyPropertyManaged"/>
       <ns:column columnName="name"/>
       <ns:column columnName="description"/>
       <ns:column columnName="DemographicData"/>

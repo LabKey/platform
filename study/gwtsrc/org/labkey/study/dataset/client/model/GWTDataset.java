@@ -37,6 +37,7 @@ public class GWTDataset implements IsSerializable
     private StringProperty _category = new StringProperty();
     private StringProperty _visitDatePropertyName = new StringProperty();
     private StringProperty _keyPropertyName = new StringProperty();
+    private BooleanProperty _keyPropertyManaged = new BooleanProperty();
     private BooleanProperty _isDemographicData = new BooleanProperty();
     private StringProperty _label = new StringProperty();
     private IntegerProperty _cohortId = new IntegerProperty(0);
@@ -66,6 +67,16 @@ public class GWTDataset implements IsSerializable
     public void setKeyPropertyName(String keyPropertyName)
     {
         this._keyPropertyName.set(keyPropertyName);
+    }
+
+    public boolean getKeyPropertyManaged()
+    {
+        return _keyPropertyManaged.getBool();
+    }
+
+    public void setKeyPropertyManaged(boolean keyPropertyManaged)
+    {
+        _keyPropertyManaged.setBool(keyPropertyManaged);
     }
 
     public int getDatasetId()

@@ -123,10 +123,14 @@ public class StudyServiceImpl implements StudyService.Service
             List<ColumnInfo> columns = tInfo.getColumns();
             for (ColumnInfo col : columns)
             {
-                // special handling for lsids -- they're not user-editable,
+                // special handling for lsids and keys -- they're not user-editable,
                 // but we want to display them
-                if (col.getName().equals("lsid") || col.getName().equals("sourcelsid"))
+                if (col.getName().equals("lsid") ||
+                        col.getName().equals("sourcelsid") ||
+                        col.isKeyField())
+                {
                     continue;
+                }
                 if (!col.isUserEditable())
                     data.remove(col.getName());
             }

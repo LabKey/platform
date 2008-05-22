@@ -52,6 +52,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     private String _category;
     private String _visitDatePropertyName;
     private String _keyPropertyName;
+    private boolean _keyPropertyManaged; // if true, the extra key is a sequence, managed by the server
     private String _description;
     private boolean _demographicData; //demographic information, sequenceNum
     private transient TableInfo _tableInfoProperties;
@@ -413,7 +414,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     private synchronized TableInfo getJoinTableInfo()
     {
         if (null == _tableInfoProperties)
-            _tableInfoProperties = new StudyDataTableInfo(getContainer(), getTypeURI(), getDataSetId());
+            _tableInfoProperties = new StudyDataTableInfo(this);
         return _tableInfoProperties;
     }
 
@@ -472,6 +473,16 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         _keyPropertyName = keyPropertyName;
     }
 
+    public boolean isKeyPropertyManaged()
+    {
+        return _keyPropertyManaged;
+    }
+
+    public void setKeyPropertyManaged(boolean keyPropertyManaged)
+    {
+        _keyPropertyManaged = keyPropertyManaged;
+    }
+
     public String getDescription()
     {
         return _description;
@@ -483,15 +494,16 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
 
-    static class StudyDataTableInfo extends SchemaTableInfo
+    private static class StudyDataTableInfo extends SchemaTableInfo
     {
         int _datasetId;
 
-        StudyDataTableInfo(Container c, String typeURI, int datasetId)
+        StudyDataTableInfo(DataSetDefinition def)
         {
-            super("StudyData_" + datasetId, StudySchema.getInstance().getSchema());
+            super("StudyData_" + def.getDataSetId(), StudySchema.getInstance().getSchema());
+            Container c = def.getContainer();
             Study study = StudyManager.getInstance().getStudy(c);
-            _datasetId = datasetId;
+            _datasetId = def.getDataSetId();
 
             TableInfo studyData = StudySchema.getInstance().getTableInfoStudyData();
             TableInfo participantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
@@ -515,12 +527,27 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             }
             columns.add(sequenceNumCol);
             // Property columns
-            ColumnInfo[] columnsLookup = OntologyManager.getColumnsForType(typeURI, this, c);
+            ColumnInfo[] columnsLookup = OntologyManager.getColumnsForType(def.getTypeURI(), this, c);
             columns.addAll(Arrays.asList(columnsLookup));
             ColumnInfo visitRowId = newDatasetColumnInfo(this, participantVisit.getColumn("VisitRowId"));
             visitRowId.setIsHidden(true);
             visitRowId.setUserEditable(false);
             columns.add(visitRowId);
+
+            // If we have an extra key, and it's server-managed, hide it
+            if (def.isKeyPropertyManaged())
+            {
+                for (ColumnInfo col : columns)
+                {
+                    if (col.getName().equals(def.getKeyPropertyName()))
+                    {
+                        col.setIsHidden(true);
+                        col.setUserEditable(false);
+                        col.setKeyField(true);
+                    }
+                }
+            }
+
             // HACK reset colMap
             colMap = null;
 
