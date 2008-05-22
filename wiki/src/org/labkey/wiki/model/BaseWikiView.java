@@ -164,12 +164,13 @@ abstract class BaseWikiView extends GroovyView
             }
             context.put("insertLink", insertLink.toString());
 
-            String versionsLink = _wiki.getVersionsLink();
-            context.put("versionsLink", versionsLink);
         }
 
         if (perms.allowUpdate(_wiki))
         {
+            String versionsLink = _wiki.getVersionsLink();
+            context.put("versionsLink", versionsLink);
+
             ActionURL updateContentLink = null == _wiki.getEntityId()
                 ? new ActionURL(WikiController.NewPageAction.class, c)
                 : new ActionURL(WikiController.EditWikiAction.class, c);

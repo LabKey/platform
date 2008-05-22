@@ -4,5 +4,6 @@ js_color_picker|v2|{link:dhtmlgoodies.com|http://www.dhtmlgoodies.com/index.html
 Slider|1.0|{link:Slider|http://webfx.eae.net/dhtml/slider/slider.html}|{link:Apache 2.0|http://webfx.eae.net/license/asl2}|daves|Basis for the range slider used for m/z range filter
 TinyMCE|2.0.9|{link:TinyMCE|http://tinymce.moxiecode.com/}|{link:LGPL|http://wiki.moxiecode.com/index.php/TinyMCE:License}|daves|HTML WYSIWYG editor
 YUI|0.12.0|{link:YUI|http://developer.yahoo.com/yui/}|{link:BSD|http://developer.yahoo.com/yui/license.txt}|matthewb|Browser User Interface Library
+Ext JS|2.0.2|{link:Ext JS|http://extjs.com/}|{link:LGPL|http://www.gnu.org/licenses/lgpl.html}|daves|Ajax Support, Various UI widgets
 {table}
 

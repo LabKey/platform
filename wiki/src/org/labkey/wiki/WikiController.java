@@ -1694,7 +1694,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermission(ACL.PERM_READ) //requires update or update_own; will check below
     public class VersionsAction extends SimpleViewAction<WikiNameForm>
     {
         Wiki _wiki;
@@ -1716,7 +1716,11 @@ public class WikiController extends SpringActionController
             _wiki = WikiManager.getWiki(getContainer(), wikiname);
             if (null == _wiki)
                 HttpView.throwNotFound();
-            _wikiversion = WikiManager.getLatestVersion(_wiki); 
+            _wikiversion = WikiManager.getLatestVersion(_wiki);
+
+            BaseWikiPermissions perms = getPermissions();
+            if(!perms.allowUpdate(_wiki))
+                throw new UnauthorizedException("You do not have permissions to view the history for this page!");
 
             TableInfo tinfoVersions = CommSchema.getInstance().getTableInfoPageVersions();
             TableInfo tinfoPages = CommSchema.getInstance().getTableInfoPages();
