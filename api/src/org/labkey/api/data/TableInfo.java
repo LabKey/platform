@@ -88,6 +88,8 @@ public interface TableInfo
 
     List<FieldKey> getDefaultVisibleColumns();
 
+    void setDefaultVisibleColumns(Iterable<FieldKey> keys);
+
     String getSequence();
 
     /**

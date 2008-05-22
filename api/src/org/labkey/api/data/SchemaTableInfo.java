@@ -50,6 +50,7 @@ public class SchemaTableInfo implements TableInfo
     private int _tableType = TABLE_TYPE_NOT_IN_DB;
     private String _versionColumnName = null;
     private String metaDataName = null;
+    private List<FieldKey> defaultVisibleColumns = null;
 
     protected SQLFragment selectName = null;
     private String _sequence = null;
@@ -665,7 +666,16 @@ public class SchemaTableInfo implements TableInfo
 
     public List<FieldKey> getDefaultVisibleColumns()
     {
+        if (defaultVisibleColumns != null)
+            return defaultVisibleColumns;
         return Collections.unmodifiableList(QueryService.get().getDefaultVisibleColumns(getColumns()));
+    }
+
+    public void setDefaultVisibleColumns(Iterable<FieldKey> keys)
+    {
+        defaultVisibleColumns = new ArrayList<FieldKey>();
+        for (FieldKey key : keys)
+            defaultVisibleColumns.add(key);
     }
 
     public boolean isPublic()

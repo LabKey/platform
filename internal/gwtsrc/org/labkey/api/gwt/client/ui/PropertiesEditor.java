@@ -209,6 +209,14 @@ public class PropertiesEditor implements LookupListener
         return newRow.edit;
     }
 
+    public void setPropertyDescriptors(List descriptors)
+    {
+        _selectedPD = null;
+        _domain.setPropertyDescriptors(descriptors);
+        init(_domain);
+        fireChangeEvent();
+    }
+
 
     void refresh()
     {
@@ -674,52 +682,6 @@ public class PropertiesEditor implements LookupListener
      * without a call to refresh() or refreshRow().
      */
 
-    private class BoundCheckBox extends CheckBox implements ClickListener, FocusListener
-    {
-        GWTPropertyDescriptor _p;
-        int _index;
-
-        BoundCheckBox(int i)
-        {
-            super();
-            _index = i;
-            _p = getRow(_index).edit;
-            setChecked(_p.isRequired());
-            addClickListener(this);
-            addFocusListener(this);
-            addKeyboardListener(new KeyboardListenerAdapter()
-            {
-                public void onKeyPress(Widget sender, char keyCode, int modifiers)
-                {
-                    fireChangeEvent();
-                }
-            });
-        }
-
-        private void update()
-        {
-            String status = getStatus(_p);
-            _p.setRequired(isChecked());
-            if (!status.equals(getStatus(_p)))
-                refreshRow(_p);
-        }
-
-        public void onFocus(Widget sender)
-        {
-        }
-
-        public void onLostFocus(Widget sender)
-        {
-            update();
-        }
-
-        public void onClick(Widget sender)
-        {
-            update();
-        }
-    }
-
-
     private class BoundTypePicker extends TypePicker implements ChangeListener
     {
         int _index;
@@ -801,13 +763,21 @@ public class PropertiesEditor implements LookupListener
             if (_pd != null)
             {
                 String status = getStatus(_pd);
-                _prop.set(StringUtils.trimToNull(getText()));
-                if (!status.equals(getStatus(_pd)))
-                    refreshRow(_pd);
+                String text = StringUtils.trimToNull(getText());
+                Object propObj = _prop.get();
+                String propText = propObj == null ? null : propObj.toString();
+                if (!nullEquals(text, propText))
+                {
+                    _prop.set(StringUtils.trimToNull(getText()));
+                    if (!status.equals(getStatus(_pd)))
+                        refreshRow(_pd);
+                    fireChangeEvent();
+                }
             }
             else
             {
                 _prop.set(StringUtils.trimToNull(getText()));
+                fireChangeEvent();
             }
         }
 
@@ -824,6 +794,18 @@ public class PropertiesEditor implements LookupListener
         public void onChange(Widget sender)
         {
             update();
+        }
+
+        private boolean nullEquals(Object s1, Object s2)
+        {
+            if (s1 == null)
+            {
+                return s2 == null;
+            }
+            else
+            {
+                return s1.equals(s2);
+            }
         }
     }
 
