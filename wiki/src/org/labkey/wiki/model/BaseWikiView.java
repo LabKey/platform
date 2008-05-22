@@ -17,16 +17,14 @@
 package org.labkey.wiki.model;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.security.User;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.GroovyView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
 import org.labkey.wiki.BaseWikiPermissions;
 import org.labkey.wiki.WikiController;
 import org.labkey.wiki.WikiManager;
-
-import java.sql.SQLException;
+import org.apache.log4j.Logger;
 
 /**
  * Created by IntelliJ IDEA.
@@ -125,9 +123,23 @@ abstract class BaseWikiView extends GroovyView
             {
                 html = _wikiVersion.getHtml(c, _wiki);
             }
-            catch (SQLException e)
+            catch (Exception e)
             {
-                throw new RuntimeSQLException(e);
+                Logger.getLogger(BaseWikiView.class).error("Error generating HTML for wiki page "
+                        + _wiki.getName() + " in container " + _wiki.getContainerPath(), e);
+
+                //build HTML that displays the exception text
+                //so the user can still get to the [edit] and other links
+                StringBuilder userMsg = new StringBuilder("<p class='labkey-error'><b>An Exception occurred while generating the HTML for this wiki page:</b></p>");
+                userMsg.append("<p>");
+
+                String exceptionMsg = e.toString();
+                exceptionMsg = exceptionMsg.replace("\n", "<br/>");
+
+                userMsg.append(exceptionMsg);
+                userMsg.append("</p>");
+
+                html = userMsg.toString();
             }
 
             context.put("wiki", _wiki);
