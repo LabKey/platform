@@ -274,10 +274,8 @@ public class PageFlowUtil
             s = s.replaceAll("\\n", "\\\\n");
         if (-1 != s.indexOf('\r'))
             s = s.replaceAll("\\r", "\\\\r");
-        if (-1 != s.indexOf('<'))
-            s = s.replaceAll("\\<", "\\\\<");
-        if (-1 != s.indexOf('>'))
-            s = s.replaceAll("\\>", "\\\\>");
+        s = s.replace("<", "\\x3C");
+        s = s.replace(">", "\\x3E");
         if (-1 == s.indexOf('\''))
             return "'" + s + "'";
         if (!forceOuterSingleQuotes && -1 == s.indexOf('"'))
