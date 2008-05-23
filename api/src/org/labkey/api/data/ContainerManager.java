@@ -518,6 +518,8 @@ public class ContainerManager
             while (rs.next())
             {
                 String name = rs.getString(1);
+                if (!shouldDisplayContainer(name))
+                    continue;
                 Container project = getForId(rs.getString(2));
                 if (project == null)
                     continue;
@@ -586,7 +588,7 @@ public class ContainerManager
                 if (null == c)
                     continue;
                 String name = c.getName();
-                if (name.startsWith("_"))
+                if (name.startsWith("_") || name.startsWith("."))
                     continue;
                 if (c.equals(getHomeContainer()))
                     name="Home";
@@ -606,7 +608,7 @@ public class ContainerManager
         }
     }
 
-    public static NavTree getFolderNavTrail(Container project, User user, ViewContext context)
+    public static NavTree getFolderNavTrail(User user, ViewContext context)
     {
         NavTree tree;
         NavTree root = new NavTree();
@@ -663,7 +665,6 @@ public class ContainerManager
         if (null != tree)
             return tree;
         User user = viewContext.getUser();
-        boolean isAdmin = user.isAdministrator();
         String projectId = project.getId();
 
         Container[] folders = ContainerManager.getAllChildren(project);
@@ -690,7 +691,7 @@ public class ContainerManager
         for (Container f : folders)
         {
             int permissions = f.getAcl().getPermissions(user);
-            boolean skip = (permissions == 0 || (f.getName().startsWith("_") && !isAdmin));
+            boolean skip = (permissions == 0 || (!shouldDisplayContainer(f.getName())));
             //Always put the project and current container in...
             if (skip && !f.equals(project) && !f.equals(c))
                 continue;
@@ -747,6 +748,25 @@ public class ContainerManager
 
         NavTreeManager.cacheTree(projectTree, user);
         return projectTree;
+    }
+
+    /**
+     * We hide folders that start with _ or .
+     * unless the user is in admin mode.
+     */
+    private static boolean shouldDisplayContainer(String name)
+    {
+        if(name.length() == 0)
+            return true; // Um, I guess we should display it?
+        char c = name.charAt(0);
+        if (c == '_' || c == '.')
+        {
+            return HttpView.currentContext().isAdminMode();
+        }
+        else
+        {
+            return true;
+        }
     }
 
     public static Set<Container> containersToRoot(Container child)
