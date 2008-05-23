@@ -16,39 +16,39 @@
 
 package org.labkey.experiment.api;
 
-import org.labkey.api.exp.api.*;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
-import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
-import org.labkey.api.data.*;
-import org.labkey.api.util.*;
-import org.labkey.api.security.User;
-import org.labkey.api.security.ACL;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.xar.LsidUtils;
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.pipeline.PipeRoot;
-import org.apache.log4j.Logger;
-import org.apache.commons.lang.StringUtils;
-
-import java.sql.SQLException;
-import java.sql.ResultSet;
-import java.util.*;
-import java.io.IOException;
-import java.io.File;
-
-import org.labkey.experiment.*;
-import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.security.ACL;
+import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.util.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.view.ViewContext;
+import org.labkey.experiment.ExperimentRunGraph;
+import org.labkey.experiment.XarReader;
 import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
-import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
+
+import java.io.File;
+import java.io.IOException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.*;
 
 public class ExperimentServiceImpl implements ExperimentService.Interface
 {
@@ -419,8 +419,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     private String generateLSID(Container container, String lsidPrefix, String objectName)
     {
-        String str = "urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":" + lsidPrefix + ".Folder-" + container.getRowId() + ":" + objectName;
-        return new Lsid(str).toString();
+        return new Lsid(lsidPrefix, "Folder-" + container.getRowId(), objectName).toString();
     }
 
     public String generateGuidLSID(Container container, Class<? extends ExpObject> clazz)
