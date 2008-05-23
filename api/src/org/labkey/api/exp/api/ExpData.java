@@ -51,17 +51,11 @@ public interface ExpData extends ExpObject
 
     File getFile();
 
-    ExpProtocolApplication retrieveSourceApp();
+    ExpProtocolApplication getSourceApp();
 
-    List<ExpProtocolApplication> retrieveSuccessorAppList();
+    List<ExpProtocolApplication> getSuccessorAppList();
 
-    void storeSourceApp(ExpProtocolApplication expProtocolApplication);
-
-    void storeSuccessorAppList(ArrayList<ExpProtocolApplication> expProtocolApplications);
-
-    void storeSuccessorRunIdList(ArrayList<Integer> integers);
-
-    List<Integer> retrieveSuccessorRunIdList();
+    List<Integer> getSuccessorRunIdList();
 
     boolean isInlineImage();
 

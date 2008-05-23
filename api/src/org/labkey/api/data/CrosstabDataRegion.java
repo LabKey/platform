@@ -47,7 +47,7 @@ public class CrosstabDataRegion extends DataRegion
     }
 
     @Override
-    protected void renderGridHeaders(RenderContext ctx, Writer out, List<DisplayColumn> renderers) throws SQLException, IOException
+    protected void renderGridHeaderColumns(RenderContext ctx, Writer out, List<DisplayColumn> renderers) throws SQLException, IOException
     {
         //add a row for the column axis label if there is one
         if(_settings.getColumnAxis().getCaption() != null)
@@ -91,7 +91,7 @@ public class CrosstabDataRegion extends DataRegion
         out.write("</tr>\n");
 
         //call the base class to finish rendering the headers
-        super.renderGridHeaders(ctx, out, renderers);
+        super.renderGridHeaderColumns(ctx, out, renderers);
     } //renderGridHeaders()
 
     protected String getMemberCaptionWithUrl(CrosstabDimension dimension, CrosstabMember member)

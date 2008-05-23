@@ -30,8 +30,6 @@ public interface ExpMaterial extends ExpObject
 
     void insert(User user) throws SQLException;
 
-    ExpProtocolApplication getSourceApplication();
-
     ExpProtocol getSourceProtocol();
 
     ExpRun getRun();
@@ -42,17 +40,11 @@ public interface ExpMaterial extends ExpObject
 
     void setRun(ExpRun run);
 
-    List<ExpProtocolApplication> retrieveSuccessorAppList();
+    List<ExpProtocolApplication> getSuccessorAppList();
 
-    List<Integer> retrieveSuccessorRunIdList();
+    List<Integer> getSuccessorRunIdList();
 
-    void storeSuccessorAppList(ArrayList<ExpProtocolApplication> protocolApplications);
-
-    void storeSourceApp(ExpProtocolApplication protocolApplication);
-
-    void storeSuccessorRunIdList(ArrayList<Integer> integers);
-
-    ExpProtocolApplication retrieveSourceApp();
+    ExpProtocolApplication getSourceApplication();
 
     public String getCpasType();
     void setCpasType(String type);

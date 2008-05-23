@@ -51,6 +51,9 @@ public class Table
 
     public static interface UncachedResultset extends ResultSet{}      // marker interface for select()
 
+    /** Return all rows instead of limiting to the top n */
+    public static final int ALL_ROWS = 0;
+
     public static String SQLSTATE_TRANSACTION_STATE = "25000";
     public static final int ERROR_ROWVERSION = 10001;
     public static final int ERROR_DELETED = 10002;
@@ -222,7 +225,7 @@ public class Table
     public static Table.TableResultSet executeQuery(DbSchema schema, String sql, Object[] parameters)
             throws SQLException
     {
-        return (Table.TableResultSet) executeQuery(schema, sql, parameters, 0, true);
+        return (Table.TableResultSet) executeQuery(schema, sql, parameters, Table.ALL_ROWS, true);
     }
 
     public static Table.TableResultSet executeQuery(DbSchema schema, SQLFragment sql) throws SQLException
@@ -1306,7 +1309,7 @@ public class Table
             throws SQLException
     {
         SQLFragment sql = getSelectSQL(table, columns, filter, sort);
-        return (TableResultSet) executeQuery(table.getSchema(), sql.getSQL(), sql.getParams().toArray(), 0, true);
+        return (TableResultSet) executeQuery(table.getSchema(), sql.getSQL(), sql.getParams().toArray(), Table.ALL_ROWS, true);
     }
 
 

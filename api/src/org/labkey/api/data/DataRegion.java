@@ -894,9 +894,16 @@ public class DataRegion extends DisplayElement
         out.write("</colgroup>");
     }
 
-    protected void renderGridHeaders(RenderContext ctx, Writer out, List<DisplayColumn> renderers) throws SQLException, IOException
+    protected final void renderGridHeaders(RenderContext ctx, Writer out, List<DisplayColumn> renderers) throws SQLException, IOException
     {
         out.write("\n<thead>");
+        renderGridHeaderColumns(ctx, out, renderers);
+        out.write("</thead>\n");
+    }
+
+    protected void renderGridHeaderColumns(RenderContext ctx, Writer out, List<DisplayColumn> renderers)
+            throws IOException, SQLException
+    {
         out.write("\n<tr>");
 
         if (_showRecordSelectors)
@@ -939,7 +946,6 @@ public class DataRegion extends DisplayElement
         }
 
         out.write("</tr>\n");
-        out.write("</thead>\n");
     }
 
     protected void renderGridEnd(RenderContext ctx, Writer out) throws IOException
