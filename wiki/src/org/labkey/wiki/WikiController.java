@@ -2117,37 +2117,17 @@ public class WikiController extends SpringActionController
                 // too big a change for this point in our release cycle:
                 ArrayList<String> tidyErrors = new ArrayList<String>();
 
-                //a bit of instrumentation for bug 4774. Every so often, the renderer type is coming
-                //through as null. Not sure why, so if it it's null, log as much info as we can
-                if(null == getRendererType() || getRendererType().length() == 0)
+                WikiRendererType renderer = WikiRendererType.valueOf(getRendererType());
+                if (renderer == WikiRendererType.HTML)
+                    body = PageFlowUtil.validateHtml(body, tidyErrors, allowMaliciousContent);
+
+                for (String err : tidyErrors)
+                    errors.rejectValue("body", ERROR_MSG, err);
+
+                if (tidyErrors.isEmpty())
                 {
-                    Logger log = Logger.getLogger(WikiDataForm.class);
-                    StringBuilder msg = new StringBuilder("Wiki Error: RendererType was null or empty!. Details:\n");
-                    msg.append("RowId='" + String.valueOf(getRowId()) + "'\n");
-                    msg.append("Name='" + String.valueOf(getName()) + "'\n");
-                    msg.append("Title='" + String.valueOf(getTitle()) + "'\n");
-                    msg.append("NextAction='" + String.valueOf(getNextAction()) + "'\n");
-                    msg.append("Redirect='" + String.valueOf(getRedirect()) + "'\n");
-                    msg.append("Reshow='" + String.valueOf(isReshow()) + "'\n");
-                    msg.append("Body='" + String.valueOf(getBody()) + "'\n");
-
-                    log.error(msg.toString());
-                    errors.rejectValue("rendererType", "Render As selection was not specified.");
-                }
-                else
-                {
-                    WikiRendererType renderer = WikiRendererType.valueOf(getRendererType());
-                    if (renderer == WikiRendererType.HTML)
-                        body = PageFlowUtil.validateHtml(body, tidyErrors, allowMaliciousContent);
-
-                    for (String err : tidyErrors)
-                        errors.rejectValue("body", ERROR_MSG, err);
-
-                    if (tidyErrors.isEmpty())
-                    {
-                        // uncomment to replace with tidy output
-                        // setBody(body);
-                    }
+                    // uncomment to replace with tidy output
+                    // setBody(body);
                 }
             }
          }
@@ -2936,6 +2916,7 @@ public class WikiController extends SpringActionController
     public class EditWikiAction extends SimpleViewAction<EditWikiForm>
     {
         private WikiVersion _wikiVer = null;
+        private Wiki _wiki = null;
 
         public ModelAndView getView(EditWikiForm form, BindException errors) throws Exception
         {
@@ -2982,6 +2963,7 @@ public class WikiController extends SpringActionController
                     form.getPageId(), form.getIndex(), user);
 
             //cache the wiki so we can build the nav trail
+            _wiki = wiki;
             _wikiVer = curVersion;
 
             return new JspView<WikiEditModel>("/org/labkey/wiki/view/wikiEdit.jsp", model);
@@ -2989,10 +2971,10 @@ public class WikiController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            if(null != _wikiVer)
+            if(null != _wiki && null != _wikiVer)
             {
                 ActionURL pageUrl = new ActionURL(WikiController.PageAction.class, getViewContext().getContainer());
-                pageUrl.addParameter("name", _wikiVer.getName());
+                pageUrl.addParameter("name", _wiki.getName());
                 return root.addChild(_wikiVer.getTitle(), pageUrl).addChild("Edit");
             }
             else
