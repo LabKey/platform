@@ -412,6 +412,7 @@ api/src/org/labkey/api/reports/report/r/view/TextOutput.java -text
 api/src/org/labkey/api/reports/report/r/view/TsvOutput.java -text
 api/src/org/labkey/api/reports/report/view/ChartDesignerBean.java -text
 api/src/org/labkey/api/reports/report/view/ChartUtil.java -text
+api/src/org/labkey/api/reports/report/view/DefaultReportUIProvider.java -text
 api/src/org/labkey/api/reports/report/view/ManageReportsBean.java -text
 api/src/org/labkey/api/reports/report/view/RReportBean.java -text
 api/src/org/labkey/api/reports/report/view/RenderBackgroundRReportView.java -text

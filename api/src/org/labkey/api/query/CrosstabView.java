@@ -16,6 +16,7 @@
 package org.labkey.api.query;
 
 import org.labkey.api.data.*;
+import org.labkey.api.reports.ReportService;
 import org.labkey.api.view.DataView;
 
 import java.sql.ResultSet;
@@ -39,7 +40,7 @@ public class CrosstabView extends QueryView
     public CrosstabView(UserSchema schema)
     {
         super(schema);
-        setShowRReportButton(false);
+        setViewItemFilter(ReportService.EMPTY_ITEM_LIST);
     }
 
     protected DataRegion createDataRegion()

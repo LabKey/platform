@@ -33,6 +33,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.reports.ReportService;
 import org.apache.commons.beanutils.ConversionException;
 
 import java.io.IOException;
@@ -72,8 +73,7 @@ public class PublishRunDataQueryView extends RunDataQueryView
         _filter.addInClause(provider.getDataRowIdFieldKey().toString(), objectIds);
         _reshowPtids = reshowPtids;
         _reshowVisits = reshowVisits;
-        setShowChartButton(false);
-        setShowRReportButton(false);
+        setViewItemFilter(ReportService.EMPTY_ITEM_LIST);
     }
 
     protected DataView createDataView()

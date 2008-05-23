@@ -20,6 +20,7 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.RReportDescriptor;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.common.util.Pair;
 import org.apache.commons.lang.StringUtils;
 
@@ -39,6 +40,12 @@ public class RReportBean extends ReportDesignBean
     protected List<String> _includedReports;
     protected boolean _isDirty;
 
+    public RReportBean(){}
+    public RReportBean(QuerySettings settings)
+    {
+        super(settings);
+    }
+    
     public String getScript()
     {
         return _script;

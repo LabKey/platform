@@ -19,6 +19,7 @@ package org.labkey.api.reports.report.view;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.action.FormArrayList;
 import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.actions.ReportForm;
@@ -50,6 +51,15 @@ public class ReportDesignBean extends ReportForm
     protected boolean _shareReport;
     protected boolean _inheritable;
 
+    public ReportDesignBean(){}
+    public ReportDesignBean(QuerySettings settings)
+    {
+        setSchemaName(settings.getSchemaName());
+        setQueryName(settings.getQueryName());
+        setViewName(settings.getViewName());
+        setDataRegionName(settings.getDataRegionName());
+    }
+    
     public String getQueryName()
     {
         return _queryName;

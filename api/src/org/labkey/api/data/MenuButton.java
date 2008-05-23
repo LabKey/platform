@@ -33,7 +33,7 @@ import java.util.List;
  */
 public class MenuButton extends ActionButton
 {
-    private PopupMenu popupMenu;
+    protected PopupMenu popupMenu;
 
     public MenuButton(String caption)
     {

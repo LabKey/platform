@@ -26,6 +26,9 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.report.RReport;
+import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.common.util.Pair;
 
 /**
@@ -39,8 +42,14 @@ public class RunDataQueryView extends AssayBaseQueryView
     {
         super(protocol, context, settings);
         setShowCustomizeViewLinkInButtonBar(true);
-        setShowChartButton(true);
-        setShowRReportButton(true);
+        setViewItemFilter(new ReportService.ItemFilter() {
+            public boolean accept(String type, String label)
+            {
+                if (RReport.TYPE.equals(type)) return true;
+                if (ChartQueryReport.TYPE.equals(type)) return true;
+                return false;
+            }
+        });
     }
 
     protected DataView createDataView()

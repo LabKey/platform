@@ -22,10 +22,13 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.Filter;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.security.User;
+import org.labkey.api.query.QuerySettings;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -87,6 +90,9 @@ public class ReportService
         public void addViewFactory(ViewFactory vf);
         public List<ViewFactory> getViewFactories();
 
+        public void addUIProvider(UIProvider provider);
+        public List<UIProvider> getUIProviders();
+
         public Report createFromQueryString(String queryString) throws Exception;
     }
 
@@ -94,4 +100,26 @@ public class ReportService
     {
         public HttpView createView(ViewContext context, RReportBean bean);
     }
+
+    public interface UIProvider
+    {
+        /**
+         * Allows providers to add to the UI for creating reports (eg: the create view button).
+         * Providers should add entries to map report type to the URL of the view to create that
+         * report.
+         */
+        public void getReportDesignURL(ViewContext context, QuerySettings settings, Map<String, String> designers);
+    }
+
+    public interface ItemFilter
+    {
+        public boolean accept(String type, String label);
+    }
+
+    public static ItemFilter EMPTY_ITEM_LIST = new ItemFilter() {
+        public boolean accept(String type, String label)
+        {
+            return false;
+        }
+    };
 }
