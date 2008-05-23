@@ -119,28 +119,33 @@ abstract class BaseWikiView extends GroovyView
 
             String html;
 
-            try
+            if(perms.allowRead(_wiki))
             {
-                html = _wikiVersion.getHtml(c, _wiki);
+                try
+                {
+                    html = _wikiVersion.getHtml(c, _wiki);
+                }
+                catch (Exception e)
+                {
+                    Logger.getLogger(BaseWikiView.class).error("Error generating HTML for wiki page "
+                            + _wiki.getName() + " in container " + _wiki.getContainerPath(), e);
+
+                    //build HTML that displays the exception text
+                    //so the user can still get to the [edit] and other links
+                    StringBuilder userMsg = new StringBuilder("<p class='labkey-error'><b>An Exception occurred while generating the HTML for this wiki page:</b></p>");
+                    userMsg.append("<p>");
+
+                    String exceptionMsg = e.toString();
+                    exceptionMsg = exceptionMsg.replace("\n", "<br/>");
+
+                    userMsg.append(exceptionMsg);
+                    userMsg.append("</p>");
+
+                    html = userMsg.toString();
+                }
             }
-            catch (Exception e)
-            {
-                Logger.getLogger(BaseWikiView.class).error("Error generating HTML for wiki page "
-                        + _wiki.getName() + " in container " + _wiki.getContainerPath(), e);
-
-                //build HTML that displays the exception text
-                //so the user can still get to the [edit] and other links
-                StringBuilder userMsg = new StringBuilder("<p class='labkey-error'><b>An Exception occurred while generating the HTML for this wiki page:</b></p>");
-                userMsg.append("<p>");
-
-                String exceptionMsg = e.toString();
-                exceptionMsg = exceptionMsg.replace("\n", "<br/>");
-
-                userMsg.append(exceptionMsg);
-                userMsg.append("</p>");
-
-                html = userMsg.toString();
-            }
+            else
+                html = ""; //wiki.gm will display appropriate message if user doesn't have read perms
 
             context.put("wiki", _wiki);
             context.put("name", _wiki.getName());
