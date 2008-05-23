@@ -3461,6 +3461,7 @@ public class WikiController extends SpringActionController
                 props.put("entityId", wiki.getEntityId());
                 props.put("rowId", wiki.getRowId());
                 props.put("depth", wiki.getDepth());
+                props.put("href", wiki.getPageLink());
 
                 WikiVersion version = wiki.latestVersion();
                 if(null != version)

@@ -216,18 +216,19 @@
 
     function loadChildren(node, pages)
     {
-        for(var idx in pages)
+        for(var idx = 0; idx < pages.length; ++idx)
         {
-            if(typeof(pages[idx]) != "object")
+            var page = pages[idx];
+            if(!page)
                 continue;
 
-            var page = pages[idx];
             var childNode = new Ext.tree.TreeNode({
                 id: page.name,
                 text: page.title + " (" + page.name + ")",
                 leaf: (null == page.children),
                 singleClickExpand: true,
-                icon: LABKEY.contextPath + "/_images/page.png"
+                icon: LABKEY.contextPath + "/_images/page.png",
+                href: page.pageLink
             });
 
             if(page.children)
