@@ -4,7 +4,6 @@ import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.study.query.SpecimenQueryView;
 import org.labkey.study.model.Visit;
-import org.labkey.study.samples.report.SpecimenTypeVisitReport;
 import org.labkey.study.samples.report.SpecimenVisitReportParameters;
 import org.labkey.study.samples.report.SpecimenVisitReport;
 import org.labkey.api.data.SimpleFilter;
@@ -73,6 +72,22 @@ public class RequestParticipantReport extends SpecimenVisitReport<SampleManager.
         }
     }
 
+    protected String getCellExcelText(Visit visit, SampleManager.RequestSummaryByVisitType summary)
+    {
+        if (summary == null || summary.getVialCount() == null)
+            return "";
+        StringBuilder summaryString = new StringBuilder();
+        if (_parameters.isViewVialCount())
+            summaryString.append(summary.getVialCount());
+        if (_parameters.isViewVolume())
+        {
+            if (summaryString.length() > 0)
+                summaryString.append("/");
+            summaryString.append(summary.getTotalVolume());
+        }
+        return summaryString.toString();
+    }
+
     protected String getCellHtml(Visit visit, SampleManager.RequestSummaryByVisitType summary)
     {
         if (summary == null || summary.getVialCount() == null)
@@ -91,20 +106,12 @@ public class RequestParticipantReport extends SpecimenVisitReport<SampleManager.
         String linkHtml = link.getLocalURIString();
         if (_filter != null)
             linkHtml += "&" + getFilterQueryString(visit, summary);
-        StringBuilder summaryString = new StringBuilder();
-        if (_parameters.isViewVialCount())
-            summaryString.append(summary.getVialCount());
-        if (_parameters.isViewVolume())
-        {
-            if (summaryString.length() > 0)
-                summaryString.append("/");
-            summaryString.append(summary.getTotalVolume());
-        }
+        String summaryString = getCellExcelText(visit, summary);
         StringBuilder cellHtml = new StringBuilder();
         if (summaryString.length() > 0)
         {
             cellHtml.append("<a href=\"").append(linkHtml).append("\">");
-            cellHtml.append(summaryString.toString()).append("</a>");
+            cellHtml.append(summaryString).append("</a>");
         }
         return cellHtml.toString();
     }

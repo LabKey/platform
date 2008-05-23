@@ -68,6 +68,49 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SampleManager.S
         }
     }
 
+    private String getCellSummaryText(SampleManager.SummaryByVisitType summary)
+    {
+        StringBuilder summaryString = new StringBuilder();
+        if (_parameters.isViewVialCount())
+            summaryString.append(summary.getVialCount());
+        if (_parameters.isViewParticipantCount())
+        {
+            if (summaryString.length() > 0)
+                summaryString.append("/");
+            summaryString.append(summary.getParticipantCount());
+        }
+        if (_parameters.isViewVolume())
+        {
+            if (summaryString.length() > 0)
+                summaryString.append("/");
+            summaryString.append(summary.getTotalVolume());
+        }
+        return summaryString.toString();
+    }
+
+    protected String getCellExcelText(Visit visit, SampleManager.SummaryByVisitType summary)
+    {
+        if (summary == null || summary.getVialCount() == null)
+            return "";
+
+        StringBuilder summaryString = new StringBuilder(getCellSummaryText(summary));
+        if (_parameters.isViewPtidList())
+        {
+            if (summaryString.length() > 0)
+                summaryString.append("; ");
+            if (summary.getParticipantIds() != null)
+            {
+                for (Iterator<String> it = summary.getParticipantIds().iterator(); it.hasNext();)
+                {
+                    summaryString.append(it.next());
+                    if (it.hasNext())
+                        summaryString.append(", ");
+                }
+            }
+        }
+        return summaryString.toString();
+    }
+
     protected String getCellHtml(Visit visit, SampleManager.SummaryByVisitType summary)
     {
         if (summary == null || summary.getVialCount() == null)
@@ -86,26 +129,12 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SampleManager.S
         String linkHtml = link.getLocalURIString();
         if (_filter != null)
             linkHtml += "&" + getFilterQueryString(visit, summary);
-        StringBuilder summaryString = new StringBuilder();
-        if (_parameters.isViewVialCount())
-            summaryString.append(summary.getVialCount());
-        if (_parameters.isViewParticipantCount())
-        {
-            if (summaryString.length() > 0)
-                summaryString.append("/");
-            summaryString.append(summary.getParticipantCount());
-        }
-        if (_parameters.isViewVolume())
-        {
-            if (summaryString.length() > 0)
-                summaryString.append("/");
-            summaryString.append(summary.getTotalVolume());
-        }
+        String summaryString = getCellSummaryText(summary);
         StringBuilder cellHtml = new StringBuilder();
         if (summaryString.length() > 0)
         {
             cellHtml.append("<a href=\"").append(linkHtml).append("\">");
-            cellHtml.append(summaryString.toString()).append("</a>");
+            cellHtml.append(summaryString).append("</a>");
         }
 
         if (_parameters.isViewPtidList())

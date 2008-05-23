@@ -69,6 +69,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
     private boolean _viewParticipantCount = false;
     private boolean _viewVolume = false;
     private boolean _viewPtidList = false;
+    private boolean _excelExport;
     private List<? extends SpecimenVisitReport> _reports;
     private SampleManager.SpecimenTypeLevel _typeLevel = SampleManager.SpecimenTypeLevel.Derivative;
 
@@ -163,6 +164,16 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
     public void setViewPtidList(boolean viewPtidList)
     {
         _viewPtidList = viewPtidList;
+    }
+
+    public boolean isExcelExport()
+    {
+        return _excelExport;
+    }
+
+    public void setExcelExport(boolean excelExport)
+    {
+        _excelExport = excelExport;
     }
 
     protected void addBaseFilters(SimpleFilter filter)

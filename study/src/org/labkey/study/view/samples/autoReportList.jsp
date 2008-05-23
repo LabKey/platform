@@ -168,21 +168,35 @@
                 %>
                         </td>
                     </tr>
-                </table>
-                </span>
-            </td>
-            <td valign="top" align="left" bgcolor="<%= bgcolor %>">
-                <%= buttonImg(bean.isListView() ? "View" : "Update") %>
                 <% if (!bean.isListView())
                     {
                 %>
-                <br><%= buttonImg("Print View", "document['" + formName + "']['_print'].value=1;") %>
+                    <tr>
+                        <td>
+                        <%= buttonImg("Refresh",  "document['" + formName + "']['excelExport'].value=false;") %>
+                        <%= buttonImg("Print View", "document['" + formName + "']['_print'].value=1; document['" + formName + "']['excelExport'].value=false;") %>
+                        <%= buttonImg("Export to Excel", "document['" + formName + "']['excelExport'].value=true;") %>
+                        </td>
+                    </tr>
                 <%
                     }
                 %>
+                </table>
+                </span>
             </td>
+            <%
+                if (bean.isListView())
+                {
+            %>
+            <td valign="top" align="left" bgcolor="<%= bgcolor %>">
+                <%= buttonImg("View") %>
+            </td>
+            <%
+                }
+            %>
         </tr>
         <input type="hidden" name="_print" value="">
+        <input type="hidden" name="excelExport" value="">
     </form>
 <%
         }

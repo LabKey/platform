@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.study.SampleManager" %>
 <%@ page import="org.labkey.study.model.SpecimenTypeSummary" %>
 <%@ page import="org.labkey.study.samples.SamplesWebPart" %>
+<%@ page import="org.labkey.api.security.ACL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     ViewContext currentContext = HttpView.currentContext();
@@ -108,7 +109,7 @@ if (settings.isEnableRequests())
 WebPartView.endTitleFrame(out);
 %>
 <%
-    if (currentContext.getUser().isAdministrator())
+    if (currentContext.getContainer().hasPermission(currentContext.getUser(), ACL.PERM_ADMIN))
     {
 %>
 <% WebPartView.startTitleFrame(out, "Administration", null, "100%", null); %>

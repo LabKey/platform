@@ -1781,6 +1781,7 @@ study/src/org/labkey/study/samples/notifications/NotificationRecipientSet.java -
 study/src/org/labkey/study/samples/notifications/RequestNotification.java -text
 study/src/org/labkey/study/samples/report/SpecimenCountSummary.java -text
 study/src/org/labkey/study/samples/report/SpecimenReportCellData.java -text
+study/src/org/labkey/study/samples/report/SpecimenReportExcelWriter.java -text
 study/src/org/labkey/study/samples/report/SpecimenTypeVisitReport.java -text
 study/src/org/labkey/study/samples/report/SpecimenVisitReport.java -text
 study/src/org/labkey/study/samples/report/SpecimenVisitReportParameters.java -text

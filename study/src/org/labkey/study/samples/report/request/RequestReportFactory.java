@@ -3,6 +3,7 @@ package org.labkey.study.samples.report.request;
 import org.labkey.study.samples.report.SpecimenVisitReport;
 import org.labkey.study.samples.report.request.RequestReport;
 import org.labkey.study.samples.report.SpecimenVisitReportParameters;
+import org.labkey.study.samples.report.specimentype.TypeReportFactory;
 import org.labkey.study.model.Site;
 import org.labkey.study.model.Visit;
 import org.labkey.study.SampleManager;
@@ -32,7 +33,7 @@ import java.sql.SQLException;
 * User: brittp
 * Created: Jan 24, 2008 1:38:40 PM
 */
-public class RequestReportFactory extends SpecimenVisitReportParameters
+public class RequestReportFactory extends TypeReportFactory
 {
     public String getLabel()
     {

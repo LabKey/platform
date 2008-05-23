@@ -2,6 +2,7 @@ package org.labkey.study.samples.report.request;
 
 import org.labkey.study.samples.report.SpecimenVisitReport;
 import org.labkey.study.samples.report.SpecimenVisitReportParameters;
+import org.labkey.study.samples.report.specimentype.TypeReportFactory;
 import org.labkey.study.model.Site;
 import org.labkey.study.model.Visit;
 import org.labkey.study.model.StudyManager;
@@ -34,7 +35,7 @@ import java.sql.SQLException;
 * User: brittp
 * Created: Jan 24, 2008 1:38:40 PM
 */
-public class RequestEnrollmentSiteReportFactory extends SpecimenVisitReportParameters
+public class RequestEnrollmentSiteReportFactory extends TypeReportFactory
 {
     private Integer _enrollmentSiteId;
 

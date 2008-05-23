@@ -46,11 +46,6 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
         _container = parameters.getContainer();
     }
 
-    public Collection<String> getStrings()
-    {
-        return null;
-    }
-
     public Collection<Row> getRows()
     {
         if (_rows == null)
@@ -82,6 +77,16 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
     }
 
    protected abstract String getCellHtml(Visit visit, CELLDATA summary);
+
+    protected abstract String getCellExcelText(Visit visit, CELLDATA summary);
+
+    public boolean isNumericData()
+    {
+        int valuesDisplayed =(_parameters.isViewVialCount() ? 1 : 0) +
+                (_parameters.isViewParticipantCount() ? 1 : 0) +
+                (_parameters.isViewVolume() ? 1 : 0);
+        return (valuesDisplayed == 1 && !_parameters.isViewParticipantCount());
+    }
 
     protected static String getTitleSuffix(SpecimenVisitReportParameters parameters)
     {
@@ -153,6 +158,12 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
         {
             CELLDATA summary = _visitData.get(visit.getSequenceNumMin());
             return SpecimenVisitReport.this.getCellHtml(visit, summary);
+        }
+
+        public String getCellText(Visit visit)
+        {
+            CELLDATA summary = _visitData.get(visit.getSequenceNumMin());
+            return SpecimenVisitReport.this.getCellExcelText(visit, summary);
         }
 
         public String[] getTitleHierarchy()

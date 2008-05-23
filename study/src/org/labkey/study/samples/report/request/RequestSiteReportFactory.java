@@ -2,6 +2,7 @@ package org.labkey.study.samples.report.request;
 
 import org.labkey.study.samples.report.SpecimenVisitReport;
 import org.labkey.study.samples.report.SpecimenVisitReportParameters;
+import org.labkey.study.samples.report.specimentype.TypeReportFactory;
 import org.labkey.study.model.Site;
 import org.labkey.study.model.Visit;
 import org.labkey.study.model.StudyManager;
@@ -34,7 +35,7 @@ import java.sql.SQLException;
 * User: brittp
 * Created: Jan 24, 2008 1:38:40 PM
 */
-public class RequestSiteReportFactory extends SpecimenVisitReportParameters
+public class RequestSiteReportFactory extends TypeReportFactory
 {
     private Integer _siteId;
 
@@ -123,7 +124,9 @@ public class RequestSiteReportFactory extends SpecimenVisitReportParameters
                 builder.append("</option>\n");
             }
             builder.append("</select>");
-            return Collections.singletonList(builder.toString());
+            List<String> inputs = new ArrayList<String>(super.getAdditionalFormInputHtml());
+            inputs.add(builder.toString());
+            return inputs;
         }
         catch (SQLException e)
         {

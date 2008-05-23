@@ -44,6 +44,7 @@ import org.labkey.study.samples.report.specimentype.TypeSummaryReportFactory;
 import org.labkey.study.samples.report.participant.ParticipantTypeReportFactory;
 import org.labkey.study.samples.report.participant.ParticipantSiteReportFactory;
 import org.labkey.study.samples.report.SpecimenVisitReportParameters;
+import org.labkey.study.samples.report.SpecimenReportExcelWriter;
 import org.labkey.api.action.*;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.ACL;
@@ -2366,13 +2367,22 @@ public class SpringSpecimenController extends BaseStudyController
         public ModelAndView getView(FormType specimenVisitReportForm, BindException errors) throws Exception
         {
             _form = specimenVisitReportForm;
-            JspView<FormType> reportView = new JspView<FormType>("/org/labkey/study/view/samples/specimenVisitReport.jsp", specimenVisitReportForm);
-            if (this.isPrint())
-                return reportView;
+            if (specimenVisitReportForm.isExcelExport())
+            {
+                SpecimenReportExcelWriter writer = new SpecimenReportExcelWriter(specimenVisitReportForm);
+                writer.write(getViewContext().getResponse());
+                return null;
+            }
             else
             {
-                return new VBox(new JspView<ReportConfigurationBean>("/org/labkey/study/view/samples/autoReportList.jsp",
-                                new ReportConfigurationBean(specimenVisitReportForm, false)), reportView);
+                JspView<FormType> reportView = new JspView<FormType>("/org/labkey/study/view/samples/specimenVisitReport.jsp", specimenVisitReportForm);
+                if (this.isPrint())
+                    return reportView;
+                else
+                {
+                    return new VBox(new JspView<ReportConfigurationBean>("/org/labkey/study/view/samples/autoReportList.jsp",
+                                    new ReportConfigurationBean(specimenVisitReportForm, false)), reportView);
+                }
             }
         }
 
