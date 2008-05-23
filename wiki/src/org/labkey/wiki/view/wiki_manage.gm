@@ -185,7 +185,7 @@ function orderModule(listName, down, targetName)
 <input type="hidden" name="rowId" value="<%= wiki.getRowId() %>">
 <input type="hidden" name="nextAction" value="">
 <input type="image" src="<%=PageFlowUtil.buttonSrc('Save')%>" value="Save" onClick="document.manage.nextAction.value = 'page'; return true;" title="Save Changes">
-<input type="image" src="<%=PageFlowUtil.buttonSrc('Edit Content')%>" value="Edit Content" onClick="document.manage.nextAction.value = 'update'; return true;" title="Edit Content and Attachments">
+<input type="image" src="<%=PageFlowUtil.buttonSrc('Edit Content')%>" value="Edit Content" onClick="document.manage.nextAction.value = 'editWiki'; return true;" title="Edit Content and Attachments">
 <% if (deleteLink != null)
     {
     %><a href="<%= deleteLink %>"><img border="0" src="<%=PageFlowUtil.buttonSrc('Delete Page')%>" title="Delete this Page"></a><%

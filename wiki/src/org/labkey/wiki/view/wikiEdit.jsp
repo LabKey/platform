@@ -166,6 +166,8 @@
         var json = Ext.util.JSON.decode(response.responseText);
         if(json.pages)
             createTocTree(json.pages);
+        if(json.displayToc)
+            showHideToc(true, false);
     }
 
     function onTocError(response)
@@ -817,7 +819,9 @@
     function convertFormat()
     {
         var newType = Ext.get("<%=ID_PREFIX%>window-change-format-to").getValue();
-        var transData = {name: _wikiProps.name, fromFormat: _wikiProps.rendererType, toFormat: newType};
+
+        gatherProps(); //to get current body
+        var transData = {body: _wikiProps.body, fromFormat: _wikiProps.rendererType, toFormat: newType};
 
         updateSourceFromVisual();
         transData.body = Ext.get("<%=ID_PREFIX%>body").getValue();
@@ -851,8 +855,12 @@
         else if(respJson.toFormat == "HTML")
         {
             updateControl("body", respJson.body);
-            //if the new type is HTML, switch to visual
-            switchToVisual();
+
+            //if the new type is HTML, switch to visual appropriate editor
+            if(_editor == "source")
+                switchToSource()
+            else
+                switchToVisual();
         }
 
         setWikiDirty();
@@ -908,11 +916,48 @@
             div.setDisplayed(isDisplayed);
     }
 
-    function showHideToc()
+    function showHideToc(show, savePref)
     {
         var elem = Ext.get("wiki-toc-tree");
-        if(elem)
-            elem.setDisplayed(!elem.isDisplayed());
+        if(!elem)
+            return;
+
+        var displayed = show || !elem.isDisplayed();
+        elem.setDisplayed(displayed);
+        var button = Ext.get("<%=ID_PREFIX%>button-toc");
+        if(button)
+            button.dom.src = displayed ? "<%=PageFlowUtil.buttonSrc("Hide Page Tree")%>" : "<%=PageFlowUtil.buttonSrc("Show Page Tree")%>";
+
+        //save preference
+        if(savePref == undefined || savePref)
+        {
+            var params = {displayed: (elem.isDisplayed())};
+            Ext.Ajax.request({
+                url : LABKEY.ActionURL.buildURL("wiki", "setTocPreference"),
+                method : 'POST',
+                success: onSaveTocPrefSuccess,
+                failure: onSaveTocPrefError,
+                jsonData : params,
+                headers : {
+                    'Content-Type' : 'application/json'
+                }
+            });
+        }
+    }
+
+    function onSaveTocPrefSuccess(response)
+    {
+        //do nothing for now
+    }
+
+    function onSaveTocPrefError(response)
+    {
+        //parse the response JSON and display the error
+        var respJson = Ext.util.JSON.decode(response.responseText);
+        if(respJson.exception)
+            setError("There was a problem while saving your show/hide page tree preference: " + respJson.exception);
+        else
+            setError("There was a problem while saving your show/hide page tree preference: " + response.statusText);
     }
 
     window.onbeforeunload = function(){
@@ -1026,7 +1071,7 @@
                 <img id="<%=ID_PREFIX%>button-change-format" src="<%=PageFlowUtil.buttonSrc("Convert To...")%>" alt="Convert To..."/>
             </a>
             <a href="javascript:{}" onclick="showHideToc()">
-                <%=PageFlowUtil.buttonLink("Other Pages", "javascript:{}", "showHideToc()")%>
+                <img id="<%=ID_PREFIX%>button-toc" src="<%=PageFlowUtil.buttonSrc("Show Page Tree")%>" alt="Show/Hide Page Tree"/> 
             </a>
             
         </td>

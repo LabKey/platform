@@ -41,8 +41,10 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
+import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.common.util.Pair;
 import org.labkey.wiki.model.*;
+import org.labkey.wiki.renderer.RadeoxRenderer;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
@@ -3354,20 +3356,9 @@ public class WikiController extends SpringActionController
 
     public static class TransformWikiForm
     {
-        private String _name;
         private String _body;
         private String _fromFormat;
         private String _toFormat;
-
-        public String getName()
-        {
-            return _name;
-        }
-
-        public void setName(String name)
-        {
-            _name = name;
-        }
 
         public String getBody()
         {
@@ -3400,34 +3391,29 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermission(ACL.PERM_NONE)
     public class TransformWikiAction extends ApiAction<TransformWikiForm>
     {
         public ApiResponse execute(TransformWikiForm form, BindException errors) throws Exception
         {
-            if(null == form.getName() || form.getName().length() <= 0)
-                throw new IllegalArgumentException("The name parameter must be provided.");
-            
-            Container container = getViewContext().getContainer();
-            Wiki wiki = WikiManager.getWiki(container, form.getName());
-            if(null == wiki)
-                throw new NotFoundException("The wiki page named '" + form.getName() + "' was not found on the server. It may have been deleted by another user.");
-            
             ApiSimpleResponse response = new ApiSimpleResponse();
             String newBody = form.getBody();
+            Container container = getViewContext().getContainer();
 
             //currently, we can only transform from wiki to HTML
             if(WikiRendererType.RADEOX.name().equals(form.getFromFormat())
                     && WikiRendererType.HTML.name().equals(form.getToFormat()))
             {
-                WikiVersion ver = wiki.latestVersion();
+                Wiki wiki = new Wiki(container, "_transform_temp");
+                WikiVersion wikiver = new WikiVersion("_transform_temp");
+
                 if(null != form.getBody())
-                    ver.setBody(form.getBody());
-                ver.setRendererType(form.getFromFormat());
-                newBody = ver.getHtml(container, wiki);
+                    wikiver.setBody(form.getBody());
+
+                wikiver.setRendererType(form.getFromFormat());
+                newBody = wikiver.getHtml(getViewContext().getContainer(), wiki);
             }
 
-            response.put("name", form.getName());
             response.put("toFormat", form.getToFormat());
             response.put("fromFormat", form.getFromFormat());
             response.put("body", newBody);
@@ -3453,7 +3439,14 @@ public class WikiController extends SpringActionController
             containerProps.put("id", container.getId());
             containerProps.put("path", container.getPath());
             response.put("container", containerProps);
-            
+
+            //include the user's TOC displayed preference
+            Map<String,String> properties = PropertyManager.getProperties(
+                    getViewContext().getUser().getUserId(), getViewContext().getContainer().getId(),
+                    SetEditorPreferenceAction.CAT_EDITOR_PREFERENCE, true);
+
+            response.put("displayToc", "true".equals(properties.get(SetTocPreferenceAction.PROP_TOC_DISPLAYED)));
+
             return response;
         }
 
@@ -3573,6 +3566,39 @@ public class WikiController extends SpringActionController
                     getViewContext().getUser().getUserId(), getViewContext().getContainer().getId(),
                     CAT_EDITOR_PREFERENCE, true);
             properties.put(PROP_USE_VISUAL_EDITOR, String.valueOf(form.isUseVisual()));
+            PropertyManager.saveProperties(properties);
+
+            return new ApiSimpleResponse("success", true);
+        }
+    }
+
+    public static class SetTocPreferenceForm
+    {
+        private boolean _displayed = false;
+
+        public boolean isDisplayed()
+        {
+            return _displayed;
+        }
+
+        public void setDisplayed(boolean displayed)
+        {
+            _displayed = displayed;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_NONE)
+    public class SetTocPreferenceAction extends ApiAction<SetTocPreferenceForm>
+    {
+        public static final String PROP_TOC_DISPLAYED = "displayToc";
+
+        public ApiResponse execute(SetTocPreferenceForm form, BindException errors) throws Exception
+        {
+            //use the same category as editor preference to save on storage
+            PropertyManager.PropertyMap properties = PropertyManager.getWritableProperties(
+                    getViewContext().getUser().getUserId(), getViewContext().getContainer().getId(),
+                    SetEditorPreferenceAction.CAT_EDITOR_PREFERENCE, true);
+            properties.put(PROP_TOC_DISPLAYED, String.valueOf(form.isDisplayed()));
             PropertyManager.saveProperties(properties);
 
             return new ApiSimpleResponse("success", true);
