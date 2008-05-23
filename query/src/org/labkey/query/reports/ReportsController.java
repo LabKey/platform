@@ -107,6 +107,11 @@ public class ReportsController extends SpringActionController
         {
             return new ActionURL(ReportSectionsAction.class, c);
         }
+
+        public ActionURL urlManageViews(Container c)
+        {
+            return new ActionURL(ManageViewsAction.class, c);
+        }
     }
 
     public ReportsController() throws Exception

@@ -75,10 +75,7 @@ import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.query.DataSetQueryView;
 import org.labkey.study.query.PublishedRecordQueryView;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.reports.ChartReportView;
-import org.labkey.study.reports.ReportManager;
-import org.labkey.study.reports.StudyChartQueryReport;
-import org.labkey.study.reports.StudyRReport;
+import org.labkey.study.reports.*;
 import org.labkey.study.view.DataHeader;
 import org.labkey.study.visitmanager.VisitManager;
 import org.springframework.validation.BindException;
@@ -516,6 +513,9 @@ public class StudyController extends BaseStudyController
 
             List<ActionButton> buttonBar = new ArrayList<ActionButton>();
 
+            createViewButton(buttonBar, queryView);
+            createCohortButton(buttonBar, cohort);
+
             MenuButton exportMenuButton = new MenuButton("Export");
 
             exportMenuButton.addMenuItem("Export all to Excel (.xls)", url.getEncodedLocalURIString() + "&amp;export=xls");
@@ -557,8 +557,6 @@ public class StudyController extends BaseStudyController
             viewSamples.setDisplayPermission(ACL.PERM_READ);
             buttonBar.add(viewSamples);
 
-            buttonBar.add(getCreateViewButton(def, viewName, cohort));
-
             queryView.setButtons(buttonBar);
 
             if (null != export)
@@ -569,15 +567,56 @@ public class StudyController extends BaseStudyController
                     queryView.exportToExcel(context.getResponse());
                 return null;
             }
+/*
             DataHeader header = new DataHeader(url, queryView.getCustomizeURL(), def, true);
             header.setShowCohortSelector(true);
             header.setSelectedCohort(cohort);
-            HttpView view = new VBox(header, queryView);
+*/
+            HttpView view = new VBox(queryView);
             if (!def.canRead(getUser()))
             {
                 view = new HtmlView("User does not have read permission on this dataset.");
             }
             return view;
+        }
+
+        private void createViewButton(List<ActionButton> buttonBar, DataSetQueryView queryView)
+        {
+            MenuButton button = queryView.createViewButton(new ReportService.ItemFilter(){
+                public boolean accept(String reportType, String label)
+                {
+                    if (StudyCrosstabReport.TYPE.equals(reportType)) return true;
+                    if (StudyChartQueryReport.TYPE.equals(reportType)) return true;
+                    if (StudyRReport.TYPE.equals(reportType)) return true;
+                    if (ExternalReport.TYPE.equals(reportType)) return true;
+                    return false;
+                }
+            });
+            if (!getViewContext().getUser().isGuest())
+                button.addMenuItem("Set Default View", getViewContext().cloneActionURL().setAction(ViewPreferencesAction.class));
+
+            buttonBar.add(button);
+        }
+
+        private void createCohortButton(List<ActionButton> buttonBar, Cohort currentCohort)
+        {
+            if (StudyManager.getInstance().showCohorts(getViewContext().getContainer(), getViewContext().getUser()))
+            {
+                Cohort[] cohorts = StudyManager.getInstance().getCohorts(getViewContext().getContainer(), getViewContext().getUser());
+                if (cohorts.length > 0)
+                {
+                    MenuButton button = new MenuButton("Cohorts");
+                    button.addMenuItem("All", getViewContext().cloneActionURL().replaceParameter("cohortId", "").toString(), null, currentCohort == null);
+                    for (Cohort cohort : cohorts)
+                    {
+                        if (currentCohort != null && currentCohort.getRowId() == cohort.getRowId())
+                            button.addMenuItem(cohort.getLabel(), getViewContext().cloneActionURL().replaceParameter("cohortId", String.valueOf(cohort.getRowId())).toString(), null, true);
+                        else
+                            button.addMenuItem(cohort.getLabel(), getViewContext().cloneActionURL().replaceParameter("cohortId", String.valueOf(cohort.getRowId())).toString());
+                    }
+                    buttonBar.add(button);
+                }
+            }
         }
 
         private MenuButton getCreateViewButton(DataSetDefinition def, String viewName, Cohort cohort)

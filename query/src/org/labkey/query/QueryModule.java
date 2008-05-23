@@ -32,6 +32,7 @@ import org.labkey.query.reports.ReportsController;
 import org.labkey.query.reports.ReportsPipelineProvider;
 import org.labkey.query.reports.ReportServiceImpl;
 import org.labkey.query.reports.ReportsWebPartFactory;
+import org.labkey.query.reports.view.ReportUIProvider;
 import org.labkey.query.reports.chart.TimeSeriesRenderer;
 import org.labkey.query.reports.chart.XYChartRenderer;
 import org.labkey.query.view.QueryWebPartFactory;
@@ -53,6 +54,7 @@ public class QueryModule extends DefaultModule
         ContainerManager.addContainerListener(QueryManager.CONTAINER_LISTENER);
 
         ReportService.registerProvider(new ReportServiceImpl());
+        ReportService.get().addUIProvider(new ReportUIProvider());
         
         ChartRendererFactory.get().addChartRenderer(XYChartRenderer.getInstance());
         ChartRendererFactory.get().addChartRenderer(TimeSeriesRenderer.getInstance());

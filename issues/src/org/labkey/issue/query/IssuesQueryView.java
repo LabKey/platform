@@ -42,7 +42,6 @@ public class IssuesQueryView extends QueryView
         super(schema, settings);
         _context = context;
         setShowDetailsColumn(false);
-        setShowRReportButton(true);
     }
 
     // MAB: I just want a resultset....

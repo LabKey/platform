@@ -75,7 +75,7 @@ public class ExternalReport extends AbstractReport
 
     public String getTypeDescription()
     {
-        return "Study External View";
+        return "Advanced View";
     }
 
     public void setContainer(Container c)

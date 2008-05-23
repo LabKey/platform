@@ -160,7 +160,6 @@ public class StudyQueryReport extends QueryReport
                 ReportQueryView view = ReportQueryViewFactory.get().generateQueryView(context, descriptor,
                         descriptor.getProperty(ReportDescriptor.Prop.queryName),
                         descriptor.getProperty(ReportDescriptor.Prop.viewName));
-                view.setShowRReportButton(false);
                 view.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
                 view.setUseQueryViewActionExportURLs(true);
                 return view;

@@ -194,6 +194,7 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
         ReportService.get().registerDescriptor(new CrosstabReportDescriptor());
 
         ReportService.get().addViewFactory(new ReportsController.StudyRReportViewFactory());
+        ReportService.get().addUIProvider(new StudyReportUIProvider());
     }
 
 

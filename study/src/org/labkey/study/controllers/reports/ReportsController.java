@@ -1997,9 +1997,14 @@ public class ReportsController extends BaseStudyController
 
             _report = getReport(form);
             DataSetDefinition def = getDataSetDefinition();
-            if (def != null)
+            if (def != null && _report != null)
             {
-                view.addView(new DataHeader(getViewContext().getActionURL(), null, getDataSetDefinition(), false));
+                ActionURL url = getViewContext().cloneActionURL().setAction(StudyController.DatasetAction.class).
+                                        replaceParameter("Dataset.viewName", QueryView.REPORTID_PARAM + _report.getDescriptor().getReportId()).
+                                        replaceParameter(DataSetDefinition.DATASETKEY, String.valueOf(def.getDataSetId()));
+
+                return HttpView.redirect(url);
+//                view.addView(new DataHeader(getViewContext().getActionURL(), null, getDataSetDefinition(), false));
             }
 
             if (_report != null)

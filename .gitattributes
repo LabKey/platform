@@ -1309,6 +1309,7 @@ query/src/org/labkey/query/reports/chart/AbstractChartRenderer.java -text
 query/src/org/labkey/query/reports/chart/ChartServiceImpl.java -text
 query/src/org/labkey/query/reports/chart/TimeSeriesRenderer.java -text
 query/src/org/labkey/query/reports/chart/XYChartRenderer.java -text
+query/src/org/labkey/query/reports/view/ReportUIProvider.java -text
 query/src/org/labkey/query/reports/view/ReportsWebPart.java -text
 query/src/org/labkey/query/reports/view/ReportsWebPartConfig.java -text
 query/src/org/labkey/query/reports/view/manageViews.jsp -text
@@ -1758,6 +1759,7 @@ study/src/org/labkey/study/reports/StudyChartQueryReport.java -text
 study/src/org/labkey/study/reports/StudyCrosstabReport.java -text
 study/src/org/labkey/study/reports/StudyQueryReport.java -text
 study/src/org/labkey/study/reports/StudyRReport.java -text
+study/src/org/labkey/study/reports/StudyReportUIProvider.java -text
 study/src/org/labkey/study/reports/StudyRunChartReportView.java -text
 study/src/org/labkey/study/reports/StudyRunRReportView.java -text
 study/src/org/labkey/study/reports/configureExportExcel.gm -text

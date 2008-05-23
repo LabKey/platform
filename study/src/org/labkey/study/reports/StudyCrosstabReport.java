@@ -57,7 +57,7 @@ public class StudyCrosstabReport extends AbstractReport
 
     public String getTypeDescription()
     {
-        return "Study Crosstab View";
+        return "Crosstab View";
     }
 
     public String getDescriptorType()

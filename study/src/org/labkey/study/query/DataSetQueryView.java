@@ -20,6 +20,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.report.view.ChartUtil;
 import org.labkey.api.reports.report.view.RReportBean;
+import org.labkey.api.reports.ReportService;
 import org.labkey.api.security.ACL;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -65,7 +66,6 @@ public class DataSetQueryView extends QueryView
     protected DataView createDataView()
     {
         DataView view = super.createDataView();
-        setShowRReportButton(true);
         if (_buttons != null)
         {
             ButtonBar bbar = new ButtonBar();
@@ -241,5 +241,11 @@ public class DataSetQueryView extends QueryView
     public void setForExport(boolean forExport)
     {
         _forExport = forExport;
+    }
+
+    protected void populateReportButtonBar(ButtonBar bar)
+    {
+        bar.add(createViewButton(ReportService.EMPTY_ITEM_LIST));
+        bar.add(createPrintButton());
     }
 }

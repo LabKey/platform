@@ -31,6 +31,7 @@ import org.labkey.common.util.Pair;
 import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
 import java.util.*;
+import java.io.File;
 
 /**
  * Created by IntelliJ IDEA.
@@ -43,6 +44,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     private static final String TABLE_NAME = "Report";
     private static final Logger _log = Logger.getLogger(ReportService.class);
     private static List<ReportService.ViewFactory> _viewFactories = new ArrayList<ReportService.ViewFactory>();
+    private static List<ReportService.UIProvider> _uiProviders = new ArrayList<ReportService.UIProvider>();
 
     /** maps descriptor types to providers */
     private final Map<String, Class> _descriptors = new HashMap<String, Class>();
@@ -371,6 +373,16 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     public List<ReportService.ViewFactory> getViewFactories()
     {
         return _viewFactories;
+    }
+
+    public void addUIProvider(ReportService.UIProvider provider)
+    {
+        _uiProviders.add(provider);
+    }
+
+    public List<ReportService.UIProvider> getUIProviders()
+    {
+        return Collections.unmodifiableList(_uiProviders);
     }
 
     private static final Report[] EMPTY_REPORT = new Report[0];

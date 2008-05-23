@@ -105,7 +105,6 @@ public class SpecimenUtils
         gridView.setShowHistoryLinks(showVials && !forExport && !settings.isSimple());
         gridView.setDisableLowVialIndicators(forExport || settings.isSimple());
         gridView.setShowRecordSelectors(settings.isEnableRequests());
-        gridView.setShowRReportButton(true);
         // if we're exporting, we can skip setting up the buttons:
         if (forExport)
             return gridView;

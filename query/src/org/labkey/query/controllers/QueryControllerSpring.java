@@ -332,7 +332,6 @@ public class QueryControllerSpring extends SpringActionController
             }
 
             QueryView queryView = QueryView.create(form);
-            queryView.setShowRReportButton(true);
             if (isPrint())
             {
                 queryView.setPrintView(true);
