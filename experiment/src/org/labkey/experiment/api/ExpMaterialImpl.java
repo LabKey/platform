@@ -27,9 +27,13 @@ import java.util.*;
 
 public class ExpMaterialImpl extends ExpIdentifiableBaseImpl<Material> implements ExpMaterial
 {
-    static public ExpMaterial[] fromMaterials(Material[] materials)
+    private ExpProtocolApplication _sourceApp;
+    private List<ExpProtocolApplication> _successorAppList;
+    private List<Integer> _successorRunIdList;
+
+    static public ExpMaterialImpl[] fromMaterials(Material[] materials)
     {
-        ExpMaterial[] ret = new ExpMaterial[materials.length];
+        ExpMaterialImpl[] ret = new ExpMaterialImpl[materials.length];
         for (int i = 0; i < materials.length; i ++)
         {
             ret[i] = new ExpMaterialImpl(materials[i]);
@@ -124,34 +128,33 @@ public class ExpMaterialImpl extends ExpIdentifiableBaseImpl<Material> implement
         _object.setRunId(run == null ? null : run.getRowId());
     }
 
-    public List<ExpProtocolApplication> retrieveSuccessorAppList()
+    public List<ExpProtocolApplication> getSuccessorAppList()
     {
-        return _object.retrieveSuccessorAppList();
+        if (null == _successorAppList)
+            throw new IllegalStateException("successorAppList not populated");
+        return _successorAppList;
     }
 
-    public List<Integer> retrieveSuccessorRunIdList()
+    public List<Integer> getSuccessorRunIdList()
     {
-        return _object.retrieveSuccessorRunIdList();
+        if (null == _successorRunIdList)
+            throw new IllegalStateException("successorRunIdList not populated");
+        return _successorRunIdList;
     }
 
-    public void storeSuccessorAppList(ArrayList<ExpProtocolApplication> protocolApplications)
+    public void setSuccessorAppList(ArrayList<ExpProtocolApplication> successorAppList)
     {
-        _object.storeSuccessorAppList(protocolApplications);
+        _successorAppList = successorAppList;
     }
 
-    public void storeSourceApp(ExpProtocolApplication protocolApplication)
+    public void setSourceApp(ExpProtocolApplication sourceApp)
     {
-        _object.storeSourceApp(protocolApplication);
+        _sourceApp = sourceApp;
     }
 
-    public void storeSuccessorRunIdList(ArrayList<Integer> integers)
+    public void setSuccessorRunIdList(ArrayList<Integer> successorRunIdList)
     {
-        _object.storeSuccessorRunIdList(integers);
-    }
-
-    public ExpProtocolApplication retrieveSourceApp()
-    {
-        return _object.retrieveSourceApp();
+        _successorRunIdList = successorRunIdList;
     }
 
     public void setCpasType(String type)
@@ -177,11 +180,16 @@ public class ExpMaterialImpl extends ExpIdentifiableBaseImpl<Material> implement
 
     public ExpProtocolApplication getSourceApplication()
     {
+        if (null != _sourceApp)
+        {
+            return _sourceApp;
+        }
         if (_object.getSourceApplicationId() == null)
         {
             return null;
         }
-        return ExperimentService.get().getExpProtocolApplication(_object.getSourceApplicationId());
+        _sourceApp = ExperimentService.get().getExpProtocolApplication(_object.getSourceApplicationId());
+        return _sourceApp;
     }
 
     public ExpProtocol getSourceProtocol()

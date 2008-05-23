@@ -62,6 +62,7 @@ public class PipelineJobRunnerGlobus implements Callable
     private String _webappDir;
     private String _globusEndpoint;
     private String _jobFactoryType = ManagedJobFactoryConstants.FACTORY_TYPE.FORK;
+    private String _queue;
 
     private PathMapper _pathMapper = PathMapper.createMapper();
 
@@ -96,6 +97,16 @@ public class PipelineJobRunnerGlobus implements Callable
     public void setGlobusEndpoint(String globusEndpoint)
     {
         _globusEndpoint = globusEndpoint;
+    }
+
+    public String getQueue()
+    {
+        return _queue;
+    }
+
+    public void setQueue(String queue)
+    {
+        _queue = queue;
     }
 
     public String getJavaPath()
@@ -264,6 +275,7 @@ public class PipelineJobRunnerGlobus implements Callable
                         if (gramJob.getExitCode() != 0)
                         {
                             newStatus = PipelineJob.TaskStatus.error;
+                            job.error("Job completed with exit code " + gramJob.getExitCode());
                         }
                         else
                         {
@@ -326,6 +338,10 @@ public class PipelineJobRunnerGlobus implements Callable
         String clusterOutputPath = clusterOutputFile.toString().replace('\\', '/');
         jobDescription.setStdout(clusterOutputPath);
         jobDescription.setStderr(clusterOutputPath);
+        if (_queue != null)
+        {
+            jobDescription.setQueue(_queue);
+        }
 
         String[] jobArgs =
             {

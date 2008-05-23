@@ -39,9 +39,6 @@ public class Data extends IdentifiableBase implements ProtocolOutput
     private Date created;
     private String sourceProtocolLSID;
     private String container;
-    private ExpProtocolApplication sourceApp;
-    private List<ExpProtocolApplication> successorAppList;
-    private List<Integer> successorRunIdList;
     public Data()
     {
     }
@@ -142,43 +139,6 @@ public class Data extends IdentifiableBase implements ProtocolOutput
             throw new IllegalArgumentException(e);
         }
     }
-
-    public ExpProtocolApplication retrieveSourceApp()
-    {
-        if (null == sourceApp)
-            throw new IllegalStateException("sourceApp not populated");
-        return sourceApp;
-    }
-
-    public void storeSourceApp(ExpProtocolApplication sourceApp)
-    {
-        this.sourceApp = sourceApp;
-    }
-
-    public List<ExpProtocolApplication> retrieveSuccessorAppList()
-    {
-        if (null == successorAppList)
-            throw new IllegalStateException("successorAppList not populated");
-        return successorAppList;
-    }
-
-    public void storeSuccessorAppList(List<ExpProtocolApplication> successorAppList)
-    {
-        this.successorAppList = successorAppList;
-    }
-
-    public List<Integer> retrieveSuccessorRunIdList()
-    {
-        if (null == successorRunIdList)
-            throw new IllegalStateException("successorRunIdList not populated");
-        return successorRunIdList;
-    }
-
-    public void storeSuccessorRunIdList(List<Integer> successorRunIdList)
-    {
-        this.successorRunIdList = successorRunIdList;
-    }
-
 
     public boolean equals(Object o)
     {

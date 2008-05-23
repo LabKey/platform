@@ -36,6 +36,10 @@ public class ExpDataImpl extends ExpIdentifiableBaseImpl<Data> implements ExpDat
 {
     static final private Logger _log = Logger.getLogger(ExpDataImpl.class);
 
+    private ExpProtocolApplication _sourceApp;
+    private List<ExpProtocolApplication> _successorAppList;
+    private List<Integer> _successorRunIdList;
+
     /**
      * Temporary mapping until experiment.xml contains the mime type
      */
@@ -227,34 +231,40 @@ public class ExpDataImpl extends ExpIdentifiableBaseImpl<Data> implements ExpDat
         return _object.getFile();
     }
 
-    public ExpProtocolApplication retrieveSourceApp()
+    public ExpProtocolApplication getSourceApp()
     {
-        return _object.retrieveSourceApp();
+        if (null == _sourceApp)
+            throw new IllegalStateException("sourceApp not populated");
+        return _sourceApp;
     }
 
-    public List<ExpProtocolApplication> retrieveSuccessorAppList()
+    public List<ExpProtocolApplication> getSuccessorAppList()
     {
-        return _object.retrieveSuccessorAppList();
+        if (null == _successorAppList)
+            throw new IllegalStateException("successorAppList not populated");
+        return _successorAppList;
     }
 
-    public void storeSourceApp(ExpProtocolApplication expProtocolApplication)
+    public void setSourceApp(ExpProtocolApplication sourceApp)
     {
-        _object.storeSourceApp(expProtocolApplication);
+        _sourceApp = sourceApp;
     }
 
-    public void storeSuccessorAppList(ArrayList<ExpProtocolApplication> expProtocolApplications)
+    public void setSuccessorAppList(ArrayList<ExpProtocolApplication> successorAppList)
     {
-        _object.storeSuccessorAppList(expProtocolApplications);
+        _successorAppList = successorAppList;
     }
 
-    public void storeSuccessorRunIdList(ArrayList<Integer> integers)
+    public void setSuccessorRunIdList(ArrayList<Integer> successorRunIdList)
     {
-        _object.storeSuccessorRunIdList(integers);
+        this._successorRunIdList = successorRunIdList;
     }
 
-    public List<Integer> retrieveSuccessorRunIdList()
+    public List<Integer> getSuccessorRunIdList()
     {
-        return _object.retrieveSuccessorRunIdList();
+        if (null == _successorRunIdList)
+            throw new IllegalStateException("successorRunIdList not populated");
+        return _successorRunIdList;
     }
 
     public boolean isInlineImage()

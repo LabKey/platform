@@ -442,7 +442,7 @@ public class ExperimentRunGraph
                     groupId = 1;
                 dg.addMaterial(material, groupId, null);
                 dg.connectRunToMaterial(runId, material.getRowId());
-                for (Integer successorRunId : material.retrieveSuccessorRunIdList())
+                for (Integer successorRunId : material.getSuccessorRunIdList())
                 {
                     ExpRun successorRun = ExperimentService.get().getExpRun(successorRunId);
                     dg.addLinkedRun(successorRunId, successorRun.getName());
@@ -462,7 +462,7 @@ public class ExperimentRunGraph
                     groupId = 1;
                 dg.addData(data, groupId, null);
                 dg.connectRunToData(runId, data.getRowId());
-                for (Integer successorRunId : data.retrieveSuccessorRunIdList())
+                for (Integer successorRunId : data.getSuccessorRunIdList())
                 {
                     ExpRun successorRun = ExperimentService.get().getExpRun(successorRunId);
                     dg.addLinkedRun(successorRunId, successorRun.getName());

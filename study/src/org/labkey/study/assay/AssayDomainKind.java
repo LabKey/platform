@@ -21,11 +21,15 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayProvider;
 
 import java.util.Map;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -42,32 +46,23 @@ public class AssayDomainKind extends DomainKind
 
     public boolean isDomainType(String domainURI)
     {
-        return false;
-
-        /* TODO: Enable the correct code below, BUT need to fix up sqlObjectIdsInDomain() first
+        // TODO: Enable the correct code below, BUT need to fix up sqlObjectIdsInDomain() first
         Lsid lsid = new Lsid(domainURI);
         return lsid.getNamespacePrefix().startsWith(ExpProtocol.ASSAY_DOMAIN_PREFIX);
-        */
     }
 
 
     public SQLFragment sqlObjectIdsInDomain(Domain domain)
     {
-        Lsid lsid = new Lsid(domain.getTypeURI());
-        String columnName;
-        if (lsid.getNamespacePrefix().equalsIgnoreCase("AssayDefinition"))
-            columnName = "lsid";
-        else if (lsid.getNamespacePrefix().equalsIgnoreCase("AssayRunProperties"))
-            columnName = "RunPropertiesDomainURI";
-        else
-            throw new IllegalArgumentException("Expected recognized domain URI");
-
-        SQLFragment sql = new SQLFragment();
-        sql.append("SELECT ObjectId FROM exp.Protocol P JOIN exp.Object O ON P." + columnName
-                + " = O.ObjectURI WHERE O.container=? AND P.container=?");
-        sql.add(domain.getContainer());
-        sql.add(domain.getContainer());
-        return sql;
+        ExpProtocol protocol = findProtocol(domain);
+        if (protocol != null)
+        {
+            SQLFragment sql = new SQLFragment();
+            sql.append("SELECT o.ObjectId FROM " + ExperimentService.get().getTinfoExperimentRun() + " r, exp.object o WHERE r.LSID = o.ObjectURI AND r.ProtocolLSID = ?");
+            sql.add(protocol.getLSID());
+            return sql;
+        }
+        return new SQLFragment("NULL");
     }
 
     public Map.Entry<TableInfo, ColumnInfo> getTableInfo(User user, Domain domain, Container[] containers)
@@ -75,39 +70,51 @@ public class AssayDomainKind extends DomainKind
         return null;
     }
 
+    private ExpProtocol findProtocol(Domain domain)
+    {
+        List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(domain.getContainer());
+        for (ExpProtocol protocol : protocols)
+        {
+            AssayProvider provider = AssayService.get().getProvider(protocol);
+            if (provider != null)
+            {
+                for (Domain protocolDomain : provider.getDomains(protocol))
+                {
+                    if (protocolDomain.getTypeURI().equals(domain.getTypeURI()))
+                    {
+                        return protocol;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
 
     public ActionURL urlShowData(Domain domain)
     {
-        throw new UnsupportedOperationException("NYI");
+        ExpProtocol protocol = findProtocol(domain);
+        if (protocol != null)
+        {
+            return AssayService.get().getAssayRunsURL(domain.getContainer(), protocol);
+        }
+        return null;
     }
 
 
     public ActionURL urlEditDefinition(Domain domain)
     {
-        throw new UnsupportedOperationException("NYI");
+        ExpProtocol protocol = findProtocol(domain);
+        if (protocol != null)
+        {
+            return AssayService.get().getDesignerURL(domain.getContainer(), protocol, false);
+        }
+        return null;
     }
 
     // return the "system" properties for this domain
-    // return the "system" properties for this domain
     public DomainProperty[] getDomainProperties(String domainURI)
     {
-//            TableInfo t = StudySchema.getInstance().getTableInfoStudyData();
-//            for (ColumnInfo c : t.getColumns())
-//            {
-//                if (c.getName().equalsIgnoreCase("container") || c.getName().equalsIgnoreCase("datasetid"))
-//                    continue;
-//                if (c.getName().startsWith("_"))
-//                    continue;
-//                DomainProperty p = new DomainProperty();
-//                p.setName(c.getName());
-//                p.setLabel(c.getCaption());
-//                PropertyType pt = PropertyType.getFromClass(c.getJavaObjectClass());
-//                p.setRangeURI(pt.getTypeUri());
-//                p.setRequired(!c.isNullable());
-//                p.setDescription(c.getDescription());
-//                p.setEditable(false);
-//                list.add(p);
-//            }
         return new DomainProperty[0];
     }
 }

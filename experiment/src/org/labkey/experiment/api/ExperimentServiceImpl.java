@@ -2063,18 +2063,18 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             sort = new Sort("RowId");
 
-            ExpMaterial[] materials = ExpMaterialImpl.fromMaterials(Table.select(getTinfoMaterial(), getTinfoMaterial().getColumns(), filt, sort, Material.class));
-            Map<Integer, ExpMaterial> runMaterialMap = new HashMap<Integer, ExpMaterial>(materials.length);
-            for (ExpMaterial mat : materials)
+            ExpMaterialImpl[] materials = ExpMaterialImpl.fromMaterials(Table.select(getTinfoMaterial(), getTinfoMaterial().getColumns(), filt, sort, Material.class));
+            Map<Integer, ExpMaterialImpl> runMaterialMap = new HashMap<Integer, ExpMaterialImpl>(materials.length);
+            for (ExpMaterialImpl mat : materials)
             {
                 runMaterialMap.put(mat.getRowId(), mat);
                 ExpProtocolApplication sourceApplication = mat.getSourceApplication();
                 Integer srcAppId = sourceApplication == null ? null : sourceApplication.getRowId();
                 assert protStepMap.containsKey(srcAppId);
                 protStepMap.get(srcAppId).getOutputMaterials().add(mat);
-                mat.storeSourceApp(protStepMap.get(srcAppId));
-                mat.storeSuccessorAppList(new ArrayList<ExpProtocolApplication>());
-                mat.storeSuccessorRunIdList(new ArrayList<Integer>());
+                mat.setSourceApp(protStepMap.get(srcAppId));
+                mat.setSuccessorAppList(new ArrayList<ExpProtocolApplication>());
+                mat.setSuccessorRunIdList(new ArrayList<Integer>());
             }
 
             ExpDataImpl[] datas = ExpDataImpl.fromDatas(Table.select(getTinfoData(), getTinfoData().getColumns(), filt, sort, Data.class));
@@ -2085,9 +2085,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 Integer srcAppId = dat.getDataObject().getSourceApplicationId();
                 assert protStepMap.containsKey(srcAppId);
                 protStepMap.get(srcAppId).getOutputDatas().add(dat);
-                dat.storeSourceApp(protStepMap.get(srcAppId));
-                dat.storeSuccessorAppList(new ArrayList<ExpProtocolApplication>());
-                dat.storeSuccessorRunIdList(new ArrayList<Integer>());
+                dat.setSourceApp(protStepMap.get(srcAppId));
+                dat.setSuccessorAppList(new ArrayList<ExpProtocolApplication>());
+                dat.setSuccessorRunIdList(new ArrayList<Integer>());
             }
 
             // get the set of starting materials, which do not belong to the run
@@ -2109,9 +2109,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             materials = ExpMaterialImpl.fromMaterials(Table.executeQuery(getExpSchema(), materialSQL, params, Material.class));
             MaterialInput[] materialInputs = Table.executeQuery(getExpSchema(), materialInputSQL, params, MaterialInput.class);
             assert materials.length == materialInputs.length;
-            Map<Integer, ExpMaterial> startingMaterialMap = new HashMap<Integer, ExpMaterial>(materials.length);
+            Map<Integer, ExpMaterialImpl> startingMaterialMap = new HashMap<Integer, ExpMaterialImpl>(materials.length);
             int index = 0;
-            for (ExpMaterial mat : materials)
+            for (ExpMaterialImpl mat : materials)
             {
                 startingMaterialMap.put(mat.getRowId(), mat);
                 MaterialInput input = materialInputs[index++];
@@ -2125,7 +2125,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     }
                 }
                 expRun.getMaterialInputs().put(mat, roleName);
-                mat.storeSuccessorAppList(new ArrayList<ExpProtocolApplication>());
+                mat.setSuccessorAppList(new ArrayList<ExpProtocolApplication>());
             }
 
             // and starting data
@@ -2161,7 +2161,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     }
                 }
                 expRun.getDataInputs().put(dat, roleName);
-                dat.storeSuccessorAppList(new ArrayList<ExpProtocolApplication>());
+                dat.setSuccessorAppList(new ArrayList<ExpProtocolApplication>());
             }
 
             // now hook up material inputs to processes in both directions
@@ -2180,7 +2180,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     Integer appId = materialInputRS.getInt("TargetApplicationId");
                     Integer matId = materialInputRS.getInt("MaterialId");
                     ExpProtocolApplication pa = protStepMap.get(appId);
-                    ExpMaterial mat;
+                    ExpMaterialImpl mat;
 
                     if (runMaterialMap.containsKey(matId))
                         mat = runMaterialMap.get(matId);
@@ -2190,10 +2190,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     if (mat == null)
                     {
                         mat = getExpMaterial(matId);
+                        mat.setSuccessorAppList(new ArrayList<ExpProtocolApplication>());
                     }
 
                     pa.getInputMaterials().add(mat);
-                    mat.retrieveSuccessorAppList().add(pa);
+                    mat.getSuccessorAppList().add(pa);
 
                     if (pa.getCpasType().equals(ExperimentService.EXPERIMENT_RUN_OUTPUT_CPAS_TYPE))
                     {
@@ -2231,8 +2232,14 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     else
                         dat = startingDataMap.get(datId);
 
+                    if (dat == null)
+                    {
+                        dat = getExpData(datId);
+                        dat.setSuccessorAppList(new ArrayList<ExpProtocolApplication>());
+                    }
+
                     pa.getInputDatas().add(dat);
-                    dat.retrieveSuccessorAppList().add(pa);
+                    dat.getSuccessorAppList().add(pa);
 
                     if (pa.getCpasType().equals(ExperimentService.EXPERIMENT_RUN_OUTPUT_CPAS_TYPE))
                     {
@@ -2267,7 +2274,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                         Integer successorRunId = materialOutputRS.getInt("RunId");
                         Integer matId = materialOutputRS.getInt("MaterialId");
                         ExpMaterial mat = outputMaterialMap.get(matId);
-                        mat.retrieveSuccessorRunIdList().add(successorRunId);
+                        mat.getSuccessorRunIdList().add(successorRunId);
                     }
                 }
                 finally
@@ -2295,7 +2302,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                         Integer successorRunId = dataOutputRS.getInt("RunId");
                         Integer datId = dataOutputRS.getInt("DataId");
                         ExpData dat = outputDataMap.get(datId);
-                        dat.retrieveSuccessorRunIdList().add(successorRunId);
+                        dat.getSuccessorRunIdList().add(successorRunId);
                     }
                 }
                 finally
@@ -2332,8 +2339,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 {
                     found = true;
                     listM.add(m);
-                    listPA.addAll(m.retrieveSuccessorAppList());
-                    descendantPAStack.addAll(m.retrieveSuccessorAppList());
+                    listPA.addAll(m.getSuccessorAppList());
+                    descendantPAStack.addAll(m.getSuccessorAppList());
                     break;
                 }
         }
@@ -2344,8 +2351,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 {
                     found = true;
                     listD.add(d);
-                    listPA.addAll(d.retrieveSuccessorAppList());
-                    descendantPAStack.addAll(d.retrieveSuccessorAppList());
+                    listPA.addAll(d.getSuccessorAppList());
+                    descendantPAStack.addAll(d.getSuccessorAppList());
                     break;
                 }
         }
@@ -2361,12 +2368,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                         {
                             found = true;
                             listM.add(m);
-                            listPA.addAll(m.retrieveSuccessorAppList());
-                            descendantPAStack.addAll(m.retrieveSuccessorAppList());
+                            listPA.addAll(m.getSuccessorAppList());
+                            descendantPAStack.addAll(m.getSuccessorAppList());
                             if (null != m.getSourceApplication() && m.getRun() != null && populatedRun.getRowId() == m.getRun().getRowId())
                             {
-                                listPA.add(m.retrieveSourceApp());
-                                ancestorPAStack.add(m.retrieveSourceApp());
+                                listPA.add(m.getSourceApplication());
+                                ancestorPAStack.add(m.getSourceApplication());
                             }
                             break;
                         }
@@ -2379,12 +2386,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                         {
                             found = true;
                             listD.add(d);
-                            listPA.addAll(d.retrieveSuccessorAppList());
-                            descendantPAStack.addAll(d.retrieveSuccessorAppList());
+                            listPA.addAll(d.getSuccessorAppList());
+                            descendantPAStack.addAll(d.getSuccessorAppList());
                             if (null != d.getSourceApplication() && d.getRun() != null && populatedRun.getRowId() == d.getRun().getRowId())
                             {
-                                listPA.add(d.retrieveSourceApp());
-                                ancestorPAStack.add(d.retrieveSourceApp());
+                                listPA.add(d.getSourceApp());
+                                ancestorPAStack.add(d.getSourceApp());
                             }
                             break;
                         }
@@ -2415,12 +2422,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             for (ExpMaterial m : pa.getOutputMaterials())
             {
                 listM.add(m);
-                descendantPAStack.addAll(m.retrieveSuccessorAppList());
+                descendantPAStack.addAll(m.getSuccessorAppList());
             }
             for (ExpData d : pa.getOutputDatas())
             {
                 listD.add(d);
-                descendantPAStack.addAll(d.retrieveSuccessorAppList());
+                descendantPAStack.addAll(d.getSuccessorAppList());
             }
             descendantPAStack.remove(pa);
             listPA.add(pa);
@@ -2443,7 +2450,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     continue;
                 }
                 if (null != m.getSourceApplication() && m.getRun() != null && populatedRun.getRowId() == m.getRun().getRowId())
-                    ancestorPAStack.add(m.retrieveSourceApp());
+                    ancestorPAStack.add(m.getSourceApplication());
             }
             for (ExpData d : pa.getInputDatas())
             {
@@ -2456,7 +2463,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     continue;
                 }
                 if (null != d.getSourceApplication() && d.getRun() != null && populatedRun.getRowId() == d.getRun().getRowId())
-                    ancestorPAStack.add(d.retrieveSourceApp());
+                    ancestorPAStack.add(d.getSourceApp());
             }
             ancestorPAStack.remove(pa);
             listPA.add(pa);
@@ -2480,11 +2487,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     if (listM.contains(m))
                     {
                         deletePA = new ArrayList<ExpProtocolApplication>();
-                        for (ExpProtocolApplication p : m.retrieveSuccessorAppList())
+                        for (ExpProtocolApplication p : m.getSuccessorAppList())
                             if (!listPA.contains(p))
                                 deletePA.add(p);
                         for (ExpProtocolApplication p : deletePA)
-                            m.retrieveSuccessorAppList().remove(p);
+                            m.getSuccessorAppList().remove(p);
                     }
                     else
                         deleteM.add(m);
@@ -2501,11 +2508,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     if (listD.contains(d))
                     {
                         deletePA = new ArrayList<ExpProtocolApplication>();
-                        for (ExpProtocolApplication p : d.retrieveSuccessorAppList())
+                        for (ExpProtocolApplication p : d.getSuccessorAppList())
                             if (!listPA.contains(p))
                                 deletePA.add(p);
                         for (ExpProtocolApplication p : deletePA)
-                            d.retrieveSuccessorAppList().remove(p);
+                            d.getSuccessorAppList().remove(p);
                     }
                     else
                         deleteD.add(d);
