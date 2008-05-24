@@ -55,9 +55,7 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * User: adam
@@ -291,7 +289,10 @@ public class ListController extends SpringActionController
             TableInfo table = _list.getTable(getUser(), null);
             ListQueryUpdateForm tableForm = new ListQueryUpdateForm(table, getViewContext().getRequest(), _list);
 
-            return getDataView(tableForm, form.getReturnActionURL(), errors);
+            DataView view = getDataView(tableForm, form.getReturnActionURL(), errors);
+            setDisplayColumnsFromDefaultView(_list.getListId(), view.getDataRegion(), true);
+
+            return view;
         }
 
         public boolean handlePost(ListDefinitionForm form, BindException errors) throws Exception
@@ -435,6 +436,29 @@ public class ListController extends SpringActionController
     }
 
 
+    // Unfortunate query hackery that orders display columns based on default view
+    // TODO: Fix this... build into InsertView (or QueryInsertView or something)
+    private void setDisplayColumnsFromDefaultView(int listId, DataRegion rgn, boolean editableOnly)
+    {
+        ListQueryView lqv = new ListQueryView(new ListQueryForm(listId, getUser(), getContainer()));
+        List<DisplayColumn> allColumns = lqv.getDisplayColumns();
+        List<DisplayColumn> displayColumns = new ArrayList<DisplayColumn>(allColumns.size());
+
+        for (DisplayColumn dc : allColumns)
+        {
+            if (editableOnly && !dc.isEditable())
+                continue;
+
+            if (dc instanceof UrlColumn)
+                continue;
+
+            displayColumns.add(rgn.getDisplayColumn(dc.getName()));
+        }
+
+        rgn.setDisplayColumns(displayColumns);
+    }
+
+
     @RequiresPermission(ACL.PERM_READ)
     public class DetailsAction extends SimpleViewAction<ListDefinitionForm>
     {
@@ -460,6 +484,7 @@ public class ListController extends SpringActionController
             ActionButton gridButton = new ActionButton("Show Grid", _list.urlShowData());
             bb.add(gridButton);
             details.getDataRegion().setButtonBar(bb);
+            setDisplayColumnsFromDefaultView(_list.getListId(), details.getDataRegion(), false);
 
             VBox view = new VBox();
             ListItem item = _list.getListItem(tableForm.getPkVal());
