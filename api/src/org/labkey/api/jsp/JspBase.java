@@ -406,7 +406,7 @@ abstract public class JspBase extends HttpServlet implements HttpJspPage, HasVie
         if (0 == errorHTML.length())
             return "";
         else
-            return "\n<tr><td" + (colspan > 1 ? "colspan=" + colspan : "") + ">" + errorHTML + "</td></tr>\n<tr><td" + (colspan > 1 ? "colspan=" + colspan : "") + ">&nbsp;</td></tr>";
+            return "\n<tr><td" + (colspan > 1 ? " colspan=" + colspan : "") + ">" + errorHTML + "</td></tr>\n<tr><td" + (colspan > 1 ? " colspan=" + colspan : "") + ">&nbsp;</td></tr>";
     }
 
     protected String _formatErrorList(List<ObjectError> l, boolean fieldNames)

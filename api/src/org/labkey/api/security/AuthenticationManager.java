@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.labkey.api.security;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.*;
 import org.labkey.api.audit.AuditLogService;
@@ -37,6 +37,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.ServletException;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
@@ -491,7 +492,7 @@ public class AuthenticationManager
 
         public ModelAndView getView(AuthLogoForm form, boolean reshow, BindException errors) throws Exception
         {
-            return new JspView<AuthLogoBean>("/org/labkey/core/login/pickAuthLogo.jsp", new AuthLogoBean(getProviderName(), getReturnURL(), reshow));
+            return new JspView<AuthLogoBean>("/org/labkey/core/login/pickAuthLogo.jsp", new AuthLogoBean(getProviderName(), getReturnURL(), reshow), errors);
         }
 
         public boolean handlePost(AuthLogoForm form, BindException errors) throws Exception
@@ -499,8 +500,17 @@ public class AuthenticationManager
             Map<String, MultipartFile> fileMap = getFileMap();
 
             boolean changedLogos = deleteLogos(form);
-            changedLogos |= handleLogo(fileMap, HEADER_LOGO_PREFIX);
-            changedLogos |= handleLogo(fileMap, LOGIN_PAGE_LOGO_PREFIX);
+
+            try
+            {
+                changedLogos |= handleLogo(fileMap, HEADER_LOGO_PREFIX);
+                changedLogos |= handleLogo(fileMap, LOGIN_PAGE_LOGO_PREFIX);
+            }
+            catch (Exception e)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                return false;
+            }
 
             // If user changed one or both logos then...
             if (changedLogos)
@@ -518,12 +528,15 @@ public class AuthenticationManager
         }
 
         // Returns true if a new logo is saved
-        private boolean handleLogo(Map<String, MultipartFile> fileMap, String prefix) throws IOException, SQLException
+        private boolean handleLogo(Map<String, MultipartFile> fileMap, String prefix) throws IOException, SQLException, ServletException
         {
             MultipartFile file = fileMap.get(prefix + "file");
 
             if (null == file || file.isEmpty())
                 return false;
+
+            if (!file.getContentType().startsWith("image/"))
+                throw new ServletException(file.getOriginalFilename() + " does not appear to be an image file");
 
             AttachmentFile aFile = new SpringAttachmentFile(file);
             aFile.setFilename(prefix + getProviderName());
@@ -575,21 +588,24 @@ public class AuthenticationManager
         public String getAuthLogoHtml(String name, String prefix)
         {
             LinkFactory factory = new LinkFactory("", name);
-            String filePicker = "<input name=\"" + prefix + "file\" type=\"file\" size=\"60\">";
             String logo = factory.getImg(prefix);
 
             if (null == logo)
             {
-                return "<td>" + filePicker + "</td>";
+                return "<td colspan=\"2\"><input name=\"" + prefix + "file\" type=\"file\" size=\"60\"></td>";
             }
             else
             {
                 StringBuilder html = new StringBuilder();
-                html.append("<td><div id=\"").append(prefix).append("id\">");
+
+                String id1 = prefix + "td1";
+                String id2 = prefix + "td2";
+
+                html.append("<td id=\"").append(id1).append("\">");
                 html.append(logo);
-                String innerHtml = filePicker + "<input type=\"hidden\" name=\"deletedLogos\" value=\"" + prefix + name + "\">";
-                html.append("&nbsp;[<a href=\"javascript:{}\" onClick=\"document.getElementById('").append(prefix).append("id').innerHTML = '").append(innerHtml.replaceAll("\"", "&quot;")).append("'\">delete</a>]");
-                html.append("</div></td>\n");
+                html.append("</td><td id=\"").append(id2).append("\" width=\"100%\">");
+                html.append("[<a href=\"javascript:{}\" onClick=\"deleteLogo('").append(prefix).append("');\">delete</a>]");
+                html.append("</td>\n");
 
                 return html.toString();
             }
