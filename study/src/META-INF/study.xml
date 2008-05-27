@@ -25,6 +25,7 @@
       <ns:column columnName="DateBased"/>
       <ns:column columnName="StartDate"/>
       <ns:column columnName="StudySecurity"/>
+      <ns:column columnName="DatasetRowsEditable"/>  
       <ns:column columnName="participantcohortdatasetid"/>
       <ns:column columnName="participantcohortproperty"/>
     </ns:columns>

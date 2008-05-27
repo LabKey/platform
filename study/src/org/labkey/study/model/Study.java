@@ -38,6 +38,7 @@ public class Study extends AbstractStudyEntity<Study>
     private boolean _studySecurity;
     private String _participantCohortProperty;
     private Integer _participantCohortDataSetId;
+    private boolean _datasetRowsEditable;
 
     public Study()
     {
@@ -174,6 +175,16 @@ public class Study extends AbstractStudyEntity<Study>
     {
         verifyMutability();
         _startDate = startDate;
+    }
+
+    public boolean isDatasetRowsEditable()
+    {
+        return _datasetRowsEditable;
+    }
+
+    public void setDatasetRowsEditable(boolean datasetRowsEditable)
+    {
+        _datasetRowsEditable = datasetRowsEditable;
     }
 
     public String getParticipantCohortProperty()

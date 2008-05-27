@@ -56,7 +56,7 @@ public class DatasetController extends BaseStudyController
         setActionResolver(ACTION_RESOLVER);
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermission(ACL.PERM_UPDATE)
     public class UpdateAction extends InsertUpdateAction
     {
 
@@ -71,7 +71,7 @@ public class DatasetController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermission(ACL.PERM_UPDATE)
     public class InsertAction extends InsertUpdateAction
     {
 
@@ -98,6 +98,10 @@ public class DatasetController extends BaseStudyController
             {
                 redirectTypeNotFound(form.getDatasetId());
                 return null;
+            }
+            if (!ds.canRead(getUser()))
+            {
+                throw new UnauthorizedException("User does not have permission to view this dataset");
             }
 
             TableInfo datasetTable = ds.getTableInfo(getUser());
@@ -145,6 +149,10 @@ public class DatasetController extends BaseStudyController
             {
                 redirectTypeNotFound(form.getDatasetId());
                 return false;
+            }
+            if (!ds.canRead(getUser()))
+            {
+                throw new UnauthorizedException("User does not have permission to view this dataset");
             }
 
             TableInfo datasetTable = ds.getTableInfo(getUser());

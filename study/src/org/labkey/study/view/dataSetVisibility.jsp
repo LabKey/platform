@@ -15,16 +15,23 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.study.model.DataSetDefinition"%>
-<%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.study.model.Cohort" %>
+<%@ page import="org.labkey.study.model.DataSetDefinition" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     Cohort[] cohorts = StudyManager.getInstance().getCohorts(getStudy().getContainer(), getViewContext().getUser());
 %>
+<form action="dataSetVisibility.post" method="POST">
+Editable Dataset Data:
+<%=PageFlowUtil.helpPopup("Editable Dataset Data",
+        "If dataset data is editable, users with update permission will be able to edit dataset data", true)
+%>
+<input type="checkbox" name="datasetRowsEditable" <%=getStudy().isDatasetRowsEditable() ? "checked" : ""%>>
+
 <p>Datasets can be hidden on the study overview screen.</p>
 <p>Hidden data can always be viewed, but is not shown by default.</p>
-<form action="dataSetVisibility.post" method="POST">
     <table class="normal">
         <tr>
             <th align="left">ID</th>

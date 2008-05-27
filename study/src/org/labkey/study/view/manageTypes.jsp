@@ -112,14 +112,15 @@
     %><tr>
         <td>Datasets can be displayed in any order.</td>
         <td><%= textLink("Change Display Order", "dataSetDisplayOrder.view")%></td>
-    </tr>
-    <tr>
-        <td>Dataset visibility, label, and category can all be changed.</td>
-        <td><%= textLink("Change Properties", "dataSetVisibility.view")%></td>
     </tr><%
     }
 
-%><tr>
+%>
+    <tr>
+        <td>Dataset visibility, label, and category can all be changed.</td>
+        <td><%= textLink("Change Properties", "dataSetVisibility.view")%></td>
+    </tr>
+    <tr>
         <td>New Datasets can be added to this study at any time.</td>
         <td><%= textLink("Create New Dataset", "defineDatasetType.view?create=true&autoDatasetId=true")%></td>
     </tr>

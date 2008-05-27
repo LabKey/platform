@@ -526,6 +526,7 @@ public class StudyController extends BaseStudyController
             ActionURL insertURL = new ActionURL(DatasetController.InsertAction.class, getContainer());
             insertURL.addParameter("datasetId", _datasetId);
             ActionButton insertButton = new ActionButton(insertURL.getLocalURIString(), "Insert New", DataRegion.MODE_GRID, ActionButton.Action.LINK);
+            insertButton.setDisplayPermission(ACL.PERM_INSERT);
             buttonBar.add(insertButton);
 
             ActionButton uploadButton = new ActionButton("showImportDataset.view?datasetId=" + _datasetId, "Import Data", DataRegion.MODE_GRID, ActionButton.Action.LINK);
@@ -1026,6 +1027,7 @@ public class StudyController extends BaseStudyController
                 Study study = new Study(getContainer(), form.getLabel());
                 study.setDateBased(form.isDateBased());
                 study.setStartDate(form.getStartDate());
+                study.setDatasetRowsEditable(form.isDatasetRowsEditable());
                 StudyManager.getInstance().createStudy(getUser(), study);
                 SampleManager.RepositorySettings reposSettings = SampleManager.getInstance().getRepositorySettings(getContainer());
                 reposSettings.setSimple(form.isSimpleRepository());
@@ -1229,20 +1231,20 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ACL.PERM_ADMIN)
-    public class ManageTypesAction extends FormViewAction<ManageTypesBean>
+    public class ManageTypesAction extends FormViewAction<ManageTypesForm>
     {
-        public void validateCommand(ManageTypesBean target, Errors errors)
+        public void validateCommand(ManageTypesForm target, Errors errors)
         {
         }
 
-        public ModelAndView getView(ManageTypesBean manageTypesBean, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ManageTypesForm manageTypesForm, boolean reshow, BindException errors) throws Exception
         {
             ModelAndView view = new StudyJspView<ManageTypesAction>(getStudy(), "manageTypes.jsp", this, errors);
             view.addObject("errors", errors);
             return view;
         }
 
-        public boolean handlePost(ManageTypesBean form, BindException errors) throws Exception
+        public boolean handlePost(ManageTypesForm form, BindException errors) throws Exception
         {
             String dateFormat = form.getDateFormat();
             String numberFormat = form.getNumberFormat();
@@ -1272,7 +1274,7 @@ public class StudyController extends BaseStudyController
             }
         }
 
-        public ActionURL getSuccessURL(ManageTypesBean manageTypesBean)
+        public ActionURL getSuccessURL(ManageTypesForm manageTypesForm)
         {
             return null;
         }
@@ -1284,7 +1286,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class ManageTypesBean
+    public static class ManageTypesForm
     {
         private String _dateFormat;
         private String _numberFormat;
@@ -3779,7 +3781,11 @@ public class StudyController extends BaseStudyController
         public boolean handlePost(DatasetPropertyForm form, BindException errors) throws Exception
         {
             int[] allIds = form.getIds();
+            if (allIds == null)
+                allIds = new int[0];
             int[] visibleIds = form.getVisible();
+            if (visibleIds == null)
+                visibleIds = new int[0];
             Set<Integer> visible = new HashSet<Integer>(visibleIds.length);
             for (int id : visibleIds)
                   visible.add(id);
@@ -3787,7 +3793,8 @@ public class StudyController extends BaseStudyController
             {
                 DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getStudy(), allIds[i]);
                 boolean show = visible.contains(allIds[i]);
-                String category = form.getExtraData()[i];
+                String[] extraData = form.getExtraData();
+                String category = extraData == null ? null : extraData[i];
                 Integer cohortId = null;
                 if (form.getCohort() != null)
                     cohortId = form.getCohort()[i];
@@ -3804,6 +3811,15 @@ public class StudyController extends BaseStudyController
                     StudyManager.getInstance().updateDataSetDefinition(getUser(), def);
                 }
             }
+
+            // Update the editable dataset data bit
+            Study study = getStudy();
+            if (form.getDatasetRowsEditable() != study.isDatasetRowsEditable())
+            {
+                study.setDatasetRowsEditable(form.getDatasetRowsEditable());
+                StudyManager.getInstance().updateStudy(getUser(), study);
+            }
+
             return true;
         }
 
@@ -4240,6 +4256,7 @@ public class StudyController extends BaseStudyController
     {
         private int[] _ids;
         private int[] _visible;
+        private boolean _datasetRowsEditable;
 
         public int[] getIds()
         {
@@ -4259,6 +4276,16 @@ public class StudyController extends BaseStudyController
         public void setVisible(int[] visible)
         {
             _visible = visible;
+        }
+
+        public boolean getDatasetRowsEditable()
+        {
+            return _datasetRowsEditable;
+        }
+
+        public void setDatasetRowsEditable(boolean datasetRowsEditable)
+        {
+            _datasetRowsEditable = datasetRowsEditable;
         }
     }
 
@@ -4485,6 +4512,7 @@ public class StudyController extends BaseStudyController
         private String _label;
         private boolean _dateBased;
         private Date _startDate;
+        private boolean _datasetRowsEditable;
         private boolean _simpleRepository = true;
 
         public String getLabel()
@@ -4517,6 +4545,15 @@ public class StudyController extends BaseStudyController
             _startDate = startDate;
         }
 
+        public boolean isDatasetRowsEditable()
+        {
+            return _datasetRowsEditable;
+        }
+
+        public void setDatasetRowsEditable(boolean datasetRowsEditable)
+        {
+            _datasetRowsEditable = datasetRowsEditable;
+        }
 
         public boolean isSimpleRepository()
         {

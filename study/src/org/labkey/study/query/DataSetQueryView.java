@@ -18,9 +18,9 @@ package org.labkey.study.query;
 
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
+import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.view.ChartUtil;
 import org.labkey.api.reports.report.view.RReportBean;
-import org.labkey.api.reports.ReportService;
 import org.labkey.api.security.ACL;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -119,8 +119,10 @@ public class DataSetQueryView extends QueryView
                         sourceLsidCol));
             }
         }
-        // Only show link to edit for editors
-        if (!_forExport && getViewContext().hasPermission(ACL.PERM_ADMIN))
+        // Only show link to edit for editors and if permission allows it
+        if (!_forExport &&
+                getViewContext().hasPermission(ACL.PERM_UPDATE) &&
+                StudyManager.getInstance().getStudy(getContainer()).isDatasetRowsEditable())
         {
             TableInfo tableInfo = view.getDataRegion().getTable();
             ColumnInfo lsidColumn = tableInfo.getColumn("lsid");
