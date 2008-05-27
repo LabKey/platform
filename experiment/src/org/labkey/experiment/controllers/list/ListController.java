@@ -455,7 +455,15 @@ public class ListController extends SpringActionController
             displayColumns.add(rgn.getDisplayColumn(dc.getName()));
         }
 
+        // Save current column list
+        List<DisplayColumn> currentColumns = new ArrayList<DisplayColumn>(rgn.getDisplayColumns());
+
         rgn.setDisplayColumns(displayColumns);
+
+        // Add all columns that aren't in the default grid view
+        for (DisplayColumn dc : currentColumns)
+            if (null == rgn.getDisplayColumn(dc.getName()))
+                rgn.addDisplayColumn(dc);
     }
 
 

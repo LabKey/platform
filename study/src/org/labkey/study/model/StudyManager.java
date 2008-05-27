@@ -725,7 +725,7 @@ public class StudyManager
 
             char sep = ' ';
             StringBuilder sb = new StringBuilder();
-            for (int i=0;i<rowLSIDs.size();i++)
+            for (String rowLSID : rowLSIDs)
             {
                 sb.append(sep);
                 sb.append('?');

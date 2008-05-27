@@ -494,20 +494,20 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
         TableInfo users = CoreSchema.getInstance().getTableInfoUsers();
 
         // Only need to delete users on PostgreSQL installations
-        if (CoreSchema.getInstance().getSqlDialect() instanceof SqlDialectPostgreSQL)
+        if (CoreSchema.getInstance().getSqlDialect() instanceof SqlDialectPostgreSQL)          // TODO: dialect.isCaseSensitive()
         {
             // For email addresses that have duplicates, keep the most recently used user.  Most recently used is the user with
             // the latest LastLogin.  If LastLogin is NULL for all duplicates, then keep the most recently modified.
-            String sql = "SELECT UserId FROM " + users + " u JOIN (SELECT LOWER(Email) AS Email, MAX(LastLogin) AS ll, MAX(Modified) AS mod FROM " + users + "\n" +
+            SQLFragment sql = new SQLFragment("SELECT UserId FROM " + users + " u JOIN (SELECT LOWER(Email) AS Email, MAX(LastLogin) AS ll, MAX(Modified) AS mod FROM " + users + "\n" +
                     "GROUP BY LOWER(Email)\n" +
                     "HAVING COUNT(*) > 1) dup ON dup.email = LOWER(u.email)\n" +
-                    "WHERE CASE WHEN ll IS NULL THEN mod <> Modified ELSE LastLogin IS NULL OR ll <> LastLogin END";
+                    "WHERE CASE WHEN ll IS NULL THEN mod <> Modified ELSE LastLogin IS NULL OR ll <> LastLogin END");
 
             Integer[] duplicateUserIds;
 
             try
             {
-                duplicateUserIds = Table.executeArray(core, sql, null, Integer.class);
+                duplicateUserIds = Table.executeArray(core, sql, Integer.class);
             }
             catch(SQLException e)
             {
