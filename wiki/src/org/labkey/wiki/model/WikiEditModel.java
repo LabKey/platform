@@ -15,20 +15,17 @@
  */
 package org.labkey.wiki.model;
 
+import org.labkey.api.data.Container;
+import org.labkey.api.security.ACL;
+import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.wiki.WikiRendererType;
-import org.labkey.api.wiki.WikiService;
-import org.labkey.api.data.Container;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.security.User;
-import org.labkey.api.security.ACL;
+import org.labkey.wiki.BaseWikiPermissions;
 import org.labkey.wiki.ServiceImpl;
 import org.labkey.wiki.WikiManager;
-import org.labkey.wiki.WikiController;
-import org.labkey.wiki.BaseWikiPermissions;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Model bean for the wikiEdit.jsp view

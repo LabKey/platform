@@ -267,21 +267,12 @@
 
     function onCancel()
     {
-        if(_wikiProps.isDirty || _attachments.isDirty)
-            Ext.Msg.confirm("Confirm Cancel", "Are you sure you want to cancel all your changes?", onCancelConfirmed);
-        else
-            window.location.href = _redirUrl;
+        window.location.href = getRedirUrl();
     }
 
     function onDeletePage()
     {
         window.location.href = LABKEY.ActionURL.buildURL("wiki", "delete") + "?name=" + _wikiProps.name + "&rowId=" + _wikiProps.rowId;
-    }
-
-    function onCancelConfirmed(btn)
-    {
-        if(btn == 'yes')
-            window.location.href = _redirUrl;
     }
 
     function onChangeName()
@@ -417,14 +408,26 @@
         enableDeleteButton(true);
 
         if(_finished)
-        {
-            if(!_redirUrl || _redirUrl.length == 0)
-                _redirUrl = LABKEY.ActionURL.buildURL("wiki", "page") + "?name=" + _wikiProps.name;
-
-            window.location.href = _redirUrl;
-        }
+            window.location.href = getRedirUrl();
         else
             loadToc();
+    }
+
+    //returns the redir URL, which can be a little tricky to determine in some
+    //scenarios. If the incoming redir url is null or empty, this function
+    //should return a url to the page view for the page, if it has a valid name
+    //if not, it should return a url for the project home page
+    function getRedirUrl()
+    {
+        if(!_redirUrl || _redirUrl.length == 0)
+        {
+            if(_wikiProps.name && _wikiProps.name.length > 0)
+                return LABKEY.ActionURL.buildURL("wiki", "page") + "?name=" + _wikiProps.name;
+            else
+                return LABKEY.ActionURL.buildURL("project", "begin");
+        }
+        else
+            return _redirUrl;
     }
 
     function gatherProps()
