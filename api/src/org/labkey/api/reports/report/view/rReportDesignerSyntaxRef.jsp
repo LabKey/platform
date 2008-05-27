@@ -53,7 +53,8 @@
             <td>A TSV text file that is displayed on LabKey Server as a Section within a View.  No downloadable
                 file is created.  For example:<br/>
         <pre>
-        write.table(labkey.data, file = "<%="${tsvout:tsvfile}"%>", sep = "\t", qmethod = "double", col.names=NA)
+        write.table(labkey.data, file = "<%="${tsvout:tsvfile}"%>", sep = "\t",
+            qmethod = "double", col.names=NA)
         </pre>
             </td></tr>
         <tr><td class="ms-searchform">txtout:&lt;name&gt;</td>
@@ -89,7 +90,8 @@
             <td>A text output file that can be downloaded from the LabKey Server.  For example, use <code>fileout</code>
                 in the place of tsvout to print a table to a downloadable file:<br/>
         <pre>
-        write.table(labkey.data, file = "<%="${fileout:tsvfile}"%>", sep = "\t", qmethod = "double", col.names=NA)
+        write.table(labkey.data, file = "<%="${fileout:tsvfile}"%>", sep = "\t",
+            qmethod = "double", col.names=NA)
         </pre>
             </td></tr>
         <tr><td class="ms-searchform">htmlout:&lt;name&gt;</td>
@@ -97,11 +99,42 @@
                 from the <code>txtout:</code> replacement in that no html escaping is done. This is useful when
                 you have a report that produces html output. No downloadable file is created:
         <pre>
-        txt <- paste("&lt;i&gt;Click on the link to visit LabKey:&lt;/i&gt;&lt;a target='blank' href='http://www.labkey.org'&gt;LabKey&lt;/a&gt;")
+        txt <- paste("&lt;i&gt;Click on the link to visit LabKey:&lt;/i&gt;
+            &lt;a target='blank' href='http://www.labkey.org'&gt;LabKey&lt;/a&gt;")
         capture.output(txt, file="<%="${htmlout:output}"%>")
         </pre>
             </td></tr>
     </table></td></tr>
+
+    <tr><td>&nbsp;</td></tr>
+    <tr><td><i>Each R script contains implicit variables that are inserted before your source script. Implicit variables
+        are R data types and may contain information that can be used by the source script.</i></td></tr>
+    <tr><td>&nbsp;</td></tr>
+    <tr><td><i>Implicit Variables:</i></td></tr>
+    <tr><td><table id="implicitVariables">
+        <tr><td class="ms-searchform">labkey.data</td>
+            <td>The data frame which the input dataset is automatically read into. The code to generate the
+                data frame is: <br/>
+            <pre>
+        labkey.data <- read.table("<%="${input_data}"%>", header=TRUE, sep="\t",
+            quote="", comment.char="")
+            </pre></td></tr>
+        <tr><td class="ms-searchform">labkey.url.path</td>
+            <td>The path portion of the current URL which omits the base context path, action and URL parameters. 
+                The path portion of the URL:
+                <code>http://localhost:8080/labkey/study/home/test/begin.view</code> would be:
+                <code>/home/test/</code></td></tr>
+        <tr><td class="ms-searchform">labkey.url.base</td>
+            <td>The base portion of the current URL. The base portion of the URL:
+                <code>http://localhost:8080/labkey/study/home/test/begin.view</code> would be:
+                <code>http://localhost:8080/labkey/</code></td></tr>
+        <tr><td class="ms-searchform">labkey.url.params</td>
+            <td>The list of parameters on the current URL. The parameters are represented as a list of key /
+                value pairs.</td></tr>
+        <tr><td class="ms-searchform">labkey.user.email</td>
+            <td>The email address of the current user</td></tr>
+    </table></td></tr>
+
     <tr><td><i>Documentation and tutorials about the R language can be found at
         the <a target="_blank" href="http://www.r-project.org/">R Project website</a>.</i>
     </tr>
