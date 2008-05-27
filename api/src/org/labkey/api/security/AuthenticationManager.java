@@ -66,7 +66,7 @@ public class AuthenticationManager
     public enum Priority { High, Low }
 
     // TODO: Replace this with a generic domain-claiming mechanism
-    public static String _ldapDomain = "";
+    public static String _ldapDomain = null;
 
     public static String getLdapDomain()
     {
@@ -75,7 +75,7 @@ public class AuthenticationManager
 
     public static void setLdapDomain(String ldapDomain)
     {
-        _ldapDomain = ldapDomain;
+        _ldapDomain = StringUtils.trimToNull(ldapDomain);
     }
 
     public interface LoginURLFactory
