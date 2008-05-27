@@ -292,6 +292,7 @@ public class AssayPanel extends Composite
                 else
                 {
                     ghostAssayDefinition = assayDef;
+                    designer.setDirty(true);
                     externalListeners.fireChange(this);
                 }
 
