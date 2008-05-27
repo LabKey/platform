@@ -162,8 +162,8 @@
 
 %>
     <table>
-        <tr><td class="normal"><a href="javascript:addFilePicker('filePickerTable','filePickerLink')" id="filePickerLink"><img src="<%=context.getRequest().getContextPath()%>/_images/paperclip.gif">Attach a file</a></td></tr>
         <tr><td class="normal"><table id="filePickerTable"></table></td></tr>
+        <tr><td class="normal"><a href="javascript:addFilePicker('filePickerTable','filePickerLink')" id="filePickerLink"><img src="<%=context.getRequest().getContextPath()%>/_images/paperclip.gif">Attach a file</a></td></tr>
     </table>
 <%
     if (bean.getCallbackURL() != null)
