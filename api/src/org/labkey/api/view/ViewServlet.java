@@ -365,8 +365,14 @@ public class ViewServlet extends HttpServlet
         if (!path.startsWith("/"))
             path = "/" + path;
         Container c = ContainerManager.getForPath(path);
+
+        // We support two types of permanent link encoding for containers:
+        // 1) for backwards compatibility, long container ids (37 chars long, including the first "/"
+        // 2) shorter row ids, starting with "/__r".
         if (null == c && path.length()==37)
             c = ContainerManager.getForId(path.substring(1));
+        if (null == c && path.startsWith("/__r"))
+            c = ContainerManager.getForRowId(path.substring(4));
         if (null == c)
         {
             c = ContainerManager.getForPathAlias(path);

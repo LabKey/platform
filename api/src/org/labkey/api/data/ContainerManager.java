@@ -315,6 +315,24 @@ public class ContainerManager
         return null;
     }
 
+    public static Container getForRowId(String id)
+    {
+        try
+        {
+            Container[] ret = Table.executeQuery(
+                    core.getSchema(),
+                    "SELECT * FROM " + core.getTableInfoContainers() + " WHERE RowId = ?",
+                    new Object[]{id}, Container.class);
+            if (ret == null || ret.length == 0)
+                return null;
+            return ret[0];
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
     
     public static Container getForId(String id)
     {
