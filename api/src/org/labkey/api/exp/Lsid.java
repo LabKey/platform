@@ -47,6 +47,7 @@ public class Lsid
     private String prefix;
     private String suffix;
 
+    /** Assume a fully qualified, correctly encoded LSID */
     public Lsid(String lsid)
     {
         src = lsid;
@@ -64,6 +65,7 @@ public class Lsid
         resetPrefix();
     }
 
+    /** Assumes that the separate parts are not encoded  */
     public Lsid(String namespace, String objectId)
     {
         valid = true;
@@ -73,6 +75,7 @@ public class Lsid
         resetPrefix();
     }
 
+    /** Assumes that the separate parts are not encoded  */
     public Lsid(String namespacePrefix, String namespaceSuffix, String objectId)
     {
         valid = true;

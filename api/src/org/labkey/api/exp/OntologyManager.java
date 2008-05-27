@@ -912,7 +912,7 @@ public class OntologyManager
 
             // this method makes sure I'm not getting rid of descriptors used by another folder
             // it is shared by ContainerDelete
-              copyDescriptors(c, oldProject);
+            copyDescriptors(c, oldProject);
 
             // if my objects refer to project-scoped properties I need a copy of those properties
             sql = " SELECT O.ObjectURI, PD.PropertyURI, PD.PropertyId  " +
@@ -2226,7 +2226,7 @@ public class OntologyManager
 
             proj1 = ContainerManager.ensureContainer("/");
             proj2 = ContainerManager.ensureContainer("/_ontMgrTestP2");
-           doMoveTest(proj1, proj2);
+            doMoveTest(proj1, proj2);
             deleteMoveTestContainers();
 
             proj1 = ContainerManager.ensureContainer("/_ontMgrTestP1");
@@ -2257,13 +2257,13 @@ public class OntologyManager
             String p = fldr1a.getProject().getPath();
             String f = fldr1a.getPath();
             String propId = f + "PD1";
-             assertNull(OntologyManager.getPropertyDescriptor(propId, proj2));
+            assertNull(OntologyManager.getPropertyDescriptor(propId, proj2));
             ContainerManager.move(fldr1a, proj2);
 
             // if demoting a folder
             if (proj1.getPath().equals("/") )
             {
-                    assertNotNull(OntologyManager.getPropertyDescriptor(propId, proj2));
+                assertNotNull(OntologyManager.getPropertyDescriptor(propId, proj2));
 
                 propId = f + "PD2";
                 assertNotNull(OntologyManager.getPropertyDescriptor(propId, proj2));
@@ -2277,7 +2277,7 @@ public class OntologyManager
                 domId = f + "DD2";
                 assertNotNull(OntologyManager.getDomainDescriptor(domId, proj2));
             }
-            // if promotoing a folder,
+            // if promoting a folder,
             else if(proj2.getPath().equals("/"))
             {
                 assertNotNull(OntologyManager.getPropertyDescriptor(propId, proj1));

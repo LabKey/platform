@@ -148,7 +148,15 @@ public class NavTreeMenu extends WebPartView implements Collapsible
 
         if (level > 0)
         {
-            out.printf("<tr class=\"%s\"><td style=\"padding-top: 0.5em;text-align:right\">\n", nav.getCanCollapse() ? "header" : "");
+            if (nav.getCanCollapse())
+            {
+                out.print("<tr class=\"header\"");
+            }
+            else
+            {
+                out.print("<tr>");
+            }
+            out.print("<td class=\"navTreeNode\">\n");
 
             if (hasChildren)
             {
@@ -161,18 +169,22 @@ public class NavTreeMenu extends WebPartView implements Collapsible
                         filter(expandCollapseUrl.getLocalURIString()),
                         "true");
 
-                out.printf("<img border=\"0\" src=\"%s/_images/%s\"></a>", context.getContextPath(), image);
+                out.printf("<img src=\"%s/_images/%s\"></a>", context.getContextPath(), image);
             }
             else if (indentForExpansionGifs)
-                out.printf("<img border=\"0\" width=\"9\" src=\"%s/_.gif\">", context.getContextPath());
+                out.printf("<div class=\"navTreeIndenter\">");
 
-            out.printf("</td><td style=\"padding: 3px; width: 100%%\">\n");
+            out.printf("</td><td class=\"navTreeText\">\n");
 
             if (null == link)
                 out.print(filter(nav.getKey()));
             else
             {
-                out.printf("<a href=\"%s\" style=\"%s\"", filter(link), selected ? "font-weight:bold;font-style:italic" : "");
+                out.printf("<a href=\"%s\"", filter(link));
+                if (selected)
+                {
+                    out.printf(" style=\"%s\"", "font-weight:bold;font-style:italic");
+                }
                 if (null != nav.getScript())
                 {
                     out.print(" onclick=\"");
@@ -183,7 +195,7 @@ public class NavTreeMenu extends WebPartView implements Collapsible
                 out.print(filter(nav.getKey()));
                 out.print("</a>");
                 if (selected)
-                    out.printf("&nbsp;<img border=0 src=\"%s/_images/square.gif\">", context.getContextPath());
+                    out.printf("&nbsp;<img src=\"%s/_images/square.gif\">", context.getContextPath());
 
             }
 
@@ -198,7 +210,7 @@ public class NavTreeMenu extends WebPartView implements Collapsible
                 if (element.hasChildren())
                     indentForExpansionGifs = true;
             }
-            out.printf("<tr %s>\n<td></td><td>\n<table cellspacing=\"0\" cellpadding=\"0\" width=\"100%%\">", collapsed ? "style=display:none" : "");
+            out.printf("<tr%s>\n<td></td><td>\n<table class=\"navTreeChild\">", collapsed ? " style=display:none" : "");
             for (NavTree child : nav.getChildren())
                 renderLinks(child, level + 1, pathToHere, rootId, context, out, indentForExpansionGifs);
             out.println("</table>\n</td></tr>");

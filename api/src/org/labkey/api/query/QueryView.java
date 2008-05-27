@@ -356,7 +356,7 @@ public class QueryView extends WebPartView<Object>
                 {
                     ActionURL expandedURL = PageFlowUtil.expandLastFilter(getViewContext());
                     expandedURL.addParameter("exportType", "excelWebQuery");
-                    ret.addParameter("exportRegion", getDataRegionName());
+                    expandedURL.addParameter("exportRegion", getDataRegionName());
                     ret.addParameter("queryViewActionURL", expandedURL.getLocalURIString());
                     break;
                 }
