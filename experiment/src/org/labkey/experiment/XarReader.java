@@ -33,6 +33,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.experiment.api.*;
 import org.labkey.experiment.api.property.DomainImpl;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
@@ -134,9 +135,7 @@ public class XarReader extends AbstractXarImporter
                 if (null != fos)
                     fos.close();
             }
-            catch (IOException ioe)
-            {
-            }
+            catch (IOException ioe) {}
         }
     }
 
@@ -209,9 +208,9 @@ public class XarReader extends AbstractXarImporter
 
             ExperimentArchiveType.ExperimentRuns experimentRuns = _experimentArchive.getExperimentRuns();
             // Start by clearing out existing things that we're going to be importing
-            if (deleteExistingRuns && experimentRuns != null)
+            if (experimentRuns != null)
             {
-                deleteExistingExperimentRuns(experimentRuns);
+                deleteExistingExperimentRuns(experimentRuns, deleteExistingRuns);
             }
 
             ExperimentArchiveType.ProtocolActionDefinitions actionDefs = _experimentArchive.getProtocolActionDefinitions();
@@ -518,7 +517,7 @@ public class XarReader extends AbstractXarImporter
         }
     }
 
-    private void deleteExistingExperimentRuns(ExperimentArchiveType.ExperimentRuns experimentRuns) throws SQLException, ExperimentException
+    private void deleteExistingExperimentRuns(ExperimentArchiveType.ExperimentRuns experimentRuns, boolean deleteExistingRuns) throws SQLException, ExperimentException
     {
         for (ExperimentRunType experimentRun : experimentRuns.getExperimentRunArray())
         {
@@ -526,7 +525,7 @@ public class XarReader extends AbstractXarImporter
 
             // Clear out any existing runs with the same LSID
             ExpRun existingRun = ExperimentService.get().getExpRun(runLSID);
-            if (existingRun != null)
+            if (existingRun != null && (deleteExistingRuns || !PageFlowUtil.nullSafeEquals(existingRun.getFilePathRoot(), _xarSource.getRoot().getPath())))
             {
                 _log.info("Deleting existing experiment run with LSID'" + runLSID + "' so that the run specified in the file can be uploaded");
                 ExperimentService.get().deleteExperimentRunsByRowIds(_container, getUser(), existingRun.getRowId());

@@ -462,6 +462,31 @@ BODY, DIV, TD, .normal, .normal td, .normal th, .wiki, .wiki-table td, .wiki-tab
     padding-right:4px;
     }
 
+.navTreeNode
+    {
+    padding-top: 0.5em;
+    text-align:right;
+    }
+
+.navTreeText
+    {
+        padding: 3px;
+        width: 100%;
+    }
+
+.navTreeChild
+    {
+        border-collapse: collapse;
+        padding: 0px;
+        width: 100%;
+    }
+
+.navTreeIndenter
+    {
+        width: 9px;
+        src: <%= AppProps.getInstance().getContextPath()%>/_.gif;
+    }
+
 .wiki ul
     {
     list-style-image : url(../_images/square.gif);

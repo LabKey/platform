@@ -431,6 +431,7 @@ experiment/src/META-INF/experiment/scripts/postgresql/exp-2.30-8.10.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-2.31-2.32.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-2.32-2.33.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-2.33-2.34.sql -text
+experiment/src/META-INF/experiment/scripts/postgresql/exp-8.10-8.11.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp_drop.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/findOrphans.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/obsolete/exp-0.00-0.63.sql -text
@@ -494,6 +495,7 @@ experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-2.30-8.10.sql -te
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-2.31-2.32.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-2.32-2.33.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-2.33-2.34.sql -text
+experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.10-8.11.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp_drop.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/findOrphans.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/obsolete/exp-0.00-0.60.sql -text
