@@ -84,8 +84,6 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
 
         if (study != null)
         {
-            datasets.add(new GWTPair("All Datasets", Integer.toString(ReportManager.ALL_DATASETS)));
-
             for (DataSetDefinition def : StudyManager.getInstance().getDataSetDefinitions(study))
             {
                 datasets.add(new GWTPair(def.getLabel(), Integer.toString(def.getDataSetId())));

@@ -125,10 +125,6 @@
 
         <td>Add as Custom View For:
             <select id="datasetSelection" name="showWithDataset">
-<%--
-            <option value="0">Views and Reports Web Part</option>
---%>
-            <option value="<%=ReportManager.ALL_DATASETS%>">All Datasets</option>
 <%
         for (DataSetDefinition def : defs)
         {
