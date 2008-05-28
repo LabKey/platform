@@ -114,6 +114,7 @@
         <%=h(comment.getCreatedByName(context))%>
         </b></td></tr></table>
         <%=comment.getComment()%>
+        <%=bean.renderAttachments(context, comment)%>
 <%
         }
 %>
