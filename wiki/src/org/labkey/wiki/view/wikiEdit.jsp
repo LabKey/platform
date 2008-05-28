@@ -389,6 +389,7 @@
     function onError(response)
     {
         _doingSave = false;
+        _finished = false;
         //parse the response JSON
         var respJson = Ext.util.JSON.decode(response.responseText);
         if(respJson.exception)
@@ -476,7 +477,7 @@
     {
         var elem = Ext.get(_idPrefix + propName)
         if(elem)
-            elem.dom.value = propValue;
+            elem.dom.value = null == propValue ? "" : propValue;
     }
 
     function setError(msg)
