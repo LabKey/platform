@@ -40,6 +40,17 @@ public class Entity implements java.io.Serializable, Ownable
     private String containerId;
 
 
+    protected void copyTo(Entity to)
+    {
+        to.entityId = entityId;
+        to.createdBy = createdBy;
+        to.created = created;
+        to.modifiedBy = modifiedBy;
+        to.modified = modified;
+        to.containerId = containerId;
+    }
+
+
     public void beforeSave(User user, String containerId)
     {
         if (created == 0)
