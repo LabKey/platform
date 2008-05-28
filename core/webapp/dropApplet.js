@@ -159,28 +159,31 @@ function _updateDropUI()
                 var percent = dropApplet.transfer_getPercent(i);
                 var state = dropApplet.transfer_getState(i);
                 var status = dropApplet.transfer_getStatus(i);
-                var tdStatus = transfers[i].tdStatus;
-                if (state == INFO && percent > 0 && percent < 100)
+                if ("tdStatus" in transfers[i] && transfers[i].tdStatus)
                 {
-                    if (percent != transfers[i].percent)
+                    var tdStatus = transfers[i].tdStatus;
+                    if (state == INFO && percent > 0 && percent < 100)
                     {
-                        var img = tdStatus.getElementsByTagName("IMG");
-                        if (img && img[0] && img[1])
+                        if (percent != transfers[i].percent)
                         {
-                            img[0].style.width = "" + (2*percent) + "px"
-                            img[1].style.width = "" + (2*(100-percent)) + "px"
+                            var img = tdStatus.getElementsByTagName("IMG");
+                            if (img && img[0] && img[1])
+                            {
+                                img[0].style.width = "" + (2*percent) + "px"
+                                img[1].style.width = "" + (2*(100-percent)) + "px"
+                            }
+                            else
+                                tdStatus.innerHTML = "<img src='_.gif' style='background:black; width:" + (2*percent) + "; height:5; border:solid 1px black;'><img src='_.gif' style='background;#202020; width:" + (2*(100-percent)) + "; height:5; border:solid 1px black;'>";
                         }
-                        else
-                            tdStatus.innerHTML = "<img src='_.gif' style='background:black; width:" + (2*percent) + "; height:5; border:solid 1px black;'><img src='_.gif' style='background;#202020; width:" + (2*(100-percent)) + "; height:5; border:solid 1px black;'>";
                     }
-                }
-                else
-                {
-                    if (status != transfers[i].status || state != transfers[i].state)
+                    else
                     {
-                        removeChildren(tdStatus);
-                        tdStatus.style.color = state == FAIL ? "red" : state==SUCCESS ? "green" : "#000000";
-                        tdStatus.appendChild(_text(status));
+                        if (status != transfers[i].status || state != transfers[i].state)
+                        {
+                            removeChildren(tdStatus);
+                            tdStatus.style.color = state == FAIL ? "red" : state==SUCCESS ? "green" : "#000000";
+                            tdStatus.appendChild(_text(status));
+                        }
                     }
                 }
                 t = transfers[i];
