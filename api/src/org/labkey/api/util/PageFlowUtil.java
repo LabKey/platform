@@ -852,6 +852,7 @@ public class PageFlowUtil
 
         try
         {
+            // TODO: use FileUtils.copyData()
             s = new FileInputStream(file);
 
             prepareResponseForFile(response, responseHeaders, file.getName(), length, asAttachment);
@@ -886,7 +887,7 @@ public class PageFlowUtil
     }
 
     // Fetch the contents of a text file, and return it in a String.
-    // TODO: Use getStreamContentsAsStream()
+    // TODO: Use IOUtils.toString()
     public static String getFileContentsAsString(File aFile)
     {
         StringBuffer contents = new StringBuffer();
@@ -962,6 +963,7 @@ public class PageFlowUtil
 
 
     // Fetch the contents of an input stream, and return in a String.
+    // TODO: use IOUtils.toString()
     public static String getStreamContentsAsString(InputStream is)
     {
         StringBuffer contents = new StringBuffer();
