@@ -163,6 +163,10 @@ public class JunitController extends SpringActionController
             {
                 for (Class<? extends TestCase> clazz : testCases.get(module))
                 {
+                    // check if the client has gone away
+                    getViewContext().getResponse().getWriter().print(" ");
+                    getViewContext().getResponse().flushBuffer();
+                    // run test
                     if (null == testCase || testCase.equals(clazz.getName()))
                         _run(clazz, result);
                 }
