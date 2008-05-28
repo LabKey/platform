@@ -643,7 +643,9 @@ public class AuthenticationManager
     public static class LinkFactory
     {
         private final String NO_LOGO = "NO_LOGO";
-        private Matcher _redirectURLMatcher;
+        private boolean _isFixedURL;
+        private String _urlPrefix = null;
+        private String _urlSuffix = null;
         private String _name;
 
         // Need to check the attachments service to see if logo exists... use map to check this once and cache result
@@ -652,7 +654,19 @@ public class AuthenticationManager
         private LinkFactory(String redirectUrl, String name)
         {
             _name = name;
-            _redirectURLMatcher = Pattern.compile("%returnURL%", Pattern.CASE_INSENSITIVE).matcher(redirectUrl);
+            Matcher matcher = Pattern.compile("%returnURL%", Pattern.CASE_INSENSITIVE).matcher(redirectUrl);
+
+            _isFixedURL = !matcher.find();
+
+            if (_isFixedURL)
+            {
+                _urlPrefix = redirectUrl;
+            }
+            else
+            {
+                _urlPrefix = redirectUrl.substring(0, matcher.start());
+                _urlSuffix = redirectUrl.substring(matcher.end(), redirectUrl.length());
+            }
         }
 
         private String getLink(ActionURL returnURL, String prefix)
@@ -667,8 +681,15 @@ public class AuthenticationManager
 
         public String getURL(ActionURL returnURL)
         {
-            ActionURL loginUrl = getLoginURL(returnURL);
-            return _redirectURLMatcher.replaceFirst(PageFlowUtil.encode(loginUrl.getURIString()));
+            if (_isFixedURL)
+            {
+                return _urlPrefix;
+            }
+            else
+            {
+                String encodedReturnURL = PageFlowUtil.encode(getLoginURL(returnURL).getURIString());
+                return _urlPrefix + encodedReturnURL + _urlSuffix;
+            }
         }
 
         private String getImg(String prefix)
