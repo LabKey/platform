@@ -50,11 +50,11 @@
     for (CustomView cv : bean.getViews().values())
     {
         String customViewName = cv.getName() != null ? cv.getName() : "";
-        views.put(cv.getName(), "value=\"?Issues.viewName=" + h(customViewName) + "\" " + (customViewName.equals(viewName) ? "selected" : ""));
+        views.put(cv.getName(), "value=\"?Issues.viewName=" + h(PageFlowUtil.encode(customViewName)) + "\" " + (customViewName.equals(viewName) ? "selected" : ""));
     }
     for (Map.Entry<String, String> entry : bean.getReports().entrySet())
     {
-        views.put(entry.getValue(), "value=\"?Issues.viewName=" + h(entry.getKey()) + "\" " + (entry.getKey().equals(viewName) ? "selected" : ""));
+        views.put(entry.getValue(), "value=\"?Issues.viewName=" + h(PageFlowUtil.encode(entry.getKey())) + "\" " + (entry.getKey().equals(viewName) ? "selected" : ""));
     }
 %>
 
