@@ -16,12 +16,26 @@
 
 package org.labkey.api.util;
 
+import org.apache.log4j.Logger;
+import org.labkey.api.audit.AuditLogEvent;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.IPropertyType;
+import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.ChangePropertyDescriptorException;
+import org.labkey.api.security.User;
 
-import java.sql.SQLException;
-import java.util.Map;
-import java.util.Date;
 import java.net.URISyntaxException;
+import java.sql.SQLException;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * User: jeckels
@@ -29,16 +43,26 @@ import java.net.URISyntaxException;
  */
 public class WriteableAppProps extends AppProps
 {
+    public final static String AUDIT_EVENT_TYPE = "AppPropsEvent";
+    public final static String AUDIT_PROP_DIFF = "AppPropsDiff";
+
     private final PropertyManager.PropertyMap _properties;
+    private final PropertyManager.PropertyMap _oldProps;
 
     public WriteableAppProps() throws SQLException
     {
         _properties = PropertyManager.getWritableSiteConfigProperties();
+        _oldProps = PropertyManager.getWritableSiteConfigProperties();
     }
 
-    protected Map getProperties()
+    protected Map<String, String> getProperties()
     {
         return _properties;
+    }
+
+    public Map<String,String> getOldProperties()
+    {
+        return _oldProps;
     }
 
     public void setAdminOnlyMessage(String adminOnlyMessage)
@@ -274,5 +298,88 @@ public class WriteableAppProps extends AppProps
     public void setMicroarrayFeatureExtractionServer(String name)
     {
         storeStringValue(MICROARRAY_FEATURE_EXTRACTION_SERVER_PROP, name);
+    }
+
+    public void writeAuditLogEvent(User user, Map<String,String> oldProps)
+    {
+        String diff = genDiffHtml(oldProps);
+        if(null != diff)
+        {
+            String domainUri = ensureAuditLogDomainAndProps(user);
+            AuditLogEvent event = new AuditLogEvent();
+            event.setCreatedBy(user.getUserId());
+            event.setComment("The site settings were changed (see details).");
+            event.setEventType(AUDIT_EVENT_TYPE);
+
+            Map<String,Object> map = new HashMap<String,Object>();
+            map.put(AUDIT_PROP_DIFF, diff);
+
+            AuditLogService.get().addEvent(event, map, domainUri);
+        }
+    }
+
+    public String genDiffHtml(Map<String,String> oldProps)
+    {
+        //since this is a fixed membership map, we just need to run
+        //one of the map's keys and compare values, noting what has changed
+        boolean propsChanged = false;
+        StringBuilder html = new StringBuilder("<table>");
+
+        for(String key : _properties.keySet())
+        {
+            if(key.equals("logoRevision"))
+                continue;
+
+            if(!(_properties.get(key).equalsIgnoreCase(oldProps.get(key))))
+            {
+                propsChanged = true;
+                html.append("<tr><td class='ms-searchform'>");
+                html.append(ColumnInfo.captionFromName(key));
+                html.append("</td><td>");
+                html.append(oldProps.get(key));
+                html.append("&nbsp;&raquo;&nbsp;");
+                html.append(_properties.get(key));
+                html.append("</td></tr>");
+            }
+        }
+
+        html.append("</html>");
+
+        return propsChanged ? html.toString() : null;
+    }
+
+    protected String ensureAuditLogDomainAndProps(User user)
+    {
+        AuditLogService.I svc = AuditLogService.get();
+        String domainUri = svc.getDomainURI(AUDIT_EVENT_TYPE);
+        Container c = ContainerManager.getSharedContainer();
+
+        try
+        {
+            Domain domain = PropertyService.get().getDomain(c, domainUri);
+            //if domain has not yet been created, create it
+            if (domain == null)
+            {
+                domain = PropertyService.get().createDomain(c, domainUri, AUDIT_EVENT_TYPE + "Domain");
+                domain.save(user);
+                domain = PropertyService.get().getDomain(c, domainUri);
+            }
+
+            //if diff property has not yet been created, create it
+            if(null == domain.getPropertyByName(AUDIT_PROP_DIFF))
+            {
+                DomainProperty prop = domain.addProperty();
+                prop.setType(PropertyService.get().getType(c, PropertyType.STRING.getXmlName()));
+                prop.setName(AUDIT_PROP_DIFF);
+                prop.setPropertyURI(AuditLogService.get().getPropertyURI(AUDIT_EVENT_TYPE, AUDIT_PROP_DIFF));
+                domain.save(user);
+            }
+        }
+        catch (ChangePropertyDescriptorException e)
+        {
+            Logger.getLogger(WriteableAppProps.class).error(e);
+        }
+
+        return domainUri;
     }
 }

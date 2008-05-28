@@ -135,7 +135,7 @@ public class AppProps
         }
     }
 
-    protected Map getProperties() throws SQLException
+    protected Map<String, String> getProperties() throws SQLException
     {
         return PropertyManager.getSiteConfigProperties();
     }
