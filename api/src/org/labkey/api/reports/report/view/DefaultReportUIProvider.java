@@ -30,4 +30,9 @@ public class DefaultReportUIProvider implements ReportService.UIProvider
     public void getReportDesignURL(ViewContext context, QuerySettings settings, Map<String, String> designers)
     {
     }
+
+    public String getReportIcon(ViewContext context, String reportType)
+    {
+        return null;
+    }
 }

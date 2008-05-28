@@ -75,9 +75,20 @@ public class MenuButton extends ActionButton
 
     public void addMenuItem(String caption, String url, String onClickScript, boolean checked)
     {
+        addMenuItem(caption, url, onClickScript, checked, false);
+    }
+
+    public void addMenuItem(String caption, boolean checked, boolean disabled)
+    {
+        addMenuItem(caption, null, null, checked, disabled);    
+    }
+
+    protected void addMenuItem(String caption, String url, String onClickScript, boolean checked, boolean disabled)
+    {
         NavTree menuItem = new NavTree(caption, url);
         menuItem.setScript(onClickScript);
         menuItem.setSelected(checked);
+        menuItem.setDisabled(disabled);
         popupMenu.getNavTree().addChild(menuItem);
     }
 }

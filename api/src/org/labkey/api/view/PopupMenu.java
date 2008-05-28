@@ -138,6 +138,8 @@ public class PopupMenu
                 sb.append(", checked:true");
             if (null != tree.getImageSrc())
                 sb.append(", icon:").append(PageFlowUtil.jsString(tree.getImageSrc()));
+            if (tree.isDisabled())
+                sb.append(", disabled:true");
             if (null != tree.getValue())
                 sb.append(",").append("href:").append(PageFlowUtil.jsString(tree.getValue()));
             if (null != tree.getScript())

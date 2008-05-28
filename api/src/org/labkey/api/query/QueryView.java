@@ -650,7 +650,7 @@ public class QueryView extends WebPartView<Object>
         NavTree menu = button.getNavTree();
 
         // default grid view stays at the top level
-        addChild(menu, "default", "", target, current);
+        addChild(menu, "default", "", target, current, getViewContext().getContextPath() + "/reports/grid.gif");
 
         // existing views
         addCustomViews(menu, target, current);
@@ -680,17 +680,19 @@ public class QueryView extends WebPartView<Object>
         addCustomizeViewItems(button);
         if (_report != null)
             button.addMenuItem("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getViewContext().getContainer()));
+        else
+            button.addMenuItem("Manage Views", false, true);
 
         return button;
     }
 
-    private void addChild(NavTree menu, String label, String paramValue, ActionURL url, String currentView)
+    private void addChild(NavTree menu, String label, String paramValue, ActionURL url, String currentView, String iconPath)
     {
         NavTree item = menu.addChild(label, url.replaceParameter(param(QueryParam.viewName), paramValue).getLocalURIString());
         if (paramValue.equals(currentView))
             item.setSelected(true);
-        //else
-        //    item.setImageSrc(getViewContext().getContextPath() + "/_images/beta.gif");
+        else
+            item.setImageSrc(iconPath);
     }
 
     protected void addCustomViews(NavTree menu, ActionURL target, String currentView)
@@ -709,7 +711,7 @@ public class QueryView extends WebPartView<Object>
                 subMenu = menu;
                 //subMenu = menu.addChild("Custom Views");
 
-            addChild(subMenu, label, label, target, currentView);
+            addChild(subMenu, label, label, target, currentView, getViewContext().getContextPath() + "/reports/grid.gif");
         }
     }
 
@@ -733,7 +735,8 @@ public class QueryView extends WebPartView<Object>
                 if (subMenu == null)
                     subMenu = menu; //menu.addChild(report.getTypeDescription());
 
-                addChild(subMenu, report.getDescriptor().getReportName(), QueryView.REPORTID_PARAM + report.getDescriptor().getReportId(), target, currentView);
+                addChild(subMenu, report.getDescriptor().getReportName(), QueryView.REPORTID_PARAM + report.getDescriptor().getReportId(),
+                        target, currentView, ReportService.get().getReportIcon(getViewContext(), report.getType()));
             }
         }
     }

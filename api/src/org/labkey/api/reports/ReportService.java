@@ -94,6 +94,8 @@ public class ReportService
         public List<UIProvider> getUIProviders();
 
         public Report createFromQueryString(String queryString) throws Exception;
+
+        public String getReportIcon(ViewContext context, String reportType);
     }
 
     public interface ViewFactory
@@ -109,6 +111,11 @@ public class ReportService
          * report.
          */
         public void getReportDesignURL(ViewContext context, QuerySettings settings, Map<String, String> designers);
+
+        /**
+         * Returns the icon path to display for the specified report type
+         */
+        public String getReportIcon(ViewContext context, String reportType);
     }
 
     public interface ItemFilter

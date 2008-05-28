@@ -93,9 +93,9 @@ public class QueryReport extends AbstractReport
                                 }
                                 qs.setViewName(viewName);
                                 //ReportQueryView queryReportView = new ReportQueryView(context, schema, qs);
-                                JspView<HeaderBean> headerView = new JspView<HeaderBean>("/org/labkey/query/reports/view/queryReportHeader.jsp",
-                                        new HeaderBean(context, qv.getCustomizeURL()));
-                                return new VBox(headerView, qv);
+                                //JspView<HeaderBean> headerView = new JspView<HeaderBean>("/org/labkey/query/reports/view/queryReportHeader.jsp",
+                                //        new HeaderBean(context, qv.getCustomizeURL()));
+                                return qv;
                             }
                             else
                             {

@@ -31,6 +31,7 @@ public class NavTree extends Pair<String, String> implements Collapsible
     private boolean _canCollapse = true;
     private String _script;
     private String _id = "";
+    private boolean _disabled;
 
     private ArrayList<NavTree> children = null;
 
@@ -277,6 +278,16 @@ public class NavTree extends Pair<String, String> implements Collapsible
     public void setScript(String script)
     {
         _script = script;
+    }
+
+    public boolean isDisabled()
+    {
+        return _disabled;
+    }
+
+    public void setDisabled(boolean disabled)
+    {
+        _disabled = disabled;
     }
 }
 
