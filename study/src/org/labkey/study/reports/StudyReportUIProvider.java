@@ -21,6 +21,7 @@ import org.labkey.api.reports.report.view.ChartUtil;
 import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.RReport;
+import org.labkey.api.reports.Report;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.query.QuerySettings;
@@ -78,5 +79,16 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
             buttonURL.setAction(ReportsController.ExternalReportAction.class);
             designers.put(ExternalReport.TYPE, buttonURL.getLocalURIString());
         }
+    }
+
+    public String getReportIcon(ViewContext context, String reportType)
+    {
+        if (StudyRReport.TYPE.equals(reportType))
+            return context.getContextPath() + "/reports/r.gif";
+        if (ChartReportView.TYPE.equals(reportType))
+            return context.getContextPath() + "/reports/chart.gif";
+        if (StudyQueryReport.TYPE.equals(reportType))
+            return context.getContextPath() + "/reports/grid.gif";
+        return super.getReportIcon(context, reportType);
     }
 }

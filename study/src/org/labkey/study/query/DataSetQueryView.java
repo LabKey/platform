@@ -247,7 +247,10 @@ public class DataSetQueryView extends QueryView
 
     protected void populateReportButtonBar(ButtonBar bar)
     {
-        bar.add(createViewButton(ReportService.EMPTY_ITEM_LIST));
-        bar.add(createPrintButton());
+        MenuButton button = createViewButton(ReportService.EMPTY_ITEM_LIST);
+        button.addMenuItem("Set Default View", getViewContext().cloneActionURL().setAction(StudyController.ViewPreferencesAction.class));
+
+        bar.add(button);
+        //bar.add(createPrintButton());
     }
 }

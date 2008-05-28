@@ -45,6 +45,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     private static final Logger _log = Logger.getLogger(ReportService.class);
     private static List<ReportService.ViewFactory> _viewFactories = new ArrayList<ReportService.ViewFactory>();
     private static List<ReportService.UIProvider> _uiProviders = new ArrayList<ReportService.UIProvider>();
+    private static Map<String, String> _reportIcons = new HashMap<String, String>();
 
     /** maps descriptor types to providers */
     private final Map<String, Class> _descriptors = new HashMap<String, Class>();
@@ -383,6 +384,23 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     public List<ReportService.UIProvider> getUIProviders()
     {
         return Collections.unmodifiableList(_uiProviders);
+    }
+
+    public String getReportIcon(ViewContext context, String reportType)
+    {
+        if (_reportIcons.containsKey(reportType))
+            return _reportIcons.get(reportType);
+
+        for (ReportService.UIProvider provider : _uiProviders)
+        {
+            String iconPath = provider.getReportIcon(context, reportType);
+            if (iconPath != null)
+            {
+                _reportIcons.put(reportType, iconPath);
+                return iconPath;
+            }
+        }
+        return null;
     }
 
     private static final Report[] EMPTY_REPORT = new Report[0];

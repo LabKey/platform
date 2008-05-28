@@ -60,4 +60,13 @@ public class ReportUIProvider extends DefaultReportUIProvider
         else
             designers.put(RReport.TYPE, "javascript:alert('The R Program has not been configured properly, please request that an administrator configure R in the Admin Console.')");
     }
+
+    public String getReportIcon(ViewContext context, String reportType)
+    {
+        if (RReport.TYPE.equals(reportType))
+            return context.getContextPath() + "/reports/r.gif";
+        if (ChartQueryReport.TYPE.equals(reportType))
+            return context.getContextPath() + "/reports/chart.gif";
+        return super.getReportIcon(context, reportType);
+    }
 }

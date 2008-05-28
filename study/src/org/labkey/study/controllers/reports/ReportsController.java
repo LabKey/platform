@@ -634,9 +634,9 @@ public class ReportsController extends BaseStudyController
             int dataset = form.getShowWithDataset();
             if (dataset != 0)
             {
-                ActionURL url = getViewContext().cloneActionURL();
-                url.setPageFlow("Study").setAction("datasetReport");
-                url.replaceParameter("Dataset.viewName", String.valueOf(_savedReportId));
+                ActionURL url = getViewContext().cloneActionURL().setAction(StudyController.DatasetAction.class).
+                                        replaceParameter("Dataset.viewName", QueryView.REPORTID_PARAM + _savedReportId);
+
                 if (dataset == ReportManager.ALL_DATASETS)
                     url.replaceParameter(DataSetDefinition.DATASETKEY,  String.valueOf(form.getDatasetId()));
                 else
@@ -2063,9 +2063,14 @@ public class ReportsController extends BaseStudyController
 
             _report = getReport(form);
             DataSetDefinition def = getDataSetDefinition();
-            if (def != null)
+            if (def != null && _report != null)
             {
-                view.addView(new DataHeader(getViewContext().getActionURL(), null, getDataSetDefinition(), false));
+                ActionURL url = getViewContext().cloneActionURL().setAction(StudyController.DatasetAction.class).
+                                        replaceParameter("Dataset.viewName", QueryView.REPORTID_PARAM + _report.getDescriptor().getReportId()).
+                                        replaceParameter(DataSetDefinition.DATASETKEY, String.valueOf(def.getDataSetId()));
+
+                return HttpView.redirect(url);
+                //view.addView(new DataHeader(getViewContext().getActionURL(), null, getDataSetDefinition(), false));
             }
 
             if (_report != null)

@@ -45,12 +45,8 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.ChartReportDescriptor;
-import org.labkey.api.reports.report.RReport;
-import org.labkey.api.reports.report.ReportDescriptor;
-import org.labkey.api.reports.report.view.ChartDesignerBean;
-import org.labkey.api.reports.report.view.ChartUtil;
-import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.QueryReport;
+import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.StudyService;
@@ -289,7 +285,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class CohortForm extends ViewForm
+    public static class CohortForm extends QueryViewAction.QueryExportForm
     {
         private Integer _cohortId;
 
@@ -300,14 +296,14 @@ public class StudyController extends BaseStudyController
 
         public void setCohortId(Integer cohortId)
         {
-            if (StudyManager.getInstance().showCohorts(getContainer(), getUser()))
+            if (StudyManager.getInstance().showCohorts(HttpView.currentContext().getContainer(), HttpView.currentContext().getUser()))
                 _cohortId = cohortId;
         }
 
         public Cohort getCohort()
         {
             if (_cohortId != null)
-                return StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), _cohortId.intValue());
+                return StudyManager.getInstance().getCohortForRowId(HttpView.currentContext().getContainer(), HttpView.currentContext().getUser(), _cohortId.intValue());
             else
                 return null;
         }
@@ -388,6 +384,14 @@ public class StudyController extends BaseStudyController
                 HttpView.throwRedirect(createRedirectURLfrom(ReportsController.RunRReportAction.class, context));
                 return null;
             }
+            else if (def != null && reportView != null)
+            {
+                ActionURL url = getViewContext().cloneActionURL().setAction(StudyController.DatasetAction.class).
+                                        replaceParameter("Dataset.viewName", QueryView.REPORTID_PARAM + reportView.getDescriptor().getReportId()).
+                                        replaceParameter(DataSetDefinition.DATASETKEY, String.valueOf(def.getDataSetId()));
+
+                return HttpView.redirect(url);
+            }
 
             _label = new StringBuilder();
             _label.append("Dataset: ");
@@ -454,13 +458,18 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ACL.PERM_READ)
-    public class DatasetAction extends SimpleViewAction<CohortForm>
+    public class DatasetAction extends QueryViewAction<CohortForm, QueryView>
     {
         private Integer _cohortId;
         private int _datasetId;
         private int _visitId;
 
-        public ModelAndView getView(CohortForm form, BindException errors) throws Exception
+        public DatasetAction()
+        {
+            super(CohortForm.class);
+        }
+
+        protected ModelAndView getHtmlView(CohortForm form, BindException errors) throws Exception
         {
             // the full resultset is a join of all datasets for each participant
             // each dataset is determined by a visitid/datasetid
@@ -471,7 +480,7 @@ public class StudyController extends BaseStudyController
             ViewContext context = getViewContext();
             final ActionURL url = context.getActionURL();
 
-            String export = StringUtils.trimToNull((String) context.get("export"));
+            String export = StringUtils.trimToNull(context.getActionURL().getParameter("export"));
             _datasetId = NumberUtils.toInt((String)context.get(DataSetDefinition.DATASETKEY), 0);
             String viewName = (String)context.get("Dataset.viewName");
             final DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, _datasetId);
@@ -511,15 +520,72 @@ public class StudyController extends BaseStudyController
                 queryView.setShowSourceLinks(hasSourceLsids(table));
             }
 
-            List<ActionButton> buttonBar = new ArrayList<ActionButton>();
+            if (null != export)
+            {
+                if ("tsv".equals(export))
+                    queryView.exportToTsv(context.getResponse());
+                else if ("xls".equals(export))
+                    queryView.exportToExcel(context.getResponse());
+                return null;
+            }
 
+            List<ActionButton> buttonBar = new ArrayList<ActionButton>();
+            populateButtonBar(buttonBar, queryView, cohort, visit);
+            queryView.setButtons(buttonBar);
+
+            StringBuffer sb = new StringBuffer();
+            sb.append("<br/><span><b>View :</b> " + getViewName() + "</span>");
+            if (cohort != null)
+                sb.append("<br/><span><b>Cohort :</b> " + cohort.getLabel() + "</span>");
+            HtmlView header = new HtmlView(sb.toString());
+
+            HttpView view = new VBox(header, queryView);
+            if (!def.canRead(getUser()))
+            {
+                view = new HtmlView("User does not have read permission on this dataset.");
+            }
+            return view;
+        }
+
+        protected QueryView createQueryView(CohortForm cohortForm, BindException errors, boolean forExport, String dataRegion) throws Exception
+        {
+            QuerySettings qs = new QuerySettings(getViewContext().getActionURL(), "Dataset");
+            Report report = qs.getReportView(getViewContext());
+            if (report instanceof QueryReport)
+            {
+                return ((QueryReport)report).getQueryViewGenerator().generateQueryView(getViewContext(), report.getDescriptor());
+            }
+            return null;
+        }
+
+        private String getViewName()
+        {
+            String viewName = StringUtils.trimToNull((String)getViewContext().get("Dataset.viewName"));
+
+            if (viewName != null)
+            {
+                if (viewName.startsWith(QueryView.REPORTID_PARAM))
+                {
+                    QuerySettings qs = new QuerySettings(getViewContext().getActionURL(), "Dataset");
+                    Report report = qs.getReportView(getViewContext());
+
+                    if (report != null)
+                        return report.getDescriptor().getReportName();
+                }
+                return viewName;
+            }
+            return "default";
+        }
+
+        private void populateButtonBar(List<ActionButton> buttonBar, DataSetQueryView queryView, Cohort cohort, Visit visit)
+        {
             createViewButton(buttonBar, queryView);
             createCohortButton(buttonBar, cohort);
 
             MenuButton exportMenuButton = new MenuButton("Export");
 
-            exportMenuButton.addMenuItem("Export all to Excel (.xls)", url.getEncodedLocalURIString() + "&amp;export=xls");
-            exportMenuButton.addMenuItem("Export all to text file (.tsv)", url.getEncodedLocalURIString() + "&amp;export=tsv");
+            exportMenuButton.addMenuItem("Export all to Excel (.xls)", getViewContext().cloneActionURL().replaceParameter("export", "xls"));
+            exportMenuButton.addMenuItem("Export all to text file (.tsv)", getViewContext().cloneActionURL().replaceParameter("export", "tsv"));
             exportMenuButton.addMenuItem("Excel Web Query (.iqy)", queryView.urlFor(QueryAction.excelWebQueryDefinition).getLocalURIString());
             buttonBar.add(exportMenuButton);
 
@@ -557,28 +623,6 @@ public class StudyController extends BaseStudyController
             viewSamples.setActionType(ActionButton.Action.GET);
             viewSamples.setDisplayPermission(ACL.PERM_READ);
             buttonBar.add(viewSamples);
-
-            queryView.setButtons(buttonBar);
-
-            if (null != export)
-            {
-                if ("tsv".equals(export))
-                    queryView.exportToTsv(context.getResponse());
-                else if ("xls".equals(export))
-                    queryView.exportToExcel(context.getResponse());
-                return null;
-            }
-/*
-            DataHeader header = new DataHeader(url, queryView.getCustomizeURL(), def, true);
-            header.setShowCohortSelector(true);
-            header.setSelectedCohort(cohort);
-*/
-            HttpView view = new VBox(queryView);
-            if (!def.canRead(getUser()))
-            {
-                view = new HtmlView("User does not have read permission on this dataset.");
-            }
-            return view;
         }
 
         private void createViewButton(List<ActionButton> buttonBar, DataSetQueryView queryView)
@@ -618,71 +662,6 @@ public class StudyController extends BaseStudyController
                     buttonBar.add(button);
                 }
             }
-        }
-
-        private MenuButton getCreateViewButton(DataSetDefinition def, String viewName, Cohort cohort)
-        {
-            MenuButton createViewButton = new MenuButton("Create Views");
-
-            if (!getViewContext().getUser().isGuest() && getViewContext().hasPermission(ACL.PERM_READ))
-            {
-                final List<String> plist = getParticipantListFromCache(getViewContext(), def.getDataSetId(), viewName, cohort);
-                Map<String, String> params = plist.size() > 0 ?
-                        Collections.singletonMap("participantId", plist.get(0)) :
-                        Collections.<String,String>emptyMap();
-
-                ActionURL url = getViewContext().getActionURL().clone();
-                url.setAction(ReportsController.ParticipantCrosstabAction.class);
-                url.addParameters(params);
-                createViewButton.addMenuItem("Crosstab View", url.getLocalURIString());
-            }
-
-            // create chart link
-            ChartDesignerBean chartBean = new ChartDesignerBean();
-
-            chartBean.setReportType(StudyChartQueryReport.TYPE);
-            chartBean.setSchemaName("study");
-            chartBean.setQueryName(def.getLabel());
-            chartBean.setViewName(viewName);
-            chartBean.setDataRegionName("Dataset");
-
-            ActionURL url = ChartUtil.getChartDesignerURL(getViewContext(), chartBean);
-            url.addParameter(DataSetDefinition.DATASETKEY, def.getDataSetId());
-            url.setPageFlow("Study-Reports");
-            //for (Pair<String, String> param : chartBean.getParameters())
-            //    url.addParameter(param.getKey(), param.getValue());
-            createViewButton.addMenuItem("Chart View", url.toString());
-
-            // create R report link
-            RReportBean bean = new RReportBean();
-            bean.setReportType(StudyRReport.TYPE);
-            bean.setSchemaName("study");
-            bean.setQueryName(def.getLabel());
-            bean.setViewName(viewName);
-            bean.setDataRegionName("Dataset");
-
-            bean.setRedirectUrl(getViewContext().getActionURL().toString());
-
-            // todo : refactor CreateChartButton to extend MenuButton so it can be used here instead of
-            // having to duplicate the permissions logic
-            if (RReport.isValidConfiguration())
-            {
-                int perms = RReport.getEditPermissions();
-                if (getViewContext().hasPermission(perms))
-                    createViewButton.addMenuItem("R View", ChartUtil.getRReportDesignerURL(getViewContext(), bean).toString());
-                else
-                    createViewButton.addMenuItem("R View", "javascript:void(0)", "javascript:alert(\"You do not have the required authorization to create R Views.\")");
-            }
-            else
-                createViewButton.addMenuItem("R View", "javascript:void(0)", "javascript:alert(\"The R Program has not been configured properly, please request that an administrator configure R in the Admin Console.\")");
-
-            if (getViewContext().getUser().isAdministrator())
-            {
-                ActionURL buttonURL = getViewContext().getActionURL().clone();
-                buttonURL.setAction(ReportsController.ExternalReportAction.class);
-                createViewButton.addMenuItem("Advanced View", buttonURL.getLocalURIString());
-            }
-            return createViewButton;
         }
 
         public NavTree appendNavTrail(NavTree root)
