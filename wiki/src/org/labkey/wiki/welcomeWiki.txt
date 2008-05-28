@@ -1,46 +1,22 @@
-<p>Welcome to your LabKey Server. LabKey helps researchers collect, analyze, and 
-share data <br>
-from mass spectrometers, flow cytometers, and long-term observational studies.</p>
-<p>Here are some options for getting started:</p>
-<p><b>CPAS Proteomics Users</b></p>
+<p>Welcome to LabKey Server.</p>
+
+<p>Thank you for installing LabKey Server, the industry's top open-source platform for accelerating biomedical research
+and facilitating collaboration between scientists.</p>
+
+<p>To learn more about using the platform, please visit one of the community resources freely available on
+<a href="http://www.labkey.org">LabKey.org</a>:</p>
 <ul>
-	<li>View the
-	<a href="http://help.labkey.org/project/home/cpas/demo/begin.view">CPAS sample
-	project</a></li>
-	<li>Browse the
-	<a href="http://help.labkey.org/project/home/cpas/documentation/begin.view">
-	CPAS documentation</a><br>
-	</li>
-	<li><a href="http://help.labkey.org/project/home/cpas/support/begin.view">Ask
-	the development team a question</a><br>
-	</li>
+    <li><a href="https://www.labkey.org/Project/home/Documentation/begin.view">Documentation</a></li>
+    <li><a href="https://www.labkey.org/wiki/home/page.view?name=support">Community Forums</a></li>
+    <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=dev">Developer Guide</a></li>
 </ul>
-<p><b>Flow Cytometry Users</b><br>
-</p>
-<ul>
-	<li>Browse the
-	<a href="http://help.labkey.org/project/home/flow/documentation/begin.view">
-	flow cytometry documentation</a></li>
-	<li><a href="http://help.labkey.org/project/home/flow/support/begin.view">Ask
-	the development team a question</a><br>
-	</li>
-</ul>
-<p><b>Observational Study Users</b></p>
-<ul>
-	<li>Browse the
-	<a href="http://help.labkey.org/project/home/study/documentation/begin.view">
-	observational study documentation</a></li>
-	<li><a href="http://help.labkey.org/project/home/study/support/begin.view">Ask
-	the development team a question</a><br>
-	</li>
-</ul>
-<p><b>All Users</b><br>
-</p>
-<ul>
-	<li><a href="../../admin/createFolder.view">Create a new project</a>
-	and set permissions for it<br>
-	</li>
-	<li><a href="../../wiki/home/update.view?name=default">Edit this page</a><br>
-	<br>
-	</li>
-</ul>
+<p>To customize LabKey Server to match your team's specific workflows and research needs,
+please contact <a href="http://www.labkey.com">LabKey Software</a> directly at
+<a href="mailto:info@labkey.com?subject=Request for More Information on LabKey Server">info@LabKey.com</a>. Commercial support packages are also available.</p>
+
+<p>Thank you again for downloading LabKey Server. We appreciate your support.</p>
+
+<p>Regards,</p>
+
+<p>The LabKey Software Team<br/>
+<a href="http://www.labkey.com">www.LabKey.com</a></p>
