@@ -398,11 +398,14 @@ public class TableViewForm extends ViewForm implements DynaBean, HasValidator
             if (null != str && "".equals(str.trim()))
                 str = null;
 
+            Class propType = null;
+
             try
             {
                 if (null != str)
                 {
-                    Object val = ConvertUtils.convert(str, _dynaClass.getTruePropType(propName));
+                    propType = _dynaClass.getTruePropType(propName);
+                    Object val = ConvertUtils.convert(str, propType);
                     values.put(propName, val);
                 }
                 else if (_validateRequired && null != _tinfo)
@@ -418,7 +421,10 @@ public class TableViewForm extends ViewForm implements DynaBean, HasValidator
             }
             catch (ConversionException e)
             {
-                errors.addError(new FieldError(errors.getObjectName(), propName, this, true, new String[] {SpringActionController.ERROR_CONVERSION}, new String[] {str, caption}, "Could not convert to value: " + str));
+                String error = SpringActionController.ERROR_CONVERSION;
+                if (null != propType)
+                    error += "." + propType.getSimpleName();
+                errors.addError(new FieldError(errors.getObjectName(), propName, this, true, new String[] {error}, new String[] {str, caption}, "Could not convert value: " + str));
             }
         }
         _values = values;
