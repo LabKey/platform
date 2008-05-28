@@ -28,6 +28,7 @@ import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.action.HasValidator;
+import org.labkey.api.action.SpringActionController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
@@ -410,14 +411,14 @@ public class TableViewForm extends ViewForm implements DynaBean, HasValidator
                     if (null == col || col.isNullable())
                         values.put(propName, null);
                     else
-                        errors.addError(new ObjectError(propName, new String[] {"NullError"}, new String[] {caption}, caption + " must not be empty."));
+                        errors.addError(new FieldError(errors.getObjectName(), propName, this, true, new String[] {SpringActionController.ERROR_REQUIRED}, new String[] {caption}, caption + " must not be empty."));
                 }
                 else
                     values.put(propName, null);
             }
             catch (ConversionException e)
             {
-                errors.addError(new ObjectError(propName, new String[] {"ConversionError"}, new String[] {str, caption}, "Could not convert to value: " + str));
+                errors.addError(new FieldError(errors.getObjectName(), propName, this, true, new String[] {SpringActionController.ERROR_CONVERSION}, new String[] {str, caption}, "Could not convert to value: " + str));
             }
         }
         _values = values;
