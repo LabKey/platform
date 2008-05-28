@@ -3121,11 +3121,12 @@ public class WikiController extends SpringActionController
                 errors.rejectValue("name", ERROR_MSG, "You must provide a name for this page.");
             else if(name.startsWith("_") && !container.hasPermission(getUser(), ACL.PERM_ADMIN))
                 errors.rejectValue("name", ERROR_MSG, "Wiki names starting with underscore are reserved for administrators.");
-            else if(form.isNew())
-            {
-                if (WikiManager.getWiki(container, name) != null)
-                    errors.rejectValue("name", ERROR_MSG, "Page '" + name + "' already exists within this folder.");
-            }
+
+            //check to ensure that there is not an existing wiki with the same name
+            //but different entity id (works for both insert and update case)
+            Wiki existingWiki = WikiManager.getWiki(container, name);
+            if(null != existingWiki && !(existingWiki.getEntityId().equals(form.getEntityId())))
+                errors.rejectValue("name", ERROR_MSG, "Page '" + name + "' already exists within this folder.");
 
             //must have a body, and if HTML, must be valid according to tidy
             if(null == form.getBody() || form.getBody().trim().length() <= 0)
