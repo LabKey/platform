@@ -138,7 +138,7 @@
                 <property name="jobFactoryType" value="PBS" />
                 <property name="queue" value="devhost" />
                 <!--<property name="javaPath" value="/usr/bin/java" />-->
-                <property name="javaPath" value="/usr/java/jre1.5.0_06/bin/java" />
+                <property name="javaHome" value="/usr/java/jre1.5.0_06" />
                 <property name="labkeyDir" value="/opt/cptools/bin_josh/globus" />
                 <property name="globusEndpoint" value="https://140.107.154.30:8443/wsrf/services/ManagedJobFactoryService" />
                 <map name="pathMapping">

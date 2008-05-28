@@ -55,6 +55,7 @@ public class PipelineJobRunnerGlobus implements Callable
 {
     private static Logger _log = Logger.getLogger(PipelineJobRunnerGlobus.class);
 
+    private String _javaHome;
     private String _javaPath;
     private String _labkeyDir;
     private String _configDir;
@@ -109,8 +110,22 @@ public class PipelineJobRunnerGlobus implements Callable
         _queue = queue;
     }
 
+    public String getJavaHome()
+    {
+        return _javaHome;
+    }
+
+    public void setJavaHome(String javaHome)
+    {
+        _javaHome = javaHome;
+    }
+
     public String getJavaPath()
     {
+        if (_javaPath == null)
+        {
+            return _javaHome + "/bin/java";
+        }
         return _javaPath;
     }
 
@@ -232,7 +247,7 @@ public class PipelineJobRunnerGlobus implements Callable
             URL factoryUrl = ManagedJobFactoryClientHelper.getServiceURL(_globusEndpoint).getURL();
             EndpointReferenceType factoryEndpoint = ManagedJobFactoryClientHelper.getFactoryEndpoint(factoryUrl, _jobFactoryType);
 
-            String jobURI = "uuid:" + jobId + "/" + job.getActiveTaskId().getNamespaceClass().getName() + "/" + job.getActiveTaskId().getName();
+            String jobURI = "uuid:" + jobId + "/" + job.getActiveTaskId();
 
             NotificationConsumerManager notifConsumerManager = new ServerNotificationConsumerManager()
             {
@@ -307,6 +322,22 @@ public class PipelineJobRunnerGlobus implements Callable
             });
 
             gramJob.submit(factoryEndpoint, false, false, jobURI);
+            StringBuilder sb = new StringBuilder();
+            sb.append("Submitted job to Globus ");
+            sb.append(getJobFactoryType());
+            if (getQueue() != null)
+            {
+                sb.append(" with queue ");
+                sb.append(getQueue());
+            }
+            sb.append(": ");
+            sb.append(jobDescription.getExecutable());
+            for (String arg : jobDescription.getArgument())
+            {
+                sb.append(" ");
+                sb.append(arg);
+            }
+            job.getLogger().info(sb.toString());
             submitted = true;
         }
         catch (Exception e)
@@ -329,7 +360,7 @@ public class PipelineJobRunnerGlobus implements Callable
     {
         // Set up the job description
         JobDescriptionType jobDescription = new JobDescriptionType();
-        jobDescription.setExecutable(_javaPath);
+        jobDescription.setExecutable(getJavaPath());
 
         // Transform an output file path to something that's useful on the cluster node
         File localOutputFile = PipelineJob.getClusterOutputFile(job.getStatusFile());
@@ -342,6 +373,8 @@ public class PipelineJobRunnerGlobus implements Callable
         {
             jobDescription.setQueue(_queue);
         }
+
+        jobDescription.setEnvironment(new NameValuePairType[] { new NameValuePairType("JAVA_HOME", _javaHome) });
 
         String[] jobArgs =
             {
