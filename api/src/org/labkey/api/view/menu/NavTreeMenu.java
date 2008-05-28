@@ -150,7 +150,7 @@ public class NavTreeMenu extends WebPartView implements Collapsible
         {
             if (nav.getCanCollapse())
             {
-                out.print("<tr class=\"header\"");
+                out.print("<tr class=\"header\">");
             }
             else
             {
@@ -172,7 +172,7 @@ public class NavTreeMenu extends WebPartView implements Collapsible
                 out.printf("<img src=\"%s/_images/%s\"></a>", context.getContextPath(), image);
             }
             else if (indentForExpansionGifs)
-                out.printf("<div class=\"navTreeIndenter\">");
+                out.printf("<div class=\"navTreeIndenter\" />");
 
             out.printf("</td><td class=\"navTreeText\">\n");
 
