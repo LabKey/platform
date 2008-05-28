@@ -148,7 +148,7 @@ LABKEY.Chart = function(config)
     var handleLoadError = function(args, config)
     {
         var error = "An error occurred trying to render the chart.\nStatus: " + args.statusText + " (" + args.status + ")";
-        alert (error);
+        Ext.Msg.alert("Load Error", error);
     }
 
     var renderChartInternal = function(response, config)

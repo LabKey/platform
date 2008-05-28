@@ -334,11 +334,11 @@ public class WriteableAppProps extends AppProps
             {
                 propsChanged = true;
                 html.append("<tr><td class='ms-searchform'>");
-                html.append(ColumnInfo.captionFromName(key));
+                html.append(PageFlowUtil.filter(ColumnInfo.captionFromName(key)));
                 html.append("</td><td>");
-                html.append(oldProps.get(key));
+                html.append(PageFlowUtil.filter(oldProps.get(key)));
                 html.append("&nbsp;&raquo;&nbsp;");
-                html.append(_properties.get(key));
+                html.append(PageFlowUtil.filter(_properties.get(key)));
                 html.append("</td></tr>");
             }
         }

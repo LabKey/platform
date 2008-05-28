@@ -165,7 +165,7 @@ LABKEY.GridView = function(config)
             error = "An error occurred trying to load grid data.\nStatus: " + arg.statusText + " (" + arg.status + ")";
         if (e && e.message)
             error += "\n" + e.name + ": " + e.message;
-        alert (error);
+        Ext.Msg.alert("Load Error", error);
     }
 
     function mapQueryParameters(store, options)
