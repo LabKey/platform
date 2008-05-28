@@ -33,6 +33,10 @@ public class PipelineRoot extends Entity
 
     public PipelineRoot(PipelineRoot root)
     {
+        // Entity
+        root.copyTo(this);
+
+        // PipelineRoot
         this._pipelineRootId = root._pipelineRootId;
         this._path = root._path;
         this._type = root._type;

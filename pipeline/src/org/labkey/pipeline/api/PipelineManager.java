@@ -147,6 +147,7 @@ public class PipelineManager
         {
             newValue = new PipelineRoot(oldValue);
             newValue.setPath(path);
+            newValue.setContainerId(container.getId());
             newValue.setType(type);
             Table.update(user, pipeline.getTableInfoPipelineRoots(), newValue, newValue.getPipelineRootId(), null);
             // should use clone
