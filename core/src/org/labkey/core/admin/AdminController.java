@@ -28,6 +28,7 @@ import org.jfree.data.category.DefaultCategoryDataset;
 import org.labkey.api.action.*;
 import org.labkey.api.attachments.*;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.data.*;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.exp.OntologyManager;
@@ -1254,6 +1255,9 @@ public class AdminController extends SpringActionController
             }
 
             props.save();
+
+            //write an audit log event
+            props.writeAuditLogEvent(getViewContext().getUser(), props.getOldProperties());
 
             if (null != level)
                 level.scheduleUpgradeCheck();
@@ -4223,6 +4227,52 @@ public class AdminController extends SpringActionController
         protected void addContainerToURL(ActionURL url, Container c)
         {
             url.replaceParameter("target", c.getPath());
+        }
+    }
+
+    public static class SiteSettingsAuditDetailsForm
+    {
+        private Integer _id;
+
+        public Integer getId()
+        {
+            return _id;
+        }
+
+        public void setId(Integer id)
+        {
+            _id = id;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class ShowSiteSettingsAuditDetailsAction extends SimpleViewAction<SiteSettingsAuditDetailsForm>
+    {
+        public ModelAndView getView(SiteSettingsAuditDetailsForm form, BindException errors) throws Exception
+        {
+            if(null == form.getId() || form.getId().intValue() < 0)
+                throw new NotFoundException("The audit log details key was not provided!");
+
+            //get the audit event
+            AuditLogEvent event = AuditLogService.get().getEvent(form.getId().intValue());
+            if(null == event)
+                throw new NotFoundException("Could not find the audit log event with id '" + form.getId().toString() + "'!");
+
+            Map<String,Object> eventProps = OntologyManager.getProperties(ContainerManager.getSharedContainer().getId(), event.getLsid());
+
+            //create the model and view
+            SiteSettingsAuditDetailsModel model = new SiteSettingsAuditDetailsModel(event, eventProps);
+            return new JspView<SiteSettingsAuditDetailsModel>("/org/labkey/core/admin/siteSettingsAuditDetails.jsp", model);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root = root.addChild("Admin Console", new ActionURL(ShowAdminAction.class, ContainerManager.getRoot()));
+
+            ActionURL urlLog = new ActionURL(ShowAuditLogAction.class, ContainerManager.getRoot());
+            urlLog.addParameter("view", WriteableAppProps.AUDIT_EVENT_TYPE);
+            root = root.addChild("Autit Log", urlLog);
+            return root.addChild("Site Settings Audit Event Details");
         }
     }
 }

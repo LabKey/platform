@@ -30,6 +30,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.core.admin.AdminController;
+import org.labkey.core.admin.SiteSettingsAuditViewFactory;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.analytics.AnalyticsController;
 import org.labkey.core.analytics.AnalyticsServiceImpl;
@@ -100,6 +101,7 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
         AttachmentService.register(new AttachmentServiceImpl());
         AnalyticsServiceImpl.register();
         FirstRequestHandler.addFirstRequestListener(this);
+        AuditLogService.get().addAuditViewFactory(new SiteSettingsAuditViewFactory());
     }
 
     @Override

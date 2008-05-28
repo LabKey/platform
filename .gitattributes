@@ -317,6 +317,8 @@ core/src/RootController.java -text
 core/src/org/labkey/core/CoreController.java -text
 core/src/org/labkey/core/CoreModule.java -text
 core/src/org/labkey/core/admin/AdminController.java -text
+core/src/org/labkey/core/admin/SiteSettingsAuditDetailsModel.java -text
+core/src/org/labkey/core/admin/SiteSettingsAuditViewFactory.java -text
 core/src/org/labkey/core/admin/TestNetworkDriveBean.java -text
 core/src/org/labkey/core/admin/admin.jsp -text
 core/src/org/labkey/core/admin/auditLog.jsp -text
@@ -334,6 +336,7 @@ core/src/org/labkey/core/admin/moduleErrors.jsp -text
 core/src/org/labkey/core/admin/moveFolder.jsp -text
 core/src/org/labkey/core/admin/renameFolder.jsp -text
 core/src/org/labkey/core/admin/reorderFolders.jsp -text
+core/src/org/labkey/core/admin/siteSettingsAuditDetails.jsp -text
 core/src/org/labkey/core/admin/sql/ShowRunningScriptsPage.java -text
 core/src/org/labkey/core/admin/sql/SqlScriptController.java -text
 core/src/org/labkey/core/admin/sql/errors.gm -text
