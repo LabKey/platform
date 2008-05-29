@@ -7,6 +7,7 @@ var _tableName = "";
 var _fieldName = "";
 var _fieldType = "text";
 var _filterDiv = null;
+var _filterWin = null;
 var _filterQueryString = "";
 
 function setFilterQueryString(s)
@@ -56,22 +57,8 @@ if (navigator.userAgent.toLowerCase().indexOf("httpunit") < 0)
 
 function showFilterPanel(elem, tableName, colName, caption, dataType)
 {
-    var posLeft = 0;
-    var posTop = 0;
-    var offsetElem = elem;
-
-    while (offsetElem.tagName != "BODY")
-    {
-        posLeft += offsetElem.offsetLeft;
-        posTop += offsetElem.offsetTop;
-        offsetElem = offsetElem.offsetParent;
-    }
-
-    posTop += elem.offsetHeight;
-
     _fieldName = colName;
     _tableName = tableName;
-    document.getElementById("filterDivFieldName").innerHTML = caption;
     fillOptions(dataType);
 
     var paramValPairs = getParamValPairs(null);
@@ -107,19 +94,22 @@ function showFilterPanel(elem, tableName, colName, caption, dataType)
         }
     }
     var div = getFilterDiv();
-    var viewportWidth = YAHOO.util.Dom.getViewportWidth();
-    var leftScroll = YAHOO.util.DragDropMgr.getScrollLeft();
-    div.style.visibility = "hidden";
     div.style.display = "block";
-
-    if (viewportWidth + leftScroll < div.offsetWidth + posLeft)
-    {
-        posLeft = viewportWidth + leftScroll - div.offsetWidth - 10;
-    }
-
-    div.style.top = posTop;
-    div.style.left = posLeft;
     div.style.visibility = "visible";
+
+    if (!_filterWin)
+    {
+        _filterWin = new Ext.Window({
+            contentEl: div,
+            width: 300,
+            autoHeight: true,
+            modal: true,
+            resizable: false,
+            closeAction: 'hide'
+        });
+    }
+    _filterWin.setTitle("Show Rows Where " + caption);
+    _filterWin.show();
 
     if (filterIndex == 2)
         document.getElementById("compare_2").selectedIndex = 0;
@@ -129,7 +119,8 @@ function showFilterPanel(elem, tableName, colName, caption, dataType)
 
 function hideFilterDiv()
 {
-    getFilterDiv().style.display = "none";
+    if (_filterWin)
+        _filterWin.hide();
 }
 
 var _typeMap = {
@@ -595,6 +586,7 @@ function doSort(tableName, columnName, sortDirection)
     var newSortArray = new Array(1);
     //sort forward
     var sortString = getParameter(tableName + ".sort");
+    var currentSort;
 
     if (sortString != null)
     {
@@ -602,13 +594,17 @@ function doSort(tableName, columnName, sortDirection)
         for (var j = 0; j < sortArray.length; j++)
         {
             if (sortArray[j] == columnName || sortArray[j] == "+" + columnName)
-                sortDirection = j == 0 ? "-" : "+";
+                currentSort = "+";
             else if (sortArray[j] == "-" + columnName)
-                sortDirection = j == 0 ? "" : "-";
+                currentSort = "-";
             else if (newSortArray.length <= 2)
                 newSortArray[newSortArray.length] = sortArray[j];
         }
     }
+    // no need to change sort
+    if (currentSort == sortDirection)
+        return;
+
     if (sortDirection == "+") //Easier to read without the encoded + on the URL...
         sortDirection = "";
     newSortArray[0] = sortDirection + columnName;
@@ -714,22 +710,6 @@ function verifySelected(form, url, method, pluralNoun, confirmText)
     }
 }
 
-function openDialog(url, target, width, height)
-{
-    if (!url)
-        return null;
-    if (!target)
-        target = "_blank";
-    if (!width)
-        width = 640;
-    if (!height)
-        height = 400;
-    if ("showModalDialog" in window)
-        window.showModalDialog(url, null, "width:" + width + ",height:" + height);
-    else
-        window.open(url, target, "width=" + width + ",height=" + height);
-}
-
 function handleKey(event)
 {
     switch (event.keyCode)
@@ -745,16 +725,8 @@ function handleKey(event)
 }
 
 document.write(
-'<div id="filterDiv" style="display:none;border: 1px solid black; display:none;position:absolute;background-color:white">' +
+'<div id="filterDiv" style="display:none;">' +
 '  <table border="0" cellpadding="0" cellspacing="0" onkeypress="handleKey(event);">' +
-'    <tr class="wpHeader">' +
-'      <td title="Filter" style="border-right:0px" nowrap>' +
-'        <div class="wpTitle">Show Rows Where <span id="filterDivFieldName">Field</span></div>' +
-'      </td>' +
-'      <td align="right" style="border-left:0px; paddingBottom:5px;">' +
-'      <img alt="close" border=0 src="' + LABKEY.imagePath + '/partdelete.gif" onclick="hideFilterDiv()">' +
-'      </td>' +
-'     </tr>' +
 '    <tr>' +
 '      <td colspan=2 class="normal" style="padding: 5px" nowrap>' +
 '' +

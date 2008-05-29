@@ -134,6 +134,8 @@ public class PopupMenu
 
             String title = tree.getKey();
             sb.append("{").append("text:").append(PageFlowUtil.jsString(title));
+            if (StringUtils.isNotEmpty(tree.getId()))
+                sb.append(", id:").append(PageFlowUtil.jsString(tree.getId()));
             if (tree.isSelected())
                 sb.append(", checked:true");
             if (null != tree.getImageSrc())

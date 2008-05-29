@@ -184,7 +184,7 @@ public class NavTree extends Pair<String, String> implements Collapsible
         //use the escaped key for path matching, so that embedded / characters are escaped
         String key = getEscapedKey();
         if (key == null) key = "";
-        
+
         if (path.charAt(0) == '/')
         {
             if (path.substring(1).equals(key))

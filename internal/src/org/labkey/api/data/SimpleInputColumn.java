@@ -83,7 +83,7 @@ public class SimpleInputColumn<T> extends DisplayColumn
         return true;
     }
 
-    public void renderSortHref(RenderContext ctx, Writer out) throws IOException
+    public void renderSortHandler(RenderContext ctx, Writer out, Sort.SortDirection sort) throws IOException
     {
         throw new UnsupportedOperationException("Can't sort");
     }

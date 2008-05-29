@@ -160,7 +160,7 @@ public class SimpleDisplayColumn extends DisplayColumn
         throw new UnsupportedOperationException("Non Bound columns not editable");
     }
 
-    public void renderSortHref(RenderContext ctx, Writer out) throws IOException
+    public void renderSortHandler(RenderContext ctx, Writer out, Sort.SortDirection sort) throws IOException
     {
         throw new UnsupportedOperationException("Non Bound columns not sortable");
     }

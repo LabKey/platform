@@ -211,6 +211,14 @@ public class Sort
         return index;
     }
 
+    public SortField getSortColumn(String columnName)
+    {
+        for (SortField sf : _sortList)
+            if (sf._colName.equalsIgnoreCase(columnName))
+                return sf;
+        return null;
+    }
+
     public int indexOf(String columnName)
     {
         for (int i = 0; i < _sortList.size(); i++)

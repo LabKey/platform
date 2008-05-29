@@ -229,15 +229,15 @@ public class DataColumn extends DisplayColumn
     {
         if (_filterColumn == null)
             return;
-        out.write("showFilterPanel(this, ");
-        out.write(hq(ctx.getCurrentRegion().getName()));
-        out.write(",");
-        out.write(hq(_filterColumn.getName()));
-        out.write(",");
+        out.write("showFilterPanel(this, '");
+        out.write(h(ctx.getCurrentRegion().getName()));
+        out.write("','");
+        out.write(h(_filterColumn.getName()));
+        out.write("','");
         StringWriter strCaption = new StringWriter();
         _caption.render(strCaption, ctx);
-        out.write(hq(strCaption.toString()));
-        out.write(", '");
+        out.write(h(strCaption.toString()));
+        out.write("', '");
         out.write(_filterColumn.getSqlDataTypeName());
         out.write("')   ");
     }
@@ -450,7 +450,7 @@ public class DataColumn extends DisplayColumn
         return PageFlowUtil.filter(value);
     }
 
-    public void renderSortHref(RenderContext ctx, Writer out) throws IOException
+    public void renderSortHandler(RenderContext ctx, Writer out, Sort.SortDirection sort) throws IOException
     {
         if (_sortColumn == null)
         {
@@ -458,7 +458,7 @@ public class DataColumn extends DisplayColumn
         }
         String uri;
         String regionName = ctx.getCurrentRegion().getName();
-        uri = "javascript:doSort("+ hq(regionName) + "," + hq(_sortColumn.getName()) + "," + hq(_defaultSort.getDir()) + ")";
+        uri = "doSort('"+ h(regionName) + "','" + h(_sortColumn.getName()) + "','" + h(sort.getDir()) + "')";
         out.write(uri);
     }
 

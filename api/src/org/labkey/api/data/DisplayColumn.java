@@ -20,6 +20,8 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.PopupMenu;
+import org.labkey.api.view.NavTree;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -60,7 +62,7 @@ public abstract class DisplayColumn extends RenderColumn
 
     public abstract boolean isEditable();
 
-    public abstract void renderSortHref(RenderContext ctx, Writer out) throws IOException;
+    public abstract void renderSortHandler(RenderContext ctx, Writer out, Sort.SortDirection sort) throws IOException;
 
     public abstract void renderFilterOnClick(RenderContext ctx, Writer out) throws IOException;
 
@@ -315,9 +317,23 @@ public abstract class DisplayColumn extends RenderColumn
 
     public void renderGridHeaderCell(RenderContext ctx, Writer out, String styleAttributes) throws IOException, SQLException
     {
+        Sort.SortField sortField = getSortField(ctx);
+        boolean filtered = isFiltered(ctx);
+        String baseId = ctx.getCurrentRegion().getName() + ":" + (getColumnInfo() != null ? getColumnInfo().getName() : super.getName());
+
         out.write("\n<th class='");
         out.write(getGridHeaderClass());
+        if (sortField != null)
+        {
+            if (sortField.getSortDirection() == Sort.SortDirection.ASC)
+                out.write(" sort-asc");
+            else
+                out.write(" sort-desc");
+        }
+        if (filtered)
+            out.write(" filtered");
         out.write("'");
+        
         if (styleAttributes != null)
         {
             styleAttributes = styleAttributes + "; " + getDefaultHeaderStyle();
@@ -340,66 +356,132 @@ public abstract class DisplayColumn extends RenderColumn
             out.write(PageFlowUtil.filter(getDescription()));
             out.write("\"");
         }
-        out.write(">");
 
+        out.write(" id=");
+        out.write(PageFlowUtil.jsString(baseId + ":header"));
 
-        if (isSortable() && ctx.getCurrentRegion().isSortable())
+        NavTree navtree = getPopupNavTree(ctx, baseId, sortField, filtered);
+        if (navtree != null)
         {
-            out.write("<a");
-            if (null == getDescription())
-                out.write(" title=\"Sort\"");
-            out.write(" href='");
-            renderSortHref(ctx, out);
-            out.write("'>");
-            renderTitle(ctx, out);
-            out.write("</a>");
+            out.write(" onmouseover=\"Ext.fly(this).toggleClass('hover')\"");
+            out.write(" onmouseout=\"Ext.fly(this).toggleClass('hover')\"");
+            out.write(" onclick=\"showMenu(this, ");
+            out.write(PageFlowUtil.jsString(navtree.getId()));
+            out.write(", null);\"");
         }
-        else
-            renderTitle(ctx, out);
+        out.write(">\n");
+        out.write("<div>");
 
-        if (isFilterable() && ctx.getCurrentRegion().getShowFilters())
+        renderTitle(ctx, out);
+
+        if (sortField != null)
+            out.write("<img src=\"" + ctx.getRequest().getContextPath() + "/_.gif\" class=\"x-grid3-sort-icon\"/>");
+
+        out.write("</div>");
+
+        if (navtree != null)
         {
-            renderFilterGif(ctx, out);
+            PopupMenu popup = new PopupMenu(navtree, PopupMenu.Align.LEFT, PopupMenu.ButtonStyle.TEXTBUTTON);
+            popup.renderMenuScript(out);
         }
+
         out.write("</th>");
     }
 
-    private void renderFilterGif(RenderContext ctx, Writer out) throws IOException
+    private Sort.SortField getSortField(RenderContext ctx)
     {
         DataRegion rgn = ctx.getCurrentRegion();
         assert null != rgn;
-        Set<String> filteredColSet = (Set<String>) ctx.get(rgn.getName() + ".filteredCols");
-        if (null == filteredColSet)
+
+        if (isSortable() && rgn.isSortable())
         {
-            TableInfo tinfo = rgn.getTable();
-            assert null != tinfo;
-            ActionURL url = ctx.getSortFilterURLHelper();
-            SimpleFilter filter = new SimpleFilter(url, rgn.getName());
-
-            filteredColSet = new HashSet<String>();
-            for (String s : filter.getWhereParamNames())
+            Sort sort = (Sort)ctx.get(rgn.getName() + ".sort");
+            if (null == sort)
             {
-                filteredColSet.add(s.toLowerCase());
+                sort = ctx.getBaseSort();
+                if (sort == null)
+                    sort = new Sort();
+                ActionURL url = PageFlowUtil.expandLastFilter(ctx.getViewContext());
+                sort.applyURLSort(url, rgn.getName());
+                ctx.put(rgn.getName() + ".sort", sort);
             }
-            ctx.put(rgn.getName() + ".filteredCols", filteredColSet);
+
+            return sort.getSortColumn(getColumnInfo().getName());
         }
+        return null;
+    }
 
-        String img = ctx.getRequest().getContextPath() + "/_images/filter.gif";
-        if (null != this.getColumnInfo() &&
-                (filteredColSet.contains(this.getColumnInfo().getName().toLowerCase())) ||
-                    (this.getColumnInfo().getDisplayField() != null &&
-                    filteredColSet.contains(this.getColumnInfo().getDisplayField().getName().toLowerCase())))
-            img = ctx.getRequest().getContextPath() + "/_images/filter_on.gif";
+    private boolean isFiltered(RenderContext ctx)
+    {
+        DataRegion rgn = ctx.getCurrentRegion();
+        assert null != rgn;
 
-        out.write("<img src=\"");
-        out.write(img);
-        out.write("\" align=\"bottom\" title=\"Filter\"  style=\"cursor:hand;\"");
-        if (null != this.getColumnInfo())
-            out.write(" id=\""+PageFlowUtil.filter(rgn.getName() + ":" + this.getColumnInfo().getName() + ":filter") + "\"");
-        out.write(" onclick=\"");
-        renderFilterOnClick(ctx, out);
-        out.write("\" >");
+        if (isFilterable() && rgn.getShowFilters())
+        {
+            Set<String> filteredColSet = (Set<String>) ctx.get(rgn.getName() + ".filteredCols");
+            if (null == filteredColSet)
+            {
+                TableInfo tinfo = rgn.getTable();
+                assert null != tinfo;
+                ActionURL url = ctx.getSortFilterURLHelper();
+                SimpleFilter filter = new SimpleFilter(url, rgn.getName());
 
+                filteredColSet = new HashSet<String>();
+                for (String s : filter.getWhereParamNames())
+                {
+                    filteredColSet.add(s.toLowerCase());
+                }
+                ctx.put(rgn.getName() + ".filteredCols", filteredColSet);
+            }
+
+            return (null != this.getColumnInfo() &&
+                    (filteredColSet.contains(this.getColumnInfo().getName().toLowerCase())) ||
+                        (this.getColumnInfo().getDisplayField() != null &&
+                        filteredColSet.contains(this.getColumnInfo().getDisplayField().getName().toLowerCase())));
+        }
+        return false;
+    }
+
+    private NavTree getPopupNavTree(RenderContext ctx, String baseId, Sort.SortField sortField, boolean filtered) throws IOException
+    {
+        DataRegion rgn = ctx.getCurrentRegion();
+        NavTree navtree = null;
+        if ((isSortable() && rgn.isSortable()) ||
+            (isFilterable() && rgn.getShowFilters()))
+        {
+            navtree = new NavTree();
+            navtree.setId(PageFlowUtil.filter(baseId + ":menu"));
+
+            if (isSortable() && rgn.isSortable())
+            {
+                NavTree asc = new NavTree("Sort Ascending");
+                asc.setId(PageFlowUtil.filter(baseId + ":asc"));
+                asc.setScript(getSortHandler(ctx, Sort.SortDirection.ASC));
+                boolean selected = sortField != null && sortField.getSortDirection() == Sort.SortDirection.ASC;
+                asc.setSelected(selected);
+//                asc.setDisabled(selected);
+                navtree.addChild(asc);
+
+                NavTree desc = new NavTree("Sort Descending");
+                desc.setId(PageFlowUtil.filter(baseId + ":desc"));
+                desc.setScript(getSortHandler(ctx, Sort.SortDirection.DESC));
+                selected = sortField != null && sortField.getSortDirection() == Sort.SortDirection.DESC;
+                desc.setSelected(selected);
+//                desc.setDisabled(selected);
+                navtree.addChild(desc);
+            }
+
+            if (isFilterable() && rgn.getShowFilters())
+            {
+                NavTree child = new NavTree("Filter...");
+                child.setId(PageFlowUtil.filter(baseId + ":filter"));
+                child.setScript(getFilterOnClick(ctx));
+                child.setImageSrc(ctx.getRequest().getContextPath() + "/_images/filter" + (filtered ? "_on" : "") + ".png");
+                navtree.addChild(child);
+            }
+
+        }
+        return navtree;
     }
 
     public String getGridDataCell(RenderContext ctx)
@@ -564,12 +646,12 @@ public abstract class DisplayColumn extends RenderColumn
         out.write("</td>");
     }
 
-    public String getSortHref(RenderContext ctx)
+    public String getSortHandler(RenderContext ctx, Sort.SortDirection sort)
     {
         StringWriter writer = new StringWriter();
         try
         {
-            renderSortHref(ctx, writer);
+            renderSortHandler(ctx, writer, sort);
         }
         catch (Exception e)
         {
