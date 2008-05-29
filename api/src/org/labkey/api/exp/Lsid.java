@@ -287,8 +287,8 @@ public class Lsid
         public void testSimpleEncode()
         {
             Lsid simpleLsid = new Lsid("SampleSet.Folder-4", "ReproSet");
-            assertEquals("urn:lsid:labkey.com:SampleSet.Folder-4:ReproSet", simpleLsid.toString());
-            assertEquals("labkey.com", simpleLsid.getAuthority());
+            assertEquals("urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":SampleSet.Folder-4:ReproSet", simpleLsid.toString());
+            assertEquals(AppProps.getInstance().getDefaultLsidAuthority(), simpleLsid.getAuthority());
             assertEquals("SampleSet", simpleLsid.getNamespacePrefix());
             assertEquals("Folder-4", simpleLsid.getNamespaceSuffix());
             assertEquals("ReproSet", simpleLsid.getObjectId());
@@ -309,8 +309,8 @@ public class Lsid
         public void testEncodeWithColon()
         {
             Lsid lsid = new Lsid("SampleSet.Folder-4", "Repro:Set");
-            assertEquals("urn:lsid:labkey.com:SampleSet.Folder-4:Repro%3ASet", lsid.toString());
-            assertEquals("labkey.com", lsid.getAuthority());
+            assertEquals("urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":SampleSet.Folder-4:Repro%3ASet", lsid.toString());
+            assertEquals(AppProps.getInstance().getDefaultLsidAuthority(), lsid.getAuthority());
             assertEquals("SampleSet", lsid.getNamespacePrefix());
             assertEquals("Folder-4", lsid.getNamespaceSuffix());
             assertEquals("Repro:Set", lsid.getObjectId());
@@ -350,8 +350,8 @@ public class Lsid
         public void testEncodeWithSpace()
         {
             Lsid lsid = new Lsid("SampleSet.Folder-4", "Repro Set");
-            assertEquals("urn:lsid:labkey.com:SampleSet.Folder-4:Repro+Set", lsid.toString());
-            assertEquals("labkey.com", lsid.getAuthority());
+            assertEquals("urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":SampleSet.Folder-4:Repro+Set", lsid.toString());
+            assertEquals(AppProps.getInstance().getDefaultLsidAuthority(), lsid.getAuthority());
             assertEquals("SampleSet", lsid.getNamespacePrefix());
             assertEquals("Folder-4", lsid.getNamespaceSuffix());
             assertEquals("Repro Set", lsid.getObjectId());
@@ -372,8 +372,8 @@ public class Lsid
         public void testEncodeWithPlus()
         {
             Lsid lsid = new Lsid("SampleSet.Folder-4", "Repro+Set");
-            assertEquals("urn:lsid:labkey.com:SampleSet.Folder-4:Repro%2BSet", lsid.toString());
-            assertEquals("labkey.com", lsid.getAuthority());
+            assertEquals("urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":SampleSet.Folder-4:Repro%2BSet", lsid.toString());
+            assertEquals(AppProps.getInstance().getDefaultLsidAuthority(), lsid.getAuthority());
             assertEquals("SampleSet", lsid.getNamespacePrefix());
             assertEquals("Folder-4", lsid.getNamespaceSuffix());
             assertEquals("Repro+Set", lsid.getObjectId());
