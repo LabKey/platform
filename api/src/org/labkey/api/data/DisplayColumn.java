@@ -20,8 +20,8 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.PopupMenu;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.PopupMenu;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -29,7 +29,9 @@ import java.io.Writer;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.Format;
-import java.util.*;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 public abstract class DisplayColumn extends RenderColumn
 {
@@ -374,8 +376,8 @@ public abstract class DisplayColumn extends RenderColumn
 
         renderTitle(ctx, out);
 
-        if (sortField != null)
-            out.write("<img src=\"" + ctx.getRequest().getContextPath() + "/_.gif\" class=\"x-grid3-sort-icon\"/>");
+        out.write("<img src=\"" + ctx.getRequest().getContextPath() + "/_.gif\" class=\"grid-filter-icon\"/>");
+        out.write("<img src=\"" + ctx.getRequest().getContextPath() + "/_.gif\" class=\"x-grid3-sort-icon\"/>");
 
         out.write("</div>");
 
@@ -459,7 +461,7 @@ public abstract class DisplayColumn extends RenderColumn
                 asc.setScript(getSortHandler(ctx, Sort.SortDirection.ASC));
                 boolean selected = sortField != null && sortField.getSortDirection() == Sort.SortDirection.ASC;
                 asc.setSelected(selected);
-//                asc.setDisabled(selected);
+                asc.setDisabled(selected);
                 navtree.addChild(asc);
 
                 NavTree desc = new NavTree("Sort Descending");
@@ -467,7 +469,7 @@ public abstract class DisplayColumn extends RenderColumn
                 desc.setScript(getSortHandler(ctx, Sort.SortDirection.DESC));
                 selected = sortField != null && sortField.getSortDirection() == Sort.SortDirection.DESC;
                 desc.setSelected(selected);
-//                desc.setDisabled(selected);
+                desc.setDisabled(selected);
                 navtree.addChild(desc);
             }
 
@@ -476,7 +478,7 @@ public abstract class DisplayColumn extends RenderColumn
                 NavTree child = new NavTree("Filter...");
                 child.setId(PageFlowUtil.filter(baseId + ":filter"));
                 child.setScript(getFilterOnClick(ctx));
-                child.setImageSrc(ctx.getRequest().getContextPath() + "/_images/filter" + (filtered ? "_on" : "") + ".png");
+                //child.setImageSrc(ctx.getRequest().getContextPath() + "/_images/filter" + (filtered ? "_on" : "") + ".png");
                 navtree.addChild(child);
             }
 
