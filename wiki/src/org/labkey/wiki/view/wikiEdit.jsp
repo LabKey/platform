@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="org.labkey.api.security.ACL" %>
+<%@ page import="org.labkey.api.view.WebTheme" %>
 <%
     JspView<WikiEditModel> me = (JspView<WikiEditModel>) HttpView.currentView();
     WikiEditModel model = me.getModelBean();
@@ -637,7 +638,7 @@
 
                 cell = row.insertCell(2);
                 cell.id = "wiki-ea-del-" + idx;
-                cell.innerHTML = "[<a href='javascript:{}' onclick='onDeleteAttachment(" + idx + ")'>delete</a>]";
+                cell.innerHTML = "[<span class='command-link' onclick='onDeleteAttachment(" + idx + ")'>delete</span>]";
             }
         }
     }
@@ -648,7 +649,7 @@
 
         getExistingAttachmentIconImg(index).src = "<%=me.getViewContext().getContextPath()%>/_icons/_deleted.gif";
         row.cells[1].style.textDecoration = "line-through";
-        row.cells[2].innerHTML = "[<a href='javascript:{}' onclick='onUndeleteAttachment(" + index + ")'>undelete</a>]"
+        row.cells[2].innerHTML = "[<span class='command-link' onclick='onUndeleteAttachment(" + index + ")'>undelete</span>]"
                 + "<input type='hidden' name='toDelete' value='" + _attachments[index].name + "'/>";
 
         //add a prop so we know we need to save the attachments
@@ -661,7 +662,7 @@
 
         getExistingAttachmentIconImg(index).src = _attachments[index].iconUrl;
         row.cells[1].style.textDecoration = "";
-        row.cells[2].innerHTML = "[<a href='javascript:{}' onclick='onDeleteAttachment(" + index + ")'>delete</a>]";
+        row.cells[2].innerHTML = "[<span class='command-link' onclick='onDeleteAttachment(" + index + ")'>delete</span>]";
     }
 
     function getFilesForm()
@@ -720,7 +721,7 @@
         if(cell)
         {
             cell.setAttribute("nobreak", "1");
-            cell.innerHTML = "[<a href='javascript:{}' onclick='onRemoveNewAttachment(" + index + ")'>remove</a>]&nbsp;"
+            cell.innerHTML = "[<span class='command-link' onclick='onRemoveNewAttachment(" + index + ")'>remove</span>]&nbsp;"
                     + getFileName(fileInput.value);
         }
 
@@ -801,7 +802,17 @@
                 var opt = document.createElement("option");
                 opt.value = fmt;
                 opt.text = _formats[fmt];
-                toSelect.add(opt, null);
+                try
+                {
+                    toSelect.add(opt, null);
+                }
+                catch(e)
+                {
+                    //IE doesn't quite support the standard here.
+                    //they expect the second arg to be an index
+                    //not an object, and definitely not null
+                    toSelect.add(opt);
+                }
             }
         }
 
@@ -1017,7 +1028,7 @@
     }
     .tab-container
     {
-        
+        width: 100%;
     }
     .tab-active
     {
@@ -1028,6 +1039,7 @@
         padding: 4px 8px 4px 8px;
         border-bottom: none;
         background-color: #E1ECFC;
+        cursor: pointer;
     }
     .tab-inactive
     {
@@ -1035,6 +1047,7 @@
         font-weight: normal;
         background-color: #D1DCEC;
         padding: 4px 8px 4px 8px;
+        cursor: pointer;
     }
     .tab-blank
     {
@@ -1055,6 +1068,12 @@
     {
         width: 99%;
     }
+    .command-link
+    {
+        cursor: pointer;
+        color: #<%=WebTheme.toRGB(org.labkey.api.view.WebTheme.getTheme().getTitleColor())%>;
+        text-decoration:none;
+    }
 </style>
 
 <div id="status" class="status-info" style="visibility: hidden;">(status)</div>
@@ -1062,23 +1081,19 @@
 <table class="button-bar">
     <tr>
         <td class="button-bar-left" nowrap="true">
-            <%=PageFlowUtil.buttonLink("Save", "javascript:{}", "onSave()")%>
-            <%=PageFlowUtil.buttonLink("Save and Finish", "javascript:{}", "onFinish()")%>
-            <%=PageFlowUtil.buttonLink("Cancel", "javascript:{}", "onCancel()")%>
+            <input type="image" src="<%=PageFlowUtil.buttonSrc("Save")%>" onclick="onSave()"/>
+            <input type="image" src="<%=PageFlowUtil.buttonSrc("Save and Finish")%>" onclick="onFinish()"/>
+            <input type="image" src="<%=PageFlowUtil.buttonSrc("Cancel")%>" onclick="onCancel()"/>
         </td>
         <td class="button-bar-right" nowrap="true">
             <% if(model.canUserDelete()) { %>
-            <a href="javascript:{}" onclick="onDeletePage()">
-                <img id="<%=ID_PREFIX%>button-delete" src="<%=PageFlowUtil.buttonSrc("Delete Page", "disabled")%>" alt="Delete Page"/>
-            </a>
+            <input type="image" id="<%=ID_PREFIX%>button-delete"
+                   src="<%=PageFlowUtil.buttonSrc("DeletePage", "disabled")%>" onclick="onDeletePage()"/>
             <% } %>
-            <a href="javascript:{}" onclick="showConvertWindow()">
-                <img id="<%=ID_PREFIX%>button-change-format" src="<%=PageFlowUtil.buttonSrc("Convert To...")%>" alt="Convert To..."/>
-            </a>
-            <a href="javascript:{}" onclick="showHideToc()">
-                <img id="<%=ID_PREFIX%>button-toc" src="<%=PageFlowUtil.buttonSrc("Show Page Tree")%>" alt="Show/Hide Page Tree"/> 
-            </a>
-            
+            <input type="image" id="<%=ID_PREFIX%>button-change-format"
+                   src="<%=PageFlowUtil.buttonSrc("Convert To...")%>" onclick="showConvertWindow()"/>
+            <input type="image" id="<%=ID_PREFIX%>button-toc" 
+                   src="<%=PageFlowUtil.buttonSrc("Show Page Tree")%>" onclick="showHideToc()"/>
         </td>
     </tr>
 </table>
@@ -1123,8 +1138,8 @@
                         <table class="tab-container" cellspacing="0">
                             <tr id="wiki-tab-strip" style="display:none">
                                 <td class="tab-blank">&nbsp;</td>
-                                <td id="wiki-tab-visual" class="tab-active"><a href="javascript:{}" onclick="switchToVisual()">Visual</a></td>
-                                <td id="wiki-tab-source" class="tab-inactive"><a href="javascript:{}" onclick="switchToSource()">Source</a></td>
+                                <td id="wiki-tab-visual" class="tab-active" onclick="switchToVisual()">Visual</td>
+                                <td id="wiki-tab-source" class="tab-inactive" onclick="switchToSource()">Source</td>
                                 <td class="tab-blank" style="width:100%">&nbsp;</td>
                             </tr>
                             <tr>
@@ -1266,8 +1281,8 @@
         </tr>
         <tr>
             <td style="text-align: right">
-                <%=PageFlowUtil.buttonLink("Convert", "javascript:{}", "convertFormat()")%>
-                <%=PageFlowUtil.buttonLink("Cancel", "javascript:{}", "cancelConvertFormat()")%>
+                <input type="image" src="<%=PageFlowUtil.buttonSrc("Convert")%>" onclick="convertFormat()"/>
+                <input type="image" src="<%=PageFlowUtil.buttonSrc("Cancel")%>" onclick="cancelConvertFormat()"/>
             </td>
         </tr>
     </table>
