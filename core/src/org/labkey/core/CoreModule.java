@@ -225,8 +225,7 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
         }
 
         if (installedVersion < 8.11)
-            GroupManager.bootstrapGroup(Group.groupDevelopers, "Developers");
-
+            GroupManager.bootstrapGroup(Group.groupDevelopers, "Developers", GroupManager.PrincipalType.ROLE);
         if (installedVersion > 0 && installedVersion < 8.12)
             migrateLdapSettings();
 
