@@ -25,23 +25,23 @@
   * @param {Object} config Describes the GridView's properties.
   * @param {Object} config.schemaName Name of a schema defined within the current
   *                 container.  Example: 'study'.  See also: <a class="link"
-					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
-					How To Find schemaName, queryName &amp; viewName</a>.  
+                    href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+                    How To Find schemaName, queryName &amp; viewName</a>.
   * @param {Object} config.queryName Name of a query defined within the specified schema
   *                 in the current container.  Example: 'SpecimenDetail'. See also: <a class="link"
-					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
-					How To Find schemaName, queryName &amp; viewName</a>.  
-  * @param {Object} [config.viewName] Name of a custom view defined over the specified query.  
+                    href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+                    How To Find schemaName, queryName &amp; viewName</a>.
+  * @param {Object} [config.viewName] Name of a custom view defined over the specified query.
   *                 in the current container. Example: 'SpecimenDetail'.  See also: <a class="link"
-					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
-					How To Find schemaName, queryName &amp; viewName</a>.  
+                    href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+                    How To Find schemaName, queryName &amp; viewName</a>.
   * @param {String} config.renderTo Name of the div in which to place the grid.
   * @param {Bool} config.editable Whether the grid should be made editable.  Note that
   *                 not all tables and columns are editable, and not all users have
   *                 permission to edit.  For this reason, part or all of the grid may
   *                 degrade to being non-editable despite the 'editable' parameter.
-  * @param {Object} [config.gridPanelConfig] Sets the display configuration for the new grid.  This 
-  *					configuration is passed through to the underlying Ext.grid.GridPanel implementation,
+  * @param {Object} [config.gridPanelConfig] Sets the display configuration for the new grid.  This
+  *                 configuration is passed through to the underlying Ext.grid.GridPanel implementation,
   *                 so all <a href="http://extjs.com/deploy/dev/docs/?class=Ext.grid.GridPanel">
   *                 GridPanel config options</a> are valid. <p/>Note that providing this configuration
   *                 is optional. Further, if you do provide it, you take responsibility for
@@ -55,33 +55,33 @@
   *                 providing a valid and complete config object.  If you do not set the
   *                 Store config, LabKey Server will use a default configuration option.
   * @param {Function(columnModel)} [config.columnModelListener] Callback function that allows
-  *					you to adjust the column 
-  *					model without providing a full GridPanel config.  The columnModel 
-  *					element/object contains information about how one may interact with 
-  *					the columns within a user interface. This format is generated to match 
-  *					the requirements of the Ext grid component.  See 
+  *					you to adjust the column
+  *					model without providing a full GridPanel config.  The columnModel
+  *					element/object contains information about how one may interact with
+  *					the columns within a user interface. This format is generated to match
+  *					the requirements of the Ext grid component.  See
   *					<a href=http://extjs.com/deploy/dev/docs/?class=Ext.grid.ColumnModel>
   *					Ext.grid.ColumnModel</a> for further information.
-  * @param {Function(Ext.grid.GridPanel)} config.gridCustomizeCallback Function that should be called after the 
-  *					grid has been constructed and populated with data. You can use this to 
-  *					further customize the grid's appearance, add toolbar buttons, or call 
+  * @param {Function(Ext.grid.GridPanel)} config.gridCustomizeCallback Function that should be called after the
+  *					grid has been constructed and populated with data. You can use this to
+  *					further customize the grid's appearance, add toolbar buttons, or call
   *					any method on the <a href="http://extjs.com/deploy/dev/docs/?class=Ext.grid.GridPanel">
-  *                 Ext GridPanel object</a>.  The function passed as this config property 
-  *					should look like this: 
+  *                 Ext GridPanel object</a>.  The function passed as this config property
+  *					should look like this:
   * @param {String} [config.containerPath] The container path in which the schemaName and queryName are defined.
   *                 If not supplied, the current container path will be used.
 <pre><code>
-function onGridCustomize(grid) 
-{ 
-   //customize the grid here 
-   //for example: 
-   grid.getTopToolbar().addButton({ 
-            text: "Test Button", 
-            handler: function(){window.alert("Test button clicked!");} 
-        }); 
-} 
+function onGridCustomize(grid)
+{
+   //customize the grid here
+   //for example:
+   grid.getTopToolbar().addButton({
+            text: "Test Button",
+            handler: function(){window.alert("Test button clicked!");}
+        });
+}
 </pre></code>
-where 'grid' is a reference to the Ext.grid.GridPanel instance. 
+where 'grid' is a reference to the Ext.grid.GridPanel instance.
   * @constructor
   * @example Example:
 <pre name="code" class="xml">
@@ -89,20 +89,20 @@ where 'grid' is a reference to the Ext.grid.GridPanel instance.
 	LABKEY.requiresClientAPI();
 &lt;/script&gt;
 &lt;script type="text/javascript"&gt;
-    // create new grid over a list named 'People' 
-	var gridView = new LABKEY.GridView({ 
-            schemaName : 'lists', 
-            queryName : 'People', 
-            renderTo : 'testDiv', 
-            editable : true, 
-            gridPanelConfig : { 
-                title :'My People Grid', 
-                autoHeight : true, 
+    // create new grid over a list named 'People'
+	var gridView = new LABKEY.GridView({
+            schemaName : 'lists',
+            queryName : 'People',
+            renderTo : 'testDiv',
+            editable : true,
+            gridPanelConfig : {
+                title :'My People Grid',
+                autoHeight : true,
                 width : 500
-            } 
-        }); 
-	// place editable grid in 'testDiv': 
-	gridView.render(); 
+            }
+        });
+	// place editable grid in 'testDiv':
+	gridView.render();
 &lt;/script&gt;
 &lt;div id='testDiv'/&gt;
 </pre></code>
@@ -270,7 +270,7 @@ LABKEY.GridView = function(config)
         }
     }
 
-    function getLookupEditor(dsLookup, lookupDef)
+    function getLookupEditor(dsLookup, lookupDef, allowNull)
     {
         var editor = new Ext.form.ComboBox({ //dropdown based on server side data (from db)
                         typeAhead: false, //will be querying database so may not want typeahead consuming resources
@@ -279,8 +279,10 @@ LABKEY.GridView = function(config)
                         lazyRender: true,//prevents combo box from rendering until requested, should always be true for editor
                         store: dsLookup,//Industry,//where to get the data for our combobox
                         displayField: lookupDef.displayColumn,//the underlying data  field name to bind to this ComboBox
-                                                     //(defaults to undefined if mode = 'remote' or 'text' if transforming a select)
-                        valueField: lookupDef.keyColumn     //the underlying value field name to bind to this ComboBox
+                                         //(defaults to undefined if mode = 'remote' or 'text' if transforming a select)
+                        valueField: lookupDef.keyColumn,     //the underlying value field name to bind to this ComboBox
+                        tpl : '<tpl for="."><div class="x-combo-list-item">{[values["' + lookupDef.displayColumn + '"]]}</div></tpl>',
+                        allowBlank : allowNull
                     });
         registerEditorListeners(editor);
         return editor;
@@ -312,10 +314,12 @@ LABKEY.GridView = function(config)
         return function(data)
         {
             var record = dsLookup.getById(data);
-            if(record)
+            if (record)
                 return record.data[lookupDef.displayColumn];
+            else if (data)
+                return '[' + data + ']';
             else
-                return '<' + data + '>';
+                return '[None]';
         };
     }
 
@@ -335,10 +339,23 @@ LABKEY.GridView = function(config)
             if (fieldColumn.lookup)
             {
                 var lookupDef = fieldColumn.lookup;
+                var allowNull = !displayColumn.required;
                 var dsLookup = createStoreImpl(lookupDef.schema, lookupDef.table);
                 displayColumn.renderer = getLookupRenderer(dsLookup, lookupDef);
                 if (_editable)
-                    displayColumn.editor = getLookupEditor(dsLookup, lookupDef);
+                    displayColumn.editor = getLookupEditor(dsLookup, lookupDef, allowNull);
+                if (allowNull)
+                {
+                    dsLookup.on("load", function(store)
+                        {
+                        var emptyRecordConstructor = Ext.data.Record.create([lookupDef.keyColumn, lookupDef.displayColumn]);
+                        var recordData = {};
+                        recordData[lookupDef.keyColumn] = "";
+                        recordData[lookupDef.displayColumn] = "[None]";
+                        var emptyRecord = new emptyRecordConstructor(recordData);
+                        store.insert(0, emptyRecord);
+                        });
+                };
                 dsLookup.load();
             }
             else
@@ -444,8 +461,7 @@ LABKEY.GridView = function(config)
                     {
                         text: 'Refresh',
                         tooltip: 'Click to Refresh the table',
-                        handler: refreshGrid, //what happens when user clicks on it
-                        iconCls:'refresh' //we create our own css with a class called 'add'
+                        handler: refreshGrid //what happens when user clicks on it
                     }
                 ];
             }
@@ -546,7 +562,7 @@ LABKEY.GridView = function(config)
                 updateDB(record)
         }
     }
-    
+
     function handleDelete()
     {
         if (_selectionModel)
@@ -619,7 +635,7 @@ LABKEY.GridView = function(config)
                     if(retRow[field])
                         record.set(field, retRow[field]);
                 }
-                
+
                 record.commit();
             }
         }
@@ -714,7 +730,7 @@ LABKEY.GridView = function(config)
             }
         }
     }
-    
+
 
 
     function createHttpProxyImpl(errorListener)

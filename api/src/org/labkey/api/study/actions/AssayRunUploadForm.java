@@ -19,10 +19,13 @@ package org.labkey.api.study.actions;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.data.*;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.query.PdLookupForeignKey;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.security.ACL;
 import org.labkey.api.util.GUID;
 
@@ -55,10 +58,45 @@ public class AssayRunUploadForm extends ProtocolIdForm implements AssayRunUpload
     private String _uploadAttemptID = GUID.makeGUID();
     private Map<PropertyDescriptor, File> _additionalFiles;
 
+    // Unfortunate query hackery that orders display columns based on default view
+    protected PropertyDescriptor[] reorderDomainColumns(PropertyDescriptor[] unorderedColumns, ViewContext context, ExpProtocol protocol)
+    {
+        Map<String, PropertyDescriptor> nameToCol = new HashMap<String, PropertyDescriptor>();
+        // unfortunately, we have to match on label/caption when mapping propertydescriptors to columninfo objects;
+        // there are no other pieces of data that are the same.
+        for (PropertyDescriptor pd : unorderedColumns)
+            nameToCol.put(pd.getLabel(), pd);
+
+        List<PropertyDescriptor> orderedColumns = new ArrayList<PropertyDescriptor>();
+        // add all columns that are found in the default view in the correct order:
+        QueryView dataView = getProvider().createRunDataView(context, protocol);
+        List<DisplayColumn> allColumns = dataView.getDisplayColumns();
+        for (DisplayColumn dc : allColumns)
+        {
+            if (!dc.isEditable())
+                continue;
+
+            if (dc instanceof UrlColumn)
+                continue;
+
+            PropertyDescriptor col = nameToCol.get(dc.getCaption());
+            if (col != null)
+            {
+                orderedColumns.add(col);
+                nameToCol.remove(dc.getName());
+            }
+        }
+        // add the remaining columns:
+        for (PropertyDescriptor col : nameToCol.values())
+            orderedColumns.add(col);
+        return orderedColumns.toArray(new PropertyDescriptor[orderedColumns.size()]);
+    }
+
     public PropertyDescriptor[] getRunDataProperties()
     {
         AssayProvider provider = AssayService.get().getProvider(getProtocol());
-        return provider.getRunDataColumns(getProtocol());
+        PropertyDescriptor[] properties = provider.getRunDataColumns(getProtocol());
+        return reorderDomainColumns(properties, getViewContext(), getProtocol());
     }
 
     public Map<PropertyDescriptor, String> getRunProperties()
@@ -66,8 +104,9 @@ public class AssayRunUploadForm extends ProtocolIdForm implements AssayRunUpload
         if (_runProperties == null)
         {
             AssayProvider provider = AssayService.get().getProvider(getProtocol());
-
-            _runProperties = getPropertyMapFromRequest(Arrays.asList(provider.getRunInputPropertyColumns(getProtocol())));
+            PropertyDescriptor[] properties = provider.getRunInputPropertyColumns(getProtocol());
+            properties = reorderDomainColumns(properties, getViewContext(), getProtocol());
+            _runProperties = getPropertyMapFromRequest(Arrays.asList(properties));
         }
         return _runProperties;
     }
@@ -121,7 +160,9 @@ public class AssayRunUploadForm extends ProtocolIdForm implements AssayRunUpload
         if (_uploadSetProperties == null)
         {
             AssayProvider provider = AssayService.get().getProvider(getProtocol());
-            _uploadSetProperties = getPropertyMapFromRequest(Arrays.asList(provider.getUploadSetColumns(getProtocol())));
+            PropertyDescriptor[] properties = provider.getUploadSetColumns(getProtocol());
+            properties = reorderDomainColumns(properties, getViewContext(), getProtocol());
+            _uploadSetProperties = getPropertyMapFromRequest(Arrays.asList(properties));
         }
         return _uploadSetProperties;
     }
