@@ -454,7 +454,7 @@ BODY, DIV, TD, .normal, .normal td, .normal th, .wiki, .wiki-table td, .wiki-tab
     {
     font-family: verdana;
     font-size: <%= themeFont.getNormalSize() %>;
-    color: #<%= theme.getGradientDarkString() %>;
+    color: #<%= titleColor %>;
     text-align: left;
     text-decoration: none;
     font-weight: normal;
@@ -467,6 +467,21 @@ BODY, DIV, TD, .normal, .normal td, .normal th, .wiki, .wiki-table td, .wiki-tab
     background: #<%= theme.getGradientLightString() %>;
     cursor: pointer;
     cursor: hand;
+}
+
+.grid-filter-icon
+{
+    background-repeat: no-repeat;
+    display: none;
+    height: 8px;
+    width: 11px;
+    margin-left:2px;
+    vertical-align: middle;
+}
+
+.filtered .grid-filter-icon {
+    background-image: url(../_images/filter_on.gif);
+    display: inline;
 }
 
 .navTreeNode
@@ -579,7 +594,7 @@ td.wikitopic
 
 .studyCell
 {
-    vertical-align: top;    
+    vertical-align: top;
     background-color: #ffffff;
     border-right:solid 1px #808080;
 }
