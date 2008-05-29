@@ -1582,8 +1582,8 @@ internal/webapp/_images/downarrow_disabled.gif -text
 internal/webapp/_images/exclaim.gif -text
 internal/webapp/_images/expand_folders.gif -text svneol=unset#unset
 internal/webapp/_images/favicon.ico -text
-internal/webapp/_images/filter.gif -text
-internal/webapp/_images/filter_on.gif -text
+internal/webapp/_images/filter.png -text
+internal/webapp/_images/filter_on.png -text
 internal/webapp/_images/folder_open.gif -text svneol=unset#unset
 internal/webapp/_images/go-first-disabled.png -text
 internal/webapp/_images/go-first.png -text
