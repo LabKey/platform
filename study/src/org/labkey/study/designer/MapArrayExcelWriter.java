@@ -133,7 +133,7 @@ public class MapArrayExcelWriter extends ExcelWriter
             return false;
         }
 
-        public void renderSortHref(RenderContext ctx, Writer out) throws IOException
+        public void renderSortHandler(RenderContext ctx, Writer out, Sort.SortDirection sort) throws IOException
         {
             throw new UnsupportedOperationException("This is for excel only.");
         }

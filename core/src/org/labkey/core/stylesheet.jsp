@@ -454,13 +454,20 @@ BODY, DIV, TD, .normal, .normal td, .normal th, .wiki, .wiki-table td, .wiki-tab
     {
     font-family: verdana;
     font-size: <%= themeFont.getNormalSize() %>;
-    color: #808080;
+    color: #<%= theme.getGradientDarkString() %>;
     text-align: left;
     text-decoration: none;
     font-weight: normal;
     vertical-align: top;
     padding-right:4px;
     }
+
+.header.hover
+{
+    background: #<%= theme.getGradientLightString() %>;
+    cursor: pointer;
+    cursor: hand;
+}
 
 .navTreeNode
     {
