@@ -53,6 +53,10 @@ public class PropertyController extends SpringActionController
         public ModelAndView getView(DomainForm form, BindException errors) throws Exception
         {
             _domain = form.getDomain();
+            if (null == _domain)
+            {
+                HttpView.throwNotFound();
+            }
             if (!_domain.getDomainKind().canEditDefinition(getUser(), _domain))
             {
                 HttpView.throwUnauthorized();
