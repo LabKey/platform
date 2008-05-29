@@ -34,7 +34,9 @@ import org.springframework.validation.BindException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * User: jeckels
@@ -45,7 +47,7 @@ public class CoreController extends SpringActionController
     private static final long SECS_IN_DAY = 60 * 60 * 24;
     private static final long MILLIS_IN_DAY = 1000 * SECS_IN_DAY;
 
-    private static AtomicReference<PageFlowUtil.Content> _cssContent = new AtomicReference<PageFlowUtil.Content>();
+    private static Map<Class, PageFlowUtil.Content> _cssContent = Collections.synchronizedMap(new HashMap<Class, PageFlowUtil.Content>());
     private static ActionResolver _actionResolver = new DefaultActionResolver(CoreController.class);
 
     public CoreController()
@@ -59,7 +61,7 @@ public class CoreController extends SpringActionController
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
             // This action gets called a LOT, so cache the generated .css
-            PageFlowUtil.Content c = _cssContent.get();
+            PageFlowUtil.Content c = _cssContent.get(getClass());
             HttpServletRequest request = getViewContext().getRequest();
             Integer dependsOn = AppProps.getInstance().getLookAndFeelRevision();
             if (null == c || !dependsOn.equals(c.dependencies) || null != request.getParameter("nocache") || AppProps.getInstance().isDevMode())
@@ -69,7 +71,7 @@ public class CoreController extends SpringActionController
                 c = PageFlowUtil.getViewContent(view, request, response);
                 c.dependencies = dependsOn;
                 c.encoded = compressCSS(c.content);
-                _cssContent.set(c);
+                _cssContent.put(this.getClass(), c);
             }
 
             response.setContentType("text/css");
