@@ -16,45 +16,44 @@
 
 package org.labkey.study.controllers.designer;
 
+import jxl.Range;
+import jxl.Workbook;
+import jxl.WorkbookSettings;
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.action.*;
-import org.labkey.api.view.*;
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.User;
-import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.ExcelColumn;
 import org.labkey.api.announcements.DiscussionService;
-import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.ExcelColumn;
+import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.portal.ProjectUrls;
-import org.labkey.study.designer.view.StudyDesignsWebPart;
+import org.labkey.api.security.ACL;
+import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.User;
+import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.*;
+import org.labkey.common.tools.TabLoader;
 import org.labkey.study.designer.*;
-import org.labkey.study.designer.client.model.GWTStudyDefinition;
 import org.labkey.study.designer.client.model.GWTCohort;
+import org.labkey.study.designer.client.model.GWTStudyDefinition;
+import org.labkey.study.designer.view.StudyDesignsWebPart;
 import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
-import org.labkey.common.tools.TabLoader;
-import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
-import org.apache.commons.lang.StringUtils;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.util.*;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
-
-import jxl.Workbook;
-import jxl.WorkbookSettings;
-import jxl.Range;
+import java.util.*;
 
 /**
  * User: jgarms
@@ -192,7 +191,15 @@ public class DesignerController extends SpringActionController
 
             int revision = form.getRevision();
             if (revision == 0 && form.getStudyId() > 0)
-                revision = StudyDesignManager.get().getLatestRevisionNumber(getContainer(), form.getStudyId());
+            {
+                Integer revInteger = StudyDesignManager.get().getLatestRevisionNumber(getContainer(), form.getStudyId());
+                if (revInteger == null)
+                {
+                    HttpView.throwNotFound("No revision found for Study ID: " + form.getStudyId());
+                    return null;
+                }
+                revision = revInteger.intValue();
+            }
             params.put("revision", Integer.toString(revision));
             params.put("edit", getViewContext().hasPermission(ACL.PERM_UPDATE) && form.isEdit() ? "true" : "false");
             boolean canEdit = getViewContext().hasPermission(ACL.PERM_UPDATE);

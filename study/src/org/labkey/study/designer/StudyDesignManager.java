@@ -194,7 +194,10 @@ public class StudyDesignManager
         return (null == version || version.length == 0) ? null : version[0];
     }
 
-    public int getLatestRevisionNumber(Container c, int studyId) throws SQLException
+    /**
+     * returns null if no revision can be found for the particular study and container
+     */
+    public Integer getLatestRevisionNumber(Container c, int studyId) throws SQLException
     {
         String sql = "SELECT Max(revision) FROM " + getStudyVersionTable().getAliasName() + " WHERE Container=? AND StudyId=?";
         return Table.executeSingleton(getSchema(), sql, new Object[] {c.getId(), studyId}, Integer.class);
