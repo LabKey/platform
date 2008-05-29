@@ -36,8 +36,8 @@ INSERT INTO PropertyIdsToDelete (SELECT p.propertyid FROM exp.propertydescriptor
 AND pd.DomainId NOT IN
 	(SELECT MAX(DomainId) as m FROM exp.DomainDescriptor WHERE DomainURI LIKE '%:DataInputRole' OR DomainURI LIKE '%:MaterialInputRole' GROUP BY DomainURI));
 
--- Don't try to delete entries that are currently in use
-DELETE FROM PropertyIdsToDelete WHERE PropertyId IN (SELECT PropertyId FROM exp.ObjectProperty);
+-- Get rid of lingering uses of these orphaned PropertyDescriptors
+DELETE FROM exp.ObjectProperty WHERE PropertyId IN (SELECT PropertyId FROM PropertyIdsToDelete);
 
 -- Get rid of the duplicate PropertyDescriptors
 DELETE FROM exp.PropertyDomain WHERE PropertyId IN (SELECT PropertyId FROM PropertyIdsToDelete);

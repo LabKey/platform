@@ -39,6 +39,10 @@ AND pd.DomainId NOT IN
 	(SELECT MAX(DomainId) as m FROM exp.DomainDescriptor WHERE DomainURI LIKE '%:DataInputRole' OR DomainURI LIKE '%:MaterialInputRole' GROUP BY DomainURI)
 GO
 
+-- Get rid of lingering uses of these orphaned PropertyDescriptors
+DELETE FROM exp.ObjectProperty WHERE PropertyId IN (SELECT PropertyId FROM ##PropertyIdsToDelete)
+GO
+
 -- Get rid of the duplicate PropertyDescriptors
 DELETE FROM exp.PropertyDomain WHERE PropertyId IN (SELECT PropertyId FROM ##PropertyIdsToDelete)
 GO
