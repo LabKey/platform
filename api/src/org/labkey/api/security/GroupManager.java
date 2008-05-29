@@ -48,6 +48,32 @@ public class GroupManager
     private static final String GROUP_CACHE_PREFIX = "Groups/Groups=";
     public static final String GROUP_AUDIT_EVENT = "GroupAuditEvent";
 
+    public enum PrincipalType
+    {
+        USER('u'),
+        GROUP('g'),
+        ROLE('r'),
+        MODULE('m');
+
+        final char typeChar;
+        PrincipalType(char type)
+        {
+            typeChar = type;
+        }
+
+        static PrincipalType forChar(char type)
+        {
+            switch (type)
+            {
+                case 'u': return USER;
+                case 'g': return GROUP;
+                case 'r': return ROLE;
+                case 'm': return MODULE;
+                default : return null;
+            }
+        }
+    }
+
     static
     {
         SecurityManager.addGroupListener(new GroupCacheListener());
@@ -148,10 +174,15 @@ public class GroupManager
      */
     public static void bootstrapGroup(int userId, String name)
     {
+        bootstrapGroup(userId, name, PrincipalType.GROUP);
+    }
+
+    public static void bootstrapGroup(int userId, String name, PrincipalType type)
+    {
         int gotUserId;
         try
         {
-            if ((gotUserId = createSystemGroup(userId, name)) != userId)
+            if ((gotUserId = createSystemGroup(userId, name, type)) != userId)
                 _log.warn(name + " group exists but has an unexpected UserId (is " + gotUserId + ", should be " + userId + ")");
         }
         catch (SQLException e)
@@ -168,7 +199,7 @@ public class GroupManager
         StringBuffer ins = new StringBuffer();
         ins.append("INSERT INTO ");
         ins.append(_core.getTableInfoPrincipals());
-        ins.append(" (UserId, Name, Type) VALUES (?, ?, 'g')");
+        ins.append(" (UserId, Name, Type) VALUES (?, ?, ?)");
         _core.getSqlDialect().overrideAutoIncrement(ins, _core.getTableInfoPrincipals());
         _insertGroupSql = ins.toString();
     }
@@ -177,7 +208,7 @@ public class GroupManager
     /**
      * Create a group in the Principals table
      */
-    private static int createSystemGroup(int userId, String name)
+    private static int createSystemGroup(int userId, String name, PrincipalType type)
             throws SQLException
     {
         // See if principal with the given name already exists
@@ -186,9 +217,9 @@ public class GroupManager
                 new Object[]{name}, Integer.class);
 
         if (id != null)
-            return id;
+            return id.intValue();
 
-        Table.execute(_core.getSchema(), _insertGroupSql, new Object[]{userId, name});
+        Table.execute(_core.getSchema(), _insertGroupSql, new Object[]{userId, name, type.typeChar});
 
         return userId;
     }

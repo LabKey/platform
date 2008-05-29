@@ -468,7 +468,7 @@ public class UserManager
         // Add row to Principals
         Map<String, Object> fieldsIn = new HashMap<String, Object>();
         fieldsIn.put("Name", email.getEmailAddress());
-        fieldsIn.put("Type", "u");
+        fieldsIn.put("Type", GroupManager.PrincipalType.USER.typeChar);
         try
         {
             Map returnMap = Table.insert(null, _core.getTableInfoPrincipals(), fieldsIn);
@@ -595,20 +595,25 @@ public class UserManager
         if (!name.trim().equals(name))
             return "Name should not start or end with whitespace";
 
-        switch (type.charAt(0))
+        GroupManager.PrincipalType pt = GroupManager.PrincipalType.forChar(type.charAt(0));
+        if (null == pt)
+            throw new IllegalArgumentException("Unknown principal type: '" + type + "'");
+        
+        switch (pt)
         {
             // USER
-            case 'u':
+            case USER:
                 throw new IllegalArgumentException("User names are not allowed");
 
             // GROUP (regular project or global)
-            case 'g':
+            case ROLE:
+            case GROUP:
                 if (!StringUtils.containsNone(name, "@./\\-&~_"))
                     return "Group name should not contain punctuation.";
                 break;
 
             // MODULE MANAGED
-            case 'm':
+            case MODULE:
                 // no validation, HOWEVER must be UNIQUE
                 // recommended start with @ or look like a GUID
                 // must contain punctuation, but not look like email
