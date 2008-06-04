@@ -30,6 +30,8 @@ import org.labkey.api.util.Cache;
 import org.labkey.api.view.HttpView;
 import org.labkey.study.StudySchema;
 import org.apache.log4j.Logger;
+import org.apache.log4j.Category;
+import org.apache.commons.lang.StringUtils;
 
 import javax.servlet.ServletException;
 import java.sql.SQLException;
@@ -44,6 +46,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 {
     // standard string to use in URLs etc.
     public static final String DATASETKEY = "datasetId";
+    private static Category _log = Logger.getInstance(DataSetDefinition.class);
    
     private Study _study;
     private int _dataSetId;
@@ -311,8 +314,20 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             {
                 mlo.verify();
                 TableInfo tinfoProp = mlo.tinfoFrom;
-                Table.TempTableInfo tinfoMat = (Table.TempTableInfo)mlo.tinfoMat;
+                Table.TempTableInfo tinfoMat = mlo.tinfoMat;
 
+                if (tinfoMat != null)
+                {
+                    TableInfo tinfoFrom = getJoinTableInfo();
+                    if (!tinfoProp.getColumnNameSet().equals(tinfoFrom.getColumnNameSet()))
+                    {
+                        StringBuilder msg = new StringBuilder("unexpected difference in columns sets\n");
+                        msg.append("  tinfoProp: " + StringUtils.join(tinfoProp.getColumnNameSet(),",") + "\n");
+                        msg.append("  tinfoFrom: " + StringUtils.join(tinfoFrom.getColumnNameSet(),",") + "\n");
+                        _log.error(msg);
+                        tinfoMat = null;
+                    }
+                }
                 if (tinfoMat == null)
                 {
                     TableInfo tinfoFrom = getJoinTableInfo();
@@ -320,15 +335,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
                     mlo.tinfoFrom = tinfoFrom;
                     mlo.tinfoMat = tinfoMat;
-                }
-                else
-                {
-                    //noinspection ConstantConditions
-                    if (debug)
-                    {
-                        TableInfo tinfoFrom = getJoinTableInfo();
-                        assert tinfoProp.getColumnNameSet().equals(tinfoFrom.getColumnNameSet());
-                    }
                 }
                 return tinfoMat;
             }
