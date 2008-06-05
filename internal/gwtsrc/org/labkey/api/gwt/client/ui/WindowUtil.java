@@ -16,11 +16,10 @@
 
 package org.labkey.api.gwt.client.ui;
 
-import com.google.gwt.user.client.ui.Widget;
-import com.google.gwt.user.client.ui.DialogBox;
-import com.google.gwt.user.client.Window;
-import com.google.gwt.user.client.DeferredCommand;
 import com.google.gwt.user.client.Command;
+import com.google.gwt.user.client.Window;
+import com.google.gwt.user.client.ui.DialogBox;
+import com.google.gwt.user.client.ui.Widget;
 
 /**
  * Created by IntelliJ IDEA.
@@ -122,6 +121,13 @@ public class WindowUtil
      */
     public static native void setLocation(String loc) /*-{
          $wnd.location = loc;
+    }-*/;
+
+    /**
+     * Navigates back one page
+     */
+    public static native void back() /*-{
+        $wnd.history.back();
     }-*/;
 
     public static void centerDialog(DialogBox dialogBox)

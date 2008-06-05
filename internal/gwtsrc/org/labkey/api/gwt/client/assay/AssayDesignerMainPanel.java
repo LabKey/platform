@@ -34,7 +34,7 @@ import java.util.*;
  * Date: Jun 20, 2007
  * Time: 2:24:04 PM
  */
-public class AssayDesignerMainPanel extends VerticalPanel
+public class AssayDesignerMainPanel extends VerticalPanel implements Saveable
 {
     private RootPanel _rootPanel;
     private AssayServiceAsync _testService;
@@ -46,9 +46,10 @@ public class AssayDesignerMainPanel extends VerticalPanel
     private HTML _statusLabel = new HTML("<br/>");
     private String _statusSuccessful = "Save successful.";
     private BoundTextBox _nameBox;
-    private BoundTextAreaBox _descriptionBox;
-    private List _saveButtons = new ArrayList();
     private boolean _copy;
+    private SaveButtonBar saveBarTop;
+    private SaveButtonBar saveBarBottom;
+
 
     public AssayDesignerMainPanel(RootPanel rootPanel, String providerName, Integer protocolId, boolean copy)
     {
@@ -235,8 +236,8 @@ public class AssayDesignerMainPanel extends VerticalPanel
 
         _rootPanel.clear();
         _domainEditors.clear();
-        _saveButtons.clear();
-        _rootPanel.add(createButtonBar());
+        saveBarTop = new SaveButtonBar(this);
+        _rootPanel.add(saveBarTop);
         _rootPanel.add(_statusLabel);
 
         Widget infoPanel = createAssayInfo(_assay);
@@ -274,7 +275,8 @@ public class AssayDesignerMainPanel extends VerticalPanel
         }
 
         _rootPanel.add(new HTML("<br/><br/>"));
-        _rootPanel.add(createButtonBar());
+        saveBarBottom = new SaveButtonBar(this);
+        _rootPanel.add(saveBarBottom);
         setDirty(_copy);
         
         Window.addWindowCloseListener(new WindowCloseListener()
@@ -301,34 +303,6 @@ public class AssayDesignerMainPanel extends VerticalPanel
     protected PropertiesEditor createPropertiesEditor(GWTDomain domain)
     {
         return new PropertiesEditor(getLookupService());
-    }
-
-    private Widget createButtonBar()
-    {
-        // Put them in a table for spacing
-        FlexTable buttonBar = new FlexTable();
-        ImageButton saveButton = new ImageButton("Save Changes", new ClickListener()
-        {
-            public void onClick(Widget sender)
-            {
-                save();
-            }
-        });
-        
-        _saveButtons.add(saveButton);
-        buttonBar.setWidget(0, 0, saveButton);
-        buttonBar.setWidget(0, 1, new HTML(" "));
-
-        // If a new assay is never saved, there are no details to view, so it will take the user to the study
-        String doneLink;
-        if (_assay != null && _assay.getProtocolId() != null)
-            doneLink = PropertyUtil.getContextPath() + "/" + PropertyUtil.getPageFlow() + PropertyUtil.getContainerPath() + "/assayRuns.view?rowId=" + _assay.getProtocolId();
-        else
-            doneLink = PropertyUtil.getContextPath() + "/Project" + PropertyUtil.getContainerPath() + "/begin.view";
-        LinkButton doneButton = new LinkButton("Done", doneLink);
-
-        buttonBar.setWidget(0, 1, doneButton);
-        return buttonBar;
     }
 
     private Widget createAssayInfo(final GWTProtocol assay)
@@ -358,7 +332,7 @@ public class AssayDesignerMainPanel extends VerticalPanel
             table.setHTML(0, 0, "Name");
         }
 
-        _descriptionBox = new BoundTextAreaBox("Description", assay.getDescription(), new WidgetUpdatable()
+        BoundTextAreaBox descriptionBox = new BoundTextAreaBox("Description", assay.getDescription(), new WidgetUpdatable()
         {
             public void update(Widget widget)
             {
@@ -370,7 +344,7 @@ public class AssayDesignerMainPanel extends VerticalPanel
             }
         });
         table.setHTML(1, 0, "Description");
-        table.setWidget(1, 1, _descriptionBox);
+        table.setWidget(1, 1, descriptionBox);
 
         if (assay.getAvailablePlateTemplates() != null)
         {
@@ -411,8 +385,13 @@ public class AssayDesignerMainPanel extends VerticalPanel
     {
         if (dirty && _statusLabel.getText().equalsIgnoreCase(_statusSuccessful))
             _statusLabel.setHTML("<br/>");
-        for (int i = 0; i < _saveButtons.size(); i++)
-            ((ImageButton) _saveButtons.get(i)).setEnabled(dirty);
+
+        if (saveBarTop != null)
+            saveBarTop.ownerDirty(dirty);
+
+        if (saveBarBottom != null)
+            saveBarBottom.ownerDirty(dirty);
+
         _dirty = dirty;
     }
 
@@ -424,12 +403,11 @@ public class AssayDesignerMainPanel extends VerticalPanel
             errors.add(error);
 
         int numProps = 0;
-        PropertiesEditor propeditor = null;
 
         // Get the errors for each of the PropertiesEditors
         for (int i = 0; i < _domainEditors.size(); i++)
         {
-            propeditor = (PropertiesEditor)(_domainEditors.get(i));
+            PropertiesEditor propeditor = (PropertiesEditor)(_domainEditors.get(i));
             List domainErrors = propeditor.validate();
             numProps += propeditor.getPropertyCount(false);
             if (domainErrors != null && domainErrors.size() > 0)
@@ -455,7 +433,27 @@ public class AssayDesignerMainPanel extends VerticalPanel
             return true;
     }
 
-    private void save()
+    public void save()
+    {
+        save(new AsyncCallback()
+        {
+            public void onFailure(Throwable caught)
+            {
+                Window.alert(caught.getMessage());
+            }
+
+            public void onSuccess(Object result)
+            {
+                setDirty(false);
+                _statusLabel.setHTML( _statusSuccessful);
+                _assay = (GWTProtocol) result;
+                _copy = false;
+                show(_assay);
+            }
+        });
+    }
+
+    public void save(AsyncCallback callback)
     {
         if (validate())
         {
@@ -468,7 +466,34 @@ public class AssayDesignerMainPanel extends VerticalPanel
             _assay.setDomains(domains);
 
             _assay.setProviderName(_providerName);
-            getService().saveChanges(_assay, true, new AsyncCallback()
+            getService().saveChanges(_assay, true, callback);
+        }
+    }
+
+    public void cancel()
+    {
+        // We're already listening for navigation if the dirty bit is set,
+        // so no extra handling is needed.
+        WindowUtil.back();
+    }
+
+    public void finish()
+    {
+        // If a new assay is never saved, there are no details to view, so it will take the user to the study
+        final String doneLink;
+        if (_assay != null && _assay.getProtocolId() != null)
+            doneLink = PropertyUtil.getContextPath() + "/" + PropertyUtil.getPageFlow() + PropertyUtil.getContainerPath() + "/assayRuns.view?rowId=" + _assay.getProtocolId();
+        else
+            doneLink = PropertyUtil.getContextPath() + "/Project" + PropertyUtil.getContainerPath() + "/begin.view";
+
+        if (!_dirty)
+        {
+            // No need to save
+            WindowUtil.setLocation(doneLink);
+        }
+        else
+        {
+            save(new AsyncCallback()
             {
                 public void onFailure(Throwable caught)
                 {
@@ -477,13 +502,14 @@ public class AssayDesignerMainPanel extends VerticalPanel
 
                 public void onSuccess(Object result)
                 {
-                    _statusLabel.setHTML( _statusSuccessful);
-                    _assay = (GWTProtocol) result;
-                    _copy = false;
-                    show(_assay);
+                    // save was successful, so don't prompt when navigating away
+                    setDirty(false);
+
+                    WindowUtil.setLocation(doneLink);
                 }
             });
         }
+
     }
 
     protected LookupServiceAsync getLookupService()

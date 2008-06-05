@@ -56,7 +56,7 @@ public class PreferenceService
 
     public String getProperty(String name, User user)
     {
-        if (user.isGuest())
+        if (user == null || user.isGuest())
             return getSessionPreferences().get(name);
 
         return (String) getPreferences(user).get(name);
