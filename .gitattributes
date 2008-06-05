@@ -1946,7 +1946,6 @@ wiki/src/org/labkey/wiki/view/wiki_delete.gm -text
 wiki/src/org/labkey/wiki/view/wiki_manage.gm -text
 wiki/src/org/labkey/wiki/view/wiki_printall.gm -text
 wiki/src/org/labkey/wiki/view/wiki_printraw.gm -text
-wiki/src/org/labkey/wiki/view/wiki_update.gm -text
 wiki/src/org/labkey/wiki/view/wiki_version.gm -text
 wiki/src/org/labkey/wiki/welcomeWiki.txt -text
 wiki/webapp/_images/page.png -text
