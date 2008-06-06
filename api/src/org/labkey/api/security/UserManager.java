@@ -416,7 +416,7 @@ public class UserManager
          */
         public String getDisplayName(ViewContext context)
         {
-            if (context.getUser().isGuest())
+            if (context.getUser() != null && context.getUser().isGuest())
             {
                 return sanitizeEmailAddress(_displayName);
             }

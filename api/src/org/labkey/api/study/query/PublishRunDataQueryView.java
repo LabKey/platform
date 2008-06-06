@@ -109,6 +109,9 @@ public class PublishRunDataQueryView extends RunDataQueryView
         DataRegion dr = super.createDataRegion();
         dr.setShowFilters(false);
         dr.setSortable(false);
+        dr.setShowPagination(false);
+        dr.setShowRows(ShowRows.ALL);
+        dr.setMaxRows(0);
         List<DisplayColumn> extraColumns = getExtraColumns();
         int idx = 0;
         for (DisplayColumn extra : extraColumns)

@@ -371,24 +371,32 @@ public class ContainerManager
         if (null != d)
             return d;
 
-        Container dirParent;
-
         try
         {
             if (path.equals("/"))
             {
-                // special case for ROOT
+                // Special case for ROOT.  Never return null -- either database error or corrupt database
                 Container[] ret = Table.executeQuery(core.getSchema(),
                         "SELECT * FROM " + core.getTableInfoContainers() + " WHERE Parent IS NULL",
                         null, Container.class);
-                d = ret == null || ret.length == 0 ? null : ret[0];
+
+                if (null == ret || ret.length == 0)
+                    throw new RuntimeException("Root container does not exist");
+
+                if (ret.length > 1)
+                    throw new RuntimeException("More than one root container was found");
+
+                if (null == ret[0])
+                    throw new RuntimeException("Root container is NULL");
+
+                return ret[0];
             }
             else
             {
                 int i = path.lastIndexOf('/');
                 String name = path.substring(i + 1);
                 String parent = (-1 == i) ? "/" : path.substring(0, i);
-                dirParent = getForPath(parent);
+                Container dirParent = getForPath(parent);
 
                 if (null == dirParent)
                     return null;
@@ -404,10 +412,8 @@ public class ContainerManager
         }
         catch (SQLException e)
         {
-            _log.error("Error getting container", e);
+            throw new RuntimeSQLException(e);
         }
-
-        return null;
     }
 
 

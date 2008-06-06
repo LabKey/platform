@@ -168,9 +168,15 @@ public class ExceptionUtil
             try
             {
                 MothershipReport report = new MothershipReport("reportException");
-                StringWriter writer = new StringWriter();
-                ex.printStackTrace(new PrintWriter(writer, true));
-                report.addParam("stackTrace", writer.getBuffer().toString());
+                StringWriter stringWriter = new StringWriter();
+                PrintWriter printWriter = new PrintWriter(stringWriter, true);
+                ex.printStackTrace(printWriter);
+                if (ex instanceof ServletException && ((ServletException)ex).getRootCause() != null)
+                {
+                    printWriter.println("Nested ServletException cause is:");
+                    ((ServletException)ex).getRootCause().printStackTrace(printWriter);
+                }
+                report.addParam("stackTrace", stringWriter.getBuffer().toString());
                 report.addParam("browser", request == null ? null : request.getHeader("User-Agent"));
                 if (ex instanceof SQLException)
                 {

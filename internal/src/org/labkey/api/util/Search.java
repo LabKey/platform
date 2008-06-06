@@ -75,17 +75,16 @@ public class Search
             {
                 for (int i=0; i < size - 1; i++)
                 {
-                    joined.append(searchables.get(i).getSearchResultName().toLowerCase());
+                    joined.append(searchables.get(i).getSearchResultNamePlural().toLowerCase());
                     if (size > 2)
-                        joined.append("s, ");
+                        joined.append(", ");
                     else
-                        joined.append("s ");
+                        joined.append(" ");
                 }
 
                 joined.append("and ");
             }
-            joined.append(searchables.get(size - 1).getSearchResultName().toLowerCase());
-            joined.append("s");
+            joined.append(searchables.get(size - 1).getSearchResultNamePlural().toLowerCase());
 
             result = joined.toString();
             if (searchables == _searchables)
@@ -219,10 +218,10 @@ public class Search
 
         /**
          * Returns a static string used to classify the search results to the user
-         * For example "Wiki Page" or "Issue".
+         * For example "Wiki Pages" or "Issues".
          * @return The type of search results returned from this provier
          */
-        String getSearchResultName();
+        String getSearchResultNamePlural();
 
         /**
          * Returns a name used to programmatically identify the search domain.

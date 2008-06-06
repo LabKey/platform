@@ -24,7 +24,9 @@ import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.security.User;
 import org.labkey.api.util.AppProps;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.*;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.common.util.Pair;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -53,8 +55,10 @@ public abstract class DefaultModule implements Module
     private final Map<Class, String> _pageFlowClassToName = new HashMap<Class, String>();
     private final WebPartFactory[] _webParts;
     private static final Logger _log = Logger.getLogger(DefaultModule.class);
+
     private boolean _beforeUpdateComplete;
-    private boolean _afterUpdateComplete;
+    private UpdateState _afterUpdateState = UpdateState.NotStarted;
+    private enum UpdateState { NotStarted, InProgress, Complete }
 
     private Map<String, String> _metaData;
     private boolean _loadFromSource;
@@ -158,7 +162,7 @@ public abstract class DefaultModule implements Module
      * hit the home page during upgrade.  We need to synchronize beforeSchemaUpdate and afterSchemaUpdate here.
      * SqlScriptRunner will run and synchronize the actual scripts.
      */
-    public ActionURL versionUpdate(ModuleContext moduleContext, ViewContext viewContext)
+    public ActionURL versionUpdate(final ModuleContext moduleContext, final ViewContext viewContext)
     {
         synchronized(SCHEMA_UPDATE_LOCK)
         {
@@ -181,9 +185,33 @@ public abstract class DefaultModule implements Module
 
         synchronized(SCHEMA_UPDATE_LOCK)
         {
-            if (!_afterUpdateComplete)
-                afterSchemaUpdate(moduleContext, viewContext);
-            _afterUpdateComplete = true;
+            if (UpdateState.Complete != _afterUpdateState)
+            {
+                if (UpdateState.NotStarted == _afterUpdateState)
+                {
+                    _afterUpdateState = UpdateState.InProgress;
+                    Thread afterSchemaUpdateThread = new Thread()
+                    {
+                        public void run()
+                        {
+                            try
+                            {
+                                afterSchemaUpdate(moduleContext, viewContext);
+                            }
+                            catch (Exception e)
+                            {
+                                ExceptionUtil.logExceptionToMothership(viewContext.getRequest(), e);
+                            }
+                            finally
+                            {
+                                _afterUpdateState = UpdateState.Complete;
+                            }
+                        }
+                    };
+                    afterSchemaUpdateThread.start();
+                }
+                return PageFlowUtil.urlProvider(AdminUrls.class).getModuleStatusURL();
+            }
         }
 
         return moduleContext.getUpgradeCompleteURL(getVersion());

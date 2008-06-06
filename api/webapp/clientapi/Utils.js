@@ -47,6 +47,28 @@ LABKEY.Utils = new function()
             var text = document.createTextNode(html);
             div.appendChild(text);
             return div.innerHTML;
+        },
+
+        displayAjaxErrorResponse: function(resonseObj, exceptionObj)
+        {
+            var error;
+            if (resonseObj &&
+                resonseObj.responseText &&
+                resonseObj.getResponseHeader['Content-Type'] &&
+                resonseObj.getResponseHeader['Content-Type'].indexOf('application/json') >= 0)
+            {
+                var jsonResponse = Ext.util.JSON.decode(resonseObj.responseText);
+                if (jsonResponse && jsonResponse.exception)
+                {
+                    error = "An error occurred trying to load:\n" + jsonResponse.exception;
+                    error += "\n(" + (jsonResponse.exceptionClass ? jsonResponse.exceptionClass : "Exception class unknown") + ")";
+                }
+            }
+            if (!error)
+                error = "An error occurred trying to load.\nStatus: " + resonseObj.statusText + " (" + resonseObj.status + ")";
+            if (exceptionObj && exceptionObj.message)
+                error += "\n" + exceptionObj.name + ": " + exceptionObj.message;
+            Ext.Msg.alert("Load Error", error);
         }
     }
 }

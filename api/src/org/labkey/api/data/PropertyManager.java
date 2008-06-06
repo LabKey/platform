@@ -157,6 +157,11 @@ public class PropertyManager
     }
 
 
+    public static PropertyMap getWritableProperties(String objectId, String category, boolean create)
+    {
+        return getWritableProperties(0, objectId, category, create);
+    }
+
     public static PropertyMap getWritableProperties(int userId, String objectId, String category, boolean create)
     {
         synchronized (objectId.intern())

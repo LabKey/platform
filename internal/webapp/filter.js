@@ -107,14 +107,19 @@ function showFilterPanel(elem, tableName, colName, caption, dataType)
             resizable: false,
             closeAction: 'hide'
         });
+
+        // 5975: Override focus behavior. Keeps Ext.Window from stealing focus after showing.
+        _filterWin.focus = function () {
+            doChange(document.getElementById("compare_1"));
+            doChange(document.getElementById("compare_2"));
+        };
     }
-    _filterWin.setTitle("Show Rows Where " + caption);
-    _filterWin.show();
 
     if (filterIndex == 2)
         document.getElementById("compare_2").selectedIndex = 0;
-    doChange(document.getElementById("compare_1"));
-    doChange(document.getElementById("compare_2"));
+
+    _filterWin.setTitle("Show Rows Where " + caption);
+    _filterWin.show();
 }
 
 function hideFilterDiv()

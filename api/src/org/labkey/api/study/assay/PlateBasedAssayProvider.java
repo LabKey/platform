@@ -21,6 +21,7 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
@@ -34,6 +35,9 @@ import org.labkey.api.study.PlateService;
 import org.labkey.api.study.PlateTemplate;
 import org.labkey.api.study.WellGroupTemplate;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.HtmlView;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -276,27 +280,7 @@ public abstract class PlateBasedAssayProvider extends AbstractAssayProvider
             List<PropertyDescriptor> selected = new ArrayList<PropertyDescriptor>();
             for (PropertyDescriptor possible : allSampleProperties)
             {
-                boolean skip = false;
-                if ((filterInputsForType instanceof SpecimenIDLookupResolverType || filterInputsForType instanceof ThawListResolverType) &&
-                        (possible.getName().equals(AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME) ||
-                         possible.getName().equals(AbstractAssayProvider.VISITID_PROPERTY_NAME) ||
-                         possible.getName().equals(AbstractAssayProvider.DATE_PROPERTY_NAME)))
-                {
-                    skip = true;
-                }
-                else if (filterInputsForType instanceof ParticipantVisitLookupResolverType &&
-                        (possible.getName().equals(AbstractAssayProvider.SPECIMENID_PROPERTY_NAME) ||
-                         possible.getName().equals(AbstractAssayProvider.DATE_PROPERTY_NAME)))
-                {
-                    skip = true;
-                }
-                else if (filterInputsForType instanceof ParticipantDateLookupResolverType &&
-                        (possible.getName().equals(AbstractAssayProvider.SPECIMENID_PROPERTY_NAME) ||
-                                possible.getName().equals(AbstractAssayProvider.VISITID_PROPERTY_NAME)))
-                {
-                    skip = true;
-                }
-                if (!skip)
+                if (filterInputsForType.collectPropertyOnUpload(possible.getName()))
                     selected.add(possible);
             }
             selectedSampleProperties = selected.toArray(new PropertyDescriptor[selected.size()]);
@@ -306,6 +290,10 @@ public abstract class PlateBasedAssayProvider extends AbstractAssayProvider
 
     public static class SpecimenIDLookupResolverType extends StudyParticipantVisitResolverType
     {
+        // null means we haven't checked the request yet to know whether
+        // or not to include the data
+        private Boolean includeParticipantAndVisit = null;
+
         public String getName()
         {
             return "SpecimenID";
@@ -313,7 +301,36 @@ public abstract class PlateBasedAssayProvider extends AbstractAssayProvider
 
         public String getDescription()
         {
-            return "I will supply specimen ids or sample ids.";
+            return "Specimen/sample id.";
+        }
+
+        public void render(RenderContext ctx) throws Exception
+        {
+            HtmlView view = new HtmlView(
+                    "<input type=\"checkbox\" name=\"includeParticipantAndVisit\">I will also provide participant id and visit id");
+            view.render(ctx.getRequest(), ctx.getViewContext().getResponse());
+        }
+
+        public boolean collectPropertyOnUpload(String propertyName)
+        {
+            if (propertyName.equals(AbstractAssayProvider.DATE_PROPERTY_NAME))
+                return false;
+
+            if (propertyName.equals(AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME) ||
+                propertyName.equals(AbstractAssayProvider.VISITID_PROPERTY_NAME))
+            {
+                if (includeParticipantAndVisit == null)
+                {
+                    // Need to initialize it
+                    String param = HttpView.currentRequest().getParameter("includeParticipantAndVisit");
+                    if ("on".equals(param))
+                        includeParticipantAndVisit = Boolean.TRUE;
+                    else
+                        includeParticipantAndVisit = Boolean.FALSE;
+                }
+                return includeParticipantAndVisit.booleanValue();
+            }
+            return true;
         }
     }
 
@@ -326,7 +343,13 @@ public abstract class PlateBasedAssayProvider extends AbstractAssayProvider
 
         public String getDescription()
         {
-            return "I will supply participant ids and visit ids.";
+            return "Participant id and visit id.";
+        }
+
+        public boolean collectPropertyOnUpload(String propertyName)
+        {
+            return !(propertyName.equals(AbstractAssayProvider.SPECIMENID_PROPERTY_NAME) ||
+                    propertyName.equals(AbstractAssayProvider.DATE_PROPERTY_NAME));
         }
     }
 
@@ -339,7 +362,13 @@ public abstract class PlateBasedAssayProvider extends AbstractAssayProvider
 
         public String getDescription()
         {
-            return "I will supply participant ids and dates.";
+            return "Participant id and date.";
+        }
+
+        public boolean collectPropertyOnUpload(String propertyName)
+        {
+            return !(propertyName.equals(AbstractAssayProvider.SPECIMENID_PROPERTY_NAME) ||
+                    propertyName.equals(AbstractAssayProvider.VISITID_PROPERTY_NAME));
         }
     }
 }

@@ -51,33 +51,33 @@ public class OORDisplayColumnFactory implements DisplayColumnFactory
         ColumnInfo combinedCol = table.addWrapColumn(numberColumn);
         combinedCol.setCaption(caption);
 
-        // Only add a new column if there is no name conflict
-        ColumnInfo wrappedNumberColumn = table.getColumn(numberColumn.getName() + NUMBER_COLUMN_SUFFIX);
-        if (wrappedNumberColumn == null)
-        {
-            wrappedNumberColumn = table.addColumn(new AliasedColumn(table, numberColumn.getName() + NUMBER_COLUMN_SUFFIX, numberColumn));
-            wrappedNumberColumn.setCaption(caption + " " + NUMBER_COLUMN_SUFFIX);
-        }
-
         ColumnInfo wrappedOORIndicatorCol = table.addWrapColumn(oorIndicatorColumn);
         wrappedOORIndicatorCol.setCaption(caption + " OOR Indicator");
 
+        // Only add new columns if there is no name conflict with either the real or virtual table
+        TableInfo realTable = table.getRealTable();
+        if (realTable.getColumn(numberColumn.getName() + NUMBER_COLUMN_SUFFIX) != null ||
+                realTable.getColumn(numberColumn.getName() + IN_RANGE_COLUMN_SUFFIX) != null ||
+                table.getColumn(numberColumn.getName() + NUMBER_COLUMN_SUFFIX) != null ||
+                table.getColumn(numberColumn.getName() + IN_RANGE_COLUMN_SUFFIX) != null )
+        {
+            return;
+        }
+
         combinedCol.setDisplayColumnFactory(new OORDisplayColumnFactory(wrappedOORIndicatorCol));
 
-        
+        ColumnInfo wrappedNumberColumn = table.addColumn(new AliasedColumn(table, numberColumn.getName() + NUMBER_COLUMN_SUFFIX, numberColumn));
+        wrappedNumberColumn.setCaption(caption + " " + NUMBER_COLUMN_SUFFIX);
+
         SQLFragment inRangeSQL = new SQLFragment("CASE WHEN ");
         inRangeSQL.append(oorIndicatorColumn.getName());
         inRangeSQL.append(" IS NULL THEN ");
         inRangeSQL.append(numberColumn.getName());
         inRangeSQL.append(" ELSE NULL END");
 
-        // Again, only add if no name conflict
-        if (table.getColumn(numberColumn.getName() + IN_RANGE_COLUMN_SUFFIX) == null)
-        {
-            ColumnInfo inRangeColumn = table.addColumn(new ExprColumn(table, numberColumn.getName() + IN_RANGE_COLUMN_SUFFIX,
+        ColumnInfo inRangeColumn = table.addColumn(new ExprColumn(table, numberColumn.getName() + IN_RANGE_COLUMN_SUFFIX,
                     inRangeSQL, numberColumn.getSqlTypeInt(), wrappedNumberColumn, wrappedOORIndicatorCol));
-            inRangeColumn.setCaption(caption + " In Range");
-            inRangeColumn.setFormatString(numberColumn.getFormatString());
-        }
+        inRangeColumn.setCaption(caption + " In Range");
+        inRangeColumn.setFormatString(numberColumn.getFormatString());
     }
 }

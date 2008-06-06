@@ -16,22 +16,21 @@
 
 package org.labkey.api.study.assay;
 
-import org.labkey.api.study.actions.AssayRunUploadForm;
-import org.labkey.api.view.InsertView;
-import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.security.User;
+import org.labkey.api.study.actions.AssayRunUploadForm;
+import org.labkey.api.view.InsertView;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Map;
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * User: jeckels
@@ -58,5 +57,7 @@ public interface ParticipantVisitResolverType
 
     public void configureRun(AssayRunUploadContext context, ExpRun run, Map<PropertyDescriptor, String> runProperties, Map<PropertyDescriptor, String> uploadSetProperties, Map<ExpData, String> inputDatas) throws ExperimentException;
 
-    void putDefaultProperties(HttpServletRequest request, Map<String, String> properties);
+    public void putDefaultProperties(HttpServletRequest request, Map<String, String> properties);
+
+    public boolean collectPropertyOnUpload(String propertyName);
 }

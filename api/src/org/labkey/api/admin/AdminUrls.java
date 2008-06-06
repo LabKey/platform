@@ -28,4 +28,5 @@ public interface AdminUrls extends UrlProvider
 {
     ActionURL getModuleErrorsURL(Container container);
     ActionURL getAdminConsoleURL();
+    ActionURL getModuleStatusURL();
 }

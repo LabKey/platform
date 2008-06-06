@@ -61,10 +61,10 @@ public class StudyParticipantVisitResolverType implements ParticipantVisitResolv
 
     public String getDescription()
     {
-        return "I will supply sample information, or I don't plan to map to participant and visit information.";
+        return "Sample information, which may be blank.";
     }
 
-    public void render(RenderContext ctx)
+    public void render(RenderContext ctx) throws Exception
     {
     }
 
@@ -81,5 +81,10 @@ public class StudyParticipantVisitResolverType implements ParticipantVisitResolv
     public void putDefaultProperties(HttpServletRequest request, Map<String, String> properties)
     {
         // No form fields, so we don't need to add anything
+    }
+
+    public boolean collectPropertyOnUpload(String propertyName)
+    {
+        return true;
     }
 }

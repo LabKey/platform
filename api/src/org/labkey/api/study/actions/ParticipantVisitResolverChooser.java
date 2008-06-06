@@ -77,7 +77,7 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
         else
         {
             out.write("<table>\n");
-            out.write("<tr><td colspan=\"2\">In order to copy data to a study, your data needs to map to participants and visits. Please choose a method of obtaining this information:</td></tr>");
+            out.write("<tr><td colspan=\"2\">My data is identified by:</td></tr>");
 
             for (ParticipantVisitResolverType resolver : _resolvers)
             {

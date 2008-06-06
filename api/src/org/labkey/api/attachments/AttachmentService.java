@@ -52,8 +52,8 @@ public class AttachmentService
         public HttpView getConfirmDeleteView(Container container, ActionURL currentUrl, AttachmentParent parent, String filename);
         public HttpView getHistoryView(ViewContext context, AttachmentParent parent);
 
-        public HttpView add(User user, AttachmentParent parent, List<AttachmentFile> files) throws IOException;
-        public HttpView getErrorView(List<AttachmentFile> files, ActionURL forwardUrl);
+        public HttpView add(User user, AttachmentParent parent, List<AttachmentFile> files);
+        public HttpView getErrorView(List<AttachmentFile> files, BindException errors, ActionURL returnUrl);
 
         public File getWebRoot(Container project);
         public void setWebRoot(Container project, File webRoot);

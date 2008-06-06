@@ -1993,6 +1993,23 @@ public class SecurityManager
         removeACL(c, c.getId()); //Inherit permissions        
     }
 
+    private static final String SUBFOLDERS_INHERIT_PERMISSIONS_NAME = "SubfoldersInheritPermissions";
+    
+    public static boolean shouldNewSubfoldersInheritPermissions(Container project)
+    {
+        Map<String, String> props = PropertyManager.getProperties(project.getId(), SUBFOLDERS_INHERIT_PERMISSIONS_NAME, false);
+        boolean subfoldersInherit = props != null && "true".equals(props.get(SUBFOLDERS_INHERIT_PERMISSIONS_NAME));
+        return subfoldersInherit;
+    }
+
+    public static void setNewSubfoldersInheritPermissions(Container project, boolean inherit)
+    {
+        Map<String, String> props = PropertyManager.getWritableProperties(project.getId(), SUBFOLDERS_INHERIT_PERMISSIONS_NAME, true);
+        props.put(SUBFOLDERS_INHERIT_PERMISSIONS_NAME, Boolean.toString(inherit));
+        PropertyManager.saveProperties(props);
+    }
+
+
     public static void changeProject(Container c, Container oldProject, Container newProject)
             throws SQLException
     {

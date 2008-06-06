@@ -150,22 +150,7 @@ LABKEY.GridView = function(config)
     // private methods:
     function handleLoadError(This, o, arg, e)
     {
-        var error;
-        if (arg && arg.responseText
-                && arg.getResponseHeader['Content-Type'] && arg.getResponseHeader['Content-Type'].indexOf('application/json') >= 0)
-        {
-            var jsonResponse = Ext.util.JSON.decode(arg.responseText);
-            if (jsonResponse && jsonResponse.exception)
-            {
-                error = "An error occurred trying to load grid data.\n" + jsonResponse.exception;
-                error += "\n(" + (jsonResponse.exceptionClass ? jsonResponse.exceptionClass : "Exception class unknown") + ")";
-            }
-        }
-        if (!error)
-            error = "An error occurred trying to load grid data.\nStatus: " + arg.statusText + " (" + arg.status + ")";
-        if (e && e.message)
-            error += "\n" + e.name + ": " + e.message;
-        Ext.Msg.alert("Load Error", error);
+        LABKEY.Utils.displayAjaxErrorResponse(arg, e);
     }
 
     function mapQueryParameters(store, options)

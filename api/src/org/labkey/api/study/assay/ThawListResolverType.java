@@ -64,7 +64,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
     public static final String THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME = "ThawListList-SchemaName";
     public static final String THAW_LIST_LIST_QUERY_NAME_INPUT_NAME = "ThawListList-QueryName";
 
-    public ParticipantVisitResolver createResolver(Collection<ExpMaterial> inputMaterials, 
+    public ParticipantVisitResolver createResolver(Collection<ExpMaterial> inputMaterials,
                                                    Collection<ExpData> inputDatas,
                                                    Collection<ExpMaterial> outputMaterials,
                                                    Collection<ExpData> outputDatas,
@@ -166,7 +166,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
 
     public String getDescription()
     {
-        return "I will supply sample indices, which map to a lookup.";
+        return "Sample indices, which map to a lookup.";
     }
 
     public void render(RenderContext ctx) throws Exception
@@ -303,5 +303,12 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
             properties.put(THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME, request.getParameter(THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME));
             properties.put(THAW_LIST_LIST_QUERY_NAME_INPUT_NAME, request.getParameter(THAW_LIST_LIST_QUERY_NAME_INPUT_NAME));
         }
+    }
+
+    public boolean collectPropertyOnUpload(String propertyName)
+    {
+        return !(propertyName.equals(AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME) ||
+                propertyName.equals(AbstractAssayProvider.VISITID_PROPERTY_NAME) ||
+                propertyName.equals(AbstractAssayProvider.DATE_PROPERTY_NAME));
     }
 }

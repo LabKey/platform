@@ -65,7 +65,7 @@ public class AssayRunUploadForm extends ProtocolIdForm implements AssayRunUpload
         // unfortunately, we have to match on label/caption when mapping propertydescriptors to columninfo objects;
         // there are no other pieces of data that are the same.
         for (PropertyDescriptor pd : unorderedColumns)
-            nameToCol.put(pd.getLabel(), pd);
+            nameToCol.put(pd.getNonBlankLabel(), pd);
 
         List<PropertyDescriptor> orderedColumns = new ArrayList<PropertyDescriptor>();
         // add all columns that are found in the default view in the correct order:
@@ -83,7 +83,7 @@ public class AssayRunUploadForm extends ProtocolIdForm implements AssayRunUpload
             if (col != null)
             {
                 orderedColumns.add(col);
-                nameToCol.remove(dc.getName());
+                nameToCol.remove(dc.getCaption());
             }
         }
         // add the remaining columns:
