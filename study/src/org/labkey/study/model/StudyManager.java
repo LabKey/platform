@@ -403,6 +403,8 @@ public class StudyManager
 
     public boolean showCohorts(Container container, User user)
     {
+        if (user == null)
+            return false;
         Study study = StudyManager.getInstance().getStudy(container);
         Integer cohortDatasetId = study.getParticipantCohortDataSetId();
         if (user.isAdministrator())

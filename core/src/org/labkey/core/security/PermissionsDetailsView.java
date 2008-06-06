@@ -26,11 +26,13 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.PropertyManager;
 
 import javax.servlet.ServletException;
 import java.io.PrintWriter;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: jeckels
@@ -159,9 +161,13 @@ public class PermissionsDetailsView extends WebPartView
         if (!_c.isRoot())
         {
             if (!_c.isProject())
-                out.println("<input type=checkbox name=inheritPermissions " + (inherited ? "checked" : "") + "> inherit permissions from " + _c.getParent().getPath());
+                out.println("<input type=checkbox name=inheritPermissions " + (inherited ? "checked" : "") + "> Inherit permissions from " + _c.getParent().getPath());
             else
+            {
                 out.println("<input type=hidden name=inheritPermissions value=off>");
+                boolean subfoldersInherit = SecurityManager.shouldNewSubfoldersInheritPermissions(_c);
+                out.println("<input type=\"checkbox\" name=\"newSubfoldersInheritPermissions\" " + (subfoldersInherit ? "checked=\"true\"" : "") + "> Newly created subfolders should inherit permissions");
+            }
         }
 
         out.println("<table>");

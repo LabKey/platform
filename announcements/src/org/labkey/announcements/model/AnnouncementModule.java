@@ -57,7 +57,7 @@ public class AnnouncementModule extends DefaultModule implements Search.Searchab
     public static final String WEB_PART_NAME = "Messages";
     public static final String SEARCH_DOMAIN = "messages";
     public static final String SEARCH_RESULT_TYPE = "labkey/message";
-    public static final String SEARCH_RESULT_TYPE_DESCR = "Message";
+    public static final String SEARCH_RESULT_TYPE_DESCR = "Messages";
 
     private static Logger _log = Logger.getLogger(AnnouncementModule.class);
 
@@ -235,7 +235,7 @@ public class AnnouncementModule extends DefaultModule implements Search.Searchab
         AnnouncementManager.search(parser, containers, hits);
     }
 
-    public String getSearchResultName()
+    public String getSearchResultNamePlural()
     {
         return SEARCH_RESULT_TYPE_DESCR;
     }

@@ -942,9 +942,21 @@ public class AnnouncementsController extends SpringActionController
     @RequiresPermission(ACL.PERM_INSERT)
     public abstract class BaseInsertAction extends FormViewAction<AnnouncementForm>
     {
-        private ActionURL _returnUrl;
+        private ActionURL _returnURL;
         protected HttpView _attachmentErrorView;
 
+        protected abstract ModelAndView getInsertUpdateView(AnnouncementForm announcementForm, boolean reshow, BindException errors) throws Exception;
+
+        public ModelAndView getView(AnnouncementForm form, boolean reshow, BindException errors) throws Exception
+        {
+            if (null != _attachmentErrorView)
+            {
+                getPageConfig().setTemplate(PageConfig.Template.Dialog);
+                return _attachmentErrorView;
+            }
+
+            return getInsertUpdateView(form, reshow, errors);
+        }
 
         public void validateCommand(AnnouncementForm form, Errors errors)
         {
@@ -972,7 +984,17 @@ public class AnnouncementsController extends SpringActionController
             else
                 insert.setMemberList(form.getMemberList());  // TODO: Do this in validate()?
 
-            AnnouncementManager.insertAnnouncement(c, u, insert, files);
+            try
+            {
+                AnnouncementManager.insertAnnouncement(c, u, insert, files);
+            }
+            catch (AttachmentService.DuplicateFilenameException e)
+            {
+                errors.reject(ERROR_MSG, "Your changes have been saved, but some attachments had duplicate names:");
+
+                for (String error: e.getErrors())
+                    errors.reject(ERROR_MSG, error);
+            }
 
             // Don't send email for notes.  For messages, send email if there's body text or an attachment.
             if (!isNote() && (null != insert.getBody() || !insert.getAttachments().isEmpty()))
@@ -982,10 +1004,10 @@ public class AnnouncementsController extends SpringActionController
                 sendNotificationEmails(insert, currentRendererType);
             }
 
-            ActionURL returnUrl = form.getReturnUrl();
+            ActionURL returnURL = form.getReturnUrl();
 
             // Null in insert/update message case, since we want to redirect to thread view anchoring to new post
-            if (null == returnUrl)
+            if (null == returnURL)
             {
                 Announcement thread = insert;
                 if (null != insert.getParent())
@@ -993,26 +1015,26 @@ public class AnnouncementsController extends SpringActionController
 
                 if (form.isFromDiscussion() && null != thread.getDiscussionSrcIdentifier())
                 {
-                    returnUrl = DiscussionServiceImpl.fromSaved(thread.getDiscussionSrcURL());
-                    returnUrl.addParameter("discussion.id", "" + thread.getRowId());
-                    returnUrl.addParameter("_anchor", "discussionArea");               // TODO: insert.getRowId() instead? -- target just inserted response
+                    returnURL = DiscussionServiceImpl.fromSaved(thread.getDiscussionSrcURL());
+                    returnURL.addParameter("discussion.id", "" + thread.getRowId());
+                    returnURL.addParameter("_anchor", "discussionArea");               // TODO: insert.getRowId() instead? -- target just inserted response
                 }
                 else
                 {
                     String threadId = thread.getEntityId();
-                    returnUrl = getThreadURL(c, threadId, insert.getRowId());
+                    returnURL = getThreadURL(c, threadId, insert.getRowId());
                 }
             }
 
-            _attachmentErrorView = AttachmentService.get().getErrorView(files, returnUrl);
-            _returnUrl = returnUrl;
+            _attachmentErrorView = AttachmentService.get().getErrorView(files, errors, returnURL);
+            _returnURL = returnURL;
 
             return (null == _attachmentErrorView);
         }
 
         public ActionURL getSuccessURL(AnnouncementForm announcementForm)
         {
-            return _returnUrl;
+            return _returnURL;
         }
 
 
@@ -1044,11 +1066,8 @@ public class AnnouncementsController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(AnnouncementForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getInsertUpdateView(AnnouncementForm form, boolean reshow, BindException errors) throws Exception
         {
-            if (null != _attachmentErrorView)
-                return _attachmentErrorView;
-
             Container c = getContainer();
             Settings settings = getSettings(c);
             Permissions perm = getPermissions(c, getUser(), settings);
@@ -1082,7 +1101,7 @@ public class AnnouncementsController extends SpringActionController
     {
         private Announcement _parent;
 
-        public ModelAndView getView(AnnouncementForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getInsertUpdateView(AnnouncementForm form, boolean reshow, BindException errors) throws Exception
         {
             Permissions perm = getPermissions();
             Announcement parent = null;

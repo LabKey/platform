@@ -26,6 +26,7 @@ import org.labkey.api.util.SimpleSearchHit;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.security.User;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.*;
 
@@ -106,9 +107,14 @@ public class StudySearch implements Search.Searchable
 
     private void searchDatasets(Study study, SearchTermParser parser, List<SearchHit> hits)
     {
+        User user = HttpView.currentContext().getUser();
         DataSetDefinition[] defs = study.getDataSets();
 def:    for (DataSetDefinition def : defs)
         {
+            // Check if the user can view this dataset
+            if (!def.canRead(user))
+                continue;
+
             if (parser.matches(def.getName()) || parser.matches(def.getLabel()) || parser.matches(def.getDescription()))
             {
                 ActionURL url = new ActionURL(StudyController.DatasetAction.class, study.getContainer());
@@ -183,7 +189,13 @@ def:    for (DataSetDefinition def : defs)
 
     private void searchCohorts(Study study, SearchTermParser parser, List<SearchHit> hits)
     {
-        Cohort[] cohorts = study.getCohorts(HttpView.currentContext().getUser());
+        User user = HttpView.currentContext().getUser();
+        
+        // If user cannot view cohorts, don't search them
+        if (!StudyManager.getInstance().showCohorts(study.getContainer(), user))
+            return;
+
+        Cohort[] cohorts = study.getCohorts(user);
         for (Cohort cohort : cohorts)
         {
             if (parser.matches(cohort.getLabel()))
@@ -204,9 +216,9 @@ def:    for (DataSetDefinition def : defs)
         }
     }
 
-    public String getSearchResultName()
+    public String getSearchResultNamePlural()
     {
-        return "Study";
+        return "Studies";
     }
 
     public String getDomainName()

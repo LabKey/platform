@@ -17,14 +17,13 @@
 package org.labkey.wiki;
 
 import org.apache.beehive.netui.pageflow.FormData;
+import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.collections15.MultiMap;
-import org.apache.log4j.Logger;
 import org.labkey.api.action.*;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
@@ -40,19 +39,14 @@ import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.wiki.WikiRendererType;
-import org.labkey.api.wiki.WikiService;
-import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.common.util.Pair;
 import org.labkey.wiki.model.*;
-import org.labkey.wiki.renderer.RadeoxRenderer;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
-import org.springframework.validation.FieldError;
-import org.springframework.validation.ObjectError;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
-import org.springframework.web.multipart.MultipartHttpServletRequest;
-import org.springframework.web.multipart.MultipartFile;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -81,7 +75,7 @@ public class WikiController extends SpringActionController
         super();
         setActionResolver(_actionResolver);
     }
-    
+
 
     protected ActionURL wikiURL(String action)
     {
@@ -117,7 +111,7 @@ public class WikiController extends SpringActionController
         }
         return template;
     }
-    
+
 
     public static class CustomizeWikiPartView extends AbstractCustomizeWebPartView<Object>
     {
@@ -168,7 +162,7 @@ public class WikiController extends SpringActionController
                     if (cStored == null || null == containerMap.get(cStored))
                     {
                         cStored = context.getContainer();
-                        
+
                         //reset the webPartContainer property so that wiki_cusotmize.gm selects the correct one in the UI
                         webPart.getPropertyMap().put("webPartContainer", cStored.getId());
                     }
@@ -291,7 +285,7 @@ public class WikiController extends SpringActionController
     public class DeleteAction extends ConfirmAction<WikiNameForm>
     {
         Wiki _wiki = null;
-        
+
         public String getConfirmText()
         {
             return "Delete";
@@ -331,7 +325,7 @@ public class WikiController extends SpringActionController
         public void validateCommand(WikiNameForm wikiNameForm, Errors errors)
         {
         }
-        
+
         public ActionURL getSuccessURL(WikiNameForm wikiNameForm)
         {
             return new BeginAction().getUrl();
@@ -555,7 +549,7 @@ public class WikiController extends SpringActionController
         {
             super(AttachmentForm.class);
         }
-        
+
         public ModelAndView getView(AttachmentForm form, boolean reshow, BindException errors) throws Exception
         {
             getPageConfig().setTemplate(PageConfig.Template.None);
@@ -1093,7 +1087,7 @@ public class WikiController extends SpringActionController
     public class ShowUpdateAttachmentsAction extends SimpleViewAction<WikiDataForm>
     {
         Wiki _wiki;
-        
+
         public ModelAndView getView(WikiDataForm form, BindException errors) throws Exception
         {
             String name = form.getName();
@@ -1129,7 +1123,7 @@ public class WikiController extends SpringActionController
         }
     }
 
-    
+
     @RequiresPermission(ACL.PERM_READ)
     public class PageAction extends SimpleViewAction<WikiNameForm>
     {
@@ -1247,7 +1241,7 @@ public class WikiController extends SpringActionController
             _wiki = wiki;
             _wikiversion = wikiversion;
         }
-        
+
         public ModelAndView getView(WikiNameForm form, BindException errors) throws Exception
         {
             String name = StringUtils.trimToEmpty(form.getName());
@@ -1321,13 +1315,13 @@ public class WikiController extends SpringActionController
         WikiVersion _wikiversion;
 
         public VersionsAction() {}
-        
+
         public VersionsAction(Wiki wiki, WikiVersion wikiversion)
         {
             _wiki = wiki;
             _wikiversion = wikiversion;
         }
-        
+
         public ModelAndView getView(WikiNameForm form, BindException errors) throws Exception
         {
             String wikiname = form.getName();
@@ -1626,7 +1620,7 @@ public class WikiController extends SpringActionController
         }
     }
 
-    
+
      public static class WikiNameForm
      {
          private String _name;
@@ -1772,6 +1766,33 @@ public class WikiController extends SpringActionController
              _reshow = reshow;
          }
      }
+
+    public static class WikiInsertForm extends WikiDataForm
+    {
+        String _pageId;
+        int _index;
+
+        public int getIndex()
+        {
+            return _index;
+        }
+
+        public void setIndex(int index)
+        {
+            _index = index;
+        }
+
+        public String getPageId()
+        {
+            return _pageId;
+        }
+
+        public void setPageId(String pageId)
+        {
+            _pageId = pageId;
+        }
+    }
+
 
     public static class CollapseExpandForm extends FormData
     {

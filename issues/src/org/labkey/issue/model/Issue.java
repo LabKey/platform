@@ -490,8 +490,6 @@ public class Issue extends Entity implements Serializable, Cloneable
     {
         private Issue issue;
         private int commentId;
-        Date created;
-        int createdBy;
         String comment;
 
         @ManyToOne
@@ -517,30 +515,10 @@ public class Issue extends Entity implements Serializable, Cloneable
             this.commentId = commentId;
         }
 
-        public Date getCreated()
-        {
-            return created;
-        }
-
         @Transient
         public String getCreatedByName(ViewContext context)
         {
             return UserManager.getDisplayName(getCreatedBy(), context);
-        }
-
-        public void setCreated(Date created)
-        {
-            this.created = created;
-        }
-
-        public int getCreatedBy()
-        {
-            return createdBy;
-        }
-
-        public void setCreatedBy(int createdBy)
-        {
-            this.createdBy = createdBy;
         }
 
         public String getComment()

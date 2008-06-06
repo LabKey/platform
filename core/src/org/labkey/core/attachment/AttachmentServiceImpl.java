@@ -71,7 +71,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         ContainerManager.addContainerListener(this);
     }
 
-    public HttpView add(User user, AttachmentParent parent, List<AttachmentFile> files) throws IOException
+    public HttpView add(User user, AttachmentParent parent, List<AttachmentFile> files)
     {
         String message = null;
 
@@ -89,6 +89,10 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             catch (AttachmentService.DuplicateFilenameException e)
             {
                 message = e.getMessage() + "<br><br>";
+            }
+            catch (IOException ioe)
+            {
+                message = ioe.getMessage() + "<br><br>";
             }
         }
         HttpView v = new RefreshParentView(message);
@@ -393,16 +397,17 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             throw new AttachmentService.DuplicateFilenameException(filesToSkip);
     }
 
-    public HttpView getErrorView(List<AttachmentFile> files, ActionURL forwardURL)
+    public HttpView getErrorView(List<AttachmentFile> files, BindException errors, ActionURL returnURL)
     {
-        String errorHtml = getErrorHtml(files);
+        boolean hasErrors = null != errors && errors.hasErrors();
+        String errorHtml = getErrorHtml(files);      // TODO: Get rid of getErrorHtml() -- use errrors collection
 
-        if (null == errorHtml)
+        if (null == errorHtml && !hasErrors)
             return null;
 
         try
         {
-            return new DialogTemplate(new ErrorView(errorHtml, forwardURL));
+            return new ErrorView(errorHtml, errors, returnURL);
         }
         catch (Exception e)
         {
@@ -430,16 +435,16 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     }
 
 
-    public static class ErrorView extends JspView
+    public static class ErrorView extends JspView<Object>
     {
         public String errorHtml;
-        public ActionURL forwardURL;
+        public ActionURL returnURL;
 
-        private ErrorView(String errorHtml, ActionURL forwardURL)
+        private ErrorView(String errorHtml, BindException errors, ActionURL returnURL)
         {
-            super("/org/labkey/core/attachment/showErrors.jsp");
+            super("/org/labkey/core/attachment/showErrors.jsp", new Object(), errors);
             this.errorHtml = errorHtml;
-            this.forwardURL = forwardURL;
+            this.returnURL = returnURL;
         }
     }
 
@@ -781,6 +786,9 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
     public File getWebRoot(Container c)
     {
+        if (c == null)
+            return null;
+        
         Container project = c.getProject();
         if (null == project)
             return null;

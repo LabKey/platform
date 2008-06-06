@@ -24,12 +24,12 @@
 filteredURL = filter(url);
 for (issue in issues) { %>
     <item>
-        <title><%=issue.issueId%>: <%=filter(issue.milestone) %> <%=filter(issue.status)%> <%=filter(issue.assignedToName)%> <%=filter(issue.title)%></title>
+        <title><%=issue.issueId%>: <%=filter(issue.milestone) %> <%=filter(issue.status)%> <%=filter(issue.getAssignedToName(currentContext))%> <%=filter(issue.title)%></title>
         <link><%=filteredURL%><%=issue.issueId%></link>
         <guid><%=filteredURL%><%=issue.issueId%></guid>
         <pubDate>${issue.created}</pubDate>
         <description>
-openedby <%=filter(issue.createdByName)%>
+openedby <%=filter(issue.getCreatedByName(currentContext))%>
 priority <%=issue.priority%>
 type <%=filter(issue.type)%>
 area <%=filter(issue.area)%>

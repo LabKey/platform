@@ -26,6 +26,7 @@
 <%@ page import="java.sql.SQLException" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.study.visitmanager.VisitManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DataSetDefinition> me = (JspView<DataSetDefinition>) HttpView.currentView();
@@ -34,6 +35,7 @@
     ViewContext context = HttpView.currentContext();
     int permissions = context.getContainer().getAcl().getPermissions(context.getUser());
     Study study = StudyManager.getInstance().getStudy(context.getContainer());
+    VisitManager visitManager = StudyManager.getInstance().getVisitManager(study);
     String contextPath = AppProps.getInstance().getContextPath();
     boolean pipelineSet = false;
     try
@@ -51,7 +53,7 @@
     <tr><td class=ms-searchform>Category</td><td class=normal><%= h(dataset.getCategory()) %></td></tr>
     <tr><td class=ms-searchform>Cohort</td><td class=normal><%= dataset.getCohort() != null ? h(dataset.getCohort().getLabel()) : "All" %></td></tr>
     <tr><td class="ms-searchform">Demographic Data <%=helpPopup("Demographic Data", "Demographic data appears only once for each participant in the study.")%></td><td class=normal><%= dataset.isDemographicData() ? "true" : "false" %></td></tr>
-    <tr><td class=ms-searchform>Visit Date Column</td><td class=normal><%= h(dataset.getVisitDatePropertyName()) %></td></tr>
+    <tr><td class=ms-searchform><%=visitManager.getLabel()%> Date Column</td><td class=normal><%= h(dataset.getVisitDatePropertyName()) %></td></tr>
     <tr><td class=ms-searchform>Show By Default</td><td class=normal><%= dataset.isShowByDefault() ? "true" : "false" %></td></tr>
     <tr><td class=ms-searchform>Description</td><td class=normal><%= h(dataset.getDescription()) %></td></tr>
 </table>
@@ -65,7 +67,7 @@
     ActionURL deleteDatasetURL = new ActionURL(StudyController.DeleteDatasetAction.class, context.getContainer());
     deleteDatasetURL.addParameter("id", dataset.getDataSetId());
 
-    %><br><a href="<%=updateDatasetURL.getLocalURIString()%>"><%=PageFlowUtil.buttonImg("Dataset Visits")%></a><%
+    %><br><a href="<%=updateDatasetURL.getLocalURIString()%>"><%=PageFlowUtil.buttonImg("Dataset " + visitManager.getPluralLabel())%></a><%
     %>&nbsp;<a href="<%=manageTypesURL.getLocalURIString()%>"><%=PageFlowUtil.buttonImg("Done")%></a><%
     %>&nbsp;<%=buttonLink("Delete Dataset", deleteDatasetURL,
         "return confirm('Are you sure you want to delete this dataset?  All related data and visitmap entries will also be deleted.')")%><%

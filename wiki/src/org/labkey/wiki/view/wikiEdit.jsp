@@ -121,7 +121,8 @@
         external_link_list_url : "example_data/example_link_list.js",
         external_image_list_url : "example_data/example_image_list.js",
         theme_advanced_statusbar_location: "bottom",
-        fix_list_elements : true
+        fix_list_elements : true,
+        handle_event_callback : "tinyMceHandleEvent"
         });
 
     //the onReady function will execute after all elements
@@ -147,10 +148,49 @@
                 switchToSource();
         }
 
+        //register for the document keypress event to trap ctrl+s for save
+        Ext.EventManager.addListener(document, "keydown", onKeyDown);
+
         showEditingHelp(_wikiProps.rendererType);
         loadToc();
         Ext.get("<%=ID_PREFIX%>name").focus();
     });
+
+    //called by tinyMCE for *all* events so make sure to filter
+    //for keydown. return false to stop tinyMCE from handling or passing on
+    function tinyMceHandleEvent(evt)
+    {
+        if(evt && "keydown" == evt.type && evt.ctrlKey
+           && !evt.shiftKey && !evt.altKey && 83 == evt.keyCode) //ctrl+s
+        {
+            onSave();
+
+            //stop default handling and propogation
+            if(evt.stopPropagation)
+                evt.stopPropagation();
+            else
+                evt.cancelBubble = true;
+            if(evt.preventDefault)
+                evt.preventDefault();
+            else
+                evt.returnValue = false;
+            return false;
+        }
+
+        return true;
+    }
+
+    //Ext event handler--the evt object is an Ext.EventObject
+    //not the normal browser event
+    function onKeyDown(evt)
+    {
+        if(evt.ctrlKey && !evt.shiftKey && !evt.altKey && 83 == evt.getKey()) //ctrl+s
+        {
+            onSave();
+            evt.preventDefault();
+            evt.stopPropagation();
+        }
+    }
 
     function loadToc()
     {
@@ -268,6 +308,8 @@
 
     function onCancel()
     {
+        //per bug 5957, don't prompt about losing changes if the user clicks cancel
+        setClean();
         window.location.href = getRedirUrl();
     }
 
@@ -494,6 +536,7 @@
         var elem = Ext.get("status");
         elem.update(msg);
         elem.dom.className = "status-info";
+        elem.setDisplayed(true);
         elem.setVisible(true);
         if(autoClear)
             setTimeout("clearStatus();", 5000);
@@ -1076,13 +1119,13 @@
     }
 </style>
 
-<div id="status" class="status-info" style="visibility: hidden;">(status)</div>
+<div id="status" class="status-info" style="display:none;">(status)</div>
 
 <table class="button-bar">
     <tr>
         <td class="button-bar-left" nowrap="true">
-            <input type="image" src="<%=PageFlowUtil.buttonSrc("Save")%>" onclick="onSave()"/>
-            <input type="image" src="<%=PageFlowUtil.buttonSrc("Save and Finish")%>" onclick="onFinish()"/>
+            <input type="image" src="<%=PageFlowUtil.buttonSrc("Finish")%>" onclick="onFinish()"/>
+            <input type="image" src="<%=PageFlowUtil.buttonSrc("    Save    ")%>" onclick="onSave()"/>
             <input type="image" src="<%=PageFlowUtil.buttonSrc("Cancel")%>" onclick="onCancel()"/>
         </td>
         <td class="button-bar-right" nowrap="true">

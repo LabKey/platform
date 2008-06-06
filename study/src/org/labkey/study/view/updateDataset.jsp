@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.study.visitmanager.VisitManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DataSetDefinition> me = (JspView<DataSetDefinition>)HttpView.currentView();
@@ -31,6 +32,7 @@
 
     Container container = HttpView.currentContext().getContainer();
     Study study = StudyManager.getInstance().getStudy(container);
+    VisitManager visitManager = StudyManager.getInstance().getVisitManager(study);
     Cohort[] cohorts = StudyManager.getInstance().getCohorts(container, me.getViewContext().getUser());
     Map<Integer, String> cohortMap = new HashMap<Integer, String>();
     cohortMap.put(null, "All");
@@ -120,7 +122,7 @@
             </td>
         </tr>
         <tr>
-            <th valign="top">Associated Visits</th>
+            <th valign="top">Associated <%=visitManager.getPluralLabel()%></th>
             <td>
                 <table>
                 <%

@@ -22,5 +22,6 @@
 <%
     AttachmentServiceImpl.ErrorView me = (AttachmentServiceImpl.ErrorView) HttpView.currentView();
 %>
-<%=me.errorHtml%>
-<a href="<%=h(me.forwardURL)%>"><img border=0 src="<%=PageFlowUtil.buttonSrc("Continue")%>"></a>
+<%=formatMissedErrors("form")%>
+<%=null != me.errorHtml ? me.errorHtml : ""%>
+<br><br><a href="<%=h(me.returnURL)%>"><img border=0 src="<%=PageFlowUtil.buttonSrc("Continue")%>"></a>

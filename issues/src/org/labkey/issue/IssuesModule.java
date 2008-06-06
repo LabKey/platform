@@ -48,7 +48,7 @@ public class IssuesModule extends DefaultModule implements ContainerManager.Cont
     public static final String NAME = "Issues";
     public static final String SEARCH_DOMAIN = "issues";
     public static final String SEARCH_RESULT_TYPE = "labkey/issue";
-    public static final String SEARCH_RESULT_TYPE_DESCR = "Issue";
+    public static final String SEARCH_RESULT_TYPE_DESCR = "Issues";
 
     public IssuesModule()
     {
@@ -163,7 +163,7 @@ public class IssuesModule extends DefaultModule implements ContainerManager.Cont
     }
 
 
-    public String getSearchResultName()
+    public String getSearchResultNamePlural()
     {
         return SEARCH_RESULT_TYPE_DESCR;
     }

@@ -25,7 +25,6 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.AppProps;
@@ -133,7 +132,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             try
             {
                 WriteableAppProps props = AppProps.getWriteableInstance();
-                File webappRoot = new File(viewContext.getRequest().getSession().getServletContext().getRealPath("/"));
+                File webappRoot = new File(viewContext.getRequest().getSession(true).getServletContext().getRealPath("/"));     // TODO: change to ModuleLoader.getServletContext()
                 props.setPipelineToolsDir(new File(webappRoot.getParentFile(), "bin").toString());
                 props.save();
             }

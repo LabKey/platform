@@ -822,7 +822,13 @@ public class StudyController extends BaseStudyController
             // display the next and previous buttons only if we have a cached participant index
             Cohort cohort = null;
             if (form.getCohortId() != null)
+            {
+                if (!StudyManager.getInstance().showCohorts(getContainer(), getUser()))
+                {
+                    HttpView.throwUnauthorized("User does not have permission to view cohort information");
+                }
                 cohort = StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), form.getCohortId().intValue());
+            }
             List<String> participants = getParticipantListFromCache(getViewContext(), form.getDatasetId(), viewName, cohort);
             if (participants != null)
             {

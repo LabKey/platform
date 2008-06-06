@@ -70,8 +70,22 @@ each folder in the project has a corresponding subdirectory in the file system.<
             {   %>
                 The web root for this project is <br><blockquote><%=h(rootFile.getCanonicalPath())%></blockquote>
                 The directory containing web files for this folder is
+
+<%
+    String path = "<unset>";
+    AttachmentDirectory attachDir = AttachmentService.get().getMappedAttachmentDirectory(ctx.getContainer(), false);
+    if (attachDir != null)
+    {
+        File fileSystemDir = attachDir.getFileSystemDirectory();
+        if (fileSystemDir != null)
+        {
+            path = fileSystemDir.getCanonicalPath();
+        }
+    }
+%>
+
                 <blockquote>
-                             <%=h(AttachmentService.get().getMappedAttachmentDirectory(ctx.getContainer(), false).getFileSystemDirectory().getCanonicalPath())%>
+                             <%=h(path)%>
                 </blockquote>
             <%}
             %>

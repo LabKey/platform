@@ -47,12 +47,12 @@
         } %>
         </tr>
         <tr>
-            <td>Name:&nbsp;</td>
+            <td class="ms-searchform">Name:</td>
             <td><input id="name" name="name" value="<%=h(name)%>"/></td>
         </tr>
         <tr>
-            <td>
-                Folder Type
+            <td class="ms-searchform">
+                Folder Type:
             </td>
             <td>
                 <table>

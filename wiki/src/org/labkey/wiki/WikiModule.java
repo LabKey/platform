@@ -270,9 +270,9 @@ public class WikiModule extends DefaultModule implements ContainerManager.Contai
     }
 
 
-    public String getSearchResultName()
+    public String getSearchResultNamePlural()
     {
-        return "Wiki Page";
+        return "Wiki Pages";
     }
 
     public String getDomainName()

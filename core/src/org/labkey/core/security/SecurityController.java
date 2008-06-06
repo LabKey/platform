@@ -906,6 +906,16 @@ public class SecurityController extends SpringActionController
 
             boolean inherit = "on".equals(ctx.get("inheritPermissions"));
 
+            if (c.isProject())
+            {
+                boolean newSubfoldersInherit = "on".equals(ctx.get("newSubfoldersInheritPermissions"));
+                if (newSubfoldersInherit != SecurityManager.shouldNewSubfoldersInheritPermissions(c))
+                {
+                    SecurityManager.setNewSubfoldersInheritPermissions(c, newSubfoldersInherit);
+                    addAuditEvent(getUser(), String.format("Container %s was updated so that new subfolders would " + (newSubfoldersInherit ? "" : "not ") + "inherit security permissions", c.getName()), 0);
+                }
+            }
+
             if (inherit)
             {
                 addAuditEvent(getUser(), String.format("Container %s was updated to inherit security permissions", c.getName()), 0);
