@@ -1155,7 +1155,7 @@ public class AdminController extends SpringActionController
             // E.g. "LabKey <info@labkey.com>" -> "info@labkey.com"
             try
             {
-                String address = form.getSystemEmailAddress().trim();
+                String address = StringUtils.trimToEmpty(form.getSystemEmailAddress());
                 // Manually check for a space or a quote, as these will later
                 // fail to send via JavaMail.
                 if (address.contains(" ") || address.contains("\""))
