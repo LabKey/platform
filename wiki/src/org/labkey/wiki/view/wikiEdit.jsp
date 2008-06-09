@@ -30,6 +30,7 @@
     WikiEditModel model = me.getModelBean();
     final String ID_PREFIX = "wiki-input-";
     String sep;
+    String saveButtonCaption = "    Save    ";
 %>
 
 <script type="text/javascript">
@@ -122,7 +123,8 @@
         external_image_list_url : "example_data/example_image_list.js",
         theme_advanced_statusbar_location: "bottom",
         fix_list_elements : true,
-        handle_event_callback : "tinyMceHandleEvent"
+        handle_event_callback : "tinyMceHandleEvent",
+        onchange_callback: onTinyMceChange
         });
 
     //the onReady function will execute after all elements
@@ -178,6 +180,11 @@
         }
 
         return true;
+    }
+
+    function onTinyMceChange(tinyMceInstance)
+    {
+        setSaveEnabled(true);
     }
 
     //Ext event handler--the evt object is an Ext.EventObject
@@ -283,8 +290,11 @@
     {
         if(_doingSave)
             return;
-
         _doingSave = true;
+
+        if(!isDirty())
+            onSaveComplete();
+
         var wikiDataNew = gatherProps();
         
         setStatus("Saving...");
@@ -697,6 +707,7 @@
 
         //add a prop so we know we need to save the attachments
         _attachments.isDirty = true;
+        setSaveEnabled(true);
     }
 
     function onUndeleteAttachment(index)
@@ -770,6 +781,7 @@
 
         //mark the attachments as dirty
         _attachments.isDirty = true;
+        setSaveEnabled(true);
 
         //add another new attachment input
         addNewAttachmentInput();
@@ -802,6 +814,7 @@
     function setWikiDirty()
     {
         _wikiProps.isDirty = true;
+        setSaveEnabled(true);
     }
 
     function setClean()
@@ -821,6 +834,19 @@
                 inst.isNotDirty = true;
             }
         }
+        setSaveEnabled(false);
+    }
+
+    function setSaveEnabled(enabled)
+    {
+        var button = Ext.get('wiki-button-save').dom;
+        if(!button)
+            return;
+
+        if(enabled)
+            button.src = "<%=PageFlowUtil.buttonSrc(saveButtonCaption)%>";
+        else
+            button.src = "<%=PageFlowUtil.buttonSrc(saveButtonCaption, "disabled")%>";
     }
 
     function isDirty()
@@ -1125,7 +1151,7 @@
     <tr>
         <td class="button-bar-left" nowrap="true">
             <input type="image" src="<%=PageFlowUtil.buttonSrc("Finish")%>" onclick="onFinish()"/>
-            <input type="image" src="<%=PageFlowUtil.buttonSrc("    Save    ")%>" onclick="onSave()"/>
+            <input id='wiki-button-save' type="image" src="<%=PageFlowUtil.buttonSrc(saveButtonCaption, "disabled")%>" onclick="onSave()"/>
             <input type="image" src="<%=PageFlowUtil.buttonSrc("Cancel")%>" onclick="onCancel()"/>
         </td>
         <td class="button-bar-right" nowrap="true">
@@ -1153,13 +1179,13 @@
                 <tr>
                     <td class="ms-searchform">Title</td>
                     <td class="field-content">
-                        <input type="text" name="title" id="<%=ID_PREFIX%>title" size="80" onchange="setWikiDirty()"/>
+                        <input type="text" name="title" id="<%=ID_PREFIX%>title" size="80" onkeypress="setWikiDirty()"/>
                     </td>
                 </tr>
                 <tr>
                     <td class="ms-searchform">Parent</td>
                     <td class="field-content">
-                        <select name="parent" id="<%=ID_PREFIX%>parent" onchange="setWikiDirty()">
+                        <select name="parent" id="<%=ID_PREFIX%>parent" onkeypress="setWikiDirty()" onchange="setWikiDirty()">
                             <option <%= model.getParent() == -1 ? "selected='1'" : "" %> value="-1">[none]</option>
                             <%
                                 for (Wiki possibleParent : model.getPossibleParents())
@@ -1189,7 +1215,7 @@
                                 <td colspan="4" id="wiki-tab-content">
                                     <form action="">
                                     <textarea rows="30" cols="80" class="stretch-input" id="<%=ID_PREFIX%>body"
-                                              name="body" onchange="setWikiDirty()"></textarea>
+                                              name="body" onkeypress="setWikiDirty()" onchange="setWikiDirty()"></textarea>
                                     </form>
                                 </td>
                             </tr>
