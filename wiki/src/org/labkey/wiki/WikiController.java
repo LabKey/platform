@@ -2114,7 +2114,9 @@ public class WikiController extends SpringActionController
             if (bHasInsert)
             {
                 out.print("[<a class=\"link\" href=\"");
-                out.print(new ActionURL(NewPageAction.class, cToc).getLocalURIString());
+                ActionURL newPageUrl = new ActionURL(EditWikiAction.class, cToc);
+                newPageUrl.addParameter("cancel", getViewContext().getActionURL().getLocalURIString());
+                out.print(newPageUrl.getLocalURIString());
                 out.print("\">new page</a>]&nbsp;");
             }
             if (bHasCopy)
@@ -2460,6 +2462,7 @@ public class WikiController extends SpringActionController
     {
         private String _name;
         private String _redirect;
+        private String _cancel;
         private String _format;
         private String _defName;
         private String _pageId;
@@ -2483,6 +2486,16 @@ public class WikiController extends SpringActionController
         public void setRedirect(String redir)
         {
             _redirect = redir;
+        }
+
+        public String getCancel()
+        {
+            return _cancel;
+        }
+
+        public void setCancel(String cancel)
+        {
+            _cancel = cancel;
         }
 
         public String getFormat()
@@ -2568,12 +2581,16 @@ public class WikiController extends SpringActionController
             }
 
             //get the user's editor preference
-            Map properties = PropertyManager.getProperties(getUser().getUserId(),
+            Map<String,String> properties = PropertyManager.getProperties(getUser().getUserId(),
                     getContainer().getId(), SetEditorPreferenceAction.CAT_EDITOR_PREFERENCE, true);
-            boolean useVisualEditor = !("false".equalsIgnoreCase((String)properties.get(SetEditorPreferenceAction.PROP_USE_VISUAL_EDITOR)));
+            boolean useVisualEditor = !("false".equalsIgnoreCase(properties.get(SetEditorPreferenceAction.PROP_USE_VISUAL_EDITOR)));
+            String defFormat = properties.get(SaveWikiAction.PROP_DEFAULT_FORMAT);
+            if((null == form.getFormat() || form.getFormat().length() == 0)
+                    && null != defFormat && defFormat.length() > 0)
+                form.setFormat(defFormat);
 
             WikiEditModel model = new WikiEditModel(container, wiki, curVersion,
-                    form.getRedirect(), form.getFormat(), form.getDefName(), useVisualEditor,
+                    form.getRedirect(), form.getCancel(), form.getFormat(), form.getDefName(), useVisualEditor,
                     form.getPageId(), form.getIndex(), user);
 
             //cache the wiki so we can build the nav trail
@@ -2712,6 +2729,8 @@ public class WikiController extends SpringActionController
     @RequiresPermission(ACL.PERM_READ) //will check below
     public class SaveWikiAction extends ApiAction<SaveWikiForm>
     {
+        public final static String PROP_DEFAULT_FORMAT = "defaultFormat";
+
         public ApiResponse execute(SaveWikiForm form, BindException errors) throws Exception
         {
             //if no entityId was passed, insert it
@@ -2780,6 +2799,8 @@ public class WikiController extends SpringActionController
             //insert new wiki and new version
             WikiManager.insertWiki(getUser(), c, wiki, wikiversion, null);
 
+            //if page id and index were sent, update the corresponding
+            //web part to show the newly inserted page
             String pageId = StringUtils.trimToEmpty(form.getPageId());
             int index = form.getIndex();
             if (pageId != null && index > 0)
@@ -2790,6 +2811,15 @@ public class WikiController extends SpringActionController
                 webPart.setProperty("name", wikiname);
                 Portal.updatePart(getUser(), webPart);
             }
+
+            //save the user's new page format so we can use it
+            //as the default for the next new page
+            PropertyManager.PropertyMap properties = PropertyManager.getWritableProperties(
+                    getViewContext().getUser().getUserId(), getViewContext().getContainer().getId(),
+                    SetEditorPreferenceAction.CAT_EDITOR_PREFERENCE, true);
+            properties.put(PROP_DEFAULT_FORMAT, wikiversion.getRendererType());
+            PropertyManager.saveProperties(properties);
+
 
             //return an API response containing the current wiki and version data
             ApiSimpleResponse resp = new ApiSimpleResponse("success", true);
@@ -3087,68 +3117,6 @@ public class WikiController extends SpringActionController
                 ret.add(props);
             }
             return ret;
-        }
-    }
-
-    public static class NewPageForm
-    {
-        private String _redirect;
-        private String _name;
-        private String _pageId;
-        private int _index;
-
-        public String getRedirect()
-        {
-            return _redirect;
-        }
-
-        public void setRedirect(String redirect)
-        {
-            _redirect = redirect;
-        }
-
-        public String getName()
-        {
-            return _name;
-        }
-
-        public void setName(String name)
-        {
-            _name = name;
-        }
-
-        public String getPageId()
-        {
-            return _pageId;
-        }
-
-        public void setPageId(String pageId)
-        {
-            _pageId = pageId;
-        }
-
-        public int getIndex()
-        {
-            return _index;
-        }
-
-        public void setIndex(int index)
-        {
-            _index = index;
-        }
-    }
-
-    @RequiresPermission(ACL.PERM_READ)
-    public class NewPageAction extends SimpleViewAction<NewPageForm>
-    {
-        public ModelAndView getView(NewPageForm form, BindException errors) throws Exception
-        {
-            return new JspView<NewPageForm>("/org/labkey/wiki/view/wikiChooseFormat.jsp", form);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("New Page");
         }
     }
 

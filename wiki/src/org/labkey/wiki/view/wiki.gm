@@ -127,9 +127,9 @@ if (!hasContent)
             This page has no content.<br><br>
             <%
 
-            if (updateContentLink)
+            if (insertLink)
             {%>
-                [<a class="link" href="<%=filter(updateContentLink)%>">add content</a>]
+                [<a class="link" href="<%=filter(insertLink)%>">add content</a>]
             <%}
         }
     }

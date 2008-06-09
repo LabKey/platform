@@ -40,6 +40,7 @@ public class WikiEditModel
     private Wiki _wiki;
     private WikiVersion _wikiVersion;
     private String _redir;
+    private String _cancelRedir;
     private Container _container;
     private String _format;
     private String _defName;
@@ -49,13 +50,14 @@ public class WikiEditModel
     private User _user;
 
     public WikiEditModel(Container container, Wiki wiki, WikiVersion wikiVersion, String redir,
-                         String format, String defName, boolean useVisualEditor,
+                         String cancelRedir, String format, String defName, boolean useVisualEditor,
                          String pageId, int index, User user)
     {
         _container = container;
         _wiki = wiki;
         _wikiVersion = wikiVersion;
         _redir = redir;
+        _cancelRedir = cancelRedir;
         _format = format;
         _defName = defName;
         _useVisualEditor = useVisualEditor;
@@ -92,6 +94,11 @@ public class WikiEditModel
     public void setRedir(String redir)
     {
         _redir = redir;
+    }
+
+    public String getCancelRedir()
+    {
+        return null == _cancelRedir ? "null" : PageFlowUtil.jsString(_cancelRedir);
     }
 
     public String getBody()

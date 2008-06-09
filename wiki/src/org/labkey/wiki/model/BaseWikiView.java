@@ -171,14 +171,16 @@ abstract class BaseWikiView extends GroovyView
 
         if (perms.allowInsert())
         {
-            ActionURL insertLink = new ActionURL(WikiController.NewPageAction.class, c); //_wiki.getWikiLink("showInsert", null);
-
+            ActionURL insertLink = new ActionURL(WikiController.EditWikiAction.class, c);
+            insertLink.addParameter("cancel", getViewContext().getActionURL().getLocalURIString());
             if (isInWebPart)
             {
                 insertLink.addParameter("redirect", url.getLocalURIString());
                 insertLink.addParameter("pageId", _pageId);
                 insertLink.addParameter("index", Integer.toString(_index));
             }
+            if(null != _wiki)
+                insertLink.addParameter("defName", _wiki.getName());
             context.put("insertLink", insertLink.toString());
 
         }
@@ -188,9 +190,8 @@ abstract class BaseWikiView extends GroovyView
             String versionsLink = _wiki.getVersionsLink();
             context.put("versionsLink", versionsLink);
 
-            ActionURL updateContentLink = null == _wiki.getEntityId()
-                ? new ActionURL(WikiController.NewPageAction.class, c)
-                : new ActionURL(WikiController.EditWikiAction.class, c);
+            ActionURL updateContentLink =  new ActionURL(WikiController.EditWikiAction.class, c);
+            updateContentLink.addParameter("cancel", getViewContext().getActionURL().getLocalURIString());
 
             updateContentLink.addParameter("name", _wiki.getName());
             updateContentLink.addParameter("redirect", url.getLocalURIString());

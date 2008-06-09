@@ -85,6 +85,7 @@
         %>
     };
     var _redirUrl = <%=model.getRedir()%>;
+    var _cancelUrl = <%=model.getCancelRedir()%>;
     var _finished = false;
     var _newAttachmentIndex = 0;
     var _doingSave = false;
@@ -320,7 +321,7 @@
     {
         //per bug 5957, don't prompt about losing changes if the user clicks cancel
         setClean();
-        window.location.href = getRedirUrl();
+        window.location.href = _cancelUrl ? _cancelUrl : getRedirUrl();
     }
 
     function onDeletePage()
@@ -559,6 +560,12 @@
         elem.setVisible(false);
     }
 
+    function userSwitchToSource()
+    {
+        switchToSource();
+        saveEditorPreference(_editor);
+    }
+
     function switchToSource()
     {
         setTabStripVisible(true);
@@ -568,10 +575,14 @@
             tinyMCE.removeMCEControl(tinyMCE.getEditorId("body"));
         _editor = "source";
         showEditingHelp(_wikiProps.rendererType);
-        saveEditorPreference(_editor);
     }
 
-    function switchToVisual(confirmOverride)
+    function userSwitchToVisual()
+    {
+        switchToVisual(false, true);
+    }
+
+    function switchToVisual(confirmOverride, savePreference)
     {
         //check for elements that get mangled by the visual editor
         if(!confirmOverride && textContainsNonVisualElements(Ext.get("<%=ID_PREFIX%>body").getValue()))
@@ -597,7 +608,8 @@
                 tinyMCE.addMCEControl(document.getElementById(_idPrefix + "body"), "body");
             _editor = "visual";
             showEditingHelp(_wikiProps.rendererType);
-            saveEditorPreference(_editor);
+            if(savePreference)
+                saveEditorPreference(_editor);
         }
     }
 
@@ -1207,8 +1219,8 @@
                         <table class="tab-container" cellspacing="0">
                             <tr id="wiki-tab-strip" style="display:none">
                                 <td class="tab-blank">&nbsp;</td>
-                                <td id="wiki-tab-visual" class="tab-active" onclick="switchToVisual()">Visual</td>
-                                <td id="wiki-tab-source" class="tab-inactive" onclick="switchToSource()">Source</td>
+                                <td id="wiki-tab-visual" class="tab-active" onclick="userSwitchToVisual()">Visual</td>
+                                <td id="wiki-tab-source" class="tab-inactive" onclick="userSwitchToSource()">Source</td>
                                 <td class="tab-blank" style="width:100%">&nbsp;</td>
                             </tr>
                             <tr>

@@ -1934,7 +1934,6 @@ wiki/src/org/labkey/wiki/renderer/PlainTextRenderer.java -text
 wiki/src/org/labkey/wiki/renderer/WebPartSubstitutionHandler.java -text
 wiki/src/org/labkey/wiki/supportWiki.txt -text
 wiki/src/org/labkey/wiki/view/wiki.gm -text
-wiki/src/org/labkey/wiki/view/wikiChooseFormat.jsp -text
 wiki/src/org/labkey/wiki/view/wikiEdit.jsp -text
 wiki/src/org/labkey/wiki/view/wikiHtmlHelp.jsp -text
 wiki/src/org/labkey/wiki/view/wikiPrint.jsp -text
