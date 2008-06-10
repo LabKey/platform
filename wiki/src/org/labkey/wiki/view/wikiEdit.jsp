@@ -53,7 +53,7 @@
         rendererType: <%=model.getRendererType()%>,
         pageId: <%=model.getPageId()%>,
         index: <%=model.getIndex()%>,
-        isDirty: <%=null==model.getWiki() ? "true" : "false"%>
+        isDirty: false
     };
     var _editableProps = ['name', 'title', 'body', 'parent']
     var _attachments = [
@@ -342,6 +342,8 @@
                 fn: onChangeNameConfirmed
             });
         }
+        else
+            setWikiDirty();
     }
 
     function onChangeNameConfirmed(buttonId)
