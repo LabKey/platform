@@ -31,9 +31,9 @@ import java.util.*;
 
 public class TableInfoForm extends QueryForm
 {
-    public String getDataRegionName()
+    public TableInfoForm()
     {
-        return null;
+        super(null);
     }
 
     public boolean isDesign()

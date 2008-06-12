@@ -16,25 +16,28 @@
 
 package org.labkey.query.controllers.dbuserschema;
 
-import org.apache.beehive.netui.pageflow.Forward;
-import org.apache.beehive.netui.pageflow.annotations.Jpf;
-import org.apache.struts.action.ActionErrors;
 import org.labkey.api.data.*;
 import org.labkey.api.data.collections.CaseInsensitiveMap;
 import org.labkey.api.query.*;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.view.*;
+import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.BaseViewAction;
 import org.labkey.query.controllers.QueryControllerSpring;
 import org.labkey.query.data.DbUserSchemaTable;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.beans.PropertyValues;
 
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
 
-@Jpf.Controller(messageBundles = {@Jpf.MessageBundle(bundlePath = "messages.Validation")})
-public class DbUserSchemaController extends ViewController
+public class DbUserSchemaController extends SpringActionController
 {
     public enum Action
     {
@@ -43,138 +46,170 @@ public class DbUserSchemaController extends ViewController
         details,
     }
 
-    @Jpf.Action
-    protected Forward begin()
+    static DefaultActionResolver _actionResolver = new DefaultActionResolver(DbUserSchemaController.class);
+
+    public DbUserSchemaController() throws Exception
     {
-        return null;
+        super();
+        setActionResolver(_actionResolver);
     }
 
-    private NavTrailConfig getNavTrailConfig(QueryForm form, String title)
+
+    abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
     {
-        NavTrailConfig ret = new NavTrailConfig(getViewContext());
-        ret.setTitle(title);
-        ret.add(new NavTree(form.getQueryName(), form.urlFor(QueryAction.executeQuery)));
-        return ret;
-    }
-
-    @Jpf.Action
-    protected Forward insert(DbUserSchemaForm form) throws Exception
-    {
-        BindException errors = null;
-        requiresPermission(ACL.PERM_INSERT);
-        UserSchema schema = form.getSchema();
-        if (null == schema)
-            return HttpView.throwNotFound("Schema not found");
-        TableInfo table = schema.getTable(form.getQueryName(), null);
-        if (null == table)
-            return HttpView.throwNotFound("Query not found");
-
-        QueryUpdateForm tableForm = new QueryUpdateForm(table, getRequest());
-        if (isPost())
-        {
-            Forward forward = doInsertUpdate((DbUserSchemaTable) table, form, true);
-            if (forward != null)
-                return forward;
-        }
-        ButtonBar bb = new ButtonBar();
-        ActionButton btnSubmit = new ActionButton(getActionURL().toString(), "Submit");
-        bb.add(btnSubmit);
-        InsertView view = new InsertView(tableForm, errors);
-        view.getDataRegion().setButtonBar(bb);
-        return renderInTemplate(view, getContainer(), getNavTrailConfig(form, "Insert"));
-
-    }
-
-    @Jpf.Action
-    protected Forward update(DbUserSchemaForm form) throws Exception
-    {
-        BindException errors = null;
-        requiresPermission(ACL.PERM_UPDATE);
-        UserSchema schema = form.getSchema();
-
-        if (schema == null)
-        {
-            return HttpView.throwNotFound("Could not find schema " + form.getSchemaName());
-        }
-
-        TableInfo table = schema.getTable(form.getQueryName(), null);
-
-        if (table == null)
-        {
-            return HttpView.throwNotFound("Could not find table " + form.getQueryName());
-        }
+        String _schemaName;
+        String _queryName;
         
-        QueryUpdateForm tableForm = new QueryUpdateForm(table, getRequest());
-        if (isPost())
+        public BindException bindParameters(PropertyValues m) throws Exception
         {
-            Forward forward = doInsertUpdate((DbUserSchemaTable) table, form, false);
-            if (forward != null)
-                return forward;
+            QueryForm form = new QueryForm(null);
+            form.setViewContext(getViewContext());
+            BaseViewAction.springBindParameters(form, getViewContext().getRequest());
+
+            UserSchema schema = form.getSchema();
+            if (null == schema)
+            {
+                HttpView.throwNotFound("Schema not found");
+                return null;
+            }
+            TableInfo table = schema.getTable(form.getQueryName(), null);
+            if (null == table)
+            {
+                HttpView.throwNotFound("Query not found");
+                return null;
+            }
+            _schemaName = form.getSchemaName();
+            _queryName = form.getQueryName();
+            QueryUpdateForm command = new QueryUpdateForm(table, getViewContext().getRequest());
+            BindException errors = new BindException(new BeanUtilsPropertyBindingResult(command, "form"));
+            command.validateBind(errors);
+            return errors;
         }
-        ButtonBar bb = new ButtonBar();
-        ActionButton btnSubmit = new ActionButton(getActionURL().toString(), "Submit");
-        bb.add(btnSubmit);
-        UpdateView view = new UpdateView(tableForm, errors);
-        view.getDataRegion().setButtonBar(bb);
-        return renderInTemplate(view, getContainer(), getNavTrailConfig(form, "Edit"));
+
+        public void validateCommand(QueryUpdateForm target, Errors errors)
+        {
+        }
+
+        public ActionURL getSuccessURL(QueryUpdateForm form)
+        {
+            return QueryService.get().urlFor(getContainer(), QueryAction.executeQuery, _schemaName, _queryName);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild(_queryName, getSuccessURL(null));
+            return root;
+        }
     }
 
-    protected Forward doInsertUpdate(DbUserSchemaTable dbUserSchemaTable, QueryForm queryForm, boolean insert) throws Exception
+
+    @RequiresPermission(ACL.PERM_INSERT)
+    public class InsertAction extends UserSchemaAction
     {
-        if (!dbUserSchemaTable.hasPermission(getUser(), insert ? ACL.PERM_INSERT : ACL.PERM_UPDATE))
+        public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors) throws Exception
+        {
+            ButtonBar bb = new ButtonBar();
+            ActionButton btnSubmit = new ActionButton(getViewContext().getActionURL(), "Submit");
+            bb.add(btnSubmit);
+            InsertView view = new InsertView(tableForm, errors);
+            view.getDataRegion().setButtonBar(bb);
+            return view;
+        }
+
+        public boolean handlePost(QueryUpdateForm tableForm, BindException errors) throws Exception
+        {
+            doInsertUpdate(tableForm, errors, true);
+            return 0 == errors.getErrorCount();
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            super.appendNavTrail(root);
+            root.addChild("Insert");
+            return root;
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_UPDATE)
+    public class UpdateAction extends UserSchemaAction
+    {
+        public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors) throws Exception
+        {
+            ButtonBar bb = new ButtonBar();
+            ActionButton btnSubmit = new ActionButton(getViewContext().getActionURL(), "Submit");
+            bb.add(btnSubmit);
+            UpdateView view = new UpdateView(tableForm, errors);
+            view.getDataRegion().setButtonBar(bb);
+            return view;
+        }
+
+        public boolean handlePost(QueryUpdateForm tableForm, BindException errors) throws Exception
+        {
+            doInsertUpdate(tableForm, errors, false);
+            return 0 == errors.getErrorCount();
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            super.appendNavTrail(root);
+            root.addChild("Edit");
+            return root;
+        }
+    }
+
+
+    protected void doInsertUpdate(QueryUpdateForm form, BindException errors, boolean insert) throws Exception
+    {
+        DbUserSchemaTable table = (DbUserSchemaTable)form.getTable();
+        
+        if (!table.hasPermission(getUser(), insert ? ACL.PERM_INSERT : ACL.PERM_UPDATE))
             HttpView.throwUnauthorized();
-        QueryUpdateForm form = new QueryUpdateForm(dbUserSchemaTable, getRequest());
-        ActionErrors errors = form.validate(null, getRequest());
-        if (!errors.isEmpty())
-            return null;
 
         Map<String, Object> values = new HashMap<String, Object>();
-        for (ColumnInfo column : dbUserSchemaTable.getColumns())
+        for (ColumnInfo column : form.getTable().getColumns())
         {
             if (form.hasTypedValue(column))
             {
                 values.put(column.getName(), form.getTypedValue(column));
             }
         }
-        if (dbUserSchemaTable.getContainerId() != null)
+        if (table.getContainerId() != null)
         {
-            values.put("container", dbUserSchemaTable.getContainerId());
+            values.put("container", table.getContainerId());
         }
 
         try
         {
             if (insert)
             {
-                Table.insert(getUser(), dbUserSchemaTable.getRealTable(), values);
+                Table.insert(getUser(), table.getRealTable(), values);
             }
             else
             {
-                if (dbUserSchemaTable.getContainerId() != null)
+                if (table.getContainerId() != null)
                 {
-                    Map<String, Object> oldValues = Table.selectObject(dbUserSchemaTable.getRealTable(), form.getPkVal(), Map.class);
+                    Map<String, Object> oldValues = Table.selectObject(table.getRealTable(), form.getPkVal(), Map.class);
                     if (oldValues == null)
                     {
-                        addError("The existing row was not found.");
-                        return null;
+                        errors.reject(ERROR_MSG, "The existing row was not found.");
+                        return;
                     }
                     Object oldContainer = new CaseInsensitiveMap(oldValues).get("container");
-                    if (!dbUserSchemaTable.getContainerId().equals(oldContainer))
+                    if (!table.getContainerId().equals(oldContainer))
                     {
-                        addError("The row is from the wrong container");
-                        return null;
+                        errors.reject(ERROR_MSG, "The row is from the wrong container");
+                        return;
                     }
                 }
-                Table.update(getUser(), dbUserSchemaTable.getRealTable(), values, form.getPkVal(), null);
+                Table.update(getUser(), table.getRealTable(), values, form.getPkVal(), null);
             }
         }
         catch (SQLException x)
         {
             if (!QueryControllerSpring.isConstraintException(x))
                 throw x;
-            addError(QueryControllerSpring.getMessage(dbUserSchemaTable.getSchema().getSqlDialect() , x));
-            return null;
-        }
-        
-        return new ViewForward(QueryService.get().urlFor(getContainer(), QueryAction.executeQuery, queryForm.getSchemaName(), queryForm.getQueryName()));
+            errors.reject(ERROR_MSG, QueryControllerSpring.getMessage(table.getSchema().getSqlDialect() , x));
+        }        
     }
 }

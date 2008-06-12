@@ -1260,7 +1260,6 @@ query/src/org/labkey/query/QueryServiceImpl.java -text
 query/src/org/labkey/query/TableQueryDefinition.java -text
 query/src/org/labkey/query/TableXML.java -text
 query/src/org/labkey/query/controllers/ChooseColumnsForm.java -text
-query/src/org/labkey/query/controllers/ColumnInfoForm.java -text
 query/src/org/labkey/query/controllers/DbUserSchemaForm.java -text
 query/src/org/labkey/query/controllers/DeleteViewForm.java -text
 query/src/org/labkey/query/controllers/DesignForm.java -text
@@ -1274,7 +1273,6 @@ query/src/org/labkey/query/controllers/Page.java -text
 query/src/org/labkey/query/controllers/PropertiesForm.java -text
 query/src/org/labkey/query/controllers/QueryController.java -text
 query/src/org/labkey/query/controllers/QueryControllerSpring.java -text
-query/src/org/labkey/query/controllers/QueryDesignForm.java -text
 query/src/org/labkey/query/controllers/QueryPage.java -text
 query/src/org/labkey/query/controllers/SourceForm.java -text
 query/src/org/labkey/query/controllers/TableInfoForm.java -text
@@ -1283,7 +1281,6 @@ query/src/org/labkey/query/controllers/apitest.jsp -text
 query/src/org/labkey/query/controllers/begin.jsp -text
 query/src/org/labkey/query/controllers/chooseColumns.jsp -text
 query/src/org/labkey/query/controllers/dbuserschema/DbUserSchemaController.java -text
-query/src/org/labkey/query/controllers/dbuserschema/DbUserSchemaForm.java -text
 query/src/org/labkey/query/controllers/deleteQuery.jsp -text
 query/src/org/labkey/query/controllers/deleteQuerySpring.jsp -text
 query/src/org/labkey/query/controllers/designQuery.jsp -text

@@ -32,8 +32,7 @@ import java.util.TreeMap;
 
 public class  ChooseColumnsForm extends DesignForm
 {
-    public LinkedHashSet<FieldKey> ff_selectedColumns = new LinkedHashSet();
-    private String _dataRegionName;
+    public LinkedHashSet<FieldKey> ff_selectedColumns = new LinkedHashSet<FieldKey>();
     public String ff_columnListName;
     public boolean ff_saveForAllUsers;
     public boolean ff_saveFilter;
@@ -44,7 +43,7 @@ public class  ChooseColumnsForm extends DesignForm
         super.reset(actionMapping, request);
         if (null == getQuerySettings())
             return;
-        _dataRegionName = request.getParameter(QueryParam.dataRegionName.toString());
+        setDataRegionName(request.getParameter(QueryParam.dataRegionName.toString()));
         ff_columnListName = getQuerySettings().getViewName();
         CustomView cv = getCustomView();
         if (cv != null && cv.getColumns() != null)
@@ -70,7 +69,7 @@ public class  ChooseColumnsForm extends DesignForm
 
     public void setFf_selectedColumns(String columns)
     {
-        ff_selectedColumns = new LinkedHashSet();
+        ff_selectedColumns = new LinkedHashSet<FieldKey>();
         if (columns != null)
         {
             for (String column : StringUtils.split(columns, '&'))
@@ -146,22 +145,17 @@ public class  ChooseColumnsForm extends DesignForm
     {
         ActionURL ret = super.urlFor(action);
         ret.addParameter(QueryParam.srcURL.toString(), getSourceURL().toString());
-        ret.addParameter(QueryParam.dataRegionName.toString(), _dataRegionName);
+        ret.addParameter(QueryParam.dataRegionName.toString(), getDataRegionName());
         ret.addParameter(QueryParam.queryName.toString(), getQuerySettings().getQueryName());
         return ret;
     }
 
     public Map<FieldKey, ColumnInfo> getAvailableColumns()
     {
-        Map<FieldKey, ColumnInfo> ret = new TreeMap();
+        Map<FieldKey, ColumnInfo> ret = new TreeMap<FieldKey, ColumnInfo>();
         TableInfo table = getQueryDef().getTable(null, getSchema(), null);
         addColumns(ret, table, null, 3);
         return ret;
-    }
-
-    public String getDataRegionName()
-    {
-        return _dataRegionName;
     }
 
     protected boolean isFilterOrSort(String dataRegionName, String param)
@@ -196,7 +190,7 @@ public class  ChooseColumnsForm extends DesignForm
     public void applyFilterAndSortToURL(ActionURL url, String dataRegionName)
     {
         ActionURL src = getSourceURL();
-        if (src.getParameter(_dataRegionName + "." + QueryParam.ignoreFilter.toString()) == null)
+        if (src.getParameter(getDataRegionName() + "." + QueryParam.ignoreFilter.toString()) == null)
         {
             CustomView current = getCustomView();
             if (current != null)
@@ -204,11 +198,11 @@ public class  ChooseColumnsForm extends DesignForm
                 current.applyFilterAndSortToURL(url, dataRegionName);
             }
         }
-        for (String key : src.getKeysByPrefix(_dataRegionName + "."))
+        for (String key : src.getKeysByPrefix(getDataRegionName() + "."))
         {
             if (!isFilterOrSort(getDataRegionName(), key))
                 continue;
-            String newKey = dataRegionName + key.substring(_dataRegionName.length());
+            String newKey = dataRegionName + key.substring(getDataRegionName().length());
             for (String value : src.getParameters(key))
             {
                 url.addParameter(newKey, value);
