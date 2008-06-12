@@ -21,6 +21,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.view.WebPartView;
 
+import java.util.List;
+
 /**
  * User: Mark Igra
  * Date: Jun 12, 2006
@@ -47,6 +49,7 @@ public class WikiService
         public WikiRenderer getRenderer(WikiRendererType rendererType, String attachPrefix, Attachment[] attachments);
         public WikiRendererType getDefaultWikiRendererType();
         public WikiRendererType getDefaultMessageRendererType();
+        public java.util.List<String> getNames(Container c);
     }
 
     public static void register(Service serviceImpl)

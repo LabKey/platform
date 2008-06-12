@@ -20,10 +20,7 @@ import org.labkey.api.security.Crypt;
 import org.apache.log4j.Logger;
 import org.apache.commons.io.IOUtils;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.nio.channels.FileChannel;
@@ -379,20 +376,18 @@ quickScan:
     }
 
 
-    public static String md5sum(File file) throws IOException
+    public static String md5sum(InputStream is) throws IOException
     {
-        FileInputStream fis = null;
+        DigestInputStream dis = null;
         try
         {
             MessageDigest digest = MessageDigest.getInstance("MD5");
-            fis = new FileInputStream(file);
-            DigestInputStream is = new DigestInputStream(fis, digest);
+            dis = new DigestInputStream(is, digest);
             byte[] buf = new byte[8*1024];
-            while (-1 != (is.read(buf)))
+            while (-1 != (dis.read(buf)))
             {
                /* */
             }
-            IOUtils.closeQuietly(is);
             return Crypt.encodeHex(digest.digest());
         }
         catch (NoSuchAlgorithmException e)
@@ -402,7 +397,54 @@ quickScan:
         }
         finally
         {
-            IOUtils.closeQuietly(fis);
+            IOUtils.closeQuietly(dis);
+            IOUtils.closeQuietly(is);
         }
+    }
+    
+    public static String md5sum(File file) throws IOException
+    {
+        return md5sum(new FileInputStream(file));
+    }
+
+
+    //
+    //  NOTE: IOUtil uses fairly small buffers for copy
+    //
+    
+    final static int BUFFERSIZE = 32*1024;
+
+    /** Does not close input or output stream */
+    public static void copyData(InputStream is, OutputStream os) throws IOException
+    {
+        byte[] buf = new byte[BUFFERSIZE];
+        int r;
+        while (0 <= (r = is.read(buf)))
+            os.write(buf,0,r);
+    }
+
+
+    /** Does not close input or output stream */
+    public static void copyData(InputStream is, DataOutput os, long len) throws IOException
+    {
+        byte[] buf = new byte[BUFFERSIZE];
+        long remaining = len;
+        do
+        {
+            int r = (int)Math.min(buf.length, remaining);
+            r = is.read(buf, 0, r);
+            os.write(buf,0,r);
+            remaining -= r;
+        } while (0 < remaining);
+    }
+
+
+    /** Does not close input or output stream */
+    public static void copyData(InputStream is, DataOutput os) throws IOException
+    {
+        byte[] buf = new byte[BUFFERSIZE];
+        int r;
+        while (0 < (r = is.read(buf)))
+            os.write(buf,0,r);
     }
 }
