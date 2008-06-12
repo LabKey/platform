@@ -914,9 +914,10 @@ public class UserController extends SpringActionController
             super(CoreSchema.getInstance().getTableInfoUsers());
         }
 
-        public void validate(Errors errors)
+        // CONSIDER: implements HasValidator
+        public void validateBind(BindException errors)
         {
-            super.validate(errors);
+            super.validateBind(errors);
             Integer userId = (Integer) getPkVal();
             if (userId == null)
                 errors.reject(SpringActionController.ERROR_MSG, "User Id cannot be null");
