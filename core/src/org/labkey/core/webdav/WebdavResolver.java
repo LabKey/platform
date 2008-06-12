@@ -22,6 +22,7 @@ import org.labkey.api.security.User;
 import java.io.File;
 import java.io.InputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.List;
 
 /**
@@ -50,8 +51,10 @@ public interface WebdavResolver
 
         boolean isCollection();
 
+        // should really be 'isResource()'
         boolean isFile();
 
+        // TODO move more functionality into interface and remove this method
         File getFile();
 
         List<String> listNames();
@@ -68,6 +71,8 @@ public interface WebdavResolver
 
         InputStream getInputStream() throws IOException;
 
+        OutputStream getOutputStream() throws IOException;
+
         long getContentLength();
 
         String getHref(ViewContext context);
@@ -76,11 +81,13 @@ public interface WebdavResolver
 
         String getETag();
 
-        // NOTE: current resource impl is already scoped to user
         boolean canRead(User user);
         boolean canWrite(User user);
         boolean canCreate(User user);
         boolean canDelete(User user);
         boolean canRename(User user);
+
+        // dav methods
+        boolean delete(User user);
     }
 }

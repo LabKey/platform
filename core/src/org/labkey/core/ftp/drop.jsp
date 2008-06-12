@@ -77,7 +77,7 @@ LABKEY.writeApplet({
           host:<%=PageFlowUtil.jsString(dropPage.getHost())%>,
           port:<%=PageFlowUtil.jsString(dropPage.getPort())%>,
           path:<%=PageFlowUtil.jsString(dropPage.getPath())%>,
-          webdavPrefix:<%=PageFlowUtil.jsString(contextPath + DavController.SERVLETPATH)%>,
+          webdavPrefix:<%=PageFlowUtil.jsString(contextPath + "/" + DavController.SERVLETPATH)%>,
         port:<%=PageFlowUtil.jsString(dropPage.getPort())%>,
         user:<%=PageFlowUtil.jsString(context.getUser().getEmail())%>,
         password:<%=PageFlowUtil.jsString(sessionId)%>,

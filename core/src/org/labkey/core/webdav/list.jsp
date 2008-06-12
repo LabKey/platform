@@ -23,9 +23,12 @@
 <%@ page import="java.util.*" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.core.webdav.DavController" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:ss zzz", TimeZone.getTimeZone("GMT"), Locale.US);
+//FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:ss zzz", TimeZone.getTimeZone("GMT"), Locale.US);
+FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:ss zzz");
 %>
 <%
     DavController.ListPage listpage = (DavController.ListPage) HttpView.currentModel();
@@ -34,13 +37,18 @@ FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:s
     ViewContext context = HttpView.currentContext();
     AppProps app = AppProps.getInstance();
     User user = context.getUser();
+    String userAgent = StringUtils.trimToEmpty(request.getHeader("user-agent"));
+    boolean supportsDavMount = false;
+    boolean supportsDavScheme = false;
+    boolean supportsFolderAttribute = false;        // <a folder=""> support removed in recent verions of windows
+    boolean supportsWebdavScheme = userAgent.contains("Konqueror");
 %>
 <html>
 <head>
 <title><%=h(path)%> -- WebDAV: <%=h(app.getServerName())%></title>
 </head>
 <style type="text/css">
-A {text-decoration:none;}
+A {text-decoration:none; behavior: url(#default#AnchorClick);}
 TR {margin-right:3px; margin-left:3px;}
 BODY, TD, TH { font-family: arial sans-serif; color: black; }
 </style>
@@ -61,7 +69,7 @@ BODY, TD, TH { font-family: arial sans-serif; color: black; }
         %><a href="<%=h(dir.getLocalHref(context))%>"><%
         if ("/".equals(dir.getPath()))
         {
-            %><%=dir.getHref(context)%><%
+            %><%=h(dir.getHref(context))%><%
         }
         else
         {
@@ -108,12 +116,10 @@ BODY, TD, TH { font-family: arial sans-serif; color: black; }
     boolean shade = true;
     if (parent != null)
     {
-        String name = "..";
+        String name = "[ up ]";
         WebdavResolver.Resource info = parent;
         shade = !shade;
         long modified = info.getLastModified();
-        if (!"..".equals(name) && !".".equals(name))
-            name += "/";
         %><tr bgcolor="<%=shade?"#ffffff":"#eeeeee"%>"><td align="left"><a href="<%=h(info.getLocalHref(context))%>"><%=h(name)%></a></td><%
         %><td align="right">&nbsp;</td><%
         %><td align="right" nowrap><%=modified==0?"&nbsp;":dateFormat.format(new Date(modified))%></td></tr><%
@@ -121,12 +127,10 @@ BODY, TD, TH { font-family: arial sans-serif; color: black; }
     }
     for (Map.Entry<String, WebdavResolver.Resource> entry : dirs.entrySet())
     {
-        String name = entry.getKey();
+        String name = entry.getKey() + "/";
         WebdavResolver.Resource info = entry.getValue();
         shade = !shade;
         long modified = info.getLastModified();
-        if (!"..".equals(name) && !".".equals(name))
-            name += "/";
         %><tr bgcolor="<%=shade?"#ffffff":"#eeeeee"%>"><td align="left"><a href="<%=h(info.getLocalHref(context))%>"><%=h(name)%></a></td><%
         %><td align="right">&nbsp;</td><%
         %><td align="right" nowrap><%=modified==0?"&nbsp;":dateFormat.format(new Date(modified))%></td></tr><%
@@ -145,8 +149,17 @@ BODY, TD, TH { font-family: arial sans-serif; color: black; }
     }
 %></table>
 <hr>
+<%
+    String href =  resource.getHref(context);
+    String folder = resource.isCollection() ? href : resource.parent().getHref(context);
+%>
 This is a WebDav enabled directory.<br>
 <%
+if (supportsDavMount) {%><%=PageFlowUtil.buttonLink("davmount","?davmount")%><br><%}
+if (supportsDavScheme) {%><%=PageFlowUtil.buttonLink("dav", href.replace("http:","dav:"))%><br><%}
+if (supportsWebdavScheme) {%><%=PageFlowUtil.buttonLink("webdav", href.replace("http:","webdav:"))%><br><%}
+if (supportsFolderAttribute) {%><a href="<%=h(href)%>" folder="<%=h(folder)%>"><%=PageFlowUtil.buttonImg("folder")%></a><br><%}
+
     ArrayList<String> can = new ArrayList<String>();
     if (resource.canRead(user)) can.add("read");
     if (resource.canWrite(user)) can.add("update");
@@ -164,5 +177,6 @@ This is a WebDav enabled directory.<br>
         %> files in this directory.<%
     }
 %>
+<!--<%=request.getHeader("user-agent")%>-->
 </body>
 </html>

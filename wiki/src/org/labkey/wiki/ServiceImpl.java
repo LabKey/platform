@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 
 /**
  * User: Mark Igra
@@ -177,6 +178,18 @@ public class ServiceImpl implements WikiService.Service
         return renderer;
     }
 
+
+    public java.util.List<String> getNames(Container c)
+    {
+        try
+        {
+            return WikiManager.getWikiNameList(c);
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
 
     public static ServiceImpl get()
     {

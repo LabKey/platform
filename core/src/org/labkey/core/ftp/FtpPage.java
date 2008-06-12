@@ -114,7 +114,7 @@ public class FtpPage implements HasViewContext
         if (getPort().length() != 0)
             path.append(":").append(getPort());
         if (!useFTP)
-            path.append(getViewContext().getContextPath()).append(DavController.SERVLETPATH);
+            path.append(getViewContext().getContextPath()).append("/").append(DavController.SERVLETPATH);
         path.append(getPath());
         return path.toString();
     }

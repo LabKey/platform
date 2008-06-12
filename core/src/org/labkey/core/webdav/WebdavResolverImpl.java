@@ -28,14 +28,12 @@ import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.wiki.WikiService;
 import org.labkey.core.ftp.FtpController;
 import org.apache.log4j.Logger;
 import org.apache.commons.lang.StringUtils;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.FileInputStream;
+import java.io.*;
 import java.util.*;
 import java.net.URI;
 import java.sql.SQLException;
@@ -54,6 +52,8 @@ import junit.framework.TestSuite;
 public class WebdavResolverImpl implements WebdavResolver
 {
     static String PIPELINE_LINK = "@pipeline";
+    static String WIKI_LINK = "@wiki";
+    static boolean wikiDemo = false;
 
     static WebdavResolverImpl _instance = new WebdavResolverImpl();
 
@@ -99,11 +99,23 @@ public class WebdavResolverImpl implements WebdavResolver
 
         String relPath = StringUtils.join(paths.subList(depth,paths.size()), "/");
 
-        // don't return FileResource if there is no file system
-        if (folder._root == null)
-            return new UnboundResource(c(folder,relPath));
+        // this is messy
 
-        return new FileResource(folder, relPath);
+        Resource resource = null;
+        if (folder instanceof WikiFolderResource)
+        {
+            if (depth == paths.size()-1)
+                resource = folder.find(relPath);
+        }
+        else if (folder.isWebFolder())
+        {
+            // don't return FileResource if there is no file system
+            if (!folder.isVirtual())
+                resource = new FileResource(folder, relPath);
+        }
+        if (null == resource)
+            resource = new UnboundResource(c(folder,relPath));
+        return resource;
     }
 
 
@@ -206,6 +218,14 @@ public class WebdavResolverImpl implements WebdavResolver
         assert(folder.equals("/") || !folder.endsWith("/"));
         if (!folder.equals("/") && folder.endsWith("/"))
             folder = folder.substring(0,folder.length()-1);
+
+        if (wikiDemo && folder.endsWith("/" + WIKI_LINK))
+        {
+            folder = folder.substring(0, folder.length()- WIKI_LINK.length()-1);
+            Container c = ContainerManager.getForPath(folder);
+            return new WikiFolderResource(c);
+        }
+        
         if (folder.endsWith("/" + PIPELINE_LINK))
         {
             isPipelineLink = true;
@@ -276,7 +296,16 @@ public class WebdavResolverImpl implements WebdavResolver
             assert _path.equals("/") || !_path.endsWith("/");
         }
 
+        ResourceImpl(String folder, String name)
+        {
+            this(c(folder,name));
+        }
 
+        ResourceImpl(ResourceImpl folder, String name)
+        {
+            this(c(folder,name));
+        }
+        
         public String getPath()
         {
             return _path;
@@ -310,7 +339,7 @@ public class WebdavResolverImpl implements WebdavResolver
         // cannot create objects in a virtual collection
         public boolean isVirtual()
         {
-            return _file != null;
+            return _file == null;
         }
 
 
@@ -333,6 +362,14 @@ public class WebdavResolverImpl implements WebdavResolver
             return new FileInputStream(_file);
         }
 
+
+        public OutputStream getOutputStream() throws IOException
+        {
+            if (null == _file || !_file.exists())
+                return null;
+            return new FileOutputStream(_file);
+        }
+        
 
         public List<String> listNames()
         {
@@ -406,7 +443,7 @@ public class WebdavResolverImpl implements WebdavResolver
 
         public long getContentLength()
         {
-            if (!isFile())
+            if (!isFile() || _file == null)
                 return 0;
             return _file.length();
         }
@@ -427,10 +464,16 @@ public class WebdavResolverImpl implements WebdavResolver
 
         public String getLocalHref(ViewContext context)
         {
-            String href = context.getContextPath() + DavController.SERVLETPATH + PageFlowUtil.encodePath(_path);
+            String href = context.getContextPath() + context.getRequest().getServletPath() + PageFlowUtil.encodePath(_path);
             if (isCollection() && !href.endsWith("/"))
                 href += "/";
             return href;
+        }
+
+
+        public String getHrefAlternate(ViewContext context)
+        {
+            return null;
         }
 
 
@@ -487,6 +530,15 @@ public class WebdavResolverImpl implements WebdavResolver
             return _acl.getPermissions(user);
         }
 
+
+        public boolean delete(User user)
+        {
+            if (_file == null || !canDelete(user))
+                return false;
+            return _file.delete();
+        }
+
+
         abstract ResourceImpl find(String name);
 
         /*
@@ -514,6 +566,11 @@ public class WebdavResolverImpl implements WebdavResolver
         FolderResourceImpl(String path)
         {
             super(path);
+        }
+
+        FolderResourceImpl(String folder, String name)
+        {
+            super(folder, name);
         }
 
         @Override
@@ -563,6 +620,8 @@ public class WebdavResolverImpl implements WebdavResolver
                     _children.add(aList.getName());
                 if (null != root)
                     _children.add(PIPELINE_LINK);
+                if (wikiDemo)
+                    _children.add(WIKI_LINK);
             }
             if (null == user || _children.size() == 0)
                 return _children;
@@ -605,7 +664,7 @@ public class WebdavResolverImpl implements WebdavResolver
     {
         PipelineFolderResource(Container c, PipeRoot root)
         {
-            super(c(c,PIPELINE_LINK));
+            super(c.getPath(),PIPELINE_LINK);
 
             URI uriRoot = (root != null) ? root.getUri(c) : null;
             if (uriRoot != null)
@@ -632,18 +691,156 @@ public class WebdavResolverImpl implements WebdavResolver
     }
 
 
+    /** demo only */
+    private class WikiFolderResource extends FolderResourceImpl
+    {
+        WikiFolderResource(Container c)
+        {
+            super(c.getPath(),WIKI_LINK);
+            _c = c;
+            _acl = c.getAcl();
+        }
+
+        @Override
+        public String getName()
+        {
+            return WIKI_LINK;
+        }
+
+        ResourceImpl find(String name)
+        {
+            return new WikiResource(this, name);
+        }
+
+        public List<String> listNames()
+        {
+            List<String> names = WikiService.get().getNames(getContainer());
+            return names;
+        }
+    }
+
+
+    /** demo only */
+    private class WikiResource extends ResourceImpl
+    {
+        WikiFolderResource _folder = null;
+        String _name;
+        
+        WikiResource(WikiFolderResource folder, String name)
+        {
+            super(folder,name);
+            _folder = folder;
+            _name = name;
+            _c = folder.getContainer();
+            _acl = _c.getAcl();
+        }
+
+        WikiResource(String path)
+        {
+            super(path);
+        }
+
+        public String getPath()
+        {
+            return super.getPath();
+        }
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public boolean exists()
+        {
+            List<String> names = WikiService.get().getNames(getContainer());
+            return names.contains(_name);
+        }
+
+        public boolean isCollection()
+        {
+            return false;
+        }
+
+        public boolean isVirtual()
+        {
+            return true;
+        }
+
+        public boolean isFile()
+        {
+            return exists();
+        }
+
+        public InputStream getInputStream() throws IOException
+        {
+            String html = StringUtils.trimToEmpty(WikiService.get().getHtml(_c, _name, true));
+            byte[] buf = html.getBytes("UTF-8");
+            return new ByteArrayInputStream(buf);
+        }
+
+        public OutputStream getOutputStream() throws IOException
+        {
+            return new ByteArrayOutputStream();
+        }
+
+        public Resource parent()
+        {
+            return _folder;
+        }
+
+        public long getCreation()
+        {
+            return super.getCreation();
+        }
+
+        public long getLastModified()
+        {
+            return super.getLastModified();
+        }
+
+        public String getContentType()
+        {
+            return "text/html";
+        }
+
+        public long getContentLength()
+        {
+            String html = StringUtils.trimToEmpty(WikiService.get().getHtml(_c, _name, true));
+            try
+            {
+                byte[] buf = html.getBytes("UTF-8");
+                return buf.length;
+            }
+            catch (UnsupportedEncodingException e)
+            {
+                return 0;
+            }
+        }
+
+        ResourceImpl find(String name)
+        {
+            return null;
+        }
+
+        public int getPermissions(User user)
+        {
+            return super.getPermissions(user) & ACL.PERM_READ;
+        }
+    }
+
+
     private class FileResource extends ResourceImpl
     {
         FileResource(FolderResourceImpl folder, String relativePath)
         {
-            super(c(folder, relativePath));
+            super(folder, relativePath);
             _acl = folder._acl;
             _file = canonicalFile(new File(folder._root,relativePath));
         }
 
         FileResource(FileResource folder, String name)
         {
-            super(c(folder, name));
+            super(folder, name);
             _acl = folder._acl;
             _file = new File(folder._file,name);
         }
