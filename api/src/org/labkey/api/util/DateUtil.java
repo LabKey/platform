@@ -18,6 +18,7 @@ package org.labkey.api.util;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections.FastHashMap;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang.time.FastDateFormat;
@@ -199,6 +200,63 @@ public class DateUtil
      *
      * Copied from RHINO (www.mozilla.org/rhino) and modified
      */
+
+    enum Month
+    {
+        january(0),february(1),march(2),april(3),may(4),june(5),july(6),august(6),september(8),october(9),november(10),december(11);
+        int month;
+        Month(int i)
+        {
+            month = i;
+        }
+    }
+
+    enum Weekday
+    {
+        monday,tuesday,wednesday,thursday,friday,saturday,sunday
+    }
+
+    enum AMPM
+    {
+        am, pm
+    }
+    
+    enum TZ
+    {
+        gmt(0),ut(0),utc(0),est(5*60),edt(4*60),cst(6*60),cdt(5*60),mst(7*60),mdt(6*60),pst(8*60),pdt(7*60);
+        int tzoffset;
+        TZ(int tzoffset)
+        {
+            this.tzoffset = tzoffset;
+        }
+    }
+
+    static Enum[] parts = null;
+    static
+    {
+        ArrayList<Enum> list = new ArrayList<Enum>();
+        list.addAll(Arrays.asList(AMPM.values()));
+        list.addAll(Arrays.asList(Month.values()));
+        list.addAll(Arrays.asList(Weekday.values()));
+        list.addAll(Arrays.asList(TZ.values()));
+        Collections.sort(list, new Comparator<Enum>() {public int compare(Enum e1, Enum e2){ return e1.name().compareTo(e2.name());}});
+        parts = list.toArray(new Enum[list.size()]);
+    }
+
+    static Comparator compEnum = new Comparator<Object>() {public int compare(Object o1, Object o2){return ((Enum)o1).name().compareTo((String)o2);}}; 
+    static Enum resolveDatePart(String sequence, int start, int end)
+    {
+        if (end-start < 2)
+            return null;
+        String s = sequence.substring(start,end).toLowerCase();
+        int i = Arrays.binarySearch(parts, s, compEnum);
+        if (i>=0)
+            return parts[i];
+        i = -(i+1);
+        return i>parts.length-1 ? null : parts[i].name().startsWith(s) ? parts[i] : null;
+    }
+
+
     public static long parseStringUS(String s, boolean allowTimeOnly)
     {
         int year = -1;
@@ -215,6 +273,7 @@ public class DateUtil
         char prevc = 0;
         int limit = 0;
         boolean seenplusminus = false;
+        boolean monthexpected = false;
 
         limit = s.length();
         while (i < limit)
@@ -264,84 +323,100 @@ public class DateUtil
                 /* uses of seenplusminus allow : in TZA, so Java
                  * no-timezone style of GMT+4:30 works
                  */
-                if ((prevc == '+' || prevc == '-')/*  && year>=0 */)
-                {
-                    /* make ':' case below change tzoffset */
-                    seenplusminus = true;
-
-                    /* offset */
-                    if (n < 24)
-                        n = n * 60; /* EG. "GMT-3" */
-                    else
-                        n = n % 100 + n / 100 * 60; /* eg "GMT-0430" */
-                    if (prevc == '+')       /* plus means east of GMT */
-                        n = -n;
-                    if (tzoffset != 0 && tzoffset != -1)
-                        throw new ConversionException(s);
-                    tzoffset = n;
-                }
-                else if (n >= 70 ||
-                        (prevc == '/' && mon >= 0 && mday >= 0 && year < 0))
-                {
-                    if (year >= 0)
-                        throw new ConversionException(s);
-                    else if (c <= ' ' || c == ',' || c == '/' || i >= limit)
+validNum:       {
+                    if ((prevc == '+' || prevc == '-')/*  && year>=0 */)
                     {
-                        if (n >= 100)
-                            year = n;
-                        else if (n > twoDigitCutoff)
-                            year = n + defaultCentury;
+                        /* make ':' case below change tzoffset */
+                        seenplusminus = true;
+
+                        /* offset */
+                        if (n < 24)
+                            n = n * 60; /* EG. "GMT-3" */
                         else
-                            year = n + defaultCentury + 100;
+                            n = n % 100 + n / 100 * 60; /* eg "GMT-0430" */
+                        if (prevc == '+')       /* plus means east of GMT */
+                            n = -n;
+                    if (tzoffset != 0 && tzoffset != -1)
+                            throw new ConversionException(s);
+                        tzoffset = n;
+                        break validNum;
+                    }
+                    if (n >= 70 || (prevc == '/' && mon >= 0 && mday >= 0 && year < 0))
+                    {
+                        if (year >= 0)
+                            throw new ConversionException(s);
+                        else if (c <= ' ' || c == ',' || c == '/' || i >= limit)
+                        {
+                            if (n >= 100)
+                                year = n;
+                            else if (n > twoDigitCutoff)
+                                year = n + defaultCentury;
+                            else
+                                year = n + defaultCentury + 100;
+                        }
+                        else
+                            throw new ConversionException(s);
+                        break validNum;
+                    }
+                    if (c == ':')
+                    {
+                        if (hour < 0)
+                            hour = n;
+                        else if (min < 0)
+                            min = n;
+                        else
+                            throw new ConversionException(s);
+                        break validNum;
+                    }
+                    if (c == '/')
+                    {
+                        if (mon < 0)
+                            mon = n - 1;
+                        else if (mday < 0)
+                            mday = n;
+                        else
+                            throw new ConversionException(s);
+                        break validNum;
+                    }
+                    if (i < limit)
+                    {
+                        if (mday < 0 && -1 != "jfmasondJFMASOND".indexOf(c))
+                        {
+                            monthexpected = true;
+                        }
+                        else if (c != ',' && c > ' ' && c != '-')
+                        {
+                            throw new ConversionException(s);
+                        }
+                    }
+                    if (seenplusminus && n < 60)
+                    {  /* handle GMT-3:30 */
+                        if (tzoffset < 0)
+                            tzoffset -= n;
+                        else
+                            tzoffset += n;
+                        break validNum;
+                    }
+                    if (hour >= 0 && min < 0)
+                    {
+                        min = n;
+                        break validNum;
+                    }
+                    if (min >= 0 && sec < 0)
+                    {
+                        sec = n;
+                        break validNum;
+                    }
+                    if (mday < 0)
+                    {
+                        mday = n;
+                        break validNum;
                     }
                     else
+                    {
                         throw new ConversionException(s);
-                }
-                else if (c == ':')
-                {
-                    if (hour < 0)
-                        hour = n;
-                    else if (min < 0)
-                        min = n;
-                    else
-                        throw new ConversionException(s);
-                }
-                else if (c == '/')
-                {
-                    if (mon < 0)
-                        mon = n - 1;
-                    else if (mday < 0)
-                        mday = n;
-                    else
-                        throw new ConversionException(s);
-                }
-                else if (i < limit && c != ',' && c > ' ' && c != '-')
-                {
-                    throw new ConversionException(s);
-                }
-                else if (seenplusminus && n < 60)
-                {  /* handle GMT-3:30 */
-                    if (tzoffset < 0)
-                        tzoffset -= n;
-                    else
-                        tzoffset += n;
-                }
-                else if (hour >= 0 && min < 0)
-                {
-                    min = n;
-                }
-                else if (min >= 0 && sec < 0)
-                {
-                    sec = n;
-                }
-                else if (mday < 0)
-                {
-                    mday = n;
-                }
-                else
-                {
-                    throw new ConversionException(s);
-                }
+                    }
+                } // validNum: end of number handling
                 prevc = 0;
             }
             else if (c == '/' || c == ':' || c == '+' || c == '-')
@@ -358,32 +433,22 @@ public class DateUtil
                         break;
                     i++;
                 }
-                int letterCount = i - st;
-                if (letterCount < 2)
+                if (i - st < 2)
                     throw new ConversionException(s);
-                /*
-                 * Use ported code from jsdate.c rather than the locale-specific
-                 * date-parsing code from Java, to keep js and rhino consistent.
-                 * Is this the right strategy?
-                 */
-                String wtb = "am;pm;"
-                        + "monday;tuesday;wednesday;thursday;friday;"
-                        + "saturday;sunday;"
-                        + "january;february;march;april;may;june;"
-                        + "july;august;september;october;november;december;"
-                        + "gmt;ut;utc;est;edt;cst;cdt;mst;mdt;pst;pdt;";
-                int index = 0;
-                for (int wtbOffset = 0; ;)
+                Enum dp = null;
+                try
                 {
-                    int wtbNext = wtb.indexOf(';', wtbOffset);
-                    if (wtbNext < 0)
-                        throw new ConversionException(s);
-                    if (wtb.regionMatches(true, wtbOffset, s, st, letterCount))
-                        break;
-                    wtbOffset = wtbNext + 1;
-                    ++index;
+                    dp = resolveDatePart(s,st,i);
                 }
-                if (index < 2)
+                catch (IllegalArgumentException x)
+                {
+                }
+                if (null == dp)
+                    throw new ConversionException(s);
+                if (monthexpected && !(dp instanceof Month))
+                    throw new ConversionException(s);
+                monthexpected = false;
+                if (dp == AMPM.am || dp == AMPM.pm)
                 {
                     /*
                      * AM/PM. Count 12:30 AM as 00:30, 12:30 PM as
@@ -393,7 +458,7 @@ public class DateUtil
                     {
                         throw new ConversionException(s);
                     }
-                    else if (index == 0)
+                    else if (dp == AMPM.am)
                     {
                         // AM
                         if (hour == 12)
@@ -406,71 +471,37 @@ public class DateUtil
                             hour += 12;
                     }
                 }
-                else if ((index -= 2) < 7)
+                else if (dp instanceof Weekday)
                 {
                     // ignore week days
                 }
-                else if ((index -= 7) < 12)
+                else if (dp instanceof Month)
                 {
                     // month
                     if (mon < 0)
                     {
-                        mon = index;
+                        mon = ((Month)dp).month;
                     }
                     else if (mday < 0 && prevc == '/')
                     {
                         // handle 01/Jan/2001 case (strange I know, the customer is always right)
                         // of course this probably makes Jan/Feb/2001 legal as well
                         mday = mon+1;
-                        mon = index;
+                        mon = ((Month)dp).month;
                     }
                     else
                     {
                         throw new ConversionException(s);
                     }
+                    // handle 01Jan2001 pretend we're seeing 01/Jan/01
+                    if (i < limit && s.charAt(i) >= '0' && s.charAt(i) <= '9')
+                    {
+                        prevc = '/';
+                    }
                 }
                 else
                 {
-                    index -= 12;
-                    // timezones
-                    switch (index)
-                    {
-                        case 0 /* gmt */:
-                            tzoffset = 0;
-                            break;
-                        case 1 /* ut */:
-                            tzoffset = 0;
-                            break;
-                        case 2 /* utc */:
-                            tzoffset = 0;
-                            break;
-                        case 3 /* est */:
-                            tzoffset = 5 * 60;
-                            break;
-                        case 4 /* edt */:
-                            tzoffset = 4 * 60;
-                            break;
-                        case 5 /* cst */:
-                            tzoffset = 6 * 60;
-                            break;
-                        case 6 /* cdt */:
-                            tzoffset = 5 * 60;
-                            break;
-                        case 7 /* mst */:
-                            tzoffset = 7 * 60;
-                            break;
-                        case 8 /* mdt */:
-                            tzoffset = 6 * 60;
-                            break;
-                        case 9 /* pst */:
-                            tzoffset = 8 * 60;
-                            break;
-                        case 10 /* pdt */:
-                            tzoffset = 7 * 60;
-                            break;
-                        default:
-                            throw new ConversionException(s);
-                    }
+                    tzoffset = ((TZ)dp).tzoffset;
                 }
             }
         }
@@ -576,15 +607,7 @@ public class DateUtil
         {
             ;
         }
-
-        try
-        {
-            return parseDateTime(s, "ddMMMyy").getTime();
-        }
-        catch (Exception x)
-        {
-            ;
-        }
+        
         throw new ConversionException(s);
     }
 
@@ -874,15 +897,28 @@ Parse:
         {
             long datetimeExpected = java.sql.Timestamp.valueOf("2001-02-03 04:05:06").getTime();
             long dateExpected = java.sql.Date.valueOf("2001-02-03").getTime();
+            String s;
 
+            s = new Date(datetimeExpected).toString();
+            assertEquals(datetimeExpected, DateUtil.parseDateTime(s)); 
+            s = new Date(datetimeExpected).toGMTString();
+            assertEquals(datetimeExpected, DateUtil.parseDateTime(s));
+            s = new Date(datetimeExpected).toLocaleString();
+            assertEquals(datetimeExpected, DateUtil.parseDateTime(s));
             assertEquals(datetimeExpected, DateUtil.parseDateTime("2001-02-03 04:05:06"));
             assertEquals(datetimeExpected, DateUtil.parseDateTime("2001-02-03T04:05:06"));
-            assertEquals(datetimeExpected, DateUtil.parseDateTime(new Date(datetimeExpected).toString()));
             assertEquals(datetimeExpected, DateUtil.parseDateTime("2/3/01 4:05:06"));
             assertEquals(datetimeExpected, DateUtil.parseDateTime("2/3/2001 4:05:06"));
-// TODO: assertEquals(datetimeExpected, DateUtil.parseDateTime(ConvertUtils.convert(new Date(datetimeExpected))));
+            s = ConvertUtils.convert(new Date(datetimeExpected));
+            assertEquals(datetimeExpected, DateUtil.parseDateTime(s));
             assertEquals(datetimeExpected, DateUtil.parseDateTime("2/3/2001 4:05:06.000"));
 
+            s = new Date(dateExpected).toString();
+            assertEquals(dateExpected, DateUtil.parseDateTime(s));
+            s = new Date(dateExpected).toGMTString();
+            assertEquals(dateExpected, DateUtil.parseDateTime(s));
+            s = new Date(dateExpected).toLocaleString();
+            assertEquals(dateExpected, DateUtil.parseDateTime(s));
             assertEquals(dateExpected, DateUtil.parseDateTime("2/3/01"));
             assertEquals(dateExpected, DateUtil.parseDateTime("3-Feb-01"));
             assertEquals(dateExpected, DateUtil.parseDateTime("3Feb01"));
@@ -895,9 +931,11 @@ Parse:
             assertEquals(dateExpected, DateUtil.parseDateTime("3Feb01"));
             assertEquals(dateExpected, DateUtil.parseDateTime("3Feb2001"));
             assertEquals(dateExpected, DateUtil.parseDateTime("03Feb01"));
-            assertEquals(dateExpected, DateUtil.parseDateTime("03Feb2001"));            assertEquals(dateExpected, DateUtil.parseDateTime("Feb 03 2001"));
+            assertEquals(dateExpected, DateUtil.parseDateTime("03Feb2001"));
+            assertEquals(dateExpected, DateUtil.parseDateTime("Feb 03 2001"));
             assertEquals(dateExpected, DateUtil.parseDateTime("February 3, 2001"));
-// TODO: assertEquals(dateExpected, DateUtil.parseDateTime(ConvertUtils.convert(new Date(dateExpected))));
+            s = ConvertUtils.convert(new Date(dateExpected)); 
+            assertEquals(dateExpected, DateUtil.parseDateTime(s));
 
             // some zero testing
             datetimeExpected = java.sql.Timestamp.valueOf("2001-02-03 00:00:00.000").getTime();

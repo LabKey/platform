@@ -20,6 +20,8 @@ import junit.framework.TestSuite;
 import org.apache.beehive.netui.pageflow.Forward;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMessage;
@@ -48,7 +50,6 @@ import org.w3c.tidy.Tidy;
 import org.xml.sax.*;
 import org.xml.sax.helpers.XMLReaderFactory;
 
-import javax.mail.MessagingException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -534,6 +535,7 @@ public class PageFlowUtil
         return (defaultValue);
     }
 
+
     /**
      * boolean controlling whether or now we compress {@link ObjectOutputStream}s when we render them in HTML forms.
      * 
@@ -541,30 +543,23 @@ public class PageFlowUtil
     static private final boolean COMPRESS_OBJECT_STREAMS = true;
     static public String encodeObject(Object o) throws IOException
     {
-        try
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        OutputStream osCompressed;
+        if (COMPRESS_OBJECT_STREAMS)
         {
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            OutputStream osBase64 = javax.mail.internet.MimeUtility.encode(byteArrayOutputStream, "base64");
-            OutputStream osCompressed;
-            if (COMPRESS_OBJECT_STREAMS)
-            {
-                osCompressed = new DeflaterOutputStream(osBase64);
-            }
-            else
-            {
-                osCompressed = osBase64;
-            }
-            ObjectOutputStream oos = new ObjectOutputStream(osCompressed);
-            oos.writeObject(o);
-            oos.close();
-            osCompressed.close();
-            return new String(byteArrayOutputStream.toByteArray());
+            osCompressed = new DeflaterOutputStream(byteArrayOutputStream);
         }
-        catch (MessagingException x)
+        else
         {
-            throw new IOException(x.getMessage());
+            osCompressed = byteArrayOutputStream;
         }
+        ObjectOutputStream oos = new ObjectOutputStream(osCompressed);
+        oos.writeObject(o);
+        oos.close();
+        osCompressed.close();
+        return new String(Base64.encodeBase64(byteArrayOutputStream.toByteArray(), true));
     }
+
 
     public static Object decodeObject(String s) throws IOException
     {
@@ -574,25 +569,21 @@ public class PageFlowUtil
         
         try
         {
-            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(s.getBytes());
-            InputStream isBase64 = javax.mail.internet.MimeUtility.decode(byteArrayInputStream, "base64");
+            byte[] buf = Base64.decodeBase64(s.getBytes());
+            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(buf);
             InputStream isCompressed;
 
             if (COMPRESS_OBJECT_STREAMS)
             {
-                isCompressed = new InflaterInputStream(isBase64);
+                isCompressed = new InflaterInputStream(byteArrayInputStream);
             }
             else
             {
-                isCompressed = isBase64;
+                isCompressed = byteArrayInputStream;
             }
             ObjectInputStream ois = new ObjectInputStream(isCompressed);
             Object obj = ois.readObject();
             return obj;
-        }
-        catch (MessagingException x)
-        {
-            throw new IOException(x.getMessage());
         }
         catch (ClassNotFoundException x)
         {
@@ -600,9 +591,6 @@ public class PageFlowUtil
         }
     }
 
-
-
-//    static Charset csUTF8 = Charset.forName("UTF-8");
     
     public static byte[] gzip(String s)
     {
@@ -848,7 +836,7 @@ public class PageFlowUtil
         // TODO: setHeader(modified)
         long length = file.length();
 
-        InputStream s = null;
+        FileInputStream s = null;
 
         try
         {
@@ -857,26 +845,11 @@ public class PageFlowUtil
 
             prepareResponseForFile(response, responseHeaders, file.getName(), length, asAttachment);
             ServletOutputStream out = response.getOutputStream();
-
-            byte[] buf = new byte[4096];
-            int r;
-            while (0 < (r = s.read(buf)))
-                out.write(buf, 0, r);
+            FileUtil.copyData(s, out);
         }
         finally
         {
-            if (s != null)
-            {
-                try
-                {
-                    s.close();
-                }
-                catch (IOException eio)
-                {
-                    _log.error("PageFlowUtil.streamFile", eio);
-                    // swallow exception
-                }
-            }
+            IOUtils.closeQuietly(s);
         }
     }
 
@@ -887,10 +860,9 @@ public class PageFlowUtil
     }
 
     // Fetch the contents of a text file, and return it in a String.
-    // TODO: Use IOUtils.toString()
     public static String getFileContentsAsString(File aFile)
     {
-        StringBuffer contents = new StringBuffer();
+        StringBuilder contents = new StringBuilder();
         BufferedReader input = null;
 
         try
@@ -915,14 +887,7 @@ public class PageFlowUtil
         }
         finally
         {
-            try
-            {
-                if (input != null) input.close();
-            }
-            catch (IOException e)
-            {
-                _log.error(e);
-            }
+            IOUtils.closeQuietly(input);
         }
         return contents.toString();
     }
@@ -963,10 +928,9 @@ public class PageFlowUtil
 
 
     // Fetch the contents of an input stream, and return in a String.
-    // TODO: use IOUtils.toString()
     public static String getStreamContentsAsString(InputStream is)
     {
-        StringBuffer contents = new StringBuffer();
+        StringBuilder contents = new StringBuilder();
         BufferedReader input = null;
 
         try
@@ -985,14 +949,7 @@ public class PageFlowUtil
         }
         finally
         {
-            try
-            {
-                if (input != null) input.close();
-            }
-            catch (IOException e)
-            {
-                _log.error("getStreamContentsAsString", e);
-            }
+            IOUtils.closeQuietly(input);
         }
         return contents.toString();
     }
@@ -1007,13 +964,12 @@ public class PageFlowUtil
         try
         {
             String line;
-
             while ((line = input.readLine()) != null)
                 contents.add(line);
         }
         finally
         {
-            input.close();
+            IOUtils.closeQuietly(input);
         }
 
         return contents;

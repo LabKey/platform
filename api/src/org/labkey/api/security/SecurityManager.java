@@ -19,6 +19,7 @@ package org.labkey.api.security;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
 import org.labkey.api.module.ModuleLoader;
@@ -308,11 +309,8 @@ public class SecurityManager
     {
         try
         {
-            ByteArrayInputStream isBase64 = new ByteArrayInputStream(basic.getBytes());
-            InputStream is = javax.mail.internet.MimeUtility.decode(isBase64, "base64");
-            byte[] buf = new byte[500];
-            int len = is.read(buf);
-            String auth = new String(buf, 0, len);
+            byte[] decode = Base64.decodeBase64(basic.getBytes());
+            String auth = new String(decode);
             int colon = auth.indexOf(':');
             if (-1 == colon)
                 return null;
@@ -321,14 +319,6 @@ public class SecurityManager
             new ValidEmail(rawEmail);  // validate email address
             User u = AuthenticationManager.authenticate(rawEmail, password);
             return u;
-        }
-        catch (MessagingException x)
-        {
-            throw new RuntimeException(x);
-        }
-        catch (IOException x)
-        {
-            throw new RuntimeException(x);
         }
         catch (ValidEmail.InvalidEmailException e)
         {

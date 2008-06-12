@@ -16,14 +16,14 @@
 
 package org.labkey.api.security;
 
+import org.apache.commons.codec.binary.Base64;
+
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import javax.mail.internet.MimeUtility;
 
 
 /**
@@ -111,7 +111,7 @@ public class Crypt
             Cipher cipher = Cipher.getInstance(_algorithm);
             cipher.init(Cipher.ENCRYPT_MODE, skey);
             byte[] cipherBytes = cipher.doFinal(textBytes);
-            crypt = encode64(cipherBytes);
+            crypt = new String(Base64.encodeBase64(cipherBytes, false));
         }
         catch (Exception x)
         {
@@ -131,23 +131,5 @@ public class Crypt
         return (char) (0 == (i & 0x0001)
                 ? 'A' + (i >> 1)
                 : 'a' + (i >> 1));
-    }
-
-
-    public static String encode64(byte[] src)
-    {
-        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        try
-        {
-            OutputStream out = MimeUtility.encode(bytes, "base64");
-            out.write(src);
-        }
-        catch (Exception x)
-        {
-            x.printStackTrace(System.err);
-            return null;
-        }
-        String enc = new String(bytes.toByteArray());
-        return enc;
     }
 }
