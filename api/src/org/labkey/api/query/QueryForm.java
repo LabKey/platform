@@ -31,7 +31,17 @@ public class QueryForm extends ViewForm
     private QuerySettings _querySettings;
     private boolean _exportAsWebPage = false;
     private String _queryViewActionURL;
+    private String _dataRegionName = QueryView.DATAREGIONNAME_DEFAULT;
 
+    public QueryForm()
+    {
+    }
+
+    public QueryForm(String dataRegionName)
+    {
+        _dataRegionName = dataRegionName;
+    }
+    
     protected UserSchema createSchema()
     {
         UserSchema ret = null;
@@ -73,9 +83,14 @@ public class QueryForm extends ViewForm
         return schema.getSettings(getViewContext().getActionURL(), getDataRegionName());
     }
 
-    protected String getDataRegionName()
+    protected void setDataRegionName(String name)
     {
-        return QueryView.DATAREGIONNAME_DEFAULT;
+        _dataRegionName = name;
+    }
+
+    public String getDataRegionName()
+    {
+        return _dataRegionName;
     }
 
     public String getSchemaName()

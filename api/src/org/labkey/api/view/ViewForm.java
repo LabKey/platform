@@ -71,6 +71,9 @@ public class ViewForm extends FormData implements HasViewContext
     public void setViewContext(ViewContext context)
     {
         _context = context;
+        _request = context.getRequest();
+        _user = context.getUser();
+        _c = context.getContainer();
     }
 
 
