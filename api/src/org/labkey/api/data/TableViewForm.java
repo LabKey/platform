@@ -46,7 +46,7 @@ import java.util.*;
  * Supports insert, update, delete functionality with a minimum of fuss
  * <p/>
  */
-public class TableViewForm extends ViewForm implements DynaBean, HasValidator
+public class TableViewForm extends ViewForm implements DynaBean
 {
     protected Map<String, String> _stringValues = new CaseInsensitiveHashMap<String>();
     protected Map<String, Object> _values = null;
@@ -580,10 +580,9 @@ public class TableViewForm extends ViewForm implements DynaBean, HasValidator
         return errors;
     }
 
-    public void validateSpring(Errors errors)
+    public void validateBind(BindException errors)
     {
-        if (errors instanceof BindException)
-            populateValues((BindException)errors);
+        populateValues(errors);
     }
 
     public Object getOldValues()

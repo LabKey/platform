@@ -121,7 +121,11 @@ public abstract class FormViewAction<FORM> extends BaseViewAction<FORM> implemen
     public void validate(Object target, Errors errors)
     {
         if (target instanceof HasValidator)
-            ((HasValidator)target).validateSpring(errors);
+        {
+            ((HasValidator)target).validate(errors);
+            if (0 < errors.getErrorCount())
+                return;
+        }
         validateCommand((FORM)target, errors);
     }
 

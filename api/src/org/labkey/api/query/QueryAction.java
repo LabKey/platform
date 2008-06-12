@@ -36,5 +36,9 @@ public enum QueryAction
     deleteView,
     createChart,
     createRReport,
-    tableInfo, excelWebQueryDefinition,
+    tableInfo,
+    excelWebQueryDefinition,
+    admin,
+    adminNewDbUserSchema,
+    adminDeleteDbUserSchema
 }

@@ -265,7 +265,8 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
                 }
             }
             tableForm.setStrings(strings);
-            return tableForm.populateValues(errors);
+            tableForm.validateBind(errors);
+            return errors;
         }
 
         /* 'regular' command handling */

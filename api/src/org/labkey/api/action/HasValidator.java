@@ -25,5 +25,5 @@ import org.springframework.validation.Errors;
  */
 public interface HasValidator
 {
-    void validateSpring(Errors errors);
+    void validate(Errors errors);
 }
