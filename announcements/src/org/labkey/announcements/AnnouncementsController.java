@@ -1475,7 +1475,6 @@ public class AnnouncementsController extends SpringActionController
 
         public void validateCommand(AnnouncementForm form, Errors errors)
         {
-            form.validate(errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1947,7 +1946,7 @@ public class AnnouncementsController extends SpringActionController
             return _selectedAnnouncement;
         }
 
-        private void validate(Errors errors)
+        public void validate(Errors errors)
         {
             Settings settings = getSettings(getContainer());
             Announcement bean = getBean();

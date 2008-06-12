@@ -1279,7 +1279,6 @@ query/src/org/labkey/query/controllers/QueryPage.java -text
 query/src/org/labkey/query/controllers/SourceForm.java -text
 query/src/org/labkey/query/controllers/TableInfoForm.java -text
 query/src/org/labkey/query/controllers/admin.jsp -text
-query/src/org/labkey/query/controllers/adminDeleteDbUserSchema.jsp -text
 query/src/org/labkey/query/controllers/apitest.jsp -text
 query/src/org/labkey/query/controllers/begin.jsp -text
 query/src/org/labkey/query/controllers/chooseColumns.jsp -text

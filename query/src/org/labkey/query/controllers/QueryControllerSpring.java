@@ -18,6 +18,8 @@ package org.labkey.query.controllers;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.beehive.netui.pageflow.annotations.Jpf;
+import org.apache.beehive.netui.pageflow.Forward;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
@@ -28,10 +30,7 @@ import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.jsp.FormPage;
 import org.labkey.api.query.*;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.ActionNames;
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.User;
+import org.labkey.api.security.*;
 import org.labkey.api.util.AppProps;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.view.*;
@@ -1741,6 +1740,167 @@ public class QueryControllerSpring extends SpringActionController
         }
     }
 
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class AdminAction extends SimpleViewAction<QueryForm>
+    {
+        public ModelAndView getView(QueryForm form, BindException errors) throws Exception
+        {
+           return new JspView<QueryForm>(getClass(), "admin.jsp", form, errors);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            new BeginAction().appendNavTrail(root);
+            root.addChild("Schema Administration", actionURL(QueryAction.admin));
+            return root;
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class AdminNewDbUserSchemaAction extends FormViewAction<DbUserSchemaForm>
+    {
+        public void validateCommand(DbUserSchemaForm form, Errors errors)
+        {
+        }
+
+        public ModelAndView getView(DbUserSchemaForm form, boolean reshow, BindException errors) throws Exception
+        {
+            InsertView view = new InsertView(form,errors);
+            Map<String, Object> initialValues = new HashMap<String, Object>();
+            initialValues.put("DbContainer", getContainer().getId());
+            view.setInitialValues(initialValues);
+            ButtonBar bb = new ButtonBar();
+            bb.add(new ActionButton("adminNewDbUserSchema.post", "Create"));
+            bb.add(new ActionButton("Cancel", getSuccessURL(form)));
+            view.getDataRegion().setButtonBar(bb);
+            return view;
+        }
+
+        public boolean handlePost(DbUserSchemaForm form, BindException errors) throws Exception
+        {
+            form.doInsert();
+            return true;
+        }
+
+        public ActionURL getSuccessURL(DbUserSchemaForm dbUserSchemaForm)
+        {
+            return actionURL(QueryAction.admin);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            new AdminAction().appendNavTrail(root);
+            root.addChild("Define Schema", actionURL(QueryAction.adminNewDbUserSchema));
+            return root;
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class AdminEditDbUserSchemaAction extends FormViewAction<DbUserSchemaForm>
+    {
+        public void validateCommand(DbUserSchemaForm target, Errors errors)
+        {
+        }
+
+        public ModelAndView getView(DbUserSchemaForm form, boolean reshow, BindException errors) throws Exception
+        {
+
+            UpdateView view = new UpdateView(form, errors);
+            ButtonBar bb = new ButtonBar();
+            bb.add(new ActionButton("adminEditDbUserSchema.post", "Update"));
+            bb.add(new ActionButton("Cancel", getSuccessURL(form)));
+            ActionURL urlDelete = new ActionURL("query", "adminDeleteDbUserSchema", form.getContainer());
+            urlDelete.addParameter("dbUserSchemaId", Integer.toString(form.getBean().getDbUserSchemaId()));
+            bb.add(new ActionButton("Delete", urlDelete));
+            view.getDataRegion().setButtonBar(bb);
+            return view;
+        }
+
+        public boolean handlePost(DbUserSchemaForm form, BindException errors) throws Exception
+        {
+            form.doUpdate();
+            return true;
+        }
+
+        public ActionURL getSuccessURL(DbUserSchemaForm dbUserSchemaForm)
+        {
+            return actionURL(QueryAction.admin);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            new AdminAction().appendNavTrail(root);
+            root.addChild("Edit Schema", actionURL(QueryAction.adminNewDbUserSchema));
+            return root;
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class AdminDeleteDbUserSchemaAction extends ConfirmAction<DbUserSchemaForm>
+    {
+        public String getConfirmText()
+        {
+            return "Delete";
+        }
+
+        public ModelAndView getConfirmView(DbUserSchemaForm form, BindException errors) throws Exception
+        {
+            form.refreshFromDb(false);
+            return new HtmlView(
+                    null,
+                    "Are you sure you want to delete the schema '%s'? The tables and queries defined in this schema will no longer be accessible.",
+                    form.getBean().getUserSchemaName()
+                    );
+        }
+
+        public boolean handlePost(DbUserSchemaForm form, BindException errors) throws Exception
+        {
+            QueryManager.get().delete(getUser(), form.getBean());
+            return true;
+        }
+
+        public void validateCommand(DbUserSchemaForm dbUserSchemaForm, Errors errors)
+        {
+        }
+
+        public ActionURL getSuccessURL(DbUserSchemaForm dbUserSchemaForm)
+        {
+            return actionURL(QueryAction.admin);
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class AdminReloadDbUserSchemaAction extends SimpleViewAction<DbUserSchemaForm>
+    {
+        public ModelAndView getView(DbUserSchemaForm form, BindException errors) throws Exception
+        {
+            form.refreshFromDb(false);
+            DbUserSchemaDef def = form.getBean();
+            ActionURL fwd = new ActionURL("query", "admin", form.getContainer());
+            fwd.addParameter("reloadedSchema", def.getUserSchemaName());
+            QueryManager.get().reloadDbUserSchema(def);
+            return HttpView.redirect(getSuccessURL(form));
+        }
+
+        public ActionURL getSuccessURL(DbUserSchemaForm form)
+        {
+            ActionURL url = actionURL(QueryAction.admin);
+            url.addParameter("reloadedSchema", form.getBean().getUserSchemaName());
+            return url;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
+        }
+    }
+
+    
     public static boolean isConstraintException(SQLException x)
     {
         String sqlState = x.getSQLState();

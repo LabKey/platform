@@ -2947,7 +2947,7 @@ public class AdminController extends SpringActionController
             return true;
         }
 
-        public void validateSpring(Errors errors)
+        public void validate(Errors errors)
         {
             //check for nulls on submit
             if ((null == _friendlyName || "".equals(_friendlyName)) &&
