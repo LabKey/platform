@@ -610,7 +610,6 @@ api/src/org/labkey/api/wiki/FormattedHtml.java -text
 api/src/org/labkey/api/wiki/MacroProvider.java -text
 api/src/org/labkey/api/wiki/WikiRendererType.java -text
 api/src/org/labkey/api/wiki/WikiService.java -text
-api/src/org/labkey/core/SqlDialectPostgreSQL.java -text
 api/webapp/WEB-INF/applicationContext.xml -text
 api/webapp/WEB-INF/beehive-netui-config.xml -text
 api/webapp/WEB-INF/beehive-netui-validator-rules.xml -text
