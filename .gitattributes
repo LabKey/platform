@@ -316,6 +316,7 @@ core/src/META-INF/scripts.txt -text
 core/src/RootController.java -text
 core/src/org/labkey/core/CoreController.java -text
 core/src/org/labkey/core/CoreModule.java -text
+core/src/org/labkey/core/SqlDialectPostgreSQL.java -text
 core/src/org/labkey/core/admin/AdminController.java -text
 core/src/org/labkey/core/admin/SiteSettingsAuditDetailsModel.java -text
 core/src/org/labkey/core/admin/SiteSettingsAuditViewFactory.java -text
