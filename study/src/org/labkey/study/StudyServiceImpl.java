@@ -108,6 +108,30 @@ public class StudyServiceImpl implements StudyService.Service
         }
     }
 
+    // change a map's keys to have proper casing just like the list of columns
+    private static Map<String,Object> canonicalizeMap(Map<String,Object> source, List<ColumnInfo> columns)
+    {
+        CaseInsensitiveHashMap<String> keyNames = new CaseInsensitiveHashMap<String>();
+        for (ColumnInfo col : columns)
+        {
+            keyNames.put(col.getName(), col.getName());
+        }
+
+        Map<String,Object> result = new HashMap<String,Object>();
+
+        for (Map.Entry<String,Object> entry : source.entrySet())
+        {
+            String key = entry.getKey();
+            String newKey = keyNames.get(key);
+            if (newKey != null)
+                key = newKey;
+
+            result.put(key, entry.getValue());
+        }
+
+        return result;
+    }
+
     @SuppressWarnings("unchecked")
     public Map<String,Object> getDatasetRow(User u, Container c, int datasetId, String lsid) throws SQLException
     {
@@ -134,7 +158,7 @@ public class StudyServiceImpl implements StudyService.Service
                 if (!col.isUserEditable())
                     data.remove(col.getName());
             }
-            return data;
+            return canonicalizeMap(data, columns);
         }
         catch (ServletException se)
         {
@@ -334,4 +358,9 @@ public class StudyServiceImpl implements StudyService.Service
         return StudySchema.getInstance().getSchema().getScope().isTransactionActive();
     }
 
+    public boolean areDatasetsEditable(Container container)
+    {
+        Study study = StudyManager.getInstance().getStudy(container);
+        return study.isDatasetRowsEditable();
+    }
 }

@@ -337,14 +337,16 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     public Report[] getReports(User user, Container c, String key) throws SQLException
     {
         SimpleFilter filter = new SimpleFilter("ContainerId", c.getId());
-        filter.addCondition("ReportKey", key);
+        if (key != null)
+            filter.addCondition("ReportKey", key);
         return _getReports(user, filter);
     }
 
     public Report[] getReports(User user, Container c, String key, int flagMask, int flagValue) throws SQLException
     {
         SimpleFilter filter = new SimpleFilter("ContainerId", c.getId());
-        filter.addCondition("ReportKey", key);
+        if (key != null)
+            filter.addCondition("ReportKey", key);
 
         SQLFragment ret = new SQLFragment("(((Flags");
         ret.append(") &");

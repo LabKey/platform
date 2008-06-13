@@ -662,6 +662,9 @@ loop:
 
     public boolean hasSubSelect()
     {
+        if (_columns == null)
+            return false;
+
         for (QColumn column : _columns)
         {
             QNode field = column.getField();

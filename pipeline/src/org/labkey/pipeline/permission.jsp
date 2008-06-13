@@ -37,7 +37,7 @@
     boolean enableFTP = !acl.isEmpty();
 %>
 <b>Pipeline&nbsp;Files&nbsp;Permissions</b><br>
-These permissions control whether pipeline files can be downloaded via the web server (read-only for now), or accessed via the
+These permissions control whether pipeline files can be downloaded and updated via the web server (broswer, WebDAV), or the
 Labkey FTP server if it is configured.
 <p />
 <form id="permissionsForm" action="updateRootPermissions.post" method="POST">

@@ -24,13 +24,15 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.util.URIUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.InsertView;
-import org.labkey.api.view.ViewURLHelper;
+import org.labkey.api.view.ActionURL;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -57,16 +59,14 @@ public class XarAssayUploadAction extends UploadWizardAction<XarAssayForm>
 
     }
 
+    @Override
     public ModelAndView getView(XarAssayForm assayRunUploadForm, BindException errors) throws Exception
     {
         String referer = assayRunUploadForm.getRequest().getParameter("referer");
         if ((null == referer && null==assayRunUploadForm.getUploadStep()))
         {
             // want to redirect the Upload Runs button from the Assay Details list to the pipeline first
-            ViewURLHelper pipelineView = assayRunUploadForm.getViewURLHelper().clone();
-            pipelineView.setPageFlow("Pipeline");
-            pipelineView.setAction("browse.view");
-            HttpView.throwRedirect(pipelineView);
+            HttpView.throwRedirect(PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(assayRunUploadForm.getContainer(),null));
         }
         return super.getView(assayRunUploadForm, errors);
 
@@ -111,7 +111,7 @@ public class XarAssayUploadAction extends UploadWizardAction<XarAssayForm>
                 throw new RuntimeException(e);
             }
 
-            ViewURLHelper helper = form.getProvider().getUploadWizardURL(getContainer(), _protocol);
+            ActionURL helper = form.getProvider().getUploadWizardURL(getContainer(), _protocol);
             helper.replaceParameter("path", form.getPath());
             helper.replaceParameter("providerName", form.getProviderName());
             HttpView.throwRedirect(helper);
@@ -125,18 +125,10 @@ public class XarAssayUploadAction extends UploadWizardAction<XarAssayForm>
 
         }
     }
-
-    // overide to work around a problem I was having when new defaults are saved
-    protected Map<String, String> getDefaultValues(String suffix, XarAssayForm form)
+    @Override
+    protected InsertView createInsertView(TableInfo baseTable, String lsidCol, Map<PropertyDescriptor, String> propertyDescriptors, boolean reshow, boolean resetDefaultValues, String uploadStepName, XarAssayForm form, BindException errors)
     {
-        Map<String, String> unmodifiable = super.getDefaultValues(suffix, form);
-        Map<String, String> modifiable = new HashMap<String, String>(unmodifiable);
-        return modifiable;
-    }
-
-    protected InsertView createInsertView(TableInfo baseTable, String lsidCol, Map<PropertyDescriptor, String> propertyDescriptors, boolean reshow, boolean resetDefaultValues, String uploadStepName, XarAssayForm form)
-    {
-        InsertView view = super.createInsertView(baseTable, lsidCol, propertyDescriptors, reshow, resetDefaultValues, uploadStepName, form);
+        InsertView view = super.createInsertView(baseTable, lsidCol, propertyDescriptors, reshow, resetDefaultValues, uploadStepName, form, errors);
         try
         {
             PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(form.getContainer());

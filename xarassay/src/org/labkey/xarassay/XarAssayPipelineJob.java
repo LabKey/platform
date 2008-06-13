@@ -18,7 +18,7 @@ package org.labkey.xarassay;
 
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.api.view.ViewURLHelper;
+import org.labkey.api.view.ActionURL;
 
 import java.io.File;
 import java.sql.SQLException;
@@ -37,7 +37,7 @@ public class XarAssayPipelineJob extends PipelineJob
         setLogFile(logFile);
     }
 
-    public ViewURLHelper getStatusHref()
+    public ActionURL getStatusHref()
     {
         // No custom viewing for status while loading
         return null;

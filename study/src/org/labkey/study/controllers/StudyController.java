@@ -1681,7 +1681,9 @@ public class StudyController extends BaseStudyController
         public NavTree appendNavTrail(NavTree root)
         {
             _appendNavTrailDatasetAdmin(root);
-            return root.addChild("Edit " + _def.getLabel() + " Visits");
+            if (_def != null)
+                return root.addChild("Edit " + _def.getLabel() + " Visits");
+            return root;
         }
     }
 
@@ -4652,6 +4654,7 @@ public class StudyController extends BaseStudyController
         private String _nextURL;
         private String _display;
         private String _currentParticipantId;
+        private boolean _showCustomizeLink = true;
 
         public ParticipantNavView(String prevURL, String nextURL, String currentPartitipantId, String display)
         {
@@ -4682,7 +4685,7 @@ public class StudyController extends BaseStudyController
                 out.print("[<a href=\"" + _nextURL + "\">Next Participant ></a>]");
 
             Container container = getViewContext().getContainer();
-            if (container.hasPermission(getViewContext().getUser(), ACL.PERM_ADMIN))
+            if (_showCustomizeLink && container.hasPermission(getViewContext().getUser(), ACL.PERM_ADMIN))
             {
                 ActionURL customizeURL = new ActionURL(CustomizeParticipantViewAction.class, container);
                 customizeURL.addParameter("returnUrl", getViewContext().getActionURL().getLocalURIString());
@@ -4697,6 +4700,11 @@ public class StudyController extends BaseStudyController
                 out.print(PageFlowUtil.filter(_display));
             }
             out.print("</td></tr></table>");
+        }
+
+        public void setShowCustomizeLink(boolean showCustomizeLink)
+        {
+            _showCustomizeLink = showCustomizeLink;
         }
     }
 

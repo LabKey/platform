@@ -21,6 +21,7 @@
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="java.util.TreeSet" %>
+<%@ page import="org.labkey.api.security.ACL" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -135,7 +136,7 @@
     </table>
 </p>
 
-<% if (getUser().isAdministrator())
+<% if (getContainer().hasPermission(getUser(), ACL.PERM_ADMIN))
 {%>
     <labkey:link href="<%=new ActionURL("query", "admin", getContainer())%>" text="Schema Administration" />
 <% } %>

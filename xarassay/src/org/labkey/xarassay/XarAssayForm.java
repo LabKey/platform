@@ -50,6 +50,7 @@ public class XarAssayForm extends AssayRunUploadForm
         setDataCollectorName(XarAssayDataCollector.NAME);
     }
 
+    @Override
     public void clearUploadedData()
     {
         // don't clear the data, but do reset the check for undescribed files

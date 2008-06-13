@@ -163,11 +163,20 @@
     //for keydown. return false to stop tinyMCE from handling or passing on
     function tinyMceHandleEvent(evt)
     {
-        if(evt && "keydown" == evt.type && evt.ctrlKey
-           && !evt.shiftKey && !evt.altKey && 83 == evt.keyCode) //ctrl+s
-        {
-            onSave();
+        var handled = false;
 
+        if(evt && "keydown" == evt.type && evt.ctrlKey
+           && !evt.altKey && 83 == evt.keyCode) //ctrl+s
+        {
+            if(evt.shiftKey)
+                onFinish();
+            else
+                onSave();
+            handled = true;
+        }
+
+        if(handled)
+        {
             //stop default handling and propogation
             if(evt.stopPropagation)
                 evt.stopPropagation();
@@ -179,8 +188,8 @@
                 evt.returnValue = false;
             return false;
         }
-
-        return true;
+        else
+            return true;
     }
 
     function onTinyMceChange(tinyMceInstance)
@@ -192,9 +201,18 @@
     //not the normal browser event
     function onKeyDown(evt)
     {
-        if(evt.ctrlKey && !evt.shiftKey && !evt.altKey && 83 == evt.getKey()) //ctrl+s
+        var handled = false;
+        if(evt.ctrlKey && !evt.altKey && 83 == evt.getKey()) //ctrl+s or ctrl+shift+s
         {
-            onSave();
+            if(evt.shiftKey)
+                onFinish();
+            else
+                onSave();
+            handled = true;
+        }
+
+        if(handled)
+        {
             evt.preventDefault();
             evt.stopPropagation();
         }
@@ -277,7 +295,8 @@
                 leaf: (null == page.children),
                 singleClickExpand: true,
                 icon: LABKEY.contextPath + "/_images/page.png",
-                href: page.pageLink
+                href: page.pageLink,
+                expanded: true
             });
 
             if(page.children)
@@ -527,6 +546,7 @@
     {
         for(var prop in _editableProps)
             updateControl(_editableProps[prop], wikiProps[_editableProps[prop]]);
+        updateBodyFormatCaption(wikiProps.rendererType)
     }
 
     function updateControl(propName, propValue)
@@ -534,6 +554,11 @@
         var elem = Ext.get(_idPrefix + propName)
         if(elem)
             elem.dom.value = null == propValue ? "" : propValue;
+    }
+
+    function updateBodyFormatCaption(rendererType)
+    {
+        Ext.get("wiki-current-format").update("(" + _formats[rendererType] + ")");
     }
 
     function setError(msg)
@@ -1091,7 +1116,7 @@
     }
     .stretch-input
     {
-        width: 99%;
+        width: 100%;
     }
     .button-bar
     {
@@ -1164,7 +1189,7 @@
 <table class="button-bar">
     <tr>
         <td class="button-bar-left" nowrap="true">
-            <input type="image" src="<%=PageFlowUtil.buttonSrc("Finish")%>" onclick="onFinish()"/>
+            <input type="image" src="<%=PageFlowUtil.buttonSrc("Save & Close")%>" onclick="onFinish()"/>
             <input id='wiki-button-save' type="image" src="<%=PageFlowUtil.buttonSrc(saveButtonCaption, "disabled")%>" onclick="onSave()"/>
             <input type="image" src="<%=PageFlowUtil.buttonSrc("Cancel")%>" onclick="onCancel()"/>
         </td>
@@ -1216,7 +1241,9 @@
                     </td>
                 </tr>
                 <tr>
-                    <td class="ms-searchform" title="This field is required">Body<span class="labkey-error">*</span></td>
+                    <td class="ms-searchform" title="This field is required">Body<span class="labkey-error">*</span>
+                        <br/><span id="wiki-current-format"></span>
+                    </td>
                     <td class="field-content">
                         <table class="tab-container" cellspacing="0">
                             <tr id="wiki-tab-strip" style="display:none">
@@ -1240,17 +1267,7 @@
                     <td class="ms-searchform">Files</td>
                     <td class="field-content">
                         <form action="attachFiles.post" method="POST" enctype="multipart/form-data" id="form-files">
-                            <table width="100%">
-                                <tr>
-                                    <td class="tab-blank"><img src="<%=me.getViewContext().getContextPath()%>/_images/paperclip.gif" alt="Clip"/>Existing Attachments</td>
-                                </tr>
-                            </table>
                             <table id="wiki-existing-attachments">
-                            </table>
-                            <table width="100%">
-                                <tr>
-                                    <td class="tab-blank"><img src="<%=me.getViewContext().getContextPath()%>/_images/paperclip.gif" alt="Clip"/>Add Attachments</td>
-                                </tr>
                             </table>
                             <table id="wiki-new-attachments">
                             </table>
@@ -1267,7 +1284,7 @@
 <div id="wiki-help-HTML-visual" style="display:none">
     <table>
         <tr>
-            <td colspan=2><b>Formatting Guide:</b></td>
+            <td colspan=2><b>HTML Formatting Guide:</b></td>
         </tr>
         <tr>
             <td>Link to a wiki page</td>
@@ -1284,7 +1301,7 @@
 <div id="wiki-help-HTML-source" style="display:none">
     <table>
         <tr>
-            <td colspan=2><b>Formatting Guide:</b></td>
+            <td colspan=2><b>HTML Source Formatting Guide:</b></td>
         </tr>
         <tr>
             <td>Link to a wiki page</td>
@@ -1304,7 +1321,7 @@
 <div id="wiki-help-RADEOX-source" style="display:none">
     <table>
         <tr>
-            <td colspan=2><b>Formatting Guide</b> (<a target="_blank" href="<%=(new HelpTopic("wikiSyntax", HelpTopic.Area.SERVER)).getHelpTopicLink()%>">more help</a>):</td>
+            <td colspan=2><b>Wiki Formatting Guide</b> (<a target="_blank" href="<%=(new HelpTopic("wikiSyntax", HelpTopic.Area.SERVER)).getHelpTopicLink()%>">more help</a>):</td>
         </tr>
         <tr>
             <td>link to page in this wiki&nbsp;&nbsp;</td>
@@ -1340,7 +1357,17 @@
         </tr>
     </table>
 </div>
-
+<div id="wiki-help-TEXT_WITH_LINKS-source" style="display:none">
+    <table>
+        <tr>
+            <td><b>Plain Text Formatting Guide:</b></td>
+        </tr>
+        <tr>
+            <td>In plain text format, web addresses (http://www.labkey.com) will be automatically converted
+            into active hyperlinks when the page is shown, but all other text will appear as typed.</td>
+        </tr>
+    </table>
+</div>
 <div id="<%=ID_PREFIX%>window-change-format" class="x-hidden">
     <table cellpadding="2">
         <tr>

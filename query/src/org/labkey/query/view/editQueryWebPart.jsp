@@ -22,6 +22,9 @@
 <%@ page import="org.labkey.api.query.UserSchema" %>
 <%@ page import="org.labkey.api.util.CaseInsensitiveHashMap" %>
 <%@ page import="java.util.*" %>
+<%@ page import="org.labkey.api.reports.report.view.ChartUtil" %>
+<%@ page import="org.labkey.api.reports.Report" %>
+<%@ page import="org.labkey.api.query.QueryView" %>
 <%@ page extends="org.labkey.query.view.EditQueryPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -141,7 +144,7 @@ function disableQuerySelect(disable)
                                 Map<String, List<String>> tableNames = schemaTableNames.get(pm.get("schemaName"));
                                 if (tableNames != null)
                                 {
-                                    for (String queryName : tableNames.keySet())
+                                    for (String queryName : new TreeSet<String>(tableNames.keySet()))
                                     {
                                         %><option value="<%=h(queryName)%>" <%=queryName.equals(pm.get("queryName")) ? "selected" : ""%>><%=h(queryName)%></option><%
                                     }

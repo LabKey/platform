@@ -16,6 +16,7 @@
 package org.labkey.experiment.controllers.list;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleRedirectAction;
@@ -957,22 +958,19 @@ public class ListController extends SpringActionController
 
             for (Map.Entry<String, String> entry : prevProps.entrySet())
             {
-                out.write("<tr><td class=\"ms-searchform\">");
-                out.write(entry.getKey());
-                out.write("</td><td>");
-
-                StringBuffer sb = new StringBuffer();
-                sb.append(entry.getValue());
-
                 String newValue = newProps.remove(entry.getKey());
-                if (newValue != null && !newValue.equals(entry.getValue()))
+                if (!ObjectUtils.equals(newValue, entry.getValue()))
                 {
+                    out.write("<tr><td class=\"ms-searchform\">");
+                    out.write(entry.getKey());
+                    out.write("</td><td>");
+
                     modified++;
-                    sb.append("&nbsp;&raquo;&nbsp;");
-                    sb.append(newValue);
+                    out.write(entry.getValue());
+                    out.write("&nbsp;&raquo;&nbsp;");
+                    out.write(ObjectUtils.toString(newValue, ""));
+                    out.write("</td></tr>\n");
                 }
-                out.write(sb.toString());
-                out.write("</td></tr>\n");
             }
 
             for (Map.Entry<String, String> entry : newProps.entrySet())
@@ -982,10 +980,8 @@ public class ListController extends SpringActionController
                 out.write(entry.getKey());
                 out.write("</td><td>");
 
-                StringBuffer sb = new StringBuffer();
-                sb.append("&nbsp;&raquo;&nbsp;");
-                sb.append(entry.getValue());
-                out.write(sb.toString());
+                out.write("&nbsp;&raquo;&nbsp;");
+                out.write(ObjectUtils.toString(entry.getValue(), ""));
                 out.write("</td></tr>\n");
             }
             out.write("<tr><td/>\n");

@@ -17,12 +17,10 @@
 package org.labkey.xarassay;
 
 import org.fhcrc.cpas.exp.xml.*;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.*;
+import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
@@ -31,16 +29,20 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.security.User;
 import org.labkey.api.study.*;
+import org.labkey.api.study.query.RunDataQueryView;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.util.AppProps;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.api.view.ViewURLHelper;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.QuerySettings;
 
 import java.io.*;
 import java.sql.SQLException;
@@ -62,19 +64,20 @@ public class XarAssayProvider extends AbstractAssayProvider
 
     public static final String RUN_LSID_NAMESPACE_PREFIX = "ExperimentRun";
     public static final String RUN_LSID_OBJECT_ID_PREFIX = "MS2PreSearch";
-    public static final String DATA_LSID_PREFIX = "Data";
+    public static final String DATA_LSID_PREFIX = "MZXMLData";
+    public static final DataType XARASSAY_DATA_TYPE = new DataType(DATA_LSID_PREFIX);
     public static final String SAMPLE_PROPERTY_NAME= "StartingSample";
     protected static String _pipelineMzXMLExt = ".mzXML";
 
     public XarAssayProvider()
     {
-        super(PROTOCOL_LSID_NAMESPACE_PREFIX, RUN_LSID_NAMESPACE_PREFIX, DATA_LSID_PREFIX);
+        super(PROTOCOL_LSID_NAMESPACE_PREFIX, RUN_LSID_NAMESPACE_PREFIX, XARASSAY_DATA_TYPE);
     }
 
 
-    public XarAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, String dataLSIDPrefix)
+    public XarAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix)
     {
-        super(protocolLSIDPrefix, runLSIDPrefix, dataLSIDPrefix);
+        super(protocolLSIDPrefix, runLSIDPrefix, XARASSAY_DATA_TYPE);
     }
 
     public String getName()
@@ -92,48 +95,23 @@ public class XarAssayProvider extends AbstractAssayProvider
         return result;
     }
 
-    public boolean shouldShowDataDescription(ExpProtocol protocol)
+    protected void addOutputDatas(AssayRunUploadContext context, Map<ExpData, String> outputDatas, ParticipantVisitResolverType resolverType) throws ExperimentException
     {
-        return false;
+        throw new UnsupportedOperationException("Xar Assay uses a Xar file template to do all data import");
     }
-
 
     public ExpData getDataForDataRow(Object dataRowId)
     {
-        return null;
+        throw new UnsupportedOperationException("Whoa how did i get here");
 
     }
 
-    public ViewURLHelper getUploadWizardURL(Container container, ExpProtocol protocol)
+    public ActionURL getUploadWizardURL(Container container, ExpProtocol protocol)
     {
-        ViewURLHelper url = new ViewURLHelper("XarAssay", "xarAssayUpload.view", container);
+        ActionURL url = new ActionURL(XarAssayUploadAction.class, container);
         url.addParameter("rowId", protocol.getRowId());
 
         return url;
-    }
-
-    protected void registerLsidHandler()
-    {
-        LsidManager.get().registerHandler(_runLSIDPrefix, new LsidManager.LsidHandler()
-        {
-            public ExpRun getObject(Lsid lsid)
-            {
-                return ExperimentService.get().getExpRun(lsid.toString());
-            }
-
-            public String getDisplayURL(Lsid lsid)
-            {
-                ExpRun run = ExperimentService.get().getExpRun(lsid.toString());
-                if (run == null)
-                    return null;
-                ExpProtocol protocol = run.getProtocol();
-                if (protocol == null)
-                    return null;
-                ViewURLHelper dataURL = new ViewURLHelper("Experiment","showRunGraph",run.getContainer());
-                dataURL.addParameter("rowId", run.getRowId());
-                return dataURL.getLocalURIString();
-            }
-        });
     }
 
 
@@ -147,15 +125,21 @@ public class XarAssayProvider extends AbstractAssayProvider
         return null;
     }
 
-
     public FieldKey getRunIdFieldKeyFromDataRow()
     {
-        return null;
+        return FieldKey.fromParts("Run");
     }
 
     public FieldKey getDataRowIdFieldKey()
     {
-        return null;
+        return FieldKey.fromParts("RowId");
+    }
+
+    @Override
+    public String getRunDataTableName(ExpProtocol protocol)
+    {
+        // use the Runs list table here so that there is a way to order columns in a run upload form
+        return protocol.getName() + " Runs";
     }
 
     public FieldKey getSpecimenIDFieldKey()
@@ -173,7 +157,12 @@ public class XarAssayProvider extends AbstractAssayProvider
         return null;
     }
 
-    public ViewURLHelper publish(User user, ExpProtocol protocol, Container study, Set<AssayPublishKey> dataKeys, List<String> errors)
+    public boolean canPublish()
+    {
+        return false;
+    }
+
+    public ActionURL publish(User user, ExpProtocol protocol, Container study, Set<AssayPublishKey> dataKeys, List<String> errors)
     {
         throw new UnsupportedOperationException("Publish not implemented for assay type " + getName());
     }
@@ -194,7 +183,7 @@ public class XarAssayProvider extends AbstractAssayProvider
         }
 
         Domain runDomain = super.createRunDomain(c, user);
-        DomainProperty startingSampleProperty = addProperty(runDomain, getSamplePropertyName(), PropertyType.STRING);
+        DomainProperty startingSampleProperty = addProperty(runDomain, getSamplePropertyName(), PropertyType.INTEGER);
         startingSampleProperty.setRequired(true);
         if(null!=ms)
             startingSampleProperty.setLookup(new Lookup(ms.getContainer(), "Samples", ms.getName()));
@@ -240,7 +229,7 @@ public class XarAssayProvider extends AbstractAssayProvider
             File f = mapFiles.get(form.getCurrentFileName());
 
 
-            ViewBackgroundInfo info = new ViewBackgroundInfo(c, context.getUser(), new ViewURLHelper("Project","begin", c));
+            ViewBackgroundInfo info = new ViewBackgroundInfo(c, context.getUser(), new ActionURL("Project","begin", c));
             XarAssayPipelineJob pj = new XarAssayPipelineJob(info, getLogFileFor(getAssayXarFile(c, form.getProtocol())));
 
             if (transactionOwner)
@@ -248,10 +237,10 @@ public class XarAssayProvider extends AbstractAssayProvider
 
             src = new XarAssayRunSource(form, run);
 
-            ExperimentService.get().loadExperiment(src, pj, false);
+            ExperimentService.get().loadXar(src, pj, false);
 
-            savePropertyObject(context.getProtocol(), run.getLSID(), context.getRunProperties(), context.getContainer());
-            savePropertyObject(context.getProtocol(), run.getLSID(), context.getUploadSetProperties(), context.getContainer());
+            savePropertyObject(run.getLSID(), context.getRunProperties(),context.getContainer());
+            savePropertyObject(run.getLSID(), context.getUploadSetProperties(), context.getContainer());
 
             ExpRun rNew = ExperimentService.get().getExpRun(run.getLSID());
             if (transactionOwner)
@@ -322,7 +311,7 @@ public class XarAssayProvider extends AbstractAssayProvider
         protocol.setMaxInputMaterialPerInstance(maxMaterials);
         protocol.setMaxInputDataPerInstance(1);
 
-        ViewBackgroundInfo info = new ViewBackgroundInfo(container, user, new ViewURLHelper("XarAssay","chooseAssay", container));
+        ViewBackgroundInfo info = new ViewBackgroundInfo(container, user, new ActionURL("XarAssay","chooseAssay", container));
         XarSource xs = new XarAssayProtocolSource(container, protocol);
         XarAssayPipelineJob pj = null;
         try
@@ -333,7 +322,7 @@ public class XarAssayProvider extends AbstractAssayProvider
         {
             throw new ExperimentException(e);
         }
-        Integer expid = ExperimentService.get().loadExperiment(xs, pj, false);
+        List<ExpRun> expRuns = ExperimentService.get().loadXar(xs, pj, false);
         ExpProtocol px = ExperimentService.get().getExpProtocol(protocolLsid);
         px.retrieveProtocolParameters();
         return px;
@@ -406,7 +395,7 @@ public class XarAssayProvider extends AbstractAssayProvider
 
     public TableInfo createDataTable(QuerySchema schema, String alias, ExpProtocol protocol)
     {
-        return null;
+        return new ExpSchema(schema.getUser(), schema.getContainer()).createDatasTable(alias);
     }
 
     public FieldKey getParticipantIDFieldKey()

@@ -18,6 +18,7 @@
 <%@ page import="org.labkey.api.query.*" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.query.QueryParam" %>
+<%@ page import="org.labkey.api.security.ACL" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -146,7 +147,7 @@
 
 
 
-<% if (getUser().isAdministrator())
+<% if (getContainer().hasPermission(getUser(), ACL.PERM_ADMIN))
 {%>
     <labkey:link href="<%=new ActionURL("query", "admin", getContainer())%>" text="Schema Administration" />
 <% } %>

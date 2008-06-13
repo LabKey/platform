@@ -180,7 +180,7 @@ public class PipelineServiceImpl extends PipelineService
 
     public boolean canModifyPipelineRoot(User user, Container container)
     {
-        return container != null && !container.isRoot() && container.hasPermission(user, ACL.PERM_ADMIN);
+        return container != null && !container.isRoot() && user.isAdministrator();
     }
 
     public File ensureSystemDirectory(URI root)

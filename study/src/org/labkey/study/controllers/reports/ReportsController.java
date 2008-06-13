@@ -1971,7 +1971,10 @@ public class ReportsController extends BaseStudyController
                 }
             }
         }
-        return new StudyController.ParticipantNavView(previousParticipantURL, nextParticipantURL, title);
+        StudyController.ParticipantNavView view =  new StudyController.ParticipantNavView(previousParticipantURL, nextParticipantURL, null, title);
+        view.setShowCustomizeLink(false);
+
+        return view;
     }
 
     @RequiresPermission(ACL.PERM_READ)

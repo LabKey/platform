@@ -42,12 +42,11 @@ public class CptacAssayProvider extends XarAssayProvider
     public static final String TEMPLATE_RESOURCE_DIR = "org/labkey/xarassay/";
     public static final String TEMPLATE_FILE = "CptacDefaultTemplate.xml";
     public static final String NAME = "Cptac";
-    public static final String DATA_LSID_PREFIX = "Data";
 
 
     public CptacAssayProvider()
     {
-        super(PROTOCOL_LSID_NAMESPACE_PREFIX, RUN_LSID_NAMESPACE_PREFIX, DATA_LSID_PREFIX);
+        super(PROTOCOL_LSID_NAMESPACE_PREFIX, RUN_LSID_NAMESPACE_PREFIX);
     }
 
 
@@ -103,7 +102,7 @@ public class CptacAssayProvider extends XarAssayProvider
         /*
         Site lookup, example of pre-population
          */
-        String baseName = "PerformancSite";
+        String baseName = "PerformanceSite";
         String listName = baseName + "List";
 
         ListDefinition cptacList = lists.get(listName);
@@ -292,9 +291,6 @@ public class CptacAssayProvider extends XarAssayProvider
     }
 
 
-    /*
-        bug?  should do this as part of default
-     */
     protected DomainProperty addProperty(Domain domain, String name, PropertyType type)
     {
         DomainProperty dp = super.addProperty(domain, name, type);

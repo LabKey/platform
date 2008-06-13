@@ -18,7 +18,7 @@ package org.labkey.xarassay;
 
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ViewURLHelper;
+import org.labkey.api.view.ActionURL;
 
 import java.util.List;
 import java.util.ListIterator;
@@ -53,9 +53,12 @@ public class XarAssayPipelineProvider extends PipelineProvider
             {
                 continue;
             }
-            ViewURLHelper actionUrl = entry.cloneHref();
-            actionUrl.setPageFlow("XarAssay");
+            ActionURL actionUrl = entry.cloneHref();
+            //TODO
+ /*           actionUrl.setPageFlow("XarAssay");
             actionUrl.setAction("chooseAssay");
+*/
+            actionUrl.setAction(XarAssayController.ChooseAssayAction.class);
             String protId = context.getRequest().getParameter("rowId");
             if (null != protId)
                 actionUrl.addParameter("rowId", protId);

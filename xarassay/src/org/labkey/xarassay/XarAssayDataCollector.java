@@ -24,7 +24,7 @@ import org.labkey.api.study.assay.AbstractAssayDataCollector;
 import org.labkey.api.study.assay.AssayRunUploadContext;
 import org.labkey.api.study.assay.AbstractAssayDataCollector;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.ViewURLHelper;
+import org.labkey.api.view.ActionURL;
 
 import java.io.File;
 import java.io.IOException;
@@ -118,7 +118,7 @@ public class XarAssayDataCollector extends AbstractAssayDataCollector
 
         try
         {
-            ViewURLHelper showSamplesURL = new ViewURLHelper("Experiment", "showMaterialSource", context.getContainer());
+            ActionURL showSamplesURL = new ActionURL("Experiment", "showMaterialSource", context.getContainer());
             showSamplesURL.addParameter("rowId", (ExperimentService.get().ensureActiveSampleSet(context.getContainer())).getRowId());
             links.put("Edit Samples", showSamplesURL.toString());
         }
@@ -133,7 +133,7 @@ public class XarAssayDataCollector extends AbstractAssayDataCollector
                 links.put("Delete Assay Runs", "javascript: window.alert('No Assay Runs associated with these files to delete') ");
             else
             {
-                ViewURLHelper deleteURL = new ViewURLHelper("XarAssay", "xarAssayUpload", context.getContainer());
+                ActionURL deleteURL = new ActionURL("XarAssay", "xarAssayUpload", context.getContainer());
                 deleteURL.addParameter("path", ctx.getPath());
                 deleteURL.addParameter("rowId", ctx.getRowId());
                 deleteURL.addParameter("uploadStep", XarAssayUploadAction.DeleteAssaysStepHandler.NAME);

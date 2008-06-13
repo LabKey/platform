@@ -52,9 +52,9 @@ if (null != StringUtils.trimToNull(reloadedSchema))
         urlReload.setAction("adminReloadDbUserSchema.view");
 %>
         <labkey:link text="<%=def.getUserSchemaName()%>" href="<%=urlView%>" />
-        <labkey:link text="Edit" href="<%=urlEdit%>" />
+        <%if (getUser().isAdministrator()) {%><labkey:link text="Edit" href="<%=urlEdit%>" /><%}%>
         <labkey:link text="Reload" href="<%=urlReload%>" />
         <br>
 <% }} %>
 <br>
-<labkey:link href="<%= new ActionURL("query", "adminNewDbUserSchema", getContainer())%>" text="Define New Schema"/>
+<%if (getUser().isAdministrator()) {%><labkey:link href="<%= new ActionURL("query", "adminNewDbUserSchema", getContainer())%>" text="Define New Schema"/><%}%>

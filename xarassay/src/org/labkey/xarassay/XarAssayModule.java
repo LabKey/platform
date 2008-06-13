@@ -40,8 +40,8 @@ public class XarAssayModule extends DefaultModule implements ContainerManager.Co
 
     public XarAssayModule()
     {
-        super("XarAssay", 0.01, null, false);
-        addController("XarAssay", XarAssayController.class);
+        super("XarAssay", 8.10, null, false);
+        addController("xarassay", XarAssayController.class);
     }
 
     public void containerCreated(Container c)

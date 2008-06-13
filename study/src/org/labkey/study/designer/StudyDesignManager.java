@@ -422,7 +422,7 @@ public class StudyDesignManager
      * @param participantInfo
      * @return
      */
-    public Map<String,Object>[] generateSampleList(GWTStudyDefinition studyDefinition, Map[] participantInfo, Date startDate)
+    public Map<String,Object>[] generateSampleList(GWTStudyDefinition studyDefinition, Map[] participantInfo, Date studyStartDate)
     {
         GWTAssaySchedule assaySchedule = studyDefinition.getAssaySchedule();
         List<GWTTimepoint> timepoints = assaySchedule.getTimepoints();
@@ -468,6 +468,9 @@ public class StudyDesignManager
             int participantIndex = 0;
             for (Map participant : participantInfo)
             {
+                Date startDate = (Date) participant.get("StartDate");
+                if (startDate == null)
+                    startDate = studyStartDate;
 
                 String ptid = participant.get("ParticipantId").toString();
                 for (GWTSampleType st : timepointSamples.keySet())

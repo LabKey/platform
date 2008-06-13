@@ -16,15 +16,15 @@
 
 package org.labkey.study.query;
 
-import org.labkey.study.StudySchema;
-import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.Study;
-import org.labkey.study.model.Visit;
-import org.labkey.study.model.StudyManager;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.study.StudySchema;
+import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.Study;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.Visit;
 
 import javax.servlet.ServletException;
 import java.util.*;
@@ -78,7 +78,7 @@ public class StudyQuerySchema extends UserSchema
         try
         {
             DataSetTable ret = new DataSetTable(this, definition);
-            ret.setName(alias);
+            ret.setAlias(alias);
             return ret;
         }
         catch (ServletException e)

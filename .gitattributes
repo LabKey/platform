@@ -1538,6 +1538,7 @@ study/src/META-INF/study/scripts/postgresql/study-8.12-8.13.sql -text
 study/src/META-INF/study/scripts/postgresql/study-8.13-8.14.sql -text
 study/src/META-INF/study/scripts/postgresql/study-8.14-8.15.sql -text
 study/src/META-INF/study/scripts/postgresql/study-8.15-8.16.sql -text
+study/src/META-INF/study/scripts/postgresql/study-8.16-8.17.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/obsolete/study-0.00-1.11.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/obsolete/study-0.00-1.25.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/obsolete/study-0.00-1.26.sql -text
@@ -1615,6 +1616,7 @@ study/src/META-INF/study/scripts/sql[!!-~]server/study-8.12-8.13.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-8.13-8.14.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-8.14-8.15.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-8.15-8.16.sql -text
+study/src/META-INF/study/scripts/sql[!!-~]server/study-8.16-8.17.sql -text
 study/src/org/labkey/study/QueryHelper.java -text
 study/src/org/labkey/study/SampleManager.java -text
 study/src/org/labkey/study/SpecimenServiceImpl.java -text

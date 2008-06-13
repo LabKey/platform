@@ -36,6 +36,7 @@ public class XarChooseAssayForm extends ProtocolIdForm
     private Map<String, String> _links = new LinkedHashMap<String, String>();
 
 
+
     public XarChooseAssayForm()
     {
         super();

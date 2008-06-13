@@ -962,6 +962,8 @@ public class QueryControllerSpring extends SpringActionController
             return false;
         if(schema.getSchemaName().equalsIgnoreCase("lists"))
             return true;
+        else if(schema.getSchemaName().equalsIgnoreCase("study"))
+            return StudyService.get().areDatasetsEditable(getViewContext().getContainer());
         else if(schema instanceof DbUserSchema)
             return ((DbUserSchema)schema).areTablesEditable();
         else

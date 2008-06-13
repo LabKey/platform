@@ -373,7 +373,7 @@ public class ListItemImpl implements ListItem
                     {
                         String value;
                         if (prop.getLookup() == null)
-                            value = ObjectUtils.toString(entry.getValue(), "");
+                            value = ObjectUtils.toString(entry.getValue(), null);
                         else
                         {
                             if (rowMap == null)
@@ -392,7 +392,8 @@ public class ListItemImpl implements ListItem
                             }
                             value = getFieldValue(user, prop, rowMap);
                         }
-                        recordChangedMap.put(prop.getName(), value);
+                        if (value != null)
+                            recordChangedMap.put(prop.getName(), value);
                     }
                 }
             }
@@ -421,10 +422,10 @@ public class ListItemImpl implements ListItem
         {
             DataColumn dc = new DataColumn(col); 
             ctx.setRow(rowMap);
-            return ObjectUtils.toString(dc.getDisplayValue(ctx), "");
+            return ObjectUtils.toString(dc.getDisplayValue(ctx), null);
         }
 
-        return "";
+        return null;
     }
 
     private String _createChangeRecord()
