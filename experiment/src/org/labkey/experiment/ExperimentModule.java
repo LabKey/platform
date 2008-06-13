@@ -374,12 +374,11 @@ public class ExperimentModule extends SpringModule
     {
         String indexOption = " ";
         String keywordNotNull = " ENTITYID ";
-        String sqlDbName = tmpSchema.getSqlDialect().getProductName();
 
-        if (sqlDbName.equals("Sql Server"))
+        if (tmpSchema.getSqlDialect().isSqlServer())
             indexOption = " CLUSTERED ";
 
-        if (sqlDbName.equals("PostgreSQL"))
+        if (tmpSchema.getSqlDialect().isPostgreSQL())
             keywordNotNull = " SET ";
 
         String sql = " ALTER TABLE exp.PropertyDescriptor ALTER COLUMN Project " + keywordNotNull + " NOT NULL ;";

@@ -52,6 +52,6 @@ public class PrimitiveType implements IPropertyType
 
     public void initColumnInfo(User user, Container container, ColumnInfo column)
     {
-        column.setSqlTypeName(ColumnInfo.sqlTypeNameFromSqlType(_type.getSqlType(), column.getSqlDialect()));
+        column.setSqlTypeName(column.getSqlDialect().sqlTypeNameFromSqlType(_type.getSqlType()));
     }
 }

@@ -231,7 +231,7 @@ public enum Method
                 try
                 {
                     _sqlType = ConvertType.valueOf(sqlEscapeTypeName).type;
-                    typeName = ColumnInfo.sqlTypeNameFromSqlType(_sqlType,parentTable.getSchema().getSqlDialect());
+                    typeName = parentTable.getSchema().getSqlDialect().sqlTypeNameFromSqlType(_sqlType);
                 }
                 catch (IllegalArgumentException x)
                 {

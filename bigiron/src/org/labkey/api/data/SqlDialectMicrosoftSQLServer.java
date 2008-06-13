@@ -23,8 +23,10 @@ import javax.servlet.ServletException;
 import java.sql.SQLException;
 import java.sql.Connection;
 import java.sql.Statement;
+import java.sql.Types;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -62,6 +64,32 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         ));
     }
 
+    protected void addSqlTypeNames(Map<String, Integer> sqlTypeNameMap)
+    {
+        //Added for SQL Server SBEAMS. Not official type in jdbc
+        sqlTypeNameMap.put("INT", Types.INTEGER);
+        sqlTypeNameMap.put("INT IDENTITY", Types.INTEGER);
+        sqlTypeNameMap.put("DATETIME", Types.TIMESTAMP);
+        sqlTypeNameMap.put("TEXT", Types.LONGVARCHAR);
+        sqlTypeNameMap.put("NTEXT", Types.LONGVARCHAR);
+        sqlTypeNameMap.put("NVARCHAR", Types.VARCHAR);
+        sqlTypeNameMap.put("UNIQUEIDENTIFIER", Types.VARCHAR);
+        sqlTypeNameMap.put("TIMESTAMP", Types.BINARY); // SQL SERVER type
+    }
+
+    protected void addSqlTypeInts(Map<Integer, String> sqlTypeIntMap)
+    {
+        sqlTypeIntMap.put(Types.BIT, "BIT");
+        sqlTypeIntMap.put(Types.BOOLEAN, "BIT");
+        sqlTypeIntMap.put(Types.CHAR, "NCHAR");
+        sqlTypeIntMap.put(Types.LONGVARBINARY, "IMAGE");
+        sqlTypeIntMap.put(Types.LONGVARCHAR, "NTEXT");
+        sqlTypeIntMap.put(Types.VARCHAR, "NVARCHAR");
+        sqlTypeIntMap.put(Types.TIMESTAMP, "DATETIME");
+        sqlTypeIntMap.put(Types.DOUBLE, "FLOAT");
+        sqlTypeIntMap.put(Types.FLOAT, "FLOAT");
+    }
+
     protected boolean claimsDriverClassName(String driverClassName)
     {
         return "net.sourceforge.jtds.jdbc.Driver".equals(driverClassName);
@@ -77,7 +105,12 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         return true;
     }
 
-    public String getProductName()
+    public boolean isPostgreSQL()
+    {
+        return false;
+    }
+
+    protected String getProductName()
     {
         return "Sql Server";
     }
@@ -106,7 +139,7 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
     }
 
 
-    void checkSqlScript(String lower, String lowerNoWhiteSpace, Collection<String> errors)
+    protected void checkSqlScript(String lower, String lowerNoWhiteSpace, Collection<String> errors)
     {
     }
 
@@ -517,5 +550,15 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         Statement stmt = conn.createStatement();
         stmt.execute("SET ARITHABORT ON");
         stmt.close();
+    }
+
+    public void purgeTempSchema(Map<String, TempTableTracker> createdTableNames)
+    {
+        // Do nothing -- SQL Server cleans up temp tables automatically
+    }
+
+    public boolean isCaseSensitive()
+    {
+        return false;
     }
 }

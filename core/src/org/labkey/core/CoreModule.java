@@ -494,8 +494,8 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
         DbSchema core = CoreSchema.getInstance().getSchema();
         TableInfo users = CoreSchema.getInstance().getTableInfoUsers();
 
-        // Only need to delete users on PostgreSQL installations
-        if (CoreSchema.getInstance().getSqlDialect() instanceof SqlDialectPostgreSQL)          // TODO: dialect.isCaseSensitive()
+        // Only need to delete users on case-sensitive installations (PostgreSQL)
+        if (core.getSqlDialect().isCaseSensitive())
         {
             // For email addresses that have duplicates, keep the most recently used user.  Most recently used is the user with
             // the latest LastLogin.  If LastLogin is NULL for all duplicates, then keep the most recently modified.

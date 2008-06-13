@@ -450,6 +450,7 @@ public class TypesController extends SpringActionController
         {
             DbSchema expSchema = ExperimentService.get().getSchema();
             String concat = expSchema.getSqlDialect().getConcatenationOperator();
+            String like = expSchema.getSqlDialect().getCaseInsensitiveLikeOperator();
 
             //noinspection unchecked
             Map<String,Object>[] rows = new HashMap[0];
@@ -473,11 +474,11 @@ public class TypesController extends SpringActionController
                         params.add(term);
                         if (form.prefixMatch)
                         {
-                            where = where + and + "P.SearchTerms " + LIKE() + " '%|' " + concat + " ? " + concat + " '%'";
+                            where = where + and + "P.SearchTerms " + like + " '%|' " + concat + " ? " + concat + " '%'";
                         }
                         else
                         {
-                            where = where + and + "P.SearchTerms " + LIKE() + " '%|' " + concat + " ? " + concat + " '|%'";
+                            where = where + and + "P.SearchTerms " + like + " '%|' " + concat + " ? " + concat + " '|%'";
                         }
                         and = " AND ";
                     }
@@ -488,7 +489,7 @@ public class TypesController extends SpringActionController
                     if (-1 != form.concept.indexOf('#'))
                         where += and + "( P.PropertyURI = ? OR P.ConceptURI = ?)";
                     else
-                        where += and + "( P.Name = ?  OR P.PropertyURI " + LIKE() + " '%#' " + concat + " ?)";
+                        where += and + "( P.Name = ?  OR P.PropertyURI " + like + " '%#' " + concat + " ?)";
                     params.add(form.concept);
                     params.add(form.concept);
                     and = " AND ";
@@ -496,7 +497,7 @@ public class TypesController extends SpringActionController
 
                 if (notEmpty(form.semanticType))
                 {
-                    where += and + "P.SemanticType " + LIKE() + " '%|' " + concat + " ? " + concat + " '|%'";
+                    where += and + "P.SemanticType " + like + " '%|' " + concat + " ? " + concat + " '|%'";
                     params.add(form.semanticType);
                     //noinspection UnusedAssignment
                     and = " AND ";
@@ -725,8 +726,10 @@ public class TypesController extends SpringActionController
     {
         DbSchema expSchema = ExperimentService.get().getSchema();
         String concat = expSchema.getSqlDialect().getConcatenationOperator();
+        String like = expSchema.getSqlDialect().getCaseInsensitiveLikeOperator();
+
         Map propertyMap = Table.executeValueMap(ExperimentService.get().getSchema(),
-                "SELECT PropertyURI, PropertyId FROM exp.PropertyDescriptor WHERE PropertyURI " + LIKE() + " ? " + concat + " '#%'",
+                "SELECT PropertyURI, PropertyId FROM exp.PropertyDescriptor WHERE PropertyURI " + like + " ? " + concat + " '#%'",
                 new Object[]{prefix}, null);
 
         try
@@ -861,18 +864,5 @@ public class TypesController extends SpringActionController
         {
             this.prefixMatch = prefixMatch;
         }
-    }
-
-
-    static String _LIKE = null;
-
-    static String LIKE()
-    {
-        if (_LIKE == null)
-        {
-            DbSchema exp = DbSchema.get("exp");
-            _LIKE = exp.getSqlDialect() instanceof SqlDialectPostgreSQL ? "ILIKE" : "LIKE";
-        }
-        return _LIKE;
     }
 }
