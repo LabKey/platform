@@ -210,7 +210,16 @@ public class ContainerManager
         if (core.getSchema().getScope().isTransactionActive())
             throw new IllegalStateException("Transaction should not be active");
 
-        Container c = getForPath(path);
+        Container c = null;
+
+        try
+        {
+            c = getForPath(path);
+        }
+        catch (RootContainerException e)
+        {
+            // Ignore this -- root doesn't exist yet
+        }
 
         if (null == c)
         {
@@ -315,10 +324,13 @@ public class ContainerManager
         return null;
     }
 
-    public static Container getForRowId(String id)
+    public static Container getForRowId(String idString)
     {
         try
         {
+            // Postgres 8.3 doesn't like it if we use a string as
+            // an int parameter, so parse it first
+            Integer id = Integer.parseInt(idString);
             Container[] ret = Table.executeQuery(
                     core.getSchema(),
                     "SELECT * FROM " + core.getTableInfoContainers() + " WHERE RowId = ?",
@@ -326,6 +338,11 @@ public class ContainerManager
             if (ret == null || ret.length == 0)
                 return null;
             return ret[0];
+        }
+        catch(NumberFormatException nfe)
+        {
+            // That's certainly not going to match anything
+            return null;
         }
         catch (SQLException e)
         {
@@ -381,13 +398,13 @@ public class ContainerManager
                         null, Container.class);
 
                 if (null == ret || ret.length == 0)
-                    throw new RuntimeException("Root container does not exist");
+                    throw new RootContainerException("Root container does not exist");
 
                 if (ret.length > 1)
-                    throw new RuntimeException("More than one root container was found");
+                    throw new RootContainerException("More than one root container was found");
 
                 if (null == ret[0])
-                    throw new RuntimeException("Root container is NULL");
+                    throw new RootContainerException("Root container is NULL");
 
                 return ret[0];
             }
@@ -413,6 +430,15 @@ public class ContainerManager
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
+        }
+    }
+
+
+    public static class RootContainerException extends RuntimeException
+    {
+        private RootContainerException(String message)
+        {
+            super(message);
         }
     }
 
@@ -1417,8 +1443,14 @@ public class ContainerManager
 
         try
         {
-
-            c = getForPath(path);
+            try
+            {
+                c = getForPath(path);
+            }
+            catch (RootContainerException e)
+            {
+                // Ignore this -- root doesn't exist yet
+            }
             boolean newContainer = false;
 
             if (c == null)

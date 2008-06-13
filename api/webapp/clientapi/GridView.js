@@ -138,38 +138,10 @@ LABKEY.GridView = function(config)
 	var _gridCustomizeCallback = config.gridCustomizeCallback;
     var _pageLimit = 20;
     var _grid;
-    var _extParamMapping = {
-        "start" : "query.offset",
-        "limit" : "query.maxRows",
-        "sort" : "query.sort",
-        "dir" : "query.sortdir"
-        }
     var _containerPath = config.containerPath;
 
 
     // private methods:
-    function handleLoadError(This, o, arg, e)
-    {
-        LABKEY.Utils.displayAjaxErrorResponse(arg, e);
-    }
-
-    function mapQueryParameters(store, options)
-    {
-        // map all parameters from ext names to labkey names:
-        for (var param in options)
-        {
-            if (_extParamMapping[param])
-                options[_extParamMapping[param]] = options[param];
-        }
-
-        // fix up any necessary parameter values:
-        if ("DESC" == options['query.sortdir'])
-        {
-            var sortCol = options['query.sort'];
-            options['query.sort'] = "-" + sortCol;
-        }
-    }
-
     function getDefaultRenderer(fieldColumn, displayColumn)
     {
         switch (fieldColumn.type)
@@ -325,22 +297,17 @@ LABKEY.GridView = function(config)
             {
                 var lookupDef = fieldColumn.lookup;
                 var allowNull = !displayColumn.required;
-                var dsLookup = createStoreImpl(lookupDef.schema, lookupDef.table);
+                var storeConfig = {schemaName: lookupDef.schema, queryName: lookupDef.table, containerPath: _containerPath};
+                if (allowNull)
+                {
+                    storeConfig.allowNull = { keyColumn: lookupDef.keyColumn, displayColumn: lookupDef.displayColumn };
+                }
+                var dsLookup = LABKEY.Utils.createExtStore(storeConfig);
+
                 displayColumn.renderer = getLookupRenderer(dsLookup, lookupDef);
                 if (_editable)
                     displayColumn.editor = getLookupEditor(dsLookup, lookupDef, allowNull);
-                if (allowNull)
-                {
-                    dsLookup.on("load", function(store)
-                        {
-                        var emptyRecordConstructor = Ext.data.Record.create([lookupDef.keyColumn, lookupDef.displayColumn]);
-                        var recordData = {};
-                        recordData[lookupDef.keyColumn] = "";
-                        recordData[lookupDef.displayColumn] = "[None]";
-                        var emptyRecord = new emptyRecordConstructor(recordData);
-                        store.insert(0, emptyRecord);
-                        });
-                };
+
                 dsLookup.load();
             }
             else
@@ -718,52 +685,15 @@ LABKEY.GridView = function(config)
 
 
 
-    function createHttpProxyImpl(errorListener)
-    {
-        var proxy = new Ext.data.HttpProxy(new Ext.data.Connection({
-                //where to retrieve data
-                url: LABKEY.ActionURL.buildURL("query", "selectRows", _containerPath), //url to data object (server side script)
-                method: 'GET'
-            }));
-
-        if (errorListener)
-            proxy.on("loadexception", errorListener);
-
-        proxy.on("beforeload", mapQueryParameters);
-
-        return proxy;
-    }
-
-    function createStoreImpl(schemaName, queryName, viewName, storeConfig)
-    {
-        if (!storeConfig)
-            storeConfig = {};
-        if (!storeConfig.baseParams)
-            storeConfig.baseParams = {};
-        storeConfig.baseParams['query.queryName'] = (queryName ? queryName : _primaryQueryName);
-        storeConfig.baseParams['schemaName'] = (schemaName ? schemaName : _primarySchemaName);
-        if (viewName)
-            storeConfig.baseParams['query.viewName'] = viewName;
-
-        if (!storeConfig.proxy)
-            storeConfig.proxy = createHttpProxyImpl();
-
-        if (!storeConfig.remoteSort)
-            storeConfig.remoteSort = true;
-
-        if (!storeConfig.listeners || !storeConfig.listeners.loadexception)
-            storeConfig.listeners = { loadexception : { fn : handleLoadError } };
-
-        storeConfig.reader = new Ext.data.JsonReader();
-
-        return new Ext.data.Store(storeConfig);
-    }
-
     function createDefaultStoreImpl()
     {
         if (!_storeConfig)
             _storeConfig = {};
-        return createStoreImpl(_primarySchemaName, _primaryQueryName, _primaryViewName, _storeConfig)
+        _storeConfig.schemaName = _primarySchemaName;
+        _storeConfig.queryName = _primaryQueryName;
+        _storeConfig.viewName = _primaryViewName;
+        _storeConfig.containerPath = _containerPath;
+        return LABKEY.Utils.createExtStore(_storeConfig);
     }
 
     function displayGridImpl()

@@ -148,6 +148,7 @@ public class PopupMenu
                 sb.append(", handler:function(){").append(tree.getScript()).append("}");
             if (null != tree.getChildren() && tree.getChildren().length > 0)
             {
+                sb.append(", hideOnClick:false");
                 sb.append(",\n menu:").append(renderMenuModel(tree.getChildren(), null)).append("\n");
             }
             sb.append("}\n");

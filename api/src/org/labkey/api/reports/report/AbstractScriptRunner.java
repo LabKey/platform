@@ -112,7 +112,9 @@ public abstract class AbstractScriptRunner implements RScriptRunner
             for (Pair<String, String> param : params)
             {
                 labkey.append(sep);
+                labkey.append("\"");
                 labkey.append(param.getKey());
+                labkey.append("\"");
                 labkey.append("=");
                 labkey.append("\"");
                 labkey.append(param.getValue());
@@ -121,6 +123,9 @@ public abstract class AbstractScriptRunner implements RScriptRunner
             }
             labkey.append(")\n");
         }
+        else
+            labkey.append("labkey.url.params <- NULL\n");
+
         return labkey.toString();
     }
 

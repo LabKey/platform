@@ -20,7 +20,6 @@ import org.labkey.api.query.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.ForeignKey;
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.security.User;
 
 import java.util.*;
@@ -31,6 +30,7 @@ public class ExpSchema extends UserSchema
 
     public static final String EXPERIMENTS_NARROW_WEB_PART_TABLE_NAME = ExpSchema.TableType.Experiments + "NarrowWebPart";
     public static final String EXPERIMENTS_MEMBERSHIP_FOR_RUN_TABLE_NAME = ExpSchema.TableType.Experiments + "MembershipForRun";
+    public static final String RUN_GROUPS_TABLE_NAME = "RunGroups";
 
     public enum TableType
     {
@@ -109,6 +109,7 @@ public class ExpSchema extends UserSchema
         {
             tableNames.add(type.toString());
         }
+        tableNames.add(RUN_GROUPS_TABLE_NAME);
         tableNames = Collections.unmodifiableSet(tableNames);
     }
 
@@ -153,7 +154,7 @@ public class ExpSchema extends UserSchema
 
         // TODO - find a better way to do this. We want to have different sets of views for the experiments table,
         // so this is a hacky way to make sure that customizing one set of views doesn't affect the other.
-        if (EXPERIMENTS_NARROW_WEB_PART_TABLE_NAME.equalsIgnoreCase(name))
+        if (EXPERIMENTS_NARROW_WEB_PART_TABLE_NAME.equalsIgnoreCase(name) || RUN_GROUPS_TABLE_NAME.equalsIgnoreCase(name))
         {
             return createExperimentsTable(alias);
         }

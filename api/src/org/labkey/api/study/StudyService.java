@@ -87,6 +87,13 @@ public class StudyService
         public void commitTransaction() throws SQLException;
         public void rollbackTransaction();
         public boolean isTransactionActive();
+
+        /**
+         * Returns true if datasets in the container's study are editable, false if not.
+         * @param container The container.
+         * @return True if editable, false if not.
+         */
+        public boolean areDatasetsEditable(Container container);
     }
 
     public static void register(Service serviceImpl)

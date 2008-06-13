@@ -606,9 +606,6 @@ function doSort(tableName, columnName, sortDirection)
                 newSortArray[newSortArray.length] = sortArray[j];
         }
     }
-    // no need to change sort
-    if (currentSort == sortDirection)
-        return;
 
     if (sortDirection == "+") //Easier to read without the encoded + on the URL...
         sortDirection = "";

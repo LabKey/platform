@@ -69,7 +69,7 @@ public class ManageReportsBean
             _views = createReportRecordMap();
 
             beforeGetViews(_views);
-            for (Report r : ReportService.get().getReports(_context.getUser(), _context.getContainer()))
+            for (Report r : ChartUtil.getReports(_context, null, true))
             {
                 if (!StringUtils.isEmpty(r.getDescriptor().getReportName()))
                     createReportRecord(r, _views);

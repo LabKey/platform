@@ -622,7 +622,7 @@ td.x-date-mp-sep{border-right:1px solid #c5d2df;}
 .x-menu li{line-height:100%;}
 .x-menu li.x-menu-sep-li{font-size:1px;line-height:1px;}
 .extContainer .x-menu-list-item, .x-menu-list-item{font:normal 11px tahoma,arial,sans-serif;white-space:nowrap;-moz-user-select:none;-khtml-user-select:none;display:block;padding:1px;}
-.x-menu-item-arrow{background:transparent url(../images/default/menu/menu-parent.gif) no-repeat right;}
+.extContainer .x-menu-item-arrow,  .x-menu-item-arrow{background:transparent url(../images/default/menu/menu-parent.gif) no-repeat right;}
 .x-menu-sep{display:block;font-size:1px;line-height:1px;margin:2px 3px;background-color:#e0e0e0;border-bottom:1px solid #fff;overflow:hidden;}
 .x-menu-focus{position:absolute;left:0;top:-5px;width:0;height:0;line-height:1px;}
 .x-menu a.x-menu-item{display:block;line-height:16px;padding:3px 21px 3px 3px;white-space:nowrap;text-decoration:none;color:#222;-moz-outline:0 none;outline:0 none;cursor:pointer;}

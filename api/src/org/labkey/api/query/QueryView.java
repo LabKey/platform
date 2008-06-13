@@ -825,7 +825,8 @@ public class QueryView extends WebPartView<Object>
             QueryDefinition queryDef = getQueryDef();
             if (queryDef.canEdit(getUser()) && getContainer().equals(queryDef.getContainer()))
             {
-                out.write(textLink("Edit Query", getSchema().urlFor(QueryAction.designQuery, queryDef)));
+                out.write(textLink("Design Query", getSchema().urlFor(QueryAction.designQuery, queryDef)));
+                out.write(textLink("Edit Query", getSchema().urlFor(QueryAction.sourceQuery, queryDef)));
             }
         }
     }

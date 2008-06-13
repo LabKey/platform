@@ -319,7 +319,8 @@ public abstract class DisplayColumn extends RenderColumn
 
     public void renderGridHeaderCell(RenderContext ctx, Writer out, String styleAttributes) throws IOException, SQLException
     {
-        Sort.SortField sortField = getSortField(ctx);
+        Sort sort = getSort(ctx);
+        Sort.SortField sortField = sort != null ? sort.getSortColumn(getColumnInfo().getName()) : null;
         boolean filtered = isFiltered(ctx);
         String baseId = ctx.getCurrentRegion().getName() + ":" + (getColumnInfo() != null ? getColumnInfo().getName() : super.getName());
 
@@ -362,7 +363,7 @@ public abstract class DisplayColumn extends RenderColumn
         out.write(" id=");
         out.write(PageFlowUtil.jsString(baseId + ":header"));
 
-        NavTree navtree = getPopupNavTree(ctx, baseId, sortField, filtered);
+        NavTree navtree = getPopupNavTree(ctx, baseId, sort, filtered);
         if (navtree != null)
         {
             out.write(" onmouseover=\"Ext.fly(this).toggleClass('hover')\"");
@@ -390,7 +391,7 @@ public abstract class DisplayColumn extends RenderColumn
         out.write("</th>");
     }
 
-    private Sort.SortField getSortField(RenderContext ctx)
+    private Sort getSort(RenderContext ctx)
     {
         DataRegion rgn = ctx.getCurrentRegion();
         assert null != rgn;
@@ -408,7 +409,7 @@ public abstract class DisplayColumn extends RenderColumn
                 ctx.put(rgn.getName() + ".sort", sort);
             }
 
-            return sort.getSortColumn(getColumnInfo().getName());
+            return sort;
         }
         return null;
     }
@@ -444,7 +445,7 @@ public abstract class DisplayColumn extends RenderColumn
         return false;
     }
 
-    private NavTree getPopupNavTree(RenderContext ctx, String baseId, Sort.SortField sortField, boolean filtered) throws IOException
+    private NavTree getPopupNavTree(RenderContext ctx, String baseId, Sort sort, boolean filtered) throws IOException
     {
         DataRegion rgn = ctx.getCurrentRegion();
         NavTree navtree = null;
@@ -456,20 +457,28 @@ public abstract class DisplayColumn extends RenderColumn
 
             if (isSortable() && rgn.isSortable())
             {
+                Sort.SortField sortField = null;
+                boolean primarySort = false;
+                if (sort != null)
+                {
+                    sortField = sort.getSortColumn(getColumnInfo().getName());
+                    primarySort = sort.indexOf(getColumnInfo().getName()) == 0;
+                }
+
+                boolean selected = sortField != null && sortField.getSortDirection() == Sort.SortDirection.ASC;
                 NavTree asc = new NavTree("Sort Ascending");
                 asc.setId(PageFlowUtil.filter(baseId + ":asc"));
                 asc.setScript(getSortHandler(ctx, Sort.SortDirection.ASC));
-                boolean selected = sortField != null && sortField.getSortDirection() == Sort.SortDirection.ASC;
                 asc.setSelected(selected);
-                asc.setDisabled(selected);
+                asc.setDisabled(primarySort && selected);
                 navtree.addChild(asc);
 
+                selected = sortField != null && sortField.getSortDirection() == Sort.SortDirection.DESC;
                 NavTree desc = new NavTree("Sort Descending");
                 desc.setId(PageFlowUtil.filter(baseId + ":desc"));
                 desc.setScript(getSortHandler(ctx, Sort.SortDirection.DESC));
-                selected = sortField != null && sortField.getSortDirection() == Sort.SortDirection.DESC;
                 desc.setSelected(selected);
-                desc.setDisabled(selected);
+                desc.setDisabled(primarySort && selected);
                 navtree.addChild(desc);
             }
 
