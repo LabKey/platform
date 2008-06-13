@@ -2168,7 +2168,7 @@ public class Table
             try
             {
                 PreparedStatement stmt = conn.prepareStatement("CREATE " + dialect.getTempTableKeyword() + " TABLE " + name +
-                        "(s VARCHAR(36), d " + ColumnInfo.sqlTypeNameFromSqlType(Types.TIMESTAMP, dialect) + ")");
+                        "(s VARCHAR(36), d " + dialect.sqlTypeNameFromSqlType(Types.TIMESTAMP) + ")");
                 stmt.execute();
                 stmt.close();
 

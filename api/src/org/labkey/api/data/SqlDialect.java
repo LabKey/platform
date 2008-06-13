@@ -21,6 +21,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.util.CaseInsensitiveHashMap;
 
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
@@ -45,6 +46,8 @@ public abstract class SqlDialect
     public static final String GENERIC_ERROR_MESSAGE = "The database experienced an unexpected problem. Please check your input and try again.";
     public static final String INPUT_TOO_LONG_ERROR_MESSAGE = "The input you provided was too long.";
     protected Set<String> reservedWordSet = new CaseInsensitiveHashSet();
+    private Map<String, Integer> sqlTypeNameMap = new CaseInsensitiveHashMap<Integer>();
+    private Map<Integer, String> sqlTypeIntMap = new HashMap<Integer, String>();
 
     static final private Pattern s_patStringLiteral = Pattern.compile("\\'([^\\']|(\'\'))*\\'");
     static final private Pattern s_patQuotedIdentifier = Pattern.compile("\\\"([^\\\"]|(\\\"\\\"))*\\\"");
@@ -117,6 +120,103 @@ public abstract class SqlDialect
     }
 
 
+    protected SqlDialect()
+    {
+        initializeSqlTypeNameMap();
+        initializeSqlTypeIntMap();
+    }
+
+
+    private void initializeSqlTypeNameMap()
+    {
+        sqlTypeNameMap.put("ARRAY", Types.ARRAY);
+        sqlTypeNameMap.put("BIGINT", Types.BIGINT);
+        sqlTypeNameMap.put("BINARY", Types.BINARY);
+        sqlTypeNameMap.put("BIT", Types.BIT);
+        sqlTypeNameMap.put("BLOB", Types.BLOB);
+        sqlTypeNameMap.put("BOOLEAN", Types.BOOLEAN);
+        sqlTypeNameMap.put("CHAR", Types.CHAR);
+        sqlTypeNameMap.put("CLOB", Types.CLOB);
+        sqlTypeNameMap.put("DATALINK", Types.DATALINK);
+        sqlTypeNameMap.put("DATE", Types.DATE);
+        sqlTypeNameMap.put("DECIMAL", Types.DECIMAL);
+        sqlTypeNameMap.put("DISTINCT", Types.DISTINCT);
+        sqlTypeNameMap.put("DOUBLE", Types.DOUBLE);
+        sqlTypeNameMap.put("DOUBLE PRECISION", Types.DOUBLE);
+        sqlTypeNameMap.put("FLOAT", Types.FLOAT);
+        sqlTypeNameMap.put("INTEGER", Types.INTEGER);
+        sqlTypeNameMap.put("JAVA_OBJECT", Types.JAVA_OBJECT);
+        sqlTypeNameMap.put("LONGVARBINARY", Types.LONGVARBINARY);
+        sqlTypeNameMap.put("LONGVARCHAR", Types.LONGVARCHAR);
+        sqlTypeNameMap.put("NULL", Types.NULL);
+        sqlTypeNameMap.put("NUMERIC", Types.NUMERIC);
+        sqlTypeNameMap.put("OTHER", Types.OTHER);
+        sqlTypeNameMap.put("REAL", Types.REAL);
+        sqlTypeNameMap.put("REF", Types.REF);
+        sqlTypeNameMap.put("SMALLINT", Types.SMALLINT);
+        sqlTypeNameMap.put("STRUCT", Types.STRUCT);
+        sqlTypeNameMap.put("TIME", Types.TIME);
+        sqlTypeNameMap.put("TINYINT", Types.TINYINT);
+        sqlTypeNameMap.put("VARBINARY", Types.VARBINARY);
+        sqlTypeNameMap.put("VARCHAR", Types.VARCHAR);
+
+        addSqlTypeNames(sqlTypeNameMap);
+    }
+
+
+    private void initializeSqlTypeIntMap()
+    {
+        sqlTypeIntMap.put(Types.ARRAY, "ARRAY");
+        sqlTypeIntMap.put(Types.BIGINT, "BIGINT");
+        sqlTypeIntMap.put(Types.BINARY, "BINARY");
+        sqlTypeIntMap.put(Types.BLOB, "BLOB");
+        sqlTypeIntMap.put(Types.CLOB, "CLOB");
+        sqlTypeIntMap.put(Types.DATALINK, "DATALINK");
+        sqlTypeIntMap.put(Types.DATE, "DATE");
+        sqlTypeIntMap.put(Types.DECIMAL, "DECIMAL");
+        sqlTypeIntMap.put(Types.DISTINCT, "DISTINCT");
+        sqlTypeIntMap.put(Types.INTEGER, "INTEGER");
+        sqlTypeIntMap.put(Types.JAVA_OBJECT, "JAVA_OBJECT");
+        sqlTypeIntMap.put(Types.NULL, "NULL");
+        sqlTypeIntMap.put(Types.NUMERIC, "NUMERIC");
+        sqlTypeIntMap.put(Types.OTHER, "OTHER");
+        sqlTypeIntMap.put(Types.REAL, "REAL");
+        sqlTypeIntMap.put(Types.REF, "REF");
+        sqlTypeIntMap.put(Types.SMALLINT, "SMALLINT");
+        sqlTypeIntMap.put(Types.STRUCT, "STRUCT");
+        sqlTypeIntMap.put(Types.TIME, "TIME");
+        sqlTypeIntMap.put(Types.TINYINT, "TINYINT");
+        sqlTypeIntMap.put(Types.VARBINARY, "VARBINARY");
+
+        addSqlTypeInts(sqlTypeIntMap);
+    }
+
+
+    protected abstract void addSqlTypeNames(Map<String, Integer> sqlTypeNameMap);
+    protected abstract void addSqlTypeInts(Map<Integer, String> sqlTypeIntMap);
+
+    public int sqlTypeIntFromSqlTypeName(String sqlTypeName)
+    {
+        Integer i = sqlTypeNameMap.get(sqlTypeName);
+
+        if (null != i)
+            return i.intValue();
+        else
+        {
+            _log.info("Unknown SQL Type Name \"" + sqlTypeName + "\"; using String instead.");
+            return Types.OTHER;
+        }
+    }
+
+
+    public String sqlTypeNameFromSqlTypeInt(int sqlTypeInt)
+    {
+        String sqlTypeName = sqlTypeIntMap.get(sqlTypeInt);
+
+        return null != sqlTypeName ? sqlTypeName : "OTHER";
+    }
+
+
     protected String getDatabaseMaintenanceSql()
     {
         return null;
@@ -168,7 +268,7 @@ public abstract class SqlDialect
     // Do dialect-specific work after schema load
     public abstract void prepareNewDbSchema(DbSchema schema);
 
-    public abstract String getProductName();
+    protected abstract String getProductName();
 
     public abstract String getSQLScriptPath();
 
@@ -349,7 +449,7 @@ public abstract class SqlDialect
     }
 
 
-    abstract void checkSqlScript(String lower, String lowerNoWhiteSpace, Collection<String> errors);
+    abstract protected void checkSqlScript(String lower, String lowerNoWhiteSpace, Collection<String> errors);
 
     protected class SQLSyntaxException extends SQLException
     {
@@ -630,6 +730,80 @@ public abstract class SqlDialect
         }
     }
 
+
+    public String sqlTypeNameFromSqlType(int sqlType)
+    {
+        boolean postgres = isPostgreSQL();
+
+        switch (sqlType)
+        {
+            case Types.ARRAY:
+                return "ARRAY";
+            case Types.BIGINT:
+                return "BIGINT";
+            case Types.BINARY:
+                return "BINARY";
+            case Types.BLOB:
+                return "BLOB";
+            case Types.BIT:
+            case Types.BOOLEAN:
+                return postgres ? "BOOLEAN" : "BIT";
+            case Types.CHAR:
+                return postgres ? "CHAR" : "NCHAR";
+            case Types.CLOB:
+                return "CLOB";
+            case Types.DATALINK:
+                return "DATALINK";
+            case Types.DATE:
+                return "DATE";
+            case Types.DECIMAL:
+                return "DECIMAL";
+            case Types.DISTINCT:
+                return "DISTINCT";
+            case Types.DOUBLE:
+            case Types.FLOAT:
+                return postgres ? "DOUBLE PRECISION" : "FLOAT";
+            case Types.INTEGER:
+                return "INTEGER";
+            case Types.JAVA_OBJECT:
+                return "JAVA_OBJECT";
+            case Types.LONGVARBINARY:
+                return postgres ? "LONGVARBINARY" : "IMAGE";
+            case Types.LONGVARCHAR:
+                return postgres ? "LONGVARCHAR" : "NTEXT";
+            case Types.NULL:
+                return "NULL";
+            case Types.NUMERIC:
+                return "NUMERIC";
+            case Types.OTHER:
+                return "OTHER";
+            case Types.REAL:
+                return "REAL";
+            case Types.REF:
+                return "REF";
+            case Types.SMALLINT:
+                return "SMALLINT";
+            case Types.STRUCT:
+                return "STRUCT";
+            case Types.TIME:
+                return "TIME";
+            case Types.TIMESTAMP:
+                return postgres ? "TIMESTAMP" : "DATETIME";  // DATETIME in mssql TIMESTAMP in pgsql
+            case Types.TINYINT:
+                return "TINYINT";
+            case Types.VARBINARY:
+                return "VARBINARY";
+            case Types.VARCHAR:
+                return postgres ? "VARCHAR" : "NVARCHAR";
+            default:
+                return "OTHER";
+        }
+    }
+
+
     public abstract void initializeConnection(Connection conn) throws SQLException;
+    public abstract void purgeTempSchema(Map<String, TempTableTracker> createdTableNames);
+    public abstract boolean isCaseSensitive();
     public abstract boolean isSqlServer();
+    public abstract boolean isPostgreSQL();
 }

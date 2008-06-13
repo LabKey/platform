@@ -795,13 +795,13 @@ public class DbSchema
             testSchema.getSqlDialect().dropSchema(testSchema,"testdrop3");
             testSchema.dropTableIfExists(tempTableName);
 
-            if (testSchema.getSqlDialect().getProductName().equalsIgnoreCase("sql server"))
+            if (testSchema.getSqlDialect().isSqlServer())
             {
                 Table.execute(testSchema, "EXEC sp_addapprole 'testdrop', 'password' ", new Object[]{});
                 Table.execute(testSchema, "EXEC sp_addapprole 'testdrop2', 'password' ", new Object[]{});
                 Table.execute(testSchema, "EXEC sp_addapprole 'testdrop3', 'password' ", new Object[]{});
             }
-            else if (testSchema.getSqlDialect().getProductName().equalsIgnoreCase("postgresql"))
+            else if (testSchema.getSqlDialect().isPostgreSQL())
             {
                 Table.execute(testSchema, "create schema testdrop", new Object[]{});
                 Table.execute(testSchema, "create schema testdrop2", new Object[]{});

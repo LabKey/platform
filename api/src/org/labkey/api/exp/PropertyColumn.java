@@ -100,7 +100,7 @@ public class PropertyColumn extends LookupColumn
 
     private String getPropertySqlType(SqlDialect dialect)
     {
-        return ColumnInfo.sqlTypeNameFromSqlType(getPropertySqlTypeInt(), dialect);
+        return dialect.sqlTypeNameFromSqlType(getPropertySqlTypeInt());
     }
 
     

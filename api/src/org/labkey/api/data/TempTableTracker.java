@@ -32,6 +32,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -44,7 +45,7 @@ public class TempTableTracker extends WeakReference<Object>
 {
     static Logger _log = Logger.getLogger(TempTableTracker.class);
     static final String LOGFILE = "CPAS_sqlTempTables.log";
-    static final TreeMap<String,TempTableTracker> createdTableNames = new TreeMap<String,TempTableTracker>();
+    static final Map<String, TempTableTracker> createdTableNames = new TreeMap<String,TempTableTracker>();
     static final ReferenceQueue<Object> cleanupQueue = new ReferenceQueue<Object>();
     static RandomAccessFile tempTableLog = null;
 
@@ -226,49 +227,8 @@ public class TempTableTracker extends WeakReference<Object>
         // consider: test to see if any of the schemas have different scope (dbName) than core schema
         synchronized(createdTableNames)
         {
-            try
-            {
-                SqlDialect dialect = CoreSchema.getInstance().getSchema().getSqlDialect();
-
-                if (dialect instanceof SqlDialectPostgreSQL)
-                {
-                    DbScope scope = CoreSchema.getInstance().getSchema().getScope();
-                    String tempSchemaName = dialect.getGlobalTempTablePrefix();
-                    if (tempSchemaName.endsWith("."))
-                        tempSchemaName = tempSchemaName.substring(0,tempSchemaName.length()-1);
-                    String dbName = dialect.getDatabaseName(scope.getDataSource());
-                    
-                    Connection conn = null;
-                    ResultSet rs = null;
-                    Object noref = new Object();
-                    try
-                    {
-                        conn = CoreSchema.getInstance().getSchema().getScope().getConnection();
-                        rs = conn.getMetaData().getTables(dbName, tempSchemaName, "%", new String[] {"TABLE"});
-                        while (rs.next())
-                        {
-                            String table = rs.getString("TABLE_NAME");
-                            String tempName = dialect.getGlobalTempTablePrefix() + table;
-                            if (!createdTableNames.containsKey(tempName))
-                                track("core", tempName, noref);
-                        }
-                    }
-                    finally
-                    {
-                        ResultSetUtil.close(rs);
-                        if (null != conn)
-                            scope.releaseConnection(conn);
-                    }
-                }
-            }
-            catch (SQLException x)
-            {
-                _log.warn("error cleaning up temp schema", x);
-            }
-            catch (ServletException x)
-            {
-                _log.warn("error cleaning up temp schema", x);
-            }
+            SqlDialect dialect = CoreSchema.getInstance().getSchema().getSqlDialect();
+            dialect.purgeTempSchema(createdTableNames);
         }
     }
 

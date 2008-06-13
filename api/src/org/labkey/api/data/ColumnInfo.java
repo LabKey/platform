@@ -19,12 +19,11 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.labkey.data.xml.ColumnType;
-import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.util.CaseInsensitiveHashSet;
-import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringExpressionFactory.StringExpression;
+import org.labkey.data.xml.ColumnType;
 
 import java.beans.Introspector;
 import java.io.File;
@@ -75,7 +74,6 @@ public class ColumnInfo
     private boolean isUnselectable = false;
     private boolean isHidden = false;
     private TableInfo parentTable = null;
-    static CaseInsensitiveHashMap<Integer> sqlTypeNameMap = null;
     static Set<String> nonEditableColNames = null;
     private DisplayColumnFactory _displayColumnFactory = DEFAULT_FACTORY;
     private int _sqlTypeInt = Types.NULL;
@@ -512,12 +510,12 @@ public class ColumnInfo
     {
         if (_sqlTypeInt == Types.NULL)
         {
-            SqlDialect d = null;
+            SqlDialect d;
             if (getParentTable() == null)
                 d = CoreSchema.getInstance().getSqlDialect();
             else
                 d = getParentTable().getSqlDialect();
-            _sqlTypeInt = sqlTypeIntFromSqlTypeName(sqlTypeName, d);
+            _sqlTypeInt = d.sqlTypeIntFromSqlTypeName(sqlTypeName);
         }
         return _sqlTypeInt;
     }
@@ -1154,162 +1152,6 @@ public class ColumnInfo
         return (sqlType == Types.BOOLEAN) ||
                 (sqlType == Types.BIT);
     }
-
-    /** TODO: move to dialect */
-    public static String sqlTypeNameFromSqlType(int sqlType, SqlDialect dialect)
-    {
-        boolean postgres = dialect instanceof SqlDialectPostgreSQL;
-
-        switch (sqlType)
-        {
-            case Types.ARRAY:
-                return "ARRAY";
-            case Types.BIGINT:
-                return "BIGINT";
-            case Types.BINARY:
-                return "BINARY";
-            case Types.BLOB:
-                return "BLOB";
-            case Types.BIT:
-            case Types.BOOLEAN:
-                return postgres ? "BOOLEAN" : "BIT";
-            case Types.CHAR:
-                return postgres ? "CHAR" : "NCHAR";
-            case Types.CLOB:
-                return "CLOB";
-            case Types.DATALINK:
-                return "DATALINK";
-            case Types.DATE:
-                return "DATE";
-            case Types.DECIMAL:
-                return "DECIMAL";
-            case Types.DISTINCT:
-                return "DISTINCT";
-            case Types.DOUBLE:
-            case Types.FLOAT:
-                return postgres ? "DOUBLE PRECISION" : "FLOAT";
-            case Types.INTEGER:
-                return "INTEGER";
-            case Types.JAVA_OBJECT:
-                return "JAVA_OBJECT";
-            case Types.LONGVARBINARY:
-                return postgres ? "LONGVARBINARY" : "IMAGE";
-            case Types.LONGVARCHAR:
-                return postgres ? "LONGVARCHAR" : "NTEXT";
-            case Types.NULL:
-                return "NULL";
-            case Types.NUMERIC:
-                return "NUMERIC";
-            case Types.OTHER:
-                return "OTHER";
-            case Types.REAL:
-                return "REAL";
-            case Types.REF:
-                return "REF";
-            case Types.SMALLINT:
-                return "SMALLINT";
-            case Types.STRUCT:
-                return "STRUCT";
-            case Types.TIME:
-                return "TIME";
-            case Types.TIMESTAMP:
-                return postgres ? "TIMESTAMP" : "DATETIME";  // DATETIME in mssql TIMESTAMP in pgsql
-            case Types.TINYINT:
-                return "TINYINT";
-            case Types.VARBINARY:
-                return "VARBINARY";
-            case Types.VARCHAR:
-                return postgres ? "VARCHAR" : "NVARCHAR";
-            default:
-                return "OTHER";
-        }
-    }
-
-
-    static
-    {
-        sqlTypeNameMap = new CaseInsensitiveHashMap<Integer>();
-        sqlTypeNameMap.put("ARRAY", Types.ARRAY);
-        sqlTypeNameMap.put("BIGINT", Types.BIGINT);
-        sqlTypeNameMap.put("BINARY", Types.BINARY);
-        sqlTypeNameMap.put("BIT", Types.BIT);
-        sqlTypeNameMap.put("BLOB", Types.BLOB);
-        sqlTypeNameMap.put("BOOLEAN", Types.BOOLEAN);
-        sqlTypeNameMap.put("CHAR", Types.CHAR);
-        sqlTypeNameMap.put("CLOB", Types.CLOB);
-        sqlTypeNameMap.put("DATALINK", Types.DATALINK);
-        sqlTypeNameMap.put("DATE", Types.DATE);
-        sqlTypeNameMap.put("DECIMAL", Types.DECIMAL);
-        sqlTypeNameMap.put("DISTINCT", Types.DISTINCT);
-        sqlTypeNameMap.put("DOUBLE", Types.DOUBLE);
-        sqlTypeNameMap.put("DOUBLE PRECISION", Types.DOUBLE);
-        sqlTypeNameMap.put("FLOAT", Types.FLOAT);
-        sqlTypeNameMap.put("INTEGER", Types.INTEGER);
-        sqlTypeNameMap.put("JAVA_OBJECT", Types.JAVA_OBJECT);
-        sqlTypeNameMap.put("LONGVARBINARY", Types.LONGVARBINARY);
-        sqlTypeNameMap.put("LONGVARCHAR", Types.LONGVARCHAR);
-        sqlTypeNameMap.put("NULL", Types.NULL);
-        sqlTypeNameMap.put("NUMERIC", Types.NUMERIC);
-        sqlTypeNameMap.put("OTHER", Types.OTHER);
-        sqlTypeNameMap.put("REAL", Types.REAL);
-        sqlTypeNameMap.put("REF", Types.REF);
-        sqlTypeNameMap.put("SMALLINT", Types.SMALLINT);
-        sqlTypeNameMap.put("STRUCT", Types.STRUCT);
-        sqlTypeNameMap.put("TIME", Types.TIME);
-        sqlTypeNameMap.put("TIMESTAMP", Types.BINARY); // SQL SERVER type
-        sqlTypeNameMap.put("TINYINT", Types.TINYINT);
-        sqlTypeNameMap.put("VARBINARY", Types.VARBINARY);
-        sqlTypeNameMap.put("VARCHAR", Types.VARCHAR);
-
-        //Added for SQL Server SBEAMS. Not official type in jdbc
-        sqlTypeNameMap.put("INT", Types.INTEGER);
-        sqlTypeNameMap.put("INT IDENTITY", Types.INTEGER);
-        sqlTypeNameMap.put("DATETIME", Types.TIMESTAMP);
-        sqlTypeNameMap.put("TEXT", Types.LONGVARCHAR);
-        sqlTypeNameMap.put("NTEXT", Types.LONGVARCHAR);
-        sqlTypeNameMap.put("NVARCHAR", Types.VARCHAR);
-        sqlTypeNameMap.put("UNIQUEIDENTIFIER", Types.VARCHAR);
-
-        //Added for PostgreSQL, which returns type names like "userid," not underlying type name
-        sqlTypeNameMap.put("USERID", Types.INTEGER);
-        sqlTypeNameMap.put("SERIAL", Types.INTEGER);
-        sqlTypeNameMap.put("ENTITYID", Types.VARCHAR);
-        sqlTypeNameMap.put("INT2", Types.INTEGER);
-        sqlTypeNameMap.put("INT4", Types.INTEGER);
-        sqlTypeNameMap.put("INT8", Types.BIGINT);
-        sqlTypeNameMap.put("FLOAT4", Types.REAL);
-        sqlTypeNameMap.put("FLOAT8", Types.DOUBLE);
-        sqlTypeNameMap.put("BOOL", Types.BOOLEAN);
-        sqlTypeNameMap.put("BPCHAR", Types.CHAR);
-        sqlTypeNameMap.put("LSIDTYPE", Types.VARCHAR);
-    }
-
-
-    public static int sqlTypeIntFromSqlTypeName(String sqlTypeName, SqlDialect dialect)
-    {
-        boolean postgres = dialect instanceof SqlDialectPostgreSQL;
-        if (postgres && "TIMESTAMP".equalsIgnoreCase(sqlTypeName))
-            return Types.TIMESTAMP;
-
-        Integer i = sqlTypeNameMap.get(sqlTypeName);
-
-        if (null != i)
-            return i;
-        else
-        {
-            _log.info("Unknown SQL Type Name \"" + sqlTypeName + "\"; using String instead.");
-            return Types.OTHER;
-        }
-    }
-
-
-
-
-/*	public static Format getDefaultFormat (int sqlType)
-        {
-        return null;
-        }
-*/
 
     public static String javaTypeFromSqlType(int sqlType, boolean isObj)
     {

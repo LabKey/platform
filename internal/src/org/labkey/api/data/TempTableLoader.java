@@ -182,6 +182,6 @@ public class TempTableLoader extends TabLoader
         else
             sqlType = Types.VARCHAR;
 
-        return ColumnInfo.sqlTypeNameFromSqlType(sqlType, dialect);
+        return dialect.sqlTypeNameFromSqlType(sqlType);
     }
 }

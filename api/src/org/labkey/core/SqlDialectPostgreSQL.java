@@ -14,20 +14,23 @@
  * limitations under the License.
  */
 
-package org.labkey.api.data;
+package org.labkey.core;
 
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.query.AliasManager;
+import org.labkey.api.data.*;
 
 import javax.servlet.ServletException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Connection;
+import java.sql.Types;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
@@ -55,6 +58,36 @@ public class SqlDialectPostgreSQL extends SqlDialect
         ));
     }
 
+    protected void addSqlTypeNames(Map<String, Integer> sqlTypeNameMap)
+    {
+        //Added for PostgreSQL, which returns type names like "userid," not underlying type name
+        sqlTypeNameMap.put("USERID", Types.INTEGER);
+        sqlTypeNameMap.put("SERIAL", Types.INTEGER);
+        sqlTypeNameMap.put("ENTITYID", Types.VARCHAR);
+        sqlTypeNameMap.put("INT2", Types.INTEGER);
+        sqlTypeNameMap.put("INT4", Types.INTEGER);
+        sqlTypeNameMap.put("INT8", Types.BIGINT);
+        sqlTypeNameMap.put("FLOAT4", Types.REAL);
+        sqlTypeNameMap.put("FLOAT8", Types.DOUBLE);
+        sqlTypeNameMap.put("BOOL", Types.BOOLEAN);
+        sqlTypeNameMap.put("BPCHAR", Types.CHAR);
+        sqlTypeNameMap.put("LSIDTYPE", Types.VARCHAR);
+        sqlTypeNameMap.put("TIMESTAMP", Types.TIMESTAMP);
+    }
+
+    protected void addSqlTypeInts(Map<Integer, String> sqlTypeIntMap)
+    {
+        sqlTypeIntMap.put(Types.BIT, "BOOLEAN");
+        sqlTypeIntMap.put(Types.BOOLEAN, "BOOLEAN");
+        sqlTypeIntMap.put(Types.CHAR, "CHAR");
+        sqlTypeIntMap.put(Types.LONGVARBINARY, "LONGVARBINARY");
+        sqlTypeIntMap.put(Types.LONGVARCHAR, "LONGVARCHAR");
+        sqlTypeIntMap.put(Types.VARCHAR, "VARCHAR");
+        sqlTypeIntMap.put(Types.TIMESTAMP, "TIMESTAMP");
+        sqlTypeIntMap.put(Types.DOUBLE, "DOUBLE PRECISION");
+        sqlTypeIntMap.put(Types.FLOAT, "DOUBLE PRECISION");
+    }
+
     protected boolean claimsDriverClassName(String driverClassName)
     {
         return "org.postgresql.Driver".equals(driverClassName);
@@ -70,7 +103,12 @@ public class SqlDialectPostgreSQL extends SqlDialect
         return false;
     }
 
-    public String getProductName()
+    public boolean isPostgreSQL()
+    {
+        return true;
+    }
+
+    protected String getProductName()
     {
         return "PostgreSQL";
     }
@@ -471,7 +509,7 @@ public class SqlDialectPostgreSQL extends SqlDialect
     }
 
 
-    void checkSqlScript(String lower, String lowerNoWhiteSpace, Collection<String> errors)
+    protected void checkSqlScript(String lower, String lowerNoWhiteSpace, Collection<String> errors)
     {
         if (lowerNoWhiteSpace.contains("setsearch_pathto"))
             errors.add("Do not use \"SET search_path TO <schema>\".  Instead, schema-qualify references to all objects.");
@@ -574,5 +612,53 @@ public class SqlDialectPostgreSQL extends SqlDialect
 
     public void initializeConnection(Connection conn) throws SQLException
     {
+    }
+
+    public void purgeTempSchema(Map<String, TempTableTracker> createdTableNames)
+    {
+        try
+        {
+            DbSchema coreSchema = CoreSchema.getInstance().getSchema();
+            DbScope scope = coreSchema.getScope();
+            String tempSchemaName = getGlobalTempTablePrefix();
+            if (tempSchemaName.endsWith("."))
+                tempSchemaName = tempSchemaName.substring(0,tempSchemaName.length()-1);
+            String dbName = getDatabaseName(scope.getDataSource());
+
+            Connection conn = null;
+            ResultSet rs = null;
+            Object noref = new Object();
+            try
+            {
+                conn = scope.getConnection();
+                rs = conn.getMetaData().getTables(dbName, tempSchemaName, "%", new String[] {"TABLE"});
+                while (rs.next())
+                {
+                    String table = rs.getString("TABLE_NAME");
+                    String tempName = getGlobalTempTablePrefix() + table;
+                    if (!createdTableNames.containsKey(tempName))
+                        TempTableTracker.track(coreSchema, tempName, noref);
+                }
+            }
+            finally
+            {
+                ResultSetUtil.close(rs);
+                if (null != conn)
+                    scope.releaseConnection(conn);
+            }
+        }
+        catch (SQLException x)
+        {
+            _log.warn("error cleaning up temp schema", x);
+        }
+        catch (ServletException x)
+        {
+            _log.warn("error cleaning up temp schema", x);
+        }
+    }
+
+    public boolean isCaseSensitive()
+    {
+        return true;
     }
 }

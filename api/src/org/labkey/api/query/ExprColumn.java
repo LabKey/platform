@@ -32,7 +32,7 @@ public class ExprColumn extends ColumnInfo
     {
         super(name, parent);
         setAlias(name);
-        setSqlTypeName(ColumnInfo.sqlTypeNameFromSqlType(sqltype, getSqlDialect()));
+        setSqlTypeName(getSqlDialect().sqlTypeNameFromSqlType(sqltype));
         _sql = sql;
         _dependentColumns = dependentColumns;
     }
