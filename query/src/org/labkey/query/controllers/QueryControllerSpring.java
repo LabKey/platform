@@ -37,6 +37,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.study.StudyService;
 import org.labkey.query.CustomViewImpl;
 import org.labkey.query.QueryDefinitionImpl;
+import org.labkey.query.TableXML;
 import org.labkey.query.sql.QParser;
 import org.labkey.query.data.Query;
 import org.labkey.query.design.QueryDocument;
@@ -48,6 +49,8 @@ import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.view.DbUserSchema;
+import org.labkey.data.xml.TablesDocument;
+import org.labkey.data.xml.TableType;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -56,10 +59,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class QueryControllerSpring extends SpringActionController
 {
@@ -1641,8 +1641,40 @@ public class QueryControllerSpring extends SpringActionController
     }
 
 
+    @RequiresPermission(ACL.PERM_READ)
+    public class TableInfoAction extends SimpleViewAction<TableInfoForm>
+    {
+        public ModelAndView getView(TableInfoForm form, BindException errors) throws Exception
+        {
+            TablesDocument ret = TablesDocument.Factory.newInstance();
+            TablesDocument.Tables tables = ret.addNewTables();
 
+            FieldKey[] fields = form.getFieldKeys();
+            if (fields.length != 0)
+            {
+                TableInfo tinfo = QueryView.create(form).getTable();
+                Map<FieldKey, ColumnInfo> columnMap = CustomViewImpl.getColumnInfos(tinfo, Arrays.asList(fields));
+                TableXML.initTable(tables.addNewTable(), tinfo, null, columnMap.values());
+            }
 
+            for (FieldKey tableKey : form.getTableKeys())
+            {
+                TableInfo tableInfo = form.getTableInfo(tableKey);
+                TableType xbTable = tables.addNewTable();
+                TableXML.initTable(xbTable, tableInfo, tableKey);
+            }
+            getViewContext().getResponse().setContentType("text/xml");
+            getViewContext().getResponse().getWriter().write(ret.toString());
+            return null;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
+        }
+    }
+
+    
     // UNDONE: should use POST, change to FormHandlerAction
     @RequiresPermission(ACL.PERM_READ) @RequiresLogin
     public class DeleteViewAction extends SimpleViewAction<DeleteViewForm>
