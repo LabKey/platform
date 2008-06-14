@@ -302,7 +302,7 @@ public class DbSchema
             if (!dbName.equalsIgnoreCase(catalogName))
             {
                 String error = "Catalog name \"" + catalogName + "\" specified in \"" + dbSchemaName + "\" configuration doesn't match database name \"" + dbName + "\" specified in the corresponding datasource \"" + dsName + "\".\n";
-                error = error + "This mismatch means meta data will be read from one database and all database operations will be directed to a different database.  Review your settings in cpas.xml or labkey.xml.";
+                error = error + "This mismatch means meta data will be read from one database and all database operations will be directed to a different database.  Review your settings in labkey.xml or cpas.xml.";
                 throw new ServletException(error);
             }
         }
