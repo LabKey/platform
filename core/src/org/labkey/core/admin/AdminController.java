@@ -700,18 +700,20 @@ public class AdminController extends SpringActionController
     }
 
 
+    // No security checks... anyone (even guests) can view the credits page
     @RequiresPermission(ACL.PERM_NONE)
     public class CreditsAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            // No security checks... anyone (even guests) can view the credits page
+            String jarRegEx = "^([\\w-\\.]+\\.jar)\\|";
 
-            HttpView jars = new CreditsView(getCreditsFile("jars.txt"), getWebInfJars(true), "JAR", "webapp", "^[\\w|-]+\\.jar\\|");
-            HttpView scripts = new CreditsView(getCreditsFile("scripts.txt"), null, "javascript", "/internal/webapp directory", null);
-            HttpView bins = new CreditsView(getCreditsFile("executables.txt"), getBinFilenames(), "executable", "/external/bin directory", null);
+            HttpView jars = new CreditsView("jars.txt", getWebInfJars(true), "JAR", "webapp", jarRegEx);
+            HttpView commonJars = new CreditsView("common_jars.txt", getCommonJars(), "Common JAR", "/external/lib/common directory", jarRegEx);
+            HttpView scripts = new CreditsView("scripts.txt", null, "JavaScript", "/internal/webapp directory", null);
+            HttpView executables = new CreditsView("executables.txt", getBinFilenames(), "Executable", "/external/bin directory", "([\\w\\.]+\\.(exe|dll|manifest|jar))");
 
-            return new VBox(jars, scripts, bins);
+            return new VBox(jars, commonJars, scripts, executables);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -726,61 +728,42 @@ public class AdminController extends SpringActionController
         private final String WIKI_LINE_SEP = "\r\n\r\n";
         private String _html;
 
-        CreditsView(String wikiSource, List<String> filenames, String fileType, String foundWhere, String wikiSourceSearchPattern)
+        CreditsView(String creditsFilename, Set<String> filenames, String fileType, String foundWhere, String wikiSourceSearchPattern) throws IOException
         {
             super();
-            setTitle(StringUtils.capitalize(fileType) + " Files Shipped with LabKey");
+            setTitle(fileType + " Files Shipped with LabKey");
+            String wikiSource = getCreditsFile(creditsFilename);
 
             if (null != filenames)
-            {
-                String undocumented = getUndocumentedFilesText(wikiSource,  filenames, fileType, foundWhere);
-                String missing = getMissingFilesText(wikiSource, filenames, fileType, foundWhere, wikiSourceSearchPattern);
-
-                wikiSource = wikiSource + undocumented + missing;
-            }
+                wikiSource = wikiSource + getErrors(wikiSource, creditsFilename, filenames, fileType, foundWhere, wikiSourceSearchPattern);
 
             WikiRenderer wf = WikiService.get().getRenderer(WikiRendererType.RADEOX);
             _html = wf.format(wikiSource).getHtml();
         }
 
 
-        private String getUndocumentedFilesText(String wikiSource, List<String> filenames, String fileType, String foundWhere)
+        private String getErrors(String wikiSource, String creditsFilename, Set<String> filenames, String fileType, String foundWhere, String wikiSourceSearchPattern)
         {
-            List<String> undocumented = new ArrayList<String>();
+            Set<String> documentedFilenames = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+            Set<String> documentedFilenamesCopy = new HashSet<String>();
 
-            for (String filename : filenames)
-                if (!wikiSource.contains(filename))
-                    undocumented.add(filename);
-
-            if (undocumented.isEmpty())
-                return "";
-            else
-                return WIKI_LINE_SEP + "**WARNING: The following " + fileType + " files were found in your " + foundWhere + " but are not documented in " + fileType.toLowerCase() + "s.txt:**\\\\" + StringUtils.join(undocumented.iterator(), "\\\\");
-        }
-
-
-        private String getMissingFilesText(String wikiSource, List<String> filenames, String fileType, String foundWhere, String wikiSourceSearchPattern)
-        {
-            if (null == wikiSourceSearchPattern)
-                return "";
-
-            Pattern p = Pattern.compile("^[\\w|-]+\\.jar\\|", Pattern.MULTILINE);
+            Pattern p = Pattern.compile(wikiSourceSearchPattern, Pattern.MULTILINE);
             Matcher m = p.matcher(wikiSource);
-
-            List<String> missing = new ArrayList<String>();
 
             while(m.find())
             {
-                String found = wikiSource.substring(m.start(), m.end() - 1);
-
-                if (!filenames.contains(found))
-                    missing.add(found);
+                String found = m.group(1);
+                documentedFilenames.add(found);
             }
 
-            if (missing.isEmpty())
-                return "";
-            else
-                return WIKI_LINE_SEP + "**WARNING: The following " + fileType + " files are documented in " + fileType.toLowerCase() + "s.txt but were not found in your " + foundWhere + ":**\\\\" + StringUtils.join(missing.iterator(), "\\\\");
+            documentedFilenamesCopy.addAll(documentedFilenames);
+            documentedFilenames.removeAll(filenames);
+            filenames.removeAll(documentedFilenamesCopy);
+
+            String undocumentedErrors = filenames.isEmpty() ? "" : WIKI_LINE_SEP + "**WARNING: The following " + fileType + " files were found in your " + foundWhere + " but are not documented in " + creditsFilename + ":**\\\\" + StringUtils.join(filenames.iterator(), "\\\\");
+            String missingErrors = documentedFilenames.isEmpty() ? "" : WIKI_LINE_SEP + "**WARNING: The following " + fileType + " files are documented in " + creditsFilename + " but were not found in your " + foundWhere + ":**\\\\" + StringUtils.join(documentedFilenames.iterator(), "\\\\");
+
+            return undocumentedErrors + missingErrors;
         }
 
 
@@ -792,7 +775,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    private String getCreditsFile(String filename) throws IOException
+    private static String getCreditsFile(String filename) throws IOException
     {
         Module core = ModuleLoader.getInstance().getCoreModule();
         InputStream is = core.getResourceStream("/META-INF/" + filename);
@@ -802,14 +785,14 @@ public class AdminController extends SpringActionController
 
     private static final String _libPath = "/WEB-INF/lib/";
 
-    private List<String> getWebInfJars(boolean removeInternalJars)
+    private Set<String> getWebInfJars(boolean removeInternalJars)
     {
         if (!AppProps.getInstance().isDevMode())
             return null;
 
         //noinspection unchecked
         Set<String> resources = ViewServlet.getViewServletContext().getResourcePaths(_libPath);
-        List<String> filenames = new ArrayList<String>(resources.size());
+        Set<String> filenames = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
 
         // Remove path prefix and copy to a modifiable collection
         for (String filename : resources)
@@ -823,12 +806,31 @@ public class AdminController extends SpringActionController
             filenames.remove("internal.jar");       // Internal JAR
         }
 
-        Collections.sort(filenames, String.CASE_INSENSITIVE_ORDER);
         return filenames;
     }
 
 
-    private List<String> getBinFilenames()
+    private Set<String> getCommonJars()
+    {
+        if (!AppProps.getInstance().isDevMode())
+            return null;
+
+        Module core = ModuleLoader.getInstance().getCoreModule();
+
+        File common = new File(core.getBuildPath(), "../../../external/lib/common");
+
+        if (!common.exists())
+            return null;
+
+        Set<String> filenames = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+
+        addAllChildren(common, filenames);
+
+        return filenames;
+    }
+
+
+    private Set<String> getBinFilenames()
     {
         if (!AppProps.getInstance().isDevMode())
             return null;
@@ -840,7 +842,7 @@ public class AdminController extends SpringActionController
         if (!binRoot.exists())
             return null;
 
-        List<String> filenames = new ArrayList<String>();
+        Set<String> filenames = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
 
         addAllChildren(binRoot, filenames);
 
@@ -862,7 +864,7 @@ public class AdminController extends SpringActionController
         }
     };
 
-    private void addAllChildren(File root, List<String> filenames)
+    private void addAllChildren(File root, Set<String> filenames)
     {
         File[] files = root.listFiles(_fileFilter);
 

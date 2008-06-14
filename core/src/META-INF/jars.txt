@@ -37,7 +37,7 @@ jug-2.0.0-asl.jar|Java Uuid/guid Generator|2.0.0|{link:JUG|http://docs.safehaus.
 junit-4.1.jar|JUnit|4.1|{link:Junit|http://www.junit.org}|{link:CPL 1.0|http://www.opensource.org/licenses/cpl.php}|jeckels|Unit testing
 jxl.jar|Java Excel|2.5.7|{link:Andy Kahn|http://www.andykhan.com/jexcelapi/}|{link:LGPL|http://www.gnu.org/copyleft/lesser.html}|adam|Export to Excel
 log4j-1.2.8.jar|Log4j|1.2.8|{link:Apache|http://logging.apache.org/log4j/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Logging
-mule-1.4.3-embedded.jar|Mule|1.4.3|{link:http://www.mulesource.com}|{link:CPAL 1.0|http://mule.codehaus.org/display/MULE/License}|brendanx|Pipeline
+mule-1.4.3-embedded.jar|Mule|1.4.3|{link:MuleSource|http://www.mulesource.com}|{link:CPAL 1.0|http://mule.codehaus.org/display/MULE/License}|brendanx|Pipeline
 radeox.jar|Radeox|1.0b3|{link:Radeox|http://radeox.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|daves|Wiki renderer
 radeox-api.jar|Radeox|1.0b3|{link:Radeox|http://radeox.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|daves|Wiki renderer
 saaj.jar|SOAP with Attachments API for Java|1.2|{link:SAAJ|http://java.sun.com/webservices/saaj/index.jsp}|{link:Sun - JCP|http://java.sun.com/xml/downloads/saaj.html}|jeckels|Attachments with webservices

@@ -1,0 +1,9 @@
+{table}
+Filename|Component|Version|Source|License|Dev|Purpose
+activation.jar|JavaBeans Activation Framework|1.1.1|{link:Sun|http://java.sun.com/javase/technologies/desktop/javabeans/jaf/index.jsp}|Sun Binary Distribution License|adam|JavaMail dependency
+jtds.jar|jTDS JDBC Driver|1.2.2|{link:SourceForge|http://jtds.sourceforge.net}|{link:LGPL|http://jtds.sourceforge.net/license.html}|adam|Connect with Microsoft SQL Server databases
+mail.jar|JavaMail|1.4.1|{link:Sun|http://java.sun.com/products/javamail}|Sun Binary Distribution License|adam|Send email from LabKey Server
+postgresql.jar|PostgreSQL JDBC Driver|603 JDBC 3|{link:postgres.org|http://jdbc.postgresql.org/index.html}|{link:BSD|http://jdbc.postgresql.org/license.html}|adam|Connect with PostgreSQL databases
+{table}
+
+

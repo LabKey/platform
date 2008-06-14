@@ -205,6 +205,7 @@ cabig/src/org/labkey/cabig/caBIGModule.java -text
 cabig/src/org/labkey/cabig/caBIGSchema.java -text
 cabig/src/org/labkey/cabig/view/publish.jsp -text
 core/module.properties -text
+core/src/META-INF/common_jars.txt -text
 core/src/META-INF/core.xml -text
 core/src/META-INF/core/scripts/postgresql/core-0.00-1.30.sql -text
 core/src/META-INF/core/scripts/postgresql/core-1.20-1.30.sql -text

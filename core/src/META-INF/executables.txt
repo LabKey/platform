@@ -103,7 +103,7 @@ Bsdtar creates and manipulates streaming archive files (tar, tar.gz, tar.bz2, cp
 
 1 X! Tandem
 
-Developer: {link:The Global Proteom Machine Organization|http://www.thegpm.org/}\\
+Developer: {link:The Global Proteome Machine Organization|http://www.thegpm.org/}\\
 License: {link:Artistic License|http://www.opensource.org/licenses/artistic-license.php}\\
 Source: {link:X! Tandem|http://www.thegpm.org/TANDEM/index.html}
 
@@ -119,7 +119,7 @@ License:\\
 Source:
 
 - dot.exe
-   -- freetype6.dll  (Do these come from somewhere else?)
+   -- freetype6.dll
    -- jpeg.dll
    -- png.dll
    -- z.dll

@@ -40,9 +40,9 @@ import java.util.regex.Pattern;
  */
 
 // Dialect specifics for PostgreSQL
-public class SqlDialectPostgreSQL extends SqlDialect
+class SqlDialectPostgreSQL extends SqlDialect
 {
-    public SqlDialectPostgreSQL()
+    SqlDialectPostgreSQL()
     {
         reservedWordSet = new CaseInsensitiveHashSet(PageFlowUtil.set(
             "ALL", "ANALYSE", "ANALYZE", "AND", "ANY", "ARRAY", "AS", "ASC", "ASYMMETRIC",
