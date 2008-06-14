@@ -17,9 +17,10 @@
 %>
 <%@ page import="org.labkey.query.controllers.PropertiesForm"%>
 <%@ page import="org.labkey.api.query.QueryAction"%>
-<%@ page extends="org.labkey.query.controllers.Page" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<% PropertiesForm form = (PropertiesForm) __form; %>
+<% PropertiesForm form = (PropertiesForm) HttpView.currentModel(); %>
 <form method="POST" action="<%=form.urlFor(QueryAction.propertiesQuery)%>">
     <p>Name: <%=h(form.getQueryDef().getName())%></p>
     <p>Description:<br>

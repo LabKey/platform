@@ -21,11 +21,12 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.query.controllers.ChooseColumnsForm" %>
 <%@ page import="java.util.Collections" %>
-<%@ page extends="org.labkey.api.jsp.FormPage" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <labkey:errors />
 <%
-    ChooseColumnsForm form = (ChooseColumnsForm) __form;
+    ChooseColumnsForm form = (ChooseColumnsForm) HttpView.currentModel();
     CustomView view = form.getCustomView();
     ActionURL urlTableInfo = form.getSchema().urlFor(QueryAction.tableInfo);
     urlTableInfo.addParameter(QueryParam.queryName.toString(), form.getQueryName());
@@ -104,7 +105,7 @@
 <% if (form.isCustomViewInherited()) { %>
     <p><b>This grid view can't be edited since it is inherited from project <%=view.getContainer().getPath()%>.</b></p>
 <% }
-   else if (getUser().isGuest()) { %>
+   else if (getViewContext().getUser().isGuest()) { %>
     <p><b>You are not currently logged in.  Changes you make here will only persist for the duration of your session.</b></p>
 <% } %>
 <table class="normal" cellspacing=0 cellpadding=0>

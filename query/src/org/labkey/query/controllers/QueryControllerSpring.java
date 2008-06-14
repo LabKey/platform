@@ -18,8 +18,6 @@ package org.labkey.query.controllers;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.beehive.netui.pageflow.annotations.Jpf;
-import org.apache.beehive.netui.pageflow.Forward;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
@@ -33,17 +31,22 @@ import org.labkey.api.query.*;
 import org.labkey.api.security.*;
 import org.labkey.api.util.AppProps;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.study.StudyService;
 import org.labkey.query.CustomViewImpl;
 import org.labkey.query.QueryDefinitionImpl;
+import org.labkey.query.sql.QParser;
 import org.labkey.query.data.Query;
 import org.labkey.query.design.QueryDocument;
 import org.labkey.query.design.ViewDocument;
+import org.labkey.query.design.ErrorsDocument;
+import org.labkey.query.design.DgMessage;
 import org.labkey.query.persist.DbUserSchemaDef;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
+import org.labkey.query.persist.CstmView;
 import org.labkey.query.view.DbUserSchema;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -60,7 +63,7 @@ import java.util.Map;
 
 public class QueryControllerSpring extends SpringActionController
 {
-    static DefaultActionResolver _actionResolver = new BeehivePortingActionResolver(QueryController.class, QueryControllerSpring.class);
+    static DefaultActionResolver _actionResolver = new DefaultActionResolver(QueryControllerSpring.class);
 
     public QueryControllerSpring() throws Exception
     {
@@ -684,7 +687,7 @@ public class QueryControllerSpring extends SpringActionController
                     errors.reject(ERROR_MSG, "The query '" + form.getQueryName() + "' doesn't exist.");
                 }
             }
-            return FormPage.getView(QueryController.class, form, errors, "chooseColumns.jsp");
+            return new JspView<ChooseColumnsForm>(QueryControllerSpring.class, "chooseColumns.jsp", form, errors);
         }
 
         public boolean handlePost(ChooseColumnsForm form, BindException errors) throws Exception
@@ -761,7 +764,6 @@ public class QueryControllerSpring extends SpringActionController
     }
 
 
-
     @RequiresPermission(ACL.PERM_READ)
     public class PropertiesQueryAction extends FormViewAction<PropertiesForm>
     {
@@ -779,7 +781,7 @@ public class QueryControllerSpring extends SpringActionController
             if (queryDef == null)
                 HttpView.throwNotFound("Query not found");
             _form = form;
-            return FormPage.getView(QueryController.class, form, errors, "propertiesQuery.jsp");
+            return new JspView<PropertiesForm>(QueryControllerSpring.class, "propertiesQuery.jsp", form, errors);
         }
 
         public boolean handlePost(PropertiesForm form, BindException errors) throws Exception
@@ -958,13 +960,13 @@ public class QueryControllerSpring extends SpringActionController
 
     protected boolean isSchemaEditable(UserSchema schema)
     {
-        if(!getViewContext().getContainer().hasPermission(getUser(), ACL.PERM_UPDATE | ACL.PERM_INSERT | ACL.PERM_DELETE))
+        if (!getViewContext().getContainer().hasPermission(getUser(), ACL.PERM_UPDATE | ACL.PERM_INSERT | ACL.PERM_DELETE))
             return false;
-        if(schema.getSchemaName().equalsIgnoreCase("lists"))
+        if (schema.getSchemaName().equalsIgnoreCase("lists"))
             return true;
-        else if(schema.getSchemaName().equalsIgnoreCase("study"))
+        else if (schema.getSchemaName().equalsIgnoreCase("study"))
             return StudyService.get().areDatasetsEditable(getViewContext().getContainer());
-        else if(schema instanceof DbUserSchema)
+        else if (schema instanceof DbUserSchema)
             return ((DbUserSchema)schema).areTablesEditable();
         else
             return false;
@@ -1611,6 +1613,7 @@ public class QueryControllerSpring extends SpringActionController
     }
 
 
+    // UNDONE: should use POST, change to FormHandlerAction
     @RequiresSiteAdmin
     public class AdminReloadDbUserSchemaAction extends SimpleViewAction<DbUserSchemaForm>
     {
@@ -1637,7 +1640,255 @@ public class QueryControllerSpring extends SpringActionController
         }
     }
 
-    
+
+
+
+    // UNDONE: should use POST, change to FormHandlerAction
+    @RequiresPermission(ACL.PERM_READ) @RequiresLogin
+    public class DeleteViewAction extends SimpleViewAction<DeleteViewForm>
+    {
+        public ModelAndView getView(DeleteViewForm form, BindException errors) throws Exception
+        {
+            CustomView view = form.getCustomView();
+            if (view == null)
+            {
+                HttpView.throwNotFound();
+                return null;
+            }
+            if (view.getOwner() == null)
+            {
+                if (!getViewContext().getContainer().hasPermission(getUser(), ACL.PERM_ADMIN))
+                    HttpView.throwUnauthorized();
+            }
+            view.delete(getUser(), getViewContext().getRequest());
+            return HttpView.redirect(getSuccessURL(form));
+        }
+
+        public ActionURL getSuccessURL(DeleteViewForm form)
+        {
+            String returnURL = getViewContext().getRequest().getParameter(QueryParam.srcURL.toString());
+            if (returnURL != null)
+                return new ActionURL(returnURL);
+            return form.urlFor(QueryAction.begin);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_NONE)
+    public class CheckSyntaxAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException bindErrors) throws Exception
+        {
+            getPageConfig().setTemplate(PageConfig.Template.None);
+
+            String sql = (String)getProperty("sql");
+            if (sql == null)
+                sql = PageFlowUtil.getStreamContentsAsString(getViewContext().getRequest().getInputStream());
+            ErrorsDocument ret = ErrorsDocument.Factory.newInstance();
+            org.labkey.query.design.Errors xbErrors = ret.addNewErrors();
+            List<QueryParseException> errors = new ArrayList<QueryParseException>();
+            try
+            {
+                QParser.parseExpr(sql, errors);
+            }
+            catch (Throwable t)
+            {
+                Logger.getInstance(QueryControllerSpring.class).error("Error", t);
+                errors.add(new QueryParseException("Unhandled exception: " + t, null, 0, 0));
+            }
+            for (QueryParseException e : errors)
+            {
+                DgMessage msg = xbErrors.addNewError();
+                msg.setStringValue(e.getMessage());
+                msg.setLine(e.getLine());
+            }
+            HtmlView view = new HtmlView(ret.toString());
+            view.setContentType("text/xml");
+            view.setFrame(WebPartView.FrameType.NONE);
+            return view;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_READ) @RequiresLogin
+    public class ManageViewsAction extends SimpleViewAction<QueryForm>
+    {
+        QueryForm _form;
+
+        public ModelAndView getView(QueryForm form, BindException errors) throws Exception
+        {
+            _form = form;
+            return new JspView<QueryForm>(QueryControllerSpring.class, "manageViews.jsp", form, errors);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            new BeginAction().appendNavTrail(root);
+            root.addChild("Manage Views", QueryControllerSpring.this.getViewContext().getActionURL());
+            return root;
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class InternalDeleteView extends ConfirmAction<InternalViewForm>
+    {
+        public ModelAndView getConfirmView(InternalViewForm form, BindException errors) throws Exception
+        {
+            return new JspView<InternalViewForm>(QueryControllerSpring.class, "internalDeleteView.jsp", form, errors);
+        }
+
+        public boolean handlePost(InternalViewForm form, BindException errors) throws Exception
+        {
+            CstmView view = form.getViewAndCheckPermission();
+            QueryManager.get().delete(getUser(), view);
+            return true;
+        }
+
+        public void validateCommand(InternalViewForm internalViewForm, Errors errors)
+        {
+        }
+
+        public ActionURL getSuccessURL(InternalViewForm internalViewForm)
+        {
+            return new ActionURL("query", "manageViews", getContainer());
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_READ) @RequiresLogin
+    public class InternalSourceViewAction extends FormViewAction<InternalSourceViewForm>
+    {
+        public void validateCommand(InternalSourceViewForm target, Errors errors)
+        {
+        }
+
+        public ModelAndView getView(InternalSourceViewForm form, boolean reshow, BindException errors) throws Exception
+        {
+            CstmView view = form.getViewAndCheckPermission();
+            form.ff_columnList = view.getColumns();
+            form.ff_filter = view.getFilter();
+            return new JspView<InternalSourceViewForm>(QueryControllerSpring.class, "internalSourceView.jsp", form, errors);
+        }
+
+        public boolean handlePost(InternalSourceViewForm form, BindException errors) throws Exception
+        {
+            CstmView view = form.getViewAndCheckPermission();
+            view.setColumns(form.ff_columnList);
+            view.setFilter(form.ff_filter);
+            QueryManager.get().update(getUser(), view);
+            return true;
+        }
+
+        public ActionURL getSuccessURL(InternalSourceViewForm form)
+        {
+            return new ActionURL("query", "manageViews", getViewContext().getContainer());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            new ManageViewsAction().appendNavTrail(root);
+            root.addChild("Edit source of Grid View");
+            return root;
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_READ) @RequiresLogin
+    public class InternalNewViewAction extends FormViewAction<InternalNewViewForm>
+    {
+        int _customViewId = 0;
+        
+        public void validateCommand(InternalNewViewForm form, Errors errors)
+        {
+            if (StringUtils.trimToNull(form.ff_schemaName) == null)
+            {
+                errors.reject(ERROR_MSG, "Schema name cannot be blank.");
+            }
+            if (StringUtils.trimToNull(form.ff_queryName) == null)
+            {
+                errors.reject(ERROR_MSG, "Query name cannot be blank");
+            }
+        }
+
+        public ModelAndView getView(InternalNewViewForm form, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView<InternalNewViewForm>(QueryControllerSpring.class, "internalNewView.jsp", form, errors);
+        }
+
+        public boolean handlePost(InternalNewViewForm form, BindException errors) throws Exception
+        {
+            if (form.ff_share)
+            {
+                if (!getContainer().hasPermission(getUser(),ACL.PERM_ADMIN))
+                    HttpView.throwUnauthorized();
+            }
+            CstmView[] existing = QueryManager.get().getColumnLists(getContainer(), form.ff_schemaName, form.ff_queryName, form.ff_viewName, form.ff_share ? null : getUser(), false);
+            CstmView view = null;
+            if (existing.length != 0)
+            {
+                view = existing[0];
+            }
+            else
+            {
+                view = new CstmView();
+                view.setSchema(form.ff_schemaName);
+                view.setQueryName(form.ff_queryName);
+                view.setName(form.ff_viewName);
+                view.setContainerId(getContainer().getId());
+                if (form.ff_share)
+                {
+                    view.setCustomViewOwner(null);
+                }
+                else
+                {
+                    view.setCustomViewOwner(getUser().getUserId());
+                }
+                if (form.ff_inherit)
+                {
+                    view.setFlags(QueryManager.get().setCanInherit(view.getFlags(), form.ff_inherit));
+                }
+                InternalViewForm.checkEdit(getViewContext(), view);
+                try
+                {
+                    view = QueryManager.get().insert(getUser(), view);
+                }
+                catch (Exception e)
+                {
+                    Logger.getInstance(QueryControllerSpring.class).error("Error", e);
+                    errors.reject(ERROR_MSG, "An exception occurred: " + e);
+                    return false;
+                }
+                _customViewId = view.getCustomViewId();
+            }
+            return true;
+        }
+
+        public ActionURL getSuccessURL(InternalNewViewForm form)
+        {
+            ActionURL forward = new ActionURL("query", "internalSourceView", getContainer());
+            forward.addParameter("customViewId", Integer.toString(_customViewId));
+            return forward;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            //new ManageViewsAction().appendNavTrail(root);
+            root.addChild("Create New Grid View");
+            return root;
+        }
+    }
+
     public static boolean isConstraintException(SQLException x)
     {
         String sqlState = x.getSQLState();

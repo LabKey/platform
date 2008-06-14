@@ -1272,7 +1272,6 @@ query/src/org/labkey/query/controllers/MetadataForm.java -text
 query/src/org/labkey/query/controllers/NewQueryForm.java -text
 query/src/org/labkey/query/controllers/Page.java -text
 query/src/org/labkey/query/controllers/PropertiesForm.java -text
-query/src/org/labkey/query/controllers/QueryController.java -text
 query/src/org/labkey/query/controllers/QueryControllerSpring.java -text
 query/src/org/labkey/query/controllers/QueryPage.java -text
 query/src/org/labkey/query/controllers/SourceForm.java -text

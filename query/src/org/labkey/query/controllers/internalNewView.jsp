@@ -17,12 +17,12 @@
 %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.query.controllers.InternalNewViewForm" %>
-<%@ page extends="org.labkey.api.jsp.FormPage"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<% InternalNewViewForm form = (InternalNewViewForm) __form;
-    ActionURL urlPost = new ActionURL("query", "internalNewView", getContainer());
-    ActionURL urlCancel = new ActionURL("query", "manageViews", getContainer());
-
+<% InternalNewViewForm form = (InternalNewViewForm) HttpView.currentModel();
+    ActionURL urlPost = new ActionURL("query", "internalNewView", getViewContext().getContainer());
+    ActionURL urlCancel = new ActionURL("query", "manageViews", getViewContext().getContainer());
 %>
 <labkey:errors />
 <form method="POST" action="<%=h(urlPost)%>">

@@ -24,7 +24,9 @@
 <%@ page import="org.labkey.query.persist.CstmView" %>
 <%@ page import="org.labkey.query.persist.QueryManager" %>
 <%@ page import="java.util.*" %>
-<%@ page extends="org.labkey.api.jsp.FormPage" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%! String userIdToString(Integer userId)
 {
@@ -40,17 +42,19 @@
     return user.toString();
 }
 %>
-
-<% QueryForm form = (QueryForm) __form;
+<%
+    QueryForm form = (QueryForm) HttpView.currentModel();
+    User user = getViewContext().getUser();
+    Container c = getViewContext().getContainer();
     QueryManager mgr = QueryManager.get();
     List<CstmView> views = new ArrayList();
     if (form.getContext().hasPermission(ACL.PERM_UPDATE))
     {
-        views.addAll(Arrays.asList(mgr.getColumnLists(getContainer(), null, null, null, null, false)));
+        views.addAll(Arrays.asList(mgr.getColumnLists(c, null, null, null, null, false)));
     }
-    if (!getUser().isGuest())
+    if (!user.isGuest())
     {
-        views.addAll(Arrays.asList(mgr.getColumnLists(getContainer(), null, null, null, getUser(), false)));
+        views.addAll(Arrays.asList(mgr.getColumnLists(c, null, null, null, user, false)));
     }
     Collections.sort(views, new Comparator<CstmView>()
     {
@@ -101,10 +105,10 @@
         <td><%=userIdToString(view.getCustomViewOwner())%>
         </td>
         <td><%=mgr.canInherit(view.getFlags()) ? "yes" : ""%></td>
-        <td><% ActionURL urlDelete = new ActionURL("query", "internalDeleteView", getContainer());
+        <td><% ActionURL urlDelete = new ActionURL("query", "internalDeleteView", c);
         urlDelete.addParameter("customViewId", Integer.toString(view.getCustomViewId())); %>
             <labkey:link href="<%=urlDelete%>" text="delete" />
-            <% ActionURL urlSource = new ActionURL("query", "internalSourceView", getContainer());
+            <% ActionURL urlSource = new ActionURL("query", "internalSourceView", c);
             urlSource.addParameter("customViewId", Integer.toString(view.getCustomViewId())); %>
             <labkey:link href="<%=urlSource%>" text="edit" />
         </td>
@@ -114,5 +118,5 @@
         }%>
 </table>
 
-<% ActionURL urlNewView = new ActionURL("query", "internalNewView", getContainer()); %>
+<% ActionURL urlNewView = new ActionURL("query", "internalNewView", c); %>
 <labkey:button text="create new view" href="<%=urlNewView%>"/>
