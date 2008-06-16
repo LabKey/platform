@@ -19,6 +19,7 @@ package org.labkey.query.reports;
 import org.apache.beehive.netui.pageflow.FormData;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.labkey.api.action.*;
 import org.labkey.api.attachments.AttachmentForm;
@@ -40,6 +41,8 @@ import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.view.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.common.util.Pair;
@@ -497,6 +500,62 @@ public class ReportsController extends SpringActionController
             return null;
         }
     }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class ReportInfoAction extends SimpleViewAction<ReportDesignBean>
+    {
+        public ModelAndView getView(ReportDesignBean form, BindException errors) throws Exception
+        {
+            return new ReportInfoView(form.getReport());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Report Debug Information");
+        }
+    }
+
+    public static class ReportInfoView extends HttpView
+    {
+        private Report _report;
+
+        public ReportInfoView(Report report)
+        {
+            _report = report;
+        }
+
+        protected void renderInternal(Object model, PrintWriter out) throws Exception
+        {
+            if (_report != null)
+            {
+                out.write("<table>");
+                addRow(out, "Name", PageFlowUtil.filter(_report.getDescriptor().getReportName()));
+
+                User user = UserManager.getUser(_report.getDescriptor().getCreatedBy());
+                if (user != null)
+                    addRow(out, "Created By", PageFlowUtil.filter(user.getDisplayName(getViewContext())));
+
+                addRow(out, "Key", PageFlowUtil.filter(_report.getDescriptor().getReportKey()));
+                for (Map.Entry<String, Object> prop : _report.getDescriptor().getProperties().entrySet())
+                {
+                    addRow(out, PageFlowUtil.filter(prop.getKey()), PageFlowUtil.filter(ObjectUtils.toString(prop.getValue())));
+                }
+                out.write("<table>");
+            }
+            else
+                out.write("Report not found");
+        }
+
+        private void addRow(PrintWriter out, String key, String value)
+        {
+            out.write("<tr><td>");
+            out.write(key);
+            out.write("</td><td>");
+            out.write(value);
+            out.write("</td></tr>");
+        }
+    }
+
     @RequiresPermission(ACL.PERM_READ)
     public class RenderRReportAction extends CreateRReportAction
     {
