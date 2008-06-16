@@ -38,10 +38,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -136,6 +133,8 @@ public class ReportDescriptor extends Entity
 
     public String getProperty(String key){return (String)_props.get(key);}
 
+    public Map<String, Object> getProperties() {return Collections.unmodifiableMap(_props);}
+    
     public void setProperty(ReportProperty prop, String value)
     {
         _props.put(prop.toString(), value);

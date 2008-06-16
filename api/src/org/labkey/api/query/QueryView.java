@@ -686,9 +686,9 @@ public class QueryView extends WebPartView<Object>
         return button;
     }
 
-    private void addChild(NavTree menu, String label, String paramValue, ActionURL url, String currentView, String iconPath)
+    protected void addChild(NavTree menu, String label, String paramValue, ActionURL url, String currentView, String iconPath)
     {
-        NavTree item = menu.addChild(label, url.replaceParameter(param(QueryParam.viewName), paramValue).getLocalURIString());
+        NavTree item = menu.addChild(label, url.clone().replaceParameter(param(QueryParam.viewName), paramValue).getLocalURIString());
         if (paramValue.equals(currentView))
             item.setSelected(true);
         else
