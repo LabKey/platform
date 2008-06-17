@@ -42,11 +42,17 @@ public interface PipelineStatusFile
     {
         String toXML(PipelineJob job);
 
-        void storeJob(ViewBackgroundInfo info, PipelineJob job) throws SQLException;
-
         PipelineJob fromXML(String xml);
 
+        void storeJob(ViewBackgroundInfo info, PipelineJob job) throws SQLException;
+
         PipelineJob getJob(String jobId) throws SQLException;
+
+        void split(ViewBackgroundInfo info, PipelineJob job)
+                throws IOException, SQLException;
+
+        void join(ViewBackgroundInfo info, PipelineJob job)
+                throws IOException, SQLException;
     }
 
     int getRowId();

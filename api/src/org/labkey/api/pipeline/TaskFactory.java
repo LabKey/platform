@@ -41,6 +41,10 @@ public interface TaskFactory
 
     boolean isJobComplete(PipelineJob job) throws IOException, SQLException;
 
+    boolean isParticipant(PipelineJob job) throws IOException, SQLException;
+
+    boolean isJoin();
+
     ExecutionLocation getExecutionLocation();
 
     enum ExecutionLocation { local, remote, cluster }

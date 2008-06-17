@@ -120,10 +120,15 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         setLogFile(FT_LOG.newFile(_dirAnalysis, _baseName), false);
     }
 
-    public AbstractFileAnalysisJob[] getSingleFileJobs()
+    public boolean isSplittable()
+    {
+        return getInputFiles().length > 1;
+    }
+
+    public PipelineJob[] createSplitJobs()
     {
         if (getInputFiles().length == 1)
-            return new AbstractFileAnalysisJob[0];
+            return new AbstractFileAnalysisJob[] { this };
 
         ArrayList<AbstractFileAnalysisJob> jobs = new ArrayList<AbstractFileAnalysisJob>();
         for (File file : getInputFiles())

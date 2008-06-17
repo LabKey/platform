@@ -25,6 +25,4 @@ public interface TaskFactorySettings
     TaskId getId();
 
     TaskId getImplId();
-
-    String getLocation();
 }

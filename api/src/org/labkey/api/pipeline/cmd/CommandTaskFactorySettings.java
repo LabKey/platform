@@ -33,6 +33,7 @@ import java.io.IOException;
 public class CommandTaskFactorySettings extends AbstractTaskFactorySettings
 {
     private String _cloneName;
+    private String _statusName;
     private Map<String, TaskPath> _inputPaths = new HashMap<String, TaskPath>();
     private Map<String, TaskPath> _outputPaths = new HashMap<String, TaskPath>();
     private ListToCommandArgs _converter = new ListToCommandArgs();
@@ -71,6 +72,16 @@ public class CommandTaskFactorySettings extends AbstractTaskFactorySettings
     public void setCloneName(String cloneName)
     {
         _cloneName = cloneName;
+    }
+
+    public String getStatusName()
+    {
+        return _statusName;
+    }
+
+    public void setStatusName(String statusName)
+    {
+        _statusName = statusName;
     }
 
     public FileType getInputType()

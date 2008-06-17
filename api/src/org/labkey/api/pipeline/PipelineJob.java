@@ -31,6 +31,7 @@
 package org.labkey.api.pipeline;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.log4j.*;
 import org.apache.log4j.spi.HierarchyEventListener;
 import org.apache.log4j.spi.LoggerFactory;
@@ -168,9 +169,15 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public PipelineJob(PipelineJob job)
     {
+        // Not yet queued
+        _queue = null;
+
+        // New ID
+        _jobGUID = GUID.makeGUID();
+
+        // Copy everything else
         _info = job._info;
         _provider = job._provider;
-        _jobGUID = GUID.makeGUID();
         _parentGUID = job._jobGUID;
         _rootURI = job._rootURI;
         _logFile = job._logFile;
@@ -180,11 +187,10 @@ abstract public class PipelineJob extends Job implements Serializable
         _errors = job._errors;
         _loggerLevel = job._loggerLevel;
         _logger = job._logger;
-        _queue = job._queue;
 
-        // This new job needs to run its own pipeline from the beginning.
-        _activeTaskId = null;
-        _activeTaskStatus = TaskStatus.waiting;
+        _activeTaskId = job._activeTaskId;
+        _activeTaskStatus = job._activeTaskStatus;
+
     }
 
     public boolean isStarted()
@@ -389,17 +395,17 @@ abstract public class PipelineJob extends Job implements Serializable
         }
     }
 
-    public void store() throws Exception
-    {
-        PipelineJobService.get().getJobStore().storeJob(getInfo(), this);
-    }
-
-    public void setQueue(PipelineQueue queue, String initialState)
+    public void restoreQueue(PipelineQueue queue)
     {
         if (null != _queue)
             throw new IllegalStateException();
         _queue = queue;
-
+    }
+    
+    public void setQueue(PipelineQueue queue, String initialState)
+    {
+        restoreQueue(queue);
+        
         // Initialize the task pipeline
         if (getTaskPipeline() != null && getActiveTaskId() == null)
             runStateMachine();
@@ -407,6 +413,11 @@ abstract public class PipelineJob extends Job implements Serializable
         // Initialize status.
         if (_logFile != null)
             setStatus(initialState);
+    }
+
+    public void clearQueue()
+    {
+        _queue = null;
     }
 
     abstract public ActionURL getStatusHref();
@@ -495,66 +506,28 @@ abstract public class PipelineJob extends Job implements Serializable
         }
 
         TaskId[] progression = pipeline.getTaskProgression();
+        int i = 0;
+        if (_activeTaskId != null)
+        {
+            i = ArrayUtils.indexOf(progression, _activeTaskId);
+            if (i == -1)
+            {
+                assert false : "Active task not found in task pipeline.";
+                return false;                
+            }
+        }
 
         switch (_activeTaskStatus)
         {
             case waiting:
-                // See if the job has not yet started.
-                if (_activeTaskId == null)
-                    setActiveTaskId(progression[0]);
-
-                // If it is a local task, then it can be run.
-                return isActiveTaskLocal();
+                return findRunnableTask(progression, i);
 
             case complete:
                 // See if the job has already completed.
                 if (_activeTaskId == null)
                     return false;
                 
-                // Find the next task.
-                for (int i = 0; i < progression.length; i++)
-                {
-                    if (_activeTaskId.equals(progression[i]))
-                    {
-                        // Search for next task that is not already complete
-                        boolean complete = true;
-                        while (complete && ++i < progression.length)
-                        {
-                            try
-                            {
-                                complete = PipelineJobService.get().getTaskFactory(progression[i]).isJobComplete(this);
-                            }
-                            catch (IOException e)
-                            {
-                                error(e.getMessage());
-                                return false;
-                            }
-                            catch (SQLException e)
-                            {
-                                error(e.getMessage());
-                                return false;
-                            }
-                        }
-
-                        if (i < progression.length)
-                        {
-                            // Set next task to be run
-                            setActiveTaskId(progression[i]);
-
-                            // If it is local, then it can be run
-                            return isActiveTaskLocal();
-                        }
-                        else
-                        {
-                            // Job is complete
-                            setActiveTaskId(null);
-                            return false;
-                        }
-                    }
-                }
-
-                assert false : "Active task not found in task pipeline.";
-                return false;
+                return findRunnableTask(progression, i + 1);
 
             case error:
             case running:
@@ -563,10 +536,188 @@ abstract public class PipelineJob extends Job implements Serializable
         }
     }
 
+    public boolean findRunnableTask(TaskId[] progression, int i)
+    {
+        // Search for next task that is not already complete
+        TaskFactory factory = null;
+        while (i < progression.length)
+        {
+            try
+            {
+                factory = PipelineJobService.get().getTaskFactory(progression[i]);
+                // Stop, if this task requires a change in join state
+                if ((factory.isJoin() && isSplit()) || (!factory.isJoin() && isSplittable()))
+                    break;
+                // Stop, if this task is part of processing this job, and not complete
+                if (factory.isParticipant(this) && !factory.isJobComplete(this))
+                    break;
+            }
+            catch (IOException e)
+            {
+                error(e.getMessage());
+                return false;
+            }
+            catch (SQLException e)
+            {
+                error(e.getMessage());
+                return false;
+            }
+
+            i++;
+        }
+
+        if (i < progression.length)
+        {
+            assert factory != null : "Factory not found.";
+
+            // Set next task to be run
+            setActiveTaskId(factory.getId());
+
+            if (factory.isJoin() && isSplit())
+            {
+                join();
+                return false;
+            }
+            else if (!factory.isJoin() && isSplittable())
+            {
+                split();
+                return false;
+            }
+
+            // If it is local, then it can be run
+            return isActiveTaskLocal();
+        }
+        else
+        {
+            // Job is complete
+            setActiveTaskId(null);
+            return false;
+        }
+    }
+
     public void run()
     {
         while (runStateMachine())
             runActiveTask();
+    }
+
+    /**
+     * Override and return true for job that may be split.  Also, override
+     * the <code>createSplitJobs()</code> method to return the sub-jobs.
+     *
+     * @return true if the job may be split
+     */
+    public boolean isSplittable()
+    {
+        return false;
+    }
+
+    /**
+     * Returns true if all tasks in this progression to be run are split with no
+     * potential joins.
+     *
+     * @return true if all tasks are split
+     */
+    public boolean isAllSplit()
+    {
+        if (!isSplittable())
+            return false;
+
+        TaskPipeline tp = getTaskPipeline();
+        if (tp == null)
+            return false;
+
+        boolean seenSplit = false;
+        boolean seenId = (getActiveTaskId() == null);
+        for (TaskId id : tp.getTaskProgression())
+        {
+            // Skip everything up to the active TaskId
+            if (!seenId)
+            {
+                if (id == getActiveTaskId())
+                    seenId = true;
+                else
+                    continue;
+            }
+            
+            TaskFactory factory = PipelineJobService.get().getTaskFactory(id);
+            if (factory.isJoin())
+            {
+                try
+                {
+                    if (factory.isParticipant(this))
+                        return false;
+                }
+                catch (Exception e)
+                {
+                    // If participant check fails, assume it is.
+                    return false;
+                }
+            }
+            else
+            {
+                seenSplit = true;
+            }
+        }
+
+        return seenSplit;
+    }
+
+    /**
+     * Returns true if this is a split job, as determined by whether it has a parent.
+     *
+     * @return true if this is a split job
+     */
+    public boolean isSplit()
+    {
+        return getParentGUID() != null;
+    }
+
+    /**
+     * Override and return instances of sub-jobs for a splittable job.
+     *
+     * @return sub-jobs requiring separate processing
+     */
+    public PipelineJob[] createSplitJobs()
+    {
+        return new PipelineJob[] { this };
+    }
+
+    public void store() throws IOException, SQLException
+    {
+        PipelineJobService.get().getJobStore().storeJob(getInfo(), this);
+    }
+
+    public void split()
+    {
+        try
+        {
+            PipelineJobService.get().getJobStore().split(getInfo(), this);
+        }
+        catch (IOException e)
+        {
+            error(e.getMessage(), e);
+        }
+        catch (SQLException e)
+        {
+            error(e.getMessage(), e);            
+        }
+    }
+    
+    public void join()
+    {
+        try
+        {
+            PipelineJobService.get().getJobStore().join(getInfo(), this);
+        }
+        catch (IOException e)
+        {
+            error(e.getMessage(), e);
+        }
+        catch (SQLException e)
+        {
+            error(e.getMessage(), e);
+        }
     }
 
     /////////////////////////////////////////////////////////////////////////

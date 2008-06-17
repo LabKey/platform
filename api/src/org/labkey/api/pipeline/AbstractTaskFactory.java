@@ -15,6 +15,9 @@
  */
 package org.labkey.api.pipeline;
 
+import java.io.IOException;
+import java.sql.SQLException;
+
 /**
  * <code>AbstractTaskFactory</code>
  *
@@ -23,6 +26,8 @@ package org.labkey.api.pipeline;
 abstract public class AbstractTaskFactory implements TaskFactory, Cloneable
 {
     private TaskId _id;
+    private TaskId _dependencyId;
+    private boolean _join;
     private ExecutionLocation _executionLocation;
 
     public AbstractTaskFactory(Class namespaceClass)
@@ -40,32 +45,68 @@ abstract public class AbstractTaskFactory implements TaskFactory, Cloneable
         _id = id;
     }
 
-    public AbstractTaskFactory(TaskFactorySettings settings)
-    {
-        this(settings.getId());
-
-        if (settings.getLocation() != null)
-            _executionLocation = ExecutionLocation.valueOf(settings.getLocation());
-    }
-
     public TaskFactory cloneAndConfigure(TaskFactorySettings settings) throws CloneNotSupportedException
     {
         AbstractTaskFactory factory = (AbstractTaskFactory) clone();
 
-        return factory.configure(settings);
+        return factory.configure((AbstractTaskFactorySettings) settings);
     }
 
-    private TaskFactory configure(TaskFactorySettings settings)
+    private TaskFactory configure(AbstractTaskFactorySettings settings)
     {
         _id = settings.getId();
+        if (settings.getDependencyId() != null)
+            _dependencyId = settings.getDependencyId();
+        if (settings.isJoinSet())
+            _join = settings.isJoin();
         if (settings.getLocation() != null)
             _executionLocation = ExecutionLocation.valueOf(settings.getLocation());
         return this;
     }
 
+    /**
+     * By default tasks participate, but may be made conditional on other tasks.
+     * Override to remove a task from processing under certain conditions.
+     *  
+     * @param job the <code>PipelineJob</code> about which task is being interrogated
+     * @return true if task is part of processing this job
+     * @throws IOException
+     * @throws SQLException
+     */
+    public boolean isParticipant(PipelineJob job) throws IOException, SQLException
+    {
+        if (_dependencyId != null)
+        {
+            TaskFactory factory = PipelineJobService.get().getTaskFactory(_dependencyId);
+            return factory.isParticipant(job);
+        }
+        
+        return true;
+    }
+
     public TaskId getId()
     {
         return _id;
+    }
+
+    public TaskId getDependencyId()
+    {
+        return _dependencyId;
+    }
+
+    public void setDependencyId(TaskId dependencyId)
+    {
+        _dependencyId = dependencyId;
+    }
+
+    public boolean isJoin()
+    {
+        return _join;
+    }
+
+    public void setJoin(boolean join)
+    {
+        _join = join;
     }
 
     public ExecutionLocation getExecutionLocation()

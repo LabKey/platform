@@ -28,6 +28,8 @@ abstract public class AbstractTaskFactorySettings implements TaskFactorySettings
 {
     private TaskId _id;
     private String _location;
+    private TaskId _dependencyId;
+    private Boolean _join;
 
     public AbstractTaskFactorySettings(TaskId id)
     {
@@ -73,5 +75,30 @@ abstract public class AbstractTaskFactorySettings implements TaskFactorySettings
     public void setLocation(String location)
     {
         _location = location;
+    }
+
+    public TaskId getDependencyId()
+    {
+        return _dependencyId;
+    }
+
+    public void setDependencyId(TaskId dependencyId)
+    {
+        _dependencyId = dependencyId;
+    }
+
+    public boolean isJoinSet()
+    {
+        return _join != null;
+    }
+
+    public boolean isJoin()
+    {
+        return isJoinSet() && _join.booleanValue();
+    }
+
+    public void setJoin(boolean join)
+    {
+        _join = join;
     }
 }
