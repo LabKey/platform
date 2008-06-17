@@ -42,6 +42,7 @@ public class CommandTaskImpl extends PipelineJob.Task implements CommandTask
 
     public static class Factory extends AbstractTaskFactory
     {
+        private String _statusName = "COMMAND";
         private Map<String, TaskPath> _inputPaths = new HashMap<String, TaskPath>();
         private Map<String, TaskPath> _outputPaths = new HashMap<String, TaskPath>();
         private ListToCommandArgs _converter = new ListToCommandArgs();
@@ -70,13 +71,16 @@ public class CommandTaskImpl extends PipelineJob.Task implements CommandTask
 
         private TaskFactory configure(CommandTaskFactorySettings settings)
         {
-            if (settings.getInputPaths() != null)
+            if (settings.getStatusName() != null)
+                _statusName = settings.getStatusName();
+
+            if (settings.getInputPaths() != null && settings.getInputPaths().size() > 0)
                 _inputPaths = settings.getInputPaths();
 
-            if (settings.getOutputPaths() != null)
+            if (settings.getOutputPaths() != null && settings.getOutputPaths().size() > 0)
                 _outputPaths = settings.getOutputPaths();
 
-            if (settings.getConverter() != null)
+            if (settings.getConverter() != null && settings.getConverter().getConverters() != null)
                 _converter = settings.getConverter();    
 
             if (settings.isCopyInputSet())
@@ -93,7 +97,7 @@ public class CommandTaskImpl extends PipelineJob.Task implements CommandTask
 
             if (settings.isPreviewSet())
                 _preview = settings.isPreview();
-            
+
             return this;
         }
 
@@ -104,22 +108,11 @@ public class CommandTaskImpl extends PipelineJob.Task implements CommandTask
 
         public String getStatusName()
         {
-            return "COMMAND";
+            return _statusName;
         }
 
         public boolean isJobComplete(PipelineJob job) throws IOException, SQLException
         {
-            // The first converter is responsible for the command name.
-            TaskToCommandArgs commandNameConverter = getConverters().get(0);
-
-            // If it produces nothing for the command line, then this command should not
-            // be executed.
-            if (commandNameConverter.toArgs((CommandTask) createTask(job),
-                    new HashSet<TaskToCommandArgs>()).length == 0)
-            {
-                return true;
-            }
-
             // TODO: Safer way to do this.
             FileAnalysisJobSupport support = (FileAnalysisJobSupport) job;
             for (TaskPath tp : getOutputPaths().values())
@@ -135,6 +128,22 @@ public class CommandTaskImpl extends PipelineJob.Task implements CommandTask
             // If there were no output paths, then the command is run for some
             // other reason than its outputs.
             return (getOutputPaths().size() > 0);
+        }
+
+        public boolean isParticipant(PipelineJob job) throws IOException, SQLException
+        {
+            // The first converter is responsible for the command name.
+            TaskToCommandArgs commandNameConverter = getConverters().get(0);
+
+            // If it produces nothing for the command line, then this command should not
+            // be executed.
+            if (commandNameConverter.toArgs((CommandTask) createTask(job),
+                    new HashSet<TaskToCommandArgs>()).length == 0)
+            {
+                return false;
+            }
+
+            return super.isParticipant(job);
         }
 
         public FileType getInputType()

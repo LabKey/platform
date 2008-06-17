@@ -930,6 +930,7 @@ pipeline/src/org/labkey/pipeline/analysis/analyze.jsp -text
 pipeline/src/org/labkey/pipeline/api/ParamParserImpl.java -text
 pipeline/src/org/labkey/pipeline/api/PipeRootImpl.java -text
 pipeline/src/org/labkey/pipeline/api/PipelineEmailPreferences.java -text
+pipeline/src/org/labkey/pipeline/api/PipelineJobMarshaller.java -text
 pipeline/src/org/labkey/pipeline/api/PipelineJobServiceImpl.java -text
 pipeline/src/org/labkey/pipeline/api/PipelineJobStoreImpl.java -text
 pipeline/src/org/labkey/pipeline/api/PipelineManager.java -text

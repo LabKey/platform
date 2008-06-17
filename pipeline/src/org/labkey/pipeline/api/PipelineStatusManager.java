@@ -179,6 +179,15 @@ public class PipelineStatusManager
         return sfExist.getJobStore();
     }
 
+    public static PipelineStatusFileImpl[] getIncompleteStatusFiles(String parentId) throws SQLException
+    {
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition("Status", PipelineJob.COMPLETE_STATUS, CompareType.NEQ);
+        filter.addCondition("JobParent", parentId, CompareType.EQUAL);
+
+        return Table.select(pipeline.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
+    }
+
     public static PipelineStatusFileImpl[] getIncompleteStatusFiles() throws SQLException
     {
         SimpleFilter filter = new SimpleFilter();

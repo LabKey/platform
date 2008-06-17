@@ -226,7 +226,15 @@ public class PipelineServiceImpl extends PipelineService
 
     public void queueJob(PipelineJob job) throws IOException
     {
-        getPipelineQueue().addJob(job);
+        if (job.isAllSplit())
+        {
+            for (PipelineJob jobSplit : job.createSplitJobs())
+                getPipelineQueue().addJob(jobSplit);
+        }
+        else
+        {
+            getPipelineQueue().addJob(job);
+        }
     }
 
     public void queueJob(PipelineJob job, String initialState) throws IOException

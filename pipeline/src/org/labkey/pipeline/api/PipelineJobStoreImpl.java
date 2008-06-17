@@ -21,49 +21,39 @@ import com.thoughtworks.xstream.io.xml.XppDriver;
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.sql.SQLException;
+import java.io.IOException;
 
 import org.labkey.pipeline.xstream.TaskIdXStreamConverter;
 import org.labkey.pipeline.xstream.FileXStreamConverter;
 import org.labkey.pipeline.xstream.URIXStreamConverter;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineStatusFile;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbSchema;
 
 /**
  * Implements serialization of a <code>PipelineJob</code> to and from XML,
  * and storage and retrieval from the <code>PipelineJobStatusManager</code>. 
  */
-public class PipelineJobStoreImpl implements PipelineStatusFile.JobStore
+public class PipelineJobStoreImpl extends PipelineJobMarshaller
 {
-    private final AtomicReference<XStream> _xstream = new AtomicReference<XStream>();
-
-    public final XStream getXStream()
+    public PipelineJob fromXML(String xml)
     {
-        XStream instance = _xstream.get();
-
-        if (instance == null)
-        {
-            try
-            {
-                instance = new XStream(new XppDriver());
-                instance.registerConverter(new TaskIdXStreamConverter());
-                instance.registerConverter(new FileXStreamConverter());
-                instance.registerConverter(new URIXStreamConverter());
-                if (!_xstream.compareAndSet(null, instance))
-                    instance = _xstream.get();
-            }
-            catch (Exception e)
-            {
-                throw new IllegalStateException("Failed to initialize XStream for pipeline jobs.", e);
-            }
-        }
-
-        return instance;
+        PipelineJob job = super.fromXML(xml);
+        job.restoreQueue(PipelineService.get().getPipelineQueue());
+        return job;
     }
 
     public PipelineJob getJob(String jobId) throws SQLException
     {
-        return fromXML(PipelineStatusManager.retreiveJob(jobId));
+        PipelineJob job = fromXML(PipelineStatusManager.retreiveJob(jobId));
+
+        // If it was stored, then it can't be on a queue.
+        job.clearQueue();        
+        return job;
     }
 
     public void storeJob(ViewBackgroundInfo info, PipelineJob job) throws SQLException
@@ -71,13 +61,45 @@ public class PipelineJobStoreImpl implements PipelineStatusFile.JobStore
         PipelineStatusManager.storeJob(job.getJobGUID(), toXML(job));
     }
 
-    public String toXML(PipelineJob job)
+    public void split(ViewBackgroundInfo info, PipelineJob job) throws IOException, SQLException
     {
-        return getXStream().toXML(job);
+        DbScope scope = PipelineSchema.getInstance().getSchema().getScope();
+        try
+        {
+            scope.beginTransaction();
+            for (PipelineJob jobSplit : job.createSplitJobs())
+                PipelineService.get().queueJob(jobSplit);
+            storeJob(info, job);
+            scope.commitTransaction();
+        }
+        finally
+        {
+            if (scope.isTransactionActive())
+                scope.rollbackTransaction();
+        }
     }
 
-    public PipelineJob fromXML(String xml)
+    public void join(ViewBackgroundInfo info, PipelineJob job) throws IOException, SQLException
     {
-        return (PipelineJob) getXStream().fromXML(xml);
+        DbScope scope = PipelineSchema.getInstance().getSchema().getScope();
+        try
+        {
+            TaskId tid = job.getActiveTaskId();
+
+            scope.beginTransaction();
+            job.setStatus(PipelineJob.COMPLETE_STATUS);
+            if (PipelineStatusManager.getIncompleteStatusFiles(job.getParentGUID()).length == 0)
+            {
+                PipelineJob jobJoin = getJob(job.getParentGUID());
+                jobJoin.setActiveTaskId(tid);
+                PipelineService.get().queueJob(jobJoin);
+            }
+            scope.commitTransaction();
+        }
+        finally
+        {
+            if (scope.isTransactionActive())
+                scope.rollbackTransaction();
+        }
     }
 }
