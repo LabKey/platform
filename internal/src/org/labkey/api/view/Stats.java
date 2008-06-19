@@ -155,6 +155,7 @@ public abstract class Stats
     public static final StatDefinition STDDEV = new StatDefinition("StdDev");
     public static final StatDefinition VAR = new StatDefinition("Var");
     public static final StatDefinition MEDIAN = new MedianDefinition();
+    public static final StatDefinition MEDIAN_ABS_DEV = new StatDefinition("MAD");
 
     public static final Set<StatDefinition> ALL_STATS = new LinkedHashSet<StatDefinition>();
     public static final Set<StatDefinition> STRING_STATS = new LinkedHashSet<StatDefinition>();
@@ -168,6 +169,7 @@ public abstract class Stats
         ALL_STATS.add(STDDEV);
         ALL_STATS.add(VAR);
         ALL_STATS.add(MEDIAN);
+        ALL_STATS.add(MEDIAN_ABS_DEV);
 
 
         STRING_STATS.add(COUNT);
@@ -283,6 +285,9 @@ public abstract class Stats
         private boolean sorted = false;
         private DecimalFormat formatter = new DecimalFormat("0.###");
 
+        private Double median;
+        private Double mad;
+
         public DoubleStats(double[] data)
         {
             this(data, ALL_STATS);
@@ -319,6 +324,7 @@ public abstract class Stats
             double min = Double.POSITIVE_INFINITY;
             double max = Double.NEGATIVE_INFINITY;
             final int n = data.length;
+            double sumSquares = 0;
             mean = 0.0;
             for (int i = 0; i < n; i++)
             {
@@ -328,28 +334,25 @@ public abstract class Stats
 
                 count ++;
                 sum += d;
-                mean += d;
+                sumSquares += (d * d);
                 if (d < min)
                     min = d;
                 if (d > max)
                     max = d;
             }
-            mean /= count;
             this.min = min;
             this.max = max;
 
-            // calculate the sum of squares
-            double sumSquares = 0;
-            for (int i = 0; i < n; i++)
+            // calculate the stardard deviation
+            if (count > 0)
             {
-                if (Double.isNaN(data[i]))
-                    continue;
-
-                final double v = data[i] - mean;
-                sumSquares += v * v;
+                mean = sum / count;
             }
-            var = sumSquares / (count - 1);
-            stdDev = Math.sqrt(var);
+            if (count > 1)
+            {
+                var = (sumSquares - count * (mean * mean)) / (count - 1);
+                stdDev = Math.sqrt(var);
+            }
         }
 
         public int getCount()
@@ -357,19 +360,9 @@ public abstract class Stats
             return count;
         }
 
-        public void setCount(int count)
-        {
-            this.count = count;
-        }
-
         public double getMean()
         {
             return mean;
-        }
-
-        public void setMean(double mean)
-        {
-            this.mean = mean;
         }
 
         public Double getMin()
@@ -400,6 +393,8 @@ public abstract class Stats
                 return getMedian();
             if (stat == SUM)
                 return getSum();
+            if (stat == MEDIAN_ABS_DEV)
+                return getMedianAbsoluteDeviation();
 
             if (stat instanceof PercentileDefinition)
                 return getPercentile(((PercentileDefinition) stat).getPercentile());
@@ -441,11 +436,20 @@ public abstract class Stats
 
         public double getMedian()
         {
+            if (median == null)
+            {
+                median = _getMedian();
+            }
+            return median.doubleValue();
+        }
+
+        private double _getMedian()
+        {
             ensureSorted();
 
             if (count == 0)
                 return Double.NaN;
-            
+
             if (count == 1)
                 return data[0];
 
@@ -467,6 +471,48 @@ public abstract class Stats
                 arrayOffset = count -1;
 
             return data[arrayOffset];
+        }
+
+        /**
+         * <pre>MAD = median( { | x_i - median | } ) * 1.4826</pre>
+         */
+        public double getMedianAbsoluteDeviation()
+        {
+            if (mad == null)
+            {
+                mad = _getMedianAbsoluteDeviation();
+            }
+            return mad.doubleValue();
+        }
+
+        private double _getMedianAbsoluteDeviation()
+        {
+            if (count == 0)
+                return Double.NaN;
+
+            double median = getMedian();
+            double[] diff = new double[data.length];
+
+            int n = data.length;
+            for (int i = 0; i < n; i++)
+            {
+                double d = data[i];
+                if (Double.isNaN(d))
+                    continue;
+                diff[i] = Math.abs(d - median);
+            }
+
+            Arrays.sort(diff);
+
+            // get scaled median of the difference
+            double factor = 1.4826;
+            if (count == 1)
+                return diff[0] * factor;
+
+            if (count % 2 == 0)
+                return ((diff[count / 2 -1 ] + diff[count / 2]) / 2) * factor;
+
+            return diff[(count -1) / 2] * factor;
         }
 
     }
