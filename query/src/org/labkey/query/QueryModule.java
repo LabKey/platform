@@ -17,6 +17,7 @@
 package org.labkey.query;
 
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.Container;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.pipeline.PipelineService;
@@ -28,6 +29,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.query.controllers.QueryControllerSpring;
 import org.labkey.query.controllers.dbuserschema.DbUserSchemaController;
 import org.labkey.query.persist.QueryManager;
+import org.labkey.query.persist.DbUserSchemaDef;
 import org.labkey.query.reports.ReportsController;
 import org.labkey.query.reports.ReportsPipelineProvider;
 import org.labkey.query.reports.ReportServiceImpl;

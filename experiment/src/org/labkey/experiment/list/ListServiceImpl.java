@@ -24,6 +24,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.security.User;
 import org.labkey.experiment.controllers.list.ListController;
 import org.apache.log4j.Logger;
 
@@ -117,5 +120,23 @@ public class ListServiceImpl implements ListService.Interface
     public boolean isTransactionActive()
     {
         return ExperimentService.get().isTransactionActive();
+    }
+
+    public String getSchemaName()
+    {
+        return ListSchema.NAME;
+    }
+
+    public QueryUpdateService getQueryUpdateService(String queryName, Container container, User user)
+    {
+        Map<String, ListDefinition> listDefs =  getLists(container);
+        if(null == listDefs)
+            throw new NotFoundException("No lists found in the container '" + container.getPath() + "'.");
+
+        ListDefinition listDef = listDefs.get(queryName);
+        if(null == listDef)
+            throw new NotFoundException("List '" + queryName + "' was not found in the container '" + container.getPath() + "'.");
+
+        return new ListQueryUpdateService(listDef);
     }
 }

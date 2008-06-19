@@ -25,10 +25,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
-import org.labkey.api.exp.ObjectProperty;
-import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.OntologyObject;
-import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
@@ -49,6 +46,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.io.IOException;
 
 public class ListItemImpl implements ListItem
 {
@@ -101,7 +99,7 @@ public class ListItemImpl implements ListItem
         return _new;
     }
 
-    public void delete(User user, Container c) throws Exception
+    public void delete(User user, Container c) throws SQLException
     {
         if (isNew())
             return;
@@ -158,7 +156,7 @@ public class ListItemImpl implements ListItem
         return OntologyManager.getOntologyObject(_itm.getObjectId());
     }
 
-    public OntologyObject ensureOntologyObject() throws Exception
+    public OntologyObject ensureOntologyObject() throws SQLException
     {
         if (_itm.getObjectId() == null)
         {
@@ -206,7 +204,7 @@ public class ListItemImpl implements ListItem
         return ensureProperties().get(property.getPropertyURI());
     }
 
-    public void save(User user) throws Exception
+    public void save(User user) throws SQLException, IOException, AttachmentService.DuplicateFilenameException
     {
         boolean fTransaction = false;
         try
@@ -321,7 +319,7 @@ public class ListItemImpl implements ListItem
         return _itm;
     }
 
-    private void addAuditEvent(User user, String comment, String entityId, String oldRecord, String newRecord) throws Exception
+    private void addAuditEvent(User user, String comment, String entityId, String oldRecord, String newRecord)
     {
         AuditLogEvent event = new AuditLogEvent();
 
@@ -339,7 +337,15 @@ public class ListItemImpl implements ListItem
         event.setKey3(_list.getName());
         event.setKey2(entityId);
 
-        ListAuditViewFactory.getInstance().ensureDomain(user);
+        try
+        {
+            ListAuditViewFactory.getInstance().ensureDomain(user);
+        }
+        catch(ChangePropertyDescriptorException e)
+        {
+            throw new RuntimeException(e);
+        }
+
         final Map<String, Object> dataMap = new HashMap<String, Object>();
         if (oldRecord != null) dataMap.put("oldRecordMap", oldRecord);
         if (newRecord != null) dataMap.put("newRecordMap", newRecord);

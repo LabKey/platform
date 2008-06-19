@@ -19,6 +19,7 @@ package org.labkey.query.data;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.query.SchemaUpdateServiceRegistry;
 import org.labkey.query.persist.DbUserSchemaDef;
 import org.labkey.data.xml.TablesDocument;
 import org.apache.log4j.Logger;

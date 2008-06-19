@@ -31,13 +31,15 @@ import java.util.*;
 
 public class StudyQuerySchema extends UserSchema
 {
+    public static final String SCHEMA_NAME = "study";
+
     Study _study;
     boolean _mustCheckPermissions;
     private Map<Integer, List<Double>> _datasetSequenceMap;
 
     public StudyQuerySchema(Study study, User user, boolean mustCheckPermissions)
     {
-        super("study", user, study.getContainer(), StudySchema.getInstance().getSchema());
+        super(SCHEMA_NAME, user, study.getContainer(), StudySchema.getInstance().getSchema());
         _study = study;
         _mustCheckPermissions = mustCheckPermissions;
     }

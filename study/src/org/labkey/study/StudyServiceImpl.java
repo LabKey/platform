@@ -23,11 +23,14 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.UploadLog;
+import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.query.DatasetUpdateService;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -362,5 +365,20 @@ public class StudyServiceImpl implements StudyService.Service
     {
         Study study = StudyManager.getInstance().getStudy(container);
         return study.isDatasetRowsEditable();
+    }
+
+    public String getSchemaName()
+    {
+        return StudyQuerySchema.SCHEMA_NAME;
+    }
+
+    public QueryUpdateService getQueryUpdateService(String queryName, Container container, User user)
+    {
+        //check to make sure datasets are updatable in this study
+        if(!areDatasetsEditable(container))
+            return null;
+
+        int datasetId = getDatasetId(container, queryName);
+        return datasetId >= 0 ? new DatasetUpdateService(datasetId) : null;
     }
 }

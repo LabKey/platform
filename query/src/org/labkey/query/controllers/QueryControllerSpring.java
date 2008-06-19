@@ -22,10 +22,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.data.*;
-import org.labkey.api.exp.list.ListDefinition;
-import org.labkey.api.exp.list.ListItem;
-import org.labkey.api.exp.list.ListService;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.jsp.FormPage;
 import org.labkey.api.query.*;
 import org.labkey.api.security.*;
@@ -40,6 +36,7 @@ import org.labkey.query.QueryDefinitionImpl;
 import org.labkey.query.TableXML;
 import org.labkey.query.sql.QParser;
 import org.labkey.query.data.Query;
+import org.labkey.query.data.DefaultSchemaUpdateService;
 import org.labkey.query.design.QueryDocument;
 import org.labkey.query.design.ViewDocument;
 import org.labkey.query.design.ErrorsDocument;
@@ -1013,51 +1010,33 @@ public class QueryControllerSpring extends SpringActionController
         {
             JSONObject json = form.getJsonObject();
             ApiSimpleResponse response = new ApiSimpleResponse();
+            Container container = getViewContext().getContainer();
+            User user = getViewContext().getUser();
 
             String schemaName = json.getString(PROP_SCHEMA_NAME);
             String queryName = json.getString(PROP_QUERY_NAME);
             if(null == schemaName || null == queryName)
-                throw new IllegalArgumentException("You must supply a schemaName and queryName in the metaData object!");
+                throw new IllegalArgumentException("You must supply a schemaName and queryName!");
 
             JSONArray rows = json.getJSONArray(PROP_ROWS);
             if(null == rows || rows.length() < 1)
                 throw new Exception("No 'rows' array supplied!");
 
-            SaveTarget target = null;
-            Container container = getViewContext().getContainer();
-            ListDefinition listDef = null;
-            DbUserSchema schema = null;
-            TableInfo userTable = null;
-            TableInfo dbTable = null;
-            int datasetId = -1;
-            if(schemaName.equalsIgnoreCase("lists"))
-            {
-                target = SaveTarget.List;
-                listDef = getListDef(queryName);
-            }
-            else if(schemaName.equalsIgnoreCase("study"))
-            {
-                target = SaveTarget.StudyDataset;
-                datasetId = StudyService.get().getDatasetId(container, queryName);
-                if(datasetId < 0)
-                    throw new IllegalArgumentException("The dataset '" + queryName + "' does not exist within the container '" + container.getPath() + "'!");
-            }
-            else
-            {
-                target = SaveTarget.DbUserSchema;
-                schema = getSchema(schemaName);
-                userTable = schema.getTable(queryName, null);
-                dbTable = getTable(schema, queryName);
-            }
+            //get the schema update service for this schema
+            SchemaUpdateService sus = getSchemaUpdateService(schemaName);
+            if(null == sus)
+                throw new Exception("The schema '" + schemaName + "' is not editable via the HTTP-based APIs!");
+
+            //get the query update service for the query
+            QueryUpdateService qus = sus.getQueryUpdateService(queryName, container, user);
+            if(null == qus)
+                throw new Exception("The query '" + queryName + "' in the schema '" + schemaName + "' is not updateable via the HTTP-based APIs!");
 
             //we will transact operations by default, but the user may
             //override this by sending a "transacted" property set to false
             boolean transacted = json.optBoolean("transacted", true);
-
-            //begin a transaction if there are more than one rows
-            //if schema is null, this will start a transaction on lists
             if(transacted)
-                beginTransaction(target, schema);
+                sus.beginTransaction();
 
             //setup the response, providing the schema name, query name, and operation
             //so that the client can sort out which request this response belongs to
@@ -1078,30 +1057,20 @@ public class QueryControllerSpring extends SpringActionController
                 {
                     JSONObject row = rows.getJSONObject(idx);
                     Map<String,Object> rowMap = row.getMap(true);
-                    if(null != userTable)
-                        stripReadOnlyCols(userTable, rowMap);
-
                     if(null != rowMap)
                     {
-                        if(null != listDef)
-                            saveListItem(listDef, rowMap, responseRows);
-                        else if(datasetId >= 0)
-                            saveDatasetRow(datasetId, rowMap, responseRows);
-                        else
-                            saveTableRow(dbTable, rowMap, responseRows);
-
+                        saveRow(qus, rowMap, responseRows);
                         ++rowsAffected;
                     }
                 }
 
                 if(transacted)
-                    commitTransaction(target, schema);
+                    sus.commitTransaction();
             }
             finally
             {
-                //will only rollback if transaction is still active
-                if(transacted)
-                    rollbackTransaction(target, schema);
+                if(transacted && sus.isTransactionActive())
+                    sus.rollbackTransaction();
             }
 
             response.put("rowsAffected", rowsAffected);
@@ -1109,200 +1078,44 @@ public class QueryControllerSpring extends SpringActionController
             return response;
         }
 
-        protected abstract void saveListItem(ListDefinition listDef, Map row, ArrayList<Object> responseRows) throws Exception;
-        protected abstract void saveTableRow(TableInfo table, Map row, ArrayList<Object> responseRows) throws Exception;
-        protected abstract void saveDatasetRow(int datasetId, Map row, ArrayList<Object> responseRows) throws Exception;
+        /**
+         * Dervied classes should implement this method to do the actual save operation (insert, update or delete)
+         * @param qus The QueryUpdateService
+         * @param row The row map
+         * @param responseRows The array of response row maps to append to
+         * @throws InvalidKeyException Thrown if the key is invalid
+         * @throws DuplicateKeyException Thrown if the key is a duplicate of an existing key (insert)
+         * @throws ValidationException Thrown if the data is not valid
+         * @throws QueryUpdateServiceException Thrown if there is a implementation-specific error
+         * @throws SQLException Thrown if there was a problem communicating with the database
+         */
+        protected abstract void saveRow(QueryUpdateService qus, Map<String,Object> row, ArrayList<Object> responseRows)
+                throws InvalidKeyException, DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException;
 
+        /**
+         * Returns the name of the dervied class's command. This will be returned to
+         * the client in the 'command' property.
+         * @return The name of the derived class's command
+         */
         protected abstract String getSaveCommandName(); //unfortunatley, getCommandName() is already defined in Spring action classes
 
-        protected void beginTransaction(SaveTarget target, DbUserSchema schema) throws Exception
+
+        protected SchemaUpdateService getSchemaUpdateService(String schemaName)
         {
-            switch(target)
+            SchemaUpdateService sus = SchemaUpdateServiceRegistry.get().getService(schemaName);
+
+            //if we didn't find anything, try looking for a DbUserSchema in the current container
+            //that matches the schemaName. If there is one, and it's editable,
+            //return a DefaultSchemaUpdateService over it
+            if(null == sus)
             {
-                case List:
-                    ListService.get().beginTransaction();
-                    break;
-                case DbUserSchema:
-                    schema.getDbSchema().getScope().beginTransaction();
-                    break;
-                case StudyDataset:
-                    StudyService.get().beginTransaction();
-            }
-        }
-
-        protected void commitTransaction(SaveTarget target, DbUserSchema schema) throws Exception
-        {
-            switch(target)
-            {
-                case List:
-                    ListService.get().commitTransaction();
-                    break;
-                case DbUserSchema:
-                    schema.getDbSchema().getScope().commitTransaction();
-                    break;
-                case StudyDataset:
-                    StudyService.get().commitTransaction();
-            }
-        }
-
-        protected void rollbackTransaction(SaveTarget target, DbUserSchema schema)
-        {
-            switch(target)
-            {
-                case List:
-                    ListService.Interface lsvc = ListService.get();
-                    if(lsvc.isTransactionActive())
-                        lsvc.rollbackTransaction();
-                    break;
-                case DbUserSchema:
-                    DbScope scope = schema.getDbSchema().getScope();
-                    if(scope.isTransactionActive())
-                        scope.rollbackTransaction();
-                    break;
-                case StudyDataset:
-                    StudyService.Service ssvc = StudyService.get();
-                    if(ssvc.isTransactionActive())
-                        ssvc.rollbackTransaction();
-            }
-        }
-
-        protected ListDefinition getListDef(String listName)
-        {
-            Map<String, ListDefinition> listDefs =  ListService.get().getLists(getViewContext().getContainer());
-            if(null == listDefs)
-                throw new NotFoundException("No lists found in the container '" + getViewContext().getContainer().getPath() + "'.");
-
-            ListDefinition listDef = listDefs.get(listName);
-            if(null == listDef)
-                throw new NotFoundException("List '" + listName + "' was not found in the container '" + getViewContext().getContainer().getPath() + "'.");
-            return listDef;
-        }
-
-        protected ListItem getListItem(Map itemData, ListDefinition listDef)
-        {
-            Object key = itemData.get(listDef.getKeyName());
-            if(null == key)
-                throw new NotFoundException("Not value was supplied for key column '" + listDef.getKeyName() + "'!");
-            ListItem item = listDef.getListItem(key);
-            if(null == item)
-                throw new NotFoundException("List item with key value '" + itemData.get(listDef.getKeyName()) + "' was not found!");
-            return item;
-        }
-
-        protected DbUserSchema getSchema(String schemaName) throws Exception
-        {
-            DbUserSchema schema = null;
-            DbUserSchemaDef[] defs = QueryManager.get().getDbUserSchemaDefs(getViewContext().getContainer());
-            for(DbUserSchemaDef def : defs)
-            {
-                if(def.getUserSchemaName().equalsIgnoreCase(schemaName))
-                {
-                    schema = new DbUserSchema(getUser(), getViewContext().getContainer(), def);
-                    break;
-                }
+                DbUserSchemaDef dbusd = QueryManager.get().getDbUserSchemaDef(getViewContext().getContainer(), schemaName);
+                if(null != dbusd && dbusd.isEditable())
+                    sus = new DefaultSchemaUpdateService(new DbUserSchema(getViewContext().getUser(),
+                            getViewContext().getContainer(), dbusd));
             }
 
-            if(null == schema)
-                throw new NotFoundException("There is no editable schema named '" + schemaName + "' in " + getViewContext().getContainer().getPath() + "!");
-            if(!schema.areTablesEditable())
-                throw new RuntimeException("Schema " + schemaName + " is not editable!");
-
-            return schema;
-        }
-
-        protected TableInfo getTable(DbUserSchema schema, String tableName)
-        {
-            TableInfo table = schema.getDbSchema().getTable(tableName);
-            if(null == table)
-                throw new NotFoundException("Table '" + tableName + "' does not exist within schema '" + schema.getSchemaName() + "'!");
-            return table;
-        }
-
-        protected Object getRowId(TableInfo table, Map row)
-        {
-            List<ColumnInfo> pkCols = table.getPkColumns();
-            if (1 == pkCols.size())
-                return row.get(pkCols.get(0).getName());
-            else
-            {
-                Object[] pkVals = new Object[pkCols.size()];
-                for(int idx = 0; idx < pkVals.length; ++idx)
-                    pkVals[idx] = row.get(pkCols.get(idx).getName());
-                return pkVals;
-            }
-        }
-
-        //TODO: this should really be an array/enum in Table.java
-        //Query handles several columns with specific names automagically, so we should
-        //always strip those from the row map so that clients cannot override this behavior
-        //the full list is:
-        // Owner, CreatedBy, Created, ModifiedBy, Modified, EntityId, _ts
-        //
-        // HOWEVER, Modified and _ts are used by the table layer to do optimistic concurrency checks
-        // so DO NOT strip those out--the table layer will keep those out of the values sent to
-        // the database (per Matt) 
-        private String[] _specialColumns = {"Owner", "CreatedBy", "Created", "ModifiedBy", "EntityId"};
-
-        protected void stripReadOnlyCols(TableInfo userTable, Map<String,Object> rowMap)
-        {
-            //remove specially-handled columns from the map
-            for(String colName : _specialColumns)
-                rowMap.remove(colName);
-
-            //strip all read-only columns from the row map so that we don't get database
-            //errors on insert/update. The Ext grid sends all column values during update
-            //and other clients may do the same.
-            for(ColumnInfo col : userTable.getColumns())
-            {
-                //don't strip the PK, which will be read-only if it's auto-incr
-                if(!col.isKeyField() && isColReadOnly(col))
-                    rowMap.remove(col.getName());
-            }
-        }
-
-        protected boolean isColReadOnly(ColumnInfo col)
-        {
-            //a column is read-only if it is:
-            // - read-only or
-            // - not user-editable or
-            // - is an fk to a non-public table
-            TableInfo fkTable = col.getFkTableInfo();
-            return col.isReadOnly() || !col.isUserEditable()
-                    || (null != fkTable && !fkTable.isPublic());
-        }
-
-        protected Map<String,Object> getListItemAsMap(ListDefinition listDef, ListItem item)
-        {
-            ListItem itemNew = listDef.getListItem(item.getKey());
-            Map<String,Object> map = new HashMap<String,Object>();
-            map.put(listDef.getKeyName(), itemNew.getKey());
-            map.put("EntityId", itemNew.getEntityId());
-            for(DomainProperty prop : listDef.getDomain().getProperties())
-                map.put(prop.getName(), itemNew.getProperty(prop));
-            
-            return map;
-        }
-
-        protected String getLSID(Map row)
-        {
-            String lsid = (String)row.get("lsid");
-            if(null == lsid || lsid.length() <= 0)
-                throw new IllegalArgumentException("You must supply a value for the LSID column!");
-            return lsid;
-        }
-
-        protected void throwDatasetErrors(String lsid, List<String> errors)
-        {
-            String sep = "";
-            StringBuilder msg = new StringBuilder("Errors while saving the study dataset row with LSID " + lsid + ": ");
-            for(String err : errors)
-            {
-                msg.append(sep);
-                msg.append(err);
-                sep = "; ";
-            }
-
-            throw new IllegalArgumentException(msg.toString());
+            return sus;
         }
     }
 
@@ -1314,52 +1127,17 @@ public class QueryControllerSpring extends SpringActionController
             return "update";
         }
 
-        protected void saveListItem(ListDefinition listDef, Map row, ArrayList<Object> responseRows) throws Exception
+        protected void saveRow(QueryUpdateService qus, Map<String, Object> row, ArrayList<Object> responseRows)
+                throws InvalidKeyException, DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
-            ListItem item = getListItem(row, listDef);
-
-            for(Object key : row.keySet())
-            {
-                //if key column, don't try to set
-                if(((String)key).equalsIgnoreCase(listDef.getKeyName()))
-                    continue;
-
-                DomainProperty prop = listDef.getDomain().getPropertyByName((String)key);
-                if(null != prop)
-                    item.setProperty(prop, row.get(key));
-            }
-
-            item.save(getUser());
-
-            responseRows.add(getListItemAsMap(listDef, item));
+            Map<String,Object> updatedRow = qus.updateRow(getViewContext().getUser(), getViewContext().getContainer(),
+                                                            row, null);
+            if(null != updatedRow)
+                updatedRow = qus.getRow(getViewContext().getUser(), getViewContext().getContainer(), updatedRow);
+            if(null != updatedRow)
+                responseRows.add(updatedRow);
         }
 
-        protected void saveTableRow(TableInfo table, Map row, ArrayList<Object> responseRows) throws Exception
-        {
-            Table.update(getUser(), table, row, getRowId(table, row), null);
-
-            //re-fetch the row from the database to pick up any column values
-            //assigned via default expressions or triggers
-            row = Table.selectObject(table, getRowId(table, row), Map.class);
-
-            responseRows.add(row);
-        }
-
-        protected void saveDatasetRow(int datasetId, Map row, ArrayList<Object> responseRows) throws Exception
-        {
-            StudyService.Service svc = StudyService.get();
-            Container container = getViewContext().getContainer();
-            User user = getViewContext().getUser();
-
-            List<String> errors = new ArrayList<String>();
-            String lsid = svc.updateDatasetRow(user, container, datasetId, getLSID(row), row, errors);
-            if(errors.size() > 0)
-                throwDatasetErrors(getLSID(row), errors);
-
-            Map<String,Object> responseRow = svc.getDatasetRow(user, container, datasetId, lsid);
-            assert null != responseRow : "Could not refetch the dataset row with LSID '" + lsid + "' from dataset id " + String.valueOf(datasetId);
-            responseRows.add(responseRow);
-        }
     }
 
     @RequiresPermission(ACL.PERM_INSERT)
@@ -1370,56 +1148,17 @@ public class QueryControllerSpring extends SpringActionController
             return "insert";
         }
 
-        protected void saveListItem(ListDefinition listDef, Map row, ArrayList<Object> responseRows) throws Exception
+        protected void saveRow(QueryUpdateService qus, Map<String, Object> row, ArrayList<Object> responseRows)
+                throws InvalidKeyException, DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
-            ListItem item = listDef.createListItem();
-
-            //set the key if it's not an auto-increment
-            if (listDef.getKeyType() != ListDefinition.KeyType.AutoIncrementInteger)
-                item.setKey(row.get(listDef.getKeyName()));
-
-            for(Object key : row.keySet())
-            {
-                //if key column, don't try to set
-                if(((String)key).equalsIgnoreCase(listDef.getKeyName()))
-                    continue;
-
-                DomainProperty prop = listDef.getDomain().getPropertyByName((String)key);
-                if(null != prop)
-                    item.setProperty(prop, row.get(key));
-            }
-
-            item.save(getUser());
-            responseRows.add(getListItemAsMap(listDef, item));
+            Map<String,Object> insertedRow = qus.insertRow(getViewContext().getUser(), getViewContext().getContainer(),
+                                                            row);
+            if(null != insertedRow)
+                insertedRow = qus.getRow(getViewContext().getUser(), getViewContext().getContainer(), insertedRow);
+            if(null != insertedRow)
+                responseRows.add(insertedRow);
         }
 
-        protected void saveTableRow(TableInfo table, Map row, ArrayList<Object> responseRows) throws Exception
-        {
-            row = Table.insert(getUser(), table, row);
-
-            //re-fetch the row from the database to pick up any column values
-            //assigned via default expressions or triggers
-            row = Table.selectObject(table, getRowId(table, row), Map.class);
-
-            responseRows.add(row);
-        }
-
-        protected void saveDatasetRow(int datasetId, Map row, ArrayList<Object> responseRows) throws Exception
-        {
-            StudyService.Service svc = StudyService.get();
-            Container container = getViewContext().getContainer();
-            User user = getViewContext().getUser();
-
-            List<String> errors = new ArrayList<String>();
-            String lsid = svc.insertDatasetRow(user, container, datasetId, row, errors);
-            if(errors.size() > 0)
-                throwDatasetErrors(lsid, errors);
-
-            //fetch the row to send back in the response
-            Map<String,Object> responseRow = svc.getDatasetRow(user, container, datasetId, lsid);
-            assert null != responseRow : "Could not refetch the dataset row with LSID '" + lsid + "' from dataset id " + String.valueOf(datasetId);
-            responseRows.add(responseRow);
-        }
     }
 
     @ActionNames("deleteRows, delRows")
@@ -1431,37 +1170,13 @@ public class QueryControllerSpring extends SpringActionController
             return "delete";
         }
 
-        protected void saveListItem(ListDefinition listDef, Map row, ArrayList<Object> responseRows) throws Exception
+        protected void saveRow(QueryUpdateService qus, Map<String, Object> row, ArrayList<Object> responseRows) throws InvalidKeyException, DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
-            ListItem item = getListItem(row, listDef);
-            item.delete(getUser(), getViewContext().getContainer());
-            Map<String,Object> responseRow = new HashMap<String,Object>();
-            responseRow.put(listDef.getKeyName(), item.getKey());
-            responseRows.add(responseRow);
-        }
+            Map<String,Object> deletedRow = qus.deleteRow(getViewContext().getUser(), getViewContext().getContainer(),
+                                                            row);
+            if(null != deletedRow)
+                responseRows.add(deletedRow);
 
-        protected void saveTableRow(TableInfo table, Map row, ArrayList<Object> responseRows) throws Exception
-        {
-            Table.delete(table, getRowId(table, row), null);
-
-            //for delete, just include the key column value(s) in the reply
-            Map<String,Object> responseRow = new HashMap<String,Object>();
-            for(ColumnInfo col : table.getColumns())
-            {
-                if(col.isKeyField())
-                    responseRow.put(col.getName(), row.get(col.getName()));
-            }
-
-            responseRows.add(responseRow);
-        }
-
-        protected void saveDatasetRow(int datasetId, Map row, ArrayList<Object> responseRows) throws Exception
-        {
-            StudyService.get().deleteDatasetRow(getViewContext().getUser(), getViewContext().getContainer(), 
-                    datasetId, getLSID(row));
-            Map<String,Object> responseRow = new HashMap<String,Object>();
-            responseRow.put("lsid", getLSID(row));
-            responseRows.add(responseRow);
         }
     }
 

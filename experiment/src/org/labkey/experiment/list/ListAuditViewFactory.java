@@ -24,6 +24,7 @@ import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
@@ -277,7 +278,7 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
         }
     }
 
-    public void ensureDomain(User user) throws Exception
+    public void ensureDomain(User user) throws ChangePropertyDescriptorException
     {
         Container c = ContainerManager.getSharedContainer();
         String domainURI = AuditLogService.get().getDomainURI(ListManager.LIST_AUDIT_EVENT);
