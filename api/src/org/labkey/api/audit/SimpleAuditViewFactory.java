@@ -19,6 +19,7 @@ package org.labkey.api.audit;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -151,7 +152,7 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
         }
     }
 
-    protected void ensureProperties(User user, Domain domain, PropertyInfo[] properties) throws Exception
+    protected void ensureProperties(User user, Domain domain, PropertyInfo[] properties) throws ChangePropertyDescriptorException
     {
         if (domain != null)
         {

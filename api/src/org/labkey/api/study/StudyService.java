@@ -18,6 +18,8 @@ package org.labkey.api.study;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.query.SchemaUpdateService;
+import org.labkey.api.query.SchemaUpdateServiceRegistry;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -33,7 +35,7 @@ public class StudyService
 {
     private static Service _serviceImpl;
 
-    public interface Service
+    public interface Service extends SchemaUpdateService
     {
         /**
          * Returns the dataset id of the requested dataset definition name,
@@ -101,6 +103,7 @@ public class StudyService
         if (_serviceImpl != null)
             throw new IllegalStateException("Service has already been set.");
         _serviceImpl = serviceImpl;
+        SchemaUpdateServiceRegistry.get().register(serviceImpl);
     }
 
     public static Service get()

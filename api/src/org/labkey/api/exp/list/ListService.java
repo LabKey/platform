@@ -19,6 +19,8 @@ package org.labkey.api.exp.list;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.query.SchemaUpdateService;
+import org.labkey.api.query.SchemaUpdateServiceRegistry;
 
 import java.util.Map;
 import java.sql.SQLException;
@@ -35,8 +37,9 @@ public class ListService
     static public void setInstance(Interface i)
     {
         instance = i;
+        SchemaUpdateServiceRegistry.get().register(i);
     }
-    public interface Interface
+    public interface Interface extends SchemaUpdateService
     {
         Map<String, ListDefinition> getLists(Container container);
         boolean hasLists(Container container);
