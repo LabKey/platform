@@ -252,7 +252,7 @@ public class Designer implements EntryPoint
     }
 
 
-    void asyncGetDomainDescriptor(String domainURI)
+    void asyncGetDomainDescriptor(final String domainURI)
     {
         if (!domainURI.equals("testURI#TYPE"))
         {
@@ -266,6 +266,14 @@ public class Designer implements EntryPoint
 
                     public void onSuccess(Object result)
                     {
+                        if (result == null)
+                        {
+                            String message = "Could not find " + domainURI;
+                            Window.alert(message);
+                            _loading.setText("ERROR: " + message);
+                            return;
+                        }
+
                         GWTDomain d = (GWTDomain)result;
                         d.setAllowFileLinkProperties(_allowFileLinkProperties);
                         d.setAllowAttachmentProperties(_allowAttachmentProperties);
