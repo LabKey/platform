@@ -54,9 +54,4 @@ public abstract class PlateQueryView extends QueryView
     {
         return urlFor(QueryAction.chooseColumns);
     }
-
-    public void renderCustomizeLinks(PrintWriter out) throws Exception
-    {
-        // do nothing: we don't want a query picker for specimen views
-    }
 }

@@ -38,12 +38,7 @@ public abstract class AssayBaseQueryView extends QueryView
     {
         super(AssayService.get().createSchema(context.getUser(), context.getContainer()), settings);
         _protocol = protocol;
-        setShowCustomizeViewLinkInButtonBar(true);
-    }
-
-    protected void renderQueryPicker(PrintWriter out)
-    {
-        // do nothing: we don't want a query picker for assay views
+        getSettings().setAllowChooseQuery(false);
     }
 
     protected DataRegion createDataRegion()

@@ -67,18 +67,14 @@ public class QueryView extends WebPartView<Object>
     private List<QueryException> _errors = new ArrayList<QueryException>();
     private QuerySettings _settings;
     private boolean _showRecordSelectors = false;
-    private boolean _showCustomizeViewLinkInButtonBar = false;
 
     private boolean _shadeAlternatingRows = false;
     private boolean _showColumnSeparators = false;
-    private boolean _showChangeViewPicker = true;
     private Report _report;
 
     private boolean _showExportButtons = true;
     private boolean _allowExcelWebQuery = true;
     private boolean _useQueryViewActionExportURLs = false;
-    private boolean _showChartButton = false;
-    private boolean _showRReportButton = true;
     private boolean _printView = false;
     private boolean _exportView = false;
     private ReportService.ItemFilter _itemFilter = new ReportService.ItemFilter(){
@@ -185,6 +181,9 @@ public class QueryView extends WebPartView<Object>
         }
     }
 
+    /**
+     * @deprecated
+     */
     public QueryPicker getColumnListPicker(HttpServletRequest request)
     {
         Map<String, CustomView> customViews = _queryDef.getCustomViews(getUser(), request);
@@ -211,6 +210,10 @@ public class QueryView extends WebPartView<Object>
     }
 
     public static final String REPORTID_PARAM = "reportID=";
+
+    /**
+     * @deprecated
+     */
     protected void addReportsToChangeViewPicker(Map<String, String> options)
     {
         String reportKey = ChartUtil.getReportKey(getSchema().getSchemaName(), getSettings().getQueryName());
@@ -220,38 +223,36 @@ public class QueryView extends WebPartView<Object>
         }
     }
 
-    protected List<QueryPicker> getQueryPickers()
+    public MenuButton createQueryPickerButton(String label)
     {
-        ArrayList<QueryPicker> ret = new ArrayList<QueryPicker>();
-        QueryPicker picker = new QueryPicker("Query:", param(QueryParam.queryName), _queryDef.getName(), getSchema().getTableAndQueryNames(true));
-        if (getQueryDef().getDescription() != null)
+        String current = _queryDef.getName();
+
+        ActionURL target = urlRefreshQuery();
+        NavTreeMenuButton button = new NavTreeMenuButton(label);
+
+        for (String query : getSchema().getTableAndQueryNames(true))
         {
-            picker.setDescriptionHTML("<i>" + PageFlowUtil.filter(getQueryDef().getDescription()) + "</i>");
+            NavTree item = new NavTree(query, target.clone().replaceParameter(param(QueryParam.queryName), query).getLocalURIString());
+            item.setId(label + ":" + query);
+            if (query.equals(current))
+                item.setSelected(true);
+            else
+                item.setImageSrc(getViewContext().getContextPath() + "/reports/grid.gif");
+            button.addMenuItem(item);
         }
-        ret.add(picker);
-        return ret;
-    }
-    protected List<QueryPicker> getChangeViewPickers()
-    {
-        ArrayList<QueryPicker> ret = new ArrayList<QueryPicker>();
-        ret.add(getColumnListPicker(getViewContext().getRequest()));
-        return ret;
-    }
 
-    protected void renderQueryPicker(PrintWriter out)
-    {
-        renderPickers(out, "queryName", urlRefreshQuery(), getQueryPickers());
-    }
-
-    public void setShowChangeViewPicker(boolean showChangeViewPicker)
-    {
-        _showChangeViewPicker = showChangeViewPicker;
-    }
-
-    protected void renderChangeViewPickers(PrintWriter out)
-    {
-        if (_showChangeViewPicker)
-            renderPickers(out, "view", urlChangeView(), getChangeViewPickers());
+        button.addSeparator();
+        if (_queryDef.canEdit(getUser()) && getContainer().equals(_queryDef.getContainer()))
+        {
+            button.addMenuItem("Design Query", getSchema().urlFor(QueryAction.designQuery, _queryDef));
+            button.addMenuItem("Edit Query", getSchema().urlFor(QueryAction.sourceQuery, _queryDef));
+        }
+        else
+        {
+            button.addMenuItem("Design Query", false, true);
+            button.addMenuItem("Edit Query", false, true);
+        }
+        return button;
     }
 
     protected User getUser()
@@ -269,45 +270,6 @@ public class QueryView extends WebPartView<Object>
         if (null != _settings || null != _schema)
             throw new IllegalStateException();
         _schema = schema;
-    }
-
-    protected void renderPickers(PrintWriter out, String formName, ActionURL target, List<QueryPicker> pickers)
-    {
-        if (target == null)
-            return;
-
-        boolean requireGoButton = false;
-        StringBuilder strPickers = new StringBuilder();
-        for (QueryPicker picker : pickers)
-        {
-            String strPicker = picker.toString();
-            if (!StringUtils.isEmpty(strPicker))
-            {
-                if (!picker.isAutoRefresh())
-                    requireGoButton = true;
-                strPickers.append(strPicker);
-            }
-        }
-        if (strPickers.length() == 0)
-            return;
-
-        out.print("<form class=\"normal\" method=\"GET\" action=\"");
-        out.print(PageFlowUtil.filter(target.getPath()));
-        out.print("\" name=\"");
-        out.print(PageFlowUtil.filter(formName));
-        out.print("\">");
-        for (Pair param : target.getParameters())
-        {
-            out.print(hiddenField(param.getKey(), param.getValue()));
-        }
-        out.write(strPickers.toString());
-        if (requireGoButton)
-        {
-            out.print("<input type=\"image\" src=\"");
-            out.print(PageFlowUtil.buttonSrc("go"));
-            out.print("\">");
-        }
-        out.print("</form>");
     }
 
     public Container getContainer()
@@ -484,19 +446,34 @@ public class QueryView extends WebPartView<Object>
 
     protected void populateReportButtonBar(ButtonBar bar)
     {
+        if (getSettings().getAllowChooseQuery())
+        {
+            bar.add(createQueryPickerButton("Query"));
+        }
+
+        if (getSettings().getAllowChooseView())
+        {
+            bar.add(createViewButton(_itemFilter));
+        }
+
         if (_showExportButtons)
         {
             bar.add(createPrintButton());
-        }
-
-        if (_showChartButton || _showRReportButton)
-        {
-            bar.add(createReportButton());
         }
     }
 
     protected void populateButtonBar(DataView view, ButtonBar bar, boolean exportAsWebPage)
     {
+        if (getSettings().getAllowChooseQuery())
+        {
+            bar.add(createQueryPickerButton("Query"));
+        }
+
+        if (getSettings().getAllowChooseView())
+        {
+            bar.add(createViewButton(_itemFilter));
+        }
+
         if (showRecordSelectors())
         {
             if (canDelete())
@@ -512,11 +489,6 @@ public class QueryView extends WebPartView<Object>
             }
         }
 
-        if (_showCustomizeViewLinkInButtonBar)
-        {
-            bar.add(createCustomizeViewButton());
-        }
-
         if (_showExportButtons)
         {
             bar.add(createExportMenuButton(exportAsWebPage));
@@ -527,11 +499,6 @@ public class QueryView extends WebPartView<Object>
         if (view.getDataRegion().getShowPagination())
         {
             addButton(bar, createPageSizeMenuButton());
-        }
-
-        if (_showChartButton || _showRReportButton)
-        {
-            bar.add(createReportButton());
         }
     }
 
@@ -612,28 +579,10 @@ public class QueryView extends WebPartView<Object>
         return pageSizeMenu;
     }
 
-    protected ActionButton createCustomizeViewButton()
-    {
-        ActionButton customizeButton = new ActionButton(urlFor(QueryAction.chooseColumns).getEncodedLocalURIString(), "Customize View");
-        customizeButton.setActionType(ActionButton.Action.LINK);
-        return customizeButton;
-    }
-
     public void setViewItemFilter(ReportService.ItemFilter filter)
     {
         if (filter != null)
             _itemFilter = filter;
-    }
-
-    public ActionButton createReportButton()
-    {
-        NavTreeMenuButton button = new NavTreeMenuButton("Views");
-        NavTree menu = button.getNavTree();
-        addCreateViewItems(menu);
-        if (_report != null)
-            button.addMenuItem("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getViewContext().getContainer()));
-
-        return button;
     }
 
     public MenuButton createViewButton(ReportService.ItemFilter filter)
@@ -649,12 +598,9 @@ public class QueryView extends WebPartView<Object>
         NavTreeMenuButton button = new NavTreeMenuButton("Views");
         NavTree menu = button.getNavTree();
 
-        // default grid view stays at the top level
-        addChild(menu, "default", "", target, current, getViewContext().getContextPath() + "/reports/grid.gif");
-
         // existing views
-        addCustomViews(menu, target, current);
-        addReportViews(menu, target, current);
+        addGridViews(button, target, current);
+        addReportViews(button, target, current);
 
         button.addSeparator();
 
@@ -666,14 +612,24 @@ public class QueryView extends WebPartView<Object>
             {
                 provider.getReportDesignURL(getViewContext(), getSettings(), menuItems);
             }
-            NavTree submenu = menu.addChild("Create");
+            NavTree submenu = null;
             for (Map.Entry<String, String> entry : menuItems.entrySet())
             {
                 if (_itemFilter.accept(entry.getKey(), entry.getValue()))
                 {
                     Report report = ReportService.get().createReportInstance(entry.getKey());
                     if (report != null)
-                        submenu.addChild(report.getTypeDescription(), entry.getValue());
+                    {
+                        if (submenu == null)
+                        {
+                            submenu = menu.addChild("Create");
+                            submenu.setId("Views:Create");
+                        }
+                        NavTree item = new NavTree(report.getTypeDescription(), entry.getValue());
+                        item.setId("Views:Create:" + report.getTypeDescription());
+
+                        submenu.addChild(item);
+                    }
                 }
             }
         }
@@ -686,20 +642,18 @@ public class QueryView extends WebPartView<Object>
         return button;
     }
 
-    protected void addChild(NavTree menu, String label, String paramValue, ActionURL url, String currentView, String iconPath)
+    protected void addGridViews(MenuButton menu, ActionURL target, String currentView)
     {
-        NavTree item = menu.addChild(label, url.clone().replaceParameter(param(QueryParam.viewName), paramValue).getLocalURIString());
-        if (paramValue.equals(currentView))
+        // default grid view stays at the top level
+        NavTree item = new NavTree("default", target.clone().replaceParameter(param(QueryParam.viewName), "").getLocalURIString());
+        item.setId("Views:default");
+        if ("".equals(currentView))
             item.setSelected(true);
         else
-            item.setImageSrc(iconPath);
-    }
+            item.setImageSrc(getViewContext().getContextPath() + "/reports/grid.gif");
+        menu.addMenuItem(item);
 
-    protected void addCustomViews(NavTree menu, ActionURL target, String currentView)
-    {
         Map<String, CustomView> customViews = getQueryDef().getCustomViews(getViewContext().getUser(), getViewContext().getRequest());
-        NavTree subMenu = null;
-
         for (CustomView view : customViews.values())
         {
             if (view.isHidden())
@@ -707,15 +661,18 @@ public class QueryView extends WebPartView<Object>
             String label = view.getName();
             if (label == null)
                 continue;
-            if (subMenu == null)
-                subMenu = menu;
-                //subMenu = menu.addChild("Custom Views");
 
-            addChild(subMenu, label, label, target, currentView, getViewContext().getContextPath() + "/reports/grid.gif");
+            item = new NavTree(label, target.clone().replaceParameter(param(QueryParam.viewName), label).getLocalURIString());
+            item.setId("Views:" + label);
+            if (label.equals(currentView))
+                item.setSelected(true);
+            else
+                item.setImageSrc(getViewContext().getContextPath() + "/reports/grid.gif");
+            menu.addMenuItem(item);
         }
     }
 
-    protected void addReportViews(NavTree menu, ActionURL target, String currentView)
+    protected void addReportViews(MenuButton menu, ActionURL target, String currentView)
     {
         String reportKey = ChartUtil.getReportKey(getSchema().getSchemaName(), getSettings().getQueryName());
         Map<String, List<Report>> views = new TreeMap<String, List<Report>>();
@@ -729,14 +686,16 @@ public class QueryView extends WebPartView<Object>
 
         for (Map.Entry<String, List<Report>> entry : views.entrySet())
         {
-            NavTree subMenu = null;
             for (Report report : entry.getValue())
             {
-                if (subMenu == null)
-                    subMenu = menu; //menu.addChild(report.getTypeDescription());
-
-                addChild(subMenu, report.getDescriptor().getReportName(), QueryView.REPORTID_PARAM + report.getDescriptor().getReportId(),
-                        target, currentView, ReportService.get().getReportIcon(getViewContext(), report.getType()));
+                String viewName = QueryView.REPORTID_PARAM + report.getDescriptor().getReportId();
+                NavTree item = new NavTree(report.getDescriptor().getReportName(), target.clone().replaceParameter(param(QueryParam.viewName), viewName).getLocalURIString());
+                item.setId("Views:" + report.getDescriptor().getReportName());
+                if (viewName.equals(currentView))
+                    item.setSelected(true);
+                else
+                    item.setImageSrc(ReportService.get().getReportIcon(getViewContext(), report.getType()));
+                menu.addMenuItem(item);
             }
         }
     }
@@ -798,28 +757,12 @@ public class QueryView extends WebPartView<Object>
         return textLink(text, url, null);
     }
 
-    public void renderCustomizeLinks(PrintWriter out) throws Exception
-    {
-        renderCustomizeViewLink(out);
-        if (_customView != null && _customView.hasFilterOrSort())
-        {
-            ActionURL url = getSettings().getSortFilterURL();
-            if (ignoreUserFilter())
-            {
-                url.deleteParameter(param(QueryParam.ignoreFilter));
-                out.write(textLink("Apply View Filter", url));
-            }
-            else
-            {
-                url.replaceParameter(param(QueryParam.ignoreFilter), "1");
-                out.write(textLink("Ignore View Filter", url));
-            }
-        }
-    }
-
+    /**
+     * @deprecated
+     */
     public void renderCustomizeViewLink(PrintWriter out)
     {
-        if (!_showCustomizeViewLinkInButtonBar && _report == null)
+        if (getSettings().isAllowCustomizeView() && _report == null)
         {
             out.write(textLink("Customize View", urlFor(QueryAction.chooseColumns)));
             QueryDefinition queryDef = getQueryDef();
@@ -833,29 +776,32 @@ public class QueryView extends WebPartView<Object>
 
     public void addCustomizeViewItems(MenuButton button) 
     {
+        String label = "Apply View Filter";
         if (_report == null)
         {
-            button.addMenuItem("Customize View", urlFor(QueryAction.chooseColumns));
-            QueryDefinition queryDef = getQueryDef();
-            if (queryDef.canEdit(getUser()) && getContainer().equals(queryDef.getContainer()))
-            {
-                button.addMenuItem("Edit Query", getSchema().urlFor(QueryAction.designQuery, queryDef));
-            }
+            NavTree item = new NavTree("Customize View", urlFor(QueryAction.chooseColumns).toString());
+            item.setId("Views:Customize View");
+
+            button.addMenuItem(item);
         }
 
         if (_customView != null && _customView.hasFilterOrSort())
         {
             ActionURL url = getSettings().getSortFilterURL();
+            NavTree item;
             if (ignoreUserFilter())
             {
                 url.deleteParameter(param(QueryParam.ignoreFilter));
-                button.addMenuItem("Apply View Filter", url.toString(), null, false);
+                item = new NavTree(label, url.toString());
             }
             else
             {
                 url.replaceParameter(param(QueryParam.ignoreFilter), "1");
-                button.addMenuItem("Apply View Filter", url.toString(), null, true);
+                item = new NavTree(label, url.toString());
+                item.setSelected(true);
             }
+            item.setId("Views:" + label);
+            button.addMenuItem(item);
         }
     }
 
@@ -877,24 +823,26 @@ public class QueryView extends WebPartView<Object>
     @Override
     protected void renderView(Object model, PrintWriter out) throws Exception
     {
-        if (!isPrintView())
-        {
-            if (getSettings().getAllowChooseView())
-            {
-                renderCustomizeLinks(out);
-            }
-
-            if (getSettings().getAllowChooseQuery())
-            {
-                renderQueryPicker(out);
-            }
-            if (getSettings().getAllowChooseView())
-            {
-                renderChangeViewPickers(out);
-            }
-        }
-
         renderDataRegion(out);
+    }
+
+    protected void renderTitle(PrintWriter out)
+    {
+        if (getSettings().getAllowChooseView() && _buttonBarPosition != DataRegion.ButtonBarPosition.NONE)
+        {
+            StringBuffer sb = new StringBuffer();
+            sb.append("<br/><span><b>View :</b> ");
+
+            if (_customView != null)
+                sb.append(PageFlowUtil.filter(_customView.getName()));
+            else if (_report != null)
+                sb.append(PageFlowUtil.filter(_report.getDescriptor().getReportName()));
+            else
+                sb.append("default");
+            sb.append("</span>");
+
+            out.write(sb.toString());
+        }
     }
 
     @Override
@@ -1272,26 +1220,6 @@ public class QueryView extends WebPartView<Object>
     public void setShowDetailsColumn(boolean showDetailsColumn)
     {
         _showDetailsColumn = showDetailsColumn;
-    }
-
-    public void setShowCustomizeViewLinkInButtonBar(boolean showCustomizeViewLinkInButtonBar)
-    {
-        _showCustomizeViewLinkInButtonBar = showCustomizeViewLinkInButtonBar;
-    }
-
-    public boolean isShowCustomizeViewLinkInButtonBar()
-    {
-        return _showCustomizeViewLinkInButtonBar;
-    }
-
-    public void setShowChartButton(boolean showChartButton)
-    {
-        _showChartButton = showChartButton;
-    }
-
-    public void setShowRReportButton(boolean showRReportButton)
-    {
-        _showRReportButton = showRReportButton;
     }
 
     public void setPrintView(boolean b)

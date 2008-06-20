@@ -47,7 +47,6 @@ public class ExperimentRunListView extends QueryView
         super(schema, settings);
         _buttonBarPosition = DataRegion.ButtonBarPosition.BOTTOM;
         _selectedFilter = selectedFilter;
-        setShowCustomizeViewLinkInButtonBar(true);
         setShowDetailsColumn(false);
         setShowExportButtons(false);
         setShowRecordSelectors(true);

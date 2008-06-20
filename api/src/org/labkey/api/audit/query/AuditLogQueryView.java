@@ -44,7 +44,6 @@ public abstract class AuditLogQueryView extends QueryView
     protected Sort _sort;
     protected String _title;
     protected Map<String, AuditDisplayColumnFactory> _displayColFactory = new HashMap();
-    protected boolean _showCustomizeLink;
 
     public AuditLogQueryView(UserSchema schema, QuerySettings settings, SimpleFilter filter)
     {
@@ -103,11 +102,6 @@ public abstract class AuditLogQueryView extends QueryView
     public void setTitle(String title)
     {
         _title = title;
-    }
-
-    public void setShowCustomizeLink(boolean showCustomizeLink)
-    {
-        _showCustomizeLink = showCustomizeLink;
     }
 }
 

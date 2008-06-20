@@ -63,32 +63,39 @@ public class MenuButton extends ActionButton
         addMenuItem(caption, url.toString());
     }
 
-    public void addMenuItem(String caption, String url)
+    public NavTree addMenuItem(String caption, String url)
     {
-        addMenuItem(caption, url, null);
+        return addMenuItem(caption, url, null);
     }
 
-    public void addMenuItem(String caption, String url, String onClickScript)
+    public NavTree addMenuItem(String caption, String url, String onClickScript)
     {
-        addMenuItem(caption, url, onClickScript, false);
+        return addMenuItem(caption, url, onClickScript, false);
     }
 
-    public void addMenuItem(String caption, String url, String onClickScript, boolean checked)
+    public NavTree addMenuItem(String caption, String url, String onClickScript, boolean checked)
     {
-        addMenuItem(caption, url, onClickScript, checked, false);
+        return addMenuItem(caption, url, onClickScript, checked, false);
     }
 
-    public void addMenuItem(String caption, boolean checked, boolean disabled)
+    public NavTree addMenuItem(String caption, boolean checked, boolean disabled)
     {
-        addMenuItem(caption, null, null, checked, disabled);    
+        return addMenuItem(caption, null, null, checked, disabled);
     }
 
-    protected void addMenuItem(String caption, String url, String onClickScript, boolean checked, boolean disabled)
+    protected NavTree addMenuItem(String caption, String url, String onClickScript, boolean checked, boolean disabled)
     {
         NavTree menuItem = new NavTree(caption, url);
         menuItem.setScript(onClickScript);
         menuItem.setSelected(checked);
         menuItem.setDisabled(disabled);
-        popupMenu.getNavTree().addChild(menuItem);
+
+        addMenuItem(menuItem);
+        return menuItem;
+    }
+
+    public void addMenuItem(NavTree item)
+    {
+        popupMenu.getNavTree().addChild(item);
     }
 }

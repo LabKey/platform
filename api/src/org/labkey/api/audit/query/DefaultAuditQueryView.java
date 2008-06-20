@@ -43,12 +43,4 @@ public class DefaultAuditQueryView extends AuditLogQueryView
     protected void renderDataRegion(PrintWriter out) throws Exception
     {
     }
-
-    public void renderCustomizeLinks(PrintWriter out) throws Exception
-    {
-    }
-
-    protected void renderChangeViewPickers(PrintWriter out)
-    {
-    }
 }

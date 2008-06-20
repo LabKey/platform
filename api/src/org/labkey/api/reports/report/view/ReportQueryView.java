@@ -49,24 +49,6 @@ public class ReportQueryView extends QueryView
         setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
     }
 
-    @Override
-    protected void renderQueryPicker(PrintWriter out)
-    {
-        // do nothing: we don't want a query picker for report query views
-    }
-
-    @Override
-    public void renderCustomizeLinks(PrintWriter out) throws Exception
-    {
-        // do nothing: we don't want a query picker for report query views
-    }
-
-    @Override
-    protected void renderChangeViewPickers(PrintWriter out)
-    {
-        //do nothing: we don't want to change views from within a report
-    }
-
     public void setFilter(SimpleFilter filter)
     {
         _filter = filter;

@@ -41,7 +41,6 @@ public class RunDataQueryView extends AssayBaseQueryView
     public RunDataQueryView(ExpProtocol protocol, ViewContext context, QuerySettings settings)
     {
         super(protocol, context, settings);
-        setShowCustomizeViewLinkInButtonBar(true);
         setViewItemFilter(new ReportService.ItemFilter() {
             public boolean accept(String type, String label)
             {

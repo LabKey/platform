@@ -41,6 +41,7 @@ public class QuerySettings
     private ActionURL _urlSortFilter;
     private boolean _allowChooseQuery = true;
     private boolean _allowChooseView = true;
+    private boolean _allowCustomizeView = true;
     private boolean _ignoreUserFilter;
     private int _maxRows = 100;
     private long _offset = 0;
@@ -338,5 +339,15 @@ public class QuerySettings
     public ActionURL getSortFilterURL()
     {
         return _urlSortFilter.clone();
+    }
+
+    public boolean isAllowCustomizeView()
+    {
+        return _allowCustomizeView;
+    }
+
+    public void setAllowCustomizeView(boolean allowCustomizeView)
+    {
+        _allowCustomizeView = allowCustomizeView;
     }
 }
