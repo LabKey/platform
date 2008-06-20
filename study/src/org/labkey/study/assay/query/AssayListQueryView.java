@@ -39,16 +39,11 @@ public class AssayListQueryView extends QueryView
     {
         super(new AssaySchema(context.getUser(), context.getContainer()), settings);
         setShowExportButtons(false);
-        setShowCustomizeViewLinkInButtonBar(true);
         setShowDetailsColumn(false);
         setShowRecordSelectors(false);
         setShadeAlternatingRows(true);
         setShowColumnSeparators(true);
-    }
-
-    protected List<QueryPicker> getQueryPickers()
-    {
-        return Collections.emptyList();
+        getSettings().setAllowChooseQuery(false);
     }
 
     protected void populateButtonBar(DataView view, ButtonBar bar)

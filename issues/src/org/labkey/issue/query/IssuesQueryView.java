@@ -22,7 +22,9 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.NavTree;
 import org.labkey.common.util.Pair;
+import org.labkey.issue.IssuesController;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -42,6 +44,7 @@ public class IssuesQueryView extends QueryView
         super(schema, settings);
         _context = context;
         setShowDetailsColumn(false);
+        getSettings().setAllowChooseQuery(false);
     }
 
     // MAB: I just want a resultset....
@@ -91,6 +94,63 @@ public class IssuesQueryView extends QueryView
 
             ActionButton prefsButton = new ActionButton(_context.cloneActionURL().setAction("emailPrefs.view").getEncodedLocalURIString(), "Email Preferences", DataRegion.MODE_GRID, ActionButton.Action.LINK);
             bar.add(prefsButton);
+        }
+    }
+
+    protected void addGridViews(MenuButton menu, ActionURL target, String currentView)
+    {
+        ActionURL url = target.clone().deleteParameters();
+        NavTree item = new NavTree("all", url);
+        if (currentView == "")
+            item.setSelected(target.toString().equals(url.toString()));
+        menu.addMenuItem(item);
+
+        url = target.clone().deleteParameters();
+        url.addFilter("Issues", FieldKey.fromString("Status"), CompareType.EQUAL, "open");
+        Sort sort = new Sort("Milestone");
+        sort.insertSortColumn("AssignedTo/DisplayName", true);
+        sort.applyURLSort(url, getDataRegionName());
+        item = new NavTree("open", url);
+        if (currentView == "")
+            item.setSelected(target.toString().equals(url.toString()));
+        menu.addMenuItem(item);
+
+        url = target.clone().deleteParameters();
+        url.addFilter("Issues", FieldKey.fromString("Status"), CompareType.EQUAL, "resolved");
+        sort = new Sort("Milestone");
+        sort.insertSortColumn("AssignedTo/DisplayName", true);
+        sort.applyURLSort(url, getDataRegionName());
+        item = new NavTree("resolved", url);
+        if (currentView == "")
+            item.setSelected(target.toString().equals(url.toString()));
+        menu.addMenuItem(item);
+
+        if (!getUser().isGuest())
+        {
+            url = target.clone().deleteParameters();
+            url.addFilter("Issues", FieldKey.fromString("AssignedTo/DisplayName"), CompareType.EQUAL, getUser().getDisplayName(getViewContext()));
+            item = new NavTree("mine", url);
+            if (currentView == "")
+                item.setSelected(target.toString().equals(url.toString()));
+            menu.addMenuItem(item);
+        }
+        menu.addSeparator();
+        Map<String, CustomView> customViews = getQueryDef().getCustomViews(getViewContext().getUser(), getViewContext().getRequest());
+        for (CustomView view : customViews.values())
+        {
+            if (view.isHidden())
+                continue;
+            String label = view.getName();
+            if (label == null)
+                continue;
+
+            item = new NavTree(label, target.clone().replaceParameter(param(QueryParam.viewName), label).getLocalURIString());
+            item.setId("Views:" + label);
+            if (label.equals(currentView))
+                item.setSelected(true);
+            else
+                item.setImageSrc(getViewContext().getContextPath() + "/reports/grid.gif");
+            menu.addMenuItem(item);
         }
     }
 
@@ -198,21 +258,6 @@ public class IssuesQueryView extends QueryView
     public ActionURL getCustomizeURL()
     {
         return urlFor(QueryAction.chooseColumns);
-    }
-    
-    protected void renderQueryPicker(PrintWriter out)
-    {
-        // do nothing: we don't want a query picker for dataset views
-    }
-
-    public void renderCustomizeLinks(PrintWriter out) throws Exception
-    {
-        // do nothing: we don't want a query picker for dataset views
-    }
-    
-    protected void renderChangeViewPickers(PrintWriter out)
-    {
-        //do nothing: we render our own picker here...
     }
 
     protected ActionURL urlFor(QueryAction action)

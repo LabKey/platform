@@ -45,7 +45,6 @@ public class SpecimenRequestQueryView extends StudyQueryView
     private NavTree[] _extraLinks;
     private boolean _allowSortAndFilter = true;
     private boolean _showOptionLinks = true;
-    private boolean _showCustomizeLink = true;
 
     private static class RequestOptionDisplayColumn extends SimpleDisplayColumn
     {
@@ -218,11 +217,11 @@ public class SpecimenRequestQueryView extends StudyQueryView
     @Override
     protected boolean showCustomizeLinks()
     {
-        return _showCustomizeLink;
+        return getSettings().isAllowCustomizeView();
     }
     
     public void setShowCustomizeLink(boolean showCustomizeLink)
     {
-        _showCustomizeLink = showCustomizeLink;
+        getSettings().setAllowCustomizeView(showCustomizeLink);
     }
 }

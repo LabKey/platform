@@ -106,7 +106,6 @@ public class ExperimentController extends SpringActionController
 
             ExperimentRunListView runView = ExperimentRunListView.createView(getViewContext(), bean.getSelectedFilter(), true);
             runView.setShowDeleteButton(true);
-            runView.setShowCustomizeViewLinkInButtonBar(true);
             runView.setShowAddToRunGroupButton(true);
             runView.setShowMoveRunsButton(true);
 
@@ -326,7 +325,6 @@ public class ExperimentController extends SpringActionController
                     bar.add(deriveButton);
                 }
             };
-            queryView.setShowCustomizeViewLinkInButtonBar(true);
             queryView.setShowRecordSelectors(getViewContext().hasPermission(ACL.PERM_DELETE) || getViewContext().hasPermission(ACL.PERM_INSERT));
 
             queryView.setTitle("Sample Set Contents");
@@ -368,7 +366,6 @@ public class ExperimentController extends SpringActionController
                     bar.add(deriveButton);
                 }
             };
-            view.setShowCustomizeViewLinkInButtonBar(true);
             view.setShowDetailsColumn(false);
             view.setShowRecordSelectors(true);
             return view;
@@ -526,7 +523,6 @@ public class ExperimentController extends SpringActionController
                     return table;
                 }
             };
-            predecessorMaterialView.setShowCustomizeViewLinkInButtonBar(true);
             predecessorMaterialView.setTitle("Materials from which this material is derived");
             vbox.addView(predecessorMaterialView);
             return vbox;

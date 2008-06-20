@@ -75,6 +75,7 @@
 	%><td><a href="insert.view"><%=PageFlowUtil.buttonImg("New Issue")%></a></td><%
 	}
     %>
+<%--
     <td>&nbsp;views:</td>
     <td><select onchange="document.location.href=this.options[this.selectedIndex].value">
         <option value="#"></option>
@@ -95,6 +96,7 @@
     <%
     }
     %>
+--%>
     <td width=100%>&nbsp;</td>
     <td nowrap><form name="jumpToIssue" action="jumpToIssue.view" method="get">Jump&nbsp;to&nbsp;issue:<input type="text" size="5" name="issueId"/></form></td>
     <td align="right" nowrap><form action="search.view" method="get"><input type="image" align="top" vspace="2" src="<%=PageFlowUtil.buttonSrc("Search")%>">&nbsp;&nbsp;<input type="text" size="30" name="search" value="">&nbsp;&nbsp;&nbsp;</form></td>

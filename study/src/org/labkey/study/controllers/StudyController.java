@@ -651,13 +651,21 @@ public class StudyController extends BaseStudyController
                 if (cohorts.length > 0)
                 {
                     MenuButton button = new MenuButton("Cohorts");
-                    button.addMenuItem("All", getViewContext().cloneActionURL().replaceParameter("cohortId", "").toString(), null, currentCohort == null);
+                    NavTree item = new NavTree("All", getViewContext().cloneActionURL().replaceParameter("cohortId", "").toString());
+                    item.setId("Cohorts:All");
+                    if (currentCohort == null)
+                        item.setSelected(true);
+                    button.addMenuItem(item);
+
                     for (Cohort cohort : cohorts)
                     {
+                        item = new NavTree(cohort.getLabel(),
+                                getViewContext().cloneActionURL().replaceParameter("cohortId", String.valueOf(cohort.getRowId())).toString());
+                        item.setId("Cohorts:" + cohort.getLabel());
                         if (currentCohort != null && currentCohort.getRowId() == cohort.getRowId())
-                            button.addMenuItem(cohort.getLabel(), getViewContext().cloneActionURL().replaceParameter("cohortId", String.valueOf(cohort.getRowId())).toString(), null, true);
-                        else
-                            button.addMenuItem(cohort.getLabel(), getViewContext().cloneActionURL().replaceParameter("cohortId", String.valueOf(cohort.getRowId())).toString());
+                            item.setSelected(true);
+
+                        button.addMenuItem(item);
                     }
                     buttonBar.add(button);
                 }

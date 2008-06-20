@@ -46,6 +46,7 @@ public class AuditQueryViewImpl extends AuditLogQueryView
     public AuditQueryViewImpl(UserSchema schema, QuerySettings settings, SimpleFilter filter)
     {
         super(schema, settings, filter);
+        getSettings().setAllowChooseQuery(false);
     }
 
     public void addDisplayColumn(int index, DisplayColumn dc)
@@ -64,7 +65,7 @@ public class AuditQueryViewImpl extends AuditLogQueryView
 
         if (!_columns.isEmpty())
         {
-            if (getCustomView() == null || !_showCustomizeLink)
+            if (getCustomView() == null)
             {
                 for (DisplayColumn dc : view.getDataRegion().getDisplayColumns())
                 {
@@ -123,22 +124,5 @@ public class AuditQueryViewImpl extends AuditLogQueryView
             table.setDisplayColumnFactory(entry.getKey(), entry.getValue());
         }
         return table;
-    }
-
-    protected List<QueryPicker> getQueryPickers()
-    {
-        return Collections.emptyList();
-    }
-
-    public void renderCustomizeLinks(PrintWriter out) throws Exception
-    {
-        if (_showCustomizeLink || isShowCustomizeViewLinkInButtonBar())
-            super.renderCustomizeLinks(out);
-    }
-
-    protected void renderChangeViewPickers(PrintWriter out)
-    {
-        if (_showCustomizeLink || isShowCustomizeViewLinkInButtonBar())
-            super.renderChangeViewPickers(out); 
     }
 }

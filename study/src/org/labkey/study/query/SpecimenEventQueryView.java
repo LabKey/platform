@@ -54,12 +54,6 @@ public class SpecimenEventQueryView extends StudyQueryView
 
 
     @Override
-    protected boolean showCustomizeLinks()
-    {
-        return true;
-    }
-
-    @Override
     protected DataRegion createDataRegion()
     {
         DataRegion rgn = super.createDataRegion();

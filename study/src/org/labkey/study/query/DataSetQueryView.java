@@ -58,6 +58,8 @@ public class DataSetQueryView extends QueryView
     public DataSetQueryView(int datasetId, UserSchema schema, QuerySettings settings, Visit visit, Cohort cohort)
     {
         super(schema, settings);
+        getSettings().setAllowChooseQuery(false);
+        getSettings().setAllowChooseView(false);
         _datasetId = datasetId;
         _visit = visit;
         _cohort = cohort;
@@ -217,22 +219,6 @@ public class DataSetQueryView extends QueryView
     public ActionURL getCustomizeURL()
     {
         return urlFor(QueryAction.chooseColumns);
-    }
-
-    protected void renderQueryPicker(PrintWriter out)
-    {
-        // do nothing: we don't want a query picker for dataset views
-    }
-
-    public void renderCustomizeLinks(PrintWriter out) throws Exception
-    {
-        // do nothing: we don't want a query picker for dataset views
-    }
-
-    @Override
-    protected void renderChangeViewPickers(PrintWriter out)
-    {
-        //do nothing: we render our own picker here...
     }
 
     public void setShowSourceLinks(boolean showSourceLinks)

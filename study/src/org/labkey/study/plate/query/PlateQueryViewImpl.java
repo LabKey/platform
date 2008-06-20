@@ -45,6 +45,7 @@ public class PlateQueryViewImpl extends PlateQueryView
     public PlateQueryViewImpl(ViewContext context, QuerySettings settings, SimpleFilter filter)
     {
         super(new PlateSchema(context.getUser(), context.getContainer()), settings);
+        getSettings().setAllowChooseQuery(false);
         _filter = filter;
     }
 
@@ -73,11 +74,6 @@ public class PlateQueryViewImpl extends PlateQueryView
         else
             view.getDataRegion().setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
         return view;
-    }
-
-    protected void renderQueryPicker(PrintWriter out)
-    {
-        // do nothing: we don't want a query picker for plate views
     }
 
     @Override

@@ -83,7 +83,6 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
 
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, getEventType());
         view.setSort(new Sort("-Date"));
-        view.setShowCustomizeViewLinkInButtonBar(true);
         view.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
 
         return view;

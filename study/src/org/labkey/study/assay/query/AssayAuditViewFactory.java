@@ -87,7 +87,6 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
         filter.addCondition("EventType", AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT);
 
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT);
-        view.setShowCustomizeViewLinkInButtonBar(true);
         view.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
         view.setSort(new Sort("-Date"));
 

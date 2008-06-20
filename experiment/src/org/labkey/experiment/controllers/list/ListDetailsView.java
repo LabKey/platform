@@ -42,6 +42,8 @@ public class ListDetailsView extends QueryView
     public ListDetailsView(ListQueryForm form, Object listItemKey)
     {
         super(form);
+        getSettings().setAllowChooseQuery(false);
+        getSettings().setAllowChooseView(false);
         ListDefinition def = form.getList();
         if (def != null)
         {
@@ -68,18 +70,5 @@ public class ListDetailsView extends QueryView
         view.getRenderContext().setBaseFilter(baseFilter);
 
         return view;
-    }
-
-    protected List<QueryPicker> getQueryPickers()
-    {
-        return Collections.emptyList();
-    }
-
-    public void renderCustomizeLinks(PrintWriter out) throws Exception
-    {
-    }
-
-    protected void renderChangeViewPickers(PrintWriter out)
-    {
     }
 }

@@ -44,6 +44,7 @@ public class StudyQueryView extends QueryView
                           SimpleFilter filter, Sort sort)
     {
         super(schema, settings);
+        getSettings().setAllowChooseQuery(false);
         _filter = filter;
         _sort = sort;
     }
@@ -79,23 +80,6 @@ public class StudyQueryView extends QueryView
     protected DataRegion.ButtonBarPosition getButtonBarPosition()
     {
         return DataRegion.ButtonBarPosition.BOTH;
-    }
-
-    protected void renderQueryPicker(PrintWriter out)
-    {
-        if (showQueryPicker())
-            super.renderQueryPicker(out);
-    }
-
-    public void renderCustomizeLinks(PrintWriter out) throws Exception
-    {
-        if (showCustomizeLinks())
-            super.renderCustomizeLinks(out);
-    }
-
-    protected boolean showQueryPicker()
-    {
-        return false;
     }
 
     protected boolean showCustomizeLinks()

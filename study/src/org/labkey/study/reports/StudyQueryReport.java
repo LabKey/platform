@@ -161,9 +161,7 @@ public class StudyQueryReport extends QueryReport
                         descriptor.getProperty(ReportDescriptor.Prop.queryName),
                         descriptor.getProperty(ReportDescriptor.Prop.viewName));
                 view.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
-                view.setShowCustomizeViewLinkInButtonBar(true);
                 view.setUseQueryViewActionExportURLs(true);
-                view.setShowRReportButton(false);
                 return view;
             }
         };

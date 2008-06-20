@@ -678,7 +678,7 @@ public class SpringSpecimenController extends BaseStudyController
                 exportMenuButton.addMenuItem("Export all to text file (.tsv)", exportTextURL.getLocalURIString());
                 buttons.add(exportMenuButton);
                 _specimenQueryView.setShowExportButtons(false);
-                _specimenQueryView.setShowChangeViewPicker(false);
+                _specimenQueryView.getSettings().setAllowChooseView(false);
 
                 if (SampleManager.getInstance().hasEditRequestPermissions(context.getUser(), sampleRequest) && !_finalState)
                 {

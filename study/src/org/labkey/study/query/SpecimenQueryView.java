@@ -280,6 +280,8 @@ public class SpecimenQueryView extends StudyQueryView
         QuerySettings qs = new QuerySettings(context.getActionURL(), queryName);
         qs.setSchemaName(schema.getSchemaName());
         qs.setQueryName(queryName);
+        qs.setAllowCustomizeView(false);
+
         String excludeRequested = StringUtils.trimToNull((String) context.get(PARAMS.excludeRequestedBySite.name()));
         if (null != excludeRequested)
             addNotPreviouslyRequestedClause(filter, context.getContainer(), Integer.parseInt(excludeRequested));

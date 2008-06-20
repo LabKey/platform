@@ -48,7 +48,6 @@ public class RunGroupWebPart extends QueryView
 
         setSettings(createQuerySettings(portalCtx, name));
 
-        setShowCustomizeViewLinkInButtonBar(true);
         setShowDetailsColumn(false);
 
         if (_narrow)

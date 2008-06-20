@@ -49,7 +49,6 @@ public class ExperimentRunGroupsView extends VBox
                 bar.add(new SimpleTextDisplayElement("<span id=\"experimentRunGroupMembershipStatus\" />", true));
             }
         };
-        experimentsView.setShowCustomizeViewLinkInButtonBar(true);
         experimentsView.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTTOM);
         experimentsView.setShowDetailsColumn(false);
         HtmlView explanationView = new HtmlView("Experiment run groups let you define sets of runs that are related. For example, you might create separate groups\n" +
