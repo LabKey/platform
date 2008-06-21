@@ -93,6 +93,14 @@ LABKEY.Utils = new function()
             return div.innerHTML;
         },
 
+        /**
+        * Shows an error dialog box to the user in response to an error from an AJAX request, including
+        * any error messages from the server.
+        * @param {XMLHttpRequest} responseObj The XMLHttpRequest object containing the response data.
+        * @param {Error} exceptionObj Optional: A JavaScript Error object caught by the calling code.
+        * The error dialog will display the Error's name and message, if available. Ext.data.DataReader implementations
+        * may throw this type of error object.
+        */
         displayAjaxErrorResponse: function(responseObj, exceptionObj)
         {
             var error;
@@ -116,8 +124,8 @@ LABKEY.Utils = new function()
         },
         
         /**
-        * Creates a store queries the LabKey Server database and can be used as the data source for various components,
-        * including GridViews, ComboBoxes, and so forth.
+        * Creates an Ext.data.Store that queries the LabKey Server database and can be used as the data source
+        * for various components, including GridViews, ComboBoxes, and so forth.
         *
         * @param {Object} config Describes the GridView's properties.
         * @param {String} config.schemaName Name of a schema defined within the current
@@ -142,7 +150,7 @@ LABKEY.Utils = new function()
         * @param {String} [config.allowNull.emptyName] If specified, what to show in the list for the blank entry.
         *                 Defaults to '[None]'.
         * @param {String} [config.allowNull.emptyValue] If specified, the value to be used for the blank entry.
-        *                 Defaults to ''.
+        *                 Defaults to the empty string.
         *
 		* @return {Ext.data.Store} The initialized Store object
 		*/

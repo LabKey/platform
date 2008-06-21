@@ -40,6 +40,8 @@ public interface ExpSampleSet extends ExpObject
      */
     public boolean canImportMoreSamples();
 
+    public boolean hasIdColumns();
+
     public PropertyDescriptor getIdCol1();
     public PropertyDescriptor getIdCol2();
     public PropertyDescriptor getIdCol3();

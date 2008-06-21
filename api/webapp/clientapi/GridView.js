@@ -593,6 +593,39 @@ LABKEY.GridView = function(config)
         }
     }
 
+    function getAfterSuccessfulEdit(record)
+    {
+        return function(responseObj, options)
+        {
+            record.operationPendingSinceLastEdit = false;
+            record.commit();
+
+            //the key value may have changed in response to the edit
+            //(study dataset case)
+            var retRecord = responseObj.rows[0];
+            var idCol = _myReader.jsonData.metaData.id;
+            if(retRecord[idCol] != record[idCol])
+            {
+                //if the key changed, we need to create a new record,
+                //add it to the store, and remove the old one. Ext
+                //has no way to update the key of an existing record.
+                var recordCreator = Ext.data.Record.create(_myReader.jsonData.metaData.fields);
+                var newKeyRecord = new recordCreator(retRecord, retRecord[idCol]);
+                _ds.insert(_ds.indexOf(record), newKeyRecord);
+                _ds.remove(record);
+            }
+            else
+            {
+                //even if the key didn't change, other fields may
+                //have been modified at the server, so copy over the
+                //values that were returned
+                for(var field in retRecord.data)
+                    record.set(field, retRecord[field]);
+            }
+
+        }
+    }
+
     function getAfterSuccessfulInsert(newRecord)
     {
         return function(responseObj, options)
@@ -607,7 +640,7 @@ LABKEY.GridView = function(config)
             var fields = _myReader.jsonData.metaData.fields;
             var recordCreator = Ext.data.Record.create(fields);
             var newNewRecord = new recordCreator(row, row[_myReader.jsonData.metaData.id]);
-            _ds.insert(0, newNewRecord);
+            _ds.insert(_ds.indexOf(newRecord), newNewRecord);
             _ds.remove(newRecord);
         }
     }
@@ -678,7 +711,7 @@ LABKEY.GridView = function(config)
             else
             {
                 LABKEY.Query.updateRows(_primarySchemaName, _primaryQueryName, [recordData],
-                        afterSuccessfulEdit, afterFailedEdit);
+                        getAfterSuccessfulEdit(record), afterFailedEdit);
             }
         }
     }
@@ -731,6 +764,26 @@ LABKEY.GridView = function(config)
         render : function()
         {
             return displayGridImpl();
+        },
+
+        /**
+         * Returns the Ext.data.Store used to manage the data displayed in the grid.
+         * You can use the returned object to programmatically manipulate the store.
+         * <p/>
+         * See <a href='http://extjs.com/deploy/dev/docs/?class=Ext.data.Store'>
+         * http://extjs.com/deploy/dev/docs/?class=Ext.data.Store</a> for more
+         * information on the Ext.data.Store class.
+         * 
+         * @example Example:
+         * <pre name="code" class="xml">
+         * //this code will programmatically refresh the data
+         * //displayed in the myGrid object
+         * myGrid.getStore().reload();
+         * </pre>
+         */
+        getStore : function()
+        {
+            return _grid.getStore();
         }
     }
 };

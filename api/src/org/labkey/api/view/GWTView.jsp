@@ -30,6 +30,20 @@ String contextPath = request.getContextPath();
 String jsPath = bean.getModuleName() + "/" + bean.getModuleName() + ".nocache.js";
 
 %>
+
+<%-- jgarms: The combination of yahoo ui and gwt javascript causes GWT to fail on IE.
+  As a horrible, horrible hack, we insert a special pair of elements here that
+  the GWT platform detection code uses to find its base directory.
+
+  The ant build will insert an empty file "fake.js" into the directory of the
+  GWT app.
+  --%>
+<script type="text/javascript" src="<%=contextPath + "/" + bean.getModuleName() + "/fake.js"%>">
+</script>
+
+<script id="__gwt_marker_<%=bean.getModuleName()%>">
+</script>
+
 <script type="text/javascript">
     LABKEY.requiresScript("<%=jsPath%>", <%= bean.isImmediateLoad()%>);
     

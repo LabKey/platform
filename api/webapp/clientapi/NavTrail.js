@@ -64,6 +64,10 @@ LABKEY.NavTrail.setTrail("People View",
                 }
                 elem.innerHTML = html;
             }
+
+            //set document title:
+            //<currentPageTitle>: <container path>
+            document.title = currentPageTitle + ": " +  decodeURI(LABKEY.ActionURL.getContainer());
         }
     }
 }

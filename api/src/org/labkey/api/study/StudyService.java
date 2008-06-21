@@ -80,7 +80,7 @@ public class StudyService
          * @param c The container
          * @param datasetId The dataset Id
          * @param lsid The row LSID
-         * @return A map of the dataset row columns
+         * @return A map of the dataset row columns, null if no record found
          * @throws SQLException Thrown if there's a database error
          */
         public Map<String, Object> getDatasetRow(User u, Container c, int datasetId, String lsid) throws SQLException;

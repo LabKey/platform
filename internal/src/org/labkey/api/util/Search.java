@@ -348,8 +348,8 @@ public class Search
                 {
                     if(!curPath.equals(hit.getContainerPath()))
                     {
-                        out.println("<tr><td colspan=\"2\"><br/><b>");
-                        out.println(hit.getContainerPath());
+                        out.print("<tr><td colspan=\"2\"><br/><b>");
+                        out.print(PageFlowUtil.filter(hit.getContainerPath()));
                         out.println("</b></td></tr>");
                         curPath = hit.getContainerPath();
                     }
@@ -365,20 +365,20 @@ public class Search
                 out.println("<tr><td>&nbsp;</td><td>");
                 if(null != hit.getTypeDescription() && hit.getTypeDescription().length() > 0)
                 {
-                    out.println(hit.getTypeDescription());
-                    out.println(": ");
+                    out.print(PageFlowUtil.filter(hit.getTypeDescription()));
+                    out.print(": ");
                 }
-                out.println("<a href=\"");
-                out.println(hit.getHref());
-                out.println("\">");
-                out.println(hit.getTitle());
+                out.print("<a href=\"");
+                out.print(PageFlowUtil.filter(hit.getHref()));
+                out.print("\">");
+                out.print(PageFlowUtil.filter(hit.getTitle()));
                 out.println("</a>");
 
                 String context = hit.getDetails();
                 if(null != context && context.length() > 0)
                 {
                     out.println("<div style=\"color: #565051;padding-left: 2em\">");
-                    out.println(context);
+                    out.println(PageFlowUtil.filter(context));
                     out.println("</div>");
                 }
 

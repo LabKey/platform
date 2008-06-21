@@ -87,4 +87,19 @@ if (bean.containerLinks != null)
     }
 }
 %>
+    <tr style="display:none" id="firebug-warning">
+        <td>&nbsp;</td>
+        <td class="labkey-error" style="padding:5px">
+        Firebug is known to cause this site to run slowly. Please disable Firebug.
+        [<a target="_blank" href="https://www.labkey.org/wiki/home/Documentation/page.view?name=firebug">instructions</a>]
+        </td>
+    </tr>
 </table>
+<script type="text/javascript">
+    if(window.console && window.console.firebug)
+    {
+        var elem = document.getElementById("firebug-warning");
+        if(elem)
+            elem.style.display = "";
+    }
+</script>
