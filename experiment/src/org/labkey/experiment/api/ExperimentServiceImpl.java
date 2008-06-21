@@ -1899,6 +1899,14 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return source;
     }
 
+    public MaterialSource updateMaterialSource(User user, MaterialSource source) throws SQLException
+    {
+        assert 0 != source.getRowId();
+        source = Table.update(user, getTinfoMaterialSource(), source, source.getRowId(), null);
+        getMaterialSourceCache().put(String.valueOf(source.getRowId()), source);
+        return source;
+    }
+
     public String getDefaultSampleSetLsid()
     {
         return new Lsid("SampleSource", "Default").toString();

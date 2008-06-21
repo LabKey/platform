@@ -44,7 +44,7 @@ public class SiteSettingsAuditViewFactory implements AuditLogService.AuditViewFa
 
     public String getName()
     {
-        return "Site Settings Events";
+        return "Site Settings events";
     }
 
     public String getDescription()

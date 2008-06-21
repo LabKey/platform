@@ -1817,6 +1817,8 @@ public class StudyController extends BaseStudyController
 
                 for (Map<String, Object> props : mapsLoad)
                 {
+                    props = new CaseInsensitiveHashMap<Object>(props);
+
                     String typeName = (String) props.get(form.getTypeNameColumn());
                     Object typeIdObj = props.get(form.getTypeIdColumn());
                     String propName = (String) props.get("Property");
@@ -1876,9 +1878,7 @@ public class StudyController extends BaseStudyController
                             "SiteId".equalsIgnoreCase(propName) ||
                             "Created".equalsIgnoreCase(propName) ||
                             "Modified".equalsIgnoreCase(propName) ||
-                            "Key".equalsIgnoreCase(propName) ||
-                            "Hidden".equalsIgnoreCase(propName) ||
-                            "AutoKey".equalsIgnoreCase(propName))
+                            "SequenceNum".equalsIgnoreCase(propName))
                         continue;
 
                     // look for visitdate column
@@ -1915,8 +1915,10 @@ public class StudyController extends BaseStudyController
                     }
 
                     // Deal with managed key field
-                    Boolean managedKey = (Boolean)props.get("autokey");
-                    if (managedKey != null && managedKey.booleanValue())
+                    String autoKeyString = (String)props.get("AutoKey");
+                    boolean managedKey = "true".equalsIgnoreCase(autoKeyString);
+
+                    if (managedKey)
                     {
                         if (!info.keyManaged)
                             info.keyManaged = true;

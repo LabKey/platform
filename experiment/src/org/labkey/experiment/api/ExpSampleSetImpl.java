@@ -129,8 +129,13 @@ public class ExpSampleSetImpl extends ExpIdentifiableBaseImpl<MaterialSource> im
             throw new IllegalArgumentException("A maximum of three id columns is supported, but tried to set " + pds.size() + " of them");
         }
         _object.setIdCol1(pds.size() > 0 ? pds.get(0).getPropertyURI() : null);
-        _object.setIdCol1(pds.size() > 1 ? pds.get(1).getPropertyURI() : null);
-        _object.setIdCol1(pds.size() > 2 ? pds.get(2).getPropertyURI() : null);
+        _object.setIdCol2(pds.size() > 1 ? pds.get(1).getPropertyURI() : null);
+        _object.setIdCol3(pds.size() > 2 ? pds.get(2).getPropertyURI() : null);
+    }
+
+    public boolean hasIdColumns()
+    {
+        return _object.getIdCol1() != null;
     }
 
     public PropertyDescriptor getIdCol1()

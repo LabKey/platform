@@ -1632,7 +1632,9 @@ public class StudyManager
             }
         }
 
-        if (noDeleteMap.size() > 0)
+        // If we have duplicates, and we don't have an auto-keyed dataset,
+        // then we cannot proceed.
+        if (noDeleteMap.size() > 0 && !def.isKeyPropertyManaged())
             return noDeleteMap;
 
         if (deleteSet.size() == 0)

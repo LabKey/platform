@@ -4280,7 +4280,7 @@ public class AdminController extends SpringActionController
 
             ActionURL urlLog = new ActionURL(ShowAuditLogAction.class, ContainerManager.getRoot());
             urlLog.addParameter("view", WriteableAppProps.AUDIT_EVENT_TYPE);
-            root = root.addChild("Autit Log", urlLog);
+            root = root.addChild("Audit Log", urlLog);
             return root.addChild("Site Settings Audit Event Details");
         }
     }

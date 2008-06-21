@@ -46,9 +46,11 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
 
     public enum Status
     {
-        ALL("Available and Unavailable Vials"),
-        AVAILABLE("Only Available Vials"),
-        UNAVAILABLE("Only Unavailable Vials");
+        ALL("All vials"),
+        AVAILABLE("Only available vials"),
+        UNAVAILABLE("Only unavailable vials"),
+        REQUESTED("Only requested vials"),
+        NOT_REQUESTED("Only non-requested vials");
 
         private String _caption;
         public String getCaption()
@@ -196,6 +198,12 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
                 break;
             case UNAVAILABLE:
                 filter.addCondition("Available", Boolean.FALSE);
+                break;
+            case REQUESTED:
+                filter.addCondition("LockedInRequest", Boolean.TRUE);
+                break;
+            case NOT_REQUESTED:
+                filter.addCondition("LockedInRequest", Boolean.FALSE);
                 break;
         }
     }

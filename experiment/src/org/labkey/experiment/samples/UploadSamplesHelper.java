@@ -16,24 +16,23 @@
 
 package org.labkey.experiment.samples;
 
-import org.labkey.api.data.Container;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.experiment.samples.UploadMaterialSetForm.OverwriteChoice;
-import org.labkey.experiment.api.ExperimentServiceImpl;
-import org.labkey.experiment.api.Material;
-import org.labkey.experiment.api.MaterialSource;
-import org.labkey.common.tools.TabLoader;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.User;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.CaseInsensitiveHashSet;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.common.tools.TabLoader;
+import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.labkey.experiment.api.Material;
+import org.labkey.experiment.api.MaterialSource;
+import org.labkey.experiment.samples.UploadMaterialSetForm.OverwriteChoice;
 
-import java.util.*;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.io.IOException;
+import java.util.*;
 
 public class UploadSamplesHelper
 {
@@ -148,7 +147,7 @@ public class UploadSamplesHelper
             String idColName2 = null;
             String idColName3 = null;
             List<String> idColPropertyURIs = new ArrayList<String>();
-            if (source != null)
+            if (source != null && source.getIdCol1() != null)
             {
                 idColName1 = source.getIdCol1();
                 idColName2 = source.getIdCol2();
@@ -206,6 +205,17 @@ public class UploadSamplesHelper
             }
             else
             {
+                // 6088: update id cols for already existing material source if none have been set
+                if (source.getIdCol1() == null && idColName1 != null)
+                {
+                    assert source.getName().equals(_form.getName());
+                    assert source.getLSID().equals(ExperimentServiceImpl.get().getSampleSetLsid(_form.getName(), _form.getContainer()).toString());
+                    source.setIdCol1(idColName1);
+                    source.setIdCol2(idColName2);
+                    source.setIdCol3(idColName3);
+                    source = ExperimentServiceImpl.get().updateMaterialSource(_form.getUser(), source);
+                }
+
                 if (maps.length > 0)
                 {
                     Set<String> uploadedPropertyURIs = maps[0].keySet();

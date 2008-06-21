@@ -64,7 +64,7 @@
         </tr>
         <tr>
             <th align="left">Editable Dataset Data<%=helpPopup("Editable Dataset Data", "If dataset data is editable, users with update permission will be able to edit dataset data")%></th>
-            <td align="left"><input type="checkbox" name="datasetRowsEditable" <%= form.isDatasetRowsEditable() ? "checked=\"true\"" : "" %>"></td>
+            <td align="left"><input type="checkbox" name="datasetRowsEditable" <%= form.isDatasetRowsEditable() ? "checked=\"true\"" : "" %>></td>
         </tr>
         <tr>
             <td>&nbsp;</td>

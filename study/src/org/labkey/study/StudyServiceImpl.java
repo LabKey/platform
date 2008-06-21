@@ -63,6 +63,13 @@ public class StudyServiceImpl implements StudyService.Service
         {
             Map<String,Object> oldData = getDatasetRow(u, c, datasetId, lsid);
 
+            if (oldData == null)
+            {
+                // No old record found, so we can't update
+                errors.add("Record not found with lsid: " + lsid);
+                return null;
+            }
+
             Map<String,Object> newData = new CaseInsensitiveHashMap<Object>(data);
             // If any fields aren't included, use the old values
             for (Map.Entry<String,Object> oldField : oldData.entrySet())
@@ -112,7 +119,7 @@ public class StudyServiceImpl implements StudyService.Service
     }
 
     // change a map's keys to have proper casing just like the list of columns
-    private static Map<String,Object> canonicalizeMap(Map<String,Object> source, List<ColumnInfo> columns)
+    private static Map<String,Object> canonicalizeDatasetRow(Map<String,Object> source, List<ColumnInfo> columns)
     {
         CaseInsensitiveHashMap<String> keyNames = new CaseInsensitiveHashMap<String>();
         for (ColumnInfo col : columns)
@@ -140,10 +147,25 @@ public class StudyServiceImpl implements StudyService.Service
     {
         Study study = StudyManager.getInstance().getStudy(c);
         DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
+
+
+        // Unfortunately we need to select twice: once to get the right column names,
+        // and once to get the canonical data.
+        // We should eventually be able to convert to using Query completely.
+        StudyQuerySchema querySchema = new StudyQuerySchema(study, u, true);
+        TableInfo queryTableInfo = querySchema.getDataSetTable(def, null);
+        Map<String,Object> result = Table.selectObject(queryTableInfo, lsid, Map.class);
+
+        if (result == null)
+            return null;
+
         try
         {
             TableInfo tInfo = def.getTableInfo(u);
             Map<String,Object> data = Table.selectObject(tInfo, lsid, Map.class);
+
+            if (data == null)
+                return null;
 
             // Need to remove extraneous columns
             data.remove("_row");
@@ -161,7 +183,7 @@ public class StudyServiceImpl implements StudyService.Service
                 if (!col.isUserEditable())
                     data.remove(col.getName());
             }
-            return canonicalizeMap(data, columns);
+            return canonicalizeDatasetRow(data, queryTableInfo.getColumns());
         }
         catch (ServletException se)
         {

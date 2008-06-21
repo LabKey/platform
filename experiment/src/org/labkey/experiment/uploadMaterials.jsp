@@ -17,9 +17,9 @@
 %>
 <%@ page import="org.labkey.api.exp.api.ExpSampleSet"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.experiment.samples.UploadMaterialSetForm"%>
+<%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.experiment.samples.UploadMaterialSetForm" %>
 
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -65,7 +65,7 @@
     <tr>
         <td class="ms-searchform">Id Columns<%= helpPopup("Id Columns", "Id columns must form a unique key for every row.")%></td>
         <td class="ms-vb">
-                <% if (sampleSet != null)
+                <% if (sampleSet != null && sampleSet.hasIdColumns())
                 { %>
                     <%= h(sampleSet.getIdCol1().getName()) %><%
                     if (sampleSet.getIdCol2() != null)
