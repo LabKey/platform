@@ -107,9 +107,10 @@ public class IssuesQueryView extends QueryView
 
         url = target.clone().deleteParameters();
         url.addFilter("Issues", FieldKey.fromString("Status"), CompareType.EQUAL, "open");
-        Sort sort = new Sort("Milestone");
-        sort.insertSortColumn("AssignedTo/DisplayName", true);
+        Sort sort = new Sort("AssignedTo/DisplayName");
+        sort.insertSortColumn("Milestone", true);
         sort.applyURLSort(url, getDataRegionName());
+        url.addParameter(getDataRegionName() + ".sort", sort.getSortParamValue());        
         item = new NavTree("open", url);
         if (currentView == "")
             item.setSelected(target.toString().equals(url.toString()));
@@ -117,9 +118,10 @@ public class IssuesQueryView extends QueryView
 
         url = target.clone().deleteParameters();
         url.addFilter("Issues", FieldKey.fromString("Status"), CompareType.EQUAL, "resolved");
-        sort = new Sort("Milestone");
-        sort.insertSortColumn("AssignedTo/DisplayName", true);
+        sort = new Sort("AssignedTo/DisplayName");
+        sort.insertSortColumn("Milestone", true);
         sort.applyURLSort(url, getDataRegionName());
+        url.addParameter(getDataRegionName() + ".sort", sort.getSortParamValue());
         item = new NavTree("resolved", url);
         if (currentView == "")
             item.setSelected(target.toString().equals(url.toString()));
@@ -129,6 +131,10 @@ public class IssuesQueryView extends QueryView
         {
             url = target.clone().deleteParameters();
             url.addFilter("Issues", FieldKey.fromString("AssignedTo/DisplayName"), CompareType.EQUAL, getUser().getDisplayName(getViewContext()));
+            url.addFilter("Issues", FieldKey.fromString("Status"), CompareType.NEQ_OR_NULL, "closed");
+            sort = new Sort("-Milestone");
+            sort.applyURLSort(url, getDataRegionName());
+            url.addParameter(getDataRegionName() + ".sort", sort.getSortParamValue());
             item = new NavTree("mine", url);
             if (currentView == "")
                 item.setSelected(target.toString().equals(url.toString()));
