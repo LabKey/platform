@@ -19,6 +19,7 @@ import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.util.FileType;
 
 import java.io.File;
+import java.io.FileFilter;
 
 /**
  * <code>FileAnalysisTaskPipeline</code>
@@ -51,13 +52,11 @@ public interface FileAnalysisTaskPipeline extends TaskPipeline
     FileType[] getInitialFileTypes();
 
     /**
-     * Returns true if a given file is of a type that can be used to start
-     * this pipeline.
-     *  
-     * @param f the file to test
-     * @return true if the file can be used to start the pipeline
+     * Returns a <code>FileFilter</code> for use in creating an input file set.
+     *
+     * @return filter for input files
      */
-    boolean isInitialType(File f);
+    FileFilter getInitialFileTypeFilter();
 
     /**
      * Returns a specific instance of an input file, pipeline root directory,

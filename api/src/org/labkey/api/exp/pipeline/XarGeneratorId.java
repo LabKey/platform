@@ -30,7 +30,7 @@ public interface XarGeneratorId
 
     interface Factory
     {
-        FileType getInputType();
+        FileType[] getInputTypes();
 
         FileType getOutputType();
     }

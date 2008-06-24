@@ -28,7 +28,7 @@ abstract public class AbstractTaskFactory implements TaskFactory, Cloneable
     private TaskId _id;
     private TaskId _dependencyId;
     private boolean _join;
-    private ExecutionLocation _executionLocation;
+    private String _executionLocation;
 
     public AbstractTaskFactory(Class namespaceClass)
     {
@@ -60,7 +60,7 @@ abstract public class AbstractTaskFactory implements TaskFactory, Cloneable
         if (settings.isJoinSet())
             _join = settings.isJoin();
         if (settings.getLocation() != null)
-            _executionLocation = ExecutionLocation.valueOf(settings.getLocation());
+            _executionLocation = settings.getLocation();
         return this;
     }
 
@@ -89,6 +89,11 @@ abstract public class AbstractTaskFactory implements TaskFactory, Cloneable
         return _id;
     }
 
+    public TaskId getActiveId(PipelineJob job)
+    {
+        return getId();
+    }
+
     public TaskId getDependencyId()
     {
         return _dependencyId;
@@ -109,7 +114,7 @@ abstract public class AbstractTaskFactory implements TaskFactory, Cloneable
         _join = join;
     }
 
-    public ExecutionLocation getExecutionLocation()
+    public String getExecutionLocation()
     {
         if (_executionLocation == null)
             return PipelineJobService.get().getDefaultExecutionLocation();
@@ -137,6 +142,6 @@ abstract public class AbstractTaskFactory implements TaskFactory, Cloneable
      */
     public void setLocation(String location)
     {
-        _executionLocation = ExecutionLocation.valueOf(location);
+        _executionLocation = location;
     }
 }

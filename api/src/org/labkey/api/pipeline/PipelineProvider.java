@@ -18,6 +18,7 @@ package org.labkey.api.pipeline;
 
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URIUtil;
+import org.labkey.api.util.FileType;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
@@ -247,6 +248,41 @@ abstract public class PipelineProvider
         }
     }
 
+    public static class FileTypesEntryFilter extends FileEntryFilter
+    {
+        private FileType[] _initialFileTypes;
+
+        public FileTypesEntryFilter(FileType[] initialFileTypes)
+        {
+            _initialFileTypes = initialFileTypes;
+        }
+        
+        public boolean accept(File f)
+        {
+            if (_initialFileTypes != null)
+            {
+                for (int i = 0; i < _initialFileTypes.length; i++)
+                {
+                    FileType ft = _initialFileTypes[i];
+                    if (ft.isType(f))
+                    {
+                        File dir = f.getParentFile();
+                        String basename = ft.getBaseName(f);
+
+                        // If any of the preceding types exist, then don't include this one.
+                        while (--i >= 0)
+                        {
+                            if (fileExists(_initialFileTypes[i].newFile(dir, basename)))
+                                return false;
+                        }
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+    }
+
 
     public static class FileAction
     {
@@ -276,7 +312,7 @@ abstract public class PipelineProvider
 
         public String getHref()
         {
-            return _href.toString();
+            return _href;
         }
 
         public boolean isRootAction()

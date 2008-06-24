@@ -291,6 +291,8 @@ api/src/org/labkey/api/pipeline/cmd/BooleanToCommandArgs.java -text
 api/src/org/labkey/api/pipeline/cmd/BooleanToSwitch.java -text
 api/src/org/labkey/api/pipeline/cmd/CommandTask.java -text
 api/src/org/labkey/api/pipeline/cmd/CommandTaskFactorySettings.java -text
+api/src/org/labkey/api/pipeline/cmd/ConvertTaskFactorySettings.java -text
+api/src/org/labkey/api/pipeline/cmd/ConvertTaskId.java -text
 api/src/org/labkey/api/pipeline/cmd/DosSwitchFormat.java -text
 api/src/org/labkey/api/pipeline/cmd/EnumToCommandArgs.java -text
 api/src/org/labkey/api/pipeline/cmd/EnumValueToSwitch.java -text

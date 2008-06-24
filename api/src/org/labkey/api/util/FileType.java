@@ -26,12 +26,32 @@ import java.io.Serializable;
 public class FileType implements Serializable
 {
     private String _suffix;
+    private Boolean _dir;
 
-    /** @param suffix usually the file extension, but may be some other suffix to uniquely identify a file type */
+    /**
+     * Constructor to use when type is assumed to be a file, but a call to isDirectory()
+     * is not necessary.
+     *
+     * @param suffix usually the file extension, but may be some other suffix to
+     *          uniquely identify a file type
+     */
     public FileType(String suffix)
     {
-//        assert suffix.charAt(0) == '.' : "Extension must begin with a period.";
         _suffix = suffix;
+    }
+
+    /**
+     * Constructor to use when a call to isDirectory() is necessary to differentiate this
+     * file type.
+     *
+     * @param suffix usually the file extension, but may be some other suffix to
+     *          uniquely identify a file type
+     * @param dir true when the type must be a directory
+     */
+    public FileType(String suffix, boolean dir)
+    {
+        _suffix = suffix;
+        _dir = new Boolean(dir);
     }
 
     public String getSuffix()
@@ -61,6 +81,9 @@ public class FileType implements Serializable
 
     public boolean isType(File file)
     {
+        if (_dir != null && _dir.booleanValue() != file.isDirectory())
+            return false;
+        
         return isType(file.getName());
     }
 

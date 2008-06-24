@@ -31,21 +31,26 @@ public interface TaskFactory
 {
     TaskId getId();
 
+    TaskId getActiveId(PipelineJob job);
+
     PipelineJob.Task createTask(PipelineJob job);
 
     TaskFactory cloneAndConfigure(TaskFactorySettings settings) throws CloneNotSupportedException;
 
-    FileType getInputType();
+    FileType[] getInputTypes();
 
     String getStatusName();
+
+    boolean isJoin();
 
     boolean isJobComplete(PipelineJob job) throws IOException, SQLException;
 
     boolean isParticipant(PipelineJob job) throws IOException, SQLException;
 
-    boolean isJoin();
+    String getExecutionLocation();
 
-    ExecutionLocation getExecutionLocation();
-
-    enum ExecutionLocation { local, remote, cluster }
+    /**
+     * Task is run on the LabKey Server.
+     */
+    static final String WEBSERVER = "webserver";
 }

@@ -170,11 +170,6 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         return _filesInput;
     }
 
-    public FileType getInputType()
-    {
-        return _inputType;
-    }
-
     public Integer getExperimentRunRowId()
     {
         return _experimentRunRowId;

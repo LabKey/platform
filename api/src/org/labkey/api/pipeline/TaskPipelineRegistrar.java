@@ -19,6 +19,7 @@ import org.springframework.beans.factory.InitializingBean;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Arrays;
 
 /**
  * <code>TaskPipelineRegistrar</code> is meant for use in a Spring
@@ -77,6 +78,28 @@ public class TaskPipelineRegistrar implements InitializingBean
         _pipelineImpls = pipelineImpls;
     }
 
+    public void addSubFactories(List factories)
+    {
+        List<TaskFactorySettings> listSettings = new ArrayList<TaskFactorySettings>();
+        for (Object spec : factories)
+        {
+            if (spec instanceof TaskFactorySettings.Provider)
+            {
+                TaskFactorySettings.Provider provider =
+                        (TaskFactorySettings.Provider) spec;
+                for (TaskFactorySettings settings : provider.getSettings())
+                {
+                    if (!_factories.contains(settings) && !listSettings.contains(settings))
+                        listSettings.add(settings);
+                }
+            }
+        }
+
+        // Make sure the sub-factories get added first
+        listSettings.addAll(_factories);
+        _factories = listSettings;
+    }
+    
     public void afterPropertiesSet() throws Exception
     {
         PipelineJobService service = PipelineJobService.get();
@@ -104,11 +127,15 @@ public class TaskPipelineRegistrar implements InitializingBean
                 {
                     TaskFactorySettings settings =
                             (TaskFactorySettings) spec;
-                    _factories.add(settings);
+                    if (!_factories.contains(settings))
+                        _factories.add(settings);
                     progression[i] = settings.getId();
                 }
             }
         }
+
+        addSubFactories(_factoryImpls);
+        addSubFactories(_factories);
 
         // Register and release the factories
         for (TaskFactory factory : _factoryImpls)
@@ -118,7 +145,7 @@ public class TaskPipelineRegistrar implements InitializingBean
         // Register and release the factories settings objects
         for (TaskFactorySettings settings : _factories)
             service.addTaskFactory(settings);
-        _factoryImpls = null;
+        _factories = null;
 
         // Register and release base pipeline implementations
         for (TaskPipeline pipeline : _pipelineImpls)

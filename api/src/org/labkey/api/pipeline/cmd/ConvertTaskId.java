@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 LabKey Corporation
+ * Copyright (c) 2008 LabKey Software Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,21 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.pipeline;
+package org.labkey.api.pipeline.cmd;
 
 /**
- * <code>TaskFactorySettings</code>
+ * <code>ConvertTaskId</code> exists only to give a unique ID to instances
+ * of <code>ConvertTaskFactorySettings</code>.  There is no such thing as
+ * a <code>ConvertTask</code>.  <code>ConvertTaskFactory</code> creates a
+ * <code>CommandTask</code> for its processing.
  */
-public interface TaskFactorySettings
+public interface ConvertTaskId
 {
-    TaskId getCloneId();
-
-    TaskId getId();
-
-    TaskId getImplId();
-
-    public interface Provider
-    {
-        TaskFactorySettings[] getSettings();
-    }
 }

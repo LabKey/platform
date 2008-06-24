@@ -40,5 +40,5 @@ public interface TaskPipelineRegistry
 
     TaskFactory[] getTaskFactories();
 
-    TaskFactory.ExecutionLocation getDefaultExecutionLocation();
+    String getDefaultExecutionLocation();
 }

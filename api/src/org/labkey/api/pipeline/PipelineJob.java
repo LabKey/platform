@@ -454,7 +454,7 @@ abstract public class PipelineJob extends Job implements Serializable
     {
         TaskFactory factory = getActiveTaskFactory();
         return (factory != null &&
-                TaskFactory.ExecutionLocation.local.equals(factory.getExecutionLocation()));
+                TaskFactory.WEBSERVER.equals(factory.getExecutionLocation()));
     }
 
     public void runActiveTask()
@@ -509,10 +509,10 @@ abstract public class PipelineJob extends Job implements Serializable
         int i = 0;
         if (_activeTaskId != null)
         {
-            i = ArrayUtils.indexOf(progression, _activeTaskId);
+            i = indexOfActiveTask(progression);
             if (i == -1)
             {
-                assert false : "Active task not found in task pipeline.";
+                error("Active task " + _activeTaskId + " not found in task pipeline.");
                 return false;                
             }
         }
@@ -536,7 +536,18 @@ abstract public class PipelineJob extends Job implements Serializable
         }
     }
 
-    public boolean findRunnableTask(TaskId[] progression, int i)
+    private int indexOfActiveTask(TaskId[] progression)
+    {
+        for (int i = 0; i < progression.length; i++)
+        {
+                TaskFactory factory = PipelineJobService.get().getTaskFactory(progression[i]);
+                if (factory.getActiveId(this).equals(_activeTaskId))
+                    return i;
+        }
+        return -1;
+    }
+
+    private boolean findRunnableTask(TaskId[] progression, int i)
     {
         // Search for next task that is not already complete
         TaskFactory factory = null;
@@ -571,7 +582,7 @@ abstract public class PipelineJob extends Job implements Serializable
             assert factory != null : "Factory not found.";
 
             // Set next task to be run
-            setActiveTaskId(factory.getId());
+            setActiveTaskId(factory.getActiveId(this));
 
             if (factory.isJoin() && isSplit())
             {
