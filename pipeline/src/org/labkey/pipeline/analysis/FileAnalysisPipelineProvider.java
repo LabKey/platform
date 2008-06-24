@@ -81,12 +81,7 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
                 String path = entry.cloneHref().getParameter(Params.path.toString());
                 ActionURL url = AnalysisController.urlAnalyze(c, tp.getId(), path);
                 addAction(url, tp.getDescription(),
-                        entry, entry.listFiles(new FileFilter(){
-                                public boolean accept(File f)
-                                {
-                                    return tp.isInitialType(f);
-                                }
-                        }));
+                        entry, entry.listFiles(tp.getInitialFileTypeFilter()));
 
                 FileFilter filter = getImportFilter(tp);
                 if (filter != null)
@@ -110,7 +105,8 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
             {
                 final XarGeneratorId.Factory factory = (XarGeneratorId.Factory)
                         PipelineJobService.get().getTaskFactory(id);
-                if (factory.getInputType() == null)
+                final FileType[] types = factory.getInputTypes();
+                if (types == null || types.length == 0)
                     return null;
 
                 return new FileEntryFilter ()
@@ -118,8 +114,16 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
                         public boolean accept(File f)
                         {
                             // If this is the input type to a xar generator
-                            FileType typeInput = factory.getInputType();
-                            if (!typeInput.isType(f))
+                            FileType typeInput = null;
+                            for (FileType type : types)
+                            {
+                                if (type.isType(f))
+                                {
+                                    typeInput = type;
+                                    break;
+                                }
+                            }
+                            if (typeInput == null)
                                 return false;
 
                             // But neither the output type, nor a plain XAR XML are present

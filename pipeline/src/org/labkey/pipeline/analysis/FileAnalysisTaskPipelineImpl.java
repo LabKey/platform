@@ -25,6 +25,7 @@ import org.labkey.api.util.URIUtil;
 import org.labkey.pipeline.api.TaskPipelineImpl;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
@@ -81,9 +82,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl implements Fi
         {
             TaskId tid = getTaskProgression()[0];
             TaskFactory factory = PipelineJobService.get().getTaskFactory(tid);
-            FileType ft = factory.getInputType();
-            if (ft != null)
-                _initialFileTypes = new FileType[] { ft };
+            _initialFileTypes = factory.getInputTypes();
         }
 
         // Misconfiguration: the user will never be able to start this pipeline
@@ -144,18 +143,9 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl implements Fi
         return _initialFileTypes;
     }
 
-    public boolean isInitialType(File f)
+    public FileFilter getInitialFileTypeFilter()
     {
-        if (_initialFileTypes != null)
-        {
-            for (FileType ft : _initialFileTypes)
-            {
-                if (ft.isType(f))
-                    return true;
-            }
-        }
-
-        return false;
+        return new PipelineProvider.FileTypesEntryFilter(_initialFileTypes);
     }
 
     public FileAnalysisXarGeneratorSupport getXarGeneratorSupport()

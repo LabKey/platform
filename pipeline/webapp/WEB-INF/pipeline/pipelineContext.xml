@@ -5,6 +5,7 @@
         <property name="factoryImpls">
             <list>
                 <bean class="org.labkey.pipeline.analysis.CommandTaskImpl$Factory"/>
+                <bean class="org.labkey.pipeline.analysis.ConvertTaskFactory"/>
             </list>
         </property>
         <property name="pipelineImpls">

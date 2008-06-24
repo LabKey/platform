@@ -365,7 +365,7 @@ public class AnalysisController extends SpringActionController
 
             XarGeneratorId.Factory factoryGenerator = (XarGeneratorId.Factory)
                     PipelineJobService.get().getTaskFactory(taskIdGenerator);
-            FileType ftGenInput = factoryGenerator.getInputType();
+            FileType ftGenInput = factoryGenerator.getInputTypes()[0];
             if (ftGenInput == null)
                 return throwNotFound("The pipeline '" + taskId + "' XAR generator input type not found.");                
 

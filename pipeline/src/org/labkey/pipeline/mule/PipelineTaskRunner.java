@@ -27,6 +27,16 @@ public class PipelineTaskRunner
 {
     public void run(PipelineJob job)
     {
-        job.runActiveTask();
+        try
+        {
+            job.runActiveTask();
+        }
+        catch (Throwable t)
+        {
+            String msg = t.getMessage();
+            if (msg == null)
+                msg = t.getClass().toString();
+            job.error(msg, t);
+        }
     }
 }

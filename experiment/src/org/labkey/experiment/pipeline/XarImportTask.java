@@ -63,9 +63,9 @@ public class XarImportTask extends PipelineJob.Task
             return new XarImportTask(job, this);
         }
 
-        public FileType getInputType()
+        public FileType[] getInputTypes()
         {
-            return _inputType;
+            return new FileType[] { _inputType };
         }
 
         public String getStatusName()
@@ -99,7 +99,7 @@ public class XarImportTask extends PipelineJob.Task
         String baseName = getJobSupport().getBaseName();
         File dirAnalysis = getJobSupport().getAnalysisDirectory();
 
-        File fileExperimentXML = _factory.getInputType().newFile(dirAnalysis, baseName);
+        File fileExperimentXML = _factory.getInputTypes()[0].newFile(dirAnalysis, baseName);
 
         FileXarSource source = new FileXarSource(fileExperimentXML);
         if (ExperimentPipelineJob.loadExperiment(getJob(), source, false))

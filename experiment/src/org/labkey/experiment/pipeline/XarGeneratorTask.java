@@ -64,9 +64,9 @@ public class XarGeneratorTask extends PipelineJob.Task implements XarGeneratorId
             return new XarGeneratorTask(job, this);
         }
 
-        public FileType getInputType()
+        public FileType[] getInputTypes()
         {
-            return _inputType;
+            return new FileType[] { _inputType };
         }
 
         public FileType getOutputType()

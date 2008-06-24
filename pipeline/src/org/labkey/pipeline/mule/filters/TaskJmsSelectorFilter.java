@@ -28,17 +28,17 @@ import org.mule.providers.jms.filters.JmsSelectorFilter;
  */
 public class TaskJmsSelectorFilter extends JmsSelectorFilter
 {
-    private TaskFactory.ExecutionLocation _location;
+    private String _location;
     private boolean _includeMonolithic;
 
     public String getLocation()
     {
-        return _location.toString();
+        return _location;
     }
 
     public void setLocation(String location)
     {
-        _location = TaskFactory.ExecutionLocation.valueOf(location);
+        _location = location;
     }
 
     public boolean isIncludeMonolithic()

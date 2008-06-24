@@ -922,6 +922,7 @@ pipeline/src/org/labkey/pipeline/PipelineWebPart.java -text
 pipeline/src/org/labkey/pipeline/analysis/AnalysisController.java -text
 pipeline/src/org/labkey/pipeline/analysis/AnalyzePage.java -text
 pipeline/src/org/labkey/pipeline/analysis/CommandTaskImpl.java -text
+pipeline/src/org/labkey/pipeline/analysis/ConvertTaskFactory.java -text
 pipeline/src/org/labkey/pipeline/analysis/FileAnalysisJob.java -text
 pipeline/src/org/labkey/pipeline/analysis/FileAnalysisPipelineProvider.java -text
 pipeline/src/org/labkey/pipeline/analysis/FileAnalysisProtocol.java -text

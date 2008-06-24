@@ -146,10 +146,10 @@ public class CommandTaskImpl extends PipelineJob.Task implements CommandTask
             return super.isParticipant(job);
         }
 
-        public FileType getInputType()
+        public FileType[] getInputTypes()
         {
             TaskPath tp = _inputPaths.get(WorkDirectory.Function.input.toString());
-            return (tp == null ? null : tp.getType());
+            return (tp == null ? null : new FileType[] { tp.getType() });
         }
 
         public Map<String, TaskPath> getInputPaths()

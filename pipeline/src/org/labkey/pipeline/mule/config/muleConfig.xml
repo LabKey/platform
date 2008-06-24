@@ -98,7 +98,7 @@
                     <transaction action="ALWAYS_BEGIN" factory="org.mule.providers.jms.JmsTransactionFactory" />
                     <filter className="org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter">
                         <properties>
-                            <property name="location" value="local"/>
+                            <property name="location" value="webserver"/>
                             <property name="includeMonolithic" value="true"/>
                         </properties>
                     </filter>

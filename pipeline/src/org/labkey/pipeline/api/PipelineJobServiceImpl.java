@@ -43,8 +43,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
     private final HashMap<TaskId, TaskFactory> _taskFactoryStore =
             new HashMap<TaskId, TaskFactory>();
 
-    private TaskFactory.ExecutionLocation _defaultExecutionLocation =
-                    TaskFactory.ExecutionLocation.local;
+    private String _defaultExecutionLocation = TaskFactory.WEBSERVER;
 
     private ApplicationProperties _appProperties;
     
@@ -154,7 +153,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
     {
         TaskFactory factory = getTaskFactory(settings.getCloneId());
         if (factory == null)
-            throw new IllegalArgumentException("Base implementation " + settings.getCloneId() + " not found.");
+            throw new IllegalArgumentException("Base task factory implementation " + settings.getCloneId() + " not found in registry.");
 
         addTaskFactory(factory.cloneAndConfigure(settings));
     }
@@ -180,12 +179,12 @@ public class PipelineJobServiceImpl extends PipelineJobService
         return new ParamParserImpl();
     }
 
-    public TaskFactory.ExecutionLocation getDefaultExecutionLocation()
+    public String getDefaultExecutionLocation()
     {
         return _defaultExecutionLocation;
     }
 
-    public void setDefaultExecutionLocation(TaskFactory.ExecutionLocation defaultExecutionLocation)
+    public void setDefaultExecutionLocation(String defaultExecutionLocation)
     {
         _defaultExecutionLocation = defaultExecutionLocation;
     }
