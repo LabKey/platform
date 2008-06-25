@@ -29,14 +29,14 @@ import java.util.HashMap;
  */
 public class TypePicker extends ListBox
 {
-    final static String xsdString = "http://www.w3.org/2001/XMLSchema#string";
-    final static String xsdMultiLine = "http://www.w3.org/2001/XMLSchema#multiLine";
-    final static String xsdBoolean = "http://www.w3.org/2001/XMLSchema#boolean";
-    final static String xsdInt =  "http://www.w3.org/2001/XMLSchema#int";
-    final static String xsdDouble = "http://www.w3.org/2001/XMLSchema#double";
-    final static String xsdDateTime = "http://www.w3.org/2001/XMLSchema#dateTime";
-    final static String xsdFileLink = "http://cpas.fhcrc.org/exp/xml#fileLink";
-    final static String xsdAttachment = "http://www.labkey.org/exp/xml#attachment";
+    public final static String xsdString = "http://www.w3.org/2001/XMLSchema#string";
+    public final static String xsdMultiLine = "http://www.w3.org/2001/XMLSchema#multiLine";
+    public final static String xsdBoolean = "http://www.w3.org/2001/XMLSchema#boolean";
+    public final static String xsdInt =  "http://www.w3.org/2001/XMLSchema#int";
+    public final static String xsdDouble = "http://www.w3.org/2001/XMLSchema#double";
+    public final static String xsdDateTime = "http://www.w3.org/2001/XMLSchema#dateTime";
+    public final static String xsdFileLink = "http://cpas.fhcrc.org/exp/xml#fileLink";
+    public final static String xsdAttachment = "http://www.labkey.org/exp/xml#attachment";
 
 
     static Map synonyms = new HashMap();

@@ -29,7 +29,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.study.ParticipantVisit;
-import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.GWTView;
@@ -305,7 +304,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
         }
     }
 
-    public boolean collectPropertyOnUpload(String propertyName)
+    public boolean collectPropertyOnUpload(String propertyName, AssayRunUploadContext uploadContext)
     {
         return !(propertyName.equals(AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME) ||
                 propertyName.equals(AbstractAssayProvider.VISITID_PROPERTY_NAME) ||

@@ -59,5 +59,5 @@ public interface ParticipantVisitResolverType
 
     public void putDefaultProperties(HttpServletRequest request, Map<String, String> properties);
 
-    public boolean collectPropertyOnUpload(String propertyName);
+    public boolean collectPropertyOnUpload(String propertyName, AssayRunUploadContext uploadContext);
 }

@@ -83,7 +83,7 @@ public class StudyParticipantVisitResolverType implements ParticipantVisitResolv
         // No form fields, so we don't need to add anything
     }
 
-    public boolean collectPropertyOnUpload(String propertyName)
+    public boolean collectPropertyOnUpload(String propertyName, AssayRunUploadContext uploadContext)
     {
         return true;
     }

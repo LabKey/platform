@@ -34,10 +34,11 @@ import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.PlateService;
 import org.labkey.api.study.PlateTemplate;
 import org.labkey.api.study.WellGroupTemplate;
+import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.api.view.JspView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.InsertView;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -108,7 +109,7 @@ public abstract class PlateBasedAssayProvider extends AbstractAssayProvider
                                   Map<ExpData, String> outputDatas) throws ExperimentException
     {
         Map<WellGroupTemplate, ExpMaterial> originalMaterials = new HashMap<WellGroupTemplate, ExpMaterial>();
-        PlateSamplePropertyHelper helper = createSamplePropertyHelper(context.getContainer(), context.getProtocol(), null);
+        PlateSamplePropertyHelper helper = createSamplePropertyHelper(context, context.getProtocol(), null);
         Map<WellGroupTemplate, Map<PropertyDescriptor, String>> materialProperties = helper.getSampleProperties(context.getRequest());
         for (Map.Entry<WellGroupTemplate, Map<PropertyDescriptor, String>> entry : materialProperties.entrySet())
         {
@@ -270,9 +271,9 @@ public abstract class PlateBasedAssayProvider extends AbstractAssayProvider
         return getPropertiesForDomainPrefix(protocol, ASSAY_DOMAIN_SAMPLE_WELLGROUP);
     }
 
-    public PlateSamplePropertyHelper createSamplePropertyHelper(Container container, ExpProtocol protocol, ParticipantVisitResolverType filterInputsForType)
+    public PlateSamplePropertyHelper createSamplePropertyHelper(AssayRunUploadContext context, ExpProtocol protocol, ParticipantVisitResolverType filterInputsForType)
     {
-        PlateTemplate template = getPlateTemplate(container, protocol);
+        PlateTemplate template = getPlateTemplate(context.getContainer(), protocol);
         PropertyDescriptor[] allSampleProperties = getSampleWellGroupColumns(protocol);
         PropertyDescriptor[] selectedSampleProperties = allSampleProperties;
         if (filterInputsForType != null)
@@ -280,7 +281,7 @@ public abstract class PlateBasedAssayProvider extends AbstractAssayProvider
             List<PropertyDescriptor> selected = new ArrayList<PropertyDescriptor>();
             for (PropertyDescriptor possible : allSampleProperties)
             {
-                if (filterInputsForType.collectPropertyOnUpload(possible.getName()))
+                if (filterInputsForType.collectPropertyOnUpload(possible.getName(), context))
                     selected.add(possible);
             }
             selectedSampleProperties = selected.toArray(new PropertyDescriptor[selected.size()]);
@@ -293,6 +294,8 @@ public abstract class PlateBasedAssayProvider extends AbstractAssayProvider
         // null means we haven't checked the request yet to know whether
         // or not to include the data
         private Boolean includeParticipantAndVisit = null;
+        
+        private static final String INCLUDE_PARTICIPANT_AND_VISIT = "includeParticipantAndVisit";
 
         public String getName()
         {
@@ -307,11 +310,13 @@ public abstract class PlateBasedAssayProvider extends AbstractAssayProvider
         public void render(RenderContext ctx) throws Exception
         {
             HtmlView view = new HtmlView(
-                    "<input type=\"checkbox\" name=\"includeParticipantAndVisit\">I will also provide participant id and visit id");
+                    "<input type=\"checkbox\" name=\"" +
+                            INCLUDE_PARTICIPANT_AND_VISIT +
+                            "\">I will also provide participant id and visit id");
             view.render(ctx.getRequest(), ctx.getViewContext().getResponse());
         }
 
-        public boolean collectPropertyOnUpload(String propertyName)
+        public boolean collectPropertyOnUpload(String propertyName, AssayRunUploadContext uploadContext)
         {
             if (propertyName.equals(AbstractAssayProvider.DATE_PROPERTY_NAME))
                 return false;
@@ -322,7 +327,7 @@ public abstract class PlateBasedAssayProvider extends AbstractAssayProvider
                 if (includeParticipantAndVisit == null)
                 {
                     // Need to initialize it
-                    String param = HttpView.currentRequest().getParameter("includeParticipantAndVisit");
+                    String param = uploadContext.getRequest().getParameter(INCLUDE_PARTICIPANT_AND_VISIT);
                     if ("on".equals(param))
                         includeParticipantAndVisit = Boolean.TRUE;
                     else
@@ -331,6 +336,12 @@ public abstract class PlateBasedAssayProvider extends AbstractAssayProvider
                 return includeParticipantAndVisit.booleanValue();
             }
             return true;
+        }
+
+        public void addHiddenFormFields(InsertView view, AssayRunUploadForm form)
+        {
+            view.getDataRegion().addHiddenFormField(INCLUDE_PARTICIPANT_AND_VISIT,
+                    form.getRequest().getParameter(INCLUDE_PARTICIPANT_AND_VISIT));
         }
     }
 
@@ -346,7 +357,7 @@ public abstract class PlateBasedAssayProvider extends AbstractAssayProvider
             return "Participant id and visit id.";
         }
 
-        public boolean collectPropertyOnUpload(String propertyName)
+        public boolean collectPropertyOnUpload(String propertyName, AssayRunUploadContext uploadContext)
         {
             return !(propertyName.equals(AbstractAssayProvider.SPECIMENID_PROPERTY_NAME) ||
                     propertyName.equals(AbstractAssayProvider.DATE_PROPERTY_NAME));
@@ -365,7 +376,7 @@ public abstract class PlateBasedAssayProvider extends AbstractAssayProvider
             return "Participant id and date.";
         }
 
-        public boolean collectPropertyOnUpload(String propertyName)
+        public boolean collectPropertyOnUpload(String propertyName, AssayRunUploadContext uploadContext)
         {
             return !(propertyName.equals(AbstractAssayProvider.SPECIMENID_PROPERTY_NAME) ||
                     propertyName.equals(AbstractAssayProvider.VISITID_PROPERTY_NAME));
