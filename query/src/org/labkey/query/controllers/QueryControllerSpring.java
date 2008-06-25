@@ -25,12 +25,12 @@ import org.labkey.api.data.*;
 import org.labkey.api.jsp.FormPage;
 import org.labkey.api.query.*;
 import org.labkey.api.security.*;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.AppProps;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.study.StudyService;
 import org.labkey.query.CustomViewImpl;
 import org.labkey.query.QueryDefinitionImpl;
 import org.labkey.query.TableXML;
@@ -97,7 +97,7 @@ public class QueryControllerSpring extends SpringActionController
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
             _form = form;
-            return FormPage.getView(QueryControllerSpring.class, _form, "begin.jsp");
+            return FormPage.getView(QueryControllerSpring.class, _form, errors, "begin.jsp");
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -122,7 +122,7 @@ public class QueryControllerSpring extends SpringActionController
             _form = form;
             if (null == form.getSchemaName())
                 return HttpView.redirect(actionURL(QueryAction.begin));
-            return FormPage.getView(QueryControllerSpring.class, _form, "schema.jsp");
+            return FormPage.getView(QueryControllerSpring.class, _form, errors, "schema.jsp");
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -148,7 +148,7 @@ public class QueryControllerSpring extends SpringActionController
         public ModelAndView getView(NewQueryForm form, boolean reshow, BindException errors) throws Exception
         {
             _form = form;
-            return FormPage.getView(QueryControllerSpring.class, form, "newQuery.jsp");
+            return FormPage.getView(QueryControllerSpring.class, form, errors, "newQuery.jsp");
         }
 
         public boolean handlePost(NewQueryForm form, BindException errors) throws Exception
@@ -197,7 +197,7 @@ public class QueryControllerSpring extends SpringActionController
             if (!form.getSchema().canCreate())
                 HttpView.throwUnauthorized();
             getPageConfig().setFocus("forms[0].ff_newQueryName");
-            return FormPage.getView(QueryControllerSpring.class, form, "newQuery.jsp");
+            return FormPage.getView(QueryControllerSpring.class, form, errors, "newQuery.jsp");
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -287,7 +287,7 @@ public class QueryControllerSpring extends SpringActionController
 
         public ModelAndView getConfirmView(QueryForm queryForm, BindException errors) throws Exception
         {
-            return FormPage.getView(QueryControllerSpring.class, queryForm, "deleteQuerySpring.jsp");
+            return FormPage.getView(QueryControllerSpring.class, queryForm, errors, "deleteQuerySpring.jsp");
         }
 
         public boolean handlePost(QueryForm form, BindException errors) throws Exception
@@ -562,7 +562,7 @@ public class QueryControllerSpring extends SpringActionController
                     return HttpView.redirect(_queryDef.urlFor(QueryAction.sourceQuery));
                 form.ff_designXML = queryDoc.toString();
             }
-            return FormPage.getView(QueryControllerSpring.class, form, "designQuery.jsp");
+            return FormPage.getView(QueryControllerSpring.class, form, errors, "designQuery.jsp");
         }
 
         public boolean handlePost(DesignForm form, BindException errors) throws Exception

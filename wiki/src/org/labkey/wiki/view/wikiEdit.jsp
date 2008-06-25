@@ -1207,7 +1207,7 @@
 </table>
 <table style="width:99%" cellpadding="0" cellspacing="0">
     <tr>
-        <td style="width:99%">
+        <td style="width:99%;vertical-align:top;">
             <table class="form-layout">
                 <tr>
                     <td class="ms-searchform" title="This field is required">Name<span class="labkey-error">*</span></td>
@@ -1275,99 +1275,99 @@
                     </td>
                 </tr>
             </table>
+            <div id="wiki-help-HTML-visual" style="display:none">
+                <table>
+                    <tr>
+                        <td colspan=2><b>HTML Formatting Guide:</b></td>
+                    </tr>
+                    <tr>
+                        <td>Link to a wiki page</td>
+                        <td>Select text and right click. Then select "Insert/edit link."
+                         Type the name of the wiki page in "Link URL" textbox.</td>
+                    </tr>
+                    <tr>
+                        <td>Link to an attachment</td>
+                        <td>Select text and right click. Then select "Insert/edit link."
+                         Type the name of the attachment with the file extension in "Link URL" textbox.</td>
+                    </tr>
+                </table>
+            </div>
+            <div id="wiki-help-HTML-source" style="display:none">
+                <table>
+                    <tr>
+                        <td colspan=2><b>HTML Source Formatting Guide:</b></td>
+                    </tr>
+                    <tr>
+                        <td>Link to a wiki page</td>
+                        <td>&lt;a href="pageName"&gt;My Page&lt;/a&gt;</td>
+                    </tr>
+                    <tr>
+                        <td>Link to an attachment</td>
+                        <td>&lt;a href="attachment.doc"&gt;My Document&lt;/a&gt;</td>
+                    </tr>
+                    <tr>
+                        <td>Show an attached image</td>
+                        <td>&lt;img src="imageName.jpg"&gt;</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div id="wiki-help-RADEOX-source" style="display:none">
+                <table>
+                    <tr>
+                        <td colspan=2><b>Wiki Formatting Guide</b> (<a target="_blank" href="<%=(new HelpTopic("wikiSyntax", HelpTopic.Area.SERVER)).getHelpTopicLink()%>">more help</a>):</td>
+                    </tr>
+                    <tr>
+                        <td>link to page in this wiki&nbsp;&nbsp;</td>
+                        <td>[pagename] or [Display text|pagename]</td>
+                    </tr>
+                    <tr>
+                        <td>external link</td>
+                        <td>http://www.google.com or {link:Display text|http://www.google.com}</td>
+                    </tr>
+                    <tr>
+                        <td>picture</td>
+                        <td>[attach.jpg] or {image:http://www.website.com/somepic.jpg}</td>
+                    </tr>
+                    <tr>
+                        <td>bold</td>
+                        <td>**like this**</td>
+                    </tr>
+                    <tr>
+                        <td>italics</td>
+                        <td>~~like this~~</td>
+                    </tr>
+                    <tr>
+                        <td>bulleted list</td>
+                        <td>- list item</td>
+                    </tr>
+                    <tr>
+                        <td>numbered List</td>
+                        <td>1. list item</td>
+                    </tr>
+                    <tr>
+                        <td>line break (&lt;br&gt;)</td>
+                        <td>\\</td>
+                    </tr>
+                </table>
+            </div>
+            <div id="wiki-help-TEXT_WITH_LINKS-source" style="display:none">
+                <table>
+                    <tr>
+                        <td><b>Plain Text Formatting Guide:</b></td>
+                    </tr>
+                    <tr>
+                        <td>In plain text format, web addresses (http://www.labkey.com) will be automatically converted
+                        into active hyperlinks when the page is shown, but all other text will appear as typed.</td>
+                    </tr>
+                </table>
+            </div>
         </td>
         <td style="width:1%;vertical-align:top;">
             <div id="wiki-toc-tree" class="extContainer" style="display:none"/>
         </td>
     </tr>
 </table>
-<div id="wiki-help-HTML-visual" style="display:none">
-    <table>
-        <tr>
-            <td colspan=2><b>HTML Formatting Guide:</b></td>
-        </tr>
-        <tr>
-            <td>Link to a wiki page</td>
-            <td>Select text and right click. Then select "Insert/edit link."
-             Type the name of the wiki page in "Link URL" textbox.</td>
-        </tr>
-        <tr>
-            <td>Link to an attachment</td>
-            <td>Select text and right click. Then select "Insert/edit link."
-             Type the name of the attachment with the file extension in "Link URL" textbox.</td>
-        </tr>
-    </table>
-</div>
-<div id="wiki-help-HTML-source" style="display:none">
-    <table>
-        <tr>
-            <td colspan=2><b>HTML Source Formatting Guide:</b></td>
-        </tr>
-        <tr>
-            <td>Link to a wiki page</td>
-            <td>&lt;a href="pageName"&gt;My Page&lt;/a&gt;</td>
-        </tr>
-        <tr>
-            <td>Link to an attachment</td>
-            <td>&lt;a href="attachment.doc"&gt;My Document&lt;/a&gt;</td>
-        </tr>
-        <tr>
-            <td>Show an attached image</td>
-            <td>&lt;img src="imageName.jpg"&gt;</td>
-        </tr>
-    </table>
-</div>
-
-<div id="wiki-help-RADEOX-source" style="display:none">
-    <table>
-        <tr>
-            <td colspan=2><b>Wiki Formatting Guide</b> (<a target="_blank" href="<%=(new HelpTopic("wikiSyntax", HelpTopic.Area.SERVER)).getHelpTopicLink()%>">more help</a>):</td>
-        </tr>
-        <tr>
-            <td>link to page in this wiki&nbsp;&nbsp;</td>
-            <td>[pagename] or [Display text|pagename]</td>
-        </tr>
-        <tr>
-            <td>external link</td>
-            <td>http://www.google.com or {link:Display text|http://www.google.com}</td>
-        </tr>
-        <tr>
-            <td>picture</td>
-            <td>[attach.jpg] or {image:http://www.website.com/somepic.jpg}</td>
-        </tr>
-        <tr>
-            <td>bold</td>
-            <td>**like this**</td>
-        </tr>
-        <tr>
-            <td>italics</td>
-            <td>~~like this~~</td>
-        </tr>
-        <tr>
-            <td>bulleted list</td>
-            <td>- list item</td>
-        </tr>
-        <tr>
-            <td>numbered List</td>
-            <td>1. list item</td>
-        </tr>
-        <tr>
-            <td>line break (&lt;br&gt;)</td>
-            <td>\\</td>
-        </tr>
-    </table>
-</div>
-<div id="wiki-help-TEXT_WITH_LINKS-source" style="display:none">
-    <table>
-        <tr>
-            <td><b>Plain Text Formatting Guide:</b></td>
-        </tr>
-        <tr>
-            <td>In plain text format, web addresses (http://www.labkey.com) will be automatically converted
-            into active hyperlinks when the page is shown, but all other text will appear as typed.</td>
-        </tr>
-    </table>
-</div>
 <div id="<%=ID_PREFIX%>window-change-format" class="x-hidden">
     <table cellpadding="2">
         <tr>

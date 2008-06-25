@@ -44,7 +44,7 @@ public class GWTTabLoader
         String[] keys = ((String)rows.get(0)).split("\t");
         for (int i=0;i<keys.length;i++)
         {
-            keys[i] = keys[i].toLowerCase();
+            keys[i] = keys[i].trim().toLowerCase();
         }
 
         Map[] data = new Map[rows.size() - 1];
@@ -74,8 +74,7 @@ public class GWTTabLoader
         List rows = new ArrayList();
         StringBuffer sb = new StringBuffer();
 
-        int index = 0;
-        while (index < tsv.length())
+        for (int index = 0; index < tsv.length(); index++)
         {
             char c = tsv.charAt(index);
             if (c == '\n' || c == '\r')
@@ -92,7 +91,6 @@ public class GWTTabLoader
             {
                 sb.append(c);
             }
-            index++;
         }
         // Handle last row which may not be properly terminated
         if (sb.length() > 0)

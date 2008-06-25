@@ -947,8 +947,9 @@ public class Designer implements EntryPoint
                         "<p><b>Paste tab-delimited text with the following column headers and one row for each field</b><br>\n" +
                         "<b>Property</b> - Required. Field name. Must start with a character and include only characters and numbers<br>\n" +
                         "<b>RangeURI</b> - Required. Values: xsd:int, xsd:string, xsd:double, xsd:boolean, xsd:dateTime<br>\n" +
+                        "<b>Format</b> - Optional. Format for a date or numeric field<br>\n" +
                         "<b>Label</b> - Optional. Name that users will see for the field<br>\n" +
-                        "<b>NotNull</b> - Optional. Set to TRUE if this value is required.<br>\n" +
+                        "<b>NotNull</b> - Optional. Set to TRUE if this value is required<br>\n" +
                         "<b>Description</b> - Optional. Description of the field</p>");
                 vPanel.add(html);
 
@@ -1013,6 +1014,7 @@ public class Designer implements EntryPoint
                     prop.setDescription((String)data[i].get("description"));
                     prop.setRequired(isRequired(data[i]));
                     prop.setRangeURI(getRangeURI(data[i]));
+                    prop.setFormat((String)data[i].get("format"));
                     properties.add(prop);
                 }
                 _propEdit.setPropertyDescriptors(properties);
@@ -1033,17 +1035,17 @@ public class Designer implements EntryPoint
                 if (rangeString != null)
                 {
                     if (rangeString.equalsIgnoreCase("xsd:int"))
-                        return "xsd:int";
+                        return TypePicker.xsdInt;
                     if (rangeString.equalsIgnoreCase("xsd:double"))
-                        return "xsd:double";
+                        return TypePicker.xsdDouble;
                     if (rangeString.equalsIgnoreCase("xsd:boolean"))
-                        return "xsd:boolean";
+                        return TypePicker.xsdBoolean;
                     if (rangeString.equalsIgnoreCase("xsd:dateTime"))
-                        return "xsd:dateTime";
+                        return TypePicker.xsdDateTime;
                 }
 
                 // Default to string
-                return "xsd:string";
+                return TypePicker.xsdString;
             }
         }
 
