@@ -30,6 +30,9 @@
       <ns:column columnName="Path"/>
       <ns:column columnName="Providers"/>
       <ns:column columnName="Type"/>
+      <ns:column columnName="KeyBytes"/>
+      <ns:column columnName="KeyPassword"/>
+      <ns:column columnName="CertBytes"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="StatusFiles" tableDbType="TABLE">

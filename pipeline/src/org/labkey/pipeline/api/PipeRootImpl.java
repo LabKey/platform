@@ -23,6 +23,7 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.GlobusKeyPair;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
@@ -77,17 +78,17 @@ public class PipeRootImpl implements PipeRoot
     private URI _uri;
     private File _file;
     private String _entityId;
-
-    public PipeRootImpl(Container container, URI uri, String entityId)
-    {
-        this._container = container;
-        this._uri = uri;
-        this._entityId = entityId;
-    }
+    private GlobusKeyPairImpl _keyPair;
 
     public PipeRootImpl(PipelineRoot root) throws URISyntaxException
     {
-        this(ContainerManager.getForId(root.getContainerId()), new URI(root.getPath()), root.getEntityId());
+        _container = ContainerManager.getForId(root.getContainerId());
+        _uri = new URI(root.getPath());
+        _entityId = root.getEntityId();
+        if (root.getKeyBytes() != null && root.getCertBytes() != null)
+        {
+            _keyPair = new GlobusKeyPairImpl(root.getKeyBytes(), root.getKeyPassword(), root.getCertBytes());
+        }
     }
 
     public Container getContainer()
@@ -241,5 +242,10 @@ public class PipeRootImpl implements PipeRoot
     public ACL getACL()
     {
         return SecurityManager.getACL(getContainer(), getEntityId());
+    }
+
+    public GlobusKeyPair getGlobusKeyPair()
+    {
+        return _keyPair;
     }
 }

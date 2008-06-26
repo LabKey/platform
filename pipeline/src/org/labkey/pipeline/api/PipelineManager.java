@@ -19,6 +19,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.GlobusKeyPair;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.api.security.User;
 import org.labkey.api.util.AppProps;
@@ -123,7 +124,7 @@ public class PipelineManager
     }
 
 
-    static public void setPipelineRoot(User user, Container container, String path, String type) throws SQLException
+    static public void setPipelineRoot(User user, Container container, String path, String type, GlobusKeyPair globusKeyPair) throws SQLException
     {
         PipelineRoot oldValue = getPipelineRootObject(container, type);
         PipelineRoot newValue = null;
@@ -135,22 +136,30 @@ public class PipelineManager
                 Table.delete(PipelineSchema.getInstance().getTableInfoPipelineRoots(), oldValue.getPipelineRootId(), null);
             }
         }
-        else if (oldValue == null)
-        {
-            newValue = new PipelineRoot();
-            newValue.setPath(path);
-            newValue.setContainerId(container.getId());
-            newValue.setType(type);
-            Table.insert(user, pipeline.getTableInfoPipelineRoots(), newValue);
-        }
         else
         {
-            newValue = new PipelineRoot(oldValue);
+            if (oldValue == null)
+            {
+                newValue = new PipelineRoot();
+            }
+            else
+            {
+                newValue = new PipelineRoot(oldValue);
+            }
             newValue.setPath(path);
             newValue.setContainerId(container.getId());
             newValue.setType(type);
-            Table.update(user, pipeline.getTableInfoPipelineRoots(), newValue, newValue.getPipelineRootId(), null);
-            // should use clone
+            newValue.setKeyBytes(globusKeyPair == null ? null : globusKeyPair.getKeyBytes());
+            newValue.setCertBytes(globusKeyPair == null ? null : globusKeyPair.getCertBytes());
+            newValue.setKeyPassword(globusKeyPair == null ? null : globusKeyPair.getPassword());
+            if (oldValue == null)
+            {
+                Table.insert(user, pipeline.getTableInfoPipelineRoots(), newValue);
+            }
+            else
+            {
+                Table.update(user, pipeline.getTableInfoPipelineRoots(), newValue, newValue.getPipelineRootId(), null);
+            }
         }
 
         ContainerManager.firePropertyChangeEvent(new ContainerManager.ContainerPropertyChangeEvent(

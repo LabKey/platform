@@ -329,7 +329,7 @@ body, td, .gwt-Label
     color: red;
     }
 
-.cpas-message
+.cpas-message, .labkey-message
     {
     font-size: <%= themeFont.getNormalSize() %>;
     color: green;

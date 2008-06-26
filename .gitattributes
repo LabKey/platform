@@ -894,6 +894,7 @@ pipeline/src/META-INF/pipeline/scripts/postgresql/pipeline-1.70-2.00.sql -text
 pipeline/src/META-INF/pipeline/scripts/postgresql/pipeline-2.00-2.10.sql -text
 pipeline/src/META-INF/pipeline/scripts/postgresql/pipeline-2.30-2.31.sql -text
 pipeline/src/META-INF/pipeline/scripts/postgresql/pipeline-2.30-8.10.sql -text
+pipeline/src/META-INF/pipeline/scripts/postgresql/pipeline-8.20-8.21.sql -text
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/obsolete/cpas-0.00-0.58.sql -text
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/obsolete/cpas-0.00-0.64.sql -text
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/obsolete/cpas-0.63-0.64.sql -text
@@ -914,6 +915,7 @@ pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/pipeline-1.70-2.00.sql -t
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/pipeline-2.00-2.10.sql -text
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/pipeline-2.30-2.31.sql -text
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/pipeline-2.30-8.10.sql -text
+pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/pipeline-8.20-8.21.sql -text
 pipeline/src/org/labkey/pipeline/DirectoryView.java -text
 pipeline/src/org/labkey/pipeline/FileContentPipelineProvider.java -text
 pipeline/src/org/labkey/pipeline/PipelineController.java -text
@@ -929,6 +931,8 @@ pipeline/src/org/labkey/pipeline/analysis/FileAnalysisProtocol.java -text
 pipeline/src/org/labkey/pipeline/analysis/FileAnalysisProtocolFactory.java -text
 pipeline/src/org/labkey/pipeline/analysis/FileAnalysisTaskPipelineImpl.java -text
 pipeline/src/org/labkey/pipeline/analysis/analyze.jsp -text
+pipeline/src/org/labkey/pipeline/api/AbstractWorkDirectory.java -text
+pipeline/src/org/labkey/pipeline/api/GlobusKeyPairImpl.java -text
 pipeline/src/org/labkey/pipeline/api/ParamParserImpl.java -text
 pipeline/src/org/labkey/pipeline/api/PipeRootImpl.java -text
 pipeline/src/org/labkey/pipeline/api/PipelineEmailPreferences.java -text
@@ -944,6 +948,7 @@ pipeline/src/org/labkey/pipeline/api/PipelineStatusFileImpl.java -text
 pipeline/src/org/labkey/pipeline/api/PipelineStatusManager.java -text
 pipeline/src/org/labkey/pipeline/api/TaskPipelineImpl.java -text
 pipeline/src/org/labkey/pipeline/api/WorkDirectoryLocal.java -text
+pipeline/src/org/labkey/pipeline/api/WorkDirectoryRemote.java -text
 pipeline/src/org/labkey/pipeline/browse/BrowseViewImpl.java -text
 pipeline/src/org/labkey/pipeline/browse/browse.jsp -text
 pipeline/src/org/labkey/pipeline/cluster/ClusterJobRunner.java -text
@@ -971,6 +976,7 @@ pipeline/src/org/labkey/pipeline/mule/transformers/NoOpTransformer.java -text
 pipeline/src/org/labkey/pipeline/mule/transformers/PipelineJobToJMSMessage.java -text
 pipeline/src/org/labkey/pipeline/permission.jsp -text
 pipeline/src/org/labkey/pipeline/pipelineStatus.jsp -text
+pipeline/src/org/labkey/pipeline/setup.jsp -text
 pipeline/src/org/labkey/pipeline/status/DescriptionDisplayColumn.java -text
 pipeline/src/org/labkey/pipeline/status/FileDisplayColumn.java -text
 pipeline/src/org/labkey/pipeline/status/ProviderButtonBar.java -text

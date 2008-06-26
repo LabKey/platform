@@ -26,6 +26,9 @@ public class PipelineRoot extends Entity
     int _pipelineRootId;
     String _path;
     String _type;
+    byte[] _keyBytes;
+    byte[] _certBytes;
+    String _keyPassword;
 
     public PipelineRoot()
     {
@@ -75,5 +78,35 @@ public class PipelineRoot extends Entity
     public void setType(String type)
     {
         _type = type;
+    }
+
+    public byte[] getKeyBytes()
+    {
+        return _keyBytes;
+    }
+
+    public void setKeyBytes(byte[] keyBytes)
+    {
+        _keyBytes = keyBytes;
+    }
+
+    public byte[] getCertBytes()
+    {
+        return _certBytes;
+    }
+
+    public void setCertBytes(byte[] certBytes)
+    {
+        _certBytes = certBytes;
+    }
+
+    public String getKeyPassword()
+    {
+        return _keyPassword;
+    }
+
+    public void setKeyPassword(String keyPassword)
+    {
+        _keyPassword = keyPassword;
     }
 }

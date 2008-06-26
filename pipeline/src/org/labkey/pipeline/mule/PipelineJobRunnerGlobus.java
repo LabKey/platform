@@ -17,8 +17,7 @@ package org.labkey.pipeline.mule;
 
 import org.apache.log4j.Logger;
 import org.apache.axis.message.addressing.EndpointReferenceType;
-import org.labkey.api.pipeline.PipelineJobService;
-import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.*;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.AppProps;
 import org.labkey.pipeline.xstream.PathMapper;
@@ -34,12 +33,22 @@ import org.globus.wsrf.impl.notification.ServerNotificationConsumerManager;
 import org.globus.wsrf.impl.security.descriptor.GSITransportAuthMethod;
 import org.globus.wsrf.impl.security.descriptor.ResourceSecurityDescriptor;
 import org.globus.wsrf.impl.security.authorization.Authorization;
+import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
+import org.globus.gsi.GlobusCredential;
+import org.globus.gsi.X509ExtensionSet;
+import org.globus.gsi.GSIConstants;
+import org.globus.gsi.proxy.ext.ProxyCertInfoExtension;
+import org.globus.gsi.proxy.ext.ProxyPolicy;
+import org.globus.gsi.proxy.ext.ProxyCertInfo;
+import org.globus.gsi.bc.BouncyCastleCertProcessingFactory;
 import org.mule.extras.client.MuleClient;
 import org.mule.umo.UMOException;
 import org.mule.umo.UMOEventContext;
 import org.mule.umo.lifecycle.Callable;
 import org.oasis.wsrf.faults.BaseFaultTypeDescription;
 import org.oasis.wsrf.faults.BaseFaultType;
+import org.ietf.jgss.GSSCredential;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import javax.xml.namespace.QName;
 import java.io.*;
@@ -50,6 +59,8 @@ import java.net.MalformedURLException;
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
+import java.security.Security;
+import java.security.InvalidKeyException;
 
 public class PipelineJobRunnerGlobus implements Callable
 {
@@ -78,6 +89,8 @@ public class PipelineJobRunnerGlobus implements Callable
             File webinfDir = new File(webappDir, "WEB-INF"); 
             System.setProperty(GLOBUS_LOCATION, webinfDir.getAbsolutePath());
         }
+        
+        Security.addProvider(new BouncyCastleProvider());
     }
 
     public Map<String, String> getPathMapping()
@@ -279,6 +292,30 @@ public class PipelineJobRunnerGlobus implements Callable
             
             EndpointReferenceType notificationConsumerEndpoint = notifConsumerManager.createNotificationConsumer(topicPath, gramJob, resourceSecDesc);
 
+            int proxyType = GSIConstants.GSI_4_IMPERSONATION_PROXY;
+
+            BouncyCastleCertProcessingFactory factory = BouncyCastleCertProcessingFactory.getDefault();
+
+            ProxyPolicy policy = new ProxyPolicy(ProxyPolicy.IMPERSONATION);
+            ProxyCertInfo proxyCertInfo = new ProxyCertInfo(policy);
+            X509ExtensionSet extSet = new X509ExtensionSet();
+            // RFC compliant OID
+            extSet.add(new ProxyCertInfoExtension(proxyCertInfo));
+
+            PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(job.getContainer());
+            GlobusKeyPair keyPair = pipeRoot.getGlobusKeyPair();
+            if (keyPair == null)
+            {
+                throw new InvalidKeyException("No Globus SSL Key Pair configured, ask an administrator to set this up for your folder's pipeline root");
+            }
+            keyPair.validateMatch();
+
+            GlobusCredential cred = factory.createCredential(keyPair.getCertificates(), keyPair.getPrivateKey(), 512, 3600 * 12, proxyType, extSet);
+
+            GlobusGSSCredentialImpl credentials = new GlobusGSSCredentialImpl(cred, GSSCredential.INITIATE_AND_ACCEPT);
+
+            gramJob.setCredentials(credentials);
+
             gramJob.setNotificationConsumerEPR(notificationConsumerEndpoint);
             gramJob.addListener(new GramJobListener()
             {
@@ -353,6 +390,27 @@ public class PipelineJobRunnerGlobus implements Callable
             }
         }
         return null;
+    }
+
+    private byte[] readFile(File keyFile) throws IOException
+    {
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        FileInputStream fIn = null;
+        try
+        {
+            fIn = new FileInputStream(keyFile);
+            byte[] b = new byte[4096];
+            int i;
+            while((i = fIn.read(b)) != -1)
+            {
+                bOut.write(b, 0, i);
+            }
+            return bOut.toByteArray();
+        }
+        finally
+        {
+            if (fIn != null) { try { fIn.close(); } catch (IOException e) {} }
+        }
     }
 
     private JobDescriptionType createJobDescription(PipelineJob job, File serializedJobFile)

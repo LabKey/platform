@@ -67,7 +67,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
     public PipelineModule()
     {
-        super(PipelineService.MODULE_NAME, 8.10, "/org/labkey/pipeline", true, new WebPartFactory(PipelineWebPart.getPartName()){
+        super(PipelineService.MODULE_NAME, 8.21, "/org/labkey/pipeline", true, new WebPartFactory(PipelineWebPart.getPartName()){
             public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
             {
                 return new PipelineWebPart(portalCtx);

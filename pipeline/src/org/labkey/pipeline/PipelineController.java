@@ -30,11 +30,14 @@ import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
+import org.labkey.pipeline.api.PipelineRoot;
+import org.labkey.pipeline.api.GlobusKeyPairImpl;
 import org.labkey.pipeline.status.StatusController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
@@ -45,6 +48,7 @@ import java.net.URLDecoder;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.*;
+import java.security.GeneralSecurityException;
 
 public class PipelineController extends SpringActionController
 {
@@ -53,7 +57,7 @@ public class PipelineController extends SpringActionController
 
     public enum RefererValues { protal, pipeline }
 
-    enum Params { referer, rootset, overrideRoot }
+    public enum Params { referer, rootset, overrideRoot }
 
     private void saveReferer()
     {
@@ -128,18 +132,18 @@ public class PipelineController extends SpringActionController
     }
 
     @RequiresSiteAdmin
-    public class SetupAction extends AbstractSetupAction<PathForm>
+    public class SetupAction extends AbstractSetupAction<SetupForm>
     {
         protected SetupField getFormField()
         {
             return SetupField.path;
         }
 
-        public void validateCommand(PathForm target, Errors errors)
+        public void validateCommand(SetupForm target, Errors errors)
         {
         }
 
-        public boolean handlePost(PathForm form, BindException errors) throws Exception
+        public boolean handlePost(SetupForm form, BindException errors) throws Exception
         {
             URI root = null;
 
@@ -166,17 +170,88 @@ public class PipelineController extends SpringActionController
                 }
             }
 
-            PipelineService.get().setPipelineRoot(getUser(), getContainer(), root);
+            Map<String, MultipartFile> files = getFileMap();
+            byte[] keyBytes = null;
+            String keyPassword = form.getKeyPassword();
+            byte[] certBytes = null;
+            if (files.get("keyFile") != null)
+            {
+                keyBytes = files.get("keyFile").getBytes();
+            }
+            if (files.get("certFile") != null)
+            {
+                certBytes = files.get("certFile").getBytes();
+            }
+            GlobusKeyPair keyPair = null;
+            if (!form.isUploadNewGlobusKeys())
+            {
+                PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(getContainer());
+                if (pipeRoot != null)
+                {
+                    keyPair = pipeRoot.getGlobusKeyPair();
+                }
+            }
+            else if ((keyBytes != null && keyBytes.length > 0) || (certBytes != null && certBytes.length > 0) || keyPassword != null)
+            {
+                keyPair = new GlobusKeyPairImpl(keyBytes, keyPassword, certBytes);
+                try
+                {
+                    keyPair.validateMatch();
+                }
+                catch (GeneralSecurityException e)
+                {
+                    errors.addError(new LabkeyError("Invalid Globus SSL configration: " + e.getMessage()));
+                    return false;
+                }
+            }
+
+            PipelineService.get().setPipelineRoot(getUser(), getContainer(), root, PipelineRoot.PRIMARY_ROOT, keyPair);
             return true;
         }
 
-        public ActionURL getSuccessURL(PathForm form)
+        public ActionURL getSuccessURL(SetupForm form)
         {
             return urlSetup(getContainer(), getSavedReferer(), true, false);
         }
     }
 
     enum SetupField { path, email }
+
+    public static class SetupBean
+    {
+        private String _confirmMessage;
+        private String _strValue;
+        private ActionURL _doneURL;
+        private GlobusKeyPair _globusKeyPair;
+
+        public SetupBean(String confirmMessage, String strValue, ActionURL doneURL, GlobusKeyPair globusKeyPair)
+        {
+            _confirmMessage = confirmMessage;
+            _strValue = strValue;
+            _doneURL = doneURL;
+            _globusKeyPair = globusKeyPair;
+        }
+
+        public ActionURL getDoneURL()
+        {
+            return _doneURL;
+        }
+
+        public String getConfirmMessage()
+        {
+            return _confirmMessage;
+        }
+
+        public String getStrValue()
+        {
+            return _strValue;
+        }
+
+        public GlobusKeyPair getGlobusKeyPair()
+        {
+            return _globusKeyPair;
+        }
+    }
 
     abstract public class AbstractSetupAction<FORM> extends FormViewAction<FORM>
     {
@@ -244,45 +319,37 @@ public class PipelineController extends SpringActionController
                     // TODO: Redirect somewhere, or show error
                 }
 
-                PipelineService service = PipelineService.get();
-                StringBuilder html = new StringBuilder();
-                html.append("<form method=\"POST\" action=\"setup.post\">\n");
                 if (root != null && fileRoot != null)
                 {
-                    if (getViewContext().getRequest().getParameter(Params.rootset.toString()) != null)
-                    {
-                        html.append("<p style=\"color:#008000\">The pipeline root was set to '");
-                        html.append(PageFlowUtil.filter(fileRoot.getPath()));
-                        html.append("'.</p>");
-                    }
                     if (!NetworkDrive.exists(fileRoot))
                     {
-                        html.append("<font class=\"labkey-error\">Pipeline root does not exist.</font><br>");
+                        errors.addError(new LabkeyError("Pipeline root does not exist."));
                         root = null;
                     }
                     else if (URIUtil.resolve(root, root, "test") == null)
                     {
-                        html.append("<font class=\"labkey-error\">Pipeline root is invalid.</font><br>");
+                        errors.addError(new LabkeyError("Pipeline root is invalid."));
                         root = null;
                     }
                 }
 
-                for (FieldError err : (List<FieldError>) errors.getFieldErrors(getFormField().toString()))
-                {
-                    // TODO: Use format for message
-                    html.append("<font class=\"labkey-error\">").append(err.getDefaultMessage()).append("</font><br>");
-                }
-
                 ActionURL doneURL = new ActionURL(ReturnToRefererAction.class, getContainer());
 
-                html.append("Pipeline root directory:<br><input type=\"text\" name=\"path\" size=\"80\" value=\"")
-                        .append(PageFlowUtil.filter(strValue)).append("\"><br>")
-                        .append("<p style=\"margin-top: 8px; margin-bottom: 10px;\"><input type=\"image\" src=\"").append(PageFlowUtil.buttonSrc("Set")).append("\"> ")
-                        .append(service.getButtonHtml("View Status", doneURL))
-                        .append("</p></form>\n");
-                HtmlView htmlView = new HtmlView(html.toString());
+                String confirmMessage = null;
+                if (root != null && fileRoot != null && getViewContext().getRequest().getParameter(PipelineController.Params.rootset.toString()) != null)
+                {
+                    confirmMessage = "The pipeline root was set to '" + fileRoot.getPath() + "'.";
+                }
+
+                SetupBean bean = new SetupBean(confirmMessage, strValue, doneURL, pipeRoot == null ? null : pipeRoot.getGlobusKeyPair());
+                JspView<SetupBean> jspView = new JspView<SetupBean>("/org/labkey/pipeline/setup.jsp", bean, errors);
+
+                PipelineService service = PipelineService.get();
+
                 HBox main = new HBox();
-                main.addView(htmlView);
+                VBox leftBox = new VBox(jspView);
+
+                main.addView(leftBox);
 
                 if (pipeRoot != null && root != null) // && StringUtils.trimToNull(AppProps.getInstance().getPipelineFTPHost()) != null)
                 {
@@ -300,12 +367,12 @@ public class PipelineController extends SpringActionController
                     {
                         HttpView part = provider.getSetupWebPart();
                         if (part != null)
-                            view.addView(part);
+                            leftBox.addView(part);
                     }
                 }
             }
 
-            view.addView(new JspView<FORM>("/org/labkey/pipeline/emailNotificationSetup.jsp", form, errors));
+            view.addView(new JspView<FORM>("/org/labkey/pipeline/emailNotificationSetup.jsp", form));
             return view;
         }
 
@@ -1232,7 +1299,6 @@ public class PipelineController extends SpringActionController
         enum Params { path }
 
         private String _path;
-        private String _mirror;
 
         public String getPath()
         {
@@ -1243,16 +1309,33 @@ public class PipelineController extends SpringActionController
         {
             _path = path;
         }
+    }
 
-        public String getMirror()
+    public static class SetupForm extends PathForm
+    {
+        private String _keyPassword;
+        private boolean _uploadNewGlobusKeys;
+
+        public boolean isUploadNewGlobusKeys()
         {
-            return _mirror;
+            return _uploadNewGlobusKeys;
         }
 
-        public void setMirror(String mirror)
+        public void setUploadNewGlobusKeys(boolean uploadNewGlobusKeys)
         {
-            _mirror = mirror;
+            _uploadNewGlobusKeys = uploadNewGlobusKeys;
         }
+
+        public String getKeyPassword()
+        {
+            return _keyPassword;
+        }
+
+        public void setKeyPassword(String keyPassword)
+        {
+            _keyPassword = keyPassword;
+        }
+
     }
 
 /////////////////////////////////////////////////////////////////////////////

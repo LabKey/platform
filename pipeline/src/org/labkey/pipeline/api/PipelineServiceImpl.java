@@ -65,6 +65,11 @@ public class PipelineServiceImpl extends PipelineService
         provider.register();
     }
 
+    public GlobusKeyPair createGlobusKeyPair(byte[] keyBytes, String keyPassword, byte[] certBytes)
+    {
+        return new GlobusKeyPairImpl(keyBytes, keyPassword, certBytes);
+    }
+
 
     public PipeRoot findPipelineRoot(Container container) throws SQLException
     {
@@ -168,14 +173,9 @@ public class PipelineServiceImpl extends PipelineService
         return rootsList.toArray(new PipeRoot[rootsList.size()]);
     }
 
-    public void setPipelineRoot(User user, Container container, URI root, String type) throws SQLException
+    public void setPipelineRoot(User user, Container container, URI root, String type, GlobusKeyPair globusKeyPair) throws SQLException
     {
-        PipelineManager.setPipelineRoot(user, container, root == null ? "" : root.toString(), type);
-    }
-
-    public void setPipelineRoot(User user, Container container, URI root) throws SQLException
-    {
-        setPipelineRoot(user, container, root , PipelineRoot.PRIMARY_ROOT);
+        PipelineManager.setPipelineRoot(user, container, root == null ? "" : root.toString(), type, globusKeyPair);
     }
 
     public boolean canModifyPipelineRoot(User user, Container container)
