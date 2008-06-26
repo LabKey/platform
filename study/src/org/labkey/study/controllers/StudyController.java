@@ -384,7 +384,7 @@ public class StudyController extends BaseStudyController
                 HttpView.throwRedirect(createRedirectURLfrom(ReportsController.RunRReportAction.class, context));
                 return null;
             }
-            else if (def != null && reportView != null)
+            else if (def != null && def.canRead(getUser()))
             {
                 ActionURL url = getViewContext().cloneActionURL().setAction(StudyController.DatasetAction.class).
                                         replaceParameter("Dataset.viewName", QueryView.REPORTID_PARAM + reportView.getDescriptor().getReportId()).
@@ -1392,14 +1392,17 @@ public class StudyController extends BaseStudyController
 
         public void validateCommand(VisitForm target, Errors errors)
         {
-            target.validate(errors);
-            if(errors.getErrorCount() > 0)
-                return;
-            
-            //check for overlapping visits
+
             try
             {
-                VisitManager visitMgr = StudyManager.getInstance().getVisitManager(getStudy());
+                Study study = getStudy();
+                target.validate(errors, study);
+                if(errors.getErrorCount() > 0)
+                    return;
+
+                //check for overlapping visits
+
+                VisitManager visitMgr = StudyManager.getInstance().getVisitManager(study);
                 if(null != visitMgr)
                 {
                     if(visitMgr.isVisitOverlapping(target.getBean()))
@@ -1566,14 +1569,16 @@ public class StudyController extends BaseStudyController
     {
         public void validateCommand(VisitForm target, Errors errors)
         {
-            target.validate(errors);
-            if(errors.getErrorCount() > 0)
-                return;
 
-            //check for overlapping visits
             try
             {
-                VisitManager visitMgr = StudyManager.getInstance().getVisitManager(getStudy());
+                Study study = getStudy();
+                target.validate(errors, study);
+                if(errors.getErrorCount() > 0)
+                    return;
+
+                //check for overlapping visits
+                VisitManager visitMgr = StudyManager.getInstance().getVisitManager(study);
                 if(null != visitMgr)
                 {
                     if(visitMgr.isVisitOverlapping(target.getBean()))
@@ -1800,6 +1805,8 @@ public class StudyController extends BaseStudyController
         @SuppressWarnings("unchecked")
         public boolean handlePost(BulkImportTypesForm form, BindException errors) throws Exception
         {
+            Study study = getStudy();
+
             TabLoader loader = new TabLoader(form.tsv, true);
             loader.setLowerCaseHeaders(true);
             loader.setParseQuotes(true);
@@ -1869,16 +1876,7 @@ public class StudyController extends BaseStudyController
                     }
 
                     // filter out the built-in types
-                    // UNDONE: need enum or something also see bug 1945
-                    if ("ParticipantId".equalsIgnoreCase(propName) ||
-                            "ptid".equalsIgnoreCase(propName) ||
-                            "VisitSequenceNum".equalsIgnoreCase(propName) ||
-                            "DatasetId".equalsIgnoreCase(propName) ||
-                            "VisitDate".equalsIgnoreCase(propName) ||
-                            "SiteId".equalsIgnoreCase(propName) ||
-                            "Created".equalsIgnoreCase(propName) ||
-                            "Modified".equalsIgnoreCase(propName) ||
-                            "SequenceNum".equalsIgnoreCase(propName))
+                    if (DataSetDefinition.isDefaultFieldName(propName, study))
                         continue;
 
                     // look for visitdate column
@@ -2805,7 +2803,7 @@ public class StudyController extends BaseStudyController
             _dataSetStatus = request.getParameterValues("dataSetStatus");
         }
 
-        public void validate(Errors errors)
+        public void validate(Errors errors, Study study)
         {
             //check for null min/max sequence numbers
             if(null == getSequenceNumMax() && null == getSequenceNumMin())
@@ -2827,7 +2825,8 @@ public class StudyController extends BaseStudyController
                 visit.setSequenceNumMin(min);
             }
             setBean(visit);
-            if (visit.getSequenceNumMin() < 0 || visit.getSequenceNumMax() < 0)
+            // for date-based studies, values can be negative, but it's not allowed in visit-based studies
+            if ( (visit.getSequenceNumMin() < 0 || visit.getSequenceNumMax() < 0) && !study.isDateBased())
                 errors.reject(null, "Sequence numbers must be greater than or equal to zero.");
         }
 

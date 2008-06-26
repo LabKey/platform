@@ -85,7 +85,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
         int valuesDisplayed =(_parameters.isViewVialCount() ? 1 : 0) +
                 (_parameters.isViewParticipantCount() ? 1 : 0) +
                 (_parameters.isViewVolume() ? 1 : 0);
-        return (valuesDisplayed == 1 && !_parameters.isViewParticipantCount());
+        return (valuesDisplayed == 1 && !_parameters.isViewPtidList());
     }
 
     protected static String getTitleSuffix(SpecimenVisitReportParameters parameters)

@@ -28,8 +28,10 @@ import org.labkey.api.exp.property.DomainEditorServiceBase;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.security.ACL;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.view.ViewContext;
 import org.labkey.common.tools.TabLoader;
 import org.labkey.study.dataset.client.DatasetService;
@@ -132,6 +134,18 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
                 errors.add("Illegal Argument");
                 return errors;
             }
+
+            // Remove any fields that are duplicates of the default dataset fields.
+            // e.g. participantid, etc.
+
+            List<GWTPropertyDescriptor> updatedProps = update.getPropertyDescriptors();
+            for (Iterator<GWTPropertyDescriptor> iter = updatedProps.iterator(); iter.hasNext();)
+            {
+                GWTPropertyDescriptor prop = iter.next();
+                if (DataSetDefinition.isDefaultFieldName(prop.getName(), study))
+                    iter.remove();
+            }
+            update.setPropertyDescriptors(updatedProps);
 
             errors = updateDomainDescriptor(orig, update);
             if (errors == null)

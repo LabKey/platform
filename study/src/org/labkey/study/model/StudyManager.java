@@ -1060,7 +1060,7 @@ public class StudyManager
         {
             DbSchema schema = StudySchema.getInstance().getSchema();
             TableInfo table = _tableInfoParticipant;
-            SQLFragment sql = new SQLFragment("SELECT ParticipantId FROM " + table + " WHERE Container = ?", study.getContainer().getId());
+            SQLFragment sql = new SQLFragment("SELECT ParticipantId FROM " + table + " WHERE Container = ? ORDER BY ParticipantId", study.getContainer().getId());
             if (rowLimit > 0)
                 sql = schema.getSqlDialect().limitRows(sql, rowLimit);
             return Table.executeArray(schema, sql, String.class);

@@ -2000,7 +2000,7 @@ public class ReportsController extends BaseStudyController
 
             _report = getReport(form);
             DataSetDefinition def = getDataSetDefinition();
-            if (def != null && _report != null)
+            if (def != null && _report != null && def.canRead(getUser()))
             {
                 ActionURL url = getViewContext().cloneActionURL().setAction(StudyController.DatasetAction.class).
                                         replaceParameter("Dataset.viewName", QueryView.REPORTID_PARAM + _report.getDescriptor().getReportId()).
@@ -2066,7 +2066,7 @@ public class ReportsController extends BaseStudyController
 
             _report = getReport(form);
             DataSetDefinition def = getDataSetDefinition();
-            if (def != null && _report != null)
+            if (def != null && _report != null && def.canRead(getUser()))
             {
                 ActionURL url = getViewContext().cloneActionURL().setAction(StudyController.DatasetAction.class).
                                         replaceParameter("Dataset.viewName", QueryView.REPORTID_PARAM + _report.getDescriptor().getReportId()).

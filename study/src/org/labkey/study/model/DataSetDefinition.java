@@ -23,10 +23,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
-import org.labkey.api.util.CaseInsensitiveHashMap;
-import org.labkey.api.util.JobRunner;
-import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.Cache;
+import org.labkey.api.util.*;
 import org.labkey.api.view.HttpView;
 import org.labkey.study.StudySchema;
 import org.apache.log4j.Logger;
@@ -61,6 +58,21 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     private transient TableInfo _tableInfoProperties;
     private Integer _cohortId;
 
+    private static final String[] BASE_DEFAULT_FIELD_NAMES_ARRAY = new String[]
+    {
+        "ParticipantID",
+        "ptid",
+        "DatasetId",
+        "SiteId",
+        "Created",
+        "Modified",
+        "sourcelsid",
+        "lsid"
+    };
+
+    private static final CaseInsensitiveHashSet BASE_DEFAULT_FIELD_NAMES =
+        new CaseInsensitiveHashSet(BASE_DEFAULT_FIELD_NAMES_ARRAY);
+
 
     public DataSetDefinition()
     {
@@ -83,6 +95,21 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     public DataSetDefinition(Study study, int dataSetId, String name, String category, String typeURI)
     {
         this(study, dataSetId, name, name, category, typeURI);
+    }
+
+    public static boolean isDefaultFieldName(String fieldName, Study study)
+    {
+        if (study.isDateBased())
+        {
+            if ("Date".equalsIgnoreCase(fieldName) || "VisitDate".equalsIgnoreCase(fieldName))
+                return true;
+        }
+        else
+        {
+            if ("sequenceNum".equalsIgnoreCase(fieldName) || "VisitSequenceNum".equalsIgnoreCase(fieldName))
+                return true;
+        }
+        return BASE_DEFAULT_FIELD_NAMES.contains(fieldName);
     }
 
 

@@ -16,6 +16,7 @@
 
 package org.labkey.study.reports;
 
+import org.apache.commons.lang.math.NumberUtils;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.ReportService;
@@ -162,6 +163,13 @@ public class StudyQueryReport extends QueryReport
                         descriptor.getProperty(ReportDescriptor.Prop.viewName));
                 view.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
                 view.setUseQueryViewActionExportURLs(true);
+
+                int datasetId = NumberUtils.toInt(getDescriptor().getProperty("showWithDataset"), -1);
+                Study study = StudyManager.getInstance().getStudy(context.getContainer());
+                DataSetDefinition datasetDef = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
+                if (datasetDef != null && !datasetDef.canRead(context.getUser()))
+                    view.getSettings().setAllowCustomizeView(false);
+
                 return view;
             }
         };
