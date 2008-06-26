@@ -31,6 +31,9 @@ public interface WorkDirectory
 
     static final String DATA_REL_PATH = "../..";
 
+    /**
+     * @return the directory where the input files live and where the output files will end up
+     */
     File getDir();
 
     File newFile(String name);
@@ -41,8 +44,6 @@ public interface WorkDirectory
 
     File newFile(Function f, FileType type);
 
-    File inputFile(File fileInput) throws IOException;
-
     File inputFile(File fileInput, boolean forceCopy) throws IOException;
 
     String getRelativePath(File fileWork) throws IOException;
@@ -51,6 +52,11 @@ public interface WorkDirectory
 
     void outputFile(File fileWork, String nameDest) throws IOException;
 
+    /**
+     * Delete a file
+     * @param fileWork
+     * @throws IOException
+     */
     void discardFile(File fileWork) throws IOException;
 
     void remove() throws IOException;

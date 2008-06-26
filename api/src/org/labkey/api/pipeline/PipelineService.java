@@ -60,9 +60,7 @@ abstract public class PipelineService
 
     abstract public PipeRoot[] getOverlappingRoots(Container c) throws SQLException;
 
-    abstract public void setPipelineRoot(User user, Container container, URI root, String type) throws SQLException;
-
-    abstract public void setPipelineRoot(User user, Container container, URI root) throws SQLException;
+    abstract public void setPipelineRoot(User user, Container container, URI root, String type, GlobusKeyPair globusKeyPair) throws SQLException;
 
     abstract public boolean canModifyPipelineRoot(User user, Container container);
 

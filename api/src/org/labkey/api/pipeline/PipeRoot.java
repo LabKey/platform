@@ -60,4 +60,9 @@ public interface PipeRoot
     String getEntityId();
 
     ACL getACL();
+
+    /**
+     * @return null if no key pair has been configured for this pipeline root
+     */
+    GlobusKeyPair getGlobusKeyPair();
 }

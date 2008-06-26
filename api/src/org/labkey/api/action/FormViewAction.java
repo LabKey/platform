@@ -151,6 +151,9 @@ public abstract class FormViewAction<FORM> extends BaseViewAction<FORM> implemen
         return null;
     }
 
+    /**
+     * @return a map from form element name to uploaded files
+     */
     protected Map<String, MultipartFile> getFileMap()
     {
         if (getViewContext().getRequest() instanceof MultipartHttpServletRequest)
