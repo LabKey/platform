@@ -170,7 +170,6 @@ public class ModuleLoader implements Filter
         }
     }
 
-
     ServletContext _servletContext = null;
     
     public static ServletContext getServletContext()
@@ -440,9 +439,7 @@ public class ModuleLoader implements Filter
                     if (null != buildPath)
                     {
                         buildPath = buildPath.replaceAll("\\\\\\\\","\\\\");
-                        // Would be nice to avoid this, if we could get ANT to store an absolute path in module.properties
-                        String absolutePath = new File(buildPath).getAbsolutePath();
-                        props.setProperty("BuildPath", absolutePath);
+                        props.setProperty("BuildPath", buildPath);
                     }
 
                     Map<String, String> propsMap = new HashMap(props);
@@ -479,7 +476,6 @@ public class ModuleLoader implements Filter
                     {
                         moduleList.add(module);
                     }
-
                 }
             }
             catch (IOException e)

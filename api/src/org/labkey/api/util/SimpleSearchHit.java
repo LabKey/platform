@@ -38,7 +38,7 @@ public class SimpleSearchHit implements SearchHit
     private String _details;
 
     /**
-     * Constructs without setting any member values. If you use this construct, use the various
+     * Constructs without setting any member values. If you use this constructor, use the various
      * setters to initialize the object before adding it to the search results
      */
     public SimpleSearchHit() {}

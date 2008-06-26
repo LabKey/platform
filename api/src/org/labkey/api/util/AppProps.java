@@ -612,4 +612,16 @@ public class AppProps
     {
         return lookupStringValue(MICROARRAY_FEATURE_EXTRACTION_SERVER_PROP, "");
     }
+
+    // Get the name of the webapp configuration file, e.g., labkey.xml, cpas.xml, or root.xml.  Used in some error messages
+    //  to provide suggestions to the admin.
+    public String getWebappConfigurationFilename()
+    {
+        // Would rather determine the context filename from ModuleLoader.getServletContext(), but there appears to be
+        //  no way to do this.
+
+        String path = getContextPath();
+
+        return "".equals(path) ? "root.xml" : path.substring(1) + ".xml";
+    }
 }

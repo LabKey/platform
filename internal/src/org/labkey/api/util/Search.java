@@ -207,7 +207,7 @@ public class Search
         /**
          * Perform the search given a set of search terms. Append search hits to
          * the list provided as the hits parameter. This list may already contain
-         * hits from previous search providers, so do not clear it. Simple append
+         * hits from previous search providers, so do not clear it. Simply append
          * your hits to the end.
          * @param parser The term parser
          * @param containers The set of containers to search in

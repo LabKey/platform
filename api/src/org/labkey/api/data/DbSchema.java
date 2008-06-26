@@ -34,11 +34,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.*;
+import java.util.Date;
 
 public class DbSchema
 {
@@ -302,7 +300,7 @@ public class DbSchema
             if (!dbName.equalsIgnoreCase(catalogName))
             {
                 String error = "Catalog name \"" + catalogName + "\" specified in \"" + dbSchemaName + "\" configuration doesn't match database name \"" + dbName + "\" specified in the corresponding datasource \"" + dsName + "\".\n";
-                error = error + "This mismatch means meta data will be read from one database and all database operations will be directed to a different database.  Review your settings in labkey.xml or cpas.xml.";
+                error = error + "This mismatch means meta data will be read from one database and all database operations will be directed to a different database.  Review your settings in " + AppProps.getInstance().getWebappConfigurationFilename() + ".";
                 throw new ServletException(error);
             }
         }
@@ -670,14 +668,34 @@ public class DbSchema
 
         public void testSchemaXml(DbSchema schema) throws Exception
         {
-             String sOut = TableXmlUtils.compareXmlToMetaData(schema.getName(), false, false);
+            String sOut = TableXmlUtils.compareXmlToMetaData(schema.getName(), false, false);
 
-             assertNull("<div>Errors in schema " + schema.getName()
-                     + ".xml  <a href=\"" + AppProps.getInstance().getContextPath() + "/admin/getSchemaXmlDoc.view?dbSchema="
-                     + schema.getName() + "\">&nbsp;&nbsp;&nbsp;Click here for an XML doc with fixes. </a> "
-                     + "<br/>"
+            assertNull("<div>Errors in schema " + schema.getName()
+                     + ".xml.  <a href=\"" + AppProps.getInstance().getContextPath() + "/admin/getSchemaXmlDoc.view?dbSchema="
+                     + schema.getName() + "\">Click here for an XML doc with fixes</a>."
+                     + "<br>"
                      + sOut + "</div>", sOut);
 
+            StringBuilder typeErrors = new StringBuilder();
+
+            for (TableInfo ti : schema.getTables())
+            {
+                for (ColumnInfo ci : ti.getColumns())
+                {
+                    String sqlTypeName = ci.getSqlTypeName();
+
+                    if ("OTHER".equals(sqlTypeName))
+                        typeErrors.append(ti.getName()).append(".").append(ci.getColumnName()).append(": getSqlTypeName() returned 'OTHER'<br>");
+
+                    int sqlTypeInt = ci.getSqlTypeInt();
+
+                    if (Types.OTHER == sqlTypeInt)
+                        typeErrors.append(ti.getName()).append(".").append(ci.getColumnName()).append(": getSqlTypeInt() returned 'Types.OTHER'<br>");
+                }
+            }
+
+            // TODO: Uncomment once we change to all generic type names in schema .xml files
+            // assertTrue("<div>Type errors in schema " + schema.getName() + ":<br><br>" + typeErrors + "<div>", "".equals(typeErrors.toString()));
         }
 
         public void testTransactions() throws Exception
@@ -997,7 +1015,7 @@ public class DbSchema
                     {
                         sbOut.append("<br> Failed attempt to recover some objects from table ");
                         sbOut.append(rs1.getString(1));
-                        sbOut.append(" due to error " + se.getMessage());
+                        sbOut.append(" due to error ").append(se.getMessage());
                         sbOut.append(". Retrying recovery may work.  ");
                     }
                 }

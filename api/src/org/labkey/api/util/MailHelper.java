@@ -154,7 +154,7 @@ public class MailHelper
     }
 
 
-    private static final String ERROR_MESSAGE = "Exception sending email; check your SMTP configuration in labkey.xml or cpas.xml";
+    private static final String ERROR_MESSAGE = "Exception sending email; check your SMTP configuration in " + AppProps.getInstance().getWebappConfigurationFilename();
 
     private static void logMessagingException(Message m, Exception e) throws MessagingException
     {

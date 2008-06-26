@@ -172,6 +172,7 @@ public class ActionURL extends URLHelper implements Cloneable
     }
 
 
+    @Deprecated
     public ActionURL setPageFlow(String pageFlow)
     {
         if (_readOnly) throw new java.lang.IllegalStateException();
