@@ -57,6 +57,7 @@ ALTER TABLE study.SampleRequestEvent ADD
     CONSTRAINT PK_SampleRequestEvent PRIMARY KEY (RowId);
 
 DROP VIEW study.SpecimenSummary
+GO
 DROP VIEW study.SpecimenDetail
 GO
 

@@ -115,7 +115,8 @@ CREATE VIEW mothership.ExceptionSummary AS
     ON q.ExceptionStackTraceId = st.ExceptionStackTraceId
 GO
 
-DROP VIEW mothership.ExceptionSummary;
+DROP VIEW mothership.ExceptionSummary
+GO
 DROP TABLE mothership.ExceptionReport;
 DROP TABLE mothership.ServerSession;
 DROP TABLE mothership.ServerInstallation;

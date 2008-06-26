@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 DROP VIEW core.Contacts
+GO
 DROP VIEW core.Users
-go
+GO
 
 ALTER TABLE core.UsersData ALTER COLUMN Phone NVARCHAR(64) NULL
 go

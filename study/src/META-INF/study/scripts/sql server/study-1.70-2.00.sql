@@ -22,7 +22,9 @@ UPDATE study.SampleRequestSpecimen SET SpecimenGlobalUniqueId =
 GO
 
 DROP VIEW study.SpecimenSummary
+GO
 DROP VIEW study.SpecimenDetail
+GO
 DROP VIEW study.LockedSpecimens
 GO
 

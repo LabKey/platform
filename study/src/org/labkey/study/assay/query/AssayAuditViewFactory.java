@@ -78,7 +78,7 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
 
     public String getName()
     {
-        return "Copy-to-Study assay events";
+        return "Copy-to-Study Assay events";
     }
 
     public QueryView createDefaultQueryView(ViewContext context)

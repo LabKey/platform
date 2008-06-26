@@ -26,13 +26,13 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.labkey.api.action.*;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.*;
-import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditLogEvent;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.jsp.FormPage;
 import org.labkey.api.module.*;
 import org.labkey.api.ms2.MS2Service;
@@ -87,6 +87,7 @@ public class AdminController extends SpringActionController
     private static DefaultActionResolver _actionResolver = new DefaultActionResolver(AdminController.class);
     private static long _errorMark = 0;
     private static NumberFormat formatInteger = DecimalFormat.getIntegerInstance();
+    private static Logger _log = Logger.getLogger(AdminController.class);
 
     public AdminController() throws Exception
     {
@@ -648,6 +649,191 @@ public class AdminController extends SpringActionController
             consolidator.setSharedToVersion(form.getToVersion());
 
             return consolidator;
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class ExtractViewsAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new ExtractView();
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return appendAdminNavTrail(root, "Extract VIEW Statements", this.getClass());
+        }
+
+        private class ExtractView extends HttpView
+        {
+            @Override
+            protected void renderInternal(Object model, PrintWriter out) throws Exception
+            {
+                out.println("<pre>");
+
+                List<Module> modules = ModuleLoader.getInstance().getModules();
+
+                for (Module module : modules)
+                {
+                    if (module instanceof DefaultModule)
+                    {
+                        DefaultModule defModule = (DefaultModule)module;
+
+                        if (defModule.hasScripts())
+                        {
+                            FileSqlScriptProvider provider = new FileSqlScriptProvider(defModule);
+                            Set<String> schemaNames = provider.getSchemaNames();
+
+                            for (String schemaName : schemaNames)
+                            {
+                                ViewExtractor extractor = new ViewExtractor(provider, schemaName);
+                                extractor.extract(out);
+                            }
+                        }
+                    }
+                }
+
+                out.println("</pre>");                
+            }
+
+            private class ViewExtractor
+            {
+                private FileSqlScriptProvider _provider;
+                private String _schemaName;
+
+                private ViewExtractor(FileSqlScriptProvider provider, String schemaName)
+                {
+                    _provider = provider;
+                    _schemaName = schemaName;
+                }
+
+                private void extract(PrintWriter out)  throws SqlScriptRunner.SqlScriptException
+                {
+                    Map<String, String> createStatements = new LinkedHashMap<String, String>();
+                    Map<String, String> dropStatements = new LinkedHashMap<String, String>();
+
+                    List<SqlScript> scripts = _provider.getScripts(_schemaName);
+
+                    boolean isPostgreSQL = DbSchema.get(_schemaName).getSqlDialect().isPostgreSQL();
+
+                    String initialCommentRegEx = "(?-m:^--.*?\\s*)?";
+                    String viewNameRegEx = "((\\w+)\\.)?(\\w+)";
+                    String dropRegEx;
+                    String createRegEx;
+                    String endRegEx;
+
+                    if (isPostgreSQL)
+                    {
+                        dropRegEx = "((DROP VIEW " + viewNameRegEx + ")|(SELECT core.fn_dropifexists\\s*\\(\\s*'(\\w+)',\\s*'(\\w+)',\\s*'VIEW',\\s*NULL\\s*\\)))";      // exec core.fn_dropifexists 'materialsource', 'cabig','VIEW', NULL
+                        createRegEx = "(CREATE (?:OR REPLACE )*VIEW " + viewNameRegEx + " AS.+?)";
+                        endRegEx = ";";
+                    }
+                    else
+                    {
+                        dropRegEx = "((DROP VIEW " + viewNameRegEx + ")|(EXEC core.fn_dropifexists\\s*'(\\w+)',\\s*'(\\w+)',\\s*'VIEW',\\s*NULL))";      // exec core.fn_dropifexists 'materialsource', 'cabig','VIEW', NULL
+                        createRegEx = "(CREATE VIEW " + viewNameRegEx + " AS.+?)";
+                        endRegEx = "GO$";
+                    }
+
+                    String combinedRegEx = (initialCommentRegEx + "(?:" + dropRegEx + "|" + createRegEx + ")\\s*" + endRegEx + "\\s*").replaceAll(" ", "\\\\s+");
+
+                    Pattern viewPattern = Pattern.compile(combinedRegEx, Pattern.CASE_INSENSITIVE + Pattern.DOTALL + Pattern.MULTILINE);
+                    for (SqlScript script : scripts)
+                    {
+                        Set<String> temporaryViews = new HashSet<String>();
+                        Matcher m = viewPattern.matcher(script.getContents());
+
+                        while (m.find())
+                        {
+                            String schemaName;
+                            String viewName;
+                            boolean create = false;
+
+                            // CREATE VIEW
+                            if (null != m.group(9))
+                            {
+                                schemaName = m.group(11);
+                                viewName = m.group(12);
+                                create = true;
+                            }
+                            else
+                            {
+                                // EXEC/SELECT core.fn_dropifexists
+                                if (null != m.group(6))
+                                {
+                                    schemaName = m.group(8);
+                                    viewName = m.group(7);
+                                }
+                                // DROP VIEW
+                                else
+                                {
+                                    assert null != m.group(2);
+                                    schemaName = m.group(4);
+                                    viewName = m.group(5);
+                                }
+                            }
+
+                            String key = getKey(_schemaName, schemaName, viewName);
+
+                            if (viewName.startsWith("_"))
+                            {
+                                if (create)
+                                {
+                                    assert temporaryViews.add(key);
+                                }
+                                else
+                                {
+                                    assert temporaryViews.remove(key);
+                                }
+                            }
+                            else
+                            {
+                                if (create)
+                                {
+                                    createStatements.put(key, m.group(0));
+                                }
+                                else
+                                {
+                                    dropStatements.put(key, m.group(0));
+                                    createStatements.remove(key);
+                                }
+                            }
+                        }
+
+                        String strippedScript = m.replaceAll("");
+                        out.println("========== " + script.getDescription() + " ==========");
+                        out.println(PageFlowUtil.filter(strippedScript));
+                        out.println();
+
+                        if (!temporaryViews.isEmpty())
+                        {
+                            out.println("========== ERROR ==========");
+                            out.println(temporaryViews.toString());
+                        }
+                    }
+
+                    out.println("========== DROP VIEW ==========");
+
+                    for (Map.Entry<String, String> entry : dropStatements.entrySet())
+                    {
+                        out.println(PageFlowUtil.filter(entry.getValue()));
+                    }
+
+                    out.println("========== CREATE VIEW ==========");
+
+                    for (Map.Entry<String, String> entry : createStatements.entrySet())
+                    {
+                        out.println(PageFlowUtil.filter(entry.getValue()));
+                    }
+                }
+
+                private String getKey(String defaultSchemaName, String schemaName, String viewName)
+                {
+                    return ((null != schemaName ? schemaName : defaultSchemaName) + "." + viewName).toLowerCase();
+                }
+            }
         }
     }
 

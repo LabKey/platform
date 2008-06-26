@@ -1,4 +1,5 @@
 DROP VIEW study.SpecimenSummary
+GO
 DROP VIEW study.SpecimenDetail
 GO
 

@@ -60,7 +60,7 @@ public class ContainerAuditViewFactory extends SimpleAuditViewFactory
 
     public String getName()
     {
-        return "Project and folder events";
+        return "Project and Folder events";
     }
 
     public QueryView createDefaultQueryView(ViewContext context)

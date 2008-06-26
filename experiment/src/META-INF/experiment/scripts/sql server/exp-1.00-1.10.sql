@@ -559,6 +559,6 @@ SET OwnerObjectId = (SELECT MAX(OWNER.ObjectId)
 COMMIT TRAN
 go
 
--- now drop the old proerty table
+-- now drop the old property table
 DROP TABLE exp.Property
 go

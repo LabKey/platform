@@ -54,7 +54,7 @@ public class AuditLogImpl implements AuditLogService.I
 {
     private static final Logger _log = Logger.getLogger(AuditLogImpl.class);
     private static final String OBJECT_XML_KEY = "objectXML";
-    private static Map<String, AuditLogService.AuditViewFactory> _auditViewFactories = new HashMap();
+    private static Map<String, AuditLogService.AuditViewFactory> _auditViewFactories = new HashMap<String, AuditLogService.AuditViewFactory>();
 
     public boolean isViewable()
     {

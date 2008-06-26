@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-DROP VIEW core.Contacts;
-DROP VIEW core.Users;
-go
+DROP VIEW core.Contacts
+GO
+DROP VIEW core.Users
+GO
 
 ALTER TABLE core.ACLs ADD Container UNIQUEIDENTIFIER;
 go

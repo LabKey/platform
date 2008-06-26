@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 DROP VIEW core.Contacts
+GO
 DROP VIEW core.Users
 go
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
--- Tables and views used for Demo module
+-- Table used by Demo module
 EXEC sp_addapprole 'demo', 'password'
 GO
 CREATE TABLE demo.Person
