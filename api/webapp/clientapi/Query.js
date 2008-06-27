@@ -33,22 +33,11 @@
  */
 LABKEY.Query = new function()
 {
-    function sendJsonQueryRequest(schemaName, queryName, action,
-                                  rowDataArray, successCallback, errorCallback)
+    function sendJsonQueryRequest(config)
     {
-        var config = {};
-        if(typeof(schemaName) == 'object')
-            config = schemaName;
-        else
-        {
-            config.schemaName = schemaName;
-            config.queryName = queryName;
-            config.action = action;
-            config.rowDataArray = rowDataArray;
-            config.successCallback = successCallback;
-            config.errorCallback = errorCallback;
-        }
-
+        if(config.timeout)
+            Ext.Ajax.timeout = config.timeout;
+        
         var dataObject = {
             schemaName : config.schemaName,
             queryName : config.queryName,
@@ -82,6 +71,17 @@ LABKEY.Query = new function()
                 data = Ext.util.JSON.decode(response.responseText)
 
             callbackFn(data, options, response);
+        }
+    }
+
+    function configFromArgs(args)
+    {
+        return {
+            schemaName: args[0],
+            queryName: args[1],
+            rowDataArray: args[2],
+            successCallback: args[3],
+            errorCallback: args[4]
         }
     }
 
@@ -120,6 +120,8 @@ LABKEY.Query = new function()
         *        If you want to return all possible rows, set this config property to -1.
         * @param {Integer} [config.offset] The index of the first row to return from the server (defaults to 0).
         *        Use this along with the maxRows config property to request pages of data.
+        * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
+        *       generating a timeout error (defaults to 30000).
         * @example Example: <pre name="code" class="xml">
 &lt;script type="text/javascript"&gt;
 	LABKEY.requiresClientAPI();
@@ -144,20 +146,20 @@ LABKEY.Query = new function()
 		* @see LABKEY.Query.SelectRowsOptions
 		* @see LABKEY.Query.SelectRowsResults
 		*/
-        selectRows : function(schemaName, queryName, successCallback, errorCallback, filterArray, sort, viewName)
+        selectRows : function(config)
         {
-            var config = {};
-            if(typeof(schemaName) == 'object')
-                config = schemaName;
-            else
+            //check for old-style separate arguments
+            if(arguments.length > 1)
             {
-                config.schemaName = schemaName;
-                config.queryName = queryName;
-                config.successCallback = successCallback;
-                config.errorCallback = errorCallback;
-                config.filterArray = filterArray;
-                config.sort = sort;
-                config.viewName = viewName;
+                config = {
+                    schemaName: arguments[0],
+                    queryName: arguments[1],
+                    successCallback: arguments[2],
+                    errorCallback: arguments[3],
+                    filterArray: arguments[4],
+                    sort: arguments[5],
+                    viewName: arguments[6]
+                };
             }
 
             if(!config.schemaName)
@@ -195,6 +197,9 @@ LABKEY.Query = new function()
             if(config.columns)
                 dataObject['query.columns'] = config.columns;
 
+            if(config.timeout)
+                Ext.Ajax.timeout = config.timeout;
+
             Ext.Ajax.request({
                 url : LABKEY.ActionURL.buildURL('query', 'getQuery', config.containerPath),
                 method : 'GET',
@@ -222,12 +227,17 @@ LABKEY.Query = new function()
         *               other columns you wish to update.
         * @param {String} [config.containerPath] The container path in which the schema and query name are defined.
          *              If not supplied, the current container path will be used.
+        * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
+        *       generating a timeout error (defaults to 30000).
 		* @see LABKEY.Query.ModifyRowsResults
 		* @see LABKEY.Query.ModifyRowsOptions
         */
-        updateRows : function(schemaName, queryName, rowDataArray, successCallback, errorCallback)
+        updateRows : function(config)
         {
-            sendJsonQueryRequest(schemaName, queryName, "updateRows", rowDataArray, successCallback, errorCallback);
+            if(arguments.length > 1)
+                config = configFromArgs(arguments);
+            config.action = "updateRows";
+            sendJsonQueryRequest(config);
         },
 
         /**
@@ -249,12 +259,17 @@ LABKEY.Query = new function()
         *                  them yourself instead of relying on auto-number.
         * @param {String} [config.containerPath] The container path in which the schema and query name are defined.
          *              If not supplied, the current container path will be used.
+        * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
+        *       generating a timeout error (defaults to 30000).
 		* @see LABKEY.Query.ModifyRowsResults
 		* @see LABKEY.Query.ModifyRowsOptions
         */
-        insertRows : function(schemaName, queryName, rowDataArray, successCallback, errorCallback)
+        insertRows : function(config)
         {
-            sendJsonQueryRequest(schemaName, queryName, "insertRows", rowDataArray, successCallback, errorCallback);
+            if(arguments.length > 1)
+                config = configFromArgs(arguments);
+            config.action = "insertRows";
+            sendJsonQueryRequest(config);
         },
 
         /**
@@ -274,12 +289,17 @@ LABKEY.Query = new function()
         *                  The row data array needs to include only the primary key column value, not all columns.
         * @param {String} [config.containerPath] The container path in which the schema and query name are defined.
          *              If not supplied, the current container path will be used.
+        * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
+        *       generating a timeout error (defaults to 30000).
 		* @see LABKEY.Query.ModifyRowsResults
 		* @see LABKEY.Query.ModifyRowsOptions
         */
-        deleteRows : function(schemaName, queryName, rowDataArray, successCallback, errorCallback)
+        deleteRows : function(config)
         {
-            sendJsonQueryRequest(schemaName, queryName, "deleteRows", rowDataArray, successCallback, errorCallback);
+            if(arguments.length > 1)
+                config = configFromArgs(arguments);
+            config.action = "deleteRows";
+            sendJsonQueryRequest(config);
         },
 
         /**
