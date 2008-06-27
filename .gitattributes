@@ -634,11 +634,13 @@ api/webapp/WEB-INF/spring.tld -text
 api/webapp/clientapi/ActionURL.js -text
 api/webapp/clientapi/Assay.js -text
 api/webapp/clientapi/Chart.js -text
+api/webapp/clientapi/EditorGridPanel.js -text
 api/webapp/clientapi/ExtJsConfig.js -text
 api/webapp/clientapi/Filter.js -text
 api/webapp/clientapi/GridView.js -text
 api/webapp/clientapi/NavTrail.js -text
 api/webapp/clientapi/Query.js -text
+api/webapp/clientapi/Store.js -text
 api/webapp/clientapi/Utils.js -text
 api/webapp/clientapi/WebPart.js -text
 api/webapp/ext-2.0.2/CHANGES.txt -text
