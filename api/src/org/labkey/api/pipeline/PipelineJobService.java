@@ -46,6 +46,7 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
     public interface ApplicationProperties
     {
         String getToolsDirectory();
+        String getMuleConfig();
     }
 
     abstract public ApplicationProperties getAppProperties();

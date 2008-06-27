@@ -810,6 +810,7 @@ abstract public class PipelineJob extends Job implements Serializable
                 // TODO: Errors should go to log even when output is redirected to a file.
                 pb.redirectErrorStream(true);
 
+                info("Working directory is " + dirWork.getAbsolutePath());
                 info("running: " + StringUtils.join(pb.command().iterator(), " "));
 
                 proc = pb.start();

@@ -23,7 +23,7 @@ import java.util.Arrays;
 
 /**
  * <code>TaskPipelineRegistrar</code> is meant for use in a Spring
- * coniguration file for adding object to the <code>TaskPipelineRegistry</code>.
+ * configuration file for adding object to the <code>TaskPipelineRegistry</code>.
  *
  * @author brendanx
  */
