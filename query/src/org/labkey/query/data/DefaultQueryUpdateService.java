@@ -21,10 +21,12 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.ColumnInfo;
+import org.apache.commons.beanutils.ConvertUtils;
 
 import java.util.Map;
 import java.util.List;
 import java.util.HashMap;
+import java.util.Date;
 import java.sql.SQLException;
 
 /*
@@ -61,6 +63,7 @@ public class DefaultQueryUpdateService implements QueryUpdateService
 
     public Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
+        convertTypes(row);
         return Table.insert(user, getTable(), row);
     }
 
@@ -82,6 +85,7 @@ public class DefaultQueryUpdateService implements QueryUpdateService
                 rowStripped.put(key, row.get(key));
         }
 
+        convertTypes(rowStripped);
         Map<String,Object> updatedRow = Table.update(user, getTable(), rowStripped, null == oldKeys ? getKeys(row) : getKeys(oldKeys), null);
 
         //when passing a map for the row, the Table layer returns the map of fields it updated, which excludes
@@ -111,5 +115,22 @@ public class DefaultQueryUpdateService implements QueryUpdateService
                 throw new InvalidKeyException("Value for key field '" + pk.getName() + "' was null or not supplied!", map);
         }
         return pkVals;
+    }
+
+    protected void convertTypes(Map<String,Object> row)
+    {
+        for(ColumnInfo col : getTable().getColumns())
+        {
+            Object value = row.get(col.getName());
+            if(null != value)
+            {
+                switch(col.getSqlTypeInt())
+                {
+                    case java.sql.Types.DATE:
+                    case java.sql.Types.TIME:
+                        row.put(col.getName(), value instanceof Date ? value : ConvertUtils.convert(value.toString(), Date.class));
+                }
+            }
+        }
     }
 }
