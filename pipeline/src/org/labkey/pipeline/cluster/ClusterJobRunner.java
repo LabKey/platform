@@ -21,7 +21,6 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.pipeline.xstream.PathMapper;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
-import org.springframework.beans.factory.ListableBeanFactory;
 
 import java.io.*;
 import java.util.List;
@@ -35,26 +34,13 @@ import java.net.URISyntaxException;
  */
 public class ClusterJobRunner
 {
-    public void run(List<File> springConfigFiles, String[] args) throws IOException, URISyntaxException
+    public void run(String[] springConfigPaths, String[] args) throws IOException, URISyntaxException
     {
-        List<String> configURIs = new ArrayList<String>();
-        for (File file : springConfigFiles)
-        {
-            if (file.getName().indexOf("pipeline") != -1)
-            {
-                configURIs.add(0, file.getAbsoluteFile().toURI().toString());
-            }
-            else
-            {
-                configURIs.add(file.getAbsoluteFile().toURI().toString());
-            }
-        }
-
         // Set up the PipelineJobService so that Spring can configure it
         PipelineJobServiceImpl.initDefaults();
 
         // Initialize the Spring context
-        FileSystemXmlApplicationContext context = new FileSystemXmlApplicationContext(configURIs.toArray(new String[configURIs.size()]));
+        FileSystemXmlApplicationContext context = new FileSystemXmlApplicationContext(springConfigPaths);
 
         if (args.length < 1)
         {

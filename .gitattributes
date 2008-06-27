@@ -959,7 +959,9 @@ pipeline/src/org/labkey/pipeline/mule/EPipelineContextListener.java -text
 pipeline/src/org/labkey/pipeline/mule/EPipelineQueueImpl.java -text
 pipeline/src/org/labkey/pipeline/mule/EPipelineStatus.java -text
 pipeline/src/org/labkey/pipeline/mule/EPipelineStatusWriter.java -text
+pipeline/src/org/labkey/pipeline/mule/LabKeySpringContainerContext.java -text
 pipeline/src/org/labkey/pipeline/mule/MuleListenerHelper.java -text
+pipeline/src/org/labkey/pipeline/mule/MuleStartup.java -text
 pipeline/src/org/labkey/pipeline/mule/PipelineJobRunner.java -text
 pipeline/src/org/labkey/pipeline/mule/PipelineJobRunnerGlobus.java -text
 pipeline/src/org/labkey/pipeline/mule/PipelineProgressionRunner.java -text

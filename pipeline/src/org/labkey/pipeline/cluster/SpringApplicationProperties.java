@@ -25,6 +25,7 @@ import org.labkey.api.pipeline.PipelineJobService;
 public class SpringApplicationProperties implements PipelineJobService.ApplicationProperties
 {
     private String _toolsDirectory;
+    private String _muleConfig;
 
     public String getToolsDirectory()
     {
@@ -34,5 +35,15 @@ public class SpringApplicationProperties implements PipelineJobService.Applicati
     public void setToolsDirectory(String toolsDirectory)
     {
         _toolsDirectory = toolsDirectory;
+    }
+
+    public void setMuleConfig(String muleConfig)
+    {
+        _muleConfig = muleConfig;
+    }
+
+    public String getMuleConfig()
+    {
+        return _muleConfig;
     }
 }
