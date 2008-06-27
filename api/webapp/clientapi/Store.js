@@ -239,7 +239,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
                 schemaName: this.schemaName,
                 queryName: this.queryName, 
                 successCallback: this.getSuccessHandler(insertRowsData, insertRecords),
-                errorCallback: this.getErrorHandler(insertRowsData),
+                errorCallback: this.getErrorHandler(insertRowsData, insertRecords),
                 rowDataArray: insertRowsData,
                 action: "insertRows" //HACK: needed for a bug in Query.js
             });
@@ -249,7 +249,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
                 schemaName: this.schemaName,
                 queryName: this.queryName,
                 successCallback: this.getSuccessHandler(updateRowsData, updateRecords),
-                errorCallback: this.getErrorHandler(updateRowsData),
+                errorCallback: this.getErrorHandler(updateRowsData, updateRecords),
                 rowDataArray: updateRowsData,
                 action: "updateRows"//HACK: needed for a bug in Query.js
             });
@@ -331,11 +331,14 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         }
     },
 
-    getErrorHandler : function(rows) {
+    getErrorHandler : function(rowsData, records) {
         return function(response) {
+            for(var idx=0; idx < records.length; ++idx)
+                delete records[idx].saveOperationInProgress;
+
             var msg = "Unable to save the data due to the following error:<br/>";
             msg += response.exception || "Unknown Error";
-            Ext.Msg.alert("Save Error", msg);
+            alert(msg);
         }
     },
 

@@ -348,7 +348,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
                 break;
             case "date":
                 editor = new Ext.form.DateField({
-                    format : "Y-m-d H:i:s",
+                    format : "Y-m-d",
                     altFormats: "Y-m-d" +
                                 'n/j/y g:i:s a|n/j/Y g:i:s a|n/j/y G:i:s|n/j/Y G:i:s|' +
                                 'n-j-y g:i:s a|n-j-Y g:i:s a|n-j-y G:i:s|n-j-Y G:i:s|' +
@@ -546,7 +546,12 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         //reject the edits
         var record = this.getSelectionModel().getSelected();
         if(record && record.dirty)
-            record.reject();
+        {
+            if(record.isNew)
+                this.getStore().remove(record);
+            else
+                record.reject();
+        }
     },
 
     onBodyClick : function(evt) {
