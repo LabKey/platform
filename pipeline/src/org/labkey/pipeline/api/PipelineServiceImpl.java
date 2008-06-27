@@ -374,6 +374,11 @@ public class PipelineServiceImpl extends PipelineService
         setStatusFile(info, new PipelineStatusFileImpl(job, status, statusInfo));
     }
 
+    public String getMuleConfig()
+    {
+        return null;
+    }
+
     public String getToolsDirectory()
     {
         return AppProps.getInstance().getPipelineToolsDirectory();
