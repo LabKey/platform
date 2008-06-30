@@ -18,6 +18,7 @@ package org.labkey.api.query;
 import org.apache.commons.beanutils.BeanUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.view.NotFoundException;
 
 import java.sql.SQLException;
 import java.util.Map;
@@ -110,6 +111,8 @@ public abstract class AbstractQueryUpdateService<T,K> implements QueryUpdateServ
     {
         K oldKey = null != oldKeys ? keyFromMap(oldKeys) : keyFromMap(row);
         T bean = get(user, container, oldKey);
+        if(null == bean)
+            throw new NotFoundException("The object you are trying to update was not found in the database."); //CONSIDER: maybe we should return null for 0 rows affected instead?
         populateBean(bean, row);
         return mapFromBean(update(user, container, bean, oldKey));
     }
