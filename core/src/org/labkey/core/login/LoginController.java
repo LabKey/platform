@@ -130,6 +130,13 @@ public class LoginController extends SpringActionController
             HttpServletRequest request = getViewContext().getRequest();
             HttpServletResponse response = getViewContext().getResponse();
 
+            // If we're reshowing, the user must have entered incorrect credentials.
+            // Set the response code accordingly
+            if (reshow)
+            {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            }
+
             // Check to see if any authentication credentials already exist (passed as URL param, in a cookie, etc.)
             if (!reshow && authenticate(form, request, response))
                 return HttpView.redirect(getSuccessURLAsString(form));

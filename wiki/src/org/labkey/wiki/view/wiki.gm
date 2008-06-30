@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.wiki.model.Wiki" %>
+<%@ page import="javax.servlet.http.HttpServletResponse" %>
 <!--wiki-->
 <%
     HttpView me = HttpView.currentView();
@@ -116,6 +117,9 @@ if (!hasContent)
     }
     else
     {
+        // No page here, so set the response code to 404
+        context.getResponse().setStatus(HttpServletResponse.SC_NOT_FOUND);
+
         if (wikiPageCount == 0 && insertLink)
         {%>
             This Wiki currently does not contain any pages.<br><br>
