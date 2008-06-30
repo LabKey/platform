@@ -363,6 +363,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     mlo.tinfoFrom = tinfoFrom;
                     mlo.tinfoMat = tinfoMat;
                 }
+                TempTableTracker.getLogger().debug("DataSetDefinition returning " + tinfoMat.getFromSQL());
                 return tinfoMat;
             }
             catch (SQLException x)
@@ -418,6 +419,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     return;
                 synchronized (mlo)
                 {
+                    if (mlo.tinfoMat != null)
+                        TempTableTracker.getLogger().debug("DataSetDefinition unmaterialize(" + mlo.tinfoMat.getTempTableName() + ")");
                     mlo.tinfoFrom = null;
                     mlo.tinfoMat = null;
                 }
