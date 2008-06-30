@@ -259,7 +259,7 @@ public class StudyController extends BaseStudyController
         {
             _appendNavTrailDatasetAdmin(root);
             root.addChild(_def.getName(), new ActionURL(DatasetDetailsAction.class, getContainer()).addParameter("id", _def.getDataSetId()));
-            return root.addChild("Edit Dataset");
+            return root.addChild("Edit Dataset Definition");
         }
     }
 
@@ -1695,7 +1695,17 @@ public class StudyController extends BaseStudyController
         {
             _appendNavTrailDatasetAdmin(root);
             if (_def != null)
-                return root.addChild("Edit " + _def.getLabel() + " Visits");
+            {
+                try
+                {
+                    VisitManager visitManager = StudyManager.getInstance().getVisitManager(getStudy());
+                    return root.addChild("Edit " + _def.getLabel() + " " + visitManager.getPluralLabel());
+                }
+                catch (ServletException se)
+                {
+                    throw new UnexpectedException(se);
+                }
+            }
             return root;
         }
     }

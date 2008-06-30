@@ -916,19 +916,17 @@ public class Designer implements EntryPoint
             Widget propTable = _propEdit.getWidget();
 
             int row = 0;
-            if (_create)
+            ImageButton importButton = new ImageButton("Import Schema", new ClickListener()
             {
-                ImageButton importButton = new ImageButton("Import Schema", new ClickListener()
+                public void onClick(Widget sender)
                 {
-                    public void onClick(Widget sender)
-                    {
-                        final TsvPopup popup = new TsvPopup();
-                        popup.setText("Import Schema");
-                        popup.center();
-                    }
-                });
-                setWidget(row++, 0, importButton);
-            }
+                    final TsvPopup popup = new TsvPopup();
+                    popup.setText("Import Schema");
+                    popup.center();
+                }
+            });
+            setWidget(row++, 0, importButton);
+
 
             setWidget(row++, 0, propTable);
         }
@@ -942,8 +940,14 @@ public class Designer implements EntryPoint
                 super(false, true);
                 VerticalPanel vPanel = new VerticalPanel();
                 vPanel.setSpacing(5);
+                String warning = "<b>NOTE: This will replace any existing fields you have defined.</b>";
+                if (!_create)
+                {
+                    warning = "<b><font color=\"red\">WARNING: This will replace any existing fields you have defined, " +
+                            "and delete all data in any redefined fields!</font></b>";
+                }
                 HTML html = new HTML(
-                        "<b>NOTE: This will replace any existing fields you have defined.</b>" +
+                        warning +
                         "<p><b>Paste tab-delimited text with the following column headers and one row for each field</b><br>\n" +
                         "<b>Property</b> - Required. Field name. Must start with a character and include only characters and numbers<br>\n" +
                         "<b>RangeURI</b> - Required. Values: xsd:int, xsd:string, xsd:double, xsd:boolean, xsd:dateTime<br>\n" +
