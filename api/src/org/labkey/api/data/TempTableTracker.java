@@ -383,4 +383,10 @@ public class TempTableTracker extends WeakReference<Object>
     {
         return tempTableThread;
     }
+
+
+    public static Logger getLogger()
+    {
+        return _log;
+    }    
 }
