@@ -82,7 +82,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
 
         this.lookupStores = {};
 
-        this.addEvents("beforedelete");
+        this.addEvents("beforedelete", "columnmodelcustomize");
 
         //apply defaults to the config and store it
         //for use when we construct the base class
@@ -247,6 +247,9 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         //and if autoSave is on
         if(config.selModel.on && config.autoSave)
             config.selModel.on("rowselect", this.onRowSelect, this);
+
+        //fire the "columnmodelcustomize" event
+        this.fireEvent("columnmodelcustomize", config.columns, this);
     },
 
     getDefaultRenderer : function(col, lookups) {
