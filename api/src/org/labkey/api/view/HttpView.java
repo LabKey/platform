@@ -312,6 +312,12 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         return (HttpView)s.peek().mv;
     }
 
+    public static boolean hasCurrentView()
+    {
+        Stack<ViewStackEntry> s = _viewContexts.get();
+        return !s.isEmpty();
+    }
+
 
     /**
      * This may seem odd, who needs currentModel except the view which can call getModel()?

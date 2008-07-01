@@ -315,17 +315,17 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 }
             }
             ParticipantVisit participantVisit = resolver.resolve(specimenID, participantID, visitID, date);
-            if (participantPD != null)
+            if (participantPD != null && map.get(participantPD.getName()) == null)
             {
                 map.put(participantPD.getName(), participantVisit.getParticipantID());
                 rawData[i] = map;
             }
-            if (visitPD != null)
+            if (visitPD != null && map.get(visitPD.getName()) == null)
             {
                 map.put(visitPD.getName(), participantVisit.getVisitID());
                 rawData[i] = map;
             }
-            if (datePD != null)
+            if (datePD != null && map.get(datePD.getName()) == null)
             {
                 map.put(datePD.getName(), participantVisit.getDate());
                 rawData[i] = map;

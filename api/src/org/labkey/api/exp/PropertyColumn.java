@@ -17,6 +17,9 @@ package org.labkey.api.exp;
 
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.*;
+import org.labkey.api.query.PdLookupForeignKey;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.security.User;
 
 
 /**
@@ -71,6 +74,13 @@ public class PropertyColumn extends LookupColumn
         setInputType(pd.getPropertyType().getInputType());
 
         this.containerId = containerId;
+
+        // TODO: pass in the user as an argument. I'd do this now,
+        // but we're late in the cycle for 8.2. See bug 6130
+        if (HttpView.hasCurrentView())
+        {
+            setFk(new PdLookupForeignKey(HttpView.currentContext().getUser(), pd));
+        }
     }
 
 
