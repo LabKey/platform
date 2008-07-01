@@ -62,6 +62,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     {
         "ParticipantID",
         "ptid",
+        "SequenceNum", // used in both date-based and visit-based studies
         "DatasetId",
         "SiteId",
         "Created",
@@ -101,12 +102,14 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     {
         if (study.isDateBased())
         {
-            if ("Date".equalsIgnoreCase(fieldName) || "VisitDate".equalsIgnoreCase(fieldName))
+            if ("Date".equalsIgnoreCase(fieldName) ||
+                "VisitDate".equalsIgnoreCase(fieldName) ||
+                "Day".equalsIgnoreCase(fieldName))
                 return true;
         }
         else
         {
-            if ("sequenceNum".equalsIgnoreCase(fieldName) || "VisitSequenceNum".equalsIgnoreCase(fieldName))
+            if ("VisitSequenceNum".equalsIgnoreCase(fieldName))
                 return true;
         }
         return BASE_DEFAULT_FIELD_NAMES.contains(fieldName);
@@ -555,11 +558,16 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             if (study.isDateBased())
             {
                 sequenceNumCol.setNullable(true);
+                sequenceNumCol.setIsHidden(true);
+                sequenceNumCol.setUserEditable(false);
                 ColumnInfo visitDateCol = newDatasetColumnInfo(this, studyData.getColumn("_visitDate"));
                 visitDateCol.setName("Date");
                 visitDateCol.setNullable(false);
                 columns.add(visitDateCol);
-                columns.add(newDatasetColumnInfo(this, participantVisit.getColumn("Day")));
+
+                ColumnInfo dayColumn = newDatasetColumnInfo(this, participantVisit.getColumn("Day"));
+                dayColumn.setUserEditable(false);
+                columns.add(dayColumn);
             }
             columns.add(sequenceNumCol);
             // Property columns
