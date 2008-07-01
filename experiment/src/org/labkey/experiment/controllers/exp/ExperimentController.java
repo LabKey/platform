@@ -1506,18 +1506,20 @@ public class ExperimentController extends SpringActionController
             if (isPost())
             {
                 boolean hasErrors = false;
-                if (StringUtils.isEmpty(form.getName()))
+                if (StringUtils.isEmpty(form.getName()) || form.getName() == null)
                 {
                     hasErrors = true;
-                    errors.rejectValue(ERROR_MSG, "You must supply name for the sample set");
+                    errors.reject(ERROR_MSG, "You must supply a name for the sample set");
                 }
-
-                String materialSourceLsid = ExperimentService.get().getSampleSetLsid(form.getName(), getContainer()).toString();
-                MaterialSource sourceExisting = ExperimentServiceImpl.get().getMaterialSource(materialSourceLsid);
-                if (null != sourceExisting && form.getOverwriteChoice() == null)
+                else
                 {
-                    hasErrors = true;
-                    errors.reject(ERROR_MSG, "Sample set already exists.  Please choose one of the options as to how to merge the imported data with the existing data.");
+                    String materialSourceLsid = ExperimentService.get().getSampleSetLsid(form.getName(), getContainer()).toString();
+                    MaterialSource sourceExisting = ExperimentServiceImpl.get().getMaterialSource(materialSourceLsid);
+                    if (null != sourceExisting && form.getOverwriteChoice() == null)
+                    {
+                        hasErrors = true;
+                        errors.reject(ERROR_MSG, "Sample set already exists.  Please choose one of the options as to how to merge the imported data with the existing data.");
+                    }
                 }
                 
                 if (!hasErrors)
