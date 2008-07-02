@@ -144,10 +144,13 @@ public class SqlScriptManager
             throw new SqlScriptException(e, script.getDescription());
         }
 
-        if (hasBeenRun(script))
-            update(user, script);
-        else
-            insert(user, script);
+        if (script.isValidName())
+        {
+            if (hasBeenRun(script))
+                update(user, script);
+            else
+                insert(user, script);
+        }
     }
 
 

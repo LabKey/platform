@@ -74,10 +74,10 @@ public abstract class DefaultModule implements Module
                 INSTANTIATED_MODULES.add(getClass());
         }
 
-        this._name = name;
-        this._version = version;
-        this._shouldRunScripts = shouldRunScripts;
-        this._webParts = webParts;
+        _name = name;
+        _version = version;
+        _shouldRunScripts = shouldRunScripts;
+        _webParts = webParts;
         ModuleLoader.getInstance().registerResourcePrefix(resourcePath, this);
         for (WebPartFactory part : webParts)
             part.setModule(this);

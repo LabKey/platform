@@ -132,6 +132,29 @@ public class FileSqlScriptProvider implements SqlScriptProvider
         return list;
     }
 
+    public List<SqlScript> getDropScripts() throws SqlScriptException
+    {
+        return getOneOffScripts("drop.sql");
+    }
+
+    public List<SqlScript> getCreateScripts() throws SqlScriptException
+    {
+        return getOneOffScripts("create.sql");
+    }
+
+    private List<SqlScript> getOneOffScripts(String suffix) throws SqlScriptException
+    {
+        List<SqlScript> scripts = new ArrayList<SqlScript>();
+
+        for (String schemaName : getSchemaNames())
+        {
+            SqlScript script = new FileSqlScript(this, schemaName + "-" + suffix, schemaName);
+            if (0 != script.getContents().length())
+                scripts.add(script);
+        }
+
+        return scripts;
+    }
 
     private String getContents(String filename) throws SqlScriptException
     {
@@ -263,7 +286,16 @@ public class FileSqlScriptProvider implements SqlScriptProvider
                 _validName = true;
         }
 
-        private boolean isValidName()
+        // Used for DROP and CREATE scripts... so we don't both verifying filename or parsing info from it
+        // Also, leave _validName = false so we don't record these scripts in the SqlScript table
+        public FileSqlScript(FileSqlScriptProvider provider, String fileName, String schemaName)
+        {
+            _provider = provider;
+            _fileName = fileName;
+            _schemaName = schemaName;
+        }
+
+        public boolean isValidName()
         {
             return _validName;
         }

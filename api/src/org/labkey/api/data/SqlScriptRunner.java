@@ -392,6 +392,7 @@ public class SqlScriptRunner
         public String getDescription();
         public SqlScriptProvider getProvider();
         public void afterScriptRuns();
+        public boolean isValidName();
     }
 
 
@@ -401,5 +402,7 @@ public class SqlScriptRunner
         public List<SqlScript> getScripts(String schemaName) throws SqlScriptException;
         public SqlScript getScript(String description);
         public String getProviderName();
+        public List<SqlScript> getDropScripts() throws SqlScriptException;
+        public List<SqlScript> getCreateScripts() throws SqlScriptException;
     }
 }
