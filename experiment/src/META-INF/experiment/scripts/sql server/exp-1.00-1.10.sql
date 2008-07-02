@@ -33,35 +33,6 @@
 -- 
 SET NOCOUNT ON
 
-if exists (select * from dbo.sysobjects where id = object_id(N'exp._orphanObjectView') and OBJECTPROPERTY(id, N'IsView') = 1)
-DROP VIEW exp._orphanObjectView 
-GO
-if exists (select * from dbo.sysobjects where id = object_id(N'exp._orphanLSIDView') and OBJECTPROPERTY(id, N'IsView') = 1)
-DROP VIEW exp._orphanLSIDView
-GO
-if exists (select * from dbo.sysobjects where id = object_id(N'exp._orphanMaterialSourceView') and OBJECTPROPERTY(id, N'IsView') = 1)
-DROP VIEW exp._orphanMaterialSourceView
-GO
-if exists (select * from dbo.sysobjects where id = object_id(N'exp._orphanDataView') and OBJECTPROPERTY(id, N'IsView') = 1)
-DROP VIEW exp._orphanDataView
-GO
-if exists (select * from dbo.sysobjects where id = object_id(N'exp._orphanMaterialView') and OBJECTPROPERTY(id, N'IsView') = 1)
-DROP VIEW exp._orphanMaterialView
-GO
-if exists (select * from dbo.sysobjects where id = object_id(N'exp._orphanProtocolApplicationView') and OBJECTPROPERTY(id, N'IsView') = 1)
-DROP VIEW exp._orphanProtocolApplicationView
-GO
-if exists (select * from dbo.sysobjects where id = object_id(N'exp._orphanExperimentRunView') and OBJECTPROPERTY(id, N'IsView') = 1)
-DROP VIEW exp._orphanExperimentRunView
-GO
-if exists (select * from dbo.sysobjects where id = object_id(N'exp._orphanExperimentView') and OBJECTPROPERTY(id, N'IsView') = 1)
-DROP VIEW exp._orphanExperimentView
-GO
-if exists (select * from dbo.sysobjects where id = object_id(N'exp._orphanProtocolView ') and OBJECTPROPERTY(id, N'IsView') = 1)
-DROP VIEW exp._orphanProtocolView 
-GO
-
-
 if exists (select * from dbo.sysobjects where id = object_id(N'exp.AllLsidContainers ') and OBJECTPROPERTY(id, N'IsView') = 1)
 DROP VIEW exp.AllLsidContainers
 GO

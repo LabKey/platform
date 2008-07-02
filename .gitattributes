@@ -322,6 +322,7 @@ core/src/org/labkey/core/admin/AdminController.java -text
 core/src/org/labkey/core/admin/SiteSettingsAuditDetailsModel.java -text
 core/src/org/labkey/core/admin/SiteSettingsAuditViewFactory.java -text
 core/src/org/labkey/core/admin/TestNetworkDriveBean.java -text
+core/src/org/labkey/core/admin/ViewHandler.java -text
 core/src/org/labkey/core/admin/admin.jsp -text
 core/src/org/labkey/core/admin/auditLog.jsp -text
 core/src/org/labkey/core/admin/checkDatabase.jsp -text

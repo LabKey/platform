@@ -189,7 +189,7 @@ CREATE TABLE ExceptionReport
 	);
 
 
-CREATE VIEW ExceptionSummary AS
+CREATE VIEW mothership.ExceptionSummary AS
     SELECT
         st.ExceptionStackTraceId,
         st.StackTrace,
@@ -201,7 +201,7 @@ CREATE VIEW ExceptionSummary AS
         st.Container,
         st.BugNumber,
         st.AssignedTo
-    FROM ExceptionStackTrace st INNER JOIN (
+    FROM mothership.ExceptionStackTrace st INNER JOIN (
         SELECT
             a.ExceptionStackTraceId,
             MAX(ss.SVNRevision) AS MaxSVNRevision,
@@ -210,7 +210,7 @@ CREATE VIEW ExceptionSummary AS
             MAX(r.Created) AS LastReport,
             MIN(r.Created) AS FirstReport
         FROM
-            ExceptionStackTrace a, ExceptionReport r, ServerSession ss
+            mothership.ExceptionStackTrace a, mothership.ExceptionReport r, mothership.ServerSession ss
         WHERE
             a.ExceptionStackTraceId = r.ExceptionStackTraceId
             AND ss.ServerSessionId = r.ServerSessionId

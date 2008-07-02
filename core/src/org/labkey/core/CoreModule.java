@@ -159,9 +159,25 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
                 }
             };
 
+            List<SqlScript> scripts = new ArrayList<SqlScript>();
+
+            // TODO: How about a helper function, e.g., runDropScripts(provider) / runCreateScripts(provider)
+            if (0.0 != moduleContext.getInstalledVersion())
+            {
+                scripts.addAll(coreProvider.getDropScripts());
+                scripts.addAll(nonCoreProvider.getDropScripts());
+            }
+
             // Must run all the core schema scripts first followed by the other schemas
-            List<SqlScript> scripts = SqlScriptRunner.getRecommendedScripts(coreProvider, null, moduleContext.getInstalledVersion(), getVersion());
+            scripts.addAll(SqlScriptRunner.getRecommendedScripts(coreProvider, null, moduleContext.getInstalledVersion(), getVersion()));
             scripts.addAll(SqlScriptRunner.getRecommendedScripts(nonCoreProvider, null, moduleContext.getInstalledVersion(), getVersion()));
+
+            if (0.0 != moduleContext.getInstalledVersion())
+            {
+                scripts.addAll(coreProvider.getCreateScripts());
+                scripts.addAll(nonCoreProvider.getCreateScripts());
+            }
+
             SqlScriptRunner.runScripts(null, scripts, coreProvider);
             SqlScriptRunner.waitForScriptsToFinish();
 
@@ -174,6 +190,10 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
         catch (InterruptedException e)
         {
             throw(new RuntimeException(e));
+        }
+        catch (SqlScriptRunner.SqlScriptException e)
+        {
+            throw new RuntimeException(e);
         }
 
         Exception se = SqlScriptRunner.getException();
