@@ -21,6 +21,7 @@
 <%@ page import="java.util.Collections" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.apache.commons.lang.math.NumberUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 
 <%
@@ -54,7 +55,12 @@
         ActionURL doneUrl = HttpView.currentContext().cloneActionURL();
         doneUrl.setAction(StudyController.DatasetReportAction.class);
         doneUrl.deleteParameter("defaultView");
-        doneUrl.replaceParameter("Dataset.viewName", defaultView);
+        doneUrl.deleteParameter("Dataset.reportId");
+        doneUrl.deleteParameter("Dataset.viewName");
+        if (NumberUtils.isNumber(defaultView))
+            doneUrl.addParameter("Dataset.reportId", defaultView);
+        else
+            doneUrl.addParameter("Dataset.viewName", defaultView);
     %>
         <tr><td>&nbsp;</td></tr>
         <tr><td><%=PageFlowUtil.buttonLink("Done", doneUrl)%></td></tr>

@@ -163,6 +163,7 @@ public class StudyQueryReport extends QueryReport
                         descriptor.getProperty(ReportDescriptor.Prop.viewName));
                 view.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
                 view.setUseQueryViewActionExportURLs(true);
+                view.getSettings().setAllowChooseQuery(false);
 
                 int datasetId = NumberUtils.toInt(getDescriptor().getProperty("showWithDataset"), -1);
                 Study study = StudyManager.getInstance().getStudy(context.getContainer());
@@ -177,13 +178,20 @@ public class StudyQueryReport extends QueryReport
 
     public ActionURL getRunReportURL(ViewContext context)
     {
-        String datasetId = getDescriptor().getProperty("showWithDataset");
-        if (datasetId != null)
+        int datasetId = NumberUtils.toInt(getDescriptor().getProperty("showWithDataset"), -1);
+        if (datasetId != -1)
         {
             return new ActionURL(StudyController.DatasetReportAction.class, context.getContainer()).
                         addParameter(DataSetDefinition.DATASETKEY, datasetId).
-                        addParameter("Dataset.viewName", getDescriptor().getReportId());
+                        addParameter("Dataset.reportId", getDescriptor().getReportId());
         }
+/*
+        QueryDefinition def = QueryService.get().getQueryDef(context.getContainer(), getDescriptor().getProperty(QueryParam.schemaName.name()), getDescriptor().getProperty(QueryParam.queryName.name()));
+        if (def != null)
+            return def.urlFor(QueryAction.executeQuery).
+                    addParameter("Dataset.reportId", getDescriptor().getReportId()).
+                    addParameter(QueryParam.dataRegionName.name(), "Dataset");
+*/
         return super.getRunReportURL(context);
     }
 }

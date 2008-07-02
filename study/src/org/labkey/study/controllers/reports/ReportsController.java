@@ -573,9 +573,9 @@ public class ReportsController extends BaseStudyController
     private ModelAndView getDatasetForward(int reportId, Integer dataset) throws Exception
     {
         ActionURL url = getViewContext().cloneActionURL();
-        url.setPageFlow("Study").setAction("datasetReport");
+        url.setAction(StudyController.DatasetReportAction.class);
 
-        url.replaceParameter("Dataset.viewName", String.valueOf(reportId));
+        url.replaceParameter("Dataset.reportId", String.valueOf(reportId));
         url.replaceParameter(DataSetDefinition.DATASETKEY,  String.valueOf(dataset));
         return HttpView.redirect(url);
     }
@@ -615,7 +615,7 @@ public class ReportsController extends BaseStudyController
         private String getReportKey(SaveReportViewForm form) throws ServletException
         {
             int showWithDataset = form.getShowWithDataset();
-            if (showWithDataset != 0)
+            if (showWithDataset != -1)
             {
                 if (ReportManager.ALL_DATASETS == showWithDataset)
                     return ReportManager.ALL_DATASETS_KEY;
@@ -623,8 +623,10 @@ public class ReportsController extends BaseStudyController
                 String queryName = null;
                 DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getStudy(), showWithDataset);
                 if (def != null)
+                {
                     queryName = def.getLabel();
-                return ChartUtil.getReportKey(StudyManager.getSchemaName(), queryName);
+                    return ChartUtil.getReportKey(StudyManager.getSchemaName(), queryName);
+                }
             }
             return ChartUtil.getReportQueryKey(form.getReport().getDescriptor());
         }
@@ -635,7 +637,7 @@ public class ReportsController extends BaseStudyController
             if (dataset != 0)
             {
                 ActionURL url = getViewContext().cloneActionURL().setAction(StudyController.DatasetAction.class).
-                                        replaceParameter("Dataset.viewName", QueryView.REPORTID_PARAM + _savedReportId);
+                                        replaceParameter("Dataset.reportId", String.valueOf(_savedReportId));
 
                 if (dataset == ReportManager.ALL_DATASETS)
                     url.replaceParameter(DataSetDefinition.DATASETKEY,  String.valueOf(form.getDatasetId()));
@@ -1985,7 +1987,7 @@ public class ReportsController extends BaseStudyController
 
         protected Report getReport(RReportBean form) throws Exception
         {
-            String reportId = form.getViewContext().getActionURL().getParameter("Dataset.viewName");
+            String reportId = form.getViewContext().getActionURL().getParameter("Dataset.reportId");
             if (NumberUtils.isDigits(reportId))
             {
                 form.setReportId(NumberUtils.toInt(reportId));
@@ -1996,29 +1998,24 @@ public class ReportsController extends BaseStudyController
 
         public ModelAndView getView(RReportBean form, BindException errors) throws Exception
         {
-            VBox view = new VBox();
-
             _report = getReport(form);
+            if (_report == null)
+                return new HtmlView("Unable to locate the specified report");
+
             DataSetDefinition def = getDataSetDefinition();
-            if (def != null && _report != null && def.canRead(getUser()))
+            if (def != null && _report != null)
             {
                 ActionURL url = getViewContext().cloneActionURL().setAction(StudyController.DatasetAction.class).
-                                        replaceParameter("Dataset.viewName", QueryView.REPORTID_PARAM + _report.getDescriptor().getReportId()).
+                                        replaceParameter("Dataset.reportId", String.valueOf(_report.getDescriptor().getReportId())).
                                         replaceParameter(DataSetDefinition.DATASETKEY, String.valueOf(def.getDataSetId()));
 
                 return HttpView.redirect(url);
-//                view.addView(new DataHeader(getViewContext().getActionURL(), null, getDataSetDefinition(), false));
             }
 
-            if (_report != null)
-            {
-                view.addView(_report.getRunReportView(getViewContext()));
-            }
+            if (ReportManager.get().canReadReport(getUser(), getContainer(), _report))
+                return _report.getRunReportView(getViewContext());
             else
-            {
-                view.addView(new HtmlView("Unable to locate the specified report"));
-            }
-            return view;
+                return new HtmlView("User does not have read permission on this report.");
         }
 
         protected DataSetDefinition getDataSetDefinition()
@@ -2031,73 +2028,6 @@ public class ReportsController extends BaseStudyController
                     _def = StudyManager.getInstance().
                             getDataSetDefinition(study, _report.getDescriptor().getProperty(ReportDescriptor.Prop.queryName));
                 }
-            }
-            return _def;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            DataSetDefinition def = getDataSetDefinition();
-
-            if (def != null)
-                _appendNavTrail(root, def.getDataSetId(), 0, 0);
-            return root;
-        }
-    }
-
-    @RequiresPermission(ACL.PERM_READ)
-    public class DatasetReportAction extends SimpleViewAction<ReportForm>
-    {
-        protected DataSetDefinition _def;
-        protected Report _report;
-
-        protected Report getReport(ReportForm form) throws Exception
-        {
-            String reportId = form.getViewContext().getActionURL().getParameter("Dataset.viewName");
-            if (NumberUtils.isDigits(reportId))
-                return ReportManager.get().getReport(form.getContainer(), NumberUtils.toInt(reportId));
-
-            return null;
-        }
-
-        public ModelAndView getView(ReportForm form, BindException errors) throws Exception
-        {
-            VBox view = new VBox();
-
-            _report = getReport(form);
-            DataSetDefinition def = getDataSetDefinition();
-            if (def != null && _report != null && def.canRead(getUser()))
-            {
-                ActionURL url = getViewContext().cloneActionURL().setAction(StudyController.DatasetAction.class).
-                                        replaceParameter("Dataset.viewName", QueryView.REPORTID_PARAM + _report.getDescriptor().getReportId()).
-                                        replaceParameter(DataSetDefinition.DATASETKEY, String.valueOf(def.getDataSetId()));
-
-                return HttpView.redirect(url);
-                //view.addView(new DataHeader(getViewContext().getActionURL(), null, getDataSetDefinition(), false));
-            }
-
-            if (_report != null)
-            {
-                view.addView(_report.getRunReportView(getViewContext()));
-            }
-            else
-            {
-                view.addView(new HtmlView("Unable to locate the specified report"));
-            }
-            return view;
-        }
-
-        protected DataSetDefinition getDataSetDefinition()
-        {
-            if (_def == null)
-            {
-                try {
-                    int datasetId = NumberUtils.toInt(getViewContext().getActionURL().getParameter(DataSetDefinition.DATASETKEY));
-                    if (_report != null)
-                        datasetId = NumberUtils.toInt(_report.getDescriptor().getProperty(DataSetDefinition.DATASETKEY));
-                    _def = StudyManager.getInstance().getDataSetDefinition(getStudy(), datasetId);
-                }
-                catch (Exception e) {_def = null;}
             }
             return _def;
         }

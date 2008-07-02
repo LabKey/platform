@@ -64,7 +64,8 @@
             if (idx == -1)
             {
                 redirect.value = "true";
-                redirectToDataset = "-1";
+                redirectToDataset.value = "-1";
+                showWithDataset.value = "-1";
             }
             else
             {

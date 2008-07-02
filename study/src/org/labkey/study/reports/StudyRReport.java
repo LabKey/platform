@@ -63,7 +63,7 @@ public class StudyRReport extends RReport
     {
         if (getDescriptor().getReportId() != -1)
             return new ActionURL(ReportsController.RunRReportAction.class, context.getContainer()).
-                            addParameter("Dataset.viewName", getDescriptor().getReportId());
+                            addParameter("Dataset.reportId", getDescriptor().getReportId());
         else
             return super.getRunReportURL(context);
     }

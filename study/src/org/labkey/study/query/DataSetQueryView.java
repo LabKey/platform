@@ -19,8 +19,10 @@ package org.labkey.study.query;
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.view.ChartUtil;
 import org.labkey.api.reports.report.view.RReportBean;
+import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.security.ACL;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -233,10 +235,15 @@ public class DataSetQueryView extends QueryView
 
     protected void populateReportButtonBar(ButtonBar bar)
     {
-        MenuButton button = createViewButton(ReportService.EMPTY_ITEM_LIST);
-        button.addMenuItem("Set Default View", getViewContext().cloneActionURL().setAction(StudyController.ViewPreferencesAction.class));
+        Report report = getSettings().getReportView(getViewContext());
 
-        bar.add(button);
-        //bar.add(createPrintButton());
+        // query reports will render their own button bar
+        if (!(report instanceof QueryReport))
+        {
+            MenuButton button = createViewButton(ReportService.EMPTY_ITEM_LIST);
+            button.addMenuItem("Set Default View", getViewContext().cloneActionURL().setAction(StudyController.ViewPreferencesAction.class));
+
+            bar.add(button);
+        }
     }
 }

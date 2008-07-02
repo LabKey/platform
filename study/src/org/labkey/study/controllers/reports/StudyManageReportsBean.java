@@ -259,19 +259,8 @@ public class StudyManageReportsBean extends ManageReportsBean
     {
         String name = r.getDescriptor().getReportName();
         String displayURL;
-        DataSetDefinition def = getDataSetDefinition(queryName);
 
-        if (def != null)
-        {
-            ActionURL url = new ActionURL("Study", "datasetReport.view", _context.getContainer());
-            url.addParameter("datasetId", def.getDataSetId());
-            url.addParameter("Dataset.viewName", String.valueOf(r.getDescriptor().getReportId()));
-
-            displayURL = url.toString();
-        }
-        else
-            displayURL = _context.cloneActionURL().relativeUrl("showReport.view", "reportId=" + r.getDescriptor().getReportId(), "Study-Reports");
-
+        displayURL = r.getRunReportURL(_context).toString();
         ActionURL deleteURL = new ActionURL("Study-Reports", "deleteReport.view", _context.getContainer());
         ActionURL permissionsURL = new ActionURL("Study-Security", "reportPermissions.view", _context.getContainer());
 

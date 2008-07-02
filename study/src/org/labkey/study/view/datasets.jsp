@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.study.model.StudyManager"%>
 <%@ page import="java.util.ArrayList"%>
 <%@ page import="java.util.List"%>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
 JspView me = (JspView)HttpView.currentView();
@@ -82,7 +83,7 @@ String styleTH=" style=\"border-right:solid 1px " + borderColor + "; border-top:
                 return "";
 
             String category = startIndex == 0 ? null : datasets.get(startIndex-1).getCategory();
-            String datasetUrl = ctx.cloneActionURL().deleteParameters().setPageFlow("Study").setAction("defaultDatasetReport").getLocalURIString();
+            String datasetUrl = ctx.cloneActionURL().deleteParameters().setAction(StudyController.DefaultDatasetReportAction.class).getLocalURIString();
             sb.append("<table>");
             //Print a column header if necessary
             DataSetDefinition firstDataset = datasets.get(startIndex);

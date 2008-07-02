@@ -155,8 +155,8 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
             int showWithDataset = NumberUtils.toInt(reportView.getDescriptor().getProperty("showWithDataset"));
             if (showWithDataset != 0)
             {
-                ActionURL url = new ActionURL("Study", "datasetReport", _context.getContainer());
-                url.addParameter("Dataset.viewName", String.valueOf(reportId));
+                ActionURL url = new ActionURL(StudyController.DatasetReportAction.class, _context.getContainer());
+                url.addParameter("Dataset.reportId", String.valueOf(reportId));
                 if (showWithDataset == ReportManager.ALL_DATASETS)
                     url.addParameter(DataSetDefinition.DATASETKEY,  reportView.getDescriptor().getProperty("datasetId"));
                 else

@@ -339,7 +339,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(ACL.PERM_READ)
     public class DatasetReportAction extends QueryViewAction<QueryViewAction.QueryExportForm, QueryView>
     {
-        StringBuilder _label;
+        Report _report;
 
         public DatasetReportAction()
         {
@@ -348,66 +348,40 @@ public class StudyController extends BaseStudyController
 
         private Report getReport() throws Exception
         {
-            String viewName = (String)getViewContext().get("Dataset.viewName");
+            String reportId = (String)getViewContext().get("Dataset.reportId");
 
-            if (NumberUtils.isDigits(viewName))
-                return ReportManager.get().getReport(getContainer(), NumberUtils.toInt(viewName));
+            if (NumberUtils.isDigits(reportId))
+                return ReportManager.get().getReport(getContainer(), NumberUtils.toInt(reportId));
 
             return null;
         }
 
         protected ModelAndView getHtmlView(QueryViewAction.QueryExportForm form, BindException errors) throws Exception
         {
-            getViewContext().requiresPermission(ACL.PERM_READ);
-
             ViewContext context = getViewContext();
-            Report reportView = getReport();
+            _report = getReport();
 
             // is not a report (either the default grid view or a custom view)...
-            if (null == reportView)
+            if (_report == null)
             {
-                HttpView.throwRedirect(createRedirectURLfrom(DatasetAction.class, context));
-                return null;
+                return HttpView.redirect(createRedirectURLfrom(DatasetAction.class, context));
             }
 
-            int datasetId = null == context.get(DataSetDefinition.DATASETKEY) ? 0 : Integer.parseInt((String) context.get(DataSetDefinition.DATASETKEY));
+            int datasetId = NumberUtils.toInt((String)context.get(DataSetDefinition.DATASETKEY), -1);
             DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getStudy(), datasetId);
 
-            final String type = reportView.getDescriptor().getReportType();
-            if (ChartReportView.TYPE.equals(type))
-            {
-                HttpView.throwRedirect(createRedirectURLfrom(ReportsController.DatasetReportAction.class, context));
-                return null;
-            }
-            else if (StudyRReport.TYPE.equals(type))
-            {
-                HttpView.throwRedirect(createRedirectURLfrom(ReportsController.RunRReportAction.class, context));
-                return null;
-            }
-            else if (def != null && def.canRead(getUser()))
+            if (def != null)
             {
                 ActionURL url = getViewContext().cloneActionURL().setAction(StudyController.DatasetAction.class).
-                                        replaceParameter("Dataset.viewName", QueryView.REPORTID_PARAM + reportView.getDescriptor().getReportId()).
+                                        replaceParameter("Dataset.reportId", String.valueOf(_report.getDescriptor().getReportId())).
                                         replaceParameter(DataSetDefinition.DATASETKEY, String.valueOf(def.getDataSetId()));
 
                 return HttpView.redirect(url);
             }
-
-            _label = new StringBuilder();
-            _label.append("Dataset: ");
-            if (def != null)
-            {
-                if (def.getLabel() != null)
-                    _label.append(def.getLabel());
-                else
-                    _label.append("CRF/Assay ").append(def.getDataSetId());
-            }
-
-            HttpView view = reportView.renderReport(getViewContext());
-            DataHeader header = new DataHeader(getViewContext().getActionURL(), null, def, false);
-
-            return new VBox(header,
-                    new ReportHeader(reportView), view);
+            else if (ReportManager.get().canReadReport(getUser(), getContainer(), _report))
+                return _report.getRunReportView(getViewContext());
+            else
+                return new HtmlView("User does not have read permission on this report.");
         }
 
         protected QueryView createQueryView(QueryExportForm form, BindException errors, boolean forExport, String dataRegion) throws Exception
@@ -422,7 +396,7 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return _appendNavTrail(root).addChild(_label.toString());
+            return root.addChild(_report.getDescriptor().getReportName());
         }
     }
 
@@ -437,7 +411,7 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            String viewName = (String) getViewContext().get("Dataset.viewName");
+            String viewName = (String) getViewContext().get("Dataset.reportId");
             int datasetId = NumberUtils.toInt((String)getViewContext().get(DataSetDefinition.DATASETKEY));
 
             if (NumberUtils.isDigits(viewName))
@@ -540,9 +514,14 @@ public class StudyController extends BaseStudyController
             HtmlView header = new HtmlView(sb.toString());
 
             HttpView view = new VBox(header, queryView);
-            if (!def.canRead(getUser()))
+            Report report = queryView.getSettings().getReportView(getViewContext());
+            if (report != null && !ReportManager.get().canReadReport(getUser(), getContainer(), report))
             {
-                view = new HtmlView("User does not have read permission on this dataset.");
+                return new HtmlView("User does not have read permission on this report.");
+            }
+            else if (report == null && !def.canRead(getUser()))
+            {
+                return new HtmlView("User does not have read permission on this dataset.");
             }
             return view;
         }
@@ -560,21 +539,17 @@ public class StudyController extends BaseStudyController
 
         private String getViewName()
         {
-            String viewName = StringUtils.trimToNull((String)getViewContext().get("Dataset.viewName"));
-
-            if (viewName != null)
+            QuerySettings qs = new QuerySettings(getViewContext().getActionURL(), "Dataset");
+            if (qs.getViewName() != null)
+                return qs.getViewName();
+            else
             {
-                if (viewName.startsWith(QueryView.REPORTID_PARAM))
-                {
-                    QuerySettings qs = new QuerySettings(getViewContext().getActionURL(), "Dataset");
-                    Report report = qs.getReportView(getViewContext());
-
-                    if (report != null)
-                        return report.getDescriptor().getReportName();
-                }
-                return viewName;
+                Report report = qs.getReportView(getViewContext());
+                if (report != null)
+                    return report.getDescriptor().getReportName();
+                else
+                    return "default";
             }
-            return "default";
         }
 
         private void populateButtonBar(List<ActionButton> buttonBar, DataSetQueryView queryView, Cohort cohort, Visit visit)
@@ -637,8 +612,7 @@ public class StudyController extends BaseStudyController
                     return false;
                 }
             });
-            if (!getViewContext().getUser().isGuest())
-                button.addMenuItem("Set Default View", getViewContext().cloneActionURL().setAction(ViewPreferencesAction.class));
+            button.addMenuItem("Set Default View", getViewContext().cloneActionURL().setAction(ViewPreferencesAction.class));
 
             buttonBar.add(button);
         }
@@ -703,114 +677,6 @@ public class StudyController extends BaseStudyController
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
-        }
-    }
-
-    @RequiresPermission(ACL.PERM_READ)
-    public class DatasetPlotAction extends SimpleViewAction<ParticipantForm>
-    {
-        ParticipantForm _bean;
-
-        @SuppressWarnings("deprecation")
-        public ModelAndView getView(ParticipantForm form, BindException errors) throws Exception
-        {
-            _bean = form;
-            ViewContext context = getViewContext();
-            String viewName = (String) context.get("Dataset.viewName");
-            int datasetId = null == context.get(DataSetDefinition.DATASETKEY) ? 0 : Integer.parseInt((String) context.get(DataSetDefinition.DATASETKEY));
-
-            final String plotPrefix = ReportManager.getDatasetReportKeyPrefix(ReportManager.ALL_DATASETS);
-            if (viewName.startsWith(plotPrefix))
-            {
-                viewName = viewName.substring(plotPrefix.length());
-            }
-
-            String previousParticipantURL = null;
-            String nextParticiapantURL = null;
-
-            Report reportView = null;
-            if (NumberUtils.isDigits(viewName))
-                reportView = ReportManager.get().getReport(context.getContainer(), NumberUtils.toInt(viewName));
-
-            // TODO: replace references by view name to report id
-/*
-            if (reportView == null && viewName != null)
-            {
-                reportView = ReportManager.get().getReport(getUser(), context.getContainer(), reportDatasetId, viewName);
-            }
-*/
-            if (null == reportView)
-            {
-                HttpView.redirect(new ActionURL(DatasetAction.class, getContainer()));
-                return null;
-            }
-            //if (!reportView.getDescriptor().canRead(getUser()))
-            //    HttpView.throwUnauthorized();
-
-            if ("delete".equals(context.get("action")))
-            {
-                if (!ReportManager.get().canDeleteReport(getUser(), getContainer(), reportView.getDescriptor().getReportId()))
-                    HttpView.throwUnauthorized();
-
-                ReportManager.get().deleteReport(getViewContext(), reportView);
-                ActionURL url = getViewContext().cloneActionURL();
-                url.setAction(DatasetAction.class);
-
-                HttpView.redirect(url);
-                return null;
-            }
-
-            DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getStudy(), datasetId);
-            VBox box = new VBox();
-
-            // display the next and previous buttons only if we have a cached participant index and the
-            // report has a filter param set
-            if (!StringUtils.isEmpty(reportView.getDescriptor().getProperty("filterParam")))
-            {
-                String prevView = (String) context.get("prevView");
-                Cohort cohort = null;
-                if (form.getCohortId() != null)
-                    cohort = StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), form.getCohortId().intValue());
-                List<String> participants = getParticipantListFromCache(context, datasetId, prevView, cohort);
-                if (!participants.isEmpty())
-                {
-                    if (form.getParticipantId() == null)
-                    {
-                        form.setParticipantId(participants.get(0));
-                    }
-                    int idx = participants.indexOf(form.getParticipantId());
-                    if (idx != -1)
-                    {
-                        if (idx > 0)
-                        {
-                            final String ptid = participants.get(idx-1);
-                            ActionURL prevUrl = getViewContext().cloneActionURL();
-                            prevUrl.replaceParameter("participantId", ptid);
-                            previousParticipantURL = prevUrl.getEncodedLocalURIString();
-                        }
-
-                        if (idx < participants.size()-1)
-                        {
-                            final String ptid = participants.get(idx+1);
-                            ActionURL nextUrl = getViewContext().cloneActionURL();
-                            nextUrl.replaceParameter("participantId", ptid);
-                            nextParticiapantURL = nextUrl.getEncodedLocalURIString();
-                        }
-                    }
-                }
-                box.addView(new ParticipantNavView(previousParticipantURL, nextParticiapantURL, form.getParticipantId()));
-            }
-            box.addView(new DataHeader(getViewContext().getActionURL(), null, def, false));
-            box.addView(new ReportHeader(reportView));
-            box.addView(reportView.renderReport(getViewContext()));
-
-            return box;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return _appendNavTrail(root, _bean.getDatasetId(), 0).
-                    addChild("Participant - " + _bean.getParticipantId());
         }
     }
 
@@ -3332,7 +3198,12 @@ public class StudyController extends BaseStudyController
 
             String defaultView = getDefaultView(context, datasetId);
             if (!StringUtils.isEmpty(defaultView))
-                url.addParameter("Dataset.viewName", defaultView);
+            {
+                if (NumberUtils.isNumber(defaultView))
+                    url.addParameter("Dataset.reportId", defaultView);
+                else
+                    url.addParameter("Dataset.viewName", defaultView);
+            }
             return url;
         }
     }

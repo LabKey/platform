@@ -36,6 +36,7 @@ import org.labkey.study.model.Visit;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.view.CrosstabView;
 import org.labkey.study.controllers.reports.ReportsController;
+import org.labkey.study.controllers.StudyController;
 
 import javax.servlet.http.HttpServletResponse;
 import java.sql.ResultSet;
@@ -136,9 +137,9 @@ public class StudyCrosstabReport extends AbstractReport
         String datasetId = getDescriptor().getProperty(DataSetDefinition.DATASETKEY);
         if (datasetId != null)
         {
-            return new ActionURL(ReportsController.DatasetReportAction.class, context.getContainer()).
+            return new ActionURL(StudyController.DatasetReportAction.class, context.getContainer()).
                         addParameter(DataSetDefinition.DATASETKEY, datasetId).
-                        addParameter("Dataset.viewName", getDescriptor().getReportId());
+                        addParameter("Dataset.reportId", getDescriptor().getReportId());
         }
         return super.getRunReportURL(context);
     }

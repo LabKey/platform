@@ -25,15 +25,15 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.ChartReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
-import org.labkey.api.reports.report.view.RunChartReportView;
 import org.labkey.api.security.ACL;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
 import org.labkey.common.util.Pair;
+import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
@@ -126,9 +126,9 @@ public class ChartReportView extends AbstractReportView
         String datasetId = getDescriptor().getProperty(DataSetDefinition.DATASETKEY);
         if (datasetId != null)
         {
-            return new ActionURL(ReportsController.DatasetReportAction.class, context.getContainer()).
+            return new ActionURL(StudyController.DatasetReportAction.class, context.getContainer()).
                         addParameter(DataSetDefinition.DATASETKEY, datasetId).
-                        addParameter("Dataset.viewName", getDescriptor().getReportId());
+                        addParameter("Dataset.reportId", getDescriptor().getReportId());
         }
         return super.getRunReportURL(context);
     }
