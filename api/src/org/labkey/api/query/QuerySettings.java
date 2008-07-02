@@ -38,6 +38,7 @@ public class QuerySettings
     private String _queryName;
     private String _viewName;
     private String _dataRegionName;
+    private int _reportId = -1;
     private ActionURL _urlSortFilter;
     private boolean _allowChooseQuery = true;
     private boolean _allowChooseView = true;
@@ -128,6 +129,8 @@ public class QuerySettings
             {
                 _ignoreUserFilter = true;
             }
+
+            setReportId(NumberUtils.toInt(_getParameter(param(QueryParam.reportId)), -1));
         }
 
         if (_showRows == ShowRows.DEFAULT)
@@ -186,6 +189,16 @@ public class QuerySettings
     public String getViewName()
     {
         return _viewName;
+    }
+
+    public int getReportId()
+    {
+        return _reportId;
+    }
+
+    public void setReportId(int reportId)
+    {
+        _reportId = reportId;
     }
 
     public void setDataRegionName(String name)
@@ -265,16 +278,10 @@ public class QuerySettings
 
     public Report getReportView(ViewContext context)
     {
-        String viewName = getViewName();
         try {
-            if (viewName != null && viewName.startsWith(QueryView.REPORTID_PARAM))
+            if (getReportId() != -1)
             {
-                String idParam = viewName.substring(QueryView.REPORTID_PARAM.length());
-                if (NumberUtils.isNumber(idParam))
-                {
-                    int reportId = NumberUtils.toInt(idParam);
-                    return ReportService.get().getReport(reportId);
-                }
+                return ReportService.get().getReport(getReportId());
             }
         }
         catch (SQLException e)

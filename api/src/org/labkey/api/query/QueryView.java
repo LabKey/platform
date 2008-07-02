@@ -378,6 +378,7 @@ public class QueryView extends WebPartView<Object>
         ActionURL ret = getSettings().getSortFilterURL();
         ret.deleteParameter(param(QueryParam.queryName));
         ret.deleteParameter(param(QueryParam.viewName));
+        ret.deleteParameter(param(QueryParam.reportId));
         ret.deleteParameter("x");
         ret.deleteParameter("y");
         for (String key : ret.getKeysByPrefix(getDataRegionName() + "."))
@@ -404,6 +405,7 @@ public class QueryView extends WebPartView<Object>
     {
         ActionURL ret = getSettings().getSortFilterURL();
         ret.deleteParameter(param(QueryParam.viewName));
+        ret.deleteParameter(param(QueryParam.reportId));
         ret.deleteParameter("x");
         ret.deleteParameter("y");
         ret.deleteParameter(RunReportView.CACHE_PARAM);
@@ -600,7 +602,7 @@ public class QueryView extends WebPartView<Object>
 
         // existing views
         addGridViews(button, target, current);
-        addReportViews(button, target, current);
+        addReportViews(button, target);
 
         button.addSeparator();
 
@@ -672,7 +674,7 @@ public class QueryView extends WebPartView<Object>
         }
     }
 
-    protected void addReportViews(MenuButton menu, ActionURL target, String currentView)
+    protected void addReportViews(MenuButton menu, ActionURL target)
     {
         String reportKey = ChartUtil.getReportKey(getSchema().getSchemaName(), getSettings().getQueryName());
         Map<String, List<Report>> views = new TreeMap<String, List<Report>>();
@@ -688,10 +690,10 @@ public class QueryView extends WebPartView<Object>
         {
             for (Report report : entry.getValue())
             {
-                String viewName = QueryView.REPORTID_PARAM + report.getDescriptor().getReportId();
-                NavTree item = new NavTree(report.getDescriptor().getReportName(), target.clone().replaceParameter(param(QueryParam.viewName), viewName).getLocalURIString());
+                String viewName = String.valueOf(report.getDescriptor().getReportId());
+                NavTree item = new NavTree(report.getDescriptor().getReportName(), target.clone().replaceParameter(param(QueryParam.reportId), viewName).getLocalURIString());
                 item.setId("Views:" + report.getDescriptor().getReportName());
-                if (viewName.equals(currentView))
+                if (getSettings().getReportId() == report.getDescriptor().getReportId())
                     item.setSelected(true);
                 else
                     item.setImageSrc(ReportService.get().getReportIcon(getViewContext(), report.getType()));
@@ -953,20 +955,17 @@ public class QueryView extends WebPartView<Object>
     protected void renderDataRegion(PrintWriter out) throws Exception
     {
         String viewName = getSettings().getViewName();
-        if (viewName != null && viewName.startsWith(REPORTID_PARAM))
+        if (_report != null && viewName == null)
         {
-            if (_report != null)
+            if (!isPrintView())
             {
-                if (!isPrintView())
-                {
-                    RenderContext ctx = new RenderContext(getViewContext());
-                    ctx.put("reportId", _report.getDescriptor().getReportId());
-                    ButtonBar bar = new ButtonBar();
-                    populateReportButtonBar(bar);
-                    bar.render(ctx, out);
-                }
-                include(_report.getRunReportView(getViewContext()));
+                RenderContext ctx = new RenderContext(getViewContext());
+                ctx.put("reportId", _report.getDescriptor().getReportId());
+                ButtonBar bar = new ButtonBar();
+                populateReportButtonBar(bar);
+                bar.render(ctx, out);
             }
+            include(_report.getRunReportView(getViewContext()));
         }
         else
         {
