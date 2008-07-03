@@ -18,6 +18,7 @@ package org.labkey.pipeline.api;
 import org.labkey.api.pipeline.WorkDirFactory;
 import org.labkey.api.pipeline.WorkDirectory;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
+import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,29 +32,29 @@ public class WorkDirectoryLocal extends AbstractWorkDirectory
 {
     public static class Factory implements WorkDirFactory
     {
-        public WorkDirectory createWorkDirectory(String jobId, FileAnalysisJobSupport support) throws IOException
+        public WorkDirectory createWorkDirectory(String jobId, FileAnalysisJobSupport support, Logger log) throws IOException
         {
             File dir = FT_WORK_DIR.newFile(support.getAnalysisDirectory(),
                     support.getBaseName());
 
-            return new WorkDirectoryLocal(support, dir);
+            return new WorkDirectoryLocal(support, dir, log);
         }
     }
 
-    public WorkDirectoryLocal(FileAnalysisJobSupport support, File dir) throws IOException
+    public WorkDirectoryLocal(FileAnalysisJobSupport support, File dir, Logger log) throws IOException
     {
-        super(support, dir);
+        super(support, dir, log);
     }
 
-    private class NoOpCopyingLock implements CopyingLock
+    public File inputFile(File fileInput, boolean forceCopy) throws IOException
     {
-        public void release()
-        {
-        }
+        if (!forceCopy)
+            return fileInput;
+        return copyInputFile(fileInput);
     }
 
-    protected CopyingLock acquireCopyingLock()
+    protected CopyingResource acquireCopyingLock()
     {
-        return new NoOpCopyingLock();
+        return new CopyingResource();
     }
 }

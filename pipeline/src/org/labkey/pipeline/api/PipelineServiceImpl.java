@@ -24,7 +24,6 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.browse.BrowseForm;
 import org.labkey.api.pipeline.browse.BrowseView;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.util.AppProps;
 import org.labkey.api.util.PageFlowUtil;
@@ -332,7 +331,7 @@ public class PipelineServiceImpl extends PipelineService
         if(sequenceDbPath == null) sequenceDbPath = "";
         if(sequenceDbPath == null || sequenceDbPath.equals("/")) sequenceDbPath = "";
         String fullPath = sequenceDbPath + sequenceDb;
-        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(user.getUserId(), container.getId(), 
+        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(user.getUserId(), container.getId(),
                 PipelineServiceImpl.KEY_PREFERENCES, true);
         map.put(PipelineServiceImpl.PREF_LASTSEQUENCEDB + "-" + factory.getName(), fullPath);
         PropertyManager.saveProperties(map);

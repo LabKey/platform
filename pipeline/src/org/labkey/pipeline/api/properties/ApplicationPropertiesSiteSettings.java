@@ -29,9 +29,18 @@ public class ApplicationPropertiesSiteSettings implements PipelineJobService.App
         return AppProps.getInstance().getPipelineToolsDirectory();
     }
 
-    public String getNetworkDriveLetter()
+    public Character getNetworkDriveLetter()
     {
-        return AppProps.getInstance().getNetworkDriveLetter();
+        String letter = AppProps.getInstance().getNetworkDriveLetter();
+        if (letter == null)
+        {
+            return null;
+        }
+        if (letter.length() != 1)
+        {
+            throw new IllegalStateException("Network drive letter should be exactly one character long but is '" + letter + "'");
+        }
+        return letter.charAt(0);
     }
 
     public String getNetworkDrivePath()

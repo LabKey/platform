@@ -20,12 +20,14 @@ import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.URIUtil;
+import org.labkey.api.util.NetworkDrive;
 import org.apache.commons.io.FileUtils;
+import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.util.HashMap;
-import java.nio.channels.FileLock;
 
 /*
 * User: jeckels
@@ -39,12 +41,14 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
 
     protected FileAnalysisJobSupport _support;
     protected File _dir;
+    protected Logger _log;
     protected HashMap<File, File> _copiedInputs = new HashMap<File, File>();
 
-    public AbstractWorkDirectory(FileAnalysisJobSupport support, File dir) throws IOException
+    public AbstractWorkDirectory(FileAnalysisJobSupport support, File dir, Logger log) throws IOException
     {
         _support = support;
         _dir = dir;
+        _log = log;
 
         if (_dir.exists())
         {
@@ -63,13 +67,30 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         return _dir;
     }
 
-    public File inputFile(File fileInput, boolean forceCopy) throws IOException
+    private void copyFile(File source, File target) throws IOException
     {
-        if (!forceCopy)
-            return fileInput;
+        NetworkDrive.ensureDrive(source.getAbsolutePath());
+        NetworkDrive.ensureDrive(target.getAbsolutePath());
+        CopyingResource resource = null;
+        try
+        {
+            resource = acquireCopyingLock();
+            _log.info("Copying " + source + " to " + target);
+            FileUtils.copyFile(source, target);
+        }
+        finally
+        {
+            if (resource != null)
+            {
+                resource.release();
+            }
+        }
+    }
 
+    protected File copyInputFile(File fileInput) throws IOException
+    {
         File fileWork = newFile(fileInput.getName());
-        FileUtils.copyFile(fileInput, fileWork);
+        copyFile(fileInput, fileWork);
         _copiedInputs.put(fileInput, fileWork);
         return fileWork;
     }
@@ -136,18 +157,33 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
 
     private void outputFile(File fileWork, File fileDest) throws IOException
     {
+        NetworkDrive.ensureDrive(fileDest.getAbsolutePath());
         ensureDescendent(fileWork);
         File fileReplace = null;
-        if (fileDest.exists())
+        CopyingResource resource = null;
+        try
         {
-            fileReplace = FT_MOVE.newFile(fileDest.getParentFile(), fileDest.getName());
-            if (!fileDest.renameTo(fileReplace))
-                throw new IOException("Failed to move file " + fileDest + " for replacement by " + fileWork);
+            resource = acquireCopyingLock();
+            if (fileDest.exists())
+            {
+                fileReplace = FT_MOVE.newFile(fileDest.getParentFile(), fileDest.getName());
+                _log.info("Moving " + fileDest + " to " + fileReplace);
+                if (!fileDest.renameTo(fileReplace))
+                    throw new IOException("Failed to move file " + fileDest + " for replacement by " + fileWork);
+            }
+            _log.info("Moving " + fileWork + " to " + fileDest);
+            if (!fileWork.renameTo(fileDest))
+                throw new IOException("Failed to move file " + fileWork + " to " + fileDest);
+            if (fileReplace != null)
+                fileReplace.delete();
         }
-        if (!fileWork.renameTo(fileDest))
-            throw new IOException("Failed to move file " + fileWork + " to " + fileDest);
-        if (fileReplace != null)
-            fileReplace.delete();
+        finally
+        {
+            if (resource != null)
+            {
+                resource.release();
+            }
+        }
     }
 
     public void discardFile(File fileWork) throws IOException
@@ -174,10 +210,12 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
             throw new IOException("The file " + fileWork + " is not a descendent of " + _dir);
     }
 
-    protected abstract CopyingLock acquireCopyingLock();
+    protected abstract CopyingResource acquireCopyingLock() throws FileNotFoundException, IOException;
 
-    protected interface CopyingLock
+    public static class CopyingResource
     {
-        public void release() throws IOException;
+        public void release()
+        {
+        }
     }
 }

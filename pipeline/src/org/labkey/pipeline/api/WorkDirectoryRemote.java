@@ -18,10 +18,11 @@ package org.labkey.pipeline.api;
 import org.labkey.api.pipeline.WorkDirFactory;
 import org.labkey.api.pipeline.WorkDirectory;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
+import org.apache.log4j.Logger;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.nio.channels.FileLock;
+import java.nio.channels.FileChannel;
 
 /**
  * Used to copy files from (and back to) a remote file system so that they can be used directly on the local file system 
@@ -30,12 +31,18 @@ import java.nio.channels.FileLock;
  */
 public class WorkDirectoryRemote extends AbstractWorkDirectory
 {
-    private File _lockDirectory;
-    private File _masterLockFile;
+    private final File _lockDirectory;
+
+    public File inputFile(File fileInput, boolean forceCopy) throws IOException
+    {
+        return copyInputFile(fileInput);
+    }
 
     public static class Factory implements WorkDirFactory
     {
-        public WorkDirectory createWorkDirectory(String jobId, FileAnalysisJobSupport support) throws IOException
+        private String _lockDirectory;
+
+        public WorkDirectory createWorkDirectory(String jobId, FileAnalysisJobSupport support, Logger log) throws IOException
         {
             File tempDir;
             int attempt = 0;
@@ -54,33 +61,170 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
                 throw new IOException("Failed to create local working directory");
             }
 
-            return new WorkDirectoryRemote(support, tempDir);
+            return new WorkDirectoryRemote(support, tempDir, log, _lockDirectory);
+        }
+
+        public void setLockDirectory(String lockDirectory)
+        {
+            _lockDirectory = lockDirectory;
         }
     }
 
-    public WorkDirectoryRemote(FileAnalysisJobSupport support, File tempDir) throws IOException
+    public WorkDirectoryRemote(FileAnalysisJobSupport support, File tempDir, Logger log, String lockDirectory) throws IOException
     {
-        super(support, tempDir);
-    }
-
-    protected CopyingLock acquireCopyingLock()
-    {
-//        _masterLockFile
-        return null;
-    }
-
-    public class LockingCopyingLock implements CopyingLock
-    {
-        private FileLock _lock;
-
-        public LockingCopyingLock(FileLock lock)
+        super(support, tempDir, log);
+        if (lockDirectory != null)
         {
-            _lock = lock;
+            _lockDirectory = new File(lockDirectory);
+        }
+        else
+        {
+            _lockDirectory = null;
+        }
+    }
+
+    /**
+     * @return a pair, where the first value is the total number of locks, and the second value is the lock index that
+     * should be used next
+     */
+    private MasterLockInfo parseMasterLock(RandomAccessFile masterIn, File masterLockFile) throws IOException
+    {
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        byte[] b = new byte[128];
+        int i;
+        while ((i = masterIn.read(b)) != -1)
+        {
+            bOut.write(b, 0, i);
+        }
+        String line = new String(bOut.toByteArray(), "UTF-8");
+        if (line.length() == 0)
+        {
+            throw new IOException("Could not get the total number of locks from the master lock file " + masterLockFile);
+        }
+        String[] parts = line.split(" ");
+        int totalLocks;
+        try
+        {
+            totalLocks = Integer.parseInt(parts[0]);
+        }
+        catch (NumberFormatException e)
+        {
+            throw new IOException("Could not parse the total number of locks from the master lock file " + masterLockFile + ", the value was: " + parts[0]);
+        }
+        int currentIndex = 0;
+        if (parts.length > 1)
+        {
+            try
+            {
+                currentIndex = Integer.parseInt(parts[1]);
+                if (currentIndex >= totalLocks)
+                {
+                    currentIndex = 0;
+                }
+            }
+            catch (NumberFormatException e)
+            {
+                throw new IOException("Could not parse the current lock index from the master lock file " + masterLockFile + ", the value was: " + parts[1]);
+            }
+        }
+        return new MasterLockInfo(totalLocks, currentIndex);
+    }
+
+    protected CopyingResource acquireCopyingLock() throws IOException
+    {
+        if (_lockDirectory == null)
+        {
+            return new CopyingResource();
         }
 
-        public void release() throws IOException
+        _log.info("Starting to acquire lock for copying files");
+
+        synchronized (WorkDirectoryRemote.class)
         {
-            _lock.release();
+            RandomAccessFile randomAccessFile = null;
+            FileLock masterLock = null;
+
+            try
+            {
+                File masterLockFile = new File(_lockDirectory, "master");
+                randomAccessFile = new RandomAccessFile(masterLockFile, "rw");
+                FileChannel masterChannel = randomAccessFile.getChannel();
+                masterLock = masterChannel.lock();
+
+                MasterLockInfo lockInfo = parseMasterLock(randomAccessFile, masterLockFile);
+
+                int nextIndex = lockInfo.getCurrentLock() + 1;
+                if (nextIndex >= lockInfo.getTotalLocks())
+                {
+                    nextIndex = 0;
+                }
+
+                rewriteMasterLock(randomAccessFile, new MasterLockInfo(lockInfo.getTotalLocks(), nextIndex));
+                _log.info("Acquiring lock #" + lockInfo.getCurrentLock());
+                File f = new File(_lockDirectory, Integer.toString(lockInfo.getCurrentLock()));
+                FileChannel lockChannel = new FileOutputStream(f, true).getChannel();
+                FileLockCopyingResource result = new FileLockCopyingResource(lockChannel, lockInfo.getCurrentLock());
+                _log.info("Lock #" + lockInfo.getCurrentLock() + " acquired");
+                return result;
+            }
+            finally
+            {
+                if (randomAccessFile != null) { try { randomAccessFile.close(); } catch (IOException e) {} }
+                if (masterLock != null) { try { masterLock.release(); } catch (IOException e) {} }
+            }
+        }
+    }
+
+    private void rewriteMasterLock(RandomAccessFile masterFile, MasterLockInfo lockInfo)
+        throws IOException
+    {
+        masterFile.seek(0);
+
+        byte[] outputBytes = (lockInfo.getTotalLocks() + " " + lockInfo.getCurrentLock()).getBytes("UTF-8");
+        masterFile.write(outputBytes);
+        masterFile.setLength(outputBytes.length);
+    }
+
+    private static class MasterLockInfo
+    {
+        private int _totalLocks;
+        private int _currentLock;
+
+        private MasterLockInfo(int totalLocks, int currentLock)
+        {
+            _totalLocks = totalLocks;
+            _currentLock = currentLock;
+        }
+
+        public int getTotalLocks()
+        {
+            return _totalLocks;
+        }
+
+        public int getCurrentLock()
+        {
+            return _currentLock;
+        }
+    }
+
+    public class FileLockCopyingResource extends CopyingResource
+    {
+        private final FileChannel _channel;
+        private final int _lockNumber;
+        private final FileLock _lock;
+
+        public FileLockCopyingResource(FileChannel channel, int lockNumber) throws IOException
+        {
+            _channel = channel;
+            _lockNumber = lockNumber;
+            _lock = _channel.lock();
+        }
+
+        public void release()
+        {
+            try { _lock.release(); } catch (IOException e) {}
+            try { _channel.close(); } catch (IOException e) {}
+            _log.info("Lock #" + _lockNumber + " released");
         }
     }
 }

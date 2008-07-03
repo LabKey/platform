@@ -300,7 +300,7 @@ public class CommandTaskImpl extends PipelineJob.Task implements CommandTask
         try
         {
             WorkDirFactory factory = PipelineJobService.get().getWorkDirFactory();
-            _wd = factory.createWorkDirectory(getJob().getJobGUID(), getJobSupport());
+            _wd = factory.createWorkDirectory(getJob().getJobGUID(), getJobSupport(), getJob().getLogger());
 
             // Input file location must be determined before creating the process
             // command.

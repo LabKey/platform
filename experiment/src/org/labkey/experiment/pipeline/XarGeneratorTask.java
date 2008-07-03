@@ -108,7 +108,7 @@ public class XarGeneratorTask extends PipelineJob.Task implements XarGeneratorId
         try
         {
             WorkDirFactory factory = PipelineJobService.get().getWorkDirFactory();
-            WorkDirectory wd = factory.createWorkDirectory(getJob().getJobGUID(), getJobSupport());
+            WorkDirectory wd = factory.createWorkDirectory(getJob().getJobGUID(), getJobSupport(), getJob().getLogger());
 
             File fileExperimentXML = wd.newFile(_factory.getOutputType());
 

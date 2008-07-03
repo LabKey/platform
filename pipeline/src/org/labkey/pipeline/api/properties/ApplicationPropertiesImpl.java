@@ -30,7 +30,7 @@ public class ApplicationPropertiesImpl implements PipelineJobService.Application
 {
     private String _toolsDirectory;
 
-    private String _networkDriveLetter;
+    private Character _networkDriveLetter;
     private String _networkDrivePath;
     private String _networkDriveUser;
     private String _networkDrivePassword;
@@ -48,12 +48,12 @@ public class ApplicationPropertiesImpl implements PipelineJobService.Application
         _toolsDirectory = toolsDirectory;
     }
 
-    public String getNetworkDriveLetter()
+    public Character getNetworkDriveLetter()
     {
         return _networkDriveLetter;
     }
 
-    public void setNetworkDriveLetter(String networkDriveLetter)
+    public void setNetworkDriveLetter(Character networkDriveLetter)
     {
         _networkDriveLetter = networkDriveLetter;
     }
