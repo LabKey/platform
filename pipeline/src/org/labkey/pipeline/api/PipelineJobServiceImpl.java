@@ -313,8 +313,18 @@ public class PipelineJobServiceImpl extends PipelineJobService
         URI uri = URIUtil.resolve(dir.toURI(), rel);
         if (uri == null)
         {
-            throw new FileNotFoundException("Failed to locate " + rel + ".  " +
-                "Path may not be valid.");
+            if (!dir.isDirectory())
+            {
+                throw new FileNotFoundException("Failed to locate " + rel + ".  " +
+                        "Pipeline tools directory " + dir + " does not exist.  " +
+                        "Use the site settings page to specify an existing directory.");
+            }
+            else
+            {
+                throw new FileNotFoundException("Failed to locate " + rel + ".  " +
+                        " Relative path is invalid.");
+
+            }
         }
         File file = new File(uri);
         if (!file.exists())
@@ -347,6 +357,14 @@ public class PipelineJobServiceImpl extends PipelineJobService
             // If the tools directory is not set, then rely on the path.
             return exeRel;
         }
+        // CONSIDER(brendanx): CruiseControl fails without this, as may other situations
+        //                     where the tools directory is set automatically to a bogus
+        //                     path, but the required executables are on the path.
+        else if (!new File(toolsDir).exists())
+        {
+            return exeRel;
+        }
+
         // Don't check for file existence with executable paths, since they may be
         // lacking an extension (exe, bat, cmd) on Windows platforms.
         return getToolsDirPath(toolsDir, getVersionedPath(exeRel, packageName, ver), false);
