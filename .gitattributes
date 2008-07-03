@@ -297,6 +297,7 @@ api/src/org/labkey/api/pipeline/cmd/ConvertTaskId.java -text
 api/src/org/labkey/api/pipeline/cmd/DosSwitchFormat.java -text
 api/src/org/labkey/api/pipeline/cmd/EnumToCommandArgs.java -text
 api/src/org/labkey/api/pipeline/cmd/EnumValueToSwitch.java -text
+api/src/org/labkey/api/pipeline/cmd/ExeToCommandArgs.java -text
 api/src/org/labkey/api/pipeline/cmd/ExtWithSwitch.java -text
 api/src/org/labkey/api/pipeline/cmd/JarToCommandArgs.java -text
 api/src/org/labkey/api/pipeline/cmd/JobParamToCommandArgs.java -text

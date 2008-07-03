@@ -20,6 +20,7 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.pipeline.PipelineJobService;
 
 public class NetworkDrive
 {
@@ -153,7 +154,7 @@ public class NetworkDrive
 
         char driveChar = path.toLowerCase().charAt(0);
 
-        AppProps props = AppProps.getInstance();
+        PipelineJobService.ApplicationProperties props = PipelineJobService.get().getAppProperties();
         if (props.getNetworkDriveLetter().equals(Character.toString(driveChar)))
         {
             NetworkDrive drive = new NetworkDrive();

@@ -21,31 +21,25 @@ import java.util.Set;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
-import java.io.File;
 import java.io.IOException;
 
 /**
- * <code>JarToCommandArgs</code>
+ * <code>ExeToCommandArgs</code>
 */
-public class JarToCommandArgs extends ListToCommandArgs
+public class ExeToCommandArgs extends ListToCommandArgs
 {
-    private String _jarPath;
+    private String _exePath;
     private String _softwarePackage;
     private String _versionParamName;
 
-    public JarToCommandArgs()
+    public String getExePath()
     {
-        setSwitchFormat(new UnixCompactSwitchFormat());
+        return _exePath;
     }
 
-    public String getJarPath()
+    public void setExePath(String exePath)
     {
-        return _jarPath;
-    }
-
-    public void setJarPath(String jarPath)
-    {
-        _jarPath = jarPath;
+        _exePath = exePath;
     }
 
     public String getSoftwarePackage()
@@ -80,23 +74,13 @@ public class JarToCommandArgs extends ListToCommandArgs
 
     public String[] toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
     {
-        if (_jarPath == null || _jarPath.length() == 0)
+        if (_exePath == null || _exePath.length() == 0)
             return new String[0];
 
         ArrayList<String> args = new ArrayList<String>();
 
         RequiredInLine converterInline = new RequiredInLine();
-        converterInline.setParent(this);
-        converterInline.setValue(PipelineJobService.get().getJavaPath());
-        args.addAll(Arrays.asList(converterInline.toArgs(task, visited)));
-
-        for (TaskToCommandArgs converter : getConverters())
-            args.addAll(Arrays.asList(converter.toArgs(task, visited)));
-
-        args.add("-client");
-        args.add("-jar");
-
-        converterInline.setValue(PipelineJobService.get().getJarPath(_jarPath,
+        converterInline.setValue(PipelineJobService.get().getExecutablePath(_exePath,
                 _softwarePackage, getVersion(task)));
         args.addAll(Arrays.asList(converterInline.toArgs(task, visited)));
 

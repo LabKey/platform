@@ -412,7 +412,14 @@ abstract public class PipelineJob extends Job implements Serializable
 
         // Initialize status.
         if (_logFile != null)
-            setStatus(initialState);
+        {
+            // If it is just the default initial status, but the job has an active
+            // task, then use the task's status.
+            if (WAITING_STATUS.equals(initialState) && getActiveTaskId() != null)
+                updateStatusForTask();
+            else
+                setStatus(initialState);
+        }
     }
 
     public void clearQueue()
@@ -581,19 +588,21 @@ abstract public class PipelineJob extends Job implements Serializable
         {
             assert factory != null : "Factory not found.";
 
-            // Set next task to be run
-            setActiveTaskId(factory.getActiveId(this));
-
             if (factory.isJoin() && isSplit())
             {
+                setActiveTaskId(factory.getId());   // ID is just a marker for state machine
                 join();
                 return false;
             }
             else if (!factory.isJoin() && isSplittable())
             {
+                setActiveTaskId(factory.getId());   // ID is just a marker for state machine
                 split();
                 return false;
             }
+
+            // Set next task to be run
+            setActiveTaskId(factory.getActiveId(this));
 
             // If it is local, then it can be run
             return isActiveTaskLocal();
@@ -769,7 +778,10 @@ abstract public class PipelineJob extends Job implements Serializable
     {
         Process proc;
 
-        header(pb.command().get(0) + " output");
+        String commandName = pb.command().get(0);
+        commandName = commandName.substring(
+                Math.max(commandName.lastIndexOf('/'), commandName.lastIndexOf('\\')) + 1);
+        header(commandName + " output");
 
         PrintWriter fileWriter = null;
         try
@@ -787,6 +799,8 @@ abstract public class PipelineJob extends Job implements Serializable
                 throw new RunProcessException(e);
             }
 
+            // Update PATH environment variable to make sure all files in the tools
+            // directory and the directory of the executable or on the path.
             String toolDir = PipelineJobService.get().getAppProperties().getToolsDirectory();
             if (toolDir != null && !"".equals(toolDir))
             {
@@ -798,6 +812,14 @@ abstract public class PipelineJob extends Job implements Serializable
                 else
                 {
                     path = toolDir + File.pathSeparatorChar + path;
+                }
+                String exePath = pb.command().get(0);
+                if (exePath != null && !"".equals(exePath))
+                {
+                    File fileExe = new File(exePath);
+                    String exeDir = fileExe.getParent();
+                    if (!exeDir.equals(toolDir) && fileExe.exists())
+                        path = fileExe.getParent() + File.pathSeparatorChar + path;
                 }
 
                 pb.environment().put("PATH", path);

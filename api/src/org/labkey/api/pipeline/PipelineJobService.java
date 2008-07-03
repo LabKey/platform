@@ -20,6 +20,7 @@ import org.labkey.api.pipeline.cmd.CommandTask;
 import java.io.File;
 import java.io.IOException;
 import java.io.FileNotFoundException;
+import java.util.Map;
 
 /**
  * <code>PipelineJobService</code> exposes the interface for dealing with
@@ -43,15 +44,62 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
         PipelineJobService._instance = instance;
     }
 
+    /**
+     * <code>ApplicationProperties</code> are set through the Site Settings page
+     * on the web server, and through config on remote machines.
+     */
     public interface ApplicationProperties
     {
         String getToolsDirectory();
+
+        String getNetworkDriveLetter();
+        String getNetworkDrivePath();
+        String getNetworkDriveUser();
+        String getNetworkDrivePassword();
+    }
+
+    /**
+     * <code>ConfigProperties</code> may be desirable on an machine, but may
+     * only be set through config.
+     */
+    public interface ConfigProperties
+    {
+        String getSoftwarePackagePath(String packageName);
+    }
+
+    /**
+     * <code>MuleServerProperties</code> are only used on a Mule Server instance.
+     */
+    public interface MuleServerProperties
+    {
         String getMuleConfig();
+    }
+
+    /**
+     * <code>GlobusClientProperties</code> are only used on a machine running
+     * the <code>PipelineJobRunnerGlobus</code>. 
+     */
+    public interface GlobusClientProperties
+    {
+        String getGlobusJavaHome();
+        String getGlobusLabkeyDir();
+        String getGlobusServer();
+        String getGlobusJobFactoryType();
+        String getGlobusQueue();
+        Map<String, String> getGlobusPathMapping();
     }
 
     abstract public ApplicationProperties getAppProperties();
 
-    abstract public String getJarPath(String jarName) throws FileNotFoundException;
+    abstract public ConfigProperties getConfigProperties();
+
+    abstract public MuleServerProperties getMuleServerProperties();
+
+    abstract public GlobusClientProperties getGlobusClientProperties();
+
+    abstract public String getExecutablePath(String exeRel, String packageName, String ver) throws FileNotFoundException;
+
+    abstract public String getJarPath(String jarRel, String packageName, String ver) throws FileNotFoundException;
 
     abstract public String getJavaPath() throws FileNotFoundException;
     
