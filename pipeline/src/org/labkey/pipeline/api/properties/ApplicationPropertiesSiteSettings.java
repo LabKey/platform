@@ -32,11 +32,11 @@ public class ApplicationPropertiesSiteSettings implements PipelineJobService.App
     public Character getNetworkDriveLetter()
     {
         String letter = AppProps.getInstance().getNetworkDriveLetter();
-        if (letter == null)
+        if (letter == null || letter.length() == 0)
         {
             return null;
         }
-        if (letter.length() != 1)
+        if (letter.length() > 1)
         {
             throw new IllegalStateException("Network drive letter should be exactly one character long but is '" + letter + "'");
         }
