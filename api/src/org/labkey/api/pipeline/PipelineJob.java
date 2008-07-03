@@ -813,8 +813,11 @@ abstract public class PipelineJob extends Job implements Serializable
                 {
                     path = toolDir + File.pathSeparatorChar + path;
                 }
+
+                // If the command has a path, then prepend its parent directory to the PATH
+                // environment variable as well.
                 String exePath = pb.command().get(0);
-                if (exePath != null && !"".equals(exePath))
+                if (exePath != null && !"".equals(exePath) && exePath.indexOf(File.separatorChar) != -1)
                 {
                     File fileExe = new File(exePath);
                     String exeDir = fileExe.getParent();
