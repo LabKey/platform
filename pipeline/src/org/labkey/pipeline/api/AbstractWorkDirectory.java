@@ -169,11 +169,27 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
                 fileReplace = FT_MOVE.newFile(fileDest.getParentFile(), fileDest.getName());
                 _log.info("Moving " + fileDest + " to " + fileReplace);
                 if (!fileDest.renameTo(fileReplace))
-                    throw new IOException("Failed to move file " + fileDest + " for replacement by " + fileWork);
+                {
+                    // File.renameTo() is the most efficient way to move a file, but it annoyingly doesn't necessarily
+                    // work across different file systems.
+                    FileUtils.copyFile(fileDest, fileReplace);
+                    if (!fileDest.delete())
+                    {
+                        throw new IOException("Failed to move file " + fileDest + " for replacement by " + fileWork);
+                    }
+                }
             }
             _log.info("Moving " + fileWork + " to " + fileDest);
             if (!fileWork.renameTo(fileDest))
-                throw new IOException("Failed to move file " + fileWork + " to " + fileDest);
+            {
+                // File.renameTo() is the most efficient way to move a file, but it annoyingly doesn't necessarily
+                // work across different file systems.
+                FileUtils.copyFile(fileWork, fileDest);
+                if (!fileWork.delete())
+                {
+                    throw new IOException("Failed to move file " + fileWork + " to " + fileDest);
+                }
+            }
             if (fileReplace != null)
                 fileReplace.delete();
         }

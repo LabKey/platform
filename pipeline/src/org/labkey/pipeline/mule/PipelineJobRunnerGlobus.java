@@ -225,6 +225,10 @@ public class PipelineJobRunnerGlobus implements Callable
                     {
                         newStatus = PipelineJob.TaskStatus.error;
                     }
+                    else if (gramJob.getState() == StateEnumeration.Active)
+                    {
+                        newStatus = PipelineJob.TaskStatus.running;
+                    }
 
                     if (newStatus != null)
                     {
