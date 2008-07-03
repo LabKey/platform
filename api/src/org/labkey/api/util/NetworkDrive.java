@@ -155,7 +155,7 @@ public class NetworkDrive
         char driveChar = path.toLowerCase().charAt(0);
 
         PipelineJobService.ApplicationProperties props = PipelineJobService.get().getAppProperties();
-        if (props.getNetworkDriveLetter().equals(Character.toString(driveChar)))
+        if (props.getNetworkDriveLetter() != null && props.getNetworkDriveLetter().equals(new Character(driveChar)))
         {
             NetworkDrive drive = new NetworkDrive();
             drive.setPath(props.getNetworkDrivePath());

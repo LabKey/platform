@@ -16,6 +16,7 @@
 package org.labkey.api.pipeline;
 
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
+import org.apache.log4j.Logger;
 
 import java.io.IOException;
 
@@ -26,6 +27,6 @@ import java.io.IOException;
  */
 public interface WorkDirFactory
 {
-    WorkDirectory createWorkDirectory(String jobId, FileAnalysisJobSupport support)
+    WorkDirectory createWorkDirectory(String jobId, FileAnalysisJobSupport support, Logger log)
             throws IOException;
 }
