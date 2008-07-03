@@ -107,6 +107,11 @@ public class DataSetTable extends FilteredTable
             else
             {
                 ColumnInfo col = addWrapColumn(baseColumn);
+
+                // When copying a column, the hidden bit is not propagated, so we need to do it manually
+                if (baseColumn.isHidden())
+                    col.setIsHidden(true);
+                
                 String propertyURI = col.getPropertyURI();
                 if (null != propertyURI && !standardURIs.contains(propertyURI))
                 {

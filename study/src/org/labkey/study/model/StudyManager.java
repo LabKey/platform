@@ -1677,7 +1677,7 @@ public class StudyManager
 
         //
         // Try to collect errors early.
-        // Try not to be too repetative, stop each loop after one error
+        // Try not to be too repetitive, stop each loop after one error
         //
 
         for (ColumnInfo col : tinfo.getColumns())
@@ -1688,10 +1688,41 @@ public class StudyManager
 
             for (int i = 0; i < dataMaps.length; i++)
             {
-                Map m = dataMaps[i];
+                Map<String,Object> m = dataMaps[i];
                 Object val = m.get(col.getPropertyURI());
                 if (null == val && !col.isNullable())
                 {
+                    // Demographic data gets special handling for visit or date fields, depending on the type of study,
+                    // since there is usually only one entry for demographic data per dataset
+                    if (def.isDemographicData())
+                    {
+                        if (study.isDateBased())
+                        {
+                            if (col.getName().equalsIgnoreCase("Date"))
+                            {
+                                // Yuck! The Map we get here isn't really a Map,
+                                // so we need to construct a copy and update our entry
+                                m = new CaseInsensitiveHashMap<Object>(m);
+                                m.put(col.getPropertyURI(), study.getStartDate());
+                                dataMaps[i] = m;
+                                continue;
+                            }
+                        }
+                        else
+                        {
+                            if (col.getName().equalsIgnoreCase("SequenceNum"))
+                            {
+                                // See above
+                                m = new CaseInsensitiveHashMap<Object>(m);
+
+                                // We introduce a sentinel, 0, as our SequenceNum
+                                m.put(col.getPropertyURI(), 0);
+                                dataMaps[i] = m;
+                                continue;
+                            }
+                        }
+                    }
+
                     errors.add("Row " + (i + 1) + " does not contain required field " + col.getName() + ".");
                     break;
                 }

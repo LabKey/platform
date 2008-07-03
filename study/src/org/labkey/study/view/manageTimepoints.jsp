@@ -27,6 +27,10 @@
 <labkey:errors />
 <%
     StudyController.StudyPropertiesForm form = (StudyController.StudyPropertiesForm) getModelBean();
+    if (form.getStartDate() == null)
+    {
+        form.setStartDate(getStudy().getStartDate());
+    }
 %>
 
 <table class="normal">

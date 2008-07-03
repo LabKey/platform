@@ -568,7 +568,21 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 ColumnInfo dayColumn = newDatasetColumnInfo(this, participantVisit.getColumn("Day"));
                 dayColumn.setUserEditable(false);
                 columns.add(dayColumn);
+
+                if (def.isDemographicData())
+                {
+                    visitDateCol.setIsHidden(true);
+                    visitDateCol.setUserEditable(false);
+                    dayColumn.setIsHidden(true);
+                }
             }
+
+            if (def.isDemographicData())
+            {
+                sequenceNumCol.setIsHidden(true);
+                sequenceNumCol.setUserEditable(false);
+            }
+
             columns.add(sequenceNumCol);
             // Property columns
             ColumnInfo[] columnsLookup = OntologyManager.getColumnsForType(def.getTypeURI(), this, c);
