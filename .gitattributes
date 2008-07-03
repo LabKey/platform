@@ -950,10 +950,14 @@ pipeline/src/org/labkey/pipeline/api/PipelineStatusManager.java -text
 pipeline/src/org/labkey/pipeline/api/TaskPipelineImpl.java -text
 pipeline/src/org/labkey/pipeline/api/WorkDirectoryLocal.java -text
 pipeline/src/org/labkey/pipeline/api/WorkDirectoryRemote.java -text
+pipeline/src/org/labkey/pipeline/api/properties/ApplicationPropertiesImpl.java -text
+pipeline/src/org/labkey/pipeline/api/properties/ApplicationPropertiesSiteSettings.java -text
+pipeline/src/org/labkey/pipeline/api/properties/ConfigPropertiesImpl.java -text
+pipeline/src/org/labkey/pipeline/api/properties/GlobusClientPropertiesImpl.java -text
+pipeline/src/org/labkey/pipeline/api/properties/MuleServerPropertiesImpl.java -text
 pipeline/src/org/labkey/pipeline/browse/BrowseViewImpl.java -text
 pipeline/src/org/labkey/pipeline/browse/browse.jsp -text
 pipeline/src/org/labkey/pipeline/cluster/ClusterJobRunner.java -text
-pipeline/src/org/labkey/pipeline/cluster/SpringApplicationProperties.java -text
 pipeline/src/org/labkey/pipeline/directory.jsp -text
 pipeline/src/org/labkey/pipeline/emailNotificationSetup.jsp -text
 pipeline/src/org/labkey/pipeline/mule/EPipelineContextListener.java -text
@@ -973,6 +977,7 @@ pipeline/src/org/labkey/pipeline/mule/filters/JobIncompleteFilter.java -text
 pipeline/src/org/labkey/pipeline/mule/filters/JobRunJmsSelectorFilter.java -text
 pipeline/src/org/labkey/pipeline/mule/filters/TaskJmsSelectorFilter.java -text
 pipeline/src/org/labkey/pipeline/mule/filters/TaskStatusJmsSelectorFilter.java -text
+pipeline/src/org/labkey/pipeline/mule/routing/EPipelineQueueMessageSplitter.java -text
 pipeline/src/org/labkey/pipeline/mule/transformers/AbstractMuleSingleValueConverter.java -text
 pipeline/src/org/labkey/pipeline/mule/transformers/JMSMessageToPipelineJob.java -text
 pipeline/src/org/labkey/pipeline/mule/transformers/NoOpTransformer.java -text

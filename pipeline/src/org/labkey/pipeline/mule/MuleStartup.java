@@ -39,12 +39,12 @@ public class MuleStartup
         // Initialize the Spring context
         FileSystemXmlApplicationContext context = new FileSystemXmlApplicationContext(springConfigPaths);
 
-        PipelineJobService.ApplicationProperties appProps = PipelineJobServiceImpl.get().getAppProperties();
-        if (appProps == null)
+        PipelineJobService.MuleServerProperties props = PipelineJobServiceImpl.get().getMuleServerProperties();
+        if (props == null)
         {
-            throw new IllegalArgumentException("No ApplicationProperties object registered. Be sure that your configuration directory is set correctly.");
+            throw new IllegalArgumentException("No MuleServerProperties object registered. Be sure that your configuration directory is set correctly.");
         }
-        String muleConfig = appProps.getMuleConfig();
+        String muleConfig = props.getMuleConfig();
         if (muleConfig == null)
         {
             throw new IllegalArgumentException("No mule configuration specified");

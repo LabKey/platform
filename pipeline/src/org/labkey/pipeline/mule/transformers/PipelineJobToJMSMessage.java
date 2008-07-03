@@ -42,20 +42,24 @@ public class PipelineJobToJMSMessage extends AbstractEventAwareTransformer
     {
         try
         {
-            String xml = PipelineJobService.get().getJobStore().toXML((PipelineJob)src);
-
-            if (logger.isDebugEnabled())
-                logger.debug("Job xml for " + src.getClass() + ":\n" + xml);
-            
-            Message msg = (Message) getJMSTransformer().transform(xml);
-            setJmsProperties((PipelineJob) src, msg);
-
-            return msg;
+            return transformJob((PipelineJob) src);
         }
         catch (Exception e)
         {
             throw new TransformerException(this, e);
         }
+    }
+
+    protected Message transformJob(PipelineJob job) throws Exception
+    {
+        String xml = PipelineJobService.get().getJobStore().toXML(job);
+
+        if (logger.isDebugEnabled())
+            logger.debug("Job xml for " + job.getClass() + ":\n" + xml);
+
+        Message msg = (Message) getJMSTransformer().transform(xml);
+        setJmsProperties(job, msg);
+        return msg;
     }
 
     protected ObjectToJMSMessage getJMSTransformer()

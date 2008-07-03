@@ -39,6 +39,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.pipeline.analysis.AnalysisController;
 import org.labkey.pipeline.analysis.FileAnalysisPipelineProvider;
 import org.labkey.pipeline.api.*;
+import org.labkey.pipeline.api.properties.ApplicationPropertiesSiteSettings;
 import org.labkey.pipeline.mule.EPipelineContextListener;
 import org.labkey.pipeline.status.StatusController;
 
@@ -60,11 +61,6 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 {
     private static Logger _log = Logger.getLogger(PipelineModule.class);
 
-    public static boolean isEnterprisePipeline()
-    {
-        return Boolean.getBoolean("epipe");
-    }
-
     public PipelineModule()
     {
         super(PipelineService.MODULE_NAME, 8.21, "/org/labkey/pipeline", true, new WebPartFactory(PipelineWebPart.getPartName()){
@@ -79,8 +75,8 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
         // Set up default PipelineJobServiceImpl, which may be overriden by Spring config.
         PipelineJobServiceImpl pjs = PipelineJobServiceImpl.initDefaults();
+        pjs.setAppProperties(new ApplicationPropertiesSiteSettings());
         pjs.setStatusWriter(ps);
-        pjs.setAppProperties(ps);
 
         addController("pipeline", PipelineController.class);
         addController("pipeline-status", StatusController.class);
@@ -108,7 +104,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
         ContainerManager.addContainerListener(this);
 
-        if (isEnterprisePipeline())
+        if (PipelineService.get().isEnterprisePipeline())
         {
             EPipelineContextListener listener = new EPipelineContextListener();
             ContextListener.addStartupListener(listener);

@@ -16,6 +16,7 @@
 package org.labkey.pipeline.mule.filters;
 
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.pipeline.mule.EPipelineQueueImpl;
 import org.mule.umo.UMOFilter;
 import org.mule.umo.UMOMessage;
 
@@ -32,6 +33,9 @@ public class JobIncompleteFilter implements UMOFilter
 
         assert payload instanceof PipelineJob
                 : "Invalid type " + payload.getClass() + " for JobIncompleteFilter.";
+
+        if (EPipelineQueueImpl.getOutboundJobs() != null)
+            return true;
 
         PipelineJob job = (PipelineJob) payload;
         switch (job.getActiveTaskStatus())

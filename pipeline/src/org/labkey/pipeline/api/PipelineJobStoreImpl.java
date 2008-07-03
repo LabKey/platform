@@ -70,6 +70,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
             for (PipelineJob jobSplit : job.createSplitJobs())
                 PipelineService.get().queueJob(jobSplit);
             storeJob(info, job);
+            job.setStatus("SPLIT WAITING");
             scope.commitTransaction();
         }
         finally
@@ -87,8 +88,11 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
             TaskId tid = job.getActiveTaskId();
 
             scope.beginTransaction();
+            // Avoid deadlock by doing this select first.
+            int count = PipelineStatusManager.getIncompleteStatusFiles(job.getParentGUID()).length;
+
             job.setStatus(PipelineJob.COMPLETE_STATUS);
-            if (PipelineStatusManager.getIncompleteStatusFiles(job.getParentGUID()).length == 0)
+            if (count == 1)
             {
                 PipelineJob jobJoin = getJob(job.getParentGUID());
                 jobJoin.setActiveTaskId(tid);

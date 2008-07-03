@@ -28,11 +28,17 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.util.AppProps;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.pipeline.PipelineModule;
 import org.labkey.pipeline.mule.EPipelineQueueImpl;
 import org.labkey.pipeline.browse.BrowseViewImpl;
+
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.jms.ConnectionFactory;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -41,7 +47,6 @@ import java.sql.SQLException;
 import java.util.*;
 
 public class PipelineServiceImpl extends PipelineService
-        implements PipelineJobService.ApplicationProperties
 {
     public static String PARAM_Provider = "provider";
     public static String PARAM_Action = "action";
@@ -209,17 +214,31 @@ public class PipelineServiceImpl extends PipelineService
 
     public boolean isEnterprisePipeline()
     {
-        return PipelineModule.isEnterprisePipeline();
+        return (getPipelineQueue() instanceof EPipelineQueueImpl);
     }
 
     public synchronized PipelineQueue getPipelineQueue()
     {
         if (_queue == null)
         {
-            if (isEnterprisePipeline())
-                _queue = new EPipelineQueueImpl();
-            else
+            ConnectionFactory factory = null;
+            try
+            {
+                Context initCtx = new InitialContext();
+                Context env = (Context) initCtx.lookup("java:comp/env");
+                factory = (ConnectionFactory) env.lookup("jms/ConnectionFactory");
+            }
+            catch (NamingException e)
+            {
+            }
+
+            if (factory == null)
                 _queue = new PipelineQueueImpl();
+            else
+            {
+                _log.info("Found JMS queue; running Enterprise Pipeline.");
+                _queue = new EPipelineQueueImpl(factory);
+            }
         }
         return _queue;
     }
@@ -372,16 +391,6 @@ public class PipelineServiceImpl extends PipelineService
                               String status, String statusInfo) throws Exception
     {
         setStatusFile(info, new PipelineStatusFileImpl(job, status, statusInfo));
-    }
-
-    public String getMuleConfig()
-    {
-        return null;
-    }
-
-    public String getToolsDirectory()
-    {
-        return AppProps.getInstance().getPipelineToolsDirectory();
     }
 
     private List<String> parseArray(String dbPaths)

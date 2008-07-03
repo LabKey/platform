@@ -109,6 +109,13 @@ public class ConvertTaskFactory extends AbstractTaskFactory
 
     private TaskFactory findCommandFactory(PipelineJob job)
     {
+        // If this job is not actually running a conversion, then no
+        // converter command can be determined.
+        File[] files = job.getJobSupport(FileAnalysisJobSupport.class).getInputFiles();
+        if (files == null || files.length != 1)
+            return null;
+
+        // Otherwise, find the appropriate converter.
         File fileInput = getInputFile(job);
         for (TaskId tid : _commands)
         {

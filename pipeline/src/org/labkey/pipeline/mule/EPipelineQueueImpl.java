@@ -18,12 +18,14 @@ package org.labkey.pipeline.mule;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.data.Container;
 import org.labkey.pipeline.api.PipelineStatusManager;
+import org.labkey.pipeline.PipelineModule;
 import org.mule.extras.client.MuleClient;
 import org.mule.umo.UMOException;
 import org.mule.umo.transformer.UMOTransformer;
 import org.mule.umo.transformer.TransformerException;
 import org.mule.umo.endpoint.UMOEndpoint;
 import org.mule.MuleManager;
+import org.mule.impl.RequestContext;
 import org.apache.log4j.Logger;
 
 import javax.naming.Context;
@@ -35,6 +37,8 @@ import java.io.File;
 import java.sql.SQLException;
 import java.util.Enumeration;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * EPipelineQueueImpl class
@@ -50,6 +54,27 @@ public class EPipelineQueueImpl implements PipelineQueue
     private static Logger _log = Logger.getLogger(EPipelineQueueImpl.class);
     public static final String PIPELINE_QUEUE_NAME = "PipelineQueue";
 
+    private static ThreadLocal<List<PipelineJob>> _outboundJobs = new ThreadLocal<List<PipelineJob>>();
+
+    public static List<PipelineJob> getOutboundJobs()
+    {
+        return _outboundJobs.get();
+    }
+
+    public static void resetOutboundJobs()
+    {
+        _outboundJobs.set(null);
+    }
+
+    private ConnectionFactory _factoryJms;
+
+    public EPipelineQueueImpl(ConnectionFactory factory)
+    {
+        assert factory != null : "Enterprise Pipeline requires a JMS connection factory.";
+        
+        _factoryJms = factory;
+    }
+
     public PipelineJobData getJobData(Container c)
     {
         PipelineJobData data =  new PipelineJobData();
@@ -58,27 +83,12 @@ public class EPipelineQueueImpl implements PipelineQueue
         if (ep == null)
             return data;
 
-        ConnectionFactory factory = null;
-        try
-        {
-            Context initCtx = new InitialContext();
-            Context env = (Context) initCtx.lookup("java:comp/env");
-            factory = (ConnectionFactory) env.lookup("jms/ConnectionFactory");
-        }
-        catch (NamingException e)
-        {
-            _log.error("Failed to getInternal JMS queue", e);
-        }
-
-        if (factory == null)
-            return data;
-
         Connection conn = null;
         Session session = null;
         QueueBrowser browser = null;
         try
         {
-            conn = factory.createConnection();
+            conn = _factoryJms.createConnection();
             session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
             browser = session.createBrowser(session.createQueue(ep.getEndpointURI().getAddress()));
             conn.start();
@@ -146,15 +156,25 @@ public class EPipelineQueueImpl implements PipelineQueue
         }
 
         job.setQueue(this, initialState);
-        try
+        if (RequestContext.getEvent() == null)
         {
-            MuleClient client = new MuleClient();
-            client.dispatch(PIPELINE_QUEUE_NAME, job, null);
+            try
+            {
+                MuleClient client = new MuleClient();
+                client.dispatch(PIPELINE_QUEUE_NAME, job, null);
+            }
+            catch (UMOException e)
+            {
+                // CONSIDER: Throw something?
+                _log.error(e);
+            }
         }
-        catch (UMOException e)
+        else
         {
-            // CONSIDER: Throw something?
-            _log.error(e);
+            _log.debug("MuleClient does not work reliably from inside an event. Using outbound routing.");
+            if (_outboundJobs.get() == null)
+                _outboundJobs.set(new ArrayList<PipelineJob>());
+            _outboundJobs.get().add(job);
         }
     }
 }

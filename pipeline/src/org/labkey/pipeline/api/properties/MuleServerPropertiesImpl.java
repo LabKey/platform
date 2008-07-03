@@ -14,36 +14,28 @@
  * limitations under the License.
  */
 
-package org.labkey.pipeline.cluster;
+package org.labkey.pipeline.api.properties;
 
 import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.pipeline.xstream.PathMapper;
+
+import java.util.Map;
+import java.io.File;
 
 /**
- * User: jeckels
- * Date: Apr 29, 2008
+ * <code>MuleServerPropertiesImpl</code> used for Spring configuration.
  */
-public class SpringApplicationProperties implements PipelineJobService.ApplicationProperties
+public class MuleServerPropertiesImpl implements PipelineJobService.MuleServerProperties
 {
-    private String _toolsDirectory;
     private String _muleConfig;
 
-    public String getToolsDirectory()
+    public String getMuleConfig()
     {
-        return _toolsDirectory;
-    }
-
-    public void setToolsDirectory(String toolsDirectory)
-    {
-        _toolsDirectory = toolsDirectory;
+        return _muleConfig;
     }
 
     public void setMuleConfig(String muleConfig)
     {
         _muleConfig = muleConfig;
-    }
-
-    public String getMuleConfig()
-    {
-        return _muleConfig;
     }
 }

@@ -17,12 +17,16 @@ package org.labkey.pipeline.api;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.pipeline.*;
+import org.labkey.api.util.URIUtil;
+import org.labkey.pipeline.api.properties.ApplicationPropertiesImpl;
+import org.labkey.pipeline.api.properties.ConfigPropertiesImpl;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.net.URI;
 
 /**
  * <code>PipelineJobServiceImpl</code>
@@ -38,15 +42,29 @@ public class PipelineJobServiceImpl extends PipelineJobService
         return (PipelineJobServiceImpl) PipelineJobService.get();
     }
 
-    private final HashMap<TaskId, TaskPipeline> _taskPipelineStore =
+    public static PipelineJobServiceImpl initDefaults()
+    {
+        PipelineJobServiceImpl pjs = new PipelineJobServiceImpl();
+        pjs.setAppProperties(new ApplicationPropertiesImpl());
+        pjs.setConfigProperties(new ConfigPropertiesImpl());
+        pjs.setJobStore(new PipelineJobStoreImpl());
+        pjs.setWorkDirFactory(new WorkDirectoryLocal.Factory());
+        PipelineJobService.setInstance(pjs);
+        return pjs;
+    }
+    
+    private HashMap<TaskId, TaskPipeline> _taskPipelineStore =
             new HashMap<TaskId, TaskPipeline>();
-    private final HashMap<TaskId, TaskFactory> _taskFactoryStore =
+    private HashMap<TaskId, TaskFactory> _taskFactoryStore =
             new HashMap<TaskId, TaskFactory>();
 
     private String _defaultExecutionLocation = TaskFactory.WEBSERVER;
 
     private ApplicationProperties _appProperties;
-    
+    private ConfigProperties _configProperties;
+    private MuleServerProperties _muleServerProperties;
+    private GlobusClientProperties _globusClientProperties;
+
     private PipelineStatusFile.StatusWriter _statusWriter;
     private PipelineStatusFile.JobStore _jobStore;
 
@@ -59,11 +77,18 @@ public class PipelineJobServiceImpl extends PipelineJobService
         PipelineJobServiceImpl current = getInternal();
         if (current != null)
         {
-            _taskPipelineStore.putAll(current._taskPipelineStore);
-            _taskFactoryStore.putAll(current._taskFactoryStore);
-            _defaultExecutionLocation = current._defaultExecutionLocation;
+            current._taskPipelineStore.putAll(_taskPipelineStore);
+            _taskPipelineStore = current._taskPipelineStore;
+            current._taskFactoryStore.putAll(_taskFactoryStore);
+            _taskFactoryStore = current._taskFactoryStore;
+
+            _appProperties = current._appProperties;
+            _configProperties = current._configProperties;
+            _muleServerProperties = current._muleServerProperties;
+            _globusClientProperties = current._globusClientProperties;
             _statusWriter = current._statusWriter;
             _workDirFactory = current._workDirFactory;
+            _jobStore = current._jobStore;
         }
 
         setInstance(this);
@@ -229,37 +254,120 @@ public class PipelineJobServiceImpl extends PipelineJobService
         _appProperties = appProperties;
     }
 
-    public String getJarPath(String jarName) throws FileNotFoundException
+    public ConfigProperties getConfigProperties()
     {
-        String toolsDirPath = getAppProperties().getToolsDirectory();
-        if (toolsDirPath == null || toolsDirPath.length() == 0)
+        return _configProperties;
+    }
+
+    public void setConfigProperties(ConfigProperties configProperties)
+    {
+        _configProperties = configProperties;
+    }
+
+    public MuleServerProperties getMuleServerProperties()
+    {
+        return _muleServerProperties;
+    }
+
+    public void setMuleServerProperties(MuleServerProperties muleServerProperties)
+    {
+        _muleServerProperties = muleServerProperties;
+    }
+
+    public GlobusClientProperties getGlobusClientProperties()
+    {
+        return _globusClientProperties;
+    }
+
+    public void setGlobusClientProperties(GlobusClientProperties globusClientProperties)
+    {
+        _globusClientProperties = globusClientProperties;
+    }
+
+    private String getVersionedPath(String path, String packageName, String ver)
+    {
+        // Add package path prefix, if it exists.
+        String packagePath = getConfigProperties().getSoftwarePackagePath(packageName);
+        if (packagePath != null && packagePath.length() > 0)
         {
-            throw new FileNotFoundException("Failed to locate " + jarName + ".  " +
-                "Pipeline tools directory is not set.  " +
-                "Use the site settings page to specify a directory.");
+            path = packagePath + '/' + path;
         }
-        File jarFile = new File(new File(toolsDirPath), jarName);
-        if (!jarFile.exists())
+
+        // Handle version string replacement.
+        if (ver == null)
+            ver = "";
+        ver = ver.trim();
+        if (!"".equals(ver))
+            ver = "." + ver;
+
+        return path.replace("${version}", ver);
+    }
+
+    private String getToolsDirPath(String toolsDir, String rel, boolean checkFile)
+            throws FileNotFoundException
+    {
+        File dir = new File(toolsDir);
+
+        // Resolve strips the final part of the path, so add a dummy file name
+        // to avoid losing part of the tools directory.
+        URI uri = URIUtil.resolve(dir.toURI(), rel);
+        if (uri == null)
         {
-            if (!jarFile.getParentFile().exists())
+            throw new FileNotFoundException("Failed to locate " + rel + ".  " +
+                "Path may not be valid.");
+        }
+        File file = new File(uri);
+        if (!file.exists())
+        {
+            if (!dir.exists())
             {
-                throw new FileNotFoundException("File not found " + jarFile + ".  " +
+                throw new FileNotFoundException("File not found " + file + ".  " +
                     "Pipeline tools directory does not exist.  " +
                     "Use the site settings page to specify an existing directory.");
             }
-            else
+            else if (!dir.equals(file.getParentFile()) && !file.getParentFile().exists())
             {
-                throw new FileNotFoundException("File not found " + jarFile + ".  " +
-                    "Add this jar file to the pipeline tools directory.");                
+                throw new FileNotFoundException("File not found " + file + ".  " +
+                    "Parent directory does not exist.");                
+            }
+            else if (checkFile)
+            {
+                throw new FileNotFoundException("File not found " + file + ".  " +
+                    "Add this file to the pipeline tools directory.");
             }
         }
-        return jarFile.toString();
+        return file.toString();
+    }
+
+    public String getExecutablePath(String exeRel, String packageName, String ver) throws FileNotFoundException
+    {
+        String toolsDir = getAppProperties().getToolsDirectory();
+        if (toolsDir == null || toolsDir.trim().equals(""))
+        {
+            // If the tools directory is not set, then rely on the path.
+            return exeRel;
+        }
+        // Don't check for file existence with executable paths, since they may be
+        // lacking an extension (exe, bat, cmd) on Windows platforms.
+        return getToolsDirPath(toolsDir, getVersionedPath(exeRel, packageName, ver), false);
+    }
+
+    public String getJarPath(String jarRel, String packageName, String ver) throws FileNotFoundException
+    {
+        String toolsDir = getAppProperties().getToolsDirectory();
+        if (toolsDir == null || toolsDir.trim().equals(""))
+        {
+            throw new FileNotFoundException("Failed to locate " + jarRel + ".  " +
+                "Pipeline tools directory is not set.  " +
+                "Use the site settings page to specify a directory.");
+        }
+        return getToolsDirPath(toolsDir, getVersionedPath(jarRel, packageName, ver), true);
     }
 
     public String getJavaPath() throws FileNotFoundException
     {
         String javaHome = System.getenv("JAVA_HOME");
-        if (javaHome == null || javaHome.length() == 0)
+        if (javaHome == null || javaHome.trim().equals(""))
         {
             throw new FileNotFoundException("Failed to locate Java.  " +
                 "Please set JAVA_HOME environment variable.");
@@ -272,14 +380,5 @@ public class PipelineJobServiceImpl extends PipelineJobService
                 "Please fix the JAVA_HOME environment variable.");
         }
         return new File(javaBin, "java").toString();
-    }
-
-    public static PipelineJobServiceImpl initDefaults()
-    {
-        PipelineJobServiceImpl pjs = new PipelineJobServiceImpl();
-        pjs.setJobStore(new PipelineJobStoreImpl());
-        pjs.setWorkDirFactory(new WorkDirectoryLocal.Factory());
-        PipelineJobService.setInstance(pjs);
-        return pjs;
     }
 }
