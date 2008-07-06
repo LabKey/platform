@@ -1024,6 +1024,7 @@ public class LoginController extends SpringActionController
 
 
     @RequiresPermission(ACL.PERM_NONE)
+    @IgnoresTermsOfUse
     public class VerifyTokenAction extends SimpleViewAction<TokenAuthenticationForm>
     {
         public ModelAndView getView(TokenAuthenticationForm form, BindException errors) throws Exception

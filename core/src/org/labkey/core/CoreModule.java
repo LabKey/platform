@@ -161,7 +161,6 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
 
             List<SqlScript> scripts = new ArrayList<SqlScript>();
 
-            // TODO: How about a helper function, e.g., runDropScripts(provider) / runCreateScripts(provider)
             if (0.0 != moduleContext.getInstalledVersion())
             {
                 scripts.addAll(coreProvider.getDropScripts());
@@ -171,12 +170,8 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
             // Must run all the core schema scripts first followed by the other schemas
             scripts.addAll(SqlScriptRunner.getRecommendedScripts(coreProvider, null, moduleContext.getInstalledVersion(), getVersion()));
             scripts.addAll(SqlScriptRunner.getRecommendedScripts(nonCoreProvider, null, moduleContext.getInstalledVersion(), getVersion()));
-
-            if (0.0 != moduleContext.getInstalledVersion())
-            {
-                scripts.addAll(coreProvider.getCreateScripts());
-                scripts.addAll(nonCoreProvider.getCreateScripts());
-            }
+            scripts.addAll(coreProvider.getCreateScripts());
+            scripts.addAll(nonCoreProvider.getCreateScripts());
 
             SqlScriptRunner.runScripts(null, scripts, coreProvider);
             SqlScriptRunner.waitForScriptsToFinish();
@@ -205,6 +200,18 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
         return null;
     }
 
+
+    @Override
+    public void beforeUpdate(ViewContext viewContext)
+    {
+        // Do nothing
+    }
+
+    @Override
+    public void beforeSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)
+    {
+        // Do nothing
+    }
 
     @Override
     public void afterSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)
@@ -249,7 +256,7 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
         if (installedVersion > 0 && installedVersion < 8.12)
             migrateLdapSettings();
 
-        super.afterSchemaUpdate(moduleContext, viewContext);
+        // TODO: New internalAfterSchemaUpdate method in base class to avoid calling this.  super.afterSchemaUpdate(moduleContext, viewContext);
     }
 
     private void migrateLdapSettings()

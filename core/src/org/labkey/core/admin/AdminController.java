@@ -3112,9 +3112,14 @@ public class AdminController extends SpringActionController
 
             VBox vbox = new VBox();
             vbox.addView(new ModuleStatusView());
+            ModuleLoader loader = ModuleLoader.getInstance();
 
-            if (ModuleLoader.getInstance().isUpgradeRequired())
-                vbox.addView(new UpgradeView(ModuleLoader.getInstance().getUpgradeUser(), form.getForce(), form.getExpress(), ModuleLoader.getInstance().isNewInstall()));
+            if (loader.isUpgradeRequired())
+            {
+                loader.ensureBeforeUpgradeComplete(getViewContext());
+
+                vbox.addView(new UpgradeView(loader.getUpgradeUser(), form.getForce(), form.getExpress(), loader.isNewInstall()));
+            }
             else
             {
                 SqlScriptRunner.stopBackgroundThread();

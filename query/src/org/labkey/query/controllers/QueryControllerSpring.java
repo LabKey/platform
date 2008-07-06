@@ -412,6 +412,7 @@ public class QueryControllerSpring extends SpringActionController
     }
 
     @RequiresPermission(ACL.PERM_NONE)
+    @IgnoresTermsOfUse
     public class ExcelWebQueryAction extends ExportRowsTsvAction
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
