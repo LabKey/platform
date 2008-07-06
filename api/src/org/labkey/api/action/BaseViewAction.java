@@ -34,10 +34,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.TermsOfUseException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.security.User;
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.RequiresSiteAdmin;
-import org.labkey.api.security.RequiresLogin;
+import org.labkey.api.security.*;
 import org.springframework.beans.*;
 import org.springframework.core.MethodParameter;
 import org.springframework.validation.*;
@@ -377,7 +374,7 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
                 else if (propClass.isArray())
                 {
                     if (value instanceof Collection)
-                        value = ((Collection)value).toArray(new String[0]);
+                        value = ((Collection) value).toArray(new String[((Collection) value).size()]);
                     else if (!value.getClass().isArray())
                         value = new String[] {String.valueOf(value)};
                     converted = ConvertUtils.convert((String[])value, propClass);
@@ -566,15 +563,10 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
     public static void checkPermissionsAndTermsOfUse(Class<? extends Controller> actionClass, ViewContext context)
             throws TermsOfUseException, UnauthorizedException 
     {
-        Container c = context.getContainer();
-        User user = context.getUser();
-
         checkActionPermissions(actionClass, context.getContainer(), context.getUser());
 
-        if (!context.hasAgreedToTermsOfUse())
+        IgnoresTermsOfUse ignoresTermsOfUse = actionClass.getAnnotation(IgnoresTermsOfUse.class);
+        if (null == ignoresTermsOfUse && !context.hasAgreedToTermsOfUse())
             throw new TermsOfUseException(context.getActionURL());
     }
-
-
-
 }

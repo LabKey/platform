@@ -73,6 +73,8 @@ public interface Module
      */
     public void bootstrap();
 
+    public void beforeUpdate(ViewContext viewContext);
+
     /**
      * Do any version updating module needs to do. If module
      * requires a UI for updating version, the ActionURL for

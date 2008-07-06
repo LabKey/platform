@@ -1370,10 +1370,6 @@ public class SecurityManager
         if ("Basic".equals(ctx.getRequest().getAttribute(AUTHENTICATION_METHOD)) || getTermsOfUseApproved(ctx, project))
             return false;
 
-        ActionURL url = ctx.getActionURL();
-        if (url != null && "query".equalsIgnoreCase(url.getPageFlow()) && "excelWebQuery".equalsIgnoreCase(url.getAction()))
-            return false;
-
         boolean required = isTermsOfUseRequired(project);
 
         //stash result so that this is faster next time.

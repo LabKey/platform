@@ -21,7 +21,6 @@ import java.lang.annotation.Target;
 import java.lang.annotation.ElementType;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Jan 11, 2007
  * Time: 11:35:28 AM

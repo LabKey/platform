@@ -28,6 +28,7 @@ import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
 
 import javax.naming.*;
 import javax.servlet.Filter;
@@ -73,8 +74,10 @@ public class ModuleLoader implements Filter
     private File _webappDir;
     private Collection<File> _moduleDirectories;
 
+    private boolean _beforeUpgradeComplete = false;
+    private static final Object BEFORE_UPGRADE_LOCK = new Object();
     private boolean _startupComplete = false;
-    private static final Object _startupLock = new Object();
+    private static final Object STARTUP_LOCK = new Object();
 
     public enum ModuleState
     {
@@ -926,6 +929,26 @@ public class ModuleLoader implements Filter
         return ActionURL.toPathString("admin", "moduleStatus", "");
     }
 
+    public void ensureBeforeUpgradeComplete(ViewContext viewContext)
+    {
+        synchronized (BEFORE_UPGRADE_LOCK)
+        {
+            if (!_beforeUpgradeComplete)
+            {
+                List<Module> modules = getModules();
+                ListIterator<Module> iter = modules.listIterator(modules.size());
+
+                while (iter.hasPrevious())
+                {
+                    Module module = iter.previous();
+                    module.beforeUpdate(viewContext);
+                }
+
+                _beforeUpgradeComplete = true;
+            }
+        }
+    }
+
     public boolean isStartupComplete()
     {
         return _startupComplete;
@@ -933,7 +956,7 @@ public class ModuleLoader implements Filter
 
     private void ensureStartupComplete()
     {
-        synchronized (_startupLock)
+        synchronized (STARTUP_LOCK)
         {
             if (_startupComplete)
                 return;

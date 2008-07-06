@@ -16,17 +16,18 @@
 package org.labkey.api.module;
 
 import junit.framework.TestCase;
-import org.apache.log4j.Logger;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.SqlScriptRunner;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
+import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.security.User;
 import org.labkey.api.util.AppProps;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
-import org.labkey.api.admin.AdminUrls;
 import org.labkey.common.util.Pair;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -54,15 +55,34 @@ public abstract class DefaultModule implements Module
     private final Map<String, Class> _pageFlowNameToClass = new LinkedHashMap<String, Class>();
     private final Map<Class, String> _pageFlowClassToName = new HashMap<Class, String>();
     private final WebPartFactory[] _webParts;
-    private static final Logger _log = Logger.getLogger(DefaultModule.class);
 
-    private boolean _beforeUpdateComplete;
     private UpdateState _afterUpdateState = UpdateState.NotStarted;
     private enum UpdateState { NotStarted, InProgress, Complete }
 
     private Map<String, String> _metaData;
     private boolean _loadFromSource;
     private String _buildPath;
+
+    private enum SchemaUpdateType
+    {
+        Before
+        {
+            List<SqlScript> getScripts(SqlScriptProvider provider) throws SqlScriptRunner.SqlScriptException
+            {
+                return provider.getDropScripts();
+            }
+        },
+
+        After
+        {
+            List<SqlScript> getScripts(SqlScriptProvider provider) throws SqlScriptRunner.SqlScriptException
+            {
+                return provider.getCreateScripts();
+            }
+        };
+
+        abstract List<SqlScript> getScripts(SqlScriptProvider provider) throws SqlScriptRunner.SqlScriptException;
+    }
 
     protected DefaultModule(String name, double version, String resourcePath, boolean shouldRunScripts, WebPartFactory... webParts)
     {
@@ -151,26 +171,25 @@ public abstract class DefaultModule implements Module
         //By default do nothing...
     }
 
+    public void beforeUpdate(ViewContext viewContext)
+    {
+        runScripts(SchemaUpdateType.Before);
+        beforeSchemaUpdate(ModuleLoader.getInstance().getModuleContext(this), viewContext);
+    }
+
     /**
      * Upgrade this module to the latest version.
      *
-     * Invoke beforeSchemaUpdate() then, if this module has scripts to run, redirect to the SqlScriptController.
-     * The status page will eventually redirect back to the moduleUpgrade action which will call this method
-     * again and cause afterSchemaUpdate() to complete.
+     * If this module has scripts to run, redirect to the SqlScriptController.  The status page will eventually
+     * redirect back to the moduleUpgrade action which will call this method again and cause afterSchemaUpdate()
+     * to complete.
      *
      * This will get called multiple times before scripts are done running, e.g., if the admin user attempts to
-     * hit the home page during upgrade.  We need to synchronize beforeSchemaUpdate and afterSchemaUpdate here.
-     * SqlScriptRunner will run and synchronize the actual scripts.
+     * hit the home page during upgrade.  We need to synchronize afterSchemaUpdate here.  SqlScriptRunner will
+     * run and synchronize the actual scripts.
      */
     public ActionURL versionUpdate(final ModuleContext moduleContext, final ViewContext viewContext)
     {
-        synchronized(SCHEMA_UPDATE_LOCK)
-        {
-            if (!_beforeUpdateComplete)
-                beforeSchemaUpdate(moduleContext, viewContext);
-            _beforeUpdateComplete = true;
-        }
-
         if (_shouldRunScripts)
         {
             Map m = moduleContext.getProperties();
@@ -219,12 +238,37 @@ public abstract class DefaultModule implements Module
 
     public void beforeSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)
     {
-
+        runScripts(SchemaUpdateType.Before);
     }
 
 
     public void afterSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)
     {
+        runScripts(SchemaUpdateType.After);
+    }
+
+
+    private void runScripts(SchemaUpdateType type)
+    {
+        try
+        {
+            if (hasScripts())
+            {
+                SqlScriptProvider provider = new FileSqlScriptProvider(this);
+                List<SqlScript> scripts = type.getScripts(provider);
+
+                if (!scripts.isEmpty())
+                {
+                    SqlScriptRunner.runScripts(null, scripts, provider);
+                    SqlScriptRunner.waitForScriptsToFinish();
+                    DbSchema.invalidateSchemas();
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
 

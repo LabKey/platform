@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2008 LabKey Corporation
+ * Copyright (c) 2008 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-package org.labkey.api.view;
+package org.labkey.api.security;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+import java.lang.annotation.ElementType;
 
 /**
- * User: Mark Igra
- * Date: Jun 30, 2006
- * Time: 5:41:25 PM
+ * User: adamr
+ * Date: Jul 4, 2008
+ * Time: 8:54:28 AM
  */
-public class TermsOfUseException extends UnauthorizedException
+public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target({ElementType.METHOD,ElementType.TYPE})
+@interface IgnoresTermsOfUse
 {
-    public TermsOfUseException(ActionURL url)
-    {
-        super(null, url.getLocalURIString());
-    }
 }

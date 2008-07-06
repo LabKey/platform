@@ -448,6 +448,7 @@ api/src/org/labkey/api/security/AuthenticationProvider.java -text
 api/src/org/labkey/api/security/DbLoginAuthenticationProvider.java -text
 api/src/org/labkey/api/security/Group.java -text
 api/src/org/labkey/api/security/GroupManager.java -text
+api/src/org/labkey/api/security/IgnoresTermsOfUse.java -text
 api/src/org/labkey/api/security/LoginUrls.java -text
 api/src/org/labkey/api/security/PermissionsMap.java -text
 api/src/org/labkey/api/security/RequiresLogin.java -text

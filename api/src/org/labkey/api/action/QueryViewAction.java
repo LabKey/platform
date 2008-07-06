@@ -16,21 +16,16 @@
 
 package org.labkey.api.action;
 
-import org.labkey.api.query.QueryView;
 import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.TermsOfUseException;
+import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.util.AppProps;
-import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
-
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.ServletException;
+import org.springframework.web.servlet.ModelAndView;
 
 /**
  * User: jeckels
@@ -43,26 +38,25 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
         super(formClass);
     }
 
+    // TODO: Remove this??  Excel web queries go through ExcelWebQueryAction
     public void checkPermissions() throws UnauthorizedException
     {
-        if ("excelWebQuery".equals(getViewContext().getRequest().getParameter("exportType")))
+        try
         {
-            try
-            {
-                super.checkPermissions();
-            }
-            catch (TermsOfUseException e)
-            {
-                // We don't enforce terms of use for access through ExcelWebQuery 
-            }
-            catch (UnauthorizedException e)
-            {
-                if (!getViewContext().getUser().isGuest())
-                    HttpView.throwUnauthorized();
-                throw new UnauthorizedException(true);
-            }
+            super.checkPermissions();
         }
-        super.checkPermissions();
+        catch (TermsOfUseException e)
+        {
+            // We don't enforce terms of use for access through ExcelWebQuery
+            if (!"excelWebQuery".equals(getViewContext().getRequest().getParameter("exportType")))
+                throw e;
+        }
+        catch (UnauthorizedException e)
+        {
+            if (!getViewContext().getUser().isGuest())
+                HttpView.throwUnauthorized();
+            throw new UnauthorizedException(true);
+        }
     }
 
     public ModelAndView getView(Form form, BindException errors) throws Exception
