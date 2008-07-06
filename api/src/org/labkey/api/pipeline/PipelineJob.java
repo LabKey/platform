@@ -407,19 +407,11 @@ abstract public class PipelineJob extends Job implements Serializable
         restoreQueue(queue);
         
         // Initialize the task pipeline
-        if (getTaskPipeline() != null && getActiveTaskId() == null)
+        if (getTaskPipeline() != null)
             runStateMachine();
-
-        // Initialize status.
-        if (_logFile != null)
-        {
-            // If it is just the default initial status, but the job has an active
-            // task, then use the task's status.
-            if (WAITING_STATUS.equals(initialState) && getActiveTaskId() != null)
-                updateStatusForTask();
-            else
-                setStatus(initialState);
-        }
+        // Initialize status for non-task pipline jobs.
+        else if (_logFile != null)
+            setStatus(initialState);
     }
 
     public void clearQueue()
@@ -548,7 +540,8 @@ abstract public class PipelineJob extends Job implements Serializable
         for (int i = 0; i < progression.length; i++)
         {
                 TaskFactory factory = PipelineJobService.get().getTaskFactory(progression[i]);
-                if (factory.getActiveId(this).equals(_activeTaskId))
+                if (factory.getId().equals(_activeTaskId) ||
+                        factory.getActiveId(this).equals(_activeTaskId))
                     return i;
         }
         return -1;

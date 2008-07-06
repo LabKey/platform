@@ -15,10 +15,6 @@
  */
 package org.labkey.api.pipeline;
 
-import org.labkey.api.pipeline.cmd.CommandTask;
-
-import java.io.File;
-import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.util.Map;
 
@@ -70,8 +66,9 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
     /**
      * <code>MuleServerProperties</code> are only used on a Mule Server instance.
      */
-    public interface MuleServerProperties
+    public interface RemoteServerProperties
     {
+        String getLocation();
         String getMuleConfig();
     }
 
@@ -93,7 +90,7 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
 
     abstract public ConfigProperties getConfigProperties();
 
-    abstract public MuleServerProperties getMuleServerProperties();
+    abstract public RemoteServerProperties getRemoteServerProperties();
 
     abstract public GlobusClientProperties getGlobusClientProperties();
 

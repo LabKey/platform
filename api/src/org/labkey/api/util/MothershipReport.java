@@ -22,6 +22,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.security.AuthenticationManager;
+import org.labkey.api.pipeline.PipelineService;
 
 import javax.mail.internet.ContentType;
 import javax.net.ssl.HttpsURLConnection;
@@ -204,7 +205,8 @@ public class MothershipReport implements Runnable
         }
         addParam("runtimeOS", System.getProperty("os.name"));
         addParam("javaVersion", System.getProperty("java.version"));
-        addParam("enterprisePipelineEnabled", AppProps.getInstance().hasPipelineCluster());
+        addParam("perlPipelineEnabled", AppProps.getInstance().hasPipelineCluster());
+        addParam("enterprisePipelineEnabled", PipelineService.get().isEnterprisePipeline());
 
         boolean ldapEnabled = AuthenticationManager.isActive("LDAP");  // TODO: Send back all active auth providers (OpenSSO, LDAP, etc.)
         addParam("ldapEnabled", ldapEnabled);
