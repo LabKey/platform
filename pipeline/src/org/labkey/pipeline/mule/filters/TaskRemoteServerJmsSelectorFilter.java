@@ -15,23 +15,31 @@
  */
 package org.labkey.pipeline.mule.filters;
 
+import org.labkey.api.pipeline.PipelineJobService;
+
 /**
  * <code>TaskJmsSelectorFilter</code> builds and applies a JMS selector for
  * all registered <code>TaskFactory</code> objects for a specified location.
  *
  * @author brendanx
  */
-public class TaskJmsSelectorFilter extends AbstractTaskJmsSelectorFilter
+public class TaskRemoteServerJmsSelectorFilter extends AbstractTaskJmsSelectorFilter
 {
     private String _location;
+
+    public TaskRemoteServerJmsSelectorFilter()
+    {
+        PipelineJobService.RemoteServerProperties props =
+                PipelineJobService.get().getRemoteServerProperties();
+        if (props != null)
+            _location = props.getLocation();
+
+        if (_location == null || "".equals(_location))
+            throw new IllegalArgumentException("RemoteServerProperties.location must be set to use TaskRemoteServerJmsSelectorFilter.");            
+    }
 
     public String getLocation()
     {
         return _location;
-    }
-
-    public void setLocation(String location)
-    {
-        _location = location;
     }
 }

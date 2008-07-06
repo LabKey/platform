@@ -31,6 +31,8 @@ import java.nio.channels.FileChannel;
  */
 public class WorkDirectoryRemote extends AbstractWorkDirectory
 {
+    private static final int PERL_PIPELINE_LOCKS_DEFAULT = 5;
+    
     private final File _lockDirectory;
 
     public File inputFile(File fileInput, boolean forceCopy) throws IOException
@@ -64,8 +66,15 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
             return new WorkDirectoryRemote(support, tempDir, log, _lockDirectory);
         }
 
+        public String getLockDirectory()
+        {
+            return _lockDirectory;
+        }
+
         public void setLockDirectory(String lockDirectory)
         {
+            if (!new File(lockDirectory).isDirectory())
+                throw new IllegalArgumentException("The lock directory " + lockDirectory + " does not exist.");
             _lockDirectory = lockDirectory;
         }
     }
@@ -96,36 +105,38 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
         {
             bOut.write(b, 0, i);
         }
-        String line = new String(bOut.toByteArray(), "UTF-8");
+        String line = new String(bOut.toByteArray(), "UTF-8").trim();
         if (line.length() == 0)
         {
             throw new IOException("Could not get the total number of locks from the master lock file " + masterLockFile);
         }
         String[] parts = line.split(" ");
-        int totalLocks;
+        int totalLocks = PERL_PIPELINE_LOCKS_DEFAULT;
+        int currentIndex;
         try
         {
-            totalLocks = Integer.parseInt(parts[0]);
+            currentIndex = Integer.parseInt(parts[0]);
         }
         catch (NumberFormatException e)
         {
-            throw new IOException("Could not parse the total number of locks from the master lock file " + masterLockFile + ", the value was: " + parts[0]);
+            throw new IOException("Could not parse the current lock index from the master lock file " + masterLockFile + ", the value was: " + parts[0]);
         }
-        int currentIndex = 0;
         if (parts.length > 1)
         {
             try
             {
-                currentIndex = Integer.parseInt(parts[1]);
-                if (currentIndex >= totalLocks)
-                {
-                    currentIndex = 0;
-                }
+                totalLocks = Integer.parseInt(parts[1]);
             }
             catch (NumberFormatException e)
             {
-                throw new IOException("Could not parse the current lock index from the master lock file " + masterLockFile + ", the value was: " + parts[1]);
+                throw new IOException("Could not parse the total number of locks from the master lock file " + masterLockFile + ", the value was: " + parts[1]);
             }
+        }
+        if (totalLocks < 1)
+            totalLocks = PERL_PIPELINE_LOCKS_DEFAULT;
+        if (currentIndex >= totalLocks)
+        {
+            currentIndex = 0;
         }
         return new MasterLockInfo(totalLocks, currentIndex);
     }
@@ -146,25 +157,21 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
 
             try
             {
-                File masterLockFile = new File(_lockDirectory, "master");
+                File masterLockFile = new File(_lockDirectory, "counter");
                 randomAccessFile = new RandomAccessFile(masterLockFile, "rw");
                 FileChannel masterChannel = randomAccessFile.getChannel();
                 masterLock = masterChannel.lock();
 
                 MasterLockInfo lockInfo = parseMasterLock(randomAccessFile, masterLockFile);
-
-                int nextIndex = lockInfo.getCurrentLock() + 1;
-                if (nextIndex >= lockInfo.getTotalLocks())
-                {
-                    nextIndex = 0;
-                }
-
+                int nextIndex = (lockInfo.getCurrentLock() + 1) % lockInfo.getTotalLocks();
                 rewriteMasterLock(randomAccessFile, new MasterLockInfo(lockInfo.getTotalLocks(), nextIndex));
+                
                 _log.info("Acquiring lock #" + lockInfo.getCurrentLock());
-                File f = new File(_lockDirectory, Integer.toString(lockInfo.getCurrentLock()));
+                File f = new File(_lockDirectory, "lock" + lockInfo.getCurrentLock());
                 FileChannel lockChannel = new FileOutputStream(f, true).getChannel();
                 FileLockCopyingResource result = new FileLockCopyingResource(lockChannel, lockInfo.getCurrentLock());
                 _log.info("Lock #" + lockInfo.getCurrentLock() + " acquired");
+                
                 return result;
             }
             finally
@@ -180,7 +187,10 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
     {
         masterFile.seek(0);
 
-        byte[] outputBytes = (lockInfo.getTotalLocks() + " " + lockInfo.getCurrentLock()).getBytes("UTF-8");
+        String output = Integer.toString(lockInfo.getCurrentLock());
+        if (lockInfo.getTotalLocks() != PERL_PIPELINE_LOCKS_DEFAULT)
+            output += " " + Integer.toString(lockInfo.getTotalLocks());
+        byte[] outputBytes = output.getBytes("UTF-8");
         masterFile.write(outputBytes);
         masterFile.setLength(outputBytes.length);
     }
@@ -192,6 +202,8 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
 
         private MasterLockInfo(int totalLocks, int currentLock)
         {
+            assert totalLocks > 0 : "Total locks must be greater than 0.";
+            
             _totalLocks = totalLocks;
             _currentLock = currentLock;
         }

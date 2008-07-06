@@ -49,6 +49,7 @@ import org.mule.extras.client.MuleClient;
 import org.mule.umo.UMOEventContext;
 import org.mule.umo.UMOException;
 import org.mule.umo.lifecycle.Callable;
+import org.mule.impl.RequestContext;
 import org.oasis.wsrf.faults.BaseFaultType;
 import org.oasis.wsrf.faults.BaseFaultTypeDescription;
 
@@ -425,8 +426,15 @@ public class PipelineJobRunnerGlobus implements Callable
 
     private void updateStatus(PipelineJob job, PipelineJob.TaskStatus status) throws UMOException
     {
+        assert status != PipelineJob.TaskStatus.waiting :
+                "Reset cluster task status to 'waiting' is not allowed.";
+        
         job.setActiveTaskStatus(status);
-        MuleClient client = new MuleClient();
-        client.dispatch(EPipelineQueueImpl.PIPELINE_QUEUE_NAME, job, null);
+
+        // Only re-queue the job if status is 'complete' (not 'running' or 'error').
+        if (status == PipelineJob.TaskStatus.complete)
+        {
+            EPipelineQueueImpl.dispatchJob(job);
+        }
     }
 }

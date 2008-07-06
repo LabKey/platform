@@ -21,10 +21,6 @@ import org.springframework.context.support.FileSystemXmlApplicationContext;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
 import org.labkey.api.pipeline.PipelineJobService;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.io.File;
-
 /*
 * User: jeckels
 * Date: Jun 26, 2008
@@ -39,16 +35,14 @@ public class MuleStartup
         // Initialize the Spring context
         FileSystemXmlApplicationContext context = new FileSystemXmlApplicationContext(springConfigPaths);
 
-        PipelineJobService.MuleServerProperties props = PipelineJobServiceImpl.get().getMuleServerProperties();
+        PipelineJobService.RemoteServerProperties props = PipelineJobServiceImpl.get().getRemoteServerProperties();
         if (props == null)
         {
-            throw new IllegalArgumentException("No MuleServerProperties object registered. Be sure that your configuration directory is set correctly.");
+            throw new IllegalArgumentException("No RemoteServerProperties object registered. Be sure that your configuration directory is set correctly.");
         }
         String muleConfig = props.getMuleConfig();
         if (muleConfig == null)
-        {
-            throw new IllegalArgumentException("No mule configuration specified");
-        }
+            muleConfig = "org/labkey/pipeline/mule/config/remoteMuleConfig.xml";
 
         LabKeySpringContainerContext.setContext(context);
         MuleXmlConfigurationBuilder builder = new MuleXmlConfigurationBuilder();

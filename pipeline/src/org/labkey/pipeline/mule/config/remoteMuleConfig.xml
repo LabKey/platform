@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mule-configuration PUBLIC "-//MuleSource //DTD mule-configuration XML V1.0//EN"
+                                "http://mule.mulesource.org/dtds/mule-configuration.dtd">
+
+<mule-configuration id="LabKey_Pipeline" version="1.0">
+
+    <mule-environment-properties serverUrl=""/>
+
+    <container-context name="pipeline" className="org.labkey.pipeline.mule.LabKeySpringContainerContext" />
+
+    <connector name="jmsConnectorTask" className="org.mule.providers.jms.activemq.ActiveMqJmsConnector">
+        <properties>
+            <container-property name="connectionFactory" reference="activeMqConnectionFactory" />
+            <property name="persistentDelivery" value="true"/>
+
+            <property name="specification" value="1.1"/>
+        </properties>
+        <threading-profile id="receiver" maxBufferSize="0" maxThreadsActive="4"
+                maxThreadsIdle="0" threadTTL="100" poolExhaustedAction="WAIT"/>
+    </connector>
+
+    <endpoint-identifiers>
+        <endpoint-identifier name="JobMQ" value="jms://job.queue"/>
+        <endpoint-identifier name="StatusMQ" value="jms://status.queue"/>
+    </endpoint-identifiers>
+
+    <transformers>
+        <transformer name="JobToJMSMessage" className="org.labkey.pipeline.mule.transformers.PipelineJobToJMSMessage"
+            returnClass="javax.jms.TextMessage"/>
+        <transformer name="JMSMessageToJob" className="org.labkey.pipeline.mule.transformers.JMSMessageToPipelineJob"
+            returnClass="org.labkey.api.pipeline.PipelineJob"/>
+        <transformer name="StatusToXML" className="org.mule.transformers.xml.ObjectToXml"
+            returnClass="java.lang.String"/>
+        <transformer name="XMLToJMSMessage" className="org.mule.providers.jms.transformers.ObjectToJMSMessage"
+            returnClass="javax.jms.TextMessage" />
+        <transformer name="NoOpTransformer" className="org.labkey.pipeline.mule.transformers.NoOpTransformer"
+            returnClass="java.lang.Object"/>
+    </transformers>
+
+<!--
+    <interceptor-stack name="default">
+        <interceptor className="org.mule.interceptors.LoggingInterceptor"/>
+        <interceptor className="org.mule.interceptors.TimerInterceptor"/>
+    </interceptor-stack>
+-->
+
+    <global-endpoints>
+        <endpoint name="StatusSetter" type="sender" address="StatusMQ"
+                  transformers="StatusToXML XMLToJMSMessage" connector="jmsConnectorTask"/>
+    </global-endpoints>
+
+    <model name="pipeline">
+        <mule-descriptor name="PipelineTaskRunnerUMO"
+            implementation="org.labkey.pipeline.mule.PipelineTaskRunner">
+            <inbound-router>
+                <endpoint type="receiver" address="JobMQ" transformers="JMSMessageToJob"
+                        responseTransformers="NoOpTransformer" connector="jmsConnectorTask">
+                    <!-- <transaction action="ALWAYS_BEGIN" factory="org.mule.providers.jms.JmsTransactionFactory"/> -->
+                    <filter className="org.labkey.pipeline.mule.filters.TaskRemoteServerJmsSelectorFilter"/>
+                </endpoint>
+            </inbound-router>
+
+            <!-- Return to job queue (task runner cannot complete) -->
+            <outbound-router>
+                <router className="org.mule.routing.outbound.OutboundPassThroughRouter">
+                    <endpoint type="sender" address="JobMQ" transformers="JobToJMSMessage"
+                            connector="jmsConnectorTask"/>
+                </router>
+            </outbound-router>
+
+            <threading-profile maxThreadsActive="4" maxThreadsIdle="0" threadTTL="100"/>
+            <pooling-profile maxActive="4" maxIdle="0" initialisationPolicy="INITIALISE_NONE"/>
+        </mule-descriptor>
+    </model>
+</mule-configuration>

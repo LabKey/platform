@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.api.pipeline.PipelineService" %>
 <%@ page import="java.security.cert.X509Certificate" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
+<%@ page import="org.labkey.api.pipeline.PipelineJobService" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<PipelineController.SetupBean> thisView = (JspView<PipelineController.SetupBean>) HttpView.currentView();
@@ -66,7 +67,8 @@ function toggleGlobusVisible()
             <td class="ms-searchform">Pipeline root directory:</td>
             <td><input type="text" name="path" size="70" value="<%= PageFlowUtil.filter(bean.getStrValue()) %>"></td>
         </tr>
-        <% if (PipelineService.get().isEnterprisePipeline())
+        <% if (PipelineService.get().isEnterprisePipeline() &&
+                PipelineJobService.get().getGlobusClientProperties() != null)
         {
             boolean showConfig = true;
             if (bean.getGlobusKeyPair() != null)

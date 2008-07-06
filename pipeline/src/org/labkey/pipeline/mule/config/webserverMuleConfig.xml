@@ -26,7 +26,7 @@
             
             <property name="specification" value="1.1"/>
         </properties>
-        <threading-profile id="receiver" maxBufferSize="0" maxThreadsActive="4"
+        <threading-profile id="receiver" maxBufferSize="0" maxThreadsActive="2"
                 maxThreadsIdle="0" threadTTL="100" poolExhaustedAction="WAIT"/>
     </connector>
 
@@ -39,7 +39,7 @@
 
             <property name="specification" value="1.1"/>
         </properties>
-        <threading-profile id="receiver" maxBufferSize="0" maxThreadsActive="4"
+        <threading-profile id="receiver" maxBufferSize="0" maxThreadsActive="1"
                 maxThreadsIdle="0" threadTTL="100" poolExhaustedAction="WAIT"/>
     </connector>
 
@@ -52,7 +52,7 @@
 
             <property name="specification" value="1.1"/>
         </properties>
-        <threading-profile id="receiver" maxBufferSize="0" maxThreadsActive="4"
+        <threading-profile id="receiver" maxBufferSize="0" maxThreadsActive="1"
                 maxThreadsIdle="0" threadTTL="100" poolExhaustedAction="WAIT"/>
     </connector>
 
@@ -95,7 +95,7 @@
             <inbound-router>
                 <endpoint type="receiver" address="JobMQ" transformers="JMSMessageToJob"
                         responseTransformers="NoOpTransformer" connector="jmsConnectorWork">
-                    <transaction action="ALWAYS_BEGIN" factory="org.mule.providers.jms.JmsTransactionFactory" />
+                    <!--<transaction action="ALWAYS_BEGIN" factory="org.mule.providers.jms.JmsTransactionFactory" />-->
                     <filter className="org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter">
                         <properties>
                             <property name="location" value="webserver"/>
@@ -114,8 +114,8 @@
                 </router>
             </outbound-router>
 
-            <threading-profile maxThreadsActive="4" maxThreadsIdle="0" threadTTL="100"/>
-            <pooling-profile maxActive="4" maxIdle="0" initialisationPolicy="INITIALISE_NONE"/>
+            <threading-profile maxThreadsActive="2" maxThreadsIdle="0" threadTTL="100"/>
+            <pooling-profile maxActive="2" maxIdle="0" initialisationPolicy="INITIALISE_NONE"/>
         </mule-descriptor>
 
         <mule-descriptor name="PipelineJobRunnerGlobusUMO"
@@ -131,8 +131,8 @@
                 </endpoint>
             </inbound-router>
 
-            <threading-profile maxThreadsActive="4" maxThreadsIdle="0" threadTTL="100"/>
-            <pooling-profile maxActive="4" maxIdle="0" initialisationPolicy="INITIALISE_NONE"/>
+            <threading-profile maxThreadsActive="1" maxThreadsIdle="0" threadTTL="100"/>
+            <pooling-profile maxActive="1" maxIdle="0" initialisationPolicy="INITIALISE_NONE"/>
         </mule-descriptor>
 
         <mule-descriptor name="PipelineProgressionRunnerUMO"
@@ -140,7 +140,7 @@
             <inbound-router>
                 <endpoint type="receiver" address="JobMQ" transformers="JMSMessageToJob"
                         responseTransformers="NoOpTransformer" connector="jmsConnectorState">
-                    <transaction action="ALWAYS_BEGIN" factory="org.mule.providers.jms.JmsTransactionFactory" />
+                    <!--<transaction action="ALWAYS_BEGIN" factory="org.mule.providers.jms.JmsTransactionFactory" />-->
                     <filter className="org.labkey.pipeline.mule.filters.TaskStatusJmsSelectorFilter">
                         <properties>
                             <property name="status" value="complete"/>
@@ -158,8 +158,8 @@
                 </router>
             </outbound-router>
 
-            <threading-profile maxThreadsActive="4" maxThreadsIdle="0" threadTTL="100"/>
-            <pooling-profile maxActive="4" maxIdle="0" initialisationPolicy="INITIALISE_NONE"/>
+            <threading-profile maxThreadsActive="1" maxThreadsIdle="0" threadTTL="100"/>
+            <pooling-profile maxActive="1" maxIdle="0" initialisationPolicy="INITIALISE_NONE"/>
         </mule-descriptor>
 
         <mule-descriptor name="PipelineStatusSetterUMO"
@@ -167,12 +167,12 @@
             <inbound-router>
                 <endpoint type="receiver" address="StatusMQ" transformers="JMSMessageToXML XMLToStatus"
                         responseTransformers="NoOpTransformer" connector="jmsConnectorState">
-                    <transaction action="ALWAYS_BEGIN" factory="org.mule.providers.jms.JmsTransactionFactory" />
+                    <!--<transaction action="ALWAYS_BEGIN" factory="org.mule.providers.jms.JmsTransactionFactory" />-->
                 </endpoint>
             </inbound-router>
 
-            <threading-profile maxThreadsActive="4" maxThreadsIdle="0" threadTTL="100"/>
-            <pooling-profile maxActive="4" maxIdle="0" initialisationPolicy="INITIALISE_NONE"/>
+            <threading-profile maxThreadsActive="1" maxThreadsIdle="0" threadTTL="100"/>
+            <pooling-profile maxActive="1" maxIdle="0" initialisationPolicy="INITIALISE_NONE"/>
         </mule-descriptor>
     </model>
 </mule-configuration>

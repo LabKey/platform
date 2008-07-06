@@ -52,7 +52,7 @@ import java.util.ArrayList;
 public class EPipelineQueueImpl implements PipelineQueue
 {
     private static Logger _log = Logger.getLogger(EPipelineQueueImpl.class);
-    public static final String PIPELINE_QUEUE_NAME = "PipelineQueue";
+    private static final String PIPELINE_QUEUE_NAME = "PipelineQueue";
 
     private static ThreadLocal<List<PipelineJob>> _outboundJobs = new ThreadLocal<List<PipelineJob>>();
 
@@ -160,8 +160,7 @@ public class EPipelineQueueImpl implements PipelineQueue
         {
             try
             {
-                MuleClient client = new MuleClient();
-                client.dispatch(PIPELINE_QUEUE_NAME, job, null);
+                dispatchJob(job);
             }
             catch (UMOException e)
             {
@@ -176,5 +175,23 @@ public class EPipelineQueueImpl implements PipelineQueue
                 _outboundJobs.set(new ArrayList<PipelineJob>());
             _outboundJobs.get().add(job);
         }
+    }
+
+    public static void dispatchJob(PipelineJob job) throws UMOException
+    {
+        MuleClient client = null;
+        try
+        {
+            client = new MuleClient();
+            client.dispatch(EPipelineQueueImpl.PIPELINE_QUEUE_NAME, job, null);
+        }
+        finally
+        {
+            if (client != null)
+            {
+                client.dispose();
+                RequestContext.clear();
+            }
+        }        
     }
 }

@@ -62,7 +62,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
 
     private ApplicationProperties _appProperties;
     private ConfigProperties _configProperties;
-    private MuleServerProperties _muleServerProperties;
+    private RemoteServerProperties _remoteServerProperties;
     private GlobusClientProperties _globusClientProperties;
 
     private PipelineStatusFile.StatusWriter _statusWriter;
@@ -84,7 +84,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
 
             _appProperties = current._appProperties;
             _configProperties = current._configProperties;
-            _muleServerProperties = current._muleServerProperties;
+            _remoteServerProperties = current._remoteServerProperties;
             _globusClientProperties = current._globusClientProperties;
             _statusWriter = current._statusWriter;
             _workDirFactory = current._workDirFactory;
@@ -264,14 +264,14 @@ public class PipelineJobServiceImpl extends PipelineJobService
         _configProperties = configProperties;
     }
 
-    public MuleServerProperties getMuleServerProperties()
+    public RemoteServerProperties getRemoteServerProperties()
     {
-        return _muleServerProperties;
+        return _remoteServerProperties;
     }
 
-    public void setMuleServerProperties(MuleServerProperties muleServerProperties)
+    public void setRemoteServerProperties(RemoteServerProperties remoteServerProperties)
     {
-        _muleServerProperties = muleServerProperties;
+        _remoteServerProperties = remoteServerProperties;
     }
 
     public GlobusClientProperties getGlobusClientProperties()

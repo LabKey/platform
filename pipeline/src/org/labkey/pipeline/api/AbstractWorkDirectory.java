@@ -158,6 +158,14 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
     private void outputFile(File fileWork, File fileDest) throws IOException
     {
         NetworkDrive.ensureDrive(fileDest.getAbsolutePath());
+        if (!fileWork.exists())
+        {
+            // If the work file does not exist, and the destination does
+            // assume the task wrote to the desired location.
+            if (fileDest.exists())
+                return;
+            throw new FileNotFoundException("Failed to find expected output " + fileWork);
+        }
         ensureDescendent(fileWork);
         File fileReplace = null;
         CopyingResource resource = null;
@@ -217,7 +225,19 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         _copiedInputs.clear();
 
         if (!_dir.delete())
-            throw new IOException("Failed to remove work directory " + _dir);
+        {
+            StringBuffer message = new StringBuffer();
+            message.append("Failed to remove work directory ").append(_dir);
+            File[] files = _dir.listFiles();
+            if (files.length > 0)
+            {
+                message.append(" unexpected files found:");
+                for (File f : files)
+                    message.append("\n").append(f.getName());
+            }
+
+            throw new IOException(message.toString());
+        }
     }
 
     private void ensureDescendent(File fileWork) throws IOException

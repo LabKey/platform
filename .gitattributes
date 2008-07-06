@@ -954,7 +954,7 @@ pipeline/src/org/labkey/pipeline/api/properties/ApplicationPropertiesImpl.java -
 pipeline/src/org/labkey/pipeline/api/properties/ApplicationPropertiesSiteSettings.java -text
 pipeline/src/org/labkey/pipeline/api/properties/ConfigPropertiesImpl.java -text
 pipeline/src/org/labkey/pipeline/api/properties/GlobusClientPropertiesImpl.java -text
-pipeline/src/org/labkey/pipeline/api/properties/MuleServerPropertiesImpl.java -text
+pipeline/src/org/labkey/pipeline/api/properties/RemoteServerPropertiesImpl.java -text
 pipeline/src/org/labkey/pipeline/browse/BrowseViewImpl.java -text
 pipeline/src/org/labkey/pipeline/browse/browse.jsp -text
 pipeline/src/org/labkey/pipeline/cluster/ClusterJobRunner.java -text
@@ -972,10 +972,13 @@ pipeline/src/org/labkey/pipeline/mule/PipelineJobRunnerGlobus.java -text
 pipeline/src/org/labkey/pipeline/mule/PipelineProgressionRunner.java -text
 pipeline/src/org/labkey/pipeline/mule/PipelineStatusSetter.java -text
 pipeline/src/org/labkey/pipeline/mule/PipelineTaskRunner.java -text
-pipeline/src/org/labkey/pipeline/mule/config/muleConfig.xml -text
+pipeline/src/org/labkey/pipeline/mule/config/remoteMuleConfig.xml -text
+pipeline/src/org/labkey/pipeline/mule/config/webserverMuleConfig.xml -text
+pipeline/src/org/labkey/pipeline/mule/filters/AbstractTaskJmsSelectorFilter.java -text
 pipeline/src/org/labkey/pipeline/mule/filters/JobIncompleteFilter.java -text
 pipeline/src/org/labkey/pipeline/mule/filters/JobRunJmsSelectorFilter.java -text
 pipeline/src/org/labkey/pipeline/mule/filters/TaskJmsSelectorFilter.java -text
+pipeline/src/org/labkey/pipeline/mule/filters/TaskRemoteServerJmsSelectorFilter.java -text
 pipeline/src/org/labkey/pipeline/mule/filters/TaskStatusJmsSelectorFilter.java -text
 pipeline/src/org/labkey/pipeline/mule/routing/EPipelineQueueMessageSplitter.java -text
 pipeline/src/org/labkey/pipeline/mule/transformers/AbstractMuleSingleValueConverter.java -text

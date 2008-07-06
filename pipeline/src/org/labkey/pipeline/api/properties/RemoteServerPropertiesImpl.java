@@ -17,17 +17,24 @@
 package org.labkey.pipeline.api.properties;
 
 import org.labkey.api.pipeline.PipelineJobService;
-import org.labkey.pipeline.xstream.PathMapper;
-
-import java.util.Map;
-import java.io.File;
 
 /**
- * <code>MuleServerPropertiesImpl</code> used for Spring configuration.
+ * <code>RemoteServerPropertiesImpl</code> used for Spring configuration.
  */
-public class MuleServerPropertiesImpl implements PipelineJobService.MuleServerProperties
+public class RemoteServerPropertiesImpl implements PipelineJobService.RemoteServerProperties
 {
+    private String _location;
     private String _muleConfig;
+
+    public String getLocation()
+    {
+        return _location;
+    }
+
+    public void setLocation(String location)
+    {
+        _location = location;
+    }
 
     public String getMuleConfig()
     {
