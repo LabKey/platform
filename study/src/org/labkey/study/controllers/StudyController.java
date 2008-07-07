@@ -72,7 +72,6 @@ import org.labkey.study.query.DataSetQueryView;
 import org.labkey.study.query.PublishedRecordQueryView;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.reports.*;
-import org.labkey.study.view.DataHeader;
 import org.labkey.study.visitmanager.VisitManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -728,11 +727,18 @@ public class StudyController extends BaseStudyController
             }
 
             CustomParticipantView customParticipantView = StudyManager.getInstance().getCustomParticipantView(StudyManager.getInstance().getStudy(getContainer()));
-            HttpView participantView;
+            ModelAndView participantView;
             if (customParticipantView != null && customParticipantView.isActive())
+            {
                 participantView = new HtmlView(customParticipantView.getBody());
+            }
             else
-                participantView = StudyManager.getInstance().getParticipantView(getContainer(), form, errors);
+            {
+                ModelAndView characteristicsView = StudyManager.getInstance().getParticipantCharacteristicsView(getContainer(), form, errors);
+                ModelAndView dataView = StudyManager.getInstance().getParticipantView(getContainer(), form, errors);
+
+                participantView = new VBox(characteristicsView, dataView);
+            }
 
             ParticipantNavView navView = new ParticipantNavView(previousParticipantURL, nextParticiapantURL, form.getParticipantId());
 

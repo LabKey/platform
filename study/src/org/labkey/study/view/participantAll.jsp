@@ -176,6 +176,12 @@
         {
             if (!all.getDataSetIds().contains(dataSet.getDataSetId()))
                 continue;
+
+            // Do not display demographic data here. That goes in a separate web part,
+            // the participant characteristics
+            if (dataSet.isDemographicData())
+                continue;
+
             String typeURI = dataSet.getTypeURI();
             if (null == typeURI)
                 continue;

@@ -79,7 +79,7 @@ String styleTH=" style=\"border-right:solid 1px " + borderColor + "; border-top:
         String renderDatasets(ViewContext ctx, List<DataSetDefinition> datasets, int startIndex, int endIndex)
         {
             StringBuffer sb = new StringBuffer();
-            if (startIndex >= datasets.size())
+            if (startIndex >= datasets.size() || startIndex >= endIndex)
                 return "";
 
             String category = startIndex == 0 ? null : datasets.get(startIndex-1).getCategory();
