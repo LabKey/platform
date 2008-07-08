@@ -112,9 +112,12 @@ public class DatasetController extends BaseStudyController
             DataRegion dataRegion = view.getDataRegion();
             dataRegion.addHiddenFormField("datasetId", Integer.toString(form.getDatasetId()));
 
-            String referer = HttpView.currentRequest().getHeader("Referer");
+            String referer = form.getReturnURL();
+            if (referer == null)
+                referer = HttpView.currentRequest().getHeader("Referer");
 
             ActionURL cancelURL;
+
             if (referer == null)
             {
                 cancelURL = new ActionURL(StudyController.DatasetAction.class, getContainer());
