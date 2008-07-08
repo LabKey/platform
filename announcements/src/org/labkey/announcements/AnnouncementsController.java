@@ -2220,8 +2220,6 @@ public class AnnouncementsController extends SpringActionController
 
             private ListBean(Container c, ActionURL url, User user, Settings settings, Permissions perm, boolean displayAll)
             {
-                url = PageFlowUtil.expandLastFilter(url);
-
                 SimpleFilter urlFilter = new SimpleFilter(url, "Threads");
                 boolean isFiltered = !urlFilter.getWhereParamNames().isEmpty();
 

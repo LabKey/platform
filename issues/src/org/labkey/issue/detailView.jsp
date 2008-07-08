@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.issue.IssuePage"%>
 <%@ page import="org.labkey.issue.IssuesController"%>
 <%@ page import="org.labkey.issue.model.Issue" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<IssuePage> me = (JspView<IssuePage>) HttpView.currentView();
@@ -36,8 +37,8 @@
 %>
 <form name="jumpToIssue" action="jumpToIssue.view" method="get">
     <table border=0 cellspacing=2 cellpadding=2><tr>
-    <td><%= textLink("new issue", IssuesController.issueURL(context.getContainer(), "insert").addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
-    <td><%= textLink("view grid", IssuesController.issueURL(context.getContainer(), "list").addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
+    <td><%= textLink("new issue", PageFlowUtil.getLastFilter(context, IssuesController.issueURL(context.getContainer(), "insert")))%></td>
+    <td><%= textLink("view grid", PageFlowUtil.getLastFilter(context, IssuesController.issueURL(context.getContainer(), "list")))%></td>
     <td><%= textLink("update", IssuesController.issueURL(context.getContainer(), "update").addParameter("issueId", issueId))%></td><%
 
     if (issue.getStatus().equals(Issue.statusOPEN))

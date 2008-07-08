@@ -96,7 +96,7 @@ public class DataHeader extends HttpView
 
         // output all URL parameters that are on the current URL as hidden fields.  we may not need them all,
         // but this guarantees that we get all sort and filter parameters.
-        ActionURL sortFilterURL = PageFlowUtil.expandLastFilter(_currentUrl);
+        ActionURL sortFilterURL = _currentUrl.clone();
         for (Pair<String, String> parameter : sortFilterURL.getParameters())
         {
             if (!"Dataset.viewName".equalsIgnoreCase(parameter.getKey()) &&
