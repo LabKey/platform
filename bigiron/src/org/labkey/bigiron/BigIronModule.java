@@ -27,7 +27,7 @@ public class BigIronModule extends DefaultModule
 
     public BigIronModule()
     {
-        super(NAME, 0.01, null, false);
+        super(NAME, 8.20, null, false);
         SqlDialect.register(new SqlDialectMicrosoftSQLServer());
         SqlDialect.register(new SqlDialectMicrosoftSQLServer9());
     }

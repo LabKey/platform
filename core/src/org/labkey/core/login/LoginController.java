@@ -571,6 +571,12 @@ public class LoginController extends SpringActionController
         public boolean doAction(Object o, BindException errors) throws Exception
         {
             SecurityManager.logoutUser(getViewContext().getRequest());
+
+            String redirect = getViewContext().getActionURL().getParameter(ReturnUrlForm.Params.returnUrl);
+
+            if (null != redirect)
+                HttpView.throwRedirect(redirect);
+
             return true;
         }
 

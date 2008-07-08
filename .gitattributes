@@ -438,6 +438,7 @@ experiment/src/META-INF/experiment/scripts/postgresql/exp-2.31-2.32.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-2.32-2.33.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-2.33-2.34.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-8.10-8.11.sql -text
+experiment/src/META-INF/experiment/scripts/postgresql/exp-8.10-8.20.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp_drop.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/findOrphans.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/obsolete/exp-0.00-0.63.sql -text
@@ -502,6 +503,7 @@ experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-2.31-2.32.sql -te
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-2.32-2.33.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-2.33-2.34.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.10-8.11.sql -text
+experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.10-8.20.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.11-8.12.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp_drop.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/findOrphans.sql -text
@@ -742,6 +744,7 @@ issues/src/META-INF/issues/scripts/postgresql/issues-1.70-2.00.sql -text
 issues/src/META-INF/issues/scripts/postgresql/issues-2.30-2.31.sql -text
 issues/src/META-INF/issues/scripts/postgresql/issues-2.30-8.10.sql -text
 issues/src/META-INF/issues/scripts/postgresql/issues-8.10-8.11.sql -text
+issues/src/META-INF/issues/scripts/postgresql/issues-8.10-8.20.sql -text
 issues/src/META-INF/issues/scripts/postgresql/obsolete/issues-0.00-0.60.sql -text
 issues/src/META-INF/issues/scripts/postgresql/obsolete/issues-1.60-1.61.sql -text
 issues/src/META-INF/issues/scripts/postgresql/obsolete/issues-1.70-1.71.sql -text
@@ -753,6 +756,7 @@ issues/src/META-INF/issues/scripts/sql[!!-~]server/issues-1.70-2.00.sql -text
 issues/src/META-INF/issues/scripts/sql[!!-~]server/issues-2.30-2.31.sql -text
 issues/src/META-INF/issues/scripts/sql[!!-~]server/issues-2.30-8.10.sql -text
 issues/src/META-INF/issues/scripts/sql[!!-~]server/issues-8.10-8.11.sql -text
+issues/src/META-INF/issues/scripts/sql[!!-~]server/issues-8.10-8.20.sql -text
 issues/src/META-INF/issues/scripts/sql[!!-~]server/obsolete/cpas-0.00-0.58.sql -text
 issues/src/META-INF/issues/scripts/sql[!!-~]server/obsolete/cpas-0.00-0.70.sql -text
 issues/src/META-INF/issues/scripts/sql[!!-~]server/obsolete/cpas-0.00-0.81.sql -text
@@ -1267,6 +1271,7 @@ query/src/META-INF/query/scripts/postgresql/query-1.60-1.70.sql -text
 query/src/META-INF/query/scripts/postgresql/query-1.70-2.00.sql -text
 query/src/META-INF/query/scripts/postgresql/query-2.10-2.20.sql -text
 query/src/META-INF/query/scripts/postgresql/query-8.10-8.11.sql -text
+query/src/META-INF/query/scripts/postgresql/query-8.10-8.20.sql -text
 query/src/META-INF/query/scripts/sql[!!-~]server/obsolete/query-1.51-1.52.sql -text
 query/src/META-INF/query/scripts/sql[!!-~]server/obsolete/query-1.60-1.61.sql -text
 query/src/META-INF/query/scripts/sql[!!-~]server/obsolete/query-1.70-1.71.sql -text
@@ -1275,6 +1280,7 @@ query/src/META-INF/query/scripts/sql[!!-~]server/query-1.60-1.70.sql -text
 query/src/META-INF/query/scripts/sql[!!-~]server/query-1.70-2.00.sql -text
 query/src/META-INF/query/scripts/sql[!!-~]server/query-2.10-2.20.sql -text
 query/src/META-INF/query/scripts/sql[!!-~]server/query-8.10-8.11.sql -text
+query/src/META-INF/query/scripts/sql[!!-~]server/query-8.10-8.20.sql -text
 query/src/org/labkey/query/CustomViewImpl.java -text
 query/src/org/labkey/query/QueryDefinitionImpl.java -text
 query/src/org/labkey/query/QueryModule.java -text
@@ -1555,6 +1561,7 @@ study/src/META-INF/study/scripts/postgresql/study-2.30-8.10.sql -text
 study/src/META-INF/study/scripts/postgresql/study-2.31-2.32.sql -text
 study/src/META-INF/study/scripts/postgresql/study-2.32-2.33.sql -text
 study/src/META-INF/study/scripts/postgresql/study-2.33-2.34.sql -text
+study/src/META-INF/study/scripts/postgresql/study-8.10-8.20.sql -text
 study/src/META-INF/study/scripts/postgresql/study-8.11-8.12.sql -text
 study/src/META-INF/study/scripts/postgresql/study-8.12-8.13.sql -text
 study/src/META-INF/study/scripts/postgresql/study-8.13-8.14.sql -text
@@ -1633,6 +1640,7 @@ study/src/META-INF/study/scripts/sql[!!-~]server/study-2.31-2.32.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-2.32-2.33.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-2.33-2.34.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-8.10-8.11.sql -text
+study/src/META-INF/study/scripts/sql[!!-~]server/study-8.10-8.20.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-8.11-8.12.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-8.12-8.13.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-8.13-8.14.sql -text

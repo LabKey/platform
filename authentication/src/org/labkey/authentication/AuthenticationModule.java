@@ -38,7 +38,7 @@ public class AuthenticationModule extends DefaultModule
 
     public AuthenticationModule()
     {
-        super(NAME, 8.10, null, false);
+        super(NAME, 8.20, null, false);
         addController("opensso", OpenSSOController.class);
         addController("ldap", LdapController.class);
         AuthenticationManager.registerProvider(new OpenSSOProvider(), Priority.High);

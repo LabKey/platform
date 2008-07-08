@@ -43,7 +43,7 @@ public class PortalModule extends DefaultModule
     {
         // NOTE:  the version number of the portal module does not govern the scripts run for the
         // portal schema.  Bump the core module version number to cause a portal-xxx.sql script to run
-        super(NAME, 8.10, "/org/labkey/portal", false,
+        super(NAME, 8.20, "/org/labkey/portal", false,
             new SearchWebPartFactory("Search", null),
             new SearchWebPartFactory("Search", "right")
         );

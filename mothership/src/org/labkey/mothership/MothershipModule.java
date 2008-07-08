@@ -42,7 +42,7 @@ public class MothershipModule extends DefaultModule
     private static final String NAME = "Mothership";
     public MothershipModule()
     {
-        super(NAME, 8.10, null, true);
+        super(NAME, 8.20, null, true);
         addController("mothership", MothershipController.class);
 
         MothershipSchema.register();

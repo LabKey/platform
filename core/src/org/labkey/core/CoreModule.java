@@ -75,7 +75,7 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
 
     public CoreModule()
     {
-        super(NAME, 8.12, "/org/labkey/core", false,
+        super(NAME, 8.20, "/org/labkey/core", false,
             new WebPartFactory("Contacts")
             {
                 public WebPartView getWebPartView(ViewContext ctx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
@@ -274,24 +274,39 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
                 map.put("PrincipalTemplate", props.get("LDAPPrincipalTemplate"));
                 map.put("SASL", props.get("LDAPAuthentication"));
                 PropertyManager.saveProperties(map);
+                saveAuthenticationProviders(true);
             }
             else
             {
-                PropertyManager.PropertyMap map = PropertyManager.getWritableProperties("Authentication", true);
-                String activeAuthProviders = map.get("Authentication");
-
-                if (null != activeAuthProviders)
-                {
-                    String disableLdap = activeAuthProviders.replaceFirst("LDAP:", "").replaceFirst(":LDAP", "").replaceFirst("LDAP", "");
-                    map.put("Authentication", disableLdap);
-                    PropertyManager.saveProperties(map);
-                }
+                saveAuthenticationProviders(false);
             }
         }
         catch (SQLException e)
         {
             ExceptionUtil.logExceptionToMothership(null, e);
         }
+    }
+
+    private static void saveAuthenticationProviders(boolean enableLdap)
+    {
+        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties("Authentication", true);
+        String activeAuthProviders = map.get("Authentication");
+
+        if (null == activeAuthProviders)
+            activeAuthProviders = "Database";
+
+        if (enableLdap)
+        {
+            if (!activeAuthProviders.contains("LDAP"))
+                activeAuthProviders = activeAuthProviders + ":LDAP";
+        }
+        else
+        {
+            activeAuthProviders = activeAuthProviders.replaceFirst("LDAP:", "").replaceFirst(":LDAP", "").replaceFirst("LDAP", "");
+        }
+
+        map.put("Authentication", activeAuthProviders);
+        PropertyManager.saveProperties(map);
     }
 
     private void upgradeTo174() throws NamingException, SQLException

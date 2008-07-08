@@ -136,15 +136,22 @@ public class TsvAssayProvider extends AbstractAssayProvider
             Container sourceContainer = null;
             for (OntologyObject row : dataRows)
             {
-                boolean hasDateColumn = false;
                 Map<String, Object> dataMap = new HashMap<String, Object>();
                 Map<String, Object> rowProperties = OntologyManager.getProperties(row.getContainer(), row.getObjectURI());
                 PropertyDescriptor[] rowPropertyDescriptors = getRunDataColumns(protocol);
                 for (PropertyDescriptor pd : rowPropertyDescriptors)
                 {
-                    if (!PARTICIPANTID_PROPERTY_NAME.equals(pd.getName()) && !VISITID_PROPERTY_NAME.equals(pd.getName()) && !DATE_PROPERTY_NAME.equals(pd.getName()))
+                    // We should skip properties that are set by the resolver: participantID,
+                    // and either date or visit, depending on the type of study
+                    boolean skipProperty = PARTICIPANTID_PROPERTY_NAME.equals(pd.getName());
+
+                    if (TimepointType.DATE == studyType)
+                            skipProperty = skipProperty || DATE_PROPERTY_NAME.equals(pd.getName());
+                    else // it's visit-based
+                        skipProperty = skipProperty || VISITID_PROPERTY_NAME.equals(pd.getName());
+
+                    if (!skipProperty)
                         addProperty(pd, rowProperties.get(pd.getPropertyURI()), dataMap, typeList);
-                    hasDateColumn = hasDateColumn || DATE_PROPERTY_NAME.equals(pd.getName());
                 }
 
                 ExpRun run = runCache.get(row.getOwnerObjectId());

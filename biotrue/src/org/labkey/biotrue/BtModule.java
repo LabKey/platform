@@ -36,7 +36,7 @@ public class BtModule extends DefaultModule
     static public final String NAME = "BioTrue";
     public BtModule()
     {
-        super(NAME, 8.10, null, true, BtOverviewWebPart.FACTORY);
+        super(NAME, 8.20, null, true, BtOverviewWebPart.FACTORY);
         addController("biotrue", BtController.class);
         DefaultSchema.registerProvider("biotrue", BtSchema.PROVIDER);
     }
