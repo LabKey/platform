@@ -734,7 +734,7 @@ public class StudyController extends BaseStudyController
             }
             else
             {
-                ModelAndView characteristicsView = StudyManager.getInstance().getParticipantCharacteristicsView(getContainer(), form, errors);
+                ModelAndView characteristicsView = StudyManager.getInstance().getParticipantDemographicsView(getContainer(), form, errors);
                 ModelAndView dataView = StudyManager.getInstance().getParticipantView(getContainer(), form, errors);
 
                 participantView = new VBox(characteristicsView, dataView);

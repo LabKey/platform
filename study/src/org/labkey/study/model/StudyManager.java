@@ -2429,7 +2429,7 @@ public class StudyManager
         return new BaseStudyController.StudyJspView<ParticipantViewConfig>(getStudy(container), "participantAll.jsp", config, errors);
     }
 
-    public WebPartView<ParticipantViewConfig> getParticipantCharacteristicsView(Container container, ParticipantViewConfig config, BindException errors)
+    public WebPartView<ParticipantViewConfig> getParticipantDemographicsView(Container container, ParticipantViewConfig config, BindException errors)
     {
         return new BaseStudyController.StudyJspView<ParticipantViewConfig>(getStudy(container), "participantCharacteristics.jsp", config, errors);
     }

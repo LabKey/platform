@@ -37,6 +37,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.study.controllers.DatasetController" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page import="org.labkey.study.model.DataSetDefinition" %>
@@ -44,7 +45,6 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.reports.StudyChartQueryReport" %>
 <%@ page import="java.util.Collections" %>
-<%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
@@ -75,6 +75,7 @@
     DataSetDefinition[] datasets = manager.getDataSetDefinitions(study);
     Map<Integer, String> expandedMap = StudyController.getExpandedState(context, bean.getDatasetId());
     boolean updateAccess = study.getContainer().hasPermission(user, ACL.PERM_UPDATE);
+    boolean editAccess = updateAccess && study.isDatasetRowsEditable();
 
     String shadeColor = "#EEEEEE";
 // UNDONE: move into stylesheet
@@ -140,15 +141,6 @@
                 <%
             }
 
-            if (updateAccess)
-            {
-                %>
-                <tr style="<%=expanded ? "" : "display:none"%>">
-                    <td colspan="2" class="studyShaded">[<a href="<%=url.replaceParameter("queryName", dataSet.getLabel()).replaceParameter("datasetId", String.valueOf(datasetId))%>">add chart</a>]</td>
-                </tr>
-                <%
-            }
-
             int row = 0;
 
             // Cache the request for data, so that we don't have to repeat this query
@@ -179,8 +171,37 @@
 
             if (datasetRow == null)
             {
-                // TODO: display "[add]" to add a new entry for this participant
+                if (editAccess)
+                {
+                    ActionURL addAction = new ActionURL(DatasetController.InsertAction.class, context.getContainer());
+                    addAction.addParameter("datasetId", datasetId);
+                    addAction.addParameter("quf_participantid", bean.getParticipantId());
+                    
+                    %><td colspan="2" class="studyShaded">[<a href="<%=addAction.getLocalURIString()%>">add</a>]</td> <%
+                }
+
                 continue;
+            }
+
+            if (updateAccess)
+            {
+                %>
+                <tr style="<%=expanded ? "" : "display:none"%>">
+                    <td colspan="2" class="studyShaded">
+                        [<a href="<%=url.replaceParameter("queryName", dataSet.getLabel()).replaceParameter("datasetId", String.valueOf(datasetId))%>">add chart</a>]
+                        <%
+                            if (editAccess)
+                            {
+                                ActionURL editAction = new ActionURL(DatasetController.UpdateAction.class, context.getContainer());
+                                editAction.addParameter("datasetId", datasetId);
+                                editAction.addParameter("lsid", lsid);
+                                
+                                %> [<a href="<%=editAction.getLocalURIString()%>">edit data</a>]<%
+                            }
+                        %>
+                    </td>
+                </tr>
+                <%
             }
 
             for (PropertyDescriptor pd : pds)

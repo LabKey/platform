@@ -39,7 +39,6 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
 import java.io.PrintWriter;
 import java.util.*;
 
@@ -88,6 +87,8 @@ public class DatasetController extends BaseStudyController
 
     public abstract class InsertUpdateAction extends FormViewAction<EditDatasetRowForm>
     {
+        private ActionURL successURL;
+
         protected abstract boolean isInsert();
         protected abstract NavTree appendExtraNavTrail(NavTree root);
 
@@ -105,16 +106,30 @@ public class DatasetController extends BaseStudyController
             }
 
             TableInfo datasetTable = ds.getTableInfo(getUser());
-            DatasetQueryUpdateForm updateForm = new DatasetQueryUpdateForm(datasetTable, getViewContext().getRequest());
+            QueryUpdateForm updateForm = new QueryUpdateForm(datasetTable, getViewContext().getRequest());
 
             UpdateView view = new UpdateView(updateForm, errors);
             DataRegion dataRegion = view.getDataRegion();
             dataRegion.addHiddenFormField("datasetId", Integer.toString(form.getDatasetId()));
-            ActionURL cancelURL = new ActionURL(StudyController.DatasetAction.class, getContainer());
-            cancelURL.addParameter("datasetId", form.getDatasetId());
+
+            String referer = HttpView.currentRequest().getHeader("Referer");
+
+            ActionURL cancelURL;
+            if (referer == null)
+            {
+                cancelURL = new ActionURL(StudyController.DatasetAction.class, getContainer());
+                cancelURL.addParameter("datasetId", form.getDatasetId());
+            }
+            else
+            {
+                cancelURL = new ActionURL(referer);
+                dataRegion.addHiddenFormField("returnURL", referer);
+            }
             ButtonBar buttonBar = dataRegion.getButtonBar(DataRegion.MODE_UPDATE);
             buttonBar = new ButtonBar(buttonBar); // need to copy since the original is read-only
-            buttonBar.add(1, new ActionButton(cancelURL.getLocalURIString(), "Cancel", DataRegion.MODE_UPDATE, ActionButton.Action.GET));
+            ActionButton cancelButton = new ActionButton(cancelURL.getLocalURIString(), "Cancel", DataRegion.MODE_UPDATE, ActionButton.Action.GET);
+            cancelButton.setURL(cancelURL);
+            buttonBar.add(1, cancelButton);
             if (isInsert())
             {
                 // Need to update the URL to be the insert action
@@ -156,7 +171,7 @@ public class DatasetController extends BaseStudyController
             }
 
             TableInfo datasetTable = ds.getTableInfo(getUser());
-            DatasetQueryUpdateForm updateForm = new DatasetQueryUpdateForm(datasetTable, getViewContext().getRequest());
+            QueryUpdateForm updateForm = new QueryUpdateForm(datasetTable, getViewContext().getRequest());
             updateForm.populateValues(errors);
 
             if (errors.hasErrors())
@@ -198,7 +213,7 @@ public class DatasetController extends BaseStudyController
 
         // query update forms have all user data stored with the prefix "quf_".
         // Clear that off and return only the user data
-        private Map<String,Object> getDataMap(DatasetQueryUpdateForm form)
+        private Map<String,Object> getDataMap(QueryUpdateForm form)
         {
             Map<String,Object> data = new HashMap<String,Object>();
             for (Map.Entry<String,Object> entry : form.getTypedValues().entrySet())
@@ -215,6 +230,9 @@ public class DatasetController extends BaseStudyController
 
         public ActionURL getSuccessURL(EditDatasetRowForm form)
         {
+            if (form.getReturnURL() != null)
+                return new ActionURL(form.getReturnURL());
+            
             ActionURL url = new ActionURL(StudyController.DatasetAction.class, getContainer());
             url.addParameter("datasetId", form.getDatasetId());
             return url;
@@ -400,19 +418,14 @@ public class DatasetController extends BaseStudyController
     {
         private String lsid;
         private int datasetId;
+        private String returnURL;
 
         public String getLsid() {return lsid;}
         public void setLsid(String lsid) {this.lsid = lsid;}
         public int getDatasetId() {return datasetId;}
         public void setDatasetId(int datasetId) {this.datasetId = datasetId;}
-    }
-
-    public static class DatasetQueryUpdateForm extends QueryUpdateForm
-    {
-        public DatasetQueryUpdateForm(TableInfo table, HttpServletRequest request)
-        {
-            super(table, request);
-        }
+        public String getReturnURL() {return returnURL;}
+        public void setReturnURL(String returnURL) {this.returnURL = returnURL;}
     }
 
     public static class DatasetAuditHistoryForm

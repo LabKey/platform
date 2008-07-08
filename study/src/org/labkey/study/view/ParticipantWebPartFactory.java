@@ -129,7 +129,7 @@ public class ParticipantWebPartFactory extends WebPartFactory
         };
 
         if (type == DataType.DEMOGRAPHIC)
-            return StudyManager.getInstance().getParticipantCharacteristicsView(container, config, null);
+            return StudyManager.getInstance().getParticipantDemographicsView(container, config, null);
 
         if (type == DataType.NON_DEMOGRAPHIC)
             return StudyManager.getInstance().getParticipantView(container,config);
@@ -137,7 +137,7 @@ public class ParticipantWebPartFactory extends WebPartFactory
         assert type == DataType.ALL : "Unrecognized DataType: " + type;
 
         VBox vbox = new VBox();
-        vbox.addView(StudyManager.getInstance().getParticipantCharacteristicsView(container, config, null));
+        vbox.addView(StudyManager.getInstance().getParticipantDemographicsView(container, config, null));
         vbox.addView(StudyManager.getInstance().getParticipantView(container,config));
         return vbox;
     }
