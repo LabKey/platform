@@ -666,7 +666,7 @@ public class StudyController extends BaseStudyController
                 Map<Integer, String> expandedMap = getExpandedState(getViewContext(), Integer.parseInt(id));
                 // collapse param is only set on a collapse action
                 if (collapse != null)
-                    expandedMap.remove(Integer.parseInt(datasetId));
+                    expandedMap.put(Integer.parseInt(datasetId), "collapse");
                 else
                     expandedMap.put(Integer.parseInt(datasetId), "expand");
             }
@@ -3912,6 +3912,8 @@ public class StudyController extends BaseStudyController
             "    var datasetId = LABKEY.ActionURL.getParameter('datasetId');\n" +
             "    if (!datasetId)\n" +
             "        datasetId = -1;\n" +
+            "    var dataType = 'ALL';\n" +
+            "    /* Additional options for dataType 'DEMOGRAPHIC' or 'NON_DEMOGRAPHIC'. */" +
             "\n" +
             "    /* create the participant details webpart: */\n" +
             "    var participantWebPart = new LABKEY.WebPart({\n" +
@@ -3921,6 +3923,7 @@ public class StudyController extends BaseStudyController
             "    partConfig: {\n" +
             "        participantId: participantId,\n" +
             "        datasetId: datasetId,\n" +
+            "        dataType: dataType,\n" +     
             "        currentUrl: '' + window.location\n" +
             "        }\n" +
             "    });\n" +

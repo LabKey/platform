@@ -187,7 +187,9 @@
                 continue;
 
             pdKey.datasetId = dataSet.getDataSetId();
-            boolean expanded = expandedMap.containsKey(pdKey.datasetId);
+            boolean expanded = false;
+            if ("expand".equalsIgnoreCase(expandedMap.get(pdKey.datasetId)))
+                expanded = true;
 
             // sort the properties so they appear in the same order as the grid view
             PropertyDescriptor[] pds = sortProperties(StudyController.getParticipantPropsFromCache(HttpView.getRootContext(), typeURI), dataSet, HttpView.getRootContext());

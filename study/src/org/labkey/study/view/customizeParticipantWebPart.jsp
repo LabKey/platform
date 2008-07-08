@@ -15,9 +15,10 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page import="org.labkey.api.view.*" %>
 <%@ page import="org.labkey.study.view.ParticipantWebPartFactory" %>
-<%@ page import="org.labkey.api.study.SpecimenService" %>
+<%@ page import="java.util.EnumSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Portal.WebPart> me = (JspView<Portal.WebPart>) HttpView.currentView();
@@ -26,6 +27,10 @@
     ActionURL postUrl = new ActionURL("Project", "customizeWebPart.post", ctx.getContainer());
     String participantId = bean.getPropertyMap().get(ParticipantWebPartFactory.PARTICIPANT_ID_KEY);
     String ptidCompletionBase = SpecimenService.get().getCompletionURLBase(ctx.getContainer(), SpecimenService.CompletionType.ParticipantId);
+
+    String selectedData = bean.getPropertyMap().get(ParticipantWebPartFactory.DATA_TYPE_KEY);
+    if (selectedData == null)
+        selectedData = ParticipantWebPartFactory.DataType.ALL.name();
 %>
 <script type="text/javascript">LABKEY.requiresScript("completion.js");</script>
 <p>Each participant webpart will display datasets from a single participant.</p>
@@ -36,6 +41,7 @@
             <td>
                 <input type="hidden" name="pageId" value="<%=bean.getPageId()%>">
                 <input type="hidden" name="index" value="<%=bean.getIndex()%>">
+                Participant ID: 
                 <input type="text"
                        name="<%= ParticipantWebPartFactory.PARTICIPANT_ID_KEY %>"
                        value="<%= h(participantId)%>"
@@ -43,6 +49,19 @@
                        onBlur="hideCompletionDiv();"
                        autocomplete="off"
                        onKeyUp="return handleChange(this, event, '<%= ptidCompletionBase %>');">
+                <br/>
+                Data to display:
+                <select name="<%=ParticipantWebPartFactory.DATA_TYPE_KEY%>">
+                    <%
+                        for (ParticipantWebPartFactory.DataType type : EnumSet.allOf(ParticipantWebPartFactory.DataType.class))
+                        {
+                            %>
+                    <option value="<%=type.name()%>"<% if (selectedData.equals(type.name())) out.print(" selected=\"selected\""); %>><%=type.toString()%></option>
+                            <%
+                        }
+                    %>
+
+                </select>
             </td>
         </tr>
     <tr>

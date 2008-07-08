@@ -1,10 +1,10 @@
 package org.labkey.study.view;
 
-import org.labkey.api.view.*;
 import org.labkey.api.data.Container;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.Study;
+import org.labkey.api.view.*;
 import org.labkey.study.model.Participant;
+import org.labkey.study.model.Study;
+import org.labkey.study.model.StudyManager;
 
 import java.sql.SQLException;
 
@@ -28,7 +28,28 @@ import java.sql.SQLException;
  */
 public class ParticipantWebPartFactory extends WebPartFactory
 {
+    public enum DataType
+    {
+        ALL("All Data"),
+        DEMOGRAPHIC("Demographic Data"),
+        NON_DEMOGRAPHIC("Non-Demographic Data");
+
+
+        private final String name;
+
+        DataType(String name)
+        {
+            this.name = name;
+        }
+
+        public String toString()
+        {
+            return name;
+        }
+    }
+
     public static final String PARTICIPANT_ID_KEY = "participantId";
+    public static final String DATA_TYPE_KEY = "dataType";
     public static final String SOURCE_DATASET_ID_KEY = "datasetId";
     public static final String CURRENT_URL_KEY = "currentUrl";
 
@@ -42,6 +63,22 @@ public class ParticipantWebPartFactory extends WebPartFactory
         String participantId = webPart.getPropertyMap().get(PARTICIPANT_ID_KEY);
         String currentUrl = webPart.getPropertyMap().get(CURRENT_URL_KEY);
         String sourceDatasetIdString = webPart.getPropertyMap().get(SOURCE_DATASET_ID_KEY);
+
+        String dataTypeString = webPart.getPropertyMap().get(DATA_TYPE_KEY);
+        DataType dataType = DataType.ALL; // We default to showing ALL
+        if (dataTypeString != null)
+        {
+            try
+            {
+                dataType = DataType.valueOf(dataTypeString);
+            }
+            catch (IllegalArgumentException iae)
+            {
+                // Do nothing -- this can be called via user-edited javascript.
+                // If we can't figure out what it is, display "ALL".
+            }
+        }
+
         int sourceDatasetId = -1;
         try
         {
@@ -52,12 +89,17 @@ public class ParticipantWebPartFactory extends WebPartFactory
         {
             // fall through; the default of -1 is fine.
         }
-        WebPartView view = createView(portalCtx.getContainer(), participantId, sourceDatasetId, currentUrl);
+        WebPartView view = createView(portalCtx.getContainer(), participantId, sourceDatasetId, currentUrl, dataType);
+        view.setFrame(WebPartView.FrameType.PORTAL);
         view.setTitle("Participant " + (participantId != null ? participantId : "unknown"));
         return view;
     }
 
-    private WebPartView createView(Container container, final String participantId, final int sourceDatasetId, final String currentUrl) throws SQLException
+    private WebPartView createView(Container container,
+                                   final String participantId,
+                                   final int sourceDatasetId,
+                                   final String currentUrl,
+                                   DataType type) throws SQLException
     {
         if (participantId == null)
             return new HtmlView("This webpart does not reference a valid participant ID.  Please customize the webpart.");
@@ -68,7 +110,7 @@ public class ParticipantWebPartFactory extends WebPartFactory
         if (participant == null)
             return new HtmlView("Participant \"" + participantId + "\" does not exist in study \"" + study.getLabel() + "\".");
 
-        return StudyManager.getInstance().getParticipantView(container, new StudyManager.ParticipantViewConfig()
+        StudyManager.ParticipantViewConfig config = new StudyManager.ParticipantViewConfig()
         {
             public String getParticipantId()
             {
@@ -84,8 +126,22 @@ public class ParticipantWebPartFactory extends WebPartFactory
             {
                 return currentUrl;
             }
-        });
+        };
+
+        if (type == DataType.DEMOGRAPHIC)
+            return StudyManager.getInstance().getParticipantCharacteristicsView(container, config, null);
+
+        if (type == DataType.NON_DEMOGRAPHIC)
+            return StudyManager.getInstance().getParticipantView(container,config);
+
+        assert type == DataType.ALL : "Unrecognized DataType: " + type;
+
+        VBox vbox = new VBox();
+        vbox.addView(StudyManager.getInstance().getParticipantCharacteristicsView(container, config, null));
+        vbox.addView(StudyManager.getInstance().getParticipantView(container,config));
+        return vbox;
     }
+
 
     @Override
     public HttpView getEditView(Portal.WebPart webPart)
