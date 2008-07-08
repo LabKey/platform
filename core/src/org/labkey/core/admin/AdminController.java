@@ -685,13 +685,12 @@ public class AdminController extends SpringActionController
             @Override
             protected void renderInternal(Object model, PrintWriter out) throws Exception
             {
+                int totalScriptLines = 0;
+
                 out.println("<pre>");
 
                 for (Module module : getModules())
                 {
-                    if (module == ModuleLoader.getInstance().getCoreModule())
-                        continue;
-
                     if (module instanceof DefaultModule)
                     {
                         DefaultModule defModule = (DefaultModule)module;
@@ -705,11 +704,13 @@ public class AdminController extends SpringActionController
                             {
                                 ViewHandler handler = getHandler(provider, schemaName);
                                 handler.handle(out);
+                                totalScriptLines += handler.getScriptLines();
                             }
                         }
                     }
                 }
 
+                out.println("Total lines processed: " + totalScriptLines);
                 out.println("</pre>");
             }
         }

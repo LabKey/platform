@@ -15,13 +15,17 @@
  */
 package org.labkey.core.admin;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.FileSqlScriptProvider;
+import org.labkey.api.data.SqlScriptRunner;
 import org.labkey.api.util.PageFlowUtil;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * User: adam
@@ -33,8 +37,7 @@ public abstract class ViewHandler
     protected FileSqlScriptProvider _provider;
     protected String _schemaName;
     private enum ViewType {DROP, CREATE}
-    private List<String> _createNames = Collections.emptyList();
-    private List<String> _dropNames = Collections.emptyList();
+    private int _scriptLines = 0;
 
     protected Pattern _viewPattern;
 
@@ -71,23 +74,13 @@ public abstract class ViewHandler
         return Pattern.compile(combinedRegEx, Pattern.CASE_INSENSITIVE + Pattern.DOTALL + Pattern.MULTILINE);
     }
 
-    public List<String> getCreateNames()
-    {
-        return _createNames;
-    }
-
-    public List<String> getDropNames()
-    {
-        return _dropNames;
-    }
-
     protected abstract List<SqlScriptRunner.SqlScript> getScripts() throws SqlScriptRunner.SqlScriptException;
     // Called only if one or more VIEW statements exist in this script
-    protected abstract void handleScript(SqlScriptRunner.SqlScript script, Map<String, String> createStatements, Map<String, String> dropStatements, PrintWriter out);
+    protected abstract void handleScript(SqlScriptRunner.SqlScript script, Map<String, String> createStatements, Map<String, String> dropStatements, PrintWriter out) throws IOException;
     // Called only if one or more VIEW statements exist in this schema
-    protected abstract void handleSchema(Map<String, String> createStatements, Map<String, String> dropStatements, PrintWriter out);
+    protected abstract void handleSchema(Map<String, String> createStatements, Map<String, String> dropStatements, PrintWriter out) throws IOException;
 
-    public void handle(PrintWriter out) throws SqlScriptRunner.SqlScriptException
+    public void handle(PrintWriter out) throws SqlScriptRunner.SqlScriptException, IOException
     {
         // These maps are ordered by most recent access, which helps us figure out the dependency order
         Map<String, String> createStatements = new LinkedHashMap<String, String>(10, 0.75f, true);
@@ -145,16 +138,30 @@ public abstract class ViewHandler
                 }
             }
 
-//            if (!createStatements.isEmpty() || !dropStatements.isEmpty())
+            countScriptLines(script);
+
+            if (!createStatements.isEmpty() || !dropStatements.isEmpty())
                 handleScript(script, createStatements, dropStatements, out);
         }
 
         if (!createStatements.isEmpty() || !dropStatements.isEmpty())
         {
-            _createNames = new ArrayList<String>(createStatements.keySet());
-            _dropNames = new ArrayList<String>(dropStatements.keySet());
             handleSchema(createStatements, dropStatements, out);
         }
+    }
+
+    private void countScriptLines(SqlScriptRunner.SqlScript script)
+    {
+        Matcher lineCounter = Pattern.compile("$", Pattern.MULTILINE).matcher(script.getContents());
+
+        while (lineCounter.find())
+            _scriptLines++;
+    }
+
+
+    public int getScriptLines()
+    {
+        return _scriptLines;
     }
 
 
@@ -175,17 +182,18 @@ public abstract class ViewHandler
         // Clear VIEW statements from all current scripts
         protected List<SqlScriptRunner.SqlScript> getScripts() throws SqlScriptRunner.SqlScriptException
         {
-            return SqlScriptRunner.getRecommendedScripts(_provider.getScripts(_schemaName), 0.0, Double.MAX_VALUE);
-//            return _provider.getScripts(_schemaName);
+            return _provider.getScripts(_schemaName);
         }
 
-        protected void handleScript(SqlScriptRunner.SqlScript script, Map<String, String> createStatements, Map<String, String> dropStatements, PrintWriter out)
+        protected void handleScript(SqlScriptRunner.SqlScript script, Map<String, String> createStatements, Map<String, String> dropStatements, PrintWriter out) throws IOException
         {
             Matcher m = _viewPattern.matcher(script.getContents());
             String strippedScript = m.replaceAll("");
             out.println("-- " + script.getDescription());
             out.println(PageFlowUtil.filter(strippedScript));
             out.println();
+
+            _provider.saveScript(script.getDescription(), strippedScript, true);
         }
 
         protected void handleSchema(Map<String, String> createStatements, Map<String, String> dropStatements, PrintWriter out)
@@ -198,6 +206,7 @@ public abstract class ViewHandler
     {
         private boolean _showCreate = true;
         private boolean _showDrop = true;
+        private static String cr = "\r\n";
 
         public ViewExtractor(FileSqlScriptProvider provider, String schemaName)
         {
@@ -222,7 +231,7 @@ public abstract class ViewHandler
         }
 
         // Careful: createStatements and dropStatements are special LRU maps.  Their order will change on every access.
-        protected void handleSchema(Map<String, String> createStatements, Map<String, String> dropStatements, PrintWriter out)
+        protected void handleSchema(Map<String, String> createStatements, Map<String, String> dropStatements, PrintWriter out) throws IOException
         {
             // Get the CREATE VIEW names, reverse their order, and create a DROP statement for each
             List<String> dropNames = new ArrayList<String>();
@@ -243,15 +252,22 @@ public abstract class ViewHandler
 
             if (_showDrop)
             {
+                StringBuilder sb = new StringBuilder();
+
                 // Add a DROP statement for everything left in dropStatements -- these are obsolete views, but we still need to drop them.
                 if (!dropStatements.isEmpty())
                 {
-                    out.println("-- DROP obsolete views.  Do not remove these statements; they are needed when upgrading from older versions.");
-                    outputDropViews(out, dropStatements.values());
-                    out.println();
+                    boolean plural = dropStatements.size() > 1;
+                    String message = "-- DROP obsolete view" + (plural ? "s" : "") + ".  Do not remove; " + (plural ? "these are" : "this is") + " needed when upgrading from older versions.";
+                    outputDropViews(sb, message, dropStatements.values());
+                    sb.append(cr);
                 }
-                out.println("-- DROP current views.");
-                outputDropViews(out, dropNames);
+                sb.append(cr);
+                outputDropViews(sb, "-- DROP current view" + (dropNames.size() > 1 ? "s." : "."), dropNames);
+
+                out.print(PageFlowUtil.filter(sb.toString()));
+
+                _provider.saveScript(_schemaName + "-drop.sql", sb.toString());
             }
 
             if (_showCreate)
@@ -259,26 +275,36 @@ public abstract class ViewHandler
                 // Reverse the keys back to order of CREATE VIEW statements in the scripts.
                 Collections.reverse(keys);
 
+                StringBuilder sb = new StringBuilder();
+
                 // Iterate keys, since the map order has probably changed.
                 for (String key : keys)
                 {
+                    String create = createStatements.get(key);
                     out.println(PageFlowUtil.filter(createStatements.get(key)));
+                    sb.append(create).append(cr);
                 }
+
+                _provider.saveScript(_schemaName + "-create.sql", sb.toString());
             }
         }
 
-        private void outputDropViews(PrintWriter out, Collection<String> viewNames)
+        private void outputDropViews(StringBuilder sb, String message, Collection<String> viewNames)
         {
+            sb.append(message).append(cr);
+
             for (String viewName : viewNames)
             {
                 String[] parts = viewName.split("\\.");
                 DbSchema schema = DbSchema.get(parts[0]);
                 String sql = schema.getSqlDialect().execute(CoreSchema.getInstance().getSchema(), "fn_dropifexists", "'" + parts[1] + "', '" + parts[0] + "', 'VIEW', NULL") + (schema.getSqlDialect().isPostgreSQL() ? ";" : "");
-                out.println(PageFlowUtil.filter(sql));
+                sb.append(sql).append(cr);
             }
 
             if (DbSchema.get(_schemaName).getSqlDialect().isSqlServer())
-                out.println("GO");
+            {
+                sb.append("GO").append(cr);
+            }
         }
     }
 }
