@@ -1152,6 +1152,13 @@ public class QueryView extends WebPartView<Object>
         view.getRenderContext().setCache(false);
 
         ResultSet rs = rgn.getResultSet(view.getRenderContext());
+
+        // Bug 5610 & 6179. Excel web queries don't work over SSL if caching is disabled,
+        // so we need to allow caching so that Excel can read from IE on Windows.
+        // Set the headers to allow the client to cache, but not proxies
+        response.setHeader("Pragma", "private");
+        response.setHeader("Cache-Control", "private");
+
         new HtmlWriter().write(rs, getExportColumns(rgn.getDisplayColumns()), response, view.getRenderContext(), true);
     }
 

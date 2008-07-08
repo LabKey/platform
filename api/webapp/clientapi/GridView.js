@@ -247,7 +247,7 @@ LABKEY.GridView = function(config)
 
     function registerEditorListeners(editor)
     {
-        editor.addListener("blur", afterCellEdit);
+        editor.addListener("complete", afterCellEdit);
         editor.addListener("beforeshow", function()
         {
             document.ActiveExtGridViewCellId = editor.id;

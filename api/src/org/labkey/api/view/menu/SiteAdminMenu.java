@@ -42,7 +42,7 @@ public class SiteAdminMenu extends NavTreeMenu
 
         Container c = context.getContainer();
         NavTree[] admin = new NavTree[5];
-        admin[0] = new NavTree("Admin Console", ActionURL.toPathString("admin", "showAdmin", c));
+        admin[0] = new NavTree("Admin Console", ActionURL.toPathString("admin", "showAdmin", ""));
         admin[1] = new NavTree("Site Admins", ActionURL.toPathString("Security", "group", "") + "?group=Administrators");
         admin[2] = new NavTree("Site Developers", ActionURL.toPathString("Security", "group", "") + "?group=Developers");
         admin[3] = new NavTree("Site Users", ActionURL.toPathString("User", "showUsers", c));
