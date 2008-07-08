@@ -64,7 +64,7 @@ public class FooterMenu extends NavTreeMenu
 
         if (null != context.getContainer())
         {
-            ActionURL permaLink = PageFlowUtil.expandLastFilter(context);
+            ActionURL permaLink = context.cloneActionURL();
             permaLink.setExtraPath("__r" + Integer.toString(context.getContainer().getRowId()));
             menu.add(new NavTree("Permanent Link", permaLink));
         }

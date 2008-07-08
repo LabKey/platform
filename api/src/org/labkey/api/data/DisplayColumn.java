@@ -404,7 +404,7 @@ public abstract class DisplayColumn extends RenderColumn
                 sort = ctx.getBaseSort();
                 if (sort == null)
                     sort = new Sort();
-                ActionURL url = PageFlowUtil.expandLastFilter(ctx.getViewContext());
+                ActionURL url = ctx.getViewContext().getActionURL();
                 sort.applyURLSort(url, rgn.getName());
                 ctx.put(rgn.getName() + ".sort", sort);
             }

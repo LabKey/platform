@@ -56,14 +56,14 @@ public class QuerySettings
         _dataRegionName = "qwp" + webPart.getIndex();
         (new BoundMap(this)).putAll(webPart.getPropertyMap());
         _request = context.getRequest();
-        init(PageFlowUtil.expandLastFilter(PageFlowUtil.expandLastFilter(context)));
+        init(context.cloneActionURL());
     }
 
     public QuerySettings(ActionURL url, String dataRegionName)
     {
         _dataRegionName = dataRegionName;
         _request = HttpView.currentContext().getRequest();
-        init(PageFlowUtil.expandLastFilter(PageFlowUtil.expandLastFilter(url)));
+        init(url);
     }
 
     public QuerySettings(ActionURL url, String dataRegionName, String queryName)

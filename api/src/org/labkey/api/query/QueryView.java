@@ -303,12 +303,12 @@ public class QueryView extends WebPartView<Object>
             {
                 if (_useQueryViewActionExportURLs)
                 {
-                    ret = PageFlowUtil.expandLastFilter(getViewContext());
+                    ret = getViewContext().cloneActionURL();
                     ret.addParameter("exportType", action.name());
                     ret.addParameter("exportRegion", getDataRegionName());
                     break;
                 }
-                ActionURL expandedURL = PageFlowUtil.expandLastFilter(getViewContext());
+                ActionURL expandedURL = getViewContext().cloneActionURL();
                 addParamsByPrefix(ret, expandedURL, getDataRegionName() + ".", DATAREGIONNAME_DEFAULT +  ".");
                 break;
             }
@@ -316,13 +316,13 @@ public class QueryView extends WebPartView<Object>
             {
                 if (_useQueryViewActionExportURLs)
                 {
-                    ActionURL expandedURL = PageFlowUtil.expandLastFilter(getViewContext());
+                    ActionURL expandedURL = getViewContext().cloneActionURL();
                     expandedURL.addParameter("exportType", "excelWebQuery");
                     expandedURL.addParameter("exportRegion", getDataRegionName());
                     ret.addParameter("queryViewActionURL", expandedURL.getLocalURIString());
                     break;
                 }
-                ActionURL expandedURL = PageFlowUtil.expandLastFilter(getViewContext());
+                ActionURL expandedURL = getViewContext().cloneActionURL();
                 addParamsByPrefix(ret, expandedURL, getDataRegionName() + ".", DATAREGIONNAME_DEFAULT +  ".");
                 break;
             }

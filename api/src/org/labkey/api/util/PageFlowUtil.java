@@ -1835,38 +1835,16 @@ public class PageFlowUtil
         boolean lastFilter = ColumnInfo.booleanFromString(url.getParameter(scope + DataRegion.LAST_FILTER_PARAM));
         if (lastFilter)
             return;
-        context.getRequest().getSession().setAttribute(url.getPath() + "#" + scope + DataRegion.LAST_FILTER_PARAM, url);
+        ActionURL clone = url.clone();
+        clone.deleteParameter(scope + DataRegion.LAST_FILTER_PARAM);
+        context.getRequest().getSession().setAttribute(url.getPath() + "#" + scope + DataRegion.LAST_FILTER_PARAM, clone);
     }
 
-
-    public static ActionURL expandLastFilter(ActionURL url)
+    public static ActionURL getLastFilter(ViewContext context, ActionURL url)
     {
-        return expandLastFilter(HttpView.getRootContext(), url, "");
+        ActionURL ret = (ActionURL) context.getSession().getAttribute(url.getPath() + "#" + DataRegion.LAST_FILTER_PARAM);
+        return ret != null ? ret.clone() : url.clone();
     }
-
-
-    public static ActionURL expandLastFilter(ViewContext context)
-    {
-        return expandLastFilter(context, context.getActionURL(), "");
-    }
-
-
-    private static ActionURL expandLastFilter(ViewContext context, ActionURL url, String scopeNYI)
-    {
-        ActionURL requestURL = context.getActionURL();
-        
-        String lastFilterParamName = scopeNYI + DataRegion.LAST_FILTER_PARAM;
-        boolean lastFilter = ColumnInfo.booleanFromString(url.getParameter(lastFilterParamName));
-
-        ActionURL ret = null;
-        if (lastFilter && requestURL != null)
-            ret = (ActionURL) context.getSession().getAttribute(requestURL.getPath() + "#" + scopeNYI + DataRegion.LAST_FILTER_PARAM);
-        if (null == ret)
-            ret = url.clone();
-        ret.deleteParameter(lastFilterParamName);
-        return ret;
-    }
-
 
     public static ActionURL addLastFilterParameter(ActionURL url)
     {

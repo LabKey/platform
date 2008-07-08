@@ -20,6 +20,8 @@ import org.apache.log4j.Logger;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
@@ -27,6 +29,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.common.util.Pair;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -379,11 +382,25 @@ public class ViewServlet extends HttpServlet
             if (c != null)
             {
                 url.setExtraPath(c.getPath());
-                throw new RedirectException(url.getLocalURIString());
+                if (request.getMethod().equals("GET"))
+                    throw new RedirectException(url.getLocalURIString());
             }
         }
         if (null != c)
             url.setExtraPath(c.getPath());
+        
+        boolean expandLastFilter = ColumnInfo.booleanFromString(url.getParameter(DataRegion.LAST_FILTER_PARAM));
+        if (expandLastFilter)
+        {
+            ActionURL expand = (ActionURL) request.getSession(true).getAttribute(url.getPath() + "#" + DataRegion.LAST_FILTER_PARAM);
+            if (null != expand)
+            {
+                // CONSIDER: preserve other parameters on URL?
+                if (request.getMethod().equals("GET"))
+                    throw new RedirectException(expand.getLocalURIString());
+                _log.error(DataRegion.LAST_FILTER_PARAM + " not supported for " + request.getMethod());
+            }
+        }
 
         url.setReadOnly();
         return url;

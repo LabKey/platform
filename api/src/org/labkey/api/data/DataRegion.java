@@ -1736,7 +1736,7 @@ public class DataRegion extends DisplayElement
         if (request.getAttribute(FILTER_WRITTEN_KEY) != null)
             return;
 
-        ActionURL urlhelp = PageFlowUtil.expandLastFilter(ctx.getViewContext());
+        ActionURL urlhelp = ctx.getViewContext().cloneActionURL();
         String queryString = StringUtils.trimToEmpty(urlhelp.getRawQuery());
 
         out.write("<script type=\"text/javascript\">\n");

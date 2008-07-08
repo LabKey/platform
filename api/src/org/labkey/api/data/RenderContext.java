@@ -202,7 +202,7 @@ public class RenderContext extends BoundMap // extends ViewContext
 
     public static ActionURL getSortFilterURLHelper(ViewContext context)
     {
-        return PageFlowUtil.expandLastFilter(context);
+        return context.cloneActionURL();
     }
 
 
@@ -218,7 +218,7 @@ public class RenderContext extends BoundMap // extends ViewContext
 
     public ResultSet getResultSet(List<DisplayColumn> displayColumns, TableInfo tinfo, int maxRows, long offset, String name, boolean async) throws SQLException, IOException
     {
-        ActionURL url = PageFlowUtil.expandLastFilter(getViewContext());
+        ActionURL url = getViewContext().cloneActionURL();
         List<ColumnInfo> cols = getSelectColumns(displayColumns, tinfo);
 
         SimpleFilter filter = buildFilter(tinfo, url, name);
@@ -236,7 +236,7 @@ public class RenderContext extends BoundMap // extends ViewContext
             return Collections.emptyMap();
 
         Set<String> ignoredAggregateFilters = new HashSet<String>();
-        ActionURL url = PageFlowUtil.expandLastFilter(getViewContext());
+        ActionURL url = getViewContext().cloneActionURL();
         List<ColumnInfo> cols = getSelectColumns(displayColumns, tinfo);
 
         SimpleFilter filter = buildFilter(tinfo, url, dataRegionName);
