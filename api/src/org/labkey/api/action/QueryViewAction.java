@@ -38,24 +38,29 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
         super(formClass);
     }
 
-    // TODO: Remove this??  Excel web queries go through ExcelWebQueryAction
     public void checkPermissions() throws UnauthorizedException
     {
-        try
+        if ("excelWebQuery".equals(getViewContext().getRequest().getParameter("exportType")))
+        {
+            try
+            {
+                super.checkPermissions();
+            }
+            catch (TermsOfUseException e)
+            {
+                // We don't enforce terms of use for access through ExcelWebQuery
+            }
+            catch (UnauthorizedException e)
+            {
+                // Force Basic authentication for excel web query
+                if (!getViewContext().getUser().isGuest())
+                    HttpView.throwUnauthorized();
+                throw new UnauthorizedException(true);
+            }
+        }
+        else
         {
             super.checkPermissions();
-        }
-        catch (TermsOfUseException e)
-        {
-            // We don't enforce terms of use for access through ExcelWebQuery
-            if (!"excelWebQuery".equals(getViewContext().getRequest().getParameter("exportType")))
-                throw e;
-        }
-        catch (UnauthorizedException e)
-        {
-            if (!getViewContext().getUser().isGuest())
-                HttpView.throwUnauthorized();
-            throw new UnauthorizedException(true);
         }
     }
 
