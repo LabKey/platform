@@ -205,12 +205,17 @@ public class FileSqlScriptProvider implements SqlScriptProvider
 
     public void saveScript(String description, String contents) throws IOException
     {
+        saveScript(description, contents, false);
+    }
+
+    public void saveScript(String description, String contents, boolean overwrite) throws IOException
+    {
         if (!AppProps.getInstance().isDevMode())
             throw new IllegalStateException("Can't save scripts while in production mode");
 
         File file = new File(_module.getBuildPath() + "/src" + getScriptPath() + "/" + description);
 
-        if (file.exists())
+        if (file.exists() && !overwrite)
             throw new IllegalStateException("File " + file.getAbsolutePath() + " already exists");
 
         FileWriter fw = null;
