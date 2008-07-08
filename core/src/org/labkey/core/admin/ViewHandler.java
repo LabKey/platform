@@ -42,11 +42,14 @@ public abstract class ViewHandler
     {
         _provider = provider;
         _schemaName = schemaName;
+        _viewPattern = getViewPattern(DbSchema.get(_schemaName));
+    }
 
-        boolean isPostgreSQL = DbSchema.get(_schemaName).getSqlDialect().isPostgreSQL();
+    public static Pattern getViewPattern(DbSchema schema)
+    {
+        boolean isPostgreSQL = schema.getSqlDialect().isPostgreSQL();
 
-        String initialCommentRegEx = "(?-m:^--.*?\\s*)?";    // This isn't working...
-        String viewNameRegEx = "((\\w+)\\.)?(\\w+)";
+        String viewNameRegEx = "((\\w+)\\.)?([a-zA-Z0-9]+)";  // Ignore view names that start with _
         String dropRegEx;
         String createRegEx;
         String endRegEx;
@@ -59,13 +62,13 @@ public abstract class ViewHandler
         }
         else
         {
-            dropRegEx = "((DROP VIEW " + viewNameRegEx + ")|(EXEC core.fn_dropifexists\\s*'(\\w+)',\\s*'(\\w+)',\\s*'VIEW',\\s*NULL))";      // exec core.fn_dropifexists 'materialsource', 'cabig','VIEW', NULL
+            dropRegEx = "((?:if exists \\(select \\* from dbo\\.sysobjects where id = object_id\\(N'\\[?[\\w]+\\]?.\\[?[\\w]+\\]?+'\\) and OBJECTPROPERTY\\(id, N'IsView'\\) = 1\\)\\s*)?(DROP VIEW " + viewNameRegEx + ")|(EXEC core.fn_dropifexists\\s*'(\\w+)',\\s*'(\\w+)',\\s*'VIEW',\\s*NULL))";      // exec core.fn_dropifexists 'materialsource', 'cabig','VIEW', NULL
             createRegEx = "(CREATE VIEW " + viewNameRegEx + " AS.+?)";
             endRegEx = "GO$";
         }
 
-        String combinedRegEx = (initialCommentRegEx + "(?:" + dropRegEx + "|" + createRegEx + ")\\s*" + endRegEx + "\\s*").replaceAll(" ", "\\\\s+");
-        _viewPattern = Pattern.compile(combinedRegEx, Pattern.CASE_INSENSITIVE + Pattern.DOTALL + Pattern.MULTILINE);
+        String combinedRegEx = ("(?:" + dropRegEx + "|" + createRegEx + ")\\s*" + endRegEx + "\\s*").replaceAll(" ", "\\\\s+");
+        return Pattern.compile(combinedRegEx, Pattern.CASE_INSENSITIVE + Pattern.DOTALL + Pattern.MULTILINE);
     }
 
     public List<String> getCreateNames()
@@ -92,7 +95,6 @@ public abstract class ViewHandler
 
         for (SqlScriptRunner.SqlScript script : getScripts())
         {
-            Set<String> temporaryViews = new HashSet<String>();
             Matcher m = _viewPattern.matcher(script.getContents());
 
             while (m.find())
@@ -127,40 +129,23 @@ public abstract class ViewHandler
                     }
                 }
 
+                // Regex should be igoring view names that start with _
+                assert !viewName.startsWith("_");
+
                 String key = getKey(_schemaName, schemaName, viewName);
 
-                if (viewName.startsWith("_"))
+                if (ViewType.CREATE == type)
                 {
-                    if (type == ViewType.CREATE)
-                    {
-                        assert temporaryViews.add(key);
-                    }
-                    else
-                    {
-                        assert temporaryViews.remove(key);
-                    }
+                    createStatements.put(key, m.group(0));
                 }
                 else
                 {
-                    if (ViewType.CREATE == type)
-                    {
-                        createStatements.put(key, m.group(0));
-                    }
-                    else
-                    {
-                        dropStatements.put(key, (null == schemaName ? _schemaName : schemaName) + "." + viewName);
-                        createStatements.remove(key);
-                    }
+                    dropStatements.put(key, (null == schemaName ? _schemaName : schemaName) + "." + viewName);
+                    createStatements.remove(key);
                 }
             }
 
-            if (!temporaryViews.isEmpty())
-            {
-                out.println("========== TEMPORARY VIEWS ERROR ==========");
-                out.println(temporaryViews.toString());
-            }
-
-            if (!createStatements.isEmpty() || !dropStatements.isEmpty())
+//            if (!createStatements.isEmpty() || !dropStatements.isEmpty())
                 handleScript(script, createStatements, dropStatements, out);
         }
 
@@ -190,18 +175,17 @@ public abstract class ViewHandler
         // Clear VIEW statements from all current scripts
         protected List<SqlScriptRunner.SqlScript> getScripts() throws SqlScriptRunner.SqlScriptException
         {
-            return _provider.getScripts(_schemaName);
+            return SqlScriptRunner.getRecommendedScripts(_provider.getScripts(_schemaName), 0.0, Double.MAX_VALUE);
+//            return _provider.getScripts(_schemaName);
         }
 
         protected void handleScript(SqlScriptRunner.SqlScript script, Map<String, String> createStatements, Map<String, String> dropStatements, PrintWriter out)
         {
-/*          TODO: Enable this!
             Matcher m = _viewPattern.matcher(script.getContents());
             String strippedScript = m.replaceAll("");
-            out.println("========== " + script.getDescription() + " ==========");
+            out.println("-- " + script.getDescription());
             out.println(PageFlowUtil.filter(strippedScript));
             out.println();
-*/
         }
 
         protected void handleSchema(Map<String, String> createStatements, Map<String, String> dropStatements, PrintWriter out)
@@ -212,9 +196,19 @@ public abstract class ViewHandler
     // Creates DROP VIEW (for all views that have ever been created) and CREATE VIEW (all current VIEWs) scripts
     public static class ViewExtractor extends ViewHandler
     {
+        private boolean _showCreate = true;
+        private boolean _showDrop = true;
+
         public ViewExtractor(FileSqlScriptProvider provider, String schemaName)
         {
             super(provider, schemaName);
+        }
+
+        public ViewExtractor(FileSqlScriptProvider provider, String schemaName, boolean showDrop, boolean showCreate)
+        {
+            this(provider, schemaName);
+            _showDrop = showDrop;
+            _showCreate = showCreate;
         }
 
         // Use the recommended scripts from 0.00 to highest version in each schema
@@ -247,23 +241,29 @@ public abstract class ViewHandler
                 dropStatements.remove(key);
             }
 
-            // Add a DROP statement for everything left in dropStatements -- these are obsolete views, but we still need to drop them.
-            if (!dropStatements.isEmpty())
+            if (_showDrop)
             {
-                out.println("-- DROP obsolete views.  Do not remove these statements; they are needed when upgrading from older versions.");
-                outputDropViews(out, dropStatements.values());
-                out.println();
+                // Add a DROP statement for everything left in dropStatements -- these are obsolete views, but we still need to drop them.
+                if (!dropStatements.isEmpty())
+                {
+                    out.println("-- DROP obsolete views.  Do not remove these statements; they are needed when upgrading from older versions.");
+                    outputDropViews(out, dropStatements.values());
+                    out.println();
+                }
+                out.println("-- DROP current views.");
+                outputDropViews(out, dropNames);
             }
-            out.println("-- DROP current views.");
-            outputDropViews(out, dropNames);
 
-            // Reverse the keys back to order of CREATE VIEW statements in the scripts.
-            Collections.reverse(keys);
-
-            // Iterate keys, since the map order has probably changed.
-            for (String key : keys)
+            if (_showCreate)
             {
-                out.println(PageFlowUtil.filter(createStatements.get(key)));
+                // Reverse the keys back to order of CREATE VIEW statements in the scripts.
+                Collections.reverse(keys);
+
+                // Iterate keys, since the map order has probably changed.
+                for (String key : keys)
+                {
+                    out.println(PageFlowUtil.filter(createStatements.get(key)));
+                }
             }
         }
 

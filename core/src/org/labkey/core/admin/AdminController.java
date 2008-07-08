@@ -659,7 +659,17 @@ public class AdminController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             getPageConfig().setTemplate(Template.None);
-            return new ExtractView();
+
+            String type = getViewContext().getActionURL().getParameter("type");
+
+            if ("drop".equals(type))
+                return new ExtractDropView();
+            else if ("create".equals(type))
+                return new ExtractCreateView();
+            else if ("clear".equals(type))
+                return new ClearView();
+
+            return new HtmlView("Error: must specify type parameter (\"drop\", \"create\", or \"clear\")");
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -667,17 +677,21 @@ public class AdminController extends SpringActionController
             return null;
         }
 
-        private class ExtractView extends HttpView
+        private abstract class ExtractView extends HttpView
         {
+            abstract List<Module> getModules();
+            abstract ViewHandler getHandler(FileSqlScriptProvider provider, String schemaName);
+
             @Override
             protected void renderInternal(Object model, PrintWriter out) throws Exception
             {
                 out.println("<pre>");
 
-                List<Module> modules = ModuleLoader.getInstance().getModules();
-
-                for (Module module : modules)
+                for (Module module : getModules())
                 {
+                    if (module == ModuleLoader.getInstance().getCoreModule())
+                        continue;
+
                     if (module instanceof DefaultModule)
                     {
                         DefaultModule defModule = (DefaultModule)module;
@@ -689,20 +703,55 @@ public class AdminController extends SpringActionController
 
                             for (String schemaName : schemaNames)
                             {
-                                ViewHandler extractor = new ViewHandler.ViewExtractor(provider, schemaName);
-                                extractor.handle(out);
-                                List<String> createNames = extractor.getCreateNames();
-
-                                ViewHandler clearer = new ViewHandler.ViewClearer(provider, schemaName);
-                                clearer.handle(out);
-
-                                assert createNames.equals(clearer.getCreateNames()) : "CREATE VIEWs differ in schema " + schemaName;
+                                ViewHandler handler = getHandler(provider, schemaName);
+                                handler.handle(out);
                             }
                         }
                     }
                 }
 
                 out.println("</pre>");
+            }
+        }
+
+        private class ExtractDropView extends ExtractView
+        {
+            List<Module> getModules()
+            {
+                List<Module> modules = new ArrayList<Module>(ModuleLoader.getInstance().getModules());
+                Collections.reverse(modules);
+                return modules;
+            }
+
+            ViewHandler getHandler(FileSqlScriptProvider provider, String schemaName)
+            {
+                return new ViewHandler.ViewExtractor(provider, schemaName, true, false);
+            }
+        }
+
+        private class ExtractCreateView extends ExtractView
+        {
+            List<Module> getModules()
+            {
+                return ModuleLoader.getInstance().getModules();
+            }
+
+            ViewHandler getHandler(FileSqlScriptProvider provider, String schemaName)
+            {
+                return new ViewHandler.ViewExtractor(provider, schemaName, false, true);
+            }
+        }
+
+        private class ClearView extends ExtractView
+        {
+            List<Module> getModules()
+            {
+                return ModuleLoader.getInstance().getModules();
+            }
+
+            ViewHandler getHandler(FileSqlScriptProvider provider, String schemaName)
+            {
+                return new ViewHandler.ViewClearer(provider, schemaName);
             }
         }
     }

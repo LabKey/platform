@@ -291,4 +291,4 @@ CREATE TABLE study.SampleRequestSpecimen
     CONSTRAINT PK_SampleRequestSpecimen PRIMARY KEY (RowId),
     CONSTRAINT FK_SampleRequestSpecimen_SampleRequest FOREIGN KEY (SampleRequestId) REFERENCES study.SampleRequest(RowId),
     CONSTRAINT FK_SampleRequestSpecimen_Specimen FOREIGN KEY (SpecimenId) REFERENCES study.Specimen(RowId)
-)
+);

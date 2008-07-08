@@ -20,8 +20,10 @@ CREATE TABLE comm.Renderers
      Name NVARCHAR(30) NOT NULL,
      CONSTRAINT PK_Renderers PRIMARY KEY (RowId)
      )
+GO
 
 INSERT INTO comm.Renderers (Label, Name) VALUES ('Radeox Engine', 'Radeox')
+GO
 
 CREATE TABLE comm.PageVersions
 	(
@@ -40,8 +42,11 @@ CREATE TABLE comm.PageVersions
 	CONSTRAINT FK_PageVersions_Renderer FOREIGN KEY (RendererId) REFERENCES comm.Renderers(RowId),
 	CONSTRAINT UQ_PageVersions UNIQUE (PageEntityId, Version)
 	)
+GO
 
 INSERT INTO comm.PageVersions (PageEntityId, Title, Body, Created, CreatedBy, Owner, Version, RendererId)
      SELECT EntityId, Title, Body, Modified, ModifiedBy, Owner, 1, 1 FROM comm.Pages
+GO
 
 ALTER TABLE comm.Pages DROP COLUMN Title, Body
+GO

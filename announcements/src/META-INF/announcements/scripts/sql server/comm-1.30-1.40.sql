@@ -38,6 +38,7 @@ CREATE TABLE comm.EmailOptions
 	EmailOption NVARCHAR(50),
 	CONSTRAINT PK_EmailOptions PRIMARY KEY (EmailOptionId)
 	)
+GO
 
 INSERT INTO comm.EmailOptions (EmailOptionId, EmailOption)
 VALUES (0, 'No Email')
@@ -55,6 +56,7 @@ CREATE TABLE comm.EmailFormats
 	EmailFormat NVARCHAR(20),
 	CONSTRAINT PK_EmailFormats PRIMARY KEY (EmailFormatId)
 	)
+GO
 
 INSERT INTO comm.EmailFormats (EmailFormatId, EmailFormat)
 VALUES (0, 'Plain Text')
