@@ -62,6 +62,11 @@ public interface PipeRoot
     ACL getACL();
 
     /**
+     * @return true if Perl Pipeline is enabled for this pipeline root
+     */
+    boolean isPerlPipeline();
+
+    /**
      * @return null if no key pair has been configured for this pipeline root
      */
     GlobusKeyPair getGlobusKeyPair();

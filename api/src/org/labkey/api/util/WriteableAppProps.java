@@ -25,7 +25,6 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.IPropertyType;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
@@ -209,9 +208,9 @@ public class WriteableAppProps extends AppProps
         storeStringValue(SYSTEM_SHORT_NAME_PROP, systemShortName);
     }
 
-    public void setPipelineCluster(boolean cluster)
+    public void setPerlPipelineEnabled(boolean cluster)
     {
-        storeBooleanValue(PIPELINE_CLUSTER_PROP, cluster);
+        storeBooleanValue(PIPELINE_PERL_CLUSTER_PROP, cluster);
     }
 
     public void setPipelineToolsDir(String toolsDir)

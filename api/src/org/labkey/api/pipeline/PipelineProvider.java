@@ -22,6 +22,8 @@ import org.labkey.api.util.FileType;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.data.Container;
+
 import java.io.File;
 import java.io.FileFilter;
 import java.net.URI;
@@ -482,11 +484,11 @@ abstract public class PipelineProvider
      * Return true, if the file name should present a link for viewing its
      * contents on the details page for status associated with this provider.
      *
+     * @param container the <code>Container</code> for the status entery
      * @param name the file name
-     * @param basename the base name associated with the status
-     * @return true if link should be displayed
+     * @param basename the base name associated with the status @return true if link should be displayed
      */
-    public boolean isStatusViewableFile(String name, String basename)
+    public boolean isStatusViewableFile(Container container, String name, String basename)
     {
         return PipelineJob.FT_LOG.isMatch(name, basename);
     }
@@ -511,8 +513,9 @@ abstract public class PipelineProvider
 
     /**
      * @return Web part shown on the setup page.
+     * @param container
      */
-    public HttpView getSetupWebPart()
+    public HttpView getSetupWebPart(Container container)
     {
         // No setup.
         return null;
@@ -523,9 +526,10 @@ abstract public class PipelineProvider
      * during pipeline root navigation by the user.
      *
      * @param context The ViewContext for the current request
+     * @param pr the <code>PipeRoot</code> object for the current context
      * @param entries List of directories to scan for possible actions
      */
-    public void updateFileProperties(ViewContext context, List<FileEntry> entries)
+    public void updateFileProperties(ViewContext context, PipeRoot pr, List<FileEntry> entries)
     {
         // Do nothing.
     }
@@ -534,9 +538,10 @@ abstract public class PipelineProvider
      * Allows the provider to add action buttons to the details page of one
      * of its status entries.
      *
+     * @param container the container for the status entry
      * @return List of actions to add to the details page
      */
-    public List<StatusAction> addStatusActions()
+    public List<StatusAction> addStatusActions(Container container)
     {
         // No extra actions.
         return null;

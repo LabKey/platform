@@ -15,17 +15,18 @@
  */
 package org.labkey.api.pipeline;
 
-import org.labkey.api.util.AppProps;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.data.Container;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.sql.SQLException;
 
 /**
  * <code>PipelinePerlClusterSupport</code> implements support for the old Perl Cluster
@@ -41,8 +42,15 @@ public class PipelinePerlClusterSupport
 {
     public void preDeleteStatusFile(PipelineStatusFile sf) throws PipelineProvider.StatusUpdateException
     {
-        if (!AppProps.getInstance().hasPipelineCluster())
-            return;
+        try
+        {
+            if (!PipelineService.get().usePerlPipeline(sf.lookupContainer()))
+                return;
+        }
+        catch (SQLException e)
+        {
+            throw new PipelineProvider.StatusUpdateException("Server attempting to delete status for " + sf.getDescription(), e);
+        }
 
         // If it is a cluster .status file, and the status is "ERROR"
         // delete the status file also to keep from leaving a stalled
@@ -64,8 +72,15 @@ public class PipelinePerlClusterSupport
 
     public void preCompleteStatusFile(PipelineStatusFile sf) throws PipelineProvider.StatusUpdateException
     {
-        if (!AppProps.getInstance().hasPipelineCluster())
-            return;
+        try
+        {
+            if (!PipelineService.get().usePerlPipeline(sf.lookupContainer()))
+                return;
+        }
+        catch (SQLException e)
+        {
+            throw new PipelineProvider.StatusUpdateException("Server attempting to complete status for " + sf.getDescription(), e);
+        }
 
         // Make sure file system stays in synch.
         if (NetworkDrive.exists(new File(sf.getFilePath())))
@@ -81,10 +96,17 @@ public class PipelinePerlClusterSupport
         }
     }
 
-    public boolean isStatusViewableFile(String name, String basename)
+    public boolean isStatusViewableFile(Container container, String name, String basename)
     {
-        if (!AppProps.getInstance().hasPipelineCluster())
+        try
+        {
+            if (!PipelineService.get().usePerlPipeline(container))
+                return false;
+        }
+        catch (SQLException e)
+        {
             return false;
+        }
 
         // Show cluster specific files
         if (PipelineJob.FT_CLUSTER_STATUS.isMatch(name, basename))
@@ -97,10 +119,19 @@ public class PipelinePerlClusterSupport
         return name.endsWith(".out") || name.endsWith(".err") || name.endsWith(".status");
     }
 
-    public List<PipelineProvider.StatusAction> addStatusActions(List<PipelineProvider.StatusAction> actions)
+    public List<PipelineProvider.StatusAction> addStatusActions(Container container, List<PipelineProvider.StatusAction> actions)
     {
-        if (!AppProps.getInstance().hasPipelineCluster())
+        try
+        {
+            if (!PipelineService.get().usePerlPipeline(container))
+                return actions;
+        }
+        catch (SQLException e)
+        {
+            // Don't add actions, if it is not possible to tell whether this
+            // container supports Perl cluster pipeline.
             return actions;
+        }
 
         if (actions == null)
             actions = new ArrayList<PipelineProvider.StatusAction>();
@@ -112,8 +143,18 @@ public class PipelinePerlClusterSupport
     public ActionURL handleStatusAction(ViewContext ctx, String name, PipelineStatusFile sf)
             throws PipelineProvider.HandlerException
     {
-        if (!AppProps.getInstance().hasPipelineCluster() || !"Retry".equals(name))
+        if (!"Retry".equals(name))
             return null;
+        
+        try
+        {
+            if (!PipelineService.get().usePerlPipeline(sf.lookupContainer()))
+                return null;
+        }
+        catch (SQLException e)
+        {
+            throw new PipelineProvider.HandlerException("Server error attempting retry.", e);
+        }
 
         if (PipelineJob.ERROR_STATUS.equals(sf.getStatus()))
         {

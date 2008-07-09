@@ -63,7 +63,7 @@ public class AppProps
     protected static final String SYSTEM_SHORT_NAME_PROP = "systemShortName";
     protected static final String DEFAULT_LSID_AUTHORITY_PROP = "defaultLsidAuthority";
     protected static final String THEME_NAME_PROP = "themeName";
-    protected static final String PIPELINE_CLUSTER_PROP = "hasPipelineCluster";
+    protected static final String PIPELINE_PERL_CLUSTER_PROP = "hasPipelineCluster";
     protected static final String PIPELINE_TOOLS_DIR_PROP = "pipelineToolsDirectory";    
     protected static final String PIPELINE_FTPHOST_PROP = "pipelineFTPHost";
     protected static final String PIPELINE_FTPPORT_PROP = "pipelineFTPPort";
@@ -398,9 +398,9 @@ public class AppProps
         return lookupStringValue(THEME_NAME_PROP, WebTheme.DEFAULT_THEME.toString());
     }
 
-    public boolean hasPipelineCluster()
+    public boolean isPerlPipelineEnabled()
     {
-        return lookupBooleanValue(PIPELINE_CLUSTER_PROP, false);
+        return lookupBooleanValue(PIPELINE_PERL_CLUSTER_PROP, false);
     }
 
     public String getPipelineToolsDirectory()

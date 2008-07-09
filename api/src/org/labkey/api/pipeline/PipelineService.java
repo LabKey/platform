@@ -60,9 +60,12 @@ abstract public class PipelineService
 
     abstract public PipeRoot[] getOverlappingRoots(Container c) throws SQLException;
 
-    abstract public void setPipelineRoot(User user, Container container, URI root, String type, GlobusKeyPair globusKeyPair) throws SQLException;
+    abstract public void setPipelineRoot(User user, Container container, URI root, String type,
+                                         GlobusKeyPair globusKeyPair, boolean perlPipeline) throws SQLException;
 
     abstract public boolean canModifyPipelineRoot(User user, Container container);
+
+    abstract public boolean usePerlPipeline(Container container) throws SQLException;
 
     abstract public File ensureSystemDirectory(URI root);
 

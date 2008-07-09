@@ -16,6 +16,7 @@
 package org.labkey.api.pipeline;
 
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.data.Container;
 
 import java.sql.SQLException;
 import java.io.IOException;
@@ -55,6 +56,8 @@ public interface PipelineStatusFile
                 throws IOException, SQLException;
     }
 
+    Container lookupContainer();
+    
     int getRowId();
 
     void setRowId(int rowId);

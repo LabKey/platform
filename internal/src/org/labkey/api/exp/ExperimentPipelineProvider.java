@@ -21,6 +21,7 @@ import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.data.Container;
 
 import java.io.File;
 import java.util.List;
@@ -77,12 +78,12 @@ public class ExperimentPipelineProvider extends PipelineProvider
     }
 
     // returns the web part appearing on the main page.
-    public HttpView getSetupWebPart()
+    public HttpView getSetupWebPart(Container container)
     {
         return null;
     }
 
-    public void updateFileProperties(ViewContext context, List<FileEntry> entries)
+    public void updateFileProperties(ViewContext context, PipeRoot pr, List<FileEntry> entries)
     {
         for (FileEntry entry : entries)
         {
