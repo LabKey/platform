@@ -177,6 +177,10 @@ public abstract class DefaultModule implements Module
         beforeSchemaUpdate(ModuleLoader.getInstance().getModuleContext(this), viewContext);
     }
 
+    public void beforeSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)
+    {
+    }
+
     /**
      * Upgrade this module to the latest version.
      *
@@ -215,7 +219,7 @@ public abstract class DefaultModule implements Module
                         {
                             try
                             {
-                                afterSchemaUpdate(moduleContext, viewContext);
+                                afterUpdate(moduleContext, viewContext);
                             }
                             catch (Exception e)
                             {
@@ -236,17 +240,15 @@ public abstract class DefaultModule implements Module
         return moduleContext.getUpgradeCompleteURL(getVersion());
     }
 
-    public void beforeSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)
+    public void afterUpdate(ModuleContext moduleContext, ViewContext viewContext)
     {
-        runScripts(SchemaUpdateType.Before);
-    }
-
-
-    public void afterSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)
-    {
+        afterSchemaUpdate(moduleContext, viewContext);
         runScripts(SchemaUpdateType.After);
     }
 
+    public void afterSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)
+    {
+    }
 
     private void runScripts(SchemaUpdateType type)
     {
@@ -259,7 +261,7 @@ public abstract class DefaultModule implements Module
 
                 if (!scripts.isEmpty())
                 {
-                    SqlScriptRunner.runScripts(null, scripts, provider);
+                    SqlScriptRunner.runScripts(null, scripts, provider, true);
                     SqlScriptRunner.waitForScriptsToFinish();
                     DbSchema.invalidateSchemas();
                 }

@@ -195,7 +195,7 @@ public class SqlScriptRunner
 
     public static void runScripts(User user, List<SqlScript> scripts, SqlScriptProvider provider) throws SQLException
     {
-        runScripts(user, scripts, provider, true);
+        runScripts(user, scripts, provider, false);
     }
 
 
@@ -219,10 +219,13 @@ public class SqlScriptRunner
                     return;
 
             // Reject the submission if this provider has already run scripts during this server session (but allow
-            // manual upgrade page to override this check).
-            if (!allowMultipleProviderSubmits && _previousProviders.contains(provider.getProviderName()))
-                return;
-            _previousProviders.add(provider.getProviderName());
+            // manual upgrade page and create/drop view scripts to override this check).
+            if (!allowMultipleProviderSubmits)
+            {
+                if (_previousProviders.contains(provider.getProviderName()))
+                    return;
+                _previousProviders.add(provider.getProviderName());
+            }
 
             _scriptsToRun.addAll(scripts);
             if (WORKER == null)
