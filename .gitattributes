@@ -32,6 +32,8 @@ announcements/src/META-INF/announcements/scripts/sql[!!-~]server/comm-1.50-1.60.
 announcements/src/META-INF/announcements/scripts/sql[!!-~]server/comm-1.60-1.70.sql -text
 announcements/src/META-INF/announcements/scripts/sql[!!-~]server/comm-1.70-2.00.sql -text
 announcements/src/META-INF/announcements/scripts/sql[!!-~]server/comm-2.00-2.10.sql -text
+announcements/src/META-INF/announcements/scripts/sql[!!-~]server/comm-create.sql -text
+announcements/src/META-INF/announcements/scripts/sql[!!-~]server/comm-drop.sql -text
 announcements/src/META-INF/announcements/scripts/sql[!!-~]server/obsolete/comm-0.00-1.00.sql -text
 announcements/src/META-INF/announcements/scripts/sql[!!-~]server/obsolete/comm-1.30-1.31.sql -text
 announcements/src/META-INF/announcements/scripts/sql[!!-~]server/obsolete/comm-1.31-1.32.sql -text
@@ -194,6 +196,8 @@ cabig/src/META-INF/cabig/scripts/sql[!!-~]server/cabig-2.20-2.30.sql -text
 cabig/src/META-INF/cabig/scripts/sql[!!-~]server/cabig-2.21-2.22.sql -text
 cabig/src/META-INF/cabig/scripts/sql[!!-~]server/cabig-2.30-2.31.sql -text
 cabig/src/META-INF/cabig/scripts/sql[!!-~]server/cabig-2.30-8.10.sql -text
+cabig/src/META-INF/cabig/scripts/sql[!!-~]server/cabig-create.sql -text
+cabig/src/META-INF/cabig/scripts/sql[!!-~]server/cabig-drop.sql -text
 cabig/src/META-INF/cabig/scripts/sql[!!-~]server/obsolete/cabig-0.00-0.01.sql -text
 cabig/src/META-INF/cabig/scripts/sql[!!-~]server/obsolete/cabig-0.01-0.02.sql -text
 cabig/src/META-INF/cabig/scripts/sql[!!-~]server/obsolete/cabig-0.02-0.03.sql -text
@@ -271,6 +275,8 @@ core/src/META-INF/core/scripts/sql[!!-~]server/core-2.21-2.22.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-2.30-2.31.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-2.30-8.10.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-2.31-2.32.sql -text
+core/src/META-INF/core/scripts/sql[!!-~]server/core-create.sql -text
+core/src/META-INF/core/scripts/sql[!!-~]server/core-drop.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/obsolete/bootstrap.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/obsolete/core-0.00-1.21.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/obsolete/core-0.59-0.60.sql -text
@@ -310,6 +316,8 @@ core/src/META-INF/core/scripts/sql[!!-~]server/portal-1.50-1.60.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/portal-1.60-1.70.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/prop-0.00-1.00.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/prop-2.00-2.10.sql -text
+core/src/META-INF/core/scripts/sql[!!-~]server/prop-create.sql -text
+core/src/META-INF/core/scripts/sql[!!-~]server/prop-drop.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/test-0.00-1.00.sql -text
 core/src/META-INF/executables.txt -text
 core/src/META-INF/jars.txt -text
@@ -505,6 +513,8 @@ experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-2.33-2.34.sql -te
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.10-8.11.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.10-8.20.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.11-8.12.sql -text
+experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-create.sql -text
+experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-drop.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp_drop.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/findOrphans.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/obsolete/exp-0.00-0.60.sql -text
@@ -807,6 +817,8 @@ mothership/src/META-INF/mothership/scripts/sql[!!-~]server/mothership-2.21-2.22.
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/mothership-2.30-2.31.sql -text
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/mothership-2.30-8.10.sql -text
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/mothership-2.31-2.32.sql -text
+mothership/src/META-INF/mothership/scripts/sql[!!-~]server/mothership-create.sql -text
+mothership/src/META-INF/mothership/scripts/sql[!!-~]server/mothership-drop.sql -text
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/obsolete/mothership-0.00-0.10.sql -text
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/obsolete/mothership-0.10-0.11.sql -text
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/obsolete/mothership-0.11-0.12.sql -text
@@ -1647,6 +1659,8 @@ study/src/META-INF/study/scripts/sql[!!-~]server/study-8.13-8.14.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-8.14-8.15.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-8.15-8.16.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-8.16-8.17.sql -text
+study/src/META-INF/study/scripts/sql[!!-~]server/study-create.sql -text
+study/src/META-INF/study/scripts/sql[!!-~]server/study-drop.sql -text
 study/src/org/labkey/study/QueryHelper.java -text
 study/src/org/labkey/study/SampleManager.java -text
 study/src/org/labkey/study/SpecimenServiceImpl.java -text
