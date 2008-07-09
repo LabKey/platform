@@ -22,6 +22,9 @@ import org.json.JSONObject;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
+import org.labkey.api.view.TermsOfUseException;
+import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.HttpView;
 
 import java.io.BufferedReader;
 import java.util.Iterator;
@@ -47,6 +50,35 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
     public ApiAction(Class<? extends FORM> formClass)
     {
         super(formClass);
+    }
+
+    /**
+     * Overriden in order to return an HTTP unauthroized response code (401) if
+     * the user is not logged in. Clients of API actions will typically either be
+     * logged in (HTML page hosted in LabKey frame) or an external application
+     * using basic authentication. Most HTTP libraries require a 401 response
+     * before sending the basic auth header
+     *
+     * @throws TermsOfUseException
+     * @throws UnauthorizedException
+     */
+    public void checkPermissions() throws TermsOfUseException, UnauthorizedException
+    {
+        try
+        {
+            super.checkPermissions();
+        }
+        catch (TermsOfUseException e)
+        {
+            // We don't enforce terms of use when calling api actions
+        }
+        catch (UnauthorizedException e)
+        {
+            // Force Basic authentication
+            if (!getViewContext().getUser().isGuest())
+                HttpView.throwUnauthorized();
+            throw new UnauthorizedException(true);
+        }
     }
 
     protected String getCommandClassMethodName()

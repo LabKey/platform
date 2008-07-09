@@ -468,6 +468,11 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
                     key: Ext.EventObject.ESC,
                     handler: this.onEsc,
                     scope: this
+                },
+                {
+                    key: Ext.EventObject.TAB,
+                    handler: this.onTab,
+                    scope: this
                 }
             ]
         }
@@ -540,7 +545,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         var selmodel = this.getSelectionModel();
         if(selmodel.hasNext())
             selmodel.selectNext();
-        else
+        else if(this.autoSave)
             this.saveChanges();
     },
 
@@ -555,6 +560,11 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
             else
                 record.reject();
         }
+    },
+
+    onTab : function() {
+        if(this.autoSave)
+            this.saveChanges();
     },
 
     onBodyClick : function(evt) {
