@@ -601,7 +601,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     {
                         col.setIsHidden(true);
                         col.setUserEditable(false);
-                        col.setKeyField(true);
                     }
                 }
             }
