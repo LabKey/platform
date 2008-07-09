@@ -21,9 +21,19 @@ GO
 /* core-2.31-2.32.sql */
 
 -- clean up user history prefs for deleted users (issue#5465)
+CREATE VIEW core._Users AS
+    SELECT Principals.Name AS Email, UsersData.*
+    FROM core.Principals Principals
+        INNER JOIN core.UsersData UsersData ON Principals.UserId = UsersData.UserId
+    WHERE Type = 'u'
+GO
+
 DELETE FROM core.UserHistory WHERE UserID NOT IN
     (
     SELECT U1.UserId
-    FROM core.Users U1
+    FROM core._Users U1
     )
+GO
+
+DROP VIEW core._Users
 GO

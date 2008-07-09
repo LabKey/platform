@@ -13,11 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-DROP VIEW core.Contacts
-GO
-DROP VIEW core.Users
-GO
-
 ALTER TABLE core.ACLs ADD Container UNIQUEIDENTIFIER;
 go
 UPDATE core.ACLs SET Container = ObjectId WHERE ObjectId in (SELECT EntityId FROM core.Containers);
@@ -64,19 +59,5 @@ go
 ALTER TABLE core.Principals ADD CONSTRAINT UQ_Principals_Container_Name_OwnerId UNIQUE (Container, Name, OwnerId);
 go
 ALTER TABLE core.Principals DROP COLUMN ProjectId;
-go
-
-CREATE VIEW core.Users AS
-    SELECT Principals.Name AS Email, UsersData.*
-    FROM core.Principals Principals
-        INNER JOIN core.UsersData UsersData ON Principals.UserId = UsersData.UserId
-    WHERE Type = 'u'
-go
-
-CREATE VIEW core.Contacts As
-	SELECT Users.FirstName + ' ' + Users.LastName AS Name, Users.Email, Users.Phone, Users.UserId, Principals.OwnerId, Principals.Container, Principals.Name AS GroupName
-	FROM core.Principals Principals
-	    INNER JOIN core.Members Members ON Principals.UserId = Members.GroupId
-	    INNER JOIN core.Users Users ON Members.UserId = Users.UserId
 go
 

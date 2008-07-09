@@ -34,18 +34,6 @@
 SET NOCOUNT ON
 
 if exists (select * from dbo.sysobjects where id = object_id(N'exp.AllLsidContainers ') and OBJECTPROPERTY(id, N'IsView') = 1)
-DROP VIEW exp.AllLsidContainers
-GO
-CREATE VIEW exp.AllLsidContainers AS
-	SELECT LSID, Container, 'Protocol' AS Type FROM exp.Protocol UNION ALL
-	SELECT exp.ProtocolApplication.LSID, Container, 'ProtocolApplication' AS Type FROM exp.ProtocolApplication JOIN exp.Protocol ON exp.Protocol.LSID = exp.ProtocolApplication.ProtocolLSID UNION ALL
-	SELECT LSID, Container, 'Experiment' AS Type FROM exp.Experiment UNION ALL
-	SELECT LSID, Container, 'Material' AS Type FROM exp.Material UNION ALL
-	SELECT LSID, Container, 'MaterialSource' AS Type FROM exp.MaterialSource UNION ALL
-	SELECT LSID, Container, 'Data' AS Type FROM exp.Data UNION ALL
-	SELECT LSID, Container, 'ExperimentRun' AS Type FROM exp.ExperimentRun
-GO
-
 CREATE VIEW exp._orphanProtocolView AS 
 SELECT * FROM exp.Protocol WHERE container NOT IN (SELECT entityid FROM core.containers) OR container IS NULL 
 go
@@ -237,14 +225,6 @@ ALTER TABLE exp.ObjectProperty ADD
 go
 
 -- Create views and procs used by Ontology Manager
-CREATE VIEW exp.ObjectPropertiesView AS
-	SELECT
-		O.*,
-		PD.name, PD.PropertyURI, PD.DatatypeURI,
-		P.TypeTag, P.FloatValue, P.StringValue, P.DatetimeValue, P.TextValue
-	FROM exp.ObjectProperty P JOIN exp.Object O ON P.ObjectId = O.ObjectId JOIN exp.PropertyDescriptor PD ON P.PropertyID = PD.RowId
-go
-
 CREATE PROCEDURE exp.getObjectProperties(@container ENTITYID, @lsid LSIDType) AS
 BEGIN
 	SELECT * FROM exp.ObjectPropertiesView

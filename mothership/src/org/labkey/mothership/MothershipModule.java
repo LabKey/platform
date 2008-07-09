@@ -73,29 +73,12 @@ public class MothershipModule extends DefaultModule
                 SecurityManager.updateACL(c, acl);
                 SecurityManager.addMember(mothershipGroup, viewContext.getUser());
             }
-
-            if (moduleContext.getInstalledVersion() <= 2.1)
-            {
-                updateExceptionHashMap(viewContext.getUser());
-            }
         }
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
         }
         super.afterSchemaUpdate(moduleContext, viewContext);
-    }
-
-    private void updateExceptionHashMap(User user) throws SQLException
-    {
-        MothershipManager mm = MothershipManager.get();
-        TableInfo tinfo = mm.getTableInfoExceptionStackTrace();
-        ExceptionStackTrace[] stackTraces = Table.select(tinfo, Table.ALL_COLUMNS, null, null, ExceptionStackTrace.class);
-        for (ExceptionStackTrace stackTrace : stackTraces)
-        {
-            stackTrace.hashStackTrace();
-            mm.updateExceptionStackTrace(stackTrace, user);
-        }
     }
 
     public Set<String> getSchemaNames()

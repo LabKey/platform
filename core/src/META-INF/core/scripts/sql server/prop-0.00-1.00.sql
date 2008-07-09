@@ -49,11 +49,6 @@ CREATE TABLE prop.Properties
 GO
 
 
-CREATE VIEW prop.PropertyEntries AS
-    SELECT ObjectId, Category, UserId, Name, Value FROM prop.Properties JOIN prop.PropertySets ON prop.PropertySets."Set" = prop.Properties."Set"
-GO
-
-
 CREATE PROCEDURE prop.Property_setValue(@Set int, @Name VARCHAR(255), @Value VARCHAR(2000)) AS
     BEGIN
     IF (@Value IS NULL)

@@ -70,14 +70,6 @@ A PropertyDescriptor with a Domain describes a member of a type (or an ObjectPro
 ALTER TABLE exp.ObjectProperty DROP CONSTRAINT FK_ObjectProperty_PropertyDescriptor
 go
 
-if exists (select * from dbo.sysobjects where id = object_id(N'[exp].[ObjectPropertiesView]') and OBJECTPROPERTY(id, N'IsView') = 1)
-DROP VIEW exp.ObjectPropertiesView
-go
-if exists (select * from dbo.sysobjects where id = object_id(N'[exp].[ObjectClasses]') and OBJECTPROPERTY(id, N'IsView') = 1)
-DROP VIEW exp.ObjectClasses
-go
-
-
 ALTER TABLE exp.PropertyDescriptor DROP CONSTRAINT PK_PropertyDescriptor 
 go
 ALTER TABLE exp.PropertyDescriptor DROP CONSTRAINT UQ_PropertyDescriptor 
@@ -162,21 +154,5 @@ GO
 ALTER TABLE exp.ObjectProperty 
 	ADD CONSTRAINT FK_ObjectProperty_PropertyDescriptor FOREIGN KEY (PropertyId) REFERENCES exp.PropertyDescriptor (PropertyId)
 
-go
-
-CREATE VIEW exp.ObjectPropertiesView AS
-	SELECT
-		O.*,
-		PD.name, PD.PropertyURI, PD.RangeURI,
-		P.TypeTag, P.FloatValue, P.StringValue, P.DatetimeValue, P.TextValue
-	FROM exp.ObjectProperty P JOIN exp.Object O ON P.ObjectId = O.ObjectId JOIN exp.PropertyDescriptor PD ON P.PropertyId = PD.PropertyId
-go
-
-
-
-CREATE VIEW exp.ObjectClasses AS
-	SELECT DISTINCT DomainURI
-	FROM exp.PropertyDescriptor
-	WHERE DomainURI IS NOT NULL
 go
 

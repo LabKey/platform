@@ -208,12 +208,6 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
     }
 
     @Override
-    public void beforeSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)
-    {
-        // Do nothing
-    }
-
-    @Override
     public void afterSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)
     {
         double installedVersion = moduleContext.getInstalledVersion();

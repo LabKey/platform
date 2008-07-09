@@ -13,12 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-CREATE VIEW exp.ExperimentRunMaterialOutputs AS
-	SELECT exp.Material.LSID AS MaterialLSID, exp.ExperimentRun.LSID AS RunLSID, exp.ExperimentRun.Container AS Container
-	FROM exp.Material
-	JOIN exp.ExperimentRun ON exp.Material.RunId=exp.ExperimentRun.RowId
-	WHERE SourceApplicationId IS NOT NULL
-go
 CREATE TABLE exp.ActiveMaterialSource (
 	Container ENTITYID NOT NULL,
 	MaterialSourceLSID LSIDtype NOT NULL,
@@ -28,13 +22,6 @@ CREATE TABLE exp.ActiveMaterialSource (
 	CONSTRAINT FK_ActiveMaterialSource_MaterialSourceLSID FOREIGN KEY (MaterialSourceLSID)
 			REFERENCES exp.MaterialSource(LSID)
 )
-go
-
-CREATE VIEW exp.MaterialSourceWithProject AS
-    SELECT ms.RowId, ms.Name, ms.LSID, ms.MaterialLSIDPrefix, ms.URLPattern, ms.Description,
-        ms.Created,	ms.CreatedBy, ms.Modified, ms.ModifiedBy, ms.Container , dd.Project
-    FROM exp.MaterialSource ms
-    LEFT OUTER JOIN exp.DomainDescriptor dd ON ms.lsid = dd.domainuri
 go
 
 ALTER TABLE exp.DataInput
@@ -58,9 +45,6 @@ go
 DROP INDEX exp.ObjectProperty.IDX_ObjectProperty_StringValue
 go
 
-DROP VIEW exp.ObjectPropertiesView
-go
-
 ALTER TABLE exp.ObjectProperty ALTER COLUMN StringValue NVARCHAR(4000)NULL
 go
 
@@ -71,14 +55,5 @@ go
 ALTER TABLE exp.ObjectProperty DROP COLUMN TextValue
 go
 
-CREATE VIEW exp.ObjectPropertiesView AS
-	SELECT
-		O.ObjectId, O.Container, O.ObjectURI, O.OwnerObjectId,
-		PD.name, PD.PropertyURI, PD.RangeURI,
-		P.TypeTag, P.FloatValue, P.StringValue, P.DatetimeValue
-	FROM exp.ObjectProperty P JOIN exp.Object O ON P.ObjectId = O.ObjectId 
-	    JOIN exp.PropertyDescriptor PD ON P.PropertyId = PD.PropertyId
-go
-        
 UPDATE exp.Material SET CpasType='Material' WHERE CpasType IS NULL
 go
