@@ -175,6 +175,10 @@ public class FileSqlScriptProvider implements SqlScriptProvider
                 contents.append('\n');
             }
         }
+        catch (NullPointerException e)
+        {
+            throw new SqlScriptException(e, filename);
+        }
         catch (FileNotFoundException e)
         {
             throw new SqlScriptException(e, filename);
