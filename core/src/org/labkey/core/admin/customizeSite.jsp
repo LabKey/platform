@@ -377,12 +377,12 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <tr style="height:1;"><td colspan=3 class=ms-titlearealine><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
 <tr>
-    <td class="ms-searchform">Use perl pipeline</td>
-    <td class="normal"><input type="checkbox" name="pipelineCluster" <%=appProps.hasPipelineCluster() ? "checked" : ""%>></td>
-</tr>
-<tr>
     <td class="ms-searchform">Pipeline tools directory</td>
     <td class="normal"><input type="text" name="pipelineToolsDirectory" size="50" value="<%= h(appProps.getPipelineToolsDirectory()) %>"></td>
+</tr>
+<tr>
+    <td class="ms-searchform">Enable Perl pipeline</td>
+    <td class="normal"><input type="checkbox" name="perlPipelineEnabled" <%=appProps.isPerlPipelineEnabled() ? "checked" : ""%>></td>
 </tr>
 <tr>
     <td class="normal">&nbsp;</td>

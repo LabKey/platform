@@ -17,7 +17,6 @@ package org.labkey.pipeline;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.struts.action.ActionError;
 import org.labkey.api.action.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
@@ -35,7 +34,6 @@ import org.labkey.pipeline.api.GlobusKeyPairImpl;
 import org.labkey.pipeline.status.StatusController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
-import org.springframework.validation.FieldError;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -205,7 +203,8 @@ public class PipelineController extends SpringActionController
                 }
             }
 
-            PipelineService.get().setPipelineRoot(getUser(), getContainer(), root, PipelineRoot.PRIMARY_ROOT, keyPair);
+            PipelineService.get().setPipelineRoot(getUser(), getContainer(), root, PipelineRoot.PRIMARY_ROOT,
+                    keyPair, form.isPerlPipeline());
             return true;
         }
 
@@ -223,13 +222,16 @@ public class PipelineController extends SpringActionController
         private String _strValue;
         private ActionURL _doneURL;
         private GlobusKeyPair _globusKeyPair;
+        private boolean _perlPipeline;
 
-        public SetupBean(String confirmMessage, String strValue, ActionURL doneURL, GlobusKeyPair globusKeyPair)
+        public SetupBean(String confirmMessage, String strValue, ActionURL doneURL,
+                         GlobusKeyPair globusKeyPair, boolean perlPipeline)
         {
             _confirmMessage = confirmMessage;
             _strValue = strValue;
             _doneURL = doneURL;
             _globusKeyPair = globusKeyPair;
+            _perlPipeline = perlPipeline;
         }
 
         public ActionURL getDoneURL()
@@ -250,6 +252,11 @@ public class PipelineController extends SpringActionController
         public GlobusKeyPair getGlobusKeyPair()
         {
             return _globusKeyPair;
+        }
+
+        public boolean isPerlPipeline()
+        {
+            return _perlPipeline;
         }
     }
 
@@ -341,7 +348,26 @@ public class PipelineController extends SpringActionController
                     confirmMessage = "The pipeline root was set to '" + fileRoot.getPath() + "'.";
                 }
 
-                SetupBean bean = new SetupBean(confirmMessage, strValue, doneURL, pipeRoot == null ? null : pipeRoot.getGlobusKeyPair());
+                GlobusKeyPair keyPair = null;
+                boolean usePerlPipeline;
+                if (pipeRoot == null)
+                {
+                    usePerlPipeline = AppProps.getInstance().isPerlPipelineEnabled();
+                    if (usePerlPipeline)
+                    {
+                        // If Globus properties are set, assume system is transitioning away
+                        // from Perl pipeline.
+                        usePerlPipeline = !PipelineService.get().isEnterprisePipeline() ||
+                            PipelineJobService.get().getGlobusClientProperties() == null;
+                    }
+                }
+                else
+                {
+                    keyPair = pipeRoot.getGlobusKeyPair();
+                    usePerlPipeline = pipeRoot.isPerlPipeline();
+                }
+                
+                SetupBean bean = new SetupBean(confirmMessage, strValue, doneURL, keyPair, usePerlPipeline);                
                 JspView<SetupBean> jspView = new JspView<SetupBean>("/org/labkey/pipeline/setup.jsp", bean, errors);
 
                 PipelineService service = PipelineService.get();
@@ -365,7 +391,7 @@ public class PipelineController extends SpringActionController
                 {
                     for (PipelineProvider provider : service.getPipelineProviders())
                     {
-                        HttpView part = provider.getSetupWebPart();
+                        HttpView part = provider.getSetupWebPart(c);
                         if (part != null)
                             leftBox.addView(part);
                     }
@@ -493,7 +519,7 @@ public class PipelineController extends SpringActionController
                     }
 
                     for (PipelineProvider provider : providers)
-                        provider.updateFileProperties(getViewContext(), parents);
+                        provider.updateFileProperties(getViewContext(), pr, parents);
 
                     // keep actions in consistent order for display
                     entry.orderActions();
@@ -1315,6 +1341,7 @@ public class PipelineController extends SpringActionController
     {
         private String _keyPassword;
         private boolean _uploadNewGlobusKeys;
+        private boolean _perlPipeline;
 
         public boolean isUploadNewGlobusKeys()
         {
@@ -1336,6 +1363,15 @@ public class PipelineController extends SpringActionController
             _keyPassword = keyPassword;
         }
 
+        public boolean isPerlPipeline()
+        {
+            return _perlPipeline;
+        }
+
+        public void setPerlPipeline(boolean perlPipeline)
+        {
+            _perlPipeline = perlPipeline;
+        }
     }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -72,62 +72,15 @@ public class PipelineWebPart extends WebPartView
             return;
         }
 
-        User user = getViewContext().getUser();
-        PipelineService service = PipelineService.get();
-
-        URI uriRoot = null;
-        boolean canModify = service.canModifyPipelineRoot(user, c);
-        PipeRoot pr = service.findPipelineRoot(c);
-        if (pr != null)
-        {
-            uriRoot = pr.getUri(c);
-        }
-
-        if (uriRoot == null && !canModify)
+        GridView gridView = StatusController.getPartView(c, getViewContext().getUser(),
+                StatusController.ShowPartRegionAction.class);
+        if (gridView == null)
         {
             showMessage("Setup required.  Please contact your project administrator.");
             return;
         }
 
-        DataRegion rgn = new StatusDataRegion();
-        rgn.setColumns(PipelineStatusManager.getTableInfo().getColumns("Status, Created, FilePath, Description"));
-        DisplayColumn col = rgn.getDisplayColumn("FilePath");
-        col.setVisible(false);
-        col = rgn.getDisplayColumn("Description");
-        col.setVisible(false);
-        col = new DescriptionDisplayColumn(uriRoot);
-        col.setWidth("500");
-        rgn.addDisplayColumn(col);
-
-        String referer = PipelineController.RefererValues.protal.toString();
-        ButtonBar bb = new ButtonBar();
-
-        if (c.hasPermission(user, ACL.PERM_INSERT) && uriRoot != null)
-        {
-            ActionURL url = PipelineController.urlBrowse(c, referer);
-            ActionButton button = new ActionButton(url, "Process and Import Data");
-            button.setActionType(ActionButton.Action.GET);
-            bb.add(button);
-        }
-
-        if (canModify)
-        {
-            ActionURL url = PipelineController.urlSetup(c, referer);
-            ActionButton button = new ActionButton(url, "Setup");
-            button.setActionType(ActionButton.Action.GET);
-            bb.add(button);
-        }
-
-        rgn.setButtonBar(bb, DataRegion.MODE_GRID);
-
-        rgn.getDisplayColumn(0).setURL(StatusController.urlDetailsData(c));
-
-        GridView gridView = new GridView(rgn);
         gridView.setCustomizeLinks(getCustomizeLinks());
-        SimpleFilter filter = new SimpleFilter();
-        filter.addCondition("Status", PipelineJob.COMPLETE_STATUS, CompareType.NEQ);
-        gridView.setFilter(filter);
-        gridView.setSort(new Sort("-Created"));
         include(gridView);
     }
 }

@@ -32,6 +32,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.pipeline.PipelineController;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
+import org.labkey.pipeline.api.PipelineStatusManager;
 import static org.labkey.pipeline.api.PipelineStatusManager.*;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -45,10 +46,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.URI;
 import java.sql.SQLException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class StatusController extends SpringActionController
 {
@@ -140,16 +138,8 @@ public class StatusController extends SpringActionController
 
             setHelpTopic(getHelpTopic("Pipeline-Status/status"));
 
-            DataRegion rgn = getGrid(c, getUser());
-            GridView gridView = new GridView(rgn);
-            if (c == null || c.isRoot())
-            {
-                gridView.getRenderContext().setUseContainerFilter(false);
-                gridView.getViewContext().setPermissions(ACL.PERM_READ);
-            }
+            GridView gridView = getGridView(c, getUser(), ShowListRegionAction.class);
             gridView.setTitle("Data Pipeline");
-            gridView.setSort(new Sort("-Created"));
-
             return gridView;
         }
 
@@ -170,6 +160,28 @@ public class StatusController extends SpringActionController
         public boolean handlePost(Object o, BindException errors) throws Exception
         {
             return true;    // Direct posts do nothing
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class ShowListRegionAction extends ApiAction
+    {
+        public ApiResponse execute(Object o, BindException errors) throws Exception
+        {
+            GridView gridView = getGridView(getContainer(), getUser(), null);
+            gridView.render(getViewContext().getRequest(), getViewContext().getResponse());
+            return null;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class ShowPartRegionAction extends ApiAction
+    {
+        public ApiResponse execute(Object o, BindException errors) throws Exception
+        {
+            GridView gridView = getPartView(getContainer(), getUser(), null);
+            gridView.render(getViewContext().getRequest(), getViewContext().getResponse());
+            return null;
         }
     }
 
@@ -398,7 +410,7 @@ public class StatusController extends SpringActionController
                         {
                             PipelineProvider provider = PipelineService.get().getPipelineProvider(providerName);
                             if (provider != null)
-                                visible = provider.isStatusViewableFile(fileName, basename);
+                                visible = provider.isStatusViewableFile(sf.lookupContainer(), fileName, basename);
                         }
 
                         if (visible)
@@ -693,8 +705,8 @@ public class StatusController extends SpringActionController
 
     private static class HideShowRetryColumn extends SimpleDisplayColumn
     {
-        private ActionButton btnRetry;
-        private Set<String> setProviders = new HashSet<String>();
+        private ActionButton _btnRetry;
+        private Map<String, Set<String>> _mapProvidersContainers = new HashMap<String, Set<String>>();
 
         public HideShowRetryColumn(ButtonBar bb)
         {
@@ -702,15 +714,15 @@ public class StatusController extends SpringActionController
             for (DisplayElement button : buttons)
             {
                 if (CAPTION_RETRY_BUTTON.equals(button.getCaption()))
-                    btnRetry = (ActionButton) button;
+                    _btnRetry = (ActionButton) button;
             }
         }
 
-        public boolean supportsRetry(PipelineProvider provider)
+        public boolean supportsRetry(PipelineProvider provider, Container container)
         {
             if (provider == null)
                 return false;
-            List<PipelineProvider.StatusAction> l = provider.addStatusActions();
+            List<PipelineProvider.StatusAction> l = provider.addStatusActions(container);
             if (l == null)
                 return false;
 
@@ -725,30 +737,110 @@ public class StatusController extends SpringActionController
 
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
-            if (btnRetry == null)
+            if (_btnRetry == null)
                 return;
 
             Map cols = ctx.getRow();
-                String providerName = (String) cols.get("Provider");
-            if (!setProviders.contains(providerName))
+            String providerName = (String) cols.get("Provider");
+            String containerId = (String) cols.get("Container");
+            Set<String> setContainers = _mapProvidersContainers.get(providerName);
+            if (setContainers == null)
             {
-                setProviders.add(providerName);
-                if (supportsRetry(PipelineService.get().getPipelineProvider(providerName)))
-                    btnRetry.setVisible(true);
+                setContainers = new HashSet<String>();
+                _mapProvidersContainers.put(providerName, setContainers);
+            }
+            if (!setContainers.contains(containerId))
+            {
+                setContainers.add(containerId);
+                if (supportsRetry(PipelineService.get().getPipelineProvider(providerName),
+                        ContainerManager.getForId(containerId)))
+                    _btnRetry.setVisible(true);
             }
         }
     }
 
-    private DataRegion getGrid(Container c, User user) throws SQLException
+    public static GridView getGridView(Container c, User user, Class<? extends ApiAction> apiAction)
+            throws SQLException
     {
-        DataRegion rgn = new StatusDataRegion();
+        StatusDataRegion rgn = getGrid(c, user);
+        rgn.setApiAction(apiAction);
+        GridView gridView = new GridView(rgn);
+        if (c == null || c.isRoot())
+        {
+            gridView.getRenderContext().setUseContainerFilter(false);
+            gridView.getViewContext().setPermissions(ACL.PERM_READ);
+        }
+        gridView.setSort(new Sort("-Created"));
+        return gridView;
+    }
 
-        rgn.setColumns(getTableInfo().getColumns("Status, Created, FilePath, Description, Provider"));
+    public static GridView getPartView(Container c, User user, Class<? extends ApiAction> apiAction) throws SQLException
+    {
+        URI uriRoot = null;
+
+        PipelineService service = PipelineService.get();
+        boolean canModify = service.canModifyPipelineRoot(user, c);
+        PipeRoot pr = service.findPipelineRoot(c);
+        if (pr != null)
+            uriRoot = pr.getUri(c);
+
+        if (uriRoot == null && !canModify)
+            return null;
+
+        StatusDataRegion rgn = new StatusDataRegion();
+        rgn.setApiAction(apiAction);
+        rgn.setColumns(PipelineStatusManager.getTableInfo().getColumns("Status, Created, FilePath, Description"));
+        DisplayColumn col = rgn.getDisplayColumn("FilePath");
+        col.setVisible(false);
+        col = rgn.getDisplayColumn("Description");
+        col.setVisible(false);
+        col = new DescriptionDisplayColumn(uriRoot);
+        col.setWidth("500");
+        rgn.addDisplayColumn(col);
+
+        String referer = PipelineController.RefererValues.protal.toString();
+        ButtonBar bb = new ButtonBar();
+
+        if (c.hasPermission(user, ACL.PERM_INSERT) && uriRoot != null)
+        {
+            ActionURL url = PipelineController.urlBrowse(c, referer);
+            ActionButton button = new ActionButton(url, "Process and Import Data");
+            button.setActionType(ActionButton.Action.GET);
+            bb.add(button);
+        }
+
+        if (canModify)
+        {
+            ActionURL url = PipelineController.urlSetup(c, referer);
+            ActionButton button = new ActionButton(url, "Setup");
+            button.setActionType(ActionButton.Action.GET);
+            bb.add(button);
+        }
+
+        rgn.setButtonBar(bb, DataRegion.MODE_GRID);
+
+        rgn.getDisplayColumn(0).setURL(StatusController.urlDetailsData(c));
+
+        GridView gridView = new GridView(rgn);
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition("Status", PipelineJob.COMPLETE_STATUS, CompareType.NEQ);
+        gridView.setFilter(filter);
+        gridView.setSort(new Sort("-Created"));
+        return gridView;
+    }
+
+    private static StatusDataRegion getGrid(Container c, User user) throws SQLException
+    {
+        StatusDataRegion rgn = new StatusDataRegion();
+
+        rgn.setColumns(getTableInfo().getColumns("Status, Created, FilePath, Description, Provider, Container"));
         DisplayColumn col = rgn.getDisplayColumn("Status");
         col.setURL(urlDetailsData(c));
         col = rgn.getDisplayColumn("Description");
         col.setVisible(false);
         col = rgn.getDisplayColumn("Provider");
+        col.setVisible(false);
+        col = rgn.getDisplayColumn("Container");
         col.setVisible(false);
         col = rgn.getDisplayColumn("FilePath");
         PipelineService service = PipelineService.get();
@@ -831,11 +923,13 @@ public class StatusController extends SpringActionController
     {
         DataRegion rgn = new DataRegion();
 
-        rgn.setColumns(getTableInfo().getColumns("Created, Modified, Job, Provider, Email, Status, Info, FilePath, DataUrl"));
+        rgn.setColumns(getTableInfo().getColumns("Created, Modified, Job, Provider, Container, Email, Status, Info, FilePath, DataUrl"));
         rgn.addDisplayColumn(new FileDisplayColumn());
         DisplayColumn col = rgn.getDisplayColumn("Job");
         col.setVisible(false);
         col = rgn.getDisplayColumn("Provider");
+        col.setVisible(false);
+        col = rgn.getDisplayColumn("Container");
         col.setVisible(false);
         col = rgn.getDisplayColumn("DataUrl");
         col.setVisible(false);
@@ -961,7 +1055,7 @@ public class StatusController extends SpringActionController
             String status;
             try
             {
-                if (!AppProps.getInstance().hasPipelineCluster())
+                if (!PipelineService.get().usePerlPipeline(getContainer()))
                     status = "ERROR->HTTP status updates disabled";
                 else if (!form.isStatusModAllowed())
                     status = "ERROR->Access denied";
@@ -1000,7 +1094,7 @@ public class StatusController extends SpringActionController
             String status;
             try
             {
-                if (!AppProps.getInstance().hasPipelineCluster())
+                if (!PipelineService.get().usePerlPipeline(getContainer()))
                     status = "ERROR->HTTP status updates disabled";
                 else if (!form.isStatusModAllowed())
                     status = "ERROR->Access denied";

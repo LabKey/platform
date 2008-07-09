@@ -17,6 +17,8 @@ package org.labkey.pipeline.status;
 
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.pipeline.PipelineProvider;
@@ -47,9 +49,10 @@ public class FileDisplayColumn extends SimpleDisplayColumn
         File dir = null;
 
         Map cols = ctx.getRow();
-        Integer rowIdI = (Integer) cols.get("rowId");
-        String filePath = (String) cols.get("filePath");
-        String providerName = (String) cols.get("provider");
+        Integer rowIdI = (Integer) cols.get("RowId");
+        String filePath = (String) cols.get("FilePath");
+        String providerName = (String) cols.get("Provider");
+        String containerId = (String) cols.get("Container");
         if (rowIdI != null && filePath != null && filePath.length() > 0)
         {
             File f = new File(filePath);
@@ -63,6 +66,7 @@ public class FileDisplayColumn extends SimpleDisplayColumn
                 // remove .status
                 final String basename = statusName.substring(0, statusName.lastIndexOf('.'));
                 final PipelineProvider provider = PipelineService.get().getPipelineProvider(providerName);
+                final Container container = ContainerManager.getForId(containerId);
 
                 // get files with .log, or same basename and .out
                 fileNames = dir.list(
@@ -71,7 +75,7 @@ public class FileDisplayColumn extends SimpleDisplayColumn
                             public boolean accept(File dir, String name)
                             {
                                 if (provider != null)
-                                    return provider.isStatusViewableFile(name, basename);
+                                    return provider.isStatusViewableFile(container, name, basename);
 
                                 return StatusController.isVisibleFile(name, basename);
                             }

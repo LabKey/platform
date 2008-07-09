@@ -18,6 +18,8 @@ package org.labkey.pipeline.status;
 import org.labkey.api.data.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.ApiAction;
 import org.labkey.pipeline.api.PipelineStatusManager;
 
 import java.io.Writer;
@@ -34,6 +36,18 @@ import java.util.List;
  */
 public class StatusDataRegion extends DataRegion
 {
+    private Class<? extends ApiAction> _apiAction;
+
+    public StatusDataRegion()
+    {
+        setShowPagination(false);
+    }
+
+    public void setApiAction(Class<? extends ApiAction> apiAction)
+    {
+        _apiAction = apiAction;
+    }
+
     private void renderTab(Writer out, String text, ActionURL url, boolean selected) throws IOException
     {
         String selectStyle = "";
@@ -50,6 +64,23 @@ public class StatusDataRegion extends DataRegion
 
     protected void _renderTable(RenderContext ctx, Writer out) throws SQLException, IOException
     {
+        if (_apiAction == null)
+        {
+            super._renderTable(ctx, out);
+            return;
+        }
+        
+        out.write("<script type=\"text/javascript\">\n" +
+                "LABKEY.requiresScript('pipeline/StatusUpdate.js');\n" +
+                "</script>\n");
+
+        String controller = SpringActionController.getPageFlowName(_apiAction);
+        String action = SpringActionController.getActionName(_apiAction);
+        out.write("<script type=\"text/javascript\">\n" +
+                "var su = new LABKEY.pipeline.StatusUpdate('" + controller + "', '" + action + "');\n" +
+                "su.start();\n" +
+                "</script>\n");
+
         ActionURL url = StatusController.urlShowList(ctx.getContainer(), false);
         ActionURL urlFilter = ctx.getSortFilterURLHelper();
 
@@ -86,8 +117,12 @@ public class StatusDataRegion extends DataRegion
         renderTab(out, "All", url, selected);
         selSeen = selSeen || selected;
 
-        out.write("</tr></table>");
+        out.write("</tr></table>\n");
+        out.write("<div id=\"statusFailureDiv\" class=\"labkey-error\" style=\"display: none\"></div>");
+        out.write("<div id=\"statusRegionDiv\">");
 
         super._renderTable(ctx, out);
+
+        out.write("</div>");
     }
 }

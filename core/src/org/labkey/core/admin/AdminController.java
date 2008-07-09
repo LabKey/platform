@@ -1282,7 +1282,7 @@ public class AdminController extends SpringActionController
             }
 
             props.setSystemShortName(form.getSystemShortName());
-            props.setPipelineCluster(form.isPipelineCluster());
+            props.setPerlPipelineEnabled(form.isPerlPipelineEnabled());
             props.setPipelineToolsDir(form.getPipelineToolsDirectory());
             props.setSequestServer(form.getSequestServer());
             props.setSSLRequired(form.isSslRequired());
@@ -1438,7 +1438,7 @@ public class AdminController extends SpringActionController
         private String _defaultLsidAuthority;
         private String _reportAProblemPath;
         private String _themeName;
-        private boolean _pipelineCluster;
+        private boolean _perlPipelineEnabled;
         private String _pipelineToolsDirectory;
         private boolean _sequest;
         private String _sequestServer;
@@ -1640,14 +1640,14 @@ public class AdminController extends SpringActionController
             _companyName = companyName;
         }
 
-        public boolean isPipelineCluster()
+        public boolean isPerlPipelineEnabled()
         {
-            return _pipelineCluster;
+            return _perlPipelineEnabled;
         }
 
-        public void setPipelineCluster(boolean pipelineCluster)
+        public void setPerlPipelineEnabled(boolean perlPipelineEnabled)
         {
-            _pipelineCluster = pipelineCluster;
+            _perlPipelineEnabled = perlPipelineEnabled;
         }
 
         public String getPipelineToolsDirectory()

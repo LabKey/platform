@@ -78,6 +78,7 @@ public class PipeRootImpl implements PipeRoot
     private URI _uri;
     private File _file;
     private String _entityId;
+    private boolean _perlPipeline;
     private GlobusKeyPairImpl _keyPair;
 
     public PipeRootImpl(PipelineRoot root) throws URISyntaxException
@@ -85,6 +86,7 @@ public class PipeRootImpl implements PipeRoot
         _container = ContainerManager.getForId(root.getContainerId());
         _uri = new URI(root.getPath());
         _entityId = root.getEntityId();
+        _perlPipeline = root.isPerlPipeline();
         if (root.getKeyBytes() != null && root.getCertBytes() != null)
         {
             _keyPair = new GlobusKeyPairImpl(root.getKeyBytes(), root.getKeyPassword(), root.getCertBytes());
@@ -242,6 +244,11 @@ public class PipeRootImpl implements PipeRoot
     public ACL getACL()
     {
         return SecurityManager.getACL(getContainer(), getEntityId());
+    }
+
+    public boolean isPerlPipeline()
+    {
+        return _perlPipeline;
     }
 
     public GlobusKeyPair getGlobusKeyPair()

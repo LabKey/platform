@@ -15,9 +15,7 @@
  */
 package org.labkey.pipeline.status;
 
-import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.*;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.ACL;
@@ -41,8 +39,9 @@ import java.util.HashMap;
 public class ProviderButtonBar extends ButtonBar
 {
     private String _providerCurrent;
-    private Map<String, List<DisplayElement>> _providerElements =
-            new HashMap<String, List<DisplayElement>>();
+    private String _containerCurrent;
+    private Map<String, Map<String, List<DisplayElement>>> _providerContainerElements =
+            new HashMap<String, Map<String, List<DisplayElement>>>();
 
     public void render(RenderContext ctx, Writer out) throws IOException
     {
@@ -53,19 +52,22 @@ public class ProviderButtonBar extends ButtonBar
         if (cols == null)
             return;
         
-        String providerName = (String) cols.get("provider");
-        if (providerName != null)
+        String providerName = (String) cols.get("Provider");
+        String containerId = (String) cols.get("Container");
+        if (providerName != null && containerId != null)
         {
             List<DisplayElement> elements = getList();
 
             _providerCurrent = providerName;
+            _containerCurrent = containerId;
 
             if (getList() == null)
             {
                 PipelineProvider provider = PipelineService.get().getPipelineProvider(providerName);
-                if (provider != null)
+                Container container = ContainerManager.getForId(containerId);
+                if (provider != null && container != null)
                 {
-                    List<PipelineProvider.StatusAction> actions = provider.addStatusActions();
+                    List<PipelineProvider.StatusAction> actions = provider.addStatusActions(container);
                     if (actions != null && actions.size() > 0)
                     {
                         List<DisplayElement> baseElements = elements;
@@ -100,19 +102,30 @@ public class ProviderButtonBar extends ButtonBar
                     }
                 }
 
-                _providerElements.put(_providerCurrent, elements);
+                Map<String, List<DisplayElement>> containerElements = _providerContainerElements.get(_providerCurrent);
+                if (containerElements == null)
+                {
+                    containerElements = new HashMap<String, List<DisplayElement>>();
+                    _providerContainerElements.put(_providerCurrent, containerElements);
+                }
+                containerElements.put(_containerCurrent, elements);
             }
         }
 
         super.render(ctx, out);
 
         _providerCurrent = null;
+        _containerCurrent = null;
     }
 
     public List<DisplayElement> getList()
     {
-        if (_providerCurrent != null)
-            return _providerElements.get(_providerCurrent);
+        if (_providerCurrent != null && _containerCurrent != null)
+        {
+            Map<String, List<DisplayElement>> containerElemenets = _providerContainerElements.get(_providerCurrent);
+            if (containerElemenets != null)
+                return containerElemenets.get(_containerCurrent);
+        }
         return super.getList();
     }
 }

@@ -24,6 +24,7 @@
 <%@ page import="java.security.cert.X509Certificate" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.pipeline.PipelineJobService" %>
+<%@ page import="org.labkey.api.util.AppProps" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<PipelineController.SetupBean> thisView = (JspView<PipelineController.SetupBean>) HttpView.currentView();
@@ -36,13 +37,6 @@
 %>
 
 <labkey:errors />
-
-<style type="text/css">
-    .globusConfig
-    {
-        display: <%= bean.getGlobusKeyPair() == null ? "table-row" : "none" %>; 
-    }
-</style>
 
 <script type="text/javascript">
 function toggleGlobusVisible()
@@ -66,8 +60,8 @@ function toggleGlobusVisible()
         <tr>
             <td class="ms-searchform">Pipeline root directory:</td>
             <td><input type="text" name="path" size="70" value="<%= PageFlowUtil.filter(bean.getStrValue()) %>"></td>
-        </tr>
-        <% if (PipelineService.get().isEnterprisePipeline() &&
+        </tr><%
+        if (PipelineService.get().isEnterprisePipeline() &&
                 PipelineJobService.get().getGlobusClientProperties() != null)
         {
             boolean showConfig = true;
@@ -91,8 +85,8 @@ function toggleGlobusVisible()
                 </tr>
             <% }
             else
-            { %>
-                <input type="hidden" name="uploadNewGlobusKeys" value="true" /><%
+            {
+                %><input type="hidden" name="uploadNewGlobusKeys" value="true" /><%
             } %>
             <tr id="keyFileRow" style="display: <%= showConfig ? "" : "none" %>">
                 <td class="ms-searchform">Globus SSL private key<labkey:helpPopup title="Globus SSL private key"><p>This is typically stored in a file with a .pem extension. It should be in a BASE64 encoded PKCS#8 file format, and may be encrypted.</p><p>If you open the file in a text editor, the first line should be:</p><pre>-----BEGIN RSA PRIVATE KEY-----</pre></labkey:helpPopup>:</td>
@@ -105,11 +99,20 @@ function toggleGlobusVisible()
             <tr id="certFileRow" style="display: <%= showConfig ? "" : "none" %>">
                 <td class="ms-searchform">Globus SSL certificate<labkey:helpPopup title="Globus SSL certificate"><p>This is typically stored in a file with a .pem extension. It should contain your BASE64 encoded X.509 certificatein a PKCS#8 file format.</p><p>If you open the file in a text editor, it should contain:</p><pre>-----BEGIN CERTIFICATE-----</pre></labkey:helpPopup>:</td>
                 <td><input type="file" size="70" name="certFile"></td>
-            </tr>
-        <% } %>
+            </tr><%
+        }
+
+        if (AppProps.getInstance().isPerlPipelineEnabled())
+        { %>
+            <tr>
+                <td class="ms-searchform">Use Perl pipeline<labkey:helpPopup title="Use Perl pipeline">Check this box to override the X! Tandem and Mascot pipelines with Perl file scanning versions.  This requires extra setup of the file scanning service for each new root.</labkey:helpPopup>:</td>
+                <td><input type="checkbox" name="perlPipeline" <%=bean.isPerlPipeline() ? " checked" : ""%>"></td>
+            </tr><%
+        }
+        %>
+        <tr><td colspan="3" style="font-size: 4px">&nbsp;</td></tr>
         <tr>
-            <td/>
-            <td><input type="image" src="<%= PageFlowUtil.buttonSrc("Set") %>"> <labkey:button text="View Status" href="<%= bean.getDoneURL() %>" /></td>
+            <td colspan="2"><input type="image" src="<%= PageFlowUtil.buttonSrc("Set") %>"> <labkey:button text="View Status" href="<%= bean.getDoneURL() %>" /></td>
         </tr>
     </table>
 </form>

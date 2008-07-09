@@ -38,7 +38,7 @@ public class FileContentPipelineProvider extends PipelineProvider
         super("File Content");
     }
 
-    public void updateFileProperties(ViewContext context, List<FileEntry> entries)
+    public void updateFileProperties(ViewContext context, PipeRoot pr, List<FileEntry> entries)
     {
         try
         {

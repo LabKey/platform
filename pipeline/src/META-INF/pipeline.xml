@@ -33,6 +33,7 @@
       <ns:column columnName="KeyBytes"/>
       <ns:column columnName="KeyPassword"/>
       <ns:column columnName="CertBytes"/>
+      <ns:column columnName="PerlPipeline"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="StatusFiles" tableDbType="TABLE">

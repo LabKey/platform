@@ -912,6 +912,7 @@ pipeline/src/META-INF/pipeline/scripts/postgresql/pipeline-2.00-2.10.sql -text
 pipeline/src/META-INF/pipeline/scripts/postgresql/pipeline-2.30-2.31.sql -text
 pipeline/src/META-INF/pipeline/scripts/postgresql/pipeline-2.30-8.10.sql -text
 pipeline/src/META-INF/pipeline/scripts/postgresql/pipeline-8.20-8.21.sql -text
+pipeline/src/META-INF/pipeline/scripts/postgresql/pipeline-8.21-8.22.sql -text
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/obsolete/cpas-0.00-0.58.sql -text
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/obsolete/cpas-0.00-0.64.sql -text
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/obsolete/cpas-0.63-0.64.sql -text
@@ -933,6 +934,7 @@ pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/pipeline-2.00-2.10.sql -t
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/pipeline-2.30-2.31.sql -text
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/pipeline-2.30-8.10.sql -text
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/pipeline-8.20-8.21.sql -text
+pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/pipeline-8.21-8.22.sql -text
 pipeline/src/org/labkey/pipeline/DirectoryView.java -text
 pipeline/src/org/labkey/pipeline/FileContentPipelineProvider.java -text
 pipeline/src/org/labkey/pipeline/PipelineController.java -text
@@ -1182,6 +1184,7 @@ pipeline/webapp/WEB-INF/schema/wsrf/servicegroup/WS-ServiceGroup.wsdl -text
 pipeline/webapp/WEB-INF/schema/wsrf/servicegroup/WS-ServiceGroup.xsd -text
 pipeline/webapp/WEB-INF/schema/wsrf/servicegroup/WS-ServiceGroup_bindings.wsdl -text
 pipeline/webapp/WEB-INF/schema/wsrf/servicegroup/WS-ServiceGroup_service.wsdl -text
+pipeline/webapp/pipeline/StatusUpdate.js -text
 pipeline/webapp/pipeline/images/file.gif -text
 pipeline/webapp/pipeline/images/folder.gif -text
 pipeline/webapp/pipeline/images/folder_open.gif -text

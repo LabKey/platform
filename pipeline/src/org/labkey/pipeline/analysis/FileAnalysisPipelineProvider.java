@@ -19,6 +19,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.exp.pipeline.XarGeneratorId;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.TaskId;
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProvider;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.util.FileType;
@@ -64,7 +65,7 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
         return null;
     }
 
-    public void updateFileProperties(ViewContext context, List<FileEntry> entries)
+    public void updateFileProperties(ViewContext context, PipeRoot pr, List<FileEntry> entries)
     {
         Container c = context.getContainer();
 

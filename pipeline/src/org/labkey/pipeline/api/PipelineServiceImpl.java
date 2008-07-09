@@ -27,10 +27,8 @@ import org.labkey.api.pipeline.browse.BrowseView;
 import org.labkey.api.security.User;
 import org.labkey.api.util.AppProps;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.pipeline.PipelineModule;
 import org.labkey.pipeline.mule.EPipelineQueueImpl;
 import org.labkey.pipeline.browse.BrowseViewImpl;
 
@@ -177,14 +175,25 @@ public class PipelineServiceImpl extends PipelineService
         return rootsList.toArray(new PipeRoot[rootsList.size()]);
     }
 
-    public void setPipelineRoot(User user, Container container, URI root, String type, GlobusKeyPair globusKeyPair) throws SQLException
+    public void setPipelineRoot(User user, Container container, URI root, String type,
+                                GlobusKeyPair globusKeyPair, boolean perlPipeline) throws SQLException
     {
-        PipelineManager.setPipelineRoot(user, container, root == null ? "" : root.toString(), type, globusKeyPair);
+        PipelineManager.setPipelineRoot(user, container, root == null ? "" : root.toString(), type,
+                globusKeyPair, perlPipeline);
     }
 
     public boolean canModifyPipelineRoot(User user, Container container)
     {
         return container != null && !container.isRoot() && user.isAdministrator();
+    }
+
+    public boolean usePerlPipeline(Container container) throws SQLException
+    {
+        if (!AppProps.getInstance().isPerlPipelineEnabled())
+            return false;
+
+        PipeRoot pr = findPipelineRoot(container);
+        return pr != null && pr.isPerlPipeline();
     }
 
     public File ensureSystemDirectory(URI root)

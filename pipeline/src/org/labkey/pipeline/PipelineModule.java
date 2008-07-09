@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.Table;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
@@ -63,7 +64,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
     public PipelineModule()
     {
-        super(PipelineService.MODULE_NAME, 8.21, "/org/labkey/pipeline", true, new WebPartFactory(PipelineWebPart.getPartName()){
+        super(PipelineService.MODULE_NAME, 8.22, "/org/labkey/pipeline", true, new WebPartFactory(PipelineWebPart.getPartName()){
             public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
             {
                 return new PipelineWebPart(portalCtx);
@@ -137,6 +138,8 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
                 _log.error("Failed to set pipeline tools directory.", e);
             }
         }
+
+        PipelineManager.updateRoots(moduleContext.getInstalledVersion());
     }
 
     @Override
