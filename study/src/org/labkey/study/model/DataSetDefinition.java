@@ -491,15 +491,22 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         _visitDatePropertyName = visitDatePropertyName;
     }
 
-    public String[] getKeyNames()
+    /**
+     * Returns the key names for display purposes.
+     * If demographic data, visit keys are supressed
+     */
+    public String[] getDisplayKeyNames()
     {
-        String[] props = new String[_keyPropertyName == null ? 2 : 3];
-        props[0] = "ParticipantId";
-        props[1] = getStudy().isDateBased() ? "Date" : "SequenceNum";
-        if (null != _keyPropertyName)
-            props[2] = _keyPropertyName;
+        List<String> keyNames = new ArrayList<String>();
+        keyNames.add("ParticipantId");
+        if (!isDemographicData())
+        {
+            keyNames.add(getStudy().isDateBased() ? "Date" : "SequenceNum");
+        }
+        if (getKeyPropertyName() != null)
+            keyNames.add(getKeyPropertyName());
 
-        return props;
+        return keyNames.toArray(new String[keyNames.size()]);
     }
     
     public String getKeyPropertyName()

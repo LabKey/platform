@@ -1606,7 +1606,7 @@ public class StudyController extends BaseStudyController
             form.setTypeURI(StudyManager.getInstance().getDatasetType(getContainer(), form.getDatasetId()));
             if (form.getTypeURI() == null)
                 return HttpView.throwNotFoundMV();
-            form.setKeys(StringUtils.join(def.getKeyNames(), ", "));
+            form.setKeys(StringUtils.join(def.getDisplayKeyNames(), ", "));
 
             return new JspView<ImportDataSetForm>("/org/labkey/study/view/importDataset.jsp", form, errors);
         }
@@ -3263,6 +3263,15 @@ public class StudyController extends BaseStudyController
             Set<String> ignoreColumns = new CaseInsensitiveHashSet("lsid", "datasetid", "visitdate", "sourcelsid", "created", "modified", "visitrowid", "day");
             if (study.isDateBased())
                 ignoreColumns.add("SequenceNum");
+
+            // If this is demographic data, user doesn't need to enter visit info -- we have defaults.
+            if (def.isDemographicData())
+            {
+                if (study.isDateBased())
+                    ignoreColumns.add("Date");
+                else
+                    ignoreColumns.add("SequenceNum");
+            }
             if (def.isKeyPropertyManaged())
             {
                 // Do not include a server-managed key field
