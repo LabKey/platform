@@ -28,7 +28,6 @@ import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.ViewContext;
 
 import javax.naming.*;
 import javax.servlet.Filter;
@@ -74,10 +73,12 @@ public class ModuleLoader implements Filter
     private File _webappDir;
     private Collection<File> _moduleDirectories;
 
+    private static final Object UPGRADE_LOCK = new Object();
     private boolean _beforeUpgradeComplete = false;
-    private static final Object BEFORE_UPGRADE_LOCK = new Object();
-    private boolean _startupComplete = false;
+    private boolean _afterUpgradeComplete = false;
+
     private static final Object STARTUP_LOCK = new Object();
+    private boolean _startupComplete = false;
 
     public enum ModuleState
     {
@@ -929,9 +930,9 @@ public class ModuleLoader implements Filter
         return ActionURL.toPathString("admin", "moduleStatus", "");
     }
 
-    public void ensureBeforeUpgradeComplete(ViewContext viewContext)
+    public void ensureBeforeUpdateComplete()
     {
-        synchronized (BEFORE_UPGRADE_LOCK)
+        synchronized (UPGRADE_LOCK)
         {
             if (!_beforeUpgradeComplete)
             {
@@ -941,10 +942,26 @@ public class ModuleLoader implements Filter
                 while (iter.hasPrevious())
                 {
                     Module module = iter.previous();
-                    module.beforeUpdate(viewContext);
+                    module.beforeUpdate();
                 }
 
                 _beforeUpgradeComplete = true;
+            }
+        }
+    }
+
+    public void ensureAfterUpdateComplete()
+    {
+        synchronized (UPGRADE_LOCK)
+        {
+            if (!_afterUpgradeComplete)
+            {
+                SqlScriptRunner.stopBackgroundThread();
+
+                for (Module module : getModules())
+                    module.afterUpdate();
+
+                _afterUpgradeComplete = true;
             }
         }
     }
@@ -1043,8 +1060,14 @@ public class ModuleLoader implements Filter
         {
             ModuleContext ctx = getModuleContext(m);
             if (ctx.getInstalledVersion() != m.getVersion())
+            {
+                ensureBeforeUpdateComplete();
                 return true;
+            }
         }
+
+        if (isUpgrading())
+            ensureAfterUpdateComplete();
 
         upgradeComplete = true;
         upgradeUser = null;

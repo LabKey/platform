@@ -56,7 +56,8 @@ public abstract class DefaultModule implements Module
     private final Map<Class, String> _pageFlowClassToName = new HashMap<Class, String>();
     private final WebPartFactory[] _webParts;
 
-    private UpdateState _afterUpdateState = UpdateState.NotStarted;
+    private boolean _beforeSchemaUpdateComplete = false;
+    private UpdateState _afterSchemaUpdateState = UpdateState.NotStarted;
     private enum UpdateState { NotStarted, InProgress, Complete }
 
     private Map<String, String> _metaData;
@@ -171,10 +172,9 @@ public abstract class DefaultModule implements Module
         //By default do nothing...
     }
 
-    public void beforeUpdate(ViewContext viewContext)
+    public void beforeUpdate()
     {
         runScripts(SchemaUpdateType.Before);
-        beforeSchemaUpdate(ModuleLoader.getInstance().getModuleContext(this), viewContext);
     }
 
     public void beforeSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)
@@ -194,6 +194,13 @@ public abstract class DefaultModule implements Module
      */
     public ActionURL versionUpdate(final ModuleContext moduleContext, final ViewContext viewContext)
     {
+        synchronized(SCHEMA_UPDATE_LOCK)
+        {
+            if (!_beforeSchemaUpdateComplete)
+                beforeSchemaUpdate(moduleContext, viewContext);
+            _beforeSchemaUpdateComplete = true;
+        }
+
         if (_shouldRunScripts)
         {
             Map m = moduleContext.getProperties();
@@ -208,18 +215,18 @@ public abstract class DefaultModule implements Module
 
         synchronized(SCHEMA_UPDATE_LOCK)
         {
-            if (UpdateState.Complete != _afterUpdateState)
+            if (UpdateState.Complete != _afterSchemaUpdateState)
             {
-                if (UpdateState.NotStarted == _afterUpdateState)
+                if (UpdateState.NotStarted == _afterSchemaUpdateState)
                 {
-                    _afterUpdateState = UpdateState.InProgress;
+                    _afterSchemaUpdateState = UpdateState.InProgress;
                     Thread afterSchemaUpdateThread = new Thread()
                     {
                         public void run()
                         {
                             try
                             {
-                                afterUpdate(moduleContext, viewContext);
+                                afterSchemaUpdate(moduleContext, viewContext);
                             }
                             catch (Exception e)
                             {
@@ -227,7 +234,7 @@ public abstract class DefaultModule implements Module
                             }
                             finally
                             {
-                                _afterUpdateState = UpdateState.Complete;
+                                _afterSchemaUpdateState = UpdateState.Complete;
                             }
                         }
                     };
@@ -240,9 +247,8 @@ public abstract class DefaultModule implements Module
         return moduleContext.getUpgradeCompleteURL(getVersion());
     }
 
-    public void afterUpdate(ModuleContext moduleContext, ViewContext viewContext)
+    public void afterUpdate()
     {
-        afterSchemaUpdate(moduleContext, viewContext);
         runScripts(SchemaUpdateType.After);
     }
 

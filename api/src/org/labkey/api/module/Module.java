@@ -73,7 +73,9 @@ public interface Module
      */
     public void bootstrap();
 
-    public void beforeUpdate(ViewContext viewContext);
+    // Called on every module in REVERSE dependency order before versionUpdate(), as long as at least one module
+    // requires updating.  This is a fine place to drop views and other dependent objects.
+    public void beforeUpdate();
 
     /**
      * Do any version updating module needs to do. If module
@@ -89,6 +91,10 @@ public interface Module
      * UI and then when complete call this method.
      */
     public ActionURL versionUpdate(ModuleContext moduleContext, ViewContext viewContext);
+
+    // Called on every module in dependency order after versionUpdate(), as long as at least one module requires
+    // updating.  This is a fine place to create views and other dependent objects.
+    public void afterUpdate();
 
     //TODO: Spring ApplicationContext might be good here
 
