@@ -40,7 +40,8 @@ CREATE TABLE exp.list (
 
 CREATE INDEX IDX_List_DomainId ON exp.List(DomainId);
 
-CREATE TABLE exp.IndexInteger (
+CREATE TABLE exp.IndexInteger
+(
     ListId INT NOT NULL,
     "Key" INT NOT NULL,
     ObjectId INT NULL,
@@ -50,7 +51,8 @@ CREATE TABLE exp.IndexInteger (
 );
 CREATE INDEX IDX_IndexInteger_ObjectId ON exp.IndexInteger(ObjectId);
 
-CREATE TABLE exp.IndexVarchar (
+CREATE TABLE exp.IndexVarchar
+(
     ListId INT NOT NULL,
     "Key" VARCHAR(300) NOT NULL,
     ObjectId INT NULL,
@@ -61,9 +63,9 @@ CREATE TABLE exp.IndexVarchar (
 CREATE INDEX IDX_IndexVarchar_ObjectId ON exp.IndexVarchar(ObjectId);
 
 exec core.fn_dropifexists 'ObjectProperty', 'exp', 'INDEX', 'IDX_ObjectProperty_FloatValue'
-go
+GO
 exec core.fn_dropifexists 'ObjectProperty', 'exp', 'INDEX', 'IX_ObjectProperty_PropertyObject'
-go
+GO
 
-CREATE  INDEX IDX_ObjectProperty_PropertyId ON exp.ObjectProperty(PropertyId)
-go
+CREATE INDEX IDX_ObjectProperty_PropertyId ON exp.ObjectProperty(PropertyId)
+GO

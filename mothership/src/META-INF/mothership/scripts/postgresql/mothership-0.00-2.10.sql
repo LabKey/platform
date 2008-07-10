@@ -82,38 +82,8 @@ CREATE TABLE ExceptionReport
 	);
 
 
-CREATE VIEW ExceptionSummary AS
-    SELECT
-        st.ExceptionStackTraceId,
-        st.StackTrace,
-        q.MaxSVNRevision,
-        q.MinSVNRevision,
-        q.Instances,
-        q.LastReport,
-        q.FirstReport,
-        st.Container,
-        st.BugNumber,
-        st.AssignedTo
-    FROM ExceptionStackTrace st INNER JOIN (
-        SELECT
-            a.ExceptionStackTraceId,
-            MAX(r.SVNRevision) AS MaxSVNRevision,
-            MIN(r.SVNRevision) AS MinSVNRevision,
-            COUNT(r.ExceptionReportId) AS Instances,
-            MAX(r.Created) AS LastReport,
-            MIN(r.Created) AS FirstReport
-        FROM
-            ExceptionStackTrace a, ExceptionReport r
-        WHERE
-            a.ExceptionStackTraceId = r.ExceptionStackTraceId
-        GROUP BY
-            a.ExceptionStackTraceId
-    ) q
-    ON q.ExceptionStackTraceId = st.ExceptionStackTraceId;
-
 SET search_path TO mothership, public;
 
-DROP VIEW ExceptionSummary;
 DROP TABLE ExceptionReport;
 DROP TABLE ServerSession;
 DROP TABLE ServerInstallation;
@@ -189,115 +159,14 @@ CREATE TABLE ExceptionReport
 	);
 
 
-CREATE VIEW mothership.ExceptionSummary AS
-    SELECT
-        st.ExceptionStackTraceId,
-        st.StackTrace,
-        q.MaxSVNRevision,
-        q.MinSVNRevision,
-        q.Instances,
-        q.LastReport,
-        q.FirstReport,
-        st.Container,
-        st.BugNumber,
-        st.AssignedTo
-    FROM mothership.ExceptionStackTrace st INNER JOIN (
-        SELECT
-            a.ExceptionStackTraceId,
-            MAX(ss.SVNRevision) AS MaxSVNRevision,
-            MIN(ss.SVNRevision) AS MinSVNRevision,
-            COUNT(r.ExceptionReportId) AS Instances,
-            MAX(r.Created) AS LastReport,
-            MIN(r.Created) AS FirstReport
-        FROM
-            mothership.ExceptionStackTrace a, mothership.ExceptionReport r, mothership.ServerSession ss
-        WHERE
-            a.ExceptionStackTraceId = r.ExceptionStackTraceId
-            AND ss.ServerSessionId = r.ServerSessionId
-        GROUP BY
-            a.ExceptionStackTraceId
-    ) q
-    ON q.ExceptionStackTraceId = st.ExceptionStackTraceId;
-
-CREATE VIEW ExceptionReportSummary AS
-    SELECT
-        r.ExceptionReportId,
-        r.ExceptionStackTraceId,
-        r.Created,
-        r.ServerSessionId,
-        r.URL,
-        r.Username,
-        r.Browser,
-        ss.SVNRevision,
-        ss.DatabaseProductName,
-        ss.DatabaseProductVersion,
-        ss.DatabaseDriverName,
-        ss.DatabaseDriverVersion,
-        ss.RuntimeOS,
-        ss.ServerSessionGUID,
-        st.StackTrace
-    FROM
-        ExceptionReport r, ServerSession ss, ExceptionStackTrace st
-    WHERE
-        r.ServerSessionId = ss.ServerSessionId
-        AND r.ExceptionStackTraceId = st.ExceptionStackTraceId;
-
 SET search_path TO mothership, public;  -- include public to get ENTITYID, USERID
 
 ALTER TABLE ExceptionReport ADD COLUMN ReferrerURL VARCHAR(512);
-
-DROP VIEW ExceptionReportSummary;
-
-CREATE VIEW ExceptionReportSummary AS
-    SELECT
-        r.ExceptionReportId,
-        r.ExceptionStackTraceId,
-        r.Created,
-        r.ServerSessionId,
-        r.URL,
-        r.ReferrerURL,
-        r.Username,
-        r.Browser,
-        ss.SVNRevision,
-        ss.DatabaseProductName,
-        ss.DatabaseProductVersion,
-        ss.DatabaseDriverName,
-        ss.DatabaseDriverVersion,
-        ss.RuntimeOS,
-        ss.ServerSessionGUID,
-        st.StackTrace
-    FROM
-        ExceptionReport r, ServerSession ss, ExceptionStackTrace st
-    WHERE
-        r.ServerSessionId = ss.ServerSessionId
-        AND r.ExceptionStackTraceId = st.ExceptionStackTraceId;
-
 
 SET search_path TO mothership, public;  -- include public to get ENTITYID, USERID
 
 ALTER TABLE ServerInstallation ADD COLUMN ServerHostName VARCHAR(256);
 ALTER TABLE mothership.ExceptionStackTrace ADD COLUMN Comments TEXT;
-CREATE VIEW mothership.ServerInstallationWithSession AS
-    SELECT
-        i.ServerInstallationId,
-        i.ServerInstallationGUID,
-        i.Note,
-        i.Container,
-        i.SystemDescription,
-        i.LogoLink,
-        i.OrganizationName,
-        i.SystemShortName,
-        i.ServerIP,
-        i.ServerHostName,
-        s.LastKnownTime
-    FROM
-        mothership.ServerInstallation i,
-        ( SELECT MAX(lastknowntime) AS LastKnownTime, ServerInstallationId
-            FROM mothership.ServerSession
-            GROUP BY ServerInstallationId ) s
-    WHERE
-        i.ServerInstallationId = s.ServerInstallationId;
-
 CREATE TABLE mothership.SoftwareRelease
 	(
 	ReleaseId SERIAL NOT NULL,
@@ -310,35 +179,6 @@ CREATE TABLE mothership.SoftwareRelease
 	);
 ALTER TABLE mothership.ExceptionReport ADD COLUMN PageflowName VARCHAR(30);
 ALTER TABLE mothership.ExceptionReport ADD COLUMN PageflowAction VARCHAR(40);
-
-DROP VIEW mothership.ExceptionReportSummary;
-
-CREATE VIEW mothership.ExceptionReportSummary AS
-    SELECT
-        r.ExceptionReportId,
-        r.ExceptionStackTraceId,
-        r.Created,
-        r.ServerSessionId,
-        r.URL,
-        r.ReferrerURL,
-        r.Username,
-        r.Browser,
-        r.PageflowName,
-        r.PageflowAction,
-        ss.SVNRevision,
-        ss.DatabaseProductName,
-        ss.DatabaseProductVersion,
-        ss.DatabaseDriverName,
-        ss.DatabaseDriverVersion,
-        ss.RuntimeOS,
-        ss.ServerSessionGUID,
-        st.StackTrace
-    FROM
-        mothership.ExceptionReport r, mothership.ServerSession ss, mothership.ExceptionStackTrace st
-    WHERE
-        r.ServerSessionId = ss.ServerSessionId
-        AND r.ExceptionStackTraceId = st.ExceptionStackTraceId;
-
 
 update mothership.serverinstallation set serverhostname=serverip where serverhostname is null;
 

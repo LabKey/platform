@@ -15,8 +15,6 @@
  */
 /* exp-2.30-2.31.sql */
 
-SELECT core.fn_dropifexists('experimentrun', 'cabig','VIEW', NULL);
-
 ALTER TABLE exp.ExperimentRun ALTER COLUMN Name TYPE VARCHAR(100);
 
 /* exp-2.31-2.32.sql */

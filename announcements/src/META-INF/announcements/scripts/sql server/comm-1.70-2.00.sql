@@ -20,7 +20,6 @@ GO
 CREATE INDEX IX_DiscussionSrcIdentifier ON comm.announcements(Container, DiscussionSrcIdentifier)
 GO
 
--- Add DiscussionSrcIdentifier, DiscussionSrcURL to threads view
 -- Better descriptions for existing email options
 UPDATE comm.EmailOptions SET EmailOption = 'No email' WHERE EmailOptionId = 0
 UPDATE comm.EmailOptions SET EmailOption = 'All conversations' WHERE EmailOptionId = 1

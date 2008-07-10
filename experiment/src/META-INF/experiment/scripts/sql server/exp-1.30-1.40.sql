@@ -22,7 +22,7 @@ CREATE TABLE exp.DomainDescriptor (
 	CONSTRAINT PK_DomainDescriptor PRIMARY KEY CLUSTERED (DomainId),
 	CONSTRAINT UQ_DomainDescriptor UNIQUE (DomainURI))
 
-go
+GO
 CREATE TABLE exp.PropertyDomain (
 	PropertyId int NOT NULL,
 	DomainId int NOT NULL,
@@ -32,61 +32,61 @@ CREATE TABLE exp.PropertyDomain (
 	CONSTRAINT FK_PropertyDomain_DomainDescriptor FOREIGN KEY (DomainId) 
 		REFERENCES exp.DomainDescriptor (DomainId)
 	)
-go
+GO
 
 INSERT INTO exp.DomainDescriptor (DomainURI, Container)
     SELECT DomainURI, Container 
 	FROM exp.PropertyDescriptor PD WHERE PD.DomainURI IS NOT NULL
 	AND NOT EXISTS (SELECT * FROM exp.DomainDescriptor DD WHERE DD.DomainURI=PD.DomainURI)
 	GROUP BY DomainURI, Container
-go
+GO
 INSERT INTO exp.PropertyDomain
     SELECT PD.PropertyId, DD.DomainId
 	FROM exp.PropertyDescriptor PD INNER JOIN exp.DomainDescriptor DD
 		ON (PD.DomainURI = DD.DomainURI)
-go
+GO
 ALTER TABLE exp.PropertyDescriptor DROP COLUMN DomainURI
-go
+GO
 -- fix orphans from bad OntologyManager unit test
 DELETE FROM exp.PropertyDescriptor
 WHERE Container = (SELECT C.EntityId from core.Containers C where C.Name is null)
 AND PropertyURI LIKE '%Junit.OntologyManager%'
-go
+GO
 
 ALTER TABLE exp.ObjectProperty DROP CONSTRAINT FK_ObjectProperty_PropertyDescriptor
-go
+GO
 ALTER TABLE exp.PropertyDomain DROP CONSTRAINT FK_PropertyDomain_Property
-go
+GO
 ALTER TABLE exp.PropertyDomain DROP CONSTRAINT FK_PropertyDomain_DomainDescriptor
-go
+GO
 ALTER TABLE exp.PropertyDescriptor DROP CONSTRAINT UQ_PropertyDescriptor
-go
+GO
 ALTER TABLE exp.PropertyDescriptor DROP CONSTRAINT PK_PropertyDescriptor
-go
+GO
 ALTER TABLE exp.DomainDescriptor DROP CONSTRAINT UQ_DomainDescriptor
-go
+GO
 ALTER TABLE exp.DomainDescriptor DROP CONSTRAINT PK_DomainDescriptor
-go
+GO
 
 ALTER TABLE exp.PropertyDescriptor ADD Project ENTITYID NULL
-go
+GO
 ALTER TABLE exp.PropertyDescriptor
 	ADD CONSTRAINT PK_PropertyDescriptor PRIMARY KEY NONCLUSTERED (PropertyId)
-go
+GO
 
 ALTER TABLE exp.DomainDescriptor
 	ADD Project ENTITYID NULL
-go
+GO
 ALTER TABLE exp.DomainDescriptor
 	ADD CONSTRAINT PK_DomainDescriptor PRIMARY KEY NONCLUSTERED (DomainId)
-go
+GO
 
 ALTER TABLE exp.ObjectProperty ADD
 	CONSTRAINT FK_ObjectProperty_PropertyDescriptor FOREIGN KEY (PropertyId) REFERENCES exp.PropertyDescriptor (PropertyId)
-go
+GO
 ALTER TABLE exp.PropertyDomain ADD
 	CONSTRAINT FK_PropertyDomain_Property FOREIGN KEY (PropertyId) REFERENCES exp.PropertyDescriptor (PropertyId)
-go
+GO
 ALTER TABLE exp.PropertyDomain ADD
 	CONSTRAINT FK_PropertyDomain_DomainDescriptor FOREIGN KEY (DomainId) REFERENCES exp.DomainDescriptor (DomainId)
-go
+GO

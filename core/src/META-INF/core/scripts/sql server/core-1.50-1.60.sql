@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 ALTER TABLE core.UsersData ALTER COLUMN Phone NVARCHAR(64) NULL
-go
+GO
 ALTER TABLE core.UsersData ALTER COLUMN Mobile NVARCHAR(64) NULL
-go
+GO
 ALTER TABLE core.UsersData ALTER COLUMN Pager NVARCHAR(64) NULL
-go
+GO
 

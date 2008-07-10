@@ -16,30 +16,30 @@
 ALTER TABLE study.Study ADD
     DateBased BIT DEFAULT 0,
     StartDate DATETIME
-  go
+  GO
 
 UPDATE study.Study SET DateBased=0 where DateBased is NULL
-go
+GO
 
 ALTER TABLE study.ParticipantVisit ADD
     Day INTEGER
-  go
+  GO
 
 ALTER TABLE study.Participant ADD
     StartDate DATETIME
-go
+GO
 
 ALTER TABLE study.Dataset
 ADD DemographicData BIT
-go
+GO
 
 UPDATE study.Dataset SET DemographicData=0 where DemographicData IS NULL
-go
+GO
 
 ALTER TABLE study.Dataset
 ADD CONSTRAINT DF_DemographicData_False
 DEFAULT 0 FOR DemographicData
-go
+GO
 
 ALTER TABLE study.Study ADD StudySecurity BIT DEFAULT 0
 Go

@@ -15,44 +15,44 @@
  */
 -- VISITMAP
 EXEC sp_rename 'study.visitmap.isrequired', 'required', 'COLUMN';
-go
+GO
 
 
 -- VISIT
 
 -- ALTER TABLE study.visit ADD name NVARCHAR(200);
--- go
+-- GO
 -- UPDATE study.visit SET name=COALESCE(label,cast(rowid as NVARCHAR(20)));
 -- UPDATE study.visit SET name=rowid
 -- WHERE 1 < (SELECT COUNT(*) FROM study.visit V where V.container=study.visit.container and V.name=study.visit.name)
--- go
+-- GO
 --
 -- ALTER TABLE study.visit ALTER COLUMN name VARCHAR(200) NOT NULL
--- go
+-- GO
 -- ALTER TABLE study.visit ADD CONSTRAINT UQ_VisitName UNIQUE (container, name);
--- go
+-- GO
 
 
 -- DATASET
 
 ALTER TABLE study.dataset ADD name VARCHAR(200);
-go
+GO
 UPDATE study.dataset SET name=COALESCE(label,cast(datasetid as NVARCHAR(20)));
 UPDATE study.dataset SET name=datasetid
 WHERE 1 < (SELECT COUNT(*) FROM study.dataset D where D.container=study.dataset.container and D.name=study.dataset.name)
-go
+GO
 
 ALTER TABLE study.dataset ALTER COLUMN name VARCHAR(200) NOT NULL
-go
+GO
 ALTER TABLE study.dataset ADD CONSTRAINT UQ_DatasetName UNIQUE (container, name);
-go
+GO
 
 ALTER TABLE study.dataset DROP CONSTRAINT UQ_DatasetName
-go
+GO
 ALTER TABLE study.dataset ALTER COLUMN name NVARCHAR(200) NOT NULL
-go
+GO
 ALTER TABLE study.dataset ADD CONSTRAINT UQ_DatasetName UNIQUE (container, name);
-go
+GO
 ALTER TABLE study.SampleRequestEvent ADD
     CONSTRAINT PK_SampleRequestEvent PRIMARY KEY (RowId);
 
@@ -69,13 +69,13 @@ CREATE INDEX IX_Specimen_OriginatingLocationId ON study.Specimen(OriginatingLoca
 GO
 
 ALTER TABLE study.StudyDesign ADD StudyEntityId entityid
-go
+GO
 
 ALTER TABLE study.Dataset ADD Description NTEXT NULL
-go
+GO
 
 ALTER TABLE study.StudyData DROP CONSTRAINT UQ_StudyData
-go
+GO
 ALTER TABLE study.StudyData ADD CONSTRAINT UQ_StudyData UNIQUE CLUSTERED
 	(
 		Container,
@@ -84,28 +84,28 @@ ALTER TABLE study.StudyData ADD CONSTRAINT UQ_StudyData UNIQUE CLUSTERED
 		ParticipantId,
 		_key
 	)
-go
+GO
 
 
 ALTER TABLE study.StudyDesign
     ADD Active BIT
-go
+GO
 
 UPDATE study.StudyDesign SET Active=1 WHERE StudyEntityId IS NOT NULL
 UPDATE study.StudyDesign SET Active=0 WHERE StudyEntityId IS NULL
-go
+GO
 
 ALTER TABLE study.StudyDesign
   ADD CONSTRAINT DF_Active DEFAULT 0 FOR Active
-go
+GO
 
 ALTER TABLE study.StudyDesign
     DROP COLUMN StudyEntityId
-go
+GO
 
 ALTER TABLE study.StudyDesign
     ADD SourceContainer ENTITYID
-go
+GO
 
 UPDATE study.StudyDesign SET SourceContainer = Container
-go
+GO

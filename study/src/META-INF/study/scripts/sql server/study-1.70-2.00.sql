@@ -122,9 +122,9 @@ CREATE TABLE study.StudyDesignVersion
 );
 
 ALTER TABLE study.Report DROP CONSTRAINT PK_Report
-go
+GO
 ALTER TABLE study.Report ADD CONSTRAINT PK_Report PRIMARY KEY (ContainerId, ReportId)
-go
+GO
 
 UPDATE exp.ObjectProperty SET
     StringValue = CAST(exp.ObjectProperty.floatValue AS INTEGER),

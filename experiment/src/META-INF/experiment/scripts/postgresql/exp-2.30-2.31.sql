@@ -13,6 +13,4 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-select core.fn_dropifexists('experimentrun', 'cabig','VIEW', NULL);
-
 ALTER TABLE exp.ExperimentRun ALTER COLUMN Name TYPE VARCHAR(100);

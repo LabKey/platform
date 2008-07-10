@@ -15,4 +15,4 @@
  */
 /* query-8.10-8.11.sql */
 
-alter table query.customview alter column queryname type varchar(200);
+ALTER TABLE query.customview ALTER COLUMN queryname type varchar(200);

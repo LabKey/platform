@@ -36,29 +36,29 @@ SET NOCOUNT ON
 if exists (select * from dbo.sysobjects where id = object_id(N'exp.AllLsidContainers ') and OBJECTPROPERTY(id, N'IsView') = 1)
 CREATE VIEW exp._orphanProtocolView AS 
 SELECT * FROM exp.Protocol WHERE container NOT IN (SELECT entityid FROM core.containers) OR container IS NULL 
-go
+GO
 CREATE VIEW exp._orphanExperimentView AS
 SELECT * FROM exp.Experiment WHERE container NOT IN (SELECT entityid FROM core.containers) OR container IS NULL 
-go
+GO
 CREATE VIEW exp._orphanExperimentRunView AS
 SELECT * FROM exp.ExperimentRun WHERE container NOT IN (SELECT entityid FROM core.containers) OR container IS NULL 
-go
+GO
 CREATE VIEW exp._orphanProtocolApplicationView AS 
 SELECT * FROM exp.ProtocolApplication WHERE (runid IN (SELECT rowid FROM exp._orphanExperimentRunView))
-go
+GO
 CREATE VIEW exp._orphanMaterialView AS
 SELECT * FROM exp.Material WHERE (runid IN (SELECT rowid FROM exp._orphanExperimentRunView)) OR 
 	(runid IS NULL AND container NOT IN (SELECT entityid FROM core.containers)) OR 
 	(container IS NULL)
-go
+GO
 CREATE VIEW exp._orphanDataView AS
 SELECT * FROM exp.Data WHERE (runid IN (SELECT rowid FROM exp._orphanExperimentRunView)) OR 
 	(runid IS NULL AND container NOT IN (SELECT entityid FROM core.containers)) OR 
 	(container IS NULL)
-go
+GO
 CREATE VIEW exp._orphanMaterialSourceView AS 
 SELECT * FROM exp.MaterialSource WHERE container NOT IN (SELECT entityid FROM core.containers) OR container IS NULL 
-go
+GO
 CREATE VIEW exp._orphanLSIDView AS 
 SELECT LSID, CAST (Container AS nvarchar) AS Container FROM exp._orphanProtocolView UNION
 SELECT LSID, CAST (Container AS nvarchar(100)) AS Container FROM exp._orphanExperimentView  UNION
@@ -67,7 +67,7 @@ SELECT LSID, CAST (Container AS nvarchar) AS Container FROM exp._orphanMaterialV
 SELECT LSID, CAST (Container AS nvarchar) AS Container FROM exp._orphanDataView UNION
 SELECT LSID, 'n/a' AS Container FROM exp._orphanProtocolApplicationView UNION
 SELECT LSID, CAST (Container AS nvarchar) AS Container FROM exp._orphanMaterialSourceView 
-go
+GO
 
 -- delete the orphans identified by the Views
 BEGIN TRANSACTION
@@ -118,27 +118,27 @@ DELETE FROM exp.Property WHERE
 			(SELECT PropertyURIValue FROM exp.Property 
 			WHERE parentURI NOT IN (SELECT lsid FROM exp.AllLsidContainers))) 
 COMMIT TRANSACTION
-go
+GO
 
 -- now make the container fields not null
 ALTER TABLE exp.Experiment 
 	ALTER COLUMN Container EntityId NOT NULL
-go
+GO
 ALTER TABLE exp.ExperimentRun 
 	ALTER COLUMN Container EntityId NOT NULL
-go
+GO
 ALTER TABLE exp.Data
 	ALTER COLUMN Container EntityId NOT NULL
-go
+GO
 ALTER TABLE exp.Material
 	ALTER COLUMN Container EntityId NOT NULL
-go
+GO
 ALTER TABLE exp.MaterialSource
 	ALTER COLUMN Container EntityId NOT NULL
-go
+GO
 ALTER TABLE exp.Protocol
 	ALTER COLUMN Container EntityId NOT NULL
-go
+GO
 
 -- now drop the views
 if exists (select * from dbo.sysobjects where id = object_id(N'exp._orphanLSIDView') and OBJECTPROPERTY(id, N'IsView') = 1)
@@ -176,7 +176,7 @@ GO
 -- I'd like to rename RowId to PropertyId
 
 ALTER TABLE exp.PropertyDescriptor ADD DatatypeURI nvarchar(200) NOT NULL DEFAULT 'http://www.w3.org/2001/XMLSchema#string'
-go
+GO
 
 --
 -- Object
@@ -188,7 +188,7 @@ CREATE TABLE exp.Object
 	ObjectURI LSIDType NOT NULL,
 	OwnerObjectId int NULL
 	)
-go
+GO
 
 
 ALTER TABLE exp.Object ADD CONSTRAINT PK_Object PRIMARY KEY NONCLUSTERED (ObjectId);
@@ -197,7 +197,7 @@ CREATE INDEX IDX_Object_OwnerObjectId ON exp.Object (OwnerObjectId);
 ALTER TABLE exp.Object ADD
 	CONSTRAINT FK_Object_Object FOREIGN KEY (OwnerObjectId)
 		REFERENCES exp.Object (ObjectId)
-go
+GO
 
 --
 -- ObjectProperty
@@ -212,7 +212,7 @@ CREATE TABLE exp.ObjectProperty
 	StringValue nvarchar(400) NULL,
 	TextValue ntext NULL
 	)
-go
+GO
 
 ALTER TABLE exp.ObjectProperty
    ADD CONSTRAINT PK_ObjectProperty PRIMARY KEY CLUSTERED (ObjectId, PropertyId);
@@ -222,7 +222,7 @@ ALTER TABLE exp.ObjectProperty ADD
 ALTER TABLE exp.ObjectProperty ADD
 	CONSTRAINT FK_ObjectProperty_PropertyDescriptor FOREIGN KEY (PropertyId)
 		REFERENCES exp.PropertyDescriptor (RowId)
-go
+GO
 
 -- Create views and procs used by Ontology Manager
 CREATE PROCEDURE exp.getObjectProperties(@container ENTITYID, @lsid LSIDType) AS
@@ -230,7 +230,7 @@ BEGIN
 	SELECT * FROM exp.ObjectPropertiesView
 	WHERE Container = @container AND ObjectURI = @lsid
 END
-go
+GO
 
 CREATE PROCEDURE exp.ensureObject(@container ENTITYID, @lsid LSIDType, @ownerObjectId INTEGER) AS
 BEGIN
@@ -246,7 +246,7 @@ BEGIN
 	COMMIT
 	SELECT @objectid
 END
-go
+GO
 
 
 CREATE PROCEDURE exp.deleteObject(@container ENTITYID, @lsid LSIDType) AS
@@ -264,7 +264,7 @@ BEGIN
 		DELETE exp.Object WHERE ObjectId = @objectid
 	COMMIT
 END
-go
+GO
 --
 -- This is the most general set property method
 --
@@ -286,7 +286,7 @@ BEGIN
 			VALUES (@objectid, @propertyid, @tag, @f, @s, @d, @t)
 	COMMIT
 END
-go
+GO
 
 
 -- internal methods
@@ -296,7 +296,7 @@ BEGIN
 	INSERT INTO exp.ObjectProperty (ObjectId, PropertyId, TypeTag, FloatValue)
 	VALUES (@objectid, @propid, 'f', @float)
 END
-go
+GO
 
 
 CREATE PROCEDURE exp._insertDateTimeProperty(@objectid INTEGER, @propid INTEGER, @datetime DATETIME) AS
@@ -305,7 +305,7 @@ BEGIN
 	INSERT INTO exp.ObjectProperty (ObjectId, PropertyId, TypeTag, DateTimeValue)
 	VALUES (@objectid, @propid, 'd', @datetime)
 END
-go
+GO
 
 CREATE PROCEDURE exp._insertStringProperty(@objectid INTEGER, @propid INTEGER, @string VARCHAR(400)) AS
 BEGIN
@@ -313,7 +313,7 @@ BEGIN
 	INSERT INTO exp.ObjectProperty (ObjectId, PropertyId, TypeTag, StringValue)
 	VALUES (@objectid, @propid, 's', @string)
 END
-go
+GO
 
 --
 -- Set the same property on multiple objects (e.g. impoirt a column of datea)
@@ -349,7 +349,7 @@ BEGIN
 		EXEC exp._insertFloatProperty @objectid10, @propertyid, @float10
 	COMMIT
 END
-go
+GO
 
 
 CREATE PROCEDURE exp.setStringProperties(@propertyid INTEGER,
@@ -380,7 +380,7 @@ BEGIN
 		EXEC exp._insertStringProperty @objectid10, @propertyid, @string10
 	COMMIT
 END
-go
+GO
 
 
 CREATE PROCEDURE exp.setDateTimeProperties(@propertyid INTEGER,
@@ -411,7 +411,7 @@ BEGIN
 		EXEC exp._insertDateTimeProperty @objectid10, @propertyid, @datetime10
 	COMMIT
 END
-go
+GO
 
 
 
@@ -508,8 +508,8 @@ SET OwnerObjectId = (SELECT MAX(OWNER.ObjectId)
 		WHERE PROPS.ParentURI = exp.Object.ObjectURI)
 
 COMMIT TRAN
-go
+GO
 
 -- now drop the old property table
 DROP TABLE exp.Property
-go
+GO

@@ -225,73 +225,73 @@ GO
 
 
 if exists (select * from dbo.sysobjects where id = object_id(N'[exp].[ExperimentRun]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
-drop table [exp].[ExperimentRun]
+DROP TABLE [exp].[ExperimentRun]
 GO
 
 if exists (select * from dbo.sysobjects where id = object_id(N'[exp].[Data]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
-drop table [exp].[Data]
+DROP TABLE [exp].[Data]
 GO
 
 if exists (select * from dbo.sysobjects where id = object_id(N'[exp].[DataInput]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
-drop table [exp].[DataInput]
+DROP TABLE [exp].[DataInput]
 GO
 
 if exists (select * from dbo.sysobjects where id = object_id(N'[exp].[Experiment]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
-drop table [exp].[Experiment]
+DROP TABLE [exp].[Experiment]
 GO
 
 if exists (select * from dbo.sysobjects where id = object_id(N'[exp].[Material]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
-drop table [exp].[Material]
+DROP TABLE [exp].[Material]
 GO
 
 if exists (select * from dbo.sysobjects where id = object_id(N'[exp].[MaterialInput]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
-drop table [exp].[MaterialInput]
+DROP TABLE [exp].[MaterialInput]
 GO
 
 if exists (select * from dbo.sysobjects where id = object_id(N'[exp].[Object]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
-drop table [exp].[Object]
+DROP TABLE [exp].[Object]
 GO
 
 if exists (select * from dbo.sysobjects where id = object_id(N'[exp].[ObjectProperty]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
-drop table [exp].[ObjectProperty]
+DROP TABLE [exp].[ObjectProperty]
 GO
 
 if exists (select * from dbo.sysobjects where id = object_id(N'[exp].[PropertyDescriptor]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
-drop table [exp].[PropertyDescriptor]
+DROP TABLE [exp].[PropertyDescriptor]
 GO
 
 if exists (select * from dbo.sysobjects where id = object_id(N'[exp].[Protocol]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
-drop table [exp].[Protocol]
+DROP TABLE [exp].[Protocol]
 GO
 
 if exists (select * from dbo.sysobjects where id = object_id(N'[exp].[ProtocolAction]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
-drop table [exp].[ProtocolAction]
+DROP TABLE [exp].[ProtocolAction]
 GO
 
 if exists (select * from dbo.sysobjects where id = object_id(N'[exp].[ProtocolActionPredecessor]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
-drop table [exp].[ProtocolActionPredecessor]
+DROP TABLE [exp].[ProtocolActionPredecessor]
 GO
 
 if exists (select * from dbo.sysobjects where id = object_id(N'[exp].[ProtocolApplication]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
-drop table [exp].[ProtocolApplication]
+DROP TABLE [exp].[ProtocolApplication]
 GO
 
 if exists (select * from dbo.sysobjects where id = object_id(N'[exp].[ProtocolParameter]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
-drop table [exp].[ProtocolParameter]
+DROP TABLE [exp].[ProtocolParameter]
 GO
 
 if exists (select * from dbo.sysobjects where id = object_id(N'[exp].[ProtocolApplicationParameter]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
-drop table [exp].[ProtocolApplicationParameter]
+DROP TABLE [exp].[ProtocolApplicationParameter]
 GO
 
 if exists (select * from dbo.sysobjects where id = object_id(N'[exp].[MaterialSource]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
-drop table [exp].[MaterialSource]
+DROP TABLE [exp].[MaterialSource]
 GO
 
 if exists (select * from dbo.sysobjects where id = object_id(N'[exp].[PropertyDescriptor]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
-drop table [exp].[PropertyDescriptor]
+DROP TABLE [exp].[PropertyDescriptor]
 GO
 
 if EXISTS (select * from sysusers where name ='exp')
 	exec sp_dropapprole 'exp'
-go
+GO

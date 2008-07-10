@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
--- Tables and views used for Audit module
+-- Schema & tables used for Audit module
 EXEC sp_addapprole 'audit', 'password'
 GO
 

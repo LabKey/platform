@@ -14,106 +14,106 @@
  * limitations under the License.
  */
 exec core.fn_dropifexists 'Experiment', 'exp', 'INDEX', 'IX_Experiment_Container'
-go
+GO
 exec core.fn_dropifexists 'ExperimentRun', 'exp', 'INDEX', 'IX_CL_ExperimentRun_Container'
-go
+GO
 exec core.fn_dropifexists 'ExperimentRun', 'exp', 'INDEX', 'IX_ExperimentRun_ProtocolLSID'
-go
+GO
 exec core.fn_dropifexists 'RunList', 'exp', 'INDEX', 'IX_RunList_ExperimentRunId'
-go
+GO
 exec core.fn_dropifexists 'ProtocolApplicationParameter', 'exp', 'INDEX', 'IX_ProtocolApplicationParameter_AppId'
-go
+GO
 exec core.fn_dropifexists 'ProtocolActionPredecessor', 'exp', 'INDEX', 'IX_ProtocolActionPredecessor_PredecessorId'
-go
+GO
 exec core.fn_dropifexists 'ProtocolAction', 'exp', 'INDEX', 'IX_ProtocolAction_ChildProtocolId'
-go
+GO
 exec core.fn_dropifexists 'ProtocolParameter', 'exp', 'INDEX', 'IX_ProtocolParameter_ProtocolId'
-go
+GO
 exec core.fn_dropifexists 'Data', 'exp', 'INDEX', 'IX_Data_Container'
-go
+GO
 exec core.fn_dropifexists 'Data', 'exp', 'INDEX', 'IX_Data_SourceApplicationId'
-go
+GO
 exec core.fn_dropifexists 'Data', 'exp', 'INDEX', 'IX_Data_DataFileUrl'
-go
+GO
 exec core.fn_dropifexists 'DataInput', 'exp', 'INDEX', 'IX_DataInput_PropertyId'
-go
+GO
 exec core.fn_dropifexists 'Material', 'exp', 'INDEX', 'IX_Material_Container'
-go
+GO
 exec core.fn_dropifexists 'Material', 'exp', 'INDEX', 'IX_Material_SourceApplicationId'
-go
+GO
 exec core.fn_dropifexists 'Material', 'exp', 'INDEX', 'IX_Material_CpasType'
-go
+GO
 exec core.fn_dropifexists 'MaterialInput', 'exp', 'INDEX', 'IX_MaterialInput_PropertyId'
-go
+GO
 exec core.fn_dropifexists 'MaterialSource', 'exp', 'INDEX', 'IX_MaterialSource_Container'
-go
+GO
 exec core.fn_dropifexists 'ActiveMaterialSource', 'exp', 'INDEX', 'IX_ActiveMaterialSource_MaterialSourceLSID'
-go
+GO
 exec core.fn_dropifexists 'ObjectProperty', 'exp', 'INDEX', 'IX_ObjectProperty_PropertyObject'
-go
+GO
 exec core.fn_dropifexists 'PropertyDomain', 'exp', 'INDEX', 'IX_PropertyDomain_DomainId'
-go
+GO
 exec core.fn_dropifexists 'PropertyDescriptor', 'exp', 'INDEX', 'IX_PropertyDescriptor_Container'
-go
+GO
 exec core.fn_dropifexists 'DomainDescriptor', 'exp', 'INDEX', 'IX_DomainDescriptor_Container'
-go
+GO
 exec core.fn_dropifexists 'Object', 'exp', 'INDEX', 'IX_Object_OwnerObjectId'
-go
+GO
 -- redundant to unique constraint
 exec core.fn_dropifexists 'Object', 'exp', 'INDEX', 'IX_Object_Uri'
-go
+GO
 
 
 
 CREATE INDEX IX_Experiment_Container ON exp.Experiment(Container)
-go
+GO
 create clustered index IX_CL_ExperimentRun_Container ON exp.ExperimentRun(Container)
-go
+GO
 create index IX_ExperimentRun_ProtocolLSID ON exp.ExperimentRun(ProtocolLSID)
-go
+GO
 CREATE INDEX IX_RunList_ExperimentRunId ON exp.RunList(ExperimentRunId)
-go
+GO
 CREATE INDEX IX_ProtocolApplicationParameter_AppId ON exp.ProtocolApplicationParameter(ProtocolApplicationId)
-go
+GO
 CREATE INDEX IX_ProtocolActionPredecessor_PredecessorId on exp.ProtocolActionPredecessor(PredecessorId)
-go
+GO
 CREATE INDEX IX_ProtocolAction_ChildProtocolId on exp.ProtocolAction(ChildProtocolId)
-go
+GO
 CREATE INDEX IX_ProtocolParameter_ProtocolId ON exp.ProtocolParameter(ProtocolId)
-go
+GO
 
 CREATE INDEX IX_Data_Container ON exp.Data(Container)
-go
+GO
 CREATE INDEX IX_Data_SourceApplicationId ON exp.Data(SourceApplicationId)
-go
+GO
 CREATE INDEX IX_DataInput_PropertyId ON exp.DataInput(PropertyId)
-go
+GO
 CREATE INDEX IX_Data_DataFileUrl ON exp.Data(DataFileUrl)
-go
+GO
 
 CREATE INDEX IX_Material_Container ON exp.Material(Container)
-go
+GO
 CREATE INDEX IX_Material_SourceApplicationId ON exp.Material(SourceApplicationId)
-go
+GO
 CREATE INDEX IX_MaterialInput_PropertyId ON exp.MaterialInput(PropertyId)
-go
+GO
 CREATE INDEX IX_Material_CpasType ON exp.Material(CpasType)
-go
+GO
 
 
 CREATE INDEX IX_MaterialSource_Container ON exp.MaterialSource(Container)
-go
+GO
 CREATE INDEX IX_ActiveMaterialSource_MaterialSourceLSID on exp.ActiveMaterialSource(MaterialSourceLSID)
-go
+GO
 
 
 CREATE  INDEX IX_ObjectProperty_PropertyObject ON exp.ObjectProperty(PropertyId, ObjectId)
-go
+GO
 CREATE INDEX IX_PropertyDomain_DomainId ON exp.PropertyDomain(DomainID)
-go
+GO
 CREATE INDEX IX_PropertyDescriptor_Container ON exp.PropertyDescriptor(Container)
-go
+GO
 CREATE INDEX IX_DomainDescriptor_Container ON exp.DomainDescriptor(Container)
-go
+GO
 CREATE INDEX IX_Object_OwnerObjectId ON exp.Object(OwnerObjectId)
-go
+GO

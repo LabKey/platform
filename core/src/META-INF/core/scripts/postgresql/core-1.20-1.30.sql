@@ -13,9 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-DROP VIEW core.Contacts;
-DROP VIEW core.Users;
-
 ALTER TABLE core.ACLs ADD Container UNIQUEIDENTIFIER;
 UPDATE core.ACLs SET Container = ObjectId WHERE ObjectId in (SELECT EntityId FROM core.Containers);
 
@@ -36,33 +33,3 @@ UPDATE core.Principals SET OwnerId = Container;
 ALTER TABLE core.Principals DROP CONSTRAINT UQ_Principals_Container_Name;
 ALTER TABLE core.Principals ADD CONSTRAINT UQ_Principals_Container_Name_OwnerId UNIQUE (Container, Name, OwnerId);
 ALTER TABLE core.Principals DROP COLUMN ProjectId;
-
-CREATE VIEW core.Users AS
-    SELECT Principals.Name AS Email, UsersData.*
-    FROM core.Principals Principals
-        INNER JOIN core.UsersData UsersData ON Principals.UserId = UsersData.UserId
-    WHERE Type = 'u';
-
-CREATE VIEW core.Contacts As
-    SELECT Users.FirstName || ' ' || Users.LastName AS Name, Users.Email, Users.Phone, Users.UserId, Principals.OwnerId, Principals.Container, Principals.Name AS GroupName
-    FROM core.Principals Principals
-        INNER JOIN core.Members Members ON Principals.UserId = Members.GroupId
-        INNER JOIN core.Users Users ON Members.UserId = Users.UserId;
-        
-SET search_path TO core, public;
-
-CREATE OR REPLACE RULE Users_Update AS
-	ON UPDATE TO Users DO INSTEAD
-		UPDATE UsersData SET
-			ModifiedBy = NEW.ModifiedBy,
-			Modified = NEW.Modified,
-			FirstName = NEW.FirstName,
-			LastName = NEW.LastName,
-			Phone = NEW.Phone,
-			Mobile = NEW.Mobile,
-			Pager = NEW.Pager,
-			IM = NEW.IM,
-			Description = NEW.Description,
-			LastLogin = NEW.LastLogin
-		WHERE UserId = NEW.UserId;
-

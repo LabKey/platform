@@ -24,12 +24,12 @@
 */
 
 exec sp_addapprole 'exp', 'password'
-go
+GO
 
 
 if NOT EXISTS (select * from systypes where name ='LSIDtype')
     exec sp_addtype 'LSIDtype', 'nvarchar(300)'
-go
+GO
 
 
 CREATE TABLE exp.ExperimentRun (

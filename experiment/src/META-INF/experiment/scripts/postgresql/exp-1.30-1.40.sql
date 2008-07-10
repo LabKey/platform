@@ -44,16 +44,8 @@ INSERT INTO exp.PropertyDomain
 	FROM exp.PropertyDescriptor PD INNER JOIN exp.DomainDescriptor DD
 		ON (PD.DomainURI = DD.DomainURI)
 ;
-DROP VIEW exp.ObjectClasses
-;
-
 ALTER TABLE exp.PropertyDescriptor DROP COLUMN DomainURI
 ;
-CREATE VIEW exp.ObjectClasses AS
-	SELECT DomainURI
-	FROM exp.DomainDescriptor
-;
-
 -- fix orphans from bad OntologyManager unit test
 DELETE FROM exp.PropertyDescriptor
 	WHERE Container = (SELECT C.EntityId from core.Containers C where C.Name is null)

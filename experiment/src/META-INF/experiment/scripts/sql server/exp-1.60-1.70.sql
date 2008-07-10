@@ -22,38 +22,38 @@ CREATE TABLE exp.ActiveMaterialSource (
 	CONSTRAINT FK_ActiveMaterialSource_MaterialSourceLSID FOREIGN KEY (MaterialSourceLSID)
 			REFERENCES exp.MaterialSource(LSID)
 )
-go
+GO
 
 ALTER TABLE exp.DataInput
     ADD PropertyId INT NULL
-go
+GO
 
 ALTER TABLE exp.DataInput
     ADD CONSTRAINT FK_DataInput_PropertyDescriptor FOREIGN KEY(PropertyId)
         REFERENCES exp.PropertyDescriptor(PropertyId)
-go
+GO
 
 ALTER TABLE exp.MaterialInput
     ADD PropertyId INT NULL
-go
+GO
 
 ALTER TABLE exp.MaterialInput
     ADD CONSTRAINT FK_MaterialInput_PropertyDescriptor FOREIGN KEY(PropertyId)
         REFERENCES exp.PropertyDescriptor(PropertyId)
-go
+GO
 
 DROP INDEX exp.ObjectProperty.IDX_ObjectProperty_StringValue
-go
+GO
 
 ALTER TABLE exp.ObjectProperty ALTER COLUMN StringValue NVARCHAR(4000)NULL
-go
+GO
 
 UPDATE exp.ObjectProperty SET StringValue=CAST(TextValue AS NVARCHAR(4000)), TypeTag='s'
 WHERE StringValue IS NULL AND (TextValue IS NOT NULL OR TypeTag='t')
-go
+GO
 
 ALTER TABLE exp.ObjectProperty DROP COLUMN TextValue
-go
+GO
 
 UPDATE exp.Material SET CpasType='Material' WHERE CpasType IS NULL
-go
+GO

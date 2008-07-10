@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
--- Steps in this script:
--- 1.  Find and delete orphan records in the exp schema.  
---	several views are created then later dropped to simplify the sql to identify orphans
--- 	Make the container column not null to prevent one type of orphan
--- 2.  Upgrade the tables underlying the exp OntologyManager.  
---      PropertyDescriptor is altered
---  	Property is replaced by Objects and ObjectProperties
---	Stored procs/functions to add/drop property entries
--- 3.  Copy old property  entries into new tables
--- 4.  Drop the old property table
 
+-- Steps in this script:
+-- 1. Find and delete orphan records in the exp schema.
+--	  several views are created then later dropped to simplify the sql to identify orphans
+--    Make the container column not null to prevent one type of orphan
+-- 2. Upgrade the tables underlying the exp OntologyManager.
+--    PropertyDescriptor is altered
+--    Property is replaced by Objects and ObjectProperties
+--    Stored procs/functions to add/drop property entries
+-- 3. Copy old property  entries into new tables
+-- 4. Drop the old property table
 
 -- The purpose of these views is to find and delete "orphan" experiment objects, for example
 -- ExperimentRuns whose container has been deleted but are still in the database.  Orphans are
@@ -31,109 +31,88 @@
 -- should not be orphaning records anymore.
 -- 
 
-CREATE OR REPLACE VIEW exp.AllLsidContainers AS
-	SELECT LSID, Container, 'Protocol' AS Type FROM exp.Protocol UNION ALL
-	SELECT exp.ProtocolApplication.LSID, Container, 'ProtocolApplication' AS Type FROM exp.ProtocolApplication JOIN exp.Protocol ON exp.Protocol.LSID = exp.ProtocolApplication.ProtocolLSID UNION ALL
-	SELECT LSID, Container, 'Experiment' AS Type FROM exp.Experiment UNION ALL
-	SELECT LSID, Container, 'Material' AS Type FROM exp.Material UNION ALL
-	SELECT LSID, Container, 'MaterialSource' AS Type FROM exp.MaterialSource UNION ALL
-	SELECT LSID, Container, 'Data' AS Type FROM exp.Data UNION ALL
-	SELECT LSID, Container, 'ExperimentRun' AS Type FROM exp.ExperimentRun
-;
+CREATE VIEW exp._orphanProtocolView AS
+    SELECT * FROM exp.Protocol WHERE container NOT IN (SELECT entityid FROM core.containers) OR container IS NULL;
 
-CREATE OR REPLACE VIEW exp._orphanProtocolView AS
-SELECT * FROM exp.Protocol WHERE container NOT IN (SELECT entityid FROM core.containers) OR container IS NULL 
-;
-CREATE OR REPLACE VIEW exp._orphanExperimentView AS
-SELECT * FROM exp.Experiment WHERE container NOT IN (SELECT entityid FROM core.containers) OR container IS NULL 
-;
-CREATE OR REPLACE VIEW exp._orphanExperimentRunView AS
-SELECT * FROM exp.ExperimentRun WHERE container NOT IN (SELECT entityid FROM core.containers) OR container IS NULL 
-;
-CREATE OR REPLACE VIEW exp._orphanProtocolApplicationView AS
-SELECT * FROM exp.ProtocolApplication WHERE (runid IN (SELECT rowid FROM exp._orphanExperimentRunView))
-;
-CREATE OR REPLACE VIEW exp._orphanMaterialView AS
-SELECT * FROM exp.Material WHERE (runid IN (SELECT rowid FROM exp._orphanExperimentRunView)) OR 
-	(runid IS NULL AND container NOT IN (SELECT entityid FROM core.containers)) OR 
-	(container IS NULL)
-;
-CREATE OR REPLACE VIEW exp._orphanDataView AS
-SELECT * FROM exp.Data WHERE (runid IN (SELECT rowid FROM exp._orphanExperimentRunView)) OR 
-	(runid IS NULL AND container NOT IN (SELECT entityid FROM core.containers)) OR 
-	(container IS NULL)
-;
-CREATE OR REPLACE VIEW exp._orphanMaterialSourceView AS
-SELECT * FROM exp.MaterialSource WHERE container NOT IN (SELECT entityid FROM core.containers) OR container IS NULL 
-;
-CREATE OR REPLACE VIEW exp._orphanLSIDView AS
-SELECT LSID, CAST (Container AS varchar) AS Container FROM exp._orphanProtocolView UNION
-SELECT LSID, CAST (Container AS varchar) AS Container FROM exp._orphanExperimentView  UNION
-SELECT LSID, CAST (Container AS varchar) AS Container FROM exp._orphanExperimentRunView UNION
-SELECT LSID, CAST (Container AS varchar) AS Container FROM exp._orphanMaterialView UNION
-SELECT LSID, CAST (Container AS varchar) AS Container FROM exp._orphanDataView UNION
-SELECT LSID, 'n/a' AS Container FROM exp._orphanProtocolApplicationView UNION
-SELECT LSID, CAST (Container AS varchar) AS Container FROM exp._orphanMaterialSourceView 
-;
-CREATE OR REPLACE VIEW exp.AllLsidContainers AS
-	SELECT LSID, Container, 'Protocol' AS Type FROM exp.Protocol UNION ALL
-	SELECT exp.ProtocolApplication.LSID, Container, 'ProtocolApplication' AS Type FROM exp.ProtocolApplication JOIN exp.Protocol ON exp.Protocol.LSID = exp.ProtocolApplication.ProtocolLSID UNION ALL
-	SELECT LSID, Container, 'Experiment' AS Type FROM exp.Experiment UNION ALL
-	SELECT LSID, Container, 'Material' AS Type FROM exp.Material UNION ALL
-	SELECT LSID, Container, 'MaterialSource' AS Type FROM exp.MaterialSource UNION ALL
-	SELECT LSID, Container, 'Data' AS Type FROM exp.Data UNION ALL
-	SELECT LSID, Container, 'ExperimentRun' AS Type FROM exp.ExperimentRun
-;
+CREATE VIEW exp._orphanExperimentView AS
+    SELECT * FROM exp.Experiment WHERE container NOT IN (SELECT entityid FROM core.containers) OR container IS NULL;
+
+CREATE VIEW exp._orphanExperimentRunView AS
+    SELECT * FROM exp.ExperimentRun WHERE container NOT IN (SELECT entityid FROM core.containers) OR container IS NULL;
+
+CREATE VIEW exp._orphanProtocolApplicationView AS
+    SELECT * FROM exp.ProtocolApplication WHERE (runid IN (SELECT rowid FROM exp._orphanExperimentRunView));
+
+CREATE VIEW exp._orphanMaterialView AS
+    SELECT * FROM exp.Material WHERE (runid IN (SELECT rowid FROM exp._orphanExperimentRunView)) OR
+        (runid IS NULL AND container NOT IN (SELECT entityid FROM core.containers)) OR
+        (container IS NULL);
+
+CREATE VIEW exp._orphanDataView AS
+    SELECT * FROM exp.Data WHERE (runid IN (SELECT rowid FROM exp._orphanExperimentRunView)) OR
+        (runid IS NULL AND container NOT IN (SELECT entityid FROM core.containers)) OR
+        (container IS NULL);
+
+CREATE VIEW exp._orphanMaterialSourceView AS
+    SELECT * FROM exp.MaterialSource WHERE container NOT IN (SELECT entityid FROM core.containers) OR container IS NULL;
+
+CREATE VIEW exp._orphanLSIDView AS
+    SELECT LSID, CAST (Container AS varchar) AS Container FROM exp._orphanProtocolView UNION
+    SELECT LSID, CAST (Container AS varchar) AS Container FROM exp._orphanExperimentView  UNION
+    SELECT LSID, CAST (Container AS varchar) AS Container FROM exp._orphanExperimentRunView UNION
+    SELECT LSID, CAST (Container AS varchar) AS Container FROM exp._orphanMaterialView UNION
+    SELECT LSID, CAST (Container AS varchar) AS Container FROM exp._orphanDataView UNION
+    SELECT LSID, 'n/a' AS Container FROM exp._orphanProtocolApplicationView UNION
+    SELECT LSID, CAST (Container AS varchar) AS Container FROM exp._orphanMaterialSourceView;
 
 -- delete the orphans identified by the Views
-
-DELETE FROM exp.DataInput WHERE 
+DELETE FROM exp.DataInput WHERE
 	(dataid IN (SELECT rowid FROM exp._orphanDataView )) OR 
-	(targetapplicationid IN	(SELECT rowid FROM exp._orphanProtocolApplicationView))
-;
-DELETE FROM exp.MaterialInput WHERE 
+	(targetapplicationid IN	(SELECT rowid FROM exp._orphanProtocolApplicationView));
+
+DELETE FROM exp.MaterialInput WHERE
 	(materialid IN (SELECT rowid FROM exp._orphanMaterialView)) OR 
-	(targetapplicationid IN	(SELECT rowid FROM exp._orphanProtocolApplicationView))
-;
-DELETE FROM exp.Fraction WHERE 
-	(materialid IN (SELECT rowid FROM exp._orphanMaterialView)) 
-;
-DELETE FROM exp.biosource WHERE 
-	(materialid IN (SELECT rowid FROM exp._orphanMaterialView)) 
-;
-DELETE FROM exp.Data WHERE rowid IN (SELECT rowid FROM exp._orphanDataView)
-;
-DELETE FROM exp.Material WHERE rowid IN (SELECT rowid FROM exp._orphanMaterialView)
-;
-DELETE FROM exp.protocolapplicationparameter WHERE 
-	(ProtocolApplicationId IN (SELECT rowid FROM exp._orphanProtocolApplicationView))
-;
-DELETE FROM exp.ProtocolApplication WHERE rowid IN (SELECT rowid FROM exp._orphanProtocolApplicationView)
-;
-DELETE FROM exp.MaterialSource WHERE rowid IN (SELECT rowid FROM exp._orphanMaterialSourceView)
-;
-DELETE FROM exp.ExperimentRun WHERE rowid IN (SELECT rowid FROM exp._orphanExperimentRunView)
-;
-DELETE FROM exp.protocolactionpredecessor WHERE 
-	(actionid IN (SELECT rowid FROM exp.protocolaction WHERE parentprotocolid IN (SELECT rowid FROM exp._orphanProtocolView)))
-;
-DELETE FROM exp.protocolaction WHERE 
-	(parentprotocolid IN (SELECT rowid FROM exp._orphanProtocolView))
-;
-DELETE FROM exp.protocolparameter WHERE 
-	(protocolid IN (SELECT rowid FROM exp._orphanProtocolView))
-;
-DELETE FROM exp.Protocol WHERE rowid IN (SELECT rowid FROM exp._orphanProtocolView)
-;
-DELETE FROM exp.Experiment WHERE rowid IN (SELECT rowid FROM exp._orphanExperimentView)
-;
-DELETE FROM exp.property WHERE 
+	(targetapplicationid IN	(SELECT rowid FROM exp._orphanProtocolApplicationView));
+
+DELETE FROM exp.Fraction WHERE
+	(materialid IN (SELECT rowid FROM exp._orphanMaterialView));
+
+DELETE FROM exp.biosource WHERE
+	(materialid IN (SELECT rowid FROM exp._orphanMaterialView));
+
+DELETE FROM exp.Data WHERE rowid IN (SELECT rowid FROM exp._orphanDataView);
+
+DELETE FROM exp.Material WHERE rowid IN (SELECT rowid FROM exp._orphanMaterialView);
+
+DELETE FROM exp.protocolapplicationparameter WHERE
+	(ProtocolApplicationId IN (SELECT rowid FROM exp._orphanProtocolApplicationView));
+
+DELETE FROM exp.ProtocolApplication WHERE rowid IN (SELECT rowid FROM exp._orphanProtocolApplicationView);
+
+DELETE FROM exp.MaterialSource WHERE rowid IN (SELECT rowid FROM exp._orphanMaterialSourceView);
+
+DELETE FROM exp.ExperimentRun WHERE rowid IN (SELECT rowid FROM exp._orphanExperimentRunView);
+
+DELETE FROM exp.protocolactionpredecessor WHERE
+	(actionid IN (SELECT rowid FROM exp.protocolaction WHERE parentprotocolid IN (SELECT rowid FROM exp._orphanProtocolView)));
+
+DELETE FROM exp.protocolaction WHERE
+	(parentprotocolid IN (SELECT rowid FROM exp._orphanProtocolView));
+
+DELETE FROM exp.protocolparameter WHERE
+	(protocolid IN (SELECT rowid FROM exp._orphanProtocolView));
+
+DELETE FROM exp.Protocol WHERE rowid IN (SELECT rowid FROM exp._orphanProtocolView);
+
+DELETE FROM exp.Experiment WHERE rowid IN (SELECT rowid FROM exp._orphanExperimentView);
+
+DELETE FROM exp.property WHERE
 	(parentURI IN (SELECT LSID FROM exp._orphanLSIDView )) OR
 	(parentURI NOT IN (SELECT lsid FROM exp.AllLsidContainers)
 		AND parentURI NOT IN
 			(SELECT PropertyURIValue FROM exp.Property
-			WHERE parentURI NOT IN (SELECT lsid FROM exp.AllLsidContainers)))
-;
+			WHERE parentURI NOT IN (SELECT lsid FROM exp.AllLsidContainers)));
+
 -- now make the container fields not null
 ALTER TABLE exp.Experiment 
 	ALTER COLUMN Container SET NOT NULL;
@@ -149,22 +128,14 @@ ALTER TABLE exp.Protocol
 	ALTER COLUMN Container SET NOT NULL;
 
 -- now drop the views
-DROP VIEW exp._orphanLSIDView 
-;
-DROP VIEW exp._orphanMaterialSourceView 
-;
-DROP VIEW exp._orphanDataView 
-;
-DROP VIEW exp._orphanMaterialView 
-;
-DROP VIEW exp._orphanProtocolApplicationView 
-;
-DROP VIEW exp._orphanExperimentRunView 
-;
-DROP VIEW exp._orphanExperimentView 
-;
-DROP VIEW exp._orphanProtocolView 
-;
+DROP VIEW exp._orphanLSIDView;
+DROP VIEW exp._orphanMaterialSourceView;
+DROP VIEW exp._orphanDataView;
+DROP VIEW exp._orphanMaterialView;
+DROP VIEW exp._orphanProtocolApplicationView;
+DROP VIEW exp._orphanExperimentRunView;
+DROP VIEW exp._orphanExperimentView;
+DROP VIEW exp._orphanProtocolView;
 
 -- now create/modify the property tables
 
@@ -176,9 +147,7 @@ DROP VIEW exp._orphanProtocolView
 -- TODO: use M-M junction table for PropertyDescriptor <-> ObjectType
 -- I'd like to rename RowId to PropertyId
 
-ALTER TABLE exp.PropertyDescriptor ADD DatatypeURI varchar(200) NOT NULL DEFAULT 'http://www.w3.org/2001/XMLSchema#string'
-;
-
+ALTER TABLE exp.PropertyDescriptor ADD DatatypeURI varchar(200) NOT NULL DEFAULT 'http://www.w3.org/2001/XMLSchema#string';
 
 --
 -- Object
@@ -188,14 +157,12 @@ ALTER TABLE exp.PropertyDescriptor ADD DatatypeURI varchar(200) NOT NULL DEFAULT
 -- DROP TABLE exp.Object
 
 CREATE TABLE exp.Object
-	(
-	ObjectId SERIAL NOT NULL,
-	Container ENTITYID NOT NULL,
-	ObjectURI LSIDType NOT NULL,
-	OwnerObjectId int NULL
-	)
-;
-
+(
+    ObjectId SERIAL NOT NULL,
+    Container ENTITYID NOT NULL,
+    ObjectURI LSIDType NOT NULL,
+    OwnerObjectId int NULL
+);
 
 ALTER TABLE exp.Object ADD CONSTRAINT PK_Object PRIMARY KEY (ObjectId);
 ALTER TABLE exp.Object ADD CONSTRAINT UQ_Object UNIQUE (Container, ObjectURI);
@@ -203,16 +170,14 @@ CREATE INDEX IDX_Object_OwnerObjectId ON exp.Object (OwnerObjectId);
 -- CONSIDER: CONSTRAINT (Container, OwnerObjectId) --> (Container, ObjectId)
 ALTER TABLE exp.Object ADD
 	CONSTRAINT FK_Object_Object FOREIGN KEY (OwnerObjectId)
-		REFERENCES exp.Object (ObjectId)
-;
+		REFERENCES exp.Object (ObjectId);
 
 --
 -- ObjectProperty
 --
 
-
 CREATE TABLE exp.ObjectProperty
-	(
+(
 	ObjectId int NOT NULL,  -- FK exp.Object
 	PropertyId int NOT NULL, -- FK exp.PropertyDescriptor
 	TypeTag char(1) NOT NULL, -- s string, f float, d datetime, t text
@@ -220,8 +185,7 @@ CREATE TABLE exp.ObjectProperty
 	DateTimeValue timestamp NULL,
 	StringValue varchar(400) NULL,
 	TextValue text NULL
-	)
-;
+);
 
 
 ALTER TABLE exp.ObjectProperty
@@ -231,20 +195,7 @@ ALTER TABLE exp.ObjectProperty ADD
 		REFERENCES exp.Object (ObjectId);
 ALTER TABLE exp.ObjectProperty ADD
 	CONSTRAINT FK_ObjectProperty_PropertyDescriptor FOREIGN KEY (PropertyId)
-		REFERENCES exp.PropertyDescriptor (RowId)
-;
-
-
-
-CREATE OR REPLACE VIEW exp.ObjectPropertiesView AS
-	SELECT
-		O.*,
-		PD.name, PD.PropertyURI, PD.DatatypeURI,
-		P.TypeTag, P.FloatValue, P.StringValue, P.DatetimeValue, P.TextValue
-	FROM exp.ObjectProperty P JOIN exp.Object O ON P.ObjectId = O.ObjectId JOIN exp.PropertyDescriptor PD ON P.PropertyID = PD.RowId
-;
-
-
+		REFERENCES exp.PropertyDescriptor (RowId);
 
 CREATE OR REPLACE FUNCTION exp.ensureObject(ENTITYID, LSIDType, INTEGER) RETURNS INTEGER AS '
 DECLARE
@@ -293,12 +244,9 @@ END;
 -- SELECT exp.deleteObject('00000000-0000-0000-0000-000000000000', 'lsidA')
 -- SELECT * FROM exp.ObjectPropertiesView
 
-
 --
 -- This is the most general set property method
 --
-
-
 CREATE OR REPLACE FUNCTION exp.setProperty(INTEGER, LSIDType, LSIDType, CHAR(1), FLOAT, varchar(400), timestamp, TEXT) RETURNS void AS '
 DECLARE
 	_objectid ALIAS FOR $1;
@@ -349,7 +297,6 @@ END;
 
 -- SELECT exp._insertFloatProperty(13, 5, 101.0)
 
-
 CREATE OR REPLACE FUNCTION exp._insertDateTimeProperty(INTEGER, INTEGER, TIMESTAMP) RETURNS void AS '
 DECLARE
 	_objectid ALIAS FOR $1;
@@ -364,8 +311,6 @@ BEGIN
 	RETURN;
 END;
 ' LANGUAGE plpgsql;
-
-
 
 CREATE OR REPLACE FUNCTION exp._insertStringProperty(INTEGER, INTEGER, VARCHAR(400)) RETURNS void AS '
 DECLARE
@@ -382,15 +327,11 @@ BEGIN
 END;
 ' LANGUAGE plpgsql;
 
-
-
 --
 -- Set the same property on multiple objects (e.g. impoirt a column of datea)
 --
 -- fast method for importing ObjectProperties (need to wrap with datalayer code)
 --
-
-
 CREATE OR REPLACE FUNCTION exp.setFloatProperties(_propertyid INTEGER,
 	_objectid1 INTEGER, _float1 FLOAT,
 	_objectid2 INTEGER, _float2 FLOAT,
@@ -431,7 +372,6 @@ END;
 -- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidD',null)
 -- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidE',null)
 
-
 CREATE OR REPLACE FUNCTION exp.setStringProperties(_propertyid INTEGER,
 	_objectid1 INTEGER, _string1 VARCHAR(400),
 	_objectid2 INTEGER, _string2 VARCHAR(400),
@@ -461,7 +401,6 @@ BEGIN
 	RETURN;
 END;
 ' LANGUAGE plpgsql;
-
 
 CREATE OR REPLACE FUNCTION exp.setDateTimeProperties(_propertyid INTEGER,
 	_objectid1 INTEGER, _datetime1 timestamp,
@@ -504,8 +443,7 @@ END;
 
 INSERT INTO exp.Object (Container, ObjectURI)
 SELECT DISTINCT '00000000-0000-0000-0000-000000000000', ParentURI
-FROM exp.Property
-;
+FROM exp.Property;
 
 -- PropertyDescriptors
 
@@ -514,9 +452,7 @@ INSERT INTO exp.PropertyDescriptor (PropertyURI, ValueType, Name)
 SELECT OntologyEntryURI, MAX(ValueType), MAX(Name)
 FROM exp.Property
 WHERE OntologyEntryURI NOT IN (SELECT PropertyURI FROM exp.PropertyDescriptor)
-GROUP BY OntologyEntryURI
-;
-
+GROUP BY OntologyEntryURI;
 
 UPDATE exp.PropertyDescriptor SET DatatypeURI =
 	CASE
@@ -528,9 +464,7 @@ UPDATE exp.PropertyDescriptor SET DatatypeURI =
 		WHEN ValueType = 'Double'      THEN 'http://www.w3.org/2001/XMLSchema#double'
 		WHEN ValueType = 'XmlText'     THEN 'http://cpas.fhcrc.org/exp/document#text-xml'
 	END
-WHERE ValueType IN ('String', 'PropertyURI', 'Integer', 'FileLink', 'DateTime', 'Double', 'XmlText')
-;
-
+WHERE ValueType IN ('String', 'PropertyURI', 'Integer', 'FileLink', 'DateTime', 'Double', 'XmlText');
 
 -- Properties
 
@@ -549,8 +483,7 @@ SELECT O.ObjectId, PD.RowId,
 	DateTimeValue, -- DateTime
 	CASE WHEN StringValue IS NOT NULL THEN StringValue WHEN PropertyURIValue IS NOT NULL THEN PropertyURIValue ELSE FileLinkValue END,
 	XmlTextValue -- Text
-FROM exp.Property P INNER JOIN exp.Object O on P.ParentURI = O.ObjectURI INNER JOIN exp.PropertyDescriptor PD on P.OntologyEntryURI = PD.PropertyURI
-;
+FROM exp.Property P INNER JOIN exp.Object O on P.ParentURI = O.ObjectURI INNER JOIN exp.PropertyDescriptor PD on P.OntologyEntryURI = PD.PropertyURI;
 
 --
 -- fix-up Containers in the Objects table
@@ -559,26 +492,21 @@ FROM exp.Property P INNER JOIN exp.Object O on P.ParentURI = O.ObjectURI INNER J
 -- find object with same LSID and update container
 UPDATE exp.Object
 SET Container = (SELECT Container FROM exp.AllLsidContainers WHERE Lsid = ObjectURI)
-WHERE exp.Object.Container = '00000000-0000-0000-0000-000000000000' AND EXISTS (SELECT Container FROM exp.AllLsidContainers WHERE Lsid = ObjectURI)
-;
+WHERE exp.Object.Container = '00000000-0000-0000-0000-000000000000' AND EXISTS (SELECT Container FROM exp.AllLsidContainers WHERE Lsid = ObjectURI);
 
 -- find children and udpate container
 UPDATE exp.Object 
 SET Container = (SELECT PARENT.Container FROM exp.ObjectProperty OP INNER JOIN exp.Object PARENT ON OP.ObjectId = Parent.ObjectID WHERE OP.StringValue = ObjectURI)
-WHERE exp.Object.Container = '00000000-0000-0000-0000-000000000000' AND EXISTS (SELECT PARENT.Container FROM exp.ObjectProperty OP INNER JOIN exp.Object PARENT ON OP.ObjectId = Parent.ObjectID WHERE OP.StringValue = ObjectURI)
-;
+WHERE exp.Object.Container = '00000000-0000-0000-0000-000000000000' AND EXISTS (SELECT PARENT.Container FROM exp.ObjectProperty OP INNER JOIN exp.Object PARENT ON OP.ObjectId = Parent.ObjectID WHERE OP.StringValue = ObjectURI);
 
 -- find children and udpate container
 UPDATE exp.Object 
 SET Container = (SELECT PARENT.Container FROM exp.ObjectProperty OP INNER JOIN exp.Object PARENT ON OP.ObjectId = Parent.ObjectID WHERE OP.StringValue = ObjectURI)
-WHERE exp.Object.Container = '00000000-0000-0000-0000-000000000000' AND EXISTS (SELECT PARENT.Container FROM exp.ObjectProperty OP INNER JOIN exp.Object PARENT ON OP.ObjectId = Parent.ObjectID WHERE OP.StringValue = ObjectURI)
-;
+WHERE exp.Object.Container = '00000000-0000-0000-0000-000000000000' AND EXISTS (SELECT PARENT.Container FROM exp.ObjectProperty OP INNER JOIN exp.Object PARENT ON OP.ObjectId = Parent.ObjectID WHERE OP.StringValue = ObjectURI);
 
 SELECT COUNT(*)
 FROM exp.Object
-WHERE Container = '00000000-0000-0000-0000-000000000000'
-;
-
+WHERE Container = '00000000-0000-0000-0000-000000000000';
 
 --
 -- fix up OwnerObjectId
@@ -587,7 +515,7 @@ WHERE Container = '00000000-0000-0000-0000-000000000000'
 UPDATE exp.Object
 SET OwnerObjectId = (SELECT MAX(OWNER.ObjectId)
 		FROM exp.Property PROPS JOIN exp.ExperimentRun RUN on PROPS.RunId = RUN.RowId JOIN exp.Object OWNER ON RUN.Lsid = OWNER.ObjectURI
-		WHERE PROPS.ParentURI = exp.Object.ObjectURI)
-;
+		WHERE PROPS.ParentURI = exp.Object.ObjectURI);
+
 -- now drop the old proerty table
 DROP TABLE exp.Property;

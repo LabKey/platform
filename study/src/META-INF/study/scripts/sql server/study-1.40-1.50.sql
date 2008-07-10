@@ -16,7 +16,7 @@
 ALTER TABLE study.SampleRequestStatus ADD
     FinalState BIT NOT NULL DEFAULT 0,
     SpecimensLocked BIT NOT NULL DEFAULT 1
-go
+GO
 
 ALTER TABLE study.Specimen
     ALTER COLUMN Ptid NVARCHAR(32)
@@ -27,8 +27,8 @@ ALTER TABLE study.Participant ADD
     CurrentSiteId INT NULL,
 	CONSTRAINT FK_EnrollmentSiteId_Site FOREIGN KEY (EnrollmentSiteId) REFERENCES study.Site (RowId),
 	CONSTRAINT FK_CurrentSiteId_Site FOREIGN KEY (CurrentSiteId) REFERENCES study.Site (RowId)
-go
+GO
 
 ALTER TABLE study.SpecimenEvent
     DROP CONSTRAINT UQ_Specimens_ScharpId
-go
+GO

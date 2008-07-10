@@ -46,4 +46,4 @@ GO
 DELETE FROM study.study WHERE NOT EXISTS
 (SELECT Container FROM study.visit WHERE study.visit.container=study.study.Container)
 AND NOT EXISTS (Select Container FROM study.dataset WHERE study.dataset.container=study.study.Container)
-go
+GO

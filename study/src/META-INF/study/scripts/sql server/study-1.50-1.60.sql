@@ -30,7 +30,7 @@ GO
 
 ALTER TABLE study.Report
     ADD ShowWithDataset INT NULL
-go
+GO
 
 -- Change visit ids to type numeric:
 ALTER TABLE study.Visit

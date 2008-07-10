@@ -16,13 +16,7 @@
 
 -- Start over to reconfigure Containers handling
 EXEC core.fn_dropifexists '*', 'cabig', 'SCHEMA'
-go
-
+GO
 
 EXEC sp_addapprole 'cabig', 'password'
-go
-
-
--- If caBIG is enabled, all containers with caBIG bit set.  Self join to Containers to get ParentId (used directly
--- by caBIG interface to navigate the folder hierarchy).  LEFT OUTER JOIN ensures that root container can be published;
--- Constraint on Containers table ensures that all Containers (except root) have a parent.
+GO

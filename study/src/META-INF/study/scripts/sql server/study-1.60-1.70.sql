@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 ALTER TABLE study.Visit ADD VisitDateDatasetId INT
-go
+GO
 ALTER TABLE study.DataSet ADD VisitDatePropertyName NVARCHAR(200)
-go
+GO
 
 CREATE TABLE study.Plate
     (
@@ -76,9 +76,9 @@ ALTER TABLE study.Visit DROP CONSTRAINT PK_Visit;
 ALTER TABLE study.Visit ADD CONSTRAINT PK_Visit PRIMARY KEY (Container,RowId);
 ALTER TABLE study.Visit ADD SequenceNumMin NUMERIC(15,4) NOT NULL DEFAULT 0;
 ALTER TABLE study.Visit ADD SequenceNumMax NUMERIC(15,4) NOT NULL DEFAULT 0;
-go
+GO
 UPDATE study.Visit SET SequenceNumMin=VisitId, SequenceNumMax=VisitId;
-go
+GO
 
 --
 -- fix up VisitMap
@@ -86,18 +86,18 @@ go
 
 ALTER TABLE study.VisitMap DROP CONSTRAINT PK_VisitMap;
 ALTER TABLE study.VisitMap ADD VisitRowId INT NOT NULL DEFAULT -1;
-go
+GO
 UPDATE study.VisitMap
 SET VisitRowId = (
     SELECT V.RowId
     FROM study.Visit V
     WHERE VisitMap.Container = V.Container AND VisitMap.VisitId = V.VisitId)
 FROM study.VisitMap VisitMap
-go
+GO
 ALTER TABLE study.VisitMap DROP COLUMN VisitId;
 ALTER TABLE study.VisitMap
     ADD CONSTRAINT PK_VisitMap PRIMARY KEY (Container,VisitRowId,DataSetId);
-go
+GO
 
 --
 -- fix up ParticipantVisit
@@ -112,47 +112,47 @@ CREATE TABLE study.ParticipantVisit
     VisitDate DATETIME NULL
     );
 ALTER TABLE study.ParticipantVisit ADD CONSTRAINT PK_ParticipantVisit PRIMARY KEY (Container, SequenceNum, ParticipantId);
-go
+GO
 
 --
 -- refactor StudyData
 --
 
 ALTER TABLE study.StudyData ADD SequenceNum Numeric(15,4);
-go
+GO
 UPDATE study.StudyData SET SequenceNum=VisitId;
-go
+GO
 ALTER TABLE study.StudyData DROP AK_ParticipantDataset;
 ALTER TABLE study.StudyData DROP COLUMN VisitId;
 ALTER TABLE study.studydata
     ADD CONSTRAINT AK_ParticipantDataset UNIQUE CLUSTERED (Container, DatasetId, SequenceNum, ParticipantId);
-go
+GO
 
 -- out with the old
 ALTER TABLE study.Visit DROP COLUMN VisitId;
-go
+GO
 
 ALTER TABLE study.StudyData
     ADD SourceLSID VARCHAR(200) NULL
 GO
 ALTER TABLE study.DataSet ADD KeyPropertyName NVARCHAR(50) NULL         -- Property name in TypeURI
-go
+GO
 
 ALTER TABLE study.StudyData ADD _key NVARCHAR(200) NULL                 -- assay key column, used only on INSERT for UQ index
-go
+GO
 
 ALTER TABLE study.StudyData DROP CONSTRAINT AK_ParticipantDataset;
-go
+GO
 
 ALTER TABLE study.StudyData
     ADD CONSTRAINT UQ_StudyData UNIQUE (Container, DatasetId, SequenceNum, ParticipantId, _key);
-go
+GO
 
 -- rename VisitDate -> _VisitDate to avoid some confusion
 
 ALTER TABLE study.StudyData ADD _VisitDate DATETIME NULL
-go
+GO
 UPDATE study.StudyData SET _VisitDate = VisitDate
-go
+GO
 ALTER TABLE study.StudyData DROP COLUMN VisitDate
-go
+GO

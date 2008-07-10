@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 ALTER TABLE core.ACLs ADD Container UNIQUEIDENTIFIER;
-go
+GO
 UPDATE core.ACLs SET Container = ObjectId WHERE ObjectId in (SELECT EntityId FROM core.Containers);
-go
+GO
 
 ALTER TABLE core.Principals ADD Type CHAR(1) NOT NULL DEFAULT 'u';
-go
+GO
 UPDATE core.Principals SET Type='u';
 UPDATE core.Principals SET Type='g' WHERE IsGroup = '1';
-go
+GO
 
 ALTER TABLE core.Principals ADD Container ENTITYID NULL;
 ALTER TABLE core.Principals DROP CONSTRAINT UQ_Principals_ProjectId_Name;
-go
+GO
 UPDATE core.Principals SET Container = ProjectId;
-go
+GO
 ALTER TABLE core.Principals ADD CONSTRAINT UQ_Principals_Container_Name UNIQUE (Container, Name);
-go
+GO
 
 DECLARE @name VARCHAR(200)
 DECLARE @sql VARCHAR(4000)
@@ -40,24 +40,24 @@ BEGIN
     select @sql = 'ALTER TABLE core.Principals DROP CONSTRAINT ' + @name
     EXEC sp_sqlexec @sql
 END
-go
+GO
 
 IF object_id('core.DF_Principals_IsGroup','d') IS NOT NULL
     ALTER TABLE core.Principals DROP CONSTRAINT DF_Principals_IsGroup
-go
+GO
 
 ALTER TABLE core.Principals DROP COLUMN IsGroup;
-go
+GO
 
 ALTER TABLE core.Principals ADD OwnerId ENTITYID NULL;
-go
+GO
 UPDATE core.Principals SET OwnerId = Container;
-go
+GO
 
 ALTER TABLE core.Principals DROP CONSTRAINT UQ_Principals_Container_Name;
-go
+GO
 ALTER TABLE core.Principals ADD CONSTRAINT UQ_Principals_Container_Name_OwnerId UNIQUE (Container, Name, OwnerId);
-go
+GO
 ALTER TABLE core.Principals DROP COLUMN ProjectId;
-go
+GO
 

@@ -3166,14 +3166,10 @@ public class AdminController extends SpringActionController
 
             if (loader.isUpgradeRequired())
             {
-                loader.ensureBeforeUpgradeComplete(getViewContext());
-
                 vbox.addView(new UpgradeView(loader.getUpgradeUser(), form.getForce(), form.getExpress(), loader.isNewInstall()));
             }
             else
             {
-                SqlScriptRunner.stopBackgroundThread();
-
                 ActionURL url = AdminController.getCustomizeSiteURL(true);
                 vbox.addView(new HtmlView("All modules are up-to-date.<br><br>" +
                         "<a href='" + url + "'><img border=0 src='" + PageFlowUtil.buttonSrc("Next") + "'></a>"));

@@ -24,12 +24,12 @@
 */
 
 exec sp_addapprole 'exp', 'password'
-go
+GO
 
 
 if NOT EXISTS (select * from systypes where name ='LSIDtype')
     exec sp_addtype 'LSIDtype', 'nvarchar(300)'
-go
+GO
 
 
 CREATE TABLE exp.ExperimentRun (
@@ -581,13 +581,13 @@ ALTER TABLE exp.ProtocolApplicationParameter ADD
 GO
 
 
--- Create views and procs used by Ontology Manager
+-- Create procs used by Ontology Manager
 CREATE PROCEDURE exp.getObjectProperties(@container ENTITYID, @lsid LSIDType) AS
 BEGIN
 	SELECT * FROM exp.ObjectPropertiesView
 	WHERE Container = @container AND ObjectURI = @lsid
 END
-go
+GO
 
 CREATE PROCEDURE exp.ensureObject(@container ENTITYID, @lsid LSIDType, @ownerObjectId INTEGER) AS
 BEGIN
@@ -603,7 +603,7 @@ BEGIN
 	COMMIT
 	SELECT @objectid
 END
-go
+GO
 
 
 CREATE PROCEDURE exp.deleteObject(@container ENTITYID, @lsid LSIDType) AS
@@ -621,7 +621,7 @@ BEGIN
 		DELETE exp.Object WHERE ObjectId = @objectid
 	COMMIT
 END
-go
+GO
 --
 -- This is the most general set property method
 --
@@ -643,7 +643,7 @@ BEGIN
 			VALUES (@objectid, @propertyid, @tag, @f, @s, @d, @t)
 	COMMIT
 END
-go
+GO
 
 
 -- internal methods
@@ -653,7 +653,7 @@ BEGIN
 	INSERT INTO exp.ObjectProperty (ObjectId, PropertyId, TypeTag, FloatValue)
 	VALUES (@objectid, @propid, 'f', @float)
 END
-go
+GO
 
 
 CREATE PROCEDURE exp._insertDateTimeProperty(@objectid INTEGER, @propid INTEGER, @datetime DATETIME) AS
@@ -662,7 +662,7 @@ BEGIN
 	INSERT INTO exp.ObjectProperty (ObjectId, PropertyId, TypeTag, DateTimeValue)
 	VALUES (@objectid, @propid, 'd', @datetime)
 END
-go
+GO
 
 CREATE PROCEDURE exp._insertStringProperty(@objectid INTEGER, @propid INTEGER, @string VARCHAR(400)) AS
 BEGIN
@@ -670,7 +670,7 @@ BEGIN
 	INSERT INTO exp.ObjectProperty (ObjectId, PropertyId, TypeTag, StringValue)
 	VALUES (@objectid, @propid, 's', @string)
 END
-go
+GO
 
 --
 -- Set the same property on multiple objects (e.g. impoirt a column of datea)
@@ -706,7 +706,7 @@ BEGIN
 		EXEC exp._insertFloatProperty @objectid10, @propertyid, @float10
 	COMMIT
 END
-go
+GO
 
 
 CREATE PROCEDURE exp.setStringProperties(@propertyid INTEGER,
@@ -737,7 +737,7 @@ BEGIN
 		EXEC exp._insertStringProperty @objectid10, @propertyid, @string10
 	COMMIT
 END
-go
+GO
 
 
 CREATE PROCEDURE exp.setDateTimeProperties(@propertyid INTEGER,
@@ -768,6 +768,6 @@ BEGIN
 		EXEC exp._insertDateTimeProperty @objectid10, @propertyid, @datetime10
 	COMMIT
 END
-go
+GO
 
 

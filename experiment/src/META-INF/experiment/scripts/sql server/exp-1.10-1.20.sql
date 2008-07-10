@@ -22,11 +22,11 @@ ALTER TABLE [exp].[Fraction] DROP CONSTRAINT FK_Fraction_Material
 GO
 
 if exists (select * from dbo.sysobjects where id = object_id(N'[exp].[BioSource]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
-drop table [exp].[BioSource]
+DROP TABLE [exp].[BioSource]
 GO
 
 if exists (select * from dbo.sysobjects where id = object_id(N'[exp].[Fraction]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
-drop table [exp].[Fraction]
+DROP TABLE [exp].[Fraction]
 GO
 
 if exists (select * from dbo.sysobjects where id = object_id(N'[exp].[setProperty]') and OBJECTPROPERTY(id, N'IsProcedure') = 1)
@@ -38,24 +38,24 @@ ALTER TABLE exp.MaterialSource
 GO
 
 ALTER TABLE exp.ProtocolParameter ALTER COLUMN StringValue nvarchar(4000) NULL
-go
+GO
 UPDATE exp.ProtocolParameter
     SET StringValue = FileLinkValue WHERE ValueType='FileLink'
-go
+GO
 ALTER TABLE exp.ProtocolParameter DROP COLUMN FileLinkValue
-go
+GO
 ALTER TABLE exp.ProtocolParameter DROP COLUMN XmlTextValue
-go
+GO
 
 ALTER TABLE exp.ProtocolApplicationParameter ALTER COLUMN StringValue nvarchar(4000) NULL
-go
+GO
 UPDATE exp.ProtocolApplicationParameter
     SET StringValue = FileLinkValue WHERE ValueType='FileLink'
-go
+GO
 ALTER TABLE exp.ProtocolApplicationParameter DROP COLUMN FileLinkValue
-go
+GO
 ALTER TABLE exp.ProtocolApplicationParameter DROP COLUMN XmlTextValue
-go
+GO
 
 
 /*
@@ -68,17 +68,15 @@ A PropertyDescriptor with a Domain describes a member of a type (or an ObjectPro
 */
 
 ALTER TABLE exp.ObjectProperty DROP CONSTRAINT FK_ObjectProperty_PropertyDescriptor
-go
+GO
 
 ALTER TABLE exp.PropertyDescriptor DROP CONSTRAINT PK_PropertyDescriptor 
-go
+GO
 ALTER TABLE exp.PropertyDescriptor DROP CONSTRAINT UQ_PropertyDescriptor 
-go
+GO
 
-
-go
 EXEC sp_rename @objname = 'exp.PropertyDescriptor',       @newname = 'PropertyDescriptorOld'
-go
+GO
 CREATE TABLE exp.PropertyDescriptor (
 	PropertyId int IDENTITY (1, 1) NOT NULL ,
 	PropertyURI nvarchar (200) NOT NULL ,
@@ -118,15 +116,15 @@ FROM exp.PropertyDescriptorOld PDU
 		)
 
 SET IDENTITY_INSERT exp.PropertyDescriptor OFF
-go
+GO
 
 DROP TABLE exp.PropertyDescriptorOld
-go
+GO
 
 UPDATE exp.PropertyDescriptor
 SET ConceptURI = RangeURI, RangeURI = 'http://www.w3.org/2001/XMLSchema#string'
 WHERE RangeURI NOT LIKE 'http://www.w3.org/2001/XMLSchema#%'
-go
+GO
 
 ALTER TABLE exp.PropertyDescriptor ADD
 	CONSTRAINT PK_PropertyDescriptor PRIMARY KEY  CLUSTERED 
@@ -138,15 +136,15 @@ ALTER TABLE exp.PropertyDescriptor ADD
 		PropertyURI
 	)
 
-go
+GO
 
 ALTER TABLE exp.Object DROP CONSTRAINT UQ_Object
-go
+GO
 ALTER TABLE exp.Object ADD CONSTRAINT UQ_Object UNIQUE (ObjectURI)
 GO
 
 DROP INDEX exp.Object.IDX_Object_OwnerObjectId
-go
+GO
 
 CREATE CLUSTERED INDEX IDX_Object_ContainerOwnerObjectId ON exp.Object (Container, OwnerObjectId, ObjectId);
 GO
@@ -154,5 +152,5 @@ GO
 ALTER TABLE exp.ObjectProperty 
 	ADD CONSTRAINT FK_ObjectProperty_PropertyDescriptor FOREIGN KEY (PropertyId) REFERENCES exp.PropertyDescriptor (PropertyId)
 
-go
+GO
 

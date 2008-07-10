@@ -47,11 +47,7 @@ ALTER TABLE exp.ProtocolApplicationParameter DROP COLUMN XmlTextValue;
 
 ALTER TABLE exp.ObjectProperty DROP CONSTRAINT FK_ObjectProperty_PropertyDescriptor;
 
-DROP VIEW exp.ObjectPropertiesView;
---DROP VIEW exp.ObjectClasses;
-
-
-ALTER TABLE exp.PropertyDescriptor DROP CONSTRAINT PK_PropertyDescriptor ;
+--ALTER TABLE exp.PropertyDescriptor DROP CONSTRAINT PK_PropertyDescriptor ;
 ALTER TABLE exp.PropertyDescriptor DROP CONSTRAINT UQ_PropertyDescriptor ;
 
 ALTER TABLE exp.PropertyDescriptor RENAME TO PropertyDescriptorOld;
@@ -112,18 +108,4 @@ CREATE INDEX IDX_Object_ContainerOwnerObjectId ON exp.Object (Container, OwnerOb
 ALTER TABLE exp.ObjectProperty 
 	ADD CONSTRAINT FK_ObjectProperty_PropertyDescriptor FOREIGN KEY (PropertyId) REFERENCES exp.PropertyDescriptor (PropertyId)
 ;
-
-CREATE VIEW exp.ObjectPropertiesView AS
-	SELECT
-		O.*,
-		PD.name, PD.PropertyURI, PD.RangeURI,
-		P.TypeTag, P.FloatValue, P.StringValue, P.DatetimeValue, P.TextValue
-	FROM exp.ObjectProperty P JOIN exp.Object O ON P.ObjectId = O.ObjectId JOIN exp.PropertyDescriptor PD ON P.PropertyId = PD.PropertyId;
-
-
-
-CREATE VIEW exp.ObjectClasses AS
-	SELECT DISTINCT DomainURI
-	FROM exp.PropertyDescriptor
-	WHERE DomainURI IS NOT NULL;
 

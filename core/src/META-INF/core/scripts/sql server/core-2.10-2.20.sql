@@ -23,4 +23,4 @@ CREATE TABLE core.MappedDirectories
    CONSTRAINT PK_MappedDirecctories PRIMARY KEY (EntityId),
    CONSTRAINT UQ_MappedDirectories UNIQUE (Container,Name)
 )
-go
+GO

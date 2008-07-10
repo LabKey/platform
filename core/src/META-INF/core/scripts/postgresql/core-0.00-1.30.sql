@@ -14,7 +14,7 @@
  * limitations under the License.
  */
  
--- Create "core" tables, views, etc.
+-- Create "core" schema, tables, etc.
 
 CREATE DOMAIN public.UNIQUEIDENTIFIER AS VARCHAR(36);
 CREATE DOMAIN public.ENTITYID AS VARCHAR(36);
@@ -138,7 +138,7 @@ CREATE TABLE Modules
 
 -- keep track of sql scripts that have been run in each module
 CREATE TABLE SqlScripts
-	(
+(
 	-- standard fields
 	_ts TIMESTAMP DEFAULT now(),
 	CreatedBy USERID,
@@ -150,57 +150,28 @@ CREATE TABLE SqlScripts
 	FileName VARCHAR(300),
 
 	CONSTRAINT PK_SqlScripts PRIMARY KEY (ModuleName, FileName)
-	);
-
-
-CREATE OR REPLACE VIEW Users AS
-	SELECT Name AS Email, UsersData.*
-	FROM Principals Principals LEFT OUTER JOIN UsersData ON Principals.UserId = UsersData.UserId
-	WHERE Type = 'u';
-
-
-CREATE OR REPLACE RULE Users_Update AS
-	ON UPDATE TO Users DO INSTEAD
-		UPDATE UsersData SET
-			ModifiedBy = NEW.ModifiedBy,
-			Modified = NEW.Modified,
-			FirstName = NEW.FirstName,
-			LastName = NEW.LastName,
-			Phone = NEW.Phone,
-			Mobile = NEW.Mobile,
-			Pager = NEW.Pager,
-			IM = NEW.IM,
-			Description = NEW.Description,
-			LastLogin = NEW.LastLogin
-		WHERE UserId = NEW.UserId;
-
+);
 
 -- generic table for all attached docs
 CREATE TABLE Documents
-	(
-	-- standard fields
-	_ts TIMESTAMP DEFAULT now(),
-	RowId SERIAL,
-	CreatedBy USERID,
-	Created TIMESTAMP,
-	ModifiedBy USERID,
-	Modified TIMESTAMP,
-	Owner USERID NULL,
+(
+    -- standard fields
+    _ts TIMESTAMP DEFAULT now(),
+    RowId SERIAL,
+    CreatedBy USERID,
+    Created TIMESTAMP,
+    ModifiedBy USERID,
+    Modified TIMESTAMP,
+    Owner USERID NULL,
 
-	Container ENTITYID NOT NULL,	-- Container of parent, if parent has no ACLs
-	Parent ENTITYID NOT NULL,
-	DocumentName VARCHAR(195),	--filename
+    Container ENTITYID NOT NULL,	-- Container of parent, if parent has no ACLs
+    Parent ENTITYID NOT NULL,
+    DocumentName VARCHAR(195),	--filename
 
-	DocumentSize INT DEFAULT -1,
-	DocumentType VARCHAR(32) DEFAULT 'text/plain',
-	Document BYTEA,			-- ContentType LIKE application/*
+    DocumentSize INT DEFAULT -1,
+    DocumentType VARCHAR(32) DEFAULT 'text/plain',
+    Document BYTEA,			-- ContentType LIKE application/*
 
-	CONSTRAINT PK_Documents PRIMARY KEY (RowId),
-	CONSTRAINT UQ_Documents_Parent_DocumentName UNIQUE (Parent, DocumentName)
-	);
-
-CREATE VIEW core.Contacts As
-	SELECT Users.FirstName || ' ' || Users.LastName AS Name, Users.Email, Users.Phone, Users.UserId, Principals.OwnerId, Principals.Container, Principals.Name AS GroupName
-	FROM core.Principals Principals
-	    INNER JOIN core.Members Members ON Principals.UserId = Members.GroupId
-	    INNER JOIN core.Users Users ON Members.UserId = Users.UserId;
+    CONSTRAINT PK_Documents PRIMARY KEY (RowId),
+    CONSTRAINT UQ_Documents_Parent_DocumentName UNIQUE (Parent, DocumentName)
+);

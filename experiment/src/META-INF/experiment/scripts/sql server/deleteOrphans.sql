@@ -56,4 +56,4 @@ DELETE FROM exp.Object WHERE objectid IN (SELECT objectid FROM exp._orphanObject
 DELETE FROM exp.PropertyDescriptor WHERE propertyid IN (SELECT propertyid FROM exp._orphanPropDescView)
 
 COMMIT TRANSACTION
-go
+GO

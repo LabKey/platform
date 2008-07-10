@@ -50,10 +50,6 @@ CREATE TABLE Properties
 	);
 
 
-CREATE VIEW prop.PropertyEntries AS
-	SELECT ObjectId, Category, UserId, Name, Value FROM prop.Properties JOIN prop.PropertySets ON PropertySets.Set = Properties.Set;
-
-
 CREATE FUNCTION Property_setValue(int, text, text) RETURNS void AS '
 	DECLARE
 		propertySet ALIAS FOR $1;

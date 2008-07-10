@@ -46,29 +46,29 @@ DROP VIEW exp._orphanProtocolView
 GO
 CREATE VIEW exp._orphanProtocolView AS 
 SELECT * FROM exp.Protocol WHERE container NOT IN (SELECT entityid FROM core.containers) OR container IS NULL 
-go
+GO
 CREATE VIEW exp._orphanExperimentView AS
 SELECT * FROM exp.Experiment WHERE container NOT IN (SELECT entityid FROM core.containers) OR container IS NULL 
-go
+GO
 CREATE VIEW exp._orphanExperimentRunView AS
 SELECT * FROM exp.ExperimentRun WHERE container NOT IN (SELECT entityid FROM core.containers) OR container IS NULL 
-go
+GO
 CREATE VIEW exp._orphanProtocolApplicationView AS 
 SELECT * FROM exp.ProtocolApplication WHERE (runid IN (SELECT rowid FROM exp._orphanExperimentRunView))
-go
+GO
 CREATE VIEW exp._orphanMaterialView AS
 SELECT * FROM exp.Material WHERE (runid IN (SELECT rowid FROM exp._orphanExperimentRunView)) OR 
 	(runid IS NULL AND container NOT IN (SELECT entityid FROM core.containers)) OR 
 	(container IS NULL)
-go
+GO
 CREATE VIEW exp._orphanDataView AS
 SELECT * FROM exp.Data WHERE (runid IN (SELECT rowid FROM exp._orphanExperimentRunView)) OR 
 	(runid IS NULL AND container NOT IN (SELECT entityid FROM core.containers)) OR 
 	(container IS NULL)
-go
+GO
 CREATE VIEW exp._orphanMaterialSourceView AS 
 SELECT * FROM exp.MaterialSource WHERE container NOT IN (SELECT entityid FROM core.containers) OR container IS NULL 
-go
+GO
 CREATE VIEW exp._orphanLSIDView AS 
 SELECT LSID, CAST (Container AS nvarchar(100)) AS Container FROM exp._orphanProtocolView UNION
 SELECT LSID, CAST (Container AS nvarchar(100)) AS Container FROM exp._orphanExperimentView  UNION
@@ -77,14 +77,14 @@ SELECT LSID, CAST (Container AS nvarchar(100)) AS Container FROM exp._orphanMate
 SELECT LSID, CAST (Container AS nvarchar(100)) AS Container FROM exp._orphanDataView UNION
 SELECT LSID, 'n/a' AS Container FROM exp._orphanProtocolApplicationView UNION
 SELECT LSID, CAST (Container AS nvarchar(100)) AS Container FROM exp._orphanMaterialSourceView 
-go
+GO
 CREATE VIEW exp._orphanObjectView AS 
 SELECT * FROM exp.Object WHERE ObjectURI IN (SELECT LSID FROM exp._orphanLSIDView) OR 
 	container NOT IN (SELECT entityid FROM core.containers)
-go
+GO
 CREATE VIEW exp._orphanPropDescView AS 
 SELECT * FROM exp.PropertyDescriptor WHERE container NOT IN (SELECT entityid FROM core.containers)
-go
+GO
 
 -- general case of all orphans
 SELECT 'DataInput' AS TableName, COUNT(*) AS NumOrphans FROM exp.DataInput WHERE 
@@ -130,4 +130,4 @@ UNION
 SELECT 'PropertyDescriptor' AS TableName, COUNT(*) AS NumOrphans FROM exp._orphanPropDescView
 
 ORDER BY 1
-go
+GO

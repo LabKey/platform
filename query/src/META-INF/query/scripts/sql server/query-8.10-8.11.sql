@@ -13,6 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-alter table query.customview alter column queryname nvarchar(200)
-go
+ALTER TABLE query.customview ALTER COLUMN queryname nvarchar(200)
+GO
  

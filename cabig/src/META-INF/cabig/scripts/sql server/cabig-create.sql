@@ -1,3 +1,6 @@
+-- If caBIG is enabled, all containers with caBIG bit set.  Self join to Containers to get ParentId (used directly
+-- by caBIG interface to navigate the folder hierarchy).  LEFT OUTER JOIN ensures that root container can be published;
+-- Constraint on Containers table ensures that all Containers (except root) have a parent.
 CREATE VIEW cabig.Containers AS
     SELECT c.RowId, c.EntityId, c.Name, p.RowId AS ParentId FROM core.Containers c
         LEFT OUTER JOIN core.Containers p ON c.Parent = p.EntityId
@@ -369,6 +372,9 @@ CREATE VIEW cabig.PeptideMembers AS
         INNER JOIN cabig.MS2RunsFilter r ON r.run = pp.run )
 GO
 
+-- the protein sequences visible via cabig are those
+-- described in a fasta file used by a run in a published container,
+-- and also those that are not marked as deleted
 CREATE VIEW cabig.ProtSequences AS
     SELECT s.SeqId, s.ProtSequence, s.Hash, s.Description,
         src.Name AS SourceName, s.SourceVersion, src.Url AS SourceUrl, s.InsertDate, s.OrgId, s.Mass,

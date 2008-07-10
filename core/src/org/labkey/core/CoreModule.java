@@ -202,7 +202,7 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
 
 
     @Override
-    public void beforeUpdate(ViewContext viewContext)
+    public void beforeUpdate()
     {
         // Do nothing
     }
@@ -251,6 +251,11 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
             migrateLdapSettings();
 
         // TODO: New internalAfterSchemaUpdate method in base class to avoid calling this.  super.afterSchemaUpdate(moduleContext, viewContext);
+    }
+
+    @Override
+    public void afterUpdate()
+    {
     }
 
     private void migrateLdapSettings()

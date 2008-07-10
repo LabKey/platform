@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
--- Tables and views used for Study module
+-- Tables used for Study module
 
 IF NOT EXISTS (SELECT * FROM sysusers WHERE name ='study')
     EXEC sp_addapprole 'study', 'password'
@@ -98,7 +98,7 @@ CREATE TABLE study.Participant
 
 	CONSTRAINT PK_Participant PRIMARY KEY (Container, ParticipantId)
 )
-go
+GO
 
 CREATE TABLE study.SampleRequestStatus
 (
@@ -108,7 +108,7 @@ CREATE TABLE study.SampleRequestStatus
     Label NVARCHAR(100),
     CONSTRAINT PK_SampleRequestStatus PRIMARY KEY (RowId)
 )
-go
+GO
 
 
 CREATE TABLE study.SampleRequestActor
@@ -143,7 +143,7 @@ CREATE TABLE study.SampleRequest
     CONSTRAINT FK_SampleRequest_SampleRequestStatus FOREIGN KEY (StatusId) REFERENCES study.SampleRequestStatus(RowId),
     CONSTRAINT FK_SampleRequest_Site FOREIGN KEY (DestinationSiteId) REFERENCES study.Site(RowId)
 )
-go
+GO
 
 CREATE TABLE study.SampleRequestRequirement
 (
@@ -160,7 +160,7 @@ CREATE TABLE study.SampleRequestRequirement
     CONSTRAINT FK_SampleRequestRequirement_SampleRequestActor FOREIGN KEY (ActorId) REFERENCES study.SampleRequestActor(RowId),
     CONSTRAINT FK_SampleRequestRequirement_Site FOREIGN KEY (SiteId) REFERENCES study.Site(RowId)
 )
-go
+GO
 
 
 CREATE TABLE study.SampleRequestEvent
@@ -177,7 +177,7 @@ CREATE TABLE study.SampleRequestEvent
 
     CONSTRAINT FK_SampleRequestEvent_SampleRequest FOREIGN KEY (RequestId) REFERENCES study.SampleRequest(RowId),
 )
-go
+GO
 
 
 CREATE TABLE study.Report
@@ -194,8 +194,8 @@ CREATE TABLE study.Report
 
     CONSTRAINT PK_Report PRIMARY KEY (ReportId),
     CONSTRAINT UQ_Report UNIQUE (ContainerId, Label)
-);
-go
+)
+GO
 
 
 CREATE TABLE study.StudyData
@@ -208,7 +208,7 @@ CREATE TABLE study.StudyData
 	CONSTRAINT PK_ParticipantDataset PRIMARY KEY (LSID),
 	CONSTRAINT AK_ParticipantDataset UNIQUE CLUSTERED (Container, DatasetId, VisitId, ParticipantId)
 )
-go
+GO
 
 
 CREATE TABLE study.SpecimenAdditive (
@@ -220,7 +220,8 @@ CREATE TABLE study.SpecimenAdditive (
     Additive NVARCHAR(100),
     CONSTRAINT PK_Additives PRIMARY KEY (RowId),
     CONSTRAINT UQ_Additives UNIQUE (ScharpId, Container)
-);
+)
+GO
 
 CREATE TABLE study.SpecimenDerivative (
     RowId INT IDENTITY(1,1),
@@ -231,7 +232,8 @@ CREATE TABLE study.SpecimenDerivative (
     Derivative NVARCHAR(100),
     CONSTRAINT PK_Derivatives PRIMARY KEY (RowId),
     CONSTRAINT UQ_Derivatives UNIQUE (ScharpId, Container)
-);
+)
+GO
 
 CREATE TABLE study.SpecimenPrimaryType (
     RowId INT IDENTITY(1,1),
@@ -242,7 +244,8 @@ CREATE TABLE study.SpecimenPrimaryType (
     PrimaryType NVARCHAR(100),
     CONSTRAINT PK_PrimaryTypes PRIMARY KEY (RowId),
     CONSTRAINT UQ_PrimaryTypes UNIQUE (ScharpId, Container)
-);
+)
+GO
 
 CREATE TABLE study.Specimen (
     RowId INT NOT NULL, -- FK exp.Material
@@ -277,7 +280,8 @@ CREATE TABLE study.Specimen (
     CONSTRAINT FK_Specimens_Additives FOREIGN KEY (AdditiveTypeId) REFERENCES study.SpecimenAdditive(RowId),
     CONSTRAINT FK_Specimens_Derivatives FOREIGN KEY (DerivativeTypeId) REFERENCES study.SpecimenDerivative(RowId),
     CONSTRAINT FK_Specimens_PrimaryTypes FOREIGN KEY (PrimaryTypeId) REFERENCES study.SpecimenPrimaryType(RowId)
-);
+)
+GO
 
 CREATE TABLE study.SpecimenEvent (
     RowId INT IDENTITY(1,1),
@@ -300,7 +304,8 @@ CREATE TABLE study.SpecimenEvent (
     CONSTRAINT UQ_Specimens_ScharpId UNIQUE (ScharpId, Container),
     CONSTRAINT FK_SpecimensEvents_Specimens FOREIGN KEY (SpecimenId) REFERENCES study.Specimen(RowId),
     CONSTRAINT FK_Specimens_Site FOREIGN KEY (LabId) REFERENCES study.Site(RowId)
-);
+)
+GO
 
 CREATE TABLE study.SampleRequestSpecimen
 (
@@ -313,4 +318,4 @@ CREATE TABLE study.SampleRequestSpecimen
     CONSTRAINT FK_SampleRequestSpecimen_SampleRequest FOREIGN KEY (SampleRequestId) REFERENCES study.SampleRequest(RowId),
     CONSTRAINT FK_SampleRequestSpecimen_Specimen FOREIGN KEY (SpecimenId) REFERENCES study.Specimen(RowId)
 )
-go
+GO

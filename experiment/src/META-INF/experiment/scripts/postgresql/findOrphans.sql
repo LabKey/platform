@@ -14,32 +14,32 @@
  * limitations under the License.
  */
 
-CREATE OR REPLACE VIEW exp._orphanProtocolView AS
+CREATE VIEW exp._orphanProtocolView AS
 SELECT * FROM exp.Protocol WHERE container NOT IN (SELECT entityid FROM core.containers) OR container IS NULL 
 ;
-CREATE OR REPLACE VIEW exp._orphanExperimentView AS
+CREATE VIEW exp._orphanExperimentView AS
 SELECT * FROM exp.Experiment WHERE container NOT IN (SELECT entityid FROM core.containers) OR container IS NULL 
 ;
-CREATE OR REPLACE VIEW exp._orphanExperimentRunView AS
+CREATE VIEW exp._orphanExperimentRunView AS
 SELECT * FROM exp.ExperimentRun WHERE container NOT IN (SELECT entityid FROM core.containers) OR container IS NULL 
 ;
-CREATE OR REPLACE VIEW exp._orphanProtocolApplicationView AS
+CREATE VIEW exp._orphanProtocolApplicationView AS
 SELECT * FROM exp.ProtocolApplication WHERE (runid IN (SELECT rowid FROM exp._orphanExperimentRunView))
 ;
-CREATE OR REPLACE VIEW exp._orphanMaterialView AS
+CREATE VIEW exp._orphanMaterialView AS
 SELECT * FROM exp.Material WHERE (runid IN (SELECT rowid FROM exp._orphanExperimentRunView)) OR 
 	(runid IS NULL AND container NOT IN (SELECT entityid FROM core.containers)) OR 
 	(container IS NULL)
 ;
-CREATE OR REPLACE VIEW exp._orphanDataView AS
+CREATE VIEW exp._orphanDataView AS
 SELECT * FROM exp.Data WHERE (runid IN (SELECT rowid FROM exp._orphanExperimentRunView)) OR 
 	(runid IS NULL AND container NOT IN (SELECT entityid FROM core.containers)) OR 
 	(container IS NULL)
 ;
-CREATE OR REPLACE VIEW exp._orphanMaterialSourceView AS
+CREATE VIEW exp._orphanMaterialSourceView AS
 SELECT * FROM exp.MaterialSource WHERE container NOT IN (SELECT entityid FROM core.containers) OR container IS NULL 
 ;
-CREATE OR REPLACE VIEW exp._orphanLSIDView AS
+CREATE VIEW exp._orphanLSIDView AS
 SELECT LSID, CAST (Container AS varchar) AS Container FROM exp._orphanProtocolView UNION
 SELECT LSID, CAST (Container AS varchar) AS Container FROM exp._orphanExperimentView  UNION
 SELECT LSID, CAST (Container AS varchar) AS Container FROM exp._orphanExperimentRunView UNION
@@ -48,11 +48,11 @@ SELECT LSID, CAST (Container AS varchar) AS Container FROM exp._orphanDataView U
 SELECT LSID, 'n/a' AS Container FROM exp._orphanProtocolApplicationView UNION
 SELECT LSID, CAST (Container AS varchar) AS Container FROM exp._orphanMaterialSourceView 
 ;
-CREATE OR REPLACE VIEW exp._orphanObjectView AS
+CREATE VIEW exp._orphanObjectView AS
 SELECT * FROM exp.Object WHERE ObjectURI IN (SELECT LSID FROM exp._orphanLSIDView) OR 
 	container NOT IN (SELECT entityid FROM core.containers)
 ;
-CREATE OR REPLACE VIEW exp._orphanPropDescView AS 
+CREATE VIEW exp._orphanPropDescView AS 
 SELECT * FROM exp.PropertyDescriptor WHERE container NOT IN (SELECT entityid FROM core.containers)
 ;
 

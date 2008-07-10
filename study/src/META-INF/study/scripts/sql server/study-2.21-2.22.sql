@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 UPDATE study.Study SET DateBased=0 where DateBased is NULL
-go
+GO
 
 ALTER TABLE study.ParticipantVisit ADD
     Day INTEGER
-  go
+  GO
 
 ALTER TABLE study.Participant ADD
     StartDate DATETIME
-go
+GO

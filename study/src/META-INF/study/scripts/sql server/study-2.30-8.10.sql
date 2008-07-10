@@ -16,7 +16,7 @@
 /* study-2.30-2.31.sql */
 
 ALTER TABLE study.Plate ADD Type NVARCHAR(200)
-go
+GO
 
 /* study-2.31-2.32.sql */
 

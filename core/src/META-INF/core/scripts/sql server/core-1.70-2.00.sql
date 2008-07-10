@@ -127,22 +127,22 @@ ELSE
 	RAISERROR('Invalid object type - %   Valid values are TABLE, VIEW, INDEX, SCHEMA ', 16,1, @objtype )
 
 RETURN @ret_code
-go
+GO
 
 exec core.fn_dropifexists 'Containers', 'core', 'Index', 'IX_Containers_Parent_Entity'
-go
+GO
 exec core.fn_dropifexists 'Documents', 'core', 'Index', 'IX_Documents_Container'
-go
+GO
 exec core.fn_dropifexists 'Documents', 'core', 'Index', 'IX_Documents_Parent'
-go
+GO
 CREATE INDEX IX_Containers_Parent_Entity ON core.Containers(Parent, EntityId)
-go
+GO
 ALTER TABLE core.Containers ADD CONSTRAINT UQ_Containers_RowId UNIQUE CLUSTERED (RowId)
-go
+GO
 CREATE INDEX IX_Documents_Container ON core.Documents(Container)
-go
+GO
 CREATE INDEX IX_Documents_Parent ON core.Documents(Parent)
-go
+GO
 
 ALTER TABLE core.Containers ADD
     SortOrder INTEGER NOT NULL DEFAULT 0
