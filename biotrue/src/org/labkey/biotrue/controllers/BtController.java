@@ -94,7 +94,7 @@ public class BtController extends SpringActionController
             if (BtManager.get().getServers(getContainer()).length > 0)
             {
                 BtSchema schema = new BtSchema(getUser(), getContainer());
-                QuerySettings settings = new QuerySettings(getViewContext().getActionURL(), "Server");
+                QuerySettings settings = new QuerySettings(getViewContext(), "Server");
                 settings.setSchemaName(schema.getSchemaName());
                 settings.setQueryName("Servers");
                 settings.setAllowChooseQuery(false);
@@ -203,7 +203,7 @@ public class BtController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             BtSchema schema = new BtSchema(getUser(), getContainer());
-            QuerySettings settings = new QuerySettings(getViewContext().getActionURL(), "Server");
+            QuerySettings settings = new QuerySettings(getViewContext(), "Server");
             settings.setSchemaName(schema.getSchemaName());
             settings.setQueryName("Servers");
             settings.setAllowChooseQuery(false);

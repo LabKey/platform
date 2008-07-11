@@ -23,6 +23,7 @@ public class DesignForm extends QueryForm
     public String ff_designXML;
     public boolean ff_dirty;
     public QueryAction ff_redirect = QueryAction.designQuery;
+
     public void setFf_designXML(String value)
     {
         ff_designXML = value;

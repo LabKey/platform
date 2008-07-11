@@ -17,12 +17,16 @@
 %>
 <%@ page import="org.labkey.api.query.QueryAction"%>
 <%@ page import="org.labkey.api.query.QueryParam"%>
-<%@ page import="org.labkey.query.controllers.NewQueryForm"%>
 <%@ page import="java.util.List" %>
-<%@ page extends="org.labkey.query.controllers.QueryPage" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.query.controllers.NewQueryForm" %>
+<%@ page import="org.labkey.query.controllers.QueryControllerSpring" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    NewQueryForm form = (NewQueryForm) __form;
+    NewQueryForm form = (NewQueryForm) HttpView.currentModel();
+    ViewContext context = HttpView.currentContext();
     List<String> tableAndQueryNames = form.getSchema().getTableAndQueryNames(false);
 %>
 <labkey:errors />
@@ -30,7 +34,7 @@
 <% if (tableAndQueryNames.size() == 0) { %>
     Cannot create a new query: no tables/queries exist in the current schema to base the new query on.
 <% } else { %>
-    <form action="<%=urlFor(QueryAction.newQuery)%>" method="POST">
+    <form action="<%=urlFor(QueryControllerSpring.NewQueryAction.class)%>" method="POST">
         <input type="hidden" name="<%=QueryParam.schemaName%>" value="<%=form.getSchemaName()%>" />
         <input type="hidden" name="ff_redirect" id="ff_redirect" value="sourceQuery" />
 

@@ -16,18 +16,14 @@
 
 package org.labkey.experiment.controllers.list;
 
-import org.apache.struts.action.ActionMapping;
-import org.labkey.api.data.Container;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.User;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.list.ListSchema;
-
-import javax.servlet.http.HttpServletRequest;
 
 public class ListQueryForm extends QueryForm
 {
@@ -36,19 +32,19 @@ public class ListQueryForm extends QueryForm
 
     public ListQueryForm()
     {
+        super(ListSchema.NAME, null);
     }
 
-    public ListQueryForm(int listId, User user, Container c)
+    public ListQueryForm(int listId, ViewContext context)
     {
-        setUser(user);
-        setContainer(c);
+        this();
+        setViewContext(context);
         _def = getListDef(listId);
     }
 
-    public void reset(ActionMapping actionMapping, HttpServletRequest request)
+    public void setListId(int listId)
     {
-        super.reset(actionMapping, request);
-        _def = getListDef(request.getParameter("listId"));
+        _def = getListDef(listId);
     }
 
     private ListDefinition getListDef(int listId)
@@ -59,31 +55,6 @@ public class ListQueryForm extends QueryForm
             throw new NotFoundException("List does not exist");
 
         return listDef;
-    }
-
-    // TODO: Move to Spring, use proper validate.  Also, share with ListDefinitionForm validate
-    private ListDefinition getListDef(String listIdParam)
-    {
-        if (null == listIdParam)
-            throw new NotFoundException("Missing listId parameter");
-
-        int listId;
-
-        try
-        {
-            listId = Integer.parseInt(listIdParam);
-        }
-        catch (NumberFormatException e)
-        {
-            throw new NotFoundException("Couldn't convert listId '" + listIdParam + "' to an integer");
-        }
-
-        return getListDef(listId);
-    }
-
-    protected UserSchema createSchema()
-    {
-        return new ListSchema(getUser(), getContainer());
     }
 
     protected QuerySettings createQuerySettings(UserSchema schema)

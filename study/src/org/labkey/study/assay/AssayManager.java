@@ -164,7 +164,7 @@ public class AssayManager implements AssayService.Interface
     public QueryView createAssayListView(ViewContext context, boolean portalView)
     {
         String name = "AssayList";
-        QuerySettings settings = new QuerySettings(context.getActionURL(), name);
+        QuerySettings settings = new QuerySettings(context, name);
         settings.setSchemaName(AssayService.ASSAY_SCHEMA_NAME);
         settings.setQueryName(name);
         if (portalView)

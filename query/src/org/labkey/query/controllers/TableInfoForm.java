@@ -18,58 +18,74 @@ package org.labkey.query.controllers;
 
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ForeignKey;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.query.data.Query;
 import org.labkey.query.QueryDefinitionImpl;
+import org.springframework.validation.BindException;
+import org.springframework.beans.PropertyValues;
 
-import javax.servlet.ServletException;
 import java.util.*;
 
 public class TableInfoForm extends QueryForm
 {
+    boolean _isDesign = false;
+    FieldKey[] _tableKeys = null;
+    FieldKey[] _fieldKeys = null;
+    
     public TableInfoForm()
     {
         super(null);
     }
 
+    protected BindException doBindParameters(PropertyValues in)
+    {
+        BindException errors = super.doBindParameters(in);
+
+        _isDesign = getValue("design", in) != null;
+
+        String[] names = getValues("tableKey", in);
+        if (names == null)
+            _tableKeys = new FieldKey[0];
+        else
+        {
+            _tableKeys = new FieldKey[names.length];
+            for (int i = 0; i < names.length; i ++)
+                _tableKeys[i] = FieldKey.fromString(names[i]);
+        }
+
+        names = getValues("fieldKey", in);
+        if (names == null)
+            _fieldKeys = new FieldKey[0];
+        else
+        {
+            _fieldKeys = new FieldKey[names.length];
+            for (int i = 0; i < names.length; i ++)
+                _fieldKeys[i] = FieldKey.fromString(names[i]);
+        }
+        return errors;
+    }
+
     public boolean isDesign()
     {
-        return getRequest().getParameter("design") != null;
+        return _isDesign;
     }
 
     public FieldKey[] getTableKeys()
     {
-        String[] names = getRequest().getParameterValues("tableKey");
-        if (names == null)
-            return new FieldKey[0];
-        FieldKey[] ret = new FieldKey[names.length];
-        for (int i = 0; i < names.length; i ++)
-        {
-            ret[i] = FieldKey.fromString(names[i]);
-        }
-        return ret;
+        return _tableKeys;
     }
+
     public FieldKey[] getFieldKeys()
     {
-        String[] names = getRequest().getParameterValues("fieldKey");
-        if (names == null)
-            return new FieldKey[0];
-        FieldKey[] ret = new FieldKey[names.length];
-        for (int i = 0; i < names.length; i ++)
-        {
-            ret[i] = FieldKey.fromString(names[i]);
-        }
-        return ret;
+        return _fieldKeys;
     }
 
 
     public Map<FieldKey, TableInfo> getTableInfoMap()
     {
-        Map<FieldKey, TableInfo> ret = new HashMap();
+        Map<FieldKey, TableInfo> ret = new HashMap<FieldKey, TableInfo>();
         if (!isDesign())
         {
             ret.put(null, getQueryDef().getTable(null, getSchema(), null));

@@ -1,6 +1,6 @@
-<%
+<%--
 /*
- * Copyright (c) 2006-2008 LabKey Corporation
+ * Copyright (c) 2007-2008 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-%>
+--%>
 <%@ page extends="org.labkey.query.controllers.Page" %>
 <%@ page import="org.labkey.api.query.QueryForm"%>
 <%@ page import="org.labkey.api.query.QueryAction"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<% QueryForm form = (QueryForm) __form; %>
-<labkey:errors />
-<form method="POST" action="<%=form.urlFor(QueryAction.deleteQuery)%>">
+<% QueryForm form = (QueryForm) HttpView.currentModel(); %>
+<%=formatErrorsForPath("form")%>
+<input type=hidden name=schemaName value="<%=h(form.getSchemaName())%>"><input type=hidden name=queryName value="<%=h(form.getQueryName())%>">
 <p>Are you sure you want to delete the query '<%=h(form.getQueryName())%>'?</p>
-<labkey:button text="OK" /> <labkey:button text="Cancel" href="<%=form.getSchema().urlFor(QueryAction.begin)%>" />
-</form>

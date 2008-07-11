@@ -37,13 +37,6 @@ public class SourceForm extends QueryForm
     public SourceForm(ViewContext context)
     {
         setViewContext(context);
-        setContainer(context.getContainer());
-        setUser(context.getUser());
-    }
-
-    public void reset(ActionMapping actionMapping, HttpServletRequest request)
-    {
-        super.reset(actionMapping, request);
     }
 
     public void setFf_queryText(String text)

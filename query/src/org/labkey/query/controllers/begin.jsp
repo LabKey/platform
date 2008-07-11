@@ -19,14 +19,17 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.query.QueryParam" %>
 <%@ page import="org.labkey.api.security.ACL" %>
-<%@ page extends="org.labkey.api.jsp.FormPage" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    QueryForm form = (QueryForm) getForm();
+    QueryForm form = (QueryForm) HttpView.currentModel();
+    ViewContext context = HttpView.currentContext();
     QueryService svc = QueryService.get();
     UserSchema currentSchema = form.getSchema();
+    DefaultSchema folderSchema = DefaultSchema.get(context.getUser(), context.getContainer());
 %>
-<% DefaultSchema folderSchema = DefaultSchema.get(getUser(), getContainer()); %>
 <p>Welcome to the Query Module.</p>
 
 <p>Schemas in this folder:<br>
@@ -35,7 +38,7 @@
         {
             if (currentSchema == null || !schemaName.equals(currentSchema.getSchemaName()))
             {
-                ActionURL urlSchema = new ActionURL("query", QueryAction.schema.name(), getContainer().getPath());
+                ActionURL urlSchema = new ActionURL("query", QueryAction.schema.name(), context.getContainer().getPath());
                 urlSchema.addParameter(QueryParam.schemaName, schemaName);
     %>
                 <labkey:link text="<%=schemaName%>" href="<%=urlSchema%>"/>
@@ -57,7 +60,7 @@
         <th colspan="7">User-defined queries in the schema: <%=h(currentSchema.getSchemaName())%>
         </th>
     </tr>
-    <% for (QueryDefinition query : svc.getQueryDefs(getContainer(), currentSchema.getSchemaName()).values())
+    <% for (QueryDefinition query : svc.getQueryDefs(context.getContainer(), currentSchema.getSchemaName()).values())
     {
     %>
     <tr>
@@ -67,7 +70,7 @@
         <td>
             <labkey:button text="Run" href="<%=currentSchema.urlFor(QueryAction.executeQuery, query)%>"/>
         </td>
-        <% if (!query.getContainer().equals(getContainer()))
+        <% if (!query.getContainer().equals(context.getContainer()))
         {
             ActionURL urlSchema = currentSchema.urlFor(QueryAction.schema);
             urlSchema.setExtraPath(query.getContainer().getPath());
@@ -86,7 +89,7 @@
         <td>
             <labkey:button text="Source" alt="<%="Source " + query.getName()%>" href="<%=currentSchema.urlFor(QueryAction.sourceQuery, query)%>"/>
         </td>
-        <td><% if (query.canEdit(getUser()))
+        <td><% if (query.canEdit(context.getUser()))
         { %>
             <labkey:button text="Delete" alt="<%="Delete " + query.getName()%>" href="<%=currentSchema.urlFor(QueryAction.deleteQuery, query)%>"/>
             <% } %></td>
@@ -131,7 +134,7 @@
                 QueryDefinition def = currentSchema.getQueryDefForTable(name);
         %>
         <tr><td>
-        <a href="<%=h(def.urlFor(QueryAction.executeQuery, getContainer()))%>"><%=h(name)%></a></td>
+        <a href="<%=h(def.urlFor(QueryAction.executeQuery, context.getContainer()))%>"><%=h(name)%></a></td>
         <td>
         <% if (def.getDescription() != null) { %>
         <i><%=h(def.getDescription())%></i>
@@ -147,7 +150,7 @@
 
 
 
-<% if (getContainer().hasPermission(getUser(), ACL.PERM_ADMIN))
+<% if (context.getContainer().hasPermission(context.getUser(), ACL.PERM_ADMIN))
 {%>
-    <labkey:link href="<%=new ActionURL("query", "admin", getContainer())%>" text="Schema Administration" />
+    <labkey:link href="<%=new ActionURL("query", "admin", context.getContainer())%>" text="Schema Administration" />
 <% } %>

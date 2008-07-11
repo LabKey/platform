@@ -387,7 +387,7 @@ public class MothershipController extends SpringActionController
             HtmlView linkView = new HtmlView(getLinkBarHTML());
 
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
-            QuerySettings settings = new QuerySettings(getViewContext().getActionURL(), "serverInstallations");
+            QuerySettings settings = new QuerySettings(getViewContext(), "serverInstallations");
             settings.setSchemaName(schema.getSchemaName());
             settings.setQueryName(MothershipSchema.SERVER_INSTALLATIONS_TABLE_NAME);
             settings.setAllowChooseQuery(false);
@@ -499,7 +499,7 @@ public class MothershipController extends SpringActionController
             ServerInstallationUpdateView updateView = new ServerInstallationUpdateView(form, getViewContext().getActionURL(), errors);
 
             MothershipSchema schema = new MothershipSchema(MothershipController.this.getUser(), MothershipController.this.getContainer());
-            QuerySettings settings = new QuerySettings(getViewContext().getActionURL(), "ServerSessions");
+            QuerySettings settings = new QuerySettings(getViewContext(), "ServerSessions");
             settings.setAllowChooseQuery(false);
             settings.setSchemaName(schema.getSchemaName());
             settings.setQueryName("ServerSessions");
@@ -527,7 +527,7 @@ public class MothershipController extends SpringActionController
             ExceptionStackTraceUpdateView updateView = new ExceptionStackTraceUpdateView(form, getViewContext().getActionURL(), getContainer(), errors);
 
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
-            QuerySettings settings = new QuerySettings(getViewContext().getActionURL(), "ExceptionReports", MothershipSchema.EXCEPTION_REPORT_TABLE_NAME);
+            QuerySettings settings = new QuerySettings(getViewContext(), "ExceptionReports", MothershipSchema.EXCEPTION_REPORT_TABLE_NAME);
             settings.setAllowChooseQuery(false);
             ExceptionReportSummaryGridView summaryGridView = new ExceptionReportSummaryGridView(schema, settings, stackTrace.getExceptionStackTraceId());
             return new VBox(updateView, summaryGridView);

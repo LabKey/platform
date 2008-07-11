@@ -451,7 +451,6 @@ public class StudyController extends BaseStudyController
             _cohortId = form.getCohortId();
             Cohort cohort = form.getCohort();
             ViewContext context = getViewContext();
-            final ActionURL url = context.getActionURL();
 
             String export = StringUtils.trimToNull(context.getActionURL().getParameter("export"));
             _datasetId = NumberUtils.toInt((String)context.get(DataSetDefinition.DATASETKEY), 0);
@@ -473,11 +472,12 @@ public class StudyController extends BaseStudyController
             }
 
             final StudyQuerySchema querySchema = new StudyQuerySchema(study, getUser(), true);
-            QuerySettings qs = new QuerySettings(url, DataSetQueryView.DATAREGION);
+            QuerySettings qs = querySchema.getSettings(context, DataSetQueryView.DATAREGION);
             qs.setSchemaName(querySchema.getSchemaName());
             qs.setQueryName(def.getLabel());
             DataSetQueryView queryView = new DataSetQueryView(_datasetId, querySchema, qs, visit, cohort);
             queryView.setForExport(export != null);
+            final ActionURL url = context.getActionURL();
             setColumnURL(url, queryView, querySchema, def);
 
             // clear the property map cache and the sort map cache
@@ -527,7 +527,7 @@ public class StudyController extends BaseStudyController
 
         protected QueryView createQueryView(CohortForm cohortForm, BindException errors, boolean forExport, String dataRegion) throws Exception
         {
-            QuerySettings qs = new QuerySettings(getViewContext().getActionURL(), "Dataset");
+            QuerySettings qs = new QuerySettings(getViewContext(), "Dataset");
             Report report = qs.getReportView(getViewContext());
             if (report instanceof QueryReport)
             {
@@ -538,7 +538,7 @@ public class StudyController extends BaseStudyController
 
         private String getViewName()
         {
-            QuerySettings qs = new QuerySettings(getViewContext().getActionURL(), "Dataset");
+            QuerySettings qs = new QuerySettings(getViewContext(), "Dataset");
             if (qs.getViewName() != null)
                 return qs.getViewName();
             else
@@ -2036,14 +2036,13 @@ public class StudyController extends BaseStudyController
         {
             final Study study = getStudy();
             final ViewContext context = getViewContext();
-            final ActionURL url = context.getActionURL();
 
             VBox view = new VBox();
 
             int datasetId = null == context.get(DataSetDefinition.DATASETKEY) ? 0 : Integer.parseInt((String) context.get(DataSetDefinition.DATASETKEY));
             final DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
             final StudyQuerySchema querySchema = new StudyQuerySchema(study, getUser(), true);
-            QuerySettings qs = new QuerySettings(url, DataSetQueryView.DATAREGION);
+            QuerySettings qs = new QuerySettings(context, DataSetQueryView.DATAREGION);
             qs.setSchemaName(querySchema.getSchemaName());
             qs.setQueryName(def.getLabel());
 
@@ -2604,7 +2603,7 @@ public class StudyController extends BaseStudyController
                     return Collections.emptyList();
             }
             StudyQuerySchema querySchema = new StudyQuerySchema(study, context.getUser(), true);
-            QuerySettings qs = new QuerySettings(context.getActionURL(), DataSetQueryView.DATAREGION);
+            QuerySettings qs = new QuerySettings(context, DataSetQueryView.DATAREGION);
             qs.setSchemaName(querySchema.getSchemaName());
             qs.setQueryName(def.getLabel());
             DataSetQueryView queryView = new DataSetQueryView(datasetId, querySchema, qs, visit, cohort);

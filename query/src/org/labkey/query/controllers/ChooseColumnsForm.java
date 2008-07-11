@@ -17,20 +17,21 @@
 package org.labkey.query.controllers;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.struts.action.ActionMapping;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.view.ActionURL;
 import org.labkey.query.CustomViewImpl;
+import org.springframework.beans.PropertyValues;
+import org.springframework.beans.MutablePropertyValues;
+import org.springframework.validation.BindException;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.TreeMap;
 
-public class  ChooseColumnsForm extends DesignForm
+public class ChooseColumnsForm extends DesignForm
 {
     public LinkedHashSet<FieldKey> ff_selectedColumns = new LinkedHashSet<FieldKey>();
     public String ff_columnListName;
@@ -38,12 +39,35 @@ public class  ChooseColumnsForm extends DesignForm
     public boolean ff_saveFilter;
     public boolean ff_inheritable;
 
-    public void reset(ActionMapping actionMapping, HttpServletRequest request)
+    private ActionURL _sourceURL;
+
+    public BindException bindParameters(PropertyValues params)
     {
-        super.reset(actionMapping, request);
+        BindException errors =  super.bindParameters(params);
+
+        //NOTE we want querySettings to be based on srcURL parameters
+        // get queryName, viewName and replace _initParameters
+        setDataRegionName(getValue(QueryParam.dataRegionName, params));
+        setQueryName(getValue(QueryParam.queryName, params));
+        setViewName(getValue(QueryParam.viewName, params));
+        _initParameters = new MutablePropertyValues();
+        String src = getValue(QueryParam.srcURL, params);
+        if (src != null)
+        {
+            _sourceURL = new ActionURL(src);
+            _sourceURL.setReadOnly();
+            ((MutablePropertyValues)_initParameters).addPropertyValues(_sourceURL.getPropertyValues());
+        }
+
+        return errors;
+    }
+
+    
+    public void initForView()
+    {
         if (null == getQuerySettings())
             return;
-        setDataRegionName(request.getParameter(QueryParam.dataRegionName.toString()));
+
         ff_columnListName = getQuerySettings().getViewName();
         CustomView cv = getCustomView();
         if (cv != null && cv.getColumns() != null)
@@ -66,6 +90,7 @@ public class  ChooseColumnsForm extends DesignForm
             }
         }
     }
+
 
     public void setFf_selectedColumns(String columns)
     {
@@ -130,23 +155,12 @@ public class  ChooseColumnsForm extends DesignForm
         }
     }
 
-    protected QuerySettings createQuerySettings(UserSchema schema)
-    {
-        String srcURL = getRequest().getParameter(QueryParam.srcURL.toString());
-        if (null == srcURL)
-            return null;
-        QuerySettings ret = schema.getSettings(new ActionURL(srcURL), getRequest().getParameter(QueryParam.dataRegionName.toString()));
-        ret.setQueryName(getRequest().getParameter(QueryParam.queryName.toString()));
-        ret.setViewName(getRequest().getParameter(QueryParam.viewName.toString()));
-        return ret;
-    }
-
     public ActionURL urlFor(QueryAction action)
     {
         ActionURL ret = super.urlFor(action);
         ret.addParameter(QueryParam.srcURL.toString(), getSourceURL().toString());
         ret.addParameter(QueryParam.dataRegionName.toString(), getDataRegionName());
-        ret.addParameter(QueryParam.queryName.toString(), getQuerySettings().getQueryName());
+        ret.addParameter(QueryParam.queryName.toString(), getQueryName());
         return ret;
     }
 
@@ -212,10 +226,7 @@ public class  ChooseColumnsForm extends DesignForm
     
     public ActionURL getSourceURL()
     {
-        String value = getRequest().getParameter(QueryParam.srcURL.toString());
-        if (value == null)
-            return null;
-        return new ActionURL(value);
+        return _sourceURL;        
     }
 
     public void setFf_saveFilter(boolean b)

@@ -84,7 +84,7 @@ public class RunGroupWebPart extends QueryView
 
     private QuerySettings createQuerySettings(ViewContext portalCtx, String dataRegionName)
     {
-        QuerySettings settings = new QuerySettings(portalCtx.getActionURL(), dataRegionName);
+        QuerySettings settings = new QuerySettings(portalCtx, dataRegionName);
         settings.setSchemaName(getSchema().getSchemaName());
         settings.setAllowChooseQuery(false);
         settings.setQueryName(ExpSchema.EXPERIMENTS_NARROW_WEB_PART_TABLE_NAME);

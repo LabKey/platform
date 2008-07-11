@@ -200,9 +200,7 @@ public class IssuesController extends SpringActionController
     private HttpView getIssuesView(IssuesController.ListForm form) throws SQLException, ServletException
     {
         UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), IssuesQuerySchema.SCHEMA_NAME);
-        QuerySettings settings = new QuerySettings(getViewContext().getActionURL(), ISSUES_QUERY);
-        settings.setSchemaName(schema.getSchemaName());
-        settings.setQueryName(ISSUES_QUERY);
+        QuerySettings settings = schema.getSettings(getViewContext(), ISSUES_QUERY, ISSUES_QUERY);
         form.setQuerySettings(settings);
         IssuesQueryView queryView = new IssuesQueryView(getViewContext(), schema, settings);
 
@@ -228,7 +226,7 @@ public class IssuesController extends SpringActionController
     private ResultSet getIssuesResultSet() throws IOException, SQLException, ServletException
     {
         UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), IssuesQuerySchema.SCHEMA_NAME);
-        QuerySettings settings = schema.getSettings(getViewContext().getActionURL(), ISSUES_QUERY);
+        QuerySettings settings = schema.getSettings(getViewContext(), ISSUES_QUERY);
         settings.setQueryName(ISSUES_QUERY);
 
         IssuesQueryView queryView = new IssuesQueryView(getViewContext(), schema, settings);

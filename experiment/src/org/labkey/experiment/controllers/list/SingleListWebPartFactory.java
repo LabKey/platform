@@ -46,7 +46,7 @@ public class SingleListWebPartFactory extends WebPartFactory
 
         try
         {
-            ListQueryForm form = new ListQueryForm(Integer.parseInt(listIdParam), portalCtx.getUser(), portalCtx.getContainer());
+            ListQueryForm form = new ListQueryForm(Integer.parseInt(listIdParam), portalCtx);
             return new SingleListWebPart(form, props);
         }
         catch (NumberFormatException e)

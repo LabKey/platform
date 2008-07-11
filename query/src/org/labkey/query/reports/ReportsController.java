@@ -229,7 +229,7 @@ public class ReportsController extends SpringActionController
             UserSchema schema = (UserSchema) DefaultSchema.get(getUser(), getContainer()).getSchema(form.getSchemaName());
             if (schema != null)
             {
-                QuerySettings settings = schema.getSettings(getViewContext().getActionURL(), form.getDataRegionName());
+                QuerySettings settings = schema.getSettings(getViewContext(), form.getDataRegionName());
                 QueryView view = schema.createView(getViewContext(), settings);
                 if (view.getTable() == null)
                     throw new IllegalArgumentException("the specified query name: '" + form.getQueryName() + "' does not exist");

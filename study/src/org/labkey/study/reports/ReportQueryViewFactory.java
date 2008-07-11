@@ -62,7 +62,7 @@ public class ReportQueryViewFactory
         StudyQuerySchema schema = getStudyQuerySchema(context, ACL.PERM_READ, descriptor);
         if (schema != null)
         {
-            QuerySettings settings = new QuerySettings(context.getActionURL(), descriptor.getProperty(QueryParam.dataRegionName.toString()));
+            QuerySettings settings = new QuerySettings(context, descriptor.getProperty(QueryParam.dataRegionName.toString()));
             settings.setSchemaName(schema.getSchemaName());
             settings.setQueryName(queryName);
             settings.setViewName(viewName);

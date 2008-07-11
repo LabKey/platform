@@ -834,7 +834,7 @@ public class ReportsController extends BaseStudyController
 
         private List<ColumnInfo> getDatasetColumns(CrosstabDesignBean form)
         {
-            QuerySettings settings = new QuerySettings(getViewContext().getActionURL(), "Dataset");
+            QuerySettings settings = new QuerySettings(getViewContext(), "Dataset");
             settings.setQueryName(form.getQueryName());
             settings.setSchemaName(form.getSchemaName());
             settings.setViewName(form.getViewName());
@@ -1921,7 +1921,7 @@ public class ReportsController extends BaseStudyController
 
         final Study study = StudyManager.getInstance().getStudy(getContainer());
         final StudyQuerySchema querySchema = new StudyQuerySchema(study, getUser(), true);
-        QuerySettings qs = new QuerySettings(context.getActionURL(), DataSetQueryView.DATAREGION);
+        QuerySettings qs = new QuerySettings(context, DataSetQueryView.DATAREGION);
         qs.setSchemaName(querySchema.getSchemaName());
         qs.setQueryName(queryName);
         qs.setViewName(viewName);

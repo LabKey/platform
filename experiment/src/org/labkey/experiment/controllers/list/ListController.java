@@ -441,7 +441,7 @@ public class ListController extends SpringActionController
     // TODO: Fix this... build into InsertView (or QueryInsertView or something)
     private void setDisplayColumnsFromDefaultView(int listId, DataRegion rgn, boolean editableOnly)
     {
-        ListQueryView lqv = new ListQueryView(new ListQueryForm(listId, getUser(), getContainer()));
+        ListQueryView lqv = new ListQueryView(new ListQueryForm(listId, getViewContext()));
         List<DisplayColumn> allColumns = lqv.getDisplayColumns();
         List<DisplayColumn> displayColumns = new ArrayList<DisplayColumn>(allColumns.size());
 
@@ -850,7 +850,7 @@ public class ListController extends SpringActionController
                 ListItem item = _list.getListItemForEntityId(entityId);
                 if (item != null)
                 {
-                    view.addView(new ListDetailsView(new ListQueryForm(listId, getUser(), getContainer()), item.getKey()));
+                    view.addView(new ListDetailsView(new ListQueryForm(listId, getViewContext()), item.getKey()));
                     empty = false;
                 }
             }

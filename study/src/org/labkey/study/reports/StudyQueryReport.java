@@ -124,7 +124,7 @@ public class StudyQueryReport extends QueryReport
         try {
             StudyQuerySchema schema = getStudyQuerySchema(context.getUser(), ACL.PERM_READ, context);
             String viewName = getDescriptor().getProperty(QueryParam.viewName.toString());
-            QuerySettings qs = new QuerySettings(context.getActionURL(), getDescriptor().getProperty(QueryParam.dataRegionName.toString()));
+            QuerySettings qs = new QuerySettings(context, getDescriptor().getProperty(QueryParam.dataRegionName.toString()));
             qs.setSchemaName(schema.getSchemaName());
             qs.setQueryName(getDescriptor().getProperty(QueryParam.queryName.toString()));
             QueryDefinition queryDef = qs.getQueryDef(schema);

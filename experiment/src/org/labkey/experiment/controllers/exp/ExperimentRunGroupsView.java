@@ -32,7 +32,7 @@ public class ExperimentRunGroupsView extends VBox
 {
     public ExperimentRunGroupsView(User user, final Container c, final ExpRun run, final ActionURL currentURL)
     {
-        QuerySettings settings = new QuerySettings(getViewContext().getActionURL(), "Experiments", ExpSchema.EXPERIMENTS_MEMBERSHIP_FOR_RUN_TABLE_NAME);
+        QuerySettings settings = new QuerySettings(getViewContext(), "Experiments", ExpSchema.EXPERIMENTS_MEMBERSHIP_FOR_RUN_TABLE_NAME);
         settings.setAllowChooseQuery(false);
         QueryView experimentsView = new QueryView(new ExpSchema(user, c), settings)
         {

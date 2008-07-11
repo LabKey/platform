@@ -48,7 +48,7 @@
     Container c = getViewContext().getContainer();
     QueryManager mgr = QueryManager.get();
     List<CstmView> views = new ArrayList();
-    if (form.getContext().hasPermission(ACL.PERM_UPDATE))
+    if (form.getViewContext().hasPermission(ACL.PERM_UPDATE))
     {
         views.addAll(Arrays.asList(mgr.getColumnLists(c, null, null, null, null, false)));
     }
@@ -91,7 +91,7 @@
         <th>Owner</th>
         <th>Inherit</th>
     </tr>
-    <% if (form.getContext().hasPermission(ACL.PERM_UPDATE))
+    <% if (form.getViewContext().hasPermission(ACL.PERM_UPDATE))
     {
         for (CstmView view : views)
         {%>

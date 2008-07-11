@@ -79,7 +79,7 @@ public class PlateSchema extends UserSchema
     public static PlateQueryView createPlateQueryView(ViewContext context, SimpleFilter filter)
     {
         String name = "Plate";
-        QuerySettings settings = new QuerySettings(context.getActionURL(), name);
+        QuerySettings settings = new QuerySettings(context, name);
         settings.setSchemaName(SCHEMA_NAME);
         settings.setQueryName(name);
         return new PlateQueryViewImpl(context, settings, filter);
@@ -91,7 +91,7 @@ public class PlateSchema extends UserSchema
         if (type != null)
             name += "_" + type.name();
 
-        QuerySettings settings = new QuerySettings(context.getActionURL(), name);
+        QuerySettings settings = new QuerySettings(context, name);
         settings.setSchemaName(SCHEMA_NAME);
         settings.setQueryName(name);
         return new PlateQueryViewImpl(context, settings, filter);

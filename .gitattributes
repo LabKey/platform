@@ -1323,7 +1323,6 @@ query/src/org/labkey/query/controllers/begin.jsp -text
 query/src/org/labkey/query/controllers/chooseColumns.jsp -text
 query/src/org/labkey/query/controllers/dbuserschema/DbUserSchemaController.java -text
 query/src/org/labkey/query/controllers/deleteQuery.jsp -text
-query/src/org/labkey/query/controllers/deleteQuerySpring.jsp -text
 query/src/org/labkey/query/controllers/designQuery.jsp -text
 query/src/org/labkey/query/controllers/internalDeleteView.jsp -text
 query/src/org/labkey/query/controllers/internalNewView.jsp -text

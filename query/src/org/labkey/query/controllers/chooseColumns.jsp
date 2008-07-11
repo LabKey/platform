@@ -268,8 +268,12 @@
         {
             ActionURL urlDeleteView = form.urlFor(QueryAction.deleteView);
             ActionURL srcURL = form.getSourceURL();
-            srcURL.deleteParameter(form.getQuerySettings().param(QueryParam.viewName));
-            urlDeleteView.replaceParameter(QueryParam.srcURL.toString(), srcURL.toString());
+            if (null != srcURL)
+            {
+                srcURL = srcURL.clone();
+                srcURL.deleteParameter(form.getQuerySettings().param(QueryParam.viewName));
+                urlDeleteView.replaceParameter(QueryParam.srcURL.toString(), srcURL.toString());
+            }
             String strButtonText;
             if (view.getName() == null)
             {

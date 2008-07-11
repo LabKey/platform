@@ -25,20 +25,8 @@ import javax.servlet.http.HttpServletRequest;
 public class PropertiesForm extends QueryForm
 {
     public String ff_description;
-    public boolean ff_inheritable;
-    public boolean ff_hidden;
-
-    public void reset(ActionMapping actionMapping, HttpServletRequest request)
-    {
-        super.reset(actionMapping, request);
-        QueryDefinition queryDef = getQueryDef();
-        if (queryDef != null)
-        {
-            ff_description = queryDef.getDescription();
-            ff_inheritable = queryDef.canInherit();
-            ff_hidden = queryDef.isHidden();
-        }
-    }
+    public boolean ff_inheritable = false;
+    public boolean ff_hidden = false;
 
     public void setFf_inheritable(boolean b)
     {

@@ -16,13 +16,13 @@
  */
 %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.query.controllers.SourceForm"%>
 <%@ page import="org.labkey.api.query.QueryAction"%>
 <%@ page import="org.labkey.query.controllers.MetadataForm"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%@ page extends="org.labkey.query.controllers.Page" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    MetadataForm form = (MetadataForm) __form;
+    MetadataForm form = (MetadataForm) HttpView.currentModel();
     boolean canEdit = form.canEdit();
 %>
 <labkey:errors />

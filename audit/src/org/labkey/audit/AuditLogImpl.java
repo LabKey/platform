@@ -250,7 +250,7 @@ public class AuditLogImpl implements AuditLogService.I
     public AuditLogQueryView createQueryView(ViewContext context, SimpleFilter filter, String viewFactoryName)
     {
         AuditQuerySchema schema = new AuditQuerySchema(context.getUser(), context.getContainer());
-        QuerySettings settings = new QuerySettings(context.getActionURL(), AuditQuerySchema.AUDIT_TABLE_NAME);
+        QuerySettings settings = new QuerySettings(context, AuditQuerySchema.AUDIT_TABLE_NAME);
         settings.setSchemaName(schema.getSchemaName());
         settings.setQueryName(viewFactoryName);
         return new AuditQueryViewImpl(schema, settings, filter);

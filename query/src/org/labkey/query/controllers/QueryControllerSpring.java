@@ -22,7 +22,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.data.*;
-import org.labkey.api.jsp.FormPage;
 import org.labkey.api.query.*;
 import org.labkey.api.security.*;
 import org.labkey.api.study.StudyService;
@@ -97,7 +96,8 @@ public class QueryControllerSpring extends SpringActionController
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
             _form = form;
-            return FormPage.getView(QueryControllerSpring.class, _form, errors, "begin.jsp");
+            return new JspView<QueryForm>(QueryControllerSpring.class, "begin.jsp", form, errors);
+
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -122,7 +122,7 @@ public class QueryControllerSpring extends SpringActionController
             _form = form;
             if (null == form.getSchemaName())
                 return HttpView.redirect(actionURL(QueryAction.begin));
-            return FormPage.getView(QueryControllerSpring.class, _form, errors, "schema.jsp");
+            return new JspView<QueryForm>(QueryControllerSpring.class, "schema.jsp", form, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -145,10 +145,14 @@ public class QueryControllerSpring extends SpringActionController
         {
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public ModelAndView getView(NewQueryForm form, boolean reshow, BindException errors) throws Exception
         {
+            if (!form.getSchema().canCreate())
+                HttpView.throwUnauthorized();
+            getPageConfig().setFocus("forms[0].ff_newQueryName");
             _form = form;
-            return FormPage.getView(QueryControllerSpring.class, form, errors, "newQuery.jsp");
+            return new JspView<NewQueryForm>(QueryControllerSpring.class, "newQuery.jsp", form, errors);
         }
 
         public boolean handlePost(NewQueryForm form, BindException errors) throws Exception
@@ -189,15 +193,6 @@ public class QueryControllerSpring extends SpringActionController
         public ActionURL getSuccessURL(NewQueryForm newQueryForm)
         {
             return _successUrl;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public ModelAndView getView(NewQueryForm form, BindException errors) throws Exception
-        {
-            if (!form.getSchema().canCreate())
-                HttpView.throwUnauthorized();
-            getPageConfig().setFocus("forms[0].ff_newQueryName");
-            return FormPage.getView(QueryControllerSpring.class, form, errors, "newQuery.jsp");
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -287,7 +282,7 @@ public class QueryControllerSpring extends SpringActionController
 
         public ModelAndView getConfirmView(QueryForm queryForm, BindException errors) throws Exception
         {
-            return FormPage.getView(QueryControllerSpring.class, queryForm, errors, "deleteQuerySpring.jsp");
+            return new JspView<QueryForm>(QueryControllerSpring.class, "deleteQuery.jsp", queryForm, errors);
         }
 
         public boolean handlePost(QueryForm form, BindException errors) throws Exception
@@ -494,7 +489,7 @@ public class QueryControllerSpring extends SpringActionController
             assertQueryExists(form);
             _form = form;
             _query = _form.getQueryDef();
-            return FormPage.getView(QueryControllerSpring.class, form, errors, "metadata.jsp");
+            return new JspView<MetadataForm>(QueryControllerSpring.class, "metadata.jsp", form, errors);
         }
 
         public boolean handlePost(MetadataForm form, BindException errors) throws Exception
@@ -563,7 +558,7 @@ public class QueryControllerSpring extends SpringActionController
                     return HttpView.redirect(_queryDef.urlFor(QueryAction.sourceQuery));
                 form.ff_designXML = queryDoc.toString();
             }
-            return FormPage.getView(QueryControllerSpring.class, form, errors, "designQuery.jsp");
+            return new JspView<DesignForm>(QueryControllerSpring.class, "designQuery.jsp", form, errors);
         }
 
         public boolean handlePost(DesignForm form, BindException errors) throws Exception
@@ -656,6 +651,9 @@ public class QueryControllerSpring extends SpringActionController
                 return null;
             }
 
+            if (!reshow)
+                form.initForView();
+
             if (form.ff_designXML == null)
             {
                 if (queryExists(form))
@@ -687,7 +685,7 @@ public class QueryControllerSpring extends SpringActionController
             }
             return new JspView<ChooseColumnsForm>(QueryControllerSpring.class, "chooseColumns.jsp", form, errors);
         }
-
+        
         public boolean handlePost(ChooseColumnsForm form, BindException errors) throws Exception
         {
             User owner = getUser();
@@ -726,6 +724,7 @@ public class QueryControllerSpring extends SpringActionController
             _returnURL = form.getSourceURL();
             if (null != _returnURL)
             {
+                _returnURL = _returnURL.clone();
                 if (name == null || !canEdit)
                 {
                     _returnURL.deleteParameter(regionName + "." + QueryParam.viewName);

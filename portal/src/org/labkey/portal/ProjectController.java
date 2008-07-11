@@ -18,7 +18,6 @@ package org.labkey.portal;
 
 import org.apache.beehive.netui.pageflow.FormData;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.collections15.MultiMap;
 import org.labkey.api.action.*;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -491,7 +490,7 @@ public class ProjectController extends SpringActionController
 
         protected void populatePropertyMap(HttpServletRequest request, Portal.WebPart webPart)
         {
-            // UNDONE: use getPropertyValues()
+            // UNDONE: use getBindPropertyValues()
             Enumeration params = request.getParameterNames();
 
             webPart.getPropertyMap().clear();

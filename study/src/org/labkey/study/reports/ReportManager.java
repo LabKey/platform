@@ -232,7 +232,7 @@ public class ReportManager
     public ResultSet getReportResultSet(ViewContext context, ActionURL url, DataSetDefinition def) throws Exception
     {
         UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), "study");
-        QuerySettings settings = new QuerySettings(url, "Dataset");
+        QuerySettings settings = new QuerySettings(url.getPropertyValues(), "Dataset");
         settings.setSchemaName(schema.getSchemaName());
         //Otherwise get from the URL somehow...
         if (null != def)

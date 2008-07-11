@@ -115,7 +115,7 @@ public class ChartServiceImpl extends BaseRemoteService implements ChartService
     public GWTChartRenderer[] getChartRenderers(GWTChart chart)
     {
         UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), chart.getSchemaName());
-        QuerySettings qs = new QuerySettings(_context.getActionURL(), null);
+        QuerySettings qs = new QuerySettings(_context, null);
         qs.setSchemaName(schema.getSchemaName());
         qs.setQueryName(chart.getQueryName());
 

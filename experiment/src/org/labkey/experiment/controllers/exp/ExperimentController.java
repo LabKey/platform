@@ -289,7 +289,7 @@ public class ExperimentController extends SpringActionController
             ensureCorrectContainer(getContainer(), _source, getViewContext());
 
             SamplesSchema schema = new SamplesSchema(getUser(), getContainer());
-            QuerySettings settings = new QuerySettings(getViewContext().getActionURL(), "Material");
+            QuerySettings settings = new QuerySettings(getViewContext(), "Material");
             settings.setAllowChooseQuery(false);
             settings.setSchemaName(schema.getSchemaName());
             settings.setQueryName(_source.getName());
@@ -348,7 +348,7 @@ public class ExperimentController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             ExpSchema schema = new ExpSchema(getUser(), getContainer());
-            QuerySettings settings = new QuerySettings(getViewContext().getActionURL(), "Materials");
+            QuerySettings settings = new QuerySettings(getViewContext(), "Materials");
             settings.setSchemaName(schema.getSchemaName());
             settings.setAllowChooseQuery(false);
             settings.setQueryName(ExpSchema.TableType.Materials.toString());
@@ -509,7 +509,7 @@ public class ExperimentController extends SpringActionController
             vbox.addView(runListView);
 
             ExpSchema schema = new ExpSchema(getUser(), getContainer());
-            QuerySettings settings = new QuerySettings(getViewContext().cloneActionURL(), "predecessorMaterials");
+            QuerySettings settings = new QuerySettings(getViewContext(), "predecessorMaterials");
             settings.setSchemaName(schema.getSchemaName());
             settings.setQueryName(ExpSchema.TableType.Materials.toString());
             settings.setAllowChooseQuery(false);

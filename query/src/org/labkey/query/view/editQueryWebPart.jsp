@@ -22,9 +22,7 @@
 <%@ page import="org.labkey.api.query.UserSchema" %>
 <%@ page import="org.labkey.api.util.CaseInsensitiveHashMap" %>
 <%@ page import="java.util.*" %>
-<%@ page import="org.labkey.api.reports.report.view.ChartUtil" %>
-<%@ page import="org.labkey.api.reports.Report" %>
-<%@ page import="org.labkey.api.query.QueryView" %>
+<%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page extends="org.labkey.query.view.EditQueryPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -152,9 +150,7 @@ function disableQuerySelect(disable)
                                 %>
                             </select>
                             <br/>
-                            <select name="viewName" id="viewName"
-                                    title="Select a View Name"
-                                    <% if (!querySelected) { %> disabled="true" <% } %>>
+                            <select name="viewName" id="viewName" title="Select a View Name" <%= querySelected ? "" : "disabled=true" %>>
                                 <%
                                 if (tableNames != null)
                                 {
@@ -163,7 +159,8 @@ function disableQuerySelect(disable)
                                     {
                                         for (String viewName : viewNames)
                                         {
-                                            String value = viewName.equals("") ? "<default view>" : viewName;
+                                            viewName = StringUtils.trimToEmpty(viewName);
+                                            String value = StringUtils.defaultString(viewName, "<default view>");
                                             %><option value="<%=h(viewName)%>" <%=viewName.equals(pm.get("viewName")) ? "selected" : ""%>><%=h(value)%></option><%
                                         }
                                     }

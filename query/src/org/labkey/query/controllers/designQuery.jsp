@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.query.QueryParam" %>
 <%@ page import="org.labkey.api.query.QueryAction" %>
 <%@ page import="org.labkey.query.controllers.DesignForm" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page extends="org.labkey.query.controllers.Page" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <labkey:errors />
@@ -26,7 +27,7 @@
     String contextPath;
 %>
 <%
-    DesignForm form = (DesignForm) getForm();
+    DesignForm form = (DesignForm) HttpView.currentModel();
     contextPath = request.getContextPath();
     ActionURL urlCheckSyntax = new ActionURL("query", "checkSyntax", getContainer());
     ActionURL urlTableInfo = new ActionURL("query", "tableInfo", getContainer());
