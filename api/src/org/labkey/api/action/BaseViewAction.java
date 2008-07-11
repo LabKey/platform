@@ -24,9 +24,7 @@ import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.ConvertHelper;
-import org.labkey.api.data.TableViewForm;
 import org.labkey.api.data.Container;
-import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
@@ -156,10 +154,12 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         return _pvs;
     }
 
+
     protected ModelAndView handleRequestInternal(HttpServletRequest request, HttpServletResponse response) throws Exception
     {
         if (null == getPropertyValues())
             setProperties(new ServletRequestParameterPropertyValues(request));
+        _context.setBindPropertyValues(getPropertyValues());
         return handleRequest();
     }
 
@@ -175,7 +175,7 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
 
     public void setViewContext(ViewContext context)
     {
-        _context = new ViewContext(context);
+        _context = context;
     }
 
 
@@ -247,25 +247,12 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
 
     public BindException defaultBindParameters(FORM form, PropertyValues params)
     {
-        /* handle TableViewForm as special case */
-        if (form instanceof TableViewForm)
+        /* check for do-it-myself forms */
+        if (form instanceof HasBindParameters)
         {
-            TableViewForm tableForm = (TableViewForm)form;
-            BindException errors = new BindException(new BeanUtilsPropertyBindingResult(tableForm, "form"));
-            tableForm.reset(null, getViewContext().getRequest());
-            Map<String,String> strings = new CaseInsensitiveHashMap<String>();
-            {
-                for (PropertyValue pv : params.getPropertyValues())
-                {
-                    if (pv.getValue() instanceof String)
-                        strings.put(pv.getName(), (String)pv.getValue());
-                }
-            }
-            tableForm.setStrings(strings);
-            tableForm.validateBind(errors);
-            return errors;
+            return ((HasBindParameters)form).bindParameters(params);
         }
-
+        
         /* 'regular' command handling */
         if (null != params.getPropertyValue(".oldValues"))
         {
@@ -426,7 +413,7 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
 
 
     /* for TableViewForm, uses BeanUtils to work with DynaBeans */
-    public class BeanUtilsPropertyBindingResult extends BeanPropertyBindingResult
+    static public class BeanUtilsPropertyBindingResult extends BeanPropertyBindingResult
     {
         public BeanUtilsPropertyBindingResult(Object target, String objectName)
         {
@@ -439,7 +426,7 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         }
     }
 
-    public class BeanUtilsWrapperImpl extends AbstractPropertyAccessor implements BeanWrapper
+    static public class BeanUtilsWrapperImpl extends AbstractPropertyAccessor implements BeanWrapper
     {
         private Object object;
 

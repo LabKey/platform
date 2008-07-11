@@ -271,11 +271,11 @@ public class SecurityManager
 
             // missing group
             Table.execute(core.getSchema(), "DELETE FROM " + core.getTableInfoMembers() + "\n" +
-                    "WHERE GroupId NOT IN (SELECT UserId FROM " + core.getTableInfoPrincipals() + " WHERE Type IN ('m','g'))", null);
+                    "WHERE GroupId NOT IN (SELECT UserId FROM " + core.getTableInfoPrincipals() + ")", null);
 
             // missing user
             Table.execute(core.getSchema(), "DELETE FROM " + core.getTableInfoMembers() + "\n" +
-                    "WHERE UserId NOT IN (SELECT UserId FROM " + core.getTableInfoPrincipals() + " WHERE Type IN ('u'))", null);
+                    "WHERE UserId NOT IN (SELECT UserId FROM " + core.getTableInfoPrincipals() + ")", null);
         }
         catch (SQLException x)
         {

@@ -16,14 +16,20 @@
 package org.labkey.api.util;
 
 import org.apache.commons.collections.ArrayStack;
+import org.apache.commons.collections15.MultiMap;
+import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.log4j.Logger;
 import org.labkey.common.util.Pair;
+import org.springframework.beans.PropertyValues;
+import org.springframework.beans.PropertyValue;
+import org.springframework.beans.MutablePropertyValues;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
+import java.lang.reflect.Array;
 
 
 public class URLHelper implements Cloneable, Serializable
@@ -515,6 +521,59 @@ public class URLHelper implements Cloneable, Serializable
     }
 
 
+    // CONSIDER: convert URLHelper implementation to use PropertyValues internally
+    public PropertyValues getPropertyValues()
+    {
+        if (null == _parameters || _parameters.size() == 0)
+            return new MutablePropertyValues();
+        // convert multiple values to String[] if necessary
+        MultiHashMap<String,String> map = new MultiHashMap<String,String>();
+        for (Pair<String,String> p : _parameters)
+            map.put(p.getKey(), p.getValue());
+        MutablePropertyValues mpvs = new MutablePropertyValues();
+        for (Map.Entry<String,Collection<String>> m : map.entrySet())
+        {
+            if (m.getValue().size() == 1)
+                mpvs.addPropertyValue(m.getKey(), ((List<String>)m.getValue()).get(0));
+            else
+                mpvs.addPropertyValue(m.getKey(), m.getValue().toArray(new String[m.getValue().size()]));
+        }
+        return mpvs;
+    }
+
+
+    public void setPropertyValues(PropertyValues pvs)
+    {
+        deleteParameters();
+        addPropertyValues(pvs);
+    }
+
+
+    public void addPropertyValues(PropertyValues pvs)
+    {
+        for (PropertyValue pv : pvs.getPropertyValues())
+        {
+            Object v = pv.getValue();
+            if (null == v)
+                continue;
+            if (v.getClass().isArray())
+            {
+                Object[] a = (Object[])v;
+                for (Object o : a)
+                {
+                    if (o != null)
+                        addParameter(pv.getName(), String.valueOf(o));
+
+                }
+            }
+            else
+            {
+                addParameter(pv.getName(), String.valueOf(v));
+            }
+        }
+    }
+
+    
     /**
      * path manipulation
      */
@@ -629,6 +688,7 @@ public class URLHelper implements Cloneable, Serializable
     }
 
 
+
     public void translatePrefix(URLHelper source, String oldPrefix, String newPrefix)
     {
         for (String key : source.getKeysByPrefix(oldPrefix))
@@ -637,6 +697,33 @@ public class URLHelper implements Cloneable, Serializable
             for (String value : source.getParameters(key))
             {
                 addParameter(newKey, value);
+            }
+        }
+    }
+
+
+
+    // CONSIDER: translate internal representation to use PropertyValues
+    public void addParameters(PropertyValues pvs)
+    {
+        addParameters(null, pvs);
+    }
+
+    public void addParameters(String prefix, PropertyValues pvs)
+    {
+        for (PropertyValue pv : pvs.getPropertyValues())
+        {
+            String name = null == prefix ? pv.getName() : prefix + "." + pv.getName();
+            Object v = pv.getValue();
+            if (null == v) continue;
+            if (!(v instanceof Array))
+                addParameter(name,String.valueOf(v));
+            else
+            {
+                for (Object o : (Object[])v)
+                {
+                    addParameter(name,String.valueOf(o));
+                }
             }
         }
     }

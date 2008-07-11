@@ -16,22 +16,49 @@
 
 package org.labkey.api.query;
 
+import org.labkey.api.action.BaseViewAction;
+import org.labkey.api.action.HasBindParameters;
+import org.labkey.api.action.HasViewContext;
+import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewForm;
+import org.labkey.api.view.ViewContext;
+import org.springframework.beans.MutablePropertyValues;
+import org.springframework.beans.PropertyValue;
+import org.springframework.beans.PropertyValues;
+import org.springframework.validation.BindException;
 
 import javax.servlet.ServletException;
 
-public class QueryForm extends ViewForm
+
+/**
+ * QueryForm is basically a wrapper for QuerySettings and related helper for the query subsystem.
+ *
+ * Since this is being bound from request variables all parameters may be overridden.  For more control,
+ * use QuerySettings directly.
+ *
+ * Note, that the QuerySettings require a schemaName and dataRegionName before being constructed.
+ */
+public class QueryForm implements HasViewContext, HasBindParameters
 {
     public static final String PARAMVAL_NOFILTER = "NONE";
+    private ViewContext _context;
+
+    private String _schemaName;
     private UserSchema _schema;
+
+    private String _queryName;
     private QueryDefinition _queryDef;
-    private CustomView _columnList;
+
+    private String _viewName;
+    private CustomView _customView;
     private QuerySettings _querySettings;
     private boolean _exportAsWebPage = false;
     private String _queryViewActionURL;
     private String _dataRegionName = QueryView.DATAREGIONNAME_DEFAULT;
+
+    protected PropertyValues _initParameters = null;
 
     public QueryForm()
     {
@@ -41,7 +68,95 @@ public class QueryForm extends ViewForm
     {
         _dataRegionName = dataRegionName;
     }
-    
+
+    protected QueryForm(String schemaName, String queryName)
+    {
+        _schemaName = schemaName;
+        _queryName = queryName;
+    }
+
+    public void setViewContext(ViewContext context)
+    {
+        _context = context;
+    }
+
+    public ViewContext getViewContext()
+    {
+        return _context;
+    }
+
+    protected User getUser()
+    {
+        return getViewContext().getUser();
+    }
+
+
+    protected Container getContainer()
+    {
+        return getViewContext().getContainer();
+    }
+
+
+    public BindException bindParameters(PropertyValues params)
+    {
+        return doBindParameters(params);
+    }
+
+
+    protected BindException doBindParameters(PropertyValues params)
+    {
+        _initParameters = params;
+        String commandName = getDataRegionName() == null ? "form" : getDataRegionName();
+
+        // Delete parameters we don't want to bind or that we want QuerySettings.init() to handle
+        MutablePropertyValues bindParams = new MutablePropertyValues(params);
+        bindParams.removePropertyValue(QueryParam.dataRegionName.name());
+        bindParams.removePropertyValue(QueryParam.queryName.name());
+        bindParams.removePropertyValue(QueryParam.viewName.name());
+        // don't override preset schemaName
+        String schemaName = _schemaName;
+        
+        BindException errors = BaseViewAction.springBindParameters(this, commandName, bindParams);
+        
+        if (null != schemaName)
+            _schemaName = schemaName;
+
+        return errors;
+    }
+
+    protected String getValue(Enum key, PropertyValues... pvss)
+    {
+        return getValue(key.name(), pvss);
+    }
+
+    protected String getValue(String key, PropertyValues... pvss)
+    {
+        for (PropertyValues pvs : pvss)
+        {
+            if (pvs == null) continue;
+            PropertyValue pv = pvs.getPropertyValue(key);
+            if (pv == null) continue;
+            Object value = pv.getValue();
+            if (value == null) continue;
+            return value instanceof  String ? (String)value : ((String[])value)[0];
+        }
+        return null;
+    }
+
+    protected String[] getValues(String key, PropertyValues... pvss)
+    {
+        for (PropertyValues pvs : pvss)
+        {
+            if (pvs == null) continue;
+            PropertyValue pv = pvs.getPropertyValue(key);
+            if (pv == null) continue;
+            Object value = pv.getValue();
+            if (value == null) continue;
+            return value instanceof String ? new String[] {(String)value} : ((String[])value);
+        }
+        return null;
+    }
+
     protected UserSchema createSchema()
     {
         UserSchema ret = null;
@@ -67,6 +182,7 @@ public class QueryForm extends ViewForm
         return ret;
     }
 
+
     final public QuerySettings getQuerySettings()
     {
         if (_querySettings == null)
@@ -78,24 +194,42 @@ public class QueryForm extends ViewForm
         return _querySettings;
     }
 
+
     protected QuerySettings createQuerySettings(UserSchema schema)
     {
-        return schema.getSettings(getViewContext().getActionURL(), getDataRegionName());
+        QuerySettings settings = schema.getSettings(_initParameters, getDataRegionName());
+        if (null != _queryName)
+            settings.setQueryName(_queryName);
+        if (null != _viewName)
+            settings.setViewName(_viewName);
+        return settings;
     }
+
 
     protected void setDataRegionName(String name)
     {
+        if (_querySettings != null)
+            throw new IllegalStateException();
         _dataRegionName = name;
     }
+
 
     public String getDataRegionName()
     {
         return _dataRegionName;
     }
 
+
+    public void setSchemaName(String name)
+    {
+        if (_querySettings != null)
+            throw new IllegalStateException();
+        _schemaName = name;
+    }
+
     public String getSchemaName()
     {
-        return getViewContext().getRequest().getParameter(QueryParam.schemaName.toString());
+        return _schemaName;
     }
 
     public UserSchema getSchema()
@@ -107,6 +241,18 @@ public class QueryForm extends ViewForm
         return _schema;
     }
 
+    public void setQueryName(String name)
+    {
+        if (_queryDef != null)
+            throw new IllegalStateException();
+        _queryName = name;
+    }
+
+    public String getQueryName()
+    {
+        return getQuerySettings() != null ? getQuerySettings().getQueryName() : _queryName;
+    }
+    
     public QueryDefinition getQueryDef()
     {
         if (getQueryName() == null)
@@ -125,9 +271,9 @@ public class QueryForm extends ViewForm
     public ActionURL urlFor(QueryAction action)
     {
         ActionURL ret = getSchema().urlFor(action, getQueryDef());
-        if (_columnList != null && _columnList.getName() != null)
+        if (_customView != null && _customView.getName() != null)
         {
-            ret.replaceParameter(QueryParam.viewName.toString(), _columnList.getName());
+            ret.replaceParameter(QueryParam.viewName.toString(), _customView.getName());
         }
         return ret;
     }
@@ -142,20 +288,27 @@ public class QueryForm extends ViewForm
         _exportAsWebPage = exportAsWebPage;
     }
 
-    public CustomView getCustomView()
+    public void setViewName(String name)
     {
-        if (_columnList != null)
-            return _columnList;
-        if (getQuerySettings() == null)
-            return null;
-        String columnListName = getQuerySettings().getViewName();
-        _columnList = getQueryDef().getCustomView(getUser(), getRequest(), columnListName);
-        return _columnList;
+        if (null != _customView || null != _querySettings)
+            throw new IllegalStateException();
+        _viewName = name;
     }
 
-    final public String getQueryName()
+    public String getViewName()
     {
-        return getQuerySettings() != null ? getQuerySettings().getQueryName() : null;
+        return getQuerySettings() != null ? getQuerySettings().getViewName() : _viewName;
+    }
+    
+    public CustomView getCustomView()
+    {
+        if (_customView != null)
+            return _customView;
+        if (getQuerySettings() == null)
+            return null;
+        String columnListName = getViewName();
+        _customView = getQueryDef().getCustomView(getUser(), getViewContext().getRequest(), columnListName);
+        return _customView;
     }
 
     public boolean canEdit()

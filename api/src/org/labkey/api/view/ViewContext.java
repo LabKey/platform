@@ -30,6 +30,7 @@ import org.springframework.context.MessageSourceResolvable;
 import org.springframework.context.NoSuchMessageException;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.web.context.WebApplicationContext;
+import org.springframework.beans.PropertyValues;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -42,6 +43,8 @@ import java.util.*;
  * User: matthewb
  * Date: Mar 20, 2005
  * Time: 12:26:38 PM
+ *
+ * UNDONE: kill BoundMap functionality of ViewContext
  */
 public class ViewContext extends BoundMap implements MessageSource
 {
@@ -49,12 +52,12 @@ public class ViewContext extends BoundMap implements MessageSource
     private HttpServletRequest _request;
     private HttpServletResponse _response;
     private User _user;
-    private ActionURL _url;
+    private ActionURL _url;                     // path and parameters on the URL (does not include posted values)
     private String _scopePrefix = "";
     private Container _c = null;
     private int _perm = -1;
     private ACL _acl = null;
-
+    PropertyValues _pvsBind = null;              // may be set by SpringActionController, representing values used to bind command object
 
     public ViewContext()
     {
@@ -78,6 +81,7 @@ public class ViewContext extends BoundMap implements MessageSource
         _scopePrefix = copyFrom._scopePrefix;
         _c = copyFrom._c;
         _webApplicationContext = copyFrom._webApplicationContext;
+        _pvsBind = copyFrom.getBindPropertyValues();
         putAll(copyFrom.getExtendedProperties());
     }
 
@@ -434,5 +438,20 @@ public class ViewContext extends BoundMap implements MessageSource
     {
         if (!hasAgreedToTermsOfUse())
             throw new TermsOfUseException(getActionURL());
+    }
+
+    /* return PropertyValues object used to bind the current commmand object
+       will be null for Struts controllers
+     */
+    public PropertyValues getBindPropertyValues()
+    {
+        if (null != _pvsBind)
+            return _pvsBind;
+        return HttpView.getBindPropertyValues();
+    }
+
+    public void setBindPropertyValues(PropertyValues pvs)
+    {
+        _pvsBind = pvs;
     }
 }

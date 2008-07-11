@@ -29,6 +29,8 @@ import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.beans.PropertyValues;
+import org.springframework.beans.MutablePropertyValues;
 
 import java.io.PrintWriter;
 import java.io.Serializable;
@@ -191,6 +193,12 @@ public class Portal
             Pair<String, String>[] props = PageFlowUtil.fromQueryString(query);
             for (Pair<String, String> prop : props)
                 setProperty(prop.first, prop.second);
+        }
+
+        public PropertyValues getPropertyValues()
+        {
+            MutablePropertyValues pvs = new MutablePropertyValues(getPropertyMap());
+            return pvs;
         }
 
         public boolean isPermanent()

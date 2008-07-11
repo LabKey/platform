@@ -18,18 +18,18 @@ package org.labkey.api.query;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
+import org.apache.log4j.Logger;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.ShowRows;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
-import org.labkey.common.util.BoundMap;
+import org.springframework.beans.PropertyValue;
+import org.springframework.beans.PropertyValues;
+import org.springframework.beans.MutablePropertyValues;
 
-import javax.servlet.http.HttpServletRequest;
 import java.sql.SQLException;
 
 public class QuerySettings
@@ -39,7 +39,6 @@ public class QuerySettings
     private String _viewName;
     private String _dataRegionName;
     private int _reportId = -1;
-    private ActionURL _urlSortFilter;
     private boolean _allowChooseQuery = true;
     private boolean _allowChooseView = true;
     private boolean _allowCustomizeView = true;
@@ -49,65 +48,113 @@ public class QuerySettings
 
     private ShowRows _showRows = ShowRows.DEFAULT;
     private boolean _showHiddenFieldsWhenCustomizing = false;
-    private HttpServletRequest _request;
 
-    public QuerySettings(Portal.WebPart webPart, ViewContext context)
-    {
-        _dataRegionName = "qwp" + webPart.getIndex();
-        (new BoundMap(this)).putAll(webPart.getPropertyMap());
-        _request = context.getRequest();
-        init(context.cloneActionURL());
-    }
+    PropertyValues _filterSort = null;
 
-    public QuerySettings(ActionURL url, String dataRegionName)
+
+    public QuerySettings(String dataRegionName)
     {
         _dataRegionName = dataRegionName;
-        _request = HttpView.currentContext().getRequest();
-        init(url);
     }
 
-    public QuerySettings(ActionURL url, String dataRegionName, String queryName)
+    /**
+     * Init the QuerySettings using all the request parameters, from context.getPropertyValues()
+     */
+    public QuerySettings(ViewContext context, String dataRegionName)
     {
-        this(url, dataRegionName);
+        _dataRegionName = dataRegionName;
+        init(getPropertyValues(context));
+    }
+
+
+    /** Init the QuerySettings using all the request parameters, from context.getPropertyValues() */
+    public QuerySettings(ViewContext context, String dataRegionName, String queryName)
+    {
+        _dataRegionName = dataRegionName;
+        init(context);
         setQueryName(queryName);
     }
 
 
-    /** if you use this method be sure to call expandLastFilter() first
+    /**
+     * @param params    all parameters from URL or POST, inluding dataregion.filter parameters
+     * @param dataRegionName    prefix for filter params etc
+     */
+    public QuerySettings(PropertyValues params, String dataRegionName)
+    {
+        _dataRegionName = dataRegionName;
+        init(params);
+    }
+
+
+    private PropertyValues getPropertyValues(ViewContext context)
+    {
+        PropertyValues pvs = context.getBindPropertyValues();
+        if (null == pvs)
+        {
+            //noinspection ThrowableInstanceNeverThrown
+            Logger.getInstance(QuerySettings.class).warn("PropertyValues not set");
+            //throw new IllegalStateException("PropertyValues not set");'
+            pvs = context.getActionURL().getPropertyValues();
+        }
+        return pvs;
+    }
+
+
+
+    /**
      * @param url parameters for filter/sort
      */
     public void setSortFilterURL(ActionURL url)
     {
-        _urlSortFilter = url;
-        if (url.getParameter(param(QueryParam.showAllRows)) != null)
+        setSortFilter(url.getPropertyValues());
+    }
+
+
+    public void setSortFilter(PropertyValues pvs)
+    {
+        _filterSort = pvs;
+        if (_getParameter(param(QueryParam.showAllRows)) != null)
         {
             _showRows = ShowRows.ALL;
         }
-        else if (url.getParameter(param(QueryParam.showSelected)) != null)
+        else if (_getParameter(param(QueryParam.showSelected)) != null)
         {
             _showRows = ShowRows.SELECTED;
         }
     }
 
 
-    /*
-       SEE 4805 : delete query throws NPE in QueryControllerSpring.DeleteActionQuery
-
-       This is a horrible hack, but it is NOT correct to use an ActionURL for form binding
-       which is effectively what init() does.  It will not see POST parameters for one thing.
-     */
-    String _getParameter(String param)
+    protected String _getParameter(String param)
     {
-        String p = StringUtils.trimToNull(_urlSortFilter.getParameter(param));
-        if (null != p || !"POST".equals(_request.getMethod()))
-            return p;
-        return StringUtils.trimToNull(_request.getParameter(param));
+        PropertyValue pv = _filterSort.getPropertyValue(param);
+        if (pv == null)
+            return null;
+        Object v = pv.getValue();
+        if (v.getClass().isArray())
+        {
+            Object[] a = (Object[])v;
+            v = a.length == 0 ? null : a[0];
+        }
+        return v == null ? null : String.valueOf(v);
+    }
+
+    public void init(ViewContext context)
+    {
+        init(getPropertyValues(context));    
     }
 
 
-    protected void init(ActionURL url)
+    /**
+     * Initialize QuerySettings from the PropertyValues, binds all fields that are supported on the URL
+     *. such as viewName.  Use setSortFilter() to provide sort filter parameters w/o affecting the other
+     * properties.
+     */
+    public void init(PropertyValues pvs)
     {
-        setSortFilterURL(url);
+        if (null == pvs)
+            pvs = new MutablePropertyValues();
+        setSortFilter(pvs);
 
         if (getAllowChooseQuery())
         {
@@ -345,7 +392,10 @@ public class QuerySettings
 
     public ActionURL getSortFilterURL()
     {
-        return _urlSortFilter.clone();
+        ActionURL url = HttpView.getRootContext().cloneActionURL();
+        url.deleteParameters();
+        url.setPropertyValues(_filterSort);
+        return url;
     }
 
     public boolean isAllowCustomizeView()

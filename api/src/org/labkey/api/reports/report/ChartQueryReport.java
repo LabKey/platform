@@ -83,7 +83,7 @@ public class ChartQueryReport extends ChartReport implements Report.ImageMapGene
         {
             UserSchema schema = (UserSchema)DefaultSchema.get(context.getUser(), context.getContainer()).getSchema(schemaName);
 
-            QuerySettings settings = new QuerySettings(context.getActionURL(), dataRegionName);
+            QuerySettings settings = new QuerySettings(context, dataRegionName);
             settings.setSchemaName(schemaName);
             settings.setQueryName(queryName);
             settings.setViewName(viewName);

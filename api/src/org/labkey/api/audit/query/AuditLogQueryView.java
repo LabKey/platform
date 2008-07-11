@@ -59,7 +59,7 @@ public abstract class AuditLogQueryView extends QueryView
         _buttonBarPosition = DataRegion.ButtonBarPosition.NONE;
         UserSchema schema = AuditLogService.get().createSchema(context.getUser(), context.getContainer());
         String tableName = AuditLogService.get().getTableName();
-        QuerySettings settings = new QuerySettings(context.getActionURL(), tableName);
+        QuerySettings settings = new QuerySettings(context, tableName);
         settings.setSchemaName(schema.getSchemaName());
         settings.setQueryName(tableName);
 

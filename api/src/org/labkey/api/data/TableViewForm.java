@@ -29,10 +29,14 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.action.HasValidator;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.HasBindParameters;
+import org.labkey.api.action.BaseViewAction;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 import org.springframework.validation.Errors;
+import org.springframework.beans.PropertyValues;
+import org.springframework.beans.PropertyValue;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -46,7 +50,7 @@ import java.util.*;
  * Supports insert, update, delete functionality with a minimum of fuss
  * <p/>
  */
-public class TableViewForm extends ViewForm implements DynaBean
+public class TableViewForm extends ViewForm implements DynaBean, HasBindParameters
 {
     protected Map<String, String> _stringValues = new CaseInsensitiveHashMap<String>();
     protected Map<String, Object> _values = null;
@@ -660,6 +664,7 @@ public class TableViewForm extends ViewForm implements DynaBean
         PageFlowUtil.getActionErrors(request, true).add(convertErrorsToStruts(errors,request));
     }
 
+
     public static ActionErrors convertErrorsToStruts(BindException errors, HttpServletRequest request)
     {
         ViewContext context = HttpView.getRootContext();
@@ -672,6 +677,24 @@ public class TableViewForm extends ViewForm implements DynaBean
             for (FieldError e : (List<FieldError>)errors.getFieldErrors())
                 struts.add(e.getField(), new ActionMessage("Error", context.getMessage(e)));
         return struts;
+    }
+
+
+    public BindException bindParameters(PropertyValues params)
+    {
+        BindException errors = new BindException(new BaseViewAction.BeanUtilsPropertyBindingResult(this, "form"));
+        reset(null, getViewContext().getRequest());
+        Map<String,String> strings = new CaseInsensitiveHashMap<String>();
+        {
+            for (PropertyValue pv : params.getPropertyValues())
+            {
+                if (pv.getValue() instanceof String)
+                    strings.put(pv.getName(), (String)pv.getValue());
+            }
+        }
+        setStrings(strings);
+        validateBind(errors);
+        return errors;
     }
 }
 

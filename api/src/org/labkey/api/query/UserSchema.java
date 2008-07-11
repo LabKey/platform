@@ -24,9 +24,12 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
+import org.labkey.common.util.BoundMap;
+import org.springframework.beans.PropertyValues;
 
 import javax.servlet.ServletException;
 import java.util.*;
+
 
 abstract public class UserSchema extends AbstractSchema
 {
@@ -140,18 +143,46 @@ abstract public class UserSchema extends AbstractSchema
         return ret;
     }
 
-    public QuerySettings getSettings(Portal.WebPart webPart, ViewContext context)
+    /** override this method to return schema specific QuerySettings object */
+    protected QuerySettings createQuerySettings(String dataRegionName)
     {
-        QuerySettings settings = new QuerySettings(webPart, context);
+        return new QuerySettings(dataRegionName);
+    }
+
+    protected final QuerySettings xcreateQuerySettings(PropertyValues pvs, String dataRegionName)
+    {
+        QuerySettings settings = createQuerySettings(dataRegionName);
+        settings.init(pvs);
+        return settings;
+    }
+
+    public final QuerySettings getSettings(Portal.WebPart webPart, ViewContext context)
+    {
+        QuerySettings settings = createQuerySettings("qwp" + webPart.getIndex());
+        (new BoundMap(settings)).putAll(webPart.getPropertyMap());
+        settings.init(context);
+        return settings;
+    }
+
+    public final QuerySettings getSettings(ViewContext context, String dataRegionName)
+    {
+        QuerySettings settings = createQuerySettings(dataRegionName);
+        settings.init(context);
         settings.setSchemaName(getSchemaName());
         return settings;
     }
 
-    public QuerySettings getSettings(ActionURL url, String dataRegionName)
+    public final QuerySettings getSettings(ViewContext context, String dataRegionName, String queryName)
     {
-        QuerySettings settings = new QuerySettings(url, dataRegionName);
-        settings.setSchemaName(getSchemaName());
+        QuerySettings settings = getSettings(context, dataRegionName);
+        settings.setQueryName(queryName);
         return settings;
     }
 
+    public final QuerySettings getSettings(PropertyValues pvs, String dataRegionName)
+    {
+        QuerySettings settings = createQuerySettings(dataRegionName);
+        settings.init(pvs);
+        return settings;
+    }
 }

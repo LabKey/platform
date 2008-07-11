@@ -19,6 +19,7 @@ package org.labkey.api;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.ByteArrayRequestEntity;
 import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
 import java.io.*;
@@ -54,14 +55,14 @@ public class RemoteControllerProxy
     {
         String authorization = null;
         if (name != null && password != null)
-            authorization = new sun.misc.BASE64Encoder().encode((name + ":" + password).getBytes("UTF-8"));
+            authorization = new String(Base64.encodeBase64((name + ":" + password).getBytes("UTF-8")));
         return Proxy.newProxyInstance(i.getClassLoader(), new Class[] {i}, new _Proxy(i, endpoint, authorization));
     }
 
 
     public static Object getAsyncInterface(Class i, String endpoint, String name, String password) throws IOException
     {
-        String authorization = new sun.misc.BASE64Encoder().encode((name + ":" + password).getBytes("UTF-8"));
+        String authorization = new String(Base64.encodeBase64((name + ":" + password).getBytes("UTF-8")));
         return Proxy.newProxyInstance(i.getClassLoader(), new Class[] {i}, new _ProxyAsync(i, endpoint, authorization));
     }
 

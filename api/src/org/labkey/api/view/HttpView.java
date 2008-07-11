@@ -20,8 +20,10 @@ import org.apache.beehive.netui.pageflow.Forward;
 import org.apache.commons.lang.ObjectUtils;
 import org.labkey.api.util.Debug;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.action.HasViewContext;
 import org.springframework.web.servlet.*;
 import org.springframework.web.servlet.view.RedirectView;
+import org.springframework.beans.PropertyValues;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
@@ -41,7 +43,7 @@ import java.util.*;
  * fix this in the future, but we're moving forward with this conceptual co-mingling
  * for now.
  */
-public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean> implements View
+public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean> implements View, HasViewContext
 {
     private static final int _debug = Debug.getLevel(HttpView.class);
 
@@ -270,6 +272,11 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         _views.put(name, view);
     }
 
+    // only used to satisfy HasViewContext
+    public void setViewContext(ViewContext context)
+    {
+        throw new IllegalStateException();   
+    }
 
     public ViewContext getViewContext()
     {
@@ -789,5 +796,22 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         {
             throw new IllegalStateException("Should not call getOutputStream() before render() is called.");
         }
+    }
+
+    public static PropertyValues getBindPropertyValues()
+    {
+        ViewStack s = _viewContexts.get();
+        for (int i = s.size()-1 ; i>= 0 ; i--)
+        {
+            ViewStackEntry vse = s.get(i);
+            ModelAndView mv = vse.mv;
+            if (mv instanceof HasViewContext)
+            {
+                ViewContext context = ((HttpView)mv).getViewContext();
+                if (context._pvsBind != null)
+                    return context._pvsBind;
+            }
+        }
+        return null;
     }
 }

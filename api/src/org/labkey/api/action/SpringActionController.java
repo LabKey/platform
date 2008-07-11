@@ -165,7 +165,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
     public void setViewContext(ViewContext context)
     {
-        _viewContext = new ViewContext(context);
+        _viewContext = context;
     }
 
     public ViewContext getViewContext()

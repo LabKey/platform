@@ -279,7 +279,7 @@ public class RReport extends AbstractReport implements AttachmentParent, Report.
         if (context != null && schemaName != null)
         {
             UserSchema base = (UserSchema) DefaultSchema.get(context.getUser(), context.getContainer()).getSchema(schemaName);
-            QuerySettings settings = base.getSettings(context.getActionURL(), dataRegionName);
+            QuerySettings settings = base.getSettings(context, dataRegionName);
             settings.setSchemaName(schemaName);
             settings.setQueryName(queryName);
             settings.setViewName(viewName);
