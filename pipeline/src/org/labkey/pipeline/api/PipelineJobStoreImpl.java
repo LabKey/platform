@@ -16,23 +16,14 @@
 
 package org.labkey.pipeline.api;
 
-import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.XppDriver;
-
-import java.util.concurrent.atomic.AtomicReference;
 import java.sql.SQLException;
 import java.io.IOException;
 
-import org.labkey.pipeline.xstream.TaskIdXStreamConverter;
-import org.labkey.pipeline.xstream.FileXStreamConverter;
-import org.labkey.pipeline.xstream.URIXStreamConverter;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.TaskId;
-import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DbSchema;
 
 /**
  * Implements serialization of a <code>PipelineJob</code> to and from XML,
@@ -49,19 +40,36 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
 
     public PipelineJob getJob(String jobId) throws SQLException
     {
-        PipelineJob job = fromXML(PipelineStatusManager.retreiveJob(jobId));
+        return fromStatus(PipelineStatusManager.retreiveJob(jobId));
+    }
 
-        // If it was stored, then it can't be on a queue.
-        job.clearQueue();        
+    public PipelineJob getJob(PipelineStatusFile sf)
+    {
+        PipelineJob job = fromStatus(sf.getJobStore());
+        if (PipelineJob.ERROR_STATUS.equals(sf.getStatus()))
+            job.hadError();
         return job;
     }
 
-    public void storeJob(ViewBackgroundInfo info, PipelineJob job) throws SQLException
+    private PipelineJob fromStatus(String xml)
+    {
+        if (xml == null || xml.length() == 0)
+            return null;
+        
+        PipelineJob job = fromXML(xml);
+
+        // If it was stored, then it can't be on a queue.
+        job.clearQueue();
+        
+        return job;
+    }
+
+    public void storeJob(PipelineJob job) throws SQLException
     {
         PipelineStatusManager.storeJob(job.getJobGUID(), toXML(job));
     }
 
-    public void split(ViewBackgroundInfo info, PipelineJob job) throws IOException, SQLException
+    public void split(PipelineJob job) throws IOException, SQLException
     {
         DbScope scope = PipelineSchema.getInstance().getSchema().getScope();
         try
@@ -69,7 +77,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
             scope.beginTransaction();
             for (PipelineJob jobSplit : job.createSplitJobs())
                 PipelineService.get().queueJob(jobSplit);
-            storeJob(info, job);
+            storeJob(job);
             job.setStatus("SPLIT WAITING");
             scope.commitTransaction();
         }
@@ -80,7 +88,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
         }
     }
 
-    public void join(ViewBackgroundInfo info, PipelineJob job) throws IOException, SQLException
+    public void join(PipelineJob job) throws IOException, SQLException
     {
         DbScope scope = PipelineSchema.getInstance().getSchema().getScope();
         try
@@ -92,11 +100,19 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
             int count = PipelineStatusManager.getIncompleteStatusFiles(job.getParentGUID()).length;
 
             job.setStatus(PipelineJob.COMPLETE_STATUS);
+
+            PipelineJob jobJoin = getJob(job.getParentGUID());
+            jobJoin.mergeSplitJob(job);
             if (count == 1)
             {
-                PipelineJob jobJoin = getJob(job.getParentGUID());
+                // All split jobs have completed; begin running the joined job again
                 jobJoin.setActiveTaskId(tid);
                 PipelineService.get().queueJob(jobJoin);
+            }
+            else
+            {
+                // More split jobs left; store the join job until they complete
+                storeJob(jobJoin);
             }
             scope.commitTransaction();
         }

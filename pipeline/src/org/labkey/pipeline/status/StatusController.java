@@ -55,7 +55,6 @@ public class StatusController extends SpringActionController
 
     private static final int MAX_DISPLAY_ROWS = 1000;
     protected static final String _newline = System.getProperty("line.separator");
-    protected static final String CAPTION_RETRY_BUTTON = "Retry";
     protected static final String DATAREGION_STATUS = "dataregion_StatusFiles";
 
     private static HelpTopic getHelpTopic(String topic)
@@ -713,7 +712,7 @@ public class StatusController extends SpringActionController
             List<DisplayElement> buttons = bb.getList();
             for (DisplayElement button : buttons)
             {
-                if (CAPTION_RETRY_BUTTON.equals(button.getCaption()))
+                if (PipelineProvider.CAPTION_RETRY_BUTTON.equals(button.getCaption()))
                     _btnRetry = (ActionButton) button;
             }
         }
@@ -728,7 +727,7 @@ public class StatusController extends SpringActionController
 
             for (PipelineProvider.StatusAction action : l)
             {
-                if (CAPTION_RETRY_BUTTON.compareTo(action.getLabel()) == 0)
+                if (PipelineProvider.CAPTION_RETRY_BUTTON.compareTo(action.getLabel()) == 0)
                     return true;
             }
 
@@ -881,8 +880,8 @@ public class StatusController extends SpringActionController
             bb.add(button);
         }
 
-        ActionButton retryStatus = new ActionButton("", CAPTION_RETRY_BUTTON);
-        retryStatus.setScript("return verifySelected(this.form, \"runAction.view?action=" + CAPTION_RETRY_BUTTON + "\", \"post\", \"files\")");
+        ActionButton retryStatus = new ActionButton("", PipelineProvider.CAPTION_RETRY_BUTTON);
+        retryStatus.setScript("return verifySelected(this.form, \"runAction.view?action=" + PipelineProvider.CAPTION_RETRY_BUTTON + "\", \"post\", \"files\")");
         retryStatus.setActionType(ActionButton.Action.POST);
         if (!user.isAdministrator())
             retryStatus.setDisplayPermission(ACL.PERM_UPDATE);
@@ -923,9 +922,11 @@ public class StatusController extends SpringActionController
     {
         DataRegion rgn = new DataRegion();
 
-        rgn.setColumns(getTableInfo().getColumns("Created, Modified, Job, Provider, Container, Email, Status, Info, FilePath, DataUrl"));
+        rgn.setColumns(getTableInfo().getColumns("Created, Modified, Job, JobStore, Provider, Container, Email, Status, Info, FilePath, DataUrl"));
         rgn.addDisplayColumn(new FileDisplayColumn());
         DisplayColumn col = rgn.getDisplayColumn("Job");
+        col.setVisible(false);
+        col = rgn.getDisplayColumn("JobStore");
         col.setVisible(false);
         col = rgn.getDisplayColumn("Provider");
         col.setVisible(false);

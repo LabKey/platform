@@ -17,7 +17,6 @@ package org.labkey.pipeline.api;
 
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.pipeline.xstream.TaskIdXStreamConverter;
 import org.labkey.pipeline.xstream.FileXStreamConverter;
 import org.labkey.pipeline.xstream.URIXStreamConverter;
@@ -75,7 +74,7 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
     }
 
     /* todo: create a separate interface? */
-    public void storeJob(ViewBackgroundInfo info, PipelineJob job) throws SQLException
+    public void storeJob(PipelineJob job) throws SQLException
     {
         throw new UnsupportedOperationException("Method supported only on web server");
     }
@@ -85,12 +84,17 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
         throw new UnsupportedOperationException("Method supported only on web server");
     }
 
-    public void split(ViewBackgroundInfo info, PipelineJob job) throws IOException, SQLException
+    public PipelineJob getJob(PipelineStatusFile sf)
+    {
+        throw new UnsupportedOperationException("Method supported only on web server");        
+    }
+
+    public void split(PipelineJob job) throws IOException, SQLException
     {
         throw new UnsupportedOperationException("Method supported only on web server");
     }
 
-    public void join(ViewBackgroundInfo info, PipelineJob job) throws IOException, SQLException
+    public void join(PipelineJob job) throws IOException, SQLException
     {
         throw new UnsupportedOperationException("Method supported only on web server");
     }

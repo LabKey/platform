@@ -34,6 +34,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
     protected String _job;
     protected String _jobParent;
     protected String _jobStore;
+    protected String _activeTaskId;
     protected String _provider;
     protected String _status;
     protected String _info;
@@ -77,6 +78,14 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
             if (urlData != null)
                 setDataUrl(urlData.getLocalURIString());
         }
+        // If there is an active task and this is waiting state, then checkpoint the
+        // job to the database for retry.
+        else if (job.getActiveTaskId() != null &&
+                PipelineJob.TaskStatus.waiting.equals(job.getActiveTaskStatus()))
+        {
+            setActiveTaskId(job.getActiveTaskId().toString());
+            setJobStore(PipelineJobService.get().getJobStore().toXML(job));
+        }
 
         try
         {
@@ -100,8 +109,6 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         PipelineStatusFileImpl curSF = (PipelineStatusFileImpl) cur;
 
         // Preserve original values across updates, if not explicitly changed.
-        if (_jobStore == null || _jobStore.length() == 0)
-            _jobStore = curSF._jobStore;
         if (_email == null || _email.length() == 0)
             _email = curSF._email;
         if (_provider == null || _provider.length() == 0)
@@ -113,6 +120,21 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         if (_dataUrl == null || _dataUrl.length() == 0)
             _dataUrl = curSF._dataUrl;
         // _hadError?
+
+        // Clear any stored job, if the status is complete.
+        if (PipelineJob.COMPLETE_STATUS.equals(_status))
+        {
+            _jobStore = null;
+            _activeTaskId = null;
+        }
+        // Otherwise preseve what is currently in the database.
+        else
+        {
+            if (_jobStore == null || _jobStore.length() == 0)
+                _jobStore = curSF._jobStore;
+            if (_activeTaskId == null || _activeTaskId.length() == 0)
+                _activeTaskId = curSF._activeTaskId;
+        }
     }
 
     public int getRowId()
@@ -153,6 +175,16 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
     public void setJobStore(String jobStore)
     {
         _jobStore = jobStore;
+    }
+
+    public String getActiveTaskId()
+    {
+        return _activeTaskId;
+    }
+
+    public void setActiveTaskId(String activeTaskId)
+    {
+        _activeTaskId = activeTaskId;
     }
 
     public String getProvider()

@@ -150,6 +150,13 @@ public class PipelineJobRunnerGlobus implements Callable
 
             String jobURI = "uuid:" + jobId + "/" + job.getActiveTaskId();
 
+            // TODO: This is a hack to get GRAM to retry errors.
+            //       Really, we need to figure out how to tell GRAM that
+            //       a job has completed (success or failure), so that it
+            //       releases the jobURI for repeated submission.
+            if (job.getErrors() > 0)
+                jobURI += "/" + job.getErrors();
+
             NotificationConsumerManager notifConsumerManager = new ServerNotificationConsumerManager()
             {
                 public URL getURL()

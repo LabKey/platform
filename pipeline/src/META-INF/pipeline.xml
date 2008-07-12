@@ -66,6 +66,7 @@
       <ns:column columnName="Provider"/>
       <ns:column columnName="JobParent"/>
       <ns:column columnName="JobStore"/>
+      <ns:column columnName="ActiveTaskId"/>
     </ns:columns>
   </ns:table>
 </ns:tables>
