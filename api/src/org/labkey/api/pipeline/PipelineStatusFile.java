@@ -45,14 +45,16 @@ public interface PipelineStatusFile
 
         PipelineJob fromXML(String xml);
 
-        void storeJob(ViewBackgroundInfo info, PipelineJob job) throws SQLException;
+        void storeJob(PipelineJob job) throws SQLException;
 
         PipelineJob getJob(String jobId) throws SQLException;
 
-        void split(ViewBackgroundInfo info, PipelineJob job)
+        PipelineJob getJob(PipelineStatusFile sf);
+
+        void split(PipelineJob job)
                 throws IOException, SQLException;
 
-        void join(ViewBackgroundInfo info, PipelineJob job)
+        void join(PipelineJob job)
                 throws IOException, SQLException;
     }
 
@@ -101,6 +103,8 @@ public interface PipelineStatusFile
     boolean isHadError();
 
     void setHadError(boolean hadError);
+
+    String getJobStore();
 
     @Deprecated
     void synchDiskStatus() throws IOException;

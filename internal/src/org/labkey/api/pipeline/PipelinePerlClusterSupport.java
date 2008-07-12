@@ -135,15 +135,27 @@ public class PipelinePerlClusterSupport
 
         if (actions == null)
             actions = new ArrayList<PipelineProvider.StatusAction>();
+        else
+        {
+            // Remove any existing retry button.
+            for (int i = 0; i < actions.size(); i++)
+            {
+                if (PipelineProvider.CAPTION_RETRY_BUTTON.equals(actions.get(i).getLabel()))
+                {
+                    actions.remove(i);
+                    break;
+                }
+            }
+        }
         
-        actions.add(new PipelineProvider.StatusAction("Retry", "\"ERROR\" == status"));
+        actions.add(new PipelineProvider.StatusAction(PipelineProvider.CAPTION_RETRY_BUTTON, "\"" + PipelineJob.ERROR_STATUS + "\" == Status"));
         return actions;
     }
 
     public ActionURL handleStatusAction(ViewContext ctx, String name, PipelineStatusFile sf)
             throws PipelineProvider.HandlerException
     {
-        if (!"Retry".equals(name))
+        if (!PipelineProvider.CAPTION_RETRY_BUTTON.equals(name))
             return null;
         
         try

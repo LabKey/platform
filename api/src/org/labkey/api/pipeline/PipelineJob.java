@@ -31,7 +31,6 @@
 package org.labkey.api.pipeline;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.ArrayUtils;
 import org.apache.log4j.*;
 import org.apache.log4j.spi.HierarchyEventListener;
 import org.apache.log4j.spi.LoggerFactory;
@@ -141,12 +140,13 @@ abstract public class PipelineJob extends Job implements Serializable
     private boolean _started;
     private boolean _interrupted;
     private boolean _submitted;
-    private boolean _settingStatus;
     private int _errors;
 
     private String _loggerLevel = Level.DEBUG.toString();
     protected transient Logger _logger;
 
+    // Don't save these
+    private transient boolean _settingStatus;
     private transient PipelineQueue _queue;
 
     public PipelineJob(String provider, ViewBackgroundInfo info) throws SQLException
@@ -220,6 +220,16 @@ abstract public class PipelineJob extends Job implements Serializable
             _activeTaskStatus = TaskStatus.error;
         
         _errors = errors;
+    }
+
+    /**
+     * Used to increment the error count without any side-effects, for when
+     * a job is restored from the database for a retry.  The saved job did
+     * not have the error recorded.
+     */
+    public void hadError()
+    {
+        _errors++;
     }
 
     public Map<String, String> getParameters()
@@ -475,7 +485,8 @@ abstract public class PipelineJob extends Job implements Serializable
 
                 _started = true;
 
-                if (getErrors() > 0)
+                // An error occurred running the task. Do not complete.
+                if (TaskStatus.error.equals(getActiveTaskStatus()))
                     return;
             }
 
@@ -696,16 +707,28 @@ abstract public class PipelineJob extends Job implements Serializable
         return new PipelineJob[] { this };
     }
 
+    /**
+     * Handles merging accumulated changes from split jobs into this job, which
+     * is a joined job.
+     *
+     * @param job the split job that has run to completion
+     */
+    public void mergeSplitJob(PipelineJob job)
+    {
+        // Add any errors that happened in the split job.
+        _errors += job._errors;
+    }
+
     public void store() throws IOException, SQLException
     {
-        PipelineJobService.get().getJobStore().storeJob(getInfo(), this);
+        PipelineJobService.get().getJobStore().storeJob(this);
     }
 
     public void split()
     {
         try
         {
-            PipelineJobService.get().getJobStore().split(getInfo(), this);
+            PipelineJobService.get().getJobStore().split(this);
         }
         catch (IOException e)
         {
@@ -721,7 +744,7 @@ abstract public class PipelineJob extends Job implements Serializable
     {
         try
         {
-            PipelineJobService.get().getJobStore().join(getInfo(), this);
+            PipelineJobService.get().getJobStore().join(this);
         }
         catch (IOException e)
         {

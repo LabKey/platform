@@ -26,13 +26,18 @@ import org.labkey.api.data.Container;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.IOException;
 import java.net.URI;
 import java.util.*;
+
+import com.thoughtworks.xstream.converters.ConversionException;
 
 /**
  */
 abstract public class PipelineProvider
 {
+    public static final String CAPTION_RETRY_BUTTON = "Retry";
+
     public enum Params { path }
 
     // UNDONE: should probably extend NavTree
@@ -543,8 +548,9 @@ abstract public class PipelineProvider
      */
     public List<StatusAction> addStatusActions(Container container)
     {
-        // No extra actions.
-        return null;
+        List<PipelineProvider.StatusAction> actions = new ArrayList<PipelineProvider.StatusAction>();
+        actions.add(new PipelineProvider.StatusAction(CAPTION_RETRY_BUTTON, "\"" + PipelineJob.ERROR_STATUS + "\" == Status && null != JobStore"));
+        return actions;
     }
 
     /**
@@ -557,8 +563,42 @@ abstract public class PipelineProvider
     public ActionURL handleStatusAction(ViewContext ctx, String name, PipelineStatusFile sf)
             throws HandlerException
     {
-        // No actions to handle.
-        return null;
+        if (!PipelineProvider.CAPTION_RETRY_BUTTON.equals(name) ||
+                !PipelineJob.ERROR_STATUS.equals(sf.getStatus()))
+            return null;
+
+        try
+        {
+            PipelineStatusFile.JobStore store = PipelineJobService.get().getJobStore();
+            try
+            {
+                PipelineJob job = store.getJob(sf);
+                if (job == null)
+                    return null;
+
+                PipelineService.get().getPipelineQueue().addJob(job);
+            }
+            catch (ConversionException e)
+            {
+                // Remove the stored job which is failing to load.
+                try
+                {
+                    PipelineJobService.get().getJobStore().getJob(sf.getJob());
+                }
+                // Ignore the expected conversion exception.
+                catch (ConversionException ex)
+                {}
+                
+                throw new IOException("Failed to restore the job from the database.");
+            }
+        }
+        // CONSIDER: Narrow this net further? 
+        catch (Exception e)
+        {
+            throw new HandlerException(e);
+        }
+
+        return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlDetails(ctx.getContainer(), sf.getRowId());
     }
 
     /**
