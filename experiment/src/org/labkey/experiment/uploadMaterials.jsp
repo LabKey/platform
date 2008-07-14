@@ -35,9 +35,10 @@
     <tr>
         <td class="ms-searchform">Name</td>
         <td class="ms-vb">
-            <% if (form.getNameReadOnly()) { %>
-                <input type="hidden" name="nameReadOnly" value="true" />
-                <input type="hidden" name="name" value="<%=h(form.getName())%>"><%= h(form.getName())%>
+            <% if (form.isImportMoreSamples() || form.getNameReadOnly()) {  %>
+                <input type="hidden" name="importMoreSamples" value="<%=h(form.isImportMoreSamples())%>"/>
+                <input type="hidden" name="nameReadOnly" value="<%=h(form.getNameReadOnly())%>"/>
+                <input id="name" type="hidden" name="name" value="<%=h(form.getName())%>"><%= h(form.getName())%>
             <% }
             else
             { %>
@@ -45,7 +46,7 @@
             <% }%>
         </td>
     </tr>
-    <% if (sampleSet != null) { %>
+    <% if (form.isImportMoreSamples()) { %>
         <tr>
             <td class="ms-searchform">Update Options</td>
             <td class="ms-vb">This dataset already exists.  Please choose how the uploaded samples should be merged with the existing samples.<br>
@@ -65,7 +66,7 @@
     <tr>
         <td class="ms-searchform">Id Columns<%= helpPopup("Id Columns", "Id columns must form a unique key for every row.")%></td>
         <td class="ms-vb">
-                <% if (sampleSet != null && sampleSet.hasIdColumns())
+                <% if (form.isImportMoreSamples() && sampleSet != null && sampleSet.hasIdColumns())
                 { %>
                     <%= h(sampleSet.getIdCol1().getName()) %><%
                     if (sampleSet.getIdCol2() != null)
@@ -164,6 +165,13 @@ function clearValues()
 
 function validateKey()
 {
+var name = document.getElementById("name").value;
+if (!(name != null && name.trim().length > 0))
+{
+    alert("Name is required");
+    return false;
+}
+
 var text = document.getElementById("textbox");
 if (text.value.match("/^\\s*\$/"))
 {

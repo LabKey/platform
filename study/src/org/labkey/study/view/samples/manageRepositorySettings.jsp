@@ -38,7 +38,7 @@
                 request system.</td>
         </tr>
         <tr>
-            <td><%= buttonImg("Submit")%>&nbsp;<%= buttonLink("Back", "", "window.history.back();return false;")%></td>
+            <td><%= buttonImg("Submit")%>&nbsp;<%= buttonLink("Back", "manageRepositorySettings.view", "window.history.back();return false;")%></td>
         </tr>
     </table>
 </form>

@@ -92,7 +92,7 @@
                 }
                 else
                 {
-                    %><a href="" onclick="window.history.back(); return false;"><%
+                    %><a href="createFolder.view" onclick="window.history.back(); return false;"><%
                 } %><img border=0 src='<%=PageFlowUtil.buttonSrc("Cancel")%>'></a></td>
         </tr>
     </table>

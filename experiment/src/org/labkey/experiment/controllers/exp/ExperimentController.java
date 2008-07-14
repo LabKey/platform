@@ -311,7 +311,7 @@ public class ExperimentController extends SpringActionController
                     {
                         ActionURL urlUploadSamples = new ActionURL(ShowUploadMaterialsAction.class, getContainer());
                         urlUploadSamples.addParameter("name", sourceName);
-                        urlUploadSamples.addParameter("nameReadOnly", "true");
+                        urlUploadSamples.addParameter("importMoreSamples", "true");
                         ActionButton uploadButton = new ActionButton(urlUploadSamples.toString(), "Import More Samples", DataRegion.MODE_ALL, ActionButton.Action.LINK);
                         uploadButton.setDisplayPermission(ACL.PERM_UPDATE);
                         bar.add(uploadButton);
@@ -1515,13 +1515,20 @@ public class ExperimentController extends SpringActionController
                 {
                     String materialSourceLsid = ExperimentService.get().getSampleSetLsid(form.getName(), getContainer()).toString();
                     MaterialSource sourceExisting = ExperimentServiceImpl.get().getMaterialSource(materialSourceLsid);
-                    if (null != sourceExisting && form.getOverwriteChoice() == null)
+
+                    if (!form.isImportMoreSamples() && null != sourceExisting)
                     {
                         hasErrors = true;
-                        errors.reject(ERROR_MSG, "Sample set already exists.  Please choose one of the options as to how to merge the imported data with the existing data.");
+                        errors.reject(ERROR_MSG, "A sample set with that name already exists.  If you would like to import samples that set, go here:  " +
+                                "<a href=" + getViewContext().getActionURL() + "name=" + form.getName() + "&importMoreSamples=true>Import More Samples</a>");
+                    }
+                    if (form.isImportMoreSamples() && form.getOverwriteChoice() == null)
+                    {
+                        hasErrors = true;
+                        errors.reject(ERROR_MSG, "Please select how to deal with duplicates.");
                     }
                 }
-                
+
                 if (!hasErrors)
                 {
                     try

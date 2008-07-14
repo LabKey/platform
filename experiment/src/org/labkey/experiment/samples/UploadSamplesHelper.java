@@ -177,6 +177,29 @@ public class UploadSamplesHelper
 
             Map<String, Object>[] maps = (Map<String, Object>[]) tl.load();
 
+            if (maps.length > 0)
+            {
+                for (String uri : idColPropertyURIs)
+                {
+                    if (!maps[0].containsKey(uri))
+                    {
+                        throw new ExperimentException("Id Columns must match");
+                    }
+                    for (int i = 0; i < maps.length; i++)
+                    {
+                        if (maps[i].get(uri) == null)
+                        {
+                            if (uri.contains("#"))
+                            {
+                                uri = uri.substring(uri.indexOf("#") + 1);
+                            }
+                            throw new ExperimentException("All rows must contain values for all Id columns:  Missing " + uri +
+                                " in row:  " + i);
+                        }
+                    }
+                }
+            }
+
             Set<String> newNames = new CaseInsensitiveHashSet();
             for (Map<String, Object> map : maps)
             {

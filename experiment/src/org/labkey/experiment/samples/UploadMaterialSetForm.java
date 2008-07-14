@@ -27,6 +27,7 @@ public class UploadMaterialSetForm extends ViewForm
 {
     static final private Logger _log = Logger.getLogger(UploadMaterialSetForm.class);
     private String name;
+    private boolean importMoreSamples;
     private boolean nameReadOnly;
     private String data;
     private Integer idColumn1;
@@ -47,6 +48,16 @@ public class UploadMaterialSetForm extends ViewForm
     public String getName()
     {
         return name;
+    }
+
+    public boolean isImportMoreSamples()
+    {
+        return importMoreSamples;
+    }
+
+    public void setImportMoreSamples(boolean importMoreSamples)
+    {
+        this.importMoreSamples = importMoreSamples;
     }
 
     public void setNameReadOnly(boolean b)
