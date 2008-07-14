@@ -21,6 +21,5 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <% QueryForm form = (QueryForm) HttpView.currentModel(); %>
-<%=formatErrorsForPath("form")%>
-<input type=hidden name=schemaName value="<%=h(form.getSchemaName())%>"><input type=hidden name=queryName value="<%=h(form.getQueryName())%>">
+<labkey:errors></labkey:errors>
 <p>Are you sure you want to delete the query '<%=h(form.getQueryName())%>'?</p>
