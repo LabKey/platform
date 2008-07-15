@@ -357,7 +357,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         Ext.apply(data, record.data);
         for(var field in data)
         {
-            if(data[field] && data[field].toString().length == 0)
+            if(null != data[field] && data[field].toString().length == 0)
                 data[field] = null;
         }
         return data;
