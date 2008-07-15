@@ -84,9 +84,8 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
 
         this.addEvents("beforedelete", "columnmodelcustomize");
 
-        //apply defaults to the config and store it
-        //for use when we construct the base class
-        this._config = Ext.applyIf(config, {
+        //apply the config with defaults
+        Ext.apply(this, config, {
             lookups: true,
             store : new LABKEY.ext.Store({
                 schemaName: config.schemaName,
@@ -100,7 +99,10 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
             editable: false,
             autoSave: true,
             loadingCaption: "[loading...]",
-            lookupNullCaption : "[none]"
+            lookupNullCaption : "[none]",
+            selModel: new Ext.grid.CheckboxSelectionModel({
+                moveEditorOnEnter: false
+            })
         });
 
         //need to setup the default panel config *before*
@@ -108,15 +110,15 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         //for some reason, the paging toolbar seems to wait
         //for the load event from the store before adjusting
         //it's UI
-        this.setupDefaultPanelConfig(this._config);
+        this.setupDefaultPanelConfig(this);
 
         //delay construction of the superclass until the load callback so
         //we can get the column model from the reader's jsonData
-        this._config.store.on("loadexception", this.onStoreLoadException, this);
-        this._config.store.on("load", this.onStoreLoad, this);
-        this._config.store.load({ params : {
+        this.store.on("loadexception", this.onStoreLoadException, this);
+        this.store.on("load", this.onStoreLoad, this);
+        this.store.load({ params : {
                 start: 0,
-                limit: this._config.pageSize
+                limit: this.pageSize
             }});
     },
 
@@ -153,18 +155,14 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
     /*-- Private Methods --*/
 
     onStoreLoad : function(store, records, options) {
-        this._config.store.un("load", this.onStoreLoad, this);
+        this.store.un("load", this.onStoreLoad, this);
 
-        this.populateMetaMap(this._config);
-        this.setupColumnModel(this._config);
-        this.setupDefaultViewConfig(this._config);
+        this.populateMetaMap(this);
+        this.setupColumnModel(this);
+        this.setupDefaultViewConfig(this);
 
         //construct the superclass
-        LABKEY.ext.EditorGridPanel.superclass.constructor.call(this, this._config);
-
-        //delete the config we were holding onto, as it should now all be applied
-        //to the class itself
-        delete this._config;
+        LABKEY.ext.EditorGridPanel.superclass.constructor.call(this, this);
 
         //subscribe to events
         this.on("beforeedit", this.onBeforeEdit, this);
@@ -230,18 +228,13 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
                 this.firstEditableColumn = idx;
         }
 
-        //set selModel to CheckboxSelectionModel if not already defined
-        if(!config.selModel)
-        {
-            config.selModel = new Ext.grid.CheckboxSelectionModel({
-                moveEditorOnEnter: false
-            });
-
-            //add a the sel model as a column at the top of the list so that the check
-            //boxes show up in the grid (not sure why the constructor for CheckboxSelectionModel
-            //doesn't do this autmatically).
+        //if a sel model has been set, and if it needs to be added as a column,
+        //add it to the front of the list.
+        //CheckBoxSelectionModel needs to be added to the selection model for
+        //the check boxes to show up.
+        //(not sure why its constructor doesn't do this autmatically).
+        if(config.selModel && config.selModel.renderer)
             config.columns = [config.selModel].concat(config.columns);
-        }
 
         //register for the rowdeselect event if the selmodel supports events
         //and if autoSave is on
