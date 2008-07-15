@@ -34,6 +34,7 @@ import org.labkey.api.view.*;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.SecurityType;
 import org.labkey.study.reports.ReportManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -313,16 +314,18 @@ public class SecurityController extends SpringActionController
 
     private static class StudySecurityForm extends ViewForm
     {
-        private boolean _studySecurity;
+        private SecurityType _securityType;
 
-        public boolean isStudySecurity()
+        public SecurityType getSecurityType() {return _securityType;}
+
+        public void setSecurityString(String s)
         {
-            return _studySecurity;
+            _securityType = SecurityType.valueOf(s);
         }
 
-        public void setStudySecurity(boolean studySecurity)
+        public String getSecurityString()
         {
-            _studySecurity = studySecurity;
+            return _securityType.name();
         }
     }
 
@@ -339,7 +342,7 @@ public class SecurityController extends SpringActionController
             if (study != null)
             {
                 Study updated = study.createMutable();
-                updated.setStudySecurity(form.isStudySecurity());
+                updated.setSecurityType(form.getSecurityType());
                 StudyManager.getInstance().updateStudy(getUser(), updated);
             }
             return true;
@@ -466,7 +469,7 @@ public class SecurityController extends SpringActionController
 
             VBox v = new VBox();
             v.addView(studySecurityView);
-            if (study.isStudySecurity())
+            if (study.getSecurityType() == SecurityType.ADVANCED)
             {
                 v.addView(studyView);
                 v.addView(dsView);

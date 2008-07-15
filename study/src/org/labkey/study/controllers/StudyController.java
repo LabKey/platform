@@ -892,7 +892,7 @@ public class StudyController extends BaseStudyController
                 Study study = new Study(getContainer(), form.getLabel());
                 study.setDateBased(form.isDateBased());
                 study.setStartDate(form.getStartDate());
-                study.setDatasetRowsEditable(form.isDatasetRowsEditable());
+                study.setSecurityType(form.getSecurityType());
                 StudyManager.getInstance().createStudy(getUser(), study);
                 SampleManager.RepositorySettings reposSettings = SampleManager.getInstance().getRepositorySettings(getContainer());
                 reposSettings.setSimple(form.isSimpleRepository());
@@ -3703,14 +3703,6 @@ public class StudyController extends BaseStudyController
                 }
             }
 
-            // Update the editable dataset data bit
-            Study study = getStudy();
-            if (form.getDatasetRowsEditable() != study.isDatasetRowsEditable())
-            {
-                study.setDatasetRowsEditable(form.getDatasetRowsEditable());
-                StudyManager.getInstance().updateStudy(getUser(), study);
-            }
-
             return true;
         }
 
@@ -4150,7 +4142,6 @@ public class StudyController extends BaseStudyController
     {
         private int[] _ids;
         private int[] _visible;
-        private boolean _datasetRowsEditable;
 
         public int[] getIds()
         {
@@ -4170,16 +4161,6 @@ public class StudyController extends BaseStudyController
         public void setVisible(int[] visible)
         {
             _visible = visible;
-        }
-
-        public boolean getDatasetRowsEditable()
-        {
-            return _datasetRowsEditable;
-        }
-
-        public void setDatasetRowsEditable(boolean datasetRowsEditable)
-        {
-            _datasetRowsEditable = datasetRowsEditable;
         }
     }
 
@@ -4406,8 +4387,8 @@ public class StudyController extends BaseStudyController
         private String _label;
         private boolean _dateBased;
         private Date _startDate;
-        private boolean _datasetRowsEditable;
         private boolean _simpleRepository = true;
+        private SecurityType _securityType;
 
         public String getLabel()
         {
@@ -4439,16 +4420,6 @@ public class StudyController extends BaseStudyController
             _startDate = startDate;
         }
 
-        public boolean isDatasetRowsEditable()
-        {
-            return _datasetRowsEditable;
-        }
-
-        public void setDatasetRowsEditable(boolean datasetRowsEditable)
-        {
-            _datasetRowsEditable = datasetRowsEditable;
-        }
-
         public boolean isSimpleRepository()
         {
             return _simpleRepository;
@@ -4457,6 +4428,21 @@ public class StudyController extends BaseStudyController
         public void setSimpleRepository(boolean simpleRepository)
         {
             _simpleRepository = simpleRepository;
+        }
+
+        public void setSecurityString(String security)
+        {
+            _securityType = SecurityType.valueOf(security);
+        }
+
+        public String getSecurityString()
+        {
+            return _securityType.name();
+        }
+
+        public SecurityType getSecurityType()
+        {
+            return _securityType;
         }
     }
 

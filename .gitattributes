@@ -1583,6 +1583,7 @@ study/src/META-INF/study/scripts/postgresql/study-8.13-8.14.sql -text
 study/src/META-INF/study/scripts/postgresql/study-8.14-8.15.sql -text
 study/src/META-INF/study/scripts/postgresql/study-8.15-8.16.sql -text
 study/src/META-INF/study/scripts/postgresql/study-8.16-8.17.sql -text
+study/src/META-INF/study/scripts/postgresql/study-8.20-8.21.sql -text
 study/src/META-INF/study/scripts/postgresql/study-create.sql -text
 study/src/META-INF/study/scripts/postgresql/study-drop.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/obsolete/study-0.00-1.11.sql -text
@@ -1664,6 +1665,7 @@ study/src/META-INF/study/scripts/sql[!!-~]server/study-8.13-8.14.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-8.14-8.15.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-8.15-8.16.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-8.16-8.17.sql -text
+study/src/META-INF/study/scripts/sql[!!-~]server/study-8.20-8.21.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-create.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-drop.sql -text
 study/src/org/labkey/study/QueryHelper.java -text
@@ -1740,6 +1742,7 @@ study/src/org/labkey/study/model/SampleRequestEntity.java -text
 study/src/org/labkey/study/model/SampleRequestEvent.java -text
 study/src/org/labkey/study/model/SampleRequestRequirement.java -text
 study/src/org/labkey/study/model/SampleRequestStatus.java -text
+study/src/org/labkey/study/model/SecurityType.java -text
 study/src/org/labkey/study/model/Site.java -text
 study/src/org/labkey/study/model/Specimen.java -text
 study/src/org/labkey/study/model/SpecimenEvent.java -text

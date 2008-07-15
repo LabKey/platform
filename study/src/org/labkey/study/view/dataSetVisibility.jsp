@@ -24,11 +24,6 @@
     Cohort[] cohorts = StudyManager.getInstance().getCohorts(getStudy().getContainer(), getViewContext().getUser());
 %>
 <form action="dataSetVisibility.post" method="POST">
-Editable Dataset Data:
-<%=PageFlowUtil.helpPopup("Editable Dataset Data",
-        "If dataset data is editable, users with update permission will be able to edit dataset data", true)
-%>
-<input type="checkbox" name="datasetRowsEditable" <%=getStudy().isDatasetRowsEditable() ? "checked=\"true\"" : ""%>>
 
 <p>Datasets can be hidden on the study overview screen.</p>
 <p>Hidden data can always be viewed, but is not shown by default.</p>

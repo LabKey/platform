@@ -75,7 +75,6 @@
     DataSetDefinition[] datasets = manager.getDataSetDefinitions(study);
     Map<Integer, String> expandedMap = StudyController.getExpandedState(context, bean.getDatasetId());
     boolean updateAccess = study.getContainer().hasPermission(user, ACL.PERM_UPDATE);
-    boolean editAccess = updateAccess && study.isDatasetRowsEditable();
 
     String shadeColor = "#EEEEEE";
 // UNDONE: move into stylesheet
@@ -169,6 +168,7 @@
                 datasetRow = StudyService.get().getDatasetRow(user, context.getContainer(), datasetId, lsid);
             }
 
+            boolean editAccess = dataSet.canWrite(user);        
             if (datasetRow == null)
             {
                 if (editAccess)

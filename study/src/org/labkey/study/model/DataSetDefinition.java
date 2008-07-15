@@ -479,6 +479,28 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         return 0 != (dsPerm & ACL.PERM_READ);
     }
 
+    public boolean canWrite(User user)
+    {
+        if (!canRead(user))
+            return false;
+
+        SecurityType securityType = getStudy().getSecurityType();
+
+        if (securityType == SecurityType.BASIC)
+            return false; // Dataset rows are not editable
+
+        if (securityType == SecurityType.EDITABLE_DATASETS)
+        {
+            // Does the user have update permission to the container?
+            return getStudy().getACL().hasPermission(user, ACL.PERM_UPDATE);
+            
+        }
+        // Advanced study security
+        int[] groups = getStudy().getACL().getGroups(ACL.PERM_READOWN, user);
+        int dsPerm = getACL().getPermissions(groups);
+        return 0 != (dsPerm & ACL.PERM_UPDATE);
+    }
+
     public String getVisitDatePropertyName()
     {
         if (null == _visitDatePropertyName && getStudy().isDateBased())

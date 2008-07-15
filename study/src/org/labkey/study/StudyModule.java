@@ -19,10 +19,7 @@ package org.labkey.study;
 import junit.framework.TestCase;
 import org.apache.log4j.Logger;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.PropertyService;
@@ -31,7 +28,6 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.SchemaUpdateServiceRegistry;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.security.ACL;
@@ -59,7 +55,9 @@ import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.study.controllers.security.SecurityController;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.designer.view.StudyDesignsWebPart;
+import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.model.DatasetDomainKind;
+import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.pipeline.StudyPipeline;
@@ -69,7 +67,6 @@ import org.labkey.study.query.StudySchemaProvider;
 import org.labkey.study.reports.*;
 import org.labkey.study.samples.SamplesWebPart;
 import org.labkey.study.view.*;
-import org.labkey.study.importer.SpecimenImporter;
 
 import java.beans.PropertyChangeEvent;
 import java.lang.reflect.InvocationTargetException;
@@ -96,7 +93,7 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
 
     public StudyModule()
     {
-        super(NAME, 8.20, "/org/labkey/study", true, reportsPartFactory, reportsWidePartFactory, samplesPartFactory,
+        super(NAME, 8.21, "/org/labkey/study", true, reportsPartFactory, reportsWidePartFactory, samplesPartFactory,
                 samplesWidePartFactory, datasetsPartFactory, manageStudyPartFactory,
                 enrollmentChartPartFactory, studyDesignsWebPartFactory, studyDesignSummaryWebPartFactory,
                 assayListWebPartFactory, assayDetailsWebPartFactory, participantWebPartFactory);
@@ -121,6 +118,8 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
         PropertyService.get().registerDomainKind(new AssayDomainKind());
 
         Search.register(new StudySearch());
+
+        EnumConverter.registerEnum(SecurityType.class);
     }
 
     public void containerCreated(Container c)

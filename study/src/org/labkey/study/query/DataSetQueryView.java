@@ -18,12 +18,11 @@ package org.labkey.study.query;
 
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
-import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.Report;
+import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.view.ChartUtil;
 import org.labkey.api.reports.report.view.RReportBean;
-import org.labkey.api.reports.report.QueryReport;
-import org.labkey.api.security.ACL;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -35,7 +34,6 @@ import org.labkey.study.model.Visit;
 import org.labkey.study.reports.StudyRReport;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.Collections;
 import java.util.List;
@@ -123,10 +121,9 @@ public class DataSetQueryView extends QueryView
                         sourceLsidCol));
             }
         }
-        // Only show link to edit for editors and if permission allows it
-        if (!_forExport &&
-                getViewContext().hasPermission(ACL.PERM_UPDATE) &&
-                StudyManager.getInstance().getStudy(getContainer()).isDatasetRowsEditable())
+        // Only show link to edit if permission allows it
+        if (!_forExport && StudyManager.getInstance().getDataSetDefinition(
+                StudyManager.getInstance().getStudy(getContainer()), _datasetId).canWrite(getViewContext().getUser()))
         {
             TableInfo tableInfo = view.getDataRegion().getTable();
             ColumnInfo lsidColumn = tableInfo.getColumn("lsid");

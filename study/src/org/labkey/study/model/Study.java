@@ -35,10 +35,9 @@ public class Study extends AbstractStudyEntity<Study>
     private String _label;
     private boolean _dateBased;
     private Date _startDate;
-    private boolean _studySecurity;
+    private SecurityType _securityType = SecurityType.BASIC; // Default value. Not allowed to be null
     private String _participantCohortProperty;
     private Integer _participantCohortDataSetId;
-    private boolean _datasetRowsEditable;
 
     public Study()
     {
@@ -155,15 +154,17 @@ public class Study extends AbstractStudyEntity<Study>
         _dateBased = dateBased;
     }
 
-    public boolean isStudySecurity()
+    public SecurityType getSecurityType()
     {
-        return _studySecurity;
+        return _securityType;
     }
 
-    public void setStudySecurity(boolean studySecurity)
+    public void setSecurityType(SecurityType securityType)
     {
         verifyMutability();
-        _studySecurity = studySecurity;
+        if (securityType == null)
+            throw new IllegalArgumentException("securityType cannot be null");
+        _securityType = securityType;
     }
 
     public Date getStartDate()
@@ -175,16 +176,6 @@ public class Study extends AbstractStudyEntity<Study>
     {
         verifyMutability();
         _startDate = startDate;
-    }
-
-    public boolean isDatasetRowsEditable()
-    {
-        return _datasetRowsEditable;
-    }
-
-    public void setDatasetRowsEditable(boolean datasetRowsEditable)
-    {
-        _datasetRowsEditable = datasetRowsEditable;
     }
 
     public String getParticipantCohortProperty()

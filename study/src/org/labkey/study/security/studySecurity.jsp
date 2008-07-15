@@ -17,9 +17,10 @@
 %>
 <%@ page import="org.labkey.api.util.HelpTopic"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.study.model.Study"%>
-<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.study.model.Study" %>
+<%@ page import="org.labkey.study.model.SecurityType" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     HttpView<Study> me = (HttpView<Study>) HttpView.currentView();
@@ -35,12 +36,23 @@
 <p class=normal>All users must have READ permissions on this folder to access anything in this study. You can configure
     groups and folder security here [&nbsp;<a href="<%=new ActionURL("Security", "begin", getViewContext().getContainer())%>">Folder&nbsp;Security</a>&nbsp;].</p>
 
-<p>If you want to set permissions on individual datasets within the study, you must enable study security.</p>
+<p>If you want to set permissions on individual datasets within the study, you must select advanced study security below.</p>
 
 <form action="studySecurity.post" method="post">
-
-    <input type="checkbox" name="studySecurity" <%=study.isStudySecurity() ? "checked" : ""%>>
-        &nbsp;Enable Study Security<%=PageFlowUtil.helpPopup("Study Security", "Study Security must be enabled before you can configure dataset level security. When a study is first created, study security is not enabled and " +
-        "folder permissions control access to the study data.")%><p/>
+    <p>Study Security Type<%=PageFlowUtil.helpPopup("Study Security", SecurityType.getHTMLDescription(), true)%>:
+    <select name="securityString">
+        <%
+            for (SecurityType securityType : SecurityType.values())
+            {
+                String selected = (study.getSecurityType() == securityType ? "selected" : "");
+                %>
+                <option value="<%= securityType.name() %>" <%= selected %>><%= securityType.getLabel() %></option>
+                <%
+            }
+        %>
+    </select>
+    </p>
     <input type=image src="<%=PageFlowUtil.buttonSrc("Update")%>" value="Update">
+
+
 </form>

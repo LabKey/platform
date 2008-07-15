@@ -19,18 +19,15 @@ package org.labkey.study;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.query.QueryUpdateService;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
-import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.Study;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.UploadLog;
-import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.model.*;
 import org.labkey.study.query.DatasetUpdateService;
+import org.labkey.study.query.StudyQuerySchema;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -385,8 +382,10 @@ public class StudyServiceImpl implements StudyService.Service
 
     public boolean areDatasetsEditable(Container container)
     {
+        // TODO: remove this method entirely, and use
+        // column metadata to indicate if info is editable
         Study study = StudyManager.getInstance().getStudy(container);
-        return study.isDatasetRowsEditable();
+        return study.getSecurityType() == SecurityType.EDITABLE_DATASETS;
     }
 
     public String getSchemaName()

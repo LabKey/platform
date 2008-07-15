@@ -15,12 +15,11 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.security.ACL" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="java.util.Date" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.model.SecurityType" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -63,8 +62,19 @@
                 request system.</td>
         </tr>
         <tr>
-            <th align="left">Editable Dataset Data<%=helpPopup("Editable Dataset Data", "If dataset data is editable, users with update permission will be able to edit dataset data")%></th>
-            <td align="left"><input type="checkbox" name="datasetRowsEditable" <%= form.isDatasetRowsEditable() ? "checked=\"true\"" : "" %>></td>
+            <th align="left">Study Security<%=helpPopup("Study Security", SecurityType.getHTMLDescription(), true)%></th>
+            <td align="left">
+                <select name="securityString">
+                    <%
+                        for (SecurityType securityType : SecurityType.values())
+                        {
+                            %>
+                            <option value="<%= securityType.name() %>"><%= securityType.getLabel() %></option>
+                            <%
+                        }
+                    %>
+                </select>
+            </td>
         </tr>
         <tr>
             <td>&nbsp;</td>
