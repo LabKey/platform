@@ -115,6 +115,7 @@ api/src/org/labkey/api/data/DimensionColumnInfo.java -text
 api/src/org/labkey/api/data/DisplayColumnFactory.java -text
 api/src/org/labkey/api/data/DisplayColumnGroup.java -text
 api/src/org/labkey/api/data/Entity.java -text
+api/src/org/labkey/api/data/EnumConverter.java -text
 api/src/org/labkey/api/data/EnumTableInfo.java -text
 api/src/org/labkey/api/data/FileSqlScriptProvider.java -text
 api/src/org/labkey/api/data/Filter.java -text
