@@ -166,10 +166,6 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
 
         //subscribe to events
         this.on("beforeedit", this.onBeforeEdit, this);
-        if(this.autoSave)
-        {
-            Ext.EventManager.on(document.body, "click", this.onBodyClick, this);
-        }
     },
 
     onStoreLoadException : function(proxy, options, response, error) {

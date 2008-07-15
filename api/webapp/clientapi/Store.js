@@ -350,7 +350,17 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
     },
 
     getRowData : function(record) {
-        return record.data;
+        //need to convert empty strings to null before posting
+        //Ext components will typically set a cleared field to
+        //empty string, but this messes-up Lists in LabKey 8.2 and earlier
+        var data = {};
+        Ext.apply(data, record.data);
+        for(var field in data)
+        {
+            if(data[field] && data[field].toString().length == 0)
+                data[field] = null;
+        }
+        return data;
     },
 
     readyForSave : function(record) {
