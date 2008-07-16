@@ -102,7 +102,8 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
             lookupNullCaption : "[none]",
             selModel: new Ext.grid.CheckboxSelectionModel({
                 moveEditorOnEnter: false
-            })
+            }),
+            viewConfig: {forceFit: true}
         });
 
         //need to setup the default panel config *before*
@@ -159,7 +160,6 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
 
         this.populateMetaMap(this);
         this.setupColumnModel(this);
-        this.setupDefaultViewConfig(this);
 
         //construct the superclass
         LABKEY.ext.EditorGridPanel.superclass.constructor.call(this, this);
@@ -466,14 +466,6 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
             ]
         }
 
-    },
-
-    setupDefaultViewConfig : function(config) {
-        //add force-fit to the view config if it's not already defined
-        if(!config.viewConfig)
-            config.viewConfig = {forceFit: true};
-        if(!config.viewConfig.forceFit)
-            config.viewConfig.forceFit = true;
     },
 
     onRefresh : function() {
