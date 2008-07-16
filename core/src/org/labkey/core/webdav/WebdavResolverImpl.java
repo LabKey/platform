@@ -865,7 +865,7 @@ public class WebdavResolverImpl implements WebdavResolver
         {
             super(folder, relativePath);
             _folder = folder;
-            _acl = null;
+            _acl = folder._acl;
             _file = canonicalFile(new File(folder._root,relativePath));
         }
 
@@ -873,7 +873,7 @@ public class WebdavResolverImpl implements WebdavResolver
         {
             super(folder, name);
             _folder = folder;
-            _acl = null;
+            _acl = folder._acl;
             _file = new File(folder._file,name);
         }
 
@@ -888,34 +888,9 @@ public class WebdavResolverImpl implements WebdavResolver
             return new FileResource(this, name);
         }
 
-        public boolean canRename(User user)
-        {
-            return _folder.canRename(user);
-        }
-
         public boolean canList(User user)
         {
-            return _folder.canList(user);
-        }
-
-        public boolean canRead(User user)
-        {
-            return _folder.canRead(user);
-        }
-
-        public boolean canWrite(User user)
-        {
-            return _folder.canWrite(user);
-        }
-
-        public boolean canCreate(User user)
-        {
-            return _folder.canCreate(user);
-        }
-
-        public boolean canDelete(User user)
-        {
-            return _folder.canDelete(user);
+            return canRead(user) || _folder.canList(user);
         }
     }
 
