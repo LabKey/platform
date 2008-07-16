@@ -21,6 +21,7 @@ import antlr.RecognitionException;
 import antlr.TokenStreamRecognitionException;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.query.sql.SqlParser;
+import org.labkey.query.sql.antlr.SqlBaseTokenTypes;
 import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.util.PageFlowUtil;
 
@@ -133,6 +134,9 @@ public class QParser
         {
             SqlParser parser = getParser(str);
             parser.statement();
+            int last = parser.LA(1);
+            if (SqlBaseTokenTypes.UNION == last)
+                throw new QueryParseException("UNION is not supported", null, 0, 0);
             Node node = (Node) parser.getAST();
             if (node == null)
                 return null;
