@@ -27,6 +27,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.security.User;
+import org.labkey.api.module.FolderType;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.*;
 
@@ -60,13 +61,11 @@ public class StudySearch implements Search.Searchable
     {
         if (parser.matches(study.getDisplayString()))
         {
-            ActionURL url = new ActionURL(StudyController.OverviewAction.class, study.getContainer());
-
             hits.add(new SimpleSearchHit(
                     SEARCH_DOMAIN,
                     study.getContainer().getPath(),
                     study.getLabel(),
-                    url.getLocalURIString(),
+                    getStudyURL(study).getLocalURIString(),
                     SEARCH_HIT_TYPE,
                     "Study"
             ));
@@ -173,13 +172,11 @@ def:    for (DataSetDefinition def : defs)
         {
             if (parser.matches(visit.getLabel()) || parser.matches(visit.getDisplayString()))
             {
-                ActionURL url = new ActionURL(StudyController.OverviewAction.class, study.getContainer());
-
                 hits.add(new SimpleSearchHit(
                     SEARCH_DOMAIN,
                     study.getContainer().getPath(),
                     study.getLabel(),
-                    url.getLocalURIString(),
+                    getStudyURL(study).getLocalURIString(),
                     SEARCH_HIT_TYPE,
                     "Study"
                 ));
@@ -200,13 +197,11 @@ def:    for (DataSetDefinition def : defs)
         {
             if (parser.matches(cohort.getLabel()))
             {
-                ActionURL url = new ActionURL(StudyController.OverviewAction.class, study.getContainer());
-
                 hits.add(new SimpleSearchHit(
                     SEARCH_DOMAIN,
                     study.getContainer().getPath(),
                     study.getLabel(),
-                    url.getLocalURIString(),
+                    getStudyURL(study).getLocalURIString(),
                     SEARCH_HIT_TYPE,
                     "Study"
                 ));
@@ -224,5 +219,19 @@ def:    for (DataSetDefinition def : defs)
     public String getDomainName()
     {
         return SEARCH_DOMAIN;
+    }
+
+    private ActionURL getStudyURL(Study study)
+    {
+        Container container = study.getContainer();
+        FolderType folderType = container.getFolderType();
+        if (folderType instanceof StudyFolderType)
+        {
+            // Customized portal page
+            User user = HttpView.currentContext().getUser();
+            return folderType.getStartURL(container, user);
+        }
+        else // return the standard start page
+            return new ActionURL(StudyController.BeginAction.class, container);
     }
 }
