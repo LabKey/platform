@@ -838,10 +838,10 @@ public class Designer implements EntryPoint
 
                 String label = descriptor.getLabel();
                 String name = descriptor.getName();
-                if (label == null)
-                    label = "";
                 if (name == null)
                     name = "";
+                if (label == null || "".equals(label)) // if there's no label set, use the name for the drop-down
+                    label = name;
                 fields.put(label, name);
 
                 String rangeURI = descriptor.getRangeURI();
