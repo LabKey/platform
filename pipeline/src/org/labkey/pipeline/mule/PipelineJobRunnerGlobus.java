@@ -346,28 +346,7 @@ public class PipelineJobRunnerGlobus implements Callable
     {
         return getProps().getGlobusJobFactoryType();
     }
-/*
-    private byte[] readFile(File keyFile) throws IOException
-    {
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-        FileInputStream fIn = null;
-        try
-        {
-            fIn = new FileInputStream(keyFile);
-            byte[] b = new byte[4096];
-            int i;
-            while((i = fIn.read(b)) != -1)
-            {
-                bOut.write(b, 0, i);
-            }
-            return bOut.toByteArray();
-        }
-        finally
-        {
-            if (fIn != null) { try { fIn.close(); } catch (IOException e) {} }
-        }
-    }
-*/
+
     private JobDescriptionType createJobDescription(PipelineJob job, File serializedJobFile)
             throws URISyntaxException
     {

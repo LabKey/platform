@@ -57,4 +57,14 @@ public class ApplicationPropertiesSiteSettings implements PipelineJobService.App
     {
         return AppProps.getInstance().getNetworkDrivePassword();
     }
+
+    public String getBaseServerUrl()
+    {
+        return AppProps.getInstance().getBaseServerUrl();
+    }
+
+    public String getCallbackPassword()
+    {
+        return AppProps.getInstance().getCallbackPassword();
+    }
 }

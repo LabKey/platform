@@ -381,6 +381,10 @@ Click the Save button at any time to accept the current settings and continue.</
     <td class="normal"><input type="text" name="pipelineToolsDirectory" size="50" value="<%= h(appProps.getPipelineToolsDirectory()) %>"></td>
 </tr>
 <tr>
+    <td class="ms-searchform">Callback password</td>
+    <td class="normal"><input type="text" name="callbackPassword" size="20" value="<%= h(appProps.getCallbackPassword()) %>"></td>
+</tr>
+<tr>
     <td class="ms-searchform">Enable Perl pipeline</td>
     <td class="normal"><input type="checkbox" name="perlPipelineEnabled" <%=appProps.isPerlPipelineEnabled() ? "checked" : ""%>></td>
 </tr>

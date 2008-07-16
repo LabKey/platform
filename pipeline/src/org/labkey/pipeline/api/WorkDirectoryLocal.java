@@ -53,8 +53,8 @@ public class WorkDirectoryLocal extends AbstractWorkDirectory
         return copyInputFile(fileInput);
     }
 
-    protected CopyingResource acquireCopyingLock()
+    protected CopyingResource createCopyingLock()
     {
-        return new CopyingResource();
+        return new SimpleCopyingResource();
     }
 }

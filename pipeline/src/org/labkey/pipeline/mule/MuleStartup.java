@@ -20,6 +20,12 @@ import org.mule.config.ConfigurationException;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
 import org.labkey.api.pipeline.PipelineJobService;
+import org.apache.log4j.Logger;
+
+import java.net.URLEncoder;
+import java.net.URL;
+import java.net.HttpURLConnection;
+import java.io.IOException;
 
 /*
 * User: jeckels
@@ -27,6 +33,8 @@ import org.labkey.api.pipeline.PipelineJobService;
 */
 public class MuleStartup
 {
+    private static Logger _log = Logger.getLogger(MuleStartup.class);
+
     public void run(String[] springConfigPaths, String[] args) throws ConfigurationException
     {
         // Set up the PipelineJobService so that Spring can configure it
@@ -45,7 +53,42 @@ public class MuleStartup
             muleConfig = "org/labkey/pipeline/mule/config/remoteMuleConfig.xml";
 
         LabKeySpringContainerContext.setContext(context);
+
+        requeueLostJobs();
+
         MuleXmlConfigurationBuilder builder = new MuleXmlConfigurationBuilder();
         builder.configure(muleConfig);
     }
+
+    public void requeueLostJobs()
+    {
+        PipelineJobService.RemoteServerProperties remoteProps = PipelineJobService.get().getRemoteServerProperties();
+        PipelineJobService.ApplicationProperties appProps = PipelineJobService.get().getAppProperties();
+
+        if (remoteProps != null && appProps != null && appProps.getBaseServerUrl() != null)
+        {
+            String location = remoteProps.getLocation();
+            String baseServerURL = appProps.getBaseServerUrl();
+
+            try
+            {
+                String urlString = baseServerURL + "Pipeline-Status/requeueLostJobs.view?location=" + URLEncoder.encode(location, "UTF-8");
+                if (PipelineJobService.get().getAppProperties().getCallbackPassword() != null)
+                {
+                    urlString += "&callbackPassword=" + URLEncoder.encode(PipelineJobService.get().getAppProperties().getCallbackPassword(), "UTF-8");
+                }
+                URL url = new URL(urlString);
+                HttpURLConnection connection = (HttpURLConnection)url.openConnection();
+                if (connection.getResponseCode() != HttpURLConnection.HTTP_OK)
+                {
+                    _log.error("Got response code " + connection.getResponseCode() + " from server when trying requeue lost jobs");
+                }
+            }
+            catch (IOException e)
+            {
+                _log.error("Failed to requeue lost jobs", e);
+            }
+        }
+    }
+
 }

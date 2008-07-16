@@ -31,6 +31,8 @@ import java.nio.channels.FileChannel;
  */
 public class WorkDirectoryRemote extends AbstractWorkDirectory
 {
+    private static Logger _systemLog = Logger.getLogger(WorkDirectoryRemote.class);
+
     private static final int PERL_PIPELINE_LOCKS_DEFAULT = 5;
     
     private final File _lockDirectory;
@@ -60,7 +62,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
             while (attempt < 5 && !tempDir.isDirectory());
             if (!tempDir.isDirectory())
             {
-                throw new IOException("Failed to create local working directory");
+                throw new IOException("Failed to create local working directory " + tempDir);
             }
 
             return new WorkDirectoryRemote(support, tempDir, log, _lockDirectory);
@@ -141,11 +143,11 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
         return new MasterLockInfo(totalLocks, currentIndex);
     }
 
-    protected CopyingResource acquireCopyingLock() throws IOException
+    protected CopyingResource createCopyingLock() throws IOException
     {
         if (_lockDirectory == null)
         {
-            return new CopyingResource();
+            return new SimpleCopyingResource();
         }
 
         _log.info("Starting to acquire lock for copying files");
@@ -219,24 +221,42 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
         }
     }
 
-    public class FileLockCopyingResource extends CopyingResource
+    public class FileLockCopyingResource extends SimpleCopyingResource
     {
-        private final FileChannel _channel;
+        private FileChannel _channel;
         private final int _lockNumber;
-        private final FileLock _lock;
+        private FileLock _lock;
+        private Throwable _creationStack;
 
         public FileLockCopyingResource(FileChannel channel, int lockNumber) throws IOException
         {
             _channel = channel;
             _lockNumber = lockNumber;
             _lock = _channel.lock();
+            _creationStack = new Throwable();
+        }
+
+        protected void finalize() throws Throwable
+        {
+            super.finalize();
+            if (_lock != null)
+            {
+                _systemLog.error("FileLockCopyingResource was not released before it was garbage collected. Creation stack is: ", _creationStack);
+            }
+            release();
         }
 
         public void release()
         {
-            try { _lock.release(); } catch (IOException e) {}
-            try { _channel.close(); } catch (IOException e) {}
-            _log.info("Lock #" + _lockNumber + " released");
+            if (_lock != null)
+            {
+                try { _lock.release(); } catch (IOException e) {}
+                try { _channel.close(); } catch (IOException e) {}
+                _log.info("Lock #" + _lockNumber + " released");
+                _lock = null;
+                _channel = null;
+                super.release();
+            }
         }
     }
 }

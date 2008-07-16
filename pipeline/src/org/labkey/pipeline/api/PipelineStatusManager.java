@@ -67,8 +67,7 @@ public class PipelineStatusManager
     }
 
     /**
-     * Get a <code>PipelineStatusFileImpl</code> by the file path associated with the
-     * entry.
+     * Get a <code>PipelineStatusFileImpl</code> by the Job's id.
      *
      * @param jobId the job id for the associated job
      * @return the corresponding <code>PipelineStatusFileImpl</code>
@@ -182,8 +181,18 @@ public class PipelineStatusManager
     public static PipelineStatusFileImpl[] getIncompleteStatusFiles(String parentId) throws SQLException
     {
         SimpleFilter filter = new SimpleFilter();
-        filter.addCondition("Status", PipelineJob.COMPLETE_STATUS, CompareType.NEQ);
+        filter.addCondition("ActiveTaskId", PipelineJob.COMPLETE_STATUS, CompareType.NEQ);
         filter.addCondition("JobParent", parentId, CompareType.EQUAL);
+
+        return Table.select(pipeline.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
+
+    }
+
+    public static PipelineStatusFileImpl[] getIncompleteStatusFilesForActiveTaskId(String activeTaskId) throws SQLException
+    {
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition("Status", PipelineJob.COMPLETE_STATUS, CompareType.NEQ);
+        filter.addCondition("ActiveTaskId", activeTaskId, CompareType.EQUAL);
 
         return Table.select(pipeline.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
     }

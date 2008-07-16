@@ -302,10 +302,23 @@ public class CommandTaskImpl extends PipelineJob.Task implements CommandTask
             WorkDirFactory factory = PipelineJobService.get().getWorkDirFactory();
             _wd = factory.createWorkDirectory(getJob().getJobGUID(), getJobSupport(), getJob().getLogger());
 
-            // Input file location must be determined before creating the process
-            // command.
-            for (TaskPath input : _factory.getInputPaths().values())
-                inputFile(input);
+            // Input file location must be determined before creating the process command.
+            if (!_factory.getInputPaths().isEmpty())
+            {
+                WorkDirectory.CopyingResource lock = null;
+                try
+                {
+                    lock = _wd.ensureCopyingLock();
+                    for (TaskPath input : _factory.getInputPaths().values())
+                    {
+                        inputFile(input);
+                    }
+                }
+                finally
+                {
+                    if (lock != null) { lock.release(); }
+                }
+            }
 
             ProcessBuilder pb = new ProcessBuilder(_factory.toArgs(this));
 
@@ -336,8 +349,20 @@ public class CommandTaskImpl extends PipelineJob.Task implements CommandTask
 
             getJob().runSubProcess(pb, _wd.getDir(), fileOutput, lineInterval);
 
-            for (TaskPath output : _factory.getOutputPaths().values())
-                outputFile(output);
+            if (!_factory.getOutputPaths().isEmpty())
+            {
+                WorkDirectory.CopyingResource lock = null;
+                try
+                {
+                    lock = _wd.ensureCopyingLock();
+                    for (TaskPath output : _factory.getOutputPaths().values())
+                        outputFile(output);
+                }
+                finally
+                {
+                    if (lock != null) { lock.release(); }
+                }
+            }
 
             // Get rid of the work directory, and any copied input files.
             _wd.remove();

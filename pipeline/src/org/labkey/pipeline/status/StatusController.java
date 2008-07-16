@@ -30,6 +30,7 @@ import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.pipeline.PipelineController;
+import org.labkey.pipeline.mule.EPipelineQueueImpl;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
@@ -1037,6 +1038,122 @@ public class StatusController extends SpringActionController
                 name.charAt(basename.length()) != '.')
             return false;
         return name.endsWith(".out") || name.endsWith(".err");
+    }
+
+    public abstract static class CallbackForm
+    {
+        private String _callbackPassword;
+
+        public String getCallbackPassword()
+        {
+            return _callbackPassword;
+        }
+
+        public void setCallbackPassword(String callbackPassword)
+        {
+            _callbackPassword = callbackPassword;
+        }
+    }
+
+    public static class JobStatusForm extends CallbackForm
+    {
+        private String _job;
+        private String _status;
+
+        public String getJob()
+        {
+            return _job;
+        }
+
+        public void setJob(String job)
+        {
+            _job = job;
+        }
+
+        public String getStatus()
+        {
+            return _status;
+        }
+
+        public void setStatus(String status)
+        {
+            _status = status;
+        }
+    }
+
+    public static class RequeueRunningJobsForm extends CallbackForm
+    {
+        private String _location;
+
+        public String getLocation()
+        {
+            return _location;
+        }
+
+        public void setLocation(String location)
+        {
+            _location = location;
+        }
+    }
+
+    /** Used to set job status for Enterprise pipeline */
+    @RequiresPermission(ACL.PERM_NONE)
+    public class RequeueLostJobsAction extends SimpleStreamAction<RequeueRunningJobsForm>
+    {
+        public void render(RequeueRunningJobsForm form, BindException errors, PrintWriter out) throws Exception
+        {
+            if (!PipelineService.get().isEnterprisePipeline())
+            {
+                HttpView.throwUnauthorized("HTTP requeuing disabled since Enterprise pipeline is not enabled");
+            }
+
+            TaskPipelineRegistry registry = PipelineJobService.get();
+            for (TaskFactory taskFactory : registry.getTaskFactories())
+            {
+                if (taskFactory.getExecutionLocation().equals(form.getLocation()))
+                {
+                    TaskId id = taskFactory.getId();
+                    PipelineStatusFileImpl[] statusFiles = PipelineStatusManager.getIncompleteStatusFilesForActiveTaskId(id.toString());
+                    for (PipelineStatusFileImpl statusFile : statusFiles)
+                    {
+                        if (statusFile.getJobStore() != null)
+                        {
+                            PipelineJob job = PipelineJobService.get().getJobStore().fromXML(statusFile.getJobStore());
+                            job.updateStatusForTask();
+                            EPipelineQueueImpl.dispatchJob(job);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /** Used to set job status for Enterprise pipeline */
+    @RequiresPermission(ACL.PERM_NONE)
+    public class SetJobStatusAction extends SimpleStreamAction<JobStatusForm>
+    {
+        public void render(JobStatusForm form, BindException errors, PrintWriter out) throws Exception
+        {
+            if (!PipelineService.get().isEnterprisePipeline())
+            {
+                HttpView.throwUnauthorized("HTTP status updates disabled since Enterprise pipeline is not enabled");
+            }
+
+            if (PipelineJobService.get().getAppProperties().getCallbackPassword() != null &&
+                !PipelineJobService.get().getAppProperties().getCallbackPassword().equals(form.getCallbackPassword()))
+            {
+                HttpView.throwUnauthorized("Invalid callback password");
+            }
+
+            PipelineStatusFileImpl status = PipelineStatusManager.getJobStatusFile(form.getJob());
+            if (!status.getContainerId().equals(getContainer().getId()))
+            {
+                HttpView.throwNotFound("Attempting to set status in wrong container");
+            }
+
+            status.setStatus(form.getStatus());
+            setStatusFile(getViewBackgroundInfo(), status);
+        }
     }
 
     /////////////////////////////////////////////////////////////////////////

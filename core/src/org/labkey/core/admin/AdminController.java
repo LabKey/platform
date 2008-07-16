@@ -1284,6 +1284,7 @@ public class AdminController extends SpringActionController
             props.setSystemShortName(form.getSystemShortName());
             props.setPerlPipelineEnabled(form.isPerlPipelineEnabled());
             props.setPipelineToolsDir(form.getPipelineToolsDirectory());
+            props.setCallbackPassword(form.getCallbackPassword());
             props.setSequestServer(form.getSequestServer());
             props.setSSLRequired(form.isSslRequired());
             props.setSSLPort(form.getSslPort());
@@ -1469,6 +1470,7 @@ public class AdminController extends SpringActionController
         private boolean _caBIGEnabled;
         private String _baseServerUrl;
         private String _microarrayFeatureExtractionServer;
+        private String _callbackPassword;
 
         public String getSystemDescription()
         {
@@ -1878,6 +1880,16 @@ public class AdminController extends SpringActionController
         public void setTestInPage(boolean testInPage)
         {
             _testInPage = testInPage;
+        }
+
+        public String getCallbackPassword()
+        {
+            return _callbackPassword;
+        }
+
+        public void setCallbackPassword(String callbackPassword)
+        {
+            _callbackPassword = callbackPassword;
         }
     }
 

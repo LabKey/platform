@@ -44,6 +44,8 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
     protected Logger _log;
     protected HashMap<File, File> _copiedInputs = new HashMap<File, File>();
 
+    protected CopyingResource _copyingResource;
+
     public AbstractWorkDirectory(FileAnalysisJobSupport support, File dir, Logger log) throws IOException
     {
         _support = support;
@@ -74,7 +76,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         CopyingResource resource = null;
         try
         {
-            resource = acquireCopyingLock();
+            resource = ensureCopyingLock();
             _log.info("Copying " + source + " to " + target);
             FileUtils.copyFile(source, target);
         }
@@ -171,7 +173,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         CopyingResource resource = null;
         try
         {
-            resource = acquireCopyingLock();
+            resource = ensureCopyingLock();
             if (fileDest.exists())
             {
                 fileReplace = FT_MOVE.newFile(fileDest.getParentFile(), fileDest.getName());
@@ -246,12 +248,34 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
             throw new IOException("The file " + fileWork + " is not a descendent of " + _dir);
     }
 
-    protected abstract CopyingResource acquireCopyingLock() throws FileNotFoundException, IOException;
+    /**
+     * Ensures that we have a lock, if needed. The lock must be released by the caller.
+     */
+    public CopyingResource ensureCopyingLock() throws IOException
+    {
+        if (_copyingResource != null)
+        {
+            // Hand out a dummy. There's already a lock established, so rely on the place that created it to release it
+            return new SimpleCopyingResource();
+        }
+        _copyingResource = createCopyingLock();
+        return _copyingResource;
+    }
 
-    public static class CopyingResource
+    /**
+     * Creates an actual lock resource. Used internally by the WorkDirectory - callers should use ensureCopyingLock() instead
+     */
+    protected abstract CopyingResource createCopyingLock() throws IOException;
+
+    public class SimpleCopyingResource implements CopyingResource
     {
         public void release()
         {
+            // If this is the real resource for the working directory, it can be released now
+            if (_copyingResource == this)
+            {
+                _copyingResource = null;
+            }
         }
     }
 }
