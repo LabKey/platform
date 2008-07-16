@@ -146,24 +146,49 @@ else
         %><tr bgcolor="<%=row++%2==0?"#eeeeee":"#ffffff"%>"><td><%=h(ds.getLabel())%></td><%
         for (Group g : restictedGroups)
         {
-            %><td align=center><input type=checkbox name="<%=inputName%>" value="<%=g.getUserId()%>" <%=acl.hasPermission(g, ACL.PERM_READ) ? "checked" : ""%>></td><%
+            boolean writePerm = acl.hasPermission(g, ACL.PERM_UPDATE);
+            boolean readPerm = !writePerm && acl.hasPermission(g, ACL.PERM_READ);
+            boolean noPerm = !writePerm && !readPerm;
+            int id = g.getUserId();
+            %><td align=center>
+                <select name="<%=inputName%>">
+                    <option value="NONE_<%=id%>" <%=noPerm ? "selected" : ""%>>NONE</option>
+                    <option value="READ_<%=id%>" <%=readPerm ? "selected" : ""%>>READ</option>
+                    <option value="WRITE_<%=id%>" <%=writePerm ? "selected" : ""%>>WRITE</option>
+                </select>
+              </td><%
         }
         %></tr><%
     }
     %>
     </table>
-    <table><tr><td><img src="<%=PageFlowUtil.buttonSrc("Select All")%>" alt="Select All" onclick="selectAllDatasets();"></td><td><img src="<%=PageFlowUtil.buttonSrc("Clear All")%>" alt="Clear All" onclick="clearAllDatasets();"></td><td><input type=image src="<%=PageFlowUtil.buttonSrc("Update")%>"></td></tr></table>
+    <table><tr>
+        <td><img src="<%=PageFlowUtil.buttonSrc("Set all to Read")%>" alt="Set all to Read" onclick="setAllSelections('READ');"></td>
+        <td><img src="<%=PageFlowUtil.buttonSrc("Set all to Write")%>" alt="Set all to Write" onclick="setAllSelections('WRITE');"></td>
+        <td><img src="<%=PageFlowUtil.buttonSrc("Clear All")%>" alt="Clear All" onclick="setAllSelections('NONE');"></td>
+        <td><input type=image src="<%=PageFlowUtil.buttonSrc("Update")%>"></td></tr></table>
 </form>
 
 <script type="text/javascript">
-function selectAllDatasets()
+function setAllSelections(value)
 {
-    var f = document.getElementById("datasetSecurityForm");
-    setAllCheckboxes(f,true);
-}
-function clearAllDatasets()
-{
-    var f = document.getElementById("datasetSecurityForm");
-    setAllCheckboxes(f,false);
+    var form = document.getElementById("datasetSecurityForm");
+    var elements = form.elements;
+
+    for (var i=0; i<elements.length; i++)
+    {
+        var elem = elements[i];
+        if (elem.nodeName == 'SELECT')
+        {
+            var options = elem.options;
+            for (var optionIndex = 0; optionIndex < options.length; optionIndex++)
+            {
+                if (options[optionIndex].text == value)
+                {
+                    elem.selectedIndex = optionIndex;
+                }
+            }
+        }
+    }
 }
 </script>

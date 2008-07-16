@@ -16,7 +16,6 @@
 package org.labkey.study.controllers.security;
 
 import org.apache.beehive.netui.pageflow.FormData;
-import org.apache.commons.lang.math.NumberUtils;
 import org.apache.struts.action.ActionMapping;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
@@ -32,9 +31,9 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.SecurityType;
 import org.labkey.study.reports.ReportManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -96,6 +95,8 @@ public class SecurityController extends SpringActionController
                 set.add(g.getUserId());
 
             ACL acl = aclFromPost(request, set);
+
+            // Explicitly give site admins read permission, so they can never be locked out
             acl.setPermission(Group.groupAdministrators, ACL.PERM_READ);
 
             study.updateACL(acl);
@@ -134,7 +135,9 @@ public class SecurityController extends SpringActionController
                     continue;
                 int perm = 0;
                 s = request.getParameter(name);
-                if (s.equals("READ"))
+                if (s.equals("UPDATE"))
+                    perm = ACL.PERM_UPDATE | ACL.PERM_READ; // Write should include read
+                else if (s.equals("READ"))
                     perm = ACL.PERM_READ;
                 else if (s.equals("READOWN"))
                     perm = ACL.PERM_READOWN;
@@ -155,35 +158,78 @@ public class SecurityController extends SpringActionController
         public boolean handlePost(Object o, BindException errors) throws Exception
         {
             Study study = StudyManager.getInstance().getStudy(getContainer());
-            HttpServletRequest request = getViewContext().getRequest();
             Group[] groups = SecurityManager.getGroups(study.getContainer().getProject(), true);
-            HashSet<Integer> set = new HashSet<Integer>(groups.length*2);
+            HashSet<Integer> groupsInProject = new HashSet<Integer>(groups.length*2);
             for (Group g : groups)
-                set.add(g.getUserId());
+                groupsInProject.add(g.getUserId());
 
             for (DataSetDefinition dsDef : study.getDataSets())
             {
-                List<String> gid = getViewContext().getList("dataset." + dsDef.getDataSetId());
-                ACL acl = dsDef.getACL();
+                // Data that comes back is a list of permissions and groups separated by underscores.
+                // e.g. "NONE_1182" or "READ_-1"
+                List<String> permsAndGroups = getViewContext().getList("dataset." + dsDef.getDataSetId());
+                Map<Integer,String> group2Perm = convertToGroupsAndPermissions(permsAndGroups);
 
-                if (gid != null || !dsDef.getACL().isEmpty())
+                if (group2Perm != null || !dsDef.getACL().isEmpty())
                 {
-                    dsDef.updateACL(aclFromPost(gid, set));
+                    dsDef.updateACL(aclFromPost(group2Perm, groupsInProject));
                 }
             }
             return true;
         }
 
-        private ACL aclFromPost(List<String> groups, HashSet<Integer> studyGroups)
+        /**
+         * convert list of "perm_groupid" strings to a map of groupid -> perm
+         */
+        private Map<Integer,String> convertToGroupsAndPermissions(List<String> permsAndGroups)
+        {
+            if (permsAndGroups == null)
+                return null;
+            Map<Integer,String> groupToPermission = new HashMap<Integer,String>();
+            for (String permAndGroup : permsAndGroups)
+            {
+                int underscoreIndex = permAndGroup.indexOf("_");
+
+                if (underscoreIndex <= 0 || underscoreIndex == permAndGroup.length() - 1)
+                    continue;
+
+                String perm = permAndGroup.substring(0, underscoreIndex);
+
+                String gIdString = permAndGroup.substring(underscoreIndex + 1);
+                int gid;
+                try
+                {
+                    gid = Integer.parseInt(gIdString);
+                }
+                catch (NumberFormatException nfe)
+                {
+                    continue;
+                }
+                
+                groupToPermission.put(gid,perm);
+            }
+            return groupToPermission;
+        }
+
+        private ACL aclFromPost(Map<Integer,String> group2Perm, HashSet<Integer> groupsInProject)
         {
             ACL acl = new ACL();
-            if (groups == null) return acl;
 
-            for (String id : groups)
+            for (Map.Entry<Integer,String> entry : group2Perm.entrySet())
             {
-                int gid = NumberUtils.toInt(id);
-                if (studyGroups.contains(gid))
-                    acl.setPermission(gid, ACL.PERM_READ);
+                int gid = entry.getKey().intValue();
+                if (groupsInProject.contains(gid))
+                {
+                    String perm = entry.getValue();
+                    if ("READ".equals(perm))
+                    {
+                        acl.setPermission(gid, ACL.PERM_READ);
+                    }
+                    else if ("WRITE".equals(perm))
+                    {
+                        acl.setPermission(gid, ACL.PERM_UPDATE | ACL.PERM_READ);
+                    }
+                }
             }
             return acl;
         }

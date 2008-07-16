@@ -27,21 +27,21 @@
     String contextPath = me.getViewContext().getContextPath();
     Study study = me.getModelBean();
 %>
-Any user with READ access to this folder may view some summary data.  However, access to detail data must be explicitly granted.  The available options are
-<ul class="minus">
-    <li><b>READ ALL</b> user/group may see all rows in all datasets</li>
-    <li><b>READ SOME</b> user/group may see rows in some datasets, configured per dataset</li>
-    <li><b>READ NONE</b> user/group may not see any detail data</li>
-</ul>
-    <form action="saveStudyPermissions.post" method="post">
+Any user with READ access to this folder may view some summary data.  However, access to detail data must be explicitly granted.
+    <form id="groupUpdateForm" action="saveStudyPermissions.post" method="post">
 <%
     String redir = (String)HttpView.currentContext().get("redirect");
     if (redir != null)
         out.write("<input type=\"hidden\" name=\"redirect\" value=\"" + h(redir) + "\">");
 %>        
     <table>
-        <tr><th>&nbsp;</th><th colspan=3 align=center style="border-bottom:solid 1px black;">READ</th></tr>
-        <tr><th>&nbsp;</th><th width=35>all</th><th width=35>some</th><th width=35>none</th></tr>
+        
+        <tr>
+            <th>&nbsp;</th>
+            <th width=100>WRITE&nbsp;ALL<%=PageFlowUtil.helpPopup("WRITE ALL","user/group may view and edit all rows in all datasets")%></th>
+            <th width=100>READ&nbsp;ALL<%=PageFlowUtil.helpPopup("READ ALL","user/group may view all rows in all datasets")%></th>
+            <th width=100>PER&nbsp;DATASET<%=PageFlowUtil.helpPopup("PER DATASET","user/group may view and/or edit rows in some datasets, configured per dataset")%></th>
+            <th width=100>NONE<%=PageFlowUtil.helpPopup("NONE","user/group may not view or edit any detail data")%></th></tr>
     <%
     ACL folderACL = me.getViewContext().getContainer().getAcl();
     ACL studyACL = study.getACL();
@@ -53,10 +53,12 @@ Any user with READ access to this folder may view some summary data.  However, a
         String name = group.getName();
         if (group.getUserId() == Group.groupUsers)
             name = "All site users";
-        int perm = studyACL.getPermissions(group.getUserId()) & (ACL.PERM_READ | ACL.PERM_READOWN);
+        int perm = studyACL.getPermissions(group.getUserId()) & (ACL.PERM_UPDATE | ACL.PERM_READ | ACL.PERM_READOWN);
         boolean hasFolderRead = folderACL.hasPermission(group, ACL.PERM_READ);
+        boolean hasUpdatePerm = 0 != (perm & ACL.PERM_UPDATE);
+        boolean hasReadAllPerm = (!hasUpdatePerm) && 0 != (perm & ACL.PERM_READ);
         String inputName = "group." + group.getUserId();
-        %><tr><td><%=h(name)%></td><th><input type=radio name="<%=inputName%>" value="READ" <%=0!=(perm&ACL.PERM_READ)?"checked":""%>></th><th><input type=radio name="<%=inputName%>" value="READOWN" <%=perm==ACL.PERM_READOWN?"checked":""%>></th><th><input type=radio name="<%=inputName%>" value="NONE" <%=perm==0?"checked":""%>></th><%
+        %><tr><td><%=h(name)%></td><th><input type=radio name="<%=inputName%>" value="UPDATE" <%=hasUpdatePerm?"checked":""%>></th><th><input type=radio name="<%=inputName%>" value="READ" <%=hasReadAllPerm?"checked":""%>></th><th><input type=radio name="<%=inputName%>" value="READOWN" <%=perm==ACL.PERM_READOWN?"checked":""%>></th><th><input type=radio name="<%=inputName%>" value="NONE" <%=perm==0?"checked":""%>></th><%
         if (!hasFolderRead)
         {
             %><td><img src="<%=contextPath%>/_images/exclaim.gif" title="group does not have folder read permissions"></td><%
@@ -64,5 +66,5 @@ Any user with READ access to this folder may view some summary data.  However, a
         %></tr><%
     }
     %></table>
-    <input type=image src="<%=PageFlowUtil.buttonSrc("Save")%>" value="Save">
+    <input id="groupUpdateButton" type=image src="<%=PageFlowUtil.buttonSrc("Update")%>" value="Update">
     </form>
