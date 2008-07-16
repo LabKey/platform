@@ -162,13 +162,13 @@ public class WebdavResolverImpl implements WebdavResolver
             {
                 switch (evt.property)
                 {
+                    case PipelineRoot:
                     case ACL:
                     case AttachmentDirectory:
-                    case PipelineRoot:
                     case WebRoot:
                     default:
                     {
-                        invalidate(c.getPath(), false);
+                        invalidate(c.getPath(), true);
                         break;
                     }
                     case Name:
@@ -484,22 +484,35 @@ public class WebdavResolverImpl implements WebdavResolver
             return _etag;
         }
 
+        protected boolean hasAccess(User user)
+        {
+            return true;
+        }
 
+        
+        public boolean canList(User user)
+        {
+            return canRead(user);
+        }
+
+        
         public boolean canRead(User user)
         {
-            return "/".equals(_path) || (getPermissions(user) & ACL.PERM_READ) != 0;
+            if ("/".equals(_path))
+                return true;
+            return hasAccess(user) && (getPermissions(user) & ACL.PERM_READ) != 0;
         }
 
 
         public boolean canWrite(User user)
         {
-            return hasFileSystem() && (getPermissions(user) & ACL.PERM_UPDATE) != 0;
+            return hasAccess(user) && hasFileSystem() && (getPermissions(user) & ACL.PERM_UPDATE) != 0;
         }
 
 
         public boolean canCreate(User user)
         {
-            return hasFileSystem() && (getPermissions(user) & ACL.PERM_INSERT) != 0;
+            return hasAccess(user) && hasFileSystem() && (getPermissions(user) & ACL.PERM_INSERT) != 0;
         }
 
 
@@ -507,7 +520,7 @@ public class WebdavResolverImpl implements WebdavResolver
         {
             if (isWebFolder())
                 return false;
-            return hasFileSystem() && (getPermissions(user) & ACL.PERM_UPDATE) != 0;
+            return hasAccess(user) && hasFileSystem() && (getPermissions(user) & ACL.PERM_UPDATE) != 0;
         }
 
 
@@ -515,7 +528,7 @@ public class WebdavResolverImpl implements WebdavResolver
         {
             if (isWebFolder())
                 return false;
-            return canCreate(user) && canDelete(user);
+            return hasAccess(user) && canCreate(user) && canDelete(user);
         }
 
 
@@ -662,10 +675,13 @@ public class WebdavResolverImpl implements WebdavResolver
 
     private class PipelineFolderResource extends FolderResourceImpl
     {
+        Container c;
+        
         PipelineFolderResource(Container c, PipeRoot root)
         {
-            super(c.getPath(),PIPELINE_LINK);
+            super(c.getPath(), PIPELINE_LINK);
 
+            this.c = c;
             URI uriRoot = (root != null) ? root.getUri(c) : null;
             if (uriRoot != null)
             {
@@ -673,6 +689,18 @@ public class WebdavResolverImpl implements WebdavResolver
                 _root = canonicalFile(uriRoot);
             }
             _file = _root;
+        }
+
+        @Override
+        protected boolean hasAccess(User user)
+        {
+            return user.isAdministrator() || c.getAcl().getPermissions(user) != 0;
+        }
+
+        @Override
+        public boolean canList(User user)
+        {
+            return hasAccess(user);
         }
 
         @Override
@@ -831,17 +859,21 @@ public class WebdavResolverImpl implements WebdavResolver
 
     private class FileResource extends ResourceImpl
     {
+        Resource _folder = null;
+        
         FileResource(FolderResourceImpl folder, String relativePath)
         {
             super(folder, relativePath);
-            _acl = folder._acl;
+            _folder = folder;
+            _acl = null;
             _file = canonicalFile(new File(folder._root,relativePath));
         }
 
         FileResource(FileResource folder, String name)
         {
             super(folder, name);
-            _acl = folder._acl;
+            _folder = folder;
+            _acl = null;
             _file = new File(folder._file,name);
         }
 
@@ -854,6 +886,36 @@ public class WebdavResolverImpl implements WebdavResolver
         ResourceImpl find(String name)
         {
             return new FileResource(this, name);
+        }
+
+        public boolean canRename(User user)
+        {
+            return _folder.canRename(user);
+        }
+
+        public boolean canList(User user)
+        {
+            return _folder.canList(user);
+        }
+
+        public boolean canRead(User user)
+        {
+            return _folder.canRead(user);
+        }
+
+        public boolean canWrite(User user)
+        {
+            return _folder.canWrite(user);
+        }
+
+        public boolean canCreate(User user)
+        {
+            return _folder.canCreate(user);
+        }
+
+        public boolean canDelete(User user)
+        {
+            return _folder.canDelete(user);
         }
     }
 

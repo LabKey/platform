@@ -100,11 +100,11 @@ BODY, TD, TH { font-family: arial sans-serif; color: black; }
     TreeMap<String, WebdavResolver.Resource> files = new TreeMap<String, WebdavResolver.Resource>();
     WebdavResolver.Resource parent = resource.parent();
 
-    if (resource.canRead(user))
+    if (resource.canList(user))
     {
         for (WebdavResolver.Resource info : resource.list())
         {
-            if (!info.canRead(user))
+            if (!info.canList(user))
                 continue;
             else if (info.isCollection())
                 dirs.put(info.getName(), info);
@@ -142,7 +142,14 @@ BODY, TD, TH { font-family: arial sans-serif; color: black; }
         WebdavResolver.Resource info = entry.getValue();
         shade = !shade;
         long modified = info.getLastModified();
-        %><tr bgcolor="<%=shade?"#ffffff":"#eeeeee"%>"><td align="left"><a href="<%=h(info.getLocalHref(context))%>"><%=h(name)%></a></td><%
+        if (info.canRead(user))
+        {
+            %><tr bgcolor="<%=shade?"#ffffff":"#eeeeee"%>"><td align="left"><a href="<%=h(info.getLocalHref(context))%>"><%=h(name)%></a></td><%
+        }
+        else
+        {
+            %><tr bgcolor="<%=shade?"#ffffff":"#eeeeee"%>"><td align="left"><%=h(name)%></td><%
+        }
         %><td align="right"><%=info.getContentLength()%></td><%
         %><td align="right" nowrap><%=modified==0?"&nbsp;":dateFormat.format(new Date(modified))%></td></tr><%
         out.println();

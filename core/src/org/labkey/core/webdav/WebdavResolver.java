@@ -81,7 +81,12 @@ public interface WebdavResolver
 
         String getETag();
 
+        /** user may read properties of this resource */
+        boolean canList(User user);
+
+        /** user may read file stream of this resource */
         boolean canRead(User user);
+        
         boolean canWrite(User user);
         boolean canCreate(User user);
         boolean canDelete(User user);

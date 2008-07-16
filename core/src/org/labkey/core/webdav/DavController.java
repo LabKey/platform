@@ -128,8 +128,11 @@ public class DavController extends SpringActionController
     public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws MultipartException
     {
         _webdavresponse = new WebdavResponse(response);
-        _webdavresolver = WebdavResolverImpl.get(); 
-        Controller action = resolveAction(request.getMethod().toLowerCase());
+        _webdavresolver = WebdavResolverImpl.get();
+        String method = request.getMethod();
+        if ("POST".equals(method))
+            method = StringUtils.defaultString(request.getHeader("method"),"POST");
+        Controller action = resolveAction(method.toLowerCase());
         try
         {
             if (null == action)
@@ -456,7 +459,7 @@ public class DavController extends SpringActionController
             WebdavResolver.Resource resource = resolvePath();
             if (null == resource)
                 return notFound();
-            if (!resource.canRead(getUser()))
+            if (!(resource.isCollection() ? resource.canList(getUser()) : resource.canRead(getUser())))
                 return unauthorized(resource);
             if (!resource.exists())
                 return notFound(resource.getPath());
@@ -536,7 +539,8 @@ public class DavController extends SpringActionController
             WebdavResolver.Resource resource = resolvePath();
             if (resource == null || !resource.exists())
                 return notFound();
-            if (!resource.canRead(getUser()))
+            
+            if (!resource.canList(getUser()))
                 return unauthorized(resource);
 
             List<String> properties = null;
@@ -661,7 +665,7 @@ public class DavController extends SpringActionController
                     String currentPath = stack.pop();
 
                     resource = resolvePath(currentPath);
-                    if (null == resource || !resource.canRead(getUser()))
+                    if (null == resource || !resource.canList(getUser()))
                         continue;
                     
                     writeProperties(generatedXML, resource, type, properties);
