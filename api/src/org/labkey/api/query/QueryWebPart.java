@@ -64,6 +64,7 @@ public class QueryWebPart extends WebPartView
                 else
                 {
                     title = _schema.getSchemaName() + " Queries";
+                    title = title.substring(0,1).toUpperCase() + title.substring(1);
                 }
             }
         }
