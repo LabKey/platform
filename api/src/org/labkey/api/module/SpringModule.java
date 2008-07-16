@@ -144,7 +144,7 @@ public class SpringModule extends DefaultModule implements ServletContext
             if (configPath != null)
             {
                 File dirConfig = new File(configPath);
-                String configRelPath = prefix + "/" + prefix + "Config.xml";
+                String configRelPath = prefix + "Config.xml";
                 File fileConfig = new File(URIUtil.resolve(dirConfig.toURI(), configRelPath));
                 if (fileConfig.exists())
                     location.append(",").append(fileConfig.toString());
