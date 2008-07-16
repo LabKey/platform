@@ -22,5 +22,6 @@ public enum JoinType
     inner,
     left,
     right,
+    full,
     outer,
 }

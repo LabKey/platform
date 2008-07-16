@@ -76,6 +76,9 @@ public class QTable
                 case outer:
                     builder.append("OUTER JOIN ");
                     break;
+                case full:
+                    builder.append("FULL OUTER JOIN ");
+                    break;
             }
         }
         _table.appendSource(builder);

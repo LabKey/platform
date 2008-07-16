@@ -18,6 +18,18 @@ package org.labkey.query.sql;
 
 public class QUnknownNode extends QNode
 {
+    int _type = 0;
+    
+    public QUnknownNode()
+    {
+        _type = 0;
+    }
+
+    public QUnknownNode(int type)
+    {
+        _type = type;
+    }
+    
     public void appendSource(SourceBuilder builder)
     {
         builder.append(getTokenText());
