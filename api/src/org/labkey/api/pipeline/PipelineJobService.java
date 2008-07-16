@@ -48,6 +48,9 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
     {
         String getToolsDirectory();
 
+        String getBaseServerUrl();
+        String getCallbackPassword();
+
         Character getNetworkDriveLetter();
         String getNetworkDrivePath();
         String getNetworkDriveUser();

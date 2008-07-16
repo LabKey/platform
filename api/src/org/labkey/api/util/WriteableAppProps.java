@@ -299,6 +299,11 @@ public class WriteableAppProps extends AppProps
         storeStringValue(MICROARRAY_FEATURE_EXTRACTION_SERVER_PROP, name);
     }
 
+    public void setCallbackPassword(String password)
+    {
+        storeStringValue(CALLBACK_PASSWORD_PROP, password);
+    }
+
     public void writeAuditLogEvent(User user, Map<String,String> oldProps)
     {
         String diff = genDiffHtml(oldProps);

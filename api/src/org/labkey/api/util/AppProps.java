@@ -32,6 +32,7 @@ import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.Map;
+import java.util.Random;
 
 /**
  * User: arauch
@@ -92,6 +93,7 @@ public class AppProps
     protected static final String NETWORK_DRIVE_PASSWORD = "networkDrivePassword";
     protected static final String FOLDER_DISPLAY_MODE = "folderDisplayMode";
     protected static final String CABIG_ENABLED = "caBIGEnabled";
+    protected static final String CALLBACK_PASSWORD_PROP = "callbackPassword";
 
     private static final String SERVER_SESSION_GUID = GUID.makeGUID();
 
@@ -623,5 +625,30 @@ public class AppProps
         String path = getContextPath();
 
         return "".equals(path) ? "root.xml" : path.substring(1) + ".xml";
+    }
+
+    public String getCallbackPassword()
+    {
+        StringBuilder defaultPassword = new StringBuilder();
+        Random random = new Random();
+        for (int i = 0; i < 8; i++)
+        {
+            int x = random.nextInt(26 + 26 + 10);
+            int letter;
+            if (x < 26)
+            {
+                letter = 'a' + x;
+            }
+            else if (x < 52)
+            {
+                letter = 'A' + x - 26;
+            }
+            else
+            {
+                letter = '0' + x - 52;
+            }
+            defaultPassword.append((char)letter);
+        }
+        return lookupStringValue(CALLBACK_PASSWORD_PROP, defaultPassword.toString());
     }
 }

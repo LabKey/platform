@@ -60,4 +60,14 @@ public interface WorkDirectory
     void discardFile(File fileWork) throws IOException;
 
     void remove() throws IOException;
+
+    /**
+     * Ensures that we have a lock, if needed. The lock must be released by the caller.
+     */
+    public CopyingResource ensureCopyingLock() throws IOException;
+
+    public interface CopyingResource
+    {
+        public void release();
+    }
 }
