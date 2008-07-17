@@ -38,13 +38,13 @@ public class UnauthorizedException extends ServletException
 
     public UnauthorizedException(String message, String url)
     {
-        super(StringUtils.defaultIfEmpty(message, "" + HttpServletResponse.SC_UNAUTHORIZED + ": no permissions to view this page"));
+        super(StringUtils.defaultIfEmpty(message, "" + HttpServletResponse.SC_UNAUTHORIZED + ": User does not have permission to perform this operation"));
         _url = url;
     }
     
     public UnauthorizedException(String message)
     {
-        this(null, message);
+        this(message, null);
     }
 
     public void setRequestBasicAuth(boolean requestBasicAuth)

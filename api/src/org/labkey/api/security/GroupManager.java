@@ -265,7 +265,7 @@ public class GroupManager
             AuditLogEvent event = new AuditLogEvent();
 
             event.setEventType(GROUP_AUDIT_EVENT);
-            event.setCreatedBy(user.getUserId());
+            event.setCreatedBy(user);
             event.setIntKey1(principal.getUserId());
             event.setIntKey2(group.getUserId());
 

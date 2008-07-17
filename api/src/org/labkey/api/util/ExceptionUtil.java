@@ -600,7 +600,7 @@ public class ExceptionUtil
             else
             {
                 responseStatus = HttpServletResponse.SC_UNAUTHORIZED;
-                message = responseStatus + ": User does not have permission to perform this operation";
+                message = ex.getMessage();
             }
             ex = null;
         }

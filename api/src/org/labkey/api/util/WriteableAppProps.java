@@ -311,7 +311,7 @@ public class WriteableAppProps extends AppProps
         {
             String domainUri = ensureAuditLogDomainAndProps(user);
             AuditLogEvent event = new AuditLogEvent();
-            event.setCreatedBy(user.getUserId());
+            event.setCreatedBy(user);
             event.setComment("The site settings were changed (see details).");
             event.setEventType(AUDIT_EVENT_TYPE);
 
