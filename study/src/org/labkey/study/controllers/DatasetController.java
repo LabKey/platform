@@ -47,7 +47,7 @@ import java.util.*;
  */
 public class DatasetController extends BaseStudyController
 {
-    private static ActionResolver ACTION_RESOLVER = new DefaultActionResolver(DatasetController.class);
+    private static final ActionResolver ACTION_RESOLVER = new DefaultActionResolver(DatasetController.class);
 
     public DatasetController()
     {
@@ -87,8 +87,6 @@ public class DatasetController extends BaseStudyController
 
     public abstract class InsertUpdateAction extends FormViewAction<EditDatasetRowForm>
     {
-        private ActionURL successURL;
-
         protected abstract boolean isInsert();
         protected abstract NavTree appendExtraNavTrail(NavTree root);
 

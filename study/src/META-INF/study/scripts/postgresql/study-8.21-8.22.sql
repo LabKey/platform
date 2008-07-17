@@ -1,0 +1,2 @@
+ALTER TABLE study.Cohort
+    ADD COLUMN LSID VARCHAR(200);

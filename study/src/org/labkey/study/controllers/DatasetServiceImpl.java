@@ -31,7 +31,6 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.security.ACL;
 import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.view.ViewContext;
 import org.labkey.common.tools.TabLoader;
 import org.labkey.study.dataset.client.DatasetService;
@@ -47,7 +46,7 @@ import java.util.*;
 
 /**
  * User: jgarms
-*/
+ */
 @SuppressWarnings("unchecked")
 class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetService
 {

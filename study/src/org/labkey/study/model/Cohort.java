@@ -25,6 +25,7 @@ public class Cohort
     private int _rowId;
     private String _label;
     private Container _container;
+    private String _lsid;
 
     public int getRowId()
     {
@@ -54,6 +55,16 @@ public class Cohort
     public void setContainer(Container container)
     {
         _container = container;
+    }
+
+    public String getLsid()
+    {
+        return _lsid;
+    }
+
+    public void setLsid(String lsid)
+    {
+        _lsid = lsid;
     }
 
     public boolean isInUse()

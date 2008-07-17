@@ -47,6 +47,7 @@ import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.assay.query.AssaySchema;
 import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.StudyController;
+import org.labkey.study.controllers.StudyDefinitionController;
 import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.controllers.designer.DesignerController;
 import org.labkey.study.controllers.plate.PlateController;
@@ -56,10 +57,7 @@ import org.labkey.study.controllers.security.SecurityController;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.designer.view.StudyDesignsWebPart;
 import org.labkey.study.importer.SpecimenImporter;
-import org.labkey.study.model.DatasetDomainKind;
-import org.labkey.study.model.SecurityType;
-import org.labkey.study.model.Study;
-import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.*;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.plate.PlateManager;
 import org.labkey.study.plate.query.PlateSchema;
@@ -93,7 +91,7 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
 
     public StudyModule()
     {
-        super(NAME, 8.21, "/org/labkey/study", true, reportsPartFactory, reportsWidePartFactory, samplesPartFactory,
+        super(NAME, 8.22, "/org/labkey/study", true, reportsPartFactory, reportsWidePartFactory, samplesPartFactory,
                 samplesWidePartFactory, datasetsPartFactory, manageStudyPartFactory,
                 enrollmentChartPartFactory, studyDesignsWebPartFactory, studyDesignSummaryWebPartFactory,
                 assayListWebPartFactory, assayDetailsWebPartFactory, participantWebPartFactory);
@@ -106,6 +104,7 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
         addController("plate", PlateController.class);
         addController("assay", AssayController.class);
         addController("dataset", DatasetController.class);
+        addController("study-definition", StudyDefinitionController.class);
 
         PlateService.register(new PlateManager());
         AssayService.setInstance(new AssayManager());
@@ -116,6 +115,7 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
 
         PropertyService.get().registerDomainKind(new DatasetDomainKind());
         PropertyService.get().registerDomainKind(new AssayDomainKind());
+        PropertyService.get().registerDomainKind(new CohortDomainKind());
 
         Search.register(new StudySearch());
 

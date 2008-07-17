@@ -15,20 +15,21 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.exp.PropertyDescriptor" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.springframework.validation.ObjectError" %>
-<%@ page import="java.util.List" %>
-<%@ page import="org.springframework.validation.BindException" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.study.model.DataSetDefinition" %>
-<%@ page import="org.labkey.study.model.Cohort" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.exp.PropertyDescriptor" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyDefinitionController" %>
+<%@ page import="org.labkey.study.model.Cohort" %>
+<%@ page import="org.labkey.study.model.DataSetDefinition" %>
 <%@ page import="org.labkey.study.model.Participant" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.springframework.validation.BindException" %>
+<%@ page import="org.springframework.validation.ObjectError" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudyController.ManageCohortsBean> me = (JspView<StudyController.ManageCohortsBean>) HttpView.currentView();;
@@ -106,7 +107,7 @@
                 <%= buttonLink("Delete Unused Cohorts",
                         new ActionURL(StudyController.DeleteCohortAction.class, me.getViewContext().getContainer()).addParameter("all", "true"),
                         "return confirm('Delete all unused cohorts?  No additional study data will be deleted.')")%>
-                <%= buttonLink("Cancel", new ActionURL(StudyController.ManageStudyAction.class, me.getViewContext().getContainer()))%>
+                <%= buttonLink("Edit Cohort Definition", new ActionURL(StudyDefinitionController.EditCohortDefinitionAction.class, me.getViewContext().getContainer()))%>
             </td>
         </tr>
     </table>

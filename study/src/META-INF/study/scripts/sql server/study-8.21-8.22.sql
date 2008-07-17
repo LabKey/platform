@@ -1,0 +1,3 @@
+ALTER TABLE study.Cohort
+    ADD LSID NVARCHAR(200)
+GO
