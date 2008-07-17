@@ -30,6 +30,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.wiki.WikiService;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.common.util.Pair;
 
 import javax.mail.Address;
@@ -368,6 +369,11 @@ public class SecurityManager
                 sessionUser = UserManager.getUser(userId.intValue());
             if (null != sessionUser)
             {
+                Integer impersonatingUserId = (Integer) request.getSession(true).getAttribute(User.class.getName() + "$impersonatingUserId");
+
+                if (null != impersonatingUserId)
+                    sessionUser.setImpersonatingUser(UserManager.getUser(impersonatingUserId.intValue()));
+
                 // We want groups membership to be calculated on every request (but just once)
                 // the cloned User will calculate groups exactly once
                 // NOTE: getUser() returns a cloned object
@@ -387,7 +393,7 @@ public class SecurityManager
                 if (null != u)
                 {
                     request.setAttribute(AUTHENTICATION_METHOD, "Basic");
-                    SecurityManager.setAuthenticatedUser(request, u);
+                    SecurityManager.setAuthenticatedUser(request, u, null);
                 }
             }
         }
@@ -395,20 +401,57 @@ public class SecurityManager
     }
 
 
-    public static void setAuthenticatedUser(HttpServletRequest request, User u)
+    public static void setAuthenticatedUser(HttpServletRequest request, User user, User impersonatingUser)
     {
         HttpSession s = request.getSession(true);
-        s.setAttribute(User.class.getName() + "$userId", u.getUserId());
-        s.setAttribute("LABKEY.username", u.getName());
+        s.setAttribute(User.class.getName() + "$userId", user.getUserId());
+        s.setAttribute("LABKEY.username", user.getName());
         s.removeAttribute(TERMS_APPROVED_KEY);   // Clear approved terms-of-use on every login (or impersonation)
+
+        if (null != impersonatingUser)
+            s.setAttribute(User.class.getName() + "$impersonatingUserId", impersonatingUser.getUserId());
     }
 
 
-    public static void logoutUser(HttpServletRequest request)
+    public static void logoutUser(HttpServletRequest request, User user)
     {
-        User user = (User)request.getUserPrincipal();
         AuthenticationManager.logout(user, request);   // Let AuthenticationProvider clean up auth-specific cookies, etc.
+        invalidateSession(request);
+    }
 
+
+    public static void impersonate(ViewContext viewContext, User impersonatedUser)
+    {
+        User adminUser = viewContext.getUser();
+        SecurityManager.setAuthenticatedUser(viewContext.getRequest(), impersonatedUser, adminUser);
+        AuditLogService.get().addEvent(viewContext, UserManager.USER_AUDIT_EVENT, adminUser.getUserId(),
+                adminUser.getEmail() + " impersonated " + impersonatedUser.getEmail());
+        AuditLogService.get().addEvent(viewContext, UserManager.USER_AUDIT_EVENT, impersonatedUser.getUserId(),
+                impersonatedUser.getEmail() + " was impersonated by " + adminUser.getEmail());
+    }
+
+
+    public static void stopImpersonating(ViewContext viewContext, User impersonatedUser)
+    {
+        assert impersonatedUser.isImpersonated();
+
+        invalidateSession(viewContext.getRequest());
+
+        if (impersonatedUser.isImpersonated())
+        {
+            User adminUser = impersonatedUser.getImpersonatingUser();
+            setAuthenticatedUser(viewContext.getRequest(), adminUser, null);
+
+            AuditLogService.get().addEvent(viewContext, UserManager.USER_AUDIT_EVENT, impersonatedUser.getUserId(),
+                impersonatedUser.getEmail() + " was no longer impersonated by " + adminUser.getEmail());
+            AuditLogService.get().addEvent(viewContext, UserManager.USER_AUDIT_EVENT, adminUser.getUserId(),
+                adminUser.getEmail() + " stopped impersonating " + impersonatedUser.getEmail());
+        }
+    }
+
+
+    private static void invalidateSession(HttpServletRequest request)
+    {
         HttpSession s = request.getSession();
         if (null != s)
             s.invalidate();

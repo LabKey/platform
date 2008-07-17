@@ -73,7 +73,7 @@ public class UserManager
         _userDetailsURLFactory = factory;
     }
 
-    public static ActionURL getUserDetailsUrl(int userId)
+    public static ActionURL getUserDetailsURL(int userId)
     {
         if (null == _userDetailsURLFactory)
             throw new IllegalStateException("User details URL factory has not been set");

@@ -36,6 +36,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     private String _displayName = null;
     protected int[] _groups = null;
     private Date _lastLogin = null;
+    private User _impersonatingUser = null;
 
     static final User guest = new GuestUser();
 
@@ -222,5 +223,20 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     public void setLastLogin(Date lastLogin)
     {
         _lastLogin = lastLogin;
+    }
+
+    public User getImpersonatingUser()
+    {
+        return _impersonatingUser;
+    }
+
+    public void setImpersonatingUser(User impersonatingUser)
+    {
+        _impersonatingUser = impersonatingUser;
+    }
+
+    public boolean isImpersonated()
+    {
+        return null != _impersonatingUser;
     }
 }
