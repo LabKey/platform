@@ -143,6 +143,10 @@ public class QueryControllerSpring extends SpringActionController
 
         public void validateCommand(NewQueryForm target, org.springframework.validation.Errors errors)
         {
+            target.ff_newQueryName = StringUtils.trimToNull(target.ff_newQueryName);
+            if (null == target.ff_newQueryName)
+                errors.reject(ERROR_MSG, "QueryName is required");
+                //errors.rejectValue("ff_newQueryName", ERROR_REQUIRED);
         }
 
         @SuppressWarnings({"UnusedDeclaration"})
