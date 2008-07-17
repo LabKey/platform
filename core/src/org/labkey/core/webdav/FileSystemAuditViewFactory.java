@@ -95,7 +95,7 @@ public class FileSystemAuditViewFactory extends SimpleAuditViewFactory
         ColumnInfo dir = table.getColumn("Key1");
         if (dir != null)
         {
-            dir.setCaption("directory");
+            dir.setCaption("Directory");
             dir.setDisplayColumnFactory(new DisplayColumnFactory()
             {
                 public DisplayColumn createRenderer(ColumnInfo colInfo)
@@ -113,7 +113,7 @@ public class FileSystemAuditViewFactory extends SimpleAuditViewFactory
         ColumnInfo file = table.getColumn("Key2");
         if (file != null)
         {
-            file.setCaption("file");
+            file.setCaption("File");
             file.setDisplayColumnFactory(new DisplayColumnFactory()
             {
                 public DisplayColumn createRenderer(ColumnInfo colInfo)
