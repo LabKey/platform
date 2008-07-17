@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.common.util.Pair" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<AdminController.AdminBean> me = (HttpView<AdminController.AdminBean>) HttpView.currentView();
@@ -70,7 +71,7 @@
             if (user.isImpersonated())
             {
         %>
-        Already impersonating; click "Sign out" to change user back to <%=h(user.getImpersonatingUser().getDisplayName(context))%>.<%
+        Already impersonating; click <a href="<%=h(AuthenticationManager.getLogoutURL())%>">here</a> to change back to <%=h(user.getImpersonatingUser().getDisplayName(context))%>.<%
             }
             else
             {
