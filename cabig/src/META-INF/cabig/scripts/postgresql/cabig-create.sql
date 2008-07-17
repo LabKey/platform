@@ -61,8 +61,8 @@ CREATE VIEW cabig.protocoldefinition AS
         , p.outputdatatype, p.instrument, p.software, p.contactid
         , c.rowid AS containerid, o.objectid
     FROM exp.protocol p
-        INNER JOIN cabig.containers c on (p.container = c.entityid)
-        LEFT OUTER JOIN exp.object o on (p.lsid = o.objecturi);
+        INNER JOIN cabig.containers c ON (p.container = c.entityid)
+        LEFT OUTER JOIN exp.object o ON (p.lsid = o.objecturi);
 
 CREATE VIEW cabig.protocolaction AS
     SELECT pa.rowid AS actionid, pa.childprotocolid AS protocolid
@@ -87,7 +87,7 @@ CREATE VIEW cabig.actionsuccessor AS
     FROM exp.protocolaction pa
         INNER JOIN exp.protocol p ON pa.childprotocolid=p.rowid
         INNER JOIN cabig.containers c ON c.entityid = p.container
-    WHERE EXISTS (select * from exp.protocolactionpredecessor pap WHERE pap.actionid = pa.rowid);
+    WHERE EXISTS (SELECT * FROM exp.protocolactionpredecessor pap WHERE pap.actionid = pa.rowid);
 
 CREATE VIEW cabig.successorpredecessor AS
     SELECT pap.actionid AS successoractionid, pap.predecessorid AS predecessoractionid
@@ -98,7 +98,7 @@ CREATE VIEW cabig.data AS
     SELECT d.rowid, d.lsid, d.name, d.cpastype, d.sourceapplicationid, d.datafileurl, d.runid, c.rowid AS containerid, o.objectid
     FROM exp.data d
         INNER JOIN cabig.containers c ON d.container = c.entityid
-        LEFT OUTER JOIN exp.object o on d.lsid = o.objecturi;
+        LEFT OUTER JOIN exp.object o ON d.lsid = o.objecturi;
 
 CREATE VIEW cabig.datainput AS
     SELECT dataid, targetapplicationid, propertyid
@@ -108,16 +108,16 @@ CREATE VIEW cabig.experiment AS
     SELECT e.rowid, e.lsid, e.name, e.hypothesis, e.contactid, e.experimentdescriptionurl, e.comments,
         c.rowid AS containerid, o.objectid
     FROM exp.experiment e
-        INNER JOIN cabig.containers c on e.container = c.entityid
-        LEFT OUTER JOIN exp.object o on e.lsid = o.objecturi;
+        INNER JOIN cabig.containers c ON e.container = c.entityid
+        LEFT OUTER JOIN exp.object o ON e.lsid = o.objecturi;
 
 CREATE VIEW cabig.material AS
     SELECT m.rowid, m.lsid, m.name, m.cpastype, m.sourceapplicationid, m.runid,
         c.rowid AS containerid, o.objectid, ms.rowid AS materialsourceid
     FROM exp.material m
         INNER JOIN cabig.containers c ON m.container = c.entityid
-        LEFT OUTER JOIN exp.object o on m.lsid = o.objecturi
-        LEFT OUTER JOIN exp.materialsource ms on m.cpastype = ms.lsid;
+        LEFT OUTER JOIN exp.object o ON m.lsid = o.objecturi
+        LEFT OUTER JOIN exp.materialsource ms ON m.cpastype = ms.lsid;
 
 CREATE VIEW cabig.materialinput AS
     SELECT materialid, targetapplicationid, propertyid
@@ -212,12 +212,12 @@ CREATE VIEW cabig.Fractions AS
     SELECT f.fraction, f.description, f.filename,
             f.run, f.pepxmldatalsid, f.mzxmlurl
     FROM ms2.Fractions f
-        INNER JOIN cabig.MS2RunsFilter mr on (f.run = mr.run);
+        INNER JOIN cabig.MS2RunsFilter mr ON (f.run = mr.run);
 
 CREATE VIEW cabig.SpectraData AS
     SELECT ((4294967296 * CAST(sd.fraction AS BigInt)) + sd.scan) AS spectrumid, f.run, sd.fraction, sd.scan, sd.spectrum
     FROM ms2.spectradata sd
-        INNER JOIN cabig.Fractions f on (f.Fraction = sd.fraction);
+        INNER JOIN cabig.Fractions f ON (f.Fraction = sd.fraction);
 
 CREATE VIEW cabig.PeptidesView AS
     SELECT frac.run, run.rundescription, pep.fraction
@@ -302,13 +302,13 @@ CREATE VIEW cabig.QuantSummaries AS
     SELECT qs.QuantId, qs.Run, qs.AnalysisType, qs.AnalysisTime, qs.Version, qs.LabeledResidues,
         qs.MassDiff, qs.MassTol, qs.SameScanRange, qs.XpressLight
     FROM ms2.QuantSummaries qs
-        INNER JOIN cabig.MS2RunsFilter r on (r.run = qs.run);
+        INNER JOIN cabig.MS2RunsFilter r ON (r.run = qs.run);
 
 CREATE VIEW cabig.ProteinProphetFiles AS
     SELECT pp.RowId, pp.FilePath, pp.Run, pp.UploadCompleted, pp.MinProbSeries, pp.SensitivitySeries, pp.ErrorSeries,
         pp.PredictedNumberCorrectSeries, pp.PredictedNumberIncorrectSeries
     FROM ms2.ProteinProphetFiles pp
-        INNER JOIN cabig.MS2RunsFilter r on (r.run = pp.run);
+        INNER JOIN cabig.MS2RunsFilter r ON (r.run = pp.run);
 
 CREATE VIEW cabig.ProteinGroups AS
     SELECT pg.RowId, pg.GroupProbability, pg.ProteinProphetFileId, pp.Run,
@@ -340,7 +340,7 @@ CREATE VIEW cabig.ProtSequences AS
         s.BestName, s.BestGeneName, s.Length, o.CommonName AS OrganismName, o.Genus, o.Species, o.Comments
     FROM prot.Sequences s
         -- join in Source info if available
-        LEFT JOIN prot.InfoSources src on (src.SourceId = s.SourceId AND src.Deleted = 0)
+        LEFT JOIN prot.InfoSources src ON (src.SourceId = s.SourceId AND src.Deleted = 0)
         -- join in Org info if is is available
         LEFT JOIN prot.Organisms o ON (s.OrgId = o.OrgId AND o.Deleted = 0)
     WHERE s.Deleted = 0
@@ -353,7 +353,7 @@ CREATE VIEW cabig.materialsource AS
     SELECT ms.rowid, ms.name, ms.lsid, ms.materiallsidprefix, ms.description, c.rowid AS containerid, dd.domainid
     FROM exp.materialsource ms
         INNER JOIN cabig.containers c ON ms.container = c.entityid
-        INNER JOIN exp.domaindescriptor dd on (dd.domainuri = ms.lsid);
+        INNER JOIN exp.domaindescriptor dd ON (dd.domainuri = ms.lsid);
 
 CREATE VIEW cabig.ProteinGroupMembers AS
     SELECT pgm.SeqId, pgm.ProteinGroupId, pgm.probability, (CAST((4294967296 * pgm.ProteinGroupId) AS BIGINT) + pgm.SeqId) AS ProteinGroupMemberId

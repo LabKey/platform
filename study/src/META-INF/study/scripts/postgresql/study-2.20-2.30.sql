@@ -17,7 +17,7 @@ ALTER TABLE study.Study
 ADD DateBased Boolean DEFAULT false,
 ADD StartDate TIMESTAMP;
 
-UPDATE study.Study SET DateBased=false where DateBased IS NULL;
+UPDATE study.Study SET DateBased=false WHERE DateBased IS NULL;
 
 ALTER TABLE study.ParticipantVisit
 ADD Day int4;
@@ -28,7 +28,7 @@ ADD StartDate TIMESTAMP;
 ALTER TABLE study.Dataset
 ADD DemographicData Boolean DEFAULT false;
 
-UPDATE study.Dataset SET DemographicData=false where DemographicData IS NULL;
+UPDATE study.Dataset SET DemographicData=false WHERE DemographicData IS NULL;
 
 ALTER TABLE study.Study ADD StudySecurity Boolean DEFAULT false;
 

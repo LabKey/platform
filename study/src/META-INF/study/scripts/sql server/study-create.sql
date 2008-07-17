@@ -46,7 +46,7 @@ CREATE VIEW study.SpecimenDetail AS
             ELSE 0
             END)
 	    END
-	    ) As Available
+	    ) AS Available
          FROM
             (
                 SELECT Specimen.*, (CASE IsRepository WHEN 1 THEN 1 ELSE 0 END) AS AtRepository,
@@ -63,10 +63,10 @@ GO
 
 CREATE VIEW study.SpecimenSummary AS
     SELECT Container, SpecimenNumber, Ptid, VisitDescription, VisitValue, SUM(Volume) AS TotalVolume,
-        SUM(CASE Available WHEN 1 THEN Volume ELSE 0 END) As AvailableVolume,
+        SUM(CASE Available WHEN 1 THEN Volume ELSE 0 END) AS AvailableVolume,
         VolumeUnits, PrimaryTypeId, AdditiveTypeId, DerivativeTypeId, DrawTimestamp, SalReceiptDate,
         ClassId, ProtocolNumber, SubAdditiveDerivative, OriginatingLocationId,
-        COUNT(GlobalUniqueId) As VialCount,
+        COUNT(GlobalUniqueId) AS VialCount,
         SUM(CASE LockedInRequest WHEN 1 THEN 1 ELSE 0 END) AS LockedInRequestCount,
         SUM(CASE AtRepository WHEN 1 THEN 1 ELSE 0 END) AS AtRepositoryCount,
         SUM(CASE Available WHEN 1 THEN 1 ELSE 0 END) AS AvailableCount

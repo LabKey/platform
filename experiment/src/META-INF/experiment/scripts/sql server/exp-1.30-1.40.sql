@@ -49,7 +49,7 @@ ALTER TABLE exp.PropertyDescriptor DROP COLUMN DomainURI
 GO
 -- fix orphans from bad OntologyManager unit test
 DELETE FROM exp.PropertyDescriptor
-WHERE Container = (SELECT C.EntityId from core.Containers C where C.Name is null)
+WHERE Container = (SELECT C.EntityId FROM core.Containers C WHERE C.Name IS NULL)
 AND PropertyURI LIKE '%Junit.OntologyManager%'
 GO
 

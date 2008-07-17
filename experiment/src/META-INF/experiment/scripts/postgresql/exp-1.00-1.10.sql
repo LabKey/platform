@@ -17,7 +17,7 @@
 -- Steps in this script:
 -- 1. Find and delete orphan records in the exp schema.
 --	  several views are created then later dropped to simplify the sql to identify orphans
---    Make the container column not null to prevent one type of orphan
+--    Make the container column NOT NULL to prevent one type of orphan
 -- 2. Upgrade the tables underlying the exp OntologyManager.
 --    PropertyDescriptor is altered
 --    Property is replaced by Objects and ObjectProperties
@@ -113,7 +113,7 @@ DELETE FROM exp.property WHERE
 			(SELECT PropertyURIValue FROM exp.Property
 			WHERE parentURI NOT IN (SELECT lsid FROM exp.AllLsidContainers)));
 
--- now make the container fields not null
+-- now make the container fields NOT NULL
 ALTER TABLE exp.Experiment 
 	ALTER COLUMN Container SET NOT NULL;
 ALTER TABLE exp.ExperimentRun 
@@ -205,7 +205,7 @@ DECLARE
 	_objectid INTEGER;
 BEGIN
 --	START TRANSACTION;
-		_objectid := (SELECT ObjectId FROM exp.Object where Container=_container AND ObjectURI=_lsid);
+		_objectid := (SELECT ObjectId FROM exp.Object WHERE Container=_container AND ObjectURI=_lsid);
 		IF (_objectid IS NULL) THEN
 			INSERT INTO exp.Object (Container, ObjectURI, OwnerObjectId) VALUES (_container, _lsid, _ownerObjectId);
 			_objectid := currval(\'exp.object_objectid_seq\');
@@ -215,7 +215,7 @@ BEGIN
 END;
 ' LANGUAGE plpgsql;
 
--- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidA',null)
+-- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidA', NULL)
 -- SELECT * FROM exp.ObjectPropertiesView
 
 
@@ -225,7 +225,7 @@ DECLARE
 	_lsid ALIAS FOR $2;
 	_objectid INTEGER;
 BEGIN
-		_objectid := (SELECT ObjectId FROM exp.Object where Container=_container AND ObjectURI=_lsid);
+		_objectid := (SELECT ObjectId FROM exp.Object WHERE Container=_container AND ObjectURI=_lsid);
 		IF (_objectid IS NULL) THEN 
 			RETURN;
 		END IF;
@@ -261,7 +261,7 @@ DECLARE
 BEGIN
 --	START TRANSACTION;
 		_propertyid := (SELECT RowId FROM exp.PropertyDescriptor WHERE PropertyURI=_propertyuri);
-		if (1=1 OR _propertyid IS NULL) THEN
+		IF (1=1 OR _propertyid IS NULL) THEN
 			INSERT INTO exp.PropertyDescriptor (PropertyURI, DatatypeURI) VALUES (_propertyuri, _datatypeuri);
 			_propertyid := currval(\'exp.propertydescriptor_rowid_seq\');
 		END IF;
@@ -274,7 +274,7 @@ END;
 ' LANGUAGE plpgsql;
 
 
--- SELECT exp.setProperty(13, 'lsidPROP', 'lsidTYPE', 'f', 1.0, null, null, null)
+-- SELECT exp.setProperty(13, 'lsidPROP', 'lsidTYPE', 'f', 1.0, NULL, NULL, NULL)
 -- SELECT * FROM exp.ObjectPropertiesView
 
 -- internal methods
@@ -363,14 +363,14 @@ END;
 ' LANGUAGE plpgsql;
 
 
--- SELECT exp.setFloatProperties(4, 13, 100.0, 14, 101.0, 15, 102.0, 16, 104.0, null, null, null, null, null, null, null, null, null, null, null, null)
+-- SELECT exp.setFloatProperties(4, 13, 100.0, 14, 101.0, 15, 102.0, 16, 104.0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
 -- SELECT * FROM exp.Object
 -- SELECT * FROM exp.PropertyDescriptor
--- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidA',null)
--- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidB',null)
--- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidC',null)
--- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidD',null)
--- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidE',null)
+-- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidA', NULL)
+-- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidB', NULL)
+-- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidC', NULL)
+-- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidD', NULL)
+-- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidE', NULL)
 
 CREATE OR REPLACE FUNCTION exp.setStringProperties(_propertyid INTEGER,
 	_objectid1 INTEGER, _string1 VARCHAR(400),
@@ -483,7 +483,7 @@ SELECT O.ObjectId, PD.RowId,
 	DateTimeValue, -- DateTime
 	CASE WHEN StringValue IS NOT NULL THEN StringValue WHEN PropertyURIValue IS NOT NULL THEN PropertyURIValue ELSE FileLinkValue END,
 	XmlTextValue -- Text
-FROM exp.Property P INNER JOIN exp.Object O on P.ParentURI = O.ObjectURI INNER JOIN exp.PropertyDescriptor PD on P.OntologyEntryURI = PD.PropertyURI;
+FROM exp.Property P INNER JOIN exp.Object O ON P.ParentURI = O.ObjectURI INNER JOIN exp.PropertyDescriptor PD ON P.OntologyEntryURI = PD.PropertyURI;
 
 --
 -- fix-up Containers in the Objects table
@@ -514,7 +514,7 @@ WHERE Container = '00000000-0000-0000-0000-000000000000';
 
 UPDATE exp.Object
 SET OwnerObjectId = (SELECT MAX(OWNER.ObjectId)
-		FROM exp.Property PROPS JOIN exp.ExperimentRun RUN on PROPS.RunId = RUN.RowId JOIN exp.Object OWNER ON RUN.Lsid = OWNER.ObjectURI
+		FROM exp.Property PROPS JOIN exp.ExperimentRun RUN ON PROPS.RunId = RUN.RowId JOIN exp.Object OWNER ON RUN.Lsid = OWNER.ObjectURI
 		WHERE PROPS.ParentURI = exp.Object.ObjectURI);
 
 -- now drop the old proerty table

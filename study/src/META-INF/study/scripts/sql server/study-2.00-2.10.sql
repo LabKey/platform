@@ -22,9 +22,9 @@ GO
 
 -- ALTER TABLE study.visit ADD name NVARCHAR(200);
 -- GO
--- UPDATE study.visit SET name=COALESCE(label,cast(rowid as NVARCHAR(20)));
+-- UPDATE study.visit SET name=COALESCE(label, CAST(rowid AS NVARCHAR(20)));
 -- UPDATE study.visit SET name=rowid
--- WHERE 1 < (SELECT COUNT(*) FROM study.visit V where V.container=study.visit.container and V.name=study.visit.name)
+-- WHERE 1 < (SELECT COUNT(*) FROM study.visit V WHERE V.container=study.visit.container AND V.name=study.visit.name)
 -- GO
 --
 -- ALTER TABLE study.visit ALTER COLUMN name VARCHAR(200) NOT NULL
@@ -37,9 +37,9 @@ GO
 
 ALTER TABLE study.dataset ADD name VARCHAR(200);
 GO
-UPDATE study.dataset SET name=COALESCE(label,cast(datasetid as NVARCHAR(20)));
+UPDATE study.dataset SET name=COALESCE(label, CAST(datasetid AS NVARCHAR(20)));
 UPDATE study.dataset SET name=datasetid
-WHERE 1 < (SELECT COUNT(*) FROM study.dataset D where D.container=study.dataset.container and D.name=study.dataset.name)
+WHERE 1 < (SELECT COUNT(*) FROM study.dataset D WHERE D.container=study.dataset.container AND D.name=study.dataset.name)
 GO
 
 ALTER TABLE study.dataset ALTER COLUMN name VARCHAR(200) NOT NULL

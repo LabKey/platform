@@ -35,11 +35,11 @@ CREATE TABLE audit.AuditLog
 
     CONSTRAINT PK_AuditLog PRIMARY KEY (RowId)
 );
-Go
+GO
 
 INSERT INTO audit.AuditLog (IntKey1, Created, Comment, EventType)
-    (SELECT UserId, Date, Message, 'UserAuditEvent' from core.UserHistory);
-Go
+    (SELECT UserId, Date, Message, 'UserAuditEvent' FROM core.UserHistory);
+GO
 
 DROP TABLE core.UserHistory;
-Go
+GO

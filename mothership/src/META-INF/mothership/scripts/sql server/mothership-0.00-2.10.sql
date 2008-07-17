@@ -189,10 +189,10 @@ GO
 ALTER TABLE mothership.ExceptionReport ADD PageflowAction VARCHAR(40)
 GO
 
-update mothership.serverinstallation set serverhostname=serverip where serverhostname is null
+UPDATE mothership.serverinstallation SET serverhostname=serverip WHERE serverhostname IS NULL
 GO
 
-delete from mothership.serverinstallation where serverinstallationid not in (select serverinstallationid from mothership.serversession)
+DELETE FROM mothership.serverinstallation WHERE serverinstallationid NOT IN (SELECT serverinstallationid FROM mothership.serversession)
 GO
 
 CREATE INDEX IX_ServerSession_ServerInstallationId ON mothership.serversession(serverinstallationid)

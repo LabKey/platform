@@ -42,7 +42,7 @@
             <tr><td colspan="2">[<a href="<%=h(link.second)%>"><%=h(link.first)%></a>]</td></tr><%
         }
     %>
-    <tr><td>&nbsp;</td></tr>
+    <tr><td colspan="2">&nbsp;</td></tr>
 
     <tr><td colspan="2"><b>Management</b></td></tr>
     <%
@@ -51,7 +51,7 @@
             <tr><td colspan="2">[<a href="<%=h(link.second)%>"><%=h(link.first)%></a>]</td></tr><%
         }
     %>
-    <tr><td>&nbsp;</td></tr>
+    <tr><td colspan="2">&nbsp;</td></tr>
 
     <tr><td colspan="2"><b>Diagnostics</b></td></tr>
     <%
@@ -60,13 +60,21 @@
             <tr><td colspan="2">[<a href="<%=h(link.second)%>"><%=h(link.first)%></a>]</td></tr><%
         }
     %>
-    <tr><td>&nbsp;</td></tr>
+    <tr><td colspan="2">&nbsp;</td></tr>
 
-    <tr><td>
+    <tr><td colspan="2">
     <form method="get" action="impersonate.view">
         <table>
-        <tr><td colspan="2"><b>Impersonate User</b></td></tr>
-        <tr><td colspan="2">
+        <tr><td><b>Impersonate User</b></td></tr>
+        <tr><td><%
+            if (user.isImpersonated())
+            {
+        %>
+        Already impersonating; click "Sign out" to change user back to <%=h(user.getImpersonatingUser().getDisplayName(context))%>.<%
+            }
+            else
+            {
+        %>
             <select id="email" name="email" style="width:200"><%
                 for (String email : bean.emails)
                 {%>
@@ -74,13 +82,15 @@
                 }
             %>
             </select><br>
-            <input style="vertical-align:bottom" type=image src="<%=PageFlowUtil.buttonSrc("Impersonate")%>">
+            <input style="vertical-align:bottom" type=image src="<%=PageFlowUtil.buttonSrc("Impersonate")%>"><%
+            }
+            %>
         </td></tr>
         </table>
     </form>
     </td></tr>
 
-    <tr><td>&nbsp;</td></tr>
+    <tr><td colspan="2">&nbsp;</td></tr>
 
     <tr><td colspan="2"><b>Active Users in the Last Hour</b></td></tr><%
 

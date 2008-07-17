@@ -62,9 +62,9 @@ CREATE TABLE exp.IndexVarchar
 );
 CREATE INDEX IDX_IndexVarchar_ObjectId ON exp.IndexVarchar(ObjectId);
 
-exec core.fn_dropifexists 'ObjectProperty', 'exp', 'INDEX', 'IDX_ObjectProperty_FloatValue'
+EXEC core.fn_dropifexists 'ObjectProperty', 'exp', 'INDEX', 'IDX_ObjectProperty_FloatValue'
 GO
-exec core.fn_dropifexists 'ObjectProperty', 'exp', 'INDEX', 'IX_ObjectProperty_PropertyObject'
+EXEC core.fn_dropifexists 'ObjectProperty', 'exp', 'INDEX', 'IX_ObjectProperty_PropertyObject'
 GO
 
 CREATE INDEX IDX_ObjectProperty_PropertyId ON exp.ObjectProperty(PropertyId)

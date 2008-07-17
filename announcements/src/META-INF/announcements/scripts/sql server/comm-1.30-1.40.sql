@@ -92,19 +92,19 @@ CREATE TABLE comm.EmailPrefs
 	CONSTRAINT FK_EmailPrefs_EmailFormats FOREIGN KEY (EmailFormatId) REFERENCES comm.EmailFormats (EmailFormatId),
 	CONSTRAINT FK_EmailPrefs_PageTypes FOREIGN KEY (PageTypeId) REFERENCES comm.PageTypes (PageTypeId)
 	)
-
+GO
 
 INSERT INTO comm.EmailPrefs (Container, UserId, EmailOptionId, EmailFormatId, PageTypeId)
-SELECT     core.Containers.EntityId AS Container, prop.PropertySets.UserId, prop.Properties.Value, 1, 1
-FROM         prop.Properties INNER JOIN
-                      prop.PropertySets ON prop.Properties.[Set] = prop.PropertySets.[Set] INNER JOIN
-                      core.Containers ON prop.PropertySets.ObjectId = core.Containers.EntityId INNER JOIN
-                      core.Users on prop.PropertySets.UserId = core.Users.UserId
-WHERE     (prop.PropertySets.Category = 'Announcements' AND prop.Properties.Name = 'email')
+    SELECT core.Containers.EntityId AS Container, prop.PropertySets.UserId, prop.Properties.Value, 1, 1
+    FROM prop.Properties INNER JOIN
+        prop.PropertySets ON prop.Properties.[Set] = prop.PropertySets.[Set] INNER JOIN
+        core.Containers ON prop.PropertySets.ObjectId = core.Containers.EntityId INNER JOIN
+        core.Users ON prop.PropertySets.UserId = core.Users.UserId
+    WHERE (prop.PropertySets.Category = 'Announcements' AND prop.Properties.Name = 'email')
 
 DELETE FROM prop.Properties
 WHERE prop.Properties.[Set] IN
-    (SELECT [Set] from prop.PropertySets WHERE prop.PropertySets.Category = 'Announcements')
+    (SELECT [Set] FROM prop.PropertySets WHERE prop.PropertySets.Category = 'Announcements')
 
 DELETE FROM prop.PropertySets WHERE prop.PropertySets.Category = 'Announcements'
 GO

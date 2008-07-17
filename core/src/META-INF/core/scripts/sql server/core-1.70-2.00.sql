@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-
-if exists (select * from sysobjects where id = object_id('core.fn_dropifexists') and sysstat & 0xf = 4)
-	drop procedure core.fn_dropifexists
+IF EXISTS (SELECT * FROM sysobjects WHERE id = object_id('core.fn_dropifexists') AND sysstat & 0xf = 4)
+	DROP PROCEDURE core.fn_dropifexists
 GO
 
 CREATE PROCEDURE core.fn_dropifexists (@objname varchar(250), @objschema varchar(50), @objtype varchar(50), @subobjname varchar(250)=NULL)
@@ -24,21 +23,21 @@ AS
 DECLARE	@ret_code INTEGER
 DECLARE	@fullname varchar(300)
 SELECT @ret_code = 0
-SELECT @fullname = (lower(@objschema)+'.'+lower(@objname))
-IF (upper(@objtype)) = 'TABLE'
+SELECT @fullname = (LOWER(@objschema) + '.' + LOWER(@objname))
+IF (UPPER(@objtype)) = 'TABLE'
 BEGIN
-	IF OBJECTPROPERTY(OBJECT_ID(@fullname),'IsTable') =1
+	IF OBJECTPROPERTY(OBJECT_ID(@fullname), 'IsTable') =1
 	BEGIN
-		EXEC('DROP TABLE '+@fullname )
+		EXEC('DROP TABLE ' + @fullname )
 		SELECT @ret_code = 1
 	END
 		ELSE IF @objname LIKE '##%' AND OBJECT_ID('tempdb.dbo.' + @objname) IS NOT NULL
 	BEGIN
-		EXEC('DROP TABLE '+@objname )
+		EXEC('DROP TABLE ' + @objname )
 		SELECT @ret_code = 1
 	END
 END
-ELSE IF (upper(@objtype)) = 'VIEW'
+ELSE IF (UPPER(@objtype)) = 'VIEW'
 BEGIN
 	IF OBJECTPROPERTY(OBJECT_ID(@fullname),'IsView') =1
 	BEGIN
@@ -46,26 +45,26 @@ BEGIN
 		SELECT @ret_code =1
 	END
 END
-ELSE IF (upper(@objtype)) = 'INDEX'
+ELSE IF (UPPER(@objtype)) = 'INDEX'
 BEGIN
-	declare @fullername varchar(500)
-	select @fullername = @fullname + '.' + @subobjname
+	DECLARE @fullername varchar(500)
+	SELECT @fullername = @fullname + '.' + @subobjname
 	IF INDEXPROPERTY(OBJECT_ID(@fullname),@subobjname, 'IndexID') IS NOT NULL
 	BEGIN
 
 		EXEC('DROP INDEX '+ @fullername )
 		SELECT @ret_code =1
 	END
-	ELSE IF EXISTS (SELECT * FROM sysindexes si inner join sysobjects so
-			on si.id = so.id
+	ELSE IF EXISTS (SELECT * FROM sysindexes si INNER JOIN sysobjects so
+			ON si.id = so.id
 			WHERE si.name = @subobjname
 			AND so.name <> @objname)
 		RAISERROR ('Index does not belong to specified table ' , 16, 1)
 END
-ELSE IF (upper(@objtype)) = 'SCHEMA'
+ELSE IF (UPPER(@objtype)) = 'SCHEMA'
 BEGIN
 	DECLARE @uid int
-	SELECT @uid=uid FROM sysusers WHERE name = lower(@objschema) and IsAppRole=1
+	SELECT @uid=uid FROM sysusers WHERE name = LOWER(@objschema) AND IsAppRole=1
 	IF @uid IS NOT NULL
 	BEGIN
 		IF (@objname = '*' )
@@ -73,13 +72,13 @@ BEGIN
 			DECLARE @soName sysname, @parent int, @xt char(2), @fkschema sysname
 			DECLARE soCursor CURSOR for SELECT so.name, so.xtype, so.parent_obj, su.name
 						FROM sysobjects so
-						INNER JOIN sysusers su on (so.uid = su.uid)
+						INNER JOIN sysusers su ON (so.uid = su.uid)
 						WHERE (so.uid=@uid)
 							OR so.id IN (
-								SELECT fso.id from sysforeignkeys sfk
-								inner join sysobjects fso on (sfk.constid = fso.id)
-								inner join sysobjects fsr on (sfk.rkeyid = fsr.id)
-								where fsr.uid=@uid)
+								SELECT fso.id FROM sysforeignkeys sfk
+								INNER JOIN sysobjects fso ON (sfk.constid = fso.id)
+								INNER JOIN sysobjects fsr ON (sfk.rkeyid = fsr.id)
+								WHERE fsr.uid=@uid)
 
 						ORDER BY (CASE 	WHEN xtype='V' THEN 1
  								WHEN xtype='P' THEN 2
@@ -120,7 +119,7 @@ BEGIN
 			SELECT @ret_code =1
 		END
 		ELSE
-			RAISERROR ('Invalid @objname for @objtype of SCHEMA   must be either "*" (to drop all dependent objects)  or NULL (for dropping empty schema )' , 16, 1)
+			RAISERROR ('Invalid @objname for @objtype of SCHEMA   must be either "*" (to drop all dependent objects) or NULL (for dropping empty schema )' , 16, 1)
 	END
 END
 ELSE
@@ -129,11 +128,11 @@ ELSE
 RETURN @ret_code
 GO
 
-exec core.fn_dropifexists 'Containers', 'core', 'Index', 'IX_Containers_Parent_Entity'
+EXEC core.fn_dropifexists 'Containers', 'core', 'Index', 'IX_Containers_Parent_Entity'
 GO
-exec core.fn_dropifexists 'Documents', 'core', 'Index', 'IX_Documents_Container'
+EXEC core.fn_dropifexists 'Documents', 'core', 'Index', 'IX_Documents_Container'
 GO
-exec core.fn_dropifexists 'Documents', 'core', 'Index', 'IX_Documents_Parent'
+EXEC core.fn_dropifexists 'Documents', 'core', 'Index', 'IX_Documents_Parent'
 GO
 CREATE INDEX IX_Containers_Parent_Entity ON core.Containers(Parent, EntityId)
 GO
@@ -150,5 +149,5 @@ GO
 
 ALTER TABLE core.Report
     ADD ReportOwner INT
-Go
+GO
 

@@ -180,9 +180,9 @@ CREATE TABLE mothership.SoftwareRelease
 ALTER TABLE mothership.ExceptionReport ADD COLUMN PageflowName VARCHAR(30);
 ALTER TABLE mothership.ExceptionReport ADD COLUMN PageflowAction VARCHAR(40);
 
-update mothership.serverinstallation set serverhostname=serverip where serverhostname is null;
+UPDATE mothership.serverinstallation SET serverhostname=serverip WHERE serverhostname IS NULL;
 
-delete from mothership.serverinstallation where serverinstallationid not in (select serverinstallationid from mothership.serversession);
+DELETE FROM mothership.serverinstallation WHERE serverinstallationid NOT IN (SELECT serverinstallationid FROM mothership.serversession);
 
 CREATE INDEX IX_ServerSession_ServerInstallationId ON mothership.serversession(serverinstallationid);
 CREATE INDEX IX_ExceptionReport_ExceptionStackTraceId ON mothership.exceptionreport(exceptionstacktraceid);

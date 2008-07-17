@@ -15,7 +15,7 @@
  */
 ALTER TABLE core.ACLs ADD Container UNIQUEIDENTIFIER;
 GO
-UPDATE core.ACLs SET Container = ObjectId WHERE ObjectId in (SELECT EntityId FROM core.Containers);
+UPDATE core.ACLs SET Container = ObjectId WHERE ObjectId IN (SELECT EntityId FROM core.Containers);
 GO
 
 ALTER TABLE core.Principals ADD Type CHAR(1) NOT NULL DEFAULT 'u';
@@ -34,10 +34,10 @@ GO
 
 DECLARE @name VARCHAR(200)
 DECLARE @sql VARCHAR(4000)
-select @name = name from sysobjects where name like 'DF__Principal__IsGro%'
-IF (@name is not null)
+SELECT @name = name FROM sysobjects WHERE name LIKE 'DF__Principal__IsGro%'
+IF (@name IS NOT NULL)
 BEGIN
-    select @sql = 'ALTER TABLE core.Principals DROP CONSTRAINT ' + @name
+    SELECT @sql = 'ALTER TABLE core.Principals DROP CONSTRAINT ' + @name
     EXEC sp_sqlexec @sql
 END
 GO

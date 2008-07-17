@@ -20,5 +20,5 @@ ALTER TABLE pipeline.StatusFiles
 ALTER TABLE pipeline.StatusFiles
     ADD HadError boolean NOT NULL DEFAULT FALSE;
 
-UPDATE pipeline.StatusFiles set HadError = TRUE
+UPDATE pipeline.StatusFiles SET HadError = TRUE
 WHERE Status = 'ERROR';

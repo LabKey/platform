@@ -2016,6 +2016,9 @@ public class AdminController extends SpringActionController
     {
         public ActionURL getRedirectURL(Object o) throws Exception
         {
+            if (getUser().isImpersonated())
+                throw new IllegalStateException("Already impersonating");
+
             String rawEmail = getViewContext().getActionURL().getParameter("email");
             ValidEmail email = new ValidEmail(rawEmail);
 
@@ -2023,11 +2026,7 @@ public class AdminController extends SpringActionController
                 throw new NotFoundException("User doesn't exist");
 
             final User impersonatedUser = UserManager.getUser(email);
-            SecurityManager.setAuthenticatedUser(getViewContext().getRequest(), impersonatedUser);
-            AuditLogService.get().addEvent(getViewContext(), UserManager.USER_AUDIT_EVENT, getUser().getUserId(),
-                    getUser().getEmail() + " impersonated user: " + email);
-            AuditLogService.get().addEvent(getViewContext(), UserManager.USER_AUDIT_EVENT, impersonatedUser.getUserId(),
-                    email + " was impersonated by user: " + getUser().getEmail());
+            SecurityManager.impersonate(getViewContext(), impersonatedUser);
             return AppProps.getInstance().getHomePageActionURL();
         }
     }

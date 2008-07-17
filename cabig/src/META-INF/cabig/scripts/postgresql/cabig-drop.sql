@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 -- DROP current views.
 SELECT core.fn_dropifexists('experimentrun', 'cabig', 'VIEW', NULL);
 SELECT core.fn_dropifexists('ProteinGroupMembers', 'cabig', 'VIEW', NULL);

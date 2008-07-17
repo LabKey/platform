@@ -419,7 +419,6 @@ experiment/gwtsrc/org/labkey/experiment/property/client/PropertyService.java -te
 experiment/gwtsrc/org/labkey/experiment/property/client/PropertyServiceAsync.java -text
 experiment/module.properties -text
 experiment/src/META-INF/exp.xml -text
-experiment/src/META-INF/experiment/scripts/postgresql/deleteOrphans.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-0.00-1.00.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-0.00-1.10.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-1.00-1.10.sql -text
@@ -444,8 +443,7 @@ experiment/src/META-INF/experiment/scripts/postgresql/exp-8.10-8.11.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-8.10-8.20.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-create.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-drop.sql -text
-experiment/src/META-INF/experiment/scripts/postgresql/exp_drop.sql -text
-experiment/src/META-INF/experiment/scripts/postgresql/findOrphans.sql -text
+experiment/src/META-INF/experiment/scripts/postgresql/obsolete/deleteOrphans.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/obsolete/exp-0.00-0.63.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/obsolete/exp-0.00-0.65.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/obsolete/exp-0.81-0.82.sql -text
@@ -486,7 +484,8 @@ experiment/src/META-INF/experiment/scripts/postgresql/obsolete/exp-2.10-2.11.sql
 experiment/src/META-INF/experiment/scripts/postgresql/obsolete/exp-2.11-2.12.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/obsolete/exp-2.12-2.13.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/obsolete/exp-2.13-2.14.sql -text
-experiment/src/META-INF/experiment/scripts/sql[!!-~]server/deleteOrphans.sql -text
+experiment/src/META-INF/experiment/scripts/postgresql/obsolete/exp_drop.sql -text
+experiment/src/META-INF/experiment/scripts/postgresql/obsolete/findOrphans.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-0.00-1.00.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-0.00-1.10.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-1.00-1.10.sql -text
@@ -512,8 +511,7 @@ experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.10-8.20.sql -te
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.11-8.12.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-create.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-drop.sql -text
-experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp_drop.sql -text
-experiment/src/META-INF/experiment/scripts/sql[!!-~]server/findOrphans.sql -text
+experiment/src/META-INF/experiment/scripts/sql[!!-~]server/obsolete/deleteOrphans.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/obsolete/exp-0.00-0.60.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/obsolete/exp-0.00-0.61.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/obsolete/exp-0.00-0.63.sql -text
@@ -561,6 +559,8 @@ experiment/src/META-INF/experiment/scripts/sql[!!-~]server/obsolete/exp-2.10-2.1
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/obsolete/exp-2.11-2.12.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/obsolete/exp-2.12-2.13.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/obsolete/exp-2.13-2.14.sql -text
+experiment/src/META-INF/experiment/scripts/sql[!!-~]server/obsolete/exp_drop.sql -text
+experiment/src/META-INF/experiment/scripts/sql[!!-~]server/obsolete/findOrphans.sql -text
 experiment/src/org/labkey/experiment/ArchiveURLRewriter.java -text
 experiment/src/org/labkey/experiment/ChooseExperimentTypeBean.java -text
 experiment/src/org/labkey/experiment/ConfirmDelete.jsp -text

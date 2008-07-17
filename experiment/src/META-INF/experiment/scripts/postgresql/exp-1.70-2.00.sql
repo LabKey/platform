@@ -67,17 +67,17 @@ SELECT core.fn_dropifexists ('Object', 'exp', 'INDEX', 'IX_Object_Uri')
 
 CREATE INDEX IX_Experiment_Container ON exp.Experiment(Container)
 ;
-create index IX_CL_ExperimentRun_Container ON exp.ExperimentRun(Container)
+CREATE INDEX IX_CL_ExperimentRun_Container ON exp.ExperimentRun(Container)
 ;
-create index IX_ExperimentRun_ProtocolLSID ON exp.ExperimentRun(ProtocolLSID)
+CREATE INDEX IX_ExperimentRun_ProtocolLSID ON exp.ExperimentRun(ProtocolLSID)
 ;
 CREATE INDEX IX_RunList_ExperimentRunId ON exp.RunList(ExperimentRunId)
 ;
 CREATE INDEX IX_ProtocolApplicationParameter_AppId ON exp.ProtocolApplicationParameter(ProtocolApplicationId)
 ;
-CREATE INDEX IX_ProtocolActionPredecessor_PredecessorId on exp.ProtocolActionPredecessor(PredecessorId)
+CREATE INDEX IX_ProtocolActionPredecessor_PredecessorId ON exp.ProtocolActionPredecessor(PredecessorId)
 ;
-CREATE INDEX IX_ProtocolAction_ChildProtocolId on exp.ProtocolAction(ChildProtocolId)
+CREATE INDEX IX_ProtocolAction_ChildProtocolId ON exp.ProtocolAction(ChildProtocolId)
 ;
 CREATE INDEX IX_ProtocolParameter_ProtocolId ON exp.ProtocolParameter(ProtocolId)
 ;
@@ -103,7 +103,7 @@ CREATE INDEX IX_Material_CpasType ON exp.Material(CpasType)
 
 CREATE INDEX IX_MaterialSource_Container ON exp.MaterialSource(Container)
 ;
-CREATE INDEX IX_ActiveMaterialSource_MaterialSourceLSID on exp.ActiveMaterialSource(MaterialSourceLSID)
+CREATE INDEX IX_ActiveMaterialSource_MaterialSourceLSID ON exp.ActiveMaterialSource(MaterialSourceLSID)
 ;
 
 

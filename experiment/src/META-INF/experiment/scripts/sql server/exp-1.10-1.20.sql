@@ -13,23 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-if exists (select * from dbo.sysobjects where id = object_id(N'[exp].[FK_BioSource_Material]') and OBJECTPROPERTY(id, N'IsForeignKey') = 1)
+IF EXISTS (SELECT * FROM dbo.sysobjects WHERE id = object_id(N'[exp].[FK_BioSource_Material]') AND OBJECTPROPERTY(id, N'IsForeignKey') = 1)
 ALTER TABLE [exp].[BioSource] DROP CONSTRAINT FK_BioSource_Material
 GO
 
-if exists (select * from dbo.sysobjects where id = object_id(N'[exp].[FK_Fraction_Material]') and OBJECTPROPERTY(id, N'IsForeignKey') = 1)
+IF EXISTS (SELECT * FROM dbo.sysobjects WHERE id = object_id(N'[exp].[FK_Fraction_Material]') AND OBJECTPROPERTY(id, N'IsForeignKey') = 1)
 ALTER TABLE [exp].[Fraction] DROP CONSTRAINT FK_Fraction_Material
 GO
 
-if exists (select * from dbo.sysobjects where id = object_id(N'[exp].[BioSource]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
+IF EXISTS (SELECT * FROM dbo.sysobjects WHERE id = object_id(N'[exp].[BioSource]') AND OBJECTPROPERTY(id, N'IsUserTable') = 1)
 DROP TABLE [exp].[BioSource]
 GO
 
-if exists (select * from dbo.sysobjects where id = object_id(N'[exp].[Fraction]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
+IF EXISTS (SELECT * FROM dbo.sysobjects WHERE id = object_id(N'[exp].[Fraction]') AND OBJECTPROPERTY(id, N'IsUserTable') = 1)
 DROP TABLE [exp].[Fraction]
 GO
 
-if exists (select * from dbo.sysobjects where id = object_id(N'[exp].[setProperty]') and OBJECTPROPERTY(id, N'IsProcedure') = 1)
+IF EXISTS (SELECT * FROM dbo.sysobjects WHERE id = object_id(N'[exp].[setProperty]') AND OBJECTPROPERTY(id, N'IsProcedure') = 1)
 DROP PROCEDURE exp.setProperty
 GO
 

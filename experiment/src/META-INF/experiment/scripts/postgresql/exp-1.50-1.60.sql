@@ -16,8 +16,8 @@
 ALTER TABLE exp.propertydomain ADD COLUMN Required BOOLEAN NOT NULL DEFAULT '0';
 
 CREATE TABLE exp.RunList (
-	ExperimentId int not null,
-	ExperimentRunId int not null,
+	ExperimentId int NOT NULL,
+	ExperimentRunId int NOT NULL,
 	CONSTRAINT PK_RunList PRIMARY KEY (ExperimentId, ExperimentRunId),
 	CONSTRAINT FK_RunList_ExperimentId FOREIGN KEY (ExperimentId)
 			REFERENCES exp.Experiment(RowId),

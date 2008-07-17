@@ -35,6 +35,6 @@ CREATE TABLE audit.AuditLog
 );
 
 INSERT INTO audit.AuditLog (IntKey1, Created, Comment, EventType)
-    (SELECT UserId, Date, Message, 'UserAuditEvent' from core.UserHistory);
+    (SELECT UserId, Date, Message, 'UserAuditEvent' FROM core.UserHistory);
 
 DROP TABLE core.UserHistory;

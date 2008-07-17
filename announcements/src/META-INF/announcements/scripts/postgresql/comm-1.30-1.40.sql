@@ -39,13 +39,13 @@ CREATE TABLE comm.EmailOptions
 	);
 
 INSERT INTO comm.EmailOptions (EmailOptionId, EmailOption)
-VALUES (0, 'No Email');
+    VALUES (0, 'No Email');
 
 INSERT INTO comm.EmailOptions (EmailOptionId, EmailOption)
-VALUES (1, 'All messages');
+    VALUES (1, 'All messages');
 
 INSERT INTO comm.EmailOptions (EmailOptionId, EmailOption)
-VALUES (2, 'Posted threads only');
+    VALUES (2, 'Posted threads only');
 
 CREATE TABLE comm.EmailFormats
 	(
@@ -55,10 +55,10 @@ CREATE TABLE comm.EmailFormats
 	);
 
 INSERT INTO comm.EmailFormats (EmailFormatId, EmailFormat)
-VALUES (0, 'Plain Text');
+    VALUES (0, 'Plain Text');
 
 INSERT INTO comm.EmailFormats (EmailFormatId, EmailFormat)
-VALUES (1, 'HTML');
+    VALUES (1, 'HTML');
 
 CREATE TABLE comm.PageTypes
 	(
@@ -68,10 +68,10 @@ CREATE TABLE comm.PageTypes
 	);
 
 INSERT INTO comm.PageTypes (PageTypeId, PageType)
-VALUES (0, 'Message');
+    VALUES (0, 'Message');
 
 INSERT INTO comm.PageTypes (PageTypeId, PageType)
-VALUES (1, 'Wiki');
+    VALUES (1, 'Wiki');
 
 CREATE TABLE comm.EmailPrefs
 	(
@@ -89,15 +89,15 @@ CREATE TABLE comm.EmailPrefs
 	);
 
 INSERT INTO comm.EmailPrefs (Container, UserId, EmailOptionId, EmailFormatId, PageTypeId)
-SELECT     core.Containers.EntityId AS Container, prop.PropertySets.UserId, to_number(prop.Properties.Value, '9'), 1, 1
-FROM         prop.Properties INNER JOIN
-                      prop.PropertySets ON prop.Properties.Set = prop.PropertySets.Set INNER JOIN
-                      core.Containers ON prop.PropertySets.ObjectId = core.Containers.EntityId INNER JOIN
-                      core.Users on prop.PropertySets.UserId = core.Users.UserId
-WHERE     (prop.PropertySets.Category = 'Announcements' AND prop.Properties.Name = 'email');
+    SELECT core.Containers.EntityId AS Container, prop.PropertySets.UserId, to_number(prop.Properties.Value, '9'), 1, 1
+    FROM prop.Properties INNER JOIN
+        prop.PropertySets ON prop.Properties.Set = prop.PropertySets.Set INNER JOIN
+        core.Containers ON prop.PropertySets.ObjectId = core.Containers.EntityId INNER JOIN
+        core.Users ON prop.PropertySets.UserId = core.Users.UserId
+    WHERE (prop.PropertySets.Category = 'Announcements' AND prop.Properties.Name = 'email');
 
 DELETE FROM prop.Properties
 WHERE prop.Properties.Set IN
-    (SELECT Set from prop.PropertySets WHERE prop.PropertySets.Category = 'Announcements');
+    (SELECT Set FROM prop.PropertySets WHERE prop.PropertySets.Category = 'Announcements');
 
 DELETE FROM prop.PropertySets WHERE prop.PropertySets.Category = 'Announcements';

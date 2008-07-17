@@ -19,4 +19,4 @@ DELETE FROM issues.EmailPrefs WHERE UserID NOT IN
     SELECT U1.UserId
     FROM core.Users U1
   	)
-Go
+GO

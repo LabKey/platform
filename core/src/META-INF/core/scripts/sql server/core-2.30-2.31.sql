@@ -14,4 +14,4 @@
  * limitations under the License.
  */
 ALTER TABLE core.Report ADD Flags INT NOT NULL DEFAULT 0
-Go
+GO

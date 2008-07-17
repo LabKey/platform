@@ -41,6 +41,3 @@ UPDATE comm.Announcements
     SET Title = (SELECT Title FROM comm.Announcements p WHERE p.EntityId = comm.Announcements.Parent),
     Expires = (SELECT Expires FROM comm.Announcements p WHERE p.EntityId = comm.Announcements.Parent)
     WHERE Parent IS NOT NULL;
-
--- For each thread, select RowId, EntityId, Container, Body, RendererType, CreatedBy, and Created from the original post and add Title, Status,
---   Expires, CreatedBy, and Created from either the most recent response or the original post, if no responses.

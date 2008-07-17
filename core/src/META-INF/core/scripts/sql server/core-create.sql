@@ -20,7 +20,7 @@ CREATE VIEW core.Users AS
     WHERE Type = 'u'
 GO
 
-CREATE VIEW core.Contacts As
+CREATE VIEW core.Contacts AS
 	SELECT DISTINCT Users.FirstName + ' ' + Users.LastName AS Name, Users.Email, Users.DisplayName, Users.Phone, Users.UserId, Principals.OwnerId, Principals.Container
 	FROM core.Principals Principals
 	    INNER JOIN core.Members Members ON Principals.UserId = Members.GroupId

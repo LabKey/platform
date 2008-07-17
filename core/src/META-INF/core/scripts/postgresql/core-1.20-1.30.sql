@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 ALTER TABLE core.ACLs ADD Container UNIQUEIDENTIFIER;
-UPDATE core.ACLs SET Container = ObjectId WHERE ObjectId in (SELECT EntityId FROM core.Containers);
+UPDATE core.ACLs SET Container = ObjectId WHERE ObjectId IN (SELECT EntityId FROM core.Containers);
 
 ALTER TABLE core.Principals ADD Type CHAR(1) NOT NULL DEFAULT 'u';
 UPDATE core.Principals SET Type='u';

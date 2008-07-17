@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 ALTER TABLE pipeline.StatusFiles ADD
     Description NVARCHAR(255),
     DataUrl NVARCHAR(255),
@@ -23,11 +22,11 @@ ALTER TABLE pipeline.StatusFiles ADD
 GO
 
 UPDATE pipeline.StatusFiles SET Provider = 'X!Tandem (Cluster)'
-WHERE FilePath like '%/xtan/%'
+WHERE FilePath LIKE '%/xtan/%'
 
 UPDATE pipeline.StatusFiles SET Provider = 'Comet (Cluster)'
-WHERE FilePath like '%/cmt/%'
+WHERE FilePath LIKE '%/cmt/%'
 
 UPDATE pipeline.StatusFiles SET Provider = 'msInspect (Cluster)'
-WHERE FilePath like '%/inspect/%'
+WHERE FilePath LIKE '%/inspect/%'
 GO

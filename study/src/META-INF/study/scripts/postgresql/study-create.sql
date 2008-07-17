@@ -45,7 +45,7 @@ CREATE VIEW study.SpecimenDetail AS
             ELSE False
             END)
 	END
-        ) As Available
+        ) AS Available
          FROM
             (
                 SELECT Specimen.*, (CASE IsRepository WHEN True THEN True ELSE False END) AS AtRepository,
@@ -54,17 +54,17 @@ CREATE VIEW study.SpecimenDetail AS
     	        FROM study.Specimen AS Specimen
                 LEFT OUTER JOIN study.Site AS Site ON
                         (Site.RowId = Specimen.CurrentLocation)
-                LEFT OUTER JOIN (select *, True as Locked from study.LockedSpecimens) LockedSpecimens ON
+                LEFT OUTER JOIN (SELECT *, True AS Locked FROM study.LockedSpecimens) LockedSpecimens ON
                     LockedSpecimens.GlobalUniqueId = Specimen.GlobalUniqueId AND
                     LockedSpecimens.Container = Specimen.Container
         ) SpecimenInfo;
 
 CREATE VIEW study.SpecimenSummary AS
     SELECT Container, SpecimenNumber, Ptid, VisitDescription, VisitValue, SUM(Volume) AS TotalVolume,
-        SUM(CASE Available WHEN True THEN Volume ELSE 0 END) As AvailableVolume,
+        SUM(CASE Available WHEN True THEN Volume ELSE 0 END) AS AvailableVolume,
         VolumeUnits, PrimaryTypeId, AdditiveTypeId, DerivativeTypeId, DrawTimestamp, SalReceiptDate,
         ClassId, ProtocolNumber, SubAdditiveDerivative, OriginatingLocationId,
-        COUNT(GlobalUniqueId) As VialCount,
+        COUNT(GlobalUniqueId) AS VialCount,
         SUM(CASE LockedInRequest WHEN True THEN 1 ELSE 0 END) AS LockedInRequestCount,
         SUM(CASE AtRepository WHEN True THEN 1 ELSE 0 END) AS AtRepositoryCount,
         SUM(CASE Available WHEN True THEN 1 ELSE 0 END) AS AvailableCount

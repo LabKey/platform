@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 ALTER TABLE audit.AuditLog ADD ProjectId ENTITYID
-Go
+GO
 ALTER TABLE audit.AuditLog ADD Key3 NVARCHAR(200)
-Go
+GO
 ALTER TABLE audit.AuditLog ADD IntKey3 INT NULL
-Go
+GO

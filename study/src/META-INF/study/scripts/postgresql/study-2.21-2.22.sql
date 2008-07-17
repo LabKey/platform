@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-UPDATE study.Study SET DateBased=false where DateBased IS NULL;
+UPDATE study.Study SET DateBased=false WHERE DateBased IS NULL;
 
 ALTER TABLE study.ParticipantVisit
 ADD Day int4;

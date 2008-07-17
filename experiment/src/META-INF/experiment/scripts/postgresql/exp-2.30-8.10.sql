@@ -22,8 +22,9 @@ ALTER TABLE exp.ExperimentRun ALTER COLUMN Name TYPE VARCHAR(100);
 -- Fix up sample sets that were incorrectly created in a folder other than their domain
 -- https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=4976
 
-update exp.materialsource set container = (select min(dd.container) from exp.domaindescriptor dd where exp.materialsource.lsid = dd.domainuri)
-where rowid in (select ms.rowid from exp.materialsource ms, exp.domaindescriptor dd where dd.domainuri = ms.lsid and ms.container != dd.container);
+UPDATE exp.materialsource SET container =
+    (SELECT MIN(dd.container) FROM exp.domaindescriptor dd WHERE exp.materialsource.lsid = dd.domainuri)
+    WHERE rowid IN (SELECT ms.rowid FROM exp.materialsource ms, exp.domaindescriptor dd WHERE dd.domainuri = ms.lsid AND ms.container != dd.container);
 
 /* exp-2.32-2.33.sql */
 

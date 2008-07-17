@@ -35,15 +35,23 @@ UPDATE prop.Properties SET Value = '2' WHERE
     Value = '0';
 
 -- Fix up mismatched containers for documents and announcements. 1.7 code inserted bad containers in some cases.
-update core.documents set container =
-    (select a.container from comm.announcements a where
-        a.entityid = core.documents.parent and
+UPDATE core.documents SET container =
+    (SELECT a.container FROM comm.announcements a WHERE
+        a.entityid = core.documents.parent AND
         a.container != core.documents.container)
-    where
+    WHERE
         core.documents.parent IN
-            (select a.entityid from comm.announcements a where
-                a.entityid = core.documents.parent and
+            (SELECT a.entityid FROM comm.announcements a WHERE
+                a.entityid = core.documents.parent AND
                 a.container != core.documents.container);
 
 -- Fix up mismatched containers for documents and wikis. 1.7 code inserted bad containers in some cases.
-update core.documents set container = (select p.container from comm.pages p where p.entityid = core.documents.parent and p.container != core.documents.container) where core.documents.parent IN (select p.entityid from comm.pages p where p.entityid = core.documents.parent and p.container != core.documents.container);
+UPDATE core.documents SET container =
+    (SELECT p.container FROM comm.pages p WHERE
+        p.entityid = core.documents.parent AND
+        p.container != core.documents.container)
+    WHERE
+        core.documents.parent IN
+            (SELECT p.entityid FROM comm.pages p WHERE
+                p.entityid = core.documents.parent AND
+                p.container != core.documents.container);

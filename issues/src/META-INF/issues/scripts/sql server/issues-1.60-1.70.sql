@@ -16,7 +16,7 @@
 
 ALTER TABLE issues.Issues
     ADD NotifyList TEXT
-Go
+GO
 
 CREATE TABLE issues.EmailPrefs
 	(
@@ -27,4 +27,4 @@ CREATE TABLE issues.EmailPrefs
 	CONSTRAINT FK_EmailPrefs_Containers FOREIGN KEY (Container) REFERENCES core.Containers (EntityId),
 	CONSTRAINT FK_EmailPrefs_Principals FOREIGN KEY (UserId) REFERENCES core.Principals (UserId),
 	)
-Go
+GO

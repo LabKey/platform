@@ -21,5 +21,5 @@ GO
 
 UPDATE Portal.PortalWebParts
 SET Properties = 'webPartContainer=' + UPPER(PageId) + '&name=default'
-WHERE (Name = 'Wiki' or Name = 'Narrow Wiki') AND (Properties IS NULL or Properties = '')
+WHERE (Name = 'Wiki' OR Name = 'Narrow Wiki') AND (Properties IS NULL OR Properties = '')
 GO

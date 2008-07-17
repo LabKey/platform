@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 ALTER TABLE study.Study ADD StudySecurity BIT DEFAULT 0
-Go
+GO
 
-UPDATE study.Study SET StudySecurity=1 where StudySecurity is NULL
-Go
+UPDATE study.Study SET StudySecurity=1 WHERE StudySecurity is NULL
+GO
 

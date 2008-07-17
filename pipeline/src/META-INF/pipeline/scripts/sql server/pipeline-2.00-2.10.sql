@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-exec core.fn_dropifexists 'StatusFiles', 'pipeline', 'INDEX', 'IX_StatusFiles_Container'
+EXEC core.fn_dropifexists 'StatusFiles', 'pipeline', 'INDEX', 'IX_StatusFiles_Container'
 GO
 
 -- dropping this index because it seems very nonselective and has been the cause(?) of some deadlocks
-exec core.fn_dropifexists 'StatusFiles', 'pipeline', 'INDEX', 'IX_StatusFiles_Status'
+EXEC core.fn_dropifexists 'StatusFiles', 'pipeline', 'INDEX', 'IX_StatusFiles_Status'
 GO
 
 CREATE INDEX IX_StatusFiles_Container ON pipeline.StatusFiles(Container)

@@ -29,13 +29,13 @@ DECLARE
     fullname := (LOWER(objschema) || '.' || LOWER(objname));
 	    IF (UPPER(objtype)) = 'TABLE' THEN
 		BEGIN
-            IF EXISTS( SELECT * FROM pg_tables WHERE tablename = LOWER(objname) and schemaname = LOWER(objschema) )
+            IF EXISTS( SELECT * FROM pg_tables WHERE tablename = LOWER(objname) AND schemaname = LOWER(objschema) )
             THEN
                 EXECUTE 'DROP TABLE ' || fullname;
                 ret_code = 1;
             ELSE
                 BEGIN
-                    SELECT INTO tempschema schemaname FROM pg_tables WHERE tablename = LOWER(objname) and schemaname LIKE '%temp%';
+                    SELECT INTO tempschema schemaname FROM pg_tables WHERE tablename = LOWER(objname) AND schemaname LIKE '%temp%';
                     IF (tempschema IS NOT NULL)
                     THEN
                         EXECUTE 'DROP TABLE ' || tempschema || '.' || objname;
@@ -46,7 +46,7 @@ DECLARE
 		END;
 	    ELSEIF (UPPER(objtype)) = 'VIEW' THEN
 		BEGIN
-		    IF EXISTS( SELECT * FROM pg_views WHERE viewname = LOWER(objname) and schemaname = LOWER(objschema) )
+		    IF EXISTS( SELECT * FROM pg_views WHERE viewname = LOWER(objname) AND schemaname = LOWER(objschema) )
 		    THEN
 			EXECUTE 'DROP VIEW ' || fullname;
 			ret_code = 1;
@@ -55,12 +55,12 @@ DECLARE
 	    ELSEIF (UPPER(objtype)) = 'INDEX' THEN
 		BEGIN
 		    fullname := LOWER(objschema) || '.' || LOWER(subobjname);
-		    IF EXISTS( SELECT * FROM pg_indexes WHERE tablename = LOWER(objname) and indexname = LOWER(subobjname) and schemaname = LOWER(objschema) )
+		    IF EXISTS( SELECT * FROM pg_indexes WHERE tablename = LOWER(objname) AND indexname = LOWER(subobjname) AND schemaname = LOWER(objschema) )
 		    THEN
 			EXECUTE 'DROP INDEX ' || fullname;
 			ret_code = 1;
 		    ELSE
-			IF EXISTS( SELECT * FROM pg_indexes WHERE indexname = LOWER(subobjname) and schemaname = LOWER(objschema) )
+			IF EXISTS( SELECT * FROM pg_indexes WHERE indexname = LOWER(subobjname) AND schemaname = LOWER(objschema) )
 				THEN RAISE EXCEPTION 'INDEX - % defined on a different table.', subobjname;
 			END IF;
 		    END IF;
@@ -68,7 +68,7 @@ DECLARE
 	    ELSEIF (UPPER(objtype)) = 'CONSTRAINT' THEN
 		BEGIN
 		    IF EXISTS( SELECT * FROM pg_class LEFT JOIN pg_constraint ON conrelid = pg_class.oid INNER JOIN pg_namespace ON pg_namespace.oid = pg_class.relnamespace
-                WHERE relkind = 'r' AND contype IS NOT NULL and nspname = LOWER(objschema) AND relname = LOWER(objname) AND conname = LOWER(subobjname) )
+                WHERE relkind = 'r' AND contype IS NOT NULL AND nspname = LOWER(objschema) AND relname = LOWER(objname) AND conname = LOWER(subobjname) )
 		    THEN
                 EXECUTE 'ALTER TABLE ' || fullname || ' DROP CONSTRAINT ' || subobjname;
                 ret_code = 1;
@@ -85,7 +85,7 @@ DECLARE
 				EXECUTE 'DROP SCHEMA ' || LOWER(objschema) || ' RESTRICT';
 				ret_code = 1;
 			ELSE
-				RAISE EXCEPTION 'Invalid objname for objtype of SCHEMA;  must be either "*" (for DROP SCHEMA CASCADE)  or NULL (for DROP SCHEMA RESTRICT)';
+				RAISE EXCEPTION 'Invalid objname for objtype of SCHEMA;  must be either "*" (for DROP SCHEMA CASCADE) or NULL (for DROP SCHEMA RESTRICT)';
 			END IF;
 		    END IF;
 		END;

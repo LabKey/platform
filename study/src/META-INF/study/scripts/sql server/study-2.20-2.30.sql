@@ -18,7 +18,7 @@ ALTER TABLE study.Study ADD
     StartDate DATETIME
   GO
 
-UPDATE study.Study SET DateBased=0 where DateBased is NULL
+UPDATE study.Study SET DateBased=0 WHERE DateBased is NULL
 GO
 
 ALTER TABLE study.ParticipantVisit ADD
@@ -33,7 +33,7 @@ ALTER TABLE study.Dataset
 ADD DemographicData BIT
 GO
 
-UPDATE study.Dataset SET DemographicData=0 where DemographicData IS NULL
+UPDATE study.Dataset SET DemographicData=0 WHERE DemographicData IS NULL
 GO
 
 ALTER TABLE study.Dataset
@@ -42,7 +42,7 @@ DEFAULT 0 FOR DemographicData
 GO
 
 ALTER TABLE study.Study ADD StudySecurity BIT DEFAULT 0
-Go
+GO
 
-UPDATE study.Study SET StudySecurity=1 where StudySecurity is NULL
-Go
+UPDATE study.Study SET StudySecurity=1 WHERE StudySecurity is NULL
+GO

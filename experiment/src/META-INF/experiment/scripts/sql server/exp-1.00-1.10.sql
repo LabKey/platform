@@ -17,7 +17,7 @@
 -- Steps in this script:
 -- 1.  Find and delete orphan records in the exp schema.  
 --	several views are created then later dropped to simplify the sql to identify orphans
--- 	Make the container column not null to prevent one type of orphan
+-- 	Make the container column NOT NULL to prevent one type of orphan
 -- 2.  Upgrade the tables underlying the exp OntologyManager.  
 --      PropertyDescriptor is altered
 --  	Property is replaced by Objects and ObjectProperties
@@ -33,7 +33,7 @@
 -- 
 SET NOCOUNT ON
 
-if exists (select * from dbo.sysobjects where id = object_id(N'exp.AllLsidContainers ') and OBJECTPROPERTY(id, N'IsView') = 1)
+IF EXISTS (SELECT * FROM dbo.sysobjects WHERE id = object_id(N'exp.AllLsidContainers ') AND OBJECTPROPERTY(id, N'IsView') = 1)
 CREATE VIEW exp._orphanProtocolView AS 
 SELECT * FROM exp.Protocol WHERE container NOT IN (SELECT entityid FROM core.containers) OR container IS NULL 
 GO
@@ -120,7 +120,7 @@ DELETE FROM exp.Property WHERE
 COMMIT TRANSACTION
 GO
 
--- now make the container fields not null
+-- now make the container fields NOT NULL
 ALTER TABLE exp.Experiment 
 	ALTER COLUMN Container EntityId NOT NULL
 GO
@@ -141,28 +141,28 @@ ALTER TABLE exp.Protocol
 GO
 
 -- now drop the views
-if exists (select * from dbo.sysobjects where id = object_id(N'exp._orphanLSIDView') and OBJECTPROPERTY(id, N'IsView') = 1)
+IF EXISTS (SELECT * FROM dbo.sysobjects WHERE id = object_id(N'exp._orphanLSIDView') AND OBJECTPROPERTY(id, N'IsView') = 1)
 DROP VIEW exp._orphanLSIDView
 GO
-if exists (select * from dbo.sysobjects where id = object_id(N'exp._orphanMaterialSourceView') and OBJECTPROPERTY(id, N'IsView') = 1)
+IF EXISTS (SELECT * FROM dbo.sysobjects WHERE id = object_id(N'exp._orphanMaterialSourceView') AND OBJECTPROPERTY(id, N'IsView') = 1)
 DROP VIEW exp._orphanMaterialSourceView
 GO
-if exists (select * from dbo.sysobjects where id = object_id(N'exp._orphanDataView') and OBJECTPROPERTY(id, N'IsView') = 1)
+IF EXISTS (SELECT * FROM dbo.sysobjects WHERE id = object_id(N'exp._orphanDataView') AND OBJECTPROPERTY(id, N'IsView') = 1)
 DROP VIEW exp._orphanDataView
 GO
-if exists (select * from dbo.sysobjects where id = object_id(N'exp._orphanMaterialView') and OBJECTPROPERTY(id, N'IsView') = 1)
+IF EXISTS (SELECT * FROM dbo.sysobjects WHERE id = object_id(N'exp._orphanMaterialView') AND OBJECTPROPERTY(id, N'IsView') = 1)
 DROP VIEW exp._orphanMaterialView
 GO
-if exists (select * from dbo.sysobjects where id = object_id(N'exp._orphanProtocolApplicationView') and OBJECTPROPERTY(id, N'IsView') = 1)
+IF EXISTS (SELECT * FROM dbo.sysobjects WHERE id = object_id(N'exp._orphanProtocolApplicationView') AND OBJECTPROPERTY(id, N'IsView') = 1)
 DROP VIEW exp._orphanProtocolApplicationView
 GO
-if exists (select * from dbo.sysobjects where id = object_id(N'exp._orphanExperimentRunView') and OBJECTPROPERTY(id, N'IsView') = 1)
+IF EXISTS (SELECT * FROM dbo.sysobjects WHERE id = object_id(N'exp._orphanExperimentRunView') AND OBJECTPROPERTY(id, N'IsView') = 1)
 DROP VIEW exp._orphanExperimentRunView
 GO
-if exists (select * from dbo.sysobjects where id = object_id(N'exp._orphanExperimentView') and OBJECTPROPERTY(id, N'IsView') = 1)
+IF EXISTS (SELECT * FROM dbo.sysobjects WHERE id = object_id(N'exp._orphanExperimentView') AND OBJECTPROPERTY(id, N'IsView') = 1)
 DROP VIEW exp._orphanExperimentView
 GO
-if exists (select * from dbo.sysobjects where id = object_id(N'exp._orphanProtocolView ') and OBJECTPROPERTY(id, N'IsView') = 1)
+IF EXISTS (SELECT * FROM dbo.sysobjects WHERE id = object_id(N'exp._orphanProtocolView ') AND OBJECTPROPERTY(id, N'IsView') = 1)
 DROP VIEW exp._orphanProtocolView 
 GO
 
@@ -237,7 +237,7 @@ BEGIN
 	DECLARE @objectid AS INTEGER
 	SET NOCOUNT ON
 	BEGIN TRANSACTION
-		SELECT @objectid = ObjectId FROM exp.Object where Container=@container AND ObjectURI=@lsid
+		SELECT @objectid = ObjectId FROM exp.Object WHERE Container=@container AND ObjectURI=@lsid
 		IF (@objectid IS NULL)
 		BEGIN
 			INSERT INTO exp.Object (Container, ObjectURI, OwnerObjectId) VALUES (@container, @lsid, @ownerObjectId)
@@ -253,8 +253,8 @@ CREATE PROCEDURE exp.deleteObject(@container ENTITYID, @lsid LSIDType) AS
 BEGIN
     SET NOCOUNT ON
 		DECLARE @objectid INTEGER
-		SELECT @objectid = ObjectId FROM exp.Object where Container=@container AND ObjectURI=@lsid
-		if (@objectid IS NULL)
+		SELECT @objectid = ObjectId FROM exp.Object WHERE Container=@container AND ObjectURI=@lsid
+		IF (@objectid IS NULL)
 			RETURN
     BEGIN TRANSACTION
 		DELETE exp.ObjectProperty WHERE ObjectId IN
@@ -276,7 +276,7 @@ BEGIN
 	SET NOCOUNT ON
 	BEGIN TRANSACTION
 		SELECT @propertyid = RowId FROM exp.PropertyDescriptor WHERE PropertyURI=@propertyuri
-		if (@propertyid IS NULL)
+		IF (@propertyid IS NULL)
 			BEGIN
 			INSERT INTO exp.PropertyDescriptor (PropertyURI, DatatypeURI) VALUES (@propertyuri, @datatypeuri)
 			SELECT @propertyid = @@identity
@@ -467,7 +467,7 @@ SELECT O.ObjectId, PD.RowId,
 	DateTimeValue, -- DateTime
 	ISNULL(StringValue,ISNULL(PropertyURIValue,FileLinkValue)), -- String
 	XmlTextValue -- Text
-FROM exp.Property P INNER JOIN exp.Object O on P.ParentURI = O.ObjectURI INNER JOIN exp.PropertyDescriptor PD on P.OntologyEntryURI = PD.PropertyURI
+FROM exp.Property P INNER JOIN exp.Object O ON P.ParentURI = O.ObjectURI INNER JOIN exp.PropertyDescriptor PD ON P.OntologyEntryURI = PD.PropertyURI
 
 
 --
@@ -504,7 +504,7 @@ WHERE Container = '00000000-0000-0000-0000-000000000000'
 
 UPDATE exp.Object
 SET OwnerObjectId = (SELECT MAX(OWNER.ObjectId)
-		FROM exp.Property PROPS JOIN exp.ExperimentRun RUN on PROPS.RunId = RUN.RowId JOIN exp.Object OWNER ON RUN.Lsid = OWNER.ObjectURI
+		FROM exp.Property PROPS JOIN exp.ExperimentRun RUN ON PROPS.RunId = RUN.RowId JOIN exp.Object OWNER ON RUN.Lsid = OWNER.ObjectURI
 		WHERE PROPS.ParentURI = exp.Object.ObjectURI)
 
 COMMIT TRAN

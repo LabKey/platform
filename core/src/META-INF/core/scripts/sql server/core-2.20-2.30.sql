@@ -56,8 +56,8 @@ BEGIN
 		EXEC('DROP INDEX ' + @fullername )
 		SELECT @ret_code =1
 	END
-	ELSE IF EXISTS (SELECT * FROM sysindexes si inner join sysobjects so
-			on si.id = so.id
+	ELSE IF EXISTS (SELECT * FROM sysindexes si INNER JOIN sysobjects so
+			ON si.id = so.id
 			WHERE si.name = @subobjname
 			AND so.name <> @objname)
 		RAISERROR ('Index does not belong to specified table ' , 16, 1)
@@ -73,7 +73,7 @@ END
 ELSE IF (UPPER(@objtype)) = 'SCHEMA'
 BEGIN
 	DECLARE @uid int
-	SELECT @uid=uid FROM sysusers WHERE name = LOWER(@objschema) and IsAppRole=1
+	SELECT @uid=uid FROM sysusers WHERE name = LOWER(@objschema) AND IsAppRole=1
 	IF @uid IS NOT NULL
 	BEGIN
 		IF (@objname = '*' )
@@ -81,13 +81,13 @@ BEGIN
 			DECLARE @soName sysname, @parent int, @xt char(2), @fkschema sysname
 			DECLARE soCursor CURSOR for SELECT so.name, so.xtype, so.parent_obj, su.name
 						FROM sysobjects so
-						INNER JOIN sysusers su on (so.uid = su.uid)
+						INNER JOIN sysusers su ON (so.uid = su.uid)
 						WHERE (so.uid=@uid)
 							OR so.id IN (
-								SELECT fso.id from sysforeignkeys sfk
-								inner join sysobjects fso on (sfk.constid = fso.id)
-								inner join sysobjects fsr on (sfk.rkeyid = fsr.id)
-								where fsr.uid=@uid)
+								SELECT fso.id FROM sysforeignkeys sfk
+								INNER JOIN sysobjects fso ON (sfk.constid = fso.id)
+								INNER JOIN sysobjects fsr ON (sfk.rkeyid = fsr.id)
+								WHERE fsr.uid=@uid)
 
 						ORDER BY (CASE 	WHEN xtype='V' THEN 1
  								WHEN xtype='P' THEN 2

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-exec sp_addapprole 'query', 'password';
+EXEC sp_addapprole 'query', 'password';
 
 CREATE TABLE query.QueryDef (
 	QueryDefId INT IDENTITY(1, 1) NOT NULL,

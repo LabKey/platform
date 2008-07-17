@@ -51,5 +51,5 @@ CREATE TABLE core.Report
 
     CONSTRAINT PK_Report PRIMARY KEY (RowId)
 );
-Go
+GO
 

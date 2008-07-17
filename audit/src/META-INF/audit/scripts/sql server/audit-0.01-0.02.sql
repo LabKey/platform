@@ -15,6 +15,6 @@
  */
 
 ALTER TABLE audit.AuditLog ADD Lsid LSIDtype;
-Go
+GO
 ALTER TABLE audit.AuditLog DROP COLUMN ObjectXML;
-Go
+GO

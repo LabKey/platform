@@ -23,12 +23,12 @@
 *
 */
 
-exec sp_addapprole 'exp', 'password'
+EXEC sp_addapprole 'exp', 'password'
 GO
 
 
-if NOT EXISTS (select * from systypes where name ='LSIDtype')
-    exec sp_addtype 'LSIDtype', 'nvarchar(300)'
+if NOT EXISTS (SELECT * FROM systypes WHERE name ='LSIDtype')
+    EXEC sp_addtype 'LSIDtype', 'nvarchar(300)'
 GO
 
 

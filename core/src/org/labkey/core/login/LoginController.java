@@ -212,7 +212,7 @@ public class LoginController extends SpringActionController
 
                 if (null != _user)
                 {
-                    SecurityManager.setAuthenticatedUser(request, _user);
+                    SecurityManager.setAuthenticatedUser(request, _user, null);
 
                     return true;
                 }
@@ -224,7 +224,7 @@ public class LoginController extends SpringActionController
                             "Note: Passwords are case sensitive; make sure your Caps Lock is off.";
                 }
             }
-            catch(ValidEmail.InvalidEmailException e)
+            catch (ValidEmail.InvalidEmailException e)
             {
                 String defaultDomain = ValidEmail.getDefaultDomain();
                 StringBuilder sb = new StringBuilder();
@@ -570,7 +570,10 @@ public class LoginController extends SpringActionController
 
         public boolean doAction(Object o, BindException errors) throws Exception
         {
-            SecurityManager.logoutUser(getViewContext().getRequest());
+            if (getUser().isImpersonated())
+                SecurityManager.stopImpersonating(getViewContext(), getUser());
+            else
+                SecurityManager.logoutUser(getViewContext().getRequest(), getUser());
 
             String redirect = getViewContext().getActionURL().getParameter(ReturnUrlForm.Params.returnUrl);
 
@@ -621,7 +624,7 @@ public class LoginController extends SpringActionController
                     // logout any current user
                     if (getUser() != null && !getUser().isGuest())
                     {
-                        SecurityManager.logoutUser(getViewContext().getRequest());
+                        SecurityManager.logoutUser(getViewContext().getRequest(), getUser());
                         HttpView.redirect(currentUrl);
                     }
 

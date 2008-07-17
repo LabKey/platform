@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 ALTER TABLE audit.AuditLog ALTER COLUMN Key1 NVARCHAR(200)
-Go
+GO
 ALTER TABLE audit.AuditLog ALTER COLUMN Key2 NVARCHAR(200)
-Go
+GO
 ALTER TABLE audit.AuditLog ALTER COLUMN Comment NVARCHAR(500)
-Go
+GO

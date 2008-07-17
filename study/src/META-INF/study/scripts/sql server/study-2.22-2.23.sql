@@ -17,7 +17,7 @@ ALTER TABLE study.Dataset
 ADD DemographicData BIT
 GO
 
-UPDATE study.Dataset SET DemographicData=0 where DemographicData IS NULL
+UPDATE study.Dataset SET DemographicData=0 WHERE DemographicData IS NULL
 GO
 
 ALTER TABLE study.Dataset

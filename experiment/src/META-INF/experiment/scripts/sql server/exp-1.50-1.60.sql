@@ -17,8 +17,8 @@ ALTER TABLE exp.PropertyDomain ADD Required BIT NOT NULL,
 CONSTRAINT DF_Required DEFAULT 0 FOR Required
 GO
 CREATE TABLE exp.RunList (
-	ExperimentId int not null,
-	ExperimentRunId int not null,
+	ExperimentId int NOT NULL,
+	ExperimentRunId int NOT NULL,
 	CONSTRAINT PK_RunList PRIMARY KEY (ExperimentId, ExperimentRunId),
 	CONSTRAINT FK_RunList_ExperimentId FOREIGN KEY (ExperimentId)
 			REFERENCES exp.Experiment(RowId),

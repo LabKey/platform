@@ -23,12 +23,12 @@
 *
 */
 
-exec sp_addapprole 'exp', 'password'
+EXEC sp_addapprole 'exp', 'password'
 GO
 
 
-if NOT EXISTS (select * from systypes where name ='LSIDtype')
-    exec sp_addtype 'LSIDtype', 'nvarchar(300)'
+if NOT EXISTS (SELECT * FROM systypes WHERE name ='LSIDtype')
+    EXEC sp_addtype 'LSIDtype', 'nvarchar(300)'
 GO
 
 
@@ -594,7 +594,7 @@ BEGIN
 	DECLARE @objectid AS INTEGER
 	SET NOCOUNT ON
 	BEGIN TRANSACTION
-		SELECT @objectid = ObjectId FROM exp.Object where Container=@container AND ObjectURI=@lsid
+		SELECT @objectid = ObjectId FROM exp.Object WHERE Container=@container AND ObjectURI=@lsid
 		IF (@objectid IS NULL)
 		BEGIN
 			INSERT INTO exp.Object (Container, ObjectURI, OwnerObjectId) VALUES (@container, @lsid, @ownerObjectId)
@@ -610,8 +610,8 @@ CREATE PROCEDURE exp.deleteObject(@container ENTITYID, @lsid LSIDType) AS
 BEGIN
     SET NOCOUNT ON
 		DECLARE @objectid INTEGER
-		SELECT @objectid = ObjectId FROM exp.Object where Container=@container AND ObjectURI=@lsid
-		if (@objectid IS NULL)
+		SELECT @objectid = ObjectId FROM exp.Object WHERE Container=@container AND ObjectURI=@lsid
+		IF (@objectid IS NULL)
 			RETURN
     BEGIN TRANSACTION
 		DELETE exp.ObjectProperty WHERE ObjectId IN
@@ -633,7 +633,7 @@ BEGIN
 	SET NOCOUNT ON
 	BEGIN TRANSACTION
 		SELECT @propertyid = RowId FROM exp.PropertyDescriptor WHERE PropertyURI=@propertyuri
-		if (@propertyid IS NULL)
+		IF (@propertyid IS NULL)
 			BEGIN
 			INSERT INTO exp.PropertyDescriptor (PropertyURI, DatatypeURI) VALUES (@propertyuri, @datatypeuri)
 			SELECT @propertyid = @@identity

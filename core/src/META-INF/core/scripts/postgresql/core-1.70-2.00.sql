@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 CREATE OR REPLACE FUNCTION core.fn_dropifexists (text, text, text, text) RETURNS integer AS '
 DECLARE
     objname ALIAS FOR $1;
@@ -26,16 +25,16 @@ DECLARE
 	tempschema text;
     BEGIN
     ret_code := 0;
-    fullname := (lower(objschema)||''.''||lower(objname));
-	    IF (upper(objtype)) = ''TABLE'' THEN
+    fullname := (LOWER(objschema)||''.''||LOWER(objname));
+	    IF (UPPER(objtype)) = ''TABLE'' THEN
 		BEGIN
-            IF EXISTS( SELECT * FROM pg_tables WHERE tablename = lower(objname) and schemaname = lower(objschema) )
+            IF EXISTS( SELECT * FROM pg_tables WHERE tablename = LOWER(objname) AND schemaname = LOWER(objschema) )
             THEN
                 EXECUTE ''DROP TABLE ''||fullname;
                 ret_code = 1;
             ELSE
                 BEGIN
-                    SELECT INTO tempschema schemaname FROM pg_tables WHERE tablename = lower(objname) and schemaname LIKE ''%temp%'';
+                    SELECT INTO tempschema schemaname FROM pg_tables WHERE tablename = LOWER(objname) AND schemaname LIKE ''%temp%'';
                     IF (tempschema IS NOT NULL)
                     THEN
                         EXECUTE ''DROP TABLE ''|| tempschema || ''.'' || objname;
@@ -44,39 +43,39 @@ DECLARE
                 END;
             END IF;
 		END;
-	    ELSEIF (upper(objtype)) = ''VIEW'' THEN
+	    ELSEIF (UPPER(objtype)) = ''VIEW'' THEN
 		BEGIN
-		    IF EXISTS( SELECT * FROM pg_views WHERE viewname = lower(objname) and schemaname = lower(objschema) )
+		    IF EXISTS( SELECT * FROM pg_views WHERE viewname = LOWER(objname) AND schemaname = LOWER(objschema) )
 		    THEN
 			EXECUTE ''DROP VIEW ''||fullname;
 			ret_code = 1;
 		    END IF;
 		END;
-	    ELSEIF (upper(objtype)) = ''INDEX'' THEN
+	    ELSEIF (UPPER(objtype)) = ''INDEX'' THEN
 		BEGIN
-		    fullname := lower(objschema) || ''.'' || lower(subobjname);
-		    IF EXISTS( SELECT * FROM pg_indexes WHERE tablename = lower(objname) and indexname = lower(subobjname) and schemaname = lower(objschema) )
+		    fullname := LOWER(objschema) || ''.'' || LOWER(subobjname);
+		    IF EXISTS( SELECT * FROM pg_indexes WHERE tablename = LOWER(objname) AND indexname = LOWER(subobjname) AND schemaname = LOWER(objschema) )
 		    THEN
 			EXECUTE ''DROP INDEX ''|| fullname;
 			ret_code = 1;
 		    ELSE
-			IF EXISTS( SELECT * FROM pg_indexes WHERE indexname = lower(subobjname) and schemaname = lower(objschema) )
+			IF EXISTS( SELECT * FROM pg_indexes WHERE indexname = LOWER(subobjname) AND schemaname = LOWER(objschema) )
 				THEN RAISE EXCEPTION ''INDEX - % defined on a different table.'', subobjname;
 			END IF;
 		    END IF;
 		END;
-	    ELSEIF (upper(objtype)) = ''SCHEMA'' THEN
+	    ELSEIF (UPPER(objtype)) = ''SCHEMA'' THEN
 		BEGIN
-		    IF EXISTS( SELECT * FROM pg_namespace WHERE nspname = lower(objschema))
+		    IF EXISTS( SELECT * FROM pg_namespace WHERE nspname = LOWER(objschema))
 		    THEN
 			IF objname = ''*'' THEN
-				EXECUTE ''DROP SCHEMA ''|| lower(objschema) || '' CASCADE'';
+				EXECUTE ''DROP SCHEMA ''|| LOWER(objschema) || '' CASCADE'';
 				ret_code = 1;
 			ELSEIF (objname = '''' OR objname IS NULL) THEN
-				EXECUTE ''DROP SCHEMA ''|| lower(objschema) || '' RESTRICT'';
+				EXECUTE ''DROP SCHEMA ''|| LOWER(objschema) || '' RESTRICT'';
 				ret_code = 1;
 			ELSE
-				RAISE EXCEPTION ''Invalid objname for objtype of SCHEMA;  must be either "*" (for DROP SCHEMA CASCADE)  or NULL (for DROP SCHEMA RESTRICT)'';
+				RAISE EXCEPTION ''Invalid objname for objtype of SCHEMA;  must be either "*" (for DROP SCHEMA CASCADE) or NULL (for DROP SCHEMA RESTRICT)'';
 			END IF;
 		    END IF;
 		END;

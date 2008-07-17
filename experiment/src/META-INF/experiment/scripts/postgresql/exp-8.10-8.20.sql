@@ -23,7 +23,7 @@
 CREATE TEMPORARY TABLE PropertyIdsToDelete (PropertyId INT);
 
 -- Grab the PropertyIds for properties that belong to assay domains where the assay has been deleted and we have a dupe
-INSERT INTO PropertyIdsToDelete (SELECT p.propertyid from exp.propertydescriptor p, exp.propertydomain pd WHERE p.propertyid = pd.propertyid AND pd.domainid IN
+INSERT INTO PropertyIdsToDelete (SELECT p.propertyid FROM exp.propertydescriptor p, exp.propertydomain pd WHERE p.propertyid = pd.propertyid AND pd.domainid IN
 		(SELECT domainid FROM exp.domaindescriptor WHERE domainuri LIKE '%:AssayDomain-%'
 			AND domainid IN (SELECT DomainId FROM exp.DomainDescriptor WHERE DomainURI IN (SELECT DomainURI FROM (SELECT Count(DomainURI) AS c, DomainURI FROM exp.DomainDescriptor GROUP BY DomainURI) X WHERE c > 1))
 			AND domainuri NOT IN
@@ -33,10 +33,10 @@ INSERT INTO PropertyIdsToDelete (SELECT p.propertyid from exp.propertydescriptor
 INSERT INTO PropertyIdsToDelete (SELECT p.propertyid FROM exp.propertydescriptor p, exp.propertydomain pd WHERE p.propertyid = pd.propertyid AND pd.DomainId IN
 	(SELECT DomainId FROM
 		exp.DomainDescriptor dd,
-		(SELECT COUNT(DomainURI) AS c, MAX(DomainId) as m, DomainURI FROM exp.DomainDescriptor WHERE DomainURI LIKE '%:DataInputRole' OR DomainURI LIKE '%:MaterialInputRole' GROUP BY DomainURI) x
+		(SELECT COUNT(DomainURI) AS c, MAX(DomainId) AS m, DomainURI FROM exp.DomainDescriptor WHERE DomainURI LIKE '%:DataInputRole' OR DomainURI LIKE '%:MaterialInputRole' GROUP BY DomainURI) x
 	WHERE dd.DomainURI = x.DomainURI AND x.c > 1)
 AND pd.DomainId NOT IN
-	(SELECT MAX(DomainId) as m FROM exp.DomainDescriptor WHERE DomainURI LIKE '%:DataInputRole' OR DomainURI LIKE '%:MaterialInputRole' GROUP BY DomainURI));
+	(SELECT MAX(DomainId) AS m FROM exp.DomainDescriptor WHERE DomainURI LIKE '%:DataInputRole' OR DomainURI LIKE '%:MaterialInputRole' GROUP BY DomainURI));
 
 -- Get rid of lingering uses of these orphaned PropertyDescriptors
 DELETE FROM exp.ObjectProperty WHERE PropertyId IN (SELECT PropertyId FROM PropertyIdsToDelete);
@@ -57,10 +57,10 @@ DELETE FROM exp.DomainDescriptor WHERE DomainId IN (SELECT domainid FROM exp.dom
 DELETE FROM exp.DomainDescriptor WHERE DomainId IN
 	(SELECT DomainId FROM
 		exp.DomainDescriptor dd,
-		(SELECT COUNT(DomainURI) AS c, MAX(DomainId) as m, DomainURI FROM exp.DomainDescriptor WHERE DomainURI LIKE '%:DataInputRole' OR DomainURI LIKE '%:MaterialInputRole' GROUP BY DomainURI) x
+		(SELECT COUNT(DomainURI) AS c, MAX(DomainId) AS m, DomainURI FROM exp.DomainDescriptor WHERE DomainURI LIKE '%:DataInputRole' OR DomainURI LIKE '%:MaterialInputRole' GROUP BY DomainURI) x
 	WHERE dd.DomainURI = x.DomainURI AND x.c > 1)
 AND DomainId NOT IN
-	(SELECT MAX(DomainId) as m FROM exp.DomainDescriptor WHERE DomainURI LIKE '%:DataInputRole' OR DomainURI LIKE '%:MaterialInputRole' GROUP BY DomainURI);
+	(SELECT MAX(DomainId) AS m FROM exp.DomainDescriptor WHERE DomainURI LIKE '%:DataInputRole' OR DomainURI LIKE '%:MaterialInputRole' GROUP BY DomainURI);
 
 
 -- Add the contraints

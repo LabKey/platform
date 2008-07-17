@@ -510,7 +510,7 @@ DECLARE
 	_objectid INTEGER;
 BEGIN
 --	START TRANSACTION;
-		_objectid := (SELECT ObjectId FROM exp.Object where Container=_container AND ObjectURI=_lsid);
+		_objectid := (SELECT ObjectId FROM exp.Object WHERE Container=_container AND ObjectURI=_lsid);
 		IF (_objectid IS NULL) THEN
 			INSERT INTO exp.Object (Container, ObjectURI, OwnerObjectId) VALUES (_container, _lsid, _ownerObjectId);
 			_objectid := currval(\'exp.object_objectid_seq\');
@@ -520,7 +520,7 @@ BEGIN
 END;
 ' LANGUAGE plpgsql;
 
--- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidA',null)
+-- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidA', NULL)
 -- SELECT * FROM exp.ObjectPropertiesView
 
 
@@ -530,7 +530,7 @@ DECLARE
 	_lsid ALIAS FOR $2;
 	_objectid INTEGER;
 BEGIN
-		_objectid := (SELECT ObjectId FROM exp.Object where Container=_container AND ObjectURI=_lsid);
+		_objectid := (SELECT ObjectId FROM exp.Object WHERE Container=_container AND ObjectURI=_lsid);
 		IF (_objectid IS NULL) THEN
 			RETURN;
 		END IF;
@@ -569,7 +569,7 @@ DECLARE
 BEGIN
 --	START TRANSACTION;
 		_propertyid := (SELECT RowId FROM exp.PropertyDescriptor WHERE PropertyURI=_propertyuri);
-		if (1=1 OR _propertyid IS NULL) THEN
+		IF (1=1 OR _propertyid IS NULL) THEN
 			INSERT INTO exp.PropertyDescriptor (PropertyURI, DatatypeURI) VALUES (_propertyuri, _datatypeuri);
 			_propertyid := currval(\'exp.propertydescriptor_rowid_seq\');
 		END IF;
@@ -582,7 +582,7 @@ END;
 ' LANGUAGE plpgsql;
 
 
--- SELECT exp.setProperty(13, 'lsidPROP', 'lsidTYPE', 'f', 1.0, null, null, null)
+-- SELECT exp.setProperty(13, 'lsidPROP', 'lsidTYPE', 'f', 1.0, NULL, NULL, NULL)
 -- SELECT * FROM exp.ObjectPropertiesView
 
 -- internal methods
@@ -678,14 +678,14 @@ END;
 ' LANGUAGE plpgsql;
 
 
--- SELECT exp.setFloatProperties(4, 13, 100.0, 14, 101.0, 15, 102.0, 16, 104.0, null, null, null, null, null, null, null, null, null, null, null, null)
+-- SELECT exp.setFloatProperties(4, 13, 100.0, 14, 101.0, 15, 102.0, 16, 104.0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
 -- SELECT * FROM exp.Object
 -- SELECT * FROM exp.PropertyDescriptor
--- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidA',null)
--- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidB',null)
--- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidC',null)
--- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidD',null)
--- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidE',null)
+-- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidA', NULL)
+-- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidB', NULL)
+-- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidC', NULL)
+-- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidD', NULL)
+-- SELECT exp.ensureObject('00000000-0000-0000-0000-000000000000', 'lsidE', NULL)
 
 
 CREATE OR REPLACE FUNCTION exp.setStringProperties(_propertyid INTEGER,
