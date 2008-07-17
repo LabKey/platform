@@ -50,4 +50,6 @@ public interface ExperimentUrls extends UrlProvider
 
     ActionURL getAddRunsToExperimentURL(Container container, ExpExperiment expExperiment);
 
+    ActionURL getDomainEditorURL(Container container, int domainId);
+
 }
