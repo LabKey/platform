@@ -184,14 +184,14 @@ public class AssayPublishManager implements AssayPublishService.Service
                 {
                     AuditLogEvent event = new AuditLogEvent();
 
-                    event.setCreatedBy(user.getUserId());
+                    event.setCreatedBy(user);
                     event.setEventType(ASSAY_PUBLISH_AUDIT_EVENT);
                     event.setIntKey1(protocol.getRowId());
                     event.setComment(entry.getValue()[0] + " row(s) were copied to a study from the assay: " + protocol.getName());
                     event.setKey1(targetContainer.getId());
                     event.setContainerId(sourceContainer.getId());
 
-                    Map<String, Object> dataMap = new HashMap();
+                    Map<String, Object> dataMap = new HashMap<String, Object>();
                     dataMap.put("datasetId", dataset.getDataSetId());
 
                     dataMap.put("sourceLsid", entry.getKey());

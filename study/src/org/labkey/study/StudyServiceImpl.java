@@ -273,7 +273,7 @@ public class StudyServiceImpl implements StudyService.Service
     private void addDatasetAuditEvent(User u, Container c, DataSetDefinition def, Map<String,Object>oldRecord, Map<String,Object> newRecord)
     {
         AuditLogEvent event = new AuditLogEvent();
-        event.setCreatedBy(u.getUserId());
+        event.setCreatedBy(u);
 
         event.setContainerId(c.getId());
         if (c.getProject() != null)
@@ -319,7 +319,7 @@ public class StudyServiceImpl implements StudyService.Service
     public static void addDatasetAuditEvent(User u, Container c, DataSetDefinition def, String comment, UploadLog ul /*optional*/)
     {
         AuditLogEvent event = new AuditLogEvent();
-        event.setCreatedBy(u.getUserId());
+        event.setCreatedBy(u);
 
         event.setContainerId(c.getId());
         if (c.getProject() != null)

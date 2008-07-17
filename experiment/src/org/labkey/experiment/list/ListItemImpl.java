@@ -323,7 +323,7 @@ public class ListItemImpl implements ListItem
     {
         AuditLogEvent event = new AuditLogEvent();
 
-        event.setCreatedBy(user.getUserId());
+        event.setCreatedBy(user);
         event.setComment(comment);
 
         Container c = _list.getContainer();

@@ -441,7 +441,7 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
         {
             AuditLogEvent event = new AuditLogEvent();
 
-            event.setCreatedBy(user.getUserId());
+            event.setCreatedBy(user);
             event.setEventType(ContainerManager.CONTAINER_AUDIT_EVENT);
             event.setContainerId(c.getId());
             event.setComment(comment);

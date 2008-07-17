@@ -2017,7 +2017,7 @@ public class AdminController extends SpringActionController
         public ActionURL getRedirectURL(Object o) throws Exception
         {
             if (getUser().isImpersonated())
-                throw new IllegalStateException("Already impersonating");
+                throw new UnauthorizedException("Can't impersonate; you're already impersonating");
 
             String rawEmail = getViewContext().getActionURL().getParameter("email");
             ValidEmail email = new ValidEmail(rawEmail);

@@ -152,7 +152,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             {
             AuditLogEvent event = new AuditLogEvent();
             event.setEventType(AttachmentService.ATTACHMENT_AUDIT_EVENT);
-            event.setCreatedBy(user.getUserId());
+            event.setCreatedBy(user);
             event.setEntityId(parent.getEntityId());
             event.setContainerId(parent.getContainerId());
             event.setKey1(filename);
@@ -167,7 +167,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             {
                 AuditLogEvent event = new AuditLogEvent();
                 event.setEventType(FileSystemAuditViewFactory.EVENT_TYPE);
-                event.setCreatedBy(user.getUserId());
+                event.setCreatedBy(user);
                 event.setContainerId(parent.getContainerId());
                 event.setKey1(((AttachmentDirectory)parent).getFileSystemDirectory().getPath());
                 event.setKey2(filename);

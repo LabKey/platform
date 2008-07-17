@@ -287,7 +287,7 @@ public class DomainImpl implements Domain
         {
             AuditLogEvent event = new AuditLogEvent();
 
-            event.setCreatedBy(user.getUserId());
+            event.setCreatedBy(user);
             event.setComment(comment);
 
             Container c = getContainer();

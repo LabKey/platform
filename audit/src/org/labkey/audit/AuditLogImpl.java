@@ -130,7 +130,7 @@ public class AuditLogImpl implements AuditLogService.I
         {
             _log.warn("user was not specified, defaulting to guest user.");
             user = UserManager.getGuestUser();
-            event.setCreatedBy(UserManager.getGuestUser().getUserId());
+            event.setCreatedBy(user);
         }
 
 /*
@@ -202,7 +202,7 @@ public class AuditLogImpl implements AuditLogService.I
     {
         AuditLogEvent event = new AuditLogEvent();
         event.setCreated(new Date());
-        event.setCreatedBy(context.getUser().getUserId());
+        event.setCreatedBy(context.getUser());
         event.setContainerId(context.getContainer().getId());
 
         return event;
@@ -217,7 +217,7 @@ public class AuditLogImpl implements AuditLogService.I
         }
         AuditLogEvent event = new AuditLogEvent();
         event.setCreated(new Date());
-        event.setCreatedBy(user.getUserId());
+        event.setCreatedBy(user);
 
         if (c != null)
             event.setContainerId(c.getId());

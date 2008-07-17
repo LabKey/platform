@@ -304,7 +304,7 @@ public class ListDefinitionImpl implements ListDefinition
         {
             AuditLogEvent event = new AuditLogEvent();
 
-            event.setCreatedBy(user.getUserId());
+            event.setCreatedBy(user);
             event.setComment(comment);
 
             Container c = getContainer();

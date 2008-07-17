@@ -393,7 +393,7 @@ public class SecurityController extends SpringActionController
         AuditLogEvent event = new AuditLogEvent();
 
         event.setEventType(GroupManager.GROUP_AUDIT_EVENT);
-        event.setCreatedBy(getUser().getUserId());
+        event.setCreatedBy(getUser());
         event.setIntKey2(group.getUserId());
         Container c = ContainerManager.getForId(group.getContainer());
         if (c != null && c.getProject() != null)
@@ -851,7 +851,7 @@ public class SecurityController extends SpringActionController
             {
                 AuditLogEvent event = new AuditLogEvent();
 
-                event.setCreatedBy(user.getUserId());
+                event.setCreatedBy(user);
                 event.setComment(comment);
 
                 Container c = getViewContext().getContainer();

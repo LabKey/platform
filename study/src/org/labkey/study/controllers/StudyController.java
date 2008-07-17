@@ -2111,7 +2111,7 @@ public class StudyController extends BaseStudyController
                 {
                     AuditLogEvent event = new AuditLogEvent();
 
-                    event.setCreatedBy(getUser().getUserId());
+                    event.setCreatedBy(getUser());
                     event.setEventType(AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT);
                     event.setContainerId(sourceContainer.getId());
                     event.setKey1(getContainer().getId());
