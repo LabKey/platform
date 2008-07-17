@@ -300,7 +300,8 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
     {
         var config = {
             schemaName: meta.lookup.schema,
-            queryName: meta.lookup.table
+            queryName: meta.lookup.table,
+            containerPath: this.store.containerPath
         };
         if(includeNullRecord)
             config.nullRecord = {

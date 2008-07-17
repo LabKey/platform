@@ -96,7 +96,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
             reader: new Ext.data.JsonReader(),
             proxy : new Ext.data.HttpProxy(new Ext.data.Connection({
                 method: 'GET',
-                url: LABKEY.ActionURL.buildURL("query", "selectRows")
+                url: LABKEY.ActionURL.buildURL("query", "selectRows", config.containerPath)
             })),
             baseParams: baseParams,
             listeners: {
@@ -173,6 +173,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         LABKEY.Query.deleteRows({
             schemaName: this.schemaName,
             queryName: this.queryName,
+            containerPath: this.containerPath,
             rowDataArray: deleteRowsKeys,
             successCallback: this.getDeleteSuccessHandler(),
             action: "deleteRows" //hack for Query.js bug
@@ -238,6 +239,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
             LABKEY.Query.insertRows({
                 schemaName: this.schemaName,
                 queryName: this.queryName, 
+                containerPath: this.containerPath,
                 successCallback: this.getSuccessHandler(insertRowsData, insertRecords),
                 errorCallback: this.getErrorHandler(insertRowsData, insertRecords),
                 rowDataArray: insertRowsData,
@@ -248,6 +250,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
             LABKEY.Query.updateRows({
                 schemaName: this.schemaName,
                 queryName: this.queryName,
+                containerPath: this.containerPath,
                 successCallback: this.getSuccessHandler(updateRowsData, updateRecords),
                 errorCallback: this.getErrorHandler(updateRowsData, updateRecords),
                 rowDataArray: updateRowsData,
