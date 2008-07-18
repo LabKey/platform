@@ -16,12 +16,11 @@
 
 package org.labkey.experiment.list;
 
-import org.apache.log4j.Logger;
 import org.apache.commons.lang.ObjectUtils;
+import org.apache.log4j.Logger;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SimpleAuditViewFactory;
 import org.labkey.api.audit.query.AuditLogQueryView;
-import org.labkey.api.audit.query.ContainerForeignKey;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -44,8 +43,9 @@ import java.util.Set;
  *
  * Event field documentation:
  *
- * createdBy - User who created the record
  * created - Timestamp
+ * createdBy - User who created the record
+ * impersonatedBy - user who was impersonating the user (or null)
  * comment - record description
  * projectId - the project id
  * container - container id of the domain event
@@ -89,10 +89,11 @@ public class DomainAuditViewFactory extends SimpleAuditViewFactory
 
     public List<FieldKey> getDefaultVisibleColumns()
     {
-        List<FieldKey> columns = new ArrayList();
+        List<FieldKey> columns = new ArrayList<FieldKey>();
 
         columns.add(FieldKey.fromParts("Date"));
         columns.add(FieldKey.fromParts("CreatedBy"));
+        columns.add(FieldKey.fromParts("ImpersonatedBy"));
         columns.add(FieldKey.fromParts("ProjectId"));
         columns.add(FieldKey.fromParts("Key1"));
         columns.add(FieldKey.fromParts("Comment"));

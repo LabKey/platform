@@ -47,8 +47,9 @@ import java.util.*;
  *
  * Event field documentation:
  *
- * createdBy - User who created the record
  * created - Timestamp
+ * createdBy - User who created the record
+ * impersonatedBy - user who was impersonating the user (or null)
  * comment - record description
  * projectId - the project id
  * container - container id of the domain event
@@ -111,7 +112,7 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, getEventType());
         view.setTitle("List Item History:");
         view.setSort(new Sort("-Date"));
-        view.setVisibleColumns(new String[]{"Date", "CreatedBy", "Comment"});
+        view.setVisibleColumns(new String[]{"Date", "CreatedBy", "ImpersonatedBy", "Comment"});
 
         return view;
     }
@@ -122,6 +123,7 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
 
         columns.add(FieldKey.fromParts("Date"));
         columns.add(FieldKey.fromParts("CreatedBy"));
+        columns.add(FieldKey.fromParts("ImpersonatedBy"));
         columns.add(FieldKey.fromParts("ProjectId"));
         columns.add(FieldKey.fromParts("Key1"));
         columns.add(FieldKey.fromParts("Comment"));

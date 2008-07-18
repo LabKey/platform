@@ -48,8 +48,9 @@ import java.util.*;
  *
  * Event field documentation:
  *
- * createdBy - User who created the record
  * created - Timestamp
+ * createdBy - User who created the record
+ * impersonatedBy - user who was impersonating the user (or null)
  * comment - record description
  * container - container id of the source lsid (publish source)
  * intKey1 - the protocol id
@@ -109,10 +110,11 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
 
     public List<FieldKey> getDefaultVisibleColumns()
     {
-        List<FieldKey> columns = new ArrayList();
+        List<FieldKey> columns = new ArrayList<FieldKey>();
 
         columns.add(FieldKey.fromParts("Date"));
         columns.add(FieldKey.fromParts("CreatedBy"));
+        columns.add(FieldKey.fromParts("ImpersonatedBy"));
         columns.add(FieldKey.fromParts("Key1"));
         columns.add(FieldKey.fromParts("Comment"));
 

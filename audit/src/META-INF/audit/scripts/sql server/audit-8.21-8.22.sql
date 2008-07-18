@@ -14,6 +14,5 @@
  * limitations under the License.
  */
 
-ALTER TABLE audit.AuditLog
-    ADD Impersonator USERID NULL
+EXEC sp_rename 'audit.AuditLog.Impersonator', 'ImpersonatedBy', 'COLUMN'
 GO

@@ -19,18 +19,15 @@ package org.labkey.core.query;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SimpleAuditViewFactory;
 import org.labkey.api.audit.query.AuditLogQueryView;
-import org.labkey.api.audit.query.SimpleAuditColumnFactory;
 import org.labkey.api.data.*;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserIdForeignKey;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.view.ViewContext;
-import org.apache.commons.lang.ObjectUtils;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -39,8 +36,9 @@ import java.util.ArrayList;
  *
  * Event field documentation:
  *
- * createdBy - User who created the record
  * created - Timestamp
+ * createdBy - User who created the record
+ * impersonatedBy - user who was impersonating the user (or null)
  * comment - record description
  * intKey1 - the user id of the principal being modified
  *
@@ -84,10 +82,11 @@ public class UserAuditViewFactory extends SimpleAuditViewFactory
 
     public List<FieldKey> getDefaultVisibleColumns()
     {
-        List<FieldKey> columns = new ArrayList();
+        List<FieldKey> columns = new ArrayList<FieldKey>();
 
         columns.add(FieldKey.fromParts("Date"));
         columns.add(FieldKey.fromParts("CreatedBy"));
+        columns.add(FieldKey.fromParts("ImpersonatedBy"));
         columns.add(FieldKey.fromParts("IntKey1"));
         columns.add(FieldKey.fromParts("Comment"));
 

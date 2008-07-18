@@ -15,5 +15,4 @@
  */
 
 ALTER TABLE audit.AuditLog
-    ADD Impersonator USERID NULL
-GO
+    RENAME Impersonator TO ImpersonatedBy;

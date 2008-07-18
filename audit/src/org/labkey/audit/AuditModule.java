@@ -24,13 +24,10 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.User;
-import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.audit.model.LogManager;
 import org.labkey.audit.query.AuditQuerySchema;
 
 import java.beans.PropertyChangeEvent;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
@@ -39,11 +36,13 @@ public class AuditModule extends DefaultModule implements ContainerManager.Conta
 {
     public static final String NAME = "Audit";
     private static final Logger _log = Logger.getLogger(AuditModule.class);
+    private AuditLogImpl _auditLog;    //
 
     public AuditModule()
     {
-        super(NAME, 8.21, null, true);
-        AuditLogService.registerProvider(new AuditLogImpl());
+        super(NAME, 8.22, null, true);
+        _auditLog = new AuditLogImpl();
+        AuditLogService.registerProvider(_auditLog);
     }
 
     public void containerCreated(Container c)
@@ -83,7 +82,7 @@ public class AuditModule extends DefaultModule implements ContainerManager.Conta
         // add a container listener so we'll know when our container is deleted:
         ContainerManager.addContainerListener(this);
 
-        //AuditLogService.registerProvider(new AuditLogImpl());
+        _auditLog.startupComplete();
         AuditQuerySchema.register();
     }
 

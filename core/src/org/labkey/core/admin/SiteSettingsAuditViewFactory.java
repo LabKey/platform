@@ -29,7 +29,9 @@ import org.labkey.api.util.WriteableAppProps;
 import java.util.List;
 import java.util.ArrayList;
 import java.io.Writer;
-import java.io.IOException;/*
+import java.io.IOException;
+
+/*
  * User: Dave
  * Date: May 27, 2008
  * Time: 3:10:03 PM
@@ -70,6 +72,7 @@ public class SiteSettingsAuditViewFactory implements AuditLogService.AuditViewFa
 
         columns.add(FieldKey.fromParts("Date"));
         columns.add(FieldKey.fromParts("CreatedBy"));
+        columns.add(FieldKey.fromParts("ImpersonatedBy"));
         columns.add(FieldKey.fromParts("Comment"));
 
         return columns;

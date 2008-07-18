@@ -16,23 +16,20 @@
 
 package org.labkey.audit.query;
 
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.query.AuditDisplayColumnFactory;
 import org.labkey.api.audit.query.AuditLogQueryView;
-import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.QueryPicker;
 import org.labkey.api.view.DataView;
 import org.labkey.audit.model.LogManager;
 
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -41,7 +38,7 @@ import java.util.List;
  */
 public class AuditQueryViewImpl extends AuditLogQueryView
 {
-    protected Map<Integer, DisplayColumn> _indexedColumns = new HashMap();
+    protected Map<Integer, DisplayColumn> _indexedColumns = new HashMap<Integer, DisplayColumn>();
 
     public AuditQueryViewImpl(UserSchema schema, QuerySettings settings, SimpleFilter filter)
     {

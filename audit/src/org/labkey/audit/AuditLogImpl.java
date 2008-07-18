@@ -36,6 +36,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.audit.model.LogManager;
 import org.labkey.audit.query.AuditQuerySchema;
 import org.labkey.audit.query.AuditQueryViewImpl;
+import org.labkey.common.util.Pair;
 
 import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
@@ -55,6 +56,24 @@ public class AuditLogImpl implements AuditLogService.I
     private static final Logger _log = Logger.getLogger(AuditLogImpl.class);
     private static final String OBJECT_XML_KEY = "objectXML";
     private static Map<String, AuditLogService.AuditViewFactory> _auditViewFactories = new HashMap<String, AuditLogService.AuditViewFactory>();
+
+    private Queue<Pair<User, AuditLogEvent>> _eventQueue = new LinkedList<Pair<User, AuditLogEvent>>();
+    private boolean _startupComplete = false;
+    private static final Object STARTUP_LOCK = new Object();
+
+    public void startupComplete()
+    {
+        synchronized (STARTUP_LOCK)
+        {
+            _startupComplete = true;
+
+            while (!_eventQueue.isEmpty())
+            {
+                Pair<User, AuditLogEvent> event = _eventQueue.remove();
+                _addEvent(event.first, event.second);
+            }
+        }
+    }
 
     public boolean isViewable()
     {
@@ -153,7 +172,7 @@ public class AuditLogImpl implements AuditLogService.I
     {
         if (map.containsKey(OBJECT_XML_KEY))
         {
-            map = new CaseInsensitiveHashMap(map);
+            map = new CaseInsensitiveHashMap<Object>(map);
             addObjectProperties((String)map.get(OBJECT_XML_KEY), map);
         }
         K event = ObjectFactory.Registry.getFactory(clz).fromMap(map);
@@ -183,13 +202,20 @@ public class AuditLogImpl implements AuditLogService.I
 
     private AuditLogEvent _addEvent(User user, AuditLogEvent event)
     {
-        try {
+        try
+        {
             /**
-             * need to check for the physical table to be in existence because the audit log service needs
-             * to be registered in the constructor of the audit module.
+             * This is necessary because audit log service needs to be registered in the constructor
+             * of the audit module, but the schema may not be created or updated at that point.  Events
+             * that occur before startup is complete are therefore queued up and recorded after startup.
              */
-            if (LogManager.get().getTinfoAuditLog().getTableType() != TableInfo.TABLE_TYPE_NOT_IN_DB)
-                return LogManager.get().insertEvent(user, event);
+            synchronized (STARTUP_LOCK)
+            {
+                if (_startupComplete)
+                    return LogManager.get().insertEvent(user, event);
+                else
+                    _eventQueue.add(new Pair<User, AuditLogEvent>(user, event));
+            }
         }
         catch (SQLException e)
         {
@@ -316,7 +342,7 @@ public class AuditLogImpl implements AuditLogService.I
 
     public AuditLogService.AuditViewFactory[] getAuditViewFactories()
     {
-        return _auditViewFactories.values().toArray(new AuditLogService.AuditViewFactory[0]);
+        return _auditViewFactories.values().toArray(new AuditLogService.AuditViewFactory[_auditViewFactories.values().size()]);
     }
 
     public AuditLogEvent addEvent(AuditLogEvent event, Map<String, Object> dataMap, String domainURI)

@@ -58,6 +58,17 @@ public class AuditLogTable extends FilteredTable
         });
         addColumn(createdBy);
 
+        ColumnInfo impersonatedBy = wrapColumn("ImpersonatedBy", getRealTable().getColumn("ImpersonatedBy"));
+        impersonatedBy.setFk(new UserIdForeignKey());
+        impersonatedBy.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            {
+                return new UserIdRenderer.GuestAsBlank(colInfo);
+            }
+        });
+        addColumn(impersonatedBy);
+
         addColumn(wrapColumn("RowId", getRealTable().getColumn("RowId")));
         addColumn(wrapColumn("Date", getRealTable().getColumn("Created")));
         addColumn(wrapColumn("EventType", getRealTable().getColumn("EventType")));
@@ -129,7 +140,7 @@ public class AuditLogTable extends FilteredTable
 
     private List<FieldKey> getDefaultColumns()
     {
-        List<FieldKey> columns = new ArrayList();
+        List<FieldKey> columns = new ArrayList<FieldKey>();
         AuditLogService.AuditViewFactory factory = AuditLogService.get().getAuditViewFactory(_viewFactoryName);
         if (factory != null)
         {
@@ -141,6 +152,7 @@ public class AuditLogTable extends FilteredTable
         if (columns.isEmpty())
         {
             columns.add(FieldKey.fromParts("CreatedBy"));
+            columns.add(FieldKey.fromParts("ImpersonatedBy"));
             columns.add(FieldKey.fromParts("Date"));
             columns.add(FieldKey.fromParts("Comment"));
             columns.add(FieldKey.fromParts("EventType"));

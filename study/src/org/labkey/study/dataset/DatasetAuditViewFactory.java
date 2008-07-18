@@ -165,6 +165,7 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
 
         columns.add(FieldKey.fromParts("Date"));
         columns.add(FieldKey.fromParts("CreatedBy"));
+        columns.add(FieldKey.fromParts("ImpersonatedBy"));
         columns.add(FieldKey.fromParts("ProjectId"));
         columns.add(FieldKey.fromParts("ContainerId"));
         columns.add(FieldKey.fromParts("IntKey1"));

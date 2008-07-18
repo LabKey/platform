@@ -34,14 +34,14 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Oct 16, 2007
  *
  * Event field documentation:
  *
- * createdBy - User who created the record
  * created - Timestamp
+ * createdBy - User who created the record
+ * impersonatedBy - user who was impersonating the user (or null)
  * comment - record description
  * projectId - the project id
  * container - container id of the domain event
@@ -83,10 +83,11 @@ public class GroupAuditViewFactory extends SimpleAuditViewFactory
 
     public List<FieldKey> getDefaultVisibleColumns()
     {
-        List<FieldKey> columns = new ArrayList();
+        List<FieldKey> columns = new ArrayList<FieldKey>();
 
         columns.add(FieldKey.fromParts("Date"));
         columns.add(FieldKey.fromParts("CreatedBy"));
+        columns.add(FieldKey.fromParts("ImpersonatedBy"));
         columns.add(FieldKey.fromParts("ProjectId"));
         columns.add(FieldKey.fromParts("ContainerId"));
         columns.add(FieldKey.fromParts("IntKey2"));

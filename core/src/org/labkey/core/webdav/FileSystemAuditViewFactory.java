@@ -35,8 +35,9 @@ import java.io.File;
  *
  * Event field documentation:
  *
- * createdBy - User who created the record
  * created - Timestamp
+ * createdBy - User who created the record
+ * impersonatedBy - user who was impersonating the user (or null)
  * comment - record description
  * projectId - the project id
  * container - container id of the domain event
@@ -83,6 +84,7 @@ public class FileSystemAuditViewFactory extends SimpleAuditViewFactory
 
         columns.add(FieldKey.fromParts("Date"));
         columns.add(FieldKey.fromParts("CreatedBy"));
+        columns.add(FieldKey.fromParts("ImpersonatedBy"));
         columns.add(FieldKey.fromParts("Key1"));
         columns.add(FieldKey.fromParts("Key2"));
         columns.add(FieldKey.fromParts("Comment"));

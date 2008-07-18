@@ -19,8 +19,10 @@ package org.labkey.core.query;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SimpleAuditViewFactory;
 import org.labkey.api.audit.query.AuditLogQueryView;
-import org.labkey.api.audit.query.ContainerForeignKey;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.view.ViewContext;
@@ -35,8 +37,9 @@ import java.util.List;
  *
  * Event field documentation:
  *
- * createdBy - User who created the record
  * created - Timestamp
+ * createdBy - User who created the record
+ * impersonatedBy - user who was impersonating the user (or null)
  * comment - record description
  * projectId - the project id
  * container - container id of the domain event
@@ -76,10 +79,11 @@ public class ContainerAuditViewFactory extends SimpleAuditViewFactory
 
     public List<FieldKey> getDefaultVisibleColumns()
     {
-        List<FieldKey> columns = new ArrayList();
+        List<FieldKey> columns = new ArrayList<FieldKey>();
 
         columns.add(FieldKey.fromParts("Date"));
         columns.add(FieldKey.fromParts("CreatedBy"));
+        columns.add(FieldKey.fromParts("ImpersonatedBy"));
         columns.add(FieldKey.fromParts("ProjectId"));
         columns.add(FieldKey.fromParts("ContainerId"));
         columns.add(FieldKey.fromParts("Comment"));

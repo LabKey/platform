@@ -40,7 +40,7 @@
         <ns:column columnName="ContainerId"/>
         <ns:column columnName="EntityId"/>
         <ns:column columnName="Lsid"/>
-        <ns:column columnName="Impersonator"/>
+        <ns:column columnName="ImpersonatedBy"/>
       </ns:columns>
     </ns:table>
 </ns:tables>
