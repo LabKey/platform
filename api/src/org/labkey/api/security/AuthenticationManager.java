@@ -354,7 +354,7 @@ public class AuthenticationManager
                 User user = SecurityManager.createUserIfNecessary(email);
                 _userProviders.put(user.getUserId(), authProvider);
                 AuditLogService.get().addEvent(user, null, UserManager.USER_AUDIT_EVENT, user.getUserId(),
-                        "User: " + email + " logged in successfully.");
+                        email + " logged in successfully.");
                 return user;
             }
         }
@@ -380,7 +380,7 @@ public class AuthenticationManager
             provider.logout(request);
 
         AuditLogService.get().addEvent(user, null, UserManager.USER_AUDIT_EVENT, user.getUserId(),
-                "User: " + user.getEmail() + " logged out.");
+                user.getEmail() + " logged out.");
     }
 
 

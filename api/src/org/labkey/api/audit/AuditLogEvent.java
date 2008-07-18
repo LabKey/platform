@@ -30,7 +30,7 @@ public class AuditLogEvent
     private int _rowId;
     private Date _created;
     private int _createdBy;
-    private Integer _impersonator;
+    private Integer _impersonatedBy;
     private String _entityId;
     private String _comment;
     private String _projectId;
@@ -80,17 +80,17 @@ public class AuditLogEvent
         _createdBy = user.getUserId();
 
         if (user.isImpersonated())
-            setImpersonator(user.getImpersonatingUser().getUserId());
+            setImpersonatedBy(user.getImpersonatingUser().getUserId());
     }
 
-    public Integer getImpersonator()
+    public Integer getImpersonatedBy()
     {
-        return _impersonator;
+        return _impersonatedBy;
     }
 
-    public void setImpersonator(Integer impersonator)
+    public void setImpersonatedBy(Integer impersonatedBy)
     {
-        _impersonator = impersonator;
+        _impersonatedBy = impersonatedBy;
     }
 
     public String getEntityId()

@@ -650,7 +650,7 @@ public class UserManager
         User principal = UserManager.getUser((Integer)pkVal);
         if (principal != null)
         {
-            addToUserHistory(principal, "Contact information for: " + principal.getEmail() + " was updated");
+            addToUserHistory(principal, "Contact information for " + principal.getEmail() + " was updated");
         }
     }
 
