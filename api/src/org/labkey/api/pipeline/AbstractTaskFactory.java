@@ -23,7 +23,7 @@ import java.sql.SQLException;
  *
  * @author brendanx
  */
-abstract public class AbstractTaskFactory implements TaskFactory, Cloneable
+abstract public class AbstractTaskFactory extends ClusterSettingsImpl implements TaskFactory, Cloneable
 {
     private TaskId _id;
     private TaskId _dependencyId;
@@ -130,7 +130,7 @@ abstract public class AbstractTaskFactory implements TaskFactory, Cloneable
      */
     public String getLocation()
     {
-        return (_executionLocation == null ? null : _executionLocation.toString());
+        return _executionLocation;
     }
 
     /**

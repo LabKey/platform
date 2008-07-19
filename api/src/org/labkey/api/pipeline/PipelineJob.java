@@ -64,7 +64,39 @@ abstract public class PipelineJob extends Job implements Serializable
         return Logger.getLogger(PipelineJob.class.getName() + ".." + clazz.getName());
     }
 
-    public enum TaskStatus { waiting, running, complete, error }
+    public enum TaskStatus
+    {
+        waiting
+        {
+            public boolean isFinished()
+            {
+                return false;
+            }
+        },
+        running
+        {
+            public boolean isFinished()
+            {
+                return false;
+            }
+        },
+        complete
+        {
+            public boolean isFinished()
+            {
+                return true;
+            }
+        },
+        error
+        {
+            public boolean isFinished()
+            {
+                return true;
+            }
+        };
+
+        public abstract boolean isFinished();
+    }
     
     /**
      * <code>Task</code> implements a runnable to complete a part of the
@@ -339,22 +371,6 @@ abstract public class PipelineJob extends Job implements Serializable
             name = name.substring(0, index);
         }
         return new File(statusFile.getParentFile(), name + ".job.ser");
-    }
-
-    public static File getClusterOutputFile(File statusFile)
-    {
-        if (statusFile == null)
-        {
-            return null;
-        }
-
-        String name = statusFile.getName();
-        int index = name.indexOf('.');
-        if (index != -1)
-        {
-            name = name.substring(0, index);
-        }
-        return new File(statusFile.getParentFile(), name + ".job.log");
     }
 
     public File getStatusFile()

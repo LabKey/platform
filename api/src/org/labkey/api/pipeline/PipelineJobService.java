@@ -79,14 +79,13 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
      * <code>GlobusClientProperties</code> are only used on a machine running
      * the <code>PipelineJobRunnerGlobus</code>. 
      */
-    public interface GlobusClientProperties
+    public interface GlobusClientProperties extends ClusterSettings
     {
-        String getGlobusJavaHome();
-        String getGlobusLabkeyDir();
+        String getJavaHome();
+        String getLabKeyDir();
         String getGlobusServer();
-        String getGlobusJobFactoryType();
-        String getGlobusQueue();
-        Map<String, String> getGlobusPathMapping();
+        String getJobFactoryType();
+        Map<String, String> getPathMapping();
     }
 
     abstract public ApplicationProperties getAppProperties();

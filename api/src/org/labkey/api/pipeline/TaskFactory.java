@@ -27,7 +27,7 @@ import java.sql.SQLException;
  *
  * @author brendanx
  */
-public interface TaskFactory
+public interface TaskFactory extends ClusterSettings
 {
     TaskId getId();
 
