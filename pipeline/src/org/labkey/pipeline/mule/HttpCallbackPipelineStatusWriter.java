@@ -29,13 +29,13 @@ import java.net.HttpURLConnection;
 import java.io.IOException;
 
 /**
- * <code>EPipelineStatusWriter</code>
+ * <code>HttpCallbackPipelineStatusWriter</code>
  *
  * @author brendanx
  */
-public class EPipelineStatusWriter implements PipelineStatusFile.StatusWriter
+public class HttpCallbackPipelineStatusWriter implements PipelineStatusFile.StatusWriter
 {
-    private static Logger _log = Logger.getLogger(EPipelineStatusWriter.class);
+    private static Logger _log = Logger.getLogger(HttpCallbackPipelineStatusWriter.class);
 
     public void setStatusFile(ViewBackgroundInfo info, PipelineJob job,
                               String status, String statusInfo)

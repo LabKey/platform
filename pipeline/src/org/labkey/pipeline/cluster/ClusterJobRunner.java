@@ -20,7 +20,9 @@ import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.pipeline.xstream.PathMapper;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
+import org.labkey.pipeline.mule.LoggerUtil;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
+import org.apache.log4j.PropertyConfigurator;
 
 import java.io.*;
 import java.util.List;
@@ -36,6 +38,8 @@ public class ClusterJobRunner
 {
     public void run(String[] springConfigPaths, String[] args) throws IOException, URISyntaxException
     {
+        LoggerUtil.initLogging("org/labkey/pipeline/mule/config/cluster.log4j.properties");
+
         // Set up the PipelineJobService so that Spring can configure it
         PipelineJobServiceImpl.initDefaults();
 

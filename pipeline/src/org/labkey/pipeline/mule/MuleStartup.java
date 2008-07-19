@@ -35,8 +35,10 @@ public class MuleStartup
 {
     private static Logger _log = Logger.getLogger(MuleStartup.class);
 
-    public void run(String[] springConfigPaths, String[] args) throws ConfigurationException
+    public void run(String[] springConfigPaths, String[] args) throws ConfigurationException, IOException
     {
+        LoggerUtil.initLogging("org/labkey/pipeline/mule/config/remote.log4j.properties");
+
         // Set up the PipelineJobService so that Spring can configure it
         PipelineJobServiceImpl.initDefaults();
 

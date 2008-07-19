@@ -18,27 +18,19 @@ package org.labkey.pipeline.mule;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.data.Container;
 import org.labkey.pipeline.api.PipelineStatusManager;
-import org.labkey.pipeline.PipelineModule;
+import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
 import org.mule.extras.client.MuleClient;
 import org.mule.umo.UMOException;
-import org.mule.umo.transformer.UMOTransformer;
-import org.mule.umo.transformer.TransformerException;
 import org.mule.umo.endpoint.UMOEndpoint;
 import org.mule.MuleManager;
 import org.mule.impl.RequestContext;
 import org.apache.log4j.Logger;
 
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
 import javax.jms.*;
 import java.io.IOException;
 import java.io.File;
 import java.sql.SQLException;
-import java.util.Enumeration;
-import java.util.Map;
-import java.util.List;
-import java.util.ArrayList;
+import java.util.*;
 
 /**
  * EPipelineQueueImpl class
@@ -84,13 +76,11 @@ public class EPipelineQueueImpl implements PipelineQueue
             return data;
 
         Connection conn = null;
-        Session session = null;
-        QueueBrowser browser = null;
         try
         {
             conn = _factoryJms.createConnection();
-            session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            browser = session.createBrowser(session.createQueue(ep.getEndpointURI().getAddress()));
+            Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            QueueBrowser browser = session.createBrowser(session.createQueue(ep.getEndpointURI().getAddress()));
             conn.start();
             for (Enumeration msgs = browser.getEnumeration(); msgs.hasMoreElements() ;)
             {
@@ -129,6 +119,52 @@ public class EPipelineQueueImpl implements PipelineQueue
     public boolean cancelJob(Container c, int jobId)
     {
         return false;
+    }
+
+    public List<PipelineJob> findJobs(String location)
+    {
+        Map endpoints = MuleManager.getInstance().getEndpoints();
+        UMOEndpoint ep = (UMOEndpoint) endpoints.get("JobQueue");
+        if (ep == null)
+        {
+            return Collections.emptyList();
+        }
+
+        List<PipelineJob> result = new ArrayList<PipelineJob>();
+        Connection conn = null;
+        try
+        {
+            conn = _factoryJms.createConnection();
+            Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            TaskJmsSelectorFilter filter = new TaskJmsSelectorFilter();
+            filter.setLocation(location);
+
+            QueueBrowser browser = session.createBrowser(session.createQueue(ep.getEndpointURI().getAddress()), filter.getExpression());
+            conn.start();
+            for (Enumeration msgs = browser.getEnumeration(); msgs.hasMoreElements() ;)
+            {
+                Message msg = (Message) msgs.nextElement();
+
+                PipelineJob job = PipelineJobService.get().getJobStore().fromXML(((TextMessage)msg).getText());
+                result.add(job);
+            }
+        }
+        catch (JMSException e)
+        {
+            _log.error("Error browsing message queue at '" + ep.getEndpointURI(), e);
+        }
+        finally
+        {
+            if (conn != null)
+            {
+                try
+                {   conn.close(); }
+                catch (JMSException e)
+                {}
+            }
+        }
+        return result;
     }
 
     public PipelineJob findJob(Container c, String statusFile)

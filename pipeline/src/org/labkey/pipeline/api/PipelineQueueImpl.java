@@ -233,6 +233,26 @@ public class PipelineQueueImpl implements PipelineQueue
         return false;
     }
 
+    public List<PipelineJob> findJobs(String location)
+    {
+        List<PipelineJob> result = new ArrayList<PipelineJob>();
+        for (PipelineJob job : _pending)
+        {
+            if (job.getActiveTaskFactory().getExecutionLocation().equals(location))
+            {
+                result.add(job);
+            }
+        }
+        for (PipelineJob job : _running)
+        {
+            if (job.getActiveTaskFactory().getExecutionLocation().equals(location))
+            {
+                result.add(job);
+            }
+        }
+        return result;
+    }
+
     private boolean statusFileMatches(PipelineJob job, String statusFile)
     {
         File fileCompare = job.getStatusFile();

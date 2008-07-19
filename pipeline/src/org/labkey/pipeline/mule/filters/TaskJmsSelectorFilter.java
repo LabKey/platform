@@ -23,13 +23,6 @@ package org.labkey.pipeline.mule.filters;
  */
 public class TaskJmsSelectorFilter extends AbstractTaskJmsSelectorFilter
 {
-    private String _location;
-
-    public String getLocation()
-    {
-        return _location;
-    }
-
     public void setLocation(String location)
     {
         _location = location;

@@ -25,8 +25,6 @@ import org.labkey.api.pipeline.PipelineJobService;
  */
 public class TaskRemoteServerJmsSelectorFilter extends AbstractTaskJmsSelectorFilter
 {
-    private String _location;
-
     public TaskRemoteServerJmsSelectorFilter()
     {
         PipelineJobService.RemoteServerProperties props =
@@ -36,10 +34,5 @@ public class TaskRemoteServerJmsSelectorFilter extends AbstractTaskJmsSelectorFi
 
         if (_location == null || "".equals(_location))
             throw new IllegalArgumentException("RemoteServerProperties.location must be set to use TaskRemoteServerJmsSelectorFilter.");            
-    }
-
-    public String getLocation()
-    {
-        return _location;
     }
 }

@@ -17,41 +17,39 @@
 package org.labkey.pipeline.api.properties;
 
 import org.labkey.api.pipeline.PipelineJobService;
-import org.labkey.pipeline.xstream.PathMapper;
+import org.labkey.api.pipeline.ClusterSettingsImpl;
 
 import java.util.Map;
-import java.io.File;
 
 /**
  * <code>GlobusClientPropertiesImpl</code> used for Spring configuration.
  */
-public class GlobusClientPropertiesImpl implements PipelineJobService.GlobusClientProperties
+public class GlobusClientPropertiesImpl extends ClusterSettingsImpl implements PipelineJobService.GlobusClientProperties
 {
-    private String _globusJavaHome; // todo: make this unnecessary
-    private String _globusLabkeyDir;
+    private String _javaHome; // todo: make this unnecessary
+    private String _labKeyDir;
     private String _globusServer;
-    private String _globusJobFactoryType;
-    private String _globusQueue;
-    private Map<String, String> _globusPathMapping;
+    private String _jobFactoryType;
+    private Map<String, String> _pathMapping;
 
-    public String getGlobusJavaHome()
+    public String getJavaHome()
     {
-        return _globusJavaHome;
+        return _javaHome;
     }
 
-    public void setGlobusJavaHome(String globusJavaHome)
+    public void setJavaHome(String globusJavaHome)
     {
-        _globusJavaHome = globusJavaHome;
+        _javaHome = globusJavaHome;
     }
 
-    public String getGlobusLabkeyDir()
+    public String getLabKeyDir()
     {
-        return _globusLabkeyDir;
+        return _labKeyDir;
     }
 
-    public void setGlobusLabkeyDir(String globusLabkeyDir)
+    public void setLabKeyDir(String globusLabkeyDir)
     {
-        _globusLabkeyDir = globusLabkeyDir;
+        _labKeyDir = globusLabkeyDir;
     }
 
     public String getGlobusServer()
@@ -64,33 +62,23 @@ public class GlobusClientPropertiesImpl implements PipelineJobService.GlobusClie
         _globusServer = globusServer;
     }
 
-    public String getGlobusJobFactoryType()
+    public String getJobFactoryType()
     {
-        return _globusJobFactoryType;
+        return _jobFactoryType;
     }
 
-    public void setGlobusJobFactoryType(String globusJobFactoryType)
+    public void setJobFactoryType(String globusJobFactoryType)
     {
-        _globusJobFactoryType = globusJobFactoryType;
+        _jobFactoryType = globusJobFactoryType;
     }
 
-    public String getGlobusQueue()
+    public Map<String, String> getPathMapping()
     {
-        return _globusQueue;
+        return _pathMapping;
     }
 
-    public void setGlobusQueue(String globusQueue)
+    public void setPathMapping(Map<String, String> globusPathMapping)
     {
-        _globusQueue = globusQueue;
-    }
-
-    public Map<String, String> getGlobusPathMapping()
-    {
-        return _globusPathMapping;
-    }
-
-    public void setGlobusPathMapping(Map<String, String> globusPathMapping)
-    {
-        _globusPathMapping = globusPathMapping;
+        _pathMapping = globusPathMapping;
     }
 }

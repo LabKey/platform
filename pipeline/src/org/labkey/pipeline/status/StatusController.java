@@ -31,6 +31,7 @@ import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.pipeline.PipelineController;
 import org.labkey.pipeline.mule.EPipelineQueueImpl;
+import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
@@ -1098,13 +1099,28 @@ public class StatusController extends SpringActionController
 
     /** Used to set job status for Enterprise pipeline */
     @RequiresPermission(ACL.PERM_NONE)
-    public class RequeueLostJobsAction extends SimpleStreamAction<RequeueRunningJobsForm>
+    public class RequeueLostJobsAction extends AbstractCallbackAction<RequeueRunningJobsForm>
     {
-        public void render(RequeueRunningJobsForm form, BindException errors, PrintWriter out) throws Exception
+        public RequeueLostJobsAction()
         {
-            if (!PipelineService.get().isEnterprisePipeline())
+            super(RequeueRunningJobsForm.class);
+        }
+
+        public void handleCallback(RequeueRunningJobsForm form) throws Exception
+        {
+            if (null == form.getLocation())
             {
-                HttpView.throwUnauthorized("HTTP requeuing disabled since Enterprise pipeline is not enabled");
+                HttpView.throwNotFound("No location specified");
+            }
+
+            TaskJmsSelectorFilter filter = new TaskJmsSelectorFilter();
+            filter.setLocation(form.getLocation());
+
+            List<PipelineJob> pendingJobs = PipelineService.get().getPipelineQueue().findJobs(form.getLocation());
+            Set<String> jobIds = new HashSet<String>();
+            for (PipelineJob job : pendingJobs)
+            {
+                jobIds.add(job.getJobGUID());
             }
 
             TaskPipelineRegistry registry = PipelineJobService.get();
@@ -1119,8 +1135,11 @@ public class StatusController extends SpringActionController
                         if (statusFile.getJobStore() != null)
                         {
                             PipelineJob job = PipelineJobService.get().getJobStore().fromXML(statusFile.getJobStore());
-                            job.updateStatusForTask();
-                            EPipelineQueueImpl.dispatchJob(job);
+                            if (!jobIds.contains(job.getJobGUID()))
+                            {
+                                job.updateStatusForTask();
+                                EPipelineQueueImpl.dispatchJob(job);
+                            }
                         }
                     }
                 }
@@ -1128,15 +1147,18 @@ public class StatusController extends SpringActionController
         }
     }
 
-    /** Used to set job status for Enterprise pipeline */
-    @RequiresPermission(ACL.PERM_NONE)
-    public class SetJobStatusAction extends SimpleStreamAction<JobStatusForm>
+    public abstract class AbstractCallbackAction<Form extends CallbackForm> extends SimpleStreamAction<Form>
     {
-        public void render(JobStatusForm form, BindException errors, PrintWriter out) throws Exception
+        public AbstractCallbackAction(Class<? extends Form> c)
+        {
+            super(c);
+        }
+
+        public void render(Form form, BindException errors, PrintWriter out) throws Exception
         {
             if (!PipelineService.get().isEnterprisePipeline())
             {
-                HttpView.throwUnauthorized("HTTP status updates disabled since Enterprise pipeline is not enabled");
+                HttpView.throwUnauthorized("HTTP access disabled since Enterprise pipeline is not configured");
             }
 
             if (PipelineJobService.get().getAppProperties().getCallbackPassword() != null &&
@@ -1145,6 +1167,23 @@ public class StatusController extends SpringActionController
                 HttpView.throwUnauthorized("Invalid callback password");
             }
 
+            handleCallback(form);
+        }
+
+        protected abstract void handleCallback(Form form) throws Exception;
+    }
+
+    /** Used to set job status for Enterprise pipeline */
+    @RequiresPermission(ACL.PERM_NONE)
+    public class SetJobStatusAction extends AbstractCallbackAction<JobStatusForm>
+    {
+        public SetJobStatusAction()
+        {
+            super(JobStatusForm.class);
+        }
+
+        public void handleCallback(JobStatusForm form) throws Exception
+        {
             PipelineStatusFileImpl status = PipelineStatusManager.getJobStatusFile(form.getJob());
             if (!status.getContainerId().equals(getContainer().getId()))
             {

@@ -30,7 +30,12 @@ abstract public class AbstractTaskJmsSelectorFilter extends JmsSelectorFilter
 {
     private boolean _includeMonolithic;
 
-    abstract public String getLocation();
+    protected String _location;
+
+    public String getLocation()
+    {
+        return _location;
+    }
 
     public boolean isIncludeMonolithic()
     {
