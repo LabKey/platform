@@ -47,7 +47,11 @@ public interface TaskFactory extends ClusterSettings
 
     boolean isParticipant(PipelineJob job) throws IOException, SQLException;
 
+    boolean isAutoRetryEnabled(PipelineJob job) throws IOException, SQLException; 
+
     String getExecutionLocation();
+
+    int getAutoRetry();
 
     /**
      * Task is run on the LabKey Server.

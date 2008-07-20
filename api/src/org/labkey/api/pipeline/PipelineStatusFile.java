@@ -35,8 +35,9 @@ public interface PipelineStatusFile
 
     public interface StatusWriter
     {
-        void setStatusFile(ViewBackgroundInfo info, PipelineJob job,
-                           String status, String statusInfo) throws Exception;
+        void setStatusFile(PipelineJob job, String status, String statusInfo) throws Exception;
+
+        void ensureError(PipelineJob job) throws Exception;
     }
 
     public interface JobStore
@@ -49,13 +50,13 @@ public interface PipelineStatusFile
 
         PipelineJob getJob(String jobId) throws SQLException;
 
-        PipelineJob getJob(PipelineStatusFile sf);
+        void retry(String jobId) throws IOException, SQLException;
 
-        void split(PipelineJob job)
-                throws IOException, SQLException;
+        void retry(PipelineStatusFile sf) throws IOException;
 
-        void join(PipelineJob job)
-                throws IOException, SQLException;
+        void split(PipelineJob job) throws IOException, SQLException;
+
+        void join(PipelineJob job) throws IOException, SQLException;
     }
 
     Container lookupContainer();

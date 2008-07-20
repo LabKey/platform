@@ -41,4 +41,6 @@ public interface TaskPipelineRegistry
     TaskFactory[] getTaskFactories();
 
     String getDefaultExecutionLocation();
+
+    int getDefaultAutoRetry();
 }

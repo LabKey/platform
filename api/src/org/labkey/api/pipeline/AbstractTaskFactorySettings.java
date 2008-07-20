@@ -27,9 +27,10 @@ package org.labkey.api.pipeline;
 abstract public class AbstractTaskFactorySettings implements TaskFactorySettings
 {
     private TaskId _id;
-    private String _location;
     private TaskId _dependencyId;
     private Boolean _join;
+    private String _location;
+    private int _autoRetry = -1;
 
     public AbstractTaskFactorySettings(TaskId id)
     {
@@ -67,16 +68,6 @@ abstract public class AbstractTaskFactorySettings implements TaskFactorySettings
         return new TaskId(TaskPipeline.class);
     }
 
-    public String getLocation()
-    {
-        return _location;
-    }
-
-    public void setLocation(String location)
-    {
-        _location = location;
-    }
-
     public TaskId getDependencyId()
     {
         return _dependencyId;
@@ -100,5 +91,30 @@ abstract public class AbstractTaskFactorySettings implements TaskFactorySettings
     public void setJoin(boolean join)
     {
         _join = join;
+    }
+
+    public String getLocation()
+    {
+        return _location;
+    }
+
+    public void setLocation(String location)
+    {
+        _location = location;
+    }
+
+    public boolean isAutoRetrySet()
+    {
+        return _autoRetry != -1;
+    }
+
+    public int getAutoRetry()
+    {
+        return _autoRetry;
+    }
+
+    public void setAutoRetry(int autoRetry)
+    {
+        _autoRetry = autoRetry;
     }
 }

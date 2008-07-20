@@ -166,6 +166,7 @@ abstract public class PipelineJob extends Job implements Serializable
     private String _parentGUID;
     private TaskId _activeTaskId;
     private TaskStatus _activeTaskStatus;
+    private int _activeTaskRetries;
     private URI _rootURI;
     private File _logFile;
     private File _statusFile;
@@ -255,13 +256,13 @@ abstract public class PipelineJob extends Job implements Serializable
     }
 
     /**
-     * Used to increment the error count without any side-effects, for when
-     * a job is restored from the database for a retry.  The saved job did
-     * not have the error recorded.
+     * This job has been restored from a checkpoint for the purpose of
+     * a retry.  Record retry information before it is checkpointed again.
      */
-    public void hadError()
+    public void retryUpdate()
     {
         _errors++;
+        _activeTaskRetries++;
     }
 
     public Map<String, String> getParameters()
@@ -286,7 +287,11 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public void setActiveTaskId(TaskId activeTaskId)
     {
-        _activeTaskId = activeTaskId;
+        if (activeTaskId == null || !activeTaskId.equals(_activeTaskId))
+        {
+            _activeTaskId = activeTaskId;
+            _activeTaskRetries = 0;
+        }
         if (_activeTaskId == null)
             _activeTaskStatus = TaskStatus.complete;
         else
@@ -407,7 +412,7 @@ abstract public class PipelineJob extends Job implements Serializable
         _settingStatus = true;
         try
         {
-            PipelineJobService.get().getStatusWriter().setStatusFile(getInfo(), this, status, info);
+            PipelineJobService.get().getStatusWriter().setStatusFile(this, status, info);
         }
         catch (Exception e)
         {
@@ -556,6 +561,19 @@ abstract public class PipelineJob extends Job implements Serializable
                 return findRunnableTask(progression, i + 1);
 
             case error:
+                if (!autoRetry())
+                {
+                    try
+                    {
+                        PipelineJobService.get().getStatusWriter().ensureError(this);
+                    }
+                    catch (Exception e)
+                    {
+                        warn("Failed to ensure error status on task error.");
+                    }
+                }
+                return false;
+            
             case running:
             default:
                 return false;   // Do not run the active task.
@@ -566,10 +584,10 @@ abstract public class PipelineJob extends Job implements Serializable
     {
         for (int i = 0; i < progression.length; i++)
         {
-                TaskFactory factory = PipelineJobService.get().getTaskFactory(progression[i]);
-                if (factory.getId().equals(_activeTaskId) ||
-                        factory.getActiveId(this).equals(_activeTaskId))
-                    return i;
+            TaskFactory factory = PipelineJobService.get().getTaskFactory(progression[i]);
+            if (factory.getId().equals(_activeTaskId) ||
+                    factory.getActiveId(this).equals(_activeTaskId))
+                return i;
         }
         return -1;
     }
@@ -633,6 +651,29 @@ abstract public class PipelineJob extends Job implements Serializable
             setActiveTaskId(null);
             return false;
         }
+    }
+
+    public boolean autoRetry()
+    {
+        TaskFactory factory = getActiveTaskFactory();
+        try
+        {
+            if (_activeTaskRetries < factory.getAutoRetry() && factory.isAutoRetryEnabled(this))
+            {
+                PipelineJobService.get().getJobStore().retry(getJobGUID());
+                // Retry has been queued
+                return true;
+            }
+        }
+        catch (IOException e)
+        {
+            warn("Failed to start automatic retry.", e);
+        }
+        catch (SQLException e)
+        {
+            warn("Failed to start automatic retry.", e);
+        }
+        return false;
     }
 
     public void run()

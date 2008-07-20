@@ -29,6 +29,7 @@ abstract public class AbstractTaskFactory extends ClusterSettingsImpl implements
     private TaskId _dependencyId;
     private boolean _join;
     private String _executionLocation;
+    private int _autoRetry = -1;
 
     public AbstractTaskFactory(Class namespaceClass)
     {
@@ -61,6 +62,8 @@ abstract public class AbstractTaskFactory extends ClusterSettingsImpl implements
             _join = settings.isJoin();
         if (settings.getLocation() != null)
             _executionLocation = settings.getLocation();
+        if (settings.isAutoRetrySet())
+            _autoRetry = settings.getAutoRetry();
         return this;
     }
 
@@ -84,21 +87,54 @@ abstract public class AbstractTaskFactory extends ClusterSettingsImpl implements
         return true;
     }
 
+    public boolean isAutoRetryEnabled(PipelineJob job) throws IOException, SQLException
+    {
+        // TODO: Check log file for wallclock expiration on cluster jobs
+        return true;
+    }
+
+    /**
+     * Returns the id for this task factory, under which it is stored in the
+     * task registry.
+     *
+     * @return the id for this task factory
+     */
     public TaskId getId()
     {
         return _id;
     }
 
+    /**
+     * Returns the id of the task with the <code>run()</code> method that should
+     * be called for this task factory, allowing a task factory to delegate work
+     * based on the state of the <code>PipelineJob</code> (e.g. file conversion
+     * which runs a different conversion command depending on the input file).
+     *
+     * @param job the job on which the task is to run
+     * @return the id for the task to run
+     */
     public TaskId getActiveId(PipelineJob job)
     {
         return getId();
     }
 
+    /**
+     * Returns the id of a task used in <code>isParticipant()</code> to determine
+     * whether this task should be run.
+     *
+     * @return the id of a task on which the participation of this task depends
+     */
     public TaskId getDependencyId()
     {
         return _dependencyId;
     }
 
+    /**
+     * Sets the id of a task used in <code>isParticipant()</code> to determine
+     * whether this task should be run.
+     *
+     * @param dependencyId the id of a task on which the participation of this task depends
+     */
     public void setDependencyId(TaskId dependencyId)
     {
         _dependencyId = dependencyId;
@@ -143,5 +179,27 @@ abstract public class AbstractTaskFactory extends ClusterSettingsImpl implements
     public void setLocation(String location)
     {
         _executionLocation = location;
+    }
+
+    /**
+     * Returns the number of times to automatically retry this task.
+     *
+     * @return number of times to automatically retry this taks.
+     */
+    public int getAutoRetry()
+    {
+        if (_autoRetry == -1)
+            return PipelineJobService.get().getDefaultAutoRetry();
+        return _autoRetry;
+    }
+
+    /**
+     * Sets the number of times to automatically retry this task.
+     *
+     * @param autoRetry the number of times to automatically retry this task
+     */
+    public void setAutoRetry(int autoRetry)
+    {
+        _autoRetry = autoRetry;
     }
 }

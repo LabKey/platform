@@ -569,28 +569,7 @@ abstract public class PipelineProvider
 
         try
         {
-            PipelineStatusFile.JobStore store = PipelineJobService.get().getJobStore();
-            try
-            {
-                PipelineJob job = store.getJob(sf);
-                if (job == null)
-                    return null;
-
-                PipelineService.get().getPipelineQueue().addJob(job);
-            }
-            catch (ConversionException e)
-            {
-                // Remove the stored job which is failing to load.
-                try
-                {
-                    PipelineJobService.get().getJobStore().getJob(sf.getJob());
-                }
-                // Ignore the expected conversion exception.
-                catch (ConversionException ex)
-                {}
-                
-                throw new IOException("Failed to restore the job from the database.");
-            }
+            PipelineJobService.get().getJobStore().retry(sf);
         }
         // CONSIDER: Narrow this net further? 
         catch (Exception e)
