@@ -19,27 +19,16 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.mule.providers.jms.filters.JmsSelectorFilter;
 
 /**
- * <code>TaskStatusJmsSelectorFilter</code> builds and applies a JMS selector for
- * for all jobs with a certain task status.
+ * <code>TaskStateChangeJmsSelectorFilter</code> builds and applies a JMS selector for
+ * for all jobs with complete or error status.
  *
  * @author brendanx
  */
-public class TaskStatusJmsSelectorFilter extends JmsSelectorFilter
+public class TaskStateChangeJmsSelectorFilter extends JmsSelectorFilter
 {
-    private PipelineJob.TaskStatus _status;
-
-    public String getStatus()
-    {
-        return _status.toString();
-    }
-
-    public void setStatus(String status)
-    {
-        _status = PipelineJob.TaskStatus.valueOf(status);
-    }
-
     public String getExpression()
     {
-        return PipelineJob.LABKEY_TASKSTATUS_PROPERTY + " = '" + _status + "'";
+        return PipelineJob.LABKEY_TASKSTATUS_PROPERTY + " = '" + PipelineJob.TaskStatus.complete + "' OR " +
+                PipelineJob.LABKEY_TASKSTATUS_PROPERTY + " = '" + PipelineJob.TaskStatus.error + "'";
     }
 }

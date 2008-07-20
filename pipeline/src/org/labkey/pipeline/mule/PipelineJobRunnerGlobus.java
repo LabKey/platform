@@ -276,7 +276,7 @@ public class PipelineJobRunnerGlobus implements Callable
         job.setActiveTaskStatus(status);
 
         // Only re-queue the job if status is 'complete' (not 'running' or 'error').
-        if (status == PipelineJob.TaskStatus.complete)
+        if (status == PipelineJob.TaskStatus.complete || status == PipelineJob.TaskStatus.error)
         {
             EPipelineQueueImpl.dispatchJob(job);
         }

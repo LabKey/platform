@@ -27,8 +27,13 @@ import org.labkey.api.view.ViewBackgroundInfo;
 */
 public class NoOpPipelineStatusWriter implements PipelineStatusFile.StatusWriter
 {
-    public void setStatusFile(ViewBackgroundInfo info, PipelineJob job, String status, String statusInfo) throws Exception
+    public void setStatusFile(PipelineJob job, String status, String statusInfo) throws Exception
     {
 
+    }
+
+    public void ensureError(PipelineJob job) throws Exception
+    {
+        throw new UnsupportedOperationException("Method supported only on web server");
     }
 }

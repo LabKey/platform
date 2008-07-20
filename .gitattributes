@@ -1008,7 +1008,7 @@ pipeline/src/org/labkey/pipeline/mule/filters/JobIncompleteFilter.java -text
 pipeline/src/org/labkey/pipeline/mule/filters/JobRunJmsSelectorFilter.java -text
 pipeline/src/org/labkey/pipeline/mule/filters/TaskJmsSelectorFilter.java -text
 pipeline/src/org/labkey/pipeline/mule/filters/TaskRemoteServerJmsSelectorFilter.java -text
-pipeline/src/org/labkey/pipeline/mule/filters/TaskStatusJmsSelectorFilter.java -text
+pipeline/src/org/labkey/pipeline/mule/filters/TaskStateChangeJmsSelectorFilter.java -text
 pipeline/src/org/labkey/pipeline/mule/routing/EPipelineQueueMessageSplitter.java -text
 pipeline/src/org/labkey/pipeline/mule/transformers/AbstractMuleSingleValueConverter.java -text
 pipeline/src/org/labkey/pipeline/mule/transformers/JMSMessageToPipelineJob.java -text

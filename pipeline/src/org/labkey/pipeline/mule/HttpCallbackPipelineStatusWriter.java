@@ -37,8 +37,7 @@ public class HttpCallbackPipelineStatusWriter implements PipelineStatusFile.Stat
 {
     private static Logger _log = Logger.getLogger(HttpCallbackPipelineStatusWriter.class);
 
-    public void setStatusFile(ViewBackgroundInfo info, PipelineJob job,
-                              String status, String statusInfo)
+    public void setStatusFile(PipelineJob job, String status, String statusInfo)
     {
         _log.info("STATUS = " + status);
         if (PipelineJobService.get().getAppProperties() != null && PipelineJobService.get().getAppProperties().getBaseServerUrl() != null)
@@ -65,17 +64,8 @@ public class HttpCallbackPipelineStatusWriter implements PipelineStatusFile.Stat
         }
     }
 
-    public void setStatusFileJms(ViewBackgroundInfo info, PipelineStatusFile sf) throws Exception
+    public void ensureError(PipelineJob job) throws Exception
     {
-        try
-        {
-            MuleClient client = new MuleClient();
-            client.dispatch("StatusSetter", new EPipelineStatus(info, sf), null);
-        }
-        catch (UMOException e)
-        {
-            // TODO: Throw something?
-            _log.error(e);
-        }
+        throw new UnsupportedOperationException("Method supported only on web server");
     }
 }

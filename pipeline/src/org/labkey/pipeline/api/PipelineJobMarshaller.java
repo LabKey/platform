@@ -73,7 +73,7 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
         return (PipelineJob) getXStream().fromXML(xml);
     }
 
-    /* todo: create a separate interface? */
+    /* CONSIDER: create a separate interface? */
     public void storeJob(PipelineJob job) throws SQLException
     {
         throw new UnsupportedOperationException("Method supported only on web server");
@@ -84,7 +84,12 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
         throw new UnsupportedOperationException("Method supported only on web server");
     }
 
-    public PipelineJob getJob(PipelineStatusFile sf)
+    public void retry(String jobId) throws IOException, SQLException
+    {
+        throw new UnsupportedOperationException("Method supported only on web server");
+    }
+
+    public void retry(PipelineStatusFile sf) throws IOException
     {
         throw new UnsupportedOperationException("Method supported only on web server");        
     }

@@ -146,6 +146,17 @@ public class PipelineStatusManager
         }
     }
 
+    public static void ensureError(ViewBackgroundInfo info, String jobId) throws Exception
+    {
+        PipelineStatusFileImpl sfExist = getJobStatusFile(jobId);
+        if (sfExist == null)
+            throw new SQLException("Status for the job " + jobId + " was not found.");
+
+        sfExist.setStatus(PipelineJob.ERROR_STATUS);
+        sfExist.setInfo(null);
+        setStatusFile(info, sfExist);
+    }
+
     public static void storeJob(String jobId, String xml) throws SQLException
     {
         PipelineStatusFileImpl sfExist = getJobStatusFile(jobId);

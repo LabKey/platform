@@ -19,11 +19,9 @@ package org.labkey.pipeline.api;
 import java.sql.SQLException;
 import java.io.IOException;
 
-import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineStatusFile;
-import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.pipeline.TaskId;
+import org.labkey.api.pipeline.*;
 import org.labkey.api.data.DbScope;
+import com.thoughtworks.xstream.converters.ConversionException;
 
 /**
  * Implements serialization of a <code>PipelineJob</code> to and from XML,
@@ -43,12 +41,27 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
         return fromStatus(PipelineStatusManager.retreiveJob(jobId));
     }
 
-    public PipelineJob getJob(PipelineStatusFile sf)
+    public void retry(String jobId) throws IOException, SQLException
     {
-        PipelineJob job = fromStatus(sf.getJobStore());
-        if (PipelineJob.ERROR_STATUS.equals(sf.getStatus()))
-            job.hadError();
-        return job;
+        retry(PipelineStatusManager.getJobStatusFile(jobId));
+    }
+
+    public void retry(PipelineStatusFile sf) throws IOException
+    {
+        try
+        {
+            PipelineJob job = fromStatus(sf.getJobStore());
+            if (job == null)
+                throw new IOException("Job checkpoint does not exist.");
+
+            job.retryUpdate();
+
+            PipelineService.get().getPipelineQueue().addJob(job);
+        }
+        catch (ConversionException e)
+        {
+            throw new IOException("Failed to restore the checkpoint from the database.");
+        }
     }
 
     private PipelineJob fromStatus(String xml)

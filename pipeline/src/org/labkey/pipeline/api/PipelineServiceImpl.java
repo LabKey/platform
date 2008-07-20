@@ -395,10 +395,14 @@ public class PipelineServiceImpl extends PipelineService
         PipelineStatusManager.setStatusFile(info, sf);
     }
 
-    public void setStatusFile(ViewBackgroundInfo info, PipelineJob job,
-                              String status, String statusInfo) throws Exception
+    public void setStatusFile(PipelineJob job, String status, String statusInfo) throws Exception
     {
-        setStatusFile(info, new PipelineStatusFileImpl(job, status, statusInfo));
+        setStatusFile(job.getInfo(), new PipelineStatusFileImpl(job, status, statusInfo));
+    }
+
+    public void ensureError(PipelineJob job) throws Exception
+    {
+        PipelineStatusManager.ensureError(job.getInfo(), job.getJobGUID());
     }
 
     private List<String> parseArray(String dbPaths)

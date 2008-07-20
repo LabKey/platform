@@ -141,11 +141,7 @@
                 <endpoint type="receiver" address="JobMQ" transformers="JMSMessageToJob"
                         responseTransformers="NoOpTransformer" connector="jmsConnectorState">
                     <!--<transaction action="ALWAYS_BEGIN" factory="org.mule.providers.jms.JmsTransactionFactory" />-->
-                    <filter className="org.labkey.pipeline.mule.filters.TaskStatusJmsSelectorFilter">
-                        <properties>
-                            <property name="status" value="complete"/>
-                        </properties>
-                    </filter>
+                    <filter className="org.labkey.pipeline.mule.filters.TaskStateChangeJmsSelectorFilter"/>
                 </endpoint>
             </inbound-router>
 

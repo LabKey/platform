@@ -59,6 +59,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
             new HashMap<TaskId, TaskFactory>();
 
     private String _defaultExecutionLocation = TaskFactory.WEBSERVER;
+    private int _defaultAutoRetry = 0;
 
     private ApplicationProperties _appProperties;
     private ConfigProperties _configProperties;
@@ -212,6 +213,16 @@ public class PipelineJobServiceImpl extends PipelineJobService
     public void setDefaultExecutionLocation(String defaultExecutionLocation)
     {
         _defaultExecutionLocation = defaultExecutionLocation;
+    }
+
+    public int getDefaultAutoRetry()
+    {
+        return _defaultAutoRetry;
+    }
+
+    public void setDefaultAutoRetry(int defaultAutoRetry)
+    {
+        _defaultAutoRetry = defaultAutoRetry;
     }
 
     public PipelineStatusFile.StatusWriter getStatusWriter()
