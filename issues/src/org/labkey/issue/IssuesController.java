@@ -318,8 +318,7 @@ public class IssuesController extends SpringActionController
             }
 
             IssuePage page = new IssuePage();
-            JspView v = new JspView<IssuePage>(IssuesController.class, "detailView.jsp", page);
-
+            page.setPrint(isPrint());
             page.setIssue(_issue);
             page.setCustomColumnConfiguration(getCustomColumnConfiguration());
             //pass user's update perms to jsp page to determine whether to show notify list
@@ -327,6 +326,8 @@ public class IssuesController extends SpringActionController
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
 
             getPageConfig().setTitle("" + _issue.getIssueId() + " : " + _issue.getTitle());
+
+            JspView v = new JspView<IssuePage>(IssuesController.class, "detailView.jsp", page);
             return v;
         }
 
@@ -1249,7 +1250,11 @@ public class IssuesController extends SpringActionController
                 v.addObject("issues", issues);
 
                 ActionURL url = new ActionURL("issues", "details.view", getContainer());
-                v.addObject("url", url.getURIString() + "issueId=");
+                if (isPrint())
+                    url.addParameter("_print","1");
+                String s = url.getURIString();
+                if (!s.endsWith("?")) s += "&";
+                v.addObject("url", s + "issueId=");
                 v.addObject("homePageUrl", ActionURL.getBaseServerURL());
                 return v;
             }

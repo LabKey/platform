@@ -56,6 +56,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     private boolean _hasUpdatePermissions;
     private String _requiredFields;
     private String _dataRegionSelectionKey;
+    private boolean _print = false;
 
     public Issue getIssue()
     {
@@ -65,6 +66,16 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     public void setIssue(Issue issue)
     {
         _issue = issue;
+    }
+
+    public void setPrint(boolean print)
+    {
+        _print = print;
+    }
+
+    public boolean isPrint()
+    {
+        return _print;
     }
     
     public List<Issue> getIssueList()

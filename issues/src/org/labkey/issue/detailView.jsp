@@ -35,7 +35,9 @@
     final String issueId = Integer.toString(issue.getIssueId());
     final boolean hasUpdatePerms = bean.getHasUpdatePermissions();
 %>
-<form name="jumpToIssue" action="jumpToIssue.view" method="get">
+<% if (!bean.isPrint())
+{
+%><form name="jumpToIssue" action="jumpToIssue.view" method="get">
     <table border=0 cellspacing=2 cellpadding=2><tr>
     <td><%= textLink("new issue", PageFlowUtil.getLastFilter(context, IssuesController.issueURL(context.getContainer(), "insert")))%></td>
     <td><%= textLink("view grid", PageFlowUtil.getLastFilter(context, IssuesController.issueURL(context.getContainer(), "list")))%></td>
@@ -58,7 +60,9 @@
     <td><%= textLink("email prefs", IssuesController.issueURL(context.getContainer(), "emailPrefs").addParameter("issueId", issueId))%></td>
     <td>&nbsp;&nbsp;&nbsp;Jump to issue: <input type="text" size="5" name="issueId"/></td>
     </tr></table>
-</form>
+</form><%
+}
+%>
 
 <table width=640>
     <tr><td class="wpTitle" colspan="3"><%=issueId + " : " + h(issue.getTitle())%></td></tr>
