@@ -1946,7 +1946,7 @@ public class ConnectionWrapper implements java.sql.Connection
                     {
                         Object o = i < _parameters.size() ? _parameters.get(i) : null;
                         String value = String.valueOf(o);
-                        logEntry.append("\n    ?[").append(i + 1).append("] ").append(value);
+                        logEntry.append("\n    ?[").append(i).append("] ").append(value);
                     }
                     catch (Exception ex)
                     {
