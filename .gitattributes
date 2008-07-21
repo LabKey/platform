@@ -1299,6 +1299,7 @@ query/src/META-INF/query/scripts/postgresql/query-2.10-2.20.sql -text
 query/src/META-INF/query/scripts/postgresql/query-8.10-8.11.sql -text
 query/src/META-INF/query/scripts/postgresql/query-8.10-8.20.sql -text
 query/src/META-INF/query/scripts/postgresql/query-8.20-8.21.sql -text
+query/src/META-INF/query/scripts/postgresql/query-8.21-8.22.sql -text
 query/src/META-INF/query/scripts/sql[!!-~]server/obsolete/query-1.51-1.52.sql -text
 query/src/META-INF/query/scripts/sql[!!-~]server/obsolete/query-1.60-1.61.sql -text
 query/src/META-INF/query/scripts/sql[!!-~]server/obsolete/query-1.70-1.71.sql -text
@@ -1309,10 +1310,12 @@ query/src/META-INF/query/scripts/sql[!!-~]server/query-2.10-2.20.sql -text
 query/src/META-INF/query/scripts/sql[!!-~]server/query-8.10-8.11.sql -text
 query/src/META-INF/query/scripts/sql[!!-~]server/query-8.10-8.20.sql -text
 query/src/META-INF/query/scripts/sql[!!-~]server/query-8.20-8.21.sql -text
+query/src/META-INF/query/scripts/sql[!!-~]server/query-8.21-8.22.sql -text
 query/src/org/labkey/query/CustomViewImpl.java -text
 query/src/org/labkey/query/QueryDefinitionImpl.java -text
 query/src/org/labkey/query/QueryModule.java -text
 query/src/org/labkey/query/QueryServiceImpl.java -text
+query/src/org/labkey/query/QuerySnapshotDefImpl.java -text
 query/src/org/labkey/query/TableQueryDefinition.java -text
 query/src/org/labkey/query/TableXML.java -text
 query/src/org/labkey/query/controllers/ChooseColumnsForm.java -text
@@ -1335,9 +1338,11 @@ query/src/org/labkey/query/controllers/admin.jsp -text
 query/src/org/labkey/query/controllers/apitest.jsp -text
 query/src/org/labkey/query/controllers/begin.jsp -text
 query/src/org/labkey/query/controllers/chooseColumns.jsp -text
+query/src/org/labkey/query/controllers/createSnapshot.jsp -text
 query/src/org/labkey/query/controllers/dbuserschema/DbUserSchemaController.java -text
 query/src/org/labkey/query/controllers/deleteQuery.jsp -text
 query/src/org/labkey/query/controllers/designQuery.jsp -text
+query/src/org/labkey/query/controllers/editSnapshot.jsp -text
 query/src/org/labkey/query/controllers/internalDeleteView.jsp -text
 query/src/org/labkey/query/controllers/internalNewView.jsp -text
 query/src/org/labkey/query/controllers/internalSourceView.jsp -text
@@ -1359,6 +1364,7 @@ query/src/org/labkey/query/persist/CstmView.java -text
 query/src/org/labkey/query/persist/DbUserSchemaDef.java -text
 query/src/org/labkey/query/persist/QueryDef.java -text
 query/src/org/labkey/query/persist/QueryManager.java -text
+query/src/org/labkey/query/persist/QuerySnapshotDef.java -text
 query/src/org/labkey/query/reports/ReportServiceImpl.java -text
 query/src/org/labkey/query/reports/ReportsController.java -text
 query/src/org/labkey/query/reports/ReportsPipelineProvider.java -text
@@ -1727,6 +1733,7 @@ study/src/org/labkey/study/controllers/samples/SpecimenUtils.java -text
 study/src/org/labkey/study/controllers/samples/SpringSpecimenController.java -text
 study/src/org/labkey/study/controllers/security/SecurityController.java -text
 study/src/org/labkey/study/dataset/DatasetAuditViewFactory.java -text
+study/src/org/labkey/study/dataset/DatasetSnapshotProvider.java -text
 study/src/org/labkey/study/designer/MapArrayExcelWriter.java -text
 study/src/org/labkey/study/designer/StudyDefinitionServiceImpl.java -text
 study/src/org/labkey/study/designer/StudyDesignInfo.java -text

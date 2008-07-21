@@ -28,6 +28,7 @@ public class QueryDef extends Entity implements Cloneable
         container,
         schema,
         name,
+        queryDefId,
     }
 
     static public class Key extends CacheKey<QueryDef, Column>
@@ -45,6 +46,11 @@ public class QueryDef extends Entity implements Cloneable
         public void setQueryName(String queryName)
         {
             addCondition(Column.name, queryName);
+        }
+
+        public void setQueryDefId(int id)
+        {
+            addCondition(Column.queryDefId, id);
         }
     }
 

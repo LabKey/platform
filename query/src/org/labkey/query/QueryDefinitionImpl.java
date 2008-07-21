@@ -333,6 +333,16 @@ public class QueryDefinitionImpl implements QueryDefinition
         edit().setFlags(mgr.setIsHidden(_queryDef.getFlags(), f));
     }
 
+    public boolean isSnapshot()
+    {
+        return mgr.isSnapshot(_queryDef.getFlags());
+    }
+
+    public void setIsSnapshot(boolean f)
+    {
+        edit().setFlags(mgr.setIsSnapshot(_queryDef.getFlags(), f));
+    }
+
     public void setSql(String sql)
     {
         edit().setSql(sql);

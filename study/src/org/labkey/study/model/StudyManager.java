@@ -31,6 +31,8 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.query.AliasManager;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
@@ -800,6 +802,16 @@ public class StudyManager
         assert StudySchema.getInstance().getSchema().getScope().isTransactionActive();
 
         deleteDatasetType(study, user, ds);
+        try {
+            QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(study.getContainer(), 
+                    StudyManager.getSchemaName(), ds.getLabel());
+            if (def != null)
+                def.delete(user);
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
         Table.execute(StudySchema.getInstance().getSchema(),
                 "DELETE FROM " + _tableInfoVisitMap + "\n" +
                 "WHERE Container=? AND DatasetId=?",

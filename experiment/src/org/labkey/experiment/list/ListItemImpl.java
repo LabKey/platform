@@ -284,14 +284,16 @@ public class ListItemImpl implements ListItem
                 _itm = Table.update(user, _list.getIndexTable(), _itm, new Object[] { _itmOld.getListId(), _itmOld.getKey()}, null);
                 _itmOld = null;
             }
+
+            newRecord = _formatItemRecord(user, _properties, dps, _itm.getKey());
+            addAuditEvent(user, isNew ? "A new list record was inserted" : "An existing list record was modified",
+                    _itm.getEntityId(), oldRecord, newRecord);
+
             if (fTransaction)
             {
                 ExperimentService.get().commitTransaction();
                 fTransaction = false;
             }
-            newRecord = _formatItemRecord(user, _properties, dps, _itm.getKey());
-            addAuditEvent(user, isNew ? "A new list record was inserted" : "An existing list record was modified",
-                    _itm.getEntityId(), oldRecord, newRecord);
         }
         finally
         {

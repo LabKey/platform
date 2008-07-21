@@ -18,6 +18,7 @@ package org.labkey.query;
 
 import org.labkey.api.security.User;
 import org.labkey.api.query.*;
+import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.data.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartView;
@@ -33,6 +34,7 @@ import java.sql.SQLException;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.DbUserSchemaDef;
+import org.labkey.query.persist.QuerySnapshotDef;
 import org.labkey.query.view.DbUserSchema;
 
 public class QueryServiceImpl extends QueryService
@@ -123,15 +125,48 @@ public class QueryServiceImpl extends QueryService
         return getQueryDefs(container, schema).get(name);
     }
 
-    /*public Pair<ColumnInfo[], ResultSet> select(TableInfo table, FieldKey[] fields)
+    private Map<String, QuerySnapshotDefinition> getAllQuerySnapshotDefs(Container container, String schemaName)
     {
-        QueryTableInfo queryTable = new QueryTableInfo(table, "query", "query");
-        Map<FieldKey, ColumnInfo> columnMap = new HashMap();
-        for (int i = 0; i < fields.length; i ++)
+        Map<String, QuerySnapshotDefinition> ret = new LinkedHashMap();
+        for (QuerySnapshotDef queryDef : QueryManager.get().getQuerySnapshots(container, schemaName))
         {
-
+            ret.put(queryDef.getName(), new QuerySnapshotDefImpl(queryDef));
         }
-    }*/
+        return ret;
+    }
+
+    public QuerySnapshotDefinition getSnapshotDef(Container container, String schema, String name)
+    {
+        return getAllQuerySnapshotDefs(container, schema).get(name);
+    }
+
+    public boolean isQuerySnapshot(Container container, String schema, String name)
+    {
+        return QueryService.get().getSnapshotDef(container, schema, name) != null;
+    }
+
+    public QuerySnapshotDefinition createQuerySnapshotDef(QueryDefinition queryDef, String name)
+    {
+        QueryDefinitionImpl qd = new QueryDefinitionImpl(queryDef.getContainer(), queryDef.getSchemaName(), queryDef.getName() + "_" + name);
+
+        qd.setMetadataXml(queryDef.getMetadataXml());
+        qd.setSql(queryDef.getSql());
+        qd.setDescription(queryDef.getDescription());
+        qd.setIsHidden(true);
+        qd.setIsSnapshot(true);
+
+        return new QuerySnapshotDefImpl(qd.getQueryDef(), name);
+    }
+
+/*public Pair<ColumnInfo[], ResultSet> select(TableInfo table, FieldKey[] fields)
+{
+    QueryTableInfo queryTable = new QueryTableInfo(table, "query", "query");
+    Map<FieldKey, ColumnInfo> columnMap = new HashMap();
+    for (int i = 0; i < fields.length; i ++)
+    {
+
+    }
+}*/
 
     private ColumnInfo getColumn(AliasManager manager, TableInfo table, Map<FieldKey, ColumnInfo> columnMap, FieldKey key)
     {

@@ -20,10 +20,13 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.query.view.DbUserSchema;
 
 import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.ArrayList;
 
 
 public class QueryManager
@@ -33,6 +36,7 @@ public class QueryManager
     static final private String SCHEMA_NAME = "query";
     final static public int FLAG_INHERITABLE = 0x01;
     final static public int FLAG_HIDDEN = 0x02;
+    final static public int FLAG_SNAPSHOT = 0x04;
 
     synchronized static public QueryManager get()
     {
@@ -84,6 +88,23 @@ public class QueryManager
         }
     }
 
+    public QuerySnapshotDef[] getQuerySnapshots(Container container, String schema)
+    {
+        try
+        {
+            QuerySnapshotDef.Key key = new QuerySnapshotDef.Key(container);
+            if (schema != null)
+            {
+                key.setSchema(schema);
+            }
+            return key.select();
+        }
+        catch (SQLException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+    }
+
     public QueryDef insert(User user, QueryDef queryDef) throws SQLException
     {
         return Table.insert(user, getTableInfoQueryDef(), queryDef);
@@ -97,6 +118,30 @@ public class QueryManager
     public void delete(User user, QueryDef queryDef) throws SQLException
     {
         Table.delete(getTableInfoQueryDef(), queryDef.getQueryDefId(), null);
+    }
+
+    public void delete(User user, QuerySnapshotDef querySnapshotDef) throws SQLException
+    {
+        Table.delete(getTableInfoQuerySnapshotDef(), querySnapshotDef.getRowId(), null);
+        if (querySnapshotDef.getQueryDefId() != null)
+            Table.delete(getTableInfoQueryDef(), querySnapshotDef.getQueryDefId(), null);
+    }
+
+    public QuerySnapshotDef insert(User user, QueryDef queryDef, QuerySnapshotDef snapshotDef) throws SQLException
+    {
+        if (queryDef != null)
+        {
+            QueryDef def = insert(user, queryDef);
+            snapshotDef.setQueryDefId(def.getQueryDefId());
+        }
+        return Table.insert(user, getTableInfoQuerySnapshotDef(), snapshotDef);
+    }
+
+    public QuerySnapshotDef update(User user, QueryDef queryDef, QuerySnapshotDef snapshotDef) throws SQLException
+    {
+        if (queryDef != null)
+            update(user, queryDef);
+        return Table.update(user, getTableInfoQuerySnapshotDef(), snapshotDef, snapshotDef.getRowId(), null);
     }
 
     public CstmView getCustomView(int id) throws SQLException
@@ -234,6 +279,23 @@ public class QueryManager
         }
     }
 
+    public boolean isSnapshot(int flag)
+    {
+        return (flag & FLAG_SNAPSHOT) != 0;
+    }
+
+    public int setIsSnapshot(int flag, boolean f)
+    {
+        if (f)
+        {
+            return flag | FLAG_SNAPSHOT;
+        }
+        else
+        {
+            return flag & ~FLAG_SNAPSHOT;
+        }
+    }
+    
     public String getDbSchemaName()
     {
         return SCHEMA_NAME;
@@ -247,6 +309,11 @@ public class QueryManager
     public TableInfo getTableInfoQueryDef()
     {
         return getDbSchema().getTable("QueryDef");
+    }
+
+    public TableInfo getTableInfoQuerySnapshotDef()
+    {
+        return getDbSchema().getTable("QuerySnapshotDef");
     }
 
     public TableInfo getTableInfoCustomView()
@@ -266,6 +333,7 @@ public class QueryManager
         Table.delete(getTableInfoCustomView(), filter);
         Table.delete(getTableInfoQueryDef(), filter);
         Table.delete(getTableInfoDbUserSchema(), filter);
+        Table.delete(getTableInfoQuerySnapshotDef(), filter);
     }
 
     static public final ContainerManager.ContainerListener CONTAINER_LISTENER = new ContainerManager.ContainerListener()

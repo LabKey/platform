@@ -24,6 +24,11 @@ import org.labkey.api.reports.report.RReport;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.snapshot.QuerySnapshotService;
+import org.labkey.query.controllers.QueryControllerSpring;
 
 import java.util.Map;
 
@@ -59,6 +64,16 @@ public class ReportUIProvider extends DefaultReportUIProvider
         }
         else
             designers.put(RReport.TYPE, "javascript:alert('The R Program has not been configured properly, please request that an administrator configure R in the Admin Console.')");
+
+        // query snapshot
+        if (!QueryService.get().isQuerySnapshot(context.getContainer(), settings.getSchemaName(), settings.getQueryName()))
+        {
+            settings.setDataRegionName(QueryView.DATAREGIONNAME_DEFAULT);
+            ActionURL snapshotURL = new ActionURL(QueryControllerSpring.CreateSnapshotAction.class, context.getContainer()).
+                    addParameter(settings.param(QueryParam.schemaName), settings.getSchemaName()).
+                    addParameter(settings.param(QueryParam.queryName), settings.getQueryName());
+            designers.put(QuerySnapshotService.TYPE, snapshotURL.getLocalURIString());
+        }
     }
 
     public String getReportIcon(ViewContext context, String reportType)

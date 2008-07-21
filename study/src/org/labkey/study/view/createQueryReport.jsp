@@ -65,7 +65,7 @@
             {
                 redirect.value = "true";
                 redirectToDataset.value = "-1";
-                showWithDataset.value = "-1";
+                showWithDataset.value = "0";
             }
             else
             {

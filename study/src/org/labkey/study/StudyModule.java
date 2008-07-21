@@ -28,6 +28,7 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.security.ACL;
@@ -55,6 +56,7 @@ import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.study.controllers.security.SecurityController;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
+import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.designer.view.StudyDesignsWebPart;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.model.*;
@@ -120,6 +122,7 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
         Search.register(new StudySearch());
 
         EnumConverter.registerEnum(SecurityType.class);
+        QuerySnapshotService.registerProvider(StudyManager.getSchemaName(), new DatasetSnapshotProvider());
     }
 
     public void containerCreated(Container c)

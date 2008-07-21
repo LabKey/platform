@@ -41,6 +41,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.query.*;
+import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ChartQueryReport;
@@ -608,6 +609,7 @@ public class StudyController extends BaseStudyController
                     if (StudyChartQueryReport.TYPE.equals(reportType)) return true;
                     if (StudyRReport.TYPE.equals(reportType)) return true;
                     if (ExternalReport.TYPE.equals(reportType)) return true;
+                    if (QuerySnapshotService.TYPE.equals(reportType)) return true;
                     return false;
                 }
             });
