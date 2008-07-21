@@ -47,7 +47,7 @@ public class StudyDefinitionController extends BaseStudyController
         public ActionURL getRedirectURL(Object o) throws Exception
         {
             // Get domain Id
-            String domainURI = StudyManager.getInstance().getDomainURI(getStudy(), Cohort.class);
+            String domainURI = StudyManager.getInstance().getDomainURI(getContainer(), Cohort.class);
             Domain domain = PropertyService.get().getDomain(getContainer(), domainURI);
             if (domain == null)
             {

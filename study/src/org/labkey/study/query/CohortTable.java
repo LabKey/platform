@@ -1,7 +1,20 @@
 package org.labkey.study.query;
 
-import org.labkey.api.query.FilteredTable;
+import org.labkey.api.data.*;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.PropertyForeignKey;
 import org.labkey.study.StudySchema;
+
+import java.sql.SQLException;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Copyright (c) 2008 LabKey Corporation
@@ -28,5 +41,33 @@ public class CohortTable extends StudyTable
         super(schema, StudySchema.getInstance().getTableInfoCohort());
         addWrapColumn(_rootTable.getColumn("Label"));
         addWrapColumn(_rootTable.getColumn("RowId")).setIsHidden(true);
+
+        // Add extended columns
+        List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
+        String sqlObjectId = "( SELECT objectid FROM exp.object WHERE exp.object.objecturi = " + ExprColumn.STR_TABLE_ALIAS + ".lsid)";
+
+        FieldKey keyProp = new FieldKey(null, "Property");
+        try
+        {
+            ColumnInfo colProperty = new ExprColumn(this, "property", new SQLFragment(sqlObjectId), Types.INTEGER);
+            String propPrefix = new Lsid("Cohort", "Folder-" + schema.getContainer().getRowId(), "Cohort").toString();
+            SimpleFilter filter = new SimpleFilter();
+            filter.addCondition("PropertyURI", propPrefix, CompareType.STARTS_WITH);
+            PropertyDescriptor[] pds = Table.select(OntologyManager.getTinfoPropertyDescriptor(), Table.ALL_COLUMNS, filter, null, PropertyDescriptor.class);
+            Map<String, PropertyDescriptor> map = new TreeMap<String, PropertyDescriptor>();
+            for(PropertyDescriptor pd : pds)
+            {
+                map.put(pd.getName(), pd);
+                visibleColumns.add(new FieldKey(keyProp, pd.getName()));
+            }
+            colProperty.setFk(new PropertyForeignKey(map, schema));
+            colProperty.setIsUnselectable(true);
+            addColumn(colProperty);
+            setDefaultVisibleColumns(visibleColumns);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 }

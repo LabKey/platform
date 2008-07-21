@@ -2425,13 +2425,13 @@ public class StudyManager
     /**
      * Returns a URI for use by Ontology Manager
      */
-    public String getDomainURI(Study study, Class<?> extensibleClass)
+    public String getDomainURI(Container container, Class<?> extensibleClass)
     {
         return "urn:lsid:" +
                 AppProps.getInstance().getDefaultLsidAuthority() +
                 ":Cohort" +
                 ".Folder-" +
-                study.getContainer().getRowId() +
+                container.getRowId() +
                 ":" +
                 extensibleClass.getSimpleName();
     }
