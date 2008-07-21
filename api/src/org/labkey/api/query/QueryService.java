@@ -20,6 +20,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.data.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 
 import java.util.Map;
 import java.util.Set;
@@ -45,6 +46,9 @@ abstract public class QueryService
     abstract public QueryDefinition createQueryDef(Container container, String schema, String name);
     abstract public QueryDefinition createQueryDefForTable(UserSchema schema, String tableName);
     abstract public QueryDefinition getQueryDef(Container container, String schema, String name);
+    abstract public QuerySnapshotDefinition getSnapshotDef(Container container, String schema, String name);
+    abstract public QuerySnapshotDefinition createQuerySnapshotDef(QueryDefinition queryDef, String name);
+    abstract public boolean isQuerySnapshot(Container container, String schema, String name);
 
     abstract public ActionURL urlQueryDesigner(Container container, String schema);
     abstract public ActionURL urlFor(Container container, QueryAction action, String schema, String queryName);

@@ -17,9 +17,10 @@
 package org.labkey.api.query;
 
 import org.apache.beehive.netui.pageflow.Forward;
-import org.apache.commons.lang.StringUtils;
 import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.data.*;
+import org.labkey.api.query.snapshot.QuerySnapshotService;
+import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.RReport;
@@ -81,6 +82,7 @@ public class QueryView extends WebPartView<Object>
         public boolean accept(String type, String label)
         {
             if (RReport.TYPE.equals(type)) return true;
+            if (QuerySnapshotService.TYPE.equals(type)) return true;
             return false;
         }
     };
@@ -230,18 +232,6 @@ public class QueryView extends WebPartView<Object>
         ActionURL target = urlRefreshQuery();
         NavTreeMenuButton button = new NavTreeMenuButton(label);
 
-        for (String query : getSchema().getTableAndQueryNames(true))
-        {
-            NavTree item = new NavTree(query, target.clone().replaceParameter(param(QueryParam.queryName), query).getLocalURIString());
-            item.setId(label + ":" + query);
-            if (query.equals(current))
-                item.setSelected(true);
-            else
-                item.setImageSrc(getViewContext().getContextPath() + "/reports/grid.gif");
-            button.addMenuItem(item);
-        }
-
-        button.addSeparator();
         if (_queryDef.canEdit(getUser()) && getContainer().equals(_queryDef.getContainer()))
         {
             button.addMenuItem("Design Query", getSchema().urlFor(QueryAction.designQuery, _queryDef));
@@ -251,6 +241,18 @@ public class QueryView extends WebPartView<Object>
         {
             button.addMenuItem("Design Query", false, true);
             button.addMenuItem("Edit Query", false, true);
+        }
+        button.addSeparator();
+
+        for (String query : getSchema().getTableAndQueryNames(true))
+        {
+            NavTree item = new NavTree(query, target.clone().replaceParameter(param(QueryParam.queryName), query).getLocalURIString());
+            item.setId(label + ":" + query);
+            if (query.equals(current))
+                item.setSelected(true);
+            else
+                item.setImageSrc(getViewContext().getContextPath() + "/reports/grid.gif");
+            button.addMenuItem(item);
         }
         return button;
     }
@@ -297,6 +299,10 @@ public class QueryView extends WebPartView<Object>
             case deleteQueryRows:
                 ret.addParameter(QueryParam.srcURL.toString(), getViewContext().getActionURL().toString());
                 break;
+            case editSnapshot:
+                ret.addParameter("snapshotName", getSettings().getQueryName());
+            case createSnapshot:
+
             case exportRowsExcel:
             case exportRowsTsv:
             case printRows:
@@ -620,18 +626,24 @@ public class QueryView extends WebPartView<Object>
                 if (_itemFilter.accept(entry.getKey(), entry.getValue()))
                 {
                     Report report = ReportService.get().createReportInstance(entry.getKey());
+                    if (submenu == null)
+                    {
+                        submenu = menu.addChild("Create");
+                        submenu.setId("Views:Create");
+                    }
+
+                    NavTree item;
                     if (report != null)
                     {
-                        if (submenu == null)
-                        {
-                            submenu = menu.addChild("Create");
-                            submenu.setId("Views:Create");
-                        }
-                        NavTree item = new NavTree(report.getTypeDescription(), entry.getValue());
+                        item = new NavTree(report.getTypeDescription(), entry.getValue());
                         item.setId("Views:Create:" + report.getTypeDescription());
-
-                        submenu.addChild(item);
                     }
+                    else
+                    {
+                        item = new NavTree(entry.getKey(), entry.getValue());
+                        item.setId("Views:Create:" + entry.getKey());
+                    }
+                    submenu.addChild(item);
                 }
             }
         }
@@ -804,6 +816,13 @@ public class QueryView extends WebPartView<Object>
             }
             item.setId("Views:" + label);
             button.addMenuItem(item);
+        }
+
+        if (QueryService.get().isQuerySnapshot(getContainer(), getSchema().getSchemaName(), getSettings().getQueryName()))
+        {
+            ActionURL url = QuerySnapshotService.get(getSchema().getSchemaName()).getCustomizeURL(getViewContext());
+            if (url != null)
+                button.addMenuItem("Edit Snapshot", urlFor(QueryAction.editSnapshot));
         }
     }
 

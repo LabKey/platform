@@ -34,6 +34,7 @@ public interface QueryDefinition
     void setCanInherit(boolean f);
     boolean isHidden();
     void setIsHidden(boolean f);
+    boolean isSnapshot();
 
     CustomView getCustomView(User user, HttpServletRequest request, String name);
     Map<String, CustomView> getCustomViews(User user, HttpServletRequest request);

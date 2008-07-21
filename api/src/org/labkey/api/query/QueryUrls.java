@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2008 LabKey Corporation
+ * Copyright (c) 2008 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,34 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.labkey.api.query;
 
-public enum QueryAction
+import org.labkey.api.action.UrlProvider;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.data.Container;
+/*
+ * User: Karl Lum
+ * Date: Jul 15, 2008
+ * Time: 2:53:11 PM
+ */
+
+public interface QueryUrls extends UrlProvider
 {
-    begin,
-    schema,
-    newQuery,
-    designQuery,
-    sourceQuery,
-    metadataQuery,
-    executeQuery,
-    deleteQuery,
-    propertiesQuery,
-    exportRowsExcel,
-    exportExcelTemplate,
-    exportRowsTsv,
-    printRows,
-    deleteQueryRows,
-    chooseColumns,
-    deleteView,
-    createChart,
-    createRReport,
-    tableInfo,
-    excelWebQueryDefinition,
-    admin,
-    adminNewDbUserSchema,
-    adminDeleteDbUserSchema,
-    createSnapshot,
-    editSnapshot,
+    ActionURL urlCustomizeSnapshot(Container c);
+    ActionURL urlUpdateSnapshot(Container c);
 }

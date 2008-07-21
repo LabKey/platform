@@ -346,7 +346,6 @@ api/src/org/labkey/api/query/AbstractSchema.java -text
 api/src/org/labkey/api/query/AliasManager.java -text
 api/src/org/labkey/api/query/AliasedColumn.java -text
 api/src/org/labkey/api/query/ChooseQueryView.java -text
-api/src/org/labkey/api/query/CreateChartButton.java -text
 api/src/org/labkey/api/query/CrosstabExcelWriter.java -text
 api/src/org/labkey/api/query/CrosstabView.java -text
 api/src/org/labkey/api/query/CustomView.java -text
@@ -381,6 +380,7 @@ api/src/org/labkey/api/query/QuerySettings.java -text
 api/src/org/labkey/api/query/QueryUpdateForm.java -text
 api/src/org/labkey/api/query/QueryUpdateService.java -text
 api/src/org/labkey/api/query/QueryUpdateServiceException.java -text
+api/src/org/labkey/api/query/QueryUrls.java -text
 api/src/org/labkey/api/query/QueryView.java -text
 api/src/org/labkey/api/query/QueryWebPart.java -text
 api/src/org/labkey/api/query/QueryWrapperDynaClass.java -text
@@ -395,6 +395,10 @@ api/src/org/labkey/api/query/UserIdRenderer.java -text
 api/src/org/labkey/api/query/UserSchema.java -text
 api/src/org/labkey/api/query/ValidationError.java -text
 api/src/org/labkey/api/query/ValidationException.java -text
+api/src/org/labkey/api/query/snapshot/AbstractSnapshotProvider.java -text
+api/src/org/labkey/api/query/snapshot/QuerySnapshotDefinition.java -text
+api/src/org/labkey/api/query/snapshot/QuerySnapshotForm.java -text
+api/src/org/labkey/api/query/snapshot/QuerySnapshotService.java -text
 api/src/org/labkey/api/reports/Report.java -text
 api/src/org/labkey/api/reports/ReportService.java -text
 api/src/org/labkey/api/reports/actions/ReportForm.java -text
