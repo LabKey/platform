@@ -148,13 +148,15 @@ public class Node extends CommonAST implements Cloneable
                 return new QNull();
             case SqlTokenTypes.LIMIT:
                 return new QLimit();
+            case SqlTokenTypes.DISTINCT:
+                return new QDistinct();
         }
         Operator op = Operator.ofTokenType(type);
         if (op != null)
         {
             return op.expr();
         }
-        return new QUnknownNode();
+        return new QUnknownNode(type);
     }
 
     public Node clone()

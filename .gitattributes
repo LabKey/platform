@@ -1386,6 +1386,7 @@ query/src/org/labkey/query/sql/QAggregate.java -text
 query/src/org/labkey/query/sql/QAs.java -text
 query/src/org/labkey/query/sql/QCase.java -text
 query/src/org/labkey/query/sql/QColumn.java -text
+query/src/org/labkey/query/sql/QDistinct.java -text
 query/src/org/labkey/query/sql/QDot.java -text
 query/src/org/labkey/query/sql/QElse.java -text
 query/src/org/labkey/query/sql/QExpr.java -text

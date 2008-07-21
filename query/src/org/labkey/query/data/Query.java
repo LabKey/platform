@@ -39,6 +39,7 @@ public class Query
     private QWhere _filter;
     private QQuery _root;
     private QLimit _limit;
+    private QDistinct _distinct;
     private Map<FieldKey, QTable> _from;
     private Map<FieldKey, TableInfo> _tables;
     private Map<FieldKey, ColumnInfo> _declaredFields = new HashMap();
@@ -62,7 +63,6 @@ public class Query
         _inFromClause = inFromClause;
         _parseErrors = parent.getParseErrors();
         parseTree();
-
     }
 
     public void parse(String queryText)
@@ -73,12 +73,15 @@ public class Query
             parseTree();
     }
 
+
     private int getNestingLevel()
     {
         if (_parent == null)
             return 0;
         return _parent.getNestingLevel() + 1;
     }
+
+    
     private void parseTree()
     {
         _columns = new ArrayList();
@@ -90,9 +93,19 @@ public class Query
         QSelect select = _root.getSelect();
         if (select != null)
         {
+            boolean first = true;
             for (QNode node : _root.getSelect().children())
             {
+                if (node instanceof QDistinct)
+                {
+                    if (!first)
+                        parseError("DISTINCT not expected", node);
+                    else
+                        _distinct = (QDistinct)node;
+                    continue;
+                }
                 _columns.add(new QColumn(node));
+                first = false;
             }
         }
         _tables = new HashMap();
@@ -287,7 +300,10 @@ public class Query
             return "ERROR";
         }
         SourceBuilder builder = new SourceBuilder();
-        builder.pushPrefix("SELECT ");
+        if (null == _distinct)
+            builder.pushPrefix("SELECT ");
+        else
+            builder.pushPrefix("SELECT DISTINCT ");
         for (QColumn column : _columns)
         {
             column.appendSource(builder);
@@ -357,6 +373,9 @@ loop:
                             break;
                         case SqlTokenTypes.OUTER:
                             joinType = JoinType.outer;
+                            break;
+                        case SqlTokenTypes.FULL:
+                            joinType = JoinType.full;
                             break;
                         default:
                             break loop;
@@ -689,21 +708,24 @@ loop:
         declareFields();
         if (_parseErrors.size() != 0)
             return null;
-        Map<TableInfo, Map<String, SQLFragment>> joins = new HashMap();
+        Map<TableInfo, Map<String, SQLFragment>> joins = new HashMap<TableInfo, Map<String, SQLFragment>>();
 
         for (ColumnInfo col : _declaredFields.values())
         {
             Map<String, SQLFragment> map = joins.get(col.getParentTable());
             if (map == null)
             {
-                map = new LinkedHashMap();
+                map = new LinkedHashMap<String, SQLFragment>();
                 joins.put(col.getParentTable(), map);
             }
             col.declareJoins(map);
         }
 
         SqlBuilder sql = new SqlBuilder(_schema.getDbSchema());
-        sql.pushPrefix("SELECT ");
+        if (null == _distinct)
+            sql.pushPrefix("SELECT ");
+        else
+            sql.pushPrefix("SELECT DISTINCT ");
         QueryTableInfo ret = new QueryTableInfo(_subqueryTable, tableAlias, tableAlias);
         for (QColumn col : _columns)
         {
@@ -776,6 +798,9 @@ loop:
                     break;
                 case right:
                     sql.append("\nRIGHT JOIN ");
+                    break;
+                case full:
+                    sql.append("\nFULL JOIN ");
                     break;
             }
             sql.append(qt.getTableObject().getFromSQL());
