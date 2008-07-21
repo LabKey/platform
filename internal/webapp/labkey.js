@@ -78,8 +78,42 @@ LABKEY.requiresScript = function(file, immediate)
     {
         this._loadedScriptFiles[file] = true;
 //        console.log("<script href=" + file + ">");
-        document.write('<script type="text/javascript" language="javascript" src="' + LABKEY.contextPath + "/" + file + '?' + LABKEY.hash + '"></script>');
+
+        //although FireFox and Safari allow scripts to use the DOM
+        //during parse time, IE does not. So if the document is
+        //closed, use the DOM to create a script element and append it
+        //to the head element. Otherwise (still parsing), use document.write()
+        if(LABKEY.isDocumentClosed)
+        {
+            //create a new script element and append it to the head element
+            LABKEY.addElemToHead("script", {
+                src: LABKEY.contextPath + "/" + file + "?" + LABKEY.hash,
+                type: "text/javascript"
+            });
+        }
+        else
+            document.write('<script type="text/javascript" language="javascript" src="' + LABKEY.contextPath + "/" + file + '?' + LABKEY.hash + '"></script>');
     }
+}
+
+LABKEY.addElemToHead = function(elemName, attributes)
+{
+    var elem = document.createElement(elemName);
+    for(var attr in attributes)
+        elem[attr] = attributes[attr];
+    document.getElementsByTagName("head")[0].appendChild(elem);
+}
+
+LABKEY.addMarkup = function(html)
+{
+    if(LABKEY.isDocumentClosed)
+    {
+        var elem = document.createElement("div");
+        elem.innerHTML = html;
+        document.body.appendChild(elem.firstChild);
+    }
+    else
+        document.write(html);
 }
 
 
@@ -90,6 +124,7 @@ LABKEY.loadScripts = function()
         var file = this._requestedScriptFiles[i];
         LABKEY.requiresScript(file, true);
     }
+    LABKEY.isDocumentClosed = true;
 }
 
 
@@ -99,7 +134,11 @@ LABKEY.requiresCss = function(file)
     if (this._requestedScriptFiles[fullPath])
         return;
     //console.debug("<link href=" + fullPath);
-    document.write('<link rel="stylesheet" type="text/css" href="'+fullPath+'" />');
+    LABKEY.addElemToHead("link", {
+        type: "text/css",
+        rel: "stylesheet",
+        href: fullPath
+    });
     this._requestedScriptFiles[fullPath] = 1;
 }
 

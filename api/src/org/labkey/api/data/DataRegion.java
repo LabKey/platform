@@ -1742,10 +1742,6 @@ public class DataRegion extends DisplayElement
         out.write("<script type=\"text/javascript\">\n");
         out.write("LABKEY.requiresScript('filter.js');\n");
         out.write("</script>");
-        // need separate script block after requiresScript
-        out.write("<script type=\"text/javascript\">\n");
-        out.write("setFilterQueryString("); out.write(PageFlowUtil.jsString(queryString)); out.write(");\n");
-        out.write("</script>");
         request.setAttribute(FILTER_WRITTEN_KEY, "true");
     }
 

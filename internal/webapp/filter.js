@@ -297,7 +297,7 @@ function registerFilterListener(fn)
 function getSearchString()
 {
     if (null == savedSearchString)
-        savedSearchString = _filterQueryString || "";
+        savedSearchString = document.location.search.substring(1) || "";
     return savedSearchString;
 }
 
@@ -725,13 +725,10 @@ function handleKey(event)
             break;
     }
 }
-
-document.write(
-'<div id="filterDiv" style="display:none;">' +
+LABKEY.addMarkup('<div id="filterDiv" style="display:none;">' +
 '  <table border="0" cellpadding="0" cellspacing="0" onkeypress="handleKey(event);">' +
 '    <tr>' +
 '      <td colspan=2 class="normal" style="padding: 5px" nowrap>' +
-'' +
 '        <select id="compare_1" name="compare_1" onchange="doChange(this)">' +
 '            <option value="">&lt;has any value></option>' +
 '        </select><br>' +
@@ -749,5 +746,4 @@ document.write(
 '      </td>' +
 '    </tr>' +
 '  </table>' +
-'</div>'
-);
+'</div>');

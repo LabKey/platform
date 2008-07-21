@@ -431,7 +431,7 @@ function mouseExitedHelpDiv()
     hideHelpDivDelay();
 }
 
-document.write(
+LABKEY.addMarkup(
 '<div id="helpDiv" onMouseOver="mouseEnteredHelpDiv()" onMouseOut="mouseExitedHelpDiv()"' +
 '   style="display:none;border: 1px solid black; display:none;position:absolute;background-color:white">'+
 '  <table border="0" cellpadding="0" cellspacing="0" width="100%">'+

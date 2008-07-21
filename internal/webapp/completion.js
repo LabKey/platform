@@ -231,7 +231,7 @@ function hideCompletionDivImmediate()
     _optionSelectedIndex = 0;
 }
 
-document.write(
+LABKEY.addMarkup(
 '<div id="completionDiv" style="display:none;border: 1px solid black;padding:1px; display:none;position:absolute;background-color:white;">' +
 '  <table border="0" cellpadding="0" cellspacing="0">' +
 '    <tr>' +

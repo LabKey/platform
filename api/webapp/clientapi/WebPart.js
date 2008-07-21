@@ -130,9 +130,9 @@ LABKEY.WebPart = function(config)
         // render the part inside the target element
         if(_renderTo)
         {
-            var targetElem = document.getElementById(_renderTo);
+            var targetElem = Ext.get(_renderTo);
             if(targetElem)
-                targetElem.innerHTML = response.responseText;
+                targetElem.update(response.responseText, true); //execute scripts
             else
                 Ext.Msg.alert("Rendering Error", "The element '" + _renderTo + "' does not exist in the document!");
         }
@@ -163,6 +163,15 @@ LABKEY.WebPart = function(config)
 
             if(!_errorCallback)
                 _errorCallback = handleLoadError;
+
+            //forward query string parameters
+            //(for Query web parts)
+            Ext.applyIf(_partConfig, LABKEY.ActionURL.getParameters());
+
+            //Ext uses a param called _dc to defeat caching, and it may be
+            //on the URL if the Query web part has done a sort or filter
+            //strip it if it's there so it's not included twice (Ext always appends one)
+            delete _partConfig["_dc"];
 
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("project", "getWebPart", _containerPath),
