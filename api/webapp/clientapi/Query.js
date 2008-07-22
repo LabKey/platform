@@ -89,7 +89,55 @@ LABKEY.Query = new function()
     /** @scope LABKEY.Query.prototype */
     return {
 
-		/**
+        /**
+         * Execute arbitrary LabKey SQL. For more information on LabKey SQL, see
+         * <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=labkeySql">
+         * https://www.labkey.org/wiki/home/Documentation/page.view?name=labkeySql</a>.
+         * @param config An object which contains the following configuration properties.
+         * @param {String} config.schemaName name of the schema to query.
+         * @param {String} config.sql The LabKey SQL to execute.
+         * @param {String} [config.containerPath] The path to the container in which the schema and query are defined,
+         *       if different than the current container. If not supplied, the current container's path will be used.
+         * @param {Function} config.successCallback
+				Function called when the "selectRows" function executes successfully. Will be called with arguments:
+				{@link LABKEY.Query.SelectRowsResults} and (optionally) {@link LABKEY.Query.SelectRowsOptions}
+         * @param {Function} [config.errorCallback] Function called when execution of the "selectRows" function fails.
+         * @param {Integer} [config.maxRows] The maximum number of rows to return from the server (defaults to 100).
+         *        If you want to return all possible rows, set this config property to -1.
+         * @param {Integer} [config.offset] The index of the first row to return from the server (defaults to 0).
+         *        Use this along with the maxRows config property to request pages of data.
+         * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
+         *       generating a timeout error (defaults to 30000).
+         */
+        executeSql : function(config)
+        {
+            if(config.timeout)
+                Ext.Ajax.timeout = config.timeout;
+            
+            var dataObject = {
+                schemaName: config.schemaName,
+                sql: config.sql
+            }
+
+            //set optional parameters
+            if(config.maxRows && config.maxRows >= 0)
+                dataObject.maxRows = config.maxRows;
+            if(config.offset && config.offset > 0)
+                dataObject.offset = config.offset;
+
+            Ext.Ajax.request({
+                url : LABKEY.ActionURL.buildURL("query", "executeSql", config.containerPath),
+                method : 'POST',
+                success: getCallbackWrapper(config.successCallback),
+                failure: getCallbackWrapper(config.errorCallback),
+                jsonData : dataObject,
+                headers : {
+                    'Content-Type' : 'application/json'
+                }
+            });
+        },
+
+        /**
         * Select rows.
         * @param {Object} config An object which contains the following configuration properties.
         * @param {String} config.schemaName Name of a schema defined within the current container. See also: <a class="link"
