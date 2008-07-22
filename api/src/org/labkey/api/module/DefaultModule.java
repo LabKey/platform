@@ -174,7 +174,10 @@ public abstract class DefaultModule implements Module
 
     public void beforeUpdate()
     {
-        runScripts(SchemaUpdateType.Before);
+        ModuleContext moduleContext = ModuleLoader.getInstance().getModuleContext(this);
+
+        if (0.0 != moduleContext.getInstalledVersion())
+            runScripts(SchemaUpdateType.Before);
     }
 
     public void beforeSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)
