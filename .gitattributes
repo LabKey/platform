@@ -89,9 +89,19 @@ audit/src/META-INF/audit.xml -text
 audit/src/META-INF/audit/scripts/postgresql/audit-0.00-2.30.sql -text
 audit/src/META-INF/audit/scripts/postgresql/audit-8.20-8.21.sql -text
 audit/src/META-INF/audit/scripts/postgresql/audit-8.21-8.22.sql -text
+audit/src/META-INF/audit/scripts/postgresql/obsolete/audit-0.00-0.01.sql -text
+audit/src/META-INF/audit/scripts/postgresql/obsolete/audit-0.01-0.02.sql -text
+audit/src/META-INF/audit/scripts/postgresql/obsolete/audit-0.02-0.03.sql -text
+audit/src/META-INF/audit/scripts/postgresql/obsolete/audit-0.03-0.04.sql -text
+audit/src/META-INF/audit/scripts/postgresql/obsolete/audit-0.04-0.05.sql -text
 audit/src/META-INF/audit/scripts/sql[!!-~]server/audit-0.00-2.30.sql -text
 audit/src/META-INF/audit/scripts/sql[!!-~]server/audit-8.20-8.21.sql -text
 audit/src/META-INF/audit/scripts/sql[!!-~]server/audit-8.21-8.22.sql -text
+audit/src/META-INF/audit/scripts/sql[!!-~]server/obsolete/audit-0.00-0.01.sql -text
+audit/src/META-INF/audit/scripts/sql[!!-~]server/obsolete/audit-0.01-0.02.sql -text
+audit/src/META-INF/audit/scripts/sql[!!-~]server/obsolete/audit-0.02-0.03.sql -text
+audit/src/META-INF/audit/scripts/sql[!!-~]server/obsolete/audit-0.03-0.04.sql -text
+audit/src/META-INF/audit/scripts/sql[!!-~]server/obsolete/audit-0.04-0.05.sql -text
 audit/src/org/labkey/audit/AuditLogImpl.java -text
 audit/src/org/labkey/audit/AuditModule.java -text
 audit/src/org/labkey/audit/AuditSchema.java -text
@@ -235,6 +245,8 @@ core/src/META-INF/core/scripts/postgresql/obsolete/core-1.72-1.73.sql -text
 core/src/META-INF/core/scripts/postgresql/obsolete/core-1.79-1.791.sql -text
 core/src/META-INF/core/scripts/postgresql/obsolete/core-2.00-2.01.sql -text
 core/src/META-INF/core/scripts/postgresql/obsolete/core-2.01-2.02.sql -text
+core/src/META-INF/core/scripts/postgresql/obsolete/core-2.20-2.21.sql -text
+core/src/META-INF/core/scripts/postgresql/obsolete/core-2.21-2.22.sql -text
 core/src/META-INF/core/scripts/postgresql/obsolete/portal-1.50-1.51.sql -text
 core/src/META-INF/core/scripts/postgresql/obsolete/portal-1.51-1.52.sql -text
 core/src/META-INF/core/scripts/postgresql/obsolete/portal-1.61-1.62.sql -text
@@ -287,6 +299,8 @@ core/src/META-INF/core/scripts/sql[!!-~]server/obsolete/core-1.72-1.73.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/obsolete/core-1.79-1.791.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/obsolete/core-2.00-2.01.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/obsolete/core-2.01-2.02.sql -text
+core/src/META-INF/core/scripts/sql[!!-~]server/obsolete/core-2.20-2.21.sql -text
+core/src/META-INF/core/scripts/sql[!!-~]server/obsolete/core-2.21-2.22.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/obsolete/cpas-0.00-0.58.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/obsolete/cpas-0.00-0.63.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/obsolete/cpas-0.60-0.63.sql -text
@@ -471,6 +485,9 @@ experiment/src/META-INF/experiment/scripts/postgresql/obsolete/exp-2.10-2.11.sql
 experiment/src/META-INF/experiment/scripts/postgresql/obsolete/exp-2.11-2.12.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/obsolete/exp-2.12-2.13.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/obsolete/exp-2.13-2.14.sql -text
+experiment/src/META-INF/experiment/scripts/postgresql/obsolete/exp-2.20-2.21.sql -text
+experiment/src/META-INF/experiment/scripts/postgresql/obsolete/exp-2.21-2.22.sql -text
+experiment/src/META-INF/experiment/scripts/postgresql/obsolete/exp-2.22-2.23.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/obsolete/exp_drop.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/obsolete/findOrphans.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-0.00-1.00.sql -text
@@ -543,6 +560,9 @@ experiment/src/META-INF/experiment/scripts/sql[!!-~]server/obsolete/exp-2.10-2.1
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/obsolete/exp-2.11-2.12.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/obsolete/exp-2.12-2.13.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/obsolete/exp-2.13-2.14.sql -text
+experiment/src/META-INF/experiment/scripts/sql[!!-~]server/obsolete/exp-2.20-2.21.sql -text
+experiment/src/META-INF/experiment/scripts/sql[!!-~]server/obsolete/exp-2.21-2.22.sql -text
+experiment/src/META-INF/experiment/scripts/sql[!!-~]server/obsolete/exp-2.22-2.23.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/obsolete/exp_drop.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/obsolete/findOrphans.sql -text
 experiment/src/org/labkey/experiment/ArchiveURLRewriter.java -text
@@ -790,6 +810,8 @@ mothership/src/META-INF/mothership/scripts/postgresql/obsolete/mothership-0.14-0
 mothership/src/META-INF/mothership/scripts/postgresql/obsolete/mothership-0.15-0.16.sql -text
 mothership/src/META-INF/mothership/scripts/postgresql/obsolete/mothership-0.16-0.17.sql -text
 mothership/src/META-INF/mothership/scripts/postgresql/obsolete/mothership-0.17-0.18.sql -text
+mothership/src/META-INF/mothership/scripts/postgresql/obsolete/mothership-2.20-2.21.sql -text
+mothership/src/META-INF/mothership/scripts/postgresql/obsolete/mothership-2.21-2.22.sql -text
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/mothership-0.00-2.10.sql -text
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/mothership-2.10-2.20.sql -text
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/mothership-2.20-2.30.sql -text
@@ -806,6 +828,8 @@ mothership/src/META-INF/mothership/scripts/sql[!!-~]server/obsolete/mothership-0
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/obsolete/mothership-0.15-0.16.sql -text
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/obsolete/mothership-0.16-0.17.sql -text
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/obsolete/mothership-0.17-0.18.sql -text
+mothership/src/META-INF/mothership/scripts/sql[!!-~]server/obsolete/mothership-2.20-2.21.sql -text
+mothership/src/META-INF/mothership/scripts/sql[!!-~]server/obsolete/mothership-2.21-2.22.sql -text
 mothership/src/org/labkey/mothership/AssignedToDisplayColumn.java -text
 mothership/src/org/labkey/mothership/CreateIssueDisplayColumn.java -text
 mothership/src/org/labkey/mothership/ExceptionReport.java -text
@@ -1553,6 +1577,10 @@ study/src/META-INF/study/scripts/postgresql/obsolete/study-2.03-2.04.sql -text
 study/src/META-INF/study/scripts/postgresql/obsolete/study-2.04-2.05.sql -text
 study/src/META-INF/study/scripts/postgresql/obsolete/study-2.05-2.06.sql -text
 study/src/META-INF/study/scripts/postgresql/obsolete/study-2.06-2.07.sql -text
+study/src/META-INF/study/scripts/postgresql/obsolete/study-2.20-2.21.sql -text
+study/src/META-INF/study/scripts/postgresql/obsolete/study-2.21-2.22.sql -text
+study/src/META-INF/study/scripts/postgresql/obsolete/study-2.22-2.23.sql -text
+study/src/META-INF/study/scripts/postgresql/obsolete/study-2.23-2.24.sql -text
 study/src/META-INF/study/scripts/postgresql/study-0.00-1.30.sql -text
 study/src/META-INF/study/scripts/postgresql/study-1.30-1.40.sql -text
 study/src/META-INF/study/scripts/postgresql/study-1.40-1.50.sql -text
@@ -1631,6 +1659,10 @@ study/src/META-INF/study/scripts/sql[!!-~]server/obsolete/study-2.03-2.04.sql -t
 study/src/META-INF/study/scripts/sql[!!-~]server/obsolete/study-2.04-2.05.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/obsolete/study-2.05-2.06.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/obsolete/study-2.06-2.07.sql -text
+study/src/META-INF/study/scripts/sql[!!-~]server/obsolete/study-2.20-2.21.sql -text
+study/src/META-INF/study/scripts/sql[!!-~]server/obsolete/study-2.21-2.22.sql -text
+study/src/META-INF/study/scripts/sql[!!-~]server/obsolete/study-2.22-2.23.sql -text
+study/src/META-INF/study/scripts/sql[!!-~]server/obsolete/study-2.23-2.24.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-0.00-1.30.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-1.30-1.40.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-1.40-1.50.sql -text
