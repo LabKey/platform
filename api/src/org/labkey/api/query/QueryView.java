@@ -1156,6 +1156,13 @@ public class QueryView extends WebPartView<Object>
                 ResultSetUtil.close(rs);
             }
         }
+        else
+        {
+            //table was null--try to get parse errors
+            List<QueryException> errors = getParseErrors();
+            if(null != errors && errors.size() > 0)
+                throw errors.get(0);
+        }
 
     }
 
