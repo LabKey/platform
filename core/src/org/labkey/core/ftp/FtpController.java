@@ -32,7 +32,6 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.core.webdav.WebdavResolver;
 import org.labkey.core.webdav.WebdavResolverImpl;
 import org.labkey.core.webdav.FileSystemAuditViewFactory;
@@ -40,6 +39,7 @@ import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.servlet.ModelAndView;
 import org.apache.log4j.Logger;
+import org.apache.commons.lang.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

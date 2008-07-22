@@ -20,7 +20,7 @@ import org.labkey.api.view.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.AttachmentDirectory;
-import org.labkey.api.gwt.client.util.StringUtils;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Created by IntelliJ IDEA.
