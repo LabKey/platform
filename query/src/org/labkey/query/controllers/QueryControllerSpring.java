@@ -23,9 +23,9 @@ import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
-import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotForm;
+import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.security.*;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.AppProps;
@@ -33,23 +33,23 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.data.xml.TableType;
+import org.labkey.data.xml.TablesDocument;
 import org.labkey.query.CustomViewImpl;
 import org.labkey.query.QueryDefinitionImpl;
 import org.labkey.query.TableXML;
-import org.labkey.query.sql.QParser;
-import org.labkey.query.data.Query;
 import org.labkey.query.data.DefaultSchemaUpdateService;
+import org.labkey.query.data.Query;
+import org.labkey.query.design.DgMessage;
+import org.labkey.query.design.ErrorsDocument;
 import org.labkey.query.design.QueryDocument;
 import org.labkey.query.design.ViewDocument;
-import org.labkey.query.design.ErrorsDocument;
-import org.labkey.query.design.DgMessage;
+import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.DbUserSchemaDef;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
-import org.labkey.query.persist.CstmView;
+import org.labkey.query.sql.QParser;
 import org.labkey.query.view.DbUserSchema;
-import org.labkey.data.xml.TablesDocument;
-import org.labkey.data.xml.TableType;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -1100,6 +1100,123 @@ public class QueryControllerSpring extends SpringActionController
             return ((DbUserSchema)schema).areTablesEditable();
         else
             return false;
+    }
+
+    public static class ExecuteSqlForm
+    {
+        private String _schemaName;
+        private String _sql;
+        private Integer _maxRows;
+        private Integer _offset;
+
+        public String getSchemaName()
+        {
+            return _schemaName;
+        }
+
+        public void setSchemaName(String schemaName)
+        {
+            _schemaName = schemaName;
+        }
+
+        public String getSql()
+        {
+            return _sql;
+        }
+
+        public void setSql(String sql)
+        {
+            _sql = sql;
+        }
+
+        public Integer getMaxRows()
+        {
+            return _maxRows;
+        }
+
+        public void setMaxRows(Integer maxRows)
+        {
+            _maxRows = maxRows;
+        }
+
+        public Integer getOffset()
+        {
+            return _offset;
+        }
+
+        public void setOffset(Integer offset)
+        {
+            _offset = offset;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class ExecuteSqlAction extends ApiAction<ExecuteSqlForm>
+    {
+        protected class TempQuerySettings extends QuerySettings
+        {
+            private String _schemaName;
+            private String _sql;
+
+            public TempQuerySettings(String schemaName, String sql)
+            {
+                super("query");
+                _schemaName = schemaName;
+                _sql = sql;
+            }
+
+            public QueryDefinition getQueryDef(UserSchema schema)
+            {
+                QueryDefinition qdef = QueryService.get().createQueryDef(getViewContext().getContainer(),
+                        _schemaName, "temp");
+                qdef.setSql(_sql);
+                return qdef;
+            }
+        }
+
+        public ApiResponse execute(ExecuteSqlForm form, BindException errors) throws Exception
+        {
+            String schemaName = StringUtils.trimToNull(form.getSchemaName());
+            if(null == schemaName)
+                throw new IllegalArgumentException("No value was supplied for the required parameter 'schemaName'.");
+            String sql = StringUtils.trimToNull(form.getSql());
+            if(null == sql)
+                throw new IllegalArgumentException("No value was supplied for the required parameter 'sql'.");
+
+            UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), schemaName);
+
+            //create a temp query settings object initialized with the posted LabKey SQL
+            //this will provide a temporary QueryDefinition to Query
+            TempQuerySettings settings = new TempQuerySettings(schemaName, sql);
+
+            //need to explicitly turn off various UI options that will try to refer to the
+            //current URL and query string
+            settings.setAllowChooseQuery(false);
+            settings.setAllowChooseView(false);
+            settings.setAllowCustomizeView(false);
+
+            //by default, return all rows
+            settings.setShowRows(ShowRows.ALL);
+
+            //apply optional settings (maxRows, offset)
+            if(null != form.getMaxRows())
+            {
+                settings.setShowRows(ShowRows.DEFAULT);
+                settings.setMaxRows(form.getMaxRows().intValue());
+            }
+
+            if(null != form.getOffset())
+                settings.setOffset(form.getOffset().longValue());
+
+            //build a query view using the schema and settings
+            QueryView view = new QueryView(schema, settings);
+            view.setShowRecordSelectors(false);
+            view.setShowExportButtons(false);
+            view.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
+
+            return new ApiQueryResponse(view, getViewContext(), isSchemaEditable(schema),
+                    false, schemaName, "sql", 0, null);
+        }
     }
 
     public static class ApiSaveRowsForm implements ApiJsonForm
