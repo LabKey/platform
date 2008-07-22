@@ -68,7 +68,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
         // query snapshot
         if (!QueryService.get().isQuerySnapshot(context.getContainer(), settings.getSchemaName(), settings.getQueryName()))
         {
-            settings.setDataRegionName(QueryView.DATAREGIONNAME_DEFAULT);
+            //settings.setDataRegionName(QueryView.DATAREGIONNAME_DEFAULT);
             ActionURL snapshotURL = new ActionURL(QueryControllerSpring.CreateSnapshotAction.class, context.getContainer()).
                     addParameter(settings.param(QueryParam.schemaName), settings.getSchemaName()).
                     addParameter(settings.param(QueryParam.queryName), settings.getQueryName());
