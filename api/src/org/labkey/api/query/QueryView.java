@@ -820,9 +820,9 @@ public class QueryView extends WebPartView<Object>
 
         if (QueryService.get().isQuerySnapshot(getContainer(), getSchema().getSchemaName(), getSettings().getQueryName()))
         {
-            ActionURL url = QuerySnapshotService.get(getSchema().getSchemaName()).getCustomizeURL(getViewContext());
-            if (url != null)
-                button.addMenuItem("Edit Snapshot", urlFor(QueryAction.editSnapshot));
+            QuerySnapshotService.I provider = QuerySnapshotService.get(getSchema().getSchemaName());
+            if (provider != null)
+                button.addMenuItem("Edit Snapshot", provider.getEditSnapshotURL(getSettings(), getViewContext()));
         }
     }
 

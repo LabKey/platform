@@ -17,6 +17,8 @@ package org.labkey.api.query.snapshot;
 
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
 import org.labkey.api.query.*;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ColumnInfo;
@@ -63,7 +65,15 @@ public abstract class AbstractSnapshotProvider implements QuerySnapshotService.I
         return view.getDisplayColumns();
     }
 
-    public ActionURL getCustomizeURL(ViewContext context)
+    public ActionURL getCreateWizardURL(QuerySettings settings, ViewContext context)
+    {
+        QuerySettings qs = new QuerySettings(context, QueryView.DATAREGIONNAME_DEFAULT);
+        return PageFlowUtil.urlProvider(QueryUrls.class).urlCreateSnapshot(context.getContainer()).
+                addParameter(qs.param(QueryParam.schemaName), settings.getSchemaName()).
+                addParameter(qs.param(QueryParam.queryName), settings.getQueryName());
+    }
+
+    public ActionURL getEditSnapshotURL(QuerySettings settings, ViewContext context)
     {
         return PageFlowUtil.urlProvider(QueryUrls.class).urlCustomizeSnapshot(context.getContainer());  
     }

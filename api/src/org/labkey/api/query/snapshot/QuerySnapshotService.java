@@ -17,9 +17,11 @@ package org.labkey.api.query.snapshot;
 
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.QueryForm;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.data.DisplayColumn;
 
 import java.util.List;
@@ -56,14 +58,33 @@ public class QuerySnapshotService
         public String getName();
         public String getDescription();
 
+        public ActionURL getCreateWizardURL(QuerySettings settings, ViewContext context);
+
+        public ActionURL getEditSnapshotURL(QuerySettings settings, ViewContext context);
+
         public ActionURL createSnapshot(QuerySnapshotForm form) throws Exception;
 
+        /**
+         * Regenerates the snapshot data, may be invoked either as the result of a manual or
+         * automatic update. The implementation is responsible for logging its own audit event.
+         */
         public ActionURL updateSnapshot(QuerySnapshotForm form) throws Exception;
 
         public ActionURL updateSnapshotDefinition(ViewContext context, QuerySnapshotDefinition def) throws Exception;
-        
-        public ActionURL getCustomizeURL(ViewContext context);
 
+        /**
+         * Returns the audit history view for a snapshot.
+         */
+        public HttpView createAuditView(QuerySnapshotForm form) throws Exception;
+
+        /**
+         * Returns the list of valid display columns for a specified QueryForm. The list of columns
+         * is used during the creation and editing of a snapshot, and in any UI where the list of columns
+         * pertaining to a snapshot can be modified.  
+         */
         public List<DisplayColumn> getDisplayColumns(QueryForm queryForm) throws Exception;
+    }
+
+    public interface AutoUpdateable {
     }
 }
