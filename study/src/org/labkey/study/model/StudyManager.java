@@ -1005,9 +1005,14 @@ public class StudyManager
         //
         // trust and verify
         //
+        Set<String> deletedTableNames = new HashSet<String>();
+        for (TableInfo t : deletedTables)
+        {
+            deletedTableNames.add(t.getName());
+        }
         StringBuilder missed = new StringBuilder();
         for (TableInfo t : StudySchema.getInstance().getSchema().getTables())
-            if (!deletedTables.contains(t))
+            if (!deletedTableNames.contains(t.getName()))
             {
                 if (!deleteStudyDesigns && isStudyDesignTable(t))
                     continue;
