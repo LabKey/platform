@@ -29,4 +29,6 @@ public interface AdminUrls extends UrlProvider
     ActionURL getModuleErrorsURL(Container container);
     ActionURL getAdminConsoleURL();
     ActionURL getModuleStatusURL();
+    ActionURL getCustomizeSiteURL();
+    ActionURL getCustomizeSiteURL(boolean upgradeInProgress);
 }

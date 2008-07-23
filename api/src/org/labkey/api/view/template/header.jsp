@@ -30,7 +30,7 @@
     ActionURL currentUrl = currentContext.getActionURL();
     AppProps app = AppProps.getInstance();
 %>
-<table width="100%" cellspacing=0 cellpadding=0><tr>
+<table id="header" width="100%" cellspacing=0 cellpadding=0><tr>
 <td align="center" valign="middle" height=56><a href="<%=h(app.getLogoHref())%>"><img src="<%=contextPath%>/logo.image?revision=<%=app.getLookAndFeelRevision()%>" alt="<%=h(app.getSystemShortName())%>"><br><img alt="<%=h(app.getLogoHref())%>" src="<%=contextPath%>/_.gif" width="146" height="1" border="0"></a></td>
 <td align="left" valign="bottom" style="padding:5px; width:100%"><span class="ms-pagetitle"><a href="<%= app.getHomePageUrl() %>" style="color:#666666;"><%=h(app.getSystemShortName())%></a></span><br><span class="normal"><a href="<%= app.getHomePageUrl() %>"><%= h(app.getSystemDescription())%></a><%
 if (bean.containerLinks != null)
@@ -67,7 +67,7 @@ if (bean.containerLinks != null)
     {
         if (AppProps.getInstance().isUserRequestedAdminOnlyMode())
         {
-%><tr><td>&nbsp;</td><td class="ms-nav; labkey-error" style="padding:5px;">Admin only mode: only administrators can log in. When finished, turn this off in the <a href="<%= contextPath %>/admin/showCustomizeSite.view">Admin Console</a>.</td></tr><%
+%><tr><td>&nbsp;</td><td class="ms-nav; labkey-error" style="padding:5px;">Admin only mode: only administrators can log in. When finished, turn this off in the <a href="<%=urlProvider(AdminUrls.class).getCustomizeSiteURL()%>">Admin Console</a>.</td></tr><%
     }
 
     if (bean.moduleFailures != null && bean.moduleFailures.size() > 0)
