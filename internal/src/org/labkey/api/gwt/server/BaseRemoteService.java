@@ -21,6 +21,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.module.ModuleLoader;
 import org.apache.log4j.Logger;
 
 import javax.servlet.ServletConfig;
@@ -72,7 +73,7 @@ public abstract class BaseRemoteService extends RemoteServiceServlet
 
             public ServletContext getServletContext()
             {
-                return _context.getRequest().getSession().getServletContext();
+                return ModuleLoader.getServletContext();
             }
 
             public String getServletName()
