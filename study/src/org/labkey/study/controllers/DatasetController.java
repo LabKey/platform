@@ -206,7 +206,7 @@ public class DatasetController extends BaseStudyController
             if (isInsert() || !newLsid.equals(form.getLsid()))
             {
                 StudyManager.getInstance().recomputeStudyDataVisitDate(getStudy());
-                StudyManager.getInstance().getVisitManager(getStudy()).updateParticipantVisits();
+                StudyManager.getInstance().getVisitManager(getStudy()).updateParticipantVisits(getUser());
             }
 
             return true;

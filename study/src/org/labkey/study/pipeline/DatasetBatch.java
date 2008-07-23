@@ -403,7 +403,7 @@ public class DatasetBatch extends StudyBatch implements Serializable
                     job.getDatasetDefinition().materializeInBackground();
             }
 
-            getStudyManager().getVisitManager(getStudy()).updateParticipantVisits();
+            getStudyManager().getVisitManager(getStudy()).updateParticipantVisits(getUser());
             try
             {
                 getStudyManager().updateParticipantCohorts(getUser(), getStudy());

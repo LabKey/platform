@@ -78,6 +78,9 @@ public class StudyManager
     private final QueryHelper<Visit> _visitHelper;
     private final QueryHelper<Site> _siteHelper;
     private final QueryHelper<DataSetDefinition> _dataSetHelper;
+    private final QueryHelper<Cohort> _cohortHelper;
+
+    private static final String LSID_REQUIRED = "LSID_REQUIRED";
 
 
     private StudyManager()
@@ -86,6 +89,7 @@ public class StudyManager
         _studyHelper = new QueryHelper<Study>(StudySchema.getInstance().getTableInfoStudy(), Study.class);
         _visitHelper = new QueryHelper<Visit>(StudySchema.getInstance().getTableInfoVisit(), Visit.class);
         _siteHelper = new QueryHelper<Site>(StudySchema.getInstance().getTableInfoSite(), Site.class);
+        _cohortHelper = new QueryHelper<Cohort>(StudySchema.getInstance().getTableInfoCohort(), Cohort.class);
 
         /* Whenever we explicitly invalidate a dataset, unmaterialize it as well
          * this is probably a little overkill, e.g. name change doesn't need to unmaterialize
@@ -186,6 +190,8 @@ public class StudyManager
     public Study createStudy(User user, Study study) throws SQLException
     {
         assert null != study.getContainer();
+        if (study.getLsid() == null)
+            study.setLsid(createLsid(study, study.getContainer().getRowId()));
         study = _studyHelper.create(user, study);
 
         Container c = study.getContainer();
@@ -209,7 +215,7 @@ public class StudyManager
         if (oldStudy.isDateBased()  && !oldStartDate.equals(study.getStartDate()))
         {
             DateVisitManager visitManager = (DateVisitManager) getVisitManager(study);
-            visitManager.recomputeDates(oldStartDate);
+            visitManager.recomputeDates(oldStartDate, user);
             clearCaches(study.getContainer(), true);
         }
     }
@@ -245,8 +251,20 @@ public class StudyManager
         if (visit.getContainer() != null && !visit.getContainer().getId().equals(study.getContainer().getId()))
             throw new IllegalStateException("Visit container does not match study");
         visit.setContainer(study.getContainer());
-        Visit created = _visitHelper.create(user, visit);
-        return created.getRowId();
+
+        // Lsid requires the row id, which does not get created until this object has been inserted into the db
+        if (visit.getLsid() != null)
+            throw new IllegalStateException("Attempt to create a visit with lsid already set");
+        visit.setLsid(LSID_REQUIRED);
+        visit = _visitHelper.create(user, visit);
+
+        if (visit.getRowId() == 0)
+            throw new IllegalStateException("Visit rowId has not been set properly");
+
+        visit.setLsid(createLsid(visit, visit.getRowId()));
+
+        updateVisit(user, visit);
+        return visit.getRowId();
     }
 
 
@@ -254,6 +272,25 @@ public class StudyManager
     {
         Visit visit = new Visit(study.getContainer(), visitId, label, type);
         createVisit(study, user, visit);
+    }
+
+    public void createCohort(Study study, User user, Cohort cohort) throws SQLException
+    {
+        if (cohort.getContainer() != null && !cohort.getContainer().getId().equals(study.getContainer().getId()))
+            throw new IllegalArgumentException("Cohort container does not match study");
+        cohort.setContainer(study.getContainer());
+
+        // Lsid requires the row id, which does not get created until this object has been inserted into the db
+        if (cohort.getLsid() != null)
+            throw new IllegalStateException("Attempt to create a new cohort with lsid already set");
+        cohort.setLsid(LSID_REQUIRED);
+        cohort = _cohortHelper.create(user, cohort);
+
+        if (cohort.getRowId() == 0)
+            throw new IllegalStateException("Cohort rowId has not been set properly");
+
+        cohort.setLsid(createLsid(cohort, cohort.getRowId()));
+        _cohortHelper.update(user, cohort);
     }
 
 
@@ -303,6 +340,11 @@ public class StudyManager
     {
         Object[] pk = new Object[]{visit.getContainer().getId(), visit.getRowId()};
         _visitHelper.update(user, visit, pk);
+    }
+
+    public void updateCohort(User user, Cohort cohort) throws SQLException
+    {
+        _cohortHelper.update(user, cohort);
     }
 
 
@@ -1947,7 +1989,7 @@ public class StudyManager
     }
 
 
-    public void upgradeParticipantVisits()
+    public void upgradeParticipantVisits(User user)
     {
         ResultSet rs = null;
         try
@@ -1964,7 +2006,7 @@ public class StudyManager
                 if (null == c)
                     continue;
                 Study study = StudyManager.getInstance().getStudy(c);
-                getVisitManager(study).updateParticipantVisits();
+                getVisitManager(study).updateParticipantVisits(user);
             }
         }
         catch (SQLException x)
@@ -2361,12 +2403,33 @@ public class StudyManager
             {
                 clearParticipantCohorts(user, study);
 
-                // find the set of cohorts specified in our dataset:
-                String uniqueCohortsSQL = "INSERT INTO " + StudySchema.getInstance().getTableInfoCohort() + " (Container, Label)\n" +
-                    "SELECT DISTINCT ? As Container, " + cohortLabelCol.getSelectName() + " As Label FROM " + cohortDatasetTinfo +
+                // Find the set of cohorts specified in our dataset
+                SQLFragment sqlFragment = new SQLFragment();
+                sqlFragment.append("SELECT DISTINCT " + cohortLabelCol.getSelectName() + " FROM " + cohortDatasetTinfo +
                         "\nWHERE " + cohortLabelCol.getSelectName() + " IS NOT NULL AND " + cohortLabelCol.getSelectName() + " NOT IN\n" +
-                        " (SELECT Label FROM " + StudySchema.getInstance().getTableInfoCohort() + " WHERE Container = ?)";
-                Table.execute(StudySchema.getInstance().getSchema(), uniqueCohortsSQL, new Object[] { study.getContainer().getId(), study.getContainer().getId() });
+                        " (SELECT Label FROM " + StudySchema.getInstance().getTableInfoCohort() + " WHERE Container = ?)");
+                sqlFragment.add(study.getContainer().getId());
+
+                Set<String> newCohortLabels = new HashSet<String>();
+                Table.TableResultSet rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sqlFragment);
+                try
+                {
+                    while (rs.next())
+                    {
+                        newCohortLabels.add(rs.getString(1));
+                    }
+                }
+                finally
+                {
+                    rs.close();
+                }
+
+                for (String cohortLabel : newCohortLabels)
+                {
+                    Cohort cohort = new Cohort();
+                    cohort.setLabel(cohortLabel);
+                    StudyManager.getInstance().createCohort(study, user, cohort);
+                }
 
                 // update participants table to reference correct cohorts:
                 String datasetSelect = "SELECT MAX(" + cohortLabelCol.getSelectName() + ") FROM (\n" +
@@ -2423,17 +2486,23 @@ public class StudyManager
     }
 
     /**
-     * Returns a URI for use by Ontology Manager
+     * Returns a domain URI for use by Ontology Manager
      */
     public String getDomainURI(Container container, Class<?> extensibleClass)
     {
         return "urn:lsid:" +
                 AppProps.getInstance().getDefaultLsidAuthority() +
-                ":Cohort" +
+                ":" +
+                extensibleClass.getSimpleName() + 
                 ".Folder-" +
                 container.getRowId() +
                 ":" +
                 extensibleClass.getSimpleName();
+    }
+
+    public String createLsid(AbstractStudyEntity o, int uniqueId)
+    {
+        return new Lsid(o.getClass().getSimpleName(), "Folder-" + o.getContainer().getRowId(), Integer.toString(uniqueId)).toString();
     }
 
     public interface ParticipantViewConfig

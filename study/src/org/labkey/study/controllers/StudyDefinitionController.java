@@ -15,16 +15,23 @@
  */
 package org.labkey.study.controllers;
 
+import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.NavTree;
 import org.labkey.study.model.Cohort;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.query.StudyQuerySchema;
+import org.springframework.validation.BindException;
 
 /**
  * User: jgarms
@@ -56,6 +63,32 @@ public class StudyDefinitionController extends BaseStudyController
             }
 
             return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(getContainer(), domain.getTypeId());
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class CohortViewAction extends QueryViewAction<QueryViewAction.QueryExportForm, QueryView>
+    {
+        public CohortViewAction()
+        {
+            super(QueryExportForm.class);
+        }
+
+        protected QueryView createQueryView(QueryExportForm queryExportForm, BindException errors, boolean forExport, String dataRegion) throws Exception
+        {
+            final StudyQuerySchema querySchema = new StudyQuerySchema(getStudy(), getUser(), true);
+            QuerySettings qs = querySchema.getSettings(HttpView.currentContext(), dataRegion);
+            qs.setQueryName("Cohort");
+            qs.setAllowChooseQuery(false);
+
+            QueryView view = new QueryView(querySchema, qs);
+            return view;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            _appendManageStudy(root);
+            return root.addChild("Cohorts");
         }
     }
 }

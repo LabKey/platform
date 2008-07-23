@@ -1,22 +1,14 @@
 package org.labkey.study.visitmanager;
 
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.*;
+import org.labkey.api.security.User;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.Cohort;
-import org.labkey.study.model.Study;
-import org.labkey.study.model.Visit;
-import org.labkey.study.model.VisitMapKey;
+import org.labkey.study.model.*;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Copyright (c) 2008 LabKey Corporation
@@ -122,7 +114,7 @@ public class DateVisitManager extends VisitManager
     }
 
 
-    protected void updateParticipantVisitTable()
+    protected void updateParticipantVisitTable(User user)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
@@ -198,7 +190,7 @@ public class DateVisitManager extends VisitManager
 
 
     /** Make sure there is a Visit for each row in StudyData otherwise rows will be orphaned */
-    protected void updateVisitTable()
+    protected void updateVisitTable(User user)
     {
         try
         {
@@ -208,13 +200,31 @@ public class DateVisitManager extends VisitManager
             TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
             TableInfo tableVisit = StudySchema.getInstance().getTableInfoVisit();
 
-            int count = Table.execute(schema,
-                    "INSERT INTO " + tableVisit + " (container, SequenceNumMin, SequenceNumMax, Label)\n" +
-                    "SELECT DISTINCT ?, Day, Day, 'Day '" + schema.getSqlDialect().getConcatenationOperator() + "CAST(Day AS VARCHAR)\n" +
-                    "FROM " + tableParticipantVisit + "\n"+
-                    "WHERE container = ? AND VisitRowId IS NULL",
-                    new Object[] {c,c});
-            if (count > 0)
+            SQLFragment sql = new SQLFragment("SELECT DISTINCT Day " +
+                "FROM " + tableParticipantVisit + "\n" +
+                "WHERE container = ? AND VisitRowId IS NULL");
+            sql.add(c);
+
+            List<Integer> days = new ArrayList<Integer>();
+            Table.TableResultSet rs = Table.executeQuery(schema, sql);
+            try
+            {
+                while (rs.next())
+                {
+                    days.add(rs.getInt(1));
+                }
+            }
+            finally
+            {
+                rs.close();
+            }
+
+            for (int day : days)
+            {
+                StudyManager.getInstance().createVisit(_study, user, day, null, "Day " + day);
+            }
+
+            if (days.size() > 0)
                 _updateVisitRowId();
         }
         catch (SQLException x)
@@ -223,7 +233,7 @@ public class DateVisitManager extends VisitManager
         }
     }
 
-    public void recomputeDates(Date oldStartDate) throws SQLException
+    public void recomputeDates(Date oldStartDate, User user) throws SQLException
     {
         if (null != oldStartDate)
         {
@@ -247,7 +257,7 @@ public class DateVisitManager extends VisitManager
                 Table.execute(schema, "DELETE FROM " + tableVisit + " WHERE Container=?", new Object[]{c});
 
                 //Now recompute everything
-                updateParticipantVisits();
+                updateParticipantVisits(user);
             }
         }
     }

@@ -16,29 +16,30 @@
 
 package org.labkey.study.importer;
 
-import org.labkey.study.SampleManager;
-import org.labkey.study.StudySchema;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.Study;
-import org.labkey.study.model.Specimen;
-import org.labkey.study.model.Site;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.User;
+import org.labkey.api.study.SpecimenService;
+import org.labkey.api.util.GUID;
 import org.labkey.common.tools.TabLoader;
 import org.labkey.common.util.CPUTimer;
-import org.labkey.api.util.GUID;
-import org.labkey.api.util.DateUtil;
-import org.labkey.api.study.SpecimenService;
+import org.labkey.study.SampleManager;
+import org.labkey.study.StudySchema;
+import org.labkey.study.model.Specimen;
+import org.labkey.study.model.Study;
+import org.labkey.study.model.StudyManager;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.sql.*;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.*;
 
 /**
@@ -372,7 +373,7 @@ public class SpecimenImporter
             populateSpecimenTables(schema, user, container, loadInfo);
 
             Study study = StudyManager.getInstance().getStudy(container);
-            StudyManager.getInstance().getVisitManager(study).updateParticipantVisits();
+            StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user);
 
             if (!DEBUG)
                 scope.commitTransaction();
@@ -413,7 +414,7 @@ public class SpecimenImporter
             populateSpecimenTables(schema, user, container, loadInfo);
 
             Study study = StudyManager.getInstance().getStudy(container);
-            StudyManager.getInstance().getVisitManager(study).updateParticipantVisits();
+            StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user);
 
             if (!DEBUG)
                 scope.commitTransaction();

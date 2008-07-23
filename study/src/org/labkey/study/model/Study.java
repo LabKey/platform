@@ -38,6 +38,7 @@ public class Study extends AbstractStudyEntity<Study>
     private SecurityType _securityType = SecurityType.BASIC; // Default value. Not allowed to be null
     private String _participantCohortProperty;
     private Integer _participantCohortDataSetId;
+    private String _lsid;
 
     public Study()
     {
@@ -196,6 +197,16 @@ public class Study extends AbstractStudyEntity<Study>
     public void setParticipantCohortDataSetId(Integer participantCohortDataSetId)
     {
         _participantCohortDataSetId = participantCohortDataSetId;
+    }
+
+    public String getLsid()
+    {
+        return _lsid;
+    }
+
+    public void setLsid(String lsid)
+    {
+        this._lsid = lsid;
     }
 
     public static class SummaryStatistics

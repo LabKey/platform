@@ -1,6 +1,7 @@
 package org.labkey.study.model;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.util.PageFlowUtil;
 
 /**
  * Copyright (c) 2008 LabKey Corporation
@@ -20,12 +21,15 @@ import org.labkey.api.data.*;
  * User: brittp
  * Created: Jan 15, 2008 4:27:38 PM
  */
-public class Cohort
+public class Cohort extends AbstractStudyEntity<Cohort>
 {
-    private int _rowId;
-    private String _label;
-    private Container _container;
+    private int _rowId = 0;
     private String _lsid;
+
+    public Object getPrimaryKey()
+    {
+        return getRowId();
+    }
 
     public int getRowId()
     {
@@ -34,27 +38,8 @@ public class Cohort
 
     public void setRowId(int rowId)
     {
+        assert _rowId == 0 : "Attempt to redefine rowId";
         _rowId = rowId;
-    }
-
-    public String getLabel()
-    {
-        return _label;
-    }
-
-    public void setLabel(String label)
-    {
-        _label = label;
-    }
-
-    public Container getContainer()
-    {
-        return _container;
-    }
-
-    public void setContainer(Container container)
-    {
-        _container = container;
     }
 
     public String getLsid()
@@ -80,7 +65,7 @@ public class Cohort
         Cohort cohort = (Cohort) o;
 
         if (_rowId != cohort._rowId) return false;
-        if (!_container.equals(cohort._container)) return false;
+        if (!PageFlowUtil.nullSafeEquals(getContainer(), cohort.getContainer())) return false;
         if (_label != null ? !_label.equals(cohort._label) : cohort._label != null) return false;
 
         return true;
@@ -91,7 +76,9 @@ public class Cohort
         int result;
         result = _rowId;
         result = 31 * result + (_label != null ? _label.hashCode() : 0);
-        result = 31 * result + _container.hashCode();
+        Container c = getContainer();
+        if (c != null)
+            result = 31 * result + c.hashCode();
         return result;
     }
 }

@@ -1,6 +1,7 @@
 package org.labkey.study.visitmanager;
 
 import org.labkey.api.data.*;
+import org.labkey.api.security.User;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.*;
@@ -39,11 +40,11 @@ public abstract class VisitManager
         _study = study;
     }
 
-    public void updateParticipantVisits()
+    public void updateParticipantVisits(User user)
     {
         boolean requiresUncache = updateParticipants();
-        updateParticipantVisitTable();
-        updateVisitTable();
+        updateParticipantVisitTable(user);
+        updateVisitTable(user);
         StudyManager.getInstance().clearVisitCache(_study);
         if (requiresUncache)
             StudyManager.getInstance().clearCaches(_study.getContainer(), true);
@@ -59,8 +60,8 @@ public abstract class VisitManager
         return "Visits";
     }
 
-    protected abstract void updateParticipantVisitTable();
-    protected abstract void updateVisitTable();
+    protected abstract void updateParticipantVisitTable(User user);
+    protected abstract void updateVisitTable(User user);
     public abstract Map<VisitMapKey, Integer> getVisitSummary(Cohort cohort) throws SQLException;
 
     public Map<Integer, List<Double>> getDatasetSequenceNums()

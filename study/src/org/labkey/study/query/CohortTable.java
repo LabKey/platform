@@ -44,6 +44,7 @@ public class CohortTable extends StudyTable
 
         // Add extended columns
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
+        visibleColumns.add(new FieldKey(null, "Label"));
         String sqlObjectId = "( SELECT objectid FROM exp.object WHERE exp.object.objecturi = " + ExprColumn.STR_TABLE_ALIAS + ".lsid)";
 
         FieldKey keyProp = new FieldKey(null, "Property");

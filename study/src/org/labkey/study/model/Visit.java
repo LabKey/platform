@@ -90,6 +90,7 @@ public class Visit extends AbstractStudyEntity<Visit> implements Cloneable, Seri
     private Character _typeCode;
     private Integer _visitDateDatasetid = 0;
     private Integer _cohortId;
+    private String _lsid;
     
     public Visit()
     {
@@ -273,5 +274,15 @@ public class Visit extends AbstractStudyEntity<Visit> implements Cloneable, Seri
         if (_cohortId == null)
             return null;
         return Table.selectObject(StudySchema.getInstance().getTableInfoCohort(), _cohortId, Cohort.class);
+    }
+
+    public String getLsid()
+    {
+        return _lsid;
+    }
+
+    public void setLsid(String lsid)
+    {
+        _lsid = lsid;
     }
 }

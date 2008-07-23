@@ -202,7 +202,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                 }
             }
             //Make sure that the study is updated with the correct timepoints.
-            StudyManager.getInstance().getVisitManager(targetStudy).updateParticipantVisits();
+            StudyManager.getInstance().getVisitManager(targetStudy).updateParticipantVisits(user);
             StudyManager.getInstance().updateParticipantCohorts(user, targetStudy);
 
             ActionURL url = new ActionURL(StudyController.DatasetAction.class, targetContainer);
@@ -444,7 +444,7 @@ public class AssayPublishManager implements AssayPublishService.Service
             ul = saveUploadData(user, dsd, tsv);
             lsids = StudyManager.getInstance().importDatasetTSV(study, dsd, tsv, ul.getCreated().getTime(), columnMap, errors, true);
             if (errors.size() == 0)
-                StudyManager.getInstance().getVisitManager(study).updateParticipantVisits();
+                StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user);
         }
         catch (IOException x)
         {

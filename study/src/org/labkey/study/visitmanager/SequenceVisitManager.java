@@ -1,16 +1,14 @@
 package org.labkey.study.visitmanager;
 
-import org.labkey.study.model.*;
-import org.labkey.study.StudySchema;
 import org.labkey.api.data.*;
+import org.labkey.api.security.User;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.study.StudySchema;
+import org.labkey.study.model.*;
 
-import java.util.Map;
-import java.util.HashMap;
-import java.util.List;
-import java.util.TreeMap;
-import java.sql.SQLException;
 import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.*;
 
 /**
  * Copyright (c) 2008 LabKey Corporation
@@ -138,7 +136,7 @@ public class SequenceVisitManager extends VisitManager
     }
 
 
-    protected void updateParticipantVisitTable()
+    protected void updateParticipantVisitTable(User user)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         TableInfo tableVisit = StudySchema.getInstance().getTableInfoVisit();
@@ -256,7 +254,7 @@ public class SequenceVisitManager extends VisitManager
 
 
     /** Make sure there is a Visit for each row in StudyData otherwise rows will be orphaned */
-    protected void updateVisitTable()
+    protected void updateVisitTable(User user)
     {
         try
         {
@@ -266,14 +264,32 @@ public class SequenceVisitManager extends VisitManager
             TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
             TableInfo tableVisit = StudySchema.getInstance().getTableInfoVisit();
 
-            int count = Table.execute(schema,
-                    "INSERT INTO " + tableVisit + " (container, SequenceNumMin, SequenceNumMax)\n" +
-                    "SELECT DISTINCT ?, SequenceNum, SequenceNum\n" +
+            SQLFragment sql = new SQLFragment("SELECT DISTINCT SequenceNum\n" +
                     "FROM " + tableParticipantVisit + "\n"+
-                    "WHERE container = ? AND VisitRowId IS NULL",
-                    new Object[] {c,c});
-            if (count > 0)
+                    "WHERE container = ? AND VisitRowId IS NULL");
+            sql.add(c);
+
+            List<Double> sequenceNums = new ArrayList<Double>();
+            Table.TableResultSet rs = Table.executeQuery(schema, sql);
+            try
+            {
+                while (rs.next())
+                {
+                    sequenceNums.add(rs.getDouble(1));
+                }
+            }
+            finally
+            {
+                rs.close();
+            }
+
+            for (double d : sequenceNums)
+            {
+                StudyManager.getInstance().createVisit(_study, user, d, null, null);
+            }
+            if (sequenceNums.size() > 0)
                 _updateVisitRowId();
+
         }
         catch (SQLException x)
         {

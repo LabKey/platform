@@ -93,7 +93,7 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
 
     public StudyModule()
     {
-        super(NAME, 8.22, "/org/labkey/study", true, reportsPartFactory, reportsWidePartFactory, samplesPartFactory,
+        super(NAME, 8.23, "/org/labkey/study", true, reportsPartFactory, reportsWidePartFactory, samplesPartFactory,
                 samplesWidePartFactory, datasetsPartFactory, manageStudyPartFactory,
                 enrollmentChartPartFactory, studyDesignsWebPartFactory, studyDesignSummaryWebPartFactory,
                 assayListWebPartFactory, assayDetailsWebPartFactory, participantWebPartFactory);
@@ -231,7 +231,7 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
     {
         if (moduleContext.getInstalledVersion() >= 1.3 && moduleContext.getInstalledVersion() < 1.7)
         {
-            StudyManager.getInstance().upgradeParticipantVisits();
+            StudyManager.getInstance().upgradeParticipantVisits(viewContext.getUser());
         }
 
         if (moduleContext.getInstalledVersion() >= 1.7 && moduleContext.getInstalledVersion() < 1.74)
@@ -266,6 +266,18 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
             catch (SQLException e)
             {
                 throw new RuntimeSQLException(e);
+            }
+        }
+
+        if (moduleContext.getInstalledVersion() >= 1.3 && moduleContext.getInstalledVersion() < 8.23)
+        {
+            try
+            {
+                StudyUpgrader.upgradeExtensibleTables_83(viewContext.getUser());
+            }
+            catch (SQLException se)
+            {
+                throw new RuntimeSQLException(se);
             }
         }
     }

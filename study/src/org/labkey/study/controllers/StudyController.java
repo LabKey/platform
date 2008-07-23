@@ -3038,18 +3038,16 @@ public class StudyController extends BaseStudyController
                 Cohort newCohort = new Cohort();
                 newCohort.setContainer(getContainer());
                 newCohort.setLabel(form.getNewLabel());
-                Table.insert(getUser(), StudySchema.getInstance().getTableInfoCohort(), newCohort);
+                StudyManager.getInstance().createCohort(getStudy(), getUser(), newCohort);
             }
             if (form.getIds() != null)
             {
                 for (int i = 0; i < form.getIds().length; i++)
                 {
                     int rowId = form.getIds()[i];
-                    Cohort cohort = new Cohort();
-                    cohort.setRowId(rowId);
+                    Cohort cohort = StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), rowId);
                     cohort.setLabel(form.getLabels()[i]);
-                    cohort.setContainer(getContainer());
-                    Table.update(getUser(), StudySchema.getInstance().getTableInfoCohort(), cohort, rowId, null);
+                    StudyManager.getInstance().updateCohort(getUser(), cohort);
                 }
             }
 
@@ -3530,7 +3528,7 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             StudyManager.getInstance().recomputeStudyDataVisitDate(getStudy());
-            StudyManager.getInstance().getVisitManager(getStudy()).updateParticipantVisits();
+            StudyManager.getInstance().getVisitManager(getStudy()).updateParticipantVisits(getUser());
 
             TableInfo tinfoParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
             Integer visitDates = Table.executeSingleton(StudySchema.getInstance().getSchema(),
