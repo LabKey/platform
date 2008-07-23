@@ -41,6 +41,7 @@ import org.xml.sax.SAXException;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
+import javax.servlet.ServletContextEvent;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.parsers.DocumentBuilder;
@@ -77,6 +78,7 @@ public class DavController extends SpringActionController
 
     WebdavResponse _webdavresponse;
     WebdavResolver _webdavresolver;
+
 
     HttpServletRequest getRequest()
     {
@@ -817,6 +819,8 @@ public class DavController extends SpringActionController
             if (resource == null)
                 return notFound();
             boolean exists = resource.exists();
+            boolean deleteFileOnFail = false;
+            boolean temp = false;
 
             if (exists && !resource.canWrite(getUser()) || !exists && !resource.canCreate(getUser()))
                 return unauthorized(resource);
@@ -831,8 +835,16 @@ public class DavController extends SpringActionController
                 is = getRequest().getInputStream();
                 if (!resource.getFile().exists())
                 {
-                    if (!resource.getFile().createNewFile())
-                        throw new DavException(WebdavStatus.SC_INTERNAL_SERVER_ERROR, "could not create file");
+                    temp = getTemporary();
+                    File f = resource.getFile();
+                    if (null != f)
+                    {
+                        if (!f.createNewFile())
+                            throw new DavException(WebdavStatus.SC_INTERNAL_SERVER_ERROR, "could not create file");
+                        deleteFileOnFail = true;
+                        if (temp)
+                            markTempFile(f);
+                    }
                 }
 
                 if (range != null)
@@ -874,17 +886,29 @@ public class DavController extends SpringActionController
                     FileUtil.copyData(is, os);
                     if (os instanceof FileOutputStream)
                         ((FileOutputStream)os).getFD().sync();
-                    if (exists)
+                    if (temp)
+                        ;
+                    else if (exists)
                         audit(resource, "created");
                     else
                         audit(resource, "replaced");
                 }
+
+                // if we got here then we succeeded
+                deleteFileOnFail = false;
             }
             finally
             {
                 close(is, "put action inputstream");
                 close(os, "put action outputstream");
                 close(raf, "put action outputdata");
+                if (deleteFileOnFail)
+                {
+                    File f = resource.getFile();
+                    if (null != f)
+                        f.delete();
+                    rmTempFile(resource);
+                }
             }
 
             lockNullResources.remove(resource.getPath());
@@ -947,7 +971,9 @@ public class DavController extends SpringActionController
         {
             if (!resource.delete(getUser()))
                 throw new DavException(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
-            audit(resource, "deleted");
+            boolean temp = rmTempFile(resource);
+            if (!temp)
+                audit(resource, "deleted");
             return WebdavStatus.SC_NO_CONTENT;
         }
         else
@@ -1009,7 +1035,10 @@ public class DavController extends SpringActionController
 
                 if (!child.delete(getUser()))
                     errorList.put(childName, WebdavStatus.SC_INTERNAL_SERVER_ERROR);
-                audit(child, "deleted");
+                
+                boolean temp = rmTempFile(child);
+                if (!temp)
+                    audit(child, "deleted");
             }
         }
     }
@@ -1166,7 +1195,7 @@ public class DavController extends SpringActionController
                 if (dest.getFile().exists())
                 {
                     tmp = new File(dest.parent().getFile(), "~rename" + GUID.makeHash() + "~" + dest.getName());
-                    tmp.deleteOnExit();
+                    markTempFile(tmp);
                     if (!dest.getFile().renameTo(tmp))
                         throw new DavException(WebdavStatus.SC_INTERNAL_SERVER_ERROR, "Could not remove destination: " + dest.getPath());
                 }
@@ -1181,11 +1210,21 @@ public class DavController extends SpringActionController
             finally
             {
                 if (null != tmp)
+                {
                     tmp.delete();
+                    rmTempFile(tmp);
+                }
             }
 
-            audit(src, "deleted: moved to " + dest.getFile().getPath());
-            audit(dest, "created: moved from " + src.getFile().getPath());
+            if (rmTempFile(src))
+            {
+                audit(dest, "created");
+            }
+            else
+            {
+                audit(src, "deleted: moved to " + dest.getFile().getPath());
+                audit(dest, "created: moved from " + src.getFile().getPath());
+            }
 
             // Removing any lock-null resource which would be present at
             // the destination path
@@ -2386,6 +2425,14 @@ public class DavController extends SpringActionController
     }
 
 
+    /** this is not part of the DAV protocol, but is used by the DropApplet to indicate this file is temporary */
+    boolean getTemporary()
+    {
+        String overwriteHeader = getRequest().getHeader("Temporary");
+        return overwriteHeader == null || overwriteHeader.equalsIgnoreCase("T");
+    }
+
+
     /**
      * Parse the content-range header.
      *
@@ -3396,5 +3443,50 @@ public class DavController extends SpringActionController
     private String h(String s)
     {
         return PageFlowUtil.filter(s);
+    }
+
+
+    static Set<String> _tempFiles = Collections.synchronizedSet(new TreeSet<String>());
+
+    private void markTempFile(WebdavResolver.Resource r)
+    {
+        markTempFile(r.getFile());
+    }
+
+    private void markTempFile(File f)
+    {
+        if (null != f)
+            _tempFiles.add(f.getPath());
+    }
+    
+    private boolean rmTempFile(WebdavResolver.Resource r)
+    {
+        return rmTempFile(r.getFile());
+    }
+
+    private boolean rmTempFile(File f)
+    {
+        if (null != f)
+            return _tempFiles.remove(f.getPath());
+        return false;
+    }
+
+    private boolean isTempFile(WebdavResolver.Resource r)
+    {
+        if (null != r.getFile())
+            return _tempFiles.contains(r.getFile().getPath());
+        return false;
+    }
+
+    public static ShutdownListener getShutdownListener()
+    {
+        return new ShutdownListener()
+        {
+            public void shutdownStarted(ServletContextEvent servletContextEvent)
+            {
+                for (Object path : _tempFiles.toArray())
+                    new File((String)path).delete();
+            }
+        };
     }
 }

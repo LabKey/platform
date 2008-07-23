@@ -38,16 +38,15 @@ import org.labkey.core.attachment.AttachmentServiceImpl;
 import org.labkey.core.ftp.FtpController;
 import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.LoginController;
-import org.labkey.core.query.AttachmentAuditViewFactory;
-import org.labkey.core.query.ContainerAuditViewFactory;
-import org.labkey.core.query.GroupAuditViewFactory;
-import org.labkey.core.query.UserAuditViewFactory;
+import org.labkey.core.query.*;
 import org.labkey.core.security.SecurityController;
 import org.labkey.core.test.TestController;
 import org.labkey.core.user.UserController;
 import org.labkey.core.webdav.WebdavResolverImpl;
 import org.labkey.core.webdav.FileSystemAuditViewFactory;
 import org.labkey.api.security.AuthenticationManager.*;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.QuerySchema;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -102,6 +101,15 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
         AnalyticsServiceImpl.register();
         FirstRequestHandler.addFirstRequestListener(this);
         AuditLogService.get().addAuditViewFactory(new SiteSettingsAuditViewFactory());
+
+        DefaultSchema.registerProvider("core", new DefaultSchema.SchemaProvider()
+        {
+            public QuerySchema getSchema(DefaultSchema schema)
+            {
+                return new CoreQuerySchema(schema.getUser(), schema.getContainer());
+            }
+        });
+            
     }
 
     @Override
@@ -379,6 +387,7 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
 
         ContextListener.addStartupListener(TempTableTracker.getStartupListener());
         ContextListener.addShutdownListener(TempTableTracker.getShutdownListener());
+        ContextListener.addShutdownListener(org.labkey.core.webdav.DavController.getShutdownListener());
     }
 
     @Override
