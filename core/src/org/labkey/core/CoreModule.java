@@ -102,14 +102,13 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
         FirstRequestHandler.addFirstRequestListener(this);
         AuditLogService.get().addAuditViewFactory(new SiteSettingsAuditViewFactory());
 
-        DefaultSchema.registerProvider("core", new DefaultSchema.SchemaProvider()
-        {
-            public QuerySchema getSchema(DefaultSchema schema)
-            {
-                return new CoreQuerySchema(schema.getUser(), schema.getContainer());
-            }
-        });
-            
+//        DefaultSchema.registerProvider("core", new DefaultSchema.SchemaProvider()
+//        {
+//            public QuerySchema getSchema(DefaultSchema schema)
+//            {
+//                return new CoreQuerySchema(schema.getUser(), schema.getContainer());
+//            }
+//        });            
     }
 
     @Override
