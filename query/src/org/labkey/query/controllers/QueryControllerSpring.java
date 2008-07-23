@@ -17,6 +17,7 @@
 package org.labkey.query.controllers;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -72,6 +73,11 @@ public class QueryControllerSpring extends SpringActionController
 
     public static class QueryUrlsImpl implements QueryUrls
     {
+        public ActionURL urlCreateSnapshot(Container c)
+        {
+            return new ActionURL(CreateSnapshotAction.class, c);
+        }
+
         public ActionURL urlCustomizeSnapshot(Container c)
         {
             return new ActionURL(EditSnapshotAction.class, c);
@@ -493,7 +499,7 @@ public class QueryControllerSpring extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermission(ACL.PERM_ADMIN)
     public class CreateSnapshotAction extends FormViewAction<QuerySnapshotForm>
     {
         ActionURL _successURL;
@@ -543,7 +549,7 @@ public class QueryControllerSpring extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermission(ACL.PERM_ADMIN)
     public class EditSnapshotAction extends FormViewAction<QuerySnapshotForm>
     {
         ActionURL _successURL;
@@ -555,13 +561,26 @@ public class QueryControllerSpring extends SpringActionController
         public ModelAndView getView(QuerySnapshotForm form, boolean reshow, BindException errors) throws Exception
         {
             if (!reshow)
-            {
                 form.init(QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName(), form.getSnapshotName()));
-            }
-            VBox box = new VBox();
 
-            box.addView(new JspView<QueryForm>("/org/labkey/query/controllers/editSnapshot.jsp", form, errors));
-            box.addView(new JspView<QueryForm>("/org/labkey/query/controllers/createSnapshot.jsp", form, errors));
+            VBox box = new VBox();
+            QuerySnapshotService.I provider = QuerySnapshotService.get(form.getSchemaName());
+
+            if (provider != null)
+            {
+                boolean showHistory = BooleanUtils.toBoolean(getViewContext().getActionURL().getParameter("showHistory"));
+
+                box.addView(new JspView<QueryForm>("/org/labkey/query/controllers/editSnapshot.jsp", form, errors));
+
+                if (showHistory)
+                {
+                    HttpView historyView = provider.createAuditView(form);
+                    if (historyView != null)
+                        box.addView(historyView);
+                }
+
+                box.addView(new JspView<QueryForm>("/org/labkey/query/controllers/createSnapshot.jsp", form, errors));
+            }
             return box;
         }
 
@@ -590,7 +609,7 @@ public class QueryControllerSpring extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermission(ACL.PERM_ADMIN)
     public class UpdateSnapshotAction extends SimpleViewAction<QuerySnapshotForm>
     {
         public ModelAndView getView(QuerySnapshotForm form, BindException errors) throws Exception

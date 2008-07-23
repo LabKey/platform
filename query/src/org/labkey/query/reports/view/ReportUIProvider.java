@@ -66,13 +66,10 @@ public class ReportUIProvider extends DefaultReportUIProvider
             designers.put(RReport.TYPE, "javascript:alert('The R Program has not been configured properly, please request that an administrator configure R in the Admin Console.')");
 
         // query snapshot
-        if (!QueryService.get().isQuerySnapshot(context.getContainer(), settings.getSchemaName(), settings.getQueryName()))
+        QuerySnapshotService.I provider = QuerySnapshotService.get(settings.getSchemaName());
+        if (provider != null && !QueryService.get().isQuerySnapshot(context.getContainer(), settings.getSchemaName(), settings.getQueryName()))
         {
-            //settings.setDataRegionName(QueryView.DATAREGIONNAME_DEFAULT);
-            ActionURL snapshotURL = new ActionURL(QueryControllerSpring.CreateSnapshotAction.class, context.getContainer()).
-                    addParameter(settings.param(QueryParam.schemaName), settings.getSchemaName()).
-                    addParameter(settings.param(QueryParam.queryName), settings.getQueryName());
-            designers.put(QuerySnapshotService.TYPE, snapshotURL.getLocalURIString());
+            designers.put(QuerySnapshotService.TYPE, provider.getCreateWizardURL(settings, context).getLocalURIString());
         }
     }
 

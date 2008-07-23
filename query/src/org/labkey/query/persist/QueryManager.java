@@ -330,10 +330,10 @@ public class QueryManager
     {
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition("Container", c.getId());
+        Table.delete(getTableInfoQuerySnapshotDef(), filter);
         Table.delete(getTableInfoCustomView(), filter);
         Table.delete(getTableInfoQueryDef(), filter);
         Table.delete(getTableInfoDbUserSchema(), filter);
-        Table.delete(getTableInfoQuerySnapshotDef(), filter);
     }
 
     static public final ContainerManager.ContainerListener CONTAINER_LISTENER = new ContainerManager.ContainerListener()

@@ -18,6 +18,7 @@ package org.labkey.study.dataset;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
@@ -27,13 +28,15 @@ import org.labkey.api.query.*;
 import org.labkey.api.query.snapshot.AbstractSnapshotProvider;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotForm;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewContext;
+import org.labkey.api.query.snapshot.QuerySnapshotService;
+import org.labkey.api.view.*;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.StudyServiceImpl;
 
 import java.util.*;
 /*
@@ -42,7 +45,7 @@ import java.util.*;
  * Time: 4:57:40 PM
  */
 
-public class DatasetSnapshotProvider extends AbstractSnapshotProvider
+public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements QuerySnapshotService.AutoUpdateable
 {
     public String getName()
     {
@@ -63,6 +66,14 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider
             }
         }
         return columns;
+    }
+
+    public ActionURL getCreateWizardURL(QuerySettings settings, ViewContext context)
+    {
+        QuerySettings qs = new QuerySettings(context, QueryView.DATAREGIONNAME_DEFAULT);
+        return new ActionURL(StudyController.CreateSnapshotAction.class, context.getContainer()).
+                addParameter(qs.param(QueryParam.schemaName), settings.getSchemaName()).
+                addParameter(qs.param(QueryParam.queryName), settings.getQueryName());
     }
 
     public ActionURL createSnapshot(QuerySnapshotForm form) throws Exception
@@ -97,27 +108,6 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider
                 QueryView view = QueryView.create(form);
                 if (view != null)
                 {
-/*
-                    Map<String, DisplayColumn> columnMap = new HashMap<String, DisplayColumn>();
-                    for (DisplayColumn c : view.getDisplayColumns())
-                        columnMap.put(c.getName(), c);
-
-                    for (String column : columns)
-                    {
-                        DisplayColumn dc = columnMap.get(column);
-                        if (dc != null)
-                        {
-                            DomainProperty prop = d.addProperty();
-                            prop.setLabel(dc.getName());
-                            prop.setName(dc.getName());
-
-                            prop.setType(PropertyService.get().getType(form.getViewContext().getContainer(), PropertyType.getFromClass(dc.getValueClass()).getXmlName()));
-                            prop.setDescription(dc.getDescription());
-                            prop.setFormat(dc.getFormatString());
-                            prop.setPropertyURI(domainURI + "." + dc.getName());
-                        }
-                    }
-*/
                     for (ColumnInfo col : QueryService.get().getColumns(view.getTable(), snapshot.getColumns()).values())
                     {
                         addAsDomainProperty(d, col);
@@ -182,11 +172,15 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider
                     List<String> errors = new ArrayList<String>();
 
                     view.getTsvWriter().write(sb);
-                    StudyManager.getInstance().importDatasetTSV(study, dsDef, sb.toString(), System.currentTimeMillis(),
+                    String[] newRows = StudyManager.getInstance().importDatasetTSV(study, dsDef, sb.toString(), System.currentTimeMillis(),
                             Collections.<String,String>emptyMap(), errors, true);
 
                     if (startedTransaction)
                         schema.getScope().commitTransaction();
+
+                    ViewContext context = form.getViewContext();
+                    StudyServiceImpl.addDatasetAuditEvent(context.getUser(), context.getContainer(), dsDef,
+                            "Dataset snapshot was updated. " + numRowsDeleted + " rows were removed and replaced with " + newRows.length + " rows.", null);
 
                     return new ActionURL(StudyController.DatasetAction.class, form.getViewContext().getContainer()).
                             addParameter(DataSetDefinition.DATASETKEY, dsDef.getDataSetId());
@@ -233,5 +227,29 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider
             }
         }
         return ret;
+    }
+
+    public HttpView createAuditView(QuerySnapshotForm form) throws Exception
+    {
+        ViewContext context = form.getViewContext();
+        QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(context.getContainer(), form.getSchemaName(), form.getSnapshotName());
+
+        if (def != null)
+        {
+            Study study = StudyManager.getInstance().getStudy(context.getContainer());
+            DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinition(study, def.getName());
+            if (dsDef != null)
+                return DatasetAuditViewFactory.getInstance().createDatasetView(context, dsDef);
+        }
+        return null;
+    }
+
+    public ActionURL getEditSnapshotURL(QuerySettings settings, ViewContext context)
+    {
+        QuerySettings qs = new QuerySettings(context, QueryView.DATAREGIONNAME_DEFAULT);
+        return new ActionURL(StudyController.EditSnapshotAction.class, context.getContainer()).
+                addParameter(qs.param(QueryParam.schemaName), settings.getSchemaName()).
+                addParameter("snapshotName", settings.getQueryName()).
+                addParameter(qs.param(QueryParam.queryName), settings.getQueryName());
     }
 }

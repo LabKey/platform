@@ -18,6 +18,7 @@ package org.labkey.study.controllers;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.log4j.Logger;
@@ -42,6 +43,8 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.query.*;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
+import org.labkey.api.query.snapshot.QuerySnapshotForm;
+import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ChartQueryReport;
@@ -4053,6 +4056,174 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class CreateSnapshotAction extends FormViewAction<QuerySnapshotForm>
+    {
+        ActionURL _successURL;
+
+        public void validateCommand(QuerySnapshotForm form, Errors errors)
+        {
+            String name = StringUtils.trimToNull(form.getSnapshotName());
+
+            if (name != null)
+            {
+                QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName(), name);
+                if (def != null)
+                    errors.reject("snapshotQuery.error", "A Snapshot with the same name already exists");
+            }
+            else
+                errors.reject("snapshotQuery.error", "The Query Snapshot name cannot be blank");
+        }
+
+        public ModelAndView getView(QuerySnapshotForm form, boolean reshow, BindException errors) throws Exception
+        {
+            if (!reshow)
+            {
+                List<DisplayColumn> columns = QuerySnapshotService.get(form.getSchemaName()).getDisplayColumns(form);
+                String[] columnNames = new String[columns.size()];
+                int i=0;
+
+                for (DisplayColumn dc : columns)
+                    columnNames[i++] = dc.getName();
+                form.setSnapshotColumns(columnNames);
+            }
+
+            String redirect = getViewContext().getActionURL().getParameter("successURL");
+            if (redirect != null)
+                return HttpView.redirect(PageFlowUtil.decode(redirect));
+
+            if (!reshow || errors.hasErrors())
+                return new JspView<QueryForm>("/org/labkey/study/view/createDatasetSnapshot.jsp", form, errors);
+            else
+            {
+                Study study = getStudy();
+                DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinition(study, form.getSnapshotName());
+
+                if (dsDef == null)
+                    return HttpView.throwNotFoundMV("Unable to edit the created DataSet Definition");
+
+                Map props = PageFlowUtil.map(
+                        "studyId", String.valueOf(study.getRowId()),
+                        "datasetId", String.valueOf(dsDef.getDataSetId()),
+                        "typeURI", dsDef.getTypeURI(),
+                        "dateBased", "false",
+                        "returnURL", getViewContext().cloneActionURL().addParameter("successURL", PageFlowUtil.encode(_successURL.getLocalURIString())).toString(),
+                        "create", "false");
+
+                HtmlView text = new HtmlView("Modify the properties and schema (form fields/properties) for this dataset.<br>Click the save button to " +
+                        "save any changes, else click the cancel button to complete the snapshot.");
+                HttpView view = new GWTView("org.labkey.study.dataset.Designer", props);
+
+                // hack for 4404 : Lookup picker performance is terrible when there are many containers
+                ContainerManager.getAllChildren(ContainerManager.getRoot());
+
+                return new VBox(text, view);
+            }
+        }
+
+        public boolean handlePost(QuerySnapshotForm form, BindException errors) throws Exception
+        {
+            _successURL = QuerySnapshotService.get(form.getSchemaName()).createSnapshot(form);
+            return true;
+        }
+
+        public ActionURL getSuccessURL(QuerySnapshotForm queryForm)
+        {
+            return null;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Create Query Snapshot");
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class EditSnapshotAction extends FormViewAction<QuerySnapshotForm>
+    {
+        ActionURL _successURL;
+
+        public void validateCommand(QuerySnapshotForm form, Errors errors)
+        {
+        }
+
+        public ModelAndView getView(QuerySnapshotForm form, boolean reshow, BindException errors) throws Exception
+        {
+            if (!reshow)
+                form.init(QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName(), form.getSnapshotName()));
+
+            VBox box = new VBox();
+            QuerySnapshotService.I provider = QuerySnapshotService.get(form.getSchemaName());
+
+            if (provider != null)
+            {
+                boolean showHistory = BooleanUtils.toBoolean(getViewContext().getActionURL().getParameter("showHistory"));
+                boolean showDataset = BooleanUtils.toBoolean(getViewContext().getActionURL().getParameter("showDataset"));
+
+                box.addView(new JspView<QueryForm>("/org/labkey/study/view/editSnapshot.jsp", form, errors));
+
+                if (showHistory)
+                {
+                    HttpView historyView = provider.createAuditView(form);
+                    if (historyView != null)
+                        box.addView(historyView);
+                }
+
+                if (showDataset)
+                {
+                    Study study = getStudy();
+                    DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinition(study, form.getSnapshotName());
+
+                    if (dsDef == null)
+                        return HttpView.throwNotFoundMV("Unable to edit the created DataSet Definition");
+
+                    Map props = PageFlowUtil.map(
+                            "studyId", String.valueOf(study.getRowId()),
+                            "datasetId", String.valueOf(dsDef.getDataSetId()),
+                            "typeURI", dsDef.getTypeURI(),
+                            "dateBased", "false",
+                            "returnURL", getViewContext().cloneActionURL().replaceParameter("showDataset", "0").toString(),
+                            "create", "false");
+
+                    HtmlView text = new HtmlView("Modify the properties and schema (form fields/properties) for this dataset.<br>Click the save button to " +
+                            "save any changes, else click the cancel button to complete the snapshot.");
+                    HttpView view = new GWTView("org.labkey.study.dataset.Designer", props);
+
+                    // hack for 4404 : Lookup picker performance is terrible when there are many containers
+                    ContainerManager.getAllChildren(ContainerManager.getRoot());
+
+                    box.addView(text);
+                    box.addView(view);
+                }
+            }
+            return box;
+        }
+
+        public boolean handlePost(QuerySnapshotForm form, BindException errors) throws Exception
+        {
+            QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName(), form.getSnapshotName());
+            if (def != null)
+            {
+                def.setColumns(form.getFieldKeyColumns());
+                _successURL = QuerySnapshotService.get(form.getSchemaName()).updateSnapshotDefinition(getViewContext(), def);
+            }
+            else
+                errors.reject("snapshotQuery.error", "Unable to create QuerySnapshotDefinition");
+
+            return false;
+        }
+
+        public ActionURL getSuccessURL(QuerySnapshotForm form)
+        {
+            return _successURL;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Edit Query Snapshot");
+        }
+    }
+    
     public static class StudySnapshotBean
     {
         private final StudyManager.SnapshotBean bean;

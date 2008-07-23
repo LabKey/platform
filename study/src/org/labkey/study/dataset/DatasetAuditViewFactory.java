@@ -88,6 +88,18 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
         return view;
     }
 
+    public AuditLogQueryView createDatasetView(ViewContext context, DataSetDefinition def)
+    {
+        SimpleFilter filter = new SimpleFilter("IntKey1", def.getRowId());
+        filter.addCondition("EventType", DATASET_AUDIT_EVENT, CompareType.EQUAL);
+
+        AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, getEventType());
+        view.setSort(new Sort("-Date"));
+        view.setTitle("<br/><b>Dataset Snapshot History:</b>");
+
+        return view;
+    }
+    
     @Override
     public void setupTable(final TableInfo table)
     {
