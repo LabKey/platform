@@ -27,6 +27,8 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.util.StartupListener;
+import org.labkey.api.util.ContextListener;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
@@ -38,6 +40,7 @@ import org.labkey.audit.query.AuditQuerySchema;
 import org.labkey.audit.query.AuditQueryViewImpl;
 import org.labkey.common.util.Pair;
 
+import javax.servlet.ServletContext;
 import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.BufferedOutputStream;
@@ -51,21 +54,33 @@ import java.util.*;
  * User: Karl Lum
  * Date: Oct 4, 2007
  */
-public class AuditLogImpl implements AuditLogService.I
+public class AuditLogImpl implements AuditLogService.I, StartupListener
 {
+    private static final AuditLogImpl _instance = new AuditLogImpl();
+
     private static final Logger _log = Logger.getLogger(AuditLogImpl.class);
     private static final String OBJECT_XML_KEY = "objectXML";
     private static Map<String, AuditLogService.AuditViewFactory> _auditViewFactories = new HashMap<String, AuditLogService.AuditViewFactory>();
 
     private Queue<Pair<User, AuditLogEvent>> _eventQueue = new LinkedList<Pair<User, AuditLogEvent>>();
-    private boolean _startupComplete = false;
+    private boolean _logToDatabase = false;
     private static final Object STARTUP_LOCK = new Object();
 
-    public void startupComplete()
+    public static AuditLogImpl get()
+    {
+        return _instance;
+    }
+
+    private AuditLogImpl()
+    {
+        ContextListener.addStartupListener(this);
+    }
+
+    public void moduleStartupComplete(ServletContext servletContext)
     {
         synchronized (STARTUP_LOCK)
         {
-            _startupComplete = true;
+            _logToDatabase = true;
 
             while (!_eventQueue.isEmpty())
             {
@@ -211,7 +226,7 @@ public class AuditLogImpl implements AuditLogService.I
              */
             synchronized (STARTUP_LOCK)
             {
-                if (_startupComplete)
+                if (_logToDatabase)
                     return LogManager.get().insertEvent(user, event);
                 else
                     _eventQueue.add(new Pair<User, AuditLogEvent>(user, event));

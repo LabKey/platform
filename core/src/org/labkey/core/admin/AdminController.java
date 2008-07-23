@@ -133,11 +133,12 @@ public class AdminController extends SpringActionController
             JspView view = new JspView<AdminBean>("/org/labkey/core/admin/admin.jsp", bean);
 
             // Configuration
-            bean.addConfigurationLink("site settings", new ActionURL("admin", "showCustomizeSite.view", ""));
+            bean.addConfigurationLink("site settings", new AdminUrlsImpl().getCustomizeSiteURL());
+            bean.addConfigurationLink("look and feel settings", new AdminUrlsImpl().getLookAndFeelSettingsURL(ContainerManager.getRoot()));
             bean.addConfigurationLink("authentication", PageFlowUtil.urlProvider(LoginUrls.class).getConfigureURL());
             bean.addConfigurationLink("flow cytometry", new ActionURL("flow", "flowAdmin.view", ""));
-            bean.addConfigurationLink("email customization", new ActionURL("admin", "customizeEmail.view", ""));
-            bean.addConfigurationLink("project display order", new ActionURL("admin", "reorderFolders.view", ""));
+            bean.addConfigurationLink("email customization", new ActionURL(CustomizeEmailAction.class, ContainerManager.getRoot()));
+            bean.addConfigurationLink("project display order", new ActionURL(ReorderFoldersAction.class, ContainerManager.getRoot()));
             bean.addConfigurationLink("R view configuration", new ActionURL("reports", "configureRReport.view", ""));
             bean.addConfigurationLink("analytics settings", new ActionURL(AnalyticsController.BeginAction.class, ContainerManager.getRoot()));
 
@@ -150,19 +151,19 @@ public class AdminController extends SpringActionController
             bean.addManagementLink("pipeline email notification", url);
             bean.addManagementLink("protein databases", new ActionURL("ms2", "showProteinAdmin.view", ""));
             if (AuditLogService.get().isViewable())
-                bean.addManagementLink("audit log", new ActionURL("admin", "showAuditLog.view", ""));
+                bean.addManagementLink("audit log", new ActionURL(ShowAuditLogAction.class, ContainerManager.getRoot()));
 
             // Diagnostics
-            bean.addDiagnosticsLink("running threads", new ActionURL("admin", "showThreads.view", ""));
-            bean.addDiagnosticsLink("memory usage", new ActionURL("admin", "memTracker.view", ""));
-            bean.addDiagnosticsLink("actions", new ActionURL("admin", "actions.view", ""));
-            bean.addDiagnosticsLink("scripts", new ActionURL("admin", "scripts.view", ""));
-            bean.addDiagnosticsLink("groovy templates", new ActionURL("admin", "groovy.view", ""));
-            bean.addDiagnosticsLink("view all site errors", new ActionURL("admin", "showAllErrors.view", ""));
-            bean.addDiagnosticsLink("view all site errors since reset", new ActionURL("admin", "showErrorsSinceMark.view", ""));
-            bean.addDiagnosticsLink("reset site errors", new ActionURL("admin", "resetErrorMark.view", ""));
-            bean.addDiagnosticsLink("check database", new ActionURL("admin", "dbChecker.view", ""));
-            bean.addDiagnosticsLink("credits", new ActionURL("admin", "credits.view", ""));
+            bean.addDiagnosticsLink("running threads", new ActionURL(ShowThreadsAction.class, ContainerManager.getRoot()));
+            bean.addDiagnosticsLink("memory usage", new ActionURL(MemTrackerAction.class, ContainerManager.getRoot()));
+            bean.addDiagnosticsLink("actions", new ActionURL(ActionsAction.class, ContainerManager.getRoot()));
+            bean.addDiagnosticsLink("scripts", new ActionURL(ScriptsAction.class, ContainerManager.getRoot()));
+            bean.addDiagnosticsLink("groovy templates", new ActionURL(GroovyAction.class, ContainerManager.getRoot()));
+            bean.addDiagnosticsLink("view all site errors", new ActionURL(ShowAllErrorsAction.class, ContainerManager.getRoot()));
+            bean.addDiagnosticsLink("view all site errors since reset", new ActionURL(ShowErrorsSinceMarkAction.class, ContainerManager.getRoot()));
+            bean.addDiagnosticsLink("reset site errors", new ActionURL(ResetErrorMarkAction.class, ContainerManager.getRoot()));
+            bean.addDiagnosticsLink("check database", new ActionURL(DbCheckerAction.class, ContainerManager.getRoot()));
+            bean.addDiagnosticsLink("credits", new ActionURL(CreditsAction.class, ContainerManager.getRoot()));
 
             return view;
         }
@@ -310,6 +311,26 @@ public class AdminController extends SpringActionController
         public ActionURL getModuleStatusURL()
         {
             return AdminController.getModuleStatusURL(false);
+        }
+
+        public ActionURL getCustomizeSiteURL()
+        {
+            return new ActionURL(ShowCustomizeSiteAction.class, ContainerManager.getRoot());
+        }
+
+        public ActionURL getCustomizeSiteURL(boolean upgradeInProgress)
+        {
+            ActionURL url = getCustomizeSiteURL();
+
+            if (upgradeInProgress)
+                url.addParameter("upgradeInProgress", "1");
+
+            return url;
+        }
+
+        public ActionURL getLookAndFeelSettingsURL(Container c)
+        {
+            return new ActionURL(LookAndFeelSettingsAction.class, c);
         }
     }
 
@@ -984,15 +1005,23 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
+    @RequiresPermission(ACL.PERM_ADMIN)
     public class ResetFaviconAction extends SimpleRedirectAction
     {
+        public void checkPermissions() throws TermsOfUseException, UnauthorizedException
+        {
+            super.checkPermissions();
+
+            if (getContainer().isRoot() && !getUser().isAdministrator())
+                throw new UnauthorizedException();
+        }
+
         public ActionURL getRedirectURL(Object o) throws Exception
         {
             deleteExistingFavicon();
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();
 
-            return getCustomizeSiteURL();
+            return new AdminUrlsImpl().getLookAndFeelSettingsURL(getContainer());
         }
     }
 
@@ -1007,11 +1036,19 @@ public class AdminController extends SpringActionController
     @RequiresSiteAdmin
     public class ResetLogoAction extends SimpleRedirectAction
     {
+        public void checkPermissions() throws TermsOfUseException, UnauthorizedException
+        {
+            super.checkPermissions();
+
+            if (getContainer().isRoot() && !getUser().isAdministrator())
+                throw new UnauthorizedException();
+        }
+
         public ActionURL getRedirectURL(Object o) throws Exception
         {
             deleteExistingLogo();
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();
-            return getCustomizeSiteURL();
+            return new AdminUrlsImpl().getLookAndFeelSettingsURL(getContainer());
         }
     }
 
@@ -1071,7 +1108,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    private void validateNetworkDrive(SiteAdminForm form, BindException errors)
+    private void validateNetworkDrive(SiteSettingsForm form, BindException errors)
     {
         if (form.getNetworkDriveLetter() == null || form.getNetworkDriveLetter().trim().length() > 1)
         {
@@ -1089,34 +1126,137 @@ public class AdminController extends SpringActionController
     }
 
 
-    // TODO: Move to public interface
-    public static ActionURL getCustomizeSiteURL()
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class LookAndFeelSettingsAction extends FormViewAction<LookAndFeelSettingsForm>
     {
-        return new ActionURL(ShowCustomizeSiteAction.class, ContainerManager.getRoot());
+        public void checkPermissions() throws TermsOfUseException, UnauthorizedException
+        {
+            super.checkPermissions();
+
+            if (getContainer().isRoot() && !getUser().isAdministrator())
+                throw new UnauthorizedException();
+        }
+
+        public void validateCommand(LookAndFeelSettingsForm target, Errors errors)
+        {
+        }
+
+        public ModelAndView getView(LookAndFeelSettingsForm form, boolean reshow, BindException errors) throws Exception
+        {
+            Container c = getContainer();
+
+            if (c.isRoot() || c.isProject())
+            {
+                LookAndFeelBean bean = new LookAndFeelBean(form.getThemeName());
+                return new JspView<LookAndFeelBean>("/org/labkey/core/admin/lookAndFeelSettings.jsp", bean, errors);
+            }
+            else
+            {
+                throw new NotFoundException("Can only be called for root or project.");
+            }
+        }
+
+        public boolean handlePost(LookAndFeelSettingsForm form, BindException errors) throws Exception
+        {
+            WriteableAppProps props = AppProps.getWriteableInstance();
+
+            Map<String, MultipartFile> fileMap = getFileMap();
+            MultipartFile logoFile = fileMap.get("logoImage");
+            if (logoFile != null && !logoFile.isEmpty())
+            {
+                try
+                {
+                    handleLogoFile(logoFile);
+                }
+                catch (Exception e)
+                {
+                    errors.reject(ERROR_MSG, e.getMessage());
+                    return false;
+                }
+            }
+
+            MultipartFile iconFile = fileMap.get("iconImage");
+            if (logoFile != null && !iconFile.isEmpty())
+            {
+                try
+                {
+                    handleIconFile(iconFile);
+                }
+                catch (Exception e)
+                {
+                    errors.reject(ERROR_MSG, e.getMessage());
+                    return false;
+                }
+            }
+
+            try
+            {
+                if (form.getThemeName() != null)
+                {
+                    WebTheme theme = WebTheme.getTheme(form.getThemeName());
+                    if (theme != null)
+                    {
+                        WebTheme.setTheme(theme);
+                        props.setThemeName(theme.getFriendlyName());
+                    }
+                    ThemeFont themeFont = ThemeFont.getThemeFont(form.getThemeFont());
+                    if (themeFont != null)
+                    {
+                        ThemeFont.setThemeFont(themeFont);
+                        props.setThemeFont(themeFont.getFriendlyName());
+                    }
+                    AttachmentCache.clearGradientCache();
+                    ButtonServlet.resetColorScheme();
+                }
+            }
+            catch (IllegalArgumentException e)
+            {
+            }
+
+            props.setSystemDescription(form.getSystemDescription());
+            props.setLogoHref(form.getLogoHref());
+            props.setSystemShortName(form.getSystemShortName());
+            props.setNavigationBarWidth(form.getNavigationBarWidth());
+            FolderDisplayMode folderDisplayMode = FolderDisplayMode.ALWAYS;
+            try
+            {
+                folderDisplayMode = FolderDisplayMode.fromString(form.getFolderDisplayMode());
+            }
+            catch (IllegalArgumentException e)
+            {
+            }
+            props.setFolderDisplayMode(folderDisplayMode);
+
+            props.incrementLookAndFeelRevision();
+            props.save();
+
+            //write an audit log event
+            props.writeAuditLogEvent(getViewContext().getUser(), props.getOldProperties());
+
+            return true;
+        }
+
+        public ActionURL getSuccessURL(LookAndFeelSettingsForm form)
+        {
+            return new ActionURL(this.getClass(), getContainer());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return appendAdminNavTrail(root, "Look and Feel Settings", this.getClass());
+        }
     }
-
-
-    public static ActionURL getCustomizeSiteURL(boolean upgradeInProgress)
-    {
-        ActionURL url = getCustomizeSiteURL();
-
-        if (upgradeInProgress)
-            url.addParameter("upgradeInProgress", "1");
-
-        return url;
-    }
-
 
     @RequiresSiteAdmin
-    public class ShowCustomizeSiteAction extends FormViewAction<SiteAdminForm>
+    public class ShowCustomizeSiteAction extends FormViewAction<SiteSettingsForm>
     {
-        public ModelAndView getView(SiteAdminForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(SiteSettingsForm form, boolean reshow, BindException errors) throws Exception
         {
             if (form.isUpgradeInProgress())
                 getPageConfig().setTemplate(Template.Dialog);
 
-            CustomizeSiteBean bean = new CustomizeSiteBean(form.isUpgradeInProgress(), form.getThemeName(), form.isTestInPage());
-            return new JspView<CustomizeSiteBean>("/org/labkey/core/admin/customizeSite.jsp", bean, errors);
+            SiteSettingsBean bean = new SiteSettingsBean(form.isUpgradeInProgress(), form.isTestInPage());
+            return new JspView<SiteSettingsBean>("/org/labkey/core/admin/customizeSite.jsp", bean, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1124,11 +1264,11 @@ public class AdminController extends SpringActionController
             return appendAdminNavTrail(root, "Customize Site", this.getClass());
         }
 
-        public void validateCommand(SiteAdminForm target, Errors errors)
+        public void validateCommand(SiteSettingsForm target, Errors errors)
         {
         }
 
-        public boolean handlePost(SiteAdminForm form, BindException errors) throws Exception
+        public boolean handlePost(SiteSettingsForm form, BindException errors) throws Exception
         {
             ModuleLoader.getInstance().setDeferUsageReport(false);
             HttpServletRequest request = getViewContext().getRequest();
@@ -1157,35 +1297,6 @@ public class AdminController extends SpringActionController
                 if (error != null)
                 {
                     errors.reject(ERROR_MSG, error);
-                    return false;
-                }
-            }
-
-            Map<String, MultipartFile> fileMap = getFileMap();
-            MultipartFile logoFile = fileMap.get("logoImage");
-            if (logoFile != null && !logoFile.isEmpty())
-            {
-                try
-                {
-                    handleLogoFile(logoFile);
-                }
-                catch (Exception e)
-                {
-                    errors.reject(ERROR_MSG, e.getMessage());
-                    return false;
-                }
-            }
-
-            MultipartFile iconFile = fileMap.get("iconImage");
-            if (logoFile != null && !iconFile.isEmpty())
-            {
-                try
-                {
-                    handleIconFile(iconFile);
-                }
-                catch (Exception e)
-                {
-                    errors.reject(ERROR_MSG, e.getMessage());
                     return false;
                 }
             }
@@ -1228,36 +1339,11 @@ public class AdminController extends SpringActionController
             }
 
             WriteableAppProps props = AppProps.getWriteableInstance();
-            try
-            {
-                if (form.getThemeName() != null)
-                {
-                    WebTheme theme = WebTheme.getTheme(form.getThemeName());
-                    if (theme != null)
-                    {
-                        WebTheme.setTheme(theme);
-                        props.setThemeName(theme.getFriendlyName());
-                    }
-                    ThemeFont themeFont = ThemeFont.getThemeFont(form.getThemeFont());
-                    if (themeFont != null)
-                    {
-                        ThemeFont.setThemeFont(themeFont);
-                        props.setThemeFont(themeFont.getFriendlyName());
-                    }
-                    AttachmentCache.clearGradientCache();
-                    ButtonServlet.resetColorScheme();
-                }
-            }
-            catch (IllegalArgumentException e)
-            {
-            }
 
             props.setCompanyName(form.getCompanyName());
             props.setDefaultDomain(form.getDefaultDomain());
             props.setDefaultLsidAuthority(form.getDefaultLsidAuthority());
-            props.setLogoHref(form.getLogoHref());
             props.setReportAProblemPath(form.getReportAProblemPath());
-            props.setSystemDescription(form.getSystemDescription());
 
             // Need to strip out any extraneous characters from the email address.
             // E.g. "LabKey <info@labkey.com>" -> "info@labkey.com"
@@ -1281,7 +1367,6 @@ public class AdminController extends SpringActionController
                 return false;
             }
 
-            props.setSystemShortName(form.getSystemShortName());
             props.setPerlPipelineEnabled(form.isPerlPipelineEnabled());
             props.setPipelineToolsDir(form.getPipelineToolsDirectory());
             props.setCallbackPassword(form.getCallbackPassword());
@@ -1289,16 +1374,6 @@ public class AdminController extends SpringActionController
             props.setSSLRequired(form.isSslRequired());
             props.setSSLPort(form.getSslPort());
             props.setMemoryUsageDumpInterval(form.getMemoryUsageDumpInterval());
-            props.setNavigationBarWidth(form.getNavigationBarWidth());
-            FolderDisplayMode folderDisplayMode = FolderDisplayMode.ALWAYS;
-            try
-            {
-                folderDisplayMode = FolderDisplayMode.fromString(form.getFolderDisplayMode());
-            }
-            catch (IllegalArgumentException e)
-            {
-            }
-            props.setFolderDisplayMode(folderDisplayMode);
 
             // Save the old system maintenance property values, compare with the new ones, and set a flag if they've changed
             String oldInterval = props.getSystemMaintenanceInterval();
@@ -1339,7 +1414,6 @@ public class AdminController extends SpringActionController
             catch (IllegalArgumentException e)
             {
             }
-            props.incrementLookAndFeelRevision();
 
             if (form.getNetworkDriveLetter() != null && form.getNetworkDriveLetter().trim().length() > 0)
             {
@@ -1382,7 +1456,7 @@ public class AdminController extends SpringActionController
             return true;
         }
 
-        public ActionURL getSuccessURL(SiteAdminForm form)
+        public ActionURL getSuccessURL(SiteSettingsForm form)
         {
             if (form.isUpgradeInProgress())
             {
@@ -1390,31 +1464,25 @@ public class AdminController extends SpringActionController
             }
             else
             {
-                return getCustomizeSiteURL();
+                return new AdminUrlsImpl().getCustomizeSiteURL();
             }
         }
     }
 
 
-    public static class CustomizeSiteBean
+    public static class LookAndFeelBean
     {
+        public String helpLink = "<a href=\"" + (new HelpTopic("configAdmin", HelpTopic.Area.SERVER)).getHelpTopicLink() + "\" target=\"labkey\">more info...</a>";
         public List<WebTheme> themes = WebTheme.getWebThemes();
         public WebTheme currentTheme = WebTheme.getTheme();
         public List<ThemeFont> themeFonts = ThemeFont.getThemeFonts();
         public ThemeFont currentThemeFont = ThemeFont.getThemeFont();
         public Attachment customLogo;
         public Attachment customFavIcon;
-        public String helpLink = "<a href=\"" + (new HelpTopic("configAdmin", HelpTopic.Area.SERVER)).getHelpTopicLink() + "\" target=\"labkey\">more info...</a>";
-        public String ftpHelpLink = "<a href=\"" + (new HelpTopic("configureFtp", HelpTopic.Area.SERVER)).getHelpTopicLink() + "\" target=\"labkey\">help configuring ftp...</a>";
-        public boolean upgradeInProgress;
-        public boolean testInPage;
         public WebTheme newTheme = null;
 
-        private CustomizeSiteBean(boolean upgradeInProgress, String newThemeName, boolean testInPage) throws SQLException
+        private LookAndFeelBean(String newThemeName) throws SQLException
         {
-            this.upgradeInProgress = upgradeInProgress;
-            this.testInPage = testInPage;
-
             customLogo = AttachmentCache.lookupLogoAttachment();
             customFavIcon = AttachmentCache.lookupFavIconAttachment();
 
@@ -1425,52 +1493,31 @@ public class AdminController extends SpringActionController
     }
 
 
-    public static class SiteAdminForm
+    public static class SiteSettingsBean
     {
-        private boolean _upgradeInProgress = false;
-        private boolean _testInPage = false;
+        // TODO: Different help link?
+        public String helpLink = "<a href=\"" + (new HelpTopic("configAdmin", HelpTopic.Area.SERVER)).getHelpTopicLink() + "\" target=\"labkey\">more info...</a>";
+        public String ftpHelpLink = "<a href=\"" + (new HelpTopic("configureFtp", HelpTopic.Area.SERVER)).getHelpTopicLink() + "\" target=\"labkey\">help configuring ftp...</a>";
+        public boolean upgradeInProgress;
+        public boolean testInPage;
 
+        private SiteSettingsBean(boolean upgradeInProgress, boolean testInPage) throws SQLException
+        {
+            this.upgradeInProgress = upgradeInProgress;
+            this.testInPage = testInPage;
+        }
+    }
+
+
+    public static class LookAndFeelSettingsForm
+    {
         private String _systemDescription;
-        private String _companyName;
         private String _systemShortName;
-        private String _logoHref;
-        private String _systemEmailAddress;
-        private String _defaultDomain;
-        private String _defaultLsidAuthority;
-        private String _reportAProblemPath;
         private String _themeName;
-        private boolean _perlPipelineEnabled;
-        private String _pipelineToolsDirectory;
-        private boolean _sequest;
-        private String _sequestServer;
-        private boolean _sslRequired;
-        private boolean _adminOnlyMode;
-        private String _adminOnlyMessage;
-        private int _sslPort;
-        private String _systemMaintenanceInterval;
-        private String _systemMaintenanceTime;
-        private int _memoryUsageDumpInterval;
-        private String _exceptionReportingLevel;
-        private String _usageReportingLevel;
-        private String _mascotServer;
-        private String _mascotUserAccount;
-        private String _mascotUserPassword;
-        private String _mascotHTTPProxy;
         private String _themeFont;
-        private String _pipelineFTPHost;
-        private String _pipelineFTPPort;
-        private boolean _pipelineFTPSecure;
-        private String _navigationBarWidth;
         private String _folderDisplayMode;
-
-        private String _networkDriveLetter;
-        private String _networkDrivePath;
-        private String _networkDriveUser;
-        private String _networkDrivePassword;
-        private boolean _caBIGEnabled;
-        private String _baseServerUrl;
-        private String _microarrayFeatureExtractionServer;
-        private String _callbackPassword;
+        private String _navigationBarWidth;
+        private String _logoHref;
 
         public String getSystemDescription()
         {
@@ -1492,6 +1539,46 @@ public class AdminController extends SpringActionController
             _systemShortName = systemShortName;
         }
 
+        public String getThemeName()
+        {
+            return _themeName;
+        }
+
+        public void setThemeName(String themeName)
+        {
+            _themeName = themeName;
+        }
+
+        public String getThemeFont()
+        {
+            return _themeFont;
+        }
+
+        public void setThemeFont(String themeFont)
+        {
+            _themeFont = themeFont;
+        }
+
+        public String getFolderDisplayMode()
+        {
+            return _folderDisplayMode;
+        }
+
+        public void setFolderDisplayMode(String folderDisplayMode)
+        {
+            _folderDisplayMode = folderDisplayMode;
+        }
+
+        public String getNavigationBarWidth()
+        {
+            return _navigationBarWidth;
+        }
+
+        public void setNavigationBarWidth(String navigationBarWidth)
+        {
+            _navigationBarWidth = navigationBarWidth;
+        }
+
         public String getLogoHref()
         {
             return _logoHref;
@@ -1500,6 +1587,68 @@ public class AdminController extends SpringActionController
         public void setLogoHref(String logoHref)
         {
             _logoHref = logoHref;
+        }
+    }
+
+    public static class SiteSettingsForm
+    {
+        private boolean _upgradeInProgress = false;
+        private boolean _testInPage = false;
+
+        private String _reportAProblemPath;
+        private String _companyName;
+
+        private String _systemEmailAddress;
+        private String _defaultDomain;
+        private String _defaultLsidAuthority;
+        private boolean _perlPipelineEnabled;
+        private String _pipelineToolsDirectory;
+        private boolean _sequest;
+        private String _sequestServer;
+        private boolean _sslRequired;
+        private boolean _adminOnlyMode;
+        private String _adminOnlyMessage;
+        private int _sslPort;
+        private String _systemMaintenanceInterval;
+        private String _systemMaintenanceTime;
+        private int _memoryUsageDumpInterval;
+        private String _exceptionReportingLevel;
+        private String _usageReportingLevel;
+        private String _mascotServer;
+        private String _mascotUserAccount;
+        private String _mascotUserPassword;
+        private String _mascotHTTPProxy;
+        private String _pipelineFTPHost;
+        private String _pipelineFTPPort;
+        private boolean _pipelineFTPSecure;
+
+        private String _networkDriveLetter;
+        private String _networkDrivePath;
+        private String _networkDriveUser;
+        private String _networkDrivePassword;
+        private boolean _caBIGEnabled;
+        private String _baseServerUrl;
+        private String _microarrayFeatureExtractionServer;
+        private String _callbackPassword;
+
+        public String getCompanyName()
+        {
+            return _companyName;
+        }
+
+        public void setCompanyName(String companyName)
+        {
+            _companyName = companyName;
+        }
+
+        public String getReportAProblemPath()
+        {
+            return _reportAProblemPath;
+        }
+
+        public void setReportAProblemPath(String reportAProblemPath)
+        {
+            _reportAProblemPath = reportAProblemPath;
         }
 
         public String getMascotServer()
@@ -1600,46 +1749,6 @@ public class AdminController extends SpringActionController
         public void setDefaultLsidAuthority(String defaultLsidAuthority)
         {
             _defaultLsidAuthority = defaultLsidAuthority;
-        }
-
-        public String getReportAProblemPath()
-        {
-            return _reportAProblemPath;
-        }
-
-        public void setReportAProblemPath(String reportAProblemPath)
-        {
-            _reportAProblemPath = reportAProblemPath;
-        }
-
-        public String getThemeName()
-        {
-            return _themeName;
-        }
-
-        public void setThemeName(String themeName)
-        {
-            _themeName = themeName;
-        }
-
-        public String getThemeFont()
-        {
-            return _themeFont;
-        }
-
-        public void setThemeFont(String themeFont)
-        {
-            _themeFont = themeFont;
-        }
-
-        public String getCompanyName()
-        {
-            return _companyName;
-        }
-
-        public void setCompanyName(String companyName)
-        {
-            _companyName = companyName;
         }
 
         public boolean isPerlPipelineEnabled()
@@ -1782,26 +1891,6 @@ public class AdminController extends SpringActionController
             _memoryUsageDumpInterval = memoryUsageDumpInterval;
         }
 
-        public String getNavigationBarWidth()
-        {
-            return _navigationBarWidth;
-        }
-
-        public void setNavigationBarWidth(String navigationBarWidth)
-        {
-            _navigationBarWidth = navigationBarWidth;
-        }
-
-        public String getFolderDisplayMode()
-        {
-            return _folderDisplayMode;
-        }
-
-        public void setFolderDisplayMode(String folderDisplayMode)
-        {
-            _folderDisplayMode = folderDisplayMode;
-        }
-
         public String getNetworkDriveLetter()
         {
             return _networkDriveLetter;
@@ -1938,9 +2027,9 @@ public class AdminController extends SpringActionController
 
 
     @RequiresSiteAdmin
-    public class ShowNetworkDriveTestAction extends SimpleViewAction<SiteAdminForm>
+    public class ShowNetworkDriveTestAction extends SimpleViewAction<SiteSettingsForm>
     {
-        public ModelAndView getView(SiteAdminForm form, BindException errors) throws Exception
+        public ModelAndView getView(SiteSettingsForm form, BindException errors) throws Exception
         {
             NetworkDrive testDrive = new NetworkDrive();
             testDrive.setPassword(form.getNetworkDrivePassword());
@@ -2854,7 +2943,7 @@ public class AdminController extends SpringActionController
             String themeName = form.getThemeName();
             String friendlyName = form.getFriendlyName();
 
-            _successURL = AdminController.getCustomizeSiteURL(form.isUpgradeInProgress());
+            _successURL = new AdminUrlsImpl().getCustomizeSiteURL(form.isUpgradeInProgress());
 
             if (null != getViewContext().getRequest().getParameter("Delete.x"))
             {
@@ -3181,12 +3270,13 @@ public class AdminController extends SpringActionController
             }
             else
             {
-                ActionURL url = AdminController.getCustomizeSiteURL(true);
+                ActionURL url = new AdminUrlsImpl().getCustomizeSiteURL(true);
                 vbox.addView(new HtmlView("All modules are up-to-date.<br><br>" +
                         "<a href='" + url + "'><img border=0 src='" + PageFlowUtil.buttonSrc("Next") + "'></a>"));
             }
 
             getPageConfig().setTemplate(Template.Dialog);
+            getPageConfig().setTitle((ModuleLoader.getInstance().isNewInstall() ? "Install" : "Upgrade") + " Status");
 
             return vbox;
         }

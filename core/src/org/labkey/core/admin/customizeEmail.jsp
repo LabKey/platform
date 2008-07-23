@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AdminController.CustomEmailForm> me = (JspView<AdminController.CustomEmailForm>) HttpView.currentView();
@@ -189,7 +190,7 @@
         <tr><td></td><td><table id="validSubstitutions"></table></td></tr>
         <tr><td>&nbsp;</td></tr>
         <tr><td></td><td><i>The values of many of these parameters can be configured on
-            the <a href="<%=new ActionURL("admin", "showCustomizeSite", "")%>">Site Settings Page</a>.</i>
+            the <a href="<%=urlProvider(AdminUrls.class).getCustomizeSiteURL()%>">Site Settings Page</a>.</i>
         </tr>
     </table>
 </form><br/><br/>

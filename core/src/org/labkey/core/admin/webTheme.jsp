@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.WebTheme" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<AdminController.WebThemesBean> me = (HttpView<AdminController.WebThemesBean>) HttpView.currentView();
@@ -367,7 +368,7 @@ if (null == webThemeErrors)
         }
         else
             {%>
-            <%=PageFlowUtil.buttonLink("Done", AdminController.getCustomizeSiteURL(bean.form.isUpgradeInProgress()))%>
+            <%=PageFlowUtil.buttonLink("Done", PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeSiteURL(bean.form.isUpgradeInProgress()))%>
            <%}%>
     </td>
 </tr>
