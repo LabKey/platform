@@ -21,7 +21,6 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.Table;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
@@ -129,7 +128,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             try
             {
                 WriteableAppProps props = AppProps.getWriteableInstance();
-                File webappRoot = new File(viewContext.getRequest().getSession(true).getServletContext().getRealPath("/"));     // TODO: change to ModuleLoader.getServletContext()
+                File webappRoot = new File(ModuleLoader.getServletContext().getRealPath("/"));
                 props.setPipelineToolsDir(new File(webappRoot.getParentFile(), "bin").toString());
                 props.save();
             }
