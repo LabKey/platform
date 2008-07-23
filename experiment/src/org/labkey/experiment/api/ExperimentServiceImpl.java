@@ -539,7 +539,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public QueryView createExperimentRunWebPart(ViewContext context, ExperimentRunFilter filter, boolean moveButton, boolean exportXARButton)
     {
-        ExperimentRunListView view = ExperimentRunListView.createView(context, filter, false);
+        ExperimentRunListView view = ExperimentRunListView.createView(context, filter, true);
         view.setShowDeleteButton(true);
         view.setShowAddToRunGroupButton(true);
         view.setShowMoveRunsButton(moveButton);

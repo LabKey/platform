@@ -233,11 +233,6 @@ public class PipelineJobRunnerGlobus implements Callable
             job.getLogger().info(sb.toString());
             submitted = true;
         }
-        catch (Exception e)
-        {
-            job.getLogger().error("Failed submitting job to Globus", e);
-            throw e;
-        }
         finally
         {
             if (!submitted)

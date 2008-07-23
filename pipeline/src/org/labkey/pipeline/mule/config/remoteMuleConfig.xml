@@ -18,6 +18,8 @@
         </properties>
         <threading-profile id="receiver" maxBufferSize="0" maxThreadsActive="4"
                 maxThreadsIdle="0" threadTTL="100" poolExhaustedAction="WAIT"/>
+
+        <exception-strategy className="org.labkey.pipeline.mule.PipelineJobExceptionStrategy" />
     </connector>
 
     <endpoint-identifiers>
@@ -71,6 +73,8 @@
 
             <threading-profile maxThreadsActive="4" maxThreadsIdle="0" threadTTL="100"/>
             <pooling-profile maxActive="4" maxIdle="0" initialisationPolicy="INITIALISE_NONE"/>
+
+            <exception-strategy className="org.labkey.pipeline.mule.PipelineJobExceptionStrategy" />
         </mule-descriptor>
     </model>
 </mule-configuration>

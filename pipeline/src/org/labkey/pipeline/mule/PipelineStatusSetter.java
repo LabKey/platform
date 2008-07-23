@@ -28,22 +28,8 @@ import java.sql.SQLException;
  */
 public class PipelineStatusSetter
 {
-    private static Logger _log = Logger.getLogger(PipelineStatusSetter.class);
-
-    public void set(EPipelineStatus status)
+    public void set(EPipelineStatus status) throws Container.ContainerException, SQLException
     {
-        try
-        {
-            PipelineStatusManager.setStatusFile(status.getInfo(), status.getStatusFile());
-        }
-        catch (SQLException e)
-        {
-            // TODO: Correct handling?
-            _log.error("Failed to set status on " + status.getStatusFile().getFilePath(), e);
-        }
-        catch (Container.ContainerException e)
-        {
-            _log.error("Failed to set status on " + status.getStatusFile().getFilePath(), e);
-        }
+        PipelineStatusManager.setStatusFile(status.getInfo(), status.getStatusFile());
     }
 }

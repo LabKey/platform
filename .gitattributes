@@ -994,6 +994,7 @@ pipeline/src/org/labkey/pipeline/mule/LoggerUtil.java -text
 pipeline/src/org/labkey/pipeline/mule/MuleListenerHelper.java -text
 pipeline/src/org/labkey/pipeline/mule/MuleStartup.java -text
 pipeline/src/org/labkey/pipeline/mule/NoOpPipelineStatusWriter.java -text
+pipeline/src/org/labkey/pipeline/mule/PipelineJobExceptionStrategy.java -text
 pipeline/src/org/labkey/pipeline/mule/PipelineJobRunner.java -text
 pipeline/src/org/labkey/pipeline/mule/PipelineJobRunnerGlobus.java -text
 pipeline/src/org/labkey/pipeline/mule/PipelineProgressionRunner.java -text

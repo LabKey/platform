@@ -28,16 +28,6 @@ public class PipelineJobRunner
 {
     public void run(PipelineJob job)
     {
-        try
-        {
-            job.run();
-        }
-        catch (Throwable t)
-        {
-            String msg = t.getMessage();
-            if (msg == null)
-                msg = t.getClass().toString();
-            job.error(msg, t);
-        }
+        job.run();
     }
 }
