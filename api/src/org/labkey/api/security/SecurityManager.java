@@ -403,13 +403,14 @@ public class SecurityManager
 
     public static void setAuthenticatedUser(HttpServletRequest request, User user, User impersonatingUser)
     {
-        HttpSession s = request.getSession(true);
-        s.setAttribute(User.class.getName() + "$userId", user.getUserId());
-        s.setAttribute("LABKEY.username", user.getName());
-        s.removeAttribute(TERMS_APPROVED_KEY);   // Clear approved terms-of-use on every login (or impersonation)
+        invalidateSession(request);      // Clear out terms-of-use and other session info that guest / previous user may have
+
+        HttpSession newSession = request.getSession(true);
+        newSession.setAttribute(User.class.getName() + "$userId", user.getUserId());
+        newSession.setAttribute("LABKEY.username", user.getName());
 
         if (null != impersonatingUser)
-            s.setAttribute(User.class.getName() + "$impersonatingUserId", impersonatingUser.getUserId());
+            newSession.setAttribute(User.class.getName() + "$impersonatingUserId", impersonatingUser.getUserId());
     }
 
 
@@ -420,10 +421,29 @@ public class SecurityManager
     }
 
 
+    private static final String IMPERSONATORS_SESSION_MAP_KEY = "ImpersonatorsSessionMapKey";
+
     public static void impersonate(ViewContext viewContext, User impersonatedUser)
     {
+        HttpServletRequest request = viewContext.getRequest();
         User adminUser = viewContext.getUser();
-        SecurityManager.setAuthenticatedUser(viewContext.getRequest(), impersonatedUser, adminUser);
+
+        // We clear the session when we impersonate; we stash the admin's session attributes in the new
+        // session so we can reinstate them after impersonation is over.
+        Map<String, Object> impersonatorSessionAttributes = new HashMap<String, Object>();
+        HttpSession impersonatorSession = request.getSession(true);
+        Enumeration names = impersonatorSession.getAttributeNames();
+
+        while (names.hasMoreElements())
+        {
+            String name = (String) names.nextElement();
+            impersonatorSessionAttributes.put(name, impersonatorSession.getAttribute(name));
+        }
+
+        SecurityManager.setAuthenticatedUser(request, impersonatedUser, adminUser);
+        HttpSession userSession = request.getSession(true);
+        userSession.setAttribute(IMPERSONATORS_SESSION_MAP_KEY, impersonatorSessionAttributes);
+
         AuditLogService.get().addEvent(viewContext, UserManager.USER_AUDIT_EVENT, adminUser.getUserId(),
                 adminUser.getEmail() + " impersonated " + impersonatedUser.getEmail());
         AuditLogService.get().addEvent(viewContext, UserManager.USER_AUDIT_EVENT, impersonatedUser.getUserId(),
@@ -434,18 +454,39 @@ public class SecurityManager
     public static void stopImpersonating(ViewContext viewContext, User impersonatedUser)
     {
         assert impersonatedUser.isImpersonated();
-
-        invalidateSession(viewContext.getRequest());
+        HttpServletRequest request = viewContext.getRequest();
 
         if (impersonatedUser.isImpersonated())
         {
             User adminUser = impersonatedUser.getImpersonatingUser();
-            setAuthenticatedUser(viewContext.getRequest(), adminUser, null);
+
+            HttpSession userSession = request.getSession(true);
+            Map<String, Object> impersonatorSessionAttributes = (Map<String, Object>)userSession.getAttribute(IMPERSONATORS_SESSION_MAP_KEY);
+
+            assert null != impersonatorSessionAttributes;
+
+            if (null != impersonatorSessionAttributes)
+            {
+                invalidateSession(request);
+                HttpSession impersonatorSession = request.getSession(true);
+
+                for (Map.Entry<String, Object> entry : impersonatorSessionAttributes.entrySet())
+                    impersonatorSession.setAttribute(entry.getKey(), entry.getValue());
+            }
+            else
+            {
+                // Just in case
+                setAuthenticatedUser(request, adminUser, null);
+            }
 
             AuditLogService.get().addEvent(viewContext, UserManager.USER_AUDIT_EVENT, impersonatedUser.getUserId(),
                 impersonatedUser.getEmail() + " was no longer impersonated by " + adminUser.getEmail());
             AuditLogService.get().addEvent(viewContext, UserManager.USER_AUDIT_EVENT, adminUser.getUserId(),
                 adminUser.getEmail() + " stopped impersonating " + impersonatedUser.getEmail());
+        }
+        else
+        {
+            invalidateSession(request);
         }
     }
 
