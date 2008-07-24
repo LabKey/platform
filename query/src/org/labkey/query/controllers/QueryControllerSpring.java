@@ -1539,11 +1539,23 @@ public class QueryControllerSpring extends SpringActionController
             urlDelete.addParameter("dbUserSchemaId", Integer.toString(form.getBean().getDbUserSchemaId()));
             bb.add(new ActionButton("Delete", urlDelete));
             view.getDataRegion().setButtonBar(bb);
-            return view;
+
+            HtmlView help = new HtmlView("Only tables with primary keys defined are editable.  The 'editable' option above may be used to disable editing for all tables in this schema.");
+
+            return new VBox(view, help);
         }
 
         public boolean handlePost(DbUserSchemaForm form, BindException errors) throws Exception
         {
+            DbUserSchemaDef def = form.getBean();
+            String container = def.getDbContainer();
+            Container c = ContainerManager.getForId(container);
+            if (c == null)
+            {
+                c = ContainerManager.getForPath(container);
+                if (null != c)
+                    def.setDbContainer(c.getId());
+            }
             form.doUpdate();
             return true;
         }
