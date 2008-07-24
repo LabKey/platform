@@ -3471,11 +3471,16 @@ public class DavController extends SpringActionController
         return false;
     }
 
+    public static boolean isTempFile(File f)
+    {
+        if (f != null)
+            return _tempFiles.contains(f.getPath());
+        return false;
+    }
+
     private boolean isTempFile(WebdavResolver.Resource r)
     {
-        if (null != r.getFile())
-            return _tempFiles.contains(r.getFile().getPath());
-        return false;
+        return isTempFile(r.getFile());
     }
 
     public static ShutdownListener getShutdownListener()

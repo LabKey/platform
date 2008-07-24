@@ -108,7 +108,7 @@ function _updateDropUI()
         {
             ftpTransfers.innerHTML =
                 "<table class=\"normal\">" +
-                "<tr><th width=150>file<br><img src=\"" + LABKEY.contextPath + "/_.gif\" width=150 height=1></th><th>modified<br><img src=\"" + LABKEY.contextPath + "/_.gif\" width=150 height=1></th><th width=100>size<br><img src=\"" + LABKEY.contextPath + "/_.gif\" width=100 height=1></th><th style=\"width:200px;\">status<br><img src=\"" + LABKEY.contextPath + "/_.gif\" width=210 height=1></th></tr>" +
+                "<tr><th>&nbsp;</th><th width=150>file<br><img src=\"" + LABKEY.contextPath + "/_.gif\" width=150 height=1></th><th>modified<br><img src=\"" + LABKEY.contextPath + "/_.gif\" width=150 height=1></th><th width=100>size<br><img src=\"" + LABKEY.contextPath + "/_.gif\" width=100 height=1></th><th style=\"width:200px;\">status<br><img src=\"" + LABKEY.contextPath + "/_.gif\" width=210 height=1></th></tr>" +
                 "</table>";
             transfersTableInit = true;
         };
@@ -123,6 +123,7 @@ function _updateDropUI()
                 {
                     transfers[i] = {};
                     t = transfers[i];
+                    t.path = dropApplet.transfer_getPath(i);
                     t.name = dropApplet.transfer_getDisplayName(i);
                     t.length = dropApplet.transfer_getLength(i);
                     var m = dropApplet.transfer_getLastModified(i);
@@ -135,6 +136,8 @@ function _updateDropUI()
                     var trNew = _tr();
                     trNew.id = 'transfer[' + i + ']';
                     trNew.style.background = (i%2 == 0) ? "#eeeeee" : "#ffffff";
+                    t.tdButton  = _td(_button("cancel", "btnCancel_onClick(" + i + ")"));
+                    trNew.appendChild(t.tdButton);
                     var tdName = _td(_text(t.name));
                     trNew.appendChild(tdName);
                     var tdModified = _td(_text(t.modified));
@@ -155,16 +158,17 @@ function _updateDropUI()
             {
                 if (!dropApplet.transfer_getUpdated(i))
                     continue;
+                t = transfers[i];
                 var transfered = Math.max(0,dropApplet.transfer_getTransferred(i));
                 var percent = dropApplet.transfer_getPercent(i);
                 var state = dropApplet.transfer_getState(i);
                 var status = dropApplet.transfer_getStatus(i);
-                if ("tdStatus" in transfers[i] && transfers[i].tdStatus)
+                if ("tdStatus" in t && t.tdStatus)
                 {
-                    var tdStatus = transfers[i].tdStatus;
+                    var tdStatus = t.tdStatus;
                     if (state == INFO && percent > 0 && percent < 100)
                     {
-                        if (percent != transfers[i].percent)
+                        if (percent != t.percent)
                         {
                             var img = tdStatus.getElementsByTagName("IMG");
                             if (img && img[0] && img[1])
@@ -173,20 +177,44 @@ function _updateDropUI()
                                 img[1].style.width = "" + (2*(100-percent)) + "px"
                             }
                             else
-                                tdStatus.innerHTML = "<img src='_.gif' style='background:black; width:" + (2*percent) + "; height:5; border:solid 1px black;'><img src='_.gif' style='background;#202020; width:" + (2*(100-percent)) + "; height:5; border:solid 1px black;'>";
+                            {
+                                tdStatus.innerHTML = "<table border=1 cellpadding=0 cellspacing=0><tr><td><img src='_.gif' style='background:black; width:" + (2*percent) + "; height:5; border-width:0px;'></td><td><img src='_.gif' style='background;#202020; width:" + (2*(100-percent)) + "; height:5;; border-width:0px;'></td></tr></table>"
+                                //tdStatus.innerHTML = "<img src='_.gif' style='background:black; width:" + (2*percent) + "; height:5; border:solid 1px black;'><img src='_.gif' style='background;#202020; width:" + (2*(100-percent)) + "; height:5; border:solid 1px black;'>";
+                            }
                         }
                     }
                     else
                     {
-                        if (status != transfers[i].status || state != transfers[i].state)
+                        if (status != t.status || state != t.state)
                         {
                             removeChildren(tdStatus);
-                            tdStatus.style.color = state == FAIL ? "red" : state==SUCCESS ? "green" : "#000000";
+                            tdStatus.style.color = state < 0 ? "red" : state==SUCCESS ? "green" : "#000000";
                             tdStatus.appendChild(_text(status));
                         }
                     }
                 }
-                t = transfers[i];
+                if ("tdButton" in t && t.tdButton)
+                {
+                    var td = t.tdButton;
+                    if (t.state != state)
+                    {
+                        switch (state)
+                        {
+                            case -2:    // cancelled
+                            case -1:    // failed
+                                removeChildren(td);
+                                td.appendChild(_button("retry", "btnRetry_onClick(" + i + ")"));
+                                break;
+                            case 1:     // success
+                                removeChildren(td);
+                                break;
+                            case 0:
+                                removeChildren(td);
+                                td.appendChild(_button("cancel", "btnCancel_onClick(" + i + ")"));
+                                break;
+                        }
+                    }
+                }
                 t.status = status;
                 t.state = state;
                 t.percent = percent;
@@ -348,6 +376,23 @@ function listDirectories()
     }
 }
 
+function btnCancel_onClick(i)
+{
+    if (i in transfers && transfers[i])
+    {
+        var t = transfers[i];
+        getDropApplet().transfer_cancel(t.path);
+    }
+}
+
+function btnRetry_onClick(i)
+{
+    if (i in transfers && transfers[i])
+    {
+        var t = transfers[i];
+        getDropApplet().transfer_retry(t.path);
+    }
+}
 
 function toggleVisible(show)
 {
@@ -382,7 +427,7 @@ function showTransfers()
 {
     toggleVisible("ftpTransfers", "ftpListing", "ftpConsole");
     toggleSelected("transfersTab", "filesTab", "consoleTab");
-    asyncUpdateUI();
+    asyncUpdateUI();                              
 }
 
 function h(s)
@@ -399,6 +444,18 @@ function _tbody() { return document.createElement("TBODY"); }
 function _tr() { return document.createElement("TR"); }
 function _td(node) { var td = document.createElement("TD"); if (node) td.appendChild(node); return td;}
 function _text(s) {return document.createTextNode(s)};
+function _button(s,onclickFN)
+{
+//    var img = document.createElement("IMG");
+//    img.src = LABKEY.contextPath + "/" + escape(s) + ".button";
+//    img.onclick = function() {eval(onclickFN)};
+//    return img;
+    var a = document.createElement("A");
+    a.href = "#";
+    a.onclick = function() {eval(onclickFN)};
+    a.appendChild(_text('['+s+']'));
+    return a;
+}
 function removeChildren(e)
 {
     while (e && e.firstChild)
