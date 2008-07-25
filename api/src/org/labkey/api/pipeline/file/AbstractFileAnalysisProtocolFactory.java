@@ -118,9 +118,9 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
             setDefaultParametersXML(dirRoot, getDefaultParametersXML(dirRoot));
     }
 
-    public String[] getProtocolNames(URI uriRoot)
+    public String[] getProtocolNames(URI uriRoot, File dirData)
     {
-        String[] protocolNames = super.getProtocolNames(uriRoot);
+        String[] protocolNames = super.getProtocolNames(uriRoot, dirData);
 
         // The default parameters file is not really a protocol so remove it from the list.
         return (String[]) ArrayUtils.removeElement(protocolNames, DEFAULT_PARAMETERS_NAME);

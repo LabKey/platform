@@ -31,4 +31,5 @@ public interface PipelineQueue
     PipelineJob findJob(Container c, String statusFile);
     void addJob(PipelineJob job) throws IOException;
     void addJob(PipelineJob job, String initialState) throws IOException;
+    boolean isTransient();
 }

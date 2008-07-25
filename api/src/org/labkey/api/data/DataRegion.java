@@ -1099,7 +1099,7 @@ public class DataRegion extends DisplayElement
 
     protected void renderFormHeader(Writer out, int mode) throws IOException
     {
-        out.write("<form method=post ");
+        out.write("<form method=\"post\" ");
         String name = getName();
         if (name != null)
         {
@@ -1108,24 +1108,24 @@ public class DataRegion extends DisplayElement
         switch (mode)
         {
             case MODE_DETAILS:
-                out.write("action='begin'>");
+                out.write("action=\"begin\">");
                 break;
             case MODE_INSERT:
             case MODE_UPDATE:
                 if (isFileUploadForm())
                 {
-                    out.write("enctype='multipart/form-data' action=''>");
+                    out.write("enctype=\"multipart/form-data\" action=\"\">");
                 }
                 else
                 {
-                    out.write("action=''>");
+                    out.write("action=\"\">");
                 }
                 break;
             case MODE_GRID:
-                out.write("action=''>");
+                out.write("action=\"\">");
                 break;
             default:
-                out.write("action=''>");
+                out.write("action=\"\">");
         }
 
         renderHiddenFormFields(out, mode);
@@ -1135,10 +1135,10 @@ public class DataRegion extends DisplayElement
     protected void renderHiddenFormFields(Writer out, int mode) throws IOException
     {
         if (mode == MODE_GRID)
-            out.write("<input type='hidden' name='" + DataRegionSelection.DATA_REGION_SELECTION_KEY + "' value='" + PageFlowUtil.filter(getSelectionKey()) + "' />");
+            out.write("<input type=\"hidden\" name=\"" + DataRegionSelection.DATA_REGION_SELECTION_KEY + "\" value=\"" + PageFlowUtil.filter(getSelectionKey()) + "\" />");
 
         for (Pair<String, String> field : _hiddenFormFields)
-            out.write("<input type=hidden name=\"" + PageFlowUtil.filter(field.first) + "\" value=\"" + PageFlowUtil.filter(field.second) + "\">");
+            out.write("<input type=\"hidden\" name=\"" + PageFlowUtil.filter(field.first) + "\" value=\"" + PageFlowUtil.filter(field.second) + "\">");
     }
 
     public void setRecordSelectorValueColumns(String... columns)
@@ -1737,6 +1737,8 @@ public class DataRegion extends DisplayElement
             return;
 
         ActionURL urlhelp = ctx.getViewContext().cloneActionURL();
+        // remove Ajax specific parameter
+        urlhelp.deleteParameter("_dc");
         String queryString = StringUtils.trimToEmpty(urlhelp.getRawQuery());
 
         out.write("<script type=\"text/javascript\">\n");

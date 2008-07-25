@@ -147,7 +147,7 @@ abstract public class PipelineJob extends Job implements Serializable
     public static final String ERROR_STATUS = TaskStatus.error.toString().toUpperCase();
     public static final String CANCELLED_STATUS = "CANCELLED";
     public static final String INTERRUPTED_STATUS = "INTERRUPTED";
-    public static final String RESTARTED_STATUS = "RESTARTED";
+    public static final String SPLIT_STATUS = "SPLIT WAITING";
 
     /*
      * JMS message header names
@@ -312,6 +312,9 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public TaskFactory getActiveTaskFactory()
     {
+        if (getActiveTaskId() == null)
+            return null;
+        
         return PipelineJobService.get().getTaskFactory(getActiveTaskId());
     }
 
@@ -370,12 +373,15 @@ abstract public class PipelineJob extends Job implements Serializable
         }
 
         String name = statusFile.getName();
-        int index = name.indexOf('.');
+
+        // Assume the status file's extension has a single period (e.g. .status or .log),
+        // and remove that extension.
+        int index = name.lastIndexOf('.');
         if (index != -1)
         {
             name = name.substring(0, index);
         }
-        return new File(statusFile.getParentFile(), name + ".job.ser");
+        return new File(statusFile.getParentFile(), name + ".job.xml");
     }
 
     public File getStatusFile()
@@ -442,7 +448,17 @@ abstract public class PipelineJob extends Job implements Serializable
             runStateMachine();
         // Initialize status for non-task pipline jobs.
         else if (_logFile != null)
+        {
             setStatus(initialState);
+            try
+            {
+                store();
+            }
+            catch (Exception e)
+            {
+                warn("Failed to checkpoint '" + getDescription() + "' job before queuing.", e);
+            }
+        }
     }
 
     public void clearQueue()
@@ -561,17 +577,20 @@ abstract public class PipelineJob extends Job implements Serializable
                 return findRunnableTask(progression, i + 1);
 
             case error:
-                if (!autoRetry())
+                // Make sure the status is in error state, so that any auto-rety that
+                // may occur will record the error.  And, if no retry occurs, then this
+                // job must be in error state.
+                try
                 {
-                    try
-                    {
-                        PipelineJobService.get().getStatusWriter().ensureError(this);
-                    }
-                    catch (Exception e)
-                    {
-                        warn("Failed to ensure error status on task error.");
-                    }
+                    PipelineJobService.get().getStatusWriter().ensureError(this);
                 }
+                catch (Exception e)
+                {
+                    warn("Failed to ensure error status on task error.");
+                }
+
+                // Run auto-retry, and retry if appropriate.
+                autoRetry();
                 return false;
             
             case running:
@@ -678,8 +697,12 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public void run()
     {
-        while (runStateMachine())
+        // The act of queueing the job runs the state machine for the first time.
+        do
+        {
             runActiveTask();
+        }
+        while (runStateMachine());
     }
 
     /**

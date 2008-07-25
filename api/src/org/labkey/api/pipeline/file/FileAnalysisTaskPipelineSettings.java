@@ -30,9 +30,14 @@ import java.util.Map;
 public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
 {
     /**
+     * Name to use in the <code>TaskId</code> for clone and configure.
+     */
+    private String _cloneName;
+
+    /**
      * Text shown in the user interface for initiating the pipeline.
      */
-    private String _description = "Analyze Data";
+    private String _description;
 
     /**
      * Name to be used by protocol factory for this pipeline.  This name
@@ -58,7 +63,7 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
     private List<String> _sharedOutputExts;
 
     /**
-     * Maps the extension for a specific input file type to the list of
+     * Maps the extension for a specific input/output file type to the list of
      * extensions for types from which it was derrived.
      * <p>
      * e.g. <pre>
@@ -73,7 +78,7 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
      * To find the .mzXML file in question, this chain must be walked
      * in reverse.
      */
-    private Map<String, List<String>> _inputExtHeirarchy;
+    private Map<String, List<String>> _fileExtHeirarchy;
 
     /**
      * Support for generating XAR files for the <code>FileAnalysisTaskPipeline</code>
@@ -82,12 +87,22 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
 
     public FileAnalysisTaskPipelineSettings(String name)
     {
-        super(AbstractFileAnalysisJob.class, name);
+        super(FileAnalysisTaskPipeline.class, name);
     }
 
     public TaskId getCloneId()
     {
-        return new TaskId(FileAnalysisTaskPipeline.class);
+        return new TaskId(FileAnalysisTaskPipeline.class, _cloneName);
+    }
+
+    public String getCloneName()
+    {
+        return _cloneName;
+    }
+
+    public void setCloneName(String cloneName)
+    {
+        _cloneName = cloneName;
     }
 
     public String getDescription()
@@ -136,14 +151,14 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
         _sharedOutputExts = sharedOutputExts;
     }
 
-    public Map<String, List<String>> getInputExtHeirarchy()
+    public Map<String, List<String>> getFileExtHeirarchy()
     {
-        return _inputExtHeirarchy;
+        return _fileExtHeirarchy;
     }
 
-    public void setInputExtHeirarchy(Map<String, List<String>> inputExtHeirarchy)
+    public void setFileExtHeirarchy(Map<String, List<String>> fileExtHeirarchy)
     {
-        _inputExtHeirarchy = inputExtHeirarchy;
+        _fileExtHeirarchy = fileExtHeirarchy;
     }
 
     public FileAnalysisXarGeneratorSupport getXarGeneratorSupport()

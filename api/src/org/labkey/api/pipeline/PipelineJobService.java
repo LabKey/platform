@@ -48,7 +48,6 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
     {
         String getToolsDirectory();
 
-        String getBaseServerUrl();
         String getCallbackPassword();
 
         Character getNetworkDriveLetter();
@@ -67,12 +66,13 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
     }
 
     /**
-     * <code>MuleServerProperties</code> are only used on a Mule Server instance.
+     * <code>RemoteServerProperties</code> are only used on a remote server instance.
      */
     public interface RemoteServerProperties
     {
         String getLocation();
         String getMuleConfig();
+        String getBaseServerUrl();
     }
 
     /**

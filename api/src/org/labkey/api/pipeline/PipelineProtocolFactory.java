@@ -190,6 +190,14 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
 
     public String[] getProtocolNames(URI uriRoot)
     {
+        return getProtocolNames(uriRoot, null); 
+    }
+
+    public String[] getProtocolNames(URI uriRoot, File dirData)
+    {
+        HashSet<String> setNames = new HashSet<String>();
+
+        // Add <protocol-name>.xml files
         File[] files = getProtocolDir(uriRoot).listFiles(new FileFilter()
         {
             public boolean accept(File f)
@@ -197,26 +205,33 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
                 return f.getName().endsWith(".xml") && !f.isDirectory();
             }
         });
-        if (files == null)
-        {
-            // files will be null if the protocol directory does not exist
-            files = new File[0];
-        }
-        Arrays.sort(files, new Comparator<File>() {
-            public int compare(File f1, File f2)
-            {
-                return f1.getName().compareToIgnoreCase(f2.getName());
-            }
-        });
-        ArrayList<String> listNames = new ArrayList<String>();
         if (files != null)
         {
             for (File file : files)
             {
                 final String name = file.getName();
-                listNames.add(name.substring(0, name.lastIndexOf('.')));
+                setNames.add(name.substring(0, name.lastIndexOf('.')));
             }
         }
-        return listNames.toArray(new String[listNames.size()]);
+
+        // Add all directories that already exist in the analysis root.
+        if (dirData != null)
+        {
+            files = new File(dirData, getName()).listFiles(new FileFilter() {
+                public boolean accept(File f)
+                {
+                    return f.isDirectory();
+                }
+            });
+            if (files != null)
+            {
+                for (File file : files)
+                    setNames.add(file.getName());
+            }
+        }
+        
+        String[] vals = setNames.toArray(new String[setNames.size()]);
+        Arrays.sort(vals, String.CASE_INSENSITIVE_ORDER);
+        return vals;
     }
 }
