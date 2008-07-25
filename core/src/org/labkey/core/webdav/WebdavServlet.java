@@ -48,26 +48,6 @@ public class WebdavServlet extends HttpServlet
     {
         String fullPath = StringUtils.trimToEmpty(request.getPathInfo());
 
-//        // find the container portion of this path
-//        String p = fullPath;
-//        if (p.startsWith("/")) p = p.substring(1);
-//        if (p.endsWith("/")) p = p.substring(0,p.length()-1);
-//        String[] paths = StringUtils.split(p,"/");
-//        String containerPath = "";
-//        Container c = ContainerManager.getRoot();
-//        int i;
-//        for (i=0 ; i<paths.length ; i++)
-//        {
-//            String name = paths[i];
-//            if (name.startsWith("@"))
-//                break;
-//            containerPath = containerPath + "/" + name;
-//            Container t = ContainerManager.getForPath(containerPath);
-//            if (null == t)
-//                break;
-//            c = t;
-//        }
-
         // Store the original URL in case we need to redirect for authentication
         if (request.getAttribute(ViewServlet.ORIGINAL_URL) == null)
         {
@@ -75,8 +55,16 @@ public class WebdavServlet extends HttpServlet
             request.setAttribute(ViewServlet.ORIGINAL_URL, helper.getURIString());
         }
 
-//        String dispatchUrl = "/" + DavController.name + c.getEncodedPath() + (c.getPath().endsWith("/") ? "" : "/") + request.getMethod().toLowerCase() + ".view?path=" + PageFlowUtil.encode(fullPath);
-        String dispatchUrl = "/" + DavController.name + "/" + request.getMethod().toLowerCase() + ".view?path=" + PageFlowUtil.encodePath(fullPath);
+        String method = request.getMethod();
+        if (method.equals("GET") || method.equals("POST"))
+        {
+            String m = request.getHeader("method");
+            if (m == null && method.equals("GET"))
+                m = request.getParameter("method");
+            if (null != m)
+                method = m;
+        }
+        String dispatchUrl = "/" + DavController.name + "/" + method.toLowerCase() + ".view?path=" + PageFlowUtil.encodePath(fullPath);
 
         if (0==1) // dispatch
         {
@@ -96,6 +84,7 @@ public class WebdavServlet extends HttpServlet
             context.setActionURL(url);
             DavController dav = new DavController();
             dav.setViewContext(context);
+            dav.setResourcePath(fullPath);
 
             int stackSize = HttpView.getStackSize();
             try
