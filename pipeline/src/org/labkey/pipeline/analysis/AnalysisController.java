@@ -271,8 +271,8 @@ public class AnalysisController extends SpringActionController
             }
 
             PipelineProtocolFactory factory = _provider.getProtocolFactory(_taskPipeline);
-            String[] protocolNames = factory.getProtocolNames(_dirRoot.toURI());
-            if (!reshow && "".equals(form.getProtocol()))
+            String[] protocolNames = factory.getProtocolNames(_dirRoot.toURI(), _dirData);
+            if (!reshow || "".equals(form.getProtocol()))
             {
                 // If protocol is empty check for a saved protocol
                 String protocolName = PipelineService.get().getLastProtocolSetting(factory,

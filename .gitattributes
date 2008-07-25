@@ -402,7 +402,6 @@ core/src/org/labkey/core/webdav/WebdavResolverImpl.java -text
 core/src/org/labkey/core/webdav/WebdavServlet.java -text
 core/src/org/labkey/core/webdav/apache/XMLWriter.java -text
 core/src/org/labkey/core/webdav/list.jsp -text
-core/webapp/WEB-INF/core/coreContext.xml -text
 core/webapp/dropApplet.js -text
 demo/module.properties -text
 demo/src/META-INF/demo.xml -text
@@ -982,6 +981,7 @@ pipeline/src/org/labkey/pipeline/api/properties/RemoteServerPropertiesImpl.java 
 pipeline/src/org/labkey/pipeline/browse/BrowseViewImpl.java -text
 pipeline/src/org/labkey/pipeline/browse/browse.jsp -text
 pipeline/src/org/labkey/pipeline/cluster/ClusterJobRunner.java -text
+pipeline/src/org/labkey/pipeline/cluster/NoOpPipelineStatusWriter.java -text
 pipeline/src/org/labkey/pipeline/directory.jsp -text
 pipeline/src/org/labkey/pipeline/emailNotificationSetup.jsp -text
 pipeline/src/org/labkey/pipeline/mule/EPipelineContextListener.java -text
@@ -994,7 +994,6 @@ pipeline/src/org/labkey/pipeline/mule/LabKeySpringContainerContext.java -text
 pipeline/src/org/labkey/pipeline/mule/LoggerUtil.java -text
 pipeline/src/org/labkey/pipeline/mule/MuleListenerHelper.java -text
 pipeline/src/org/labkey/pipeline/mule/MuleStartup.java -text
-pipeline/src/org/labkey/pipeline/mule/NoOpPipelineStatusWriter.java -text
 pipeline/src/org/labkey/pipeline/mule/PipelineJobExceptionStrategy.java -text
 pipeline/src/org/labkey/pipeline/mule/PipelineJobRunner.java -text
 pipeline/src/org/labkey/pipeline/mule/PipelineJobRunnerGlobus.java -text

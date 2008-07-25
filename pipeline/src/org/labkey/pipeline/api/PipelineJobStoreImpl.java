@@ -54,7 +54,11 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
             if (job == null)
                 throw new IOException("Job checkpoint does not exist.");
 
-            job.retryUpdate();
+            // If the job is being retried from a non-error status, then don't
+            // increment error and retry counts.  This happens when a server restart
+            // causes all previously queued jobs to be requeued.
+            if (PipelineJob.ERROR_STATUS.equals(sf.getStatus()))
+                job.retryUpdate();
 
             PipelineService.get().getPipelineQueue().addJob(job);
         }
@@ -91,7 +95,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
             for (PipelineJob jobSplit : job.createSplitJobs())
                 PipelineService.get().queueJob(jobSplit);
             storeJob(job);
-            job.setStatus("SPLIT WAITING");
+            job.setStatus(PipelineJob.SPLIT_STATUS);
             scope.commitTransaction();
         }
         finally

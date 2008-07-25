@@ -112,12 +112,6 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
     }
 
     @Override
-    protected ContextType getContextType()
-    {
-        return ContextType.context;
-    }
-
-    @Override
     public void bootstrap()
     {
         CoreSchema core = CoreSchema.getInstance();

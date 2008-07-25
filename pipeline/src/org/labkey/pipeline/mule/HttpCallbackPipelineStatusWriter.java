@@ -40,15 +40,18 @@ public class HttpCallbackPipelineStatusWriter implements PipelineStatusFile.Stat
     public void setStatusFile(PipelineJob job, String status, String statusInfo)
     {
         _log.info("STATUS = " + status);
-        if (PipelineJobService.get().getAppProperties() != null && PipelineJobService.get().getAppProperties().getBaseServerUrl() != null)
+        PipelineJobService.RemoteServerProperties remoteProps = PipelineJobService.get().getRemoteServerProperties();
+        PipelineJobService.ApplicationProperties appProps = PipelineJobService.get().getAppProperties();
+
+        if (remoteProps != null && remoteProps.getBaseServerUrl() != null)
         {
             try
             {
-                String baseServerURL = PipelineJobService.get().getAppProperties().getBaseServerUrl();
+                String baseServerURL = remoteProps.getBaseServerUrl();
                 String urlString = baseServerURL + "Pipeline-Status/" + job.getContainerId() + "/setJobStatus.view?job=" + job.getJobGUID() + "&status=" + URLEncoder.encode(status, "UTF-8");
-                if (PipelineJobService.get().getAppProperties().getCallbackPassword() != null)
+                if (appProps.getCallbackPassword() != null)
                 {
-                    urlString += "&callbackPassword=" + URLEncoder.encode(PipelineJobService.get().getAppProperties().getCallbackPassword(), "UTF-8");
+                    urlString += "&callbackPassword=" + URLEncoder.encode(appProps.getCallbackPassword(), "UTF-8");
                 }
                 URL url = new URL(urlString);
                 HttpURLConnection connection = (HttpURLConnection)url.openConnection();

@@ -33,6 +33,7 @@ LABKEY.pipeline.StatusUpdate = function(controller, action)
     var _controller = controller;
     var _action = action;
     var _dt = null;
+    var _lastUpdate = "";
     var _iDelay = 0;
     var _delays = new Array(5, 15, 30, 60);
 
@@ -80,7 +81,12 @@ LABKEY.pipeline.StatusUpdate = function(controller, action)
             }
             else
             {
-                el.update(response.responseText);
+                var newText = response.responseText;
+                if (_lastUpdate != newText)
+                {
+                    el.update(newText);
+                    _lastUpdate = newText;
+                }
                 nextUpdate(0);
             }
         }

@@ -25,6 +25,7 @@ import org.mule.umo.endpoint.UMOEndpoint;
 import org.mule.MuleManager;
 import org.mule.impl.RequestContext;
 import org.apache.log4j.Logger;
+import org.apache.activemq.ActiveMQConnectionFactory;
 
 import javax.jms.*;
 import java.io.IOException;
@@ -59,11 +60,22 @@ public class EPipelineQueueImpl implements PipelineQueue
     }
 
     private ConnectionFactory _factoryJms;
+    private boolean _transient;
 
     public EPipelineQueueImpl(ConnectionFactory factory)
     {
         assert factory != null : "Enterprise Pipeline requires a JMS connection factory.";
-        
+
+        if (factory instanceof ActiveMQConnectionFactory)
+        {
+            String brokerUrl = ((ActiveMQConnectionFactory) factory).getBrokerURL();
+            assert brokerUrl != null : "ActiveMQConnectionFactory requires a broker URL."; 
+
+            // Detect default server configuration for the Enterprise Pipeline, which does
+            // not persist JMS messages between server restarts.
+            if (brokerUrl.startsWith("vm:") && brokerUrl.indexOf("persistent=false") > 0)
+                _transient = true;
+        }
         _factoryJms = factory;
     }
 
@@ -192,6 +204,7 @@ public class EPipelineQueueImpl implements PipelineQueue
         }
 
         job.setQueue(this, initialState);
+        
         if (RequestContext.getEvent() == null)
         {
             try
@@ -211,6 +224,11 @@ public class EPipelineQueueImpl implements PipelineQueue
                 _outboundJobs.set(new ArrayList<PipelineJob>());
             _outboundJobs.get().add(job);
         }
+    }
+
+    public boolean isTransient()
+    {
+        return _transient;
     }
 
     public static void dispatchJob(PipelineJob job) throws UMOException

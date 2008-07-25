@@ -122,6 +122,8 @@
 
             <threading-profile maxThreadsActive="2" maxThreadsIdle="0" threadTTL="100"/>
             <pooling-profile maxActive="2" maxIdle="0" initialisationPolicy="INITIALISE_NONE"/>
+
+            <exception-strategy className="org.labkey.pipeline.mule.PipelineJobExceptionStrategy" />
         </mule-descriptor>
 
         <mule-descriptor name="PipelineJobRunnerGlobusUMO"
@@ -164,14 +166,16 @@
 
             <threading-profile maxThreadsActive="1" maxThreadsIdle="0" threadTTL="100"/>
             <pooling-profile maxActive="1" maxIdle="0" initialisationPolicy="INITIALISE_NONE"/>
-        </mule-descriptor>
 
+            <exception-strategy className="org.labkey.pipeline.mule.PipelineJobExceptionStrategy" />
+        </mule-descriptor>
+<!--
         <mule-descriptor name="PipelineStatusSetterUMO"
             implementation="org.labkey.pipeline.mule.PipelineStatusSetter">
             <inbound-router>
                 <endpoint type="receiver" address="StatusMQ" transformers="JMSMessageToXML XMLToStatus"
                         responseTransformers="NoOpTransformer" connector="jmsConnectorState">
-                    <!--<transaction action="ALWAYS_BEGIN" factory="org.mule.providers.jms.JmsTransactionFactory" />-->
+                    <!-<transaction action="ALWAYS_BEGIN" factory="org.mule.providers.jms.JmsTransactionFactory" />->
                 </endpoint>
             </inbound-router>
 
@@ -180,5 +184,6 @@
             
             <exception-strategy className="org.labkey.pipeline.mule.PipelineJobExceptionStrategy" />
         </mule-descriptor>
+-->
     </model>
 </mule-configuration>

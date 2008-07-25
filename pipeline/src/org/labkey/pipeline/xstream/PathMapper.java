@@ -38,21 +38,10 @@ public class PathMapper
 
     public static synchronized PathMapper getInstance()
     {
-        // TODO: Use dependency injection when Mule supports it.
+        // Create an empty path mapper, if one wasn't created during spring
+        // context construction.
         if (instance == null)
-        {
-            try
-            {
-                UMOContainerContext context = MuleManager.getInstance().getContainerContext();
-                instance = (PathMapper) context.getComponent("pathMapper");
-            }
-            catch (ObjectNotFoundException e)
-            {
-                BeanFactory factory = new DefaultListableBeanFactory();
-                // Not in context, so just use an empty mapper.
-                instance = new PathMapper();
-            }
-        }
+            instance = new PathMapper();
 
         return instance;
     }
@@ -81,10 +70,8 @@ public class PathMapper
 
     private PathMapper(boolean registerIfFirst)
     {
-        if (instance == null)
-        {
+        if (registerIfFirst && instance == null)
             instance = this;
-        }
     }
 
     public Map<String, String> getPathMap()

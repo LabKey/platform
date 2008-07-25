@@ -789,14 +789,18 @@ public class StatusController extends SpringActionController
             return null;
 
         StatusDataRegion rgn = new StatusDataRegion();
+        rgn.setShadeAlternatingRows(true);
+        rgn.setShowColumnSeparators(true);
         rgn.setApiAction(apiAction);
         rgn.setColumns(PipelineStatusManager.getTableInfo().getColumns("Status, Created, FilePath, Description"));
-        DisplayColumn col = rgn.getDisplayColumn("FilePath");
+        DisplayColumn col = rgn.getDisplayColumn("Status");
+        col.setURL(urlDetailsData(c));
+        col.setNoWrap(true);
+        col = rgn.getDisplayColumn("FilePath");
         col.setVisible(false);
         col = rgn.getDisplayColumn("Description");
         col.setVisible(false);
         col = new DescriptionDisplayColumn(uriRoot);
-        col.setWidth("500");
         rgn.addDisplayColumn(col);
 
         String referer = PipelineController.RefererValues.protal.toString();
@@ -820,8 +824,6 @@ public class StatusController extends SpringActionController
 
         rgn.setButtonBar(bb, DataRegion.MODE_GRID);
 
-        rgn.getDisplayColumn(0).setURL(StatusController.urlDetailsData(c));
-
         GridView gridView = new GridView(rgn);
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition("Status", PipelineJob.COMPLETE_STATUS, CompareType.NEQ);
@@ -833,10 +835,12 @@ public class StatusController extends SpringActionController
     private static StatusDataRegion getGrid(Container c, User user) throws SQLException
     {
         StatusDataRegion rgn = new StatusDataRegion();
-
+        rgn.setShadeAlternatingRows(true);
+        rgn.setShowColumnSeparators(true);
         rgn.setColumns(getTableInfo().getColumns("Status, Created, FilePath, Description, Provider, Container"));
         DisplayColumn col = rgn.getDisplayColumn("Status");
         col.setURL(urlDetailsData(c));
+        col.setNoWrap(true);
         col = rgn.getDisplayColumn("Description");
         col.setVisible(false);
         col = rgn.getDisplayColumn("Provider");
@@ -911,7 +915,9 @@ public class StatusController extends SpringActionController
             bb.add(showQueue);
         }
 
-        rgn.addDisplayColumn(new HideShowRetryColumn(bb));
+        col = new HideShowRetryColumn(bb);
+        col.setWidth("35"); // Match the width if the checkbox.
+        rgn.addDisplayColumn(col);
 
         rgn.setButtonBar(bb, DataRegion.MODE_GRID);
         rgn.setShowRecordSelectors(true);
@@ -1129,7 +1135,7 @@ public class StatusController extends SpringActionController
                 if (taskFactory.getExecutionLocation().equals(form.getLocation()))
                 {
                     TaskId id = taskFactory.getId();
-                    PipelineStatusFileImpl[] statusFiles = PipelineStatusManager.getIncompleteStatusFilesForActiveTaskId(id.toString());
+                    PipelineStatusFileImpl[] statusFiles = PipelineStatusManager.getQueuedStatusFilesForActiveTaskId(id.toString());
                     for (PipelineStatusFileImpl statusFile : statusFiles)
                     {
                         if (statusFile.getJobStore() != null)

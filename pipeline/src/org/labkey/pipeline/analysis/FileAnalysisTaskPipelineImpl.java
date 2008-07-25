@@ -39,11 +39,12 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl implements Fi
     /**
      * The text that will appear in the button to start this pipeline.
      */
-    private String _description;
+    private String _description = "Analyze Data";
     private String _protocolFactoryName;
+    private boolean _initialFileTypesFromTask;
     private FileType[] _initialFileTypes;
     private FileType[] _sharedOutputTypes;
-    private Map<FileType, FileType[]> _inputTypeHeirarchy;
+    private Map<FileType, FileType[]> _typeHeirarchy;
     private FileAnalysisXarGeneratorSupport _xarGeneratorSupport;
 
     public FileAnalysisTaskPipelineImpl()
@@ -74,12 +75,14 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl implements Fi
         List<String> inputFilterExts = settings.getInitialInputExts();
         if (inputFilterExts != null)
         {
+            _initialFileTypesFromTask = false;
             _initialFileTypes = new FileType[inputFilterExts.size()];
             for (int i = 0; i < _initialFileTypes.length; i++)
                 _initialFileTypes[i] = new FileType(inputFilterExts.get(i));
         }
-        else if (getInitialFileTypes() == null)
+        else if (_initialFileTypesFromTask || getInitialFileTypes() == null)
         {
+            _initialFileTypesFromTask = true;
             TaskId tid = getTaskProgression()[0];
             TaskFactory factory = PipelineJobService.get().getTaskFactory(tid);
             _initialFileTypes = factory.getInputTypes();
@@ -103,25 +106,26 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl implements Fi
                 _sharedOutputTypes[i] = new FileType(sharedOutputExts.get(i));            
         }
 
-        _inputTypeHeirarchy = new HashMap<FileType, FileType[]>();
+        // Convert any input extension heirarchy into file types.
+        Map<String, List<String>> extHeirarchy = settings.getFileExtHeirarchy();
+        if (extHeirarchy != null || _typeHeirarchy == null)
+            _typeHeirarchy = new HashMap<FileType, FileType[]>();
 
         // Add the initial types to the heirarchy
         for (FileType ft : _initialFileTypes)
-            _inputTypeHeirarchy.put(ft, new FileType[0]);
+            _typeHeirarchy.put(ft, new FileType[0]);
 
-        // Convert any input extension heirarchy into file types.
-        Map<String, List<String>> inputExtHeirarchy = settings.getInputExtHeirarchy();
-        if (inputExtHeirarchy != null)
+        if (extHeirarchy != null)
         {
-            if (_inputTypeHeirarchy == null)
-                _inputTypeHeirarchy = new HashMap<FileType, FileType[]>();
-            for (Map.Entry<String, List<String>> entry  : inputExtHeirarchy.entrySet())
+            if (_typeHeirarchy == null)
+                _typeHeirarchy = new HashMap<FileType, FileType[]>();
+            for (Map.Entry<String, List<String>> entry  : extHeirarchy.entrySet())
             {
                 List<String> inputExtList = entry.getValue();
                 FileType[] heirarchy = new FileType[inputExtList.size()];
                 for (int i = 0; i < inputExtList.size(); i++)
                     heirarchy[i] = new FileType(inputExtList.get(i));
-                _inputTypeHeirarchy.put(new FileType(entry.getKey()), heirarchy);
+                _typeHeirarchy.put(new FileType(entry.getKey()), heirarchy);
             }
         }
 
@@ -160,7 +164,45 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl implements Fi
 
     public File findInputFile(File dirRoot, File dirAnalysis, String name)
     {
-        for (Map.Entry<FileType, FileType[]> entry : _inputTypeHeirarchy.entrySet())
+        File file = findAncestorFile(dirRoot, dirAnalysis, name);
+        if (file != null)
+            return file;
+
+        // Path of last resort is always to look in the current directory.
+        return new File(dirAnalysis, name);
+    }
+
+    public File findOutputFile(FileAnalysisJobSupport support, String name)
+    {
+        for (FileType ft : _sharedOutputTypes)
+        {
+            if (ft.isType(name))
+            {
+                File file = findAncestorFile(support.getRootDir(), support.getAnalysisDirectory(), name);
+                if (file != null)
+                    return file;
+
+                // If it is shared, then the default is the input data directory.
+                return new File(support.getDataDirectory(), name);
+            }
+        }
+
+        // Path of last resort is always to look in the current directory.
+        return new File(support.getAnalysisDirectory(), name);
+    }
+
+    /**
+     * Look at the specified type heirarchy to see if the requested file is an
+     * ancestor to this processing job, residing outside the analysis directory.
+     *
+     * @param dirRoot The pipeline root directoy, outside which no files can be processed.
+     * @param dirAnalysis Default input/output directory for the current job.
+     * @param name The name of the file to be located
+     * @return The file location outside the analysis directory, or null, if no such match is found.
+     */
+    private File findAncestorFile(File dirRoot, File dirAnalysis, String name)
+    {
+        for (Map.Entry<FileType, FileType[]> entry : _typeHeirarchy.entrySet())
         {
             if (entry.getKey().isType(name))
             {
@@ -179,18 +221,6 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl implements Fi
             }
         }
 
-        // Path of last resort is always to look in the current directory.
-        return new File(dirAnalysis, name);
-    }
-
-    public File findOutputFile(FileAnalysisJobSupport support, String name)
-    {
-        for (FileType ft : _sharedOutputTypes)
-        {
-            if (ft.isType(name))
-                return new File(support.getDataDirectory(), name);
-        }
-
-        return new File(support.getAnalysisDirectory(), name);
+        return null;
     }
 }

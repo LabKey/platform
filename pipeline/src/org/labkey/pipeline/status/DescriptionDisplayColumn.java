@@ -39,6 +39,7 @@ public class DescriptionDisplayColumn extends SimpleDisplayColumn
     public DescriptionDisplayColumn(URI uriRoot)
     {
         super();
+        setName("Description");
         setCaption("Description");
 
         setWidth("500");

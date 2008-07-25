@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.pipeline.mule;
+package org.labkey.pipeline.cluster;
 
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineJob;

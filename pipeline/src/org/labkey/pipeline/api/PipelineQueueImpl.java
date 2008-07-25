@@ -58,39 +58,28 @@ public class PipelineQueueImpl implements PipelineQueue
         if (null == job)
             throw new NullPointerException();
         _logDebug("PENDING:   " + job.toString());
-        ObjectOutputStream oOut = null;
-        FileOutputStream fOut = null;
+
         try
         {
-            File outputFile = PipelineJob.getSerializedFile(job.getStatusFile());
-            if (outputFile != null)
-            {
+            // Make sure status file path and Job ID are in synch.
+            File statusFile = job.getStatusFile();
+            if (statusFile != null)
                 PipelineStatusManager.resetJobId(job.getStatusFile().getAbsolutePath(), job.getJobGUID());
-
-                fOut = new FileOutputStream(outputFile);
-                oOut = new ObjectOutputStream(fOut);
-                oOut.writeObject(job);
-            }
-        }
-        catch (IOException e)
-        {
-            _log.warn("Job " + job.getDescription() + " cannot be restarted automatically", e);
-            job.getLogger().warn("Job will not be restarted automatically if the server is shut down before this job finishes");
         }
         catch (SQLException e)
         {
-            _log.warn("Job " + job.getDescription() + " cannot be restarted automatically", e);
-            job.getLogger().warn("Job will not be restarted automatically if the server is shut down before this job finishes");
-        }
-        finally
-        {
-            if (fOut != null) { try { fOut.close(); } catch (IOException e) {} }
-            if (oOut != null) { try { oOut.close(); } catch (IOException e) {} }
+            _log.warn(e);  // This is not currently a hard dependency.
         }
 
         _pending.add(job);
         job.setQueue(this, initialState);
         submitJobs();
+    }
+
+    public boolean isTransient()
+    {
+        // Only place for this queue is local server memory.
+        return true;
     }
 
 

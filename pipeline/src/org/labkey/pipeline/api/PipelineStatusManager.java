@@ -199,23 +199,29 @@ public class PipelineStatusManager
 
     }
 
-    public static PipelineStatusFileImpl[] getIncompleteStatusFilesForActiveTaskId(String activeTaskId) throws SQLException
+    public static PipelineStatusFileImpl[] getQueuedStatusFilesForActiveTaskId(String activeTaskId) throws SQLException
     {
-        SimpleFilter filter = new SimpleFilter();
-        filter.addCondition("Status", PipelineJob.COMPLETE_STATUS, CompareType.NEQ);
+        SimpleFilter filter = createQueueFilter();
         filter.addCondition("ActiveTaskId", activeTaskId, CompareType.EQUAL);
 
         return Table.select(pipeline.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
     }
 
-    public static PipelineStatusFileImpl[] getIncompleteStatusFiles() throws SQLException
+    public static PipelineStatusFileImpl[] getQueuedStatusFiles() throws SQLException
+    {
+        SimpleFilter filter = createQueueFilter();
+        
+        return Table.select(pipeline.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
+    }
+
+    private static SimpleFilter createQueueFilter()
     {
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition("Status", PipelineJob.COMPLETE_STATUS, CompareType.NEQ);
         filter.addCondition("Status", PipelineJob.ERROR_STATUS, CompareType.NEQ);
+        filter.addCondition("Status", PipelineJob.SPLIT_STATUS, CompareType.NEQ);
         filter.addCondition("Job", null, CompareType.NONBLANK);
-
-        return Table.select(pipeline.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
+        return filter;
     }
 
     public static void removeStatusFile(ViewBackgroundInfo info, PipelineStatusFile sf)

@@ -19,6 +19,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
 import org.mule.providers.jms.filters.JmsSelectorFilter;
+import org.apache.log4j.Logger;
 
 /**
  * <code>TaskJmsSelectorFilter</code> builds and applies a JMS selector for
@@ -28,6 +29,8 @@ import org.mule.providers.jms.filters.JmsSelectorFilter;
  */
 abstract public class AbstractTaskJmsSelectorFilter extends JmsSelectorFilter
 {
+    private static Logger _log = Logger.getLogger(AbstractTaskJmsSelectorFilter.class);
+
     private boolean _includeMonolithic;
 
     protected String _location;
@@ -82,6 +85,8 @@ abstract public class AbstractTaskJmsSelectorFilter extends JmsSelectorFilter
         expr.append(" AND ");
         expr.append(PipelineJob.LABKEY_TASKSTATUS_PROPERTY).append(" = 'waiting'");
         expr.append(")");
+
+        _log.debug("JMS Select: " + expr);
 
         return expr.toString();
     }

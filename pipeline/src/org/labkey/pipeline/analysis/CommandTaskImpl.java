@@ -133,7 +133,10 @@ public class CommandTaskImpl extends PipelineJob.Task implements CommandTask
         public boolean isParticipant(PipelineJob job) throws IOException, SQLException
         {
             // The first converter is responsible for the command name.
-            TaskToCommandArgs commandNameConverter = getConverters().get(0);
+            List<TaskToCommandArgs> converters = getConverters();
+            assert converters != null && converters.size() > 0 :
+                    "No converters found in " + getId();
+            TaskToCommandArgs commandNameConverter = converters.get(0);
 
             // If it produces nothing for the command line, then this command should not
             // be executed.

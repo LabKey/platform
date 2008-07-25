@@ -42,7 +42,7 @@
       <ns:column columnName="CreatedBy"/>
       <ns:column columnName="Created">
         <ns:formatString>DateTime</ns:formatString>
-        <ns:displayWidth>150</ns:displayWidth>
+        <ns:displayWidth>120</ns:displayWidth>
       </ns:column>
       <ns:column columnName="ModifiedBy"/>
       <ns:column columnName="Modified">
@@ -52,7 +52,7 @@
       <ns:column columnName="EntityId"/>
       <ns:column columnName="RowId"/>
       <ns:column columnName="Status">
-        <ns:displayWidth>100</ns:displayWidth>
+        <ns:displayWidth>120</ns:displayWidth>
       </ns:column>
       <ns:column columnName="Info"/>
       <ns:column columnName="FilePath">

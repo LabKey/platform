@@ -28,12 +28,12 @@ public class ApplicationPropertiesImpl implements PipelineJobService.Application
 {
     private String _toolsDirectory;
 
+    private String _callbackPassword;
+
     private Character _networkDriveLetter;
     private String _networkDrivePath;
-    private String _callbackPassword;
     private String _networkDriveUser;
     private String _networkDrivePassword;
-    private String _baseServerUrl;
 
     public String getToolsDirectory()
     {
@@ -48,20 +48,6 @@ public class ApplicationPropertiesImpl implements PipelineJobService.Application
     public String getCallbackPassword()
     {
         return _callbackPassword;
-    }
-
-    public String getBaseServerUrl()
-    {
-        return _baseServerUrl;
-    }
-
-    public void setBaseServerUrl(String baseServerUrl)
-    {
-        if (!baseServerUrl.endsWith("/"))
-        {
-            baseServerUrl = baseServerUrl + "/";
-        }
-        _baseServerUrl = baseServerUrl;
     }
 
     public void setToolsDirectory(String toolsDirectory)

@@ -16,6 +16,7 @@
 package org.labkey.pipeline.analysis;
 
 import org.labkey.api.pipeline.TaskId;
+import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisJob;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.pipeline.file.FileAnalysisXarGeneratorSupport;
@@ -68,7 +69,11 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
 
     public FileAnalysisTaskPipeline getTaskPipeline()
     {
-        return (FileAnalysisTaskPipeline) super.getTaskPipeline();
+        TaskPipeline tp = super.getTaskPipeline();
+
+        assert tp != null : "Task pipeline " + _taskPipelineId + " not found.";
+        
+        return (FileAnalysisTaskPipeline) tp; 
     }
 
     public File findInputFile(String name)

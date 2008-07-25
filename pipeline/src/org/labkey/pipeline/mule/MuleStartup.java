@@ -67,10 +67,10 @@ public class MuleStartup
         PipelineJobService.RemoteServerProperties remoteProps = PipelineJobService.get().getRemoteServerProperties();
         PipelineJobService.ApplicationProperties appProps = PipelineJobService.get().getAppProperties();
 
-        if (remoteProps != null && appProps != null && appProps.getBaseServerUrl() != null)
+        if (remoteProps != null && appProps != null && remoteProps.getBaseServerUrl() != null)
         {
             String location = remoteProps.getLocation();
-            String baseServerURL = appProps.getBaseServerUrl();
+            String baseServerURL = remoteProps.getBaseServerUrl();
 
             try
             {

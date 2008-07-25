@@ -45,9 +45,7 @@ import org.labkey.pipeline.status.StatusController;
 
 import java.beans.PropertyChangeEvent;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -110,7 +108,11 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             ContextListener.addStartupListener(listener);
             ContextListener.addShutdownListener(listener);
         }
-        else
+
+        // If the queue is in local server memory, then we need to restart all
+        // jobs on server restart.  Otherwise, an external JMS queue will retain
+        // all jobs between server restarts.
+        if (PipelineService.get().getPipelineQueue().isTransient())
         {
             Thread restarterThread = new Thread(new JobRestarter());
             restarterThread.start();
@@ -195,53 +197,17 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             }
             try
             {
-                PipelineStatusFileImpl[] incompleteStatusFiles = PipelineStatusManager.getIncompleteStatusFiles();
-                for (PipelineStatusFileImpl incompleteStatusFile : incompleteStatusFiles)
+                PipelineStatusFileImpl[] incompleteStatusFiles = PipelineStatusManager.getQueuedStatusFiles();
+                for (PipelineStatusFileImpl sf : incompleteStatusFiles)
                 {
-                    File logFile = new File(incompleteStatusFile.getFilePath());
-                    File serializedJobFile = PipelineJob.getSerializedFile(logFile);
-                    if (serializedJobFile != null && serializedJobFile.exists())
+                    try
                     {
-                        FileInputStream fIn = null;
-                        ObjectInputStream oIn = null;
-                        PipelineJob job = null;
-                        try
-                        {
-                            fIn = new FileInputStream(serializedJobFile);
-                            oIn = new ObjectInputStream(fIn);
-                            job = (PipelineJob)oIn.readObject();
-                        }
-                        catch (IOException e)
-                        {
-                            _log.error("Unable to restart job", e);
-                            moveJobToError(incompleteStatusFile);
-                        }
-                        catch (ClassNotFoundException e)
-                        {
-                            _log.error("Unable to restart job", e);
-                            moveJobToError(incompleteStatusFile);
-                        }
-                        finally
-                        {
-                            if (fIn != null) { try { fIn.close(); } catch (IOException e) {} }
-                            if (oIn != null) { try { oIn.close(); } catch (IOException e) {} }
-                        }
-                        if (job != null)
-                        {
-                            try
-                            {
-                                PipelineService.get().queueJob(job, PipelineJob.RESTARTED_STATUS);
-                            }
-                            catch (IOException e)
-                            {
-                                _log.error("Unable to restart job", e);
-                                moveJobToError(incompleteStatusFile);
-                            }
-                        }
+                        PipelineJobServiceImpl.get().getJobStore().retry(sf);
                     }
-                    else
+                    catch (IOException e)
                     {
-                        moveJobToError(incompleteStatusFile);
+                        _log.error("Unable to restart job", e);
+                        moveJobToError(sf);
                     }
                 }
             }
