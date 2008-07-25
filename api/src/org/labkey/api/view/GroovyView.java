@@ -29,17 +29,18 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.AppProps;
 import org.labkey.api.util.CacheMap;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.common.util.Pair;
+import org.springframework.validation.Errors;
+import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
 
 import javax.servlet.ServletException;
 import java.io.*;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.lang.reflect.InvocationTargetException;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.lang.reflect.InvocationTargetException;
 
 
 /**
@@ -61,24 +62,36 @@ public class GroovyView<ModelClass> extends WebPartView<ModelClass>
     String _templateName = null;
     GroovyObject _groovyObject = null;
     Message _message = null;
+    Errors _errors = null;
 
 
     public GroovyView(String file)
     {
-        this(file, (ModelClass)null);
+        this(file, (ModelClass)null, null);
     }
 
 
     public GroovyView(String file, String title)
     {
-        this(file);
+        this(file, title, null);
+    }
+
+    public GroovyView(String file, String title, Errors errors)
+    {
+        this(file, (ModelClass)null, errors);
         setTitle(title);
     }
 
 
     public GroovyView(String file, ModelClass model)
     {
+        this(file, model, null);
+    }
+
+    public GroovyView(String file, ModelClass model, Errors errors)
+    {
         super(model);
+        _errors = errors;
 
         assert MemTracker.put(this);
         _templateName = file;
@@ -199,8 +212,8 @@ public class GroovyView<ModelClass> extends WebPartView<ModelClass>
         }
     }
 
-    static Pattern scriptPattern = Pattern.compile("<%(.*?)%>", Pattern.DOTALL);
-    static Pattern importPattern = Pattern.compile("@\\s*page\\s*import=\\\"([\\.\\w]*)\\\"");
+    static Pattern scriptPattern = Pattern.compile("<%--(.*?)--%>|<%(.*?)%>", Pattern.DOTALL);
+    static Pattern importOrExtendsPattern = Pattern.compile("@\\s*page\\s*(import|extends)=\\\"([\\.\\w]*)\\\"");
     static Pattern hashPattern = Pattern.compile("^#(.*)$", Pattern.UNIX_LINES);
 
     static String _translateScript(String filename, String scriptFile) throws SyntaxException
@@ -274,17 +287,22 @@ public class GroovyView<ModelClass> extends WebPartView<ModelClass>
             String text = start > endPrev ? template.substring(endPrev, start) : "";
             if (0 != text.length())
                 appendPrintText(script, text);
-            String code = m2.group(1);
-            String importClass;
+            // skip comment pattern
+            if (m2.group(1) != null)
+                continue;
+            String code = m2.group(2);
             // handle <%@ page import="org.labkey.api.util.PageFlowUtil"%>
             // just to make using jsp editor kinda work
             if (code.startsWith("@"))
             {
-                Matcher m = importPattern.matcher(code);
+                Matcher m = importOrExtendsPattern.matcher(code);
                 if (!m.find())
                     throw new SyntaxException(code, 0, 0);
-                importClass = m.group(1);
-                script.append("import ").append(importClass).append("; ");
+                String directive = m.group(1);
+                String clazz = m.group(2);
+                if ("import".equals(directive))
+                    script.append("import ").append(clazz).append("; ");
+                // ignore "extends" for now
             }
 /*
             else if (code.startsWith("=&"))
@@ -295,6 +313,10 @@ public class GroovyView<ModelClass> extends WebPartView<ModelClass>
             else if (code.startsWith("="))
             {
                 script.append(";safe_print(").append(code.substring(1)).append(");");
+            }
+            else if (code.startsWith("--"))
+            {
+                // ignore comments
             }
             else
             {
@@ -352,10 +374,14 @@ public class GroovyView<ModelClass> extends WebPartView<ModelClass>
     private static void appendFunctions(StringBuffer sb)
     {
         sb.append("\n");
+        sb.append("def getViewContext() { return context;}\n");
+        sb.append("def getModelBean() { return modelBean;}\n");
         sb.append("def safe_print(o)  { if (null == o) return; out.print(o); }\n");
         //sb.append("def printf(String fmt, java.util.List args) { out.printf(fmt, args.toArray()); }\n");
         sb.append("def filter(o) { return PageFlowUtil.filter(o);}\n");
+        sb.append("def h(o) { return PageFlowUtil.filter(o);}\n");
         sb.append("def toString(o) { if (null == o) return ''; return String.valueOf(o); }\n");
+        sb.append("def include(view, out) { currentView.include(view, out); }\n");
     }
 
 
@@ -478,5 +504,26 @@ public class GroovyView<ModelClass> extends WebPartView<ModelClass>
         return new Binding(copy);
     }
 
-    
+    protected String renderErrors(boolean fieldNames)
+    {
+        if (_errors == null || !_errors.hasErrors())
+            return "";
+        List<ObjectError> l = (List<ObjectError>)_errors.getAllErrors();
+        ViewContext context = getViewContext();
+        StringBuffer message = new StringBuffer();
+        String br = "";
+        message.append("<span style=\"color:red;\">");
+        for (ObjectError e : l)
+        {
+            message.append(br);
+            br = "<br>";
+            if (fieldNames && e instanceof FieldError)
+            {
+                message.append("<b>" + PageFlowUtil.filter(((FieldError)e).getField()) + ":</b>&nbsp;");
+            }
+            message.append(PageFlowUtil.filter(context.getMessage(e)));
+        }
+        message.append("</span>");
+        return message.toString();
+    }
 }
