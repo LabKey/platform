@@ -426,7 +426,7 @@ public class IssueManager
 
     public static User[] getAssignedToList(Container c, Issue issue)
     {
-        final TableInfo table = CoreSchema.getInstance().getTableInfoUsers();
+        final TableInfo table = CoreSchema.getInstance().getTableInfoActiveUsers();
         final String cacheKey = getCacheKey(c);
 
         Map<String, User> assignedToMap = (Map<String, User>) DbCache.get(table, cacheKey);
@@ -455,13 +455,18 @@ public class IssueManager
 
     public static String getCacheKey(Container c)
     {
-        String projectName = c.getProject().getName();
-        return projectName + "AssignedTo";
+        String key = "AssignedTo";
+        return null != c ? key + c.getProject().getName() : key;
     }
 
     public static int getUserEmailPreferences(Container c, int userId)
     {
         Integer[] emailPreference = null;
+
+        //if the user is inactive, don't send email
+        User user = UserManager.getUser(userId);
+        if(null != user && !user.isActive())
+            return 0;
 
         try
         {
@@ -524,7 +529,9 @@ public class IssueManager
     public static void uncache(Container c)
     {
         if (c != null)
-            DbCache.remove(CoreSchema.getInstance().getTableInfoUsers(), getCacheKey(c));
+            DbCache.remove(CoreSchema.getInstance().getTableInfoActiveUsers(), getCacheKey(c));
+        else
+            DbCache.removeUsingPrefix(CoreSchema.getInstance().getTableInfoActiveUsers(), getCacheKey(null));
     }
 
     public static void purgeContainer(Container c)

@@ -202,7 +202,7 @@ public class SecurityController extends SpringActionController
 
         public List<String> getCompletionNames() throws SQLException
         {
-            User[] users = UserManager.getAllUsers();
+            User[] users = UserManager.getActiveUsers();
             List<String> names = new ArrayList<String>();
             for (User user : users)
             {

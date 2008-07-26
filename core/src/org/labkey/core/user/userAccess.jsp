@@ -38,6 +38,12 @@
     int cellPadding = 3;
 %>
 <labkey:errors />
+
+<% if(!bean.isActive()) {%>
+<div class="labkey-error"><b>NOTE:</b> This user account has been disabled, and thus has no permissions.
+However, If this account is re-enabled, it would have the following permissions.</div>
+<% } %>
+
 <table class="normal" cellspacing="0" cellpadding="<%= cellPadding %>" style="border-bottom:solid 2px <%=borderColor%>;">
     <tr>
         <th style="border-left:solid 1px <%= borderColor %>;<%=styleTH%>">Container</th>

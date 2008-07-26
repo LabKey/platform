@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 CREATE VIEW core.Users AS
-    SELECT Principals.Name AS Email, UsersData.*
+    SELECT Principals.Name AS Email, UsersData.*, Principals.Active
     FROM core.Principals Principals
         INNER JOIN core.UsersData UsersData ON Principals.UserId = UsersData.UserId
     WHERE Type = 'u';
@@ -41,4 +41,8 @@ CREATE OR REPLACE RULE Users_Update AS
 			DisplayName = NEW.DisplayName
 		WHERE UserId = NEW.UserId;
 
-
+CREATE VIEW core.ActiveUsers AS
+    SELECT Principals.Name AS Email, UsersData.*
+    FROM core.Principals Principals
+        INNER JOIN core.UsersData UsersData ON Principals.UserId = UsersData.UserId
+    WHERE Type = 'u' AND Principals.Active=true;

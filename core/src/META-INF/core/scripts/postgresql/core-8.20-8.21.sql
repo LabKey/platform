@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
--- DROP current views.
-SELECT core.fn_dropifexists('Contacts', 'core', 'VIEW', NULL);
-SELECT core.fn_dropifexists('Users', 'core', 'VIEW', NULL);
-SELECT core.fn_dropifexists('ActiveUsers', 'core', 'VIEW', NULL);
+ -- PostgreSQL version
 
+ -- Add Active column to Principals table
+ALTER TABLE core.Principals
+ADD COLUMN Active boolean NOT NULL DEFAULT true;

@@ -213,6 +213,16 @@ public class IssuesModule extends DefaultModule implements ContainerManager.Cont
         }
     }
 
+    public void userAccountDisabled(User user)
+    {
+        IssueManager.uncache(null);
+    }
+
+    public void userAccountEnabled(User user)
+    {
+        IssueManager.uncache(null);
+    }
+
     public void afterSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)
     {
         double version = moduleContext.getInstalledVersion();

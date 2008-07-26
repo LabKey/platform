@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 CREATE VIEW core.Users AS
-    SELECT Principals.Name AS Email, UsersData.*
+    SELECT Principals.Name AS Email, UsersData.*, Principals.Active
     FROM core.Principals Principals
         INNER JOIN core.UsersData UsersData ON Principals.UserId = UsersData.UserId
     WHERE Type = 'u'
@@ -27,3 +27,9 @@ CREATE VIEW core.Contacts AS
 	    INNER JOIN core.Users Users ON Members.UserId = Users.UserId
 GO
 
+CREATE VIEW core.ActiveUsers AS
+    SELECT Principals.Name AS Email, UsersData.*
+    FROM core.Principals Principals
+        INNER JOIN core.UsersData UsersData ON Principals.UserId = UsersData.UserId
+    WHERE Type = 'u' and Principals.Active=1
+GO

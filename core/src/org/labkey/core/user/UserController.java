@@ -65,7 +65,7 @@ public class UserController extends SpringActionController
         String columnNames = "Email, DisplayName, FirstName, LastName, Phone, Mobile, Pager, IM, Description";
 
         if (user != null && user.isAdministrator())
-            columnNames = columnNames + ", UserId, LastLogin";
+            columnNames = columnNames + ", UserId, LastLogin, Active";
 
         return columnNames;
     }
@@ -397,6 +397,7 @@ public class UserController extends SpringActionController
     {
         private List<AccessDetailRow> _rows;
         private boolean _showGroups;
+        private boolean _active = true;
 
         public AccessDetail(List<AccessDetailRow> rows)
         {
@@ -415,6 +416,16 @@ public class UserController extends SpringActionController
         public boolean showGroups()
         {
             return _showGroups;
+        }
+
+        public boolean isActive()
+        {
+            return _active;
+        }
+
+        public void setActive(boolean active)
+        {
+            _active = active;
         }
     }
 
@@ -567,7 +578,9 @@ public class UserController extends SpringActionController
                 return HttpView.throwNotFoundMV();
             List<AccessDetailRow> rows = new ArrayList<AccessDetailRow>();
             buildAccessDetailList(ContainerManager.getContainerTree(), ContainerManager.getRoot(), rows, requestedUser, 0);
-            JspView<AccessDetail> accessView = new JspView<AccessDetail>("/org/labkey/core/user/userAccess.jsp", new AccessDetail(rows));
+            AccessDetail details = new AccessDetail(rows);
+            details.setActive(requestedUser.isActive());
+            JspView<AccessDetail> accessView = new JspView<AccessDetail>("/org/labkey/core/user/userAccess.jsp", details);
 
             VBox view = new VBox(accessView);
             if (getUser().isAdministrator())
@@ -761,6 +774,11 @@ public class UserController extends SpringActionController
             {
                 form.setContainer(null);
                 DataRegion rgn = getGridRegion(isOwnRecord);
+
+                //don't let the user make themselves inactive
+                if(isOwnRecord)
+                    rgn.removeColumns("Active");
+
                 String returnUrl = form.getStrings().get(ReturnUrlForm.Params.returnUrl.toString());
 
                 if (null != returnUrl)
@@ -781,7 +799,33 @@ public class UserController extends SpringActionController
 
         public boolean handlePost(UpdateForm form, BindException errors) throws Exception
         {
-            UserManager.updateUser(getUser(), form.getTypedValues(), form.getPkVal());
+            //the Active column is on Principals, and since SQL Server can't update
+            //columns from different base tables via a View, we need to strip the Active
+            //form value out of the form and do a separate call under the same transaction
+            Map<String,Object> values = form.getTypedValues();
+            boolean isActive = values.containsKey("Active");
+            values.remove("Active");
+            DbScope userScope = DbSchema.get("core").getScope();
+            User user = getUser();
+            try
+            {
+                userScope.beginTransaction();
+
+                //update the user data
+                UserManager.updateUser(user, values, form.getPkVal());
+
+                //update Principals.Active if user is admin and not editing own record
+                boolean isOwnRecord = ((Integer) form.getPkVal()).intValue() == user.getUserId();
+                if(user.isAdministrator() && !isOwnRecord)
+                    UserManager.setUserActive(user, ((Integer)form.getPkVal()).intValue(), isActive);
+
+                userScope.commitTransaction();
+            }
+            finally
+            {
+                if(userScope.isTransactionActive())
+                    userScope.rollbackTransaction();
+            }
             return true;
         }
 

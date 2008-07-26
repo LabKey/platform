@@ -94,6 +94,10 @@ public abstract class EmailPrefsSelector
         int emailPreference = ep.getEmailOptionId() & AnnouncementManager.EMAIL_PREFERENCE_MASK;
 
         User user = ep.getUser();
+        //if user is inactive, don't sent email
+        if(!user.isActive())
+            return false;
+
         AnnouncementManager.Settings settings = AnnouncementsController.getSettings(_c);
 
         if (AnnouncementManager.EMAIL_PREFERENCE_MINE == emailPreference)

@@ -197,6 +197,16 @@ public class AnnouncementModule extends DefaultModule implements Search.Searchab
         }
     }
 
+    public void userAccountDisabled(User user)
+    {
+        //TODO: what should go here?
+    }
+
+    public void userAccountEnabled(User user)
+    {
+        //TODO: what should go here?
+    }
+
     public void principalAddedToGroup(Group group, UserPrincipal user)
     {
     }
