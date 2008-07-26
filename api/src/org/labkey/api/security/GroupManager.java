@@ -298,6 +298,17 @@ public class GroupManager
             removeFromCache(user);
         }
 
+        public void userAccountDisabled(User user)
+        {
+            removeFromCache(user);
+
+        }
+
+        public void userAccountEnabled(User user)
+        {
+            removeFromCache(user);
+        }
+
         public void propertyChange(PropertyChangeEvent evt)
         {
         }

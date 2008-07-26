@@ -37,6 +37,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     protected int[] _groups = null;
     private Date _lastLogin = null;
     private User _impersonatingUser = null;
+    private boolean _active = false;
 
     static final User guest = new GuestUser();
 
@@ -238,5 +239,15 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     public boolean isImpersonated()
     {
         return null != _impersonatingUser;
+    }
+
+    public boolean isActive()
+    {
+        return _active;
+    }
+
+    public void setActive(boolean active)
+    {
+        _active = active;
     }
 }

@@ -86,6 +86,10 @@ public class UserManager
         void userAddedToSite(User user);
 
         void userDeletedFromSite(User user);
+
+        void userAccountDisabled(User user);
+
+        void userAccountEnabled(User user);
     }
 
     private static final ArrayList<UserListener> _listeners = new ArrayList<UserListener>();
@@ -142,6 +146,45 @@ public class UserManager
         return errors;
     }
 
+    protected static List<Throwable> fireUserDisabled(User user)
+    {
+        UserListener[] list = getListeners();
+        List<Throwable> errors = new ArrayList<Throwable>();
+
+        for (UserListener userListener : list)
+        {
+            try
+            {
+                userListener.userAccountDisabled(user);
+            }
+            catch (Throwable t)
+            {
+                _log.error("fireUserDisabled", t);
+                errors.add(t);
+            }
+        }
+        return errors;
+    }
+
+    protected static List<Throwable> fireUserEnabled(User user)
+    {
+        UserListener[] list = getListeners();
+        List<Throwable> errors = new ArrayList<Throwable>();
+
+        for (UserListener userListener : list)
+        {
+            try
+            {
+                userListener.userAccountEnabled(user);
+            }
+            catch (Throwable t)
+            {
+                _log.error("fireUserEnabled", t);
+                errors.add(t);
+            }
+        }
+        return errors;
+    }
 
     public static User getUser(int userId)
     {
@@ -327,30 +370,25 @@ public class UserManager
         if(User.guest.getUserId() == userId.intValue())
             return "Guest";
 
-        Map<Integer, UserName> userList = getUserEmailDisplayNameMap();
-
-        UserName userName = userList.get(userId);
-        if (userName == null)
-            return null;
-        else
-            return userName.getEmail();
+        User user = getUser(userId);
+        return null != user ? user.getEmail() : null;
     }
 
 
-    public static User[] getAllUsers() throws SQLException
+    public static User[] getActiveUsers() throws SQLException
     {
-        User[] userList = (User[]) DbCache.get(_core.getTableInfoUsers(),_userObjectListLookup);
+        User[] userList = (User[]) DbCache.get(_core.getTableInfoActiveUsers(),_userObjectListLookup);
         if (userList != null)
             return userList;
-        userList = Table.select(_core.getTableInfoUsers(), Table.ALL_COLUMNS, null, new Sort("Email"), User.class);
-        DbCache.put(_core.getTableInfoUsers(),_userObjectListLookup, userList, Cache.HOUR);
+        userList = Table.select(_core.getTableInfoActiveUsers(), Table.ALL_COLUMNS, null, new Sort("Email"), User.class);
+        DbCache.put(_core.getTableInfoActiveUsers(),_userObjectListLookup, userList, Cache.HOUR);
         return userList;
     }
 
 
     private static Map<Integer, UserName> getUserEmailDisplayNameMap()
     {
-        Map<Integer, UserName> userList = (Map<Integer, UserName>) DbCache.get(_core.getTableInfoUsers(), _userListLookup);
+        Map<Integer, UserName> userList = (Map<Integer, UserName>) DbCache.get(_core.getTableInfoActiveUsers(), _userListLookup);
 
         if (null == userList)
         {
@@ -360,7 +398,7 @@ public class UserManager
 
             try
             {
-                rs = Table.executeQuery(_core.getSchema(), "SELECT UserId, Email, DisplayName FROM " + _core.getTableInfoUsers(), new Object[]{});
+                rs = Table.executeQuery(_core.getSchema(), "SELECT UserId, Email, DisplayName FROM " + _core.getTableInfoActiveUsers(), new Object[]{});
 
                 while (rs.next())
                 {
@@ -387,7 +425,7 @@ public class UserManager
                 }
             }
 
-            DbCache.put(_core.getTableInfoUsers(), _userListLookup, userList, Cache.HOUR);
+            DbCache.put(_core.getTableInfoActiveUsers(), _userListLookup, userList, Cache.HOUR);
         }
 
         return userList;
@@ -444,8 +482,8 @@ public class UserManager
 
     private static void clearUserList(int userId)
     {
-        DbCache.remove(_core.getTableInfoUsers(),_userListLookup);
-        DbCache.remove(_core.getTableInfoUsers(),_userObjectListLookup);
+        DbCache.remove(_core.getTableInfoActiveUsers(),_userListLookup);
+        DbCache.remove(_core.getTableInfoActiveUsers(),_userObjectListLookup);
         if (0 != userId)
             DbCache.remove(_core.getTableInfoUsers(), "" + userId);
         _userCount = null;
@@ -576,7 +614,7 @@ public class UserManager
         {
             try
             {
-                _userCount = Table.rowCount(_core.getTableInfoUsers());
+                _userCount = Table.rowCount(_core.getTableInfoActiveUsers());
             }
             catch (SQLException e)
             {
@@ -737,6 +775,52 @@ public class UserManager
         }
     }
 
+    public static void setUserActive(User currentUser, int userIdToAdjust, boolean active) throws SecurityManager.UserManagementException
+    {
+        setUserActive(currentUser, getUser(userIdToAdjust), active);
+    }
+
+    public static void setUserActive(User currentUser, User userToAdjust, boolean active) throws SecurityManager.UserManagementException
+    {
+        if (null == userToAdjust)
+            return;
+
+        //no-op if active state is not actually changed
+        if(userToAdjust.isActive() == active)
+            return;
+
+        removeActiveUser(userToAdjust);
+
+        Integer userId = new Integer(userToAdjust.getUserId());
+
+        List<Throwable> errors = active ? fireUserEnabled(userToAdjust) : fireUserDisabled(userToAdjust);
+
+        if (errors.size() != 0)
+        {
+            Throwable first = errors.get(0);
+            if (first instanceof RuntimeException)
+                throw (RuntimeException)first;
+            else
+                throw new RuntimeException(first);
+        }
+        try
+        {
+            Table.update(currentUser, CoreSchema.getInstance().getTableInfoPrincipals(),
+                    Collections.singletonMap("Active", active), userId, null);
+            addToUserHistory(userToAdjust, "User account " + userToAdjust.getEmail() + " was " + 
+                    (active ? "re-enabled" : "disabled"));
+        }
+        catch(SQLException e)
+        {
+            _log.error("setUserActive: " + e);
+            throw new SecurityManager.UserManagementException(userToAdjust.getEmail(), e);
+        }
+        finally
+        {
+            clearUserList(userId);
+        }
+    }
+
     public static String getRequiredUserFields()
     {
         Map<String, String> map = getUserPreferences(false);
@@ -763,7 +847,7 @@ public class UserManager
     // Get completions from list of all site users
     public static List<AjaxCompletion> getAjaxCompletions(String prefix, ViewContext context) throws SQLException
     {
-        return UserManager.getAjaxCompletions(prefix, UserManager.getAllUsers(), context);
+        return UserManager.getAjaxCompletions(prefix, UserManager.getActiveUsers(), context);
     }
 
     // Get completions from specified list of users

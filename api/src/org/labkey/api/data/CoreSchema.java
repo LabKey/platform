@@ -103,6 +103,11 @@ public class CoreSchema
         return getSchema().getTable("Users");
     }
 
+    public TableInfo getTableInfoActiveUsers()
+    {
+        return getSchema().getTable("ActiveUsers");
+    }
+
     public TableInfo getTableInfoContacts()
     {
         return getSchema().getTable("Contacts");

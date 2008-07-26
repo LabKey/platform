@@ -1209,7 +1209,7 @@ public class SecurityManager
     public static List<User> getUsersWithPermissions(Container c, int perm) throws SQLException
     {
         // No cache right now, but performance seems fine.  After the user list and acl is cached, no other queries occur.
-        User[] allUsers = UserManager.getAllUsers();
+        User[] allUsers = UserManager.getActiveUsers();
         List<User> users = new ArrayList<User>(allUsers.length);
         ACL acl = c.getAcl();
 
@@ -1264,9 +1264,9 @@ public class SecurityManager
                     core.getSchema(),
                     "SELECT Users.UserId, Users.Name\n" +
                             "FROM " + core.getTableInfoMembers() + " JOIN " + core.getTableInfoPrincipals() + " Users ON " + core.getTableInfoMembers() + ".UserId = Users.UserId\n" +
-                            "WHERE GroupId = ?\n" +
+                            "WHERE GroupId = ? AND Active=?\n" +
                             "ORDER BY Users.Name",
-                    new Object[]{groupId});
+                    new Object[]{groupId, true});
             List<Pair<Integer,String>> members = new ArrayList<Pair<Integer, String>>();
             while (rs.next())
                 members.add(new Pair<Integer,String>(rs.getInt(1), rs.getString(2)));
