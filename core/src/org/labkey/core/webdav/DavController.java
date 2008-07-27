@@ -39,7 +39,6 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.json.JSONWriter;
-import org.json.JSONException;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
@@ -460,7 +459,7 @@ public class DavController extends SpringActionController
                 return notFound(resource.getPath());
 
             // http://www.ietf.org/rfc/rfc4709.txt
-            if (null != getRequest().getParameter("davmount"))
+            if ("DAVMOUNT".equals(method))
                 return mountResource(resource);
             else if (resource.isCollection())
                 return serveCollection(resource, !"HEAD".equals(method));
@@ -470,6 +469,16 @@ public class DavController extends SpringActionController
     }
 
 
+    @RequiresPermission(ACL.PERM_NONE)
+    public class DavmountAction extends GetAction
+    {
+        public DavmountAction()
+        {
+            super("DAVMOUNT");
+        }
+    }
+
+    
     @RequiresPermission(ACL.PERM_NONE)
     public class HeadAction extends GetAction
     {
@@ -524,6 +533,9 @@ public class DavController extends SpringActionController
     @RequiresPermission(ACL.PERM_NONE)
     public class PropfindAction extends DavAction
     {
+        boolean listRootProperties = true; // return root node when depth>0?
+        int defaultDepth = INFINITY;
+        
         public PropfindAction()
         {
             super("PROPFIND");
@@ -533,15 +545,36 @@ public class DavController extends SpringActionController
         {
             super(method);
         }
-        
+
+        protected WebdavResolver.Resource _resolvePath() throws DavException
+        {
+            return resolvePath();
+        }
+
+        int getDepthParameter()
+        {
+            try
+            {
+                String depthStr = getRequest().getHeader("Depth");
+                if (null == depthStr)
+                    depthStr = getRequest().getParameter("depth");
+                int depth = null == depthStr ? defaultDepth : "infinity".equals(depthStr) ? INFINITY : Integer.parseInt(depthStr);
+                return depth < 0 ? INFINITY : Math.min(depth,INFINITY);
+            }
+            catch (NumberFormatException x)
+            {
+            }
+            return INFINITY;
+        }
+
         public WebdavStatus doMethod() throws DavException, IOException
         {
-            WebdavResolver.Resource resource = resolvePath();
-            if (resource == null || !resource.exists())
+            WebdavResolver.Resource root = _resolvePath();
+            if (root == null || !root.exists())
                 return notFound();
             
-            if (!resource.canList(getUser()))
-                return unauthorized(resource);
+            if (!root.canList(getUser()))
+                return unauthorized(root);
 
             List<String> properties = null;
             Find type = Find.FIND_ALL_PROP;
@@ -549,26 +582,70 @@ public class DavController extends SpringActionController
 
             Node propNode = null;
 
-            ReadAheadInputStream is = new ReadAheadInputStream(getRequest().getInputStream());
-            try
+            if ("PROPFIND".equals(method))
             {
-                if (is.available() > 0)
+                ReadAheadInputStream is = new ReadAheadInputStream(getRequest().getInputStream());
+                try
                 {
-                    DocumentBuilder documentBuilder;
-                    try
+                    if (is.available() > 0)
                     {
-                        documentBuilder = getDocumentBuilder();
-                    }
-                    catch (ServletException ex)
-                    {
-                        throw new DavException(ex.getCause());
-                    }
+                        DocumentBuilder documentBuilder;
+                        try
+                        {
+                            documentBuilder = getDocumentBuilder();
+                        }
+                        catch (ServletException ex)
+                        {
+                            throw new DavException(ex.getCause());
+                        }
 
-                    Document document = documentBuilder.parse(is);
+                        Document document = documentBuilder.parse(is);
 
-                    // Get the root element of the document
-                    Element rootElement = document.getDocumentElement();
-                    NodeList childList = rootElement.getChildNodes();
+                        // Get the root element of the document
+                        Element rootElement = document.getDocumentElement();
+                        NodeList childList = rootElement.getChildNodes();
+
+                        for (int i = 0; i < childList.getLength(); i++)
+                        {
+                            Node currentNode = childList.item(i);
+                            switch (currentNode.getNodeType())
+                            {
+                                case Node.TEXT_NODE:
+                                    break;
+                                case Node.ELEMENT_NODE:
+                                    if (currentNode.getNodeName().endsWith("prop"))
+                                    {
+                                        type = Find.FIND_BY_PROPERTY;
+                                        propNode = currentNode;
+                                    }
+                                    if (currentNode.getNodeName().endsWith("propname"))
+                                    {
+                                        type = Find.FIND_PROPERTY_NAMES;
+                                    }
+                                    if (currentNode.getNodeName().endsWith("allprop"))
+                                    {
+                                        type = Find.FIND_ALL_PROP;
+                                    }
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    throw new DavException(WebdavStatus.SC_BAD_REQUEST);
+                }
+                finally
+                {
+                    close(is, "propfind request stream");
+                }
+
+                if (type == Find.FIND_BY_PROPERTY)
+                {
+                    properties = new Vector<String>();
+                    NodeList childList = propNode.getChildNodes();
 
                     for (int i = 0; i < childList.getLength(); i++)
                     {
@@ -578,61 +655,20 @@ public class DavController extends SpringActionController
                             case Node.TEXT_NODE:
                                 break;
                             case Node.ELEMENT_NODE:
-                                if (currentNode.getNodeName().endsWith("prop"))
+                                String nodeName = currentNode.getNodeName();
+                                String propertyName;
+                                if (nodeName.indexOf(':') != -1)
                                 {
-                                    type = Find.FIND_BY_PROPERTY;
-                                    propNode = currentNode;
+                                    propertyName = nodeName.substring(nodeName.indexOf(':') + 1);
                                 }
-                                if (currentNode.getNodeName().endsWith("propname"))
+                                else
                                 {
-                                    type = Find.FIND_PROPERTY_NAMES;
+                                    propertyName = nodeName;
                                 }
-                                if (currentNode.getNodeName().endsWith("allprop"))
-                                {
-                                    type = Find.FIND_ALL_PROP;
-                                }
-                                break;
-                            default:
+                                // href is a live property which is handled differently
+                                properties.add(propertyName);
                                 break;
                         }
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                throw new DavException(WebdavStatus.SC_BAD_REQUEST);
-            }
-            finally
-            {
-                close(is, "propfind request stream");
-            }
-
-            if (type == Find.FIND_BY_PROPERTY)
-            {
-                properties = new Vector<String>();
-                NodeList childList = propNode.getChildNodes();
-
-                for (int i = 0; i < childList.getLength(); i++)
-                {
-                    Node currentNode = childList.item(i);
-                    switch (currentNode.getNodeType())
-                    {
-                        case Node.TEXT_NODE:
-                            break;
-                        case Node.ELEMENT_NODE:
-                            String nodeName = currentNode.getNodeName();
-                            String propertyName;
-                            if (nodeName.indexOf(':') != -1)
-                            {
-                                propertyName = nodeName.substring(nodeName.indexOf(':') + 1);
-                            }
-                            else
-                            {
-                                propertyName = nodeName;
-                            }
-                            // href is a live property which is handled differently
-                            properties.add(propertyName);
-                            break;
                     }
                 }
             }
@@ -648,26 +684,31 @@ public class DavController extends SpringActionController
 
                 if (depth == 0)
                 {
-                    resourceWriter.writeProperties(resource, type, properties);
+                    resourceWriter.writeProperties(root, type, properties);
                 }
                 else
                 {
                     // The stack always contains the object of the current level
                     Stack<String> stack = new Stack<String>();
-                    stack.push(resource.getPath());
+                    stack.push(root.getPath());
 
                     // Stack of the objects one level below
+                    boolean skipFirst = !listRootProperties;
+                    WebdavResolver.Resource resource;
                     Stack<String> stackBelow = new Stack<String>();
 
                     while ((!stack.isEmpty()) && (depth >= 0))
                     {
                         String currentPath = stack.pop();
-
                         resource = resolvePath(currentPath);
+
                         if (null == resource || !resource.canList(getUser()))
                             continue;
 
-                        resourceWriter.writeProperties(resource, type, properties);
+                        if (skipFirst)
+                            skipFirst = false;
+                        else
+                            resourceWriter.writeProperties(resource, type, properties);
 
                         if (resource.isCollection() && depth > 0)
                         {
@@ -692,7 +733,7 @@ public class DavController extends SpringActionController
                                 for (Object currentLockNullResource : currentLockNullResources)
                                 {
                                     String lockNullPath = (String) currentLockNullResource;
-                                    resourceWriter.parseLockNullProperties(lockNullPath, type, properties);
+                                    resourceWriter.writeLockNullProperties(lockNullPath, type, properties);
                                 }
                             }
                         }
@@ -738,9 +779,21 @@ public class DavController extends SpringActionController
     @RequiresPermission(ACL.PERM_NONE)
     public class JsonAction extends PropfindAction
     {
+        // depth > 1 NYI
         public JsonAction()
         {
             super("JSON");
+            listRootProperties = false;
+            defaultDepth = 1;
+        }
+
+        @Override
+        protected WebdavResolver.Resource _resolvePath() throws DavException
+        {
+            String node = getRequest().getParameter("node");
+            if (null != node)
+                setResourcePath(node);
+            return resolvePath();
         }
 
         @Override
@@ -769,7 +822,7 @@ public class DavController extends SpringActionController
          * @param propertiesVector If the propfind type is find properties by
          *                         name, then this Vector contains those properties
          */
-        public void parseLockNullProperties(String path, Find type, List<String> propertiesVector) throws Exception;
+        public void writeLockNullProperties(String path, Find type, List<String> propertiesVector) throws Exception;
 
         void sendData() throws Exception;
     }
@@ -1070,13 +1123,8 @@ public class DavController extends SpringActionController
            }
 
 
-           public void parseLockNullProperties(String path, Find type, List<String> propertiesVector) throws DavException
+           public void writeLockNullProperties(String path, Find type, List<String> propertiesVector) throws DavException
            {
-               // Exclude any resource in the /WEB-INF and /META-INF subdirectories
-               // (the "toUpperCase()" avoids problems on Windows systems)
-               if (path.toUpperCase().startsWith("/WEB-INF") || path.toUpperCase().startsWith("/META-INF"))
-                   return;
-
                // Retrieving the lock associated with the lock-null resource
                LockInfo lock = (LockInfo) resourceLocks.get(path);
                if (lock == null)
@@ -1294,41 +1342,38 @@ public class DavController extends SpringActionController
 
         public void writeProperties(WebdavResolver.Resource resource, Find type, List<String> propertiesVector) throws Exception
         {
-            boolean exists = resource.exists();
-
             json.object();
-            json.key("href").value(resource.getLocalHref(getViewContext()));
-            String displayName = resource.getPath().equals("/") ? SERVLETPATH : resource.getName();
+            json.key("id").value(resource.getPath());
+            String displayName = resource.getPath().equals("/") ? "/" : resource.getName();
+            json.key("href").value(resource.getHref(getViewContext()));
+            json.key("text").value(displayName);
 
             json.key("creationdate").value(new Date(resource.getCreation()));
-            if (null != displayName)
-                json.key("displayname").value(displayName);
             if (resource.isFile())
             {
-                json.key("getlastmodified").value(new Date(resource.getLastModified()));
-                json.key("getcontentlength").value(resource.getContentLength());
+                json.key("lastmodified").value(new Date(resource.getLastModified()));
+                json.key("contentlength").value(resource.getContentLength());
+                if (null != resource.getFile())
+                    json.key("size").value(resource.getFile().length());
                 String contentType = resource.getContentType();
                 if (contentType != null)
-                    json.key("getcontenttype").value(contentType);
-                json.key("getetag").value(resource.getETag());
+                    json.key("contenttype").value(contentType);
+                json.key("etag").value(resource.getETag());
                 json.key("leaf").value(true);
             }
             else
             {
                 json.key("leaf").value(false);
+                if (resource.getFile() != null)
+                    json.key("directory").value(resource.getFile().getPath());
             }
 
             json.endObject();
             out.newLine();
         }
 
-        public void parseLockNullProperties(String path, Find type, List<String> propertiesVector) throws Exception
+        public void writeLockNullProperties(String path, Find type, List<String> propertiesVector) throws Exception
         {
-            // Exclude any resource in the /WEB-INF and /META-INF subdirectories
-            // (the "toUpperCase()" avoids problems on Windows systems)
-            if (path.toUpperCase().startsWith("/WEB-INF") || path.toUpperCase().startsWith("/META-INF"))
-                return;
-
             // Retrieving the lock associated with the lock-null resource
             LockInfo lock = (LockInfo) resourceLocks.get(path);
             if (lock == null)
@@ -1337,10 +1382,11 @@ public class DavController extends SpringActionController
             WebdavResolver.Resource resource = resolvePath(path);
 
             json.object();
+            json.key("id").value(resource.getPath());
             json.key("href").value(resource.getHref(getViewContext()));
+            json.key("text").value(resource.getName());
             json.key("creationdate").value(lock.creationDate);
-            json.key("displayname").value(resource.getName());
-            json.key("getlastmodified").value(lock.creationDate);
+            json.key("lastmodified").value(lock.creationDate);
             json.endObject();
         }
 
@@ -2548,23 +2594,6 @@ public class DavController extends SpringActionController
             return true;
         }
         return true;
-    }
-
-
-    int getDepthParameter()
-    {
-        try
-        {
-            String depthStr = getRequest().getHeader("Depth");
-            if (null == depthStr)
-                depthStr = getViewContext().getActionURL().getParameter("depth");
-            int depth = null == depthStr || "infinity".equals(depthStr) ? INFINITY : Integer.parseInt(depthStr);
-            return depth < 0 ? INFINITY : Math.min(depth,INFINITY);
-        }
-        catch (NumberFormatException x)
-        {
-        }
-        return INFINITY;
     }
 
 

@@ -49,9 +49,10 @@ public class WebdavServlet extends HttpServlet
         String fullPath = StringUtils.trimToEmpty(request.getPathInfo());
 
         // Store the original URL in case we need to redirect for authentication
-        if (request.getAttribute(ViewServlet.ORIGINAL_URL) == null)
+        URLHelper helper = (URLHelper)request.getAttribute(ViewServlet.ORIGINAL_URL); 
+        if (helper == null)
         {
-            URLHelper helper = new URLHelper(request);
+            helper = new URLHelper(request);
             request.setAttribute(ViewServlet.ORIGINAL_URL, helper.getURIString());
         }
 
@@ -59,33 +60,35 @@ public class WebdavServlet extends HttpServlet
         if (method.equals("GET") || method.equals("POST"))
         {
             String m = request.getHeader("method");
-            if (m == null && method.equals("GET"))
-                m = request.getParameter("method");
+            if (m == null)
+                m = helper.getParameter("method");
             if (null != m)
                 method = m;
         }
-        String dispatchUrl = "/" + DavController.name + "/" + method.toLowerCase() + ".view?path=" + PageFlowUtil.encodePath(fullPath);
+
+        ActionURL dispatchUrl = new ActionURL("/" + DavController.name + "/" + method.toLowerCase() + ".view");
+        dispatchUrl.addParameters(helper.getParameters());
+        dispatchUrl.replaceParameter("path",fullPath);
 
         if (0==1) // dispatch
         {
             // NOTE other parameters seem to get magically propagated...
-            RequestDispatcher r = request.getRequestDispatcher(dispatchUrl);
+            RequestDispatcher r = request.getRequestDispatcher(dispatchUrl.getLocalURIString());
             r.forward(request, response);
         }
         else // direct (if DavController doesn't depends on ViewServlet)
         {
-            ActionURL url = new ActionURL(dispatchUrl);
-            url.setScheme(request.getScheme());
-            url.setHost(request.getServerName());
-            url.setPort(request.getServerPort());
+            //ActionURL url = new ActionURL(dispatchUrl);
+            dispatchUrl.setScheme(request.getScheme());
+            dispatchUrl.setHost(request.getServerName());
+            dispatchUrl.setPort(request.getServerPort());
             ViewContext context = new ViewContext();
             context.setRequest(request);
             context.setResponse(response);
-            context.setActionURL(url);
+            context.setActionURL(dispatchUrl);
             DavController dav = new DavController();
             dav.setViewContext(context);
             dav.setResourcePath(fullPath);
-
             int stackSize = HttpView.getStackSize();
             try
             {
