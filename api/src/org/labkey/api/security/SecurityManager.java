@@ -1148,6 +1148,14 @@ public class SecurityManager
         return groupList.toString();
     }
 
+    public static List<User> getGroupMembers(Group group) throws SQLException, ValidEmail.InvalidEmailException
+    {
+        String[] emails = getGroupMemberNames(group.getUserId());
+        List<User> users = new ArrayList<User>(emails.length);
+        for(String email : emails)
+            users.add(UserManager.getUser(new ValidEmail(email)));
+        return users;
+    }
 
     public static List<User> getProjectMembers(Container c, boolean includeGlobal)
     {
@@ -1386,7 +1394,7 @@ public class SecurityManager
         List<String> params = new ArrayList<String>();
         params.add(caseInsensitive ? groupName.toLowerCase() : groupName);
         String sql = "SELECT UserId FROM " + core.getTableInfoPrincipals() + " WHERE " + (caseInsensitive ? "LOWER(Name)" : "Name") + " = ? AND Container ";
-        if (c == null)
+        if (c == null || c.isRoot())
             sql += "IS NULL";
         else
         {

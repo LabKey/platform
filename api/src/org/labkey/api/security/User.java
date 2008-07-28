@@ -109,7 +109,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
      */
     public String getDisplayName(ViewContext context)
     {
-        if (context.getUser().isGuest())
+        if (null == context || context.getUser().isGuest())
         {
             return UserManager.sanitizeEmailAddress(_displayName);
         }
