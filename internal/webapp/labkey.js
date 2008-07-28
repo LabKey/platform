@@ -156,6 +156,7 @@ LABKEY.requiresYahoo = function(script, immediate)
 LABKEY.requiresExtJs = function(immediate)
 {
     if (arguments.length < 2) immediate = true;
+    LABKEY.requiresCss(LABKEY.extJsRoot + '/resources/css/ext-all.css');
     LABKEY.requiresScript(LABKEY.extJsRoot + "/adapter/ext/ext-base.js", immediate);
     LABKEY.requiresScript(LABKEY.extJsRoot + "/ext-all" + (LABKEY.devMode ?  "-debug.js" : ".js"), immediate);
 }
