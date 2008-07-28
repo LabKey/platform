@@ -29,7 +29,7 @@ import org.labkey.api.query.snapshot.QuerySnapshotForm;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.security.*;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.util.AppProps;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;

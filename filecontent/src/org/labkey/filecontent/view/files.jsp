@@ -22,12 +22,12 @@
 <%@ page import="org.labkey.api.attachments.DownloadURL" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.ACL" %>
-<%@ page import="org.labkey.api.util.AppProps" %>
 <%@ page import="org.labkey.api.util.MimeMap" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.filecontent.FileContentController" %>
 <%@ page import="org.labkey.filecontent.FilesWebPart" %>
 <%@ page import="java.io.File" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -41,7 +41,7 @@
         out.println("The file set for this directory is not configured properly.");
         if (me.isShowAdmin() && context.getUser().isAdministrator())
         {%>
-            [<a href="<%=new ActionURL("FileContent", "showAdmin.view", c)%>" >Configure Directories</a>]
+            [<a href="<%=h(new ActionURL(FileContentController.ShowAdminAction.class, c))%>" >Configure Directories</a>]
         <%}
     return;
     }
@@ -136,7 +136,7 @@ if (context.hasPermission(ACL.PERM_UPDATE))
 }
 if (me.isShowAdmin() && context.getUser().isAdministrator())
 {
-%>[<a href="<%=new ActionURL("FileContent", "showAdmin.view", c)%>" >Configure</a>]&nbsp;<%
+%>[<a href="<%=h(new ActionURL(FileContentController.ShowAdminAction.class, c))%>" >Configure</a>]&nbsp;<%
 }%>
 <%!
     MimeMap mimeMap = new MimeMap();

@@ -51,7 +51,7 @@
     </select>
     <% if (ctx.getUser().isAdministrator())
 {
-    ActionURL configUrl = new ActionURL("FileContent", "showAdmin.view", ctx.getContainer());
+    ActionURL configUrl = new ActionURL(FileContentController.ShowAdminAction.class, ctx.getContainer());
     %>
     <a href="<%=h(configUrl)%>">Configure Directories</a>
     <%

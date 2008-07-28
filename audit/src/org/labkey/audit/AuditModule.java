@@ -38,6 +38,7 @@ public class AuditModule extends DefaultModule
     {
         super(NAME, 8.22, null, true);
         AuditLogService.registerProvider(AuditLogImpl.get());
+        addController("audit", AuditController.class);
     }
 
     public TabDisplayMode getTabDisplayMode()
@@ -56,6 +57,8 @@ public class AuditModule extends DefaultModule
         // add a container listener so we'll know when our container is deleted:
 
         AuditQuerySchema.register();
+        AuditLogService.get().addAuditViewFactory(new SiteSettingsAuditViewFactory());
+        AuditController.registerAdminConsoleLinks();
     }
 
     public Set<String> getSchemaNames()

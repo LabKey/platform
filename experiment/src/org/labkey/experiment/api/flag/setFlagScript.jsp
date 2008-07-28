@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.api.util.AppProps" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <% 
    ActionURL urlSet = new ActionURL("Experiment", "setFlag", "");

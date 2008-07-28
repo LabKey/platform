@@ -17,10 +17,7 @@
 package org.labkey.wiki.model;
 
 import org.labkey.api.module.DefaultFolderType;
-import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.AppProps;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.data.ContainerManager;

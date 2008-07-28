@@ -25,7 +25,7 @@ import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.browse.BrowseForm;
 import org.labkey.api.pipeline.browse.BrowseView;
 import org.labkey.api.security.User;
-import org.labkey.api.util.AppProps;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;

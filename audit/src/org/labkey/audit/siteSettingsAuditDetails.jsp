@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.core.admin.SiteSettingsAuditDetailsModel" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.audit.SiteSettingsAuditDetailsModel" %>
 <%
     JspView<SiteSettingsAuditDetailsModel> me = (JspView<SiteSettingsAuditDetailsModel>) HttpView.currentView();
     SiteSettingsAuditDetailsModel model = me.getModelBean();

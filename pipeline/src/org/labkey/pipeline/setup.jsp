@@ -24,7 +24,7 @@
 <%@ page import="java.security.cert.X509Certificate" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.pipeline.PipelineJobService" %>
-<%@ page import="org.labkey.api.util.AppProps" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<PipelineController.SetupBean> thisView = (JspView<PipelineController.SetupBean>) HttpView.currentView();

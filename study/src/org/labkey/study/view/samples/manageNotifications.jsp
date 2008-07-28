@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.api.security.SecurityUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <script type="text/javascript">LABKEY.requiresScript('completion.js');</script>
 <script type="text/javascript">
@@ -41,8 +42,7 @@ function setElementDisplayByCheckbox(checkbox, element)
     SampleManager.RequestNotificationSettings bean = me.getModelBean();
     Container container = HttpView.getRootContext().getContainer();
 
-    ActionURL completionAction = new ActionURL("Security", "completeUser", container);
-    String completionURLPrefix = completionAction.getLocalURIString() + "prefix=";
+    String completionURLPrefix = urlProvider(SecurityUrls.class).getCompleteUserURLPrefix(container);
     boolean newRequestNotifyChecked = ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()) ?
             bean.isNewRequestNotifyCheckbox() : (h(bean.getNewRequestNotify()) != null &&
             h(bean.getNewRequestNotify()).compareTo("") != 0));

@@ -18,7 +18,7 @@ package org.labkey.experiment;
 import org.apache.log4j.Logger;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.*;
-import org.labkey.api.util.AppProps;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.view.ViewContext;

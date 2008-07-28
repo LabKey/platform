@@ -16,23 +16,22 @@
 
 package org.labkey.core.security;
 
-import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.VBox;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.security.*;
-import org.labkey.api.security.SecurityManager;
-import org.labkey.api.util.HelpTopic;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.PropertyManager;
+import org.labkey.api.security.ACL;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityUrls;
+import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
 
 import javax.servlet.ServletException;
-import java.io.PrintWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.List;
-import java.util.Map;
 
 /**
  * User: jeckels
@@ -110,7 +109,7 @@ public class PermissionsDetailsView extends WebPartView
         if (!_c.isRoot())
         {
             out.print("<td class=\"normal\">");
-            out.print("&nbsp;[<a href=\"" + ActionURL.toPathString("Security", "groupPermission", _c.getPath()) + "?group=" + group.getUserId() + "\">");
+            out.print("&nbsp;[<a href=\"" + PageFlowUtil.filter(PageFlowUtil.urlProvider(SecurityUrls.class).getGroupPermissionURL(_c, group.getUserId())) + "\">");
             out.print("permissions</a>]</td>");
         }
         out.print("</tr>");

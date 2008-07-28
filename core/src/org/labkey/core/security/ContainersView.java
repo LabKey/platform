@@ -21,8 +21,10 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.util.ContainerTreeSelected;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.admin.AdminUrls;
 
 import javax.servlet.ServletException;
 import java.io.PrintWriter;
@@ -48,16 +50,15 @@ public class ContainersView extends WebPartView
 
     public void renderView(Object model, PrintWriter out) throws IOException, ServletException
     {
-        ActionURL url = new ActionURL("Security", "container", "");
+        ActionURL url = PageFlowUtil.urlProvider(SecurityUrls.class).getContainerURL(_c);
         PermissionsContainerTree ct = new PermissionsContainerTree(_c.getPath(), getViewContext().getUser(), ACL.PERM_ADMIN, url);
         ct.setCurrent(getViewContext().getContainer());
         StringBuilder html = new StringBuilder("<table class=\"dataRegion\">");
         ct.render(html);
         html.append("</table><br>");
-        ActionURL manageFoldersURL = getViewContext().cloneActionURL();
-        manageFoldersURL.setAction("manageFolders").setPageFlow("admin");
+        ActionURL manageFoldersURL = PageFlowUtil.urlProvider(AdminUrls.class).getManageFoldersURL(_c);
         html.append("*Indicates that this folder's permissions are inherited from the parent folder<br><br>");
-        html.append("[<a href=\"").append(manageFoldersURL.getURIString()).append("\">manage folders</a>]");
+        html.append("[<a href=\"").append(PageFlowUtil.filter(manageFoldersURL)).append("\">manage folders</a>]");
 
         out.println(html.toString());
     }

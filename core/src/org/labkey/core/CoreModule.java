@@ -18,6 +18,7 @@ package org.labkey.core;
 import junit.framework.TestCase;
 import org.apache.log4j.Logger;
 import org.fhcrc.cpas.util.NetworkDrive;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
@@ -26,11 +27,13 @@ import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.module.*;
 import org.labkey.api.security.*;
+import org.labkey.api.security.AuthenticationManager.Priority;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.core.admin.AdminController;
-import org.labkey.core.admin.SiteSettingsAuditViewFactory;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.analytics.AnalyticsController;
 import org.labkey.core.analytics.AnalyticsServiceImpl;
@@ -38,15 +41,15 @@ import org.labkey.core.attachment.AttachmentServiceImpl;
 import org.labkey.core.ftp.FtpController;
 import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.LoginController;
-import org.labkey.core.query.*;
+import org.labkey.core.query.AttachmentAuditViewFactory;
+import org.labkey.core.query.ContainerAuditViewFactory;
+import org.labkey.core.query.GroupAuditViewFactory;
+import org.labkey.core.query.UserAuditViewFactory;
 import org.labkey.core.security.SecurityController;
 import org.labkey.core.test.TestController;
 import org.labkey.core.user.UserController;
-import org.labkey.core.webdav.WebdavResolverImpl;
 import org.labkey.core.webdav.FileSystemAuditViewFactory;
-import org.labkey.api.security.AuthenticationManager.*;
-import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.QuerySchema;
+import org.labkey.core.webdav.WebdavResolverImpl;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -100,7 +103,6 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
         AttachmentService.register(new AttachmentServiceImpl());
         AnalyticsServiceImpl.register();
         FirstRequestHandler.addFirstRequestListener(this);
-        AuditLogService.get().addAuditViewFactory(new SiteSettingsAuditViewFactory());
 
 //        DefaultSchema.registerProvider("core", new DefaultSchema.SchemaProvider()
 //        {
@@ -381,6 +383,9 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
         ContextListener.addStartupListener(TempTableTracker.getStartupListener());
         ContextListener.addShutdownListener(TempTableTracker.getShutdownListener());
         ContextListener.addShutdownListener(org.labkey.core.webdav.DavController.getShutdownListener());
+
+        AdminController.registerAdminConsoleLinks();
+        AnalyticsController.registerAdminConsoleLinks();
     }
 
     @Override
@@ -400,11 +405,11 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
         }
         else if (c != null && "/".equals(c.getPath()) && user.isAdministrator())
         {
-            return new ActionURL("admin", "showAdmin.view", "");
+            return PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL();
         }
         else if (c != null && c.hasPermission(user, ACL.PERM_ADMIN))
         {
-            return new ActionURL("Security", "project.view", containerPath);
+            return PageFlowUtil.urlProvider(SecurityUrls.class).getProjectURL(c);
         }
         else
         {

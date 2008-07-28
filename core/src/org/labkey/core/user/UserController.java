@@ -32,6 +32,7 @@ import org.labkey.api.view.*;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.core.query.GroupAuditViewFactory;
 import org.labkey.core.query.UserAuditViewFactory;
+import org.labkey.core.security.SecurityController.*;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -126,7 +127,7 @@ public class UserController extends SpringActionController
             gridButtonBar.add(delete);
 
             ActionButton insert = new ActionButton("showAddUsers", "Add Users");
-            ActionURL actionURL = new ActionURL("Security", "showAddUsers.view", "");
+            ActionURL actionURL = new ActionURL(AddUsersAction.class, ContainerManager.getRoot());
             insert.setURL(actionURL.getLocalURIString());
             insert.setActionType(ActionButton.Action.LINK);
             gridButtonBar.add(insert);
@@ -648,7 +649,7 @@ public class UserController extends SpringActionController
                 if (!SecurityManager.isLdapEmail(new ValidEmail(displayEmail)))
                 {
                     ActionButton reset = new ActionButton("reset", "Reset Password");
-                    ActionURL resetURL = new ActionURL("Security", "resetPassword", "");
+                    ActionURL resetURL = new ActionURL(ResetPasswordAction.class, ContainerManager.getRoot());
                     resetURL.addParameter("email", displayEmail);
                     reset.setURL(resetURL.getLocalURIString());
                     reset.setActionType(ActionButton.Action.LINK);

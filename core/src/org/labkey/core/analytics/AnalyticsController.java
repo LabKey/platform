@@ -19,9 +19,13 @@ package org.labkey.core.analytics;
 import org.apache.struts.action.ActionMapping;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.jsp.FormPage;
 import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.settings.AdminConsole.SettingsLinkType;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewForm;
@@ -34,8 +38,15 @@ import javax.servlet.http.HttpServletRequest;
 public class AnalyticsController extends SpringActionController
 {
     private static DefaultActionResolver _actionResolver = new DefaultActionResolver(AnalyticsController.class);
-    public AnalyticsController() {
+
+    public AnalyticsController()
+    {
         setActionResolver(_actionResolver);
+    }
+
+    public static void registerAdminConsoleLinks()
+    {
+        AdminConsole.addLink(SettingsLinkType.Configuration, "analytics settings", new ActionURL(BeginAction.class, ContainerManager.getRoot()));
     }
 
     static public class SettingsForm extends ViewForm
@@ -86,7 +97,7 @@ public class AnalyticsController extends SpringActionController
 
         public ActionURL getSuccessURL(SettingsForm settingsForm)
         {
-            return new ActionURL("admin", "showAdmin", ContainerManager.getRoot());
+            return PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL();
         }
     }
 }

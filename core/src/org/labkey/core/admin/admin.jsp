@@ -16,13 +16,14 @@
  */
 %>
 <%@ page import="org.labkey.api.module.Module" %>
+<%@ page import="org.labkey.api.security.AuthenticationManager" %>
+<%@ page import="org.labkey.api.settings.AdminConsole" %>
+<%@ page import="org.labkey.api.settings.AdminConsole.*" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.common.util.Pair" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<AdminController.AdminBean> me = (HttpView<AdminController.AdminBean>) HttpView.currentView();
@@ -35,34 +36,18 @@
 <table cellspacing="10"><tr>
 <td valign=top>
 
-<table class="dataRegion">
-    <tr><td colspan="2"><b>Configuration</b></td></tr>
-    <%
-        for (Pair<String, ActionURL> link : bean.configurationLinks)
-        { %>
-            <tr><td colspan="2">[<a href="<%=h(link.second)%>"><%=h(link.first)%></a>]</td></tr><%
-        }
-    %>
-    <tr><td colspan="2">&nbsp;</td></tr>
+<table class="dataRegion"><%
+    for (SettingsLinkType type : SettingsLinkType.values())
+    { %>
 
-    <tr><td colspan="2"><b>Management</b></td></tr>
-    <%
-        for (Pair<String, ActionURL> link : bean.managementLinks)
+    <tr><td colspan="2"><b><%=type.name()%></b></td></tr><%
+        for (AdminLink link : AdminConsole.getLinks(type))
         { %>
-            <tr><td colspan="2">[<a href="<%=h(link.second)%>"><%=h(link.first)%></a>]</td></tr><%
-        }
-    %>
-    <tr><td colspan="2">&nbsp;</td></tr>
-
-    <tr><td colspan="2"><b>Diagnostics</b></td></tr>
-    <%
-        for (Pair<String, ActionURL> link : bean.diagnosticsLinks)
-        { %>
-            <tr><td colspan="2">[<a href="<%=h(link.second)%>"><%=h(link.first)%></a>]</td></tr><%
-        }
-    %>
-    <tr><td colspan="2">&nbsp;</td></tr>
-
+    <tr><td colspan="2">[<a href="<%=h(link.getUrl())%>"><%=h(link.getText())%></a>]</td></tr><%
+        } %>
+    <tr><td colspan="2">&nbsp;</td></tr><%
+    }
+%>
     <tr><td colspan="2">
     <form method="get" action="impersonate.view">
         <table>

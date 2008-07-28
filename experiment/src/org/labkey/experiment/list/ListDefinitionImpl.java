@@ -26,7 +26,7 @@ import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.security.User;
-import org.labkey.api.util.AppProps;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.list.ListController;
 

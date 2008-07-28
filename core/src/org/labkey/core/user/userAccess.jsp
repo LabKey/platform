@@ -23,6 +23,8 @@
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.data.ContainerManager"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.security.SecurityUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -62,7 +64,7 @@ However, If this account is re-enabled, it would have the following permissions.
     for (UserController.AccessDetailRow row : rows)
     {
         boolean inherited = row.isInheritedAcl() && !row.getContainer().isProject();
-        ActionURL containerPermissionsLink = new ActionURL("Security", "project", row.getContainer());
+        ActionURL containerPermissionsLink = urlProvider(SecurityUrls.class).getProjectURL(row.getContainer());
 %>
     <tr<%= rowNumber++ % 2 == 0 ?  " bgcolor=\"" + shadeColor + "\"" : ""%>>
         <td style="border-left:solid 1px <%= borderColor %>;padding-left:<%= cellPadding + (10 * row.getDepth()) %>;<%= styleTD %>">
@@ -80,14 +82,13 @@ However, If this account is re-enabled, it would have the following permissions.
                 String displayName = (group.isProjectGroup() ? groupContainer.getName() + "/" : "Site ") + group.getName();
                 if (group.isAdministrators() || group.isProjectGroup())
                 {
-                    ActionURL groupURL = new ActionURL("Security", "group", groupContainer);
                     String groupName = group.isProjectGroup() ? groupContainer.getPath() + "/" + group.getName() : group.getName();
-                    groupURL.addParameter("group", groupName);
-                    %><%= !first ? ", " : "" %><a href="<%= groupURL.getLocalURIString() %>"><%= displayName %></a><%
+                    ActionURL groupURL = PageFlowUtil.urlProvider(SecurityUrls.class).getManageGroupURL(groupContainer, groupName);
+                    %><%= !first ? ", " : "" %><a href="<%=h(groupURL)%>"><%=h(displayName)%></a><%
                 }
                 else
                 {
-                    %><%= !first ? ", " : "" %><%= displayName %><%
+                    %><%= !first ? ", " : "" %><%=h(displayName)%><%
                 }
                 first = false;
             }

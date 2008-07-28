@@ -15,7 +15,7 @@
  */
 package org.labkey.pipeline.api.properties;
 
-import org.labkey.api.util.AppProps;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.pipeline.PipelineJobService;
 
 /**

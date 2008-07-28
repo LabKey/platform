@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.labkey.api.pipeline.PipelineService"%>
 <%@ page import="org.labkey.api.security.ACL"%>
-<%@ page import="org.labkey.api.util.AppProps"%>
+<%@ page import="org.labkey.api.settings.AppProps"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.*" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>

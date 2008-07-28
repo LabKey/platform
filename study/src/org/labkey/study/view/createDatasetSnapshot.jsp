@@ -1,16 +1,15 @@
 <%@ page import="org.apache.commons.lang.StringUtils" %>
+<%@ page import="org.labkey.api.data.DisplayColumn" %>
 <%@ page import="org.labkey.api.query.QueryService" %>
 <%@ page import="org.labkey.api.query.snapshot.QuerySnapshotForm" %>
 <%@ page import="org.labkey.api.query.snapshot.QuerySnapshotService" %>
-<%@ page import="org.labkey.api.util.AppProps" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.data.ColumnInfo" %>
-<%@ page import="org.labkey.api.data.DisplayColumn" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 

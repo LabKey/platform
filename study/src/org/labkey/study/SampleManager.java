@@ -30,6 +30,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.*;
+import org.labkey.api.settings.AppProps;
 import org.labkey.common.util.Pair;
 import org.labkey.study.model.*;
 import org.labkey.study.requirements.RequirementProvider;

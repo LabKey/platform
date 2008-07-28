@@ -26,6 +26,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.reports.report.DefaultScriptRunner" %>
 <%@ page import="org.labkey.api.reports.report.RServeScriptRunner" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
@@ -118,7 +119,7 @@
         <tr><td>&nbsp;</td></tr>
         <tr><td>&nbsp;</td>
             <td><input type="image" src="<%=PageFlowUtil.submitSrc()%>">
-            &nbsp;<%=PageFlowUtil.buttonLink("Done", new ActionURL("admin", "showAdmin", ""))%></td></tr>
+            &nbsp;<%=PageFlowUtil.buttonLink("Done", urlProvider(AdminUrls.class).getAdminConsoleURL())%></td></tr>
 
         <tr><td>&nbsp;</td></tr>
         <tr><td></td><td><i>The configuration of this page is necessary to be able to create an R view. The location

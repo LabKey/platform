@@ -22,7 +22,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.GlobusKeyPair;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.api.security.User;
-import org.labkey.api.util.AppProps;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;

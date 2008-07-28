@@ -27,10 +27,10 @@ import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
-import org.labkey.api.util.AppProps;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.WriteableAppProps;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
@@ -119,6 +119,8 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         }
 
         PipelineEmailPreferences.get().startNotificationTasks();
+        PipelineController.registerAdminConsoleLinks();
+        StatusController.registerAdminConsoleLinks();
     }
 
     public void afterSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)

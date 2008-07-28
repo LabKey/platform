@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.AppProps" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.view.ThemeFont" %>
 <%@ page import="org.labkey.api.view.WebTheme" %>
 <%@ page import="java.util.List" %>

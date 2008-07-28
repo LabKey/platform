@@ -21,7 +21,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.util.AppProps;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.common.util.Pair;

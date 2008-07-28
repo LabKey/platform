@@ -56,6 +56,52 @@ public class SecurityController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
+    public static class SecurityUrlsImpl implements SecurityUrls
+    {
+        public ActionURL getManageGroupURL(Container container, String groupName)
+        {
+            ActionURL url = new ActionURL(GroupAction.class, container);
+            return url.addParameter("group", groupName);
+        }
+
+        public ActionURL getGroupPermissionURL(Container container, int id)
+        {
+            ActionURL url = new ActionURL(GroupPermissionAction.class, container);
+            return url.addParameter("group", id);
+        }
+
+        public ActionURL getProjectURL(Container container)
+        {
+            return new ActionURL(ProjectAction.class, container);
+        }
+
+        public ActionURL getContainerURL(Container container)
+        {
+            return new ActionURL(ContainerAction.class, container);
+        }
+
+        public String getCompleteUserURLPrefix(Container container)
+        {
+            ActionURL url = new ActionURL(CompleteUserAction.class, container);
+            url.addParameter("prefix", "");
+            return url.getLocalURIString();
+        }
+
+        public ActionURL getBeginURL(Container container)
+        {
+            return new ActionURL(BeginAction.class, container);
+        }
+
+        public ActionURL getShowRegistrationEmailURL(Container container, String email, String mailPrefix)
+        {
+            ActionURL url = new ActionURL(ShowRegistrationEmailAction.class, container);
+            url.addParameter("email", email);
+            url.addParameter("mailPrefix", mailPrefix);
+
+            return url;
+        }
+    }
+
     private void ensureGroupInContainer(String group, Container c)
             throws ServletException
     {
@@ -86,7 +132,7 @@ public class SecurityController extends SpringActionController
         {
             if (null == getContainer() || getContainer().isRoot())
             {
-                HttpView.throwRedirect(new ActionURL("Security", "showAddUsers", "/"));
+                HttpView.throwRedirect(new ActionURL(AddUsersAction.class, ContainerManager.getRoot()));
             }
             else
             {
@@ -1182,9 +1228,8 @@ public class SecurityController extends SpringActionController
             else
             {
                 String verification = SecurityManager.getVerification(email);
-                String verificationUrl = SecurityManager.createVerificationUrl(getContainer(), email.getEmailAddress(),
-                        verification, null).getURIString();
-                SecurityManager.renderEmail(getUser(), message, email.getEmailAddress(), verificationUrl, out);
+                ActionURL verificationURL = SecurityManager.createVerificationURL(getContainer(), email.getEmailAddress(), verification, null);
+                SecurityManager.renderEmail(getUser(), message, email.getEmailAddress(), verificationURL, out);
             }
             return null;
         }
@@ -1254,16 +1299,14 @@ public class SecurityController extends SpringActionController
 
                     try
                     {
-                        String verificationUrl = SecurityManager.createVerificationUrl(getContainer(), email.getEmailAddress(),
-                                verification, null).getURIString();
+                        ActionURL verificationURL = SecurityManager.createVerificationURL(getContainer(), email.getEmailAddress(), verification, null);
 
-                        SecurityManager.sendEmail(user, SecurityManager.getResetMessage(false), email.getEmailAddress(),
-                                verificationUrl);
+                        SecurityManager.sendEmail(user, SecurityManager.getResetMessage(false), email.getEmailAddress(), verificationURL);
                         if (!user.getEmail().equals(email.getEmailAddress()))
                         {
                             SecurityMessage msg = SecurityManager.getResetMessage(true);
                             msg.setTo(email.getEmailAddress());
-                            SecurityManager.sendEmail(user, msg, user.getEmail(), verificationUrl);
+                            SecurityManager.sendEmail(user, msg, user.getEmail(), verificationURL);
                         }
                         sbReset.append("Email sent. ");
                         sbReset.append("Click ").append(href).append(" to see the email.");

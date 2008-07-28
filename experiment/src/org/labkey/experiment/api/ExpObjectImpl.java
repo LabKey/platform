@@ -25,7 +25,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.security.User;
-import org.labkey.api.util.AppProps;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
 import org.apache.log4j.Logger;
 import org.apache.commons.lang.StringUtils;

@@ -16,20 +16,24 @@
 
 package org.labkey.cabig;
 
-import org.labkey.api.action.*;
+import org.labkey.api.action.RedirectAction;
+import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
-import org.labkey.api.util.AppProps;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
-import org.labkey.api.security.SecurityManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -48,14 +52,13 @@ public class caBIGController extends SpringActionController
 
     public caBIGController()
     {
-        super();
         setActionResolver(_actionResolver);
     }
 
 
-    public static ActionURL getCaBigURL(String action, Container c, ActionURL returnURL)
+    public static ActionURL getCaBigURL(Class<? extends Controller> actionClass, Container c, ActionURL returnURL)
     {
-        ActionURL url = new ActionURL("cabig", action, c);
+        ActionURL url = new ActionURL(actionClass, c);
         return url.addReturnURL(returnURL);
     }
 
@@ -65,7 +68,7 @@ public class caBIGController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return HttpView.redirect(getCaBigURL("admin", getContainer(), SecurityManager.getPermissionsUrl(getContainer())));
+            return HttpView.redirect(getCaBigURL(AdminAction.class, getContainer(), PageFlowUtil.urlProvider(SecurityUrls.class).getContainerURL(getContainer())));
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -274,7 +277,7 @@ public class caBIGController extends SpringActionController
         }
 
 
-        private static void appendButton(StringBuilder html, Container c, boolean isAuthorized, ActionURL returnUrl)
+        private static void appendButton(StringBuilder html, Container c, boolean isAuthorized, ActionURL returnURL)
         {
             if (!isAuthorized)
             {
@@ -283,8 +286,8 @@ public class caBIGController extends SpringActionController
             else
             {
                 boolean isPublished = isPublished(c);
-                ActionURL publishUrl = getCaBigURL(isPublished ? "unpublish" : "publish", c, returnUrl);
-                html.append(PageFlowUtil.buttonLink(isPublished ? "Unpublish" : "Publish", publishUrl));
+                ActionURL publishURL = getCaBigURL(isPublished ? UnpublishAction.class : PublishAction.class, c, returnURL);
+                html.append(PageFlowUtil.buttonLink(isPublished ? "Unpublish" : "Publish", publishURL));
             }
         }
 

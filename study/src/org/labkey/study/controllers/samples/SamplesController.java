@@ -288,8 +288,7 @@ public class SamplesController extends BaseController
 
         public String getCompleteUsersPrefix()
         {
-            ActionURL helper = new ActionURL("Security", "completeUser", _actor.getContainer());
-            return helper.getLocalURIString() + "prefix=";
+            return PageFlowUtil.urlProvider(SecurityUrls.class).getCompleteUserURLPrefix(_actor.getContainer());
         }
     }
 

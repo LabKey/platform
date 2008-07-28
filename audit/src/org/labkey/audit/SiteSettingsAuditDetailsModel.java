@@ -13,16 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.core.admin;
+package org.labkey.audit;
 
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.util.WriteableAppProps;
+import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.apache.commons.lang.time.FastDateFormat;
 
-import java.util.Map;/*
+import java.util.Map;
+
+/*
  * User: Dave
  * Date: May 28, 2008
  * Time: 11:00:14 AM

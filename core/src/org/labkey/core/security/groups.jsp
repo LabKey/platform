@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.core.security.SecurityController" %>
+<%@ page import="org.labkey.api.security.SecurityUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -57,8 +58,8 @@ LABKEY.requiresScript('completion.js');
                 </td>
                 <td><%= h(group.getName()) %></td>
                 <td><%= members.size() %> member<%= members.size() != 1 ? "s" : "" %></td>
-                <td><%= textLink("manage group", ActionURL.toPathString("Security", "group", container.getPath()) + "?group=" + u(groupPath), "managegroup" + groupPath)%></td>
-                <td><%= textLink("permissions", ActionURL.toPathString("Security", "groupPermission", container.getPath()) + "?group=" + group.getUserId())%></td>
+                <td><%= textLink("manage group", urlProvider(SecurityUrls.class).getManageGroupURL(container, groupPath), "managegroup" + groupPath)%></td>
+                <td><%= textLink("permissions", urlProvider(SecurityUrls.class).getGroupPermissionURL(container, group.getUserId()))%></td>
             </tr>
             <tr style="display:<%= groupsBean.isExpandedGroup(groupPath) ? "" : "none" %>">
                 <td>&nbsp;</td>

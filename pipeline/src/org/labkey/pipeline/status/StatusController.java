@@ -29,6 +29,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.settings.AdminConsole;
 import org.labkey.pipeline.PipelineController;
 import org.labkey.pipeline.mule.EPipelineQueueImpl;
 import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
@@ -87,6 +88,12 @@ public class StatusController extends SpringActionController
     {
         super();
         setActionResolver(_resolver);
+    }
+
+    public static void registerAdminConsoleLinks()
+    {
+        ActionURL url = PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(ContainerManager.getRoot(), false);
+        AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "pipeline", url);
     }
 
     public PageConfig defaultPageConfig()
@@ -1305,12 +1312,22 @@ public class StatusController extends SpringActionController
     {
         public ActionURL urlBegin(Container container)
         {
-            return StatusController.urlShowList(container, false);
+            return urlShowList(container, false);
         }
 
         public ActionURL urlDetails(Container container, int rowId)
         {
             return StatusController.urlDetails(container, rowId);
+        }
+
+        public ActionURL urlBegin(Container container, boolean notComplete)
+        {
+            ActionURL url = urlBegin(container);
+
+            if (notComplete)
+                url.addParameter("StatusFiles.Status~neqornull", "COMPLETE");
+
+            return url;
         }
     }
 }

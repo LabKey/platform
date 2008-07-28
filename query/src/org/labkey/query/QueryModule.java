@@ -74,6 +74,7 @@ public class QueryModule extends DefaultModule
     public void startup(ModuleContext moduleContext)
     {
         PipelineService.get().registerPipelineProvider(new ReportsPipelineProvider());
+        ReportsController.registerAdminConsoleLinks();
         super.startup(moduleContext);
 
 /*

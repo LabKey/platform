@@ -39,6 +39,7 @@ import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.wiki.WikiRendererType;
+import org.labkey.api.settings.AppProps;
 import org.labkey.common.util.Pair;
 import org.labkey.wiki.model.*;
 import org.springframework.validation.BindException;

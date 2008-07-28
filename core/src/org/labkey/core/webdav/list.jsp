@@ -16,7 +16,7 @@
  */
 %>
 <%@ page import="org.apache.commons.lang.time.FastDateFormat" %>
-<%@ page import="org.labkey.api.util.AppProps" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.core.webdav.WebdavResolver" %>

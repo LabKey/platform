@@ -18,7 +18,7 @@ package org.labkey.core.ftp;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.ftp.FtpConnector;
-import org.labkey.api.util.AppProps;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.view.ViewContext;

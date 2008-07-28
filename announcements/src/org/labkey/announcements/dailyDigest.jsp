@@ -19,7 +19,7 @@
 <%@ page import="org.labkey.announcements.model.Announcement" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.wiki.WikiRenderer" %>
-<%@ page import="org.labkey.api.util.AppProps" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page extends="org.labkey.announcements.DailyDigestPage" %>
 <html>

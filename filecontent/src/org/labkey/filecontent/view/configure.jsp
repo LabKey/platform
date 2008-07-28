@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.api.attachments.AttachmentService" %>
 <%@ page import="java.io.File" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.filecontent.FileContentController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<FileContentForm> me = (JspView<FileContentForm>) HttpView.currentView();
@@ -61,7 +62,7 @@ each folder in the project has a corresponding subdirectory in the file system.<
         else
         {
             File rootFile = AttachmentService.get().getWebRoot(ctx.getContainer().getProject());
-            ActionURL configureHelper = new ActionURL("FileContent", "showAdmin.view", ctx.getContainer().getProject());
+            ActionURL configureHelper = new ActionURL(FileContentController.ShowAdminAction.class, ctx.getContainer().getProject());
             if (null == rootFile)
             { %>
                     There is no web root for this project.

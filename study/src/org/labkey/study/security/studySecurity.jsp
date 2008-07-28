@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.security.SecurityUrls"%>
 <%@ page import="org.labkey.api.util.HelpTopic"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.study.model.Study" %>
 <%@ page import="org.labkey.study.model.SecurityType" %>
+<%@ page import="org.labkey.study.model.Study" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     HttpView<Study> me = (HttpView<Study>) HttpView.currentView();
@@ -34,7 +34,7 @@
 </ul>
 
 <p class=normal>All users must have READ permissions on this folder to access anything in this study. You can configure
-    groups and folder security here [&nbsp;<a href="<%=new ActionURL("Security", "begin", getViewContext().getContainer())%>">Folder&nbsp;Security</a>&nbsp;].</p>
+    groups and folder security here [&nbsp;<a href="<%=h(urlProvider(SecurityUrls.class).getBeginURL(getViewContext().getContainer()))%>">Folder&nbsp;Security</a>&nbsp;].</p>
 
 <p>If you want to set permissions on individual datasets within the study, you must select advanced study security below.</p>
 

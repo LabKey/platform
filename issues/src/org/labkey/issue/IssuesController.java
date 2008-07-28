@@ -38,6 +38,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
+import org.labkey.api.settings.AppProps;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.query.IssuesQuerySchema;

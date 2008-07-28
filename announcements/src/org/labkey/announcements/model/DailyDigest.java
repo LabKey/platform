@@ -30,6 +30,7 @@ import org.labkey.api.util.MailHelper.ViewMessage;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.settings.AppProps;
 
 import javax.mail.MessagingException;
 import javax.servlet.ServletException;

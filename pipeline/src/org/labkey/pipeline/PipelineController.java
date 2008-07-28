@@ -28,6 +28,8 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.AdminConsole;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
 import org.labkey.pipeline.api.PipelineRoot;
 import org.labkey.pipeline.api.GlobusKeyPairImpl;
@@ -1376,6 +1378,12 @@ public class PipelineController extends SpringActionController
 
 /////////////////////////////////////////////////////////////////////////////
 //  Public URL interface to this controller
+
+    public static void registerAdminConsoleLinks()
+    {
+        ActionURL url = PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(ContainerManager.getRoot());
+        AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "pipeline email notification", url);
+    }
 
     public static class PipelineUrlsImp implements PipelineUrls
     {

@@ -43,7 +43,7 @@ import org.globus.wsrf.impl.security.descriptor.ResourceSecurityDescriptor;
 import org.ietf.jgss.GSSCredential;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.*;
-import org.labkey.api.util.AppProps;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.pipeline.xstream.PathMapper;
 import org.mule.umo.UMOEventContext;

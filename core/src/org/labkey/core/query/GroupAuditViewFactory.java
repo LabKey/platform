@@ -23,6 +23,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
+import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
@@ -191,20 +192,19 @@ public class GroupAuditViewFactory extends SimpleAuditViewFactory
             Integer id = (Integer)getBoundColumn().getValue(ctx);
             if (id != null)
             {
-                Group g = org.labkey.api.security.SecurityManager.getGroup(id);
+                Group g = org.labkey.api.security.SecurityManager.getGroup(id.intValue());
                 if (g != null)
                 {
                     Container groupContainer = g.isAdministrators() ? ContainerManager.getRoot() : ContainerManager.getForId(g.getContainer());
                     if (g.isAdministrators() || g.isProjectGroup())
                     {
                         String groupName = g.isProjectGroup() ? groupContainer.getPath() + "/" + g.getName() : g.getName();
-                        ActionURL url = new ActionURL("Security", "group", groupContainer);
-                        url.addParameter("group", groupName);
+                        ActionURL url = PageFlowUtil.urlProvider(SecurityUrls.class).getManageGroupURL(groupContainer, groupName);
 
                         out.write("<a href=\"");
                         out.write(PageFlowUtil.filter(url));
                         out.write("\">");
-                        out.write(g.getName());
+                        out.write(PageFlowUtil.filter(g.getName()));
                         out.write("</a>");
                         return;
                     }

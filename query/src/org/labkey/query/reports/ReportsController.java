@@ -26,6 +26,7 @@ import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
@@ -45,6 +46,9 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
+import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.settings.AdminConsole.*;
 import org.labkey.common.util.Pair;
 import org.labkey.query.reports.chart.ChartServiceImpl;
 import org.springframework.validation.BindException;
@@ -123,12 +127,17 @@ public class ReportsController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
+    public static void registerAdminConsoleLinks()
+    {
+        AdminConsole.addLink(SettingsLinkType.Configuration, "R view configuration", new ActionURL(ConfigureRReportAction.class, ContainerManager.getRoot()));
+    }
+
     @RequiresPermission(ACL.PERM_READ)
     public class DesignChartAction extends SimpleViewAction<ChartDesignerBean>
     {
         public ModelAndView getView(ChartDesignerBean form, BindException errors) throws Exception
         {
-            Map props = new HashMap();
+            Map<String, String> props = new HashMap<String, String>();
             for (Pair<String, String> param : form.getParameters())
             {
                 props.put(param.getKey(), param.getValue());
@@ -324,7 +333,7 @@ public class ReportsController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild("Admin Console", new ActionURL("admin", "showAdmin", (String)null));
+            root.addChild("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL());
             return root.addChild("R View Configuration");
         }
     }

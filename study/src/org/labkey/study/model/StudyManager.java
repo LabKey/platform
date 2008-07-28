@@ -41,6 +41,7 @@ import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.settings.AppProps;
 import org.labkey.common.tools.TabLoader;
 import org.labkey.common.util.CPUTimer;
 import org.labkey.study.QueryHelper;

@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ViewContext> me = (JspView<ViewContext>) HttpView.currentView();
@@ -29,7 +30,7 @@
     List<Container> containers;
     boolean reorderingProjects = current.isRoot() || current.getParent().isRoot();
     if (current.isRoot())
-       containers = current.getChildren();
+        containers = current.getChildren();
     else
         containers = current.getParent().getChildren();
 
@@ -141,5 +142,5 @@ function toggleItemSelector()
     </table>
 </p>
     <input type="hidden" name="order" value="">
-    <%= buttonImg("Save") %>&nbsp;<%= buttonLink("Cancel", reorderingProjects ? "showAdmin.view" : "manageFolders.view") %>
+    <%= buttonImg("Save") %>&nbsp;<%= buttonLink("Cancel", reorderingProjects ? urlProvider(AdminUrls.class).getAdminConsoleURL() : urlProvider(AdminUrls.class).getManageFoldersURL(context.getContainer())) %>
 </form>

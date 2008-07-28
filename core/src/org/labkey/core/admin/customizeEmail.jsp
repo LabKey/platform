@@ -175,7 +175,7 @@
         <tr><td>Message:</td><td class="normal"><textarea id="emailMessage" name="emailMessage" style="width:100%" rows="20"><%=bean.getEmailMessage()%></textarea></td></tr>
         <tr>
             <td></td><td>
-            <%=PageFlowUtil.buttonLink("Cancel", new ActionURL("admin", "showAdmin.view", ""))%>&nbsp;
+            <%=PageFlowUtil.buttonLink("Cancel", urlProvider(AdminUrls.class).getAdminConsoleURL())%>&nbsp;
             <input type="image" src="<%=PageFlowUtil.buttonSrc("Reset to Default")%>" onclick="this.form.action='deleteCustomEmail.view'">&nbsp;
             <input type="image" src="<%=PageFlowUtil.buttonSrc("Update")%>">&nbsp;
         </tr>

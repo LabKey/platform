@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.core.admin;
+package org.labkey.audit;
 
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.query.AuditLogQueryView;
@@ -24,7 +24,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.*;
-import org.labkey.api.util.WriteableAppProps;
+import org.labkey.api.settings.WriteableAppProps;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -51,7 +51,7 @@ public class SiteSettingsAuditViewFactory implements AuditLogService.AuditViewFa
 
     public String getDescription()
     {
-        return "Displays information about modifictions to the site settings.";
+        return "Displays information about modifications to the site settings.";
     }
 
     public QueryView createDefaultQueryView(ViewContext context)
@@ -104,7 +104,7 @@ public class SiteSettingsAuditViewFactory implements AuditLogService.AuditViewFa
 
     private class DetailsDisplayColumn extends DataColumn
     {
-        ActionURL _urlDetails = new ActionURL(AdminController.ShowSiteSettingsAuditDetailsAction.class, ContainerManager.getRoot());
+        ActionURL _urlDetails = new ActionURL(AuditController.ShowSiteSettingsAuditDetailsAction.class, ContainerManager.getRoot());
 
         DetailsDisplayColumn(ColumnInfo column)
         {

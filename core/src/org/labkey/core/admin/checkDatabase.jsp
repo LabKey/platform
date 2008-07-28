@@ -22,6 +22,8 @@
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.api.module.Module" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AdminController.DataCheckForm> me = (JspView<AdminController.DataCheckForm>) HttpView.currentView();
@@ -36,7 +38,7 @@
     <table class="normal">
         <tr class="wpHeader"><th colspan=2 align=center>Database Tools</th></tr>
         <tr><td class=normal>Check table consistency:&nbsp;</td>
-        <td> <%=PageFlowUtil.buttonLink("Do Database Check", new ActionURL("admin", "doCheck.view", ""))%>&nbsp;</td></tr>
+        <td> <%=PageFlowUtil.buttonLink("Do Database Check", new ActionURL(AdminController.DoCheckAction.class, ContainerManager.getRoot()))%>&nbsp;</td></tr>
         <tr><td class=normal>&nbsp;</td><td></td></tr>
         <tr><td>Get schema xml doc:&nbsp;</td>
             <td>
@@ -56,7 +58,7 @@
                 </select><br>
             </td></tr>
         <tr><td></td><td><%= buttonImg("Get Schema Xml") %>
-        <%=PageFlowUtil.buttonLink("Cancel", new ActionURL("admin", "begin.view", ""))%>  </td></tr>
+        <%=PageFlowUtil.buttonLink("Cancel", urlProvider(AdminUrls.class).getAdminConsoleURL())%>  </td></tr>
         <tr><td class=normal></td><td></td></tr>
 
 

@@ -28,8 +28,6 @@ import org.jfree.data.category.DefaultCategoryDataset;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.*;
-import org.labkey.api.audit.AuditLogEvent;
-import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.exp.OntologyManager;
@@ -37,22 +35,22 @@ import org.labkey.api.jsp.FormPage;
 import org.labkey.api.module.*;
 import org.labkey.api.ms2.MS2Service;
 import org.labkey.api.ms2.SearchClient;
-import org.labkey.api.pipeline.PipelineStatusUrls;
-import org.labkey.api.pipeline.PipelineUrls;
-import org.labkey.api.query.QueryView;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.settings.AdminConsole.SettingsLinkType;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.PreferenceService;
+import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.*;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
-import org.labkey.api.util.preferences.PreferenceService;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.common.util.Pair;
-import org.labkey.core.analytics.AnalyticsController;
 import org.labkey.core.login.LoginController;
 import org.labkey.data.xml.TablesDocument;
 import org.springframework.validation.BindException;
@@ -88,6 +86,30 @@ public class AdminController extends SpringActionController
     private static long _errorMark = 0;
     private static NumberFormat formatInteger = DecimalFormat.getIntegerInstance();
     private static Logger _log = Logger.getLogger(AdminController.class);
+
+    public static void registerAdminConsoleLinks()
+    {
+        Container root = ContainerManager.getRoot();
+
+        // Configuration
+        AdminConsole.addLink(SettingsLinkType.Configuration, "site settings", new AdminUrlsImpl().getCustomizeSiteURL());
+        AdminConsole.addLink(SettingsLinkType.Configuration, "look and feel settings", new AdminUrlsImpl().getLookAndFeelSettingsURL(root));
+        AdminConsole.addLink(SettingsLinkType.Configuration, "authentication", PageFlowUtil.urlProvider(LoginUrls.class).getConfigureURL());
+        AdminConsole.addLink(SettingsLinkType.Configuration, "email customization", new ActionURL(CustomizeEmailAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Configuration, "project display order", new ActionURL(ReorderFoldersAction.class, root));
+
+        // Diagnostics
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "running threads", new ActionURL(ShowThreadsAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "memory usage", new ActionURL(MemTrackerAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "actions", new ActionURL(ActionsAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "scripts", new ActionURL(ScriptsAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "groovy templates", new ActionURL(GroovyAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "view all site errors", new ActionURL(ShowAllErrorsAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "view all site errors since reset", new ActionURL(ShowErrorsSinceMarkAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "reset site errors", new ActionURL(ResetErrorMarkAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "check database", new ActionURL(DbCheckerAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "credits", new ActionURL(CreditsAction.class, root));
+    }
 
     public AdminController() throws Exception
     {
@@ -127,45 +149,8 @@ public class AdminController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            ActionURL url;
-            Container c = getContainer();
             AdminBean bean = new AdminBean(getUser());
-            JspView view = new JspView<AdminBean>("/org/labkey/core/admin/admin.jsp", bean);
-
-            // Configuration
-            bean.addConfigurationLink("site settings", new AdminUrlsImpl().getCustomizeSiteURL());
-            bean.addConfigurationLink("look and feel settings", new AdminUrlsImpl().getLookAndFeelSettingsURL(ContainerManager.getRoot()));
-            bean.addConfigurationLink("authentication", PageFlowUtil.urlProvider(LoginUrls.class).getConfigureURL());
-            bean.addConfigurationLink("flow cytometry", new ActionURL("flow", "flowAdmin.view", ""));
-            bean.addConfigurationLink("email customization", new ActionURL(CustomizeEmailAction.class, ContainerManager.getRoot()));
-            bean.addConfigurationLink("project display order", new ActionURL(ReorderFoldersAction.class, ContainerManager.getRoot()));
-            bean.addConfigurationLink("R view configuration", new ActionURL("reports", "configureRReport.view", ""));
-            bean.addConfigurationLink("analytics settings", new ActionURL(AnalyticsController.BeginAction.class, ContainerManager.getRoot()));
-
-            // Management
-            bean.addManagementLink("ms1", new ActionURL("ms1", "showAdmin.view", ""));
-            bean.addManagementLink("ms2", new ActionURL("ms2", "showMS2Admin.view", ""));
-            url = PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c).addParameter("StatusFiles.Status~neqornull", "COMPLETE");
-            bean.addManagementLink("pipeline", url);
-            url = PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(c);
-            bean.addManagementLink("pipeline email notification", url);
-            bean.addManagementLink("protein databases", new ActionURL("ms2", "showProteinAdmin.view", ""));
-            if (AuditLogService.get().isViewable())
-                bean.addManagementLink("audit log", new ActionURL(ShowAuditLogAction.class, ContainerManager.getRoot()));
-
-            // Diagnostics
-            bean.addDiagnosticsLink("running threads", new ActionURL(ShowThreadsAction.class, ContainerManager.getRoot()));
-            bean.addDiagnosticsLink("memory usage", new ActionURL(MemTrackerAction.class, ContainerManager.getRoot()));
-            bean.addDiagnosticsLink("actions", new ActionURL(ActionsAction.class, ContainerManager.getRoot()));
-            bean.addDiagnosticsLink("scripts", new ActionURL(ScriptsAction.class, ContainerManager.getRoot()));
-            bean.addDiagnosticsLink("groovy templates", new ActionURL(GroovyAction.class, ContainerManager.getRoot()));
-            bean.addDiagnosticsLink("view all site errors", new ActionURL(ShowAllErrorsAction.class, ContainerManager.getRoot()));
-            bean.addDiagnosticsLink("view all site errors since reset", new ActionURL(ShowErrorsSinceMarkAction.class, ContainerManager.getRoot()));
-            bean.addDiagnosticsLink("reset site errors", new ActionURL(ResetErrorMarkAction.class, ContainerManager.getRoot()));
-            bean.addDiagnosticsLink("check database", new ActionURL(DbCheckerAction.class, ContainerManager.getRoot()));
-            bean.addDiagnosticsLink("credits", new ActionURL(CreditsAction.class, ContainerManager.getRoot()));
-
-            return view;
+            return new JspView<AdminBean>("/org/labkey/core/admin/admin.jsp", bean);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -189,94 +174,9 @@ public class AdminController extends SpringActionController
         public List<Pair<String, Long>> active = UserManager.getActiveUsers(System.currentTimeMillis() - DateUtils.MILLIS_PER_HOUR);
         public String userEmail;
 
-        public List<Pair<String, ActionURL>> configurationLinks = new ArrayList<Pair<String, ActionURL>>();
-        public List<Pair<String, ActionURL>> managementLinks = new ArrayList<Pair<String, ActionURL>>();
-        public List<Pair<String, ActionURL>> diagnosticsLinks = new ArrayList<Pair<String, ActionURL>>();
-
         private AdminBean(User user)
         {
             userEmail = user.getEmail();
-        }
-
-        private void addConfigurationLink(String linkText, ActionURL url)
-        {
-            addLink(configurationLinks, linkText, url);
-        }
-
-        private void addManagementLink(String linkText, ActionURL url)
-        {
-            addLink(managementLinks, linkText, url);
-        }
-
-        private void addDiagnosticsLink(String linkText, ActionURL url)
-        {
-            addLink(diagnosticsLinks, linkText, url);
-        }
-
-        private void addLink(List<Pair<String, ActionURL>> list, String linkText, ActionURL url)
-        {
-            list.add(new Pair<String, ActionURL>(linkText, url));
-        }
-    }
-
-
-    @RequiresPermission(ACL.PERM_READ)
-    public class ShowAuditLogAction extends QueryViewAction<ShowAuditLogForm, QueryView>
-    {
-        public ShowAuditLogAction()
-        {
-            super(ShowAuditLogForm.class);
-        }
-
-        protected ModelAndView getHtmlView(ShowAuditLogForm form, BindException errors) throws Exception
-        {
-            if (!getViewContext().getUser().isAdministrator())
-                HttpView.throwUnauthorized();
-            VBox view = new VBox();
-
-            String selected = form.getView();
-            if (selected == null)
-                selected = AuditLogService.get().getAuditViewFactories()[0].getEventType();
-
-            JspView jspView = new JspView("/org/labkey/core/admin/auditLog.jsp");
-            ((ModelAndView)jspView).addObject("currentView", selected);
-
-            view.addView(jspView);
-            view.addView(createInitializedQueryView(form, errors, false, null));
-
-            return view;
-        }
-
-        protected QueryView createQueryView(ShowAuditLogForm form, BindException errors, boolean forExport, String dataRegion) throws Exception
-        {
-            String selected = form.getView();
-            if (selected == null)
-                selected = AuditLogService.get().getAuditViewFactories()[0].getEventType();
-
-            AuditLogService.AuditViewFactory factory = AuditLogService.get().getAuditViewFactory(selected);
-            if (factory != null)
-                return factory.createDefaultQueryView(getViewContext());
-            return null;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return appendAdminNavTrail(root, "Audit Log", this.getClass());
-        }
-    }
-
-    public static class ShowAuditLogForm extends QueryViewAction.QueryExportForm
-    {
-        private String _view;
-
-        public String getView()
-        {
-            return _view;
-        }
-
-        public void setView(String view)
-        {
-            _view = view;
         }
     }
 
@@ -331,6 +231,46 @@ public class AdminController extends SpringActionController
         public ActionURL getLookAndFeelSettingsURL(Container c)
         {
             return new ActionURL(LookAndFeelSettingsAction.class, c);
+        }
+
+        public ActionURL getMaintenanceURL()
+        {
+            return new ActionURL(MaintenanceAction.class, ContainerManager.getRoot());
+        }
+
+        public ActionURL getModuleUpgradeURL(String moduleName, double oldVersion, double newVersion, ModuleLoader.ModuleState state, boolean express)
+        {
+            ActionURL url = new ActionURL(ModuleUpgradeAction.class, ContainerManager.getRoot());
+            url.addParameter("moduleName", moduleName);
+            url.addParameter("oldVersion", String.valueOf(oldVersion));
+            url.addParameter("newVersion", String.valueOf(newVersion));
+            url.addParameter("state", state.toString());
+
+            if (express)
+                url.addParameter("express", "1");
+
+            return url;
+        }
+
+        public ActionURL getManageFoldersURL(Container c)
+        {
+            return new ActionURL(ManageFoldersAction.class, c);
+        }
+
+        public ActionURL getCreateProjectURL()
+        {
+            return new ActionURL(CreateFolderAction.class, ContainerManager.getRoot());
+        }
+
+        public NavTree appendAdminNavTrail(NavTree root, String childTitle)
+        {
+            root.addChild("Admin Console", getAdminConsoleURL()).addChild(childTitle);
+            return root;
+        }
+
+        public ActionURL getCustomizeFolderURL(Container c)
+        {
+            return new ActionURL(CustomizeAction.class, c);
         }
     }
 
@@ -4085,7 +4025,7 @@ public class AdminController extends SpringActionController
                     if (c.isProject())
                     {
                         SecurityManager.createNewProjectGroups(c);
-                        _successURL = new ActionURL("Security", "project", c);
+                        _successURL = PageFlowUtil.urlProvider(SecurityUrls.class).getProjectURL(c);
                     }
                     else
                     {
@@ -4100,9 +4040,9 @@ public class AdminController extends SpringActionController
                             SecurityManager.setInheritPermissions(c);
 
                         if (type.equals(FolderType.NONE))
-                            _successURL = getCustomizeURL(c);
+                            _successURL = new AdminUrlsImpl().getCustomizeFolderURL(c);
                         else
-                            _successURL = new ActionURL("Security", "container", c);
+                            _successURL = PageFlowUtil.urlProvider(SecurityUrls.class).getContainerURL(c);
                     }
                     _successURL.addParameter("wizard", Boolean.TRUE.toString());
 
@@ -4139,12 +4079,6 @@ public class AdminController extends SpringActionController
 
             throw new NotFoundException();
         }
-    }
-
-
-    private ActionURL getCustomizeURL()
-    {
-        return getCustomizeURL(getContainer());
     }
 
 
@@ -4214,7 +4148,7 @@ public class AdminController extends SpringActionController
 
             if (form.isWizard())
             {
-                _successURL = new ActionURL("Security", "container", c);
+                _successURL = PageFlowUtil.urlProvider(SecurityUrls.class).getContainerURL(c);
                 _successURL.addParameter("wizard", Boolean.TRUE.toString());
             }
             else
@@ -4444,52 +4378,6 @@ public class AdminController extends SpringActionController
         protected void addContainerToURL(ActionURL url, Container c)
         {
             url.replaceParameter("target", c.getPath());
-        }
-    }
-
-    public static class SiteSettingsAuditDetailsForm
-    {
-        private Integer _id;
-
-        public Integer getId()
-        {
-            return _id;
-        }
-
-        public void setId(Integer id)
-        {
-            _id = id;
-        }
-    }
-
-    @RequiresPermission(ACL.PERM_ADMIN)
-    public class ShowSiteSettingsAuditDetailsAction extends SimpleViewAction<SiteSettingsAuditDetailsForm>
-    {
-        public ModelAndView getView(SiteSettingsAuditDetailsForm form, BindException errors) throws Exception
-        {
-            if(null == form.getId() || form.getId().intValue() < 0)
-                throw new NotFoundException("The audit log details key was not provided!");
-
-            //get the audit event
-            AuditLogEvent event = AuditLogService.get().getEvent(form.getId().intValue());
-            if(null == event)
-                throw new NotFoundException("Could not find the audit log event with id '" + form.getId().toString() + "'!");
-
-            Map<String,Object> eventProps = OntologyManager.getProperties(ContainerManager.getSharedContainer().getId(), event.getLsid());
-
-            //create the model and view
-            SiteSettingsAuditDetailsModel model = new SiteSettingsAuditDetailsModel(event, eventProps);
-            return new JspView<SiteSettingsAuditDetailsModel>("/org/labkey/core/admin/siteSettingsAuditDetails.jsp", model);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            root = root.addChild("Admin Console", new ActionURL(ShowAdminAction.class, ContainerManager.getRoot()));
-
-            ActionURL urlLog = new ActionURL(ShowAuditLogAction.class, ContainerManager.getRoot());
-            urlLog.addParameter("view", WriteableAppProps.AUDIT_EVENT_TYPE);
-            root = root.addChild("Audit Log", urlLog);
-            return root.addChild("Site Settings Audit Event Details");
         }
     }
 }

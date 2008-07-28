@@ -25,10 +25,10 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.util.AppProps;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.WriteableAppProps;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRenderer;
@@ -36,6 +36,7 @@ import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.core.admin.AdminController;
 import org.labkey.core.user.UserController;
+import org.labkey.common.util.Pair;
 import org.mule.MuleManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -846,19 +847,18 @@ public class LoginController extends SpringActionController
                 {
                     final SecurityMessage message = SecurityManager.getResetMessage(false);
                     message.setHideContact(true);
-                    String verificationUrl = SecurityManager.createVerificationUrl(getContainer(), _email.getEmailAddress(),
-                            verification, null).getURIString();
+                    ActionURL verificationURL = SecurityManager.createVerificationURL(getContainer(), _email.getEmailAddress(), verification, null);
 
                     final User system = new User(AppProps.getInstance().getSystemEmailAddress(), 0);
                     system.setFirstName(AppProps.getInstance().getCompanyName());
-                    SecurityManager.sendEmail(system, message, _email.getEmailAddress(), verificationUrl);
+                    SecurityManager.sendEmail(system, message, _email.getEmailAddress(), verificationURL);
 
                     if (!user.getEmail().equals(_email.getEmailAddress()))
                     {
                         final SecurityMessage adminMessage = SecurityManager.getResetMessage(true);
                         message.setHideContact(true);
                         message.setTo(_email.getEmailAddress());
-                        SecurityManager.sendEmail(user, adminMessage, user.getEmail(), verificationUrl);
+                        SecurityManager.sendEmail(user, adminMessage, user.getEmail(), verificationURL);
                     }
                     sbReset.append("An email has been sent to you with instructions on how to reset your password. ");
                     UserManager.addToUserHistory(UserManager.getUser(_email), _email + " reset the password.");
@@ -901,7 +901,7 @@ public class LoginController extends SpringActionController
     @RequiresPermission(ACL.PERM_NONE)
     public class InitialUserAction extends FormViewAction<InitialUserForm>
     {
-        private ActionURL _verificationUrl = null;
+        private ActionURL _verificationURL = null;
 
         public void validateCommand(InitialUserForm target, Errors errors)
         {
@@ -958,7 +958,7 @@ public class LoginController extends SpringActionController
                 }
                 appProps.save();
 
-                _verificationUrl = SecurityManager.createVerificationUrl(getContainer(), newUserBean.getEmail(), newUserBean.getVerification(), null);
+                _verificationURL = SecurityManager.createVerificationURL(getContainer(), newUserBean.getEmail(), newUserBean.getVerification(), null);
 
                 return true;
             }
@@ -976,7 +976,7 @@ public class LoginController extends SpringActionController
 
         public ActionURL getSuccessURL(InitialUserForm registerForm)
         {
-            return _verificationUrl;
+            return _verificationURL;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1200,6 +1200,18 @@ public class LoginController extends SpringActionController
         public ActionURL getConfigureURL()
         {
             return new ActionURL(ConfigureAction.class, ContainerManager.getRoot());
+        }
+
+        public ActionURL getVerificationURL(Container c, String email, String verification, Pair<String, String>[] extraParameters)
+        {
+            ActionURL url = new ActionURL(SetPasswordAction.class, c);
+            url.addParameter("verification", verification);
+            url.addParameter("email", email);
+
+            if (null != extraParameters)
+                url.addParameters(extraParameters);
+
+            return url;
         }
     }
 

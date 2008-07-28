@@ -40,6 +40,7 @@ import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.settings.AppProps;
 import org.labkey.experiment.ExperimentRunGraph;
 import org.labkey.experiment.XarReader;
 import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
