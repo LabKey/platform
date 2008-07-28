@@ -1199,6 +1199,25 @@ public class SecurityManager
     }
 
 
+    public static List<Integer> getProjectUserids(Container c)
+    {
+        try
+        {
+            Integer[] a =Table.executeArray(CoreSchema.getInstance().getSchema(),
+                    "SELECT U.userid\n" +
+                    "FROM core.principals U\n" +
+                    "WHERE U.type='u' AND U.userid IN \n" +
+                    "  (SELECT M.userid from core.members M INNER JOIN core.principals G ON M.groupid = G.userid WHERE G.type = 'g' AND G.container = ?)",
+                    new Object[] {c}, Integer.class);
+            return Arrays.asList(a);
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
+
+
     public static List<User> getUsersWithPermissions(Container c, int perm) throws SQLException
     {
         // No cache right now, but performance seems fine.  After the user list and acl is cached, no other queries occur.
