@@ -16,8 +16,9 @@
 
 package org.labkey.core.user;
 
-import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.collections15.MultiMap;
+import org.apache.commons.lang.ObjectUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionMessage;
 import org.labkey.api.action.*;
@@ -32,7 +33,7 @@ import org.labkey.api.view.*;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.core.query.GroupAuditViewFactory;
 import org.labkey.core.query.UserAuditViewFactory;
-import org.labkey.core.security.SecurityController.*;
+import org.labkey.core.security.SecurityController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -127,7 +128,7 @@ public class UserController extends SpringActionController
             gridButtonBar.add(delete);
 
             ActionButton insert = new ActionButton("showAddUsers", "Add Users");
-            ActionURL actionURL = new ActionURL(AddUsersAction.class, ContainerManager.getRoot());
+            ActionURL actionURL = new ActionURL(SecurityController.AddUsersAction.class, ContainerManager.getRoot());
             insert.setURL(actionURL.getLocalURIString());
             insert.setActionType(ActionButton.Action.LINK);
             gridButtonBar.add(insert);
@@ -649,7 +650,7 @@ public class UserController extends SpringActionController
                 if (!SecurityManager.isLdapEmail(new ValidEmail(displayEmail)))
                 {
                     ActionButton reset = new ActionButton("reset", "Reset Password");
-                    ActionURL resetURL = new ActionURL(ResetPasswordAction.class, ContainerManager.getRoot());
+                    ActionURL resetURL = new ActionURL(SecurityController.ResetPasswordAction.class, ContainerManager.getRoot());
                     resetURL.addParameter("email", displayEmail);
                     reset.setURL(resetURL.getLocalURIString());
                     reset.setActionType(ActionButton.Action.LINK);
@@ -1076,6 +1077,88 @@ public class UserController extends SpringActionController
         public boolean isNullable()
         {
             return false;
+        }
+    }
+
+    public static class GetUsersForm
+    {
+        private String _group;
+
+        public String getGroup()
+        {
+            return _group;
+        }
+
+        public void setGroup(String group)
+        {
+            _group = group;
+        }
+    }
+
+    @RequiresLogin
+    @RequiresPermission(ACL.PERM_READ)
+    public class GetUsersAction extends ApiAction<GetUsersForm>
+    {
+        protected static final String PROP_USER_ID = "userId";
+        protected static final String PROP_USER_NAME = "displayName";
+
+        public ApiResponse execute(GetUsersForm form, BindException errors) throws Exception
+        {
+            Container container = getViewContext().getContainer();
+            if(container.isRoot() && !getViewContext().getUser().isAdministrator())
+                throw new UnauthorizedException("Only system administrators may see users in the root container!");
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("container", container.getPath());
+
+            List<User> users = null;
+            List<Map<String,Object>> userResponseList = new ArrayList<Map<String,Object>>();
+
+            //if requesting users in a specific group...
+            if(null != StringUtils.trimToNull(form.getGroup()))
+            {
+                response.put("group", form.getGroup());
+
+                Container project = container.getProject();
+
+                //get users in given group/role name
+                Integer groupId = SecurityManager.getGroupId(container, form.getGroup(), false);
+                if(null == groupId)
+                    throw new IllegalArgumentException("The group '" + form.getGroup() + "' does not exist in the project '"
+                            + project.getPath() + "'");
+
+                Group group = SecurityManager.getGroup(groupId.intValue());
+                if(null == group)
+                    throw new RuntimeException("Could not get group for group id " + groupId);
+
+                users = SecurityManager.getGroupMembers(group);
+            }
+            else
+            {
+                //special-case: if container is root, return all active users
+                //else, return all users in the current project
+                //we've already checked above that the current user is a system admin
+                if(container.isRoot())
+                    users = Arrays.asList(UserManager.getActiveUsers());
+                else
+                    users = SecurityManager.getProjectMembers(container);
+            }
+
+            if(null != users)
+            {
+                for(User user : users)
+                {
+                    Map<String,Object> userInfo = new HashMap<String,Object>();
+                    userInfo.put(PROP_USER_ID, user.getUserId());
+
+                    //force sanitize of the display name, even for logged-in users
+                    userInfo.put(PROP_USER_NAME, user.getDisplayName(null));
+                    userResponseList.add(userInfo);
+                }
+            }
+
+            response.put("users", userResponseList);
+            return response;
         }
     }
 }
