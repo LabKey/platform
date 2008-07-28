@@ -1493,7 +1493,7 @@ public class PageFlowUtil
         sb.append(",canUpdate:").append(container.hasPermission(user, ACL.PERM_UPDATE) ? "true" : "false");
         sb.append(",canUpdateOwn:").append(container.hasPermission(user, ACL.PERM_UPDATEOWN) ? "true" : "false");
         sb.append(",canDelete:").append(container.hasPermission(user, ACL.PERM_DELETE) ? "true" : "false");
-        sb.append(",canUpdateOwn:").append(container.hasPermission(user, ACL.PERM_DELETEOWN) ? "true" : "false");
+        sb.append(",canDeleteOwn:").append(container.hasPermission(user, ACL.PERM_DELETEOWN) ? "true" : "false");
         sb.append(",isAdmin:").append(container.hasPermission(user, ACL.PERM_ADMIN) ? "true" : "false");
         sb.append("}"); //end user object
 
