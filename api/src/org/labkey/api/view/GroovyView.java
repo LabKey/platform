@@ -26,7 +26,7 @@ import org.codehaus.groovy.control.messages.Message;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.util.AppProps;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CacheMap;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;

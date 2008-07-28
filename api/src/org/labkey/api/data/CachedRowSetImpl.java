@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.util.*;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewServlet;
+import org.labkey.api.settings.AppProps;
 
 import java.io.InputStream;
 import java.io.Reader;

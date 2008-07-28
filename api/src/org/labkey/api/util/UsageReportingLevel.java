@@ -21,6 +21,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.settings.AppProps;
 import org.labkey.common.util.Pair;
 
 import java.net.MalformedURLException;

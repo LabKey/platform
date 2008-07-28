@@ -16,12 +16,12 @@
 
 package org.labkey.api.reports.report;
 
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
-import org.apache.struts.upload.FormFile;
-import org.labkey.api.attachments.*;
+import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.*;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
@@ -30,21 +30,20 @@ import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.Report;
-import org.labkey.api.reports.report.view.ChartUtil;
-import org.labkey.api.reports.report.view.ReportQueryView;
-import org.labkey.api.reports.report.view.RunRReportView;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.r.view.*;
+import org.labkey.api.reports.report.view.ChartUtil;
+import org.labkey.api.reports.report.view.ReportQueryView;
+import org.labkey.api.reports.report.view.RunRReportView;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.GUID;
-import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
-import org.labkey.common.tools.TabLoader;
+import org.labkey.api.admin.AdminUrls;
 
-import java.io.*;
+import java.io.File;
+import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
@@ -190,7 +189,7 @@ public class RReport extends AbstractReport implements AttachmentParent, Report.
 
         if (validateConfiguration(getRExe(), getRCmd(), getTempFolder(), getRScriptHandler()) != null)
         {
-            final String error = "The R program has not been configured to be used by the LabKey server yet, navigate to the <a href='" + ActionURL.toPathString("admin", "showAdmin.view", "") + "'>admin console</a> to configure R.";
+            final String error = "The R program has not been configured to be used by the LabKey server yet, navigate to the <a href='" + PageFlowUtil.filter(PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL()) + "'>admin console</a> to configure R.";
             view.addView(new HtmlView("<span class=\"labkey-error\">" + error + "</span>"));
             return view;
         }

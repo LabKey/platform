@@ -18,6 +18,8 @@ package org.labkey.api.security;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.data.Container;
+import org.labkey.common.util.Pair;
 
 /**
  * User: adam
@@ -27,5 +29,6 @@ import org.labkey.api.view.ActionURL;
 public interface LoginUrls extends UrlProvider
 {
     public ActionURL getConfigureURL();
+    public ActionURL getVerificationURL(Container c, String email, String verification, Pair<String, String>[] extraParameters);
     public NavTree appendAuthenticationNavTrail(NavTree root);
 }

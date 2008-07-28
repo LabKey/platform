@@ -23,6 +23,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.ms2.MS2Service;
 import org.labkey.api.util.*;
+import org.labkey.api.settings.AppProps;
 import org.labkey.common.util.Pair;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;

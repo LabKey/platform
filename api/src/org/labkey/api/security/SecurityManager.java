@@ -513,16 +513,9 @@ public class SecurityManager
     }
 
 
-    public static ActionURL createVerificationUrl(Container c, String email, String verification, Pair<String, String>[] extraParameters)
+    public static ActionURL createVerificationURL(Container c, String email, String verification, Pair<String, String>[] extraParameters)
     {
-        ActionURL url = new ActionURL("login", "setPassword", c);
-        url.addParameter("verification", verification);
-        url.addParameter("email", email);
-
-        if (null != extraParameters)
-            url.addParameters(extraParameters);
-
-        return url;
+        return PageFlowUtil.urlProvider(LoginUrls.class).getVerificationURL(c, email, verification, extraParameters);
     }
 
 
@@ -715,23 +708,23 @@ public class SecurityManager
     }
 
 
-    public static void sendEmail(User user, SecurityMessage message, String to, String verificationUrl) throws MessagingException
+    public static void sendEmail(User user, SecurityMessage message, String to, ActionURL verificationURL) throws MessagingException
     {
-        MimeMessage m = createMessage(user, message, to, verificationUrl);
+        MimeMessage m = createMessage(user, message, to, verificationURL);
         MailHelper.send(m);
     }
 
-    public static void renderEmail(User user, SecurityMessage message, String to, String verificationUrl, Writer out) throws MessagingException
+    public static void renderEmail(User user, SecurityMessage message, String to, ActionURL verificationURL, Writer out) throws MessagingException
     {
-        MimeMessage m = createMessage(user, message, to, verificationUrl);
+        MimeMessage m = createMessage(user, message, to, verificationURL);
         MailHelper.renderHtml(m, message.getType(), out);
     }
 
-    private static MimeMessage createMessage(User user, SecurityMessage message, String to, String verificationUrl) throws MessagingException
+    private static MimeMessage createMessage(User user, SecurityMessage message, String to, ActionURL verificationURL) throws MessagingException
     {
         try
         {
-            message.setVerificationURL(verificationUrl);
+            message.setVerificationURL(verificationURL.getURIString());
             message.setFrom(user.getEmail());
             if (message.getTo() == null)
                 message.setTo(to);
@@ -1576,12 +1569,6 @@ public class SecurityManager
     }
 
 
-    public static ActionURL getPermissionsUrl(Container c)
-    {
-        return new ActionURL("Security", "container", c);
-    }
-
-
     // Modules register a factory to add module-specific ui to the permissions page
     public static void addViewFactory(ViewFactory vf)
     {
@@ -1905,7 +1892,7 @@ public class SecurityManager
         StringBuilder message = new StringBuilder();
         NewUserBean newUserBean;
 
-        String mailContentURL = null;
+        ActionURL messageContentsURL = null;
         boolean appendClickToSeeMail = false;
         User currentUser = context.getUser();
 
@@ -1915,21 +1902,17 @@ public class SecurityManager
 
             if (!newUserBean.isLdap() && sendMail)
             {
-                ActionURL actionURL = new ActionURL("Security", "showRegistrationEmail", context.getContainer());
-                actionURL.addParameter("email", email.getEmailAddress());
-                actionURL.addParameter("mailPrefix", mailPrefix);
-                mailContentURL = actionURL.getLocalURIString();
+                messageContentsURL = PageFlowUtil.urlProvider(SecurityUrls.class).getShowRegistrationEmailURL(context.getContainer(), email.getEmailAddress(), mailPrefix);
 
-                String verificationUrl = SecurityManager.createVerificationUrl(context.getContainer(), email.getEmailAddress(),
-                        newUserBean.getVerification(), extraParameters).getURIString();
+                ActionURL verificationURL = createVerificationURL(context.getContainer(), email.getEmailAddress(),
+                        newUserBean.getVerification(), extraParameters);
 
-                SecurityManager.sendEmail(currentUser, getRegistrationMessage(mailPrefix, false),
-                        email.getEmailAddress(), verificationUrl);
+                SecurityManager.sendEmail(currentUser, getRegistrationMessage(mailPrefix, false), email.getEmailAddress(), verificationURL);
                 if (!currentUser.getEmail().equals(email.getEmailAddress()))
                 {
                     SecurityMessage msg = getRegistrationMessage(mailPrefix, true);
                     msg.setTo(email.getEmailAddress());
-                    SecurityManager.sendEmail(currentUser, msg, currentUser.getEmail(), verificationUrl);
+                    SecurityManager.sendEmail(currentUser, msg, currentUser.getEmail(), verificationURL);
                 }
                 appendClickToSeeMail = true;
             }
@@ -1948,8 +1931,8 @@ public class SecurityManager
             }
             else
             {
-                String href = "<a href=\"" + SecurityManager.createVerificationUrl(context.getContainer(),
-                        email.getEmailAddress(), newUserBean.getVerification(), extraParameters).getURIString() + "\" target=\"" + email.getEmailAddress() + "\">here</a>";
+                String href = "<a href=\"" + PageFlowUtil.filter(createVerificationURL(context.getContainer(),
+                        email.getEmailAddress(), newUserBean.getVerification(), extraParameters)) + "\" target=\"" + email.getEmailAddress() + "\">here</a>";
                 message.append(email.getEmailAddress()).append(" added as a new user to the sytem, but no email was sent.  Click ");
                 message.append(href).append(" to change the password from the random one that was assigned.");
                 UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system and the administrator chose not to send a verification email.");
@@ -1962,7 +1945,7 @@ public class SecurityManager
             message.append(" was added successfully, but could not be emailed due to a failure:<br><pre>");
             message.append(e.getMessage());
             message.append("</pre>");
-            appendMailHelpText(message, mailContentURL);
+            appendMailHelpText(message, messageContentsURL);
 
             User newUser = UserManager.getUser(email);
 
@@ -1978,22 +1961,22 @@ public class SecurityManager
             message.append("Failed to create user ").append(email).append(": ").append(e.getMessage());
         }
 
-        if (appendClickToSeeMail && mailContentURL != null)
+        if (appendClickToSeeMail && messageContentsURL != null)
         {
-            String href = "<a href=" + mailContentURL + " target=\"_blank\">here</a>";
+            String href = "<a href=" + PageFlowUtil.filter(messageContentsURL) + " target=\"_blank\">here</a>";
             message.append(" Click ").append(href).append(" to see the email.");
         }
 
         return message.toString();
     }
 
-    private static void appendMailHelpText(StringBuilder sb, String mailHref)
+    private static void appendMailHelpText(StringBuilder sb, ActionURL messageContentsURL)
     {
         sb.append("You can attempt to resend this mail later by going to the Site Users link, clicking on the appropriate user from the list, and resetting their password.");
-        if (mailHref != null)
+        if (messageContentsURL != null)
         {
             sb.append(" Alternatively, you can copy the <a href=\"");
-            sb.append(mailHref);
+            sb.append(PageFlowUtil.filter(messageContentsURL));
             sb.append("\" target=\"_blank\">contents of the message</a> into an email client and send it to the user manually.");
         }
         sb.append("</p>");

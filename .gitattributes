@@ -61,7 +61,6 @@ api/src/org/labkey/api/action/SpringActionController.java -text
 api/src/org/labkey/api/action/UrlProvider.java -text
 api/src/org/labkey/api/action/confirmWrapper.jsp -text
 api/src/org/labkey/api/action/simpleErrorView.jsp -text
-api/src/org/labkey/api/admin/AdminConsole.java -text
 api/src/org/labkey/api/admin/AdminUrls.java -text
 api/src/org/labkey/api/analytics/AnalyticsService.java -text
 api/src/org/labkey/api/attachments/AttachmentCache.java -text
@@ -465,10 +464,15 @@ api/src/org/labkey/api/security/RequiresPermission.java -text
 api/src/org/labkey/api/security/RequiresSiteAdmin.java -text
 api/src/org/labkey/api/security/SecurityManager.java -text
 api/src/org/labkey/api/security/SecurityMessage.java -text
+api/src/org/labkey/api/security/SecurityUrls.java -text
 api/src/org/labkey/api/security/TokenAuthentication.java -text
 api/src/org/labkey/api/security/UserManager.java -text
 api/src/org/labkey/api/security/UserPrincipal.java -text
 api/src/org/labkey/api/security/ValidEmail.java -text
+api/src/org/labkey/api/settings/AdminConsole.java -text
+api/src/org/labkey/api/settings/AppProps.java -text
+api/src/org/labkey/api/settings/PreferenceService.java -text
+api/src/org/labkey/api/settings/WriteableAppProps.java -text
 api/src/org/labkey/api/study/DilutionCurve.java -text
 api/src/org/labkey/api/study/ParticipantVisit.java -text
 api/src/org/labkey/api/study/Plate.java -text
@@ -542,7 +546,6 @@ api/src/org/labkey/api/study/query/PublishRunDataQueryView.java -text
 api/src/org/labkey/api/study/query/RunDataQueryView.java -text
 api/src/org/labkey/api/study/query/RunListQueryView.java -text
 api/src/org/labkey/api/study/query/ValidParticipantVisitDisplayColumn.java -text
-api/src/org/labkey/api/util/AppProps.java -text
 api/src/org/labkey/api/util/BooleanExpression.java -text
 api/src/org/labkey/api/util/BreakpointThread.java -text
 api/src/org/labkey/api/util/Cache.java -text
@@ -580,11 +583,9 @@ api/src/org/labkey/api/util/TTLCacheMap.java -text
 api/src/org/labkey/api/util/URIUtil.java -text
 api/src/org/labkey/api/util/UnexpectedException.java -text
 api/src/org/labkey/api/util/UsageReportingLevel.java -text
-api/src/org/labkey/api/util/WriteableAppProps.java -text
 api/src/org/labkey/api/util/emailTemplate/EmailTemplate.java -text
 api/src/org/labkey/api/util/emailTemplate/EmailTemplateService.java -text
 api/src/org/labkey/api/util/mime.txt -text
-api/src/org/labkey/api/util/preferences/PreferenceService.java -text
 api/src/org/labkey/api/view/AbstractView.java -text
 api/src/org/labkey/api/view/ActionErrorsView.java -text
 api/src/org/labkey/api/view/ActionWebPart.java -text

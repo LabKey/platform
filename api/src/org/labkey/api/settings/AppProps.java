@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.util;
+package org.labkey.api.settings;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.util.*;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ThemeFont;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebTheme;
-import org.labkey.api.view.ActionURL;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import javax.naming.Context;

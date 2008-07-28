@@ -26,6 +26,7 @@ import org.labkey.api.data.SqlDialect;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.User;
 import org.labkey.api.view.*;
+import org.labkey.api.settings.AppProps;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;

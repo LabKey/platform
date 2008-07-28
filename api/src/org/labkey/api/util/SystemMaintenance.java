@@ -18,6 +18,7 @@ package org.labkey.api.util;
 
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
+import org.labkey.api.settings.AppProps;
 
 import javax.servlet.ServletContextEvent;
 import java.text.ParseException;

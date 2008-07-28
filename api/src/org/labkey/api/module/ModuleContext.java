@@ -17,6 +17,8 @@ package org.labkey.api.module;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.admin.AdminUrls;
 
 import java.text.DecimalFormat;
 import java.util.Collections;
@@ -126,27 +128,12 @@ public class ModuleContext implements Cloneable
 
     public ActionURL getUpgradeCompleteURL(double newVersion)
     {
-        return getUpgradeURL(getName(), getInstalledVersion(), newVersion, ModuleLoader.ModuleState.InstallComplete, getExpress());
-    }
-
-    // TODO: Move to interface, with implementation in AdminController
-    public static ActionURL getUpgradeURL(String name, double oldVersion, double newVersion, ModuleLoader.ModuleState state, boolean express)
-    {
-        ActionURL url = new ActionURL("admin", "moduleUpgrade", "");
-        url.addParameter("moduleName", name);
-        url.addParameter("oldVersion", String.valueOf(oldVersion));
-        url.addParameter("newVersion", String.valueOf(newVersion));
-        url.addParameter("state", state.toString());
-
-        if (express)
-            url.addParameter("express", "1");
-
-        return url;
+        return PageFlowUtil.urlProvider(AdminUrls.class).getModuleUpgradeURL(getName(), getInstalledVersion(), newVersion, ModuleLoader.ModuleState.InstallComplete, getExpress());
     }
 
     public ActionURL getContinueUpgradeURL(double newVersion)
     {
-        return getUpgradeURL(getName(), getInstalledVersion(), newVersion, ModuleLoader.ModuleState.Installing, false);
+        return PageFlowUtil.urlProvider(AdminUrls.class).getModuleUpgradeURL(getName(), getInstalledVersion(), newVersion, ModuleLoader.ModuleState.Installing, false);
     }
 
     /*

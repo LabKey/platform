@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.security.AuthenticationManager"%><%@ page import="org.labkey.api.security.User" %><%@ page import="org.labkey.api.security.UserManager" %><%@ page import="org.labkey.api.util.AppProps" %>
+<%@ page import="org.labkey.api.security.AuthenticationManager"%><%@ page import="org.labkey.api.security.User" %><%@ page import="org.labkey.api.security.UserManager" %><%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.TemplateHeaderView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>

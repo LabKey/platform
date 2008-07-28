@@ -17,7 +17,7 @@
 package org.labkey.api.view;
 
 import org.apache.commons.lang.StringUtils;
-import org.labkey.api.util.AppProps;
+import org.labkey.api.settings.AppProps;
 
 import java.sql.SQLException;
 import java.util.ArrayList;

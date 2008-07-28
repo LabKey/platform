@@ -18,7 +18,9 @@ package org.labkey.api.admin;
 
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.data.Container;
+import org.labkey.api.module.ModuleLoader;
 
 /**
  * User: jgarms
@@ -29,6 +31,13 @@ public interface AdminUrls extends UrlProvider
     ActionURL getModuleErrorsURL(Container container);
     ActionURL getAdminConsoleURL();
     ActionURL getModuleStatusURL();
+    ActionURL getModuleUpgradeURL(String moduleName, double oldVersion, double newVersion, ModuleLoader.ModuleState state, boolean express);
     ActionURL getCustomizeSiteURL();
     ActionURL getCustomizeSiteURL(boolean upgradeInProgress);
+    ActionURL getMaintenanceURL();
+    ActionURL getManageFoldersURL(Container c);
+    ActionURL getCustomizeFolderURL(Container c);
+    ActionURL getCreateProjectURL();
+
+    NavTree appendAdminNavTrail(NavTree root, String childTitle);
 }

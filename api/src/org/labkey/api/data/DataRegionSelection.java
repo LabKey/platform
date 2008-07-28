@@ -18,7 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.util.AppProps;
+import org.labkey.api.settings.AppProps;
 
 import javax.servlet.http.HttpSession;
 import java.util.*;

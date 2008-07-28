@@ -17,6 +17,7 @@
 package org.labkey.api.util;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.settings.AppProps;
 
 import java.util.*;
 import java.lang.management.ManagementFactory;

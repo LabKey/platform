@@ -15,7 +15,7 @@
  */
 package org.labkey.api.exp;
 
-import org.labkey.api.util.AppProps;
+import org.labkey.api.settings.AppProps;
 
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;

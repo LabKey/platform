@@ -16,7 +16,7 @@
 
 package org.labkey.api.security;
 
-import org.labkey.api.util.AppProps;
+import org.labkey.api.settings.AppProps;
 
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.AddressException;

@@ -23,7 +23,7 @@ import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.util.CaseInsensitiveHashSet;
-import org.labkey.api.util.AppProps;
+import org.labkey.api.settings.AppProps;
 
 import java.io.*;
 import java.util.*;

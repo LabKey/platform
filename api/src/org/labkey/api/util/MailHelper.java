@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.settings.AppProps;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 import javax.mail.*;

@@ -16,8 +16,8 @@
 package org.labkey.api.view;
 
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.util.AppProps;
-import org.labkey.api.util.WriteableAppProps;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.WriteableAppProps;
 
 import java.sql.SQLException;
 import java.util.List;

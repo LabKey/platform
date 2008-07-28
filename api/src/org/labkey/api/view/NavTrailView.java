@@ -20,7 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.util.AppProps;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
 import static org.labkey.api.util.PageFlowUtil.filter;
 import org.labkey.api.security.ACL;

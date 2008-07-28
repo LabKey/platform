@@ -13,24 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.admin;
+package org.labkey.api.security;
 
-import org.labkey.api.view.NavTree;
+import org.labkey.api.action.UrlProvider;
+import org.labkey.api.data.Container;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.util.PageFlowUtil;
 
 /**
  * User: adam
- * Date: May 14, 2008
- * Time: 1:54:57 PM
+ * Date: Jul 25, 2008
+ * Time: 11:48:29 AM
  */
-public class AdminConsole
-{
-    private static ActionURL adminURL = PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL();
 
-    public static NavTree appendAdminNavTrail(NavTree root, String childTitle)
-    {
-        root.addChild("Admin Console", adminURL).addChild(childTitle);
-        return root;
-    }
+public interface SecurityUrls extends UrlProvider
+{
+    ActionURL getBeginURL(Container container);
+    ActionURL getManageGroupURL(Container container, String groupName);
+    ActionURL getGroupPermissionURL(Container container, int id);
+    ActionURL getProjectURL(Container container);
+    ActionURL getContainerURL(Container container);
+    ActionURL getShowRegistrationEmailURL(Container container, String email, String mailPrefix);
+    String getCompleteUserURLPrefix(Container container);
 }

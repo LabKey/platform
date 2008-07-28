@@ -16,11 +16,11 @@
 
 package org.labkey.api.jsp;
 
-import org.labkey.api.view.GroovyView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.common.util.Pair;
 import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.util.AppProps;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.module.ModuleLoader;
 import org.apache.log4j.Logger;
 
 import javax.servlet.jsp.HttpJspPage;
@@ -142,7 +142,7 @@ public class JspLoader
     {
         try
         {
-            ServletContext context = request.getSession().getServletContext();
+            ServletContext context = ModuleLoader.getServletContext();
             String className = getJspClassName(context, packageName, jspFile);
             JspClassLoader loader = getClassLoader(context, className);
             Class clazz = loader.loadClass(context, className);

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.util;
+package org.labkey.api.settings;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.audit.AuditLogEvent;
@@ -29,6 +29,8 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.*;
 
 import java.net.URISyntaxException;
 import java.sql.SQLException;

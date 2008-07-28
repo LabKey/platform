@@ -15,9 +15,8 @@
  */
 package org.labkey.api.exp;
 
-import org.labkey.api.util.AppProps;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.ExpObject;
 
 import java.util.HashMap;
 import java.util.Collections;

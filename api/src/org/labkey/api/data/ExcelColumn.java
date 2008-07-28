@@ -24,7 +24,7 @@ import jxl.write.*;
 import jxl.write.Number;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.log4j.Logger;
-import org.labkey.api.util.AppProps;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.DateUtil;
 import org.labkey.common.util.Pair;
 

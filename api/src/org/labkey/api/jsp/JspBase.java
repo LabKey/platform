@@ -194,6 +194,11 @@ abstract public class JspBase extends HttpServlet implements HttpJspPage, HasVie
         return PageFlowUtil.textLink(text, url);
     }
 
+    public String textLink(String text, ActionURL url, String id)
+    {
+        return PageFlowUtil.textLink(text, url, id);
+    }
+
     /**
      * Renders a button wrapped in an &lt;a> tag.
      * Consider: is there any way to name this method in such a way as to

@@ -26,5 +26,7 @@ public interface PipelineStatusUrls extends UrlProvider
 {
     ActionURL urlBegin(Container container);
 
+    ActionURL urlBegin(Container container, boolean notComplete);
+
     ActionURL urlDetails(Container container, int rowId);    
 }

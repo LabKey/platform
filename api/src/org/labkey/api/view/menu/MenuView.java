@@ -17,7 +17,7 @@
 package org.labkey.api.view.menu;
 
 import org.labkey.api.view.*;
-import org.labkey.api.util.AppProps;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FolderDisplayMode;
 import org.labkey.api.util.PageFlowUtil;
 import org.springframework.web.servlet.ModelAndView;

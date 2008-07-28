@@ -16,7 +16,7 @@
 
 package org.labkey.api.util.emailTemplate;
 
-import org.labkey.api.util.AppProps;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.ActionURL;
 
 import java.util.ArrayList;

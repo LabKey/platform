@@ -212,7 +212,6 @@ public class Search
          * @param parser The term parser
          * @param containers The set of containers to search in
          * @param hits List of hits to append to
-         * @return The number of hits added to the hits list
          */
         void search(SearchTermParser parser, Set<Container> containers, List<SearchHit> hits);
 
@@ -344,10 +343,11 @@ public class Search
 
                 out.println("<table class=\"dataRegion\">");
 
-                for(SearchHit hit : hits)
+                for (SearchHit hit : hits)
                 {
-                    if(!curPath.equals(hit.getContainerPath()))
+                    if (!curPath.equals(hit.getContainerPath()))
                     {
+                        out.println();         // Empty line separating each section
                         out.print("<tr><td colspan=\"2\"><br/><b>");
                         out.print(PageFlowUtil.filter(hit.getContainerPath()));
                         out.println("</b></td></tr>");
@@ -362,8 +362,8 @@ public class Search
 
             protected void writeHit(SearchHit hit, PrintWriter out)
             {
-                out.println("<tr><td>&nbsp;</td><td>");
-                if(null != hit.getTypeDescription() && hit.getTypeDescription().length() > 0)
+                out.print("<tr><td>&nbsp;</td><td>");
+                if (null != hit.getTypeDescription() && hit.getTypeDescription().length() > 0)
                 {
                     out.print(PageFlowUtil.filter(hit.getTypeDescription()));
                     out.print(": ");
@@ -372,14 +372,14 @@ public class Search
                 out.print(PageFlowUtil.filter(hit.getHref()));
                 out.print("\">");
                 out.print(PageFlowUtil.filter(hit.getTitle()));
-                out.println("</a>");
+                out.print("</a>");
 
                 String context = hit.getDetails();
-                if(null != context && context.length() > 0)
+                if (null != context && context.length() > 0)
                 {
-                    out.println("<div style=\"color: #565051;padding-left: 2em\">");
-                    out.println(PageFlowUtil.filter(context));
-                    out.println("</div>");
+                    out.print("<div style=\"color: #565051;padding-left: 2em\">");
+                    out.print(PageFlowUtil.filter(context));
+                    out.print("</div>");
                 }
 
                 //close the table cell and row

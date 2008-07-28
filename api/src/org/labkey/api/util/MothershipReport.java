@@ -23,6 +23,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.settings.AppProps;
 
 import javax.mail.internet.ContentType;
 import javax.net.ssl.HttpsURLConnection;

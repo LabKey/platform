@@ -36,6 +36,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.view.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ACL;
+import org.labkey.api.settings.AppProps;
 import org.labkey.common.util.Pair;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
@@ -1101,6 +1102,11 @@ public class PageFlowUtil
     public static String textLink(String text, ActionURL url)
     {
         return textLink(text, url.getLocalURIString(), null, null);
+    }
+
+    public static String textLink(String text, ActionURL url, String id)
+    {
+        return textLink(text, url.getLocalURIString(), null, id);
     }
 
     public static String helpPopup(String title, String helpText)

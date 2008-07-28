@@ -16,12 +16,14 @@
 
 package org.labkey.api.view.menu;
 
+import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.data.Container;
+import org.labkey.api.security.ACL;
+import org.labkey.api.security.SecurityUrls;
+import org.labkey.api.security.User;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.data.Container;
-import org.labkey.api.security.User;
-import org.labkey.api.security.ACL;
 
 /**
  * User: brittp
@@ -40,9 +42,9 @@ public class ProjectAdminMenu extends NavTreeMenu
         Container c = context.getContainer();
 
         NavTree[] admin = new NavTree[3];
-        admin[0] = new NavTree("Permissions", ActionURL.toPathString("Security", "begin", c.getPath()));
-        admin[1] = new NavTree("Manage Folders", ActionURL.toPathString("admin", "manageFolders", c.getPath()));
-        admin[2] = new NavTree("Customize Folder", ActionURL.toPathString("admin", "customize", c.getPath()));
+        admin[0] = new NavTree("Permissions", PageFlowUtil.urlProvider(SecurityUrls.class).getBeginURL(c));
+        admin[1] = new NavTree("Manage Folders", PageFlowUtil.urlProvider(AdminUrls.class).getManageFoldersURL(c));
+        admin[2] = new NavTree("Customize Folder", PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeFolderURL(c));
         return admin;
     }
 

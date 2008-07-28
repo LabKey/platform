@@ -27,6 +27,7 @@ import org.labkey.api.wiki.WikiService;
 import org.labkey.api.view.menu.MenuView;
 import org.labkey.api.view.menu.MenuService;
 import org.labkey.api.view.*;
+import org.labkey.api.settings.AppProps;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.util.*;

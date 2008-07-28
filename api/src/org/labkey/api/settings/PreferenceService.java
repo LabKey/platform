@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.util.preferences;
+package org.labkey.api.settings;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;

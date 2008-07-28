@@ -22,12 +22,14 @@ import org.labkey.api.data.*;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.util.AppProps;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.BreakpointThread;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.admin.AdminUrls;
 
 import javax.naming.*;
 import javax.servlet.Filter;
@@ -881,7 +883,7 @@ public class ModuleLoader implements Filter
                 int stackSize = HttpView.getStackSize();
                 try
                 {
-                    ActionURL url = new ActionURL("admin", "maintenance", "");
+                    ActionURL url = PageFlowUtil.urlProvider(AdminUrls.class).getMaintenanceURL();
                     response.sendRedirect(url.toString());
                     return;
                 }
@@ -903,7 +905,7 @@ public class ModuleLoader implements Filter
             if (isAdminURL(request))
                 filterChain.doFilter(servletRequest, servletResponse);
             else
-                response.sendRedirect(getMainUpgradeURL());
+                response.sendRedirect(getMainUpgradeURL().toString());
 
             return;
         }
@@ -925,9 +927,9 @@ public class ModuleLoader implements Filter
         _deferUsageReport = defer;
     }
 
-    public String getMainUpgradeURL()
+    public ActionURL getMainUpgradeURL()
     {
-        return ActionURL.toPathString("admin", "moduleStatus", "");
+        return PageFlowUtil.urlProvider(AdminUrls.class).getModuleStatusURL();
     }
 
     public void ensureBeforeUpdateComplete()
