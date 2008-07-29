@@ -100,7 +100,8 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
             })),
             baseParams: baseParams,
             listeners: {
-                'load': {fn: this.onLoad, scope: this}
+                'load': {fn: this.onLoad, scope: this},
+                'loadexception' : {fn: this.onLoadException, scope: this}
             }
         });
 
@@ -291,16 +292,31 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
 
         if(this.nullRecord)
         {
-            //create an extra record with all null values
+            //create an extra record with a blank id column
             //and the null caption in the display column
-            var fields = this.reader.meta.fields;
             var data = {};
-            for(var idx = 0; idx < fields.length; ++idx)
-                data[fields[idx].name] = '';
+            data[this.reader.meta.id] = "";
             data[this.nullRecord.displayColumn] = this.nullCaption || "[none]";
-            var record = this.addRecord(data, 0);
-            delete record.isNew; //don't treat it as a new record that needs saving
+
+            var recordConstructor = Ext.data.Record.create(this.reader.meta.fields);
+            var record = new recordConstructor(data, -1);
+            this.insert(0, record);
         }
+    },
+
+    onLoadException : function(proxy, options, response, error)
+    {
+        var loadError = {message: error};
+
+        var ctype = response.getResponseHeader["Content-Type"];
+        if(ctype.indexOf("application/json") >= 0)
+        {
+            var errorJson = Ext.util.JSON.decode(response.responseText);
+            if(errorJson && errorJson.exception)
+                loadError.message = errorJson.exception;
+        }
+
+        this.loadError = loadError;
     },
 
     getSuccessHandler : function(rowsData, records) {

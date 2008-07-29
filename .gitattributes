@@ -1531,6 +1531,7 @@ internal/src/org/labkey/api/issues/IssuesSchema.java -text
 internal/src/org/labkey/api/module/DefaultFolderType.java -text
 internal/src/org/labkey/api/pipeline/PipelinePerlClusterSupport.java -text
 internal/src/org/labkey/api/query/ComparisonCrosstabView.java -text
+internal/src/org/labkey/api/query/UserIdQueryForeignKey.java -text
 internal/src/org/labkey/api/security/UserComparator.java -text
 internal/src/org/labkey/api/util/BeanQuery.java -text
 internal/src/org/labkey/api/util/ContainerTree.java -text

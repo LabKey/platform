@@ -273,11 +273,14 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         var store = this.ensureLookupStore(col, meta);
         return function(data)
         {
+            if(store.loadError)
+                return "ERROR: " + store.loadError.message;
+
             var record = store.getById(data);
             if (record)
                 return record.data[meta.lookup.displayColumn];
             else if (data)
-                return this.loadingCaption || "[loading...]";
+                return "[" + data + "]";
             else
                 return this.lookupNullCaption || "[none]";
         };
@@ -289,6 +292,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         {
             store = this.createLookupStore(meta, !col.required);
             store.on("load", this.onLookupStoreLoad, this);
+            store.on("loadexception", this.onLookupStoreError, this);
             store.load();
 
             this.lookupStores[meta.name] = store;
@@ -312,6 +316,22 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
     },
 
     onLookupStoreLoad : function(store, records, options) {
+        if(this.view)
+            this.view.refresh();
+    },
+
+    onLookupStoreError : function(proxy, options, response, error)
+    {
+        var message = error;
+        var ctype = response.getResponseHeader["Content-Type"];
+        if(ctype.indexOf("application/json") >= 0)
+        {
+            var errorJson = Ext.util.JSON.decode(response.responseText);
+            if(errorJson && errorJson.exception)
+                message = errorJson.exception;
+        }
+        Ext.Msg.alert("Load Error", "Error loading lookup data: " + message);
+
         if(this.view)
             this.view.refresh();
     },
