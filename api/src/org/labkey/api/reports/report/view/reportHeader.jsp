@@ -138,7 +138,7 @@
 
 
 <form id="reportHeader" method="post">
-<table width="100%"><tr class="wpHeader"><td align="left">
+<table width="100%"><tr class="labkey-wp-header"><td align="left">
     <table>
         <tr><td style="border:none;font-weight:bold">View :</td><td style="border:none">&nbsp;<%=reportName%></td></tr>
     <%  if (isReportInherited) { %>

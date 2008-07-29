@@ -67,7 +67,7 @@ public class TidyFilterView extends HttpView
                 }
                 else
                 {
-                    out.print("<span color=red>");
+                    out.print("<span class=labkey-error>");
                     out.print(PageFlowUtil.filter(e));
                     out.print("</span><br>");
                 }

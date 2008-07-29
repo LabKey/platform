@@ -329,7 +329,7 @@ public class WriteableAppProps extends AppProps
         //since this is a fixed membership map, we just need to run
         //one of the map's keys and compare values, noting what has changed
         boolean propsChanged = false;
-        StringBuilder html = new StringBuilder("<table>");
+        StringBuilder html = new StringBuilder("<table class='labkey-form'>");
 
         for(String key : _properties.keySet())
         {
@@ -339,7 +339,7 @@ public class WriteableAppProps extends AppProps
             if(!(_properties.get(key).equalsIgnoreCase(oldProps.get(key))))
             {
                 propsChanged = true;
-                html.append("<tr><td class='ms-searchform'>");
+                html.append("<tr><td class='labkey-form-label'>");
                 html.append(PageFlowUtil.filter(ColumnInfo.captionFromName(key)));
                 html.append("</td><td>");
                 html.append(PageFlowUtil.filter(oldProps.get(key)));

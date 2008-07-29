@@ -119,7 +119,7 @@ function postProcess(responseXML)
         return;
     }
 
-    var completionText = "<table width='100%' cellspacing='0' cellpadding='0'>";
+    var completionText = "<table class='labkey-completion-text'>";
     var completionList = completions.getElementsByTagName("completion")
     for (var i = 0; i < completionList.length; i++)
     {
@@ -232,11 +232,11 @@ function hideCompletionDivImmediate()
 }
 
 LABKEY.addMarkup(
-'<div id="completionDiv" style="display:none;border: 1px solid black;padding:1px; display:none;position:absolute;background-color:white;">' +
-'  <table border="0" cellpadding="0" cellspacing="0">' +
+'<div id="completionDiv" class="labkey-completion">' +
+'  <table>' +
 '    <tr>' +
-'      <td class="normal">' +
-'        <span id="completionBody" class="normal"></span>' +
+'      <td>' +
+'        <span id="completionBody"></span>' +
 '      </td>' +
 '    </tr>' +
 '  </table>' +

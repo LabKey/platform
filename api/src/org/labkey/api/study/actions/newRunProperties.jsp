@@ -26,13 +26,13 @@
     JspView<AssayRunUploadForm> me = (JspView<AssayRunUploadForm>) HttpView.currentView();
     org.labkey.api.study.actions.AssayRunUploadForm bean = me.getModelBean();
 %>
-<table>
+<table class="labkey-form">
 <%
     if (bean.isSuccessfulUploadComplete())
     {
 %>
     <tr>
-        <td class="heading-1" colspan="2">Upload successful.  Upload another run below, or click Cancel to view previously uploaded runs.</td>
+        <td class="labkey-heading-1" colspan="2">Upload successful.  Upload another run below, or click Cancel to view previously uploaded runs.</td>
     </tr>
     <tr>
         <td>&nbsp;</td>
@@ -40,29 +40,29 @@
 <%
     }
 %>
-    <tr class="wpHeader">
-        <td class="wpTitle" colspan="2">Assay Properties</td>
+    <tr class="labkey-wp-header">
+        <td colspan="2">Assay Properties</td>
     </tr>
     <tr>
-        <td class="ms-searchform" nowrap="true">Name</td>
+        <td class="labkey-form-label" nowrap="true">Name</td>
         <td width="100%"><%= h(bean.getProtocol().getName()) %></td>
     </tr>
     <tr>
-        <td class="ms-searchform" nowrap="true">Description</td>
+        <td class="labkey-form-label" nowrap="true">Description</td>
         <td><%= h(bean.getProtocol().getProtocolDescription()) %></td>
     </tr>
     <% if (!bean.getUploadSetProperties().isEmpty())
     { %>
         <tr><td>&nbsp;</td></tr>
-        <tr class="wpHeader">
-            <td class="wpTitle" colspan="2">Upload Set Properties</td>
+        <tr class="labkey-wp-header">
+            <td colspan="2">Upload Set Properties</td>
         </tr>
         <%
             for (Map.Entry<PropertyDescriptor, String> entry : bean.getUploadSetProperties().entrySet())
             {
                 %>
                 <tr>
-                    <td class="ms-searchform" nowrap="true"><%= h(entry.getKey().getNonBlankLabel()) %></td>
+                    <td class="labkey-form-label" nowrap="true"><%= h(entry.getKey().getNonBlankLabel()) %></td>
                     <td>
                         <%= h(bean.getUploadSetPropertyValue(entry.getKey(), entry.getValue())) %>
                     </td>

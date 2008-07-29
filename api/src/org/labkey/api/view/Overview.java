@@ -81,10 +81,10 @@ public class Overview
         public String toString()
         {
             StringBuilder ret = new StringBuilder("<li");
-            ret.append(" class=\"step");
+            ret.append(" class=\"labkey-step");
             if (_status == Status.disabled)
             {
-                ret.append(" step-disabled");
+                ret.append(" labkey-step-disabled");
             }
             ret.append("\">");
             ret.append("<b>");
@@ -181,7 +181,7 @@ public class Overview
     public String toString()
     {
         StringBuilder ret = new StringBuilder();
-        ret.append("<div class=\"overview\">\n");
+        ret.append("<div class=\"labkey-overview\">\n");
         if (!StringUtils.isEmpty(_title))
         {
             ret.append("<b>");

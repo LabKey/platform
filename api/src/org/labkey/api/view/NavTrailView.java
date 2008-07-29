@@ -160,11 +160,11 @@ public class NavTrailView extends HttpView
         // TABSTRIP
         //
 
-        _out.print("<table class=\"normal\" id=navBar cellspacing=\"0\" cellpadding=\"0\" width=\"100%\" style=\"margin:0px; padding:0px;");
+        _out.print("<table class=\"labkey-nav-bar\" id=\"navBar\" ");
         WebTheme theme = WebTheme.getTheme();
         if (tabs.size() == 1)
-            _out.print("border-top: 1px solid #" + theme.getHeaderLineColor());
-        _out.print("\"><tr>\n");
+            _out.print("style=\"border-top: 1px solid #" + theme.getHeaderLineColor() + "\"");
+        _out.print("><tr>\n");
 
         int tabHeight = ButtonServlet.getTabHeight();
         int lastTabHeight = tabHeight - ButtonServlet.getTabCornerHeight();
@@ -178,14 +178,14 @@ public class NavTrailView extends HttpView
                 drawTab(tab, tab==firstTab, tab==lastTab, lastTabHeight, tabHeight);
             endTabstrip(lastTab);
         }
-        _out.print("<td align=\"right\" style=\"padding-right:5px;white-space:nowrap;");
+        _out.print("<td id=\"labkey-end-nav-tab-space\"");
         if (tabs.size() > 1)
-            _out.print("border-bottom:1px solid #" + theme.getHeaderLineColor());
+            _out.print(" class=\"labkey-nav-tab-space\"");
         _out.print("\">");
 
         if (null != connectionsInUse || _pageConfig.getExploratoryFeatures())
         {
-            out.print("<span class=\"normal\">");
+            out.print("<span>");
 
             if (null != connectionsInUse)
             {
@@ -196,8 +196,8 @@ public class NavTrailView extends HttpView
             }
             if (_pageConfig.getExploratoryFeatures())
             {
-                _out.print("<a href=\"");_out.print(filter((new HelpTopic("exploratory", HelpTopic.Area.CPAS)).getHelpTopicLink()));
-                _out.print("\" target=\"help\"><font class=\"labkey-error\">This page contains exploratory features</font></a>");
+                _out.print("<a class=\"labkey-error\" href=\"");_out.print(filter((new HelpTopic("exploratory", HelpTopic.Area.CPAS)).getHelpTopicLink()));
+                _out.print("\" target=\"help\">This page contains exploratory features</a>");
             }
 
             _out.print("</span>");
@@ -209,14 +209,14 @@ public class NavTrailView extends HttpView
         // CRUMB TRAIL
         //
 
-        _out.print("<table border=\"0\" cellspacing=\"0\" cellpadding=\"0\" style=\"width:100%;\">\n");
+        _out.print("<table class=\"labkey-nav-bar\">\n");
         boolean hasCrumbTrail = null != _crumbTrail && _crumbTrail.size() > 1;
         _out.print("<tr><td colspan=");
         _out.print(hasCrumbTrail ? "1" : "2");
-        out.print(" class=\"ms-nav\" style=\"padding-top:5px; padding-left:5px;\">");
+        out.print(" class=\"labkey-crumb-trail\">");
         if (hasCrumbTrail)
         {
-            _out.print("<span id=\"navTrailAncestors\" class=\"normal\">");
+            _out.print("<span id=\"navTrailAncestors\">");
             String and = "";
             for (int i=0 ; i<_crumbTrail.size()-1; i++)
             {
@@ -232,13 +232,13 @@ public class NavTrailView extends HttpView
 
         out.print("</tr>\n<tr><td colspan=");
         out.print(hasCrumbTrail ? "2" : "1");
-        out.print(" class=\"ms-nav\" style=\"padding-left:12;\">");
+        out.print(" class=\"labkey-nav-page-header\">");
         String lastCaption = _title;
         if (_crumbTrail.size() > 0)
             lastCaption = _crumbTrail.get(_crumbTrail.size()-1).getKey();
         if (lastCaption != null)
         {
-            _out.print("<span id=\"navTrailCurrentPage\" class=\"navPageHeader\">");_out.print(filter(_title));_out.print("</span>");
+            _out.print("<span id=\"labkey-nav-trail-current-page\" class=\"labkey-nav-page-header\">");_out.print(filter(_title));_out.print("</span>");
         }
         _out.print("</td>");
         if (!hasCrumbTrail)
@@ -265,13 +265,12 @@ public class NavTrailView extends HttpView
         String link = tab.getValue();
         String name = tab.getKey();
         boolean active = link != null;
-        String className = tab.isSelected() ? "navtab-selected" : active ? "navtab" : "navtab-inactive";
+        String className = tab.isSelected() ? "labkey-nav-tab-selected" : active ? "labkey-nav-tab" : "labkey-nav-tab-inactive";
         WebTheme theme = WebTheme.getTheme();
-        _out.print("<td style=\"border-bottom:1px solid #" + theme.getHeaderLineColor()
-                + "\"><img border=0 width=\"5\" src=\"");
+        _out.print("<td class=\"labkey-nav-tab-space\"><img width=\"5\" src=\"");
         _out.print(_contextPath);
         _out.print("/_.gif\"></td>");
-        _out.print("<td><table border=\"0\" cellspacing=\"0\" cellpadding=\"0\"><tr>");
+        _out.print("<td><table><tr>");
         if (active)
         {
             _out.print("<td style=\"margin-bottom:0px\" class=");_out.print(className);_out.print(">");
@@ -287,9 +286,10 @@ public class NavTrailView extends HttpView
 
     void endTabstrip(NavTree lastTab)
     {
-        WebTheme theme = WebTheme.getTheme();
-        _out.print("<td style=\"border-bottom:1px solid #" + theme.getHeaderLineColor()
-                + "\" width=\"100%\"><img border=0 src=\"");_out.print(_contextPath);_out.print("/_.gif\"></td>\n");
+        _out.print("<td class=\"labkey-nav-tab-space\"" +
+                " width=\"100%\"><img src=\"");
+        _out.print(_contextPath);
+        _out.print("/_.gif\"></td>\n");
     }
 
     private String formatLink(NavTree tree)

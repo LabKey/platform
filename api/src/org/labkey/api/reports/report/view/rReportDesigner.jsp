@@ -140,10 +140,10 @@
 <labkey:errors/>
 
 <form id="renderReport" action="<%=renderAction%>" method="post">
-    <table class="wp" width="100%">
-        <tr class="wpHeader"><th class="wpTitle" align="left">R View Builder</th></tr>
-        <tr><td class=normal>Create an R script to be executed on the server:<br/></td></tr>
-        <tr><td class=normal><a href="javascript:void(0)" onclick="javascript:downloadData()">Download input data
+    <table class="labkey-wp">
+        <tr class="labkey-wp-header"><th align="left">R View Builder</th></tr>
+        <tr><td>Create an R script to be executed on the server:<br/></td></tr>
+        <tr><td><a href="javascript:void(0)" onclick="javascript:downloadData()">Download input data
             <%=PageFlowUtil.helpPopup("Download input data", "LabKey Server automatically exports your chosen dataset into " +
                     "a data frame called: labkey.data. You can download it to help with the development of your R script.")%></a> <br/><br/></td></tr>
         <tr><td>
@@ -186,7 +186,7 @@
     {
 %>
         <tr><td>&nbsp;</td></tr>
-        <tr class="wpHeader"><th class="wpTitle" align="left">Shared Scripts</th></tr>
+        <tr class="labkey-wp-header"><th align="left">Shared Scripts</th></tr>
         <tr><td><i>You can execute any of the following scripts as part of your current script by calling: source('&lt;Script Name&gt;.r') after checking the box next to the &lt;Script Name&gt; you plan to use.</i></td></tr>
 <%
         for (Report report : sharedReports)
@@ -224,9 +224,9 @@
     <div style="display:none;" id="saveDialog">
         <div class="hd">Save View</div>
         <div class="bd">
-            <table cellpadding="0" class="normal">
+            <table>
                 <tr><td>View name:</td></tr>
-                <tr><td class="normal" width="275"><input id="reportName" name="reportName" style="width:100%" value="<%=StringUtils.trimToEmpty(bean.getReportName())%>"></td></tr>
+                <tr><td width="275"><input id="reportName" name="reportName" style="width:100%" value="<%=StringUtils.trimToEmpty(bean.getReportName())%>"></td></tr>
                 <tr><td>&nbsp;</td></tr>
                 <tr><td>
                     <a href="javascript:void(0)" onclick="javascript:doSaveReport(true)"><%=PageFlowUtil.buttonImg("Save")%></a>&nbsp;

@@ -111,7 +111,7 @@ function collapseExpand(elem, notify)
 
     while (nextRow != null)
     {
-         if (nextRow.className == "header")
+         if (nextRow.className == "labkey-header")
             break;
         toggleDisplay(nextRow);
         nextRow = getNextRow(nextRow);
@@ -390,7 +390,7 @@ function addFilePicker(tblId, linkId)
     filePickerCell.innerHTML = '<input type="file" id="' + filePickerId + '" name="formFiles[' + filePickerIndex + ']" size="60" onChange="showPathname(this, \'filename' + filePickerIndex + '\')">';
     var removePathnameCell = newRow.insertCell(1);
     removePathnameCell.innerHTML = '<a href="javascript:removeFilePicker(\'' + tblId + '\', \'' + linkId + '\', \'' + newRow.id + '\')">remove</a>' +
-        '&nbsp;&nbsp;<label class="normal" id="filename' + filePickerIndex + '"></label>';
+        '&nbsp;&nbsp;<label id="filename' + filePickerIndex + '"></label>';
     updateInstructions(document.getElementById(linkId), table.rows.length);
 }
 
@@ -433,18 +433,18 @@ function mouseExitedHelpDiv()
 
 LABKEY.addMarkup(
 '<div id="helpDiv" onMouseOver="mouseEnteredHelpDiv()" onMouseOut="mouseExitedHelpDiv()"' +
-'   style="display:none;border: 1px solid black; display:none;position:absolute;background-color:white">'+
-'  <table border="0" cellpadding="0" cellspacing="0" width="100%">'+
-'    <tr class="wpHeader">'+
-'      <td title="Help" style="border-right:0px" nowrap>'+
-'        <div class="wpTitle"><span id="helpDivTitle">Title</span></div>'+
+'   style="display:none;">'+
+'  <table>'+
+'    <tr>'+
+'      <td title="Help" class="labkey-wp-title-left" nowrap>'+
+'        <div><span id="helpDivTitle" class="labkey-wp-title">Title</span></div>'+
 '      </td>'+
-'      <td align="right" style="border-left:0px">'+
-'      <img alt="close" border=0 src="' + LABKEY.imagePath + '/partdelete.gif" onclick="hideHelpDiv(true)">'+
+'      <td class="labkey-wp-title-right" align="right" style="border-left:0px">'+
+'      <img alt="close" src="' + LABKEY.imagePath + '/partdelete.gif" onclick="hideHelpDiv(true)">'+
 '      </td>'+
 '     </tr>'+
 '    <tr>'+
-'      <td colspan=2 class="normal" style="padding:5px;">'+
+'      <td colspan=2 style="padding:5px;">'+
 '        <span id="helpDivBody">Body</span>'+
 '      </td>'+
 '    </tr>'+

@@ -52,7 +52,7 @@ public class LinkBarView extends WebPartView
         out.write("</td></tr>");
         if(_drawLine)
         {
-            out.write("<tr style=\"height:1;\"><td colspan=3 class=ms-titlearealine><img height=1 width=1 src=\"" +
+            out.write("<tr style=\"height:1;\"><td colspan=3 class=\"labkey-title-area-line\"><img height=1 width=1 src=\"" +
                     getViewContext().getContextPath()+ "/_.gif\"></td></tr>");
         }
         out.write("</table>");

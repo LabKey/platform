@@ -87,9 +87,9 @@ public class ROutputView extends HttpView
 
         if (_showHeader)
         {
-            sb.append("<tr class=\"wpHeader\"><th colspan=2 align=left>");
+            sb.append("<tr class=\"labkey-wp-header\"><th colspan=2 align=left>");
             sb.append("   <a href=\"#\" onclick=\"return toggleLink(this, false);\">");
-            sb.append("   <img border=\"0\" src=\"");
+            sb.append("   <img src=\"");
             sb.append(getViewContext().getContextPath());
             sb.append("/_images/");
             sb.append(_collapse ? "plus.gif" : "minus.gif");

@@ -48,7 +48,7 @@ public class AssayDataCollectorDisplayColumn extends SimpleDisplayColumn
         if (null == _caption)
             return;
 
-        out.write("<td class='ms-searchform'>");
+        out.write("<td class='labkey-form-label'>");
         renderTitle(ctx, out);
         out.write(" *");
         out.write("</td>");

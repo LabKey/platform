@@ -106,7 +106,7 @@ public class ExceptionUtil
 
     public static String getUnauthorizedMessage(ViewContext context)
     {
-        return "<table width=\"100%\"><tr><td align=left class=\"normal\">" +
+        return "<table width=\"100%\"><tr><td align=left>" +
                 (context.getUser().isGuest() ? "Please sign in to see this data." : "You do not have permission to see this data.") +
                 "</td></tr></table>";
     }

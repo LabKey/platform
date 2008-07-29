@@ -38,7 +38,7 @@ public class ChooseQueryView extends WebPartView
 
     protected void renderView(Object model, PrintWriter out) throws Exception
     {
-        out.write("<table class=\"normal\">");
+        out.write("<table>");
         Map<String, QueryDefinition> queryDefs = QueryService.get().getQueryDefs(_schema.getContainer(), _schema.getSchemaName());
         for (String queryName : _schema.getTableAndQueryNames(true))
         {

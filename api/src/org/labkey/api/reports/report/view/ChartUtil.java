@@ -131,7 +131,7 @@ public class ChartUtil
         }
         else
         {
-            sb.append("<img border=0 src='");
+            sb.append("<img src='");
             sb.append(getPlotChartURL(context, report).toString());
             sb.append("'>");
         }

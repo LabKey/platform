@@ -89,7 +89,7 @@ public abstract class RunReportView extends TabStripView
             include(new HttpView() {
 
                 protected void renderInternal(Object model, PrintWriter out) throws Exception {
-                    out.write("<table width=\"100%\"><tr class=\"wpHeader\"><td align=\"left\">" + sb + "</td></tr><tr><td></td>&nbsp;</tr></table>");
+                    out.write("<table width=\"100%\"><tr class=\"labkey-wp-header\"><td align=\"left\">" + sb + "</td></tr><tr><td></td>&nbsp;</tr></table>");
                 }
             });
         }

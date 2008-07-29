@@ -552,7 +552,7 @@ public class RenderContext extends BoundMap // extends ViewContext
             if (list == null || list.size() == 0)
                 return "";
             StringBuilder sb = new StringBuilder();
-            String br = "<font color=\"red\" class=\"error\">";
+            String br = "<font class=\"labkey-error\">";
             for (Object m : list)
             {
                 sb.append(br);

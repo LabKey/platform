@@ -619,7 +619,7 @@ public class DataRegion extends DisplayElement
             Set<FieldKey> ignoredColumns = ctx.getIgnoredFilterColumns();
             if (!ignoredColumns.isEmpty())
             {
-                out.write("<span class=\"normal\" style=\"color:red\">");
+                out.write("<span class=\"error\">");
                 if (ignoredColumns.size() == 1)
                 {
                     FieldKey field = ignoredColumns.iterator().next();
@@ -647,7 +647,7 @@ public class DataRegion extends DisplayElement
                 Table.TableResultSet tableRS = (Table.TableResultSet) rs;
                 if (!tableRS.isComplete())
                 {
-                    out.write("<span class=normal style=\"color:#008000\">");
+                    out.write("<span style=\"color:#008000\">");
                     out.write(tableRS.getTruncationMessage(_maxRows));
                     out.write("</span>");
                 }
@@ -685,7 +685,7 @@ public class DataRegion extends DisplayElement
         if (renderButtons)
             renderFormHeader(out, MODE_GRID);
 
-        out.write("<table class=\"dataregion_header\" id=\"" + PageFlowUtil.filter("dataregion_header_" + getName()) + "\">\n");
+        out.write("<table class=\"labkey-data-region-header\" id=\"" + PageFlowUtil.filter("dataregion_header_" + getName()) + "\">\n");
         out.write("<tr><td nowrap>\n");
         if (renderButtons)
         {
@@ -705,7 +705,7 @@ public class DataRegion extends DisplayElement
 
     protected void renderFooter(RenderContext ctx, Writer out, Integer resultSetSize, boolean renderButtons) throws IOException
     {
-        out.write("<table class=\"dataregion_footer\" id=\"" + PageFlowUtil.filter("dataregion_footer_" + getName()) + "\">\n");
+        out.write("<table class=\"labkey-data-region-footer\" id=\"" + PageFlowUtil.filter("dataregion_footer_" + getName()) + "\">\n");
         out.write("<tr><td nowrap>\n");
         if (renderButtons && _buttonBarPosition.atBottom())
         {
@@ -740,7 +740,7 @@ public class DataRegion extends DisplayElement
         if (_complete && _offset == 0 && resultSetSize != null && resultSetSize.intValue() < 10)
             return;
 
-        out.write("<div class=\"pagination\" style=\"visibility:hidden;\">");
+        out.write("<div class=\"labkey-pagination\" style=\"visibility:hidden;\">");
 
         if (_maxRows > 0 && _offset >= 2*_maxRows)
             paginateLink(out, "First Page", "<b>&laquo;</b> First", 0);
@@ -856,36 +856,25 @@ public class DataRegion extends DisplayElement
     {
         if (isShowColumnSeparators())
         {
-            out.write("<table class=\"grid\"");
+            out.write("<table class=\"labkey-grid labkey-show-column-separators\"");
 
         }
         else
         {
-            out.write("<table class=\"dataRegion\"");
+            out.write("<table class=\"labkey-data-region labkey-show-header-separator\"");
         }
 
         StringBuilder style = new StringBuilder();
         if (_fixedWidthColumns)
             style.append("table-layout:fixed");
 
-        if (_showColumnSeparators)
-        {
-            if (style.length() > 0)
-                style.append(";");
-            style.append("; border-top: solid 1px ").append(COLUMN_SEPARATOR_COLOR);
-            style.append("; border-bottom: solid 1px ").append(COLUMN_SEPARATOR_COLOR);
-            style.append("; border-left: solid 1px ").append(COLUMN_SEPARATOR_COLOR);
-            style.append(";");
-        }
-
         if (style.length() > 0)
             out.write(" style=\"" + style.toString() + "\"");
 
-        out.write(" id=\"" + PageFlowUtil.filter("dataregion_" + getName()) + "\"");
-        out.write(" cellspacing=\"0\" cellpadding=\"1\">\n");
+        out.write(" id=\"" + PageFlowUtil.filter("dataregion_" + getName()) + "\">\n");
         out.write("<colgroup>");
         if (_showRecordSelectors)
-            out.write("<col class=\"selectors\" width=\"35\"/>");
+            out.write("<col class=\"labkey-selectors\" width=\"35\"/>");
         for (DisplayColumn renderer : renderers)
         {
             if (renderer.getVisible(ctx))
@@ -908,18 +897,16 @@ public class DataRegion extends DisplayElement
 
         if (_showRecordSelectors)
         {
-            out.write("<td class=\"header selectors\"");
+            out.write("<td class=\"labkey-selectors labkey-selector-header");
             if (_showColumnSeparators)
             {
-                String style = "border: solid 1px " + COLUMN_SEPARATOR_COLOR;
-                out.write(" style='" + style + "'");
+                out.write(" labkey-show-column-separators");
             }
             else if (_showHeaderSeparator)
             {
-                String style = "border-bottom: solid 1px " + COLUMN_SEPARATOR_COLOR;
-                out.write(" style='" + style + "'");
+                out.write(" labkey-show-header-separator");
             }
-            out.write(">");
+            out.write("\">");
 
             out.write("<input type=checkbox title='Check/uncheck all' name='");
             out.write(TOGGLE_CHECKBOX_NAME);
@@ -933,12 +920,11 @@ public class DataRegion extends DisplayElement
             {
                 if (_showColumnSeparators)
                 {
-                    renderer.renderGridHeaderCell(ctx, out, COLUMN_SEPARATOR_STYLE_ARRIBS +
-                            ";border-bottom:solid 1px " + COLUMN_SEPARATOR_COLOR);
+                    renderer.renderGridHeaderCell(ctx, out, "labkey-show-column-separators");
                 }
                 else if (_showHeaderSeparator)
                 {
-                    renderer.renderGridHeaderCell(ctx, out, "border-bottom:solid 1px " + COLUMN_SEPARATOR_COLOR);
+                    renderer.renderGridHeaderCell(ctx, out, "labkey-show-header-separator");
                 }
                 else
                     renderer.renderGridHeaderCell(ctx, out);
@@ -976,7 +962,7 @@ public class DataRegion extends DisplayElement
             out.write("<tr style=\"border-top:solid 1px;background-color:#" + WebTheme.getTheme().getNavBarColor() + "\">");
             if (_showRecordSelectors)
             {
-                out.write("<td class='selectors'");
+                out.write("<td class='labkey-selectors'");
                 if (tdStyle.length() > 0)
                     out.write(" style=\"" + tdStyle.toString() + "\"");
                 out.write(">");
@@ -1076,11 +1062,11 @@ public class DataRegion extends DisplayElement
     {
         if (_shadeAlternatingRows && rowIndex % 2 == 0)
         {
-            out.write("<tr bgcolor=\"" + ALTERNATING_ROW_COLOR + "\">");
+            out.write("<tr class=\"labkey-alternating-row\">");
         }
         else
         {
-            out.write("<tr>");
+            out.write("<tr class=\"labkey-row\">");
         }
 
         if (_showRecordSelectors)
@@ -1154,7 +1140,7 @@ public class DataRegion extends DisplayElement
     protected void renderRecordSelector(RenderContext ctx, Writer out) throws IOException
     {
         Map rowMap = ctx.getRow();
-        out.write("<td class='selectors' nowrap>");
+        out.write("<td class='labkey-selectors' nowrap>");
         out.write("<input type=checkbox name='");
         out.write(SELECT_CHECKBOX_NAME);
         out.write("' value=\"");
@@ -1496,7 +1482,7 @@ public class DataRegion extends DisplayElement
                 }
                 for (String heading : _groupHeadings)
                 {
-                    out.write("<td valign='bottom' class='ms-searchform'>");
+                    out.write("<td valign='bottom' class='labkey-form-label'>");
                     out.write(PageFlowUtil.filter(heading));
                     out.write("</td>");
                 }
@@ -1564,7 +1550,7 @@ public class DataRegion extends DisplayElement
                 for (int i = 0; i < _groupHeadings.size(); i++)
                 {
                     out.write("<tr>");
-                    out.write("<td valign='bottom' class='ms-searchform'>");
+                    out.write("<td valign='bottom' class='labkey-form-label'>");
                     out.write(PageFlowUtil.filter(_groupHeadings.get(i)));
                     out.write("</td>");
                     for (int j = 0; j < _groups.size(); j++)
@@ -1645,7 +1631,7 @@ public class DataRegion extends DisplayElement
     private void writeSameHeader(RenderContext ctx, Writer out)
             throws IOException
     {
-        out.write("<td class='ms-searchform'>");
+        out.write("<td class='labkey-form-label'>");
         out.write("<input type='checkbox' name='~~SELECTALL~~' onchange=\"");
         for (DisplayColumnGroup group : _groups)
         {

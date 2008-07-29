@@ -46,7 +46,7 @@ public class ContainerTreeSelected extends ContainerTree
     protected void renderCellContents(StringBuilder html, Container c, ActionURL url)
     {
         if (c.equals(current))
-            html.append("<span class=\"labkey-navtree-selected\">");
+            html.append("<span class=\"labkey-nav-tree-selected\">");
 
         super.renderCellContents(html, c, url);
 

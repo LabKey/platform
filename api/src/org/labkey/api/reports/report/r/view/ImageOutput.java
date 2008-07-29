@@ -80,13 +80,13 @@ public class ImageOutput extends AbstractParamReplacement
                         String key = "temp:" + GUID.makeGUID();
                         getViewContext().getRequest().getSession(true).setAttribute(key, imgFile);
 
-                        out.write("<table width=\"100%\" cellspacing=\"0\" cellpadding=\"1\">");
+                        out.write("<table class=\"labkey-output\">");
                         renderTitle(model, out);
                         if (isCollapse())
                             out.write("<tr style=\"display:none\"><td>");
                         else
                             out.write("<tr><td>");
-                        out.write("<img border=0 id=\"resultImage\" src=\"");
+                        out.write("<img id=\"resultImage\" src=\"");
 
                         ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlStreamFile(getViewContext().getContainer());
                         url.addParameters(PageFlowUtil.map("sessionKey", key, "deleteFile", Boolean.toString(true), "cacheFile", "true"));

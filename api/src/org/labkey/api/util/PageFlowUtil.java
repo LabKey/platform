@@ -686,7 +686,7 @@ public class PageFlowUtil
         {
             // HACK make this works with non-Struts controllers
             final Properties props = new Properties();
-            props.put("errors.prefix","<font color=\"red\" class=\"error\">");
+            props.put("errors.prefix","<font class=\"labkey-error\">");
             props.put("errors.suffix","</font><br>");
             props.put("Error","{0}");
             props.put("ConversionError","Could not convert {0} to correct type.");
@@ -1121,9 +1121,7 @@ public class PageFlowUtil
 
     public static String helpPopup(String title, String helpText, boolean htmlHelpText, int width)
     {
-        String questionMarkHtml = "<span style=\"font-weight:bold;font-size:" +
-                ThemeFont.getThemeFont().getHeader_1Size() +
-                ";text-decoration:none;padding:0;\"><sup>?</sup></span>";
+        String questionMarkHtml = "<span class=\"labkey-help-pop-up\"><sup>?</sup></span>";
         return helpPopup(title, helpText, htmlHelpText, questionMarkHtml, width);
     }
 

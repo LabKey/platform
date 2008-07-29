@@ -93,7 +93,7 @@ public class PopupMenu
         if (_buttonStyle == ButtonStyle.TEXTBUTTON)
             out.append(PageFlowUtil.filter(_navTree.getKey())).append(" &gt;&gt;");
         else
-            out.append("<img border=0 src='").append(PageFlowUtil.buttonSrc(_navTree.getKey(), _buttonStyle.getStyleText())).append("'>");
+            out.append("<img src='").append(PageFlowUtil.buttonSrc(_navTree.getKey(), _buttonStyle.getStyleText())).append("'>");
         out.append("</a>");
         if (_buttonStyle == ButtonStyle.TEXTBUTTON)
             out.append("]");

@@ -674,7 +674,7 @@ function resizeContainer(tableName, onload)
 function showPagination(el)
 {
     if (!el) return;
-    var pagination = YAHOO.util.Dom.getElementsByClassName("pagination", "div", el)[0];
+    var pagination = YAHOO.util.Dom.getElementsByClassName("labkey-pagination", "div", el)[0];
     if (pagination)
         pagination.style.visibility = "visible";
 }
@@ -726,9 +726,9 @@ function handleKey(event)
     }
 }
 LABKEY.addMarkup('<div id="filterDiv" style="display:none;">' +
-'  <table border="0" cellpadding="0" cellspacing="0" onkeypress="handleKey(event);">' +
+'  <table class="labkey-filter" onkeypress="handleKey(event);">' +
 '    <tr>' +
-'      <td colspan=2 class="normal" style="padding: 5px" nowrap>' +
+'      <td colspan=2 style="padding: 5px" nowrap>' +
 '        <select id="compare_1" name="compare_1" onchange="doChange(this)">' +
 '            <option value="">&lt;has any value></option>' +
 '        </select><br>' +

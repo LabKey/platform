@@ -29,8 +29,8 @@ public class DetailsColumn extends UrlColumn
     public DetailsColumn(StringExpressionFactory.StringExpression urlExpression)
     {
         super(urlExpression, "details");
-        setGridHeaderClass("header details");
-        setGridCellClass("details");
+        setGridHeaderClass("labkey-header labkey-details");
+        setGridCellClass("labkey-details");
     }
 
 }

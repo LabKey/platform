@@ -68,7 +68,7 @@ public class DefaultScriptRunner extends AbstractScriptRunner
         }
         catch (Exception e)
         {
-            String error = "<font color='red'>An error occurred rendering this view, you may not have permission to view it</font>";
+            String error = "<font class=\"labkey-error\">An error occurred rendering this view, you may not have permission to view it</font>";
             _log.error("Error while rendering RReport", e);
             view.addView(new HtmlView(error));
             return false;
@@ -100,7 +100,7 @@ public class DefaultScriptRunner extends AbstractScriptRunner
                 errors.add(error1);
                 errors.add(error2);
 
-                String err = "<font color='red'>" + error1 + "</font><pre>" + error2 + "</pre>";
+                String err = "<font class=\"labkey-error\">" + error1 + "</font><pre>" + error2 + "</pre>";
                 HttpView errView = new HtmlView(err);
                 view.addView(errView);
                 ret = false;

@@ -27,7 +27,7 @@
     JspView<AssayHeaderView> me = (JspView<AssayHeaderView>) HttpView.currentView();
     AssayHeaderView bean = me.getModelBean();
 %>
-<table class="normal" cellspacing="0" width="100%">
+<table width="100%">
     <tr>
         <td>
             <p><%= h(bean.getProtocol().getProtocolDescription()) %></p>

@@ -67,7 +67,7 @@ public class TextOutput extends AbstractParamReplacement
         {
             if (getFile() != null && getFile().exists() && (getFile().length() > 0))
             {
-                out.write("<table width=\"100%\" cellspacing=\"0\" cellpadding=\"1\">");
+                out.write("<table class=\"labkey-output\">");
                 renderTitle(model, out);
                 if (isCollapse())
                     out.write("<tr style=\"display:none\"><td><pre>");

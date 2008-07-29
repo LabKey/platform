@@ -56,7 +56,7 @@ public class PopupAdminView extends PopupMenuView
         else
         {
             if (canAdmin)
-                out.write("<a class=\"wpTitle\" href=\"" + PageFlowUtil.filter(adminURL.toString()) + "\">Show Admin</a>");
+                out.write("<a class=\"labkey-wp-title\" href=\"" + PageFlowUtil.filter(adminURL.toString()) + "\">Show Admin</a>");
             else
                 out.write("&nbsp;");
         }

@@ -92,7 +92,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
 
     public String getBodyClass()
     {
-        return StringUtils.defaultString((String) getViewContext().get("className"), "normal");
+        return StringUtils.defaultString((String) getViewContext().get("className"), "");
     }
 
     public void setTitle(String title)
@@ -295,8 +295,8 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
 
         case DIALOG:
         {
-            out.print("<table cellspacing=0 border=1 bordercolor=black><tr>");
-            out.print("<th class=normal bgcolor=#dddddd>");
+            out.print("<table class=\"labkey-dialog\"><tr>");
+            out.print("<th>");
             out.print(  PageFlowUtil.filter(title));
             out.print(  "<br><img src='" + getViewContext().getContextPath() + "/_.gif' height=1 width=600>");
             out.print("</th>");
@@ -304,7 +304,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
             {
                 Object o = getViewContext().get("closeURL");
                 Object closeUrl = o instanceof ActionURL ? ((ActionURL)o).getLocalURIString() : String.valueOf(o);
-                out.print("<th class=normal bgcolor=#dddddd>");
+                out.print("<th>");
                 out.print("<a href=\"" + PageFlowUtil.filter(closeUrl) + "\">");
                 out.print("<img src=\"" + contextPath + "/_images/delete.gif\"></a>");
                 out.print("</th>");
@@ -317,9 +317,9 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
         case PORTAL:
         {
             out.print(
-                    "<!--webpart--><table class=\"wp\" cellpadding=\"0\" cellspacing=\"0\" width=\"100%\">" +
-                            "<tr class=\"wpHeader\">" +
-                            "<th class=\"wpTitle\" style=\"border-right:0px\" title=\"");
+                    "<!--webpart--><table class=\"labkey-wp\">" +
+                            "<tr class=\"labkey-wp-header\">" +
+                            "<th class=\"labkey-wp-title-left\" title=\"");
             out.print(PageFlowUtil.filter(title));
             out.print("\">");
 
@@ -342,7 +342,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
                 out.printf("<a href=\"%s\" onclick=\"return toggleLink(this, %s);\" id=\"%s\">",
                         filter(expandCollapseUrl.getLocalURIString()), "true", expandCollapseGifId);
                 String image = collapsed ? "plus.gif" : "minus.gif";
-                out.printf("<img border=\"0\" src=\"%s/_images/%s\"></a>", context.getContextPath(), image);
+                out.printf("<img src=\"%s/_images/%s\"></a>", context.getContextPath(), image);
                 
                 out.printf(" <a href=\"%s\" onclick=\"return toggleLink(document.getElementById(%s), %s);\">",
                         filter(expandCollapseUrl.getLocalURIString()), PageFlowUtil.jsString(expandCollapseGifId), "true");
@@ -357,7 +357,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
                 if (null != href)
                     out.print("</a>");
             }
-            out.print("</th>\n<th class=\"wpTitle\" style=\"text-align:right;border-left:0px\">");
+            out.print("</th>\n<th class=\"labkey-wp-title-right\">");
             NavTree[] links = getCustomizeLinks().getChildren();
             if (links == null || links.length == 0)
                 out.print("&nbsp;");
@@ -373,7 +373,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
                     if (null != linkHref && 0 < linkHref.length())
                         out.print("<a href=\"" + PageFlowUtil.filter(linkHref) + "\">");
                     if (null != link.getImageSrc())
-                        out.print("<img valign=\"center\" style=\"opacity: 0.6; filter: alpha(opacity=60); -moz-opacity: 0.6; padding-top: 2px;\" border=0 src=\"" + link.getImageSrc() +
+                        out.print("<img class=\"labkey-wp-header\" src=\"" + link.getImageSrc() +
                                 "\" title=\"" + PageFlowUtil.filter(linkText) + "\">");
                     else
                         out.print(PageFlowUtil.filter(linkText));
@@ -387,18 +387,18 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
             {
                 out.print("style=\"display: none\"");
             }
-            out.print("><td colspan=2 class=\"" + className + "\" style=\"padding-top: 2px;\">");
+            out.print("><td colspan=2 class=\"" + className + " labkey-wp-body\">");
             break;
         }
         case LEFT_NAVIGATION:
             {
-                out.print("<!--leftnav-webpart--><table class=\"leftNavBox\">");
+                out.print("<!--leftnav-webpart--><table class=\"labkey-expandable-nav\">");
 
                 Boolean collapsed = (Boolean) context.get("collapsed");
                 if (title != null)
                 {
                     out.print("<tr>" +
-                            "<th class=\"wpTitle\" title=\"");
+                            "<th class=\"labkey-expandable-nav-title\" title=\"");
                     out.print(PageFlowUtil.filter(title));
                     out.print("\">");
 
@@ -435,19 +435,19 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
                         out.print(PageFlowUtil.filter(title));
                     }
 
-                    out.print("</th>\n<th class=\"wpTitle\" style=\"text-align:right;padding-left:0px\">");
+                    out.print("</th>\n<th class=\"labkey-expand-collapse-area\">");
 
                     if (collapsed != null)
                     {
                         out.printf("<a href=\"%s\" onclick=\"return toggleLink(this, %s);\" id=\"%s\">",
                                 filter(expandCollapseUrl.getLocalURIString()), "true", expandCollapseGifId);
                         String image = collapsed ? "plus.gif" : "minus.gif";
-                        out.printf("<img border=\"0\" src=\"%s/_images/%s\"></a>", context.getContextPath(), image);
+                        out.printf("<img src=\"%s/_images/%s\"></a>", context.getContextPath(), image);
                     }
                     out.print("</th></tr>\n");
                 }
                 out.print("<tr" + (collapsed != null && collapsed ? " style=\"display:none\"" : "") + " class=\"" + className + "\">" +
-                        "<td colspan=\"2\" class=\"leftNavBoxBody\">");
+                        "<td colspan=\"2\" class=\"labkey-expandable-nav-body\">");
                 break;
             }
         }
@@ -465,14 +465,14 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
             out.write(
                     "<table cellpadding=\"0\"" + (null!=width?"width=\"" + width + "\"" : "") + ">" +
                             "<tr>" +
-                            "<td class=\"normal\" style=\"padding-top:14; padding-bottom:2\" align=left><span class=\"ms-announcementtitle\">");
+                            "<td class=\"labkey-announcement-title\" align=left><span>");
             if (null != href)
                 out.write("<a href=\"" + PageFlowUtil.filter(href) + "\">");
             out.write(PageFlowUtil.filter(title));
             if (null != href)
                 out.write("</a>");
             out.write("</span></td></tr>");
-            out.write("<tr style=\"height:1;\"><td class=ms-titlearealine><img height=1 width=1 src=\"" + AppProps.getInstance().getContextPath() + "/_.gif\"></td></tr>");
+            out.write("<tr style=\"height:1;\"><td class=\"labkey-title-area-line\"><img height=1 width=1 src=\"" + AppProps.getInstance().getContextPath() + "/_.gif\"></td></tr>");
             out.write("<tr><td colspan=3 class=\"" + className + "\">");
         }
         catch (IOException x)

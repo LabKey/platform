@@ -477,7 +477,7 @@ public class DataColumn extends DisplayColumn
         if (null == _caption)
             return;
 
-        out.write("<td class='ms-searchform'>");
+        out.write("<td class='labkey-form-label'>");
         renderTitle(ctx, out);
         int mode = ctx.getMode();
         if ((mode == DataRegion.MODE_INSERT || mode == DataRegion.MODE_UPDATE) && isEditable())

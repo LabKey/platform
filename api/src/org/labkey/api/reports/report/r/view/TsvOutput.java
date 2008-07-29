@@ -110,7 +110,7 @@ public class TsvOutput extends AbstractParamReplacement
                 }
 
                 int row = 0;
-                out.write("<table width=\"100%\" class=\"dataRegion\" cellspacing=\"0\" cellpadding=\"1\">");
+                out.write("<table class=\"labkey-data-region\">");
                 renderTitle(model, out);
                 if (isCollapse())
                     out.write("<tr style=\"display:none\"><td><table>");
@@ -120,9 +120,9 @@ public class TsvOutput extends AbstractParamReplacement
                 for (TabLoader.ColumnDescriptor col : display)
                 {
                     if (Number.class.isAssignableFrom(col.getClass()))
-                        out.write("<td class='header' align='right'>");
+                        out.write("<td class='labkey-header' align='right'>");
                     else
-                        out.write("<td class='header'>");
+                        out.write("<td class='labkey-header'>");
                     out.write(PageFlowUtil.filter(col.name, true, true));
                     out.write("</td>");
                     row++;
@@ -145,7 +145,7 @@ public class TsvOutput extends AbstractParamReplacement
                         TabLoader.ColumnDescriptor styleCol = styles.get(col.name);
                         String style = styleCol == null ? null : ConvertUtils.convert((m.get(styleCol.name)));
 
-                        out.write("<td class='ms-vb'");
+                        out.write("<td");
                         if (Number.class.isAssignableFrom(col.clazz))
                             out.write(" align='right'");
                         if (null != style)

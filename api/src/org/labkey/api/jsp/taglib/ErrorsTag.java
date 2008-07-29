@@ -62,7 +62,7 @@ public class ErrorsTag extends TagSupport
                         {
                             count++;
                             if (count == 1)
-                                out.print("<font color=\"red\" class=\"error\">");
+                                out.print("<font class=\"labkey-error\">");
                             try
                             {
                                 out.print(context.getMessage(m));

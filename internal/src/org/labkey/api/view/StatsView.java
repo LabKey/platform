@@ -64,39 +64,39 @@ public class StatsView extends GridView
         for (String col : cols)
             statMap.put(col, new Stats.DoubleStats(valueMap.get(col).toArray(null)));
 
-        out.write("<table><tr><td class=\"normal\"></td>");
+        out.write("<table><tr><td></td>");
         for (String col : cols)
         {
-            out.write("<td class=\"normal\" style=\"font-weight:bold\" >");
+            out.write("<td style=\"font-weight:bold\" >");
             out.write(PageFlowUtil.filter(col));
             out.write("</td>");
         }
         out.write("</td></tr>");
 
-        out.write("<tr><td class=\"normal\" style=\"font-weight:bold\" >count</td>");
+        out.write("<tr><td style=\"font-weight:bold\" >count</td>");
         for (String col : cols)
-            out.write("<td class=\"normal\">" + fmt(statMap.get(col).getCount()) + "</td>");
+            out.write("<td>" + fmt(statMap.get(col).getCount()) + "</td>");
         out.write("</tr>");
 
 
-        out.write("<tr><td class=\"normal\" style=\"font-weight:bold\" >mean</td>");
+        out.write("<tr><td style=\"font-weight:bold\" >mean</td>");
         for (String col : cols)
-            out.write("<td class=\"normal\">" + fmt(statMap.get(col).getMean()) + "</td>");
+            out.write("<td>" + fmt(statMap.get(col).getMean()) + "</td>");
         out.write("</tr>");
 
-        out.write("<tr><td class=\"normal\" style=\"font-weight:bold\" >min</td>");
+        out.write("<tr><td style=\"font-weight:bold\" >min</td>");
         for (String col : cols)
-            out.write("<td class=\"normal\">" + fmt(statMap.get(col).getMin()) + "</td>");
+            out.write("<td>" + fmt(statMap.get(col).getMin()) + "</td>");
         out.write("</tr>");
 
-        out.write("<tr><td class=\"normal\" style=\"font-weight:bold\" >max</td>");
+        out.write("<tr><td style=\"font-weight:bold\" >max</td>");
         for (String col : cols)
-            out.write("<td class=\"normal\">" + fmt(statMap.get(col).getMax()) + "</td>");
+            out.write("<td>" + fmt(statMap.get(col).getMax()) + "</td>");
         out.write("</tr>");
 
-        out.write("<tr><td class=\"normal\" style=\"font-weight:bold\" >stdDev</td>");
+        out.write("<tr><td style=\"font-weight:bold\" >stdDev</td>");
         for (String col : cols)
-            out.write("<td class=\"normal\">" + fmt(statMap.get(col).getStdDev()) + "</td>");
+            out.write("<td>" + fmt(statMap.get(col).getStdDev()) + "</td>");
         out.write("</tr>");
 
         out.write("</table>");

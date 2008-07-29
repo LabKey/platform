@@ -19,18 +19,18 @@
     String contextPath = request.getContextPath();
 %>
 
-<div id="filterDiv" style="display:none;border: 1px solid black;padding:4px; display:none;position:absolute;background-color:white">
-  <table border="0" cellpadding="0" cellspacing="0">
-    <tr class="wpHeader">
+<div id="filterDiv" class="labkey-row-filter labkey-filter">
+  <table>
+    <tr class="labkey-wp-header">
       <td title="Filter" nowrap>
-        <div class="wpTitle">Show Rows Where <span id="filterDivFieldName">Field</span></div>
+        <div class="labkey-wp-title">Show Rows Where <span id="filterDivFieldName">Field</span></div>
       </td>
       <td align="right">
-      <img alt="close" border=0 src="<%=contextPath%>/_images/partdelete.gif" onclick="hideFilterDiv()">
+      <img alt="close" src="<%=contextPath%>/_images/partdelete.gif" onclick="hideFilterDiv()">
       </td>
      </tr>
     <tr>
-      <td colspan=2 class="normal">
+      <td colspan=2>
 
         <select id="compare_1" name="compare_1" onchange="doChange(this)">
             <option value="">&lt;has any value></option>

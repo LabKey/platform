@@ -30,9 +30,9 @@
     ActionURL currentUrl = currentContext.getActionURL();
     AppProps app = AppProps.getInstance();
 %>
-<table id="header" width="100%" cellspacing=0 cellpadding=0><tr>
-<td align="center" valign="middle" height=56><a href="<%=h(app.getLogoHref())%>"><img src="<%=contextPath%>/logo.image?revision=<%=app.getLookAndFeelRevision()%>" alt="<%=h(app.getSystemShortName())%>"><br><img alt="<%=h(app.getLogoHref())%>" src="<%=contextPath%>/_.gif" width="146" height="1" border="0"></a></td>
-<td align="left" valign="bottom" style="padding:5px; width:100%"><span class="ms-pagetitle"><a href="<%= app.getHomePageUrl() %>" style="color:#666666;"><%=h(app.getSystemShortName())%></a></span><br><span class="normal"><a href="<%= app.getHomePageUrl() %>"><%= h(app.getSystemDescription())%></a><%
+<table id="header"><tr>
+<td class="labkey-main-icon"><a href="<%=h(app.getLogoHref())%>"><img src="<%=contextPath%>/logo.image?revision=<%=app.getLookAndFeelRevision()%>" alt="<%=h(app.getSystemShortName())%>"><br><img alt="<%=h(app.getLogoHref())%>" src="<%=contextPath%>/_.gif" width="146" height="1" border="0"></a></td>
+<td class="labkey-main-title-area"><span><a id="labkey-main-title" class="labkey-main-title" href="<%= app.getHomePageUrl() %>"><%=h(app.getSystemShortName())%></a></span><br><span class="normal"><a href="<%= app.getHomePageUrl() %>"><%= h(app.getSystemDescription())%></a><%
 if (bean.containerLinks != null)
     {
     for (String containerLink : bean.containerLinks)
@@ -41,7 +41,7 @@ if (bean.containerLinks != null)
         }
     }
 %></span></td>
-<td class="ms-nav" style="padding:5px;" align="right" valign="bottom" nowrap><%
+<td class="labkey-main-nav" align="right"><%
 
     User user = (User) request.getUserPrincipal();
 
@@ -67,12 +67,12 @@ if (bean.containerLinks != null)
     {
         if (AppProps.getInstance().isUserRequestedAdminOnlyMode())
         {
-%><tr><td>&nbsp;</td><td class="ms-nav; labkey-error" style="padding:5px;">Admin only mode: only administrators can log in. When finished, turn this off in the <a href="<%=urlProvider(AdminUrls.class).getCustomizeSiteURL()%>">Admin Console</a>.</td></tr><%
+%><tr><td>&nbsp;</td><td class="labkey-nav labkey-error" style="padding:5px;">Admin only mode: only administrators can log in. When finished, turn this off in the <a href="<%=urlProvider(AdminUrls.class).getCustomizeSiteURL()%>">Admin Console</a>.</td></tr><%
     }
 
     if (bean.moduleFailures != null && bean.moduleFailures.size() > 0)
     {
-    %><tr><td>&nbsp;</td><td class="ms-nav"style="padding:5px;">
+    %><tr><td>&nbsp;</td><td class="labkey-nav" style="padding:5px;">
     <p class="labkey-error">There were errors loading the following modules during server startup:</p>
     <%= bean.moduleFailures.keySet() %>
     <p><a href="<%=PageFlowUtil.urlProvider(AdminUrls.class).getModuleErrorsURL(currentContext.getContainer()) %>">Error details</a></p>
@@ -83,7 +83,7 @@ if (bean.containerLinks != null)
     // download a new version, for example.
     if (bean.upgradeMessage != null)
     {
-    %><tr><td>&nbsp;</td><td class="ms-nav"style="padding:5px;"><%= bean.upgradeMessage %></td></tr><%
+    %><tr><td>&nbsp;</td><td class="labkey-nav" style="padding:5px;"><%= bean.upgradeMessage %></td></tr><%
     }
 }
 %>

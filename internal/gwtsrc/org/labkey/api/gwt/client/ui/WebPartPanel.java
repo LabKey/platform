@@ -31,11 +31,11 @@ public class WebPartPanel extends FlexTable
 {
     public WebPartPanel(String title, Widget contents)
     {
-        setStyleName("wp");
+        setStyleName("labkey-wp");
         setText(0, 0, title);
 
-        getRowFormatter().setStyleName(0, "wpHeader");
-        getCellFormatter().setStyleName(0, 0, "wpTitle");
+        getRowFormatter().setStyleName(0, "labkey-wp-header");
+        getCellFormatter().setStyleName(0, 0, "labkey-wp-title");
 
         setWidget(1, 0, contents);
     }

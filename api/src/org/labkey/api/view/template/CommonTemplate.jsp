@@ -66,7 +66,7 @@ if (null != bean.getStyles())
 %>
 </head>
 
-<body id="bodyElement" style="margin-top:0; margin-left:0; margin-right:0;" <%
+<body id="bodyElement" <%
     if (null != bean.getFocus() || bean.getShowPrintDialog())
     {%>onload="<%
         if (null != bean.getFocus()) {%>document.<%=bean.getFocus()%>.focus();<%}
@@ -78,13 +78,13 @@ if (null != gwtModules && gwtModules.size() > 0)
     <iframe id="__gwt_historyFrame" style="width:0;height:0;border:0"></iframe><%
 }
 %>
-    <table class=ms-main border=0 style="width:100%; height:100%;" cellspacing=0 cellpadding=0><%
+    <table class="labkey-main"><%
 
 if (bean.showHeader())
 {
     String headerLineColor = "#" + WebTheme.getTheme().getHeaderLineColor();
 %>
-        <tr id="headerpanel">
+        <tr id="labkey-header-panel" class="labkey-header-panel">
             <td colspan=3>
                 <!-- HEADER -->
                 <% me.include(me.getView("header"),out); %>
@@ -92,20 +92,20 @@ if (bean.showHeader())
             </td>
         </tr>
         <tr>
-            <td id="leftmenupanel" align=left valign=top class=ms-navframe style="border-top:solid 1px <%=headerLineColor%>; border-right:solid 1px <%=headerLineColor%>;">
+            <td id="leftmenupanel" class="labkey-site-nav-panel">
 <%            if (HttpView.currentContext().isShowFolders())
                 {%>
     		    <img src="<%= request.getContextPath() %>/_.gif" width="<%=AppProps.getInstance().getNavigationBarWidth()%>" height=1><br>
             <%  } %>
                 <% me.include(me.getView("menu") ,out); %>
             </td>
-            <td style="width:100%; height:100%;" valign=top>
+            <td class="labkey-proj">
                 <!--content area-->
-                <table style="height:100%; width:100%;" cellpadding=0 cellspacing=0 border=0>
+                <table class="labkey-proj">
 <%    if (me.getView("nav") instanceof HttpView && ((HttpView)me.getView("nav")).isVisible())
           { %>
         <tr>
-            <td id="navpanel" valign="top" colspan=2 style="width:100%; padding:0;">
+            <td id="navpanel" class="labkey-proj-nav-panel" colspan="2">
 <%
             me.include(me.getView("nav"),out);
 %>
@@ -114,7 +114,7 @@ if (bean.showHeader())
 <%        } %>
 <% } %>
         <tr>
-            <td id="bodypanel" align=left valign=top class=normal style="width:100%; height:100%; padding:5;">
+            <td id="bodypanel" class="labkey-body-panel">
                 <img height=1 width=<%=bean.getMinimumWidth()%> src="<%= contextPath %>/_.gif"><br>
                 <!-- BODY -->
                 <% me.include(me.getBody(),out); %>
@@ -124,7 +124,7 @@ if (bean.showHeader())
             if (me.getView("right") instanceof HttpView && ((HttpView)me.getView("right")).isVisible())
 				{ %>
             <!-- RIGHT -->
-            <td align=left valign=top class=normal style="padding:5; height:100%; width:240;">
+            <td class="labkey-side-panel">
                 <img height=1 width=240 src="<%= contextPath %>/_.gif"><br>
                 <% me.include(me.getView("right"),out); %>
             </td>

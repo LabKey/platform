@@ -124,7 +124,7 @@ public class CrosstabDataRegion extends DataRegion
         out.write(String.valueOf(groupWidth));
         out.write("\" rowspan=\"");
         out.write(String.valueOf(groupHeight));
-        out.write("\" class=\"grid\"");
+        out.write("\" class=\"labkey-grid\"");
         if (isShowColumnSeparators() || isShowHeaderSeparator())
         {
             out.write(" style=\"border: solid 1px " + COLUMN_SEPARATOR_COLOR + "\"");

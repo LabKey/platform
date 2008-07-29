@@ -29,22 +29,22 @@
     if (currentTab == null && !tabs.isEmpty())
         currentTab = tabs.get(0).getId();
 %>
-<table cellspacing=0 cellpadding=0 width="100%">
+<table class="labkey-tab-strip">
     <tr>
-        <td class="navtab" style="border-top:none;border-left:none;border-right:none;">
+        <td class="labkey-nav-tab-space">
             <img src="<%=request.getContextPath()%>/_.gif" height=1 width=5>
         </td>
     <%
         for (TabStripView.TabInfo tab : tabs)
         {
-            out.println("<td class=\"" + (tab.getId().equals(currentTab) ? "navtab-selected" : "navtab-inactive") + "\">" + tab.render(HttpView.currentContext()) + "</td>");
+            out.println("<td class=\"" + (tab.getId().equals(currentTab) ? "labkey-nav-tab-selected" : "labkey-nav-tab-inactive") + "\">" + tab.render(HttpView.currentContext()) + "</td>");
         }
     %>
-        <td class="navtab" style="border-top:none;border-left:none;border-right:none;text-align:right;" width=100%>
+        <td class="labkey-nav-tab-space" style="text-align:right;" width=100%>
             <img src="<%=request.getContextPath()%>/_.gif" height=1 width=5>
         </td>
     </tr>
     <tr>
-        <td colspan="<%=tabs.size() + 2%>" class="navtab" style="border-top:none;text-align:left;" width=100%>
+        <td colspan="<%=tabs.size() + 2%>" class="labkey-nav-tab" style="border-top:none;text-align:left;" width=100%>
             <img src="<%=request.getContextPath()%>/_.gif" height=1 width=5>
 

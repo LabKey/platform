@@ -22,11 +22,11 @@
 <%
     Portal.AddWebParts bean = (Portal.AddWebParts)HttpView.currentModel();
 %>
-<table width="100%">
+<table class="labkey-add-web-part-row">
 <tr>
-    <td class="normal" align="left">
+    <td class="labkey-add-web-part" align="left">
 		<form action=addWebPart.view>
-		<table><tr><td>
+		<table class="labkey-add-web-part"><tr><td>
 		<input type="hidden" name="pageId" value="<%=bean.pageId%>"/>
 		<input type="hidden" name="location" value="<%=bean.location%>"/>
         <select name="name">
@@ -43,9 +43,9 @@
     </td>
 <% if (bean.rightWebPartNames != null && !bean.rightWebPartNames.isEmpty())
     { %>
-    <td class="normal"align="right">
+    <td class="labkey-add-web-part" align="right">
         <form action=addWebPart.view>
-        <table><tr><td>
+        <table class="labkey-add-web-part"><tr><td>
         <input type="hidden" name="pageId" value="<%=bean.pageId%>"/>
         <input type="hidden"name="location"value="right"/>
         <select name="name">

@@ -70,9 +70,9 @@ function sizeNavBar()
 <body onLoad=sizeNavBar() onResize=sizeNavBar() style="margin-top:0px; margin-left:0px; margin-right:0px;">
 <%
 me.include(me.getView("header"),out);
-%><TABLE border=0 style="width:146; height:100%;" cellspacing=0 cellpadding=0 align=left>
+%><TABLE style="width:146;" align=left>
 <tr>
-<td id="leftmenupanel" align=left valign=top class=ms-navframe style="border-top:solid 1px <%=headerLineColor%>; border-right:solid 1px <%=headerLineColor%>;">
+<td id="leftmenupanel" class="labkey-site-nav-panel">
 <img src=<%=contextPath%>/_.gif width=146 height=1><br><%
 	me.include(me.getView("menu"),out);
 %></td></tr>

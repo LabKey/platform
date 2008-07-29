@@ -73,7 +73,7 @@
         var div = document.getElementById('container');
 	    if(o.responseText !== undefined)
         {
-            var msg = "<font color=\"red\" class=\"error\">"
+            var msg = "<font class=\"labkey-error\">"
             msg += "An error occurred trying to start the job";
 	        msg += "<li>HTTP status: " + o.status + "</li>";
 
@@ -95,7 +95,7 @@
 
 <div id="container"></div>
 <table>
-    <tr class="wpHeader"><th colspan="2" class="wpTitle" align="left">R Background Job Status</th></tr>
+    <tr class="labkey-wp-header"><th colspan="2" align="left">R Background Job Status</th></tr>
     <tr><td colspan="2"><i>Your R script is configured to run in the background as a pipeline job. You can check status
         on a running job or start a new background job. If the job has been completed, the results will be shown on this
         page. When you click on the start button, a new background job will be launched, and the page will automatically
@@ -107,16 +107,16 @@
     if (statusFile != null)
     {
 %>
-    <tr><td class="ms-searchform">Description</td><td><%=statusFile.getDescription()%></td></tr>
-    <tr><td class="ms-searchform">Status</td><td><%=statusFile.getStatus()%></td></tr>
-    <tr><td class="ms-searchform">Email</td><td><%=statusFile.getEmail()%></td></tr>
-    <tr><td class="ms-searchform">Info</td><td><%=StringUtils.defaultString(statusFile.getInfo(), "")%></td></tr>
+    <tr><td class="labkey-form-label">Description</td><td><%=statusFile.getDescription()%></td></tr>
+    <tr><td class="labkey-form-label">Status</td><td><%=statusFile.getStatus()%></td></tr>
+    <tr><td class="labkey-form-label">Email</td><td><%=statusFile.getEmail()%></td></tr>
+    <tr><td class="labkey-form-label">Info</td><td><%=StringUtils.defaultString(statusFile.getInfo(), "")%></td></tr>
 <%
     }
     else
     {
 %>
-    <tr><td class="ms-searchform">Status</td><td>Not Run</td></tr>
+    <tr><td class="labkey-form-label">Status</td><td>Not Run</td></tr>
 <%
     }
 

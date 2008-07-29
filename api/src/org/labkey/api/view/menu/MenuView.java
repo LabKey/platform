@@ -50,7 +50,7 @@ public class MenuView extends VBox
 
         PrintWriter out = response.getWriter();
 
-        out.println("<table class=\"ms-vb\" cellspacing=\"0\" cellpadding=\"0\" width=\"100%\" style=\"padding: 0px\">");
+        out.println("<table class=\"labkey-expandable-nav-panel\">");
         if(showFolders)
         {
             List<HttpView> nonNullViews = new ArrayList<HttpView>();
@@ -73,7 +73,7 @@ public class MenuView extends VBox
                 }
                 else
                 {
-                    out.println("<tr><td colspan=" + (renderFolderExpander ? "2" : "1") + "><!-- menuview element -->");
+                    out.println("<tr><td class=\"labkey-expandable-nav\" colspan=" + (renderFolderExpander ? "2" : "1") + "><!-- menuview element -->");
                     include(view);
                     out.println("<!--/ menuview element --></td></tr>");
                 }
@@ -97,7 +97,7 @@ public class MenuView extends VBox
         hideShowLink.addParameter("showFolders", Boolean.toString(!showFolders));
         hideShowLink.addParameter("redir", HttpView.currentContext().getActionURL().toString());
 
-        out.print("<td id=\"expandCollapseFolders\" align=left  style=\"padding-top:5px\" valign=top class=ms-navframe >\n");
+        out.print("<td id=\"expandCollapseFolders\" class=labkey-expand-collapse-folders>\n");
         out.print("<a href=\"" + hideShowLink.getEncodedLocalURIString() + "\">");
         String img = (showFolders ? "collapse_" : "expand_") + "folders.gif";
         String title = "Click to " + (showFolders ? "hide" : "show") + " folders.";

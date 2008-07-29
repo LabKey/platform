@@ -59,7 +59,7 @@ public abstract class DownloadOutputView extends ROutputView
                 AttachmentService.get().deleteAttachment(_parent, getFile().getName());
                 AttachmentService.get().addAttachments(getViewContext().getUser(), _parent, Collections.singletonList((AttachmentFile)new StrutsAttachmentFile(form)));
             }
-            out.write("<table width=\"100%\" cellspacing=\"0\" cellpadding=\"1\">");
+            out.write("<table class=\"labkey-output\">");
             renderTitle(model, out);
             if (isCollapse())
                 out.write("<tr style=\"display:none\"><td>");

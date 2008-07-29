@@ -101,7 +101,7 @@ public class ButtonBar extends DisplayElement
 
         // Write out an empty column so that we can easily write a display element that wraps to the next line
         // by closing the current cell, closing the table, opening a new table, and opening an empty cell
-        out.write("<div class=\"button-bar\">");
+        out.write("<div class=\"labkey-button-bar\">");
         for (DisplayElement el : getList())
         {
             if (ctx.getMode() != 0 && (ctx.getMode() & el.getDisplayModes()) == 0)
@@ -110,7 +110,7 @@ public class ButtonBar extends DisplayElement
             // This is rendundant with shouldRender check in ActionButton.render, but we don't want to output <td></td> if button is not visible
             if (el.shouldRender(ctx))
             {
-                out.write("<span class=\"button-bar-item\">");
+                out.write("<span class=\"labkey-button-bar-item\">");
                 el.render(ctx, out);
                 out.write("</span>");
             }

@@ -18,7 +18,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <table>
-    <tr class="wpHeader"><th class="wpTitle" align="left">Syntax Reference</th></tr>
+    <tr class="labkey-wp-header"><th align="left">Syntax Reference</th></tr>
     <tr><td><i>Your R script uses input substitution parameters to generate the names of input files and to import data
         from your chosen Dataset Grid. It then uses output substitution parameters to either directly place image/data
         files in your View or to include download links to these files in your View. Substitutions take the form
@@ -27,8 +27,8 @@
     <tr><td>&nbsp;</td></tr>
     <tr><td><i>Valid substitutions:</i></td>
     </tr>
-    <tr><td><table id="validSubstitutions">
-        <tr><td class="ms-searchform">input_data</td>
+    <tr><td><table id="validSubstitutions" class="labkey-form">
+        <tr><td class="labkey-form-label">input_data</td>
             <td>The input dataset, a tab-delimited table. LabKey Server automatically reads your chosen dataset into
                 a data frame called: <code>labkey.data</code>. If you desire tighter control over the method of data upload, you
                 can perform the data upload yourself:<br/>
@@ -37,7 +37,7 @@
         labkey.data
         </pre>
             </td></tr>
-        <tr><td class="ms-searchform">imgout:&lt;name&gt;</td>
+        <tr><td class="labkey-form-label">imgout:&lt;name&gt;</td>
             <td>An image output file (such as jpg, png, etc.) that will be displayed as a Section of a View on the
                 LabKey Server.  The 'imgout:' prefix indicates that the output file is an image and the &lt;name&gt;
                 substitution identifies the unique image produced after you call <code>dev.off()</code>.  The following script
@@ -49,7 +49,7 @@
         dev.off()
         </pre>
             </td></tr>
-        <tr><td class="ms-searchform">tsvout:&lt;name&gt;</td>
+        <tr><td class="labkey-form-label">tsvout:&lt;name&gt;</td>
             <td>A TSV text file that is displayed on LabKey Server as a Section within a View.  No downloadable
                 file is created.  For example:<br/>
         <pre>
@@ -57,14 +57,14 @@
             qmethod = "double", col.names=NA)
         </pre>
             </td></tr>
-        <tr><td class="ms-searchform">txtout:&lt;name&gt;</td>
+        <tr><td class="labkey-form-label">txtout:&lt;name&gt;</td>
             <td>A text file that is displayed on LabKey Server as a Section within a View.
                 No downloadable file is created.   A CSV example:<br/>
         <pre>
         write.csv(labkey.data, file = "<%="${txtout:csvfile}"%>")
         </pre>
             </td></tr>
-        <tr><td class="ms-searchform">pdfout:&lt;name&gt;</td>
+        <tr><td class="labkey-form-label">pdfout:&lt;name&gt;</td>
             <td>A PDF output file that can be downloaded from the LabKey Server.  The 'pdfout:' prefix indicates that
                 the expected output is a pdf file.  The &lt;name&gt; substitution identifies the unique file produced
                 after you call <code>dev.off()</code>.<br/>
@@ -75,7 +75,7 @@
         dev.off()
         </pre>
             </td></tr>
-        <tr><td class="ms-searchform">psout:&lt;name&gt;</td>
+        <tr><td class="labkey-form-label">psout:&lt;name&gt;</td>
             <td>A postscript output file that can be downloaded from the LabKey Server.  The 'psout:' prefix indicates
                 that the expected output is a postscript file.  The &lt;name&gt; substitution identifies the unique
                 file produced after you call <code>dev.off()</code>.<br/>
@@ -86,7 +86,7 @@
         dev.off()
         </pre>
             </td></tr>
-        <tr><td class="ms-searchform">fileout:&lt;name&gt;</td>
+        <tr><td class="labkey-form-label">fileout:&lt;name&gt;</td>
             <td>A text output file that can be downloaded from the LabKey Server.  For example, use <code>fileout</code>
                 in the place of tsvout to print a table to a downloadable file:<br/>
         <pre>
@@ -94,7 +94,7 @@
             qmethod = "double", col.names=NA)
         </pre>
             </td></tr>
-        <tr><td class="ms-searchform">htmlout:&lt;name&gt;</td>
+        <tr><td class="labkey-form-label">htmlout:&lt;name&gt;</td>
             <td>A text file that is displayed on LabKey Server as a Section within a View. The output is different
                 from the <code>txtout:</code> replacement in that no html escaping is done. This is useful when
                 you have a report that produces html output. No downloadable file is created:
@@ -112,26 +112,26 @@
     <tr><td>&nbsp;</td></tr>
     <tr><td><i>Implicit Variables:</i></td></tr>
     <tr><td><table id="implicitVariables">
-        <tr><td class="ms-searchform">labkey.data</td>
+        <tr><td class="labkey-form-label">labkey.data</td>
             <td>The data frame which the input dataset is automatically read into. The code to generate the
                 data frame is: <br/>
             <pre>
         labkey.data <- read.table("<%="${input_data}"%>", header=TRUE, sep="\t",
             quote="", comment.char="")
             </pre></td></tr>
-        <tr><td class="ms-searchform">labkey.url.path</td>
+        <tr><td class="labkey-form-label">labkey.url.path</td>
             <td>The path portion of the current URL which omits the base context path, action and URL parameters. 
                 The path portion of the URL:
                 <code>http://localhost:8080/labkey/study/home/test/begin.view</code> would be:
                 <code>/home/test/</code></td></tr>
-        <tr><td class="ms-searchform">labkey.url.base</td>
+        <tr><td class="labkey-form-label">labkey.url.base</td>
             <td>The base portion of the current URL. The base portion of the URL:
                 <code>http://localhost:8080/labkey/study/home/test/begin.view</code> would be:
                 <code>http://localhost:8080/labkey/</code></td></tr>
-        <tr><td class="ms-searchform">labkey.url.params</td>
+        <tr><td class="labkey-form-label">labkey.url.params</td>
             <td>The list of parameters on the current URL. The parameters are represented as a list of key /
                 value pairs.</td></tr>
-        <tr><td class="ms-searchform">labkey.user.email</td>
+        <tr><td class="labkey-form-label">labkey.user.email</td>
             <td>The email address of the current user</td></tr>
     </table></td></tr>
 

@@ -51,7 +51,7 @@ public class ButtonTag extends SimpleTagBase
                 out.write("\"");
             }
             out.write(">");
-            out.write("<img border=0 alt=\"" + PageFlowUtil.filter(_alt != null ? _alt : _text) + "\" src=\"" + ButtonServlet.buttonSrc(_text) + "\">");
+            out.write("<img alt=\"" + PageFlowUtil.filter(_alt != null ? _alt : _text) + "\" src=\"" + ButtonServlet.buttonSrc(_text) + "\">");
             out.write("</a>");
         }
         else

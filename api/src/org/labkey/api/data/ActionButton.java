@@ -337,7 +337,7 @@ public class ActionButton extends DisplayElement implements Cloneable
                 out.write("\"");
             }
             out.write(">");
-            out.write("<img border=0 src='" + PageFlowUtil.buttonSrc(getCaption(ctx)) + "'>");
+            out.write("<img src='" + PageFlowUtil.buttonSrc(getCaption(ctx)) + "'>");
             out.write("</a>");
         }
         else
@@ -347,7 +347,7 @@ public class ActionButton extends DisplayElement implements Cloneable
                 renderDefaultScript(ctx, out);
             out.write(getScript(ctx));
             out.write("'>");
-            out.write("<img border=0 src='" + PageFlowUtil.buttonSrc(getCaption(ctx)) + "'>");
+            out.write("<img src='" + PageFlowUtil.buttonSrc(getCaption(ctx)) + "'>");
             out.write("</a>");
         }
     }

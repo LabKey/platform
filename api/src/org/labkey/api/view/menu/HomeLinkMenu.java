@@ -37,7 +37,7 @@ public class HomeLinkMenu extends HtmlView
     {
         ActionURL homeLink = new ActionURL("Project", "start", ContainerManager.getHomeContainer());
         return "<table><tr>" +
-                "<td class=\"ms-navheader\" style=\"padding-left: 3px;\">" +
+                "<td class=\"labkey-nav-header\">" +
                 "<a href=\"" + homeLink.getLocalURIString() + "\">Home</a></td></tr></table>";
     }
 

@@ -42,11 +42,11 @@ public abstract class DisplayColumn extends RenderColumn
     protected String _excelFormatString = null;
     protected Format _format = null;
     protected Format _tsvFormat = null;
-    protected String _gridHeaderClass = "header";
-    protected String _gridCellClass = "normal";
-    protected String _detailsCaptionClass = "ms-searchform";
-    protected String _detailsDataClass = "normal";
-    protected String _inputCellClass = "normal";
+    protected String _gridHeaderClass = "labkey-grid-header";
+    protected String _gridCellClass = "labkey-grid-cell";
+    protected String _detailsCaptionClass = "labkey-details-caption";
+    protected String _detailsDataClass = "labkey-details-data";
+    protected String _inputCellClass = "labkey-input-cell";
     private String _inputPrefix = "";
     private String _description = null;
     protected boolean _htmlFiltered = true;
@@ -317,7 +317,7 @@ public abstract class DisplayColumn extends RenderColumn
         renderGridHeaderCell(ctx, out, null);
     }
 
-    public void renderGridHeaderCell(RenderContext ctx, Writer out, String styleAttributes) throws IOException, SQLException
+    public void renderGridHeaderCell(RenderContext ctx, Writer out, String headerClass) throws IOException, SQLException
     {
         Sort sort = getSort(ctx);
         Sort.SortField sortField = sort != null ? sort.getSortColumn(getColumnInfo().getName()) : null;
@@ -334,19 +334,15 @@ public abstract class DisplayColumn extends RenderColumn
                 out.write(" sort-desc");
         }
         if (filtered)
-            out.write(" filtered");
+            out.write(" labkey-filtered");
+        if (headerClass != null)
+        {
+            out.write(" " + headerClass);
+        }
         out.write("'");
-        
-        if (styleAttributes != null)
-        {
-            styleAttributes = styleAttributes + "; " + getDefaultHeaderStyle();
-        }
-        else
-        {
-            styleAttributes = getDefaultHeaderStyle();
-        }
+    
         out.write(" style='");
-        out.write(styleAttributes);
+        out.write(getDefaultHeaderStyle());
         out.write("'");
 
         if (_backgroundColor != null)
@@ -377,7 +373,7 @@ public abstract class DisplayColumn extends RenderColumn
 
         renderTitle(ctx, out);
 
-        out.write("<img src=\"" + ctx.getRequest().getContextPath() + "/_.gif\" class=\"grid-filter-icon\"/>");
+        out.write("<img src=\"" + ctx.getRequest().getContextPath() + "/_.gif\" class=\"labkey-grid-filter-icon\"/>");
         out.write("<img src=\"" + ctx.getRequest().getContextPath() + "/_.gif\" class=\"x-grid3-sort-icon\"/>");
 
         out.write("</div>");
@@ -587,7 +583,7 @@ public abstract class DisplayColumn extends RenderColumn
         if (null == _caption)
             return;
 
-        out.write("<td class='ms-searchform'>");
+        out.write("<td class='labkey-form'>");
         renderTitle(ctx, out);
         out.write("</td>");
     }
@@ -609,9 +605,9 @@ public abstract class DisplayColumn extends RenderColumn
     public void renderDetailsData(RenderContext ctx, Writer out, int span) throws IOException, SQLException
     {
         if (null == _caption)
-            out.write("<td colspan=" + (span + 1) + " class='ms-vb'>");
+            out.write("<td colspan=" + (span + 1) + ">");
         else
-            out.write("<td colspan=" + span + " class='ms-vb'>");
+            out.write("<td colspan=" + span + ">");
         renderDetailsCellContents(ctx, out);
         out.write("</td>");
     }
@@ -655,7 +651,7 @@ public abstract class DisplayColumn extends RenderColumn
 
     public void renderInputCell(RenderContext ctx, Writer out, int span) throws IOException
     {
-        out.write("<td colspan=" + span + " class='ms-vb'>");
+        out.write("<td colspan=" + span + ">");
         renderInputHtml(ctx, out, getInputValue(ctx));
         out.write("</td>");
     }

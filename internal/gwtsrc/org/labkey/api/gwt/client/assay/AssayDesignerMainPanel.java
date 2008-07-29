@@ -20,6 +20,7 @@ import com.google.gwt.user.client.ui.*;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.WindowCloseListener;
+import com.google.gwt.user.client.DOM;
 import com.google.gwt.core.client.GWT;
 import org.labkey.api.gwt.client.util.ServiceUtil;
 import org.labkey.api.gwt.client.util.PropertyUtil;
@@ -123,10 +124,12 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable
     {
         protected TextBox _box;
         protected String _caption;
-        public BoundTextBox(String caption, String initialValue, final WidgetUpdatable updatable)
+
+        public BoundTextBox(String caption, String id, String initialValue, final WidgetUpdatable updatable)
         {
             _caption = caption;
             _box = new TextBox();
+            DOM.setElementAttribute(_box.getElement(), "id", id);
             _box.setText(safeStr(initialValue));
             _box.addFocusListener(new FocusListenerAdapter()
             {
@@ -192,10 +195,12 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable
     {
         protected TextArea _box;
         protected String _caption;
-        public BoundTextAreaBox(String caption, String initialValue, final WidgetUpdatable updatable)
+
+        public BoundTextAreaBox(String caption, String id, String initialValue, final WidgetUpdatable updatable)
         {
             _caption = caption;
             _box = new TextArea();
+            DOM.setElementAttribute(_box.getElement(), "id", id);
             _box.setText(safeStr(initialValue));
             _box.setWidth("350px");
             _box.addFocusListener(new FocusListenerAdapter()
@@ -309,7 +314,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable
     {
         final FlexTable table = new FlexTable();
         final String assayName = assay.getProtocolId() != null ? assay.getName() : null;
-        _nameBox = new BoundTextBox("Name", assayName, new WidgetUpdatable()
+        _nameBox = new BoundTextBox("Name", "AssayDesignerName", assayName, new WidgetUpdatable()
         {
             public void update(Widget widget)
             {
@@ -320,7 +325,6 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable
                 }
             }
         });
-
         if (assay.getProtocolId() == null || _copy)
         {
             table.setWidget(0, 1, _nameBox);
@@ -332,7 +336,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable
             table.setHTML(0, 0, "Name");
         }
 
-        BoundTextAreaBox descriptionBox = new BoundTextAreaBox("Description", assay.getDescription(), new WidgetUpdatable()
+        BoundTextAreaBox descriptionBox = new BoundTextAreaBox("Description", "AssayDesignerDescription", assay.getDescription(), new WidgetUpdatable()
         {
             public void update(Widget widget)
             {

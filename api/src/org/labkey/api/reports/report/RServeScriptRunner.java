@@ -62,7 +62,7 @@ public class RServeScriptRunner extends AbstractScriptRunner
         }
         catch (Exception e)
         {
-            String error = "<font color='red'>An error occurred rendering this view, you may not have permission to view it</font>";
+            String error = "<font class=\"labkey-error\">An error occurred rendering this view, you may not have permission to view it</font>";
             view.addView(new HtmlView(error));
             return false;
         }
@@ -105,13 +105,13 @@ public class RServeScriptRunner extends AbstractScriptRunner
             }
             catch (RserveException rse)
             {
-                String err = "<font color='red'>An Error occurred executing the script</font><pre>" + rse.getMessage() + "</pre>";
+                String err = "<font class=\"labkey-error\">An Error occurred executing the script</font><pre>" + rse.getMessage() + "</pre>";
                 view.addView(new HtmlView(err));
             }
         }
         catch (RserveException rse)
         {
-            String err = "<font color='red'>Unable to connect to Rserve</font><pre>" + rse.getMessage() + "</pre>";
+            String err = "<font class=\"labkey-error\">Unable to connect to Rserve</font><pre>" + rse.getMessage() + "</pre>";
             view.addView(new HtmlView(err));
         }
         finally
@@ -327,7 +327,7 @@ public class RServeScriptRunner extends AbstractScriptRunner
             if (!StringUtils.isEmpty(_output))
             {
                 out.write("<table width=\"100%\">");
-                out.write("<tr class=\"wpHeader\"><th colspan=2 align=center>Console output</th></tr>");
+                out.write("<tr class=\"labkey-wp-header\"><th colspan=2 align=center>Console output</th></tr>");
                 out.write("<tr><td><pre>");
                 out.write(_output);
                 out.write("</pre></td></tr>");

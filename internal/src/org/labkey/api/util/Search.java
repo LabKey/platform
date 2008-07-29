@@ -341,7 +341,7 @@ public class Search
                 //the hits are sorted by path, type, title
                 String curPath = "";
 
-                out.println("<table class=\"dataRegion\">");
+                out.println("<table class=\"labkey-data-region\">");
 
                 for (SearchHit hit : hits)
                 {
