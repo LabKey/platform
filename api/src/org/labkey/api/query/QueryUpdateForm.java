@@ -22,6 +22,8 @@ import org.labkey.api.data.TableInfo;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Enumeration;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Extension of the class TableViewForm which deals with the fact that we don't have much control over the names
@@ -30,7 +32,11 @@ import java.util.Enumeration;
  */
 public class QueryUpdateForm extends TableViewForm
 {
-    protected String _prefix = "quf_";
+    /**
+     * Prefix prepended to all form elements
+     */
+    public static final String PREFIX = "quf_";
+
     public QueryUpdateForm(TableInfo table, HttpServletRequest request)
     {
         _tinfo = table;
@@ -49,13 +55,28 @@ public class QueryUpdateForm extends TableViewForm
 
     public ColumnInfo getColumnByFormFieldName(String name)
     {
-        if (name.length() < _prefix.length())
+        if (name.length() < PREFIX.length())
             return null;
-        return getTable().getColumn(name.substring(_prefix.length()));
+        return getTable().getColumn(name.substring(PREFIX.length()));
     }
 
     public String getFormFieldName(ColumnInfo column)
     {
-        return _prefix + column.getName();
+        return PREFIX + column.getName();
+    }
+
+    public Map<String,Object> getDataMap()
+    {
+        Map<String,Object> data = new HashMap<String,Object>();
+        for (Map.Entry<String,Object> entry : getTypedValues().entrySet())
+        {
+            String key = entry.getKey();
+            if (key.startsWith(PREFIX))
+            {
+                key = key.substring(4);
+                data.put(key, entry.getValue());
+            }
+        }
+        return data;
     }
 }

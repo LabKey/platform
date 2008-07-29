@@ -481,6 +481,11 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
         }
     }
 
+    public static void startTitleFrame(Writer out, String title)
+    {
+        startTitleFrame(out, title, null, null, null);
+    }
+
 
     public static void endTitleFrame(Writer out)
     {

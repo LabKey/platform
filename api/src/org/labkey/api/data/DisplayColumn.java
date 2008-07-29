@@ -523,8 +523,11 @@ public abstract class DisplayColumn extends RenderColumn
             out.write(getGridCellClass());
             out.write("'");
         }
-        if ("right".equals(_textAlign))
-            out.write(" align=right");
+        if (_textAlign != null)
+        {
+            out.write(" align=");
+            out.write(_textAlign);
+        }
         if (style != null)
         {
             out.write(" style='");

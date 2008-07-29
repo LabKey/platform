@@ -20,7 +20,6 @@ import org.apache.beehive.netui.pageflow.Forward;
 import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.data.*;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
-import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.RReport;
@@ -78,6 +77,8 @@ public class QueryView extends WebPartView<Object>
     private boolean _useQueryViewActionExportURLs = false;
     private boolean _printView = false;
     private boolean _exportView = false;
+    private boolean _showPagination = true;
+    private boolean _showPaginationCount = true;
     private ReportService.ItemFilter _itemFilter = new ReportService.ItemFilter(){
         public boolean accept(String type, String label)
         {
@@ -587,6 +588,11 @@ public class QueryView extends WebPartView<Object>
         return pageSizeMenu;
     }
 
+    public ReportService.ItemFilter getViewItemFilter()
+    {
+        return _itemFilter;
+    }
+
     public void setViewItemFilter(ReportService.ItemFilter filter)
     {
         if (filter != null)
@@ -891,6 +897,8 @@ public class QueryView extends WebPartView<Object>
 
         rgn.setShadeAlternatingRows(isShadeAlternatingRows());
         rgn.setShowColumnSeparators(isShowColumnSeparators());
+        rgn.setShowPagination(isShowPagination());
+        rgn.setShowPaginationCount(isShowPaginationCount());
 
         rgn.setTable(getTable());
         return rgn;
@@ -1307,6 +1315,26 @@ public class QueryView extends WebPartView<Object>
     public void setShowColumnSeparators(boolean showColumnSeparators)
     {
         _showColumnSeparators = showColumnSeparators;
+    }
+
+    public boolean isShowPagination()
+    {
+        return _showPagination;
+    }
+
+    public void setShowPagination(boolean showPagination)
+    {
+        _showPagination = showPagination;
+    }
+
+    public boolean isShowPaginationCount()
+    {
+        return _showPaginationCount;
+    }
+
+    public void setShowPaginationCount(boolean showPaginationCount)
+    {
+        _showPaginationCount = showPaginationCount;
     }
 
     private static class NavTreeMenuButton extends MenuButton

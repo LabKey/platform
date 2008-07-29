@@ -448,6 +448,10 @@ public class ActionURL extends URLHelper implements Cloneable
         return this;
     }
 
+    /**
+     *
+     * @deprecated use the version that takes a class instead
+     */
     @Deprecated
     public ActionURL setAction(String action)
     {
