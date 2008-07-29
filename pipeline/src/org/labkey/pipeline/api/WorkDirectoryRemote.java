@@ -45,6 +45,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
     public static class Factory implements WorkDirFactory
     {
         private String _lockDirectory;
+        private String _tempDirectory;
 
         public WorkDirectory createWorkDirectory(String jobId, FileAnalysisJobSupport support, Logger log) throws IOException
         {
@@ -54,7 +55,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
             {
                 // We've seen very intermittent problems failing to create temp files in the past during the DRTs,
                 // so try a few times before failing
-                tempDir = File.createTempFile(support.getBaseName(), FT_WORK_DIR.getSuffix());
+                tempDir = File.createTempFile(support.getBaseName(), FT_WORK_DIR.getSuffix(), new File(_tempDirectory));
                 tempDir.delete();
                 tempDir.mkdirs();
                 attempt++;
@@ -78,6 +79,26 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
             if (!new File(lockDirectory).isDirectory())
                 throw new IllegalArgumentException("The lock directory " + lockDirectory + " does not exist.");
             _lockDirectory = lockDirectory;
+        }
+
+        public String getTempDirectory()
+        {
+            return _tempDirectory;
+        }
+
+        public void setTempDirectory(String tempDirectory)
+        {
+            if (!new File(tempDirectory).isDirectory())
+                throw new IllegalArgumentException("The temporary directory " + tempDirectory + " does not exist.");
+            _tempDirectory = tempDirectory;
+        }
+
+        public void setTempDirectoryEnv(String tempDirectoryVar)
+        {
+            String tempDirectory = System.getenv(tempDirectoryVar);
+            if (tempDirectory == null || tempDirectory.length() == 0)
+                throw new IllegalArgumentException("The environment variable " + tempDirectoryVar + " does not exist:\n" + System.getenv());                
+            setTempDirectory(tempDirectory);
         }
     }
 

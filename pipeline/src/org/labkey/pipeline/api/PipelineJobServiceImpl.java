@@ -399,7 +399,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
         if (javaHome == null || javaHome.trim().equals(""))
         {
             throw new FileNotFoundException("Failed to locate Java.  " +
-                "Please set JAVA_HOME environment variable.");
+                "Please set JAVA_HOME environment variable.\n" + System.getenv());
         }
         File javaBin = new File(javaHome, "bin");
         if (!javaBin.exists())

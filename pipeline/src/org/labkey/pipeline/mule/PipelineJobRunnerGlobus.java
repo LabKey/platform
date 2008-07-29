@@ -25,6 +25,7 @@ import org.globus.axis.util.Util;
 import org.globus.exec.client.GramJob;
 import org.globus.exec.generated.JobDescriptionType;
 import org.globus.exec.generated.NameValuePairType;
+import org.globus.exec.generated.JobTypeEnumeration;
 import org.globus.exec.utils.ManagedJobConstants;
 import org.globus.exec.utils.client.ManagedJobFactoryClientHelper;
 import org.globus.gsi.GSIConstants;
@@ -364,9 +365,9 @@ public class PipelineJobRunnerGlobus implements Callable
     {
         // Set up the job description
         JobDescriptionType jobDescription = new JobDescriptionType();
-        String javaHome = PipelineJobService.get().getGlobusClientProperties().getJavaHome();
-        jobDescription.setExecutable(javaHome + "/bin/java");
-
+        // Haven't seen this work yet...
+        // jobDescription.setJobType(JobTypeEnumeration.single);
+        
         // Create the output files with the right permissions
         FileUtils.touch(getOutputFile(job.getStatusFile(), OutputType.out));
         FileUtils.touch(getOutputFile(job.getStatusFile(), OutputType.err));
@@ -399,10 +400,12 @@ public class PipelineJobRunnerGlobus implements Callable
             jobDescription.setMaxWallTime(settings.getMaxWallTime());
         }
 
-        jobDescription.setEnvironment(new NameValuePairType[] { new NameValuePairType("JAVA_HOME", javaHome) });
-
+        String javaHome = PipelineJobService.get().getGlobusClientProperties().getJavaHome();
         String labKeyDir = PipelineJobService.get().getGlobusClientProperties().getLabKeyDir();
 
+        jobDescription.setEnvironment(new NameValuePairType[] { new NameValuePairType("JAVA_HOME", javaHome) });
+
+        jobDescription.setExecutable(javaHome + "/bin/java");
         String[] jobArgs =
             {
 //                "-Xdebug",
