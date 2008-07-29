@@ -47,6 +47,7 @@ import org.labkey.study.assay.*;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.assay.query.AssaySchema;
 import org.labkey.study.controllers.DatasetController;
+import org.labkey.study.controllers.CohortController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.StudyDefinitionController;
 import org.labkey.study.controllers.assay.AssayController;
@@ -93,7 +94,7 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
 
     public StudyModule()
     {
-        super(NAME, 8.23, "/org/labkey/study", true, reportsPartFactory, reportsWidePartFactory, samplesPartFactory,
+        super(NAME, 8.24, "/org/labkey/study", true, reportsPartFactory, reportsWidePartFactory, samplesPartFactory,
                 samplesWidePartFactory, datasetsPartFactory, manageStudyPartFactory,
                 enrollmentChartPartFactory, studyDesignsWebPartFactory, studyDesignSummaryWebPartFactory,
                 assayListWebPartFactory, assayDetailsWebPartFactory, participantWebPartFactory);
@@ -107,6 +108,7 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
         addController("assay", AssayController.class);
         addController("dataset", DatasetController.class);
         addController("study-definition", StudyDefinitionController.class);
+        addController("study-manage", CohortController.class);
 
         PlateService.register(new PlateManager());
         AssayService.setInstance(new AssayManager());

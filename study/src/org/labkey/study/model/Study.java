@@ -30,7 +30,7 @@ import java.util.*;
  * Date: Jan 6, 2006
  * Time: 10:28:32 AM
  */
-public class Study extends AbstractStudyEntity<Study>
+public class Study extends AbstractStudyEntity<Study> implements Extensible
 {
     private String _label;
     private boolean _dateBased;
@@ -38,6 +38,7 @@ public class Study extends AbstractStudyEntity<Study>
     private SecurityType _securityType = SecurityType.BASIC; // Default value. Not allowed to be null
     private String _participantCohortProperty;
     private Integer _participantCohortDataSetId;
+    private boolean _manualCohortAssignment;
     private String _lsid;
 
     public Study()
@@ -199,6 +200,16 @@ public class Study extends AbstractStudyEntity<Study>
         _participantCohortDataSetId = participantCohortDataSetId;
     }
 
+    public boolean isManualCohortAssignment()
+    {
+        return _manualCohortAssignment;
+    }
+
+    public void setManualCohortAssignment(boolean manualCohortAssignment)
+    {
+        _manualCohortAssignment = manualCohortAssignment;
+    }
+
     public String getLsid()
     {
         return _lsid;
@@ -206,6 +217,7 @@ public class Study extends AbstractStudyEntity<Study>
 
     public void setLsid(String lsid)
     {
+        verifyMutability();
         this._lsid = lsid;
     }
 

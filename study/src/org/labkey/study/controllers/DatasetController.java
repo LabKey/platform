@@ -178,9 +178,7 @@ public class DatasetController extends BaseStudyController
             if (errors.hasErrors())
                 return false;
 
-            // The form we have stores our new values in a map with "quf_" as a prefix. Clean that up,
-            // and only use those fields. This excludes read-only data.
-            Map<String,Object> data = getDataMap(updateForm);
+            Map<String,Object> data = updateForm.getDataMap();
             List<String> importErrors = new ArrayList<String>();
 
             String newLsid;
@@ -210,23 +208,6 @@ public class DatasetController extends BaseStudyController
             }
 
             return true;
-        }
-
-        // query update forms have all user data stored with the prefix "quf_".
-        // Clear that off and return only the user data
-        private Map<String,Object> getDataMap(QueryUpdateForm form)
-        {
-            Map<String,Object> data = new HashMap<String,Object>();
-            for (Map.Entry<String,Object> entry : form.getTypedValues().entrySet())
-            {
-                String key = entry.getKey();
-                if (key.startsWith("quf_"))
-                {
-                    key = key.substring(4);
-                    data.put(key, entry.getValue());
-                }
-            }
-            return data;
         }
 
         public ActionURL getSuccessURL(EditDatasetRowForm form)

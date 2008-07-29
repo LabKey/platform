@@ -215,9 +215,15 @@ public class StudyManager
         _studyHelper.update(user, study, new Object[] { study.getContainer() });
         if (oldStudy.isDateBased()  && !oldStartDate.equals(study.getStartDate()))
         {
+            // start date has changed, and datasets may use that value. Uncache.
             DateVisitManager visitManager = (DateVisitManager) getVisitManager(study);
             visitManager.recomputeDates(oldStartDate, user);
             clearCaches(study.getContainer(), true);
+        }
+        else
+        {
+            // Need to get rid of any old copies of the study
+            clearCaches(study.getContainer(), false);
         }
     }
 
@@ -348,6 +354,15 @@ public class StudyManager
         _cohortHelper.update(user, cohort);
     }
 
+    public void updateParticipant(User user, Participant participant) throws SQLException
+    {
+        Table.update(user,
+                _tableInfoParticipant,
+                participant,
+                new Object[] {participant.getContainer().getId(), participant.getParticipantId()}, 
+                null);
+    }
+
 
     public Site[] getSites(Container container)
     {
@@ -451,12 +466,23 @@ public class StudyManager
         if (user == null)
             return false;
         Study study = StudyManager.getInstance().getStudy(container);
+
+        if (study.isManualCohortAssignment())
+        {
+            // If we're not reading from a dataset for cohort definition,
+            // we use the container's permission
+            if (user.isAdministrator())
+                return true;
+            return SecurityManager.getACL(container).hasPermission(user, ACL.PERM_READ);
+        }
+
+        // Automatic cohort assignment -- can the user read the source dataset?
         Integer cohortDatasetId = study.getParticipantCohortDataSetId();
         if (user.isAdministrator())
             return cohortDatasetId != null;
         if (cohortDatasetId != null)
         {
-            DataSetDefinition def = getDataSetDefinition(study, cohortDatasetId);
+            DataSetDefinition def = getDataSetDefinition(study, cohortDatasetId.intValue());
             if (def != null)
                 return def.canRead(user);
         }
@@ -468,10 +494,18 @@ public class StudyManager
         if (!user.isAdministrator())
         {
             Study study = StudyManager.getInstance().getStudy(container);
+
+            if (study.isManualCohortAssignment())
+            {
+                if (!SecurityManager.getACL(container).hasPermission(user, ACL.PERM_READ))
+                    throw new IllegalStateException("User does not have permission to view cohort information");
+            }
+
+            // Automatic cohort assignment -- check the source dataset for permissions
             Integer cohortDatasetId = study.getParticipantCohortDataSetId();
             if (cohortDatasetId != null)
             {
-                DataSetDefinition def = getDataSetDefinition(study, cohortDatasetId);
+                DataSetDefinition def = getDataSetDefinition(study, cohortDatasetId.intValue());
                 if (def != null)
                 {
                     if (!def.canRead(user))
@@ -538,6 +572,15 @@ public class StudyManager
     public void deleteCohort(Cohort cohort) throws SQLException
     {
         Table.delete(StudySchema.getInstance().getTableInfoCohort(), cohort.getRowId(), null);
+
+        // delete extended properties
+        Container container = cohort.getContainer();
+        String lsid = cohort.getLsid();
+        Map<String, ObjectProperty> resourceProperties = OntologyManager.getPropertyObjects(container.getId(), lsid);
+        if (resourceProperties != null && !resourceProperties.isEmpty())
+        {
+            OntologyManager.deleteOntologyObject(lsid, container, false);
+        }
     }
 
 
@@ -2392,8 +2435,12 @@ public class StudyManager
 
     public void updateParticipantCohorts(User user, Study study) throws SQLException, ServletException
     {
-        if (study.getParticipantCohortDataSetId() == null || study.getParticipantCohortProperty() == null)
+        if (study.isManualCohortAssignment() ||
+                study.getParticipantCohortDataSetId() == null ||
+                study.getParticipantCohortProperty() == null)
+        {
             return;
+        }
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
         boolean transactionOwner = !scope.isTransactionActive();
         try
@@ -2494,19 +2541,17 @@ public class StudyManager
     /**
      * Returns a domain URI for use by Ontology Manager
      */
-    public String getDomainURI(Container container, Class<?> extensibleClass)
+    public String getDomainURI(Container container, Class<? extends Extensible> clazz)
     {
-        return "urn:lsid:" +
-                AppProps.getInstance().getDefaultLsidAuthority() +
-                ":" +
-                extensibleClass.getSimpleName() + 
-                ".Folder-" +
-                container.getRowId() +
-                ":" +
-                extensibleClass.getSimpleName();
+        return new Lsid(clazz.getSimpleName(),
+                "Folder-" + container.getRowId(),
+                clazz.getSimpleName()).toString();
     }
 
-    public String createLsid(AbstractStudyEntity o, int uniqueId)
+    /**
+     * Creates and lsid for this individual extensible object
+     */
+    public String createLsid(Extensible o, int uniqueId)
     {
         return new Lsid(o.getClass().getSimpleName(), "Folder-" + o.getContainer().getRowId(), Integer.toString(uniqueId)).toString();
     }

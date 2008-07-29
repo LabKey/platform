@@ -31,7 +31,7 @@ import java.io.Serializable;
  * Date: Jan 6, 2006
  * Time: 10:28:55 AM
  */
-public class Visit extends AbstractStudyEntity<Visit> implements Cloneable, Serializable
+public class Visit extends AbstractStudyEntity<Visit> implements Extensible, Cloneable, Serializable
 {
     // standard strings to use in URLs etc
     public static final String VISITKEY = "visitRowId";

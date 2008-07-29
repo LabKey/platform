@@ -20,7 +20,6 @@ import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
@@ -29,11 +28,15 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.study.model.Cohort;
+import org.labkey.study.model.Extensible;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.query.ExtensibleObjectQueryView;
 import org.springframework.validation.BindException;
 
 /**
+ * Provides actions for extensible study objects,
+ * like cohort, visit and study.
+ *
  * User: jgarms
  * Date: Jul 17, 2008
  * Time: 11:24:51 AM
@@ -48,17 +51,18 @@ public class StudyDefinitionController extends BaseStudyController
         setActionResolver(ACTION_RESOLVER);
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
-    public class EditCohortDefinitionAction extends SimpleRedirectAction
+    private abstract class EditDefinitionAction extends SimpleRedirectAction
     {
+        protected abstract Class<? extends Extensible> getClassToEdit();
+
         public ActionURL getRedirectURL(Object o) throws Exception
         {
             // Get domain Id
-            String domainURI = StudyManager.getInstance().getDomainURI(getContainer(), Cohort.class);
+            String domainURI = StudyManager.getInstance().getDomainURI(getContainer(), getClassToEdit());
             Domain domain = PropertyService.get().getDomain(getContainer(), domainURI);
             if (domain == null)
             {
-                domain = PropertyService.get().createDomain(getContainer(), domainURI, "Cohort");
+                domain = PropertyService.get().createDomain(getContainer(), domainURI, getClassToEdit().getSimpleName());
                 domain.save(getUser());
             }
 
@@ -67,28 +71,48 @@ public class StudyDefinitionController extends BaseStudyController
     }
 
     @RequiresPermission(ACL.PERM_ADMIN)
-    public class CohortViewAction extends QueryViewAction<QueryViewAction.QueryExportForm, QueryView>
+    public class EditCohortDefinitionAction extends EditDefinitionAction
     {
-        public CohortViewAction()
+        protected Class<Cohort> getClassToEdit()
         {
-            super(QueryExportForm.class);
+            StudyManager.getInstance().assertCohortsViewable(getContainer(), getUser());
+            return Cohort.class;
         }
+    }
 
-        protected QueryView createQueryView(QueryExportForm queryExportForm, BindException errors, boolean forExport, String dataRegion) throws Exception
-        {
-            final StudyQuerySchema querySchema = new StudyQuerySchema(getStudy(), getUser(), true);
-            QuerySettings qs = querySchema.getSettings(HttpView.currentContext(), dataRegion);
-            qs.setQueryName("Cohort");
-            qs.setAllowChooseQuery(false);
+    private abstract class ViewAction extends QueryViewAction<QueryViewAction.QueryExportForm, QueryView>
+    {
+        public ViewAction() {super(QueryExportForm.class);}
 
-            QueryView view = new QueryView(querySchema, qs);
-            return view;
-        }
+        protected abstract Class<? extends Extensible> getClassToView();
+
+        protected abstract String getPluralName();
 
         public NavTree appendNavTrail(NavTree root)
         {
             _appendManageStudy(root);
-            return root.addChild("Cohorts");
+            return root.addChild(getPluralName());
+        }
+
+        protected QueryView createQueryView(QueryExportForm queryExportForm, BindException errors, boolean forExport, String dataRegion) throws Exception
+        {
+            return new ExtensibleObjectQueryView(getUser(), getStudy(), getClassToView(), HttpView.currentContext());
         }
     }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class CohortViewAction extends ViewAction
+    {
+        protected Class<? extends Extensible> getClassToView()
+        {
+            return Cohort.class;
+        }
+
+        protected String getPluralName()
+        {
+            return "Cohorts";
+        }
+    }
+
+
 }

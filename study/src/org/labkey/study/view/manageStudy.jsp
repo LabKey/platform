@@ -15,15 +15,17 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.DateUtil"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.study.controllers.CohortController" %>
+<%@ page import="org.labkey.study.controllers.security.SecurityController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <h4>General Study Information</h4>
 <%
     String visitLabel = StudyManager.getInstance().getVisitManager(getStudy()).getPluralLabel();
+    ActionURL manageCohortsURL = new ActionURL(CohortController.ManageCohortsAction.class, getStudy().getContainer());
 %>
 <table cellspacing="3" class="normal">
     <tr>
@@ -49,12 +51,12 @@
     <tr>
         <th align="left">Cohorts</th>
         <td>This study defines <%= getCohorts(getViewContext().getUser()).length %> cohorts</td>
-        <td><%= textLink("Manage Cohorts", "manageCohorts.view") %></td>
+        <td><%= textLink("Manage Cohorts", manageCohortsURL.getLocalURIString()) %></td>
     </tr>
     <tr>
         <th align="left">Security</th>
         <td>Manage access to Study datasets and samples</td>
-        <% ActionURL url = new ActionURL("Study-Security", "begin", getStudy().getContainer());%>
+        <% ActionURL url = new ActionURL(SecurityController.BeginAction.class, getStudy().getContainer());%>
         <td><%= textLink("Manage Security", url.toString()) %></td>
     </tr>
     <tr>

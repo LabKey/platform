@@ -47,7 +47,6 @@ public class StudyQuerySchema extends UserSchema
     public Set<String> getTableNames()
     {
         Set<String> ret = new LinkedHashSet<String>();
-        ret.add("Cohort");
         ret.add("Participant");
         ret.add("Site");
         ret.add("Visit");
@@ -59,6 +58,11 @@ public class StudyQuerySchema extends UserSchema
         ret.add("ParticipantVisit");
         ret.add("DataSets");
         ret.add("DataSetColumns");
+
+        // Only show cohorts if the user has permission
+        if (StudyManager.getInstance().showCohorts(getContainer(), getUser()))
+            ret.add("Cohort");
+
         ret.addAll(getDataSetDefinitions().keySet());
         return ret;
     }

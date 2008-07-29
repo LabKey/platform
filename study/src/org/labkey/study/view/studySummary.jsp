@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.ActionURL"%>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.security.User"%>
 <%@ page import="org.labkey.api.security.ACL"%>
-<%@ page import="org.labkey.api.util.DateUtil" %>
+<%@ page import="org.labkey.api.security.User"%>
+<%@ page import="org.labkey.api.view.ActionURL"%>
+<%@ page import="org.labkey.study.controllers.CohortController"%>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
@@ -29,7 +29,7 @@ if (null == getStudy())
     out.println("A study has not yet been created in this folder.<br>");
     if (getViewContext().hasPermission(ACL.PERM_ADMIN))
     {
-        ActionURL createURL = new ActionURL("Study", "manageStudyProperties.view", getViewContext().getContainer());
+        ActionURL createURL = new ActionURL(StudyController.ManageStudyPropertiesAction.class, getViewContext().getContainer());
         out.println(buttonLink("Create Study", createURL));
     }
     else
@@ -42,31 +42,31 @@ if (null == getStudy())
 }
     boolean dateBased = getStudy().isDateBased();
     boolean isAdmin = getStudy().getContainer().hasPermission(user, ACL.PERM_ADMIN);
-    ActionURL url = new ActionURL("Study", "begin", getStudy().getContainer());
+    ActionURL url = new ActionURL(StudyController.BeginAction.class, getStudy().getContainer());
     String visitLabel = StudyManager.getInstance().getVisitManager(getStudy()).getPluralLabel();
 %>
 <br>
 <table class="normal" width="100%">
     <tr><td valign="top">This study defines
 <ul>
-    <li><%= getDataSets().length %> Datasets (Forms and Assays) &nbsp;<%= isAdmin ? textLink("Manage Datasets", url.setAction("manageTypes.view")) : "&nbsp;" %></li>
+    <li><%= getDataSets().length %> Datasets (Forms and Assays) &nbsp;<%= isAdmin ? textLink("Manage Datasets", url.setAction(StudyController.ManageTypesAction.class)) : "&nbsp;" %></li>
     <li><%= getVisits().length %> <%=visitLabel%>&nbsp;<%=!dateBased && isAdmin && getVisits().length < 0 ?
-                        textLink("Import Visit Map", url.setAction("uploadVisitMap.view")) : "" %><%=
-                        isAdmin ? textLink("Manage " + visitLabel, url.setAction("manageVisits.view")) : "" %></li>
-    <li><%= getSites().length %> Labs and Sites&nbsp;<%= isAdmin ? textLink("Manage Labs/Sites", url.setAction("manageSites.view")) : ""%></li>
+                        textLink("Import Visit Map", url.setAction(StudyController.UploadVisitMapAction.class)) : "" %><%=
+                        isAdmin ? textLink("Manage " + visitLabel, url.setAction(StudyController.ManageVisitsAction.class)) : "" %></li>
+    <li><%= getSites().length %> Labs and Sites&nbsp;<%= isAdmin ? textLink("Manage Labs/Sites", url.setAction(StudyController.ManageSitesAction.class)) : ""%></li>
 <%
     if (StudyManager.getInstance().showCohorts(getViewContext().getContainer(), getViewContext().getUser()))
     {
 %>
-    <li><%= getCohorts(getViewContext().getUser()).length %> Cohorts&nbsp;<%= isAdmin ? textLink("Manage Cohorts", url.setAction("manageCohorts.view")) : ""%></li>
+    <li><%= getCohorts(getViewContext().getUser()).length %> Cohorts&nbsp;<%= isAdmin ? textLink("Manage Cohorts", url.setAction(CohortController.ManageCohortsAction.class)) : ""%></li>
 <%
     }
 %>
 </ul>
     </td>
         <td valign="top">
-            <a href="<%=h(url.setAction("overview.view").getLocalURIString())%>"><img src="<%=request.getContextPath()%>/_images/studyNavigator.gif" alt="Study Navigator" border=0> </a><br>
-            <%=textLink("Study Navigator", url.setAction("overview.view"))%>
+            <a href="<%=h(url.setAction(StudyController.OverviewAction.class).getLocalURIString())%>"><img src="<%=request.getContextPath()%>/_images/studyNavigator.gif" alt="Study Navigator" border=0> </a><br>
+            <%=textLink("Study Navigator", url.setAction(StudyController.OverviewAction.class))%>
         </td>
     </tr>
     </table>
@@ -74,7 +74,7 @@ if (null == getStudy())
 <%
     if (isAdmin)
     {
-        out.write(textLink("Manage Study", url.setAction("manageStudy.view")));
+        out.write(textLink("Manage Study", url.setAction(StudyController.ManageStudyAction.class)));
         out.write("&nbsp;");
         out.write(textLink("Data Pipeline", url.setPageFlow("Pipeline").setAction("begin.view")));
     }

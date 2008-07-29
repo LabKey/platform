@@ -1609,6 +1609,7 @@ study/src/META-INF/study/scripts/postgresql/study-8.16-8.17.sql -text
 study/src/META-INF/study/scripts/postgresql/study-8.20-8.21.sql -text
 study/src/META-INF/study/scripts/postgresql/study-8.21-8.22.sql -text
 study/src/META-INF/study/scripts/postgresql/study-8.22-8.23.sql -text
+study/src/META-INF/study/scripts/postgresql/study-8.23-8.24.sql -text
 study/src/META-INF/study/scripts/postgresql/study-create.sql -text
 study/src/META-INF/study/scripts/postgresql/study-drop.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/obsolete/study-0.00-1.11.sql -text
@@ -1693,6 +1694,7 @@ study/src/META-INF/study/scripts/sql[!!-~]server/study-8.16-8.17.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-8.20-8.21.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-8.21-8.22.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-8.22-8.23.sql -text
+study/src/META-INF/study/scripts/sql[!!-~]server/study-8.23-8.24.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-create.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-drop.sql -text
 study/src/org/labkey/study/QueryHelper.java -text
@@ -1725,6 +1727,7 @@ study/src/org/labkey/study/assay/view/publishChooseStudy.jsp -text
 study/src/org/labkey/study/assay/view/tsvDataDescription.jsp -text
 study/src/org/labkey/study/controllers/BaseController.java -text
 study/src/org/labkey/study/controllers/BaseStudyController.java -text
+study/src/org/labkey/study/controllers/CohortController.java -text
 study/src/org/labkey/study/controllers/DatasetController.java -text
 study/src/org/labkey/study/controllers/DatasetServiceImpl.java -text
 study/src/org/labkey/study/controllers/StudyController.java -text
@@ -1763,6 +1766,7 @@ study/src/org/labkey/study/model/CohortDomainKind.java -text
 study/src/org/labkey/study/model/CustomParticipantView.java -text
 study/src/org/labkey/study/model/DataSetDefinition.java -text
 study/src/org/labkey/study/model/DatasetDomainKind.java -text
+study/src/org/labkey/study/model/Extensible.java -text
 study/src/org/labkey/study/model/Participant.java -text
 study/src/org/labkey/study/model/ParticipantDataMapKey.java -text
 study/src/org/labkey/study/model/ParticipantDataset.java -text
@@ -1812,6 +1816,7 @@ study/src/org/labkey/study/plate/view/copyTemplate.jsp -text
 study/src/org/labkey/study/plate/view/plateTemplate.jsp -text
 study/src/org/labkey/study/plate/view/plateTemplateList.jsp -text
 study/src/org/labkey/study/query/AdditiveTypeTable.java -text
+study/src/org/labkey/study/query/CohortQueryView.java -text
 study/src/org/labkey/study/query/CohortTable.java -text
 study/src/org/labkey/study/query/DataSetColumnsTable.java -text
 study/src/org/labkey/study/query/DataSetQueryView.java -text
@@ -1819,6 +1824,7 @@ study/src/org/labkey/study/query/DataSetTable.java -text
 study/src/org/labkey/study/query/DataSetsTable.java -text
 study/src/org/labkey/study/query/DatasetUpdateService.java -text
 study/src/org/labkey/study/query/DerivativeTypeTable.java -text
+study/src/org/labkey/study/query/ExtensibleObjectQueryView.java -text
 study/src/org/labkey/study/query/ParticipantDataSetTable.java -text
 study/src/org/labkey/study/query/ParticipantTable.java -text
 study/src/org/labkey/study/query/ParticipantVisitColumn.java -text

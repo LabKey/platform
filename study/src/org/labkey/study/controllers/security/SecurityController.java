@@ -385,7 +385,7 @@ public class SecurityController extends SpringActionController
         public boolean handlePost(StudySecurityForm form, BindException errors) throws Exception
         {
             Study study = StudyManager.getInstance().getStudy(getContainer());
-            if (study != null)
+            if (study != null && form.getSecurityType() != study.getSecurityType())
             {
                 Study updated = study.createMutable();
                 updated.setSecurityType(form.getSecurityType());

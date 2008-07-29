@@ -27,6 +27,7 @@
       <ns:column columnName="SecurityType"/> 
       <ns:column columnName="participantcohortdatasetid"/>
       <ns:column columnName="participantcohortproperty"/>
+      <ns:column columnName="manualCohortAssignment"/>  
       <ns:column columnName="LSID"/>
     </ns:columns>
   </ns:table>

@@ -25,7 +25,8 @@ import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
-import org.labkey.study.controllers.StudyController;
+import org.labkey.study.controllers.CohortController;
+import org.labkey.study.StudySchema;
 
 import java.util.Map;
 
@@ -49,7 +50,12 @@ public class CohortDomainKind extends DomainKind
 
     public SQLFragment sqlObjectIdsInDomain(Domain domain)
     {
-        throw new UnsupportedOperationException();
+        Container container = domain.getContainer();
+
+        SQLFragment sql = new SQLFragment();
+        sql.append("SELECT o.ObjectId FROM " + StudySchema.getInstance().getTableInfoCohort() + " c, exp.object o WHERE c.LSID = o.ObjectURI AND c.container = ?");
+        sql.add(container.getId());
+        return sql;
     }
     
     public Map.Entry<TableInfo, ColumnInfo> getTableInfo(User user, Domain domain, Container[] containers)
@@ -59,13 +65,13 @@ public class CohortDomainKind extends DomainKind
 
     public ActionURL urlShowData(Domain domain)
     {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Not implemented");
     }
 
     public ActionURL urlEditDefinition(Domain domain)
     {
         // This isn't really the edit url, but instead the destination after editing
-        return new ActionURL(StudyController.ManageCohortsAction.class, domain.getContainer());
+        return new ActionURL(CohortController.ManageCohortsAction.class, domain.getContainer());
     }
 
     // return the "system" properties for this domain
