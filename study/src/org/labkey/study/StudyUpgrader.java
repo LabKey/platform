@@ -83,6 +83,7 @@ public class StudyUpgrader
         {
             if (UPGRADE_REQUIRED.equals(cohort.getLsid()))
             {
+                cohort = cohort.createMutable();
                 cohort.setLsid(manager.createLsid(cohort, cohort.getRowId()));
                 manager.updateCohort(user, cohort);
             }

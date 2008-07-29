@@ -1,8 +1,5 @@
 package org.labkey.study.model;
 
-import org.labkey.api.data.Container;
-import org.labkey.api.util.PageFlowUtil;
-
 /**
  * Copyright (c) 2008 LabKey Corporation
  * <p/>
@@ -38,7 +35,7 @@ public class Cohort extends AbstractStudyEntity<Cohort> implements Extensible
 
     public void setRowId(int rowId)
     {
-        assert _rowId == 0 : "Attempt to redefine rowId";
+        verifyMutability();
         _rowId = rowId;
     }
 
@@ -49,36 +46,12 @@ public class Cohort extends AbstractStudyEntity<Cohort> implements Extensible
 
     public void setLsid(String lsid)
     {
+        verifyMutability();
         _lsid = lsid;
     }
 
     public boolean isInUse()
     {
         return StudyManager.getInstance().isCohortInUse(this);
-    }
-
-    public boolean equals(Object o)
-    {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Cohort cohort = (Cohort) o;
-
-        if (_rowId != cohort._rowId) return false;
-        if (!PageFlowUtil.nullSafeEquals(getContainer(), cohort.getContainer())) return false;
-        if (_label != null ? !_label.equals(cohort._label) : cohort._label != null) return false;
-
-        return true;
-    }
-
-    public int hashCode()
-    {
-        int result;
-        result = _rowId;
-        result = 31 * result + (_label != null ? _label.hashCode() : 0);
-        Container c = getContainer();
-        if (c != null)
-            result = 31 * result + c.hashCode();
-        return result;
     }
 }

@@ -56,6 +56,8 @@ public abstract class AbstractStudyCachable<T> implements StudyCachable<T>, Clon
 
     public T createMutable()
     {
+        if (_mutable)
+            return (T)this;
         try
         {
             T obj = (T) clone();

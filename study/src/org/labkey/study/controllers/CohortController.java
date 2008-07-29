@@ -325,6 +325,7 @@ public class CohortController extends BaseStudyController
 
                     if (newLabel != null && !cohort.getLabel().equals(newLabel))
                     {
+                        cohort = cohort.createMutable();
                         cohort.setLabel(newLabel);
                         StudyManager.getInstance().updateCohort(getUser(), cohort);
                     }

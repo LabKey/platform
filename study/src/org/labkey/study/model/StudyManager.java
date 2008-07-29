@@ -183,11 +183,6 @@ public class StudyManager
         return Table.select(StudySchema.getInstance().getTableInfoStudy(), Table.ALL_COLUMNS, null, null, Study.class);
     }
 
-    private Study createStudy(User user, Container container, String label) throws SQLException
-    {
-        return createStudy(user, new Study(container, label));
-    }
-
     public Study createStudy(User user, Study study) throws SQLException
     {
         assert null != study.getContainer();
@@ -202,7 +197,7 @@ public class StudyManager
         acl.setPermission(Group.groupGuests, 0);
         Integer groupId = SecurityManager.getGroupId(c.getProject(), "Users", false);
         if (null != groupId)
-            acl.setPermission(groupId, ACL.PERM_READ);
+            acl.setPermission(groupId.intValue(), ACL.PERM_READ);
         SecurityManager.updateACL(study.getContainer(), study.getEntityId(), c.getAcl());
 
         return study;
@@ -249,7 +244,7 @@ public class StudyManager
     {
         String sql = "SELECT max(n) FROM (select count(*) AS n from study.studydata WHERE container=? AND datasetid=? GROUP BY participantid) x";
         Integer maxCount = Table.executeSingleton(getSchema(), sql, new Object[] {dataSetDefinition.getContainer().getId(), dataSetDefinition.getDataSetId()}, Integer.class);
-        return maxCount == null || maxCount <= 1;
+        return maxCount == null || maxCount.intValue() <= 1;
     }
 
 
@@ -520,12 +515,11 @@ public class StudyManager
         assertCohortsViewable(container, user);
         try
         {
-            SimpleFilter filter = new SimpleFilter("Container", container);
-            return Table.select(StudySchema.getInstance().getTableInfoCohort(), Table.ALL_COLUMNS, filter, new Sort("Label"), Cohort.class);
+            return _cohortHelper.get(container,"Label");
         }
-        catch (SQLException x)
+        catch (SQLException se)
         {
-            throw new RuntimeSQLException(x);
+            throw new RuntimeSQLException(se);
         }
     }
 
@@ -534,17 +528,21 @@ public class StudyManager
         assertCohortsViewable(container, user);
         Participant participant = getParticipant(getStudy(container), participantId);
         if (participant != null && participant.getCohortId() != null)
-            return getCohortForRowId(container, user, participant.getCohortId());
+            return _cohortHelper.get(container, participant.getCohortId().intValue());
         return null;
     }
 
     public Cohort getCohortForRowId(Container container, User user, int rowId)
     {
         assertCohortsViewable(container, user);
-        Cohort cohort = Table.selectObject(StudySchema.getInstance().getTableInfoCohort(), rowId, Cohort.class);
-        if (cohort != null && !container.equals(cohort.getContainer()))
-            return null;
-        return cohort;
+        try
+        {
+            return _cohortHelper.get(container, rowId);
+        }
+        catch (SQLException se)
+        {
+            throw new RuntimeSQLException(se);
+        }
     }
 
     private boolean isCohortInUse(Cohort cohort, TableInfo table)
@@ -554,7 +552,7 @@ public class StudyManager
             Integer count = Table.executeSingleton(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM " +
                     table + " WHERE Container = ? AND CohortId = ?",
                     new Object[] { cohort.getContainer().getId(), cohort.getRowId() }, Integer.class);
-            return count != null && count > 0;
+            return count != null && count.intValue() > 0;
         }
         catch (SQLException e)
         {
@@ -571,7 +569,7 @@ public class StudyManager
 
     public void deleteCohort(Cohort cohort) throws SQLException
     {
-        Table.delete(StudySchema.getInstance().getTableInfoCohort(), cohort.getRowId(), null);
+        _cohortHelper.delete(cohort);
 
         // delete extended properties
         Container container = cohort.getContainer();
