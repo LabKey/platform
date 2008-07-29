@@ -50,7 +50,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     private File _dirAnalysis;
     private File _fileParameters;
     private File[] _filesInput;
-    private FileType _inputType;
+    private FileType[] _inputTypes;
 
     private Map<String, String> _parametersDefaults;
     private Map<String, String> _parametersOverrides;
@@ -68,7 +68,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         super(providerName, info);
 
         _filesInput = filesInput;
-        _inputType = protocol.findInputType(filesInput[0]);
+        _inputTypes = FileType.findTypes(protocol.getInputTypes(), _filesInput);
         _dirData = filesInput[0].getParentFile();
         _protocolName = protocolName;
 
@@ -106,7 +106,6 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         // Copy some parameters from the parent job.
         _experimentRunRowId = job._experimentRunRowId;
         _protocolName = job._protocolName;
-        _inputType = job._inputType;
         _dirData = job._dirData;
         _dirAnalysis = job._dirAnalysis;
         _fileParameters = job._fileParameters;
@@ -116,7 +115,8 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
 
         // Change parameters which are specific to the fraction job.
         _filesInput = new File[] { fileInput };
-        _baseName = (_inputType == null ? fileInput.getName() : _inputType.getBaseName(fileInput));
+        _inputTypes = FileType.findTypes(job._inputTypes, _filesInput);
+        _baseName = (_inputTypes.length > 0 ? fileInput.getName() : _inputTypes[0].getBaseName(fileInput));
         setLogFile(FT_LOG.newFile(_dirAnalysis, _baseName), false);
     }
 

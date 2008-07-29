@@ -17,6 +17,7 @@ package org.labkey.api.util;
 
 import java.io.File;
 import java.io.Serializable;
+import java.util.ArrayList;
 
 /**
  * <code>FileType</code>
@@ -113,5 +114,23 @@ public class FileType implements Serializable
     public int hashCode()
     {
         return _suffix.hashCode();
+    }
+
+    public static FileType[] findTypes(FileType[] types, File[] files)
+    {
+        ArrayList<FileType> foundTypes = new ArrayList<FileType>();
+        // This O(n*m), but these are usually very short lists.
+        for (FileType type : types)
+        {
+            for (File file : files)
+            {
+                if (type.isType(file))
+                {
+                    foundTypes.add(type);
+                    break;
+                }
+            }
+        }
+        return foundTypes.toArray(new FileType[foundTypes.size()]);
     }
 }

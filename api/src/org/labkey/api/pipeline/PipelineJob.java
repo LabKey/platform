@@ -106,28 +106,6 @@ abstract public class PipelineJob extends Job implements Serializable
     {
         private PipelineJob _job;
 
-        protected String getExecutablePath(String executable)
-        {
-            String toolsDir = PipelineJobService.get().getAppProperties().getToolsDirectory();
-            if (toolsDir == null || toolsDir.trim().equals(""))
-            {
-                return executable;
-            }
-
-            File f = new File(toolsDir);
-            if (!NetworkDrive.exists(f) || !f.isDirectory())
-            {
-                return executable;
-            }
-            
-            if (!toolsDir.endsWith(File.separator))
-            {
-                toolsDir = toolsDir + File.separatorChar;
-            }
-
-            return toolsDir + executable;
-        }
-
         public Task(PipelineJob job)
         {
             _job = job;
