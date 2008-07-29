@@ -16,19 +16,30 @@
 
 package org.labkey.core.webdav;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.FastDateFormat;
-import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Category;
 import org.apache.log4j.Logger;
+import org.json.JSONWriter;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.data.Container;
-import org.labkey.api.security.*;
-import org.labkey.api.util.*;
-import org.labkey.api.view.*;
-import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.data.Container;
+import org.labkey.api.security.ACL;
+import org.labkey.api.security.AuthenticationManager;
+import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.ViewServlet;
+import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.template.PageConfig;
+import org.labkey.common.util.Pair;
 import org.labkey.core.webdav.apache.XMLWriter;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.servlet.ModelAndView;
@@ -39,11 +50,10 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-import org.json.JSONWriter;
 
+import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
-import javax.servlet.ServletContextEvent;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.parsers.DocumentBuilder;
@@ -534,7 +544,7 @@ public class DavController extends SpringActionController
     @RequiresPermission(ACL.PERM_NONE)
     public class PropfindAction extends DavAction
     {
-        boolean listRootProperties = true; // return root node when depth>0?
+        boolean defaultListRoot = true; // return root node when depth>0?
         int defaultDepth = INFINITY;
         
         public PropfindAction()
@@ -552,20 +562,28 @@ public class DavController extends SpringActionController
             return resolvePath();
         }
 
-        int getDepthParameter()
+        // "0", "1", "1,noroot" or "infinity"
+        Pair<Integer, Boolean> getDepthParameter()
         {
             try
             {
                 String depthStr = getRequest().getHeader("Depth");
                 if (null == depthStr)
-                    depthStr = getRequest().getParameter("depth");
-                int depth = null == depthStr ? defaultDepth : "infinity".equals(depthStr) ? INFINITY : Integer.parseInt(depthStr);
-                return depth < 0 ? INFINITY : Math.min(depth,INFINITY);
+                    depthStr = getViewContext().getActionURL().getParameter("depth");
+                if (null == depthStr)
+                    return new Pair(defaultDepth, defaultListRoot);
+                if ("0".equals(depthStr))
+                    return new Pair(0, false);
+                if ("1".equals(depthStr))
+                    return new Pair(1, false);
+                if ("1,noroot".equals(depthStr))
+                    return new Pair(1, true);
+                return new Pair(INFINITY, false);
             }
             catch (NumberFormatException x)
             {
             }
-            return INFINITY;
+            return new Pair(INFINITY, false);
         }
 
         public WebdavStatus doMethod() throws DavException, IOException
@@ -579,7 +597,9 @@ public class DavController extends SpringActionController
 
             List<String> properties = null;
             Find type = Find.FIND_ALL_PROP;
-            int depth = getDepthParameter();
+            Pair<Integer, Boolean> depthParam = getDepthParameter();
+            int depth = depthParam.first;
+            boolean noroot = depthParam.second;
 
             Node propNode = null;
 
@@ -677,10 +697,10 @@ public class DavController extends SpringActionController
             // Create multistatus object
             Writer writer = getResponse().getWriter();
             assert track(writer);
-
+            ResourceWriter resourceWriter = null;
             try
             {
-                ResourceWriter resourceWriter = getResourceWriter(writer);
+                resourceWriter = getResourceWriter(writer);
                 resourceWriter.beginResponse(getResponse());
 
                 if (depth == 0)
@@ -694,7 +714,7 @@ public class DavController extends SpringActionController
                     stack.push(root.getPath());
 
                     // Stack of the objects one level below
-                    boolean skipFirst = !listRootProperties;
+                    boolean skipFirst = noroot;
                     WebdavResolver.Resource resource;
                     Stack<String> stackBelow = new Stack<String>();
 
@@ -750,8 +770,6 @@ public class DavController extends SpringActionController
                     }
                 }
 
-                resourceWriter.endResponse();
-                resourceWriter.sendData();
             }
             catch (IOException x)
             {
@@ -764,6 +782,17 @@ public class DavController extends SpringActionController
             catch (Exception x)
             {
                 throw new DavException(x);    
+            }
+            finally
+            {
+                if (resourceWriter != null)
+                {
+                    try {
+                        resourceWriter.endResponse();
+                        resourceWriter.sendData();
+                    }
+                    catch (Exception e) { }
+                }
             }
 
             close(writer, "response writer");
@@ -784,7 +813,7 @@ public class DavController extends SpringActionController
         public JsonAction()
         {
             super("JSON");
-            listRootProperties = false;
+            defaultListRoot = false;
             defaultDepth = 1;
         }
 
@@ -2849,7 +2878,8 @@ public class DavController extends SpringActionController
     }
 
 
-    private static final FastDateFormat creationDateFormat = FastDateFormat.getInstance("yyyy-MM-dd'T'HH:mm:ss'Z'", TimeZone.getTimeZone("GMT"));
+//    private static final FastDateFormat creationDateFormat = FastDateFormat.getInstance("yyyy-MM-dd'T'HH:mm:ss'Z'", TimeZone.getTimeZone("GMT"));
+    private static final FastDateFormat creationDateFormat = FastDateFormat.getInstance("yyyy-MM-dd'T'HH:mm:ss'-00:00'", TimeZone.getTimeZone("GMT"));
 
     private String getISOCreationDate(long creationDate)
     {
