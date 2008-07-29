@@ -382,6 +382,7 @@ core/src/org/labkey/core/login/resetPassword.jsp -text
 core/src/org/labkey/core/login/setPassword.jsp -text
 core/src/org/labkey/core/query/AttachmentAuditViewFactory.java -text
 core/src/org/labkey/core/query/ContainerAuditViewFactory.java -text
+core/src/org/labkey/core/query/CoreQuerySchema.java -text
 core/src/org/labkey/core/query/GroupAuditViewFactory.java -text
 core/src/org/labkey/core/query/UserAuditViewFactory.java -text
 core/src/org/labkey/core/security/ContainersView.java -text

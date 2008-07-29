@@ -1083,6 +1083,7 @@ public class UserController extends SpringActionController
     public static class GetUsersForm
     {
         private String _group;
+        private String _name;
 
         public String getGroup()
         {
@@ -1092,6 +1093,16 @@ public class UserController extends SpringActionController
         public void setGroup(String group)
         {
             _group = group;
+        }
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
         }
     }
 
@@ -1146,14 +1157,24 @@ public class UserController extends SpringActionController
 
             if(null != users)
             {
+                //trim name filter to empty so we are guaranteed a non-null string
+                //and conver to lower-case for the compare below
+                String nameFilter = StringUtils.trimToEmpty(form.getName()).toLowerCase();
+                if(nameFilter.length() > 0)
+                    response.put("name", nameFilter);
+                
                 for(User user : users)
                 {
-                    Map<String,Object> userInfo = new HashMap<String,Object>();
-                    userInfo.put(PROP_USER_ID, user.getUserId());
+                    //according to the docs, startsWith will return true of nameFilter is empty string
+                    if(user.getEmail().toLowerCase().startsWith(nameFilter) || user.getDisplayName(null).toLowerCase().startsWith(nameFilter))
+                    {
+                        Map<String,Object> userInfo = new HashMap<String,Object>();
+                        userInfo.put(PROP_USER_ID, user.getUserId());
 
-                    //force sanitize of the display name, even for logged-in users
-                    userInfo.put(PROP_USER_NAME, user.getDisplayName(null));
-                    userResponseList.add(userInfo);
+                        //force sanitize of the display name, even for logged-in users
+                        userInfo.put(PROP_USER_NAME, user.getDisplayName(null));
+                        userResponseList.add(userInfo);
+                    }
                 }
             }
 

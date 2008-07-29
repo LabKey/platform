@@ -17,10 +17,7 @@
 package org.labkey.query.data;
 
 import org.labkey.api.data.*;
-import org.labkey.api.query.FilteredTable;
-import org.labkey.api.query.LookupForeignKey;
-import org.labkey.api.query.QueryParam;
-import org.labkey.api.query.QueryUpdateForm;
+import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.TableType;
@@ -84,6 +81,15 @@ public class DbUserSchemaTable extends FilteredTable
                     });
                 } //if we know the pk col name
             } //if has FK and FK table from same schema
+
+            //if the column is named "CreatedBy" or "ModifiedBy", the Table layer automagically
+            //fills these out with user ids, so set their fks to use a UserIdForeignKey
+            if("CreatedBy".equalsIgnoreCase(col.getName()) || "ModifiedBy".equalsIgnoreCase(col.getName()))
+            {
+                if(null == col.getFk())
+                    col.setFk(new UserIdQueryForeignKey(_schema.getUser(), _schema.getContainer()));
+            }
+
         } //for each column
     }
 

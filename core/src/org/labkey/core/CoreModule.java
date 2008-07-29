@@ -33,6 +33,8 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.DefaultSchema;
 import org.labkey.core.admin.AdminController;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.analytics.AnalyticsController;
@@ -41,10 +43,7 @@ import org.labkey.core.attachment.AttachmentServiceImpl;
 import org.labkey.core.ftp.FtpController;
 import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.LoginController;
-import org.labkey.core.query.AttachmentAuditViewFactory;
-import org.labkey.core.query.ContainerAuditViewFactory;
-import org.labkey.core.query.GroupAuditViewFactory;
-import org.labkey.core.query.UserAuditViewFactory;
+import org.labkey.core.query.*;
 import org.labkey.core.security.SecurityController;
 import org.labkey.core.test.TestController;
 import org.labkey.core.user.UserController;
@@ -104,13 +103,13 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
         AnalyticsServiceImpl.register();
         FirstRequestHandler.addFirstRequestListener(this);
 
-//        DefaultSchema.registerProvider("core", new DefaultSchema.SchemaProvider()
-//        {
-//            public QuerySchema getSchema(DefaultSchema schema)
-//            {
-//                return new CoreQuerySchema(schema.getUser(), schema.getContainer());
-//            }
-//        });            
+        DefaultSchema.registerProvider("core", new DefaultSchema.SchemaProvider()
+        {
+            public QuerySchema getSchema(DefaultSchema schema)
+            {
+                return new CoreQuerySchema(schema.getUser(), schema.getContainer());
+            }
+        });            
     }
 
     @Override
