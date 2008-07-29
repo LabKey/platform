@@ -55,7 +55,8 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
             {
                 // We've seen very intermittent problems failing to create temp files in the past during the DRTs,
                 // so try a few times before failing
-                tempDir = File.createTempFile(support.getBaseName(), FT_WORK_DIR.getSuffix(), new File(_tempDirectory));
+                File dirParent = (_tempDirectory == null ? null : new File(_tempDirectory));
+                tempDir = File.createTempFile(support.getBaseName(), FT_WORK_DIR.getSuffix(), dirParent);
                 tempDir.delete();
                 tempDir.mkdirs();
                 attempt++;
