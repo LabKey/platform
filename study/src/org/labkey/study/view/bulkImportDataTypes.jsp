@@ -26,14 +26,14 @@
     BaseStudyController.StudyJspView<StudyController.BulkImportTypesForm> me = (BaseStudyController.StudyJspView<StudyController.BulkImportTypesForm>) HttpView.currentView();
     StudyController.BulkImportTypesForm bean = me.getModelBean();
 %>
-<table border=0 cellspacing=2 cellpadding=0>
+<table>
 <%
     BindException errors = (BindException)request.getAttribute("errors");
     if (errors != null)
     {
         for (ObjectError e : (List<ObjectError>) errors.getAllErrors())
         {
-            %><tr><td colspan=3><font color="red" class="error"><%=h(HttpView.currentContext().getMessage(e))%></font></td></tr><%
+            %><tr><td colspan=3><font class="labkey-error"><%=h(HttpView.currentContext().getMessage(e))%></font></td></tr><%
         }
     }
 %>
@@ -45,7 +45,7 @@ Use this form to import schemas for multiple datasets.
 Paste in a tab delimited file with the following columns, as well as columns for type
 name and type id.  Additional columns will just be ignored.
 </p>
-<table cellpadding="2" class="normal">
+<table class="labkey-bulk-import-data-header">
     <tr>
         <th align="left"><u>Column Header</u></th>
         <th align="left"><u>Description</u></th>
@@ -92,27 +92,27 @@ name and type id.  Additional columns will just be ignored.
 </table>
 
 <form action="bulkImportDataTypes.post" method="POST" enctype="multipart/form-data">
-    <table cellspacing="0" cellpadding="2">
+    <table class="labkey-bulk-import-data">
         <tr>
-            <td class=ms-searchform>Column containing dataset Name<span style="color:red;">*</span></td>
+            <td class=labkey-form-label>Column containing dataset Name<span style="color:red;">*</span></td>
         </tr>
         <tr>
             <td><input name="typeNameColumn" style="width:100%" value="<%=h(bean.getTypeNameColumn())%>"></td>
         </tr>
         <tr>
-            <td class=ms-searchform>Column containing dataset Label<span style="color:red;">*</span></td>
+            <td class=labkey-form-label>Column containing dataset Label<span style="color:red;">*</span></td>
         </tr>
         <tr>
             <td><input name="labelColumn" style="width:100%" value="<%=h(bean.getLabelColumn())%>"></td>
         </tr>
         <tr>
-            <td class=ms-searchform>Column containing dataset Id<span style="color:red;">*</span></td>
+            <td class=labkey-form-label>Column containing dataset Id<span style="color:red;">*</span></td>
         </tr>
         <tr>
             <td><input name="typeIdColumn" style="width:100%" value="<%=h(bean.getTypeIdColumn())%>"></td>
         </tr>
         <tr>
-            <td class=ms-searchform>Type Definition<span style="color:red;">*</span> (tab delimited)</td>
+            <td class=labkey-form-label>Type Definition<span style="color:red;">*</span> (tab delimited)</td>
         </tr>
         <tr>
             <td><textarea name=tsv rows=25 cols=80><%=h(bean.getTsv())%></textarea></td>

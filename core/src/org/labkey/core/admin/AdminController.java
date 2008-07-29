@@ -3212,7 +3212,7 @@ public class AdminController extends SpringActionController
             {
                 ActionURL url = new AdminUrlsImpl().getCustomizeSiteURL(true);
                 vbox.addView(new HtmlView("All modules are up-to-date.<br><br>" +
-                        "<a href='" + url + "'><img border=0 src='" + PageFlowUtil.buttonSrc("Next") + "'></a>"));
+                        "<a href='" + url + "'><img src='" + PageFlowUtil.buttonSrc("Next") + "'></a>"));
             }
 
             getPageConfig().setTemplate(Template.Dialog);
@@ -3348,8 +3348,8 @@ public class AdminController extends SpringActionController
             //Upgrade is not started
             if (null == upgradeUser || _force)
             {
-                out.write("<a href=\"" + getModuleUpgradeURL(true, _force).getEncodedLocalURIString() + "\"><img border=0 src='" + PageFlowUtil.buttonSrc("Express " + action) + "'></a>&nbsp;");
-                out.write("<a href=\"" + getModuleUpgradeURL(false, _force).getEncodedLocalURIString() + "\"><img border=0 src='" + PageFlowUtil.buttonSrc("Advanced " + action) + "'></a>");
+                out.write("<a href=\"" + getModuleUpgradeURL(true, _force).getEncodedLocalURIString() + "\"><img src='" + PageFlowUtil.buttonSrc("Express " + action) + "'></a>&nbsp;");
+                out.write("<a href=\"" + getModuleUpgradeURL(false, _force).getEncodedLocalURIString() + "\"><img src='" + PageFlowUtil.buttonSrc("Advanced " + action) + "'></a>");
             }
             //I'm already upgrading -- upgrade next module after showing status
             else if (getViewContext().getUser().equals(upgradeUser))

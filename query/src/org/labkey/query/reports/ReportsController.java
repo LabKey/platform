@@ -1134,7 +1134,7 @@ public class ReportsController extends SpringActionController
                 url.setAction("plotChart");
                 url.addParameter("reportId", String.valueOf(_report.getDescriptor().getReportId()));
 
-                out.write("<img border=0 src='" + url + "'>");
+                out.write("<img src='" + url + "'>");
             }
         }
     }

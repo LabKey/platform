@@ -29,22 +29,19 @@
     JspView<SpecimenVisitReportParameters> me = (JspView<SpecimenVisitReportParameters>) HttpView.currentView();
     SpecimenVisitReportParameters bean = me.getModelBean();
     String contextPath = request.getContextPath();
-    String shadeColor = "#EEEEEE";
-    // UNDONE: move into stylesheet
-    String borderColor = "#808080";
-    String styleTH=" style=\"border-right:solid 1px " + borderColor + "; border-top:solid 2px " + borderColor + ";\"";
+    String alternateRow = "labkey-alternate-row";
 
     for (SpecimenVisitReport report : bean.getReports())
     {
         Visit[] visits = report.getVisits();
         int colCount = visits.length + report.getLabelDepth();
 %>
-<table border="0" cellspacing="0" cellpadding="2" class="grid">
+<table class="labkey-specimen-visit-report labkey-grid">
     <tr>
         <th align="left" colspan="<%= colCount %>"><%= h(report.getTitle())%></th>
     </tr>
 
-    <tr bgcolor="<%=shadeColor%>">
+    <tr class="<%=alternateRow%>">
         <%
         if (report.getLabelDepth() > 0)
         {
@@ -55,7 +52,7 @@
         for (Visit visit : visits)
         {
             String label = visit.getDisplayString();
-            %><td align="center" valign="top" bgcolor=<%=shadeColor%>><%= h(label) %></td><%
+            %><td align="center" valign="top" class=<%=alternateRow%>><%= h(label) %></td><%
         }
         %>
     </tr>
@@ -75,7 +72,7 @@
                 for (SpecimenVisitReport.Row row : (Collection<SpecimenVisitReport.Row>) report.getRows())
                 {
                     String[] currentTitleHierarchy = row.getTitleHierarchy();
-                    %><tr <%= (rowIndex++)%2==1 ? "bgcolor=\"eeeeee\"" : "" %>  style="vertical-align:top">
+                    %><tr class="<%= (rowIndex++)%2==1 ? "labkey-alternate-row" : "labkey-row" %>"  style="vertical-align:top">
                     <%
                     for (int i = 0; i < currentTitleHierarchy.length; i++)
                     {
@@ -93,7 +90,7 @@
                         }
                         String style = "border-bottom:0;border-top:solid " + (outputElement ? "1px" : "0px") + " #808080";
                     %>
-                        <td <%= i < currentTitleHierarchy.length - 1 ? "bgcolor=\"#FFFFFF\"" : ""%> style="<%= style %>">
+                        <td <%= i < currentTitleHierarchy.length - 1 ? "class=\"labkey-row\"" : ""%> style="<%= style %>">
                             <%= outputElement ? h(titleElement != null ? titleElement : "[unspecified]") : "&nbsp;" %>
                         </td>
                     <%

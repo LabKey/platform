@@ -30,9 +30,9 @@
 
 
 <form action="" method="post">
-    <table class="normal">
+    <table>
         <input type="hidden" name="serverId" value="<%=server.getRowId()%>">
-        <tr><td class=ms-vb align=center><div class="ms-searchform"><b>Set Server Password</b></div></td></tr>
+        <tr><td align=center><div class="labkey-form-label"><b>Set Server Password</b></div></td></tr>
         <tr><td>Server:&nbsp;<%=server.getName()%></td><td><input name="password" value="<%=StringUtils.trimToEmpty(server.getPassword())%>"></td></tr>
         <tr><td colspan="2">
             <%=PageFlowUtil.buttonLink("Cancel", form.getContext().cloneActionURL().setAction("admin.view"))%>&nbsp;

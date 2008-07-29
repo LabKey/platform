@@ -22,11 +22,11 @@
 //PropertyDescriptor pd;
 %><h3><%=filter(typeName)%></h3>
 <table>
-<tr><th class=normal>Name</th><th class=normal>PropertyURI</th><th class=normal>Type</th></tr><%
+<tr><th>Name</th><th>PropertyURI</th><th>Type</th></tr><%
 for (pd in properties)
     {
     PropertyType t = pd.getPropertyType();
-    %><tr><td class=normal><%=filter(pd.getName())%></td><td class=normal><%=filter(pd.getPropertyURI())%></td><td class=normal><%=filter(t.getXmlName())%></td></tr><%
+    %><tr><td><%=filter(pd.getName())%></td><td><%=filter(pd.getPropertyURI())%></td><td><%=filter(t.getXmlName())%></td></tr><%
     }
 %></table>
 <!-- <p>

@@ -131,8 +131,8 @@ else
         out.write("<input type=\"hidden\" name=\"redirect\" value=\"" + h(redir) + "\">");
 
     int row = 0;
-    %><br/><table class=normal cellspacing=0>
-    <tr bgcolor="<%=row++%2==0?"#eeeeee":"#ffffff"%>"><th>&nbsp;</th><%
+    %><br/><table class=labkey-dataset-security>
+    <tr class="<%=row++%2==0?"labkey-alternating-row":"labkey-row"%>"><th>&nbsp;</th><%
     for (Group g : restictedGroups)
     {
         %><th style="padding: 0 5px 0 5px;"><%=h(groupName(g))%></th><%
@@ -143,7 +143,7 @@ else
     {
         ACL acl = ds.getACL();
         String inputName = "dataset." + ds.getDataSetId();
-        %><tr bgcolor="<%=row++%2==0?"#eeeeee":"#ffffff"%>"><td><%=h(ds.getLabel())%></td><%
+        %><tr class="<%=row++%2==0?"labkey-alternating-row":"labkey-row"%>"><td><%=h(ds.getLabel())%></td><%
         for (Group g : restictedGroups)
         {
             boolean writePerm = acl.hasPermission(g, ACL.PERM_UPDATE);

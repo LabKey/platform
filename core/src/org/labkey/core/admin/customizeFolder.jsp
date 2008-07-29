@@ -233,7 +233,7 @@ for (Module module : allModules)
         }
     }
 %><br>
-<div class="heading-1-1" id="defaultTabDiv" style="display:<%="None".equals(folderType.getName()) ? "" : "none"%>">Default Tab:<br>
+<div class="labkey-heading-1-1" id="defaultTabDiv" style="display:<%="None".equals(folderType.getName()) ? "" : "none"%>">Default Tab:<br>
 <select name="defaultModule" value="<%=defaultModule.getName()%>">
 <%
         for (Module module : allModules)

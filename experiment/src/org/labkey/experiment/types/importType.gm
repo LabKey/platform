@@ -53,12 +53,12 @@ We will create a type called <code>http://www.scharp.org/CHAVI001/122</code>.  T
 
 <form action="importTypes.post" method="POST" enctype="multipart/form-data">
 <table>
-<tr><td class=ms-searchform>Vocabulary (type name prefix)<br><small>e.g http://www.scharp.org/CHAVI001/datafax or http://proteomics.fhcrc.org/SPORE/forms</small></td</tr>
+<tr><td class=labkey-form-label>Vocabulary (type name prefix)<br><small>e.g http://www.scharp.org/CHAVI001/datafax or http://proteomics.fhcrc.org/SPORE/forms</small></td</tr>
 <tr><td><input name="vocabulary" style="width:100%" value="<%=filter(form.vocabulary)%>"></td></tr>
-<tr><td class=ms-searchform>Type name suffix column<br><small>e.g. form</small></td</tr>
+<tr><td class=labkey-form-label>Type name suffix column<br><small>e.g. form</small></td</tr>
 <tr><td><input name="typeColumn" style="width:100%" value="<%=filter(form.typeColumn)%>"></td></tr>
-<!--<tr><td class=ms-searchform>Short prefix<br><small>e.g NCI_Thesaurus</small></td><td><input name="prefix" value=""></td></tr> -->
-<tr><td class=ms-searchform>Type Definition (tab delimited)</td></tr>
+<!--<tr><td class=labkey-form-label>Short prefix<br><small>e.g NCI_Thesaurus</small></td><td><input name="prefix" value=""></td></tr> -->
+<tr><td class=labkey-form-label>Type Definition (tab delimited)</td></tr>
 <tr><td><textarea name=tsv rows=25 cols=80><%=filter(form.tsv)%></textarea></td></tr>
 </table>
 <input type=image src="<%=PageFlowUtil.buttonSrc("Submit","large")%>">

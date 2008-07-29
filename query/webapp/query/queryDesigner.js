@@ -229,7 +229,7 @@ Tab.prototype = {
     {
         if (this.elTab)
         {
-            this.elTab.className = 'navtab-selected';
+            this.elTab.className = 'labkey-nav-tab-selected';
         }
         for (var i = 0; i < this.rgEl.length; i ++)
         {
@@ -248,7 +248,7 @@ Tab.prototype = {
     {
         if (this.elTab)
         {
-            this.elTab.className = 'navtab';
+            this.elTab.className = 'labkey-nav-tab';
         }
         for (var i = 0; i < this.rgEl.length; i ++)
         {
@@ -571,7 +571,7 @@ function createFilterEditor(tab, dn, parent, insertBefore)
 {
     var doc = parent.ownerDocument;
     var trTitle = doc.createElement('tr');
-    trTitle.className = 'wpTitle';
+    trTitle.className = 'labkey-wp-title';
     var tdTitle = doc.createElement('td');
     tdTitle.colSpan = 3;
     if (parent.getElementsByTagName('TR').length == 0)

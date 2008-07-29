@@ -55,7 +55,7 @@
 <%
     if (currentSchema != null)
     { %>
-<table class="normal">
+<table>
     <tr>
         <th colspan="7">User-defined queries in the schema: <%=h(currentSchema.getSchemaName())%>
         </th>
@@ -126,7 +126,7 @@
 
 
 <p>
-    <table class="normal">
+    <table>
         <tr><th colspan="2">Built-in tables</th></tr>
         <%
             for (String name : currentSchema.getTableNames())

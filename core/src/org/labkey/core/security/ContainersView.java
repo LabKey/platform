@@ -43,7 +43,6 @@ public class ContainersView extends WebPartView
     public ContainersView(Container c)
     {
         setTitle("Folders in project " + c.getName());
-        setBodyClass("normal");
         _c = c;
     }
 
@@ -53,7 +52,7 @@ public class ContainersView extends WebPartView
         ActionURL url = PageFlowUtil.urlProvider(SecurityUrls.class).getContainerURL(_c);
         PermissionsContainerTree ct = new PermissionsContainerTree(_c.getPath(), getViewContext().getUser(), ACL.PERM_ADMIN, url);
         ct.setCurrent(getViewContext().getContainer());
-        StringBuilder html = new StringBuilder("<table class=\"dataRegion\">");
+        StringBuilder html = new StringBuilder("<table class=\"labkey-data-region\">");
         ct.render(html);
         html.append("</table><br>");
         ActionURL manageFoldersURL = PageFlowUtil.urlProvider(AdminUrls.class).getManageFoldersURL(_c);
@@ -73,7 +72,7 @@ public class ContainersView extends WebPartView
         protected void renderCellContents(StringBuilder html, Container c, ActionURL url)
         {
             if (c.equals(current))
-                html.append("<span class=\"labkey-navtree-selected\">");
+                html.append("<span class=\"labkey-nav-tree-selected\">");
 
             if (null != url)
             {

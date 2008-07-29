@@ -38,7 +38,7 @@
 <% if (!bean.isPrint())
 {
 %><form name="jumpToIssue" action="jumpToIssue.view" method="get">
-    <table border=0 cellspacing=2 cellpadding=2><tr>
+    <table class="labkey-issue-jump"><tr>
     <td><%= textLink("new issue", PageFlowUtil.getLastFilter(context, IssuesController.issueURL(context.getContainer(), "insert")))%></td>
     <td><%= textLink("view grid", PageFlowUtil.getLastFilter(context, IssuesController.issueURL(context.getContainer(), "list")))%></td>
     <td><%= textLink("update", IssuesController.issueURL(context.getContainer(), "update").addParameter("issueId", issueId))%></td><%
@@ -65,25 +65,25 @@
 %>
 
 <table width=640>
-    <tr><td class="wpTitle" colspan="3"><%=issueId + " : " + h(issue.getTitle())%></td></tr>
+    <tr><td class="labkey-wp-title" colspan="3"><%=issueId + " : " + h(issue.getTitle())%></td></tr>
     <tr>
         <td valign="top" width="34%"><table>
-            <tr><td class="ms-searchform">Status</td><td class="normal"><%=h(issue.getStatus())%></td></tr>
-            <tr><td class="ms-searchform">Assigned&nbsp;To</td><td class="normal"><%=h(issue.getAssignedToName(context))%></td></tr>
-            <tr><td class="ms-searchform">Type</td><td class="normal"><%=h(issue.getType())%></td></tr>
-            <tr><td class="ms-searchform">Area</td><td class="normal"><%=h(issue.getArea())%></td></tr>
-            <tr><td class="ms-searchform">Priority</td><td class="normal"><%=bean._toString(issue.getPriority())%></td></tr>
-            <tr><td class="ms-searchform">Milestone</td><td class="normal"><%=h(issue.getMilestone())%></td></tr>
+            <tr><td class="labkey-form-label">Status</td><td><%=h(issue.getStatus())%></td></tr>
+            <tr><td class="labkey-form-label">Assigned&nbsp;To</td><td><%=h(issue.getAssignedToName(context))%></td></tr>
+            <tr><td class="labkey-form-label">Type</td><td><%=h(issue.getType())%></td></tr>
+            <tr><td class="labkey-form-label">Area</td><td><%=h(issue.getArea())%></td></tr>
+            <tr><td class="labkey-form-label">Priority</td><td><%=bean._toString(issue.getPriority())%></td></tr>
+            <tr><td class="labkey-form-label">Milestone</td><td><%=h(issue.getMilestone())%></td></tr>
         </table></td>
         <td valign="top" width="33%"><table>
-            <tr><td class="ms-searchform">Opened&nbsp;By</td><td class="normal"><%=h(issue.getCreatedByName(context))%></td></tr>
-            <tr><td class="ms-searchform">Opened</td><td class="normal"><%=bean.writeDate(issue.getCreated())%></td></tr>
-            <tr><td class="ms-searchform">Resolved By</td><td class="normal"><%=h(issue.getResolvedByName(context))%></td></tr>
-            <tr><td class="ms-searchform">Resolved</td><td class="normal"><%=bean.writeDate(issue.getResolved())%></td></tr>
-            <tr><td class="ms-searchform">Resolution</td><td class="normal"><%=h(issue.getResolution())%></td></tr><%
+            <tr><td class="labkey-form-label">Opened&nbsp;By</td><td><%=h(issue.getCreatedByName(context))%></td></tr>
+            <tr><td class="labkey-form-label">Opened</td><td><%=bean.writeDate(issue.getCreated())%></td></tr>
+            <tr><td class="labkey-form-label">Resolved By</td><td><%=h(issue.getResolvedByName(context))%></td></tr>
+            <tr><td class="labkey-form-label">Resolved</td><td><%=bean.writeDate(issue.getResolved())%></td></tr>
+            <tr><td class="labkey-form-label">Resolution</td><td><%=h(issue.getResolution())%></td></tr><%
             if (bean.isEditable("resolution") || !"open".equals(issue.getStatus()) && null != issue.getDuplicate())
             {
-                %><tr><td class="ms-searchform">Duplicate</td><td class="normal">
+                %><tr><td class="labkey-form-label">Duplicate</td><td>
                 <%=bean.writeInput("duplicate", null == issue.getDuplicate() ? null : issue.getDuplicate().toString())%>
                 </td></tr><%
             }
@@ -92,15 +92,15 @@
             <%=bean.writeCustomColumn(c.getId(), "int2", bean._toString(issue.getInt2()), IssuesController.ISSUE_NONE)%>
         </table></td>
         <td valign="top" width="33%"><table>
-            <tr><td class="ms-searchform">Changed&nbsp;By</td><td class="normal"><%=h(issue.getModifiedByName(context))%></td></tr>
-            <tr><td class="ms-searchform">Changed</td><td class="normal"><%=bean.writeDate(issue.getModified())%></td></tr>
-            <tr><td class="ms-searchform">Closed&nbsp;By</td><td class="normal"><%=h(issue.getClosedByName(context))%></td></tr>
-            <tr><td class="ms-searchform">Closed</td><td class="normal"><%=bean.writeDate(issue.getClosed())%></td></tr>
+            <tr><td class="labkey-form-label">Changed&nbsp;By</td><td><%=h(issue.getModifiedByName(context))%></td></tr>
+            <tr><td class="labkey-form-label">Changed</td><td><%=bean.writeDate(issue.getModified())%></td></tr>
+            <tr><td class="labkey-form-label">Closed&nbsp;By</td><td><%=h(issue.getClosedByName(context))%></td></tr>
+            <tr><td class="labkey-form-label">Closed</td><td><%=bean.writeDate(issue.getClosed())%></td></tr>
 
             <%
                 if (hasUpdatePerms)
                 {
-                    %><tr><td class="ms-searchform">Notify</td><td class="normal"><%=bean.getNotifyList(c, issue)%></td></tr><%
+                    %><tr><td class="labkey-form-label">Notify</td><td><%=bean.getNotifyList(c, issue)%></td></tr><%
             }
             %><%=bean.writeCustomColumn(c.getId(), "string1", issue.getString1(), IssuesController.ISSUE_STRING1)%>
             <%=bean.writeCustomColumn(c.getId(), "string2", issue.getString2(), IssuesController.ISSUE_STRING2)%>
@@ -115,9 +115,9 @@
 
     for (Issue.Comment comment : issue.getComments())
     {
-        %><hr><table width="100%"><tr><td align="left" class="normal"><b>
+        %><hr><table width="100%"><tr><td align="left"><b>
         <%=bean.writeDate(comment.getCreated())%>
-        </b></td><td align="right" class="normal"><b>
+        </b></td><td align="right"><b>
         <%=h(comment.getCreatedByName(context))%>
         </b></td></tr></table>
         <%=comment.getComment()%>

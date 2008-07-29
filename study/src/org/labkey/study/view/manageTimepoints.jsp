@@ -33,7 +33,7 @@
     }
 %>
 
-<table class="normal">
+<table>
     <tr>
         <td>New visits can be defined for this study at any time.</td>
         <td><%= textLink("Create New Timepoint", "createVisit.view")%></td>
@@ -46,7 +46,7 @@
 
 <%WebPartView.startTitleFrame(out, "Start Date", null, "600", null);%>
 <form action="manageVisits.post" method="POST">
-    <table cellspacing="3" class="normal">
+    <table class="labkey-manage-study">
            <tr><td colspan="2">Data in this study is grouped using date-based timepoints rather than visit ids.
                <ul>
                <li>A timepoint is assigned to each dataset row by computing the number of days between a subject's start date and the date supplied in the row.</li>

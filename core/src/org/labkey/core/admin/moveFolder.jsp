@@ -34,7 +34,7 @@
     String containerType = (c.isProject() ? "project" : "folder");
 %>
 
-<table class="dataRegion">
+<table class="labkey-data-region">
     <%=formatMissedErrors("form")%>
     <tr><td><form name="moveAddAlias" action="showMoveFolderTree.view">
         <input type="checkbox" onchange="document.forms.moveAddAlias.submit()" name="addAlias" <% if (form.isAddAlias()) { %>checked<% } %>> Add a folder alias for the folder's current location. This will make links that still target the old folder location continue to work.
@@ -56,18 +56,18 @@
     <tr><td>&nbsp;</td></tr>
     </table>
 
-    <table border=0 cellspacing=2 cellpadding=0><tr>
-    <td><a href="<%=h(AdminController.getManageFoldersURL(c))%>"><img border=0 src='<%=PageFlowUtil.buttonSrc("Cancel")%>'></a></td><%
+    <table class="labkey-small-button-bar"><tr>
+    <td><a href="<%=h(AdminController.getManageFoldersURL(c))%>"><img src='<%=PageFlowUtil.buttonSrc("Cancel")%>'></a></td><%
     if (form.isShowAll())
     {
         if (!c.isProject())
         {
-            %><td><a href="<%=h(AdminController.getShowMoveFolderTreeURL(c, form.isAddAlias(), false))%>"><img border=0 src='<%=PageFlowUtil.buttonSrc("Show Current Project Only")%>'></a></td><%
+            %><td><a href="<%=h(AdminController.getShowMoveFolderTreeURL(c, form.isAddAlias(), false))%>"><img src='<%=PageFlowUtil.buttonSrc("Show Current Project Only")%>'></a></td><%
         }
     }
     else
     {
-        %><td><a href="<%=h(AdminController.getShowMoveFolderTreeURL(c, form.isAddAlias(), true))%>"><img border=0 src='<%=PageFlowUtil.buttonSrc("Show All Projects")%>'></a></td><%
+        %><td><a href="<%=h(AdminController.getShowMoveFolderTreeURL(c, form.isAddAlias(), true))%>"><img src='<%=PageFlowUtil.buttonSrc("Show All Projects")%>'></a></td><%
     }
     %></tr>
 </table>

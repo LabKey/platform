@@ -76,9 +76,9 @@
 %>
     <table>
         <tr>
-            <th class="header">File</th>
-            <th class="header">Date</th>
-            <th class="header">Person</th>
+            <th class="labkey-header">File</th>
+            <th class="labkey-header">Date</th>
+            <th class="labkey-header">Person</th>
             <%if (me.isShowAdmin() && context.hasPermission(ACL.PERM_DELETE)) {%>
                     <th>&nbsp;</th>
             <%      } %>

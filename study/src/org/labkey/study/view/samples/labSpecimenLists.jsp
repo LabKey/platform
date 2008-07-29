@@ -42,7 +42,7 @@
     }
 %>
 
-<table cellspacing="0" cellpadding="4" class="normal">
+<table class="labkey-lab-specimen-list">
     <tr>
         <th align="left"><%= originating ? "Originating" : "Providing" %> Location</th>
         <th align="left">Download options</th>
@@ -58,7 +58,7 @@
                     "&listType=" + bean.getType().toString() +
                     "&sourceSiteId=" + site.getRowId() + "&export=";
     %>
-    <tr bgcolor="<%= rowCount++ % 2 == 0 ? "#EEEEEE" : "#FFFFFF"%>" valign="top">
+    <tr class="<%= rowCount++ % 2 == 0 ? "labkey-alternating-row" : "labkey-row"%>" valign="top">
         <td><%= site.getDisplayName()%></td>
         <td>
             <table>
@@ -126,10 +126,10 @@
         }
     %>
 </table>
-<table class="normal">
+<table>
     <tr>
         <td>&nbsp;</td>
-        <td class='ms-searchform'>
+        <td class='labkey-form-label'>
             Any comments will be included in all notifications that are sent.  Additionally, they<br>
             will appear in the request history.
         </td>
@@ -140,7 +140,7 @@
     </tr>
     <tr>
         <td>&nbsp;</td>
-        <td class='ms-searchform'>
+        <td class='labkey-form-label'>
             Selecting an attachment format will automatically attach appropriate specimen lists to<br>
             any notifications. It is not necessary to attach the lists manually.</td>
     </tr>
@@ -153,7 +153,7 @@
     </tr>
     <tr>
         <td>&nbsp;</td>
-        <td class='ms-searchform'>
+        <td class='labkey-form-label'>
             Supporting documents are optional.  If added, they will be available to all notification<br>
             recipients, as well as in the request history.</td>
     </tr>

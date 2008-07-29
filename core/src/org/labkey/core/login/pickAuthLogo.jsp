@@ -29,15 +29,15 @@
     <td colspan="3"><input type="hidden" name="name" value="<%=h(bean.name)%>"></td>
 </tr>
 <tr id="auth_header_logo_row">
-    <td class="ms-searchform" nowrap>Page header logo</td>
+    <td class="labkey-form-label" nowrap>Page header logo</td>
     <%=bean.headerLogo%>
 </tr>
 <tr id="auth_login_page_logo_row">
-    <td class="ms-searchform" nowrap>Login page logo</td>
+    <td class="labkey-form-label" nowrap>Login page logo</td>
     <%=bean.loginPageLogo%>
 </tr>
 <tr>
-    <td class="ms-searchform" nowrap>Enter a URL<%=PageFlowUtil.helpPopup("URL Instructions", "Include <code>%returnURL%</code> as the redirect parameter within the URL.  <code>%returnURL%</code> will be replaced with a link to the login page including the current page as a redirect parameter.  Examples:<br><br>http://localhost:8080/openfm/UI/Login?service=adminconsoleservice&goto=%returnURL%<br>https://machine.domain.org:8443/openfm/WSFederationServlet/metaAlias/wsfedsp?wreply=%returnURL%", true, 700)%></td>
+    <td class="labkey-form-label" nowrap>Enter a URL<%=PageFlowUtil.helpPopup("URL Instructions", "Include <code>%returnURL%</code> as the redirect parameter within the URL.  <code>%returnURL%</code> will be replaced with a link to the login page including the current page as a redirect parameter.  Examples:<br><br>http://localhost:8080/openfm/UI/Login?service=adminconsoleservice&goto=%returnURL%<br>https://machine.domain.org:8443/openfm/WSFederationServlet/metaAlias/wsfedsp?wreply=%returnURL%", true, 700)%></td>
     <td colspan="2"><input type="text" name="url" size="130" value="<%=h(bean.url)%>"></td>
 </tr>
 <tr>

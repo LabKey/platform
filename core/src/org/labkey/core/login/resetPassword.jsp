@@ -29,7 +29,7 @@
     String errors = formatMissedErrors("form");
 %>
 <form style="margin:0" method="POST" action="resetPassword.post">
-    <table border="0"><%
+    <table><%
         if (errors.length() > 0)
         { %>
         <tr><td colspan=2><%=errors%></td></tr>

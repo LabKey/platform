@@ -48,16 +48,16 @@ the vaccine study.
 %>
     <table>
         <tr>
-            <td class="ms-vh">Study Begin Date</td>
-            <td class="ms-vb"><input name="beginDate" value="<%=DateUtil.formatDate(form.getBeginDate())%>"></td>
+            <td>Study Begin Date</td>
+            <td><input name="beginDate" value="<%=DateUtil.formatDate(form.getBeginDate())%>"></td>
         </tr>
         <tr>
-        <td class="ms-vh">Folder Name</td>
-        <td class="ms-vb"><input name="folderName" value="<%=PageFlowUtil.filter(form.getFolderName())%>"></td>
+        <td>Folder Name</td>
+        <td><input name="folderName" value="<%=PageFlowUtil.filter(form.getFolderName())%>"></td>
         </tr>
         <tr>
-            <td class="ms-vh">Parent Folder</td>
-            <td class="ms-vb">
+            <td>Parent Folder</td>
+            <td>
                 <select name="parentFolderId">
             <%
                 Set<Container> writableContainers = ContainerManager.getContainerSet(ContainerManager.getContainerTree(), HttpView.currentContext().getUser(), ACL.PERM_ADMIN);

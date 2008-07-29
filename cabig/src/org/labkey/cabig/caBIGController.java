@@ -193,7 +193,7 @@ public class caBIGController extends SpringActionController
             html.append("<form method=post action=''>");
             html.append("<input type=\"hidden\" name=\"returnUrl\" value=\"");
             html.append(currentUrl.getEncodedLocalURIString());
-            html.append("\"><table class=\"dataRegion\" cellspacing=\"0\" cellpadding=\"1\">");
+            html.append("\"><table class=\"labkey-data-region\">");
             tree.render(html);
             html.append("</table><br>");
             renderHierarchyButtonBar(html, form.getReturnActionURL());

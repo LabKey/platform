@@ -27,27 +27,27 @@
 
 <table>
     <tr>
-        <td class="ms-searchform">Name</td>
+        <td class="labkey-form-label">Name</td>
         <td><%= h(protocol.getName()) %></td>
     </tr>
     <tr>
-        <td class="ms-searchform">LSID</td>
+        <td class="labkey-form-label">LSID</td>
         <td><%= h(protocol.getLSID()) %></td>
     </tr>
     <tr>
-        <td class="ms-searchform">Contact</td>
+        <td class="labkey-form-label">Contact</td>
         <td><%= h(protocol.getContact()) %></td>
     </tr>
     <tr>
-        <td class="ms-searchform">Instrument</td>
+        <td class="labkey-form-label">Instrument</td>
         <td><%= h(protocol.getInstrument()) %></td>
     </tr>
     <tr>
-        <td class="ms-searchform">Software</td>
+        <td class="labkey-form-label">Software</td>
         <td><%= h(protocol.getSoftware()) %></td>
     </tr>
     <tr>
-        <td class="ms-searchform">Description</td>
+        <td class="labkey-form-label">Description</td>
         <td><%= h(protocol.getProtocolDescription()) %></td>
     </tr>
 </table>

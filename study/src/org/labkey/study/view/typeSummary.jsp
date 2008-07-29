@@ -35,7 +35,7 @@
 // UNDONE: clean way to get count of system fields???
     int systemCount = 6;
 %>
-<table class="normal">
+<table>
     <tr>
 <!--    <th>ID</th> -->
         <th>Name</th>

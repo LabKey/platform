@@ -237,7 +237,7 @@ public class EnrollmentReport extends ChartReport
                         }
                         if (countNull != 0)
                         {
-                            out.println("<br><font color=red>" + countNull + " participants (out of " + countAll + ") do not have VisitDate properly recorded.</font>");
+                            out.println("<br><font class=labkey-error>" + countNull + " participants (out of " + countAll + ") do not have VisitDate properly recorded.</font>");
                         }
                     }
                     finally

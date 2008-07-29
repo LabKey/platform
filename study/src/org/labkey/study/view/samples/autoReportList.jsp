@@ -62,14 +62,13 @@
 %>
 <% if (bean.isListView())
     WebPartView.startTitleFrame(out, category, null, "100%", null); %>
-<table cellspacing="0" cellpadding="3">
+<table class="labkey-auto-report-list">
 <%
-        String shadeColor = "#EEEEEE";
         int formRowIndex = 0;
-        String bgcolor;
+        String rowClass;
         for (SpecimenVisitReportParameters factory : bean.getFactories(category))
         {
-            bgcolor= (formRowIndex++)%2==0 ? shadeColor : "#FFFFFF";
+            rowClass = (formRowIndex++)%2==0 ? "labkey-alternating-row" : "labkey-row";
             String showHideSuffix = "_" + categoryIndex + "_" + formRowIndex;
             String formName = "form" + showHideSuffix;
 %>
@@ -79,11 +78,11 @@
                 if (bean.isListView())
                 {
             %>
-            <th align="right" valign="top" bgcolor="<%= bgcolor %>"><%= h(factory.getLabel())%></th>
+            <th align="right" valign="top" class="<%= rowClass %>"><%= h(factory.getLabel())%></th>
             <%
                 }
             %>
-            <td bgcolor="<%= bgcolor %>">
+            <td class="<%= rowClass %>">
                 <%
                     if (bean.isListView())
                     {
@@ -93,7 +92,7 @@
                     }
                 %>
                 <span id="reportParameters<%= showHideSuffix %>" style="display:<%= bean.isListView() ? "none" : "block" %>">
-                    <table cellspacing="0" cellpadding="2">
+                    <table class="labkey-report-parameters">
                 <%
                     if (factory.allowsCohortFilter())
                     {
@@ -188,7 +187,7 @@
                 if (bean.isListView())
                 {
             %>
-            <td valign="top" align="left" bgcolor="<%= bgcolor %>">
+            <td valign="top" align="left" class="<%= rowClass %>">
                 <%= buttonImg("View") %>
             </td>
             <%

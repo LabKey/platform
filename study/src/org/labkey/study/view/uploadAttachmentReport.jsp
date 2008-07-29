@@ -34,19 +34,19 @@
     boolean canUseDiskFile = HttpView.currentContext().getUser().isAdministrator() && bean.getReportId() == 0;
 %>
 
-<table border=0 cellspacing=2 cellpadding=0>
+<table>
 <%
     for (ObjectError e : (List<ObjectError>) bean.getErrors().getAllErrors())
     {
-%>      <tr><td colspan=3><font color="red" class="error"><%=h(HttpView.currentContext().getMessage(e))%></font></td></tr><%
+%>      <tr><td colspan=3><font class="labkey-error"><%=h(HttpView.currentContext().getMessage(e))%></font></td></tr><%
     }
 %>
 </table>
 
 <form method="post" action="" enctype="multipart/form-data">
-    <table border=0>
+    <table>
             <tr>
-            <td class="ms-searchform">
+            <td class="labkey-form-label">
                 Report Name
             </td>
             <td>
@@ -62,7 +62,7 @@
             </td>
         </tr>
         <tr>
-            <td class="ms-searchform">
+            <td class="labkey-form-label">
                 Report Date
             </td>
             <td>
@@ -72,14 +72,14 @@
         <% if (canUseDiskFile)
         {%>
         <tr>
-            <td colspan=2 class="ms-searchform">
+            <td colspan=2 class="labkey-form-label">
                 <input type="radio" checked name="uploadType" onclick="showUpload()">Upload File &nbsp;&nbsp;
                 <input type="radio" name="uploadType" onclick="showPath()">Use a file on server <%=request.getServerName()%>
             </td>
         </tr>
         <%}%>
         <tr>
-            <td id="fileTitle" class="ms-searchform">Choose file to upload</td>
+            <td id="fileTitle" class="labkey-form-label">Choose file to upload</td>
             <td><input id=uploadFile type="file" name="formFiles[0]">
         <% if (canUseDiskFile)
         {%>

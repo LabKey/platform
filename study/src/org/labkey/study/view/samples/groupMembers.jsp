@@ -27,7 +27,7 @@
     String messages = bean.getMessages().length() > 0 ? bean.getMessages() + "<br>" : "";
 %>
 <%= messages %>
-<span class="normal">
+<span>
 <form action="showGroupMembers.post" method="POST">
     <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl()) %>">
 <%
@@ -41,7 +41,7 @@
     <div id="current-members">
         Group members
         <br>
-        <table valign="top" class="normal">
+        <table class="labkey-form">
             <tr>
                 <th>Remove</th>
                 <th>Email</th>

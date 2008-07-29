@@ -32,7 +32,7 @@
 %>
 <form action="manageRequestStatus.post" enctype="multipart/form-data" method="POST">
     <input type="hidden" name="id" value="<%= bean.getSampleRequest().getRowId()%>">
-    <table cellspacing="5" class="normal">
+    <table  class="labkey-manage-display">
         <tr>
             <th align="right">Status</th>
             <td>

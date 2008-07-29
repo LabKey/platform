@@ -33,10 +33,10 @@
     org.labkey.api.security.User user = context.getUser();
     String contextPath = context.getContextPath();
 %>
-<table cellspacing="10"><tr>
-<td valign=top>
+<table class="labkey-admin-console"><tr>
+<td>
 
-<table class="dataRegion"><%
+<table class="labkey-data-region"><%
     for (SettingsLinkType type : SettingsLinkType.values())
     { %>
 
@@ -87,8 +87,8 @@
 %></table>
 </td>
 
-<td valign=top>
-<table>
+<td>
+<table class="labkey-data-region">
     <tr><td colspan="2"><b>Core Database Configuration</b></td></tr>
     <tr><td>Server URL</td><td><%=bean.schema.getURL() %></td></tr>
     <tr><td>Product Name</td><td><%=bean.schema.getDatabaseProductName() %></td></tr>
@@ -107,15 +107,15 @@
 
     <tr><td>&nbsp;</td></tr>
 </table>
-<table class="dataRegion">
+<table class="labkey-data-region">
     <tr><td colspan="4"><b>Module Information</b></td></tr><%
 
     for (Module module : bean.modules)
     {%>
-    <tr class="header">
+    <tr class="labkey-header">
         <td style="vertical-align:middle">
             <a href="#" onclick="return toggleLink(this, false);">
-                <img border="0" src="<%= contextPath %>/_images/plus.gif">
+                <img src="<%= contextPath %>/_images/plus.gif">
             </a>
         </td>
         <td><%=h(module.getName())%></td>

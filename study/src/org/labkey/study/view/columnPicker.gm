@@ -38,7 +38,7 @@ String error = null;
 %>
 <p><%=filter(bean.caption)%></p>
 <form id="columnPickerForm" action="renderConfigureEnrollmentReport.view" method="POST">
-<table class=normal>
+<table>
 <tr><td>Dataset</td><td><select name="<%=DataSetDefinition.DATASETKEY%>" onchange="refreshForm(this.options[this.selectedIndex].value)">
     <option value="-1"></option>
 <%
@@ -105,7 +105,7 @@ if (selectedDataset != null)
 </table>
 <input type="image" src="<%=PageFlowUtil.submitSrc()%>">
 </form>
-<font color=red><%= error==null ? "" : filter(error)%></font>
+<font class=labkey-error><%= error==null ? "" : filter(error)%></font>
 <script type="text/javascript">
 function refreshForm(value)
 {

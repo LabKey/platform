@@ -41,7 +41,7 @@
     }
 %>
 
-<table border="0" cellspacing="0" cellpadding="2" class="normal">
+<table class="labkey-dataset-charts">
 <%
     for (Report report : bean.getReports())
     {

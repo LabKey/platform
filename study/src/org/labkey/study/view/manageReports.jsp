@@ -109,9 +109,9 @@
     <div class="bd">
         <form action="<%=new ActionURL(ReportsController.RenameReportAction.class, context.getContainer())%>" method="post" onsubmit="dialogHelper.hide();">
             <input type="hidden" id="renameReportId" name="reportId" value=""/>
-            <table cellpadding="0" class="normal">
+            <table class="labkey-manage-report">
                 <tr><td>View name:</td></tr>
-                <tr><td class="normal" width="275"><input id="renameReportName" name="reportName" style="width:100%" value=""></td></tr>
+                <tr><td width="275"><input id="renameReportName" name="reportName" style="width:100%" value=""></td></tr>
                 <tr><td><input type="image" src="<%=PageFlowUtil.buttonSrc("Rename")%>"></td></tr>
             </table>
         </form>
@@ -123,9 +123,9 @@
     <div class="bd">
         <form action="<%=new ActionURL(ReportsController.ReportDescriptionAction.class, context.getContainer())%>" method="post" onsubmit="descriptionDialogHelper.hide();">
             <input type="hidden" id="descReportId" name="reportId" value=""/>
-            <table cellpadding="0" class="normal">
+            <table class="labkey-manage-report">
                 <tr><td>View Description:</td></tr>
-                <tr><td class="normal" width="370"><textarea id="descReportDescription" name="reportDescription" style="width:100%" rows="6"></textarea></td></tr>
+                <tr><td width="370"><textarea id="descReportDescription" name="reportDescription" style="width:100%" rows="6"></textarea></td></tr>
                 <tr><td><input type="image" src="<%=PageFlowUtil.buttonSrc("Update")%>"></td></tr>
             </table>
         </form>
@@ -135,13 +135,13 @@
     }
 %>
 
-<table border=0 cellspacing=2 cellpadding=0>
+<table>
 <%
     if (bean.getErrors() != null)
     {
         for (ObjectError e : (List<ObjectError>) bean.getErrors().getAllErrors())
         {
-            %><tr><td colspan=3><font color="red" class="error"><%=h(HttpView.currentContext().getMessage(e))%></font></td></tr><%
+            %><tr><td colspan=3><font class="labkey-error"><%=h(HttpView.currentContext().getMessage(e))%></font></td></tr><%
         }
     }
 %>
@@ -154,7 +154,7 @@
         maxColumns--;
     }
     else if (bean.getAdminView())
-        out.print("<table cellpadding=\"0\">");
+        out.print("<table class=\"labkey-manage-report\">");
 
     Map<String, List<ManageReportsBean.ReportRecord>> live = bean.getViews();
     for (Map.Entry<String, List<ManageReportsBean.ReportRecord>> entry : live.entrySet()) {
@@ -264,7 +264,7 @@
 <%
     if (isAdmin) {
 %>
-        <table cellpadding="0" class="normal">
+        <table class="labkey-manage-report">
             <tr><td>&nbsp</td></tr>
             <tr><td colspan="4">
             [<a href="<%= h(url.relativeUrl("createQueryReport.view", null, "Study-Reports")) %>">new grid view</a>]
@@ -278,7 +278,7 @@
     }
     else if (user.isAdministrator() || context.getContainer().hasPermission(user, ACL.PERM_ADMIN)) {
 %>
-        <table cellpadding="0" class="normal">
+        <table class="labkey-manage-report">
             <tr><td>&nbsp</td></tr>
             <tr><td colspan="4">
             [<a href="<%= h(url.relativeUrl("manageReports.view", null, "Study-Reports")) %>">Manage Reports and Views</a>]
@@ -295,14 +295,14 @@
         if (!bean.getAdminView())
         {
             WebPartView.startTitleFrame(out, title, null, "100%", null);
-            out.write("<table cellpadding=\"0\" class=\"normal\">");
+            out.write("<table class=\"labkey-manage-report\">");
         }
         else
         {
-            out.write("<tr width=\"100%\"><td colspan=\"7\" class=\"normal\" style=\"padding-top:14; padding-bottom:2\" align=left><span class=\"ms-announcementtitle\">");
+            out.write("<tr width=\"100%\"><td colspan=\"7\" class=\"labkey-announcement-title\" align=left><span>");
             out.write(PageFlowUtil.filter(title));
             out.write("</span></td></tr>");
-            out.write("<tr width=\"100%\" style=\"height:1;\"><td colspan=\"7\" class=\"ms-titlearealine\"><img height=\"1\" width=\"1\" src=\"" + AppProps.getInstance().getContextPath() + "/_.gif\"></td></tr>");
+            out.write("<tr width=\"100%\" style=\"height:1;\"><td colspan=\"7\" class=\"labkey-title-area-line\"><img height=\"1\" width=\"1\" src=\"" + AppProps.getInstance().getContextPath() + "/_.gif\"></td></tr>");
         }
     }
 

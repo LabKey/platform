@@ -33,8 +33,8 @@
     String defaultView = StudyController.getDefaultView(context, bean.getDataSetDefinition().getDataSetId());
 %>
 
-<table class="normal">
-    <tr class="wpHeader">
+<table>
+    <tr class="labkey-wp-header">
         <th colspan="3" align="left">Default View<%=PageFlowUtil.helpPopup("Default View", "Select the default View that will display from the Study Datasets Web Part")%></th>
     </tr>
     <%

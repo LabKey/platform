@@ -71,7 +71,7 @@ public class SamplesWebPart extends JspView<SamplesWebPart.SamplesWebPartBean>
         private String getTypeListInnerHtml(List<? extends SpecimenTypeSummary.TypeCount> types, ActionURL parentURL)
         {
             StringBuilder builder = new StringBuilder();
-            builder.append("<table width=\"100%\" cellspacing=\"0\" cellpadding=\"0\">");
+            builder.append("<table class=\"labkey-type-list-inner-html\">");
             for (SpecimenTypeSummary.TypeCount count : types)
             {
                 ActionURL url = parentURL.clone();
@@ -79,15 +79,15 @@ public class SamplesWebPart extends JspView<SamplesWebPart.SamplesWebPartBean>
 
 
 
-                builder.append("<tr class=\"header\"><td style=\"padding-top:5px\">");
+                builder.append("<tr class=\"labkey-header\"><td style=\"padding-top:5px\">");
                 if (!children.isEmpty())
                 {
                     builder.append("<a href=\"#\" onclick=\"return toggleLink(this, false);\">");
-                    builder.append("<img border=\"0\" src=\"").append(_viewContext.getContextPath()).append("/_images/plus.gif\"></a>");
+                    builder.append("<img src=\"").append(_viewContext.getContextPath()).append("/_images/plus.gif\"></a>");
                 }
                 else
                 {
-                    builder.append("<img width=\"9\" border=\"0\" src=\"").append(_viewContext.getContextPath()).append("/_.gif\"/>");
+                    builder.append("<img width=\"9\" src=\"").append(_viewContext.getContextPath()).append("/_.gif\"/>");
                 }
                 builder.append("</td>");
 

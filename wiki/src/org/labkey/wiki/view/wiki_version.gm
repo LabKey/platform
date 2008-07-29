@@ -18,8 +18,8 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.wiki.WikiManager"%>
 <!--wiki-->
-<table width="100%" cellpadding=0>
-    <tr><td align=left class="normal" colspan="2">
+<table class="labkey-wiki-version">
+    <tr><td align=left colspan="2">
 <%
 if (!hasReadPermission)
 {
@@ -54,18 +54,18 @@ else
 
         if(fOutputMakeCurrent)
         {
-            %><tr><td align=right class="normal" colspan="2"><form method=POST action="<%=filter(makeCurrentLink)%>"><input type=image border="0" src="<%=PageFlowUtil.buttonSrc('Make Current')%>"></form></td></tr><%
+            %><tr><td align=right colspan="2"><form method=POST action="<%=filter(makeCurrentLink)%>"><input type=image src="<%=PageFlowUtil.buttonSrc('Make Current')%>"></form></td></tr><%
         }%>
 
-       <tr style="height:1;"><td colspan=2 class=ms-titlearealine><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
+       <tr style="height:1;"><td colspan=2 class="labkey-title-area-line"><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
        <tr>
-           <td align=left class="normal">
+           <td align=left>
                <i>created by:</i> <%=createdBy%><br>
                <i>date:</i> <%=created%><br>
            </td>
-           <td align=right class="normal">
-               [<a class="link" href="<%=filter(pageLink)%>">page</a>]&nbsp;
-               [<a class="link" href="<%=filter(versionsLink)%>">history</a>]&nbsp;<%
+           <td align=right>
+               [<a class="labkey-link" href="<%=filter(pageLink)%>">page</a>]&nbsp;
+               [<a class="labkey-link" href="<%=filter(versionsLink)%>">history</a>]&nbsp;<%
 
         out.print("&nbsp;[versions:");
 
@@ -79,7 +79,7 @@ else
             }
             else
             {%>
-                <a class="link" href="<%=versionLink + "&version=" + n%>"><%=n%></a><%
+                <a class="labkey-link" href="<%=versionLink + "&version=" + n%>"><%=n%></a><%
             }
         }
         out.print("]");

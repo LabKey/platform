@@ -42,7 +42,7 @@
 
 if (!c.hasPermission(user, ACL.PERM_READ))
 {
-    %><table width="100%"><tr><td align=left class="normal"><%
+    %><table width="100%"><tr><td align=left><%
     if (user.isGuest())
     {
         %>Please log in to see this data.<%
@@ -57,34 +57,34 @@ if (!c.hasPermission(user, ACL.PERM_READ))
 //if page has content, write out commands
 if (hasContent && includeLinks)
 {
-    %><table width="100%" cellpadding=0><tr><td align=right class="normal" style="height:16;"><%
+    %><table class="labkey-wp-link-panel"><tr><td align="right"><%
 
     if (updateContentLink)
     {
-        %>[<a class="link" href="<%=filter(updateContentLink)%>">edit</a>]<%
+        %>[<a class="labkey-link" href="<%=filter(updateContentLink)%>">edit</a>]<%
     }
 
     //user must have update perms
     if (manageLink)
     {
-        %>&nbsp;[<a class="link" href="<%=filter(manageLink)%>">manage</a>]<%
+        %>&nbsp;[<a class="labkey-link" href="<%=filter(manageLink)%>">manage</a>]<%
     }
 
     //user must have update perms
     if (versionsLink)
     {
-        %>&nbsp;[<a class="link" href="<%=filter(versionsLink)%>">history</a>]<%
+        %>&nbsp;[<a class="labkey-link" href="<%=filter(versionsLink)%>">history</a>]<%
     }
 
     if (printLink)
     {
-        %>&nbsp;[<a class="link" target="_blank" href="<%= filter(printLink) %>">print</a>]<%
+        %>&nbsp;[<a class="labkey-link" target="_blank" href="<%= filter(printLink) %>">print</a>]<%
     }
     %>
     </td></tr></table><%
 }
 
-%><table width="100%" cellpadding=0><tr><td><%
+%><table class="labkey-wiki-front-page"><tr><td><%
 
 //if page has no content, write out message and add content command
 if (!hasContent)
@@ -98,7 +98,7 @@ if (!hasContent)
             The Wiki web part displays a single wiki page.
             This folder does not currently contain any wiki pages to display. You can:<br>
             <ul>
-                <li><a class="link" href="<%=filter(insertLink)%>">Create a new wiki page</a> to display in this web part.</li>
+                <li><a class="labkey-link" href="<%=filter(insertLink)%>">Create a new wiki page</a> to display in this web part.</li>
             </ul>
         <%}
         else if (wikiPageCount > 0 && hasAdminPermission && !isEmbedded)
@@ -106,8 +106,8 @@ if (!hasContent)
             The Wiki web part displays a single wiki page.
             Currently there is no page selected to display. You can:<br>
             <ul>
-                <li><a class="link" href="<%=filter(customizeLink)%>">Choose an existing page to display</a> from this project or a different project.</li>
-                <li><a class="link" href="<%=filter(insertLink)%>">Create a new wiki page</a> to display in this web part.</li>
+                <li><a class="labkey-link" href="<%=filter(customizeLink)%>">Choose an existing page to display</a> from this project or a different project.</li>
+                <li><a class="labkey-link" href="<%=filter(insertLink)%>">Create a new wiki page</a> to display in this web part.</li>
             </ul><%
         }
         else
@@ -133,7 +133,7 @@ if (!hasContent)
 
             if (insertLink)
             {%>
-                [<a class="link" href="<%=filter(insertLink)%>">add content</a>]
+                [<a class="labkey-link" href="<%=filter(insertLink)%>">add content</a>]
             <%}
         }
     }
@@ -149,7 +149,7 @@ else
 
     for (a in wiki.attachments)
     {
-        %><a class="link" href="<%=filter(a.getDownloadUrl("Wiki"))%>"><img border=0 src="<%=request.getContextPath()%><%=filter(a.getFileIcon())%>">&nbsp;<%=filter(a.name)%></a><br><%
+        %><a class="labkey-link" href="<%=filter(a.getDownloadUrl("Wiki"))%>"><img src="<%=request.getContextPath()%><%=filter(a.getFileIcon())%>">&nbsp;<%=filter(a.name)%></a><br><%
     }
 }
 %></td></tr></table>

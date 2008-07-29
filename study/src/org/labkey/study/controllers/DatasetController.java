@@ -344,13 +344,13 @@ public class DatasetController extends BaseStudyController
             int modified = 0;
 
             out.write("<table>\n");
-            out.write("<tr class=\"wpHeader\"><th colspan=\"2\" class=\"wpTitle\" align=\"left\">Item Changes</th></tr>");
+            out.write("<tr class=\"labkey-wp-header\"><th colspan=\"2\" align=\"left\">Item Changes</th></tr>");
             out.write("<tr><td colspan=\"2\">Comment:&nbsp;<i>" + PageFlowUtil.filter(event.getComment()) + "</i></td></tr>");
             out.write("<tr><td/>\n");
 
             for (Map.Entry<String, String> entry : oldData.entrySet())
             {
-                out.write("<tr><td class=\"ms-searchform\">");
+                out.write("<tr><td class=\"labkey-form-label\">");
                 out.write(entry.getKey());
                 out.write("</td><td>");
 
@@ -376,7 +376,7 @@ public class DatasetController extends BaseStudyController
             for (Map.Entry<String, String> entry : newData.entrySet())
             {
                 modified++;
-                out.write("<tr><td class=\"ms-searchform\">");
+                out.write("<tr><td class=\"labkey-form-label\">");
                 out.write(entry.getKey());
                 out.write("</td><td>");
 

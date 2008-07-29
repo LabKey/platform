@@ -92,7 +92,7 @@
     if (!bean.getReports().containsKey(viewName) && ((!isHidden && !context.getUser().isGuest()) || (context.hasPermission(ACL.PERM_ADMIN))))
     {
     %>
-    <td class=normal>[<a href="<%=bean.getCustomizeURL()%>">customize&nbsp;view</a>]</td>
+    <td>[<a href="<%=bean.getCustomizeURL()%>">customize&nbsp;view</a>]</td>
     <%
     }
     %>

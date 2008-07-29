@@ -28,7 +28,7 @@
 <%=errors%>
 <form action="createDataSet.post" method="POST">
     <input type="hidden" name="action" value="create">
-    <table class="normal">
+    <table>
         <tr>
             <th align="right">Dataset Id (Integer)</th>
             <td>

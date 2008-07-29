@@ -565,7 +565,7 @@
     {
         var elem = Ext.get("status");
         elem.update(msg);
-        elem.dom.className = "status-error";
+        elem.dom.className = "labkey-status-error";
         elem.setVisible(true);
     }
 
@@ -573,7 +573,7 @@
     {
         var elem = Ext.get("status");
         elem.update(msg);
-        elem.dom.className = "status-info";
+        elem.dom.className = "labkey-status-info";
         elem.setDisplayed(true);
         elem.setVisible(true);
         if(autoClear)
@@ -596,8 +596,8 @@
     function switchToSource()
     {
         setTabStripVisible(true);
-        document.getElementById("wiki-tab-visual").className = "tab-inactive";
-        document.getElementById("wiki-tab-source").className = "tab-active";
+        document.getElementById("wiki-tab-visual").className = "labkey-wiki-tab-inactive";
+        document.getElementById("wiki-tab-source").className = "labkey-wiki-tab-active";
         if(tinyMCE.getEditorId("body"))
             tinyMCE.removeMCEControl(tinyMCE.getEditorId("body"));
         _editor = "source";
@@ -629,8 +629,8 @@
         else
         {
             setTabStripVisible(true);
-            document.getElementById("wiki-tab-visual").className = "tab-active";
-            document.getElementById("wiki-tab-source").className = "tab-inactive";
+            document.getElementById("wiki-tab-visual").className = "labkey-wiki-tab-active";
+            document.getElementById("wiki-tab-source").className = "labkey-wiki-tab-inactive";
             if(!tinyMCE.getEditorId("body"))
                 tinyMCE.addMCEControl(document.getElementById(_idPrefix + "body"), "body");
             _editor = "visual";
@@ -686,9 +686,9 @@
     {
         Ext.get("wiki-tab-strip").setDisplayed(isVisible);
         if(isVisible)
-            Ext.get("wiki-tab-content").addClass("tab-content");
+            Ext.get("wiki-tab-content").addClass("labkey-wiki-tab-content");
         else
-            Ext.get("wiki-tab-content").removeClass("tab-content");
+            Ext.get("wiki-tab-content").removeClass("labkey-wiki-tab-content");
     }
 
     function updateExistingAttachments(attachments)
@@ -730,7 +730,7 @@
 
                 cell = row.insertCell(2);
                 cell.id = "wiki-ea-del-" + idx;
-                cell.innerHTML = "[<span class='command-link' onclick='onDeleteAttachment(" + idx + ")'>delete</span>]";
+                cell.innerHTML = "[<span class='labkey-command-link' onclick='onDeleteAttachment(" + idx + ")'>delete</span>]";
             }
         }
     }
@@ -741,7 +741,7 @@
 
         getExistingAttachmentIconImg(index).src = "<%=me.getViewContext().getContextPath()%>/_icons/_deleted.gif";
         row.cells[1].style.textDecoration = "line-through";
-        row.cells[2].innerHTML = "[<span class='command-link' onclick='onUndeleteAttachment(" + index + ")'>undelete</span>]"
+        row.cells[2].innerHTML = "[<span class='labkey-command-link' onclick='onUndeleteAttachment(" + index + ")'>undelete</span>]"
                 + "<input type='hidden' name='toDelete' value='" + _attachments[index].name + "'/>";
 
         //add a prop so we know we need to save the attachments
@@ -755,7 +755,7 @@
 
         getExistingAttachmentIconImg(index).src = _attachments[index].iconUrl;
         row.cells[1].style.textDecoration = "";
-        row.cells[2].innerHTML = "[<span class='command-link' onclick='onDeleteAttachment(" + index + ")'>delete</span>]";
+        row.cells[2].innerHTML = "[<span class='labkey-command-link' onclick='onDeleteAttachment(" + index + ")'>delete</span>]";
     }
 
     function getFilesForm()
@@ -814,7 +814,7 @@
         if(cell)
         {
             cell.setAttribute("nobreak", "1");
-            cell.innerHTML = "[<span class='command-link' onclick='onRemoveNewAttachment(" + index + ")'>remove</span>]&nbsp;"
+            cell.innerHTML = "[<span class='labkey-command-link' onclick='onRemoveNewAttachment(" + index + ")'>remove</span>]&nbsp;"
                     + getFileName(fileInput.value);
         }
 
@@ -1091,109 +1091,16 @@
 
 </script>
 
-<style type="text/css">
-    .status-info
-    {
-        width: 99%;
-        text-align: center;
-        background-color: #FFDF8C;
-        border: 1px solid #FFAD6A;
-        padding: 2px;
-        font-weight: bold;
-    }
-    .status-error
-    {
-        width: 99%;
-        text-align: center;
-        background-color: #FF5A7A;
-        border: 1px solid #C11B17;
-        color: #FFFFFF;
-        font-weight: bold;
-    }
-    table.form-layout
-    {
-        width: 99%;
-    }
-    .stretch-input
-    {
-        width: 100%;
-    }
-    .button-bar
-    {
-        padding-top: 4px;
-        padding-bottom: 4px;
-        width: 99%;
-    }
-    .button-bar-right
-    {
-        text-align: right;
-        width: 50%;
-    }
-    .button-bar-left
-    {
-        text-align: left;
-        width: 50%
-    }
-    .tab-container
-    {
-        width: 100%;
-    }
-    .tab-active
-    {
-        border-left: 1px solid #89A1B4;
-        border-right: 1px solid #89A1B4;
-        border-top: 1px solid #89A1B4;
-        font-weight: bold;
-        padding: 4px 8px 4px 8px;
-        border-bottom: none;
-        background-color: #E1ECFC;
-        cursor: pointer;
-    }
-    .tab-inactive
-    {
-        border: 1px solid #89A1B4;
-        font-weight: normal;
-        background-color: #D1DCEC;
-        padding: 4px 8px 4px 8px;
-        cursor: pointer;
-    }
-    .tab-blank
-    {
-        border-bottom: 1px solid #89A1B4;
-        padding: 4px 8px 4px 8px;
-    }
-    .tab-content
-    {
-        border-left: 1px solid #89A1B4;
-        border-right: 1px solid #89A1B4;
-        border-bottom: 1px solid #89A1B4;
-    }
-    .ms-searchform
-    {
-        width: 1%;
-    }
-    .field-content
-    {
-        width: 99%;
-    }
-    .command-link
-    {
-        cursor: pointer;
-        color: #<%=WebTheme.toRGB(org.labkey.api.view.WebTheme.getTheme().getTitleColor())%>;
-        text-decoration:none;
-    }
-</style>
+<div id="status" class="labkey-status-info" style="display:none;">(status)</div>
 
-<div id="status" class="status-info" style="display:none;">(status)</div>
-
-<table class="button-bar">
+<table class="labkey-button-bar" width=99%;>
     <tr>
-        <td class="button-bar-left" nowrap="true">
+        <td class="labkey-button-bar-left" nowrap="true">
             <input type="image" src="<%=PageFlowUtil.buttonSrc("Save & Close")%>" onclick="onFinish()"/>
             <input id='wiki-button-save' type="image" src="<%=PageFlowUtil.buttonSrc(saveButtonCaption, "disabled")%>" onclick="onSave()"/>
             <input type="image" src="<%=PageFlowUtil.buttonSrc("Cancel")%>" onclick="onCancel()"/>
         </td>
-        <td class="button-bar-right" nowrap="true">
+        <td class="labkey-button-bar-right" nowrap="true">
             <% if(model.canUserDelete()) { %>
             <input type="image" id="<%=ID_PREFIX%>button-delete"
                    src="<%=PageFlowUtil.buttonSrc("DeletePage", "disabled")%>" onclick="onDeletePage()"/>
@@ -1205,25 +1112,25 @@
         </td>
     </tr>
 </table>
-<table style="width:99%" cellpadding="0" cellspacing="0">
+<table class="labkey-wiki-edit">
     <tr>
         <td style="width:99%;vertical-align:top;">
-            <table class="form-layout">
+            <table class="labkey-form-layout">
                 <tr>
-                    <td class="ms-searchform" title="This field is required">Name<span class="labkey-error">*</span></td>
-                    <td class="field-content">
+                    <td class="labkey-form-label" title="This field is required">Name<span class="labkey-error">*</span></td>
+                    <td class="labkey-wiki-field-content">
                         <input type="text" name="name" id="<%=ID_PREFIX%>name" size="80" onchange="onChangeName()"/>
                     </td>
                 </tr>
                 <tr>
-                    <td class="ms-searchform">Title</td>
-                    <td class="field-content">
+                    <td class="labkey-form-label">Title</td>
+                    <td class="labkey-wiki-field-content">
                         <input type="text" name="title" id="<%=ID_PREFIX%>title" size="80" onkeypress="setWikiDirty()"/>
                     </td>
                 </tr>
                 <tr>
-                    <td class="ms-searchform">Parent</td>
-                    <td class="field-content">
+                    <td class="labkey-form-label">Parent</td>
+                    <td class="labkey-wiki-field-content">
                         <select name="parent" id="<%=ID_PREFIX%>parent" onkeypress="setWikiDirty()" onchange="setWikiDirty()">
                             <option <%= model.getParent() == -1 ? "selected='1'" : "" %> value="-1">[none]</option>
                             <%
@@ -1241,21 +1148,21 @@
                     </td>
                 </tr>
                 <tr>
-                    <td class="ms-searchform" title="This field is required">Body<span class="labkey-error">*</span>
+                    <td class="labkey-form-label" title="This field is required">Body<span class="labkey-error">*</span>
                         <br/><span id="wiki-current-format"></span>
                     </td>
-                    <td class="field-content">
-                        <table class="tab-container" cellspacing="0">
+                    <td class="labkey-wiki-field-content">
+                        <table class="labkey-tab-container">
                             <tr id="wiki-tab-strip" style="display:none">
-                                <td class="tab-blank">&nbsp;</td>
-                                <td id="wiki-tab-visual" class="tab-active" onclick="userSwitchToVisual()">Visual</td>
-                                <td id="wiki-tab-source" class="tab-inactive" onclick="userSwitchToSource()">Source</td>
-                                <td class="tab-blank" style="width:100%">&nbsp;</td>
+                                <td class="labkey-wiki-tab-blank">&nbsp;</td>
+                                <td id="wiki-tab-visual" class="labkey-wiki-tab-active" onclick="userSwitchToVisual()">Visual</td>
+                                <td id="wiki-tab-source" class="labkey-wiki-tab-inactive" onclick="userSwitchToSource()">Source</td>
+                                <td class="labkey-wiki-tab-blank" style="width:100%">&nbsp;</td>
                             </tr>
                             <tr>
                                 <td colspan="4" id="wiki-tab-content">
                                     <form action="">
-                                    <textarea rows="30" cols="80" class="stretch-input" id="<%=ID_PREFIX%>body"
+                                    <textarea rows="30" cols="80" class="labkey-stretch-input" id="<%=ID_PREFIX%>body"
                                               name="body" onkeypress="setWikiDirty()" onchange="setWikiDirty()"></textarea>
                                     </form>
                                 </td>
@@ -1264,8 +1171,8 @@
                     </td>
                 </tr>
                 <tr>
-                    <td class="ms-searchform">Files</td>
-                    <td class="field-content">
+                    <td class="labkey-form-label">Files</td>
+                    <td class="labkey-wiki-field-content">
                         <form action="attachFiles.post" method="POST" enctype="multipart/form-data" id="form-files">
                             <table id="wiki-existing-attachments">
                             </table>
@@ -1369,7 +1276,7 @@
     </tr>
 </table>
 <div id="<%=ID_PREFIX%>window-change-format" class="x-hidden">
-    <table cellpadding="2">
+    <table class="labkey-wiki-page-format">
         <tr>
             <td>
                 <span style="font-weight:bold;color:#FF0000">WARNING:</span>

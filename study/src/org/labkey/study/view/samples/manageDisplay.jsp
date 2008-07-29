@@ -32,7 +32,7 @@
 
 <%=PageFlowUtil.getStrutsError(request, "main")%>
 <form action="handleUpdateDisplaySettings.post" method="POST">
-    <table cellspacing="5" class="normal" width="500">
+    <table class="labkey-manage-display" width=500>
         <tr>
             <td colspan="2">The specimen request system can display warning icons when one or zero vials of any primary specimen are available for request.  The icon will appear next to all vials of that the primary specimen.</td>
         </tr>

@@ -37,7 +37,7 @@
     String deleteURL = "deleteRequirement.view?id=" + requirement.getRequestId() +
             "&requirementId=" + requirement.getRowId();
 %>
-<table cellspacing="5" class="normal">
+<table class="labkey-manage-display">
     <tr>
         <td align="left"><%= textLink("View Request", "manageRequest.view?id=" + requirement.getRequestId())%></td>
     </tr>
@@ -45,11 +45,11 @@
     if (bean.isRequestManager() && bean.isFinalState())
     {
 %>
-    <tr class="wpHeader">
+    <tr class="labkey-wp-header">
         <th align="left">Requirement Notes</th>
     </tr>
     <tr>
-        <td class="ms-searchform">
+        <td class="labkey-form-label">
             This request is in a final state; no changes are allowed.<br>
             To make changes, you must <a href="manageRequestStatus.view?id=<%= requirement.getRequestId() %>">
             change the request's status</a> to a non-final state.
@@ -58,7 +58,7 @@
 <%
     }
 %>
-    <tr class="wpHeader">
+    <tr class="labkey-wp-header">
         <th align="left">Requirement Details</th>
     </tr>
     <tr>
@@ -98,7 +98,7 @@
         if (bean.isRequestManager())
         {
 %>
-    <tr class="wpHeader">
+    <tr class="labkey-wp-header">
         <th align="left">Change Status</th>
     </tr>
 <%
@@ -110,7 +110,7 @@
             <form action="manageRequirement.post" enctype="multipart/form-data" method="post">
                 <input type="hidden" name="id" value="<%= requirement.getRequestId() %>">
                 <input type="hidden" name="requirementId" value="<%= requirement.getRowId() %>">
-                <table class="normal">
+                <table>
                     <tr>
                         <td>&nbsp;</td>
                         <th align="left">
@@ -170,7 +170,7 @@
             }
         }
     %>
-    <tr class="wpHeader">
+    <tr class="labkey-wp-header">
         <th align="left">History</th>
     </tr>
     <tr>

@@ -46,7 +46,7 @@
             String message = getMessage(e);
             if (messages.add(message))
             {
-                %><font color=red><%=h(message)%></font><br><%
+                %><font class="labkey-error"><%=h(message)%></font><br><%
             }
         }
     }
@@ -55,7 +55,7 @@
     {
 %>
     <form action="bulkUpdate.post" method="POST">
-        <table class="normal">
+        <table>
             <tr>
                 <th>First Name</th>
                 <th>Last Name</th>
@@ -91,7 +91,7 @@
     else
     {
 %>
-    <span class="normal">There is no data to update.</span><br>
+    <span>There is no data to update.</span><br>
     <%= buttonLink("Grid View", "begin.view") %>
 <%
     }

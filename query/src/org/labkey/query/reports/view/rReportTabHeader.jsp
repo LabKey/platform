@@ -39,18 +39,18 @@
             out.write("<input type=\"hidden\" name=\"" + param.getKey() + "\" value=\"" + h(param.getValue()) + "\">");
     }
 %>
-    <table cellspacing=0 cellpadding=0 width="100%">
+    <table class="labkey-tab-strip">
         <tr>
-            <td class="navtab" style="border-top:none;border-left:none;border-right:none;">
+            <td class="labkey-nav-tab-space">
                 <img src="<%=request.getContextPath()%>/_.gif" height=1 width=5>
             </td>
-            <td class=<%=ReportsController.TAB_SOURCE.equals(currentTab) ? "navtab-selected" : "navtab-inactive"%>><a <%=ReportsController.TAB_SOURCE.equals(currentTab) ? "" : "href=\"javascript:document.forms[0].submit()\""%>>Source&nbsp;</a></td>
-            <td class=<%=ReportsController.TAB_VIEW.equals(currentTab) ? "navtab-selected" : "navtab-inactive"%>><a <%=ReportsController.TAB_VIEW.equals(currentTab) ? "" : "href=\"javascript:document.forms[0].submit()\""%>>View&nbsp;</a></td>
-            <td class="navtab" style="border-top:none;border-left:none;border-right:none;text-align:right;" width=100%>
+            <td class=<%=ReportsController.TAB_SOURCE.equals(currentTab) ? "labkey-nav-tab-selected" : "labkey-nav-tab-inactive"%>><a <%=ReportsController.TAB_SOURCE.equals(currentTab) ? "" : "href=\"javascript:document.forms[0].submit()\""%>>Source&nbsp;</a></td>
+            <td class=<%=ReportsController.TAB_VIEW.equals(currentTab) ? "labkey-nav-tab-selected" : "labkey-nav-tab-inactive"%>><a <%=ReportsController.TAB_VIEW.equals(currentTab) ? "" : "href=\"javascript:document.forms[0].submit()\""%>>View&nbsp;</a></td>
+            <td class="labkey-nav-tab-space" style="text-align:right;" width=100%>
                 <img src="<%=request.getContextPath()%>/_.gif" height=1 width=5>
             </td>
         </tr>
         <tr>
-            <td colspan="4" class="navtab" style="border-top:none;text-align:left;" width=100%>
+            <td colspan="4" class="labkey-nav-tab" style="border-top:none;text-align:left;" width=100%>
                 <img src="<%=request.getContextPath()%>/_.gif" height=1 width=5>
     

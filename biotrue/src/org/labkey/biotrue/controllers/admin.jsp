@@ -35,7 +35,7 @@
 <labkey:errors />
 
 <form action="" method="post">
-    <table class="normal">
+    <table>
 <%
     for (Server server : servers) {
         BtServer btServer = BtServer.fromId(server.getRowId());
@@ -70,7 +70,7 @@
     }
 %>
     </table>
-    <table class="normal">
+    <table>
         <tr><td>
             <%=PageFlowUtil.buttonLink("Back to BioTrue", context.cloneActionURL().setAction("begin.view"))%>&nbsp;
             <input type="image" src="<%=PageFlowUtil.buttonSrc("Delete Selected Servers")%>">&nbsp;

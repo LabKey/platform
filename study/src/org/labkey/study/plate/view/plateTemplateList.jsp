@@ -32,7 +32,7 @@
     PlateTemplate[] plateTemplates = me.getModelBean().getTemplates();
 %>
 <h4>Available Plate Templates</h4>
-<table class="normal">
+<table>
 <%
     for (PlateTemplate template : plateTemplates)
     {

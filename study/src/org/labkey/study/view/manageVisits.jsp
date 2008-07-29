@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.labkey.study.model.Visit"%>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
-<table class="normal">
+<table>
 <%
     if (getVisits().length > 0)
     {
@@ -53,7 +53,7 @@
     {
 %>
 <p>
-<table class="normal">
+<table>
     <th>&nbsp;</th>
     <th>Label</th>
     <th>Sequence</th>

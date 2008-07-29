@@ -66,12 +66,7 @@
         out.write(viewLink);
     }
 
-String shadeColor = "#EEEEEE";
-// UNDONE: move into stylesheet
-String borderColor = "#808080";
-//String styleCol =" style=\"border-right:solid 1px " + borderColor + "\"";
-//String styleTD = " style=\"border-right:solid 1px " + borderColor + ";\"";
-String styleTH=" style=\"border-right:solid 1px " + borderColor + "; border-top:solid 2px " + borderColor + ";\"";
+
 %>
 <%
 if (bean.showCohorts)
@@ -97,18 +92,18 @@ Cohort: <select name="cohortId" onchange="document.changeCohortForm.submit()">
 }
 %>
 <br><br>
-<table border="0" cellspacing="0" cellpadding="2" class="normal" style="border-bottom:solid 2px <%=borderColor%>;">
+<table class="labkey-alternating-grid labkey-show-column-separators">
 
-    <tr bgcolor="<%=shadeColor%>">
-        <td <%=styleTH%>><img alt="" width=60 height=1 src="<%=contextPath%>/_.gif"></td>
-        <th bgcolor=<%=shadeColor%> <%=styleTH%>>ALL</th><%
+    <tr class="labkey-alternating-grid-header labkey-alternating-row">
+        <td><img alt="" width=60 height=1 src="<%=contextPath%>/_.gif"></td>
+        <th>ALL</th><%
 
         for (Visit visit : visits)
         {
             if (!bean.showAll && !visit.isShowByDefault())
                 continue;
             String label = visit.getDisplayString();
-            %><td align="center" valign="top" bgcolor=<%=shadeColor%> <%=styleTH%>><%= h(label) %></td><%
+            %><td class="labkey-alternating-grid-cell" align="center" valign="top"><%= h(label) %></td><%
             //visitSummary.view?id=411.0
         }
         %>
@@ -146,21 +141,21 @@ Cohort: <select name="cohortId" onchange="document.changeCohortForm.submit()">
                 category = "Uncategorized";
             if (!category.equals(prevCategory))
             {
-                %><tr><th align="left" bgcolor="#AAAAAA" colspan="<%= visits.length + 2%>"><%= h(category) %></th></tr><%
+                %><tr><th class="labkey-alternating-grid-cell" align="left" bgcolor="#AAAAAA" colspan="<%= visits.length + 2%>"><%= h(category) %></th></tr><%
             }
             prevCategory = category;
         }
 
         String dataSetLabel = (dataSet.getLabel() != null ? dataSet.getLabel() : "" + dataSet.getDataSetId());
-        String className= row%2==0 ? "studyShaded" : "studyCell";
+        String className= row%2==0 ? "labkey-alternating-row" : "labkey-row";
         %>
-        <tr><td align="center" class="<%=className%>"><%= h(dataSetLabel) %><%
+        <tr class="<%= className %>" ><td align="center" class="labkey-alternating-grid-cell"><%= h(dataSetLabel) %><%
         if (null != StringUtils.trimToNull(dataSet.getDescription()))
         {
             %><%=PageFlowUtil.helpPopup(dataSetLabel, dataSet.getDescription())%><%
         }
         %></td>
-        <th class="<%=className%>"><%
+        <th class="labkey-alternating-grid-cell"><%
         int totalCount = 0;
         for (Visit visit : visits)
         {
@@ -214,7 +209,7 @@ Cohort: <select name="cohortId" onchange="document.changeCohortForm.submit()">
                 innerHtml = count == 0 ? "&nbsp;" : "" + count;
             }
 
-            %><td align="center" class="<%=className%>"><%
+            %><td align="center" class="labkey-alternating-grid-cell"><%
 
             if ((isRequired || isOptional || count > 0) && userCanRead)
             {

@@ -26,12 +26,8 @@
     Map<String,Throwable> moduleFailures = ModuleLoader.getInstance().getModuleFailures();
 
 %>
-    <table cellspacing="0" cellpadding="1"
-           id="dataregion_Gen Runs"
-           style="border-top: 1px solid rgb(170, 170, 170);
-           border-left: 1px solid rgb(170, 170, 170);
-           border-bottom: 1px solid rgb(170, 170, 170);"
-           class="grid">
+    <table id="dataregion_Gen Runs"
+           class="labkey-grid">
         <tr><th><b>Module name</b></th><th><b>Stack trace</b></th></tr>
 
 <%

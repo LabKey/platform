@@ -56,7 +56,7 @@ The saved view can also be secured so that only a subset of users (e.g. users fr
 %>
 <%    WebPartView.startTitleFrame(out, "Configure", null, "600", null);%>
     <form action="exportExcel.view" method=GET>
-    <table><tr><th class="ms-searchform">Site</th><td><select <%= isAdmin ? "onClick='siteId_onChange(this)'" : ""%> id=siteId name=siteId><option value="0">ALL</option>
+    <table><tr><th class="labkey-form-label">Site</th><td><select <%= isAdmin ? "onClick='siteId_onChange(this)'" : ""%> id=siteId name=siteId><option value="0">ALL</option>
 <%
 for (Site site : sites)
 {
@@ -69,7 +69,7 @@ for (Site site : sites)
 <%if (isAdmin)
     {
     %>
-        <tr><th class="ms-searchform">Report name</th><td><input style="width:250;" type=text id=label name=label value=""></td></tr>
+        <tr><th class="labkey-form-label">Report name</th><td><input style="width:250;" type=text id=label name=label value=""></td></tr>
 <%}%>
 </table>
 <input type=image src="<%=PageFlowUtil.buttonSrc("Export")%>">

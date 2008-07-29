@@ -70,7 +70,7 @@ else
     <% } %>
 
     <% if (bean.getRunsWithoutPermission().size() > 0) { %>
-        <font color="red">The <%= bean.getObjectType() %><%= bean.getObjects().size() > 1 ? "s" : "" %> are also referenced by the following
+        <font class="labkey-error">The <%= bean.getObjectType() %><%= bean.getObjects().size() > 1 ? "s" : "" %> are also referenced by the following
             experiment run<%= bean.getRunsWithoutPermission().size() > 1 ? "s" : "" %>, which you do not have permission to delete:</font>
 
         <ul>

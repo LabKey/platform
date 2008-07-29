@@ -36,7 +36,7 @@
     {
         String value = bean.props.get(key);
 %>
-<tr><td class="ms-searchform"><%=key%></td><td><%=value%></td></tr><%
+<tr><td class="labkey-form-label"><%=key%></td><td><%=value%></td></tr><%
     }
 %>
 </table><br>

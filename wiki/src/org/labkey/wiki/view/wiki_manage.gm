@@ -89,20 +89,20 @@ function orderModule(listName, down, targetName)
 		}
   %>
   <tr>
-    <td class='ms-searchform'>Name</td>
-    <td class='ms-vb'><input type="text" size="40" name="name" value="<%= filter(wiki.getName()) %>"></td>
+    <td class='labkey-form-label'>Name</td>
+    <td><input type="text" size="40" name="name" value="<%= filter(wiki.getName()) %>"></td>
   </tr>
   <tr>
-    <td class='ms-vb'></td>
-    <td class='ms-vb'>WARNING: Changing a page's name will break any links to the page.</td>
+    <td></td>
+    <td>WARNING: Changing a page's name will break any links to the page.</td>
   </tr>
   <tr>
-    <td class='ms-searchform'>Title</td>
-    <td class='ms-vb'><input type="text" size="40" name="title" value="<%= filter(wiki.latestVersion().getTitle()) %>"></td>
+    <td class='labkey-form-label'>Title</td>
+    <td><input type="text" size="40" name="title" value="<%= filter(wiki.latestVersion().getTitle()) %>"></td>
   </tr>
   <tr>
-    <td class='ms-searchform'>Parent</td>
-    <td class='ms-vb'><select name="parent" onChange="document.manage.nextAction.value = 'manage'; submit();">
+    <td class='labkey-form-label'>Parent</td>
+    <td><select name="parent" onChange="document.manage.nextAction.value = 'manage'; submit();">
         <option <%= wiki.getParent() == -1 ? "selected" : "" %> value="-1">[none]</option>
 <%
     for (possibleParent in possibleParents)
@@ -123,8 +123,8 @@ function orderModule(listName, down, targetName)
 
 </tr>
   <tr>
-    <td class='ms-searchform'>Sibling Order</td>
-    <td class='ms-vb'>
+    <td class='labkey-form-label'>Sibling Order</td>
+    <td>
         <table>
             <tr>
                 <td>
@@ -153,8 +153,8 @@ function orderModule(listName, down, targetName)
         {
 %>
   <tr>
-    <td class='ms-searchform'>Child Order</td>
-    <td class='ms-vb'><table>
+    <td class='labkey-form-label'>Child Order</td>
+    <td><table>
             <tr>
                 <td>
                     <select name="children" size="10">
@@ -188,7 +188,7 @@ function orderModule(listName, down, targetName)
 <input type="image" src="<%=PageFlowUtil.buttonSrc('Edit Content')%>" value="Edit Content" onClick="document.manage.nextAction.value = 'editWiki'; return true;" title="Edit Content and Attachments">
 <% if (deleteLink != null)
     {
-    %><a href="<%= deleteLink %>"><img border="0" src="<%=PageFlowUtil.buttonSrc('Delete Page')%>" title="Delete this Page"></a><%
+    %><a href="<%= deleteLink %>"><img src="<%=PageFlowUtil.buttonSrc('Delete Page')%>" title="Delete this Page"></a><%
     }
 %>
 

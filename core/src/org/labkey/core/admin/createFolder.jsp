@@ -35,7 +35,7 @@
 
 <form name="createForm" action="createFolder.view" method="post">
     <%=formatMissedErrors("form")%>
-    <table border=0 cellspacing=2 cellpadding=0 class="dataRegion">
+    <table class="labkey-form labkey-create-folder">
         <tr><td colspan=2><%
         if (!c.isRoot())
         {
@@ -47,11 +47,11 @@
         } %>
         </tr>
         <tr>
-            <td class="ms-searchform">Name:</td>
+            <td class="labkey-form-label">Name:</td>
             <td><input id="name" name="name" value="<%=h(name)%>"/></td>
         </tr>
         <tr>
-            <td class="ms-searchform">
+            <td class="labkey-form-label">
                 Folder Type:
             </td>
             <td>
@@ -82,7 +82,7 @@
         </tr>
     </table>
 
-    <table border=0 cellspacing=2 cellpadding=0>
+    <table class="labkey-small-button-bar">
         <tr>
             <td><input type="image" src='<%=PageFlowUtil.buttonSrc("Next")%>'></td>
             <td><%
@@ -93,7 +93,7 @@
                 else
                 {
                     %><a href="createFolder.view" onclick="window.history.back(); return false;"><%
-                } %><img border=0 src='<%=PageFlowUtil.buttonSrc("Cancel")%>'></a></td>
+                } %><img src='<%=PageFlowUtil.buttonSrc("Cancel")%>'></a></td>
         </tr>
     </table>
 </form>

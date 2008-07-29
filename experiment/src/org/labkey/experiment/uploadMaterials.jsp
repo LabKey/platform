@@ -33,8 +33,8 @@
 <labkey:errors />
 <table>
     <tr>
-        <td class="ms-searchform">Name</td>
-        <td class="ms-vb">
+        <td class="labkey-form-label">Name</td>
+        <td>
             <% if (form.isImportMoreSamples() || form.getNameReadOnly()) {  %>
                 <input type="hidden" name="importMoreSamples" value="<%=h(form.isImportMoreSamples())%>"/>
                 <input type="hidden" name="nameReadOnly" value="<%=h(form.getNameReadOnly())%>"/>
@@ -48,24 +48,24 @@
     </tr>
     <% if (form.isImportMoreSamples()) { %>
         <tr>
-            <td class="ms-searchform">Update Options</td>
-            <td class="ms-vb">This dataset already exists.  Please choose how the uploaded samples should be merged with the existing samples.<br>
+            <td class="labkey-form-label">Update Options</td>
+            <td>This dataset already exists.  Please choose how the uploaded samples should be merged with the existing samples.<br>
                 <labkey:radio name="overwriteChoice" value="<%=UploadMaterialSetForm.OverwriteChoice.ignore%>" currentValue="<%=form.getOverwriteChoice()%>" /> Skip new samples that already exist.<br>
                 <labkey:radio name="overwriteChoice" value="<%=UploadMaterialSetForm.OverwriteChoice.replace%>" currentValue="<%=form.getOverwriteChoice()%>" /> Replace existing samples with new ones.<br>
             </td>
         </tr>
     <% } %>
     <tr>
-        <td class="ms-searchform">Sample Set Data</td>
-        <td class="ms-vb">
+        <td class="labkey-form-label">Sample Set Data</td>
+        <td>
             Sample set uploads must formatted as tab separated values (TSV). Copy/paste from Microsoft Excel works well.<br>
             The first row should contain column names, and subsequent rows should contain the data.<br>
             <textarea id="textbox" onchange="updateIds(this)" rows=25 cols="120" style="width: 100%;" name="data" wrap="off"><%=h(form.getData())%></textarea>
         </td>
     </tr>
     <tr>
-        <td class="ms-searchform">Id Columns<%= helpPopup("Id Columns", "Id columns must form a unique key for every row.")%></td>
-        <td class="ms-vb">
+        <td class="labkey-form-label">Id Columns<%= helpPopup("Id Columns", "Id columns must form a unique key for every row.")%></td>
+        <td>
                 <% if (form.isImportMoreSamples() && sampleSet != null && sampleSet.hasIdColumns())
                 { %>
                     <%= h(sampleSet.getIdCol1().getName()) %><%

@@ -45,32 +45,32 @@
         if (action.isRootAction() &&action.getDescription() != null)
         {
             %><%=action.getDescription()%><%
-            %><p><a href="<%=h(action.getHref())%>"><img src="<%=PageFlowUtil.buttonSrc(action.getLabel())%>" border="0"/></a></p><%
+            %><p><a href="<%=h(action.getHref())%>"><img src="<%=PageFlowUtil.buttonSrc(action.getLabel())%>"/></a></p><%
         }
     }
     for (PipelineProvider.FileAction action : parent.getActions())
     {
         if (action.isRootAction() && action.getDescription() == null)
         {
-            %><a href="<%=h(action.getHref())%>"><img src="<%=PageFlowUtil.buttonSrc(action.getLabel())%>" border="0"/></a>&nbsp;<%
+            %><a href="<%=h(action.getHref())%>"><img src="<%=PageFlowUtil.buttonSrc(action.getLabel())%>"/></a>&nbsp;<%
         }
     }%>
 
-<table cellspacing="0" cellpadding="0" style="width:100%; height:120px">
+<table class="labkey-pipeline-setup">
 <tr><td valign="top"><%
 
     //
     // DIRECTORY TREE
     //
-    %><table  cellspacing="0" cellpadding="2" style="width:240px;"><%
+    %><table class="labkey-directory-tree"><%
 
     for (int i=0 ; i<parents.size() ; i++)
     {
         PipelineProvider.FileEntry entry = parents.get(i);
         boolean bold = i == parents.size()-1;
-        %><tr><td colspan=5 class="normal" style="padding-left:<%=i*10%>;"><%
+        %><tr><td colspan=5 style="padding-left:<%=i*10%>;"><%
         if (bold) {%><b><%}
-        %><a style="width:100%" href="<%=h(entry.getHref())%>"><img border="0" src="<%=h(entry.getImageURL()) %>">&nbsp;<%=f(entry.getLabel())%></a><%
+        %><a style="width:100%" href="<%=h(entry.getHref())%>"><img src="<%=h(entry.getImageURL()) %>">&nbsp;<%=f(entry.getLabel())%></a><%
         if (bold) {%></b><%}
         %></td></tr><%
         out.println();
@@ -114,19 +114,19 @@
     //
     // FILES/ACTIONS in current directory
     //
-    %><table cellspacing="0" cellpadding="2" style="width:100%;"><%
+    %><table class="labkey-current-directory"><%
 
     int row = 0;
     for (PipelineProvider.FileEntry entry : entries)
     {
         String color = (0 == (row++)%2) ? "#ffffff" : "#ffffff";
         %><tr style="background-color:<%=color%>"><td>&nbsp;</td><%
-        %><td nowrap class="normal" style="vertical-align: middle;"><a style="width:100%" href="<%=h(entry.getHref())%>"><img border="0" src="<%=h(entry.getImageURL())%>">&nbsp;<%=f(entry.getLabel())%></a></td><%
+        %><td nowrap style="vertical-align: middle;"><a style="width:100%" href="<%=h(entry.getHref())%>"><img src="<%=h(entry.getImageURL())%>">&nbsp;<%=f(entry.getLabel())%></a></td><%
         Collection<PipelineProvider.FileAction> c = dirActions.getCollection(entry.getURI());
         dirActions.remove(entry.getURI());
         if (c != null)
         {
-            %><td><table cellspacing="0"><tr><%
+            %><td><table class="labkey-button-bar"><tr><%
             for (PipelineProvider.FileAction action : c)
             {
                 %><td nowrap><%=action.getDisplay()%></td><%
@@ -176,11 +176,11 @@
             {
                 %><td><input type="checkbox" name="fileInputNames" value="<%=h(file.getName())%>" checked="true" style="visibility: hidden;"></td><%
             }
-            %><td nowrap class="normal" style="vertical-align: middle;"><img border="0" src="<%=contextPath%><%=Attachment.getFileIcon(file.getName())%>">&nbsp;<%=f(file.getName())%></td><%
+            %><td nowrap style="vertical-align: middle;"><img src="<%=contextPath%><%=Attachment.getFileIcon(file.getName())%>">&nbsp;<%=f(file.getName())%></td><%
             if (file == action.getFiles()[0])
             {
-                %><td nowrap class="normal" style="vertical-align: top;" rowspan="<%=action.getFiles().length%>"><%
-                %><table cellspacing="0"><tr><td><%=showCheckboxes ? action.getDisplay() : action.getDisplay(iForm)%></td><%
+                %><td nowrap style="vertical-align: top;" rowspan="<%=action.getFiles().length%>"><%
+                %><table class="labkey-button-bar"><tr><td><%=showCheckboxes ? action.getDisplay() : action.getDisplay(iForm)%></td><%
                 while (i < fileActions.size() && action.hasSameFiles(fileActions.get(i)))
                 {
                     action = fileActions.get(i++);

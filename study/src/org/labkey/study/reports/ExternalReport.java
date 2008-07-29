@@ -505,7 +505,7 @@ public class ExternalReport extends AbstractReport
             out.write("<table><tr>");
             for (TabLoader.ColumnDescriptor col : cols)
             {
-                out.write("<td class='header'>");
+                out.write("<td class='labkey-header'>");
                 out.write(PageFlowUtil.filter(col.name));
                 out.write("</td>");
             }
@@ -515,7 +515,7 @@ public class ExternalReport extends AbstractReport
                 out.write("<tr>");
                 for (TabLoader.ColumnDescriptor col : cols)
                 {
-                    out.write("<td class='ms-vb'");
+                    out.write("<td");
                     if (Number.class.isAssignableFrom(col.clazz))
                         out.write(" align='right'");
                     out.write(">");
@@ -549,7 +549,7 @@ public class ExternalReport extends AbstractReport
         {
             String key = "temp:" + GUID.makeGUID();
             getViewContext().getRequest().getSession(true).setAttribute(key, file);
-            out.write("<img border=0 src=\"");
+            out.write("<img src=\"");
             out.write(getViewContext().getActionURL().relativeUrl("streamFile", PageFlowUtil.map("sessionKey", key), "Study-Reports", true));
             out.write("\">");
         }

@@ -36,7 +36,7 @@
 <%= textLink("Bulk Import Schemas", "bulkImportDataTypes.view")%>&nbsp;
 
 <h3>Undefined datasets:</h3>
-<table class="normal">
+<table>
     <tr>
         <th>ID</th>
         <th>Label</th>

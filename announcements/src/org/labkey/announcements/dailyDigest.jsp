@@ -28,8 +28,8 @@
 </head>
 
 <body>
-<table width="100%" border="0" cellspacing="0" cellpadding="4">
-    <tr><td class="normal"><b>The following new posts were made yesterday in folder: <%=h(c.getPath())%></b></td></tr><%
+<table class="labkey-daily-digest">
+    <tr><td><b>The following new posts were made yesterday in folder: <%=h(c.getPath())%></b></td></tr><%
 
     String previousThread = null;
     String threadUrl = null;
@@ -49,7 +49,7 @@
             }
 
             threadUrl = h(AnnouncementsController.getThreadURL(c, previousThread, ann.getRowId()).getURIString());%>
-            <tr><td>&nbsp;</td></tr><tr><td class="normal" colspan="2" style="background-color: #dddddd"><%=ann.getTitle()%></td></tr><%
+            <tr><td>&nbsp;</td></tr><tr><td class="labkey-response-header" colspan="2"><%=ann.getTitle()%></td></tr><%
         }
 
         int attachmentCount = ann.getAttachments().size();
@@ -78,8 +78,8 @@
 <br>
 <hr size="1">
 
-<table width="100%" border="0" cellspacing="0" cellpadding="4">
-    <tr><td class="normal">You have received this email because you are signed up for a daily digest of new posts to <a href="<%=boardUrl%>"><%=boardPath%></a> at <a href="<%=siteUrl%>"><%=siteUrl%></a>.
+<table class="labkey-daily-digest">
+    <tr><td>You have received this email because you are signed up for a daily digest of new posts to <a href="<%=boardUrl%>"><%=boardPath%></a> at <a href="<%=siteUrl%>"><%=siteUrl%></a>.
   If you no longer wish to receive these notifications, please <a href="<%=removeUrl%>">change your email preferences</a>.</td></tr>
 </table>    
 </body>

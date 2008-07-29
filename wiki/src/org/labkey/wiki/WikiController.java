@@ -2107,14 +2107,14 @@ public class WikiController extends SpringActionController
 
             if (bHasInsert || bHasCopy || bHasPrint)
             {
-                out.println("<table width=\"100%\" cellpadding=0>");
+                out.println("<table class=\"labkey-wp-link-panel\">");
                 out.println("<tr>");
                 out.println("<td  style=\"height:16;\">");
             }
 
             if (bHasInsert)
             {
-                out.print("[<a class=\"link\" href=\"");
+                out.print("[<a class=\"labkey-link\" href=\"");
                 ActionURL newPageUrl = new ActionURL(EditWikiAction.class, cToc);
                 newPageUrl.addParameter("cancel", getViewContext().getActionURL().getLocalURIString());
                 out.print(newPageUrl.getLocalURIString());
@@ -2126,13 +2126,13 @@ public class WikiController extends SpringActionController
                 //pass in source container as a param.
                 copyUrl.addParameter("sourceContainer", cToc.getPath());
 
-                out.print("[<a class=\"link\" href=\"");
+                out.print("[<a class=\"labkey-link\" href=\"");
                 out.print(PageFlowUtil.filter(copyUrl.toString()));
                 out.print("\">copy pages</a>]&nbsp;");
             }
             if (bHasPrint)
             {
-                out.print("[<a class=\"link\" href=\"");
+                out.print("[<a class=\"labkey-link\" href=\"");
                 out.print(PageFlowUtil.filter(ActionURL.toPathString("Wiki", "printAll", cToc.getPath())));
                 out.print("\" target=\"_blank\">print all</a>]");
             }
@@ -2150,7 +2150,7 @@ public class WikiController extends SpringActionController
             if (getElements().length > 1)
             {
                 out.println("<br>");
-                out.println("<table width=\"100%\" cellpadding=0>");
+                out.println("<table class=\"labkey-wiki-nav-tree\">");
                 out.println("<tr>\n<td>");
 
                 if(prevLink != null)
@@ -2174,8 +2174,8 @@ public class WikiController extends SpringActionController
                 if (showExpandOption)
                 {
                     out.println("</td></tr><tr><td>&nbsp;</td></tr><tr><td>");
-                    out.println("[<a class=\"link\" onclick=\"adjustAllTocEntries('NavTree-"+getId()+"', true, true)\" href=\"javascript:;\">expand&nbsp;all</a>]");
-                    out.println("[<a class=\"link\" onclick=\"adjustAllTocEntries('NavTree-"+getId()+"', true, false)\" href=\"javascript:;\">collapse&nbsp;all</a>]");
+                    out.println("[<a class=\"labkey-link\" onclick=\"adjustAllTocEntries('NavTree-"+getId()+"', true, true)\" href=\"javascript:;\">expand&nbsp;all</a>]");
+                    out.println("[<a class=\"labkey-link\" onclick=\"adjustAllTocEntries('NavTree-"+getId()+"', true, false)\" href=\"javascript:;\">collapse&nbsp;all</a>]");
                 }
                 out.println("</td>\n</tr>\n</table>");
             }

@@ -86,7 +86,7 @@ public class StatusDataRegion extends DataRegion
 
         boolean selSeen = false;
 
-        out.write("<table class=\"dataRegion\" border=\"0\"><tr>");
+        out.write("<table class=\"labkey-data-region-header\"><tr>");
         out.write("<td>Show:</td>");
 
         String name = "StatusFiles.Status~neqornull";

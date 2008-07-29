@@ -86,13 +86,13 @@
     }
 </script>
 
-<table border=0 cellspacing=2 cellpadding=0>
+<table>
 <%
     if (bean.getErrors() != null)
     {
         for (ObjectError e : (List<ObjectError>) bean.getErrors().getAllErrors())
         {
-            %><tr><td colspan=3><font color="red" class="error"><%=h(HttpView.currentContext().getMessage(e))%></font></td></tr><%
+            %><tr><td colspan=3><font class="labkey-error"><%=h(HttpView.currentContext().getMessage(e))%></font></td></tr><%
         }
     }
 %>
@@ -100,7 +100,7 @@
 
 <form method="post" action="<%=PageFlowUtil.filter(context.getActionURL().relativeUrl("saveReportView", null, "Study-Reports"))%>" onsubmit="return validateForm();">
     <input type="hidden" name="datasetId" value="<%=bean.getDatasetId()%>">
-    <table border="0" cellspacing="0" cellpadding="2" class="normal">
+    <table class="labkey-save-report">
     <tr>
 <%
     if (confirm)
@@ -140,7 +140,7 @@
     if (confirm)
     {
 %>
-        &nbsp;<a href="<%=PageFlowUtil.filter(bean.getSrcURL())%>"><img border=0 src="<%=PageFlowUtil.buttonSrc("Cancel")%>"></a>
+        &nbsp;<a href="<%=PageFlowUtil.filter(bean.getSrcURL())%>"><img src="<%=PageFlowUtil.buttonSrc("Cancel")%>"></a>
 <%
     } 
 %>
@@ -169,7 +169,7 @@
     if (allowPlotView) {
 %>
     &nbsp;    
-    <table border="0" cellspacing="0" cellpadding="2" class="normal">
+    <table class="labkey-save-report">
         <tr>
             <td><input id="plotViewCheck" type="checkbox" name="isPlotView" value="true" <%=bean.getIsPlotView() ? "checked" : ""%> onclick="participantPlot();"><b>Show chart for only one participant at a time</b></td>
         </tr>

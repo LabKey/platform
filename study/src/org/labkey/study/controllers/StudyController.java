@@ -3234,7 +3234,7 @@ public class StudyController extends BaseStudyController
             int count = null == visitDates ? 0 : visitDates.intValue();
 
             HttpView view = new HtmlView(
-                    "<div class=normal>" + count + " rows were updated.<p/>" +
+                    "<div>" + count + " rows were updated.<p/>" +
                     PageFlowUtil.buttonLink("Done", "manageVisits.view") +
                     "</div>");
             return new DialogTemplate(view);
@@ -4342,7 +4342,7 @@ public class StudyController extends BaseStudyController
         {
             if (!StringUtils.isEmpty(_report.getDescriptor().getReportDescription()))
             {
-                out.print("<table class='normal'>");
+                out.print("<table>");
                 out.print("<tr><td><span class='navPageHeader'>Report Description:</span>&nbsp;</td>");
                 out.print("<td>" + _report.getDescriptor().getReportDescription() + "</td></tr>");
                 out.print("</table>");
@@ -4454,7 +4454,7 @@ public class StudyController extends BaseStudyController
 
             if (_display != null)
             {
-                out.print("</td><td class=\"ms-searchform\">");
+                out.print("</td><td class=\"labkey-form-label\">");
                 out.print(PageFlowUtil.filter(_display));
             }
             out.print("</td></tr></table>");

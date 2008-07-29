@@ -54,7 +54,7 @@ public class DirectoryView extends HttpView
             }
             if (entry.getImageURL() != null)
             {
-                out.write("<img border=\"0\" src=\"");
+                out.write("<img src=\"");
                 out.write(PageFlowUtil.filter(entry.getImageURL()));
                 out.write("\">");
             }

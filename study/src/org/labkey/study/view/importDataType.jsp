@@ -29,31 +29,31 @@
     String errors = PageFlowUtil.getStrutsError(request, "main");
     String decimalFormatHelp =
             "The following table has an abbreviated guide to pattern symbols:<br/>" +
-            "<table border=0 cellspacing=3 cellpadding=0>" +
-            "<tr bgcolor=\"#ccccff\"><th align=left>Symbol<th align=left>Location<th align=left>Localized?<th align=left>Meaning</tr>" +
+            "<table class=\"labkey-format-helper\">" +
+            "<tr class=\"labkey-format-helper-header\"><th align=left>Symbol<th align=left>Location<th align=left>Localized?<th align=left>Meaning</tr>" +
             "<tr valign=top><td><code>0</code><td>Number<td>Yes<td>Digit</tr>" +
-            "<tr valign=top bgcolor=\"#eeeeff\"><td><code>#</code><td>Number<td>Yes<td>Digit, zero shows as absent</tr>" +
+            "<tr valign=top class=\"labkey-format-helper-alternate-row\"><td><code>#</code><td>Number<td>Yes<td>Digit, zero shows as absent</tr>" +
             "<tr valign=top><td><code>.</code><td>Number<td>Yes<td>Decimal separator or monetary decimal separator</tr>" +
-            "<tr valign=top bgcolor=\"#eeeeff\"><td><code>-</code><td>Number<td>Yes<td>Minus sign</tr>" +
+            "<tr valign=top class=\"labkey-format-helper-alternate-row\"><td><code>-</code><td>Number<td>Yes<td>Minus sign</tr>" +
             "<tr valign=top><td><code>,</code><td>Number<td>Yes<td>Grouping separator</tr></table>";
     String dateFormatHelp = 
             "The following table has a partial guide to pattern symbols:<br/>" +
-            "<table border=0 cellspacing=3 cellpadding=0>" +
-            "<tr bgcolor=\"#ccccff\"><th align=left>Letter<th align=left>Date or Time Component<th align=left>Examples</tr>" +
+            "<table class=\"labkey-format-helper\">" +
+            "<tr class=\"labkey-format-helper-header\"><th align=left>Letter<th align=left>Date or Time Component<th align=left>Examples</tr>" +
             "<tr><td><code>G</code><td>Era designator<td><code>AD</code></tr>" +
-            "<tr bgcolor=\"#eeeeff\"><td><code>y</code><td>Year<td><code>1996</code>; <code>96</code></tr>" +
+            "<tr class=\"labkey-format-helper-alternate-row\"><td><code>y</code><td>Year<td><code>1996</code>; <code>96</code></tr>" +
             "<tr><td><code>M</code><td>Month in year<td><code>July</code>; <code>Jul</code>; <code>07</code></tr>" +
-            "<tr bgcolor=\"#eeeeff\"><td><code>w</code><td>Week in year<td><code>27</code></td></tr>" +
+            "<tr class=\"labkey-format-helper-alternate-row\"><td><code>w</code><td>Week in year<td><code>27</code></td></tr>" +
             "<tr><td><code>W</code><td>Week in month<td><code>2</code></td></tr>" +
-            "<tr bgcolor=\"#eeeeff\"><td><code>D</code><td>Day in year<td><code>189</code></td></tr>" +
+            "<tr class=\"labkey-format-helper-alternate-row\"><td><code>D</code><td>Day in year<td><code>189</code></td></tr>" +
             "<tr><td><code>d</code><td>Day in month<td><code>10</code></tr>" +
-            "<tr bgcolor=\"#eeeeff\"><td><code>F</code><td>Day of week in month<td><code>2</code></tr>" +
+            "<tr class=\"labkey-format-helper-alternate-row\"><td><code>F</code><td>Day of week in month<td><code>2</code></tr>" +
             "<tr><td><code>E</code><td>Day in week<td><code>Tuesday</code>; <code>Tue</code></tr>" +
-            "<tr bgcolor=\"#eeeeff\"><td><code>a</code><td>Am/pm marker<td><code>PM</code></tr>" +
+            "<tr class=\"labkey-format-helper-alternate-row\"><td><code>a</code><td>Am/pm marker<td><code>PM</code></tr>" +
             "<tr><td><code>H</code><td>Hour in day (0-23)<td><code>0</code></tr>" +
-            "<tr bgcolor=\"#eeeeff\"><td><code>k</code><td>Hour in day (1-24)<td><code>24</code></tr>" +
+            "<tr class=\"labkey-format-helper-alternate-row\"><td><code>k</code><td>Hour in day (1-24)<td><code>24</code></tr>" +
             "<tr><td><code>K</code><td>Hour in am/pm (0-11)<td><code>0</code></tr>" +
-            "<tr bgcolor=\"#eeeeff\"><td><code>h</code><td>Hour in am/pm (1-12)<td><code>12</code></tr></table>";
+            "<tr class=\"labkey-format-helper-alternate-row\"><td><code>h</code><td>Hour in am/pm (1-12)<td><code>12</code></tr></table>";
 
 
 %>
@@ -65,7 +65,7 @@ Use this form to define the properties of a dataset.
 <p>
 Paste in a tab delimited file with the following fields.  Additional fields will just be ignored.
 </p>
-<table cellpadding="2" class="normal">
+<table class="labkey-bulk-import-data-">
     <tr>
         <th align="left"><u>Column Header</u></th>
         <th align="left"><u>Description</u></th>
@@ -96,27 +96,27 @@ Paste in a tab delimited file with the following fields.  Additional fields will
     </tr>
 </table>
 --%>
-<table border=0 cellspacing=2 cellpadding=0>
+<table>
 <%
     for (ObjectError e : (List<ObjectError>) form.getErrors().getAllErrors())
     {
-        %><tr><td colspan=3><font color="red" class="error"><%=h(HttpView.currentContext().getMessage(e))%></font></td></tr><%
+        %><tr><td colspan=3><font class="labkey-error"><%=h(HttpView.currentContext().getMessage(e))%></font></td></tr><%
     }
 %>
 </table>
 
 <form id="typeDefForm" name=typeDefForm action="defineDatasetType.post" method="POST" onsubmit="return doSubmit()" enctype="multipart/form-data">
     <input type=hidden name=create value="<%=form.isCreate()%>">
-    <table id=typeDefTable cellspacing="1" cellpadding="2">
+    <table id=typeDefTable class="labkey-type-def">
         <tr>
             <td >
-            <table width=100% cellspacing=0 cellpadding=2>
+            <table>
                 <tr>
-                    <td class=ms-searchform>Short Dataset Name&nbsp;<%=helpPopup("Name", "Short unique name, e.g. 'DEM1'")%></td>
+                    <td class=labkey-form-label>Short Dataset Name&nbsp;<%=helpPopup("Name", "Short unique name, e.g. 'DEM1'")%></td>
                     <td><input name="typeName" style="width:100%" value="<%=h(form.getTypeName())%>"></td>
                 </tr>
                 <tr>
-                    <td class=ms-searchform >Dataset Id <%=PageFlowUtil.helpPopup("Dataset Id", "The dataset id is an integer number that must be unique for all datasets in a study.")%></td>
+                    <td class=labkey-form-label >Dataset Id <%=PageFlowUtil.helpPopup("Dataset Id", "The dataset id is an integer number that must be unique for all datasets in a study.")%></td>
                     <td><input id=datasetId type=text name=dataSetIdStr value="" <%=form.isAutoDatasetId() ? "disabled" : "" %> size=6>
                         <input type=checkbox name="autoDatasetId" <%=form.isAutoDatasetId() ? "checked" : "" %> value="true" onclick="toggleAutoDatasetId(this)">Define Dataset Id Automatically</td>
                 </tr>
@@ -125,7 +125,7 @@ Paste in a tab delimited file with the following fields.  Additional fields will
         </tr>
 <%--        <tr>
             <td>
-        <table id="typeEditorTable" width="100%" cellspacing=0 celladding=2>
+        <table id="typeEditorTable">
         < %-- UNDONE: generate this list from TableInfo (DatasetDefinition.getStandardPropertiesSet() --% >
         <tr>
         <td></td>

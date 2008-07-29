@@ -63,7 +63,7 @@
 <form action="addUsers.post" method=post>
     <labkey:errors />
 
-    <table border=0 cellspacing=2 cellpadding=0>
+    <table class="labkey-form">
         <tr>
             <td valign="top">Add new users.<br><br>Enter one or more email addresses,&nbsp;<br>each on its own line.</td>
             <td colspan="2">

@@ -24,4 +24,4 @@
 %>
 <%=formatMissedErrors("form")%>
 <%=null != me.errorHtml ? me.errorHtml : ""%>
-<br><br><a href="<%=h(me.returnURL)%>"><img border=0 src="<%=PageFlowUtil.buttonSrc("Continue")%>"></a>
+<br><br><a href="<%=h(me.returnURL)%>"><img src="<%=PageFlowUtil.buttonSrc("Continue")%>"></a>

@@ -41,13 +41,13 @@
     ct.setInitialLevel(1);
 %>
 
-<table class="dataRegion">
+<table class="labkey-data-region">
     <tr><td style="padding-left:0">Pick a folder to modify:</td></tr>
     <tr><td>&nbsp;</td></tr>
     <%= ct.render()%>
 </table><br>
 
-<table border=0 cellspacing=2 cellpadding=0><tr>
+<table><tr>
 <%
     ActionURL rename  = urlFor(RenameFolderAction.class);
     ActionURL move    = urlFor(ShowMoveFolderTreeAction.class);

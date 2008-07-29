@@ -280,7 +280,6 @@ public class SecurityController extends SpringActionController
             groupsView.setTitle("Global Groups");
         else
             groupsView.setTitle("Groups for project " + container.getProject().getName());
-        groupsView.setBodyClass("normal");
         return groupsView;
     }
 

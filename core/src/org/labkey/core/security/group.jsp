@@ -66,7 +66,7 @@ if (bean.messages.size() > 0)
     {
     %>
     <b>System membership status for new group members:</b><br>
-    <div id="messages" class="normal">
+    <div id="messages">
     <%
     for (String message : bean.messages)
         {
@@ -90,7 +90,7 @@ else
     %>
     <div id="current-members">
     Group members
-    <br><table valign="top" class="normal">
+    <br><table class="labkey-form">
         <tr>
             <th>Remove</th>
             <th>Email</th>

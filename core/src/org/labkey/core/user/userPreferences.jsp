@@ -30,8 +30,8 @@
     showGridLink.addParameter(".lastFilter", "true");
 %>
 <form action="" method="post">
-    <table class="normal">
-        <tr class="wpHeader"><td colspan="2">Required Fields for User Information</td></tr>
+    <table>
+        <tr class="labkey-wp-header"><td colspan="2">Required Fields for User Information</td></tr>
     <%
         for (ColumnInfo info : bean.getColumns())
         {

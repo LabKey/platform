@@ -29,23 +29,23 @@
 
 <table>
     <tr>
-        <td class="ms-searchform">Name</td>
+        <td class="labkey-form-label">Name</td>
         <td><%= h(run.getName()) %></td>
     </tr>
     <tr>
-        <td class="ms-searchform">LSID</td>
+        <td class="labkey-form-label">LSID</td>
         <td><%= h(run.getLSID()) %></td>
     </tr>
     <tr>
-        <td class="ms-searchform">Protocol</td>
+        <td class="labkey-form-label">Protocol</td>
         <td><a href="protocolDetails.view?rowId=<%= protocol.getRowId() %>"><%= h(protocol.getName()) %></a></td>
     </tr>
     <tr>
-        <td class="ms-searchform">Created on</td>
+        <td class="labkey-form-label">Created on</td>
         <td><%=DateUtil.formatDateTime(run.getCreated()) %></td>
     </tr>
     <tr>
-        <td class="ms-searchform">Comments</td>
+        <td class="labkey-form-label">Comments</td>
         <td><%= h(run.getComments()) %></td>
     </tr>
 </table>

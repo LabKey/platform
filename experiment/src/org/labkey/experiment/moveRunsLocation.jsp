@@ -42,7 +42,7 @@
     %>
     <input type="hidden" name="<%= DataRegionSelection.DATA_REGION_SELECTION_KEY %>" value="<%= bean.getDataRegionSelectionKey() %>" />
     <input type="hidden" name="targetContainerId" />
-<table class="dataRegion">
+<table class="labkey-data-region">
 <tr><td style="padding-left:0">Please select the destination folder. Folders that are not configured with a pipeline root are not valid destinations. They are shown in the list, but are not linked.</td></tr>
 <tr><td>&nbsp;</td></tr>
 <%=bean.getContainerTree().render()%>

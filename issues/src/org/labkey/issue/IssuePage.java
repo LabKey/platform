@@ -186,9 +186,9 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         {
             final StringBuffer sb = new StringBuffer();
 
-            sb.append("<tr><td class=\"ms-searchform\">");
+            sb.append("<tr><td class=\"labkey-form-label\">");
             sb.append(getLabel(tableColumnName));
-            sb.append("</td><td class=\"normal\">");
+            sb.append("</td><td>");
 
             // If custom column has pick list, then show select with keywords, otherwise input box
             if (_ccc.getPickListColumns().contains(tableColumnName))
@@ -438,9 +438,9 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                 sb.append("<tr><td>");
                 if (!canEdit)
                 {
-                    sb.append("<a class=\"link\" href=\"");
+                    sb.append("<a class=\"labkey-link\" href=\"");
                     sb.append(PageFlowUtil.filter(a.getDownloadUrl("issues")));
-                    sb.append("\"><img border=0 src=\"");
+                    sb.append("\"><img src=\"");
                     sb.append(context.getRequest().getContextPath());
                     sb.append(PageFlowUtil.filter(a.getFileIcon()));
                     sb.append("\">&nbsp;");
@@ -449,7 +449,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                 }
                 else
                 {
-                    sb.append("<img border=0 src=\"");
+                    sb.append("<img src=\"");
                     sb.append(context.getRequest().getContextPath());
                     sb.append(PageFlowUtil.filter(a.getFileIcon()));
                     sb.append("\">&nbsp;");

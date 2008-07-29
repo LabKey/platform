@@ -22,14 +22,14 @@
 <%@ page import="org.springframework.validation.BindException" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 
-<table border=0 cellspacing=2 cellpadding=0>
+<table>
 <%
     BindException errors = (BindException)request.getAttribute("errors");
     if (errors != null)
     {
         for (ObjectError e : (List<ObjectError>) errors.getAllErrors())
         {
-            %><tr><td colspan=3><font color="red" class="error"><%=h(HttpView.currentContext().getMessage(e))%></font></td></tr><%
+            %><tr><td colspan=3><font class="labkey-error"><%=h(HttpView.currentContext().getMessage(e))%></font></td></tr><%
         }
     }
 %>

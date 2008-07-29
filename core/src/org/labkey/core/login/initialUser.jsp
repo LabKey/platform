@@ -38,7 +38,7 @@ permission to add users to the system, add users to groups, assign permissions, 
 folders, etc.<br><br>
 
 <form name="initialUser" method="post" action="initialUser.post">
-<table border="0">
+<table>
     <tr><td>Email:</td><td><input id="email" type="text" name="email" value="<%=h(email)%>" style="width:200px;"></td></tr>
     <tr><td>&nbsp;</td><td style="height:50px"><input type="image" src="<%=PageFlowUtil.buttonSrc("Register") %>" name="register"></td></tr>
 </table>

@@ -46,20 +46,20 @@
 
 <form style="margin:0" method="POST" enctype="multipart/form-data" action="<%=IssuesController.issueURL(context.getContainer(),bean.getAction()+".post")%>">
 
-    <table border=0 cellspacing=2 cellpadding=0>
+    <table>
     <%
         if (null != errors && 0 != errors.getErrorCount())
         {
             for (ObjectError e : (List<ObjectError>) errors.getAllErrors())
             {
-                %><tr><td colspan=3><font color="red" class="error"><%=h(context.getMessage(e))%></font></td></tr><%
+                %><tr><td colspan=3><font class="labkey-error"><%=h(context.getMessage(e))%></font></td></tr><%
             }
         }
     if (!StringUtils.isEmpty(bean.getRequiredFields()))
         out.print("<tr><td>Fields marked with an asterisk <span class=\"labkey-error\">*</span> are required.</td></tr>");
     %>
     </table>
-    <table border=0 cellspacing=2 cellpadding=0><tr>
+    <table class="labkey-small-button-bar"><tr>
         <td><input name="<%=bean.getAction()%>" type="image" value="Submit" onClick="LABKEY.setSubmit(true); return true;" src="<%=ButtonServlet.buttonSrc("Submit")%>"></td>
         <td><%= buttonLink("View Grid", IssuesController.issueURL(context.getContainer(), "list").addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
     </tr></table>
@@ -70,38 +70,38 @@
             if (0 == issue.getIssueId())
             {
 %>
-                <td class="ms-searchform" width="69"><%=bean.getLabel("Title")%></td>
+                <td class="labkey-form-label" width="69"><%=bean.getLabel("Title")%></td>
 <%
             } else {
 %>
-                <td class="wpTitle"><%=issue.getIssueId()%></td>
+                <td class="labkey-wp-title"><%=issue.getIssueId()%></td>
 <%
             }
 %>
-                <td class="normal" width="571">
+                <td width="571">
                 <%=bean.writeInput("title", issue.getTitle(), "id=title style=\"width:100%;\"")%>
                 </td></tr>
             </table></td></tr>
         <tr>
             <td valign="top" width="34%"><table>
-                <tr><td class="ms-searchform"><%=bean.getLabel("Status")%></td><td class="normal"><%=h(issue.getStatus())%></td></tr>
-                <tr><td class="ms-searchform"><%=bean.getLabel("AssignedTo")%></td><td class="normal"><%=bean.writeSelect("assignedTo", "" + issue.getAssignedTo(), issue.getAssignedToName(context), bean.getUserOptions(c, issue, context))%></td></tr>
-                <tr><td class="ms-searchform"><%=bean.getLabel("Type")%></td><td class="normal"><%=bean.writeSelect("type", issue.getType(), bean.getTypeOptions(c.getId()))%></td></tr>
-                <tr><td class="ms-searchform"><%=bean.getLabel("Area")%></td><td class="normal"><%=bean.writeSelect("area", issue.getArea(), bean.getAreaOptions(c.getId()))%></td></tr>
-                <tr><td class="ms-searchform"><%=bean.getLabel("Priority")%></td><td class="normal"><%=bean.writeSelect("priority", "" + bean._toString(issue.getPriority()), bean.getPriorityOptions(c))%></td></tr>
-                <tr><td class="ms-searchform"><%=bean.getLabel("Milestone")%></td><td class="normal"><%=bean.writeSelect("milestone", issue.getMilestone(), bean.getMilestoneOptions(c.getId()))%></td></tr>
+                <tr><td class="labkey-form-label"><%=bean.getLabel("Status")%></td><td><%=h(issue.getStatus())%></td></tr>
+                <tr><td class="labkey-form-label"><%=bean.getLabel("AssignedTo")%></td><td><%=bean.writeSelect("assignedTo", "" + issue.getAssignedTo(), issue.getAssignedToName(context), bean.getUserOptions(c, issue, context))%></td></tr>
+                <tr><td class="labkey-form-label"><%=bean.getLabel("Type")%></td><td><%=bean.writeSelect("type", issue.getType(), bean.getTypeOptions(c.getId()))%></td></tr>
+                <tr><td class="labkey-form-label"><%=bean.getLabel("Area")%></td><td><%=bean.writeSelect("area", issue.getArea(), bean.getAreaOptions(c.getId()))%></td></tr>
+                <tr><td class="labkey-form-label"><%=bean.getLabel("Priority")%></td><td><%=bean.writeSelect("priority", "" + bean._toString(issue.getPriority()), bean.getPriorityOptions(c))%></td></tr>
+                <tr><td class="labkey-form-label"><%=bean.getLabel("Milestone")%></td><td><%=bean.writeSelect("milestone", issue.getMilestone(), bean.getMilestoneOptions(c.getId()))%></td></tr>
             </table></td>
             <td valign="top" width="33%"><table>
-                <tr><td class="ms-searchform"><%=bean.getLabel("Opened&nbsp;By")%></td><td class="normal"><%=h(issue.getCreatedByName(context))%></td></tr>
-                <tr><td class="ms-searchform"><%=bean.getLabel("Opened")%></td><td class="normal"><%=bean.writeDate(issue.getCreated())%></td></tr>
-                <tr><td class="ms-searchform"><%=bean.getLabel("ResolvedBy")%></td><td class="normal"><%=h(issue.getResolvedByName(context))%></td></tr>
-                <tr><td class="ms-searchform"><%=bean.getLabel("Resolved")%></td><td class="normal"><%=bean.writeDate(issue.getResolved())%></td></tr>
-                <tr><td class="ms-searchform"><%=bean.getLabel("Resolution")%></td><td class="normal"><%=bean.writeSelect("resolution", issue.getResolution(), bean.getResolutionOptions(c))%></td></tr>
+                <tr><td class="labkey-form-label"><%=bean.getLabel("Opened&nbsp;By")%></td><td><%=h(issue.getCreatedByName(context))%></td></tr>
+                <tr><td class="labkey-form-label"><%=bean.getLabel("Opened")%></td><td><%=bean.writeDate(issue.getCreated())%></td></tr>
+                <tr><td class="labkey-form-label"><%=bean.getLabel("ResolvedBy")%></td><td><%=h(issue.getResolvedByName(context))%></td></tr>
+                <tr><td class="labkey-form-label"><%=bean.getLabel("Resolved")%></td><td><%=bean.writeDate(issue.getResolved())%></td></tr>
+                <tr><td class="labkey-form-label"><%=bean.getLabel("Resolution")%></td><td><%=bean.writeSelect("resolution", issue.getResolution(), bean.getResolutionOptions(c))%></td></tr>
 <%
             if (bean.isEditable("resolution") || !"open".equals(issue.getStatus()) && null != issue.getDuplicate())
             {
 %>
-                <tr><td class="ms-searchform">Duplicate</td><td class="normal">
+                <tr><td class="labkey-form-label">Duplicate</td><td>
                 <%=bean.writeInput("duplicate", null == issue.getDuplicate() ? null : issue.getDuplicate().toString())%>
                 </td></tr>
 <%
@@ -111,16 +111,16 @@
                 <%=bean.writeCustomColumn(c.getId(), "int2", bean._toString(issue.getInt2()), IssuesController.ISSUE_NONE)%>
             </table></td>
             <td valign="top" width="33%"><table>
-                <tr><td class="ms-searchform">Changed&nbsp;By</td><td class="normal"><%=h(issue.getModifiedByName(context))%></td></tr>
-                <tr><td class="ms-searchform">Changed</td><td class="normal"><%=bean.writeDate(issue.getModified())%></td></tr>
-                <tr><td class="ms-searchform">Closed&nbsp;By</td><td class="normal"><%=h(issue.getClosedByName(context))%></td></tr>
-                <tr><td class="ms-searchform">Closed</td><td class="normal"><%=bean.writeDate(issue.getClosed())%></td></tr>
+                <tr><td class="labkey-form-label">Changed&nbsp;By</td><td><%=h(issue.getModifiedByName(context))%></td></tr>
+                <tr><td class="labkey-form-label">Changed</td><td><%=bean.writeDate(issue.getModified())%></td></tr>
+                <tr><td class="labkey-form-label">Closed&nbsp;By</td><td><%=h(issue.getClosedByName(context))%></td></tr>
+                <tr><td class="labkey-form-label">Closed</td><td><%=bean.writeDate(issue.getClosed())%></td></tr>
 <%
             if (bean.isEditable("notifyList"))
             {
 %>
                 <tr>
-                    <td class="ms-searchform"><%=bean.getLabel("NotifyList") + popup%><br/><br/>
+                    <td class="labkey-form-label"><%=bean.getLabel("NotifyList") + popup%><br/><br/>
 <%
                     if (issue.getIssueId() == 0)
                     {
@@ -134,12 +134,12 @@
                     }
 %>
                     </td>
-                    <td class="normal"><%=bean.getNotifyList(c, issue)%></td>
+                    <td><%=bean.getNotifyList(c, issue)%></td>
                 </tr>
 <%
             } else {
 %>
-                <tr><td class="ms-searchform">Notify</td><td class="normal"><%=bean.getNotifyList(c, issue)%></td></tr>
+                <tr><td class="labkey-form-label">Notify</td><td><%=bean.getNotifyList(c, issue)%></td></tr>
 <%
             }
 %>
@@ -162,8 +162,8 @@
 
 %>
     <table>
-        <tr><td class="normal"><table id="filePickerTable"></table></td></tr>
-        <tr><td class="normal"><a href="javascript:addFilePicker('filePickerTable','filePickerLink')" id="filePickerLink"><img src="<%=context.getRequest().getContextPath()%>/_images/paperclip.gif">Attach a file</a></td></tr>
+        <tr><td><table id="filePickerTable"></table></td></tr>
+        <tr><td><a href="javascript:addFilePicker('filePickerTable','filePickerLink')" id="filePickerLink"><img src="<%=context.getRequest().getContextPath()%>/_images/paperclip.gif">Attach a file</a></td></tr>
     </table>
 <%
     if (bean.getCallbackURL() != null)
@@ -176,9 +176,9 @@
     for (Issue.Comment comment : issue.getComments())
     {
 %>
-        <hr><table width="100%"><tr><td align="left" class="normal"><b>
+        <hr><table width="100%"><tr><td align="left"><b>
         <%=bean.writeDate(comment.getCreated())%>
-        </b></td><td align="right" class="normal"><b>
+        </b></td><td align="right"><b>
         <%=h(comment.getCreatedByName(context))%>
         </b></td></tr></table>
         <%=comment.getComment()%>

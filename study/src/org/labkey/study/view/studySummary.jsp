@@ -46,7 +46,7 @@ if (null == getStudy())
     String visitLabel = StudyManager.getInstance().getVisitManager(getStudy()).getPluralLabel();
 %>
 <br>
-<table class="normal" width="100%">
+<table width="100%">
     <tr><td valign="top">This study defines
 <ul>
     <li><%= getDataSets().length %> Datasets (Forms and Assays) &nbsp;<%= isAdmin ? textLink("Manage Datasets", url.setAction(StudyController.ManageTypesAction.class)) : "&nbsp;" %></li>
@@ -65,7 +65,7 @@ if (null == getStudy())
 </ul>
     </td>
         <td valign="top">
-            <a href="<%=h(url.setAction(StudyController.OverviewAction.class).getLocalURIString())%>"><img src="<%=request.getContextPath()%>/_images/studyNavigator.gif" alt="Study Navigator" border=0> </a><br>
+            <a href="<%=h(url.setAction(StudyController.OverviewAction.class).getLocalURIString())%>"><img src="<%=request.getContextPath()%>/_images/studyNavigator.gif" alt="Study Navigator"> </a><br>
             <%=textLink("Study Navigator", url.setAction(StudyController.OverviewAction.class))%>
         </td>
     </tr>

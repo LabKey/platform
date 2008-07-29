@@ -62,16 +62,16 @@ function updateNavigationColor ()
   {
     // theme.getNavBarColor()
     var cssName=cssRules[i].selectorText.toLowerCase();
-    if ((cssName.indexOf('.ms-nav td')!=-1)
-      || (cssName.indexOf('.ms-nav th')!=-1)
-      || (cssName.indexOf('.ms-navframe')!=-1)
+    if ((cssName.indexOf('.labkey-nav td')!=-1)
+      || (cssName.indexOf('.labkey-nav th')!=-1)
+      || (cssName.indexOf('.labkey-nav-frame')!=-1)
       || (cssName.indexOf('.labkey-completion-highlight')!=-1)
-      || (cssName.indexOf('ms-navheader')!=-1)
+      || (cssName.indexOf('labkey-nav-header')!=-1)
       //|| (cssName.indexOf('header')!=-1 && cssName!=".navpageheader")
-      || (cssName.indexOf('tr.wpHeader')!=-1)
+      || (cssName.indexOf('tr.labkey-wp-header')!=-1)
       ) {
       cssRules[i].style.backgroundColor="#"+color;
-    } else if (cssName.indexOf('.ms-tabinactive')!=-1) {
+    } else if (cssName.indexOf('.labkey-nav-tab-inactive')!=-1) {
       cssRules[i].style.backgroundColor="#"+color;
       cssRules[i].style.borderColor="#"+color; // TODO: check
     }
@@ -80,13 +80,13 @@ function updateNavigationColor ()
 
 function descendLeftNav(element, color)
 {
-    if (element.className == "leftNavBox")
+    if (element.className == "labkey-expandable-nav")
     {
         element.style.borderTopColor = color;
         element.style.borderBottomColor = color;
         element.style.borderRightColor = color;
     }
-    else if (element.className == "leftNavBoxBody")
+    else if (element.className == "labkey-expandable-nav-body")
     {
         element.style.borderTopColor = color;
     }
@@ -106,11 +106,11 @@ function updateHeaderLineColor ()
   {
     // headerline
     var cssName=cssRules[i].selectorText.toLowerCase();
-    if (cssName.indexOf('.ms-titlearealine')!=-1) {
+    if (cssName.indexOf('labkey-title-area-line')!=-1) {
       cssRules[i].style.backgroundColor="#"+color;
-    } else if (cssName.indexOf('.navtab')!=-1 && cssName!='.navtab-selected') {
+    } else if (cssName.indexOf('.labkey-nav-tab')!=-1 && cssName!='.labkey-nav-tab-selected') {
       cssRules[i].style.borderBottom="1px solid #"+color;
-    } else if (cssName.indexOf('.navtab-inactive')!=-1) {
+    } else if (cssName.indexOf('.labkey-nav-tab-inactive')!=-1) {
       cssRules[i].style.borderBottom="1px solid #"+color;
     }
   }
@@ -186,7 +186,7 @@ function updateFormFieldNameColor ()
   {
     // theme.getEditFormColor()
     var cssName=cssRules[i].selectorText.toLowerCase();
-    if (cssName.indexOf('.ms-searchform')!=-1) {
+    if (cssName.indexOf('.labkey-form-label')!=-1) {
       cssRules[i].style.backgroundColor="#"+color;
     }
   }
@@ -203,7 +203,7 @@ function updateFullScreenBorderColor ()
   {
     //theme.getFullScreenBorderColor()
     var cssName=cssRules[i].selectorText.toLowerCase();
-    if (cssName.indexOf('fullscreentable')!=-1) {
+    if (cssName.indexOf('labkey-full-screen-table')!=-1) {
       cssRules[i].style.backgroundColor="#"+color;
     }
   }
@@ -221,7 +221,7 @@ function updateGradientColor ()
     for ( i = 0; i < cssRules.length; i++ )
     {
         var cssName=cssRules[i].selectorText.toLowerCase();
-        if (cssName.indexOf('wpheader') != -1)
+        if (cssName.indexOf('labkey-wp-header') != -1)
         {
             cssRules[i].style.backgroundColor="#"+darkColor;
             var imageLink="url(\"gradient.image?lightColor="+lightColor+"&darkColor="+darkColor+"\")";
@@ -259,11 +259,11 @@ if (null != webThemeErrors)
 
 <!-- web theme definition -->
 
-<table cellpadding=0>
+<table>
 <%
 if (null == webThemeErrors)
 {
-%><tr><td class="normal" colspan=2>&nbsp;</td></tr><%
+%><tr><td colspan=2>&nbsp;</td></tr><%
     }
     boolean isBuiltInTheme;
     if (bean.selectedTheme != null)
@@ -279,12 +279,12 @@ if (null == webThemeErrors)
     String helpLink = (new HelpTopic("customizeTheme", HelpTopic.Area.SERVER)).getHelpTopicLink();
 %>
 <tr>
-    <td class="normal" colspan=2>Choose an existing web theme or define a new one. (<a href="<%=helpLink%>" target="_new">examples...</a>)</td>
+    <td colspan=2>Choose an existing web theme or define a new one. (<a href="<%=helpLink%>" target="_new">examples...</a>)</td>
 </tr>
-<tr style="height:1;"><td colspan=3 class=ms-titlearealine><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
+<tr style="height:1;"><td colspan=3 class="labkey-title-area-line"><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
 <tr>
-    <td class="ms-searchform">Web site theme (color scheme)</td>
-    <td class="normal">
+    <td class="labkey-form-label">Web site theme (color scheme)</td>
+    <td>
         <select name="themeName" onchange="changeTheme(this)">
             <option value="">&lt;New Theme&gt;</option>
             <%
@@ -304,54 +304,54 @@ if (null == webThemeErrors)
 <%if (!themeFound)
 {%>
 <tr>
-    <td class="ms-searchform">Theme Name</td>
+    <td class="labkey-form-label">Theme Name</td>
     <td><input type="text" name="friendlyName" size="16" maxlength="16" value="<%=((null != selectedTheme) ? selectedTheme.getFriendlyName() : StringUtils.trimToEmpty(bean.form.getFriendlyName()))%>"></td>
 </tr>
 <%}%>
 <tr>
-    <td class="ms-searchform">Navigation Bar Color (left panel menu)</td>
+    <td class="labkey-form-label">Navigation Bar Color (left panel menu)</td>
     <td>
         <input type="text" name="navBarColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getNavBarColor() : StringUtils.trimToEmpty(bean.form.getNavBarColor()))%>" <%=disabled%> onfocus="updateNavigationColor()" onblur="updateNavigationColor()">
         <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if ("".equals(disabled)) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.forms[0].navBarColor)"<%}%>>
     </td>
 </tr>
 <tr>
-    <td class="ms-searchform">Left Navigation Border Color</td>
+    <td class="labkey-form-label">Left Navigation Border Color</td>
     <td>
         <input type="text" name="headerLineColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getHeaderLineColor() : StringUtils.trimToEmpty(bean.form.getHeaderLineColor()))%>" <%=disabled%> onfocus="updateHeaderLineColor()" onblur="updateHeaderLineColor()">
         <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if ("".equals(disabled)) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.forms[0].headerLineColor)"<%}%>>
     </td>
 </tr>
 <tr>
-    <td class="ms-searchform">Form Field Name Color</td>
+    <td class="labkey-form-label">Form Field Name Color</td>
     <td>
         <input type="text" name="editFormColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getEditFormColor() : StringUtils.trimToEmpty(bean.form.getEditFormColor()))%>" <%=disabled%> onfocus="updateFormFieldNameColor()" onblur="updateFormFieldNameColor()">
         <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if ("".equals(disabled)) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.forms[0].editFormColor)"<%}%>>
     </td>
 </tr>
 <tr>
-    <td class="ms-searchform">Full Screen Border Color</td>
+    <td class="labkey-form-label">Full Screen Border Color</td>
     <td>
         <input type="text" name="fullScreenBorderColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getFullScreenBorderColor() : StringUtils.trimToEmpty(bean.form.getFullScreenBorderColor()))%>" <%=disabled%> onfocus="updateFullScreenBorderColor()" onblur="updateFullScreenBorderColor()">
         <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if ("".equals(disabled)) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.forms[0].fullScreenBorderColor)"<%}%>>
     </td>
 </tr>
 <tr>
-    <td class="ms-searchform">Title Bar Background Color</td>
+    <td class="labkey-form-label">Title Bar Background Color</td>
     <td>
         <input type="text" name="gradientLightColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getGradientLightString() : StringUtils.trimToEmpty(bean.form.getGradientLightColor()))%>" <%=disabled%> onfocus="updateGradientColor()" onblur="updateGradientColor()">
         <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if ("".equals(disabled)) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.forms[0].gradientLightColor)"<%}%>>
     </td>
 </tr>
 <tr>
-    <td class="ms-searchform">Title Bar Border Color</td>
+    <td class="labkey-form-label">Title Bar Border Color</td>
     <td>
         <input type="text" name="gradientDarkColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getGradientDarkString () : StringUtils.trimToEmpty(bean.form.getGradientDarkColor()))%>" <%=disabled%> onfocus="updateGradientColor()" onblur="updateGradientColor()">
         <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if ("".equals(disabled)) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.forms[0].gradientDarkColor)"<%}%>>
     </td>
 </tr>
 <tr>
-    <td colspan="2" class="normal">&nbsp;</td>
+    <td colspan="2">&nbsp;</td>
 </tr>
 
 <tr>
@@ -381,10 +381,10 @@ if (null == webThemeErrors)
 <td>
 <!-- start of dialog preview -->
 
-<table class="wp" cellpadding="0" cellspacing="0" width="100%">
-<tr class="wpHeader">
-  <th class="wpTitle" style="border-right:0px" title="Full Screen Border Preview">Full Screen Border Preview</th>
-  <th class="wpTitle" style="text-align:right;border-left:0px"><a href="javascript:;"><img border=0 src="<%=request.getContextPath()%>/_images/partedit.gif" title="Customize Web Part"></a>&nbsp;<img border=0 src="<%=request.getContextPath()%>/_images/partupg.gif" title="">&nbsp;<img border=0 src="<%=request.getContextPath()%>/_images/partdowng.gif" title="">&nbsp;<a href="javascript:;"><img border=0 src="<%=request.getContextPath()%>/_images/partdelete.gif" title="Remove From Page"></a></th>
+<table class="labkey-wp">
+<tr class="labkey-wp-header">
+  <th class="labkey-wp-title-left" title="Full Screen Border Preview">Full Screen Border Preview</th>
+  <th class="labkey-wp-title-right"><a href="javascript:;"><img src="<%=request.getContextPath()%>/_images/partedit.gif" title="Customize Web Part"></a>&nbsp;<img src="<%=request.getContextPath()%>/_images/partupg.gif" title="">&nbsp;<img src="<%=request.getContextPath()%>/_images/partdowng.gif" title="">&nbsp;<a href="javascript:;"><img src="<%=request.getContextPath()%>/_images/partdelete.gif" title="Remove From Page"></a></th>
 </tr>
 
 <tr>
@@ -393,11 +393,11 @@ if (null == webThemeErrors)
 
 <form name="login" method="post" onsubmit="javascript:return false;">
 <tr>
-  <td colspan="3" class="fullScreenTable">
-    <table style="height: 100%; width: 100%; background-color: rgb(255, 255, 255);" cellpadding="0" cellspacing="0">
+  <td colspan="3" class="labkey-full-screen-table">
+    <table class="labkey-full-screen-table">
       <tr><td style="background-color: rgb(229, 229, 204);" height="20"><img src="login_files/_.gif" height="1" width="100%"></td></tr>
-      <tr><td class="wpBody" style="padding: 10px;" align="left" height="100%" valign="top"><div class="normal">
-        <table border="0">
+      <tr><td class="labkey-wp-body" style="padding: 10px;" align="left" height="100%" valign="top"><div>
+        <table>
           <tr><td colspan="2">Changes to full-screen color preferences will be displayed here.</td></tr>
           <tr><td colspan="2">&nbsp;</td></tr>
         </table>

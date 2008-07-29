@@ -39,7 +39,7 @@
 %>
 <labkey:errors />
 <form action="<%=list.urlFor(ListController.Action.editListDefinition)%>" method="POST">
-<table class="normal">
+<table>
     <tr><th colspan="2">List Definition</th></tr>
     <tr><td>Name:</td><td><%=h(list.getName())%></td></tr>
     <tr><td>Description:</td><td>

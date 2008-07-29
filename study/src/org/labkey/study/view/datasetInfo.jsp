@@ -23,9 +23,9 @@
     DataSetDefinition dataset = me.getModelBean();
 %>
 <table>
-    <tr><td class=ms-searchform>Name</td><th class=normal align=left><%= h(dataset.getName()) %></th></tr>
-    <tr><td class=ms-searchform>Label</td><td class=normal><%= h(dataset.getLabel()) %></td></tr>
-    <tr><td class=ms-searchform>Display String</td><td class=normal><%= h(dataset.getDisplayString()) %></td></tr>
-    <tr><td class=ms-searchform>Category</td><td class=normal><%= h(dataset.getCategory()) %></td></tr>
-    <tr><td class=ms-searchform>Visit Date Column</td><td class=normal><%= h(dataset.getVisitDatePropertyName()) %></td></tr>
+    <tr><td class=labkey-form-label>Name</td><th align=left><%= h(dataset.getName()) %></th></tr>
+    <tr><td class=labkey-form-label>Label</td><td><%= h(dataset.getLabel()) %></td></tr>
+    <tr><td class=labkey-form-label>Display String</td><td><%= h(dataset.getDisplayString()) %></td></tr>
+    <tr><td class=labkey-form-label>Category</td><td><%= h(dataset.getCategory()) %></td></tr>
+    <tr><td class=labkey-form-label>Visit Date Column</td><td><%= h(dataset.getVisitDatePropertyName()) %></td></tr>
 </table>

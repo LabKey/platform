@@ -46,12 +46,9 @@ if (null == datasets || datasets.length == 0)
     }
     return;
 }
-// UNDONE: move into stylesheet
-String borderColor = "#808080";
-String styleTH=" style=\"border-right:solid 1px " + borderColor + "; border-top:solid 2px " + borderColor + ";\"";
 
 %>
-<table border="0" cellspacing="3" cellpadding="2" width="100%" class="normal">
+<table class="labkey-study-datasets">
 
 <%
     List<DataSetDefinition> userDatasets = new ArrayList<DataSetDefinition>();
@@ -90,13 +87,13 @@ String styleTH=" style=\"border-right:solid 1px " + borderColor + "; border-top:
             if (!equal(category, firstDataset.getCategory()))
             {
                 category = firstDataset.getCategory();
-                sb.append("<tr><th align=\"left\" bgcolor=\"#AAAAAA\">");
+                sb.append("<tr><th>");
                 sb.append(h(category == null ? "Uncategorized" : category));
                 sb.append("</th></tr>\n");
             }
             else if (null != category)
             {
-                sb.append("<tr><th align=\"left\" bgcolor=\"#AAAAAA\">");
+                sb.append("<tr><th>");
                 sb.append(h(category)).append(" (Continued)");
                 sb.append("</th></tr>\n");
             }
@@ -106,7 +103,7 @@ String styleTH=" style=\"border-right:solid 1px " + borderColor + "; border-top:
                 if (!equal(category, dataSet.getCategory()))
                 {
                     category = dataSet.getCategory();
-                    sb.append("<tr><th align=\"left\" bgcolor=\"#AAAAAA\">").append(h(category == null ? "Uncategorized" : category)).append("</th></tr>\n");
+                    sb.append("<tr><th>").append(h(category == null ? "Uncategorized" : category)).append("</th></tr>\n");
                 }
 
                 String dataSetLabel = (dataSet.getLabel() != null ? dataSet.getLabel() : "" + dataSet.getDataSetId());

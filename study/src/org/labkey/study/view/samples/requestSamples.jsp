@@ -102,7 +102,7 @@ function setDefaults()
             }
         }
     %>
-    <table class="normal">
+    <table>
     <%
         if (shoppingCart)
         {

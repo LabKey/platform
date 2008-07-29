@@ -107,7 +107,7 @@ function _updateDropUI()
         if (!transfersTableInit)
         {
             ftpTransfers.innerHTML =
-                "<table class=\"normal\">" +
+                "<table>" +
                 "<tr><th>&nbsp;</th><th width=150>file<br><img src=\"" + LABKEY.contextPath + "/_.gif\" width=150 height=1></th><th>modified<br><img src=\"" + LABKEY.contextPath + "/_.gif\" width=150 height=1></th><th width=100>size<br><img src=\"" + LABKEY.contextPath + "/_.gif\" width=100 height=1></th><th style=\"width:200px;\">status<br><img src=\"" + LABKEY.contextPath + "/_.gif\" width=210 height=1></th></tr>" +
                 "</table>";
             transfersTableInit = true;

@@ -111,7 +111,7 @@ public class JunitController extends SpringActionController
                 {
                     Map<String, List<Class<? extends TestCase>>> testCases = getTestCases();
 
-                    out.println("<div class=\"normal\"><table class=\"dataRegion\">");
+                    out.println("<div><table class=\"labkey-data-region\">");
 
                     for (String module : testCases.keySet())
                     {
@@ -129,7 +129,7 @@ public class JunitController extends SpringActionController
 
                     out.println("</table></div>");
 
-                    out.print("<br><a href=run.view><img border=0 src=\"" + PageFlowUtil.buttonSrc("Run All") + "\" alt=\"Run All\"></a>");
+                    out.print("<br><a href=run.view><img src=\"" + PageFlowUtil.buttonSrc("Run All") + "\" alt=\"Run All\"></a>");
                 }
             };
 
@@ -289,17 +289,17 @@ public class JunitController extends SpringActionController
                 out.print("<br><h2>SUCCESS</h2>");
             else
                 out.print("<h2 class=ms-error>FAILURE</h2>");
-            out.print("<br><table><tr><td class=ms-searchform>Tests</td><td class=normal align=right>");
+            out.print("<br><table><tr><td class=labkey-form-label>Tests</td><td align=right>");
             out.print("" + _result.runCount());
-            out.print("</td></tr><tr><td class=ms-searchform>Failures</td><td class=normal align=right>");
+            out.print("</td></tr><tr><td class=labkey-form-label>Failures</td><td align=right>");
             out.print("" + _result.failureCount());
-            out.print("</td></tr><tr><td class=ms-searchform>Errors</td><td class=normal align=right>");
+            out.print("</td></tr><tr><td class=labkey-form-label>Errors</td><td align=right>");
             out.print("" + _result.errorCount());
             out.print("</td></tr></table>");
 
             if (_result.errorCount() > 0)
             {
-                out.println("<br><table width=\"640\"><td width=100><hr style=\"width:40; height:1;\"></td><td class=\"normal\" nowrap><b>errors</b></td><td width=\"100%\"><hr style=\"height:1;\"></td></tr></table>");
+                out.println("<br><table width=\"640\"><td width=100><hr style=\"width:40; height:1;\"></td><td nowrap><b>errors</b></td><td width=\"100%\"><hr style=\"height:1;\"></td></tr></table>");
                 for (Enumeration e = _result.errors(); e.hasMoreElements();)
                 {
                     TestFailure tf = (TestFailure) e.nextElement();
@@ -312,7 +312,7 @@ public class JunitController extends SpringActionController
 
             if (_result.failureCount() > 0)
             {
-                out.println("<table width=\"640\"><td width=100><hr style=\"width:40; height:1;\"></td><td class=\"normal\" nowrap><b>failures</b></td><td width=\"100%\"><hr style=\"height:1;\"></td></tr></table>");
+                out.println("<table width=\"640\"><td width=100><hr style=\"width:40; height:1;\"></td><td nowrap><b>failures</b></td><td width=\"100%\"><hr style=\"height:1;\"></td></tr></table>");
                 for (Enumeration e = _result.failures(); e.hasMoreElements();)
                 {
                     TestFailure f = (TestFailure) e.nextElement();

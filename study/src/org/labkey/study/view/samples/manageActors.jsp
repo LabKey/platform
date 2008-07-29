@@ -45,7 +45,7 @@
 %>
 <%=PageFlowUtil.getStrutsError(request, "main")%>
 <form action="manageActors.post" name="manageActors" method="POST">
-    <table class="normal">
+    <table>
         <tr>
             <th>&nbsp;</th>
             <th>Actor Name</th>

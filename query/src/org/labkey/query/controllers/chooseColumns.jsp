@@ -89,7 +89,7 @@
 
 <p>
 <table width="100%">
-    <tr class="wpHeader"><td class="wpTitle" align="left">
+    <tr class="labkey-wp-header"><td align="left">
     Grid View :
         <% if (view != null) { %>
             <%=h(view.getName())%>
@@ -108,18 +108,18 @@
    else if (getViewContext().getUser().isGuest()) { %>
     <p><b>You are not currently logged in.  Changes you make here will only persist for the duration of your session.</b></p>
 <% } %>
-<table class="normal" cellspacing=0 cellpadding=0>
+<table class="labkey-customize-view">
     <tr>
         <th>
-            <table cellspacing=0 cellpadding=0 width="100%">
+            <table>
                 <tr>
-                    <td class="navtab" style="border-top:none;border-left:none;border-right:none;">
+                    <td class="labkey-nav-tab labkey-nav-tab-space">
                         <img src="<%=request.getContextPath()%>/_.gif" height=1 width=5>
                     </td>
-                    <td class="navtab-selected" style="cursor:pointer">
+                    <td class="labkey-nav-tab-selected" style="cursor:pointer">
                         Available&nbsp;Fields
                     </td>
-                    <td class="navtab" style="border-top:none;border-left:none;border-right:none;text-align:right;" width=100%>
+                    <td class="labkey-nav-tab-space" style="text-align:right;" width=100%>
 
                         <labkey:helpPopup title="Available Fields">
                             <p>Click on the available fields to select them.  Click the 'Add' button to add selected fields to the grid view.</p>
@@ -132,30 +132,30 @@
         </th>
         <th></th>
         <th colspan="2" align="left">
-            <table cellspacing=0 cellpadding=0 width="100%">
+            <table>
                 <tr>
-                    <td class="navtab" style="border-top:none;border-left:none;border-right:none;">
+                    <td class="labkey-nav-tab labkey-nav-tab-space">
                         <img src="<%=request.getContextPath()%>/_.gif" height=1 width=5>
                     </td>
-                    <td style="cursor:pointer" class="navtab" id="columns.tab"
+                    <td style="cursor:pointer" class="labkey-nav-tab" id="columns.tab"
                         onclick="designer.setActiveTab(designer.tabs.columns)">
                         Fields&nbsp;In&nbsp;Grid
                     </td>
-                    <td class="navtab" style="border-top:none;border-left:none;border-right:none;padding-left:0px;padding-right:0px;">
+                    <td class="labkey-nav-tab-space" style="padding-left:0px;padding-right:0px;">
                         <img src="<%=request.getContextPath()%>/_.gif" height=1 width=5>
                     </td>
-                    <td style="cursor:pointer" id="filter.tab" class="navtab"
+                    <td style="cursor:pointer" id="filter.tab" class="labkey-nav-tab"
                         onclick="designer.setActiveTab(designer.tabs.filter)">
                         Filter
                     </td>
-                    <td class="navtab" style="border-top:none;border-left:none;border-right:none;padding-left:0px;padding-right:0px;">
+                    <td class="labkey-nav-tab-space" style="padding-left:0px;padding-right:0px;">
                         <img src="<%=request.getContextPath()%>/_.gif" height=1 width=5>
                     </td>
-                    <td style="cursor:pointer" id="sort.tab" class="navtab"
+                    <td style="cursor:pointer" id="sort.tab" class="labkey-nav-tab"
                         onclick="designer.setActiveTab(designer.tabs.sort)">
                         Sort
                     </td>
-                    <td class="navtab" style="border-top:none;border-left:none;border-right:none;text-align:right;" width=100%>
+                    <td class="labkey-nav-tab-space" style="text-align:right;" width=100%>
                         <labkey:helpPopup title="Fields In Grid / Filter / Sort">
                             <p>There are three tabs for choosing which fields are to be displayed in the grid, and setting the filter and sort.</p>
                             <p>Add fields from the Available Fields</p>
@@ -167,7 +167,7 @@
         </th>
     </tr>
     <tr>
-    <td valign="top" onSelectStart="return false;" onMouseDown="return false;" class="navtab" style="border-top:none;">
+    <td valign="top" onSelectStart="return false;" onMouseDown="return false;" class="labkey-nav-tab" style="border-top:none;">
         <div style="height:400px;width:300px;overflow:auto;" id="columnPicker">
         </div>
     </td>
@@ -181,53 +181,53 @@
         </p>
     </td>
 
-    <td id="columns.list" valign="top" style="display:none;border-top:none;border-right:none;" class="navtab">
+    <td id="columns.list" valign="top" style="display:none;border-top:none;border-right:none;" class="labkey-nav-tab">
         <div id="columns.list.div" style="height:400px;width:500px;overflow:auto;"></div>
     </td>
-    <td valign="top" id="columns.controls" style="display:none;border-top:none;border-left:none;vertical-align:top;" class="navtab">
+    <td valign="top" id="columns.controls" style="display:none;border-top:none;border-left:none;vertical-align:top;" class="labkey-nav-tab">
         <br>
 
         <p><a href="#" onclick="designer.moveUp();return false"><img src="<%=request.getContextPath()%>/query/moveup.gif"
-                                                       alt="Move Up" title="Move Up" border="0"></a></p>
+                                                       alt="Move Up" title="Move Up"></a></p>
 
         <p><a href="#" onclick="designer.moveDown();return false"><img src="<%=request.getContextPath()%>/query/movedown.gif"
-                                                         alt="Move Down" title="Move Down" border="0"></a></p>
+                                                         alt="Move Down" title="Move Down"></a></p>
 
         <p><a href="#" onclick="designer.remove();return false"><img src="<%=request.getContextPath()%>/query/delete.gif" alt="Delete"
-                                                       border="0" title="Delete"></a></p>
+                                                       title="Delete"></a></p>
         <p><a href="#" onclick="designer.showColumnProperties();return false;"><img src="<%=request.getContextPath()%>/query/columnProperties.gif" alt="Set Field Caption" title="Set Field Caption"></a></p>
     </td>
-    <td id="filter.list" valign="top" style="display:none;border-top:none;border-right:none" class="navtab">
+    <td id="filter.list" valign="top" style="display:none;border-top:none;border-right:none" class="labkey-nav-tab">
         <div id="filter.list.div" style="height:400px;width:600px;overflow:auto;"></div>
     </td>
-    <td id="filter.controls" valign="top" style="display:none;border-top:none;border-left:none;vertical-align:top;" class="navtab">
+    <td id="filter.controls" valign="top" style="display:none;border-top:none;border-left:none;vertical-align:top;" class="labkey-nav-tab">
         <br>
 
         <p><a href="#" onclick="designer.tabs.filter.moveUp();return false"><img src="<%=request.getContextPath()%>/query/moveup.gif"
-                                                                   alt="Move Up" border="0" title="Move Up"></a></p>
+                                                                   alt="Move Up" title="Move Up"></a></p>
 
         <p><a href="#" onclick="designer.tabs.filter.moveDown();return false"><img
                 src="<%=request.getContextPath()%>/query/movedown.gif"
-                alt="Move Down" title="Move Down" border="0"></a></p>
+                alt="Move Down" title="Move Down"></a></p>
 
         <p><a href="#" onclick="designer.tabs.filter.remove();return false"><img src="<%=request.getContextPath()%>/query/delete.gif"
-                                                                   alt="Delete" border="0" title="Delete"></a></p>
+                                                                   alt="Delete" title="Delete"></a></p>
     </td>
-    <td id="sort.list" valign="top" style="display:none;border-top:none;border-right:none;" class="navtab">
+    <td id="sort.list" valign="top" style="display:none;border-top:none;border-right:none;" class="labkey-nav-tab">
         <div id="sort.list.div" style="height:400px;width:500px;overflow:auto;"></div>
     </td>
-    <td id="sort.controls" valign="top" style="display:none;border-top:none;border-left:none;vertical-align:top;" class="navtab">
+    <td id="sort.controls" valign="top" style="display:none;border-top:none;border-left:none;vertical-align:top;" class="labkey-nav-tab">
         <br>
 
         <p><a href="#" onclick="designer.tabs.sort.moveUp();return false"><img src="<%=request.getContextPath()%>/query/moveup.gif"
-                                                                 alt="Move Up" title="Move Up" border="0"></a></p>
+                                                                 alt="Move Up" title="Move Up"></a></p>
 
         <p><a href="#" onclick="designer.tabs.sort.moveDown();return false"><img
                 src="<%=request.getContextPath()%>/query/movedown.gif"
-                alt="Move Down" border="0"></a></p>
+                alt="Move Down"></a></p>
 
         <p><a href="#" onclick="designer.tabs.sort.remove();return false"><img src="<%=request.getContextPath()%>/query/delete.gif"
-                                                                 alt="Delete" border="0" title="Delete"></a></p>
+                                                                 alt="Delete" title="Delete"></a></p>
     </td>
 </table>
 <form method="POST" action="<%=form.urlFor(QueryAction.chooseColumns)%>" onsubmit="return onSubmit();">

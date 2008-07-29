@@ -70,7 +70,7 @@ public class ExperimentRunGraphView extends WebPartView
             }
             out.println("</p>");
             out.println("<p>Click on an element of the experiment run below to see details</p>");
-            out.println("<img src=\"" + ExperimentController.ExperimentUrlsImpl.get().getDownloadGraphURL(_run, _detail, _focus) + "\" border=\"0\" usemap=\"#graphmap\" >");
+            out.println("<img src=\"" + ExperimentController.ExperimentUrlsImpl.get().getDownloadGraphURL(_run, _detail, _focus) + "\" usemap=\"#graphmap\" >");
             out.println("<map name=\"graphmap\">");
 
             File mapFile = ExperimentRunGraph.getMapFile(context.getContainer().getRowId(), _run.getRowId(), _detail, _focus);

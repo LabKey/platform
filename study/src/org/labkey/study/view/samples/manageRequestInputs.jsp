@@ -159,7 +159,7 @@
     }
 </script>
 <form action="handleUpdateRequestInputs.post" method="POST" onSubmit="return verifyForm()">
-    <table class="normal" id="inputTable">
+    <table id="inputTable">
         <tr>
             <th valign="bottom">&nbsp;</th>
             <th valign="bottom">Title</th>

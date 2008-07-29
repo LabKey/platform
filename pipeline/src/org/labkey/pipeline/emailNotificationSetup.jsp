@@ -95,26 +95,26 @@
 </script>
 
 &nbsp;&nbsp;
-<form action="updateEmailNotification.view" method="post">
-    <table width="100%" class="normal">
-        <tr class="wpHeader"><th class="wpTitle" colspan=2><b>Email Notification</b></th></tr>
+<form class="labkey-email-notification" action="updateEmailNotification.view" method="post">
+    <table>
+        <tr class="labkey-wp-header"><th class="labkey-admin-title" colspan=2><b>Email Notification</b></th></tr>
         <tr><td><labkey:errors /></td></tr>
-        <tr><td class="normal" colspan=2>Check the appropriate box(es) to configure notification emails to be sent
+        <tr><td colspan=2>Check the appropriate box(es) to configure notification emails to be sent
             when a pipeline job succeeds and/or fails.<br/><%=c.isRoot() ? "" : "<span class=\"labkey-error\">*</span>&nbsp;Indicates that the field value has been inherited from the site wide configuration."%>
         </td></tr>
     </table>
-    <table class="normal">
-        <tr class="header"><td class="normal" colspan="2"><input type=checkbox id="notifyOnSuccess" name="notifyOnSuccess" onclick="return updateControls(this, false);" <%=displaySuccess.equals("none") ? "" : "checked"%>>Send Email notifications if the pipeline job succeeds</td></tr>
-        <tr style="display:<%=displaySuccess%>"><td>&nbsp;&nbsp;&nbsp;</td><td class="normal"><input value="true" type=checkbox id="notifyOwnerOnSuccess" name="notifyOwnerOnSuccess" <%=notifyOwnerOnSuccess ? "checked" : ""%>><%=getTitle(PipelineEmailPreferences.PREF_NOTIFY_OWNER_ON_SUCCESS, c, "Send To Owner")%></td></tr>
-        <tr style="display:<%=displaySuccess%>"><td></td><td class="normal"><%=getTitle(PipelineEmailPreferences.PREF_NOTIFY_USERS_ON_SUCCESS, c, "Additional users to notify<br/><i>Enter one or more email addresses, each on its own line:</i>")%></td></tr>
-        <tr style="display:<%=displaySuccess%>"><td></td><td class="normal">
+    <table>
+        <tr><td colspan="2"><input type=checkbox id="notifyOnSuccess" name="notifyOnSuccess" onclick="return updateControls(this, false);" <%=displaySuccess.equals("none") ? "" : "checked"%>>Send Email notifications if the pipeline job succeeds</td></tr>
+        <tr style="display:<%=displaySuccess%>"><td>&nbsp;&nbsp;&nbsp;</td><td><input value="true" type=checkbox id="notifyOwnerOnSuccess" name="notifyOwnerOnSuccess" <%=notifyOwnerOnSuccess ? "checked" : ""%>><%=getTitle(PipelineEmailPreferences.PREF_NOTIFY_OWNER_ON_SUCCESS, c, "Send To Owner")%></td></tr>
+        <tr style="display:<%=displaySuccess%>"><td></td><td><%=getTitle(PipelineEmailPreferences.PREF_NOTIFY_USERS_ON_SUCCESS, c, "Additional users to notify<br/><i>Enter one or more email addresses, each on its own line:</i>")%></td></tr>
+        <tr style="display:<%=displaySuccess%>"><td></td><td>
             <textarea id="notifyUsersOnSuccess" name="notifyUsersOnSuccess" style="width:100%" rows="5"
                       onKeyDown="return ctrlKeyCheck(event);"
                       onBlur="hideCompletionDiv();"
                       autocomplete="off"
                       onKeyUp="return handleChange(this, event, 'completeUser.view?prefix=');"><%=notifyUsersOnSuccess%></textarea>
             </td></tr>
-        <tr style="display:<%=displaySuccess%>"><td></td><td class="normal"><%=getTitle(PipelineEmailPreferences.PREF_SUCCESS_INTERVAL, c, "Notification frequency:")%>&nbsp;
+        <tr style="display:<%=displaySuccess%>"><td></td><td><%=getTitle(PipelineEmailPreferences.PREF_SUCCESS_INTERVAL, c, "Notification frequency:")%>&nbsp;
             <select id="successNotifyInterval" name="successNotifyInterval" onchange="updateSuccessNotifyInterval();">
                 <option value="0" <%=getSelected("0", successNotifyInterval)%>>every job</option>
                 <option value="1" <%=getSelected("1", successNotifyInterval)%>>1 hour</option>
@@ -129,25 +129,25 @@
             <%=getTitle(PipelineEmailPreferences.PREF_SUCCESS_NOTIFY_START, c, "Starting at:") + helpPopup("Notification start time", "Enter the starting time in 24-hour format (e.g., 0:30 for 12:30AM, 14:00 for 2:00PM).")%>&nbsp;<input type="text" name="successNotifyStart" id="successNotifyStart" value="<%=successNotifyStart%>" size="4"></td></tr>
         <tr><td></td></tr>
     </table>
-    <table class="normal">
-        <tr class="header"><td class="normal" colspan="2"><input type=checkbox id="notifyOnError" name="notifyOnError" onclick="return updateControls(this, false);" <%=displayError.equals("none") ? "" : "checked"%>>Send Email notification(s) if the pipeline job fails</td></tr>
-        <tr style="display:<%=displayError%>"><td>&nbsp;&nbsp;&nbsp;</td><td class="normal"><input type=checkbox id="notifyOwnerOnError" name="notifyOwnerOnError" <%=notifyOwnerOnError ? "checked" : ""%>><%=getTitle(PipelineEmailPreferences.PREF_NOTIFY_OWNER_ON_ERROR, c, "Send To Owner")%></td></tr>
-        <tr style="display:<%=displayError%>"><td></td><td class="normal"><%=getTitle(PipelineEmailPreferences.PREF_NOTIFY_USERS_ON_ERROR, c, "Additional users to notify:")%></td></tr>
-        <tr style="display:<%=displayError%>"><td></td><td class="normal">
+    <table>
+        <tr><td colspan="2"><input type=checkbox id="notifyOnError" name="notifyOnError" onclick="return updateControls(this, false);" <%=displayError.equals("none") ? "" : "checked"%>>Send Email notification(s) if the pipeline job fails</td></tr>
+        <tr style="display:<%=displayError%>"><td>&nbsp;&nbsp;&nbsp;</td><td><input type=checkbox id="notifyOwnerOnError" name="notifyOwnerOnError" <%=notifyOwnerOnError ? "checked" : ""%>><%=getTitle(PipelineEmailPreferences.PREF_NOTIFY_OWNER_ON_ERROR, c, "Send To Owner")%></td></tr>
+        <tr style="display:<%=displayError%>"><td></td><td><%=getTitle(PipelineEmailPreferences.PREF_NOTIFY_USERS_ON_ERROR, c, "Additional users to notify:")%></td></tr>
+        <tr style="display:<%=displayError%>"><td></td><td>
             <textarea id="notifyUsersOnError" name="notifyUsersOnError" style="width:100%" rows="5"
                       onKeyDown="return ctrlKeyCheck(event);"
                       onBlur="hideCompletionDiv();"
                       autocomplete="off"
                       onKeyUp="return handleChange(this, event, 'completeUser.view?prefix=');"><%=notifyUsersOnError%></textarea>
-        <tr style="display:<%=displayError%>"><td></td><td class="normal" width="350"><%=getTitle(PipelineEmailPreferences.PREF_ESCALATION_USERS, c, "Escalation Users<br/><i>Email addresses entered here will appear in a view accesible from pipeline job details. Additional email messages can be sent from this view regarding a job failure.</i>")%></td></tr>
-        <tr style="display:<%=displayError%>"><td></td><td class="normal">
+        <tr style="display:<%=displayError%>"><td></td><td width="350"><%=getTitle(PipelineEmailPreferences.PREF_ESCALATION_USERS, c, "Escalation Users<br/><i>Email addresses entered here will appear in a view accesible from pipeline job details. Additional email messages can be sent from this view regarding a job failure.</i>")%></td></tr>
+        <tr style="display:<%=displayError%>"><td></td><td>
             <textarea id="escalationUsers" name="escalationUsers" style="width:100%" rows="5"
                       onKeyDown="return ctrlKeyCheck(event);"
                       onBlur="hideCompletionDiv();"
                       autocomplete="off"
                       onKeyUp="return handleChange(this, event, 'completeUser.view?prefix=');"><%=escalationUsers%></textarea>
             </td></tr>
-        <tr style="display:<%=displayError%>"><td></td><td class="normal"><%=getTitle(PipelineEmailPreferences.PREF_FAILURE_INTERVAL, c, "Notification frequency:")%>&nbsp;
+        <tr style="display:<%=displayError%>"><td></td><td><%=getTitle(PipelineEmailPreferences.PREF_FAILURE_INTERVAL, c, "Notification frequency:")%>&nbsp;
             <select id="failureNotifyInterval" name="failureNotifyInterval" onchange="updateFailureNotifyInterval();">
                 <option value="0" <%=getSelected("0", failureNotifyInterval)%>>every job</option>
                 <option value="1" <%=getSelected("1", failureNotifyInterval)%>>1 hour</option>
@@ -162,8 +162,8 @@
         <%=getTitle(PipelineEmailPreferences.PREF_FAILURE_NOTIFY_START, c, "Starting at:") + helpPopup("Notification start time", "Enter the starting time in 24-hour format (e.g., 0:30 for 12:30AM, 14:00 for 2:00PM).")%>&nbsp;<input type="text" name="failureNotifyStart" id="failureNotifyStart" value="<%=failureNotifyStart%>" size="4"></td></tr>
         <tr><td></td></tr>
     </table>
-    <table class="normal">
-        <tr class="header">
+    <table>
+        <tr>
             <td><input type="image" src="<%=PageFlowUtil.buttonSrc("Update")%>">&nbsp;
             <input type="image" src="<%=PageFlowUtil.buttonSrc("Reset to Default")%>" onclick="this.form.action='resetEmailNotification.view'"></td>
         </tr>

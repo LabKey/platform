@@ -27,7 +27,7 @@
     String visitLabel = StudyManager.getInstance().getVisitManager(getStudy()).getPluralLabel();
     ActionURL manageCohortsURL = new ActionURL(CohortController.ManageCohortsAction.class, getStudy().getContainer());
 %>
-<table cellspacing="3" class="normal">
+<table class="labkey-manage-study">
     <tr>
         <th align="left">Study Label</th>
         <td><%= h(getStudy().getLabel()) %></td>
@@ -67,7 +67,7 @@
 </table>
 
 <h4>Specimen Request/Tracking Settings</h4>
-<table cellspacing="3" class="normal">
+<table class="labkey-manage-study">
     <tr>
         <th align="left">Specimen Repository</th>
         <td>This study uses <%=getStudy().getRepositorySettings().isSimple() ? "standard" : "advanced"%> specimen repository</td>

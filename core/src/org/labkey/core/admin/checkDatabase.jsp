@@ -35,11 +35,11 @@
 <span class="labkey-error"><%=errors%></span>
 
 <form action="getSchemaXmlDoc.view" method="get">
-    <table class="normal">
-        <tr class="wpHeader"><th colspan=2 align=center>Database Tools</th></tr>
-        <tr><td class=normal>Check table consistency:&nbsp;</td>
+    <table>
+        <tr class="labkey-wp-header"><th colspan=2 align=center>Database Tools</th></tr>
+        <tr><td>Check table consistency:&nbsp;</td>
         <td> <%=PageFlowUtil.buttonLink("Do Database Check", new ActionURL(AdminController.DoCheckAction.class, ContainerManager.getRoot()))%>&nbsp;</td></tr>
-        <tr><td class=normal>&nbsp;</td><td></td></tr>
+        <tr><td>&nbsp;</td><td></td></tr>
         <tr><td>Get schema xml doc:&nbsp;</td>
             <td>
 
@@ -59,7 +59,7 @@
             </td></tr>
         <tr><td></td><td><%= buttonImg("Get Schema Xml") %>
         <%=PageFlowUtil.buttonLink("Cancel", urlProvider(AdminUrls.class).getAdminConsoleURL())%>  </td></tr>
-        <tr><td class=normal></td><td></td></tr>
+        <tr><td></td><td></td></tr>
 
 
     </table>

@@ -24,7 +24,7 @@
     JspView<Wiki> me = (JspView<Wiki>) HttpView.currentView();
     Wiki wiki = me.getModelBean();
 %>
-<div class="normal" style="padding:10px;">
+<div style="padding:10px;">
     <%  if (null == wiki.latestVersion())
         {%>
             This page does not have any printable content. The page may have been deleted or renamed by another user.<br><br>
@@ -33,7 +33,7 @@
         {%>
             <table style="width:100%;">
                 <tr>
-                    <td align=left><h3 class=".heading-1"><%=PageFlowUtil.filter(wiki.latestVersion().getTitle())%></h3></td>
+                    <td align=left><h3 class="labkey-heading-1"><%=PageFlowUtil.filter(wiki.latestVersion().getTitle())%></h3></td>
                     <td align=right><%=DateUtil.formatDate()%></td>
                 </tr>
             </table>

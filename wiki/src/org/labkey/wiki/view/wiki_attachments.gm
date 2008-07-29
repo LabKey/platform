@@ -19,15 +19,15 @@
 <form method="post" action="update.post" enctype="multipart/form-data">
 <table>
   <tr>
-    <td class='ms-searchform'>Name</td><td class='ms-vb'>
+    <td class='labkey-form-label'>Name</td><td>
     ${wiki.name}
     <input type="hidden" name="rowId" value="${wiki.rowId}">
     <input type="hidden" name="name" value="${wiki.name}">
     </td>
   </tr>
   <tr>
-    <td class='ms-searchform'>Attachments</td>
-    <td class="normal">
+    <td class='labkey-form-label'>Attachments</td>
+    <td>
 <%
     for (attach in wiki.attachments)
         {
@@ -45,8 +45,8 @@
   </tr>
   <tr>
     <td colspan=2 align=left>
-    <a href="#addAttachment" onclick="window.open('${addAttachmentURL}',null,'width=550,height=200',false);" style="color:green;"><img border=0 src="<%=PageFlowUtil.buttonSrc('Add Attachment')%>"></a>
-    <a href="<%= PageFlowUtil.filter(redirect) %>"><img border=0 src="<%=PageFlowUtil.buttonSrc('Done')%>"></a>
+    <a href="#addAttachment" onclick="window.open('${addAttachmentURL}',null,'width=550,height=200',false);" style="color:green;"><img src="<%=PageFlowUtil.buttonSrc('Add Attachment')%>"></a>
+    <a href="<%= PageFlowUtil.filter(redirect) %>"><img src="<%=PageFlowUtil.buttonSrc('Done')%>"></a>
     </td>
   </tr>
 </table>

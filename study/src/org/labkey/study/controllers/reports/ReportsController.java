@@ -342,7 +342,7 @@ public class ReportsController extends BaseStudyController
             if (report.getDescriptor().getProperty(DataSetDefinition.DATASETKEY) == null)
             {
                 if (!getViewContext().hasPermission(ACL.PERM_ADMIN))
-                    return new HtmlView("<font color=red>This view must be configured by an administrator.</font>");
+                    return new HtmlView("<font class=labkey-error>This view must be configured by an administrator.</font>");
 
                 return HttpView.redirect(getViewContext().getActionURL().relativeUrl("configureEnrollmentReport", null));
             }
@@ -1464,7 +1464,7 @@ public class ReportsController extends BaseStudyController
             out.write("<form method='post' action='");
             out.write(PageFlowUtil.filter(getViewContext().getActionURL().relativeUrl("saveReportView", null, "Study-Reports")));
             out.write("'>");
-            out.write("<table border='0' class='normal'><tr>");
+            out.write("<table><tr>");
             if (confirm)
             {
                 out.write("<td>");
@@ -1526,7 +1526,7 @@ public class ReportsController extends BaseStudyController
             {
                 out.write("&nbsp;<a href='");
                 out.write(PageFlowUtil.filter(srcURL));
-                out.write("'><img border=0 src='");
+                out.write("'><img src='");
                 out.write(PageFlowUtil.buttonSrc("Cancel"));
                 out.write("'></a>");
             }

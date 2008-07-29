@@ -45,7 +45,7 @@
     {
         for (ObjectError e : (List<ObjectError>) errors.getAllErrors())
         {
-            %><span color=red><%=h(context.getMessage(e))%></span><br><%
+            %><span class=labkey-error><%=h(context.getMessage(e))%></span><br><%
         }
     }
 %>

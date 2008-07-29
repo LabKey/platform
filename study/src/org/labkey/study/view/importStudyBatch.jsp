@@ -25,7 +25,7 @@
 <%@ page import="org.labkey.study.model.DataSetDefinition" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<div class=normal>
+<div>
 <labkey:errors/>
 <%
     BaseStudyController.StudyJspView<StudyController.ImportStudyBatchBean> me = (BaseStudyController.StudyJspView<StudyController.ImportStudyBatchBean>)HttpView.currentView();
@@ -45,7 +45,7 @@ for (DatasetBatch.DatasetImportJob job : jobs)
     else
     {
         hasError = true;
-        message = "<font color=red>" + PageFlowUtil.filter(message) + "</font>";
+        message = "<font class=labkey-error>" + PageFlowUtil.filter(message) + "</font>";
     }
     %><tr>
     <td align=right><%=dataset.getDataSetId()%></td>

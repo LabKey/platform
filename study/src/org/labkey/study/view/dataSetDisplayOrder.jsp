@@ -69,7 +69,7 @@ function orderModule(down)
 }
 </script>
 <form method="post" name="reorder" action="dataSetDisplayOrder.post" enctype="multipart/form-data">
-    <table class="normal">
+    <table>
         <tr>
             <td>
                 <%

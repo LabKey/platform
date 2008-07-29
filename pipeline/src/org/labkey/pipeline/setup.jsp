@@ -58,7 +58,7 @@ function toggleGlobusVisible()
 <form enctype="multipart/form-data" method="POST" action="setup.post">
     <table>
         <tr>
-            <td class="ms-searchform">Pipeline root directory:</td>
+            <td class="labkey-form-label">Pipeline root directory:</td>
             <td><input type="text" name="path" size="70" value="<%= PageFlowUtil.filter(bean.getStrValue()) %>"></td>
         </tr><%
         if (PipelineService.get().isEnterprisePipeline() &&
@@ -69,7 +69,7 @@ function toggleGlobusVisible()
             {
                 showConfig = false; %>
                 <tr>
-                    <td class="ms-searchform">Upload new Globus SSL configuration<labkey:helpPopup title="Use existing config">Check this box if you would like to replace the existing Globus configuration for this pipeline root.</labkey:helpPopup>:</td>
+                    <td class="labkey-form-label">Upload new Globus SSL configuration<labkey:helpPopup title="Use existing config">Check this box if you would like to replace the existing Globus configuration for this pipeline root.</labkey:helpPopup>:</td>
                     <td><input type="checkbox" name="uploadNewGlobusKeys" onclick="toggleGlobusVisible()">
                         <%
                             X509Certificate[] certs = bean.getGlobusKeyPair().getCertificates();
@@ -89,15 +89,15 @@ function toggleGlobusVisible()
                 %><input type="hidden" name="uploadNewGlobusKeys" value="true" /><%
             } %>
             <tr id="keyFileRow" style="display: <%= showConfig ? "" : "none" %>">
-                <td class="ms-searchform">Globus SSL private key<labkey:helpPopup title="Globus SSL private key"><p>This is typically stored in a file with a .pem extension. It should be in a BASE64 encoded PKCS#8 file format, and may be encrypted.</p><p>If you open the file in a text editor, the first line should be:</p><pre>-----BEGIN RSA PRIVATE KEY-----</pre></labkey:helpPopup>:</td>
+                <td class="labkey-form-label">Globus SSL private key<labkey:helpPopup title="Globus SSL private key"><p>This is typically stored in a file with a .pem extension. It should be in a BASE64 encoded PKCS#8 file format, and may be encrypted.</p><p>If you open the file in a text editor, the first line should be:</p><pre>-----BEGIN RSA PRIVATE KEY-----</pre></labkey:helpPopup>:</td>
                 <td><input type="file" size="70" name="keyFile"></td>
             </tr>
             <tr id="keyPasswordRow" style="display: <%= showConfig ? "" : "none" %>">
-                <td class="ms-searchform">Private key password<labkey:helpPopup title="Private key password">If your private key has been encrypted, you must specify the password so that it can be decrypted.</labkey:helpPopup>:</td>
+                <td class="labkey-form-label">Private key password<labkey:helpPopup title="Private key password">If your private key has been encrypted, you must specify the password so that it can be decrypted.</labkey:helpPopup>:</td>
                 <td><input type="text" size="20" name="keyPassword" value=""></td>
             </tr>
             <tr id="certFileRow" style="display: <%= showConfig ? "" : "none" %>">
-                <td class="ms-searchform">Globus SSL certificate<labkey:helpPopup title="Globus SSL certificate"><p>This is typically stored in a file with a .pem extension. It should contain your BASE64 encoded X.509 certificatein a PKCS#8 file format.</p><p>If you open the file in a text editor, it should contain:</p><pre>-----BEGIN CERTIFICATE-----</pre></labkey:helpPopup>:</td>
+                <td class="labkey-form-label">Globus SSL certificate<labkey:helpPopup title="Globus SSL certificate"><p>This is typically stored in a file with a .pem extension. It should contain your BASE64 encoded X.509 certificatein a PKCS#8 file format.</p><p>If you open the file in a text editor, it should contain:</p><pre>-----BEGIN CERTIFICATE-----</pre></labkey:helpPopup>:</td>
                 <td><input type="file" size="70" name="certFile"></td>
             </tr><%
         }
@@ -105,7 +105,7 @@ function toggleGlobusVisible()
         if (AppProps.getInstance().isPerlPipelineEnabled())
         { %>
             <tr>
-                <td class="ms-searchform">Use Perl pipeline<labkey:helpPopup title="Use Perl pipeline">Check this box to override the X! Tandem and Mascot pipelines with Perl file scanning versions.  This requires extra setup of the file scanning service for each new root.</labkey:helpPopup>:</td>
+                <td class="labkey-form-label">Use Perl pipeline<labkey:helpPopup title="Use Perl pipeline">Check this box to override the X! Tandem and Mascot pipelines with Perl file scanning versions.  This requires extra setup of the file scanning service for each new root.</labkey:helpPopup>:</td>
                 <td><input type="checkbox" name="perlPipeline" <%=bean.isPerlPipeline() ? " checked" : ""%>"></td>
             </tr><%
         }

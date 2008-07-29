@@ -45,28 +45,28 @@
     <table>
         <tr>
             <td></td>
-            <td class="normal" style="border:1px solid black;font-weight:bold">Column Field<%=fieldDropDown("colField", cols, bean.getColField(), false, true)%></td>
+            <td style="border:1px solid black;font-weight:bold">Column Field<%=fieldDropDown("colField", cols, bean.getColField(), false, true)%></td>
 
         </tr>
     <tr>
-        <td class="normal" style="border:1px solid black;font-weight:bold">Row<br>Field<br><%=fieldDropDown("rowField", cols, bean.getRowField(), false, true)%>
+        <td style="border:1px solid black;font-weight:bold">Row<br>Field<br><%=fieldDropDown("rowField", cols, bean.getRowField(), false, true)%>
         </td>
-        <td class="normal" style="border: 1px solid black;font-weight:bold" width="100%">Compute Statistics for Field<br><%=fieldDropDown("statField", cols, bean.getStatField(), true, false)%><br>
+        <td style="border: 1px solid black;font-weight:bold" width="100%">Compute Statistics for Field<br><%=fieldDropDown("statField", cols, bean.getStatField(), true, false)%><br>
             <br>
             Compute<br>
-            <table><tr><td class="normal">
+            <table><tr><td>
             <input type=checkbox name=stats value=Count <%=stats.contains("Count") ? "CHECKED" : ""%> > Count <br>
             <input type=checkbox name=stats value=Sum <%=stats.contains("Sum") ? "CHECKED" : ""%> > Sum <br>
             </td>
-                <td class="normal">
+                <td>
                 <input type=checkbox name=stats value=StdDev  <%=stats.contains("StdDev") ? "CHECKED" : ""%> > StdDev <br>
             <input type=checkbox name=stats value=Mean <%=stats.contains("Mean") ? "CHECKED" : ""%> > Mean <br>
             </td>
-                <td class="normal">
+                <td>
                 <input type=checkbox name=stats value=Min <%=stats.contains("Min") ? "CHECKED" : ""%> > Min <br>
             <input type=checkbox name=stats value=Max <%=stats.contains("Max") ? "CHECKED" : ""%> > Max <br>
                     </td>
-                <td valign=top class="normal">
+                <td valign=top>
             <input type=checkbox name=stats value=Median <%=stats.contains("Median") ? "CHECKED" : ""%> > Median<br>
             </td>
                 </tr></table>

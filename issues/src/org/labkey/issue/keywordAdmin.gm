@@ -17,14 +17,14 @@
 %>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.issue.IssuesController"%>
-<table border=0 cellspacing=4 cellpadding=0>
+<table class="labkey-issue-keyword-picker">
 <tr><%
     for (kwp in keywordPickers) {
         IssuesController.KeywordAdminView.KeywordPicker keywordPicker = kwp;
 %>
     <!--<%=keywordPicker.plural%>-->
-    <td class="normal" style="vertical-align:top">
-    <div class="ms-searchform"><b><%=keywordPicker.plural%></b></div>
+    <td style="vertical-align:top">
+    <div class="labkey-form-label"><b><%=keywordPicker.plural%></b></div>
     <form id="form<%=keywordPicker.plural%>" method="POST" action="deleteKeyword.post" style="margin:0px;">
 <%
     if (keywordPicker.keywords.length == 0)
@@ -34,7 +34,7 @@
         for (keyword in keywordPicker.keywords) {
             selected = keyword.isDefault();
 %>
-        <tr><td class=normal><%=selected ? "<b>" + filter(keyword.keyword) + "</b>" : filter(keyword.keyword)%></td><td class=normal>[<a href="javascript:callAction('deleteKeyword','form<%=keywordPicker.plural%>',<%=filter(PageFlowUtil.jsString(keyword.keyword))%>)" title="Delete this keyword">delete</a>]&nbsp;<%
+        <tr><td><%=selected ? "<b>" + filter(keyword.keyword) + "</b>" : filter(keyword.keyword)%></td><td>[<a href="javascript:callAction('deleteKeyword','form<%=keywordPicker.plural%>',<%=filter(PageFlowUtil.jsString(keyword.keyword))%>)" title="Delete this keyword">delete</a>]&nbsp;<%
             if (selected)
             {
                 %>[<a href="javascript:callAction('clearKeywordDefault','form<%=keywordPicker.plural%>',<%=filter(PageFlowUtil.jsString(keyword.keyword))%>)" title="Clear the default value">clear</a>]<%

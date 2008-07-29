@@ -103,7 +103,7 @@ This page may be used to search by <%= bean.isDetailsView() ? " vial" : "specime
         for (int pass = 0; pass < 2; pass++)
         {
     %>
-    <table class="normal" id="<%= pass == 0 ? "specialColumnsTable" : "additionalColumnsTable" %>" style="display:<%= pass == 0 ? "block" : "none" %>">
+    <table id="<%= pass == 0 ? "specialColumnsTable" : "additionalColumnsTable" %>" style="display:<%= pass == 0 ? "block" : "none" %>">
     <%
             for (DisplayColumn col : bean.getDisplayColumns())
             {

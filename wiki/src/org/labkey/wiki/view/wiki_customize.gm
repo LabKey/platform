@@ -168,15 +168,15 @@ function restoreDefaultPage()
 <input type="hidden" name="pageId" value="${webPart.pageId}">
 <input type="hidden" name="index" value="${webPart.index}">
 
-<table cellpadding="2">
+<table class="labkey-wiki-customize">
     <tr>
-        <td colspan="2" class="normal">
+        <td colspan="2">
             To display a different wiki page in this web part, first select the folder containing the page
             you want to display, then select the name of the page.<br><br>
         </td>
     </tr>
     <tr>
-        <td class="normal" width="20%" nowrap="1">
+        <td width="20%" nowrap="1">
         Folder containing the page to display:
         </td>
         <td width="80%">
@@ -200,7 +200,7 @@ function restoreDefaultPage()
         </td>
      </tr>
     <tr>
-        <td class="normal" width="20%" nowrap="1">
+        <td width="20%" nowrap="1">
         Name and title of the page to display:
         </td>
         <td width="80%">

@@ -35,7 +35,7 @@
 {
     AbstractParameter param = params.get(name); %>
     <tr>
-        <td class="ms-searchform"><%= h(param.getName()) %></td>
+        <td class="labkey-form-label"><%= h(param.getName()) %></td>
         <td>
             <%= h(param.getValue()) %>
         </td>

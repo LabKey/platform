@@ -47,15 +47,15 @@
     }
 %>
 <table>
-    <tr><td class=ms-searchform>Name</td><th class=normal align=left><%= h(dataset.getName()) %></th></tr>
-    <tr><td class=ms-searchform>Label</td><td class=normal><%= h(dataset.getLabel()) %></td></tr>
-    <tr><td class=ms-searchform>Display String</td><td class=normal><%= h(dataset.getDisplayString()) %></td></tr>
-    <tr><td class=ms-searchform>Category</td><td class=normal><%= h(dataset.getCategory()) %></td></tr>
-    <tr><td class=ms-searchform>Cohort</td><td class=normal><%= dataset.getCohort() != null ? h(dataset.getCohort().getLabel()) : "All" %></td></tr>
-    <tr><td class="ms-searchform">Demographic Data <%=helpPopup("Demographic Data", "Demographic data appears only once for each participant in the study.")%></td><td class=normal><%= dataset.isDemographicData() ? "true" : "false" %></td></tr>
-    <tr><td class=ms-searchform><%=visitManager.getLabel()%> Date Column</td><td class=normal><%= h(dataset.getVisitDatePropertyName()) %></td></tr>
-    <tr><td class=ms-searchform>Show By Default</td><td class=normal><%= dataset.isShowByDefault() ? "true" : "false" %></td></tr>
-    <tr><td class=ms-searchform>Description</td><td class=normal><%= h(dataset.getDescription()) %></td></tr>
+    <tr><td class=labkey-form-label>Name</td><th align=left><%= h(dataset.getName()) %></th></tr>
+    <tr><td class=labkey-form-label>Label</td><td><%= h(dataset.getLabel()) %></td></tr>
+    <tr><td class=labkey-form-label>Display String</td><td><%= h(dataset.getDisplayString()) %></td></tr>
+    <tr><td class=labkey-form-label>Category</td><td><%= h(dataset.getCategory()) %></td></tr>
+    <tr><td class=labkey-form-label>Cohort</td><td><%= dataset.getCohort() != null ? h(dataset.getCohort().getLabel()) : "All" %></td></tr>
+    <tr><td class="labkey-form-label">Demographic Data <%=helpPopup("Demographic Data", "Demographic data appears only once for each participant in the study.")%></td><td><%= dataset.isDemographicData() ? "true" : "false" %></td></tr>
+    <tr><td class=labkey-form-label><%=visitManager.getLabel()%> Date Column</td><td><%= h(dataset.getVisitDatePropertyName()) %></td></tr>
+    <tr><td class=labkey-form-label>Show By Default</td><td><%= dataset.isShowByDefault() ? "true" : "false" %></td></tr>
+    <tr><td class=labkey-form-label>Description</td><td><%= h(dataset.getDescription()) %></td></tr>
 </table>
 <% if (0 != (permissions & ACL.PERM_ADMIN))
 {

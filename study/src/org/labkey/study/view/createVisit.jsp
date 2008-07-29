@@ -31,7 +31,7 @@ to this study must be assigned to a visit. The assignment happens using a "Seque
 is uploaded along with the data. This form allows you to define a range of sequence numbers that will be correspond to the visit.
 <br>
 <form action="createVisit.post" method="POST">
-    <table class="normal">
+    <table>
 <%--        <tr>
             <th align="right">Name&nbsp;<%=helpPopup("Name", "Short unique name, e.g. 'Enroll'")%></th>
             <td>

@@ -59,7 +59,7 @@ LABKEY.borderColor = '<%=border%>';
 LABKEY.requiresScript("applet.js",true);
 LABKEY.requiresScript("dropApplet.js",true);
 </script>
-<div><h3 class="ms-announcementtitle">
+<div><h3 class="labkey-announcement-title">
     <a id="ftpLocation" href="<%=h(dropPage.getUserURL())%>"><%=dropPage.getURL()%></a>
 </h3></div>
 <table id=ftpOuterTable width="100%"><tr>
@@ -119,7 +119,7 @@ YAHOO.util.Event.addListener(window, "resize", onWindowResize);
 <a href="#findFiles" onclick="browseFiles();"><img src="<%=PageFlowUtil.buttonSrc("Find Files...")%>"></a>
 <!--<a href="#mkdir" onclick="showMkdirDialog();"><img src="<%=PageFlowUtil.buttonSrc("New Folder...")%>"></a>-->
 <br>
-        <table class="normal">
+        <table>
             <tr><td><img src="<%=contextPath%>/_.gif" width="100" height="1"></td><td><img src="<%=contextPath%>/_.gif" width="100" height="1"></td></tr>
             <tr><td align="right" id="ftpBytesTransferred">0</td><td>bytes</td></tr>
             <tr><td align="right" id="ftpFilesTransferred">0</td><td>files</td></tr>
@@ -131,13 +131,13 @@ YAHOO.util.Event.addListener(window, "resize", onWindowResize);
 <td width=1><img src="<%=contextPath%>/_img.gif" width=1 height=204></td>
 
 <td valign="top" width=100% height=100%>
-    <table cellspacing="0" cellpadding="0" width=100%>
+    <table>
         <tr><td class="myTabEmpty">&nbsp;</td><td id="transfersTab" class="myTabSelected" onclick="showTransfers()"><a href="#">transfers</a></td><!--<td id="filesTab" class="myTab" onclick="showFiles()"><a href="#">files</a></td>--><td id="consoleTab" class="myTab" onclick="showConsole()"><a href="#">console</a></td><td class="myTabEmpty" width="100%">&nbsp;</td></tr>
         <tr><td colspan="20" width="100%" height="3" style="background-color:<%=highlight%>;"><img src="<%=contextPath%>/_.gif" width=600 height=3></td></tr>
     <tr>
         <td colspan="20" valign="top" width="100%" height="100%" style="border-bottom:1px solid <%=border%>;border-left:1px solid <%=border%>;border-right:1px solid <%=border%>;">
             <div id="scrollDiv" style="overflow:scroll; width:100%;">
-            <div id="ftpConsole" class="normal" style="display:none; font-family:courier,monospace;">&nbsp;</div><div id="ftpTransfers" class="normal" style="display:inline;">&nbsp;</div><!--<div id="ftpListing" class="normal" style="display:none; font-family:courier,monospace;">&nbsp;</div>-->
+            <div id="ftpConsole" style="display:none; font-family:courier,monospace;">&nbsp;</div><div id="ftpTransfers" style="display:inline;">&nbsp;</div><!--<div id="ftpListing" style="display:none; font-family:courier,monospace;">&nbsp;</div>-->
             </div>
         </td></tr>
     </table>

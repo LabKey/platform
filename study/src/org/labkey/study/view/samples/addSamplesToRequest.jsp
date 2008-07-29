@@ -48,7 +48,7 @@
     %><input type="hidden" name="sampleIds" value="<%= specimen.getRowId() %>"><%
     }
 %>
-    <table class="normal">
+    <table>
         <tr>
             <th style="<%= headerTDStyle %>">Available Specimen Requests</th>
         </tr>

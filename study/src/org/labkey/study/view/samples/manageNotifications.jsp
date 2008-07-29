@@ -52,13 +52,13 @@ function setElementDisplayByCheckbox(checkbox, element)
 
 <%=PageFlowUtil.getStrutsError(request, "main")%>
 <form action="handleUpdateNotifications.post" method="POST">
-    <table cellspacing="5" class="normal" width="500">
+    <table class="labkey-manage-display" width="500">
         <tr>
             <td colspan="2">The specimen request system sends emails as requested by the specimen administrator.
                 Some properties of these email notifications can be configured here.</td>
         </tr>
         <tr>
-            <td colspan="2" class="ms-searchform">Notification emails will be sent from the specified reply-to address.
+            <td colspan="2" class="labkey-form-label">Notification emails will be sent from the specified reply-to address.
             This is the address that will receive replies and error messages, so it should be a monitored address.</td>
         </tr>
         <tr>
@@ -68,7 +68,7 @@ function setElementDisplayByCheckbox(checkbox, element)
             </td>
         </tr>
         <tr>
-            <td colspan="2" class="ms-searchform">All specimen request emails have the same subject line.  <b>%requestId%</b> may be used
+            <td colspan="2" class="labkey-form-label">All specimen request emails have the same subject line.  <b>%requestId%</b> may be used
                 to insert the specimen request's study-specific ID number.  The format for the subject line is:
                 <b><%= h(StudyManager.getInstance().getStudy(container).getLabel()) %>: [Subject Suffix]</b>
             </td>
@@ -80,7 +80,7 @@ function setElementDisplayByCheckbox(checkbox, element)
             </td>
         </tr>
         <tr>
-            <td colspan="2" class="ms-searchform">Notification can be sent whenever a new specimen request is submitted.</td>
+            <td colspan="2" class="labkey-form-label">Notification can be sent whenever a new specimen request is submitted.</td>
         </tr>
         <tr>
             <td><input type='checkbox' value='true' id='newRequestNotifyCheckbox'
@@ -99,7 +99,7 @@ function setElementDisplayByCheckbox(checkbox, element)
             </td>
         </tr>
         <tr>
-            <td colspan="2" class="ms-searchform">Email addresses listed under "always CC" will receive a single copy of each email notification.
+            <td colspan="2" class="labkey-form-label">Email addresses listed under "always CC" will receive a single copy of each email notification.
                 Please keep security issues in mind when adding users to this list.</td>
         </tr>
         <tr>

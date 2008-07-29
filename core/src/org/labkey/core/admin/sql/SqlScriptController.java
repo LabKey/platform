@@ -200,7 +200,7 @@ public class SqlScriptController extends SpringActionController
                 out.print("<br>All scripts have been run.<br><br>");
             else
             {
-                out.print("<br><table class=\"dataRegion\">");
+                out.print("<br><table class=\"labkey-data-region\">");
 
                 for (SqlScriptRunner.SqlScript script : _scripts)
                     out.print("<tr><td>" + script.getDescription() + "</td></tr>");
@@ -254,7 +254,7 @@ public class SqlScriptController extends SpringActionController
                 out.print("<br>");
 
                 // Post back to current URL
-                out.print("<form method=\"post\"><table class=\"dataRegion\">");
+                out.print("<form method=\"post\"><table class=\"labkey-data-region\">");
 
                 for (SqlScriptRunner.SqlScript script : _scripts)
                 {
@@ -637,7 +637,7 @@ public class SqlScriptController extends SpringActionController
             out.print("<b>");
 
             if (exists)
-                out.print("<font color=\"red\">Note: This script has already been run</font>\n\n");
+                out.print("<font class=\"labkey-error\">Note: This script has already been run</font>\n\n");
 
             out.print(_script.getDescription());
             out.print("</b>\n\n");

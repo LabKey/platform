@@ -27,7 +27,7 @@
 %>
 <%=PageFlowUtil.getStrutsError(request, "main")%>
 <form action="manageSites.post" method="POST">
-    <table class="normal">
+    <table>
         <tr>
             <th>&nbsp;</th>
             <th>Location Id</th>

@@ -27,9 +27,9 @@
 %>
 <form action="importData.view" method=POST>
     <table>
-    <tr><td class=ms-searchform width=150>Type URI</td><td><%=filter(form.typeURI)%><input type=hidden name="typeURI" value="<%=filter(form.typeURI)%>"></td></tr>
-    <tr><td class=ms-searchform width=150>Key Fields</td><td><%=filter(form.keys)%><input type=hidden name="keys" value="<%=filter(form.keys)%>"></td></tr>
-        <tr><td class=ms-searchform width=150>Tab delimited data (TSV)</td></tr>
+    <tr><td class=labkey-form-label width=150>Type URI</td><td><%=filter(form.typeURI)%><input type=hidden name="typeURI" value="<%=filter(form.typeURI)%>"></td></tr>
+    <tr><td class=labkey-form-label width=150>Key Fields</td><td><%=filter(form.keys)%><input type=hidden name="keys" value="<%=filter(form.keys)%>"></td></tr>
+        <tr><td class=labkey-form-label width=150>Tab delimited data (TSV)</td></tr>
         <tr><td colspan=2><textarea id=tsv name=tsv rows=25 cols=80 onchange="updateTSV(this, false)"><%=filter(form.tsv)%></textarea></td></tr>
     </table>
     <input type=image src="<%=PageFlowUtil.buttonSrc("Submit","large")%>">
@@ -128,11 +128,11 @@ function updateMap(names, append)
             keys[names[n]] = 1;
         }
 
-        html += "<tr><td class=normal>" + (isKey ? "<b>" : "") + names[n] + (isKey? "<\/b>" : "") + "<\/td><td>";
+        html += "<tr><td>" + (isKey ? "<b>" : "") + names[n] + (isKey? "<\/b>" : "") + "<\/td><td>";
         if (match)
             html += match.uri + "<\/td><td>" + match.range;
         else
-            html += "<font color=red>no match<\/font>";
+            html += "<font class=labkey-error>no match<\/font>";
         html += "<\/td><\/tr>";
     }
 
@@ -143,7 +143,7 @@ function updateMap(names, append)
     }
 
     if (errors)
-        errors = "<p><font color=red>" + errors + "<\/font>";
+        errors = "<p><font class=labkey-error>" + errors + "<\/font>";
     if (append)
         errors = document.getElementById("errors").innerHTML + errors;
     document.getElementById("errors").innerHTML = errors;

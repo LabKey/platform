@@ -23,7 +23,7 @@
     Cohort[] cohorts = StudyManager.getInstance().getCohorts(getStudy().getContainer(), getViewContext().getUser());
 %>
 <form action="visitVisibility.post" method="POST">
-    <table class="normal">
+    <table>
         <tr>
             <th align="left">ID</th>
             <th align="left">Label</th>

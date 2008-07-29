@@ -26,7 +26,7 @@
 <form action="<%=list.urlFor(ListController.Action.insert)%>" method="POST">
     <table>
         <tr>
-            <td class="ms-searchform"><%=h(list.getKeyName())%></td>
+            <td class="labkey-form-label"><%=h(list.getKeyName())%></td>
             <td></td>
         </tr>
     </table>

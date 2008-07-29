@@ -79,7 +79,7 @@ function orderModule(down)
 </script>
 
 <form action="manageStatusOrder.post" name="reorder" method="POST">
-<table class="normal">
+<table>
         <tr>
             <td>
                 <%

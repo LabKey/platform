@@ -47,7 +47,7 @@ for (Thread t : bean.threads)
     }
     catch (Exception x)
     {
-        %><b color=red><%=x.getMessage()%></b><%
+        %><b class=labkey-error><%=x.getMessage()%></b><%
     }
     %><br/><%
 }
@@ -78,7 +78,7 @@ for (Thread t : bean.threads)
     }
     catch (Exception x)
     {
-        %><b color=red><%=(x.getMessage()!=null?x.getMessage():x.toString()) + "\n"%></b><%
+        %><b class=labkey-error><%=(x.getMessage()!=null?x.getMessage():x.toString()) + "\n"%></b><%
     }
     %></pre><%
 }

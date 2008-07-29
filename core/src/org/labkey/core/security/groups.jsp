@@ -41,7 +41,7 @@
 <script type="text/javascript">
 LABKEY.requiresScript('completion.js');
 </script>
-<table class="normal" width="100%">
+<table class="labkey-manage-groups">
     <%
         for (Group group : groupsBean.getGroups())
         {
@@ -50,10 +50,10 @@ LABKEY.requiresScript('completion.js');
                 String groupPath = (container.isRoot() ? group.getName() : container.getPath() + "/" + group.getName());
                 List<Pair<Integer, String>> members = SecurityManager.getGroupMemberNamesAndIds(groupPath);
     %>
-            <tr class="header">
+            <tr>
                 <td width="10">
                     <a href="#" onclick="return toggleLink(this, false);">
-                        <img border="0" src="<%=request.getContextPath()%>/_images/<%= groupsBean.isExpandedGroup(groupPath) ? "minus.gif" : "plus.gif" %>">
+                        <img src="<%=request.getContextPath()%>/_images/<%= groupsBean.isExpandedGroup(groupPath) ? "minus.gif" : "plus.gif" %>">
                     </a>
                 </td>
                 <td><%= h(group.getName()) %></td>
@@ -64,7 +64,7 @@ LABKEY.requiresScript('completion.js');
             <tr style="display:<%= groupsBean.isExpandedGroup(groupPath) ? "" : "none" %>">
                 <td>&nbsp;</td>
                 <td colspan="3">
-                    <table style="background-color:#EEEEEE" class="normal">
+                    <table style="background-color:#EEEEEE">
                     <%
                     for (Pair<Integer, String> member : members)
                     {
@@ -111,9 +111,9 @@ LABKEY.requiresScript('completion.js');
     {
 %>
 <form action=newGroup.post method=POST>
-    <table>
+    <table class="labkey-form">
         <tr>
-            <td class="ms-searchform">Create new group</td>
+            <td class="labkey-form-label">Create new group</td>
             <td><input type="text" size="30" name="name"></td>
             <td><%= this.buttonImg("Create")%></td>
         </tr>

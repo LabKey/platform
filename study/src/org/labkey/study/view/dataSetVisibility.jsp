@@ -27,7 +27,7 @@
 
 <p>Datasets can be hidden on the study overview screen.</p>
 <p>Hidden data can always be viewed, but is not shown by default.</p>
-    <table class="normal">
+    <table>
         <tr>
             <th align="left">ID</th>
             <th align="left">Label</th>

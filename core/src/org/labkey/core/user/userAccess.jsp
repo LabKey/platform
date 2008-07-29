@@ -33,10 +33,6 @@
     UserController.AccessDetail bean = me.getModelBean();
     List<UserController.AccessDetailRow> rows = bean.getRows();
 
-    String shadeColor = "#EEEEEE";
-    String borderColor = "#808080";
-    String styleTH = "border-right:solid 1px " + borderColor + "; border-top:solid 2px " + borderColor + ";";
-    String styleTD = "border-right:solid 1px " + borderColor + ";";
     int cellPadding = 3;
 %>
 <labkey:errors />
@@ -46,15 +42,15 @@
 However, If this account is re-enabled, it would have the following permissions.</div>
 <% } %>
 
-<table class="normal" cellspacing="0" cellpadding="<%= cellPadding %>" style="border-bottom:solid 2px <%=borderColor%>;">
+<table class="labkey-alternating-grid">
     <tr>
-        <th style="border-left:solid 1px <%= borderColor %>;<%=styleTH%>">Container</th>
-        <th style="<%=styleTH%>">Current Access</th>
+        <th class="labkey-alternating-grid-header">Container</th>
+        <th class="labkey-alternating-grid-header">Current Access</th>
 <%
     if (bean.showGroups())
     {
 %>
-        <th style="<%=styleTH%>">Relevant Group(s)</th>
+        <th class="labkey-alternating-grid-header">Relevant Group(s)</th>
 <%
     }
 %>
@@ -66,15 +62,15 @@ However, If this account is re-enabled, it would have the following permissions.
         boolean inherited = row.isInheritedAcl() && !row.getContainer().isProject();
         ActionURL containerPermissionsLink = urlProvider(SecurityUrls.class).getProjectURL(row.getContainer());
 %>
-    <tr<%= rowNumber++ % 2 == 0 ?  " bgcolor=\"" + shadeColor + "\"" : ""%>>
-        <td style="border-left:solid 1px <%= borderColor %>;padding-left:<%= cellPadding + (10 * row.getDepth()) %>;<%= styleTD %>">
+    <tr class="<%= rowNumber++ % 2 == 0 ?  "labkey-alternating-row" : "labkey-row"%>">
+        <td class="labkey-alternating-grid-cell" style="padding-left:<%= cellPadding + (10 * row.getDepth()) %>;">
             <a href="<%= containerPermissionsLink.getLocalURIString() %>"><%= row.getContainer().getName() %></a>
         </td>
-        <td style="<%= styleTD %>"><%= row.getAccess() %><%= inherited ? "*" : "" %></td>
+        <td class="labkey-alternating-grid-cell"><%= row.getAccess() %><%= inherited ? "*" : "" %></td>
     <%
         if (bean.showGroups())
         {
-            out.print("<td style=\"" +  styleTD + "\">");
+            out.print("<td class=\"labkey-alternating-grid-cell\">");
             boolean first = true;
             for (Group group : row.getGroups())
             {

@@ -86,7 +86,7 @@ public class DataHeader extends HttpView
     {
         if (null != StringUtils.trimToNull(_datasetDef.getDescription()))
         {
-            out.print("<div class=normal style=\"width:640px\">");
+            out.print("<div style=\"width:640px\">");
             out.print(PageFlowUtil.filter(_datasetDef.getDescription()));
             out.print("</div>");
         }

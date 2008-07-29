@@ -30,7 +30,7 @@
     ExpRun run = me.getModelBean();
 %>
 
-<table cellspacing="5">
+<table class="labkey-protocol-applications">
     <tr>
         <td><b>Name</b></td>
         <td><b>Inputs</b></td>

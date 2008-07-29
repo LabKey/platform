@@ -28,7 +28,7 @@
 
 %>
 <form action="participantCrosstab.view" method="GET">
-<table class="normal">
+<table>
     <tr>
         <td>Dataset</td>
         <td>

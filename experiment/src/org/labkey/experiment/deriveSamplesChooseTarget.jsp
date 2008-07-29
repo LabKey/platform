@@ -32,12 +32,12 @@
 
     <table>
         <tr>
-            <td class="ms-searchform">Source materials:</td>
+            <td class="labkey-form-label">Source materials:</td>
             <td>
                 <table>
                     <tr>
-                        <td valign="bottom" class="ms-searchform"><strong>Name</strong></td>
-                        <td valign="bottom" class="ms-searchform"><strong>Role</strong><%= PageFlowUtil.helpPopup("Role", "Roles allow you to label an input as being used in a particular way. It serves to disambiguate the purpose of each of the input materials. Each input should have a unique role.")%></td>
+                        <td valign="bottom" class="labkey-form-label"><strong>Name</strong></td>
+                        <td valign="bottom" class="labkey-form-label"><strong>Role</strong><%= PageFlowUtil.helpPopup("Role", "Roles allow you to label an input as being used in a particular way. It serves to disambiguate the purpose of each of the input materials. Each input should have a unique role.")%></td>
                     </tr>
                 <%
                 int roleIndex = 0;
@@ -62,7 +62,7 @@
             </td>
         </tr>
         <tr>
-            <td class="ms-searchform">Number of derived samples:</td>
+            <td class="labkey-form-label">Number of derived samples:</td>
             <td colspan="2">
                 <select name="outputCount">
                     <% for (int i = 1; i <= 20; i++)
@@ -73,7 +73,7 @@
             </td>
         </tr>
         <tr>
-            <td class="ms-searchform">Target sample set:</td>
+            <td class="labkey-form-label">Target sample set:</td>
             <td colspan="2">
                 <select name="targetSampleSetId">
                     <option value="0">Not a member of a sample set</option>

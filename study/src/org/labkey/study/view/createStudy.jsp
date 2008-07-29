@@ -34,7 +34,7 @@
 <%  } else { %>
 <labkey:errors/>
 <form action="createStudy.post" method="POST">
-    <table cellspacing="3" class="normal">
+    <table class="labkey-create-study">
         <tr>
             <th align="left">Study Label</th>
             <td align="left"><input type="text" size="40" name="label" value="<%= h(form.getLabel()) %>"></td>

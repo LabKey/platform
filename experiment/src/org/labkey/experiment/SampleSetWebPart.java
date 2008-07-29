@@ -146,7 +146,7 @@ public class SampleSetWebPart extends WebPartView<Object>
     {
         if (_sampleSetError != null)
         {
-            out.write("<font color=\"red\">" + PageFlowUtil.filter(_sampleSetError) + "</font><br>");
+            out.write("<font class=\"labkey-error\">" + PageFlowUtil.filter(_sampleSetError) + "</font><br>");
         }
         DataRegion dr = getMaterialSourceWithProjectRegion(getViewContext());
         dr.render(new SampleSetRenderContext(getViewContext()), out);

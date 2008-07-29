@@ -26,7 +26,7 @@
     Specimen sample = me.getModelBean();
     Site originatingLocation = SampleManager.getInstance().getOriginatingSite(sample);
 %>
-<table class="normal">
+<table>
     <tr>
         <th align="right">Specimen Number</th>
         <td><%= h(sample.getSpecimenNumber()) %></td>

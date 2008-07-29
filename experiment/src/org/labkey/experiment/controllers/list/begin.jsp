@@ -30,7 +30,7 @@
 <% if (map.isEmpty()) { %>
 <p>There are no user-defined lists in this folder.</p>
 <% } else {%>
-    <table class="normal">
+    <table>
         <tr>
             <th colspan="4">User defined lists in this folder.</th>
         </tr>

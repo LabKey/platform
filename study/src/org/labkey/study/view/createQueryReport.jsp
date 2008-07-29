@@ -87,7 +87,7 @@
 <input type="hidden" name="srcURL" value="<%= bean.getSrcURL().getLocalURIString() %>">
 <input type="hidden" id="viewName" name="<%=QueryParam.viewName.toString()%>" value="">
 <input type="hidden" name="dataRegionName" value="<%=DataSetQueryView.DATAREGION%>">
-<table class="normal">
+<table>
     <tr>
         <th align="right">Label for View</th>
         <td><input type="text" size="30" id="label" name="label"></td>

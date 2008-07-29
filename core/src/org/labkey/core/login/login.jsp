@@ -44,7 +44,7 @@
     { %>
 <form name="login" method="POST" action="login.post"><%
     } %>
-    <table border="0"><%
+    <table><%
     if (null != form.getErrorHtml() && form.getErrorHtml().length() > 0)
     { %>
         <tr><td colspan=2><b><%=form.getErrorHtml()%></b></td></tr>

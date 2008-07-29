@@ -43,7 +43,7 @@ client browser.
 <br>
 
 <form name="testLdap" method="post" action="testLdap.post">
-<table border="0">
+<table>
     <tr><td>LDAP Server URL:</td><td><input id="server" type="text" name="server" style="width:400;" value="<%=h(form.getServer())%>"></td></tr>
     <tr><td>Security Principal:</td><td><input id="principal" type="text" name="principal" style="width:400;" value="<%=h(form.getPrincipal())%>"></td></tr>
     <tr><td>Password:</td><td><input id="password" type="password" name="password" style="width:400;" value="<%=h(form.getPassword())%>"></td></tr>

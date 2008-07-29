@@ -33,7 +33,7 @@
 </script>
 <form action="<%=_ctx.getSearchUrl()%>" id="frmSearch">
 <input type="hidden" name="includeSubfolders" value="on"/>
-<table width="100%" cellpadding="2px" cellspacing="0" border="0">
+<table class="labkey-wiki-search">
     <tr>
         <td width="99%" align="left">
             <input type="text" name="search" style="width:100%">

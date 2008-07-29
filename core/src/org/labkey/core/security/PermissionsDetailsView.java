@@ -78,7 +78,6 @@ public class PermissionsDetailsView extends WebPartView
             setTitle("Default permissions for new projects");
         else
             setTitle("Permissions for " + _c.getPath());
-        setBodyClass("normal");
     }
 
     private void renderGroupTableRow(Group group, ACL acl, PrintWriter out, String displayName)
@@ -87,7 +86,7 @@ public class PermissionsDetailsView extends WebPartView
         int perm = acl.getPermissions(id);
         if (perm == -1) perm = ACL.PERM_ALLOWALL; // HACK
         String htmlId = "group." + Integer.toHexString(id);
-        out.print("<tr><td class=ms-searchform>");
+        out.print("<tr><td class=labkey-form-label>");
         out.print(displayName);
         out.print("</td><td><select onchange=\"document.updatePermissions.inheritPermissions.checked=false;\" id=");
         out.print(htmlId);
@@ -108,7 +107,7 @@ public class PermissionsDetailsView extends WebPartView
 
         if (!_c.isRoot())
         {
-            out.print("<td class=\"normal\">");
+            out.print("<td>");
             out.print("&nbsp;[<a href=\"" + PageFlowUtil.filter(PageFlowUtil.urlProvider(SecurityUrls.class).getGroupPermissionURL(_c, group.getUserId())) + "\">");
             out.print("permissions</a>]</td>");
         }
@@ -169,7 +168,7 @@ public class PermissionsDetailsView extends WebPartView
             }
         }
 
-        out.println("<table>");
+        out.println("<table class=\"labkey-form\">");
         // the first pass through will output only the project groups:
         Group guestsGroup = null;
         Group usersGroup = null;

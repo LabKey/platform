@@ -131,7 +131,7 @@
 </style>
 <p/>
 
-<table border="0" cellspacing="0" cellpadding="2" class="normal" style="border-bottom:solid 2px <%=borderColor%>;">
+<table class="labkey-participant-view">
 
     <tr bgcolor="<%=shadeColor%>">
         <td class=gth><img alt="" width=180 height=1 src="<%=contextPath%>/_.gif"></td><%
@@ -195,12 +195,12 @@
             PropertyDescriptor[] pds = sortProperties(StudyController.getParticipantPropsFromCache(HttpView.getRootContext(), typeURI), dataSet, HttpView.getRootContext());
             if (!dataSet.canRead(user))
             {
-                %><tr class="header"><th nowrap align="left" bgcolor="<%=headerColor%>" style="border-top:solid 2px <%=borderColor%>; border-bottom:solid 2px <%=borderColor%>;"><%=h(dataSet.getDisplayString())%></th><td colspan="<%=totalSeqKeyCount%>" nowrap align="left" bgcolor="<%=headerColor%>" style="border-top:solid 2px <%=borderColor%>; border-bottom:solid 2px <%=borderColor%>;">(no access)</td></tr><%
+                %><tr class="labkey-header"><th nowrap align="left" bgcolor="<%=headerColor%>" style="border-top:solid 2px <%=borderColor%>; border-bottom:solid 2px <%=borderColor%>;"><%=h(dataSet.getDisplayString())%></th><td colspan="<%=totalSeqKeyCount%>" nowrap align="left" bgcolor="<%=headerColor%>" style="border-top:solid 2px <%=borderColor%>; border-bottom:solid 2px <%=borderColor%>;">(no access)</td></tr><%
                 continue;
             }
 
             %>
-            <tr class="header">
+            <tr class="labkey-header">
             <th nowrap colspan="<%=totalSeqKeyCount+1%>" align="left" bgcolor="<%=headerColor%>" style="border-top:solid 2px <%=borderColor%>; border-bottom:solid 2px <%=borderColor%>;"><a title="Click to expand" href="<%=new ActionURL("Study", "expandStateNotify", study.getContainer()).addParameter("datasetId", Integer.toString(pdKey.datasetId)).addParameter("id", Integer.toString(bean.getDatasetId()))%>" onclick="return collapseExpand(this, true);"><%=h(dataSet.getDisplayString())%></a><%
             if (null != StringUtils.trimToNull(dataSet.getDescription()))
             {
@@ -222,7 +222,7 @@
                 }
                 %>
                 <tr style="<%=expanded ? "" : "display:none"%>">
-                    <td colspan="<%=totalSeqKeyCount%>"><img border=0 src="<%=new ActionURL(ReportsController.PlotChartAction.class, study.getContainer()).addParameter("participantId", bean.getParticipantId()).addParameter(ReportDescriptor.Prop.reportId.name(), report.getDescriptor().getReportId())%>"></td>
+                    <td colspan="<%=totalSeqKeyCount%>"><img src="<%=new ActionURL(ReportsController.PlotChartAction.class, study.getContainer()).addParameter("participantId", bean.getParticipantId()).addParameter(ReportDescriptor.Prop.reportId.name(), report.getDescriptor().getReportId())%>"></td>
                 </tr>
                 <%
             }

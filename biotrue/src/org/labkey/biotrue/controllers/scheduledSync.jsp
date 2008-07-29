@@ -31,9 +31,9 @@
 
 
 <form action="scheduledSync.view" method="post">
-    <table class="normal">
+    <table>
         <input type="hidden" name="serverId" value="<%=server.getRowId()%>">
-        <tr><td class=ms-vb align=center><div class="ms-searchform"><b>Scheduled Synchronization</b></div></td></tr>
+        <tr><td align=center><div class="labkey-form-label"><b>Scheduled Synchronization</b></div></td></tr>
         <tr><td>Server:&nbsp;<%=server.getName()%></td></tr>
         <tr><td>Synchronize with the BioTrue server:&nbsp;
             <select name="serverSyncInterval">

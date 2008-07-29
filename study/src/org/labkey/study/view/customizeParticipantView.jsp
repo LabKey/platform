@@ -43,8 +43,8 @@
     <input type="hidden" name="reshow" value="false">
     <input type="hidden" name="participantId" value="<%= h(bean.getParticipantId()) %>">
     <table>
-        <tr class="wpHeader">
-            <th class="wpTitle">Participant View Contents</th>
+        <tr class="labkey-wp-header">
+            <th>Participant View Contents</th>
         </tr>
         <tr>
             <td>
@@ -86,8 +86,8 @@
     {
 %>
 <table width="100%">
-    <tr class="wpHeader">
-        <th class="wpTitle">Participant View Preview (Save to refresh)</th>
+    <tr class="labkey-wp-header">
+        <th>Participant View Preview (Save to refresh)</th>
     </tr>
     <tr>
         <td>

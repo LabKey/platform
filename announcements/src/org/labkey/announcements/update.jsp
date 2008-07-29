@@ -43,22 +43,22 @@
 
 if (settings.isTitleEditable())
 {
-    %><tr><td class='ms-searchform'>Title</td><td class='ms-vb' colspan="2"><input name="title" size="60" value="<%=h(ann.getTitle())%>"></td></tr><%
+    %><tr><td class='labkey-form-label'>Title</td><td colspan="2"><input name="title" size="60" value="<%=h(ann.getTitle())%>"></td></tr><%
 }
 
 if (settings.hasStatus())
 {
-    %><tr><td class='ms-searchform'>Status</td><td class='ms-vb' colspan="2"><%=bean.statusSelect%></td></tr><%
+    %><tr><td class='labkey-form-label'>Status</td><td colspan="2"><%=bean.statusSelect%></td></tr><%
 }
 
 if (settings.hasAssignedTo())
 {
-    %><tr><td class='ms-searchform'>Assigned&nbsp;To</td><td class='ms-vb' colspan="2"><%=bean.assignedToSelect%></td></tr><%
+    %><tr><td class='labkey-form-label'>Assigned&nbsp;To</td><td colspan="2"><%=bean.assignedToSelect%></td></tr><%
 }
 
 if (settings.hasMemberList())
 {
-    %><tr><td class="ms-searchform">Members</td><td class="normal"><%=bean.memberList%></td><td style="width:100%;"><i><%
+    %><tr><td class="labkey-form-label">Members</td><td><%=bean.memberList%></td><td style="width:100%;"><i><%
     if (settings.isSecure())
     {
         %> This <%=settings.getConversationName().toLowerCase()%> is private; only editors and the users on this list can view it.  These users will also<%
@@ -72,13 +72,13 @@ if (settings.hasMemberList())
 
 if (settings.hasExpires())
 {
-    %><tr><td class="ms-searchform">Expires</td><td class="normal"><input name="expires" size="23" value="<%=h(DateUtil.formatDate(ann.getExpires()))%>"></td><td style="width:100%;"><i>Expired messages are not deleted, they are just no longer shown on the Portal page.</i></td></tr><%
+    %><tr><td class="labkey-form-label">Expires</td><td><input name="expires" size="23" value="<%=h(DateUtil.formatDate(ann.getExpires()))%>"></td><td style="width:100%;"><i>Expired messages are not deleted, they are just no longer shown on the Portal page.</i></td></tr><%
 }
 
 %>
   <tr>
-    <td class='ms-searchform'>Body</td>
-    <td class='ms-vb' style="width:100%;" colspan="2">
+    <td class='labkey-form-label'>Body</td>
+    <td style="width:100%;" colspan="2">
         <textarea cols="120" rows ="15" name='body' style="width:100%;"><%=h(ann.getBody())%></textarea>
     </td>
   </tr>
@@ -86,8 +86,8 @@ if (settings.hasExpires())
     if (settings.hasFormatPicker())
     { %>
   <tr>
-    <td class="ms-searchform">Render As</td>
-    <td class="normal" colspan="2">
+    <td class="labkey-form-label">Render As</td>
+    <td colspan="2">
       <select name="rendererType"><%
           for (WikiRendererType type : bean.renderers)
           {
@@ -102,8 +102,8 @@ if (settings.hasExpires())
   </tr>
 <%  } %>
   <tr>
-    <td class='ms-searchform'>Attachments</td>
-    <td class="normal" colspan="2">
+    <td class='labkey-form-label'>Attachments</td>
+    <td colspan="2">
 <%
     for (Attachment attach : ann.getAttachments())
     {
@@ -122,7 +122,7 @@ if (settings.hasExpires())
   </tr>
   <tr>
     <td colspan=3 align=left>
-      <table border=0 cellspacing=2 cellpadding=0>
+      <table class="labkey-small-button-bar">
         <tr>
           <td><input type='image' src='<%=PageFlowUtil.buttonSrc("Submit")%>' name='update.post' value='Submit' onClick='this.form.action="update.post";this.form.method="post";' >&nbsp;<%=PageFlowUtil.buttonLink("Cancel", bean.returnURL)%></td>
         </tr>

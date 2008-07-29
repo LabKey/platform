@@ -79,18 +79,18 @@
     {
         if (null == form)
         {
-            %><font color=red><em>form</em> is NULL</font><br><%
+            %><font class="labkey-error"><em>form</em> is NULL</font><br><%
         }
         // since we're don't showing errors field-by-field don't show duplicates
         if (null == errors)
         {
-            %><font color=red><em>errors</em> is NULL</font><br><%
+            %><font class="labkey-error"><em>errors</em> is NULL</font><br><%
         }
         else
             for (ObjectError e : (List<ObjectError>) errors.getAllErrors())
             {
                 String message = getMessage(e);
-                %><font color=red><%=h(message)%></font><br><%
+                %><font class="labkey-error"><%=h(message)%></font><br><%
             }
     }
 %>

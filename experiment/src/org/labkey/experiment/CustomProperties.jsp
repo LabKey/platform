@@ -53,7 +53,7 @@ while (!stack.isEmpty())
         CustomPropertyRenderer renderer = form.getRenderers().get(value.getPropertyURI());
         if (renderer.shouldRender(value, values)) { %>
             <tr>
-                <td class="ms-searchform"><% int i = 0; while(i < stack.size() - 1) { i++; %>&nbsp;&nbsp;&nbsp;&nbsp;<% } %><%= renderer.getDescription(value, values) %></td>
+                <td class="labkey-form-label"><% int i = 0; while(i < stack.size() - 1) { i++; %>&nbsp;&nbsp;&nbsp;&nbsp;<% } %><%= renderer.getDescription(value, values) %></td>
                 <td><%= renderer.getValue(value, values, me.getViewContext()) %></td>
             </tr> <%
         }

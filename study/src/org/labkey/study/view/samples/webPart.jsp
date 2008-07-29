@@ -42,7 +42,7 @@
     if (bean.isWide())
     {
 %>
-<table width="100%" cellspacing="5">
+<table width="100%" class="labkey-manage-display">
     <tr>
         <td valign="top" width="30%">
 <%

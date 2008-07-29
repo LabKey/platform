@@ -33,7 +33,7 @@
 %>
     <div>
         <br/>
-<table class="normal" column="2"  >
+<table>
         <tr>
             <td colspan="2" align='center'>Select the Assay definition to apply to these files:</td>
         </tr>

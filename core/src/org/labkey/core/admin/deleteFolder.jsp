@@ -41,12 +41,12 @@
     String containerType = (c.isProject() ? "project" : "folder");
     String childrenDescription = (c.isProject() ? "folder" : "subfolder");
 %>
-<table class="dataRegion"><%
+<table class="labkey-data-region"><%
     if (c.equals(ContainerManager.getHomeContainer()))
     {
         %><tr><td>You cannot delete the home project.</td></tr>
-        <tr><td class="normal">
-        <a href="manageFolders.view"><img border=0 src='<%=PageFlowUtil.buttonSrc("OK")%>'></a>
+        <tr><td>
+        <a href="manageFolders.view"><img src='<%=PageFlowUtil.buttonSrc("OK")%>'></a>
         </td></tr>
         </table><%
 
@@ -59,8 +59,8 @@
     {
         %><tr><td>This <%=h(containerType)%> has <%=childrenDescription%>s, but you don't have admininistrative permissions to all the <%=childrenDescription%>s.</td></tr>
         <tr><td>&nbsp;</td></tr>
-        <tr><td class="normal">
-        <a href="manageFolders.view"><img border=0 src="<%=PageFlowUtil.buttonSrc("Back")%>"></a>
+        <tr><td>
+        <a href="manageFolders.view"><img src="<%=PageFlowUtil.buttonSrc("Back")%>"></a>
         </td></tr>
         </table><%
 
@@ -109,9 +109,9 @@
             <tr><td>&nbsp;</td></tr>
         </table>
 
-        <table border=0 cellspacing=2 cellpadding=0><tr>
-            <td><form action="deleteFolder.post<%=recurse ? "?recurse=1" : ""%>" method="post"><input type=image border=0 src='<%=PageFlowUtil.buttonSrc("Delete")%>'></form></td>
-            <td><a href="manageFolders.view"><img border=0 src='<%=PageFlowUtil.buttonSrc("Cancel")%>'></a></td>
+        <table class="labkey-small-button-bar"><tr>
+            <td><form action="deleteFolder.post<%=recurse ? "?recurse=1" : ""%>" method="post"><input type=image src='<%=PageFlowUtil.buttonSrc("Delete")%>'></form></td>
+            <td><a href="manageFolders.view"><img src='<%=PageFlowUtil.buttonSrc("Cancel")%>'></a></td>
         </tr></table><%
     }
     else
@@ -124,10 +124,10 @@
     <tr><td>&nbsp;</td></tr>
 </table>
 
-<table border=0 cellspacing=2 cellpadding=0>
+<table class="labkey-small-button-bar">
     <tr>
-        <td><a href="deleteFolder.view?recurse=1"><img border=0 src="<%=PageFlowUtil.buttonSrc("Delete All Folders")%>"></a></td>
-        <td><a href="manageFolders.view"><img border=0 src="<%=PageFlowUtil.buttonSrc("Cancel")%>"></a></td>
+        <td><a href="deleteFolder.view?recurse=1"><img src="<%=PageFlowUtil.buttonSrc("Delete All Folders")%>"></a></td>
+        <td><a href="manageFolders.view"><img src="<%=PageFlowUtil.buttonSrc("Cancel")%>"></a></td>
     </tr>
 </table><%
     }  %>

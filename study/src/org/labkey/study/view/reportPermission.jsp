@@ -112,7 +112,7 @@
     %>
         </table>
         <table>
-        <tr><th class=ms-searchform colspan=2 align=left>Site groups</th></tr><%
+        <tr><th class=labkey-form-label colspan=2 align=left>Site groups</th></tr><%
         for (Group g : globalGroups)
         {
             if (g.isAdministrators())
@@ -124,18 +124,18 @@
             //if (g.isAdministrators()) continue;
             boolean checked = acl.hasPermission(g, ACL.PERM_READ) || g.isAdministrators();
             boolean disabled = !containerAcl.hasPermission(g, ACL.PERM_READ) || g.isAdministrators();
-            %><tr><td class=normal><font color=<%=disabled?"gray":"black"%>><%=g.getName()%></font></td><td height="22" width=20><input name=group value="<%=g.getUserId()%>" type=checkbox <%=checked?"checked":""%> <%=disabled?"disabled":""%>></td></tr><%
+            %><tr><td><font color=<%=disabled?"gray":"black"%>><%=g.getName()%></font></td><td height="22" width=20><input name=group value="<%=g.getUserId()%>" type=checkbox <%=checked?"checked":""%> <%=disabled?"disabled":""%>></td></tr><%
         }
 
         if (projectGroups.length > 0)
         {
-            %><tr><th class=ms-searchform colspan=2 align=left>Project groups</th></tr><%
+            %><tr><th class=labkey-form-label colspan=2 align=left>Project groups</th></tr><%
         }
         for (Group g : projectGroups)
         {
             boolean checked = acl.hasPermission(g, ACL.PERM_READ);
             boolean disabled = !containerAcl.hasPermission(g, ACL.PERM_READ);
-            %><tr><td class=normal><font color=<%=disabled?"gray":"black"%>><%=g.getName()%></font></td><td height=22 width=20><input name=group value="<%=g.getUserId()%>" type=checkbox <%=checked?"checked":""%> <%=disabled?"disabled":""%>></td></tr><%
+            %><tr><td><font color=<%=disabled?"gray":"black"%>><%=g.getName()%></font></td><td height=22 width=20><input name=group value="<%=g.getUserId()%>" type=checkbox <%=checked?"checked":""%> <%=disabled?"disabled":""%>></td></tr><%
         }
         %>
     </table>

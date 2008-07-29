@@ -23,7 +23,7 @@
 
 <table>
     <tr>
-        <td class="normal">
+        <td>
         Enter the title for the Wiki TOC web part.
         </td>
         <td>
@@ -31,7 +31,7 @@
         </td>
      </tr>
     <tr>
-        <td class="normal">
+        <td>
         Select the path to the folder containing the wiki to display.
         </td>
         <td>

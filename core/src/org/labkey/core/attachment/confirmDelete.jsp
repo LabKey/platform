@@ -24,12 +24,12 @@
 %>
 <table>
   <tr>
-    <td class="normal">Delete <%=me.name%>?</td>
+    <td>Delete <%=me.name%>?</td>
   </tr>
   <tr>
-    <td class="normal">
-      <a href="<%=h(me.deleteURL)%>"><img border=0 src="<%=PageFlowUtil.buttonSrc("OK")%>"></a>
-      <a href="#cancel"><img border=0 onClick="window.close()" src="<%=PageFlowUtil.buttonSrc("Cancel")%>"></a>
+    <td>
+      <a href="<%=h(me.deleteURL)%>"><img src="<%=PageFlowUtil.buttonSrc("OK")%>"></a>
+      <a href="#cancel"><img onClick="window.close()" src="<%=PageFlowUtil.buttonSrc("Cancel")%>"></a>
     </td>
   </tr>
 </table>

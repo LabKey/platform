@@ -120,7 +120,7 @@ function toggleItemSelector()
     <input type="radio" name="resetToAlphabetical" value="false" <%= isCustomOrder ? "checked" : "" %> onChange="toggleItemSelector();" /> Use custom <%= reorderingProjects ? "project" : "folder" %> order
 </p>
 <p>
-    <table class="normal">
+    <table class="labkey-form">
         <tr>
             <td>
                 <select name="items" size="<%= containers.size() %>"  <%= isCustomOrder ? "" : "DISABLED" %>>
@@ -134,7 +134,7 @@ function toggleItemSelector()
                 %>
                 </select>
             </td>
-            <td align="center" valign="center">
+            <td>
                 <input type='image' src="<%= PageFlowUtil.buttonSrc("Move Up")%>" value='Move Up' onclick="return orderModule(0)"><br><br>
                 <input type='image' src="<%= PageFlowUtil.buttonSrc("Move Down")%>" value='Move Down' onclick="return orderModule(1)">
             </td>

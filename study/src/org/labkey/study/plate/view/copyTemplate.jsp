@@ -27,7 +27,7 @@
     PlateController.CopyTemplateBean bean = me.getModelBean();
 %>
 <labkey:errors />
-<table class="normal">
+<table>
     <tr>
         <td>Copy <b><%= h(bean.getTemplateName()) %></b> to:</td>
     </tr>

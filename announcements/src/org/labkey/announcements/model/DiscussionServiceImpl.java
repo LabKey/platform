@@ -288,7 +288,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
 
         public void doStartTag(Map context, PrintWriter out)
         {
-            out.write("<table><tr><th valign=top width=50px><img src='" + getViewContext().getContextPath() + "/_.gif' width=50 height=1></th><td class=normal>");
+            out.write("<table><tr><th valign=top width=50px><img src='" + getViewContext().getContextPath() + "/_.gif' width=50 height=1></th><td>");
         }
 
         protected void renderView(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception

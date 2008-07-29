@@ -547,7 +547,7 @@ public class Designer implements EntryPoint
 
         private void createPanel()
         {
-            String labelStyleName="ms-searchform"; // Pretty yellow background for labels
+            String labelStyleName="labkey-form-label"; // Pretty yellow background for labels
             CellFormatter cellFormatter = getCellFormatter();
 
             int row = 0;
@@ -559,6 +559,7 @@ public class Designer implements EntryPoint
                     _dataset.setName(((TextBox)widget).getText());
                 }
             });
+            DOM.setElementAttribute(dsName._box.getElement(), "id", "DatasetDesignerName");
             HorizontalPanel panel = new HorizontalPanel();
             panel.add(new Label("Dataset Name"));
             panel.add(new HelpPopup("Name", "Short unique name, e.g. 'DEM1'"));
@@ -943,7 +944,7 @@ public class Designer implements EntryPoint
                 String warning = "<b>NOTE: This will replace any existing fields you have defined.</b>";
                 if (!_create)
                 {
-                    warning = "<b><font color=\"red\">WARNING: This will replace any existing fields you have defined, " +
+                    warning = "<b><font class=\"labkey-error\">WARNING: This will replace any existing fields you have defined, " +
                             "and delete all data in any redefined fields!</font></b>";
                 }
                 HTML html = new HTML(

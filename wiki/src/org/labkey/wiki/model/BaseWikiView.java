@@ -60,7 +60,6 @@ abstract class BaseWikiView extends GroovyView
         addObject("hasContent", Boolean.TRUE);
         addObject("includeLinks", Boolean.TRUE);
         addObject("isEmbedded", Boolean.FALSE);
-        this.setBodyClass("normal");
     }
 
 

@@ -34,7 +34,7 @@
 
     Map<String, QueryDefinition> queries = new TreeMap<String, QueryDefinition>(svc.getQueryDefs(context.getContainer(), currentSchema.getSchemaName()));
 %>
-<table class="normal">
+<table>
     <tr>
         <th colspan="7">User-defined queries in the schema:</th>
     </tr>
@@ -114,7 +114,7 @@
 
 
 <p>
-    <table class="normal">
+    <table>
         <tr><th colspan="2">Built-in tables</th></tr>
         <%
             Set<String> tableNames = new TreeSet<String>(currentSchema.getTableNames());

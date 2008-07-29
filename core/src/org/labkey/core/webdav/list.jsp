@@ -89,7 +89,7 @@ BODY, TD, TH { font-family: arial sans-serif; color: black; }
     }
 %></td></tr> </table>
 <hr size="1" noshade="noshade">
-<table cellspacing="1" cellpadding="2">
+<table>
 <thead>
 <th align="left" width="300">Filename</th>
 <th align="center" width="100">Size</th>

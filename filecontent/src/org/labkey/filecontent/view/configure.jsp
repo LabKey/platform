@@ -104,11 +104,11 @@ Each file set is an additional directory that stores files accessible to users o
     <form action="deleteAttachmentDirectory.post" method="POST">
     <table>
         <tr>
-            <td class="ms-searchform">Name</td>
+            <td class="labkey-form-label">Name</td>
             <td><%=h(attDir.getLabel())%><input type="hidden" name="fileSetName" value="<%=h(attDir.getLabel())%>"></td>
         </tr>
         <tr>
-            <td class="ms-searchform">Path</td>
+            <td class="labkey-form-label">Path</td>
             <td><%=h(attDir.getFileSystemDirectory().getPath())%> <%=attDir.getFileSystemDirectory().exists() ? "" : "Directory does not exist. An administrator must create it."%></td>
         </tr>
         <tr>
@@ -121,11 +121,11 @@ Each file set is an additional directory that stores files accessible to users o
 <form action="addAttachmentDirectory.post" method="POST">
 <table>                                        
     <tr>
-        <td class="ms-searchform">Name</td>
+        <td class="labkey-form-label">Name</td>
         <td><input name="fileSetName" value="<%=h(form.getFileSetName())%>"></td>
     </tr>
     <tr>
-        <td class="ms-searchform">Path</td>
+        <td class="labkey-form-label">Path</td>
         <td><input name="path" size="60" value="<%=h(form.getPath())%>"></td>
     </tr>
     <tr>

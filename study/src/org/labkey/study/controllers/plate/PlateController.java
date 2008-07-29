@@ -286,7 +286,7 @@ public class PlateController extends SpringActionController
                     copyURL.addParameter("destination", c.getPath());
                     boolean selected = c.getPath().equals(selectedDestination);
                     if (selected)
-                        html.append("<span class=\"labkey-navtree-selected\">");
+                        html.append("<span class=\"labkey-nav-tree-selected\">");
                     html.append("<a href=\"");
                     html.append(copyURL.getEncodedLocalURIString());
                     html.append("\">");

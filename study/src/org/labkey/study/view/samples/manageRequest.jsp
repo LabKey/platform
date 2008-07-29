@@ -146,16 +146,16 @@
 <%
     }
 %>
-    <table class="normal" cellspacing="10">
+    <table class="labkey-request-warnings">
 <%
     if (bean.hasMissingSpecimens())
     {
 %>
-        <tr class="wpHeader">
+        <tr class="labkey-wp-header">
             <th align="left">Request  Warnings</th>
         </tr>
         <tr>
-            <td class="ms-searchform">
+            <td class="labkey-form-label">
                 <span class="labkey-error"><b>WARNING: Missing Specimens</b></span><br><br>
                 The following specimen(s) are part of this request, but have been deleted from the database:<br>
                 <%
@@ -180,11 +180,11 @@
     if (bean.isRequestManager() && (bean.isFinalState() || bean.isRequirementsComplete()))
     {
 %>
-        <tr class="wpHeader">
+        <tr class="labkey-wp-header">
             <th align="left">Request  Notes</th>
         </tr>
         <tr>
-            <td class="ms-searchform">
+            <td class="labkey-form-label">
 <%
         if (bean.isFinalState())
         {
@@ -215,11 +215,11 @@
     if (notYetSubmitted)
     {
 %>
-        <tr class="wpHeader">
+        <tr class="labkey-wp-header">
             <th align="left">Unsubmitted Request</th>
         </tr>
         <tr>
-            <td class="ms-searchform"><span class="labkey-error"><b>This request has not been submitted.</b></span>
+            <td class="labkey-form-label"><span class="labkey-error"><b>This request has not been submitted.</b></span>
 <%
         if (SampleManager.getInstance().hasEditRequestPermissions(context.getUser(), bean.getSampleRequest()))
         {
@@ -255,7 +255,7 @@
         }
     }
 %>
-        <tr class="wpHeader">
+        <tr class="labkey-wp-header">
             <th align="left">Request Information</th>
         </tr>
         <tr>
@@ -297,7 +297,7 @@
         </tr>
         <form action="manageRequest.post" name="addRequirementForm" enctype="multipart/form-data" method="POST">
         <input type="hidden" name="id" value="<%= bean.getSampleRequest().getRowId()%>">
-        <tr class="wpHeader">
+        <tr class="labkey-wp-header">
             <th align="left">Current Requirements</th>
         </tr>
         <%
@@ -317,7 +317,7 @@
                     else
                     {
                 %>
-                    <table cellspacing="0" cellpadding="3">
+                    <table class="labkey-requirements">
                         <tr style="border-bottom:solid 1px <%= borderColor %>;border-top:solid 1px <%= borderColor %>">
                             <th <%= styleTH %>>Actor</th>
                             <th <%= styleTH %>>Location</th>
@@ -396,7 +396,7 @@
             </td>
         </tr>
         </form>
-        <tr class="wpHeader">
+        <tr class="labkey-wp-header">
             <th align="left">Associated Specimens</th>
         </tr>
         <tr>

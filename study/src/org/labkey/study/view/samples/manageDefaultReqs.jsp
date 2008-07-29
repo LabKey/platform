@@ -25,9 +25,6 @@
 <%
     JspView<org.labkey.study.controllers.samples.SpringSpecimenController.ManageReqsBean> me = (JspView<SpringSpecimenController.ManageReqsBean>) HttpView.currentView();
     SpringSpecimenController.ManageReqsBean bean = me.getModelBean();
-    String borderColor = "#808080";
-    String styleTD = " style=\"border-bottom:solid 1px " + borderColor + ";\"";
-    String styleTH = " style=\"border-bottom:solid 1px " + borderColor + ";\" align=\"left\"";
     SampleRequestRequirement[] providerRequirements = bean.getProviderRequirements();
     SampleRequestRequirement[] originatingRequirements = bean.getOriginatorRequirements();
     SampleRequestRequirement[] receiverRequirements = bean.getReceiverRequirements();
@@ -54,26 +51,26 @@ function verifyNewRequirement(prefix)
 }
 </script>
 <form action="manageDefaultReqs.post" name="manageDefaultReqs" method="POST">
-    <table class="normal" cellspacing="10">
-    <tr class="wpHeader">
+    <table class="labkey-manage-default-reqs">
+    <tr class="labkey-wp-header">
         <th align="left">Requirements of Each Originating Lab</th>
     </tr>
     <tr>
         <td>
-            <table cellspacing="0" cellpadding="3">
-                <tr style="border-bottom:solid 1px <%= borderColor %>;border-top:solid 1px <%= borderColor %>">
-                    <th <%= styleTH %>>&nbsp;</th>
-                    <th <%= styleTH %>>Actor</th>
-                    <th <%= styleTH %> colspan="2">Description</th>
+            <table>
+                <tr class="labkey-requirement-row">
+                    <th class="labkey-requirement-cell" align="left">&nbsp;</th>
+                    <th class="labkey-requirement-cell" align="left">Actor</th>
+                    <th class="labkey-requirement-cell" align="left" colspan="2">Description</th>
                 </tr>
                 <%
                     for (SampleRequestRequirement requirement : originatingRequirements)
                     {
                 %>
                 <tr>
-                    <td <%= styleTD %>><%= textLink("Delete", "deleteDefaultRequirement.view?id=" + requirement.getRowId())%></td>
-                    <td <%= styleTD %>><%= h(requirement.getActor().getLabel()) %></td>
-                    <td <%= styleTD %>
+                    <td class="labkey-requirement-cell"><%= textLink("Delete", "deleteDefaultRequirement.view?id=" + requirement.getRowId())%></td>
+                    <td class="labkey-requirement-cell"><%= h(requirement.getActor().getLabel()) %></td>
+                    <td class="labkey-requirement-cell"
                             colspan="2"><%= requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;" %></td>
                 </tr>
                 <%
@@ -102,25 +99,25 @@ function verifyNewRequirement(prefix)
             </table>
         </td>
     </tr>
-    <tr class="wpHeader">
+    <tr class="labkey-wp-header">
         <th align="left">Requirements of Each Providing Lab</th>
     </tr>
     <tr>
         <td>
-            <table cellspacing="0" cellpadding="3">
-                <tr style="border-bottom:solid 1px <%= borderColor %>;border-top:solid 1px <%= borderColor %>">
-                    <th <%= styleTH %>>&nbsp;</th>
-                    <th <%= styleTH %>>Actor</th>
-                    <th <%= styleTH %> colspan="2">Description</th>
+            <table>
+                <tr class="labkey-requirement-row">
+                    <th class="labkey-requirement-cell" align="left">&nbsp;</th>
+                    <th class="labkey-requirement-cell" align="left">Actor</th>
+                    <th class="labkey-requirement-cell" align="left" colspan="2">Description</th>
                 </tr>
                 <%
                     for (SampleRequestRequirement requirement : providerRequirements)
                     {
                 %>
                 <tr>
-                    <td <%= styleTD %>><%= textLink("Delete", "deleteDefaultRequirement.view?id=" + requirement.getRowId())%></td>
-                    <td <%= styleTD %>><%= h(requirement.getActor().getLabel()) %></td>
-                    <td <%= styleTD %>
+                    <td class="labkey-requirement-cell"><%= textLink("Delete", "deleteDefaultRequirement.view?id=" + requirement.getRowId())%></td>
+                    <td class="labkey-requirement-cell"><%= h(requirement.getActor().getLabel()) %></td>
+                    <td class="labkey-requirement-cell"
                             colspan="2"><%= requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;" %></td>
                 </tr>
                 <%
@@ -149,25 +146,25 @@ function verifyNewRequirement(prefix)
             </table>
         </td>
     </tr>
-    <tr class="wpHeader">
+    <tr class="labkey-wp-header">
             <th align="left">Requirements of Receiving Lab</th>
         </tr>
         <tr>
             <td>
-                <table cellspacing="0" cellpadding="3">
-                    <tr style="border-bottom:solid 1px <%= borderColor %>;border-top:solid 1px <%= borderColor %>">
-                        <th <%= styleTH %>>&nbsp;</th>
-                        <th <%= styleTH %>>Actor</th>
-                        <th <%= styleTH %> colspan="2">Description</th>
+                <table>
+                    <tr class="labkey-requirement-row">
+                        <th class="labkey-requirement-cell" align="left">&nbsp;</th>
+                        <th class="labkey-requirement-cell" align="left">Actor</th>
+                        <th class="labkey-requirement-cell" align="left" colspan="2">Description</th>
                     </tr>
                     <%
                         for (SampleRequestRequirement requirement : receiverRequirements)
                         {
                     %>
                     <tr>
-                        <td <%= styleTD %>><%= textLink("Delete", "deleteDefaultRequirement.view?id=" + requirement.getRowId())%></td>
-                        <td <%= styleTD %>><%= h(requirement.getActor().getLabel()) %></td>
-                        <td <%= styleTD %> colspan="2"><%= requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;" %></td>
+                        <td class="labkey-requirement-cell"><%= textLink("Delete", "deleteDefaultRequirement.view?id=" + requirement.getRowId())%></td>
+                        <td class="labkey-requirement-cell"><%= h(requirement.getActor().getLabel()) %></td>
+                        <td class="labkey-requirement-cell" colspan="2"><%= requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;" %></td>
                     </tr>
                     <%
                         }
@@ -195,25 +192,25 @@ function verifyNewRequirement(prefix)
                 </table>
             </td>
         </tr>
-        <tr class="wpHeader">
+        <tr class="labkey-wp-header">
             <th align="left">General Requirements</th>
         </tr>
         <tr>
             <td>
-                <table cellspacing="0" cellpadding="3">
-                    <tr style="border-bottom:solid 1px <%= borderColor %>;border-top:solid 1px <%= borderColor %>">
-                        <th <%= styleTH %>>&nbsp;</th>
-                        <th <%= styleTH %>>Actor</th>
-                        <th <%= styleTH %> colspan="2">Description</th>
+                <table>
+                    <tr class="labkey-requirement-row">
+                        <th class="labkey-requirement-cell" align="left">&nbsp;</th>
+                        <th class="labkey-requirement-cell" align="left">Actor</th>
+                        <th class="labkey-requirement-cell" align="left" colspan="2">Description</th>
                     </tr>
                     <%
                         for (SampleRequestRequirement requirement : generalRequirements)
                         {
                     %>
                     <tr>
-                        <td <%= styleTD %>><%= textLink("Delete", "deleteDefaultRequirement.view?id=" + requirement.getRowId())%></td>
-                        <td <%= styleTD %>><%= h(requirement.getActor().getLabel()) %></td>
-                        <td <%= styleTD %> colspan="2"><%= requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;" %></td>
+                        <td class="labkey-requirement-cell"><%= textLink("Delete", "deleteDefaultRequirement.view?id=" + requirement.getRowId())%></td>
+                        <td class="labkey-requirement-cell"><%= h(requirement.getActor().getLabel()) %></td>
+                        <td class="labkey-requirement-cell" colspan="2"><%= requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;" %></td>
                     </tr>
                     <%
                         }

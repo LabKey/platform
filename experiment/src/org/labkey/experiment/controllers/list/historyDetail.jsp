@@ -33,5 +33,5 @@
 %>
 
 
-<table><tr><td class="ms-searchform"><%=bean.getComment()%></td></tr></table><br/>
+<table><tr><td class="labkey-form-label"><%=bean.getComment()%></td></tr></table><br/>
 <%=dataMap.get(AuditLogService.get().getPropertyURI(ListManager.LIST_AUDIT_EVENT, "modifications"))%>

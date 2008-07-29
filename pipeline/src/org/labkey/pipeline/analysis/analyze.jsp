@@ -48,9 +48,9 @@
     <input type="hidden" name="path" value="<%=h(form.getPath())%>">
     <input type="hidden" name="nsClass" value="<%=h(form.getNsClass())%>">
     <input type="hidden" name="name" value="<%=h(form.getName())%>">
-<table border="0">
-    <tr><td class='ms-searchform'>Analysis Protocol:</td>
-        <td class='ms-vb'><select name="protocol"
+<table>
+    <tr><td class='labkey-form-label'>Analysis Protocol:</td>
+        <td><select name="protocol"
                             onchange="changeProtocol(this)">
             <option value="">&lt;New Protocol&gt;</option>
 <%
@@ -68,42 +68,42 @@
 
 <%  if ("".equals(form.getProtocol()))
     { %>
-    <tr><td class='ms-searchform'>Protocol Name:</td>
-        <td class='ms-vb'><input type="text" name="protocolName" size="40" value="<%=h(form.getProtocolName())%>"></td></tr>
-    <tr><td class='ms-searchform'>Protocol Description:</td>
-        <td class='ms-vb'><textarea style="width: 100%;" name="protocolDescription" cols="150" rows="4"><%=h(form.getProtocolDescription())%></textarea></td></tr>
+    <tr><td class='labkey-form-label'>Protocol Name:</td>
+        <td><input type="text" name="protocolName" size="40" value="<%=h(form.getProtocolName())%>"></td></tr>
+    <tr><td class='labkey-form-label'>Protocol Description:</td>
+        <td><textarea style="width: 100%;" name="protocolDescription" cols="150" rows="4"><%=h(form.getProtocolDescription())%></textarea></td></tr>
 <%  } %>
 
 <%  if (form.getFileInputNames().length != 1)
     { %>
-    <tr><td class='ms-searchform'>Analyze Files:</td>
+    <tr><td class='labkey-form-label'>Analyze Files:</td>
 <%  }
     else
     { %>
-    <tr><td class='ms-searchform'>Analyze File:</td>
+    <tr><td class='labkey-form-label'>Analyze File:</td>
 <%  } %>
-        <td class='ms-vb'>
+        <td>
 <%
     if (form.getFileInputNames().length == 0)
         out.print("No files found");
     else
     {
         hasWork = true; %>
-        <table border="0" cellpadding="0" cellspacing="3">
+        <table>
 <%
         for (String fileName : form.getFileInputNames())
         {
-            %><tr><td class='ms-vb'><%=h(fileName)%>
+            %><tr><td><%=h(fileName)%>
                 <input type="hidden" name="fileInputNames" value="<%=h(fileName)%>"></td>
-            <td class='ms-vb'>&nbsp;</td></tr><%
+            <td>&nbsp;</td></tr><%
         } %>
         </table><%
     }
 %>
         </td>
     </tr>
-    <tr><td class='ms-searchform'>Paramters:</td>
-        <td class='ms-vb'>
+    <tr><td class='labkey-form-label'>Paramters:</td>
+        <td>
 <%  if ("".equals(form.getProtocol()))
     { %>
             <textarea style="width: 100%" name="configureXml" cols="150" rows="20"><%=form.getConfigureXml()%></textarea><br>
@@ -117,7 +117,7 @@
 
     if ("".equals(form.getProtocol()))
     {
-        %><tr><td></td><td class='ms-vb'><input type="checkbox" name="saveProtocol" <% if (form.isSaveProtocol()) { %>checked<% } %>/> Save protocol for future use</td></tr><%
+        %><tr><td></td><td><input type="checkbox" name="saveProtocol" <% if (form.isSaveProtocol()) { %>checked<% } %>/> Save protocol for future use</td></tr><%
     }
     if (hasWork)
     {

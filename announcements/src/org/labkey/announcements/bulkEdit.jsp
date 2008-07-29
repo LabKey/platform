@@ -28,7 +28,7 @@
 <%=formatMissedErrors("form")%>
 <form action="bulkEdit.post" method="POST">
 
-<table class="normal">
+<table>
     <tr><td></td></tr>
     <tr>
         <td>The current folder default setting is: <%=bean.folderEmailOption%></td>
@@ -37,24 +37,25 @@
 </table>
 
 
-<table style="border:solid 1px #AAAAAA" cellspacing="0" cellpadding="1">
+<table class="labkey-bulk-edit">
     <tr>
-        <th class='header'  style='border-right:solid 1px #AAAAAA;border-bottom:solid 1px #AAAAAA'>Email</th>
-        <th class='header'  style='border-right:solid 1px #AAAAAA;border-bottom:solid 1px #AAAAAA'>First Name</th>
-        <th class='header'  style='border-right:solid 1px #AAAAAA;border-bottom:solid 1px #AAAAAA'>Last Name</th>
-        <th class='header'  style='border-right:solid 1px #AAAAAA;border-bottom:solid 1px #AAAAAA'>Display Name</th>
-        <th class='header'  style='border-right:solid 1px #AAAAAA;border-bottom:solid 1px #AAAAAA'>Email Option</th>
-        <th class='header'  style='border-right:solid 1px #AAAAAA;border-bottom:solid 1px #AAAAAA'>Project Member?</th>
+        <th>Email</th>
+        <th>First Name</th>
+        <th>Last Name</th>
+        <th>Display Name</th>
+        <th>Email Option</th>
+        <th>Project Member?</th>
     </tr>
 
 <%
     int i = 1;
     for (AnnouncementManager.EmailPref emailPref : bean.emailPrefList)
     {
-        String bgColor = "#FFFFFF";
+
+        String rowClass = "labkey-row";
         //shade odd rows in gray
         if (i % 2 == 1)
-            bgColor = "#EEEEEE";
+            rowClass = "labkey-alternating-row";
 
         int userId = emailPref.getUserId();
         String email = emailPref.getEmail();
@@ -68,21 +69,21 @@
         if (emailOptionId != null)
             emailOptionValue = emailOptionId.intValue();
 %>
-            <tr bgcolor="<%=bgColor%>">
-                <td style='border-right:solid 1px #AAAAAA'>
+            <tr class="<%=rowClass%>">
+                <td>
                     <input type="hidden" name="userId" value="<%=userId%>">
                     <%= email %>
                 </td>
-                <td style='border-right:solid 1px #AAAAAA'>
+                <td>
                     <%= firstName %>&nbsp;
                 </td>
-                <td style='border-right:solid 1px #AAAAAA'>
+                <td>
                     <%= lastName %>&nbsp;
                 </td>
-                <td style='border-right:solid 1px #AAAAAA'>
+                <td>
                     <%= displayName %>
                 </td>
-                <td style='border-right:solid 1px #AAAAAA'>
+                <td>
                     <select name="emailOptionId"><%
 
                         if (emailPref.isProjectMember())
@@ -96,7 +97,7 @@
                         <option value='<%=AnnouncementManager.EMAIL_NOTIFICATION_TYPE_DIGEST | AnnouncementManager.EMAIL_PREFERENCE_MINE%>'<%=emailOptionValue == (AnnouncementManager.EMAIL_NOTIFICATION_TYPE_DIGEST | AnnouncementManager.EMAIL_PREFERENCE_MINE) ? " selected" : "" %>>Daily digest of my conversations</option>
                     </select>
                 </td>
-                <td align="center" style='border-right:solid 1px #AAAAAA'>
+                <td align="center">
                     <%  if (emailPref.isProjectMember())
                             out.write("Yes");
                         else

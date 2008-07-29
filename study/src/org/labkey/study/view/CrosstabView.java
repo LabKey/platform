@@ -71,7 +71,7 @@ public class CrosstabView extends WebPartView
         Crosstab crossTab = new Crosstab(resultSet, rowField, colField, statField, statSet);
         List<Object> colHeaders = crossTab.getColHeaders();
 
-        pw.write("<table id=\"report\" cellspacing=\"0\" style=\"border-collapse:collapse\"><tr>\n");
+        pw.write("<table id=\"report\" class=\"labkey-crosstab-report\"><tr>\n");
         if (null != colField)
         {
             pw.write("\t<td>&nbsp;</td>\n");
@@ -79,7 +79,7 @@ public class CrosstabView extends WebPartView
                 pw.write("\t<td>&nbsp;</td>\n");
 
             pw.printf("\t<td style=\"%s\" colspan=\"%d\">%s</td>\n", "font-weight:bold;border-bottom 1px solid black", colHeaders.size(), str(getFieldLabel(colField)));
-            pw.write("\t<td class=\"normal\" style=\"font-weight:bold;border-bottom:1px solid black;\">&nbsp;</td>\n</tr>\n");
+            pw.write("\t<td style=\"font-weight:bold;border-bottom:1px solid black;\">&nbsp;</td>\n</tr>\n");
         }
         pw.printf("\t<td style=\"font-weight:bold;border-bottom:1px solid black;border-right:1px solid black\">%s</td>\n", str(getFieldLabel(rowField)));
         if (statSet.size() > 1)
@@ -87,10 +87,10 @@ public class CrosstabView extends WebPartView
 
         if (null != colField)
             for (Object colVal : colHeaders)
-                pw.printf("\t<td class=\"normal\" style=\"%s\">%s</td>\n", COL_HEADER_STYLE, str(colVal));
+                pw.printf("\t<td style=\"%s\">%s</td>\n", COL_HEADER_STYLE, str(colVal));
 
         CellStyle style = COL_HEADER_STYLE.clone().right(BLACK).left(BLACK);
-        pw.printf("<td class=\"normal\" style=\"%s\">", style);
+        pw.printf("<td style=\"%s\">", style);
         Stats.StatDefinition stat = null;
         if (statSet.size() == 1)
             stat = statSet.toArray(new Stats.StatDefinition[1])[0];
@@ -108,7 +108,7 @@ public class CrosstabView extends WebPartView
         {
             for (Object rowVal : crossTab.getRowHeaders())
             {
-                pw.printf("<tr>\n\t<td class=\"normal\" style=\"%s\" rowspan=\"%d\">%s</td>\n", ROW_HEADER_STYLE, statSet.size(), rowVal);
+                pw.printf("<tr>\n\t<td style=\"%s\" rowspan=\"%d\">%s</td>\n", ROW_HEADER_STYLE, statSet.size(), rowVal);
 
                 int statRow = 0;
                 for (Stats.StatDefinition rowStat : statSet.toArray(new Stats.StatDefinition[0]))
@@ -117,13 +117,13 @@ public class CrosstabView extends WebPartView
                     {
                         if (statRow > 0)
                             pw.write("<tr>");
-                        pw.printf("\t<td class=\"normal\" style=\"%s\">%s</td>\n", STAT_NAME_STYLE, rowStat.getName());
+                        pw.printf("\t<td style=\"%s\">%s</td>\n", STAT_NAME_STYLE, rowStat.getName());
                     }
 
                     for (Object colVal : colHeaders)
-                        pw.printf("\t<td class=\"normal\" style=\"%s\">%s</td>\n", DATA_STYLE, crossTab.getStats(rowVal, colVal).getFormattedStat(rowStat));
+                        pw.printf("\t<td style=\"%s\">%s</td>\n", DATA_STYLE, crossTab.getStats(rowVal, colVal).getFormattedStat(rowStat));
 
-                    pw.printf("\t<td class=\"normal\" style=\"%s\">%s</td>\n", ROW_TOTAL_STYLE, crossTab.getStats(rowVal, Crosstab.TOTAL_COLUMN).getFormattedStat(rowStat));
+                    pw.printf("\t<td style=\"%s\">%s</td>\n", ROW_TOTAL_STYLE, crossTab.getStats(rowVal, Crosstab.TOTAL_COLUMN).getFormattedStat(rowStat));
 
                     statRow++;
                     if (statSet.size() > 1 && statRow < statSet.size())
@@ -135,7 +135,7 @@ public class CrosstabView extends WebPartView
         }
 
         //Now totals for the cols
-        pw.printf("<tr>\n\t<td class=\"normal\" style=\"%s\" rowspan=\"%d\">Total</td>\n", ROW_HEADER_STYLE.clone().bottom(BLACK), statSet.size());
+        pw.printf("<tr>\n\t<td style=\"%s\" rowspan=\"%d\">Total</td>\n", ROW_HEADER_STYLE.clone().bottom(BLACK), statSet.size());
 
         int statRow = 0;
         for (Stats.StatDefinition rowStat : statSet)
@@ -152,7 +152,7 @@ public class CrosstabView extends WebPartView
                 else
                     cs = cs.clone().top(BLACK);
 
-                pw.printf("\t<td class=\"normal\" style=\"%s\">%s</td>\n", cs, rowStat.getName());
+                pw.printf("\t<td style=\"%s\">%s</td>\n", cs, rowStat.getName());
             }
 
 
@@ -165,9 +165,9 @@ public class CrosstabView extends WebPartView
                     else if (statRow < statSet.size() - 1)
                         cs = cs.clone().bottom(BLACK);
 
-                    pw.printf("\t<td class=\"normal\" style=\"%s\">%s</td>\n", cs, crossTab.getStats(Crosstab.TOTAL_ROW, colVal).getFormattedStat(rowStat));
+                    pw.printf("\t<td style=\"%s\">%s</td>\n", cs, crossTab.getStats(Crosstab.TOTAL_ROW, colVal).getFormattedStat(rowStat));
                 }
-            pw.write("<td class=\"normal\" style=\"font-weight:bold;border-left: 1px solid black; border-right:1px solid black; border-bottom:1px solid black\">");
+            pw.write("<td style=\"font-weight:bold;border-left: 1px solid black; border-right:1px solid black; border-bottom:1px solid black\">");
             Stats stats = crossTab.getStats(Crosstab.TOTAL_ROW, Crosstab.TOTAL_COLUMN);
             pw.write(stats.getFormattedStat(rowStat));
             pw.write("</td>");

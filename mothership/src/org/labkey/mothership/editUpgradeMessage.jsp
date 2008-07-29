@@ -26,7 +26,7 @@
 %>
 
 <form action="saveUpgradeMessage.post" method="post">
-    <table class="normal">
+    <table>
         <tr>
             <td>
                 Current SVN revision:

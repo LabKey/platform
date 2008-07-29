@@ -75,47 +75,47 @@
     YAHOO.util.Event.addListener(window, "load", onTempFolder)
 </script>
 
-<table border=0 cellspacing=2 cellpadding=0>
+<table>
 <%
     for (ObjectError e : (List<ObjectError>) bean.getErrors().getAllErrors())
     {
-        %><tr><td colspan=3><font color="red" class="error"><%=h(HttpView.currentContext().getMessage(e))%></font></td></tr><%
+        %><tr><td colspan=3><font class="labkey-error"><%=h(HttpView.currentContext().getMessage(e))%></font></td></tr><%
     }
 %>
 </table>
 
 <form action="" method="post" onsubmit="validateForm();">
     <table>
-        <tr class="wpHeader"><th colspan=2 align=center>R View Configuration</th></tr>
+        <tr class="labkey-wp-header"><th colspan=2 class="labkey-admin-title">R View Configuration</th></tr>
         <tr><td>&nbsp;</td></tr>
-        <tr><td></td><td class=normal><i>Specify the absolute path of the R program (R.exe on Windows, R for Unix and Mac) :</i><br/></td></tr>
+        <tr><td></td><td><i>Specify the absolute path of the R program (R.exe on Windows, R for Unix and Mac) :</i><br/></td></tr>
 
-        <tr><td>R&nbsp;program:</td><td class="normal"><input name="programPath" style="width:400px" value="<%=StringUtils.trimToEmpty(bean.getProgramPath())%>"></td><td></td></tr>
-        <tr><td>R&nbsp;command:</td><td class="normal"><input name="command" style="width:400px" value="<%=StringUtils.trimToEmpty(h(bean.getCommand()))%>"></td><td></td></tr>
+        <tr><td>R&nbsp;program:</td><td><input name="programPath" style="width:400px" value="<%=StringUtils.trimToEmpty(bean.getProgramPath())%>"></td><td></td></tr>
+        <tr><td>R&nbsp;command:</td><td><input name="command" style="width:400px" value="<%=StringUtils.trimToEmpty(h(bean.getCommand()))%>"></td><td></td></tr>
 
-        <tr><td></td><td class=normal><i>Scripts can be executed by running R in batch mode or by using an RServe server:</i><br/></td></tr>
-        <tr><td>Script&nbsp;execution:</td><td class="normal"><input name="scriptHandler" value="<%=DefaultScriptRunner.ID%>" type="radio" <%=DefaultScriptRunner.ID.equals(bean.getScriptHandler()) ? "checked" : ""%>>
+        <tr><td></td><td><i>Scripts can be executed by running R in batch mode or by using an RServe server:</i><br/></td></tr>
+        <tr><td>Script&nbsp;execution:</td><td><input name="scriptHandler" value="<%=DefaultScriptRunner.ID%>" type="radio" <%=DefaultScriptRunner.ID.equals(bean.getScriptHandler()) ? "checked" : ""%>>
             Batch mode.<%=PageFlowUtil.helpPopup("Batch mode", "A new instance of R is started up in batch mode each " +
                 "time a script is executed. Because the instance of R is run using the same privileges as the LabKey server, " +
                 "care must be taken to ensure that security settings below are set accordingly.")%></td><td></td></tr>
-        <tr><td></td><td class="normal"><input name="scriptHandler" value="<%=RServeScriptRunner.ID%>" type="radio" <%=RServeScriptRunner.ID.equals(bean.getScriptHandler()) ? "checked" : ""%>>
+        <tr><td></td><td><input name="scriptHandler" value="<%=RServeScriptRunner.ID%>" type="radio" <%=RServeScriptRunner.ID.equals(bean.getScriptHandler()) ? "checked" : ""%>>
             RServe server.<img src="<%=HttpView.currentContext().getContextPath() + "/_images/beta.gif"%>"><%=PageFlowUtil.helpPopup("RServe server (Beta)", "RServe is a TCP/IP based server that can interact with R. " +
                 "It can improve execution performance because the server does not need to be started for every script " +
                 "that is run. Additionally, it can be configured on Unix systems to run under a specified group or user ID. RServe " +
                 "is a separate R library that must be installed by your R administrator.")%></td><td></td></tr>
         <tr><td>&nbsp;</td></tr>
 
-        <tr><td></td><td class=normal><i>Specify the permissions required in order to create R Views:</i><br/></td></tr>
-        <tr><td>Permissions:</td><td class="normal">
+        <tr><td></td><td><i>Specify the permissions required in order to create R Views:</i><br/></td></tr>
+        <tr><td>Permissions:</td><td>
             <select name="permissions" id="permissions"><%=options%></select></td><td></td></tr>
         <tr>
             <td>Temp&nbsp;directory:<%=PageFlowUtil.helpPopup("Temporary Folder", "In order to execute R scripts on the LabKey server, temporary files need to be created. The folder location specified " +
                 "must be accesible by the LabKey server. Alternatively, the system temporary location will be used.")%>
             </td>
-            <td class="normal"><input name="tempFolderRadio" value="folder" type="radio" onclick="onTempFolder();" <%=StringUtils.isEmpty(bean.getTempFolder()) ? "" : "checked"%>>Specify a folder location&nbsp;&nbsp;<input name="tempFolder" id="tempFolder" style="width:200px;display:none" value="<%=StringUtils.trimToEmpty(bean.getTempFolder())%>"></td>
+            <td><input name="tempFolderRadio" value="folder" type="radio" onclick="onTempFolder();" <%=StringUtils.isEmpty(bean.getTempFolder()) ? "" : "checked"%>>Specify a folder location&nbsp;&nbsp;<input name="tempFolder" id="tempFolder" style="width:200px;display:none" value="<%=StringUtils.trimToEmpty(bean.getTempFolder())%>"></td>
             <td></td>
         </tr>
-        <tr><td></td><td class="normal"><input name="tempFolderRadio" value="system" id="tempFolderSystem" type="radio" onclick="onTempFolder();" <%=StringUtils.isEmpty(bean.getTempFolder()) ? "checked" : ""%>>Use the system temporary folder</td><td></td></tr>
+        <tr><td></td><td><input name="tempFolderRadio" value="system" id="tempFolderSystem" type="radio" onclick="onTempFolder();" <%=StringUtils.isEmpty(bean.getTempFolder()) ? "checked" : ""%>>Use the system temporary folder</td><td></td></tr>
         <tr><td>&nbsp;</td></tr>
         <tr><td>&nbsp;</td>
             <td><input type="image" src="<%=PageFlowUtil.submitSrc()%>">

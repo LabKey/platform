@@ -35,7 +35,7 @@
     <labkey:options value="<%=getForm().getFileFilter()%>" map="<%=map%>" />
 </select></p>
 <% } %>
-<table cellspacing="2" cellpadding="0">
+<table>
     <%
         ActionURL urlBrowse = getUrlBrowsePath();
         String urlOpenFolder = request.getContextPath() + "/pipeline/images/folder_open.gif";
@@ -52,7 +52,7 @@
         <td colspan="<%=i%>"></td>
         <% } %>
         <td></td>
-        <td><a href="<%=h(urlBrowse)%>"><img src="<%=h(urlOpenFolder)%>" border="0" alt=""></a></td>
+        <td><a href="<%=h(urlBrowse)%>"><img src="<%=h(urlOpenFolder)%>" alt=""></a></td>
         <td colspan="<%=parents.size() - i + 1%>"><a href="<%=h(urlBrowse)%>"><%=h(entry.getKey())%></a></td>
     </tr>
     <% } %>
@@ -67,7 +67,7 @@
         <% if (bf.isDirectory()) {
             urlBrowse.replaceParameter(paramName(Param.path), bf.getRelativePath());
         %>
-        <td><a href="<%=h(urlBrowse)%>"><img src="<%=h(urlClosedFolder)%>" border="0" alt=""></a></td>
+        <td><a href="<%=h(urlBrowse)%>"><img src="<%=h(urlClosedFolder)%>" alt=""></a></td>
         <td><a href="<%=h(urlBrowse)%>"><%=h(bf.getName())%></td>
         <% } else { %>
         <td><img src="<%=h(urlFile)%>" alt=""></td>

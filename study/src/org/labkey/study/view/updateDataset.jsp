@@ -42,14 +42,14 @@
             cohortMap.put(cohort.getRowId(), cohort.getLabel());
     }
 %>
-<table border=0 cellspacing=2 cellpadding=0>
+<table>
 <%
     BindException errors = (BindException)request.getAttribute("errors");
     if (errors != null)
     {
         for (ObjectError e : (List<ObjectError>) errors.getAllErrors())
         {
-            %><tr><td colspan=3><font color="red" class="error"><%=h(HttpView.currentContext().getMessage(e))%></font></td></tr><%
+            %><tr><td colspan=3><font class="labkey-error"><%=h(HttpView.currentContext().getMessage(e))%></font></td></tr><%
         }
     }
 %>
@@ -60,54 +60,54 @@
 %>
 
 <form action="<%=updateDatasetURL.getLocalURIString()%>" method="POST">
-    <table class="normal">
+    <table>
         <tr>
             <td>
                 <%= this.buttonImg("Save")%>&nbsp;<%= this.buttonLink("Cancel", "datasetDetails.view?id=" + dataset.getDataSetId())%>
             </td>
         </tr>
         <tr>
-            <td class="ms-searchform">Id</td>
+            <td class="labkey-form-label">Id</td>
             <td>
                 <input type="hidden" name="datasetId" value="<%= dataset.getDataSetId() %>">
                 <%= dataset.getDataSetId() %>
             </td>
         </tr>
         <tr>
-            <td class="ms-searchform">Dataset Name</td>
+            <td class="labkey-form-label">Dataset Name</td>
             <td><%= h(dataset.getName()) %></td>
         </tr>
         <tr>
-            <td class="ms-searchform">Label</td>
+            <td class="labkey-form-label">Label</td>
             <td><%= h(dataset.getLabel()) %></td>
         </tr>
         <tr>
-            <td class="ms-searchform">Category</td>
+            <td class="labkey-form-label">Category</td>
             <td><%= h(dataset.getCategory()) %></td>
         </tr>
         <tr>
-           <td class="ms-searchform">Cohort</td><td><%=h(cohortMap.get(dataset.getCohortId()))%></td>
+           <td class="labkey-form-label">Cohort</td><td><%=h(cohortMap.get(dataset.getCohortId()))%></td>
         </tr>
         <%
             if (!study.isDateBased()) //TODO: Allow date column to change even in date-based studies...
             {
         %>
         <tr>
-            <td class="ms-searchform">Visit Date Column</td><td><%=h(dataset.getVisitDatePropertyName())%></td>
+            <td class="labkey-form-label">Visit Date Column</td><td><%=h(dataset.getVisitDatePropertyName())%></td>
         </tr>
         <%
             }
         %>
-        <tr><td class="ms-searchform">Demographic Data</td><td class=normal><%= dataset.isDemographicData() ? "true" : "false" %></td></tr>
+        <tr><td class="labkey-form-label">Demographic Data</td><td><%= dataset.isDemographicData() ? "true" : "false" %></td></tr>
         <tr>
-            <td class="ms-searchform">Show In Overview</td><td><%= dataset.isShowByDefault() ? "true" : "false" %></td>
+            <td class="labkey-form-label">Show In Overview</td><td><%= dataset.isShowByDefault() ? "true" : "false" %></td>
         </tr>
         <tr>
-            <td class="ms-searchform">Description</td>
+            <td class="labkey-form-label">Description</td>
             <td><%= h(dataset.getDescription()) %></td>
         </tr>
         <tr>
-            <td class="ms-searchform">Definition URI</td>
+            <td class="labkey-form-label">Definition URI</td>
             <td>
                 <%
                 if (dataset.getTypeURI() == null)

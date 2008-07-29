@@ -52,22 +52,22 @@ for (found in foundSemanticTypes)
 <%=PageFlowUtil.getStrutsError(request, "main")%>
 <form action="findConcepts.view" method=GET>
 <table >
-	<tr><td class="ms-searchform">Search for</td><td><input name=query style="width:320;" value="<%=filter(form.query)%>"></td></tr>
-	<tr><td class="ms-searchform">Prefix match</td><td><input type=checkbox name=prefixMatch <%=form.prefixMatch?"checked":""%>></td></tr>
+	<tr><td class="labkey-form-label">Search for</td><td><input name=query style="width:320;" value="<%=filter(form.query)%>"></td></tr>
+	<tr><td class="labkey-form-label">Prefix match</td><td><input type=checkbox name=prefixMatch <%=form.prefixMatch?"checked":""%>></td></tr>
 	<tr><td colspan=2><hr></td></tr>
-	<tr><td class="ms-searchform">Semantic Type</td><td><select name="semanticType"  style="width:320;">
+	<tr><td class="labkey-form-label">Semantic Type</td><td><select name="semanticType"  style="width:320;">
 	<option value=""<%=!form.semanticType?" selected":""%>>- any -</option><%
 	for (type in semanticTypes)
 		{
 		%><option<%=form.semanticType==type?" selected":""%>><%=filter(type)%></option><%
 		}
 	%></select></td></tr>
-	<tr><td class="ms-searchform">Concept</td><td><input name="concept" style="width:320;" value="<%=filter(form.concept)%>"></td></tr>
+	<tr><td class="labkey-form-label">Concept</td><td><input name="concept" style="width:320;" value="<%=filter(form.concept)%>"></td></tr>
 	<tr><td><input type=image src="<%=PageFlowUtil.buttonSrc("Search", "large")%>"></td><td></td></tr>
 </table>
 </form>
 <p/>
-<div style="normal"><%
+<div><%
 
 //
 // SEARCH RESULTS
@@ -104,11 +104,11 @@ else
             }
         %><p/><b><%=filter(uri)%></b><hr size=1>
 		<table>
-			<tr><th class="normal" valign=top align=right nowrap>Name</th><td class="normal"><%=filter(name)%></td></tr>
-			<tr><th class="normal" valign=top align=right nowrap>Label</th><td class="normal"><%=filter(label)%></td></tr>
-			<tr><th class="normal" valign=top align=right nowrap>Semantic Type(s)</th><td class="normal"><%=filter(semanticType)%></td></tr>
-			<tr><th class="normal" valign=top align=right nowrap>Parent Concept</th><td class="normal"><%=filter(row.get("ConceptURI"))%></td></tr>
-			<tr><th class="normal" valign=top align=right nowrap>Description</th><td class="normal"><%=filter(description)%></td></tr>
+			<tr><th valign=top align=right nowrap>Name</th><td><%=filter(name)%></td></tr>
+			<tr><th valign=top align=right nowrap>Label</th><td><%=filter(label)%></td></tr>
+			<tr><th valign=top align=right nowrap>Semantic Type(s)</th><td><%=filter(semanticType)%></td></tr>
+			<tr><th valign=top align=right nowrap>Parent Concept</th><td><%=filter(row.get("ConceptURI"))%></td></tr>
+			<tr><th valign=top align=right nowrap>Description</th><td><%=filter(description)%></td></tr>
 		</table><%
 		if (selectScript)
 			{

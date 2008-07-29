@@ -25,7 +25,7 @@
     ViewContext context = me.getViewContext();
     String[] pathAliases = ContainerManager.getAliasesForContainer(context.getContainer());
 %>
-<table border="0" width="500">
+<table width="500">
     <tr>
         <td>Folder aliases allow you to redirect other URLs on this server to this folder.</td>
     </tr>

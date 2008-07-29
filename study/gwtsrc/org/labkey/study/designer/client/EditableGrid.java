@@ -38,7 +38,7 @@ public abstract class EditableGrid extends FlexTable
     {
         setCellSpacing(0);
         addTableListener(new RowHeaderClickListener());
-        setStyleName("grid");
+        setStyleName("labkey-grid");
     }
     
     public void updateAll()
@@ -72,10 +72,10 @@ public abstract class EditableGrid extends FlexTable
                 if (null != header)
                 {
                     setWidget(row, i + 1, header);
-                    getCellFormatter().setStyleName(row, i + 1, "colHeader");
+                    getCellFormatter().setStyleName(row, i + 1, "labkey-col-header");
                 }
             }
-            getCellFormatter().setStyleName(row, 0, "colHeader");
+            getCellFormatter().setStyleName(row, 0, "labkey-col-header");
         }
     }
 
@@ -87,12 +87,12 @@ public abstract class EditableGrid extends FlexTable
     public void setReadOnly(boolean readOnly)
     {
         this.readOnly = readOnly;
-        setStyleName(readOnly ? "gridReadOnly" : "grid");
+        setStyleName(readOnly ? "labkey-grid-read-only" : "labkey-grid");
     }
 
     private void initRow(int row)
     {
-        getCellFormatter().setStyleName(row, 0,  "rowHeader");
+        getCellFormatter().setStyleName(row, 0,  "labkey-row-header");
         setWidget(row, 0, getRowNumberWidget(row - getHeaderRows()));
 
         for (int col = 0; col < getDataColumnCount(); col++)
@@ -127,7 +127,7 @@ public abstract class EditableGrid extends FlexTable
     private void initGhostRow()
     {
         int row = getRowCount() - 1;
-        getCellFormatter().setStyleName(row, 0, "rowHeader");
+        getCellFormatter().setStyleName(row, 0, "labkey-row-header");
         setText(row, 0, "*");
         for (int col = 0; col < getDataColumnCount(); col++)
         {

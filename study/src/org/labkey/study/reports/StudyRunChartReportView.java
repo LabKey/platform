@@ -89,7 +89,7 @@ public class StudyRunChartReportView extends RunChartReportView
             if (participantId != null)
                 url.addParameter(PARTICIPANT_KEY, participantId);
 
-            view.addView(new HtmlView("<img border=0 src='" + url.getLocalURIString() + "'>"));
+            view.addView(new HtmlView("<img src='" + url.getLocalURIString() + "'>"));
         }
     }
 

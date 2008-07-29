@@ -29,9 +29,9 @@
     IssuesController.IssuesPreference bean = me.getModelBean();
 %>
 <form action="updateRequiredFields.view" method="post" name="requiredFieldsForm">
-    <table class="normal">
-        <tr><td class=normal colspan=2 align=center><div class="ms-searchform"><b>Required Fields for Issues</b></div></td></tr>
-        <tr><td class=normal colspan=2>Select fields to be required when entering or updating an issue:</td></tr>
+    <table>
+        <tr><td colspan=2 align=center><div class="labkey-form-label"><b>Required Fields for Issues</b></div></td></tr>
+        <tr><td colspan=2>Select fields to be required when entering or updating an issue:</td></tr>
     <%
         List<ColumnInfo> columns = bean.getColumns();
         for (int i = 0; i < columns.size(); i++)

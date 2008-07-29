@@ -31,7 +31,7 @@ to this study is assigned to a timepoint using the Date field. The assignment ha
 field in the uploaded data and that subject's StartDate.
 <br>
 <form action="createVisit.post" method="POST">
-    <table class="normal">
+    <table>
 <%--        <tr>
             <th align="right">Name&nbsp;<%=helpPopup("Name", "Short unique name, e.g. 'Enroll'")%></th>
             <td>

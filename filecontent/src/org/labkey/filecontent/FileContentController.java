@@ -752,7 +752,7 @@ public class FileContentController extends SpringActionController
     {
         public ImgView(String url)
         {
-            super("\n<img border=0 src=\"" + PageFlowUtil.filter(url) + "\">");
+            super("\n<img src=\"" + PageFlowUtil.filter(url) + "\">");
         }
     }
 

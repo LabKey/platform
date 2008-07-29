@@ -28,7 +28,6 @@
     JspView<MemBean> me = (JspView<MemBean>)HttpView.currentView();
     MemBean bean = me.getModelBean();
 
-    
 
     String contextPath = AppProps.getInstance().getContextPath();
 %>
@@ -56,7 +55,7 @@
     }
 %>
 <hr size="1">
-<table class="normal" name="systemProperties">
+<table name="systemProperties">
 <%
     for (Pair<String,Object> property : bean.systemProperties)
         {
@@ -75,7 +74,7 @@
 %>
 <hr size="1">
 <h3>In-Use Objects</h3>
-<p><table name="leaks" class="normal" width="100%" cellpadding=2 cellspacing=0>
+<p><table name="leaks" class="spaced normal">
     <tr>
         <th>&nbsp;</th>
         <th align="left">Object Class</th>
@@ -92,7 +91,7 @@ for (MemTracker.HeldReference reference : bean.references)
 
 %>
     <tr style="background:<%=(counter % 2 == 0) ? "#ffffff" : "#f0f0f0"%>;">
-        <td valign=top><img id="toggleImg<%=counter%>" src="<%=contextPath%>/_images/plus.gif" border=0 alt="expand/collapse" onclick='toggle(<%=counter%>)'></td>
+        <td valign=top><img id="toggleImg<%=counter%>" src="<%=contextPath%>/_images/plus.gif" alt="expand/collapse" onclick='toggle(<%=counter%>)'></td>
         <td valign=top><%= reference.getClassName() %></td>
         <td valign=top>
 <%

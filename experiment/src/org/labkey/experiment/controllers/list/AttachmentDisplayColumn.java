@@ -73,7 +73,7 @@ public class AttachmentDisplayColumn extends DataColumn
             ctx.remove("setFocusId");
         }
 
-        filePicker += " type=\"file\" size=\"60\" onChange=\"showPathname(this, &quot;" + labelName + "&quot;)\">&nbsp;<label class=\"normal\" id=\"" + labelName + "\"></label>\n";
+        filePicker += " type=\"file\" size=\"60\" onChange=\"showPathname(this, &quot;" + labelName + "&quot;)\">&nbsp;<label id=\"" + labelName + "\"></label>\n";
 
         if (null == filename)
         {
@@ -105,7 +105,7 @@ public class AttachmentDisplayColumn extends DataColumn
                 out.write("\">");
             }
 
-            out.write("<img border=0 class=\"link\" src=\"" + ctx.getRequest().getContextPath() + Attachment.getFileIcon(filename) + "\" alt=\"icon\"/>&nbsp;" + filename);
+            out.write("<img src=\"" + ctx.getRequest().getContextPath() + Attachment.getFileIcon(filename) + "\" alt=\"icon\"/>&nbsp;" + filename);
 
             if (link)
             {

@@ -17,22 +17,22 @@
 %>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <br>
-<table border=0 cellspacing=4 cellpadding=0>
-<tr><td><a href="list.view?.lastFilter=true"><img border=0 src="<%=PageFlowUtil.buttonSrc("Back to Issues")%>"></a></td></tr>
+<table class="labkey-issue-keyword-view">
+<tr><td><a href="list.view?.lastFilter=true"><img src="<%=PageFlowUtil.buttonSrc("Back to Issues")%>"></a></td></tr>
 <tr><td>&nbsp;</td></tr>
 </table>
 <% currentView.include(currentView.getView("keywordView")); %>
 <br>
 
-<table width=100% cellspacing=2 cellpadding=0 border=0><tr>
+<table class="labkey-issue-required-view"><tr>
 <td valign=top>
     <% currentView.include(currentView.getView("requiredFieldsView")); %>
 </td>
 <td valign=top>
     <form action="setCustomColumnConfiguration.post" method="post">
-    <table border=0 cellspacing=4 cellpadding=0>
-    <tr><td class=normal colspan=2 align=center><div class="ms-searchform"><b>Custom Fields</b></div></td></tr>
-    <tr><td class=normal colspan=2>Enter captions below to use custom fields in this issues list:</td></tr>
+    <table class="labkey-customize-columns">
+    <tr><td colspan=2 align=center><div class="labkey-form-label"><b>Custom Fields</b></div></td></tr>
+    <tr><td colspan=2>Enter captions below to use custom fields in this issues list:</td></tr>
     <tr><td colspan=2>&nbsp;</td></tr>
     <tr><td>Integer1</td><td><input name="int1" value="<%=captions.int1%>" size=20></td></tr>
     <tr><td>Integer2</td><td><input name="int2" value="<%=captions.int2%>" size=20></td></tr>

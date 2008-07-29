@@ -195,7 +195,7 @@
 
 </script>
 <div id="lblStatus" class="status">Enter a Url in the "Get Url" box and click "Get"</div>
-<table border="0" width="100%">
+<table width="100%">
     <tr>
         <td width="1%">Get&nbsp;Url:</td>
         <td width="98%"><input type="text" id="txtUrlGet" style="width:100%"
@@ -218,7 +218,7 @@
         <td colspan="3" width="100%">Post Body:<br/><textarea id="txtPost" rows="10" cols="80" style="width:100%"></textarea></td>
     </tr>
 </table>
-<table border="0" width="100%">
+<table width="100%">
     <tr>
         <td>Response:</td>
     </tr>

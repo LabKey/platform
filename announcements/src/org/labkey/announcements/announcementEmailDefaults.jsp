@@ -28,10 +28,10 @@
 <form action="setDefaultEmailOptions.view">
 <table width="50%">
 <tr>
-    <td align="left" class="normal" style="padding-top:2px;padding-bottom:4px;"><b>Folder default settings</b></td>
+    <td align="left" style="padding-top:2px;padding-bottom:4px;"><b>Folder default settings</b></td>
 </tr>
 <tr>
-    <td align="left" class="normal" style="padding-top:2px;padding-bottom:4px;">Specify the default settings for email notifications for this folder. For any individual user, that user or an administrator can override the default setting.</td>
+    <td align="left" style="padding-top:2px;padding-bottom:4px;">Specify the default settings for email notifications for this folder. For any individual user, that user or an administrator can override the default setting.</td>
 </tr>
 <tr>
     <td>

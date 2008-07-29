@@ -263,7 +263,7 @@ public class AssayController extends SpringActionController
                 }
             };
             ActionURL copyHereURL = AssayService.get().getDesignerURL(form.getContainer(), _protocol, true);
-            HtmlView fileTree = new HtmlView("<table class=\"normal\"><tr><td><b>Select destination folder:</b></td></tr>" +
+            HtmlView fileTree = new HtmlView("<table><tr><td><b>Select destination folder:</b></td></tr>" +
                     tree.render().toString() + "</table>");
             HtmlView bbar = new HtmlView(
                     PageFlowUtil.buttonLink("Cancel", getUrl("assayRuns").addParameter("rowId", _protocol.getRowId())) + " " +

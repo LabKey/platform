@@ -28,7 +28,7 @@
     Domain domain = list.getDomain();
 %>
 
-<table class="normal">
+<table>
     <tr><td colspan="2"><b>List Properties</b></td></tr>
     <tr><td>Name:</td><td><%=h(list.getName())%></td></tr>
     <tr><td>Description:</td><td><%=h(list.getDescription())%></td></tr>
@@ -52,7 +52,7 @@
 <% if (domain.getProperties().length == 0) { %>
     <p>No fields have been defined.</p>
 <% } else { %>
-<table class="normal">
+<table>
     <tr><td colspan="2"><b>List Fields</b></td></tr>
 <% for (DomainProperty property : domain.getProperties()) { %>
     <tr><td><%=h(property.getName())%></td><td><%=h(property.getType().getLabel())%></td></tr>

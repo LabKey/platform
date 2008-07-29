@@ -71,7 +71,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
     String _attachmentPrefix = null;
 
     MessageFormat _wikiLinkFormat = new MessageFormat("<a class=\"{2}\" href=\"{0}\">{1}</a>");
-    MessageFormat _wikiImgFormat = new MessageFormat("<img class=\"{2}\" src=\"{0}\" title=\"{1}\" border=0>");
+    MessageFormat _wikiImgFormat = new MessageFormat("<img class=\"{2}\" src=\"{0}\" title=\"{1}\">");
     MessageFormat _wikiCreateLinkFormat = new MessageFormat("<a class=\"{2}\" href=\"{0}\">Create Page: {1}</a>");
 
     Map<String, WikiLinkable> _pages;

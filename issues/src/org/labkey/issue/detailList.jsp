@@ -44,7 +44,7 @@
 %>
 
 <form name="jumpToIssue" action="jumpToIssue.view" method="get">
-<table border=0 cellspacing=2 cellpadding=2><tr>
+<table class="labkey-issue-jump"><tr>
     <td><%= textLink("new issue", IssuesController.issueURL(context.getContainer(), "insert").addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
     <td><%= textLink("view grid", IssuesController.issueURL(context.getContainer(), "list").addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
     <td><%= textLink("print", printLink)%></td>
@@ -59,27 +59,27 @@
         issueId = Integer.toString(issue.getIssueId());
 %>
 <table width=640>
-    <tr><td class="wpTitle" colspan="3"><%=issueId + " : " + h(issue.getTitle())%></td></tr>
+    <tr><td colspan="3"><%=issueId + " : " + h(issue.getTitle())%></td></tr>
     <tr>
         <td valign="top" width="34%"><table>
-            <tr><td class="ms-searchform">Status</td><td class="ms-vb"><%=h(issue.getStatus())%></td></tr>
-            <tr><td class="ms-searchform">Assigned&nbsp;To</td><td class="ms-vb"><%=h(issue.getAssignedToName(context))%></td></tr>
-            <tr><td class="ms-searchform">Type</td><td class="ms-vb"><%=h(issue.getType())%></td></tr>
-            <tr><td class="ms-searchform">Area</td><td class="ms-vb"><%=h(issue.getArea())%></td></tr>
-            <tr><td class="ms-searchform">Priority</td><td class="ms-vb"><%=bean._toString(issue.getPriority())%></td></tr>
-            <tr><td class="ms-searchform">Milestone</td><td class="ms-vb"><%=h(issue.getMilestone())%></td></tr>
+            <tr><td class="labkey-form-label">Status</td><td><%=h(issue.getStatus())%></td></tr>
+            <tr><td class="labkey-form-label">Assigned&nbsp;To</td><td><%=h(issue.getAssignedToName(context))%></td></tr>
+            <tr><td class="labkey-form-label">Type</td><td><%=h(issue.getType())%></td></tr>
+            <tr><td class="labkey-form-label">Area</td><td><%=h(issue.getArea())%></td></tr>
+            <tr><td class="labkey-form-label">Priority</td><td><%=bean._toString(issue.getPriority())%></td></tr>
+            <tr><td class="labkey-form-label">Milestone</td><td><%=h(issue.getMilestone())%></td></tr>
         </table></td>
         <td valign="top" width="33%"><table>
-            <tr><td class="ms-searchform">Opened&nbsp;By</td><td class="ms-vb"><%=h(issue.getCreatedByName(context))%></td></tr>
-            <tr><td class="ms-searchform">Opened</td><td class="ms-vb"><%=bean.writeDate(issue.getCreated())%></td></tr>
-            <tr><td class="ms-searchform">Resolved By</td><td class="ms-vb"><%=h(issue.getResolvedByName(context))%></td></tr>
-            <tr><td class="ms-searchform">Resolved</td><td class="ms-vb"><%=bean.writeDate(issue.getResolved())%></td></tr>
-            <tr><td class="ms-searchform">Resolution</td><td class="ms-vb"><%=h(issue.getResolution())%></td></tr>
+            <tr><td class="labkey-form-label">Opened&nbsp;By</td><td><%=h(issue.getCreatedByName(context))%></td></tr>
+            <tr><td class="labkey-form-label">Opened</td><td><%=bean.writeDate(issue.getCreated())%></td></tr>
+            <tr><td class="labkey-form-label">Resolved By</td><td><%=h(issue.getResolvedByName(context))%></td></tr>
+            <tr><td class="labkey-form-label">Resolved</td><td><%=bean.writeDate(issue.getResolved())%></td></tr>
+            <tr><td class="labkey-form-label">Resolution</td><td><%=h(issue.getResolution())%></td></tr>
 <%
             if (bean.isEditable("resolution") || !"open".equals(issue.getStatus()) && null != issue.getDuplicate())
             {
 %>
-                <tr><td class="ms-searchform">Duplicate</td><td class="ms-vb">
+                <tr><td class="labkey-form-label">Duplicate</td><td>
                 <%=bean.writeInput("duplicate", null == issue.getDuplicate() ? null : issue.getDuplicate().toString())%>
                 </td></tr>
 <%
@@ -89,10 +89,10 @@
             <%=bean.writeCustomColumn(c.getId(), "int2", bean._toString(issue.getInt2()), IssuesController.ISSUE_NONE)%>
         </table></td>
         <td valign="top" width="33%"><table>
-            <tr><td class="ms-searchform">Changed&nbsp;By</td><td class="ms-vb"><%=h(issue.getModifiedByName(context))%></td></tr>
-            <tr><td class="ms-searchform">Changed</td><td class="ms-vb"><%=bean.writeDate(issue.getModified())%></td></tr>
-            <tr><td class="ms-searchform">Closed&nbsp;By</td><td class="ms-vb"><%=h(issue.getClosedByName(context))%></td></tr>
-            <tr><td class="ms-searchform">Closed</td><td class="ms-vb"><%=bean.writeDate(issue.getClosed())%></td></tr>
+            <tr><td class="labkey-form-label">Changed&nbsp;By</td><td><%=h(issue.getModifiedByName(context))%></td></tr>
+            <tr><td class="labkey-form-label">Changed</td><td><%=bean.writeDate(issue.getModified())%></td></tr>
+            <tr><td class="labkey-form-label">Closed&nbsp;By</td><td><%=h(issue.getClosedByName(context))%></td></tr>
+            <tr><td class="labkey-form-label">Closed</td><td><%=bean.writeDate(issue.getClosed())%></td></tr>
 
             <%=bean.writeCustomColumn(c.getId(), "string1", issue.getString1(), IssuesController.ISSUE_STRING1)%>
             <%=bean.writeCustomColumn(c.getId(), "string2", issue.getString2(), IssuesController.ISSUE_STRING2)%>
@@ -108,9 +108,9 @@
         for (Issue.Comment comment : issue.getComments())
         {
 %>
-        <hr><table width="100%"><tr><td align="left" class="ms-vb"><b>
+        <hr><table width="100%"><tr><td align="left"><b>
         <%=bean.writeDate(comment.getCreated())%>
-        </b></td><td align="right" class="ms-vb"><b>
+        </b></td><td align="right"><b>
         <%=h(comment.getCreatedByName(context))%>
         </b></td></tr></table>
         <%=comment.getComment()%>

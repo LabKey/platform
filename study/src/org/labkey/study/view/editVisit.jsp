@@ -32,14 +32,14 @@
     Cohort[] cohorts = StudyManager.getInstance().getCohorts(me.getViewContext().getContainer(), me.getViewContext().getUser());
 %>
 
-<table border=0 cellspacing=2 cellpadding=0>
+<table>
 <%
     BindException errors = (BindException)request.getAttribute("errors");
     if (errors != null)
     {
         for (ObjectError e : (List<ObjectError>) errors.getAllErrors())
         {
-            %><tr><td colspan=3><font color="red" class="error"><%=h(HttpView.currentContext().getMessage(e))%></font></td></tr><%
+            %><tr><td colspan=3><font class="labkey-error"><%=h(HttpView.currentContext().getMessage(e))%></font></td></tr><%
         }
     }
 %>
@@ -49,7 +49,7 @@
 <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(visit)%>">
 <input type="hidden" name="id" value="<%=visit.getRowId()%>">
 
-    <table class="normal">
+    <table>
 <%--        <tr>
             <th align="right">Name&nbsp;<%=helpPopup("Name", "Short unique name, e.g. 'Enroll'")%></th>
             <td>
@@ -186,7 +186,7 @@
             </td>
         </tr>
     </table>
-    <table class="normal">
+    <table>
         <tr>
             <td><%= buttonImg("Save")%>&nbsp;<%= buttonLink("Delete visit", "confirmDeleteVisit.view?id="+visit.getRowId())%>&nbsp;<%= buttonLink("Cancel", "manageVisits.view")%></td>
         </tr>

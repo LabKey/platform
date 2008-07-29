@@ -54,7 +54,7 @@ private Object outputJob(String status, PipelineJob job,
     {
         ret.append("<td><a href=\"cancelJob.view?jobId=").append(job.getJobId())
                 .append(isAllContainers ? "&allcontainers=1" : "")
-                .append("\"><img border=\"0\" src=\"")
+                .append("\"><img src=\"")
                 .append(PageFlowUtil.buttonSrc("cancel"))
                 .append("\"></a>");
     }
@@ -104,4 +104,4 @@ private Object outputJob(String status, PipelineJob job,
         </table><%
     } %>
     <a href="<%=ActionURL.toPathString("Pipeline-Status", "showList", "/")%>">
-        <img border="0" src="<%=PageFlowUtil.buttonSrc("Grid")%>"></a>
+        <img src="<%=PageFlowUtil.buttonSrc("Grid")%>"></a>

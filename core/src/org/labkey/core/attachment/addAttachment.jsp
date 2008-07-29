@@ -35,7 +35,7 @@ Browse for file and then click submit<br>
     <tr>
       <td><input type="image" src="<%=PageFlowUtil.buttonSrc("Submit")%>"></td>
       <td><img onClick="window.close();" alt="Cancel" src="<%=PageFlowUtil.buttonSrc("Cancel")%>"></td>
-      <td style="padding-left:5px;"><label class="normal" id="filename"></label></td>
+      <td style="padding-left:5px;"><label id="filename"></label></td>
     </tr>
   </table>
 </form>

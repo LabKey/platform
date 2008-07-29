@@ -26,14 +26,14 @@
     HttpView<Study> me = (HttpView<Study>) HttpView.currentView();
     Study study = me.getModelBean();
 %>
-<p class=normal>Before setting up security for your study please read the documentation on LabKey security and
+<p>Before setting up security for your study please read the documentation on LabKey security and
     on setting up study security.</p>
 <ul>
     <li><a href="<%=new HelpTopic("security", HelpTopic.Area.SERVER).getHelpTopicLink()%>" target="_blank">LabKey Security Documentation</a></li>
     <li><a href="<%=new HelpTopic("studySecurity", HelpTopic.Area.STUDY).getHelpTopicLink()%>" target="_blank">Study Security Documentation</a></li>
 </ul>
 
-<p class=normal>All users must have READ permissions on this folder to access anything in this study. You can configure
+<p>All users must have READ permissions on this folder to access anything in this study. You can configure
     groups and folder security here [&nbsp;<a href="<%=h(urlProvider(SecurityUrls.class).getBeginURL(getViewContext().getContainer()))%>">Folder&nbsp;Security</a>&nbsp;].</p>
 
 <p>If you want to set permissions on individual datasets within the study, you must select advanced study security below.</p>

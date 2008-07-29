@@ -626,7 +626,7 @@ public class SpecimenQueryView extends StudyQueryView
                     columns.add(col);
             }
             StringBuilder builder = new StringBuilder();
-            builder.append("<table border=\"1\" cellpadding=\"2\" cellspacing=\"0\">\n  <tr>\n");
+            builder.append("<table class=\"labkey-simple-html\">\n  <tr>\n");
             for (DisplayColumn col : columns)
             {
                 String header = PageFlowUtil.filter(col.getCaption());

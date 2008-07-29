@@ -107,11 +107,11 @@ function disableQuerySelect(disable)
 <form name="frmCustomize" method="post" action="<%=h(_part.getCustomizePostURL(getContainer()))%>">
     <table>
         <tr>
-            <td class="ms-searchform">Web Part Title:</td>
+            <td class="labkey-form-label">Web Part Title:</td>
             <td><input type="text" name="title" size="40" value="<%=h(pm.get("title"))%>"></td>
         </tr>
         <tr>
-            <td class="ms-searchform">Schema:</td>
+            <td class="labkey-form-label">Schema:</td>
             <td>
                 <select name="schemaName" id="schemaName"
                         title="Select a Schema Name"
@@ -121,9 +121,9 @@ function disableQuerySelect(disable)
             </td>
         </tr>
         <tr>
-            <td class="ms-searchform" valign="top">Query and View:</td>
+            <td class="labkey-form-label" valign="top">Query and View:</td>
             <td>
-                <table class="normal">
+                <table>
                     <tr>
                         <td><input type="radio" name="selectQuery" value="false" <% if (!querySelected) { %> checked <% } %> onchange="disableQuerySelect(this.value == 'false');"/></td>
                         <td>Show the list of tables in this schema.</td>
@@ -173,7 +173,7 @@ function disableQuerySelect(disable)
             </td>
         </tr>
         <tr>
-            <td class="ms-searchform">Allow user to choose query?</td>
+            <td class="labkey-form-label">Allow user to choose query?</td>
             <td>
                 <select name="allowChooseQuery">
                     <option value="true"<%=allowChooseQuery ? " selected" : ""%>>Yes</option>
@@ -182,7 +182,7 @@ function disableQuerySelect(disable)
             </td>
         </tr>
         <tr>
-            <td class="ms-searchform">Allow user to choose view?</td>
+            <td class="labkey-form-label">Allow user to choose view?</td>
             <td>
                 <select name="allowChooseView">
                     <option value="true"<%=allowChooseView ? " selected" : ""%>>Yes</option>

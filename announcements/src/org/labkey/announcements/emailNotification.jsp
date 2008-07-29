@@ -23,30 +23,30 @@
 </head>
 
 <body>
-<table width="100%" border="0" cellspacing="0" cellpadding="4">
-    <tr><td class="normal" colspan="2" style="background-color: #dddddd">
+<table class="labkey-email-notification">
+    <tr><td class="labkey-response-header" colspan="2">
     <%
         int attachmentCount = announcement.getAttachments().size();
     %>
     <%=announcement.getCreatedByName(includeGroups, HttpView.currentContext()) + (announcement.getParent() != null ? " responded" : " created a new " + settings.getConversationName().toLowerCase()) + (attachmentCount > 0 ? " and attached " + attachmentCount + " document" + (attachmentCount > 1 ? "s" : "") : "")%></td>
-    <td class="normal" align="right" style="background-color: #dddddd"><%=formatDateTime(announcement.getCreated())%></td></tr><%
+    <td class="labkey-response-header" align="right"><%=formatDateTime(announcement.getCreated())%></td></tr><%
 
     if (null != body)
     { %>
-    <tr><td colspan="3" class="normal"><%=body%></td></tr><%
+    <tr><td colspan="3"><%=body%></td></tr><%
     }
 
     %>
-    <tr><td colspan="3" class="normal">&nbsp;</td></tr>
-    <tr><td colspan="3" class="normal"><a href="<%=threadURL%>">View this <%=settings.getConversationName().toLowerCase()%></a></td></tr>
+    <tr><td colspan="3">&nbsp;</td></tr>
+    <tr><td colspan="3"><a href="<%=threadURL%>">View this <%=settings.getConversationName().toLowerCase()%></a></td></tr>
 </table>
 
 <br>
 <br>
 <hr size="1">
 
-<table width="100%" border="0" cellspacing="0" cellpadding="4">
-    <tr><td class="normal">You have received this email because <%
+<table class="labkey-email-notification">
+    <tr><td>You have received this email because <%
         switch(reason)
         {
             case broadcast:

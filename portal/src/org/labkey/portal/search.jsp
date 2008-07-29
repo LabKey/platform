@@ -31,7 +31,7 @@
     { %>
 Search <%=h(bean.what)%> in this <%=(c.isProject() ? "project" : "folder")%><%
     } %>
-<table>
+<table class="labkey-search">
 <tr>
     <td colspan=2><input type="text" id="search" name="search" value="<%=h(bean.searchTerm)%>"<%=bean.textBoxWidth > 0 ? " size=\"" + bean.textBoxWidth + "\"" : ""%>></td><%
 

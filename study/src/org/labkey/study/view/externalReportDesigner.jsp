@@ -40,8 +40,8 @@
     Your code will be invoked by the user who is running the LabKey Server installation. The current directory will be determined by LabKey Server.
     <table>
         <tr>
-            <td class="normal">Dataset/Query</td>
-            <td class="normal">            <select name="queryName">
+            <td>Dataset/Query</td>
+            <td>            <select name="queryName">
                 <%
                     for (String name : bean.getTableAndQueryNames())
                     {
@@ -54,11 +54,11 @@
 </td>
         </tr>
         <tr>
-            <td class="normal">Command Line</td>
+            <td>Command Line</td>
             <td><input name="commandLine" size="50" value="<%=h(report.getCommandLine())%>"></td>
         </tr>
         <tr>
-            <td class="normal">Output File Type</td>
+            <td>Output File Type</td>
             <td >
                 <%
                     String ext = report.getFileExtension();

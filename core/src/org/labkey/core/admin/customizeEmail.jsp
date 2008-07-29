@@ -135,7 +135,7 @@
             {
                 row = table.insertRow(table.rows.length);
                 cell = row.insertCell(0);
-                cell.className = "ms-searchform";
+                cell.className = "labkey-form-label";
                 cell.innerHTML = record.replacements[i].paramName;
 
                 cell = row.insertCell(1);
@@ -155,9 +155,9 @@
 </script>
 
 <form action="customizeEmail.view" method="post">
-    <table class="normal">
-        <tr class="wpHeader"><th colspan=2 align=center>Custom Emails</th></tr>
-        <tr><td class=normal colspan=2>Customize user emails:</td></tr>
+    <table class="labkey-form">
+        <tr class="labkey-wp-header"><th colspan=2 class="labkey-admin-title">Custom Emails</th></tr>
+        <tr><td colspan=2>Customize user emails:</td></tr>
         <tr><td></td></tr>
         <tr><td>Email Type:</td>
             <td><select id="templateClass" name="templateClass" onchange="changeEmailTemplate();">
@@ -170,9 +170,9 @@
         }
 %>
         </select></td></tr>
-        <tr><td>Description:</td><td class="normal" width="600"><div id="emailDescription"></div></td><td></td></tr>
-        <tr><td>Subject:</td><td class="normal" width="600"><input id="emailSubject" name="emailSubject" style="width:100%" value="<%=bean.getEmailSubject()%>"></td><td></td></tr>
-        <tr><td>Message:</td><td class="normal"><textarea id="emailMessage" name="emailMessage" style="width:100%" rows="20"><%=bean.getEmailMessage()%></textarea></td></tr>
+        <tr><td>Description:</td><td width="600"><div id="emailDescription"></div></td><td></td></tr>
+        <tr><td>Subject:</td><td width="600"><input id="emailSubject" name="emailSubject" style="width:100%" value="<%=bean.getEmailSubject()%>"></td><td></td></tr>
+        <tr><td>Message:</td><td><textarea id="emailMessage" name="emailMessage" style="width:100%" rows="20"><%=bean.getEmailMessage()%></textarea></td></tr>
         <tr>
             <td></td><td>
             <%=PageFlowUtil.buttonLink("Cancel", urlProvider(AdminUrls.class).getAdminConsoleURL())%>&nbsp;
@@ -187,7 +187,7 @@
             The list of valid substitutions for this email type is (current values appear to the right, although
             some are not known until the email is generated):</i></td>
         </tr>
-        <tr><td></td><td><table id="validSubstitutions"></table></td></tr>
+        <tr><td></td><td><table id="validSubstitutions" class="labkey-form"></table></td></tr>
         <tr><td>&nbsp;</td></tr>
         <tr><td></td><td><i>The values of many of these parameters can be configured on
             the <a href="<%=urlProvider(AdminUrls.class).getCustomizeSiteURL()%>">Site Settings Page</a>.</i>

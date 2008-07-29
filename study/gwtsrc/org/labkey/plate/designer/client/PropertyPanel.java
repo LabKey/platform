@@ -56,7 +56,7 @@ public abstract class PropertyPanel extends DockPanel
         private PopupPanel _tooltip = new PopupPanel(true);
         {
             _tooltip.add(new Label("Delete"));
-            _tooltip.setStyleName("ms-searchform");
+            _tooltip.setStyleName("labkey-form-label");
         }
 
         public void onMouseEnter(Widget sender)
@@ -151,7 +151,7 @@ public abstract class PropertyPanel extends DockPanel
     private void insertPropertyRow(int row, final String name, Object value)
     {
         _propertyTable.setWidget(row, 0, new Label(name));
-        _propertyTable.getFlexCellFormatter().setStyleName(row, 0, "ms-searchform");
+        _propertyTable.getFlexCellFormatter().setStyleName(row, 0, "labkey-form-label");
         TextBox textBox = new TextBox();
         textBox.addChangeListener(_changeListener);
         textBox.addKeyboardListener(_keyboardListener);

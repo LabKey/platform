@@ -56,18 +56,18 @@
     <% } %>
     designerInit();
 </script>
-<table class="normal" cellspacing="0" cellpadding="0">
+<table class="labkey-design-query">
     <tr>
         <th>
-            <table cellspacing=0 cellpadding=0>
+            <table class="labkey-design-query">
                 <tr>
-                    <td class="navtab" style="border-top:none;border-left:none;border-right:none;">
+                    <td class="labkey-nav-tab-space">
                         <img src="<%=contextPath%>/_.gif" height=1 width=5>
                     </td>
-                    <td class="navtab-selected" style="cursor:pointer">
+                    <td class="labkey-nav-tab-selected" style="cursor:pointer">
                         Available&nbsp;Fields
                     </td>
-                    <td class="navtab" style="border-top:none;border-left:none;border-right:none;" width=100%>
+                    <td class="labkey-nav-tab-space" width=100%>
                         <img src="<%=contextPath%>/_.gif" height=1 width=5>
                     </td>
                 </tr>
@@ -75,30 +75,30 @@
         </th>
         <th></th>
         <th colspan="3" align="left">
-            <table cellspacing=0 cellpadding=0>
+            <table class="labkey-design-query">
                 <tr>
-                    <td class="navtab" style="border-top:none;border-left:none;border-right:none;">
+                    <td class="labkey-nav-tab-space">
                         <img src="<%=contextPath%>/_.gif" height=1 width=5>
                     </td>
-                    <td style="cursor:pointer" class="navtab" id="columns.tab"
+                    <td style="cursor:pointer" class="labkey-nav-tab" id="columns.tab"
                         onclick="designer.setActiveTab(designer.tabs.columns)">
                         Select
                     </td>
-                    <td class="navtab" style="border-top:none;border-left:none;border-right:none;">
+                    <td class="labkey-nav-tab-space">
                         <img src="<%=contextPath%>/_.gif" height=1 width=5>
                     </td>
-                    <td style="cursor:pointer" id="filter.tab" class="navtab"
+                    <td style="cursor:pointer" id="filter.tab" class="labkey-nav-tab"
                         onclick="designer.setActiveTab(designer.tabs.filter)">
                         Where
                     </td>
-                    <td class="navtab" style="border-top:none;border-left:none;border-right:none;">
+                    <td class="labkey-nav-tab-space">
                         <img src="<%=contextPath%>/_.gif" height=1 width=5>
                     </td>
-                    <td style="cursor:pointer" id="sort.tab" class="navtab"
+                    <td style="cursor:pointer" id="sort.tab" class="labkey-nav-tab"
                         onclick="designer.setActiveTab(designer.tabs.sort)">
                         Order&nbsp;By
                     </td>
-                    <td class="navtab" style="border-top:none;border-left:none;border-right:none;" width=100%>
+                    <td class="labkey-nav-tab-space" width=100%>
                         <img src="<%=contextPath%>/_.gif" height=1 width=5>
                     </td>
                 </tr>
@@ -106,7 +106,7 @@
         </th>
     </tr>
     <tr>
-        <td valign="top" onSelectStart="return false;" onMouseDown="return false;" class="navtab" style="border-top:none;">
+        <td valign="top" onSelectStart="return false;" onMouseDown="return false;" class="labkey-nav-tab" style="border-top:none;">
         <div style="height:400px;width:300px;overflow:auto">
         <table>
             <tbody id="columnPicker">
@@ -124,62 +124,62 @@
         </p>
     </td>
 
-    <td id="columns.list" valign="top" style="display:none;border-top:none;border-right:none;" class="navtab">
+    <td id="columns.list" valign="top" style="display:none;border-top:none;border-right:none;" class="labkey-nav-tab">
         <div id="columns.list.div" style="height:400px;width:200px;overflow:auto;border:solid 1px black;"></div>
     </td>
-    <td valign="top" id="columns.controls" style="display:none;border-top:none;border-left:none;border-right:none;vertical-align:top;" class="navtab">
+    <td valign="top" id="columns.controls" style="display:none;vertical-align:top;" class="labkey-nav-tab-space">
         <br>
 
         <p><a href="#" onclick="designer.moveUp();return false"><img src="<%=contextPath%>/query/moveup.gif"
-                                                       alt="Move Up" border="0"></a></p>
+                                                       alt="Move Up"></a></p>
 
         <p><a href="#" onclick="designer.moveDown();return false"><img src="<%=contextPath%>/query/movedown.gif"
-                                                         alt="Move Down" border="0"></a></p>
+                                                         alt="Move Down"></a></p>
 
         <p><a href="#" onclick="designer.remove();return false"><img src="<%=contextPath%>/query/delete.gif" alt="Delete"
-                                                       border="0"></a></p>
-        <p><a href="#" onclick="designer.insertSQL();return false"><img src="<%=contextPath%>/query/sql.gif" alt="Add SQL Expression Column" title="Add SQL Expression Column" border="0"></a></p>
+                                                      ></a></p>
+        <p><a href="#" onclick="designer.insertSQL();return false"><img src="<%=contextPath%>/query/sql.gif" alt="Add SQL Expression Column" title="Add SQL Expression Column"></a></p>
     </td>
 
-    <td id="columns.properties" valign="top" style="display:none;border-top:none;border-left:none" class="navtab">
+    <td id="columns.properties" valign="top" style="display:none;border-top:none;border-left:none" class="labkey-nav-tab">
         <div id="columns.properties.div" style="height:400px;width:300px;overflow:auto;border:solid 1px black;"></div>
     </td>
-    <td id="filter.list" valign="top" colspan="2" style="display:none;border-top:none;border-right:none" class="navtab">
+    <td id="filter.list" valign="top" colspan="2" style="display:none;border-top:none;border-right:none" class="labkey-nav-tab">
         <div id="filter.list.div" style="height:400px;width:500px;overflow:auto;border:solid 1px black;"></div>
     </td>
-    <td id="filter.controls" valign="top" style="display:none;border-top:none;border-left:none;vertical-align:top;" class="navtab">
+    <td id="filter.controls" valign="top" style="display:none;border-top:none;border-left:none;vertical-align:top;" class="labkey-nav-tab">
         <br>
 
         <p><a href="#" onclick="designer.tabs.filter.moveUp();return false"><img src="<%=contextPath%>/query/moveup.gif"
-                                                                   alt="Move Up" border="0"></a></p>
+                                                                   alt="Move Up"></a></p>
 
         <p><a href="#" onclick="designer.tabs.filter.moveDown();return false"><img
                 src="<%=contextPath%>/query/movedown.gif"
-                alt="Move Down" border="0"></a></p>
+                alt="Move Down"></a></p>
 
         <p><a href="#" onclick="designer.tabs.filter.remove();return false"><img src="<%=contextPath%>/query/delete.gif"
-                                                                   alt="Delete" border="0"></a></p>
+                                                                   alt="Delete"></a></p>
         <p><a href="#" onclick="designer.insertSQL();return false"><img src="<%=contextPath%>/query/sql.gif" alt="Add SQL Expression Clause"
-                                                          title="Add SQL Expression Clause" border="0"></a></p>
+                                                          title="Add SQL Expression Clause"></a></p>
 
     </td>
-    <td id="sort.list" valign="top" colspan="2" style="display:none;border-top:none;border-right:none;" class="navtab">
+    <td id="sort.list" valign="top" colspan="2" style="display:none;border-top:none;border-right:none;" class="labkey-nav-tab">
         <div id="sort.list.div" style="height:400px;width:500px;overflow:auto;border:solid 1px black;"></div>
     </td>
-    <td id="sort.controls" valign="top" style="display:none;border-top:none;border-left:none;vertical-align:top;" class="navtab">
+    <td id="sort.controls" valign="top" style="display:none;border-top:none;border-left:none;vertical-align:top;" class="labkey-nav-tab">
         <br>
 
         <p><a href="#" onclick="designer.tabs.sort.moveUp();return false"><img src="<%=contextPath%>/query/moveup.gif"
-                                                                 alt="Move Up" border="0"></a></p>
+                                                                 alt="Move Up"></a></p>
 
         <p><a href="#" onclick="designer.tabs.sort.moveDown();return false"><img
                 src="<%=contextPath%>/query/movedown.gif"
-                alt="Move Down" border="0"></a></p>
+                alt="Move Down"></a></p>
 
         <p><a href="#" onclick="designer.tabs.sort.remove();return false"><img src="<%=contextPath%>/query/delete.gif"
-                                                                 alt="Delete" border="0"></a></p>
+                                                                 alt="Delete"></a></p>
         <p><a href="#" onclick="designer.insertSQL();return false"><img src="<%=contextPath%>/query/sql.gif" alt="Add SQL Expression Clause"
-                                                          title="Add SQL Expression Clause" border="0"></a></p>
+                                                          title="Add SQL Expression Clause"></a></p>
     </td>
     <td id="sql.editor" valign="top" colspan="3" style="display:none">
         <table>
