@@ -36,6 +36,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
     private static final int PERL_PIPELINE_LOCKS_DEFAULT = 5;
     
     private final File _lockDirectory;
+    private final String _outputPermissions;
 
     public File inputFile(File fileInput, boolean forceCopy) throws IOException
     {
@@ -45,7 +46,9 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
     public static class Factory implements WorkDirFactory
     {
         private String _lockDirectory;
+        private String _outputPermissions;
         private String _tempDirectory;
+        private boolean _sharedTempDirectory;
 
         public WorkDirectory createWorkDirectory(String jobId, FileAnalysisJobSupport support, Logger log) throws IOException
         {
@@ -56,6 +59,15 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
                 // We've seen very intermittent problems failing to create temp files in the past during the DRTs,
                 // so try a few times before failing
                 File dirParent = (_tempDirectory == null ? null : new File(_tempDirectory));
+
+                // If the temp directory is shared, then create a jobId directory to be sure the
+                // work directory path is unique.
+                if (_sharedTempDirectory)
+                {
+                    dirParent = File.createTempFile(jobId, "", dirParent);
+                    dirParent.delete();
+                    dirParent.mkdirs();                    
+                }
                 tempDir = File.createTempFile(support.getBaseName(), FT_WORK_DIR.getSuffix(), dirParent);
                 tempDir.delete();
                 tempDir.mkdirs();
@@ -67,7 +79,8 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
                 throw new IOException("Failed to create local working directory " + tempDir);
             }
 
-            return new WorkDirectoryRemote(support, tempDir, log, _lockDirectory);
+            File lockDir = (_lockDirectory == null ? null : new File(_lockDirectory));
+            return new WorkDirectoryRemote(support, log, lockDir, tempDir, _outputPermissions);
         }
 
         public String getLockDirectory()
@@ -94,6 +107,13 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
             _tempDirectory = tempDirectory;
         }
 
+        /**
+         * Set to an environment variable set to the path to use for the temporary directory.
+         * (e.g. some cluster schedulers initialize TMPDIR to a job specific temporary directory
+         * which will be removed, if the job is cancelled)
+         *
+         * @param tempDirectoryVar environment variable name 
+         */
         public void setTempDirectoryEnv(String tempDirectoryVar)
         {
             String tempDirectory = System.getenv(tempDirectoryVar);
@@ -101,18 +121,66 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
                 throw new IllegalArgumentException("The environment variable " + tempDirectoryVar + " does not exist:\n" + System.getenv());                
             setTempDirectory(tempDirectory);
         }
+
+        /**
+         * @return true if the root temporary directory will be shared by multiple tasks
+         */
+        public boolean isSharedTempDirectory()
+        {
+            return _sharedTempDirectory;
+        }
+
+        /**
+         * Set to true, if the root temporary directory will be shared by multiple tasks.
+         * This is usually not necessary on a scheduled computational cluster, where each
+         * task is given a separate working environment.
+         *
+         * @param sharedTempDirectory true if the root temporary directory will be shared by multiple tasks
+         */
+        public void setSharedTempDirectory(boolean sharedTempDirectory)
+        {
+            _sharedTempDirectory = sharedTempDirectory;
+        }
+
+        /**
+         * @return chmod permissions mask for Unix systems
+         */
+        public String getOutputPermissions()
+        {
+            return _outputPermissions;
+        }
+
+        /**
+         * Specify a permissions mask to pass to chmod on Unix systems.  Some cluster
+         * scheduling software give processing nodes very restrictive umask settings.
+         * 
+         * @param outputPermissions chmod permissions mask (e.g. "0664")
+         */
+        public void setOutputPermissions(String outputPermissions)
+        {
+            _outputPermissions = outputPermissions;
+        }
     }
 
-    public WorkDirectoryRemote(FileAnalysisJobSupport support, File tempDir, Logger log, String lockDirectory) throws IOException
+    public WorkDirectoryRemote(FileAnalysisJobSupport support, Logger log, File lockDir, File tempDir, String outputPermissions) throws IOException
     {
         super(support, tempDir, log);
-        if (lockDirectory != null)
+
+        _lockDirectory = lockDir;
+        _outputPermissions = outputPermissions;
+    }
+
+    protected void outputFile(File fileWork, File fileDest) throws IOException
+    {
+        super.outputFile(fileWork, fileDest);
+
+        if (_outputPermissions != null)
         {
-            _lockDirectory = new File(lockDirectory);
-        }
-        else
-        {
-            _lockDirectory = null;
+            Runtime.getRuntime().exec(new String[] {
+                    "chmod",
+                    _outputPermissions,
+                    fileDest.toString()
+            });
         }
     }
 

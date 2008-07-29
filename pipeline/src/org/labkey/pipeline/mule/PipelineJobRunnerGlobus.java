@@ -365,8 +365,7 @@ public class PipelineJobRunnerGlobus implements Callable
     {
         // Set up the job description
         JobDescriptionType jobDescription = new JobDescriptionType();
-        // Haven't seen this work yet...
-        // jobDescription.setJobType(JobTypeEnumeration.single);
+        jobDescription.setJobType(JobTypeEnumeration.single);
         
         // Create the output files with the right permissions
         FileUtils.touch(getOutputFile(job.getStatusFile(), OutputType.out));
