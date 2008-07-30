@@ -1924,6 +1924,7 @@ study/src/org/labkey/study/view/DataSetSummaryPage.java -text
 study/src/org/labkey/study/view/DatasetsWebPartView.java -text
 study/src/org/labkey/study/view/ParticipantWebPartFactory.java -text
 study/src/org/labkey/study/view/StudySummaryWebPartFactory.java -text
+study/src/org/labkey/study/view/VisitWebPartFactory.java -text
 study/src/org/labkey/study/view/bulkImportDataTypes.jsp -text
 study/src/org/labkey/study/view/columnPicker.gm -text
 study/src/org/labkey/study/view/confirmDeleteStudy.jsp -text

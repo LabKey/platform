@@ -91,13 +91,14 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
     public static final WebPartFactory assayListWebPartFactory = new AssayListWebPartFactory();
     public static final WebPartFactory assayDetailsWebPartFactory = new AssayDetailsWebPartFactory();
     public static final WebPartFactory participantWebPartFactory = new ParticipantWebPartFactory();
+    public static final WebPartFactory visitWebPartFactory = new VisitWebPartFactory();
 
     public StudyModule()
     {
         super(NAME, 8.24, "/org/labkey/study", true, reportsPartFactory, reportsWidePartFactory, samplesPartFactory,
                 samplesWidePartFactory, datasetsPartFactory, manageStudyPartFactory,
                 enrollmentChartPartFactory, studyDesignsWebPartFactory, studyDesignSummaryWebPartFactory,
-                assayListWebPartFactory, assayDetailsWebPartFactory, participantWebPartFactory);
+                assayListWebPartFactory, assayDetailsWebPartFactory, participantWebPartFactory, visitWebPartFactory);
 
         addController("study", StudyController.class);
         addController("study-reports", ReportsController.class);

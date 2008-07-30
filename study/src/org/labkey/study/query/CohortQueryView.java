@@ -68,7 +68,7 @@ public class CohortQueryView extends ExtensibleObjectQueryView
             bar.add(new ActionButton(deleteUnusedURL, "Delete Unused"));
 
             ActionURL editDefinitionURL = new ActionURL(StudyDefinitionController.EditCohortDefinitionAction.class, getSchema().getContainer());
-            bar.add(new ActionButton(editDefinitionURL, "Edit Definition"));
+            bar.add(new ActionButton(editDefinitionURL, "Edit Cohort Definition"));
         }
     }
 

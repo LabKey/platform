@@ -105,6 +105,7 @@ public class StudyDefinitionController extends BaseStudyController
     {
         protected Class<? extends Extensible> getClassToView()
         {
+            StudyManager.getInstance().assertCohortsViewable(getContainer(), getUser());
             return Cohort.class;
         }
 
