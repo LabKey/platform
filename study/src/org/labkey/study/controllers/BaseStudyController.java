@@ -16,11 +16,11 @@
 
 package org.labkey.study.controllers;
 
-import org.labkey.api.action.SpringActionController;
-import org.labkey.api.action.BaseViewAction;
-import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.view.*;
+import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.ACL;
 import org.labkey.study.model.DataSetDefinition;
@@ -28,11 +28,15 @@ import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.Visit;
 import org.labkey.study.view.BaseStudyPage;
+import org.labkey.study.view.StudyNavigationView;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletException;
 import java.util.Collection;
+import java.io.PrintWriter;
+import static org.labkey.api.util.PageFlowUtil.jsString;
 
 /**
  * Created by IntelliJ IDEA.
@@ -41,6 +45,89 @@ import java.util.Collection;
  */
 public abstract class BaseStudyController extends SpringActionController
 {
+    static final boolean extprototype = false;
+
+    ActionURL getPermaLink()
+    {
+        ActionURL url = getViewContext().cloneActionURL().setExtraPath(getContainer().getId());
+        url.deleteParameter("_template");
+        url.deleteParameter("_dc");
+        return url;
+    }
+
+    public PageConfig defaultPageConfig()
+    {
+        PageConfig page =  super.defaultPageConfig();
+        String template = getViewContext().getRequest().getHeader("template");
+        if (null == template)
+            template = getViewContext().getRequest().getParameter("_template");
+        if ("custom".equals(template))
+            page.setTemplate(PageConfig.Template.Custom);
+        return page;
+    }
+
+    protected ModelAndView getTemplate(ViewContext context, final ModelAndView mv, final Controller action, PageConfig page)
+    {
+        if (!extprototype)
+            return super.getTemplate(context,mv,action,page);
+
+        if (((HasPageConfig)action).getPageConfig().getTemplate() == PageConfig.Template.Custom)
+        {
+            HttpView custom = new HttpView()
+            {
+                protected void renderInternal(Object model, PrintWriter out) throws Exception
+                {
+                    out.println("<!--custom-->");   // marker
+                    include(mv);
+                    out.println("<script type='text/javascript'>updatePageProperties({");
+                    out.print("permalink:");out.println(jsString(getPermaLink().getLocalURIString()));
+                    if (action instanceof NavTrailAction)
+                    {
+                        NavTree root = new NavTree();
+                        appendNavTrail(action, root);
+                        out.print(",navtrail:[");
+                        String c = "";
+                        NavTree last = null;
+                        for (NavTree nt : root.getChildren())
+                        {
+                            out.print(c);c = ",";
+                            out.print("{title:");out.print(jsString(nt.getKey()));out.print(',');
+                            out.print("url:");out.print(jsString(nt.getValue()));out.print('}');
+                            last = nt;
+                        }
+                        out.print("]");
+                        if (null != last)
+                        {
+                            out.print(",title:");out.println(jsString(last.getKey()));
+                        }
+                    }
+                    out.println("});</script>");
+                }
+            };
+            return custom;
+        }
+
+        HttpView wrapper =  new HttpView()
+        {
+            protected void renderInternal(Object model, PrintWriter out) throws Exception
+            {
+
+                out.println("<div class=extContainer><div id=studyDiv><!--BODY-->");
+                include(mv);
+                out.println("</div></div>");
+            }
+        };
+        ModelAndView t = super.getTemplate(context, wrapper, action, page);
+        if (t instanceof HomeTemplate)
+        {
+            Study study = null;
+            try {study = getStudy(true);}catch (ServletException x){}
+            if (null != study)
+                ((HttpView)t).setView("moduleNav", new StudyNavigationView(study));
+        }
+        return t;
+    }
+
     public Study getStudy(boolean allowNullStudy) throws ServletException
     {
         // UNDONE: see https://cpas.fhcrc.org/Issues/home/issues/details.view?issueId=1137

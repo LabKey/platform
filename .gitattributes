@@ -1923,6 +1923,7 @@ study/src/org/labkey/study/view/DataHeader.java -text
 study/src/org/labkey/study/view/DataSetSummaryPage.java -text
 study/src/org/labkey/study/view/DatasetsWebPartView.java -text
 study/src/org/labkey/study/view/ParticipantWebPartFactory.java -text
+study/src/org/labkey/study/view/StudyNavigationView.java -text
 study/src/org/labkey/study/view/StudySummaryWebPartFactory.java -text
 study/src/org/labkey/study/view/VisitWebPartFactory.java -text
 study/src/org/labkey/study/view/bulkImportDataTypes.jsp -text
@@ -1962,6 +1963,7 @@ study/src/org/labkey/study/view/manageTimepoints.jsp -text
 study/src/org/labkey/study/view/manageTypes.jsp -text
 study/src/org/labkey/study/view/manageUndefinedTypes.jsp -text
 study/src/org/labkey/study/view/manageVisits.jsp -text
+study/src/org/labkey/study/view/moduleNav.gm -text
 study/src/org/labkey/study/view/overview.jsp -text
 study/src/org/labkey/study/view/participantAll.jsp -text
 study/src/org/labkey/study/view/participantCharacteristics.jsp -text
