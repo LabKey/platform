@@ -810,7 +810,14 @@ public class DataRegion extends DisplayElement
             out.write("style=\"" + COLUMN_SEPARATOR_STYLE_ARRIBS + ";border-right:solid 1px " + COLUMN_SEPARATOR_COLOR + "\"");
         }
 
-        out.write("colspan=\"" + colCount + "\"><i>No data to show.</i></td></tr>\n");
+        out.write("colspan=\"" + colCount + "\"><i>");
+        out.write(getNoRowsMessage());
+        out.write("</i></td></tr>\n");
+    }
+
+    protected String getNoRowsMessage()
+    {
+        return "No data to show.";
     }
 
     private void checkResultSet(RenderContext ctx, Writer out) throws SQLException, IOException
