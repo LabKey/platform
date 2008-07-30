@@ -30,7 +30,7 @@ LABKEY.ext.WebDavTreeLoader = function (config)
     var PropfindResponse = Ext.data.Record.create([
         {name: 'id', mapping: 'href',
             convert : function (v, rec) {
-                return v.replace(loader.url, "");
+                return v.replace(loader.url, ""); // remove contextPath/webdav
             }
         },
         {name: 'text', mapping: 'propstat/prop/displayname'},
@@ -144,7 +144,7 @@ LABKEY.ext.FileTree = function (config)
     if (!this.root)
     {
         this.root = new Ext.tree.AsyncTreeNode({
-            id: LABKEY.ActionURL.getContainer() + (this.browsePipeline ? "/@pipeline" : ""),
+            id: LABKEY.ActionURL.getContainer() + (this.browsePipeline ? "/%40pipeline" : ""),
             text:'<root>'
         });
     }
@@ -160,6 +160,13 @@ LABKEY.ext.FileTree = function (config)
     }
 
     LABKEY.ext.FileTree.superclass.constructor.call(this);
+
+    if (this.initialSelection && this.initialSelection.length > 0)
+    {
+        if (this.initialSelection[0] != '/')
+            this.initialSelection = '/' + this.initialSelection;
+        this.selectPath('/<root>' + this.initialSelection, 'text');
+    }
 
     this.getSelectionModel().addListener("beforeselect",
         function (model, newnode, oldnode)
@@ -208,6 +215,11 @@ Ext.extend(LABKEY.ext.FileTree, Ext.tree.ColumnTree, {
     multiSelect : false,
 
     /**
+     * @cfg {String} initialSelection (optional) Select the node given
+     * by the path.
+     */
+
+    /**
      * @cfg {Regex} fileFilter (optional) Only files matching the pattern are shown.
      */
     fileFilter : null,
@@ -218,6 +230,12 @@ Ext.extend(LABKEY.ext.FileTree, Ext.tree.ColumnTree, {
      * be a comma separated list of hrefs.
      */
     inputId : null,
+
+    /**
+     * @cfg {String} relativeToRoot (optional) remove root's id prefix from
+     * the selected nodes' ids as returned by getSelectedValues().
+     */
+    relativeToRoot : false,
 
     autoHeight:true,
     rootVisible:false,
@@ -260,13 +278,22 @@ Ext.extend(LABKEY.ext.FileTree, Ext.tree.ColumnTree, {
 
     getSelectedValues: function ()
     {
+        var self = this;
+        function stripId(id)
+        {
+            var rootId = self.getRootNode().id;
+            if (self.relativeToRoot && id.indexOf(rootId) == 0)
+                return id.substring(rootId.length);
+            return id;
+        }
+
         var selModel = this.getSelectionModel();
         if (!selModel)
             return "";
         if (selModel.getSelectedNode)
         {
             var node = selModel.getSelectedNode();
-            return node ? node.id : "";
+            return node ? stripId(node.id) : "";
         }
         else if (selModel.getSelectedNodes)
         {
@@ -275,7 +302,7 @@ Ext.extend(LABKEY.ext.FileTree, Ext.tree.ColumnTree, {
             var sep = "";
             for (var i = 0; i < nodes.length; i++)
             {
-                value += sep + nodes[i].id;
+                value += sep + stripId(nodes[i].id);
                 sep = ",";
             }
             return value;
