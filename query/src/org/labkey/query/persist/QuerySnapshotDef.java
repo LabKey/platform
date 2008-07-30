@@ -18,7 +18,9 @@ package org.labkey.query.persist;
 import org.labkey.api.data.Entity;
 import org.labkey.api.data.CacheKey;
 import org.labkey.api.data.Container;
-import org.labkey.api.util.UnexpectedException;/*
+import org.labkey.api.util.UnexpectedException;
+
+import java.util.Date;/*
  * User: Karl Lum
  * Date: Jul 14, 2008
  * Time: 1:08:03 PM
@@ -61,6 +63,9 @@ public class QuerySnapshotDef extends Entity implements Cloneable
     private String _schema;
     private String _columns;
     private String _filter;
+    private Date _lastUpdated;
+    private Date _nextUpdate;
+    private int _updateDelay;
 
     public int getRowId()
     {
@@ -120,6 +125,36 @@ public class QuerySnapshotDef extends Entity implements Cloneable
     public void setFilter(String filter)
     {
         _filter = filter;
+    }
+
+    public Date getLastUpdated()
+    {
+        return _lastUpdated;
+    }
+
+    public void setLastUpdated(Date lastUpdated)
+    {
+        _lastUpdated = lastUpdated;
+    }
+
+    public Date getNextUpdate()
+    {
+        return _nextUpdate;
+    }
+
+    public void setNextUpdate(Date nextUpdate)
+    {
+        _nextUpdate = nextUpdate;
+    }
+
+    public int getUpdateDelay()
+    {
+        return _updateDelay;
+    }
+
+    public void setUpdateDelay(int updateDelay)
+    {
+        _updateDelay = updateDelay;
     }
 
     public QuerySnapshotDef clone()

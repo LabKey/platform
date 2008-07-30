@@ -122,7 +122,10 @@ public class QueryServiceImpl extends QueryService
 
     public QueryDefinition getQueryDef(Container container, String schema, String name)
     {
-        return getQueryDefs(container, schema).get(name);
+        QueryDef def = QueryManager.get().getQueryDef(container, schema, name);
+        if (def != null)
+            return new QueryDefinitionImpl(def);
+        return null;
     }
 
     private Map<String, QuerySnapshotDefinition> getAllQuerySnapshotDefs(Container container, String schemaName)
@@ -143,6 +146,11 @@ public class QueryServiceImpl extends QueryService
     public boolean isQuerySnapshot(Container container, String schema, String name)
     {
         return QueryService.get().getSnapshotDef(container, schema, name) != null;
+    }
+
+    public List<QuerySnapshotDefinition> getQuerySnapshotDefs(Container container, String schema)
+    {
+        return new ArrayList<QuerySnapshotDefinition>(getAllQuerySnapshotDefs(container, schema).values());
     }
 
     public QuerySnapshotDefinition createQuerySnapshotDef(QueryDefinition queryDef, String name)

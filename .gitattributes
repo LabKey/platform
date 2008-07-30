@@ -1308,6 +1308,7 @@ query/src/META-INF/query/scripts/postgresql/query-8.10-8.11.sql -text
 query/src/META-INF/query/scripts/postgresql/query-8.10-8.20.sql -text
 query/src/META-INF/query/scripts/postgresql/query-8.20-8.21.sql -text
 query/src/META-INF/query/scripts/postgresql/query-8.21-8.22.sql -text
+query/src/META-INF/query/scripts/postgresql/query-8.22-8.23.sql -text
 query/src/META-INF/query/scripts/sql[!!-~]server/obsolete/query-1.51-1.52.sql -text
 query/src/META-INF/query/scripts/sql[!!-~]server/obsolete/query-1.60-1.61.sql -text
 query/src/META-INF/query/scripts/sql[!!-~]server/obsolete/query-1.70-1.71.sql -text
@@ -1319,6 +1320,7 @@ query/src/META-INF/query/scripts/sql[!!-~]server/query-8.10-8.11.sql -text
 query/src/META-INF/query/scripts/sql[!!-~]server/query-8.10-8.20.sql -text
 query/src/META-INF/query/scripts/sql[!!-~]server/query-8.20-8.21.sql -text
 query/src/META-INF/query/scripts/sql[!!-~]server/query-8.21-8.22.sql -text
+query/src/META-INF/query/scripts/sql[!!-~]server/query-8.22-8.23.sql -text
 query/src/org/labkey/query/CustomViewImpl.java -text
 query/src/org/labkey/query/QueryDefinitionImpl.java -text
 query/src/org/labkey/query/QueryModule.java -text

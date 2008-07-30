@@ -2578,6 +2578,43 @@ public class StudyManager
         return new BaseStudyController.StudyJspView<ParticipantViewConfig>(getStudy(container), "participantCharacteristics.jsp", config, errors);
     }
 
+    public interface StudyCachableListener
+    {
+        void cacheCleared(StudyCachable c);
+    }
+
+    static final ArrayList<StudyCachableListener> _listeners = new ArrayList<StudyCachableListener>();
+
+    public static void addCachableListener(StudyCachableListener listener)
+    {
+        synchronized (_listeners)
+        {
+            _listeners.add(listener);
+        }
+    }
+
+    protected static StudyCachableListener[] getListeners()
+    {
+        synchronized (_listeners)
+        {
+            return _listeners.toArray(new StudyCachableListener[_listeners.size()]);
+        }
+    }
+    
+    public static void fireCacheCleared(StudyCachable c)
+    {
+        StudyCachableListener[] list = getListeners();
+        for (StudyCachableListener l : list)
+            try
+            {
+                l.cacheCleared(c);
+            }
+            catch (Throwable t)
+            {
+                _log.error("fireCacheCleared", t);
+            }
+    }
+
     public static class StudyTestCase extends junit.framework.TestCase
     {
         public StudyTestCase()

@@ -3817,7 +3817,14 @@ public class StudyController extends BaseStudyController
 
         public boolean handlePost(QuerySnapshotForm form, BindException errors) throws Exception
         {
-            _successURL = QuerySnapshotService.get(form.getSchemaName()).createSnapshot(form);
+            List<String> errorList = new ArrayList<String>();
+            _successURL = QuerySnapshotService.get(form.getSchemaName()).createSnapshot(form, errorList);
+            if (!errorList.isEmpty())
+            {
+                for (String error : errorList)
+                    errors.reject("snapshotQuery.error", error);
+                return false;
+            }
             return true;
         }
 
@@ -3855,6 +3862,7 @@ public class StudyController extends BaseStudyController
                 boolean showDataset = BooleanUtils.toBoolean(getViewContext().getActionURL().getParameter("showDataset"));
 
                 box.addView(new JspView<QueryForm>("/org/labkey/study/view/editSnapshot.jsp", form, errors));
+                box.addView(new JspView<QueryForm>("/org/labkey/study/view/createDatasetSnapshot.jsp", form));
 
                 if (showHistory)
                 {
@@ -3899,6 +3907,7 @@ public class StudyController extends BaseStudyController
             if (def != null)
             {
                 def.setColumns(form.getFieldKeyColumns());
+                def.setUpdateDelay(form.getUpdateDelay());
                 _successURL = QuerySnapshotService.get(form.getSchemaName()).updateSnapshotDefinition(getViewContext(), def);
             }
             else

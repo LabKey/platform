@@ -76,10 +76,13 @@ public class QueryManager
             {
                 key.setSchema(schema);
             }
+
+            // omit snapshot query definitions 
             if (inheritableOnly)
-            {
-                key.setFlagMask(FLAG_INHERITABLE, FLAG_INHERITABLE);
-            }
+                key.setFlagMask(FLAG_INHERITABLE | FLAG_SNAPSHOT, FLAG_INHERITABLE);
+            else
+                key.setFlagMask(FLAG_SNAPSHOT, 0);
+
             return key.select();
         }
         catch (SQLException e)

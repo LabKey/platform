@@ -125,7 +125,7 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
         Search.register(new StudySearch());
 
         EnumConverter.registerEnum(SecurityType.class);
-        QuerySnapshotService.registerProvider(StudyManager.getSchemaName(), new DatasetSnapshotProvider());
+        QuerySnapshotService.registerProvider(StudyManager.getSchemaName(), DatasetSnapshotProvider.getInstance());
     }
 
     public void containerCreated(Container c)

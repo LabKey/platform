@@ -9,6 +9,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.HashMap" %>
+<%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -22,29 +23,79 @@
     for (String name : bean.getSnapshotColumns())
         columnMap.put(name, name);
 
-    boolean isAutoUpdateable = false;//QuerySnapshotService.get(bean.getSchemaName()) instanceof QuerySnapshotService.AutoUpdateable;
+    boolean isAutoUpdateable = QuerySnapshotService.get(bean.getSchemaName()) instanceof QuerySnapshotService.AutoUpdateable;
     boolean isEdit = QueryService.get().getSnapshotDef(context.getContainer(), bean.getSchemaName(), bean.getSnapshotName()) != null;
+
+    Map<String, String> updateDelay = new LinkedHashMap<String, String>();
+    updateDelay.put("30", "30 seconds");
+    updateDelay.put("60", "1 minute");
+    updateDelay.put("300", "5 minutes");
+    updateDelay.put("600", "10 minutes");
+    updateDelay.put("1800", "30 minutes");
+    updateDelay.put("3600", "1 hour");
+    updateDelay.put("7200", "2 hours");
 %>
+
+<script type="text/javascript">LABKEY.requiresYahoo("yahoo");</script>
+<script type="text/javascript">LABKEY.requiresYahoo("event");</script>
+<script type="text/javascript">LABKEY.requiresYahoo("dom");</script>
 
 <labkey:errors/>
 
-<form action="" method="post">
-    <table cellpadding="0" class="normal">
-        <tr><td colspan="10" style="padding-top:14; padding-bottom:2"><span class="ms-announcementtitle">Snapshot Name and Type</span></td></tr>
-        <tr><td colspan="10" width="100%" class="ms-titlearealine"><img height="1" width="1" src="<%=AppProps.getInstance().getContextPath() + "/_.gif"%>"></td></tr>
+<form action="" method="post" onsubmit="validateForm();">
+<table>
+        <tr><td colspan="10" class="labkey-nav-header">Snapshot Name</td></tr>
+        <tr><td colspan="10" class="labkey-title-area-line"><img height="1" width="1" src="<%=AppProps.getInstance().getContextPath() + "/_.gif"%>"></td></tr>
 
         <tr><td>&nbsp;</td></tr>
-        <tr><td>Snapshot Name:</td><td><input type="text" name="snapshotName" <%=isEdit ? "readonly" : ""%> value="<%=StringUtils.trimToEmpty(bean.getSnapshotName())%>"></td></tr>
+        <tr><td>Snapshot&nbsp;Name:</td><td><input type="text" name="<%=isEdit ? "" : "snapshotName"%>" <%=isEdit ? "readonly" : ""%> value="<%=StringUtils.trimToEmpty(bean.getSnapshotName())%>"></td></tr>
         <tr><td>&nbsp;</td></tr>
-        <tr><td>Manual Refresh</td><td><input <%=isAutoUpdateable ? "" : "disabled"%> checked type="radio" name="manualRefresh"></td></tr>
-        <tr><td>Automatic Refresh</td><td><input disabled="<%=isAutoUpdateable ? "" : "disabled"%>" type="radio" name="automaticRefresh"></td></tr>
 
-        <tr><td></td><td><table class="normal">
+        <tr><td colspan="10" class="labkey-nav-header">Snapshot Refresh</td></tr>
+        <tr><td colspan="10" class="labkey-title-area-line"><img height="1" width="1" src="<%=AppProps.getInstance().getContextPath() + "/_.gif"%>"></td></tr>
+        <tr><td colspan="2"><i>Snapshots can be configured to be manually updated or to automatically update<br/>within an amount of time after the
+            underlying data has changed.</i></td></tr>
+        <tr><td>&nbsp;</td></tr>
+
+        <tr><td>Manual&nbsp;Refresh</td><td><input <%=isAutoUpdateable ? "" : "disabled"%> <%=bean.getUpdateDelay() == 0 ? "checked" : ""%> type="radio" name="updateType" value="manual" id="manualUpdate" onclick="onAutoUpdate();"></td></tr>
+        <tr><td>Automatic&nbsp;Refresh</td><td><input <%=isAutoUpdateable ? "" : "disabled"%> <%=bean.getUpdateDelay() != 0 ? "checked" : ""%> type="radio" name="updateType" onclick="onAutoUpdate();"></td></tr>
+        <tr><td>&nbsp;</td></tr>
+        <tr><td></td><td><select name="updateDelay" id="updateDelay" style="display:none"><labkey:options value="<%=String.valueOf(bean.getUpdateDelay())%>" map="<%=updateDelay%>"></labkey:options></select></td></tr>
+
+        <tr><td><input type="image" src="<%=PageFlowUtil.buttonSrc("Next")%>"></td></tr>
+
+        <tr><td></td><td><table>
     <%  for (DisplayColumn col : QuerySnapshotService.get(bean.getSchemaName()).getDisplayColumns(bean)) { %>
             <tr><td><input type="hidden" name="snapshotColumns" value="<%=col.getName()%>"></td></tr>
     <%  } %>
         </table></td></tr>
 
-        <tr><td><input type="image" src="<%=PageFlowUtil.buttonSrc("Next")%>"></td></tr>
     </table>
 </form>
+
+<script type="text/javascript">
+
+    function onAutoUpdate()
+    {
+        var manualUpdate = YAHOO.util.Dom.get('manualUpdate');
+        var updateDelay = YAHOO.util.Dom.get('updateDelay');
+
+        if (manualUpdate.checked)
+            updateDelay.style.display = "none";
+        else
+            updateDelay.style.display = "";
+    }
+
+    function validateForm()
+    {
+        var manualUpdate = YAHOO.util.Dom.get('manualUpdate');
+        var updateDelay = YAHOO.util.Dom.get('updateDelay');
+
+        if (manualUpdate.checked)
+            updateDelay.value = "0";
+    }
+
+    YAHOO.util.Event.addListener(window, "load", onAutoUpdate)
+
+</script>
+

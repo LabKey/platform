@@ -534,7 +534,14 @@ public class QueryControllerSpring extends SpringActionController
 
         public boolean handlePost(QuerySnapshotForm form, BindException errors) throws Exception
         {
-            _successURL = QuerySnapshotService.get(form.getSchemaName()).createSnapshot(form);
+            List<String> errorList = new ArrayList<String>();
+            _successURL = QuerySnapshotService.get(form.getSchemaName()).createSnapshot(form, errorList);
+            if (!errorList.isEmpty())
+            {
+                for (String error : errorList)
+                    errors.reject("snapshotQuery.error", error);
+                return false;
+            }
             return true;
         }
 

@@ -17,6 +17,7 @@
 package org.labkey.study;
 
 import org.labkey.study.model.StudyCachable;
+import org.labkey.study.model.StudyManager;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 
@@ -162,6 +163,7 @@ public class QueryHelper<K extends StudyCachable>
             StudyCache.uncache(_tableInfo, obj.getContainer().getId(), filter);
         _cachedFilters.clear();
         StudyCache.uncache(_tableInfo, obj.getContainer().getId(), obj.getPrimaryKey().toString());
+        StudyManager.fireCacheCleared(obj);
     }
 
     private String getCacheId(Filter filter)

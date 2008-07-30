@@ -23,6 +23,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.persist.QueryDef;
@@ -69,6 +70,21 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
     public String getName()
     {
         return _snapshotDef.getName();
+    }
+
+    public int getId()
+    {
+        return _snapshotDef.getRowId();
+    }
+
+    public User getCreatedBy()
+    {
+        return UserManager.getUser(_snapshotDef.getCreatedBy());
+    }
+
+    public User getModifiedBy()
+    {
+        return UserManager.getUser(_snapshotDef.getModifiedBy());
     }
 
     public Container getContainer()
@@ -128,6 +144,36 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
     public void setColumns(List<FieldKey> columns)
     {
         edit().setColumns(StringUtils.join(columns.iterator(), "&"));
+    }
+
+    public Date getLastUpdated()
+    {
+        return _snapshotDef.getLastUpdated();
+    }
+
+    public void setLastUpdated(Date date)
+    {
+        edit().setLastUpdated(date);
+    }
+
+    public Date getNextUpdate()
+    {
+        return _snapshotDef.getNextUpdate();
+    }
+
+    public void setNextUpdate(Date date)
+    {
+        edit().setNextUpdate(date);
+    }
+
+    public int getUpdateDelay()
+    {
+        return _snapshotDef.getUpdateDelay();
+    }
+
+    public void setUpdateDelay(int delayInSeconds)
+    {
+        edit().setUpdateDelay(delayInSeconds);
     }
 
     public void save(User user, Container container) throws Exception
