@@ -17,6 +17,7 @@
 package org.labkey.experiment.xar;
 
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.api.ExperimentRun;
 import org.labkey.experiment.api.ExperimentServiceImpl;
@@ -70,8 +71,7 @@ public class XarExportSelection implements Serializable
 
         for (int runId : _runIds)
         {
-            ExperimentRun run = ExperimentServiceImpl.get().getExperimentRun(runId);
-            exporter.addExperimentRun(run);
+            exporter.addExperimentRun(ExperimentServiceImpl.get().getExpRun(runId));
         }
         
         for (int protocolId : _protocolIds)

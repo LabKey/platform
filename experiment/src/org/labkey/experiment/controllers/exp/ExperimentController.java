@@ -20,6 +20,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.action.*;
 import org.labkey.api.data.*;
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.xar.LsidUtils;
@@ -52,6 +53,7 @@ import java.io.*;
 import java.net.URI;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.List;
 
 /**
  * User: jeckels
@@ -870,11 +872,11 @@ public class ExperimentController extends SpringActionController
             DataRegion dr = new DataRegion();
             dr.addColumns(ExperimentServiceImpl.get().getTinfoProtocolApplication().getUserEditableColumns());
             DetailsView detailsView = new DetailsView(dr, form);
-            dr.removeColumns("RunId", "ProtocolLSID");
+            dr.removeColumns("RunId", "ProtocolLSID", "RowId");
             dr.addDisplayColumn(new ExperimentRunDisplayColumn(_run));
             dr.addDisplayColumn(new ProtocolDisplayColumn(protocol));
             dr.addDisplayColumn(new LineageGraphDisplayColumn(_app, _run));
-            detailsView.setTitle("ProtocolApplication");
+            detailsView.setTitle("Protocol Application");
             dr.setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
 
 

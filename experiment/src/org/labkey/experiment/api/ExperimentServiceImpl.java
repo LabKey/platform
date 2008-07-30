@@ -58,10 +58,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     private DatabaseCache<MaterialSource> materialSourceCache;
 
     static private final Logger _log = Logger.getLogger(ExperimentServiceImpl.class);
-    // following are used in URLs to generate lineage graphs
-    public static String TYPECODE_MATERIAL = "M";
-    public static String TYPECODE_DATA = "D";
-    public static String TYPECODE_PROT_APP = "A";
     public static final String DEFAULT_MATERIAL_SOURCE_NAME = "Unspecified";
 
     private Set<ExperimentRunFilter> _runFilters = new TreeSet<ExperimentRunFilter>();
@@ -81,10 +77,16 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ExpRunImpl getExpRun(int rowid)
     {
-        ExperimentRun run = getExperimentRun(rowid);
-        if (run == null)
-            return null;
-        return new ExpRunImpl(run);
+        SimpleFilter filter = new SimpleFilter("RowId", rowid);
+        try
+        {
+            ExperimentRun run = Table.selectObject(getTinfoExperimentRun(), Table.ALL_COLUMNS, filter, null, ExperimentRun.class);
+            return run == null ? null : new ExpRunImpl(run);
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
     }
 
     public ExpRun getExpRun(String lsid)
@@ -673,12 +675,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     private void deleteRun(int runId, Container container, ExpData[] datasToDelete, User user)
         throws SQLException
     {
-        ExperimentRun run = getExperimentRun(runId);
+        ExpRun run = getExpRun(runId);
         if (run == null)
         {
             return;
         }
-        if (user == null || !ContainerManager.getForId(run.getContainer()).hasPermission(user, ACL.PERM_DELETE))
+        if (user == null || !run.getContainer().hasPermission(user, ACL.PERM_DELETE))
         {
             throw new SQLException("Attempting to delete an ExperimentRun without having delete permissions for its container");
         }
@@ -965,19 +967,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public ExperimentRun getExperimentRun(int runId)
-    {
-        SimpleFilter filter = new SimpleFilter("RowId", runId);
-        try
-        {
-            return Table.selectObject(getTinfoExperimentRun(), Table.ALL_COLUMNS, filter, null, ExperimentRun.class);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-    }
-
     public void clearCaches()
     {
         getMaterialSourceCache().clear();
@@ -1026,10 +1015,17 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public ProtocolAction[] getProtocolActions(int parentProtocolRowId) throws SQLException
+    public ProtocolAction[] getProtocolActions(int parentProtocolRowId)
     {
-        SimpleFilter filter = new SimpleFilter("ParentProtocolId", parentProtocolRowId);
-        return Table.select(getTinfoProtocolAction(), Table.ALL_COLUMNS, filter, new Sort("+Sequence"), ProtocolAction.class);
+        try
+        {
+            SimpleFilter filter = new SimpleFilter("ParentProtocolId", parentProtocolRowId);
+            return Table.select(getTinfoProtocolAction(), Table.ALL_COLUMNS, filter, new Sort("+Sequence"), ProtocolAction.class);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     public Material getMaterial(int materialId)
@@ -1200,7 +1196,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return result;
     }
 
-    public ExpDataImpl getDataByURL(File file, Container c) throws IOException
+    public ExpDataImpl getExpDataByURL(File file, Container c) throws IOException
     {
         File canonicalFile = file.getCanonicalFile();
         String url = canonicalFile.toURI().toURL().toString();
@@ -2051,7 +2047,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         //todo cache populated runs
         try
         {
-            Map<Integer, ExpMaterial> outputMaterialMap = new HashMap<Integer, ExpMaterial>();
+            Map<Integer, ExpMaterialImpl> outputMaterialMap = new HashMap<Integer, ExpMaterialImpl>();
             Map<Integer, ExpDataImpl> outputDataMap = new HashMap<Integer, ExpDataImpl>();
 
             int runId = expRun.getRowId();
@@ -2059,7 +2055,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             Sort sort = new Sort("ActionSequence, RowId");
             ExpProtocolApplicationImpl[] protocolSteps = ExpProtocolApplicationImpl.fromProtocolApplications(Table.select(getTinfoProtocolApplication(), getTinfoProtocolApplication().getColumns(), filt, sort, ProtocolApplication.class));
             expRun.setProtocolApplications(protocolSteps);
-            Map<Integer, ExpProtocolApplication> protStepMap = new HashMap<Integer, ExpProtocolApplication>(protocolSteps.length);
+            Map<Integer, ExpProtocolApplicationImpl> protStepMap = new HashMap<Integer, ExpProtocolApplicationImpl>(protocolSteps.length);
             for (ExpProtocolApplicationImpl protocolStep : protocolSteps)
             {
                 protStepMap.put(protocolStep.getRowId(), protocolStep);
@@ -2080,9 +2076,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 Integer srcAppId = sourceApplication == null ? null : sourceApplication.getRowId();
                 assert protStepMap.containsKey(srcAppId);
                 protStepMap.get(srcAppId).getOutputMaterials().add(mat);
-                mat.setSourceApp(protStepMap.get(srcAppId));
-                mat.setSuccessorAppList(new ArrayList<ExpProtocolApplication>());
-                mat.setSuccessorRunIdList(new ArrayList<Integer>());
+                mat.markAsPopulated(protStepMap.get(srcAppId));
             }
 
             ExpDataImpl[] datas = ExpDataImpl.fromDatas(Table.select(getTinfoData(), getTinfoData().getColumns(), filt, sort, Data.class));
@@ -2093,9 +2087,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 Integer srcAppId = dat.getDataObject().getSourceApplicationId();
                 assert protStepMap.containsKey(srcAppId);
                 protStepMap.get(srcAppId).getOutputDatas().add(dat);
-                dat.setSourceApp(protStepMap.get(srcAppId));
-                dat.setSuccessorAppList(new ArrayList<ExpProtocolApplication>());
-                dat.setSuccessorRunIdList(new ArrayList<Integer>());
+                dat.markAsPopulated(protStepMap.get(srcAppId));
             }
 
             // get the set of starting materials, which do not belong to the run
@@ -2169,7 +2161,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     }
                 }
                 expRun.getDataInputs().put(dat, roleName);
-                dat.setSuccessorAppList(new ArrayList<ExpProtocolApplication>());
+                dat.markSuccessorAppsAsPopulated();
             }
 
             // now hook up material inputs to processes in both directions
@@ -2202,7 +2194,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     }
 
                     pa.getInputMaterials().add(mat);
-                    mat.getSuccessorAppList().add(pa);
+                    mat.getSuccessorApps().add(pa);
 
                     if (pa.getCpasType().equals(ExperimentService.EXPERIMENT_RUN_OUTPUT_CPAS_TYPE))
                     {
@@ -2243,11 +2235,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     if (dat == null)
                     {
                         dat = getExpData(datId);
-                        dat.setSuccessorAppList(new ArrayList<ExpProtocolApplication>());
+                        dat.markSuccessorAppsAsPopulated();
                     }
 
                     pa.getInputDatas().add(dat);
-                    dat.getSuccessorAppList().add(pa);
+                    dat.getSuccessorApps().add(pa);
 
                     if (pa.getCpasType().equals(ExperimentService.EXPERIMENT_RUN_OUTPUT_CPAS_TYPE))
                     {
@@ -2281,8 +2273,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     {
                         Integer successorRunId = materialOutputRS.getInt("RunId");
                         Integer matId = materialOutputRS.getInt("MaterialId");
-                        ExpMaterial mat = outputMaterialMap.get(matId);
-                        mat.getSuccessorRunIdList().add(successorRunId);
+                        ExpMaterialImpl mat = outputMaterialMap.get(matId);
+                        mat.addSuccessorRunId(successorRunId);
                     }
                 }
                 finally
@@ -2309,8 +2301,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     {
                         Integer successorRunId = dataOutputRS.getInt("RunId");
                         Integer datId = dataOutputRS.getInt("DataId");
-                        ExpData dat = outputDataMap.get(datId);
-                        dat.getSuccessorRunIdList().add(successorRunId);
+                        ExpDataImpl dat = outputDataMap.get(datId);
+                        dat.addSuccessorRunId(successorRunId);
                     }
                 }
                 finally
@@ -2325,233 +2317,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         {
             throw new RuntimeSQLException(e);
         }
-    }
-
-
-    public void trimRunTree(ExpRunImpl populatedRun, Integer id, String type) throws SQLException, ExperimentException
-    {
-        List<ExpProtocolApplication> listPA = new ArrayList<ExpProtocolApplication>();
-        List<ExpMaterial> listM = new ArrayList<ExpMaterial>();
-        List<ExpData> listD = new ArrayList<ExpData>();
-        List<ExpProtocolApplication> ancestorPAStack = new ArrayList<ExpProtocolApplication>();
-        List<ExpProtocolApplication> descendantPAStack = new ArrayList<ExpProtocolApplication>();
-        ExpProtocolApplication [] apps = populatedRun.getProtocolApplications();
-
-        boolean found = false;
-
-        // support focus on a starting material that is not part of the run
-        if (type.equals(TYPECODE_MATERIAL))
-        {
-            for (ExpMaterial m : populatedRun.getMaterialInputs().keySet())
-                if (m.getRowId() == id.intValue())
-                {
-                    found = true;
-                    listM.add(m);
-                    listPA.addAll(m.getSuccessorAppList());
-                    descendantPAStack.addAll(m.getSuccessorAppList());
-                    break;
-                }
-        }
-        if (type.equals(TYPECODE_DATA))
-        {
-            for (ExpData d : populatedRun.getDataInputs().keySet())
-                if (d.getRowId() == id.intValue())
-                {
-                    found = true;
-                    listD.add(d);
-                    listPA.addAll(d.getSuccessorAppList());
-                    descendantPAStack.addAll(d.getSuccessorAppList());
-                    break;
-                }
-        }
-        if (!found)
-        {
-            for (ExpProtocolApplication app : apps)
-            {
-                if (type.equals(TYPECODE_MATERIAL))
-                {
-                    List<ExpMaterial> outputMat = app.getOutputMaterials();
-                    for (ExpMaterial m : outputMat)
-                        if (m.getRowId() == id.intValue())
-                        {
-                            found = true;
-                            listM.add(m);
-                            listPA.addAll(m.getSuccessorAppList());
-                            descendantPAStack.addAll(m.getSuccessorAppList());
-                            if (null != m.getSourceApplication() && m.getRun() != null && populatedRun.getRowId() == m.getRun().getRowId())
-                            {
-                                listPA.add(m.getSourceApplication());
-                                ancestorPAStack.add(m.getSourceApplication());
-                            }
-                            break;
-                        }
-                }
-                if (type.equals(TYPECODE_DATA))
-                {
-                    for (ExpData d : app.getOutputDatas())
-                    {
-                        if (d.getRowId() == id.intValue())
-                        {
-                            found = true;
-                            listD.add(d);
-                            listPA.addAll(d.getSuccessorAppList());
-                            descendantPAStack.addAll(d.getSuccessorAppList());
-                            if (null != d.getSourceApplication() && d.getRun() != null && populatedRun.getRowId() == d.getRun().getRowId())
-                            {
-                                listPA.add(d.getSourceApp());
-                                ancestorPAStack.add(d.getSourceApp());
-                            }
-                            break;
-                        }
-                    }
-                }
-                if (type.equals(TYPECODE_PROT_APP))
-                {
-                    if (app.getRowId() == id.intValue())
-                    {
-                        found = true;
-                        listPA.add(app);
-                        ancestorPAStack.add(app);
-                        descendantPAStack.add(app);
-                        break;
-                    }
-                }
-                if (found)
-                    break;
-            }
-        }
-        if (!found)
-            throw new ExperimentException("Specified node not found in Experiment Run");
-
-
-        while (descendantPAStack.size() > 0)
-        {
-            ExpProtocolApplication pa = descendantPAStack.get(0);
-            for (ExpMaterial m : pa.getOutputMaterials())
-            {
-                listM.add(m);
-                descendantPAStack.addAll(m.getSuccessorAppList());
-            }
-            for (ExpData d : pa.getOutputDatas())
-            {
-                listD.add(d);
-                descendantPAStack.addAll(d.getSuccessorAppList());
-            }
-            descendantPAStack.remove(pa);
-            listPA.add(pa);
-        }
-
-
-        while (ancestorPAStack.size() > 0)
-        {
-            ExpProtocolApplication pa = ancestorPAStack.get(0);
-            if (pa.getCpasType().equals(ExperimentService.EXPERIMENT_RUN_CPAS_TYPE))
-                break;
-            for (ExpMaterial m : pa.getInputMaterials())
-            {
-                listM.add(m);
-                if (populatedRun.getMaterialInputs().containsKey(m))
-                {
-                    ExpProtocolApplication runNode = populatedRun.getProtocolApplications()[0];
-                    assert runNode.getCpasType().equals(ExperimentService.EXPERIMENT_RUN_CPAS_TYPE);
-                    listPA.add(runNode);
-                    continue;
-                }
-                if (null != m.getSourceApplication() && m.getRun() != null && populatedRun.getRowId() == m.getRun().getRowId())
-                    ancestorPAStack.add(m.getSourceApplication());
-            }
-            for (ExpData d : pa.getInputDatas())
-            {
-                listD.add(d);
-                if (populatedRun.getDataInputs().containsKey(d))
-                {
-                    ExpProtocolApplication runNode = populatedRun.getProtocolApplications()[0];
-                    assert runNode.getCpasType().equals(ExperimentService.EXPERIMENT_RUN_CPAS_TYPE);
-                    listPA.add(runNode);
-                    continue;
-                }
-                if (null != d.getSourceApplication() && d.getRun() != null && populatedRun.getRowId() == d.getRun().getRowId())
-                    ancestorPAStack.add(d.getSourceApp());
-            }
-            ancestorPAStack.remove(pa);
-            listPA.add(pa);
-        }
-
-        ArrayList<ExpProtocolApplication> allPA = new ArrayList<ExpProtocolApplication>();
-        ArrayList<ExpProtocolApplication> deletePA;
-        ArrayList<ExpMaterial> deleteM;
-        ArrayList<ExpData> deleteD;
-
-        populatedRun.setProtocolApplications(null);
-
-        for (ExpProtocolApplication app : apps)
-        {
-            if (listPA.contains(app))
-            {
-                allPA.add(app);
-                deleteM = new ArrayList<ExpMaterial>();
-                for (ExpMaterial m : app.getInputMaterials())
-                {
-                    if (listM.contains(m))
-                    {
-                        deletePA = new ArrayList<ExpProtocolApplication>();
-                        for (ExpProtocolApplication p : m.getSuccessorAppList())
-                            if (!listPA.contains(p))
-                                deletePA.add(p);
-                        for (ExpProtocolApplication p : deletePA)
-                            m.getSuccessorAppList().remove(p);
-                    }
-                    else
-                        deleteM.add(m);
-                }
-                for (ExpMaterial m : deleteM)
-                {
-                    app.getInputMaterials().remove(m);
-                    populatedRun.getMaterialInputs().remove(m);
-                }
-
-                deleteD = new ArrayList<ExpData>();
-                for (ExpData d : app.getInputDatas())
-                {
-                    if (listD.contains(d))
-                    {
-                        deletePA = new ArrayList<ExpProtocolApplication>();
-                        for (ExpProtocolApplication p : d.getSuccessorAppList())
-                            if (!listPA.contains(p))
-                                deletePA.add(p);
-                        for (ExpProtocolApplication p : deletePA)
-                            d.getSuccessorAppList().remove(p);
-                    }
-                    else
-                        deleteD.add(d);
-                }
-                for (ExpData d : deleteD)
-                {
-                    app.getInputDatas().remove(d);
-                    populatedRun.getDataInputs().remove(d);
-                }
-
-                deleteM = new ArrayList<ExpMaterial>();
-                for (ExpMaterial m : app.getOutputMaterials())
-                {
-                    if (!listM.contains(m))
-                        deleteM.add(m);
-                }
-                for (ExpMaterial m : deleteM)
-                    app.getOutputMaterials().remove(m);
-
-
-                deleteD = new ArrayList<ExpData>();
-                for (ExpData d : app.getOutputDatas())
-                {
-                    if (!listD.contains(d))
-                        deleteD.add(d);
-                }
-                for (ExpData d : deleteD)
-                    app.getOutputDatas().remove(d);
-            }
-        }
-        populatedRun.setProtocolApplications(allPA.toArray(new ExpProtocolApplicationImpl[allPA.size()]));
     }
 
 
@@ -2778,7 +2543,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     public ExpRun getCreatingRun(File file, Container c)
         throws IOException
     {
-        ExpDataImpl data = getDataByURL(file, c);
+        ExpDataImpl data = getExpDataByURL(file, c);
         if (data != null)
         {
             return data.getRun();
@@ -3298,6 +3063,22 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     + " WHERE P.RowId = PA.ParentProtocolID AND PA.ChildProtocolId = ?" ;
 
             return ExpProtocolImpl.fromProtocols(Table.executeQuery(getExpSchema(), sql, new Object[]{childProtocolRowId}, Protocol.class));
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
+    public List<ExpProtocol> getChildProtocols(int parentProtocolId)
+    {
+        try
+        {
+            String sql = "SELECT P.* FROM " + getTinfoProtocol() + " P, " + getTinfoProtocolAction() + " PA "
+                    + " WHERE P.RowId = PA.ParentProtocolID AND PA.ParentProtocolId = ? ORDER BY PA.Sequence" ;
+
+            ExpProtocolImpl[] result = ExpProtocolImpl.fromProtocols(Table.executeQuery(getExpSchema(), sql, new Object[]{parentProtocolId}, Protocol.class));
+            return Arrays.<ExpProtocol>asList(result);
         }
         catch (SQLException e)
         {

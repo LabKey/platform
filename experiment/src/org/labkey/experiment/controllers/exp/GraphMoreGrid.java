@@ -20,6 +20,7 @@ import org.labkey.api.view.GridView;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.*;
 import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.labkey.experiment.DotGraph;
 
 import java.util.List;
 
@@ -32,7 +33,7 @@ public class GraphMoreGrid extends GridView
     public GraphMoreGrid(Container c, ActionURL url)
     {
         super(new DataRegion());
-        String objectType = ExperimentServiceImpl.TYPECODE_PROT_APP;
+        String objectType = DotGraph.TYPECODE_PROT_APP;
         String title = "Selected ";
         TableInfo ti;
         String runIdParam;
@@ -40,12 +41,12 @@ public class GraphMoreGrid extends GridView
         if (null != url.getParameter("objtype"))
             objectType = url.getParameter("objtype");
 
-        if (objectType.equals(ExperimentServiceImpl.TYPECODE_MATERIAL))
+        if (objectType.equals(DotGraph.TYPECODE_MATERIAL))
         {
             ti = ExperimentServiceImpl.get().getTinfoMaterial();
             title += "Materials";
         }
-        else if (objectType.equals(ExperimentServiceImpl.TYPECODE_DATA))
+        else if (objectType.equals(DotGraph.TYPECODE_DATA))
         {
             ti = ExperimentServiceImpl.get().getTinfoData();
             title += "Data Objects";

@@ -19,7 +19,6 @@ import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.exp.api.*;
-import org.labkey.experiment.api.ExperimentServiceImpl;
 
 import java.io.Writer;
 import java.io.IOException;
@@ -36,17 +35,17 @@ public class LineageGraphDisplayColumn extends SimpleDisplayColumn
 
     public LineageGraphDisplayColumn(ExpMaterial material, ExpRun run)
     {
-        this(ExperimentServiceImpl.TYPECODE_MATERIAL, material, run);
+        this(DotGraph.TYPECODE_MATERIAL, material, run);
     }
 
     public LineageGraphDisplayColumn(ExpData data, ExpRun run)
     {
-        this(ExperimentServiceImpl.TYPECODE_DATA, data, run);
+        this(DotGraph.TYPECODE_DATA, data, run);
     }
 
     public LineageGraphDisplayColumn(ExpProtocolApplication app, ExpRun run)
     {
-        this(ExperimentServiceImpl.TYPECODE_PROT_APP, app, run);
+        this(DotGraph.TYPECODE_PROT_APP, app, run);
     }
 
     private LineageGraphDisplayColumn(String typeCode, ExpObject object, ExpRun run)

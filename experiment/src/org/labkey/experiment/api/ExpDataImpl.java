@@ -32,13 +32,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.io.File;
 
-public class ExpDataImpl extends ExpIdentifiableBaseImpl<Data> implements ExpData
+public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements ExpData
 {
     static final private Logger _log = Logger.getLogger(ExpDataImpl.class);
-
-    private ExpProtocolApplication _sourceApp;
-    private List<ExpProtocolApplication> _successorAppList;
-    private List<Integer> _successorRunIdList;
 
     /**
      * Temporary mapping until experiment.xml contains the mime type
@@ -60,21 +56,9 @@ public class ExpDataImpl extends ExpIdentifiableBaseImpl<Data> implements ExpDat
         super(data);
     }
 
-    public String getContainerId()
-    {
-        return _object.getContainer();
-    }
-
     public URLHelper detailsURL()
     {
         return getDataType().getDetailsURL(this);
-    }
-
-    public ExpProtocolApplication getSourceApplication()
-    {
-        if (_object.getSourceApplicationId() == null)
-            return null;
-        return ExperimentService.get().getExpProtocolApplication(_object.getSourceApplicationId());
     }
 
     public ExpProtocolApplication[] getTargetApplications()
@@ -94,8 +78,7 @@ public class ExpDataImpl extends ExpIdentifiableBaseImpl<Data> implements ExpDat
         }
         catch (SQLException e)
         {
-            _log.error("Error", e);
-            return new ExpProtocolApplication[0];
+            throw new RuntimeSQLException(e);
         }
         finally
         {
@@ -118,8 +101,7 @@ public class ExpDataImpl extends ExpIdentifiableBaseImpl<Data> implements ExpDat
         }
         catch (SQLException e)
         {
-            _log.error("Error", e);
-            return new ExpRun[0];
+            throw new RuntimeSQLException(e);
         }
 
     }
@@ -129,11 +111,6 @@ public class ExpDataImpl extends ExpIdentifiableBaseImpl<Data> implements ExpDat
         return ExperimentService.get().getDataType(getLSIDNamespacePrefix());
     }
 
-    public int getRowId()
-    {
-        return _object.getRowId();
-    }
-
     public void setDataFileURI(URI uri)
     {
         if (uri != null && !uri.isAbsolute())
@@ -141,26 +118,6 @@ public class ExpDataImpl extends ExpIdentifiableBaseImpl<Data> implements ExpDat
             throw new IllegalArgumentException("URI must be absolute.");
         }
         _object.setDataFileUrl(uri == null ? null : uri.toString());
-    }
-
-    public void setSourceApplication(ExpProtocolApplication app)
-    {
-        _object.setSourceApplicationId(app.getRowId());
-        _object.setSourceProtocolLSID(app.getProtocol().getLSID());
-        _object.setContainer(getContainer().getId());
-        _object.setRunId(app.getRun().getRowId());
-    }
-
-    public void setRun(ExpRun run)
-    {
-        if (run == null)
-        {
-            _object.setRunId(null);
-        }
-        else
-        {
-            _object.setRunId(run.getRowId());
-        }
     }
 
     public void save(User user)
@@ -180,15 +137,6 @@ public class ExpDataImpl extends ExpIdentifiableBaseImpl<Data> implements ExpDat
         {
             throw new RuntimeSQLException(e);
         }
-    }
-
-    public ExpRunImpl getRun()
-    {
-        if (_object.getRunId() == null)
-        {
-            return null;
-        }
-        return ExperimentServiceImpl.get().getExpRun(_object.getRunId());
     }
 
     public URI getDataFileURI()
@@ -231,42 +179,6 @@ public class ExpDataImpl extends ExpIdentifiableBaseImpl<Data> implements ExpDat
         return _object.getFile();
     }
 
-    public ExpProtocolApplication getSourceApp()
-    {
-        if (null == _sourceApp)
-            throw new IllegalStateException("sourceApp not populated");
-        return _sourceApp;
-    }
-
-    public List<ExpProtocolApplication> getSuccessorAppList()
-    {
-        if (null == _successorAppList)
-            throw new IllegalStateException("successorAppList not populated");
-        return _successorAppList;
-    }
-
-    public void setSourceApp(ExpProtocolApplication sourceApp)
-    {
-        _sourceApp = sourceApp;
-    }
-
-    public void setSuccessorAppList(ArrayList<ExpProtocolApplication> successorAppList)
-    {
-        _successorAppList = successorAppList;
-    }
-
-    public void setSuccessorRunIdList(ArrayList<Integer> successorRunIdList)
-    {
-        this._successorRunIdList = successorRunIdList;
-    }
-
-    public List<Integer> getSuccessorRunIdList()
-    {
-        if (null == _successorRunIdList)
-            throw new IllegalStateException("successorRunIdList not populated");
-        return _successorRunIdList;
-    }
-
     public boolean isInlineImage()
     {
         return null != getDataFileUrl() && MIME_MAP.isInlineImageFor(getDataFileUrl());
@@ -285,22 +197,11 @@ public class ExpDataImpl extends ExpIdentifiableBaseImpl<Data> implements ExpDat
         return super.urlFlag(flagged);
     }
 
-    public User getCreatedBy()
-    {
-        ExpRunImpl run = getRun();
-        return null != run ? run.getCreatedBy() : null;
-    }
-
     public void delete(User user) throws Exception
     {
         ExperimentService.get().deleteDataByRowIds(getContainer(), getRowId());
     }
     
-    public void setContainerId(String container)
-    {
-        _object.setContainer(container);
-    }
-
     public String getMimeType()
     {
         if (null != getDataFileUrl())
@@ -332,22 +233,9 @@ public class ExpDataImpl extends ExpIdentifiableBaseImpl<Data> implements ExpDat
         }
     }
 
-    public ExpProtocolImpl getSourceProtocol()
+    public String getCpasType()
     {
-        if (_object.getSourceProtocolLSID() == null)
-        {
-            return null;
-        }
-        return ExperimentServiceImpl.get().getExpProtocol(_object.getSourceProtocolLSID());
-    }
-
-    public void setSourceProtocol(ExpProtocol expProtocol)
-    {
-        _object.setSourceProtocolLSID(expProtocol.getLSID());
-    }
-
-    public Integer getSourceApplicationId()
-    {
-        return _object.getSourceApplicationId();
+        String result = _object.getCpasType();
+        return result == null ? "Data" : result;
     }
 }

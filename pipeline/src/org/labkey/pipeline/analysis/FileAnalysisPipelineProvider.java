@@ -16,7 +16,7 @@
 package org.labkey.pipeline.analysis;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.exp.pipeline.XarGeneratorId;
+import org.labkey.api.exp.pipeline.XarTemplateSubstitutionId;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.PipeRoot;
@@ -102,9 +102,9 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
         
         for (TaskId id : progression)
         {
-            if (id.getNamespaceClass().equals(XarGeneratorId.class))
+            if (id.getNamespaceClass().equals(XarTemplateSubstitutionId.class))
             {
-                final XarGeneratorId.Factory factory = (XarGeneratorId.Factory)
+                final XarTemplateSubstitutionId.Factory factory = (XarTemplateSubstitutionId.Factory)
                         PipelineJobService.get().getTaskFactory(id);
                 final FileType[] types = factory.getInputTypes();
                 if (types == null || types.length == 0)
@@ -131,7 +131,7 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
                             File parent = f.getParentFile();
                             String baseName = typeInput.getBaseName(f);
                             return !fileExists(factory.getOutputType().newFile(parent, baseName)) &&
-                                    !fileExists(XarGeneratorId.FT_XAR_XML.newFile(parent, baseName));
+                                    !fileExists(XarTemplateSubstitutionId.FT_XAR_XML.newFile(parent, baseName));
                         }
                     };
                 

@@ -20,7 +20,6 @@ import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.pipeline.cmd.ConvertTaskId;
 import org.labkey.api.pipeline.cmd.ConvertTaskFactorySettings;
 import org.labkey.api.util.FileType;
-import org.apache.commons.lang.ArrayUtils;
 
 import java.io.IOException;
 import java.io.File;
@@ -128,6 +127,16 @@ public class ConvertTaskFactory extends AbstractTaskFactory
         }
 
         return null;
+    }
+
+    public List<String> getActionNames()
+    {
+        List<String> result = new ArrayList<String>();
+        for (TaskId command : _commands)
+        {
+            result.add(command.toString());
+        }
+        return result;
     }
 
     public PipelineJob.Task createTask(PipelineJob job)

@@ -131,18 +131,8 @@ public class PipelineJobRunnerGlobus implements Callable
             // Write the file to disk
             final File serializedJobFile = PipelineJob.getSerializedFile(job.getStatusFile());
 
-            FileOutputStream fOut = null;
-            try
-            {
-                fOut = new FileOutputStream(serializedJobFile);
-                PrintWriter writer = new PrintWriter(fOut);
-                writer.write(xmlJob);
-                writer.flush();
-            }
-            finally
-            {
-                if (fOut != null) { try { fOut.close(); } catch (IOException e) {} }
-            }
+            job.writeToFile(serializedJobFile);
+            
             JobDescriptionType jobDescription = createJobDescription(job, serializedJobFile, settings);
 
             // Figure out where to send the job
@@ -238,7 +228,18 @@ public class PipelineJobRunnerGlobus implements Callable
         {
             if (!submitted)
             {
-                updateStatus(job, PipelineJob.TaskStatus.error);
+                try
+                {
+                    updateStatus(job, PipelineJob.TaskStatus.error);
+                }
+                catch (IOException e)
+                {
+                    _log.error("Failed to update status after failing to submit job", e);
+                }
+                catch (UMOException e)
+                {
+                    _log.error("Failed to update status after failing to submit job", e);
+                }
             }
         }
         return null;
@@ -255,7 +256,7 @@ public class PipelineJobRunnerGlobus implements Callable
         return _pathMapper.remoteToLocal(localPath);
     }
 
-    public static void updateStatus(PipelineJob job, PipelineJob.TaskStatus status) throws UMOException
+    public static void updateStatus(PipelineJob job, PipelineJob.TaskStatus status) throws UMOException, IOException
     {
         assert status != PipelineJob.TaskStatus.waiting :
                 "Reset cluster task status to 'waiting' is not allowed.";
@@ -266,7 +267,12 @@ public class PipelineJobRunnerGlobus implements Callable
             appendAndDeleteLogFile(job, OutputType.err);
 
             // Clean up the serialized job file if Globus is done trying to run it
-            PipelineJob.getSerializedFile(job.getStatusFile()).delete();
+            File serializedFile = PipelineJob.getSerializedFile(job.getStatusFile());
+            if (NetworkDrive.exists(serializedFile))
+            {
+                job = PipelineJob.readFromFile(serializedFile);
+                serializedFile.delete();
+            }
         }
 
         job.setActiveTaskStatus(status);

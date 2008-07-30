@@ -21,7 +21,6 @@ import org.apache.commons.lang.StringUtils;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpData;
-import org.labkey.experiment.api.ExperimentServiceImpl;
 
 import java.util.*;
 import java.io.PrintWriter;
@@ -62,6 +61,10 @@ public class DotGraph
     Set<String> writtenConnects;
     Integer focusId = null;
     String objectType = null;
+    // following are used in URLs to generate lineage graphs
+    public static String TYPECODE_MATERIAL = "M";
+    public static String TYPECODE_DATA = "D";
+    public static String TYPECODE_PROT_APP = "A";
 
     public DotGraph(PrintWriter out, ActionURL url, boolean bSmallFonts)
     {
@@ -132,13 +135,13 @@ public class DotGraph
         DotNode node = new MNode(m);
         node.setLink("resolveLSID", "lsid=" + m.getLSID());
 
-        if (null != focusId && objectType.equals(ExperimentServiceImpl.TYPECODE_MATERIAL) && focusId.intValue() == m.getRowId())
+        if (null != focusId && objectType.equals(TYPECODE_MATERIAL) && focusId.intValue() == m.getRowId())
             node.setFocus(true);
         if (null != groupId)
         {
             node = addNodeToGroup(node, groupId, actionseq, groupMNodes);
             node.setLink("showGraphMoreList.view", "runId="+  runId
-                    + "&objtype=" + ExperimentServiceImpl.TYPECODE_MATERIAL);
+                    + "&objtype=" + TYPECODE_MATERIAL);
         }
         pendingMNodes.put(m.getRowId(), node);
     }
@@ -148,13 +151,13 @@ public class DotGraph
         DotNode node = new DNode(d);
         node.setLink("resolveLSID", "lsid=" + d.getLSID());
 
-        if (null != focusId && objectType.equals(ExperimentServiceImpl.TYPECODE_DATA) && focusId.intValue() == d.getRowId())
+        if (null != focusId && objectType.equals(TYPECODE_DATA) && focusId.intValue() == d.getRowId())
             node.setFocus(true);
         if (null != groupId)
         {
             node = addNodeToGroup(node, groupId, actionseq, groupDNodes);
             node.setLink("showGraphMoreList.view", "runId="+  runId
-                    + "&objtype=" + ExperimentServiceImpl.TYPECODE_DATA);
+                    + "&objtype=" + TYPECODE_DATA);
         }
         pendingDNodes.put(d.getRowId(), node);
     }
@@ -183,7 +186,7 @@ public class DotGraph
         if (writtenMNodes.containsKey(m.getRowId()) || pendingMNodes.containsKey(m.getRowId()))
             return;
         DotNode node = new MNode(m);
-        if (null != focusId && objectType.equals(ExperimentServiceImpl.TYPECODE_MATERIAL) && focusId.intValue() == m.getRowId())
+        if (null != focusId && objectType.equals(TYPECODE_MATERIAL) && focusId.intValue() == m.getRowId())
             node.setFocus(true);
         if (null != groupId)
             node = addNodeToGroup(node, groupId, actionseq, groupMNodes);
@@ -195,7 +198,7 @@ public class DotGraph
         if (writtenDNodes.containsKey(d.getRowId()) || pendingDNodes.containsKey(d.getRowId()))
             return;
         DotNode node = new DNode(d);
-        if (null != focusId && objectType.equals(ExperimentServiceImpl.TYPECODE_DATA) && focusId.intValue() == d.getRowId())
+        if (null != focusId && objectType.equals(TYPECODE_DATA) && focusId.intValue() == d.getRowId())
             node.setFocus(true);
         if (null != groupId)
             node = addNodeToGroup(node, groupId, actionseq, groupDNodes);
@@ -207,7 +210,7 @@ public class DotGraph
         if (writtenProcNodes.containsKey(rowId) || pendingProcNodes.containsKey(rowId))
             return;
         DotNode node = new PANode(rowId, name);
-        if (null != focusId && objectType.equals(ExperimentServiceImpl.TYPECODE_PROT_APP) && focusId.intValue() == rowId)
+        if (null != focusId && objectType.equals(TYPECODE_PROT_APP) && focusId.intValue() == rowId)
             node.setFocus(true);
         if (null != groupId)
             node = addNodeToGroup(node, groupId, actionseq, groupPANodes);
@@ -467,7 +470,7 @@ public class DotGraph
 
         public MNode(ExpMaterial m)
         {
-            super(ExperimentServiceImpl.TYPECODE_MATERIAL, m.getRowId(), m.getName());
+            super(TYPECODE_MATERIAL, m.getRowId(), m.getName());
             setShape("box", MATERIAL_COLOR);
             setLink("resolveLSID", "lsid=" + m.getLSID());
             ExpProtocolApplication sourceApplication = m.getSourceApplication();
@@ -483,7 +486,7 @@ public class DotGraph
 
         public DNode(ExpData d)
         {
-            super(ExperimentServiceImpl.TYPECODE_DATA, d.getRowId(), d.getName());
+            super(TYPECODE_DATA, d.getRowId(), d.getName());
             setShape("ellipse", DATA_COLOR);
             setLink("resolveLSID", "lsid=" + d.getLSID());
             ExpProtocolApplication sourceApplication = d.getSourceApplication();
@@ -496,7 +499,7 @@ public class DotGraph
     {
         public PANode(Integer id, String name)
         {
-            super(ExperimentServiceImpl.TYPECODE_PROT_APP, id, name);
+            super(TYPECODE_PROT_APP, id, name);
             setShape("diamond", PROTOCOLAPP_COLOR);
             setLink("showApplication", "rowId=" + id.toString());
         }

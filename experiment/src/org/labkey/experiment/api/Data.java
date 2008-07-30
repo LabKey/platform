@@ -15,11 +15,7 @@
  */
 package org.labkey.experiment.api;
 
-import org.labkey.api.exp.api.ExpProtocolApplication;
-import org.labkey.api.exp.IdentifiableBase;
-
 import java.util.Date;
-import java.util.List;
 import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URI;
@@ -29,10 +25,10 @@ import java.net.URI;
  * Date: Jun 14, 2005
  * Time: 3:12:17 PM
  */
-public class Data extends IdentifiableBase implements ProtocolOutput
+public class Data extends ProtocolOutput
 {
     private int rowId;
-    private String CpasType = "Data";
+    private String _cpasType = "Data";
     private Integer sourceApplicationId;
     private String dataFileUrl;
     private Integer runId;
@@ -55,12 +51,12 @@ public class Data extends IdentifiableBase implements ProtocolOutput
 
     public String getCpasType()
     {
-        return CpasType;
+        return _cpasType;
     }
 
     public void setCpasType(String cpasType)
     {
-        CpasType = cpasType;
+        _cpasType = cpasType;
     }
 
     public Integer getSourceApplicationId()

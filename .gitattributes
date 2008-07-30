@@ -611,6 +611,7 @@ experiment/src/org/labkey/experiment/XarExportType.java -text
 experiment/src/org/labkey/experiment/XarExporter.java -text
 experiment/src/org/labkey/experiment/XarReader.java -text
 experiment/src/org/labkey/experiment/addXarFile.jsp -text
+experiment/src/org/labkey/experiment/api/AbstractProtocolOutputImpl.java -text
 experiment/src/org/labkey/experiment/api/Data.java -text
 experiment/src/org/labkey/experiment/api/DataInput.java -text
 experiment/src/org/labkey/experiment/api/ExpChildObjectImpl.java -text
@@ -714,6 +715,7 @@ experiment/src/org/labkey/experiment/moveRunsLocation.jsp -text
 experiment/src/org/labkey/experiment/pipeline/MoveRunsPipelineJob.java -text
 experiment/src/org/labkey/experiment/pipeline/XarGeneratorTask.java -text
 experiment/src/org/labkey/experiment/pipeline/XarImportTask.java -text
+experiment/src/org/labkey/experiment/pipeline/XarTemplateSubstitutionTask.java -text
 experiment/src/org/labkey/experiment/runTypeFilters.jsp -text
 experiment/src/org/labkey/experiment/samples/UploadMaterialSetForm.java -text
 experiment/src/org/labkey/experiment/samples/UploadSamplesHelper.java -text

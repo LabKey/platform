@@ -18,12 +18,14 @@ package org.labkey.experiment.api;
 
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
 
 import java.util.*;
+import java.sql.SQLException;
 
 public class ExpProtocolApplicationImpl extends ExpObjectImpl implements ExpProtocolApplication
 {
@@ -205,39 +207,53 @@ public class ExpProtocolApplicationImpl extends ExpObjectImpl implements ExpProt
         _outputDatas = outputDataList;
     }
     
-    public PropertyDescriptor addDataInput(User user, ExpData data, String roleName, PropertyDescriptor pd) throws Exception
+    public PropertyDescriptor addDataInput(User user, ExpData data, String roleName, PropertyDescriptor pd)
     {
-        if (pd == null)
+        try
         {
-            pd = ExperimentService.get().ensureDataInputRole(user, getContainer(), roleName, data);
-        }
-        DataInput obj = new DataInput();
-        obj.setDataId(data.getRowId());
-        obj.setTargetApplicationId(getRowId());
-        if (pd != null)
-        {
-            obj.setPropertyId(pd.getPropertyId());
-        }
+            if (pd == null)
+            {
+                pd = ExperimentService.get().ensureDataInputRole(user, getContainer(), roleName, data);
+            }
+            DataInput obj = new DataInput();
+            obj.setDataId(data.getRowId());
+            obj.setTargetApplicationId(getRowId());
+            if (pd != null)
+            {
+                obj.setPropertyId(pd.getPropertyId());
+            }
 
-        Table.insert(user, ExperimentServiceImpl.get().getTinfoDataInput(), obj);
-        return pd;
+            Table.insert(user, ExperimentServiceImpl.get().getTinfoDataInput(), obj);
+            return pd;
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
-    public PropertyDescriptor addMaterialInput(User user, ExpMaterial material, String roleName, PropertyDescriptor pd) throws Exception
+    public PropertyDescriptor addMaterialInput(User user, ExpMaterial material, String roleName, PropertyDescriptor pd)
     {
-        if (pd == null)
+        try
         {
-            pd = ExperimentService.get().ensureMaterialInputRole(getContainer(), roleName, material);
+            if (pd == null)
+            {
+                pd = ExperimentService.get().ensureMaterialInputRole(getContainer(), roleName, material);
+            }
+            MaterialInput obj = new MaterialInput();
+            obj.setMaterialId(material.getRowId());
+            obj.setTargetApplicationId(getRowId());
+            if (pd != null)
+            {
+                obj.setPropertyId(pd.getPropertyId());
+            }
+            Table.insert(user, ExperimentServiceImpl.get().getTinfoMaterialInput(), obj);
+            return pd;
         }
-        MaterialInput obj = new MaterialInput();
-        obj.setMaterialId(material.getRowId());
-        obj.setTargetApplicationId(getRowId());
-        if (pd != null)
+        catch (SQLException e)
         {
-            obj.setPropertyId(pd.getPropertyId());
+            throw new RuntimeSQLException(e);
         }
-        Table.insert(user, ExperimentServiceImpl.get().getTinfoMaterialInput(), obj);
-        return pd;
     }
 
     public void removeDataInput(User user, ExpData data) throws Exception
@@ -264,5 +280,10 @@ public class ExpProtocolApplicationImpl extends ExpObjectImpl implements ExpProt
             result[i] = new ExpProtocolApplicationImpl(apps[i]);
         }
         return result;
+    }
+
+    public String toString()
+    {
+        return "ProtocolApplication, LSID: " + getLSID() + (getRun() == null ? null : ( ", run: " + getRun().getLSID()));  
     }
 }

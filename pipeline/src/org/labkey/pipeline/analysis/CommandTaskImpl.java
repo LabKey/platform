@@ -25,10 +25,7 @@ import org.labkey.api.util.FileType;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.HashSet;
-import java.util.HashMap;
+import java.util.*;
 import java.sql.SQLException;
 
 /**
@@ -36,7 +33,7 @@ import java.sql.SQLException;
  *
  * @author brendanx
  */
-public class CommandTaskImpl extends PipelineJob.Task implements CommandTask
+public class CommandTaskImpl extends PipelineJob.Task<CommandTaskImpl.Factory> implements CommandTask
 {
     private static final Logger _log = Logger.getLogger(CommandTaskImpl.class);
 
@@ -212,19 +209,11 @@ public class CommandTaskImpl extends PipelineJob.Task implements CommandTask
         }
     }
 
-    private Factory _factory;
     private WorkDirectory _wd;
 
     public CommandTaskImpl(PipelineJob job, Factory factory)
     {
-        super(job);
-
-        _factory = factory;
-    }
-
-    public Factory getFactory()
-    {
-        return _factory;
+        super(factory, job);
     }
 
     public FileAnalysisJobSupport getJobSupport()
@@ -298,7 +287,7 @@ public class CommandTaskImpl extends PipelineJob.Task implements CommandTask
             _wd.outputFile(fileWork);
     }
 
-    public void run()
+    public List<PipelineAction> run() throws PipelineJobException
     {
         try
         {
@@ -326,17 +315,20 @@ public class CommandTaskImpl extends PipelineJob.Task implements CommandTask
             ProcessBuilder pb = new ProcessBuilder(_factory.toArgs(this));
 
             List<String> args = pb.command();
-            if (args.size() == 0)
-                return;
 
+            if (args.size() == 0)
+                return Collections.emptyList();
+
+            String commandLine = StringUtils.join(args, " ");
+            
             // Just output the command line, if debug mode is set.
             if (_factory.isPreview())
             {
                 getJob().header(args.get(0) + " output");
-                getJob().info(StringUtils.join(args, " "));
+                getJob().info(commandLine);
 
                 _wd.remove();
-                return;
+                return Collections.emptyList();
             }
 
             // Check if output file is to be generated from the stdout
@@ -376,20 +368,16 @@ public class CommandTaskImpl extends PipelineJob.Task implements CommandTask
                 File fileInput = newWorkFile(WorkDirectory.Function.input,
                         _factory.getInputPaths().get(WorkDirectory.Function.input.toString()));
                 if (fileInput != null)
-                    fileInput.delete();                
+                    fileInput.delete();
             }
-        }
-        catch (PipelineJob.RunProcessException e)
-        {
-            // Handled in runSubProcess
-        }
-        catch (InterruptedException e)
-        {
-            // Handled in runSubProcess
+            PipelineAction action = new PipelineAction(_factory.getId().toString());
+            action.addAll(_wd);
+            action.addParameter(PipelineAction.COMMAND_LINE_PARAM, commandLine);
+            return Collections.singletonList(action);
         }
         catch (IOException e)
         {
-            getJob().error(e.getMessage(), e);
+            throw new PipelineJobException(e);
         }
         finally
         {

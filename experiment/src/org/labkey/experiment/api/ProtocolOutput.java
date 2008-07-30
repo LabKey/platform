@@ -15,26 +15,34 @@
  */
 package org.labkey.experiment.api;
 
+import org.labkey.api.exp.IdentifiableBase;
+
 /**
  * Output of a protocol, like a data file or a material
  * User: jeckels
  * Date: Oct 17, 2005
  */
-public interface ProtocolOutput
+public abstract class ProtocolOutput extends IdentifiableBase
 {
-    Integer getSourceApplicationId();
+    public abstract Integer getSourceApplicationId();
 
-    void setSourceApplicationId(Integer sourceApplicationId);
+    public abstract void setSourceApplicationId(Integer sourceApplicationId);
 
-    Integer getRunId();
+    public abstract Integer getRunId();
 
-    void setRunId(Integer runId);
+    public abstract void setRunId(Integer runId);
 
-    String getSourceProtocolLSID();
+    public abstract String getSourceProtocolLSID();
 
-    void setSourceProtocolLSID(String s);
+    public abstract void setSourceProtocolLSID(String s);
 
-    String getLSID();
+    public abstract int getRowId();
 
-    int getRowId();
+    public abstract void setCpasType(String cpasType);
+
+    public abstract String getCpasType();
+
+    public abstract String getContainer();
+
+    public abstract void setContainer(String container);
 }

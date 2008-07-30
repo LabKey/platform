@@ -34,6 +34,7 @@ import org.labkey.experiment.DataURLRelativizer;
 import org.labkey.experiment.XarReader;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.ExperimentRun;
+import org.labkey.experiment.api.ExpRunImpl;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.fhcrc.cpas.exp.xml.ExperimentArchiveDocument;
@@ -112,7 +113,7 @@ public class MoveRunsPipelineJob extends PipelineJob
             for (int runId : _runIds)
             {
                 XarExporter exporter = new XarExporter(LSIDRelativizer.PARTIAL_FOLDER_RELATIVE, DataURLRelativizer.ORIGINAL_FILE_LOCATION);
-                ExperimentRun experimentRun = ExperimentServiceImpl.get().getExperimentRun(runId);
+                ExpRunImpl experimentRun = ExperimentServiceImpl.get().getExpRun(runId);
                 if (experimentRun != null)
                 {
                     exporter.addExperimentRun(experimentRun);

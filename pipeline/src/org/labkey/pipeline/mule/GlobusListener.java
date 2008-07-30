@@ -24,6 +24,8 @@ import org.mule.umo.UMOException;
 import org.oasis.wsrf.faults.BaseFaultType;
 import org.oasis.wsrf.faults.BaseFaultTypeDescription;
 
+import java.io.IOException;
+
 public class GlobusListener implements GramJobListener
 {
     private final PipelineJob _job;
@@ -69,6 +71,10 @@ public class GlobusListener implements GramJobListener
                 PipelineJobRunnerGlobus.updateStatus(_job, newStatus);
             }
             catch (UMOException e)
+            {
+                _job.error("Failed up update job status to " + newStatus, e);
+            }
+            catch (IOException e)
             {
                 _job.error("Failed up update job status to " + newStatus, e);
             }

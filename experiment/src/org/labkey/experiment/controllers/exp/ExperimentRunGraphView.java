@@ -26,6 +26,7 @@ import org.apache.log4j.Logger;
 import java.io.PrintWriter;
 import java.io.File;
 import java.io.FileReader;
+import java.io.IOException;
 
 /**
  * User: jeckels
@@ -87,7 +88,11 @@ public class ExperimentRunGraphView extends WebPartView
         {
             out.println("<p>" + e.getMessage() + "</p>");
         }
-        catch (Exception e)
+        catch (InterruptedException e)
+        {
+            out.println("<p>" + e.getMessage() + "</p>");
+        }
+        catch (IOException e)
         {
             out.println("<p> Error in generating graph:</p>");
             out.println("<p>" + e.getMessage() + "</p>");

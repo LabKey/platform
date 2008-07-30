@@ -108,7 +108,7 @@ public class XarExporter
         this._xarXmlFileName = fileName;
     }
 
-    public void addExperimentRun(ExperimentRun run) throws SQLException, ExperimentException
+    public void addExperimentRun(ExpRunImpl run) throws SQLException, ExperimentException
     {
         if (_experimentRunLSIDs.contains(run.getLSID()))
         {
@@ -140,18 +140,15 @@ public class XarExporter
             xRun.setComments(run.getComments());
         }
         xRun.setName(run.getName());
-        PropertyCollectionType properties = getProperties(run.getLSID(), ContainerManager.getForId(run.getContainer()));
+        PropertyCollectionType properties = getProperties(run.getLSID(), run.getContainer());
         if (properties != null)
         {
             xRun.setProperties(properties);
         }
-        xRun.setProtocolLSID(_lsidRelativizer.relativize(run.getProtocolLSID(), _relativizedLSIDs));
+        Protocol protocol = run.getProtocol().getDataObject();
+        xRun.setProtocolLSID(_lsidRelativizer.relativize(protocol.getLSID(), _relativizedLSIDs));
 
-        Protocol protocol = ExperimentServiceImpl.get().getProtocol(run.getProtocolLSID());
-        if (protocol != null)
-        {
-            addProtocol(protocol, true);
-        }
+        addProtocol(protocol, true);
 
         List<Data> inputData = ExperimentServiceImpl.get().getRunInputData(run.getLSID());
         ExperimentArchiveType.StartingInputDefinitions inputDefs = _archive.getStartingInputDefinitions();
@@ -166,7 +163,7 @@ public class XarExporter
                 _inputDataLSIDs.add(data.getLSID());
 
                 DataBaseType xData = inputDefs.addNewData();
-                populateData(xData, data, run);
+                populateData(xData, data, run.getDataObject());
             }
         }
 
@@ -189,8 +186,8 @@ public class XarExporter
         ExpProtocolApplication[] applications = ExperimentService.get().getExpProtocolApplicationsForRun(run.getRowId());
         ExperimentRunType.ProtocolApplications xApplications = xRun.addNewProtocolApplications();
 
-        Map<String, PropertyDescriptor> dataInputRoles = ExperimentService.get().getDataInputRoles(ContainerManager.getForId(run.getContainer()));
-        Map<String, PropertyDescriptor> materialInputRoles = ExperimentService.get().getMaterialInputRoles(ContainerManager.getForId(run.getContainer()));
+        Map<String, PropertyDescriptor> dataInputRoles = ExperimentService.get().getDataInputRoles(run.getContainer());
+        Map<String, PropertyDescriptor> materialInputRoles = ExperimentService.get().getMaterialInputRoles(run.getContainer());
 
         for (ExpProtocolApplication application : applications)
         {
@@ -281,7 +278,7 @@ public class XarExporter
                 for (Data data : outputData)
                 {
                     DataBaseType xData = outputDataObjects.addNewData();
-                    populateData(xData, data, run);
+                    populateData(xData, data, run.getDataObject());
                 }
             }
 
@@ -296,7 +293,7 @@ public class XarExporter
                 }
             }
 
-            PropertyCollectionType appProperties = getProperties(application.getLSID(), ContainerManager.getForId(run.getContainer()));
+            PropertyCollectionType appProperties = getProperties(application.getLSID(), run.getContainer());
             if (appProperties != null)
             {
                 xApplication.setProperties(appProperties);

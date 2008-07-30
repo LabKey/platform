@@ -21,16 +21,13 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.security.User;
+import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.sql.SQLException;
 import java.util.*;
 
-public class ExpMaterialImpl extends ExpIdentifiableBaseImpl<Material> implements ExpMaterial
+public class ExpMaterialImpl extends AbstractProtocolOutputImpl<Material> implements ExpMaterial
 {
-    private ExpProtocolApplication _sourceApp;
-    private List<ExpProtocolApplication> _successorAppList;
-    private List<Integer> _successorRunIdList;
-
     static public ExpMaterialImpl[] fromMaterials(Material[] materials)
     {
         ExpMaterialImpl[] ret = new ExpMaterialImpl[materials.length];
@@ -46,22 +43,11 @@ public class ExpMaterialImpl extends ExpIdentifiableBaseImpl<Material> implement
         super(material);
     }
 
-    public int getRowId()
-    {
-        return _object.getRowId();
-    }
-
     public URLHelper detailsURL()
     {
-        ActionURL ret = new ActionURL("Experiment", "showMaterial", getContainerPath());
+        ActionURL ret = new ActionURL(ExperimentController.ShowMaterialAction.class, getContainer());
         ret.addParameter("rowId", Integer.toString(getRowId()));
         return ret;
-    }
-
-    public User getCreatedBy()
-    {
-        ExpRunImpl run = getRun();
-        return null == run ? null : run.getCreatedBy();
     }
 
     public ExpSampleSet getSampleSet()
@@ -77,89 +63,9 @@ public class ExpMaterialImpl extends ExpIdentifiableBaseImpl<Material> implement
         }
     }
 
-    public String getContainerId()
-    {
-        return _object.getContainer();
-    }
-
-    public void setContainerId(String containerId)
-    {
-        _object.setContainer(containerId);
-    }
-    
     public void insert(User user) throws SQLException
     {
         ExperimentServiceImpl.get().insertMaterial(user, _object);
-    }
-
-    public ExpRunImpl getRun()
-    {
-        if (_object.getRunId() == null)
-        {
-            return null;
-        }
-        return ExperimentServiceImpl.get().getExpRun(_object.getRunId());
-    }
-
-    public void setSourceApplication(ExpProtocolApplication sourceApplication)
-    {
-        if (sourceApplication != null && sourceApplication.getRowId() == 0)
-        {
-            throw new IllegalArgumentException();
-        }
-        _object.setSourceApplicationId(sourceApplication == null ? null : sourceApplication.getRowId());
-    }
-
-    public void setSourceProtocol(ExpProtocol protocol)
-    {
-        if (protocol != null && protocol.getLSID() == null)
-        {
-            throw new IllegalArgumentException();
-        }
-        _object.setSourceProtocolLSID(protocol == null ? null : protocol.getLSID());
-    }
-
-    public void setRun(ExpRun run)
-    {
-        if (run != null && run.getRowId() == 0)
-        {
-            throw new IllegalArgumentException();
-        }
-        _object.setRunId(run == null ? null : run.getRowId());
-    }
-
-    public List<ExpProtocolApplication> getSuccessorAppList()
-    {
-        if (null == _successorAppList)
-            throw new IllegalStateException("successorAppList not populated");
-        return _successorAppList;
-    }
-
-    public List<Integer> getSuccessorRunIdList()
-    {
-        if (null == _successorRunIdList)
-            throw new IllegalStateException("successorRunIdList not populated");
-        return _successorRunIdList;
-    }
-
-    public void setSuccessorAppList(ArrayList<ExpProtocolApplication> successorAppList)
-    {
-        _successorAppList = successorAppList;
-    }
-
-    public void setSourceApp(ExpProtocolApplication sourceApp)
-    {
-        _sourceApp = sourceApp;
-    }
-
-    public void setSuccessorRunIdList(ArrayList<Integer> successorRunIdList)
-    {
-        _successorRunIdList = successorRunIdList;
-    }
-
-    public void setCpasType(String type)
-    {
-        _object.setCpasType(type);
     }
 
     public Map<PropertyDescriptor, Object> getPropertyValues()
@@ -177,30 +83,6 @@ public class ExpMaterialImpl extends ExpIdentifiableBaseImpl<Material> implement
         }
         return values;
     }
-
-    public ExpProtocolApplication getSourceApplication()
-    {
-        if (null != _sourceApp)
-        {
-            return _sourceApp;
-        }
-        if (_object.getSourceApplicationId() == null)
-        {
-            return null;
-        }
-        _sourceApp = ExperimentService.get().getExpProtocolApplication(_object.getSourceApplicationId());
-        return _sourceApp;
-    }
-
-    public ExpProtocol getSourceProtocol()
-    {
-        if (_object.getSourceProtocolLSID() == null)
-        {
-            return null;
-        }
-        return ExperimentService.get().getExpProtocol(_object.getSourceProtocolLSID());
-    }
-
 
     public String getCpasType()
     {

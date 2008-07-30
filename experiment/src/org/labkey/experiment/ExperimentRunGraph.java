@@ -28,7 +28,6 @@ import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.ExpProtocolApplicationImpl;
 
 import java.io.*;
-import java.sql.SQLException;
 import java.util.*;
 
 /**
@@ -96,7 +95,7 @@ public class ExperimentRunGraph
         return result;
     }
 
-    public static void generateRunGraph(ViewContext ctx, int containerId, int runId, boolean detail, String focus) throws ExperimentException, IOException, SQLException, InterruptedException
+    public static void generateRunGraph(ViewContext ctx, int containerId, int runId, boolean detail, String focus) throws ExperimentException, IOException, InterruptedException
     {
         File gifFile = getGifFile(containerId, runId, detail, focus);
         File mapFile = getMapFile(containerId, runId, detail, focus);
@@ -120,7 +119,6 @@ public class ExperimentRunGraph
 
         ActionURL url = ctx.getActionURL();
         PrintWriter out = null;
-//        File file = getDotFile(containerId, runId, detail, focus);
         Integer focusId = null;
         String typeCode = null;
 
@@ -131,14 +129,13 @@ public class ExperimentRunGraph
             {
                 typeCode = focus.substring(0, 1);
                 focusId = Integer.parseInt(focus.substring(1));
-                ExperimentServiceImpl.get().trimRunTree(expRun, focusId, typeCode);
+                expRun.trimRunTree(focusId, typeCode);
             }
             StringWriter writer = new StringWriter();
             out = new PrintWriter(writer);
-            DotGraph dg;
             GraphCtrlProps ctrlProps = analyzeGraph(expRun);
 
-            dg = new DotGraph(out, url, ctrlProps.fUseSmallFonts);
+            DotGraph dg = new DotGraph(out, url, ctrlProps.fUseSmallFonts);
 
             if (!detail)
                 generateSummaryGraph(expRun, dg, ctrlProps);
@@ -442,11 +439,10 @@ public class ExperimentRunGraph
                     groupId = 1;
                 dg.addMaterial(material, groupId, null);
                 dg.connectRunToMaterial(runId, material.getRowId());
-                for (Integer successorRunId : material.getSuccessorRunIdList())
+                for (ExpRun successorRun : material.getSuccessorRuns())
                 {
-                    ExpRun successorRun = ExperimentService.get().getExpRun(successorRunId);
-                    dg.addLinkedRun(successorRunId, successorRun.getName());
-                    dg.connectMaterialToRun(material.getRowId(), successorRunId, null);
+                    dg.addLinkedRun(successorRun.getRowId(), successorRun.getName());
+                    dg.connectMaterialToRun(material.getRowId(), successorRun.getRowId(), null);
                 }
                 i++;
             }
@@ -462,11 +458,10 @@ public class ExperimentRunGraph
                     groupId = 1;
                 dg.addData(data, groupId, null);
                 dg.connectRunToData(runId, data.getRowId());
-                for (Integer successorRunId : data.getSuccessorRunIdList())
+                for (ExpRun successorRun : data.getSuccessorRuns())
                 {
-                    ExpRun successorRun = ExperimentService.get().getExpRun(successorRunId);
-                    dg.addLinkedRun(successorRunId, successorRun.getName());
-                    dg.connectDataToRun(data.getRowId(), successorRunId, null);
+                    dg.addLinkedRun(successorRun.getRowId(), successorRun.getName());
+                    dg.connectDataToRun(data.getRowId(), successorRun.getRowId(), null);
                 }
                 i++;
             }

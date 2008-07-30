@@ -20,7 +20,7 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
-import org.labkey.api.exp.pipeline.XarGeneratorId;
+import org.labkey.api.exp.pipeline.XarTemplateSubstitutionId;
 import org.labkey.api.jsp.FormPage;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisJob;
@@ -353,7 +353,7 @@ public class AnalysisController extends SpringActionController
             TaskId taskIdGenerator = null;
             for (TaskId id : tp.getTaskProgression())
             {
-                if (id.getNamespaceClass().equals(XarGeneratorId.class))
+                if (id.getNamespaceClass().equals(XarTemplateSubstitutionId.class))
                 {
                     taskIdGenerator = id;
                     break;
@@ -363,7 +363,7 @@ public class AnalysisController extends SpringActionController
             if (taskIdGenerator == null)
                 return throwNotFound("The pipeline '" + taskId + "' does not contain a valid XAR XML generator.");
 
-            XarGeneratorId.Factory factoryGenerator = (XarGeneratorId.Factory)
+            XarTemplateSubstitutionId.Factory factoryGenerator = (XarTemplateSubstitutionId.Factory)
                     PipelineJobService.get().getTaskFactory(taskIdGenerator);
             FileType ftGenInput = factoryGenerator.getInputTypes()[0];
             if (ftGenInput == null)

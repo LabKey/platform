@@ -18,6 +18,7 @@ package org.labkey.experiment.api;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.ProtocolParameter;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -33,6 +34,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Arrays;
 
 public class ExpProtocolImpl extends ExpIdentifiableBaseImpl<Protocol> implements ExpProtocol
 {
@@ -110,22 +112,9 @@ public class ExpProtocolImpl extends ExpIdentifiableBaseImpl<Protocol> implement
         _object.setMaxInputDataPerInstance(i);
     }
 
-    public ExpProtocolAction[] getSteps()
+    public List<ExpProtocolAction> getSteps()
     {
-        try
-        {
-            List<ExpProtocolAction> ret = new ArrayList();
-            for (ProtocolAction action : ExperimentServiceImpl.get().getProtocolActions(getRowId()))
-            {
-                ret.add(new ExpProtocolActionImpl(action));
-            }
-            return ret.toArray(new ExpProtocolAction[0]);
-        }
-        catch (SQLException e)
-        {
-            _log.error("Error", e);
-            return new ExpProtocolAction[0];
-        }
+        return Arrays.<ExpProtocolAction>asList(ExpProtocolActionImpl.fromProtocolActions(ExperimentServiceImpl.get().getProtocolActions(getRowId())));
     }
 
     public String getContainerId()
@@ -153,14 +142,21 @@ public class ExpProtocolImpl extends ExpIdentifiableBaseImpl<Protocol> implement
         _object = ExperimentServiceImpl.get().saveProtocol(user, _object);
     }
 
-    public ExpProtocolAction addStep(User user, ExpProtocol childProtocol, int actionSequence) throws Exception
+    public ExpProtocolAction addStep(User user, ExpProtocol childProtocol, int actionSequence)
     {
-        ProtocolAction action = new ProtocolAction();
-        action.setParentProtocolId(getRowId());
-        action.setChildProtocolId(childProtocol.getRowId());
-        action.setSequence(actionSequence);
-        action = Table.insert(user, ExperimentServiceImpl.get().getTinfoProtocolAction(), action);
-        return new ExpProtocolActionImpl(action);
+        try
+        {
+            ProtocolAction action = new ProtocolAction();
+            action.setParentProtocolId(getRowId());
+            action.setChildProtocolId(childProtocol.getRowId());
+            action.setSequence(actionSequence);
+            action = Table.insert(user, ExperimentServiceImpl.get().getTinfoProtocolAction(), action);
+            return new ExpProtocolActionImpl(action);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     public ExpProtocol[] getParentProtocols()
@@ -191,6 +187,12 @@ public class ExpProtocolImpl extends ExpIdentifiableBaseImpl<Protocol> implement
     public String getContact()
     {
         return _object.getContact();
+    }
+
+    public List<ExpProtocol> getChildProtocols()
+    {
+        return ExperimentServiceImpl.get().getChildProtocols(_object.getRowId());
+
     }
 
     public static ExpProtocolImpl[] fromProtocols(Protocol[] protocols)

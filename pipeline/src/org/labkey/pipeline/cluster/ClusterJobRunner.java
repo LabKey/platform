@@ -16,17 +16,13 @@
 
 package org.labkey.pipeline.cluster;
 
-import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.pipeline.xstream.PathMapper;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
 import org.labkey.pipeline.mule.LoggerUtil;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
-import org.apache.log4j.PropertyConfigurator;
 
 import java.io.*;
-import java.util.List;
-import java.util.ArrayList;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -59,12 +55,13 @@ public class ClusterJobRunner
             throw new IllegalArgumentException("Could not find file " + file.getAbsolutePath());
         }
 
-        StringBuilder xml = readFile(file);
-
-        PipelineJob job = PipelineJobService.get().getJobStore().fromXML(xml.toString());
+        PipelineJob job = PipelineJob.readFromFile(file);
+        
         System.out.println("Starting to run task for job " + job);
         job.runActiveTask();
         System.out.println("Finished running task for job " + job);
+
+        job.writeToFile(file);
 
         if (job.getActiveTaskStatus() == PipelineJob.TaskStatus.error)
         {
@@ -76,26 +73,5 @@ public class ClusterJobRunner
             job.error("Task finished running but was not marked as complete - it was in state " + job.getActiveTaskStatus());
             System.exit(1);
         }
-    }
-
-    private StringBuilder readFile(File file) throws IOException
-    {
-        InputStream fIn = null;
-        StringBuilder xml = new StringBuilder();
-        try
-        {
-            fIn = new FileInputStream(file);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(fIn));
-            String line;
-            while ((line = reader.readLine()) != null)
-            {
-                xml.append(line);
-            }
-        }
-        finally
-        {
-            if (fIn != null) { try { fIn.close(); } catch (IOException e) {} }
-        }
-        return xml;
     }
 }

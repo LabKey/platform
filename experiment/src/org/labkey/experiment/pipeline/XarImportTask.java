@@ -18,7 +18,7 @@ package org.labkey.experiment.pipeline;
 import org.labkey.api.exp.ExperimentPipelineJob;
 import org.labkey.api.exp.FileXarSource;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.pipeline.XarGeneratorId;
+import org.labkey.api.exp.pipeline.XarTemplateSubstitutionId;
 import org.labkey.api.exp.pipeline.XarImportFactorySettings;
 import org.labkey.api.exp.pipeline.XarImportTaskId;
 import org.labkey.api.pipeline.*;
@@ -28,15 +28,17 @@ import org.labkey.api.util.FileType;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.Collections;
 
 /**
  * <code>XarImportTask</code>
  */
-public class XarImportTask extends PipelineJob.Task
+public class XarImportTask extends PipelineJob.Task<XarImportTask.Factory>
 {
      public static class Factory extends AbstractTaskFactory
     {
-        private FileType _inputType = XarGeneratorId.FT_PIPE_XAR_XML;
+        private FileType _inputType = XarTemplateSubstitutionId.FT_PIPE_XAR_XML;
 
         public Factory()
         {
@@ -60,7 +62,7 @@ public class XarImportTask extends PipelineJob.Task
 
         public PipelineJob.Task createTask(PipelineJob job)
         {
-            return new XarImportTask(job, this);
+            return new XarImportTask(this, job);
         }
 
         public FileType[] getInputTypes()
@@ -80,13 +82,9 @@ public class XarImportTask extends PipelineJob.Task
         }
     }
 
-    private Factory _factory;
-
-    protected XarImportTask(PipelineJob job, Factory factory)
+    protected XarImportTask(Factory factory, PipelineJob job)
     {
-        super(job);
-
-        _factory = factory;
+        super(factory, job);
     }
 
     public FileAnalysisJobSupport getJobSupport()
@@ -94,7 +92,7 @@ public class XarImportTask extends PipelineJob.Task
         return getJob().getJobSupport(FileAnalysisJobSupport.class);
     }
 
-    public void run()
+    public List<PipelineAction> run()
     {
         String baseName = getJobSupport().getBaseName();
         File dirAnalysis = getJobSupport().getAnalysisDirectory();
@@ -108,5 +106,7 @@ public class XarImportTask extends PipelineJob.Task
             if (run != null)
                 getJobSupport().setExperimentRunRowId(run.getRowId());
         }
+
+        return Collections.emptyList();
     }
 }

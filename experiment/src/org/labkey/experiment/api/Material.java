@@ -15,18 +15,14 @@
  */
 package org.labkey.experiment.api;
 
-import org.labkey.api.exp.IdentifiableBase;
-import org.labkey.api.exp.api.ExpProtocolApplication;
-
 import java.util.Date;
-import java.util.List;
 
 /**
  * User: migra
  * Date: Jun 14, 2005
  * Time: 2:49:46 PM
  */
-public class Material extends IdentifiableBase implements ProtocolOutput
+public class Material extends ProtocolOutput
 {
     private int rowId;
     private String cpasType = "Material";

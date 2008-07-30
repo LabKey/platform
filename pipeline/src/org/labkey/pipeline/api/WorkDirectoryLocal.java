@@ -37,17 +37,23 @@ public class WorkDirectoryLocal extends AbstractWorkDirectory
             File dir = FT_WORK_DIR.newFile(support.getAnalysisDirectory(),
                     support.getBaseName());
 
-            return new WorkDirectoryLocal(support, dir, log);
+            return new WorkDirectoryLocal(support, this, dir, log);
+        }
+
+        public void setPermissions(File outputFile)
+        {
+            
         }
     }
 
-    public WorkDirectoryLocal(FileAnalysisJobSupport support, File dir, Logger log) throws IOException
+    public WorkDirectoryLocal(FileAnalysisJobSupport support, WorkDirFactory factory, File dir, Logger log) throws IOException
     {
-        super(support, dir, log);
+        super(support, factory, dir, log);
     }
 
     public File inputFile(File fileInput, boolean forceCopy) throws IOException
     {
+        logInputFile(fileInput);
         if (!forceCopy)
             return fileInput;
         return copyInputFile(fileInput);

@@ -36,7 +36,6 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
     private static final int PERL_PIPELINE_LOCKS_DEFAULT = 5;
     
     private final File _lockDirectory;
-    private final String _outputPermissions;
 
     public File inputFile(File fileInput, boolean forceCopy) throws IOException
     {
@@ -80,7 +79,19 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
             }
 
             File lockDir = (_lockDirectory == null ? null : new File(_lockDirectory));
-            return new WorkDirectoryRemote(support, log, lockDir, tempDir, _outputPermissions);
+            return new WorkDirectoryRemote(support, this, log, lockDir, tempDir);
+        }
+
+        public void setPermissions(File outputFile) throws IOException
+        {
+            if (_outputPermissions != null)
+            {
+                Runtime.getRuntime().exec(new String[] {
+                        "chmod",
+                        _outputPermissions,
+                        outputFile.toString()
+                });
+            }
         }
 
         public String getLockDirectory()
@@ -162,26 +173,20 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
         }
     }
 
-    public WorkDirectoryRemote(FileAnalysisJobSupport support, Logger log, File lockDir, File tempDir, String outputPermissions) throws IOException
+    public WorkDirectoryRemote(FileAnalysisJobSupport support, WorkDirFactory factory, Logger log, File lockDir, File tempDir) throws IOException
     {
-        super(support, tempDir, log);
+        super(support, factory, tempDir, log);
 
         _lockDirectory = lockDir;
-        _outputPermissions = outputPermissions;
     }
 
-    protected void outputFile(File fileWork, File fileDest) throws IOException
+    protected File outputFile(File fileWork, File fileDest) throws IOException
     {
-        super.outputFile(fileWork, fileDest);
+        File result = super.outputFile(fileWork, fileDest);
 
-        if (_outputPermissions != null)
-        {
-            Runtime.getRuntime().exec(new String[] {
-                    "chmod",
-                    _outputPermissions,
-                    fileDest.toString()
-            });
-        }
+        _factory.setPermissions(fileDest);
+
+        return result;
     }
 
     /**
