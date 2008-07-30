@@ -4684,4 +4684,52 @@ public class StudyController extends BaseStudyController
             _cohortId = cohortId;
         }
     }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class DatasetsAction extends SimpleViewAction<Object>
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return StudyModule.datasetsPartFactory.getWebPartView(getViewContext(), StudyModule.datasetsPartFactory.createWebPart());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            try
+            {
+                Study study = getStudy();
+                if (study != null)
+                    root.addChild(study.getLabel(), new ActionURL(BeginAction.class, getContainer()));
+            }
+            catch (ServletException e)
+            {
+            }
+            root.addChild("Datasets");
+            return root;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class SamplesAction extends SimpleViewAction<Object>
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return StudyModule.samplesWidePartFactory.getWebPartView(getViewContext(), StudyModule.samplesWidePartFactory.createWebPart());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            try
+            {
+                Study study = getStudy();
+                if (study != null)
+                    root.addChild(study.getLabel(), new ActionURL(BeginAction.class, getContainer()));
+            }
+            catch (ServletException e)
+            {
+            }
+            root.addChild("Samples");
+            return root;
+        }
+    }
 }
