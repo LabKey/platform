@@ -18,22 +18,33 @@ package org.labkey.api.exp.pipeline;
 import org.labkey.api.pipeline.AbstractTaskFactorySettings;
 import org.labkey.api.pipeline.TaskId;
 
-/*
-* User: jeckels
-* Date: Jul 28, 2008
-*/
-public class XarGeneratorFactorySettings extends AbstractTaskFactorySettings
+/**
+ * <code>XarGeneratorFactorySettings</code>
+ */
+public class XarTemplateSubstitutionFactorySettings extends AbstractTaskFactorySettings
 {
-    private String _outputExt = ".xar.xml";
+    // CONSIDER: All necessary inputs?
+    private String _inputExt;
+    private String _outputExt;
 
-    public XarGeneratorFactorySettings()
+    public XarTemplateSubstitutionFactorySettings(String name)
     {
-        super(new TaskId(XarGeneratorId.class));
+        super(new TaskId(XarTemplateSubstitutionId.class, name));
     }
 
     public TaskId getCloneId()
     {
-        return new TaskId(XarGeneratorId.class);
+        return new TaskId(XarTemplateSubstitutionId.class);
+    }
+
+    public String getInputExt()
+    {
+        return _inputExt;
+    }
+
+    public void setInputExt(String inputExt)
+    {
+        _inputExt = inputExt;
     }
 
     public String getOutputExt()

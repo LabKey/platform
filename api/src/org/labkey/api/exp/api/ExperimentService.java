@@ -146,7 +146,7 @@ public class ExperimentService
 
         ExpData[] getExpData(Container c) throws SQLException;
         ExpData getExpDataByURL(String canonicalURL, Container container);
-        ExpData getDataByURL(File f, Container c) throws IOException;
+        ExpData getExpDataByURL(File f, Container c) throws IOException;
         
         TableInfo getTinfoMaterial();
         TableInfo getTinfoMaterialSource();

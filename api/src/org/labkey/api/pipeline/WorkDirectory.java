@@ -19,6 +19,7 @@ import org.labkey.api.util.FileType;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Set;
 
 /**
  * <code>WorkDirectory</code>
@@ -44,13 +45,36 @@ public interface WorkDirectory
 
     File newFile(Function f, FileType type);
 
+    /**
+     * Simply logs a file as being an input to this run. Does NOT copy it.
+     * @param fileInput file that's an input to the run
+     * @return the same file that was passed in
+     */
+    File logInputFile(File fileInput);
+
     File inputFile(File fileInput, boolean forceCopy) throws IOException;
 
     String getRelativePath(File fileWork) throws IOException;
 
-    void outputFile(File fileWork) throws IOException;
+    /**
+     * @return the final location for file after it's copied out of the work directory
+     */
+    File outputFile(File fileWork) throws IOException;
 
-    void outputFile(File fileWork, String nameDest) throws IOException;
+    /**
+     * @return the final location for file after it's copied out of the work directory
+     */
+    File outputFile(File fileWork, String nameDest) throws IOException;
+
+    /**
+     * @return all the input files that this WorkDirectory has encountered so far
+     */
+    Set<File> getInputs();
+
+    /**
+     * @return all the output files that this WorkDirectory has encountered so far
+     */
+    Set<File> getOutputs();
 
     /**
      * Delete a file

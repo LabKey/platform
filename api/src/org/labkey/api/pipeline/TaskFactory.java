@@ -19,6 +19,7 @@ import org.labkey.api.util.FileType;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.List;
 
 /**
  * <code>TaskFactory</code> is responsible for creating a task to run on a
@@ -38,6 +39,8 @@ public interface TaskFactory extends ClusterSettings
     TaskFactory cloneAndConfigure(TaskFactorySettings settings) throws CloneNotSupportedException;
 
     FileType[] getInputTypes();
+
+    List<String> getActionNames();
 
     String getStatusName();
 

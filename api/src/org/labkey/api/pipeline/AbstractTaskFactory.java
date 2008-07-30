@@ -17,6 +17,8 @@ package org.labkey.api.pipeline;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.Collections;
 
 /**
  * <code>AbstractTaskFactory</code>
@@ -51,6 +53,11 @@ abstract public class AbstractTaskFactory extends ClusterSettingsImpl implements
         AbstractTaskFactory factory = (AbstractTaskFactory) clone();
 
         return factory.configure((AbstractTaskFactorySettings) settings);
+    }
+
+    public List<String> getActionNames()
+    {
+        return Collections.singletonList(getId().toString());
     }
 
     private TaskFactory configure(AbstractTaskFactorySettings settings)

@@ -861,7 +861,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         try
         {
             file = file.getCanonicalFile();
-            ExpData data = ExperimentService.get().getDataByURL(file, c);
+            ExpData data = ExperimentService.get().getExpDataByURL(file, c);
             if (data == null)
             {
                 data = ExperimentService.get().createData(c, dataType, file.getName());

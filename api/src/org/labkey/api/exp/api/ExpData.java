@@ -29,19 +29,16 @@ import java.util.List;
 import java.util.ArrayList;
 import java.io.File;
 
-public interface ExpData extends ExpObject
+public interface ExpData extends ExpProtocolOutput
 {
-    ExpProtocolApplication getSourceApplication();
     ExpProtocolApplication[] getTargetApplications();
     ExpRun[] getTargetRuns();
-    ExpRun getRun();
     DataType getDataType();
     URI getDataFileURI();
     File getDataFile();
     void delete(User user) throws Exception;
 
     void setDataFileURI(URI uri);
-    void setSourceApplication(ExpProtocolApplication app);
     void save(User user);
     Date getCreated();
 
@@ -51,23 +48,9 @@ public interface ExpData extends ExpObject
 
     File getFile();
 
-    ExpProtocolApplication getSourceApp();
-
-    List<ExpProtocolApplication> getSuccessorAppList();
-
-    List<Integer> getSuccessorRunIdList();
-
     boolean isInlineImage();
 
     boolean isFileOnDisk();
 
     void setDataFileUrl(String s);
-
-    void insert(User user);
-
-    ExpProtocol getSourceProtocol();
-
-    void setSourceProtocol(ExpProtocol expProtocol);
-
-    void setRun(ExpRun expRun);
 }

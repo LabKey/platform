@@ -17,14 +17,16 @@ package org.labkey.api.exp.pipeline;
 
 import org.labkey.api.util.FileType;
 
-/*
-* User: jeckels
-* Date: Jul 28, 2008
-*/
-public class XarGeneratorId
+import java.util.Map;
+import java.io.IOException;
+
+/**
+ * <code>XarGeneratorId</code> is the TaskId interface for the XarTemplateSubstitutionTask
+ */
+public interface XarTemplateSubstitutionId
 {
-    public static final FileType FT_XAR_XML = new FileType(".xar.xml");
-    public static final FileType FT_PIPE_XAR_XML = new FileType(".pipe.xar.xml");
+    final FileType FT_XAR_XML = new FileType(".xar.xml");
+    final FileType FT_PIPE_XAR_XML = new FileType(".pipe.xar.xml");
 
     interface Factory
     {
@@ -43,5 +45,15 @@ public class XarGeneratorId
          * Returns a description of the search.
          */
         String getDescription();
+
+        /**
+         * Returns a classpath-relative path to the template resource.
+         */
+        String getXarTemplateResource();
+
+        /**
+         * Returns a map of string replacements to be made in the template.
+         */
+        Map<String, String> getXarTemplateReplacements() throws IOException;
     }
 }

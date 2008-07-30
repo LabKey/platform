@@ -16,38 +16,13 @@
 
 package org.labkey.api.exp.api;
 
-import org.labkey.api.security.User;
 import org.labkey.api.exp.PropertyDescriptor;
 
-import java.sql.SQLException;
-import java.util.List;
-import java.util.ArrayList;
 import java.util.Map;
 
-public interface ExpMaterial extends ExpObject
+public interface ExpMaterial extends ExpProtocolOutput
 {
     public ExpSampleSet getSampleSet();
-
-    void insert(User user) throws SQLException;
-
-    ExpProtocol getSourceProtocol();
-
-    ExpRun getRun();
-
-    void setSourceApplication(ExpProtocolApplication sourceApplication);
-
-    void setSourceProtocol(ExpProtocol protocol);
-
-    void setRun(ExpRun run);
-
-    List<ExpProtocolApplication> getSuccessorAppList();
-
-    List<Integer> getSuccessorRunIdList();
-
-    ExpProtocolApplication getSourceApplication();
-
-    public String getCpasType();
-    void setCpasType(String type);
 
     public Map<PropertyDescriptor, Object> getPropertyValues();
 }

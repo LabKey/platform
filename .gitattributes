@@ -196,6 +196,7 @@ api/src/org/labkey/api/exp/api/ExpProtocol.java -text
 api/src/org/labkey/api/exp/api/ExpProtocolAction.java -text
 api/src/org/labkey/api/exp/api/ExpProtocolApplication.java -text
 api/src/org/labkey/api/exp/api/ExpProtocolApplicationTable.java -text
+api/src/org/labkey/api/exp/api/ExpProtocolOutput.java -text
 api/src/org/labkey/api/exp/api/ExpProtocolTable.java -text
 api/src/org/labkey/api/exp/api/ExpRun.java -text
 api/src/org/labkey/api/exp/api/ExpRunTable.java -text
@@ -216,6 +217,8 @@ api/src/org/labkey/api/exp/pipeline/XarGeneratorFactorySettings.java -text
 api/src/org/labkey/api/exp/pipeline/XarGeneratorId.java -text
 api/src/org/labkey/api/exp/pipeline/XarImportFactorySettings.java -text
 api/src/org/labkey/api/exp/pipeline/XarImportTaskId.java -text
+api/src/org/labkey/api/exp/pipeline/XarTemplateSubstitutionFactorySettings.java -text
+api/src/org/labkey/api/exp/pipeline/XarTemplateSubstitutionId.java -text
 api/src/org/labkey/api/exp/property/Domain.java -text
 api/src/org/labkey/api/exp/property/DomainKind.java -text
 api/src/org/labkey/api/exp/property/DomainProperty.java -text
@@ -265,8 +268,10 @@ api/src/org/labkey/api/pipeline/ClusterSettingsImpl.java -text
 api/src/org/labkey/api/pipeline/GlobusKeyPair.java -text
 api/src/org/labkey/api/pipeline/ParamParser.java -text
 api/src/org/labkey/api/pipeline/PipeRoot.java -text
+api/src/org/labkey/api/pipeline/PipelineAction.java -text
 api/src/org/labkey/api/pipeline/PipelineJob.java -text
 api/src/org/labkey/api/pipeline/PipelineJobData.java -text
+api/src/org/labkey/api/pipeline/PipelineJobException.java -text
 api/src/org/labkey/api/pipeline/PipelineJobService.java -text
 api/src/org/labkey/api/pipeline/PipelineProtocol.java -text
 api/src/org/labkey/api/pipeline/PipelineProtocolFactory.java -text

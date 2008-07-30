@@ -15,21 +15,31 @@
  */
 package org.labkey.api.pipeline;
 
-import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
-import org.apache.log4j.Logger;
-
-import java.io.IOException;
-import java.io.File;
-
-/**
- * <code>WorkDirFactory</code>
- *
- * @author brendanx
- */
-public interface WorkDirFactory
+/*
+* User: jeckels
+* Date: Jul 28, 2008
+*/
+public class PipelineJobException extends Exception
 {
-    WorkDirectory createWorkDirectory(String jobId, FileAnalysisJobSupport support, Logger log)
-            throws IOException;
+    private static final String DEFAULT_MESSAGE = "Error during job execution";
 
-    void setPermissions(File outputFile) throws IOException;
+    public PipelineJobException()
+    {
+        super(DEFAULT_MESSAGE);
+    }
+
+    public PipelineJobException(String message)
+    {
+        super(message);
+    }
+
+    public PipelineJobException(String message, Throwable cause)
+    {
+        super(message, cause);
+    }
+
+    public PipelineJobException(Throwable cause)
+    {
+        super(cause.getMessage() == null ? DEFAULT_MESSAGE : cause.getMessage(), cause);
+    }
 }

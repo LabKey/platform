@@ -22,6 +22,7 @@ import org.labkey.api.exp.ProtocolParameter;
 
 import java.util.Map;
 import java.util.Date;
+import java.util.List;
 import java.sql.SQLException;
 
 public interface ExpProtocol extends ExpObject
@@ -43,6 +44,8 @@ public interface ExpProtocol extends ExpObject
 
     String getContact();
 
+    List<ExpProtocol> getChildProtocols();
+
     enum ApplicationType
     {
         ExperimentRun,
@@ -50,7 +53,7 @@ public interface ExpProtocol extends ExpObject
         ExperimentRunOutput,
     }
 
-    public ExpProtocolAction[] getSteps();
+    public List<ExpProtocolAction> getSteps();
     public ApplicationType getApplicationType();
     public ProtocolImplementation getImplementation();
     public String getDescription();
@@ -60,7 +63,10 @@ public interface ExpProtocol extends ExpObject
     void setMaxInputMaterialPerInstance(Integer maxMaterials);
     void setMaxInputDataPerInstance(Integer i);
 
-    public ExpProtocolAction addStep(User user, ExpProtocol childProtocol, int actionSequence) throws Exception;
+    /**
+     * Adds a step and persists it to the database
+     */
+    public ExpProtocolAction addStep(User user, ExpProtocol childProtocol, int actionSequence);
 
     public ExpProtocol[] getParentProtocols();
 

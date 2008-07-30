@@ -36,9 +36,9 @@ public interface ExpRun extends ExpObject
     public void setFilePathRoot(File filePathRoot);
     public Date getCreated();
     public User getCreatedBy();
-    public void save(User user) throws Exception;
+    public void save(User user);
     public void setProtocol(ExpProtocol protocol);
-    public ExpProtocolApplication addProtocolApplication(User user, ExpProtocolAction action, ExpProtocol.ApplicationType type) throws Exception;
+    public ExpProtocolApplication addProtocolApplication(User user, ExpProtocolAction action, ExpProtocol.ApplicationType type, String name);
 
     String getComments();
 

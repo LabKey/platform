@@ -43,9 +43,9 @@ public interface ExpProtocolApplication extends ExpObject
      * @return The property descriptor corresponding to the input role.  Will be null if inputRole is null
      * @throws Exception
      */
-    public PropertyDescriptor addDataInput(User user, ExpData input, String inputRole, PropertyDescriptor pd) throws Exception;
+    public PropertyDescriptor addDataInput(User user, ExpData input, String inputRole, PropertyDescriptor pd);
     public void removeDataInput(User user, ExpData data) throws Exception;
-    public PropertyDescriptor addMaterialInput(User user, ExpMaterial material, String inputRole, PropertyDescriptor pd) throws Exception;
+    public PropertyDescriptor addMaterialInput(User user, ExpMaterial material, String inputRole, PropertyDescriptor pd);
     public void removeMaterialInput(User user, ExpMaterial material) throws Exception;
 
     public ExpRun getRun();

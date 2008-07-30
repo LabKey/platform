@@ -583,7 +583,7 @@ public abstract class DisplayColumn extends RenderColumn
         if (null == _caption)
             return;
 
-        out.write("<td class='labkey-form'>");
+        out.write("<td class='labkey-form-label'>");
         renderTitle(ctx, out);
         out.write("</td>");
     }

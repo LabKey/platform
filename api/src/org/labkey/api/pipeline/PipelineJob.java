@@ -44,10 +44,7 @@ import org.labkey.api.view.ActionURL;
 import java.io.*;
 import java.net.URI;
 import java.sql.SQLException;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Vector;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -62,6 +59,11 @@ abstract public class PipelineJob extends Job implements Serializable
     public static Logger getJobLogger(Class clazz)
     {
         return Logger.getLogger(PipelineJob.class.getName() + ".." + clazz.getName());
+    }
+
+    public List<PipelineAction> getActions()
+    {
+        return Collections.unmodifiableList(_actions);
     }
 
     public enum TaskStatus
@@ -102,19 +104,23 @@ abstract public class PipelineJob extends Job implements Serializable
      * <code>Task</code> implements a runnable to complete a part of the
      * processing associated with a particular <code>PipelineJob</code>.
      */
-    abstract static public class Task implements Runnable
+    abstract static public class Task<FactoryType extends TaskFactory>
     {
         private PipelineJob _job;
+        protected FactoryType _factory;
 
-        public Task(PipelineJob job)
+        public Task(FactoryType factory, PipelineJob job)
         {
             _job = job;
+            _factory = factory;
         }
 
         public PipelineJob getJob()
         {
             return _job;
         }
+
+        public abstract List<PipelineAction> run() throws PipelineJobException;
     }
 
     /*
@@ -152,6 +158,7 @@ abstract public class PipelineJob extends Job implements Serializable
     private boolean _interrupted;
     private boolean _submitted;
     private int _errors;
+    private List<PipelineAction> _actions = new ArrayList<PipelineAction>();
 
     private String _loggerLevel = Level.DEBUG.toString();
     protected transient Logger _logger;
@@ -362,6 +369,63 @@ abstract public class PipelineJob extends Job implements Serializable
         return new File(statusFile.getParentFile(), name + ".job.xml");
     }
 
+    public static PipelineJob readFromFile(File file) throws IOException
+    {
+        InputStream fIn = null;
+        StringBuilder xml = new StringBuilder();
+        try
+        {
+            fIn = new FileInputStream(file);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(fIn));
+            String line;
+            while ((line = reader.readLine()) != null)
+            {
+                xml.append(line);
+            }
+        }
+        finally
+        {
+            if (fIn != null) { try { fIn.close(); } catch (IOException e) {} }
+        }
+        return PipelineJobService.get().getJobStore().fromXML(xml.toString());
+    }
+
+
+    public void writeToFile(File file) throws IOException
+    {
+        File newFile = new File(file.getPath() + ".new");
+        File origFile = new File(file.getPath() + ".orig");
+
+        String xml = PipelineJobService.get().getJobStore().toXML(this);
+
+        FileOutputStream fOut = null;
+        try
+        {
+            fOut = new FileOutputStream(newFile);
+            PrintWriter writer = new PrintWriter(fOut);
+            writer.write(xml);
+            writer.flush();
+        }
+        finally
+        {
+            if (fOut != null) { try { fOut.close(); } catch (IOException e) {} }
+        }
+
+        if (NetworkDrive.exists(file))
+        {
+            file.renameTo(origFile);
+            newFile.renameTo(file);
+            origFile.delete();
+        }
+        else
+        {
+            newFile.renameTo(file);
+        }
+        PipelineJobService.get().getWorkDirFactory().setPermissions(file);
+    }
+
+
+
     public File getStatusFile()
     {
         return (_statusFile == null ? _logFile : _statusFile);
@@ -496,7 +560,8 @@ abstract public class PipelineJob extends Job implements Serializable
                     return; // Bad task key.
 
                 setActiveTaskStatus(TaskStatus.running);
-                task.run();
+                List<PipelineAction> actions = task.run();
+                _actions.addAll(actions);
 
                 _started = true;
 
@@ -515,6 +580,10 @@ abstract public class PipelineJob extends Job implements Serializable
         {
             error(e.getMessage(), e);
         }
+        catch (PipelineJobException e)
+        {
+            error(e.getMessage(), e);
+        }
     }
 
     public boolean runStateMachine()
@@ -523,7 +592,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
         if (pipeline == null)
         {
-            assert false : "Either override getTaskPipeline(), or run()";
+            assert false : "Either override getTaskPipeline() or run() for " + getClass();
 
             // Best we can do is to complete the job.
             setActiveTaskId(null);
@@ -817,38 +886,18 @@ abstract public class PipelineJob extends Job implements Serializable
     /////////////////////////////////////////////////////////////////////////
     // Support for running processes
     
-    public static class RunProcessException extends Exception
-    {
-        public RunProcessException()
-        {
-            super();
-        }
-
-        public RunProcessException(Throwable cause)
-        {
-            super(cause);
-        }
-
-        public RunProcessException(String message)
-        {
-            super(message);
-        }
-    }
-
-    public void runSubProcess(ProcessBuilder pb, File dirWork)
-            throws RunProcessException, InterruptedException
+    public void runSubProcess(ProcessBuilder pb, File dirWork) throws PipelineJobException
     {
         runSubProcess(pb, dirWork, null, 0);
     }
 
-    public void runSubProcess(ProcessBuilder pb, File dirWork, File outputFile)
-            throws RunProcessException, InterruptedException
+    public void runSubProcess(ProcessBuilder pb, File dirWork, File outputFile) throws PipelineJobException
     {
         runSubProcess(pb, dirWork, outputFile, 0);
     }
 
     public void runSubProcess(ProcessBuilder pb, File dirWork, File outputFile, int logLineInterval)
-            throws RunProcessException, InterruptedException
+            throws PipelineJobException
     {
         Process proc;
 
@@ -869,8 +918,7 @@ abstract public class PipelineJob extends Job implements Serializable
             }
             catch(IOException e)
             {
-                error("Could not create the " + outputFile + " file.",e);
-                throw new RunProcessException(e);
+                throw new PipelineJobException("Could not create the " + outputFile + " file.", e);
             }
 
             // Update PATH environment variable to make sure all files in the tools
@@ -916,17 +964,15 @@ abstract public class PipelineJob extends Job implements Serializable
             }
             catch (SecurityException se)
             {
-                error("Failed starting process '" + pb.command() + "'. Permissions do not allow execution.", se);
-                throw new RunProcessException(se);
+                throw new PipelineJobException("Failed starting process '" + pb.command() + "'. Permissions do not allow execution.", se);
             }
             catch (IOException eio)
             {
                 Map<String, String> env = pb.environment();
                 String path = env.get("PATH");
                 if(path == null) path = env.get("Path");
-                error("Failed starting process '" + pb.command() + "'. " +
+                throw new PipelineJobException("Failed starting process '" + pb.command() + "'. " +
                         "Must be on server path. (PATH=" + path + ")", eio);
-                throw new RunProcessException(eio);
             }
 
             BufferedReader procReader = null;
@@ -954,8 +1000,7 @@ abstract public class PipelineJob extends Job implements Serializable
             }
             catch (IOException eio)
             {
-                error("Failed writing output for process in '" + dirWork.getPath() + "'.", eio);
-                throw new RunProcessException(eio);
+                throw new PipelineJobException("Failed writing output for process in '" + dirWork.getPath() + "'.", eio);
             }
             finally
             {
@@ -979,14 +1024,12 @@ abstract public class PipelineJob extends Job implements Serializable
             int result = proc.waitFor();
             if (result != 0)
             {
-                error("Failed running " + pb.command().get(0) + ", exit code " + result);
-                throw new RunProcessException("Exit code " + result);
+                throw new PipelineJobException("Failed running " + pb.command().get(0) + ", exit code " + result);
             }
         }
         catch (InterruptedException ei)
         {
-            info("Interrupted process for '" + dirWork.getPath() + "'.", ei);
-            throw ei;
+            throw new PipelineJobException("Interrupted process for '" + dirWork.getPath() + "'.", ei);
         }
     }
 
