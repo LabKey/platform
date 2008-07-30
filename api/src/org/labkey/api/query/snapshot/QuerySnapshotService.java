@@ -62,7 +62,7 @@ public class QuerySnapshotService
 
         public ActionURL getEditSnapshotURL(QuerySettings settings, ViewContext context);
 
-        public ActionURL createSnapshot(QuerySnapshotForm form) throws Exception;
+        public ActionURL createSnapshot(QuerySnapshotForm form, List<String> errors) throws Exception;
 
         /**
          * Regenerates the snapshot data, may be invoked either as the result of a manual or

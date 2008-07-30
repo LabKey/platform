@@ -43,7 +43,7 @@ public abstract class AbstractSnapshotProvider implements QuerySnapshotService.I
         return null;
     }
 
-    public ActionURL createSnapshot(QuerySnapshotForm form) throws Exception
+    public ActionURL createSnapshot(QuerySnapshotForm form, List<String> errors) throws Exception
     {
         throw new UnsupportedOperationException();
     }
@@ -90,6 +90,7 @@ public abstract class AbstractSnapshotProvider implements QuerySnapshotService.I
             QuerySnapshotDefinition snapshot = QueryService.get().createQuerySnapshotDef(queryDef,  form.getSnapshotName());
 
             snapshot.setColumns(form.getFieldKeyColumns());
+            snapshot.setUpdateDelay(form.getUpdateDelay());
             return snapshot;
         }
         return null;
@@ -101,7 +102,13 @@ public abstract class AbstractSnapshotProvider implements QuerySnapshotService.I
         prop.setLabel(column.getCaption());
         prop.setName(column.getName());
 
-        prop.setType(PropertyService.get().getType(domain.getContainer(), PropertyType.getFromClass(column.getJavaClass()).getXmlName()));
+        PropertyType type;
+        // need to determine if the column is a lookup
+        if (column.getDisplayField() != null)
+            type = PropertyType.getFromClass(column.getDisplayField().getJavaClass());
+        else
+            type = PropertyType.getFromClass(column.getJavaClass());
+        prop.setType(PropertyService.get().getType(domain.getContainer(), type.getXmlName()));
         prop.setDescription(column.getDescription());
         prop.setFormat(column.getFormatString());
         prop.setPropertyURI(domain.getTypeURI() + "." + column.getName());

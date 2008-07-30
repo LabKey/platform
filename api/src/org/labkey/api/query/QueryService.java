@@ -49,6 +49,7 @@ abstract public class QueryService
     abstract public QuerySnapshotDefinition getSnapshotDef(Container container, String schema, String name);
     abstract public QuerySnapshotDefinition createQuerySnapshotDef(QueryDefinition queryDef, String name);
     abstract public boolean isQuerySnapshot(Container container, String schema, String name);
+    abstract public List<QuerySnapshotDefinition> getQuerySnapshotDefs(Container container, String schema);
 
     abstract public ActionURL urlQueryDesigner(Container container, String schema);
     abstract public ActionURL urlFor(Container container, QueryAction action, String schema, String queryName);

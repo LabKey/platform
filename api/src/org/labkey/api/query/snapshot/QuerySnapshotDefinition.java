@@ -20,7 +20,8 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.data.Container;
 
-import java.util.List;/*
+import java.util.List;
+import java.util.Date;/*
  * User: Karl Lum
  * Date: Jul 14, 2008
  * Time: 12:51:32 PM
@@ -29,12 +30,24 @@ import java.util.List;/*
 public interface QuerySnapshotDefinition
 {
     String getName();
+    int getId();
     QueryDefinition getQueryDefinition();
 
     boolean canEdit(User user);
     void save(User user, Container container) throws Exception;
     void delete(User user) throws Exception;
+    User getCreatedBy();
+    User getModifiedBy();
+    Container getContainer();
 
     List<FieldKey> getColumns();
     void setColumns(List<FieldKey> columns);
+
+    Date getLastUpdated();
+    void setLastUpdated(Date date);
+    Date getNextUpdate();
+    void setNextUpdate(Date date);
+
+    int getUpdateDelay();
+    void setUpdateDelay(int delayInSeconds);
 }
