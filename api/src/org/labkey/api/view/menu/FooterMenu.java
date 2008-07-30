@@ -65,7 +65,9 @@ public class FooterMenu extends NavTreeMenu
         {
             ActionURL permaLink = context.cloneActionURL();
             permaLink.setExtraPath("__r" + Integer.toString(context.getContainer().getRowId()));
-            menu.add(new NavTree("Permanent Link", permaLink));
+            NavTree ntPermalink = new NavTree("Permanent Link", permaLink);
+            ntPermalink.setId("permalink");
+            menu.add(ntPermalink);
         }
         
         AppProps appProps = AppProps.getInstance();

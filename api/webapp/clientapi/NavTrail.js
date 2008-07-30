@@ -44,7 +44,7 @@ LABKEY.NavTrail.setTrail("People View",
         */
         setTrail: function (currentPageTitle, ancestorArray)
         {
-            var elem = document.getElementById("navTrailCurrentPage");
+            var elem = document.getElementById("labkey-nav-trail-current-page");
             if(elem)
                 elem.innerHTML = currentPageTitle;
 

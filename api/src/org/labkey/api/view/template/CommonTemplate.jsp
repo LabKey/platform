@@ -1,4 +1,4 @@
-<%
+<%--
 /*
  * Copyright (c) 2007-2008 LabKey Corporation
  *
@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-%>
+--%>
 <%@ page buffer="none" %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page import="org.labkey.api.analytics.AnalyticsService" %>
@@ -114,6 +114,16 @@ if (bean.showHeader())
 <%        } %>
 <% } %>
         <tr>
+<%
+
+if (null != me.getView("moduleNav"))
+{
+    %><td align=left valign=top class=normal style="width:200px; height:100%; padding:5;"><%
+        me.include(me.getView("moduleNav"), out);
+    %></td><%
+}
+
+    %>
             <td id="bodypanel" class="labkey-body-panel">
                 <img height=1 width=<%=bean.getMinimumWidth()%> src="<%= contextPath %>/_.gif"><br>
                 <!-- BODY -->

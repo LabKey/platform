@@ -28,7 +28,10 @@ public abstract class SimpleRedirectAction<FORM> extends SimpleViewAction<FORM>
 {
     public ModelAndView getView(FORM form, BindException errors) throws Exception
     {
-        return HttpView.redirect(getRedirectURL(form));
+        ActionURL url = getRedirectURL(form);
+        if (null != getViewContext().getRequest().getHeader("template"))
+            url.addParameter("_template",getViewContext().getRequest().getHeader("template"));
+        return HttpView.redirect(url);
     }
 
     public NavTree appendNavTrail(NavTree root)

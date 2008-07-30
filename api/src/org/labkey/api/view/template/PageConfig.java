@@ -38,7 +38,8 @@ public class PageConfig
         Home,
         Fast,   // NYI (same as Home)
         Print,
-        Dialog
+        Dialog,
+        Custom  // must be handled by module
     }
 
     private Template _template = Template.Home;

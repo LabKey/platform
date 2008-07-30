@@ -17,6 +17,8 @@ package org.labkey.api.view;
 
 import org.labkey.common.util.Pair;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.PageFlowUtil;
+import org.apache.commons.lang.StringUtils;
 
 import java.util.*;
 
@@ -288,6 +290,64 @@ public class NavTree extends Pair<String, String> implements Collapsible
     public void setDisabled(boolean disabled)
     {
         _disabled = disabled;
+    }
+
+    public String childrenToJS()
+    {
+        if (null == children)
+            return "[]";
+        return toJS(children, new StringBuilder(), false).toString();
+    }
+
+    public String toJS()
+    {
+        return toJS(new StringBuilder(), false).toString();
+    }
+
+    StringBuilder toJS(StringBuilder sb, boolean asMenu)
+    {
+        String title = getKey();
+        sb.append("{").append("text:").append(PageFlowUtil.jsString(title));
+        if (StringUtils.isNotEmpty(getId()))
+            sb.append(",id:").append(PageFlowUtil.jsString(getId()));
+        if (isSelected())
+            sb.append(",checked:true");
+        if (null != getImageSrc())
+            sb.append(",icon:").append(PageFlowUtil.jsString(getImageSrc()));
+        if (isDisabled())
+            sb.append(",disabled:true");
+        if (null != getValue())
+            sb.append(",href:").append(PageFlowUtil.jsString(getValue()));
+        if (null != getScript())
+            sb.append(",handler:function(){").append(getScript()).append("}");
+        if (null != getChildren() && getChildren().length > 0)
+        {
+            sb.append(",\n").append(asMenu ? "menu:" : "children:");
+            toJS(children, sb, asMenu);
+        }
+        else
+        {
+            sb.append(",leaf:true");
+        }
+        sb.append("}");
+        return sb;
+    }
+
+    static StringBuilder toJS(Collection<NavTree> list, StringBuilder sb, boolean asMenu)
+    {
+        String sep = "";
+        sb.append("[");
+        for (NavTree tree : list)
+        {
+            sb.append(sep);
+            if (tree == NavTree.MENU_SEPARATOR)
+                sb.append("'-'");
+            else
+                tree.toJS(sb, asMenu);
+            sep = ",\n";
+        }
+        sb.append("]");
+        return sb;
     }
 }
 
