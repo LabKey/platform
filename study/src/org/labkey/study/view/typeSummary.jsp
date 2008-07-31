@@ -33,7 +33,7 @@
     List<ColumnInfo> cols = dataset.getTableInfo(context.getUser(), true, false).getColumns();
 
 // UNDONE: clean way to get count of system fields???
-    int systemCount = 6;
+    int systemCount = 7;
 %>
 <table>
     <tr>

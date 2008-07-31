@@ -24,6 +24,7 @@
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.study.controllers.BaseStudyController" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     JspView<StudyController.VisitSummaryBean> me = (JspView<StudyController.VisitSummaryBean>) HttpView.currentView();
@@ -80,7 +81,7 @@
                     else
                     {
                     %>
-                    <select name="cohortId">
+                    <select name="<%= BaseStudyController.SharedFormParameters.cohortId.name() %>">
                         <option value="">All</option>
                     <%
 

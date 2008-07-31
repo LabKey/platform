@@ -54,6 +54,8 @@ import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.StudyService;
+import org.labkey.study.model.QCState;
+import org.labkey.study.model.QCStateSet;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
@@ -208,7 +210,7 @@ public class StudyController extends BaseStudyController
                 return null;
             }
             return new ActionURL(EditTypeAction.class, getContainer()).
-                    addParameter("datasetId", _def.getDataSetId()).
+                    addParameter(DataSetDefinition.DATASETKEY, _def.getDataSetId()).
                     addParameter("create", String.valueOf(form.isCreate()));
         }
 
@@ -288,9 +290,11 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class CohortForm extends QueryViewAction.QueryExportForm
+    public static class DatasetFilterForm extends QueryViewAction.QueryExportForm implements HasViewContext
     {
         private Integer _cohortId;
+        private String _qcState;
+        private ViewContext _viewContext;
 
         public Integer getCohortId()
         {
@@ -303,6 +307,16 @@ public class StudyController extends BaseStudyController
                 _cohortId = cohortId;
         }
 
+        public String getQCState()
+        {
+            return _qcState;
+        }
+
+        public void setQCState(String qcState)
+        {
+            _qcState = qcState;
+        }
+
         public Cohort getCohort()
         {
             if (_cohortId != null)
@@ -310,13 +324,23 @@ public class StudyController extends BaseStudyController
             else
                 return null;
         }
+
+        public void setViewContext(ViewContext context)
+        {
+            _viewContext = context;
+        }
+
+        public ViewContext getViewContext()
+        {
+            return _viewContext;
+        }
     }
 
     @RequiresPermission(ACL.PERM_READ)
-    public class OverviewAction extends SimpleViewAction<CohortForm>
+    public class OverviewAction extends SimpleViewAction<DatasetFilterForm>
     {
         private Study _study;
-        public ModelAndView getView(CohortForm form, BindException errors) throws Exception
+        public ModelAndView getView(DatasetFilterForm form, BindException errors) throws Exception
         {
             _study = getStudy();
             OverviewBean bean = new OverviewBean();
@@ -324,12 +348,15 @@ public class StudyController extends BaseStudyController
             bean.showAll = "1".equals(getViewContext().get("showAll"));
             bean.canManage = getContainer().hasPermission(getUser(), ACL.PERM_ADMIN);
             bean.showCohorts = StudyManager.getInstance().showCohorts(getContainer(), getUser());
+            if (StudyManager.getInstance().showQCStates(getContainer()))
+                bean.qcStates = QCStateSet.getSelectedStates(getContainer(), form.getQCState());
             if (!bean.showCohorts)
                 bean.cohortId = null;
             else
                 bean.cohortId = form.getCohortId();
 
-            bean.visitMapSummary = StudyManager.getInstance().getVisitManager(bean.study).getVisitSummary(form.getCohort());
+            VisitManager visitManager = StudyManager.getInstance().getVisitManager(bean.study);
+            bean.visitMapSummary = visitManager.getVisitSummary(bean.showCohorts ? form.getCohort() : null, bean.qcStates);
             return new StudyJspView<OverviewBean>(getStudy(), "overview.jsp", bean, errors);
         }
 
@@ -435,24 +462,29 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ACL.PERM_READ)
-    public class DatasetAction extends QueryViewAction<CohortForm, QueryView>
+    public class DatasetAction extends QueryViewAction<DatasetFilterForm, QueryView>
     {
         private Integer _cohortId;
         private int _datasetId;
         private int _visitId;
+        private String _encodedQcState;
 
         public DatasetAction()
         {
-            super(CohortForm.class);
+            super(DatasetFilterForm.class);
         }
 
-        protected ModelAndView getHtmlView(CohortForm form, BindException errors) throws Exception
+        protected ModelAndView getHtmlView(DatasetFilterForm form, BindException errors) throws Exception
         {
             // the full resultset is a join of all datasets for each participant
             // each dataset is determined by a visitid/datasetid
 
             Study study = getStudy();
             _cohortId = form.getCohortId();
+            _encodedQcState = form.getQCState();
+            QCStateSet qcStateSet = null;
+            if (StudyManager.getInstance().showQCStates(getContainer()))
+                qcStateSet = QCStateSet.getSelectedStates(getContainer(), form.getQCState());
             Cohort cohort = form.getCohort();
             ViewContext context = getViewContext();
 
@@ -479,7 +511,7 @@ public class StudyController extends BaseStudyController
             QuerySettings qs = querySchema.getSettings(context, DataSetQueryView.DATAREGION);
             qs.setSchemaName(querySchema.getSchemaName());
             qs.setQueryName(def.getLabel());
-            DataSetQueryView queryView = new DataSetQueryView(_datasetId, querySchema, qs, visit, cohort);
+            DataSetQueryView queryView = new DataSetQueryView(_datasetId, querySchema, qs, visit, cohort, qcStateSet);
             queryView.setForExport(export != null);
             final ActionURL url = context.getActionURL();
             setColumnURL(url, queryView, querySchema, def);
@@ -491,7 +523,7 @@ public class StudyController extends BaseStudyController
             final TableInfo table = queryView.getTable();
             if (table != null)
             {
-                addParticipantListToCache(context, _datasetId, viewName, generateParticipantList(queryView), cohort);
+                addParticipantListToCache(context, _datasetId, viewName, generateParticipantList(queryView), cohort, form.getQCState());
                 getExpandedState(context, _datasetId).clear();
 
                 queryView.setShowSourceLinks(hasSourceLsids(table));
@@ -507,13 +539,15 @@ public class StudyController extends BaseStudyController
             }
 
             List<ActionButton> buttonBar = new ArrayList<ActionButton>();
-            populateButtonBar(buttonBar, queryView, cohort, visit);
+            populateButtonBar(buttonBar, queryView, cohort, visit, qcStateSet);
             queryView.setButtons(buttonBar);
 
             StringBuffer sb = new StringBuffer();
             sb.append("<br/><span><b>View :</b> ").append(getViewName()).append("</span>");
             if (cohort != null)
                 sb.append("<br/><span><b>Cohort :</b> ").append(cohort.getLabel()).append("</span>");
+            if (qcStateSet != null)
+                sb.append("<br/><span><b>QC States:</b> ").append(qcStateSet.getLabel()).append("</span>");
             HtmlView header = new HtmlView(sb.toString());
 
             HttpView view = new VBox(header, queryView);
@@ -529,7 +563,7 @@ public class StudyController extends BaseStudyController
             return view;
         }
 
-        protected QueryView createQueryView(CohortForm cohortForm, BindException errors, boolean forExport, String dataRegion) throws Exception
+        protected QueryView createQueryView(DatasetFilterForm datasetFilterForm, BindException errors, boolean forExport, String dataRegion) throws Exception
         {
             QuerySettings qs = new QuerySettings(getViewContext(), "Dataset");
             Report report = qs.getReportView(getViewContext());
@@ -555,10 +589,12 @@ public class StudyController extends BaseStudyController
             }
         }
 
-        private void populateButtonBar(List<ActionButton> buttonBar, DataSetQueryView queryView, Cohort cohort, Visit visit)
+        private void populateButtonBar(List<ActionButton> buttonBar, DataSetQueryView queryView, Cohort cohort, Visit visit, QCStateSet currentStates)
         {
             createViewButton(buttonBar, queryView);
             createCohortButton(buttonBar, cohort);
+            if (StudyManager.getInstance().showQCStates(queryView.getContainer()))
+                createQCStateButton(queryView, buttonBar, currentStates);
 
             MenuButton exportMenuButton = new MenuButton("Export");
 
@@ -568,7 +604,7 @@ public class StudyController extends BaseStudyController
             buttonBar.add(exportMenuButton);
 
             ActionURL insertURL = new ActionURL(DatasetController.InsertAction.class, getContainer());
-            insertURL.addParameter("datasetId", _datasetId);
+            insertURL.addParameter(DataSetDefinition.DATASETKEY, _datasetId);
             ActionButton insertButton = new ActionButton(insertURL.getLocalURIString(), "Insert New", DataRegion.MODE_GRID, ActionButton.Action.LINK);
             insertButton.setDisplayPermission(ACL.PERM_INSERT);
             buttonBar.add(insertButton);
@@ -579,7 +615,6 @@ public class StudyController extends BaseStudyController
 
             ActionButton deleteRows = new ActionButton("button", "Delete Selected");
             ActionURL deleteRowsURL = new ActionURL(DeleteDatasetRowsAction.class, getContainer());
-            deleteRowsURL.addParameter("datasetId", _datasetId);
 
             deleteRows.setScript("return confirm(\"Delete selected rows of this dataset?\") && verifySelected(this.form, \"" + deleteRowsURL.getLocalURIString() + "\", \"post\", \"rows\")");
             deleteRows.setActionType(ActionButton.Action.GET);
@@ -588,9 +623,9 @@ public class StudyController extends BaseStudyController
 
             if (null == visit)
             {
-                ActionButton purgeButton = new ActionButton("purgeDataset.view?datasetId=" + _datasetId, "Delete All Rows", DataRegion.MODE_GRID, ActionButton.Action.LINK);
+                ActionButton purgeButton = new ActionButton("purgeDataset.view", "Delete All Rows", DataRegion.MODE_GRID, ActionButton.Action.LINK);
                 purgeButton.setDisplayPermission(ACL.PERM_ADMIN);
-                purgeButton.setScript("if(confirm(\"Delete all rows of this dataset?\")){ form.action=\"purgeDataset.view?datasetId=" + _datasetId + "\";return true;}else return false;");
+                purgeButton.setScript("if(confirm(\"Delete all rows of this dataset?\")){ form.action=\"purgeDataset.view\";return true;} else return false;");
                 purgeButton.setActionType(ActionButton.Action.GET);
                 buttonBar.add(purgeButton);
             }
@@ -629,7 +664,7 @@ public class StudyController extends BaseStudyController
                 if (cohorts.length > 0)
                 {
                     MenuButton button = new MenuButton("Cohorts");
-                    NavTree item = new NavTree("All", getViewContext().cloneActionURL().replaceParameter("cohortId", "").toString());
+                    NavTree item = new NavTree("All", getViewContext().cloneActionURL().replaceParameter(SharedFormParameters.cohortId, "").toString());
                     item.setId("Cohorts:All");
                     if (currentCohort == null)
                         item.setSelected(true);
@@ -638,21 +673,51 @@ public class StudyController extends BaseStudyController
                     for (Cohort cohort : cohorts)
                     {
                         item = new NavTree(cohort.getLabel(),
-                                getViewContext().cloneActionURL().replaceParameter("cohortId", String.valueOf(cohort.getRowId())).toString());
+                                getViewContext().cloneActionURL().replaceParameter(SharedFormParameters.cohortId, String.valueOf(cohort.getRowId())).toString());
                         item.setId("Cohorts:" + cohort.getLabel());
                         if (currentCohort != null && currentCohort.getRowId() == cohort.getRowId())
                             item.setSelected(true);
 
                         button.addMenuItem(item);
                     }
+
+                    button.addSeparator();
+                    button.addMenuItem("Manage Cohorts", new ActionURL(CohortController.ManageCohortsAction.class, getContainer()));
                     buttonBar.add(button);
                 }
             }
         }
 
+        private void createQCStateButton(DataSetQueryView view, List<ActionButton> buttonBar, QCStateSet currentSet)
+        {
+            List<QCStateSet> stateSets = QCStateSet.getSelectableSets(getContainer());
+            MenuButton button = new MenuButton("QC State");
+
+            for (QCStateSet set : stateSets)
+            {
+                NavTree setItem = new NavTree(set.getLabel(), getViewContext().cloneActionURL().replaceParameter(SharedFormParameters.QCState, set.getFormValue()).toString());
+                setItem.setId("QCState:" + set.getLabel());
+                if (set.equals(currentSet))
+                    setItem.setSelected(true);
+                button.addMenuItem(setItem);
+            }
+            if (getContainer().hasPermission(getUser(), ACL.PERM_ADMIN))
+            {
+                button.addSeparator();
+                ActionURL updateAction = new ActionURL(UpdateQCStateAction.class, getContainer());
+                NavTree updateItem = button.addMenuItem("Update state of selected rows", "#", "if (verifySelected(document.forms[\"" +
+                        view.getDataRegionName() + "\"], \"" + updateAction.getLocalURIString() + "\", \"post\", \"rows\")) document.forms[\"" +
+                        view.getDataRegionName() + "\"].submit()");
+                updateItem.setId("QCState:updateSelected");
+                
+                button.addMenuItem("Manage states", new ActionURL(ManageQCStatesAction.class, getContainer()));
+            }
+            buttonBar.add(button);
+        }
+
         public NavTree appendNavTrail(NavTree root)
         {
-            return _appendNavTrail(root, _datasetId, _visitId,  _cohortId != null ? _cohortId.intValue() : -1);
+            return _appendNavTrail(root, _datasetId, _visitId,  _cohortId != null ? _cohortId.intValue() : -1, _encodedQcState);
         }
     }
 
@@ -663,7 +728,7 @@ public class StudyController extends BaseStudyController
         {
             final ActionURL url = getViewContext().getActionURL();
             final String collapse = url.getParameter("collapse");
-            final String datasetId = url.getParameter("datasetId");
+            final String datasetId = url.getParameter(DataSetDefinition.DATASETKEY);
             final String id = url.getParameter("id");
 
             if (datasetId != null && id != null)
@@ -707,7 +772,7 @@ public class StudyController extends BaseStudyController
                 }
                 cohort = StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), form.getCohortId().intValue());
             }
-            List<String> participants = getParticipantListFromCache(getViewContext(), form.getDatasetId(), viewName, cohort);
+            List<String> participants = getParticipantListFromCache(getViewContext(), form.getDatasetId(), viewName, cohort, form.getQCState());
             if (participants != null)
             {
                 int idx = participants.indexOf(form.getParticipantId());
@@ -745,14 +810,14 @@ public class StudyController extends BaseStudyController
                 participantView = new VBox(characteristicsView, dataView);
             }
 
-            ParticipantNavView navView = new ParticipantNavView(previousParticipantURL, nextParticiapantURL, form.getParticipantId());
+            ParticipantNavView navView = new ParticipantNavView(previousParticipantURL, nextParticiapantURL, form.getParticipantId(), form.getQCState());
 
             return new VBox(navView, participantView);
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return _appendNavTrail(root, _bean.getDatasetId(), 0, _bean.getCohortId() != null ? _bean.getCohortId().intValue() : -1).
+            return _appendNavTrail(root, _bean.getDatasetId(), 0, _bean.getCohortId() != null ? _bean.getCohortId().intValue() : -1, _bean.getQCState()).
                     addChild("Participant - " + _bean.getParticipantId());
         }
     }
@@ -1640,6 +1705,7 @@ public class StudyController extends BaseStudyController
                 columnMap.put("visit", DataSetDefinition.getSequenceNumURI());
                 columnMap.put("date", DataSetDefinition.getVisitDateURI());
                 columnMap.put("ptid", DataSetDefinition.getParticipantIdURI());
+                columnMap.put("qcstate", DataSetDefinition.getQCStateURI());
                 columnMap.put("dfcreate", DataSetDefinition.getCreatedURI());     // datafax field name
                 columnMap.put("dfmodify", DataSetDefinition.getModifiedURI());    // datafax field name
                 List<String> errorList = new LinkedList<String>();
@@ -1665,8 +1731,11 @@ public class StudyController extends BaseStudyController
 
         public ActionURL getSuccessURL(ImportDataSetForm form)
         {
-            return new ActionURL(DatasetAction.class, getContainer()).
+            ActionURL url = new ActionURL(DatasetAction.class, getContainer()).
                     addParameter(DataSetDefinition.DATASETKEY, form.getDatasetId());
+            if (StudyManager.getInstance().showQCStates(form.getContainer()))
+                url.addParameter(SharedFormParameters.QCState, QCStateSet.getAllStates(form.getContainer()).getFormValue());
+            return url;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1984,7 +2053,7 @@ public class StudyController extends BaseStudyController
             SimpleFilter filter = new SimpleFilter("container", getContainer().getId());
             if (form.getId() != 0)
             {
-                filter.addCondition("datasetId", form.getId());
+                filter.addCondition(DataSetDefinition.DATASETKEY, form.getId());
                 _datasetName = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getId()).getLabel();
             }
 
@@ -2064,7 +2133,7 @@ public class StudyController extends BaseStudyController
 
                 ActionButton deleteRows = new ActionButton("button", "Recall Selected Rows");
                 ActionURL deleteURL = new ActionURL(DeletePublishedRowsAction.class, getContainer());
-                deleteURL.addParameter("datasetId", datasetId);
+                deleteURL.addParameter(DataSetDefinition.DATASETKEY, datasetId);
                 deleteURL.addParameter("protocolId", protocolId);
                 deleteURL.addParameter("sourceLsid", sourceLsid);
 
@@ -2130,7 +2199,7 @@ public class StudyController extends BaseStudyController
                     event.setIntKey1(NumberUtils.toInt(protocolId));
                     event.setComment(lsids.size() + " row(s) were deleted from the assay: " + assayName);
 
-                    Map<String,Object> dataMap = Collections.<String,Object>singletonMap("datasetId", form.getDatasetId());
+                    Map<String,Object> dataMap = Collections.<String,Object>singletonMap(DataSetDefinition.DATASETKEY, form.getDatasetId());
 
                     AssayAuditViewFactory.getInstance().ensureDomain(getUser());
                     AuditLogService.get().addEvent(event, dataMap, AuditLogService.get().getDomainURI(AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT));
@@ -2370,6 +2439,7 @@ public class StudyController extends BaseStudyController
         public boolean canManage;
         public Integer cohortId;
         public boolean showCohorts;
+        public QCStateSet qcStates;
     }
 
     /**
@@ -2396,7 +2466,8 @@ public class StudyController extends BaseStudyController
                         {
                             if ((param.getKey().contains(".sort")) ||
                                 (param.getKey().contains("~")) ||
-                                ("cohortId".equals(param.getKey())) ||
+                                (SharedFormParameters.cohortId.name().equals(param.getKey())) ||
+                                (SharedFormParameters.QCState.name().equals(param.getKey())) ||
                                 ("Dataset.viewName".equals(param.getKey())))
                             {
                                 base.addParameter(param.getKey(), param.getValue());
@@ -2507,7 +2578,7 @@ public class StudyController extends BaseStudyController
         return sortMap;
     }
 
-    private static String getParticipantListCacheKey(int dataset, String viewName, Cohort cohort)
+    private static String getParticipantListCacheKey(int dataset, String viewName, Cohort cohort, String encodedQCState)
     {
         String key = Integer.toString(dataset);
         // if there is also a view associated with the dataset, incorporate it into the key as well
@@ -2515,14 +2586,16 @@ public class StudyController extends BaseStudyController
             key = key + viewName;
         if (cohort != null)
             key = key + "cohort" + cohort.getRowId();
+        if (encodedQCState != null)
+            key = key + "qcState" + encodedQCState;
         return key;
     }
 
-    public static void addParticipantListToCache(ViewContext context, int dataset, String viewName, List<String> participants, Cohort cohort)
+    public static void addParticipantListToCache(ViewContext context, int dataset, String viewName, List<String> participants, Cohort cohort, String encodedQCState)
     {
 
         Map<String, List<String>> map = getParticipantMapFromCache(context);
-        map.put(getParticipantListCacheKey(dataset, viewName, cohort), participants);
+        map.put(getParticipantListCacheKey(dataset, viewName, cohort, encodedQCState), participants);
     }
 
     @SuppressWarnings("unchecked")
@@ -2558,10 +2631,10 @@ public class StudyController extends BaseStudyController
         return expandedMap;
     }
 
-    public static List<String> getParticipantListFromCache(ViewContext context, int dataset, String viewName, Cohort cohort)
+    public static List<String> getParticipantListFromCache(ViewContext context, int dataset, String viewName, Cohort cohort, String encodedQCState)
     {
         Map<String, List<String>> map = getParticipantMapFromCache(context);
-        String key = getParticipantListCacheKey(dataset, viewName, cohort);
+        String key = getParticipantListCacheKey(dataset, viewName, cohort, encodedQCState);
         List<String> plist = map.get(key);
         if (plist == null)
         {
@@ -2578,6 +2651,13 @@ public class StudyController extends BaseStudyController
             final StudyManager studyMgr = StudyManager.getInstance();
             final Study study = studyMgr.getStudy(context.getContainer());
             String cohortIdStr = context.getActionURL().getParameter("CohortId");
+            QCStateSet qcStateSet = null;
+            if (StudyManager.getInstance().showQCStates(context.getContainer()))
+            {
+                String qcState = context.getActionURL().getParameter(SharedFormParameters.QCState);
+                qcStateSet = QCStateSet.getSelectedStates(context.getContainer(), qcState);
+            }
+
             Cohort cohort = null;
             if (cohortIdStr != null && StudyManager.getInstance().showCohorts(context.getContainer(), context.getUser()))
             {
@@ -2611,7 +2691,7 @@ public class StudyController extends BaseStudyController
             QuerySettings qs = new QuerySettings(context, DataSetQueryView.DATAREGION);
             qs.setSchemaName(querySchema.getSchemaName());
             qs.setQueryName(def.getLabel());
-            DataSetQueryView queryView = new DataSetQueryView(datasetId, querySchema, qs, visit, cohort);
+            DataSetQueryView queryView = new DataSetQueryView(datasetId, querySchema, qs, visit, cohort, qcStateSet);
             return generateParticipantList(queryView);
         }
         catch (Exception e)
@@ -2839,6 +2919,495 @@ public class StudyController extends BaseStudyController
         return values == null ? 0 : values.length;
     }
     
+    public static class ManageQCStatesBean
+    {
+        private BindException _errors;
+        private Study _study;
+        private QCState[] _states;
+
+        public ManageQCStatesBean(Study study, BindException errors)
+        {
+            _study = study;
+            _errors = errors;
+        }
+
+        public BindException getErrors()
+        {
+            return _errors;
+        }
+
+        public void setErrors(BindException errors)
+        {
+            _errors = errors;
+        }
+
+        public QCState[] getQCStates()
+        {
+            if (_states == null)
+                _states = StudyManager.getInstance().getQCStates(_study.getContainer());
+            return _states;
+        }
+
+        public Study getStudy()
+        {
+            return _study;
+        }
+    }
+
+    public static class ManageQCStatesForm extends ViewForm
+    {
+        private int[] _ids;
+        private String[] _labels;
+        private String[] _descriptions;
+        private int[] _publicData;
+        private String _newLabel;
+        private String _newDescription;
+        private boolean _newPublicData;
+        private boolean _reshowPage;
+        private Integer _defaultPipelineQCState;
+        private Integer _defaultAssayQCState;
+        private Integer _defaultDirectEntryQCState;
+        private boolean _showPrivateDataByDefault;
+
+        public int[] getIds()
+        {
+            return _ids;
+        }
+
+        public void setIds(int[] ids)
+        {
+            _ids = ids;
+        }
+
+        public String[] getLabels()
+        {
+            return _labels;
+        }
+
+        public void setLabels(String[] labels)
+        {
+            _labels = labels;
+        }
+
+        public String[] getDescriptions()
+        {
+            return _descriptions;
+        }
+
+        public void setDescriptions(String[] descriptions)
+        {
+            _descriptions = descriptions;
+        }
+
+        public int[] getPublicData()
+        {
+            return _publicData;
+        }
+
+        public void setPublicData(int[] publicData)
+        {
+            _publicData = publicData;
+        }
+
+        public String getNewLabel()
+        {
+            return _newLabel;
+        }
+
+        public void setNewLabel(String newLabel)
+        {
+            _newLabel = newLabel;
+        }
+
+        public String getNewDescription()
+        {
+            return _newDescription;
+        }
+
+        public void setNewDescription(String newDescription)
+        {
+            _newDescription = newDescription;
+        }
+
+        public boolean isNewPublicData()
+        {
+            return _newPublicData;
+        }
+
+        public void setNewPublicData(boolean newPublicData)
+        {
+            _newPublicData = newPublicData;
+        }
+
+        public boolean isReshowPage()
+        {
+            return _reshowPage;
+        }
+
+        public void setReshowPage(boolean reshowPage)
+        {
+            _reshowPage = reshowPage;
+        }
+
+        public Integer getDefaultPipelineQCState()
+        {
+            return _defaultPipelineQCState;
+        }
+
+        public void setDefaultPipelineQCState(Integer defaultPipelineQCState)
+        {
+            _defaultPipelineQCState = defaultPipelineQCState;
+        }
+
+        public Integer getDefaultAssayQCState()
+        {
+            return _defaultAssayQCState;
+        }
+
+        public void setDefaultAssayQCState(Integer defaultAssayQCState)
+        {
+            _defaultAssayQCState = defaultAssayQCState;
+        }
+
+        public Integer getDefaultDirectEntryQCState()
+        {
+            return _defaultDirectEntryQCState;
+        }
+
+        public void setDefaultDirectEntryQCState(Integer defaultDirectEntryQCState)
+        {
+            _defaultDirectEntryQCState = defaultDirectEntryQCState;
+        }
+
+        public boolean isShowPrivateDataByDefault()
+        {
+            return _showPrivateDataByDefault;
+        }
+
+        public void setShowPrivateDataByDefault(boolean showPrivateDataByDefault)
+        {
+            _showPrivateDataByDefault = showPrivateDataByDefault;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class ManageQCStatesAction extends FormViewAction<ManageQCStatesForm>
+    {
+        public ModelAndView getView(ManageQCStatesForm manageQCStatesForm, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView<ManageQCStatesBean>("/org/labkey/study/view/manageQCStates.jsp", 
+                    new ManageQCStatesBean(getStudy(), errors));
+        }
+
+        public void validateCommand(ManageQCStatesForm form, Errors errors)
+        {
+            Set<String> labels = new HashSet<String>();
+            if (form.getLabels() != null)
+            {
+                for (String label : form.getLabels())
+                {
+                    if (labels.contains(label))
+                    {
+                        errors.reject(null, "QC state \"" + label + "\" is defined more than once.");
+                        return;
+                    }
+                    else
+                        labels.add(label);
+                }
+            }
+            if (labels.contains(form.getNewLabel()))
+                errors.reject(null, "QC state \"" + form.getNewLabel() + "\" is defined more than once.");
+        }
+
+        public boolean handlePost(ManageQCStatesForm form, BindException errors) throws Exception
+        {
+            if (form.getNewLabel() != null && form.getNewLabel().length() > 0)
+            {
+                QCState newState = new QCState();
+                newState.setContainer(getContainer());
+                newState.setLabel(form.getNewLabel());
+                newState.setDescription(form.getNewDescription());
+                newState.setPublicData(form.isNewPublicData());
+                StudyManager.getInstance().insertQCState(getUser(), newState);
+            }
+            if (form.getIds() != null)
+            {
+                // use a map to store the IDs of the public QC states; since checkboxes are
+                // ommitted from the request entirely if they aren't checked, we use a different
+                // method for keeping track of the checked values (by posting the rowid of the item as the
+                // checkbox value).
+                Set<Integer> publicDataSet = new HashSet<Integer>();
+                if (form.getPublicData() != null)
+                {
+                    for (int i = 0; i < form.getPublicData().length; i++)
+                        publicDataSet.add(form.getPublicData()[i]);
+                }
+
+                for (int i = 0; i < form.getIds().length; i++)
+                {
+                    int rowId = form.getIds()[i];
+                    QCState state = new QCState();
+                    state.setRowId(rowId);
+                    state.setLabel(form.getLabels()[i]);
+                    if (form.getDescriptions() != null)
+                        state.setDescription(form.getDescriptions()[i]);
+                    state.setPublicData(publicDataSet.contains(state.getRowId()));
+                    state.setContainer(getContainer());
+                    StudyManager.getInstance().updateQCState(getUser(), state);
+                }
+            }
+
+            Study study = getStudy();
+            if (!nullSafeEqual(study.getDefaultAssayQCState(), form.getDefaultAssayQCState()) ||
+                !nullSafeEqual(study.getDefaultPipelineQCState(), form.getDefaultPipelineQCState()) ||
+                !nullSafeEqual(study.getDefaultDirectEntryQCState(), form.getDefaultDirectEntryQCState()) ||
+                study.isShowPrivateDataByDefault() != form.isShowPrivateDataByDefault())
+            {
+                study = study.createMutable();
+                study.setDefaultAssayQCState(form.getDefaultAssayQCState());
+                study.setDefaultPipelineQCState(form.getDefaultPipelineQCState());
+                study.setDefaultDirectEntryQCState(form.getDefaultDirectEntryQCState());
+                study.setShowPrivateDataByDefault(form.isShowPrivateDataByDefault());
+                StudyManager.getInstance().updateStudy(getUser(), study);
+            }
+            return true;
+        }
+
+        public ActionURL getSuccessURL(ManageQCStatesForm manageQCStatesForm)
+        {
+            if (manageQCStatesForm.isReshowPage())
+                return new ActionURL(ManageQCStatesAction.class, getContainer());
+            else
+                return new ActionURL(ManageStudyAction.class, getContainer());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            _appendManageStudy(root);
+            return root.addChild("Manage QC States");
+        }
+    }
+
+    public static class DeleteQCStateForm extends IdForm
+    {
+        private boolean _all = false;
+
+        public boolean isAll()
+        {
+            return _all;
+        }
+
+        public void setAll(boolean all)
+        {
+            _all = all;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class DeleteQCStateAction extends RedirectAction<DeleteQCStateForm>
+    {
+        public boolean doAction(DeleteQCStateForm form, BindException errors) throws Exception
+        {
+            if (form.isAll())
+            {
+                QCState[] states = StudyManager.getInstance().getQCStates(getContainer());
+                for (QCState state : states)
+                {
+                    if (!StudyManager.getInstance().isQCStateInUse(state))
+                        StudyManager.getInstance().deleteQCState(state);
+                }
+            }
+            else
+            {
+                QCState state = StudyManager.getInstance().getQCStateForRowId(getContainer(), form.getId());
+                if (state != null)
+                    StudyManager.getInstance().deleteQCState(state);
+            }
+            return true;
+        }
+
+        public void validateCommand(DeleteQCStateForm target, Errors errors)
+        {
+        }
+
+        public ActionURL getSuccessURL(DeleteQCStateForm form)
+        {
+            return new ActionURL(ManageQCStatesAction.class, getContainer());
+        }
+    }
+
+    public static class UpdateQCStateForm
+    {
+        private String _comments;
+        private boolean _update;
+        private int _datasetId;
+        private String _dataRegionSelectionKey;
+        private Integer _newState;
+        private DataSetQueryView _queryView;
+
+        public String getComments()
+        {
+            return _comments;
+        }
+
+        public void setComments(String comments)
+        {
+            _comments = comments;
+        }
+
+        public boolean isUpdate()
+        {
+            return _update;
+        }
+
+        public void setUpdate(boolean update)
+        {
+            _update = update;
+        }
+
+        public int getDatasetId()
+        {
+            return _datasetId;
+        }
+
+        public void setDatasetId(int datasetId)
+        {
+            _datasetId = datasetId;
+        }
+
+        public String getDataRegionSelectionKey()
+        {
+            return _dataRegionSelectionKey;
+        }
+
+        public void setDataRegionSelectionKey(String dataRegionSelectionKey)
+        {
+            _dataRegionSelectionKey = dataRegionSelectionKey;
+        }
+
+        public Integer getNewState()
+        {
+            return _newState;
+        }
+
+        public void setNewState(Integer newState)
+        {
+            _newState = newState;
+        }
+
+        public void setQueryView(DataSetQueryView queryView)
+        {
+            _queryView = queryView;
+        }
+
+        public DataSetQueryView getQueryView()
+        {
+            return _queryView;
+        }
+    }
+    
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class UpdateQCStateAction extends FormViewAction<UpdateQCStateForm>
+    {
+        private int _datasetId;
+        private Study _study;
+
+        public void validateCommand(UpdateQCStateForm updateQCForm, Errors errors)
+        {
+            if (updateQCForm.isUpdate())
+            {
+                if (updateQCForm.getNewState() == null)
+                    errors.reject(null, "New state is required.");
+                if (updateQCForm.getComments() == null || updateQCForm.getComments().length() == 0)
+                    errors.reject(null, "Comments are required.");
+            }
+        }
+
+        public ModelAndView getView(UpdateQCStateForm updateQCForm, boolean reshow, BindException errors) throws Exception
+        {
+            _study = getStudy();
+            _datasetId = updateQCForm.getDatasetId();
+            DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(_study, _datasetId);
+            Set<String> lsids = null;
+            if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
+                lsids = DataRegionSelection.getSelected(getViewContext(), updateQCForm.getDataRegionSelectionKey(), true, false);
+            if (lsids == null || lsids.isEmpty())
+                return new HtmlView("No samples selected.  [<a href=\"javascript:back()\">back</a>]");
+            StudyQuerySchema querySchema = new StudyQuerySchema(_study, getUser(), true);
+            QuerySettings qs = new QuerySettings(getViewContext(), DataSetQueryView.DATAREGION);
+            qs.setSchemaName(querySchema.getSchemaName());
+            qs.setQueryName(def.getLabel());
+            final Set<String> finalLsids = lsids;
+            DataSetQueryView queryView = new DataSetQueryView(_datasetId, querySchema, qs, null, null, null)
+            {
+                protected DataView createDataView()
+                {
+                    DataView view = super.createDataView();
+                    view.getDataRegion().setSortable(false);
+                    view.getDataRegion().setShowFilters(false);
+                    view.getDataRegion().setShowRecordSelectors(false);
+                    view.getDataRegion().setMaxRows(0);
+                    view.getDataRegion().setShowPagination(false);
+                    SimpleFilter filter = (SimpleFilter) view.getRenderContext().getBaseFilter();
+                    if (null == filter)
+                    {
+                        filter = new SimpleFilter();
+                        view.getRenderContext().setBaseFilter(filter);
+                    }
+                    filter.addInClause("lsid", new ArrayList<String>(finalLsids));
+                    return view;
+                }
+            };
+            queryView.setShowDetailsColumn(false);
+            queryView.setShowSourceLinks(false);
+            queryView.setShowEditLinks(false);
+            updateQCForm.setQueryView(queryView);
+            updateQCForm.setDataRegionSelectionKey(DataRegionSelection.getSelectionKeyFromRequest(getViewContext()));
+            return new JspView<UpdateQCStateForm>("/org/labkey/study/view/updateQCState.jsp", updateQCForm, errors);
+        }
+
+        public boolean handlePost(UpdateQCStateForm updateQCForm, BindException errors) throws Exception
+        {
+            if (!updateQCForm.isUpdate())
+                return false;
+            Set<String> lsids = DataRegionSelection.getSelected(getViewContext(), updateQCForm.getDataRegionSelectionKey(), true, false);
+
+            QCState state = StudyManager.getInstance().getQCStateForRowId(getContainer(), updateQCForm.getNewState().intValue());
+            if (state == null)
+            {
+                errors.reject(null, "The selected state could not be found.  It may have been deleted from the database.");
+                return false;
+            }
+            List<String> updateErrors = StudyManager.getInstance().updateDataQCState(getContainer(), getUser(),
+                    updateQCForm.getDatasetId(), lsids, state, updateQCForm.getComments());
+            if (updateErrors != null && !updateErrors.isEmpty())
+            {
+                for (String error : updateErrors)
+                    errors.reject(null, error);
+                return false;
+            }
+
+            // if everything has succeeded, we can clear our saved checkbox state now:
+            DataRegionSelection.clearAll(getViewContext(), updateQCForm.getDataRegionSelectionKey());
+            return true;
+        }
+
+        public ActionURL getSuccessURL(UpdateQCStateForm updateQCForm)
+        {
+            ActionURL url = new ActionURL(DatasetAction.class, getContainer());
+            url.addParameter(DataSetDefinition.DATASETKEY, updateQCForm.getDatasetId());
+            if (updateQCForm.getNewState() != null)
+                url.addParameter(SharedFormParameters.QCState, updateQCForm.getNewState());
+            return url;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root = _appendNavTrail(root, _datasetId, -1);
+            return root.addChild("Change QC State");
+        }
+    }
+    
     // GWT Action
     @RequiresPermission(ACL.PERM_ADMIN)
     public class DatasetServiceAction extends GWTServiceAction
@@ -2956,7 +3525,7 @@ public class StudyController extends BaseStudyController
             DataRegion dr = new DataRegion();
             dr.setTable(tinfo);
 
-            Set<String> ignoreColumns = new CaseInsensitiveHashSet("lsid", "datasetid", "visitdate", "sourcelsid", "created", "modified", "visitrowid", "day");
+            Set<String> ignoreColumns = new CaseInsensitiveHashSet("lsid", "datasetid", "visitdate", "sourcelsid", "created", "modified", "visitrowid", "day", "qcstate");
             if (study.isDateBased())
                 ignoreColumns.add("SequenceNum");
 
@@ -3612,6 +4181,8 @@ public class StudyController extends BaseStudyController
             "    var dataType = 'ALL';\n" +
             "    /* Additional options for dataType 'DEMOGRAPHIC' or 'NON_DEMOGRAPHIC'. */" +
             "\n" +
+            "    var QCState = LABKEY.ActionURL.getParameter('QCState');\n" +
+            "\n" +
             "    /* create the participant details webpart: */\n" +
             "    var participantWebPart = new LABKEY.WebPart({\n" +
             "    partName: 'Participant Details',\n" +
@@ -3620,7 +4191,8 @@ public class StudyController extends BaseStudyController
             "    partConfig: {\n" +
             "        participantId: participantId,\n" +
             "        datasetId: datasetId,\n" +
-            "        dataType: dataType,\n" +     
+            "        dataType: dataType,\n" +
+            "        QCState: QCState,\n" +
             "        currentUrl: '' + window.location\n" +
             "        }\n" +
             "    });\n" +
@@ -4220,7 +4792,7 @@ public class StudyController extends BaseStudyController
         return prefix + (getStudy().isDateBased() ? "Timepoint" : "Visit") + ".jsp";
     }
 
-    public static class ParticipantForm implements StudyManager.ParticipantViewConfig
+    public static class ParticipantForm extends ViewForm implements StudyManager.ParticipantViewConfig
     {
         private String participantId;
         private int datasetId;
@@ -4228,6 +4800,7 @@ public class StudyController extends BaseStudyController
         private String action;
         private int reportId;
         private Integer cohortId;
+        private String _qcState;
         private String _redirectUrl;
 
         public String getParticipantId(){return participantId;}
@@ -4252,7 +4825,18 @@ public class StudyController extends BaseStudyController
 
         public String getRedirectUrl() { return _redirectUrl; }
 
+        public QCStateSet getQCStateSet()
+        {
+            if (_qcState != null && StudyManager.getInstance().showQCStates(getContainer()))
+                return QCStateSet.getSelectedStates(getContainer(), getQCState());
+            return null;
+        }
+
         public void setRedirectUrl(String redirectUrl) { _redirectUrl = redirectUrl; }
+
+        public String getQCState() { return _qcState; }
+
+        public void setQCState(String qcState) { _qcState = qcState; }
     }
 
 
@@ -4370,7 +4954,7 @@ public class StudyController extends BaseStudyController
 
         private TableInfo getTable(ViewContext context, ReportDescriptor descriptor) throws Exception
         {
-            final int datasetId = Integer.parseInt(descriptor.getProperty("datasetId"));
+            final int datasetId = Integer.parseInt(descriptor.getProperty(DataSetDefinition.DATASETKEY));
             final Study study = StudyManager.getInstance().getStudy(context.getContainer());
             DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
 
@@ -4421,19 +5005,21 @@ public class StudyController extends BaseStudyController
         private String _nextURL;
         private String _display;
         private String _currentParticipantId;
+        private String _encodedQcState;
         private boolean _showCustomizeLink = true;
 
-        public ParticipantNavView(String prevURL, String nextURL, String currentPartitipantId, String display)
+        public ParticipantNavView(String prevURL, String nextURL, String currentPartitipantId, String encodedQCState, String display)
         {
             _prevURL = prevURL;
             _nextURL = nextURL;
             _display = display;
             _currentParticipantId = currentPartitipantId;
+            _encodedQcState = encodedQCState;
         }
 
-        public ParticipantNavView(String prevURL, String nextURL, String currentPartitipantId)
+        public ParticipantNavView(String prevURL, String nextURL, String currentPartitipantId, String encodedQCState)
         {
-            this(prevURL, nextURL, currentPartitipantId,  null);
+            this(prevURL, nextURL, currentPartitipantId,  encodedQCState, null);
         }
 
         @Override
@@ -4457,6 +5043,7 @@ public class StudyController extends BaseStudyController
                 ActionURL customizeURL = new ActionURL(CustomizeParticipantViewAction.class, container);
                 customizeURL.addParameter("returnUrl", getViewContext().getActionURL().getLocalURIString());
                 customizeURL.addParameter("participantId", _currentParticipantId);
+                customizeURL.addParameter(SharedFormParameters.QCState, _encodedQcState);
                 out.print("</td><td>");
                 out.print(PageFlowUtil.textLink("Customize View", customizeURL));
             }
@@ -4475,7 +5062,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class ImportDataSetForm
+    public static class ImportDataSetForm extends ViewForm
     {
         private int datasetId = 0;
         private String typeURI;

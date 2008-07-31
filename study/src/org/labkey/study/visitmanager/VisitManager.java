@@ -3,6 +3,7 @@ package org.labkey.study.visitmanager;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.study.model.QCStateSet;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.*;
 
@@ -62,7 +63,7 @@ public abstract class VisitManager
 
     protected abstract void updateParticipantVisitTable(User user);
     protected abstract void updateVisitTable(User user);
-    public abstract Map<VisitMapKey, Integer> getVisitSummary(Cohort cohort) throws SQLException;
+    public abstract Map<VisitMapKey, Integer> getVisitSummary(Cohort cohort, QCStateSet qcStates) throws SQLException;
 
     public Map<Integer, List<Double>> getDatasetSequenceNums()
     {

@@ -45,6 +45,11 @@ import static org.labkey.api.util.PageFlowUtil.jsString;
  */
 public abstract class BaseStudyController extends SpringActionController
 {
+    public enum SharedFormParameters
+    {
+        QCState,
+        cohortId
+    }
     static final boolean extprototype = false;
 
     ActionURL getPermaLink()
@@ -186,7 +191,7 @@ public abstract class BaseStudyController extends SpringActionController
             root.addChild(study.getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
             ActionURL overviewURL = new ActionURL(StudyController.OverviewAction.class, getContainer());
             if (cohortId != null)
-                overviewURL.addParameter("cohortId", cohortId.intValue());
+                overviewURL.addParameter(SharedFormParameters.cohortId, cohortId.intValue());
             root.addChild("Study Overview", overviewURL);
         }
         catch (ServletException e)
@@ -197,16 +202,21 @@ public abstract class BaseStudyController extends SpringActionController
 
     protected NavTree _appendNavTrail(NavTree root, int datasetId, int visitId)
     {
-        return _appendNavTrail(root, datasetId, visitId, -1);
+        return _appendNavTrail(root, datasetId, visitId, -1, null);
     }
 
-    protected NavTree _appendNavTrail(NavTree root, int datasetId, int visitId, int cohortId)
+    protected NavTree _appendNavTrail(NavTree root, int datasetId, int visitId, int cohortId, String qcStateSetFormValue)
     {
         try {
             Study study = getStudy();
             root.addChild(study.getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
-            root.addChild("Study Overview", new ActionURL(StudyController.OverviewAction.class, getContainer()));
-            _appendDataset(root, study, datasetId, visitId, cohortId);
+            ActionURL overviewURL = new ActionURL(StudyController.OverviewAction.class, getContainer());
+            if (cohortId >= 0)
+                overviewURL.addParameter(SharedFormParameters.cohortId, cohortId);
+            if (qcStateSetFormValue != null)
+                overviewURL.addParameter(SharedFormParameters.QCState, qcStateSetFormValue);
+            root.addChild("Study Overview", overviewURL);
+            _appendDataset(root, study, datasetId, visitId, cohortId, qcStateSetFormValue);
         }
         catch (ServletException e)
         {
@@ -214,7 +224,7 @@ public abstract class BaseStudyController extends SpringActionController
         return root;
     }
 
-    protected NavTree _appendDataset(NavTree root, Study study, int datasetId, int visitRowId, int cohortId)
+    protected NavTree _appendDataset(NavTree root, Study study, int datasetId, int visitRowId, int cohortId, String qcStateSetFormValue)
     {
         if (datasetId > 0)
         {
@@ -240,7 +250,9 @@ public abstract class BaseStudyController extends SpringActionController
                 ActionURL datasetUrl = new ActionURL(StudyController.DatasetAction.class, getContainer()).
                         addParameter(DataSetDefinition.DATASETKEY, datasetId);
                 if (cohortId >= 0)
-                    datasetUrl.addParameter("cohortId", cohortId);
+                    datasetUrl.addParameter(SharedFormParameters.cohortId, cohortId);
+                if (qcStateSetFormValue != null)
+                    datasetUrl.addParameter(SharedFormParameters.QCState, qcStateSetFormValue);
                 root.addChild(label.toString(), datasetUrl.getLocalURIString());
             }
         }

@@ -25,6 +25,9 @@
 <%@ page import="org.labkey.study.controllers.StudyController"%>
 <%@ page import="org.labkey.study.model.*"%>
 <%@ page import="java.util.Map"%>
+<%@ page import="java.util.List" %>
+<%@ page import="org.labkey.study.model.QCStateSet" %>
+<%@ page import="org.labkey.study.controllers.BaseStudyController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudyController.OverviewBean> me = (JspView<StudyController.OverviewBean>) HttpView.currentView();
@@ -43,6 +46,16 @@
         selectedCohort = bean.cohortId != null ? manager.getCohortForRowId(container, user, bean.cohortId) : null;
         cohorts = manager.getCohorts(container, user);
     }
+
+    boolean showQCStates = manager.showQCStates(container);
+    QCStateSet selectedQCStateSet = null;
+    List<QCStateSet> qcStateSetOptions = null;
+    if (showQCStates)
+    {
+        selectedQCStateSet = bean.qcStates;
+        qcStateSetOptions = QCStateSet.getSelectableSets(container);
+    }
+
     Visit[] visits = manager.getVisits(study, selectedCohort, user);
     DataSetDefinition[] datasets = manager.getDataSetDefinitions(study, selectedCohort);
     boolean cantReadOneOrMoreDatasets = false;
@@ -68,13 +81,13 @@
 
 
 %>
+<form action="overview.view" name="changeFilterForm" method="GET">
 <%
-if (bean.showCohorts)
-{
+    if (showCohorts)
+    {
 %>
 <br><br>
-<form action="overview.view" name="changeCohortForm" method="GET">
-Cohort: <select name="cohortId" onchange="document.changeCohortForm.submit()">
+    Cohort: <select name="<%= BaseStudyController.SharedFormParameters.cohortId.name() %>" onchange="document.changeFilterForm.submit()">
     <option value="">All</option>
     <%
         for (Cohort cohort : cohorts)
@@ -83,14 +96,31 @@ Cohort: <select name="cohortId" onchange="document.changeCohortForm.submit()">
     <option value="<%= cohort.getRowId() %>" <%= selectedCohort != null && cohort.getRowId() == selectedCohort.getRowId() ? "SELECTED" : "" %>>
         <%= h(cohort.getLabel()) %>
     </option>
-    <%
-        }
-    %>
-</select>
-</form>
 <%
-}
+        }
 %>
+    </select>
+<%
+    }
+    if (showQCStates)
+    {
+%>
+    QC State: <select name="<%= BaseStudyController.SharedFormParameters.QCState.name() %>" onchange="document.changeFilterForm.submit()">
+        <%
+            for (QCStateSet set : qcStateSetOptions)
+            {
+        %>
+        <option value="<%= set.getFormValue() %>" <%= set.equals(selectedQCStateSet) ? "SELECTED" : "" %>>
+            <%= h(set.getLabel()) %>
+        </option>
+        <%
+            }
+        %>
+    </select>
+    <%
+    }
+    %>
+</form>
 <br><br>
 <table class="labkey-data-region labkey-show-borders">
 
@@ -173,6 +203,8 @@ Cohort: <select name="cohortId" onchange="document.changeCohortForm.submit()">
             sb.append(dataSet.getDataSetId());
             if (selectedCohort != null)
                 sb.append("&cohortId=").append(selectedCohort.getRowId());
+            if (bean.qcStates != null)
+                sb.append("&QCState=").append(bean.qcStates.getFormValue());
 
             %><a href="<%=sb%>"><%=totalCount%></a><%
         }
@@ -217,7 +249,9 @@ Cohort: <select name="cohortId" onchange="document.changeCohortForm.submit()">
                 datasetLink.addParameter(Visit.VISITKEY, visit.getRowId());
                 datasetLink.addParameter(DataSetDefinition.DATASETKEY, dataSet.getDataSetId());
                 if (selectedCohort != null)
-                    datasetLink.addParameter("cohortId", selectedCohort.getRowId());
+                    datasetLink.addParameter(BaseStudyController.SharedFormParameters.cohortId, selectedCohort.getRowId());
+                if (bean.qcStates != null)
+                    datasetLink.addParameter(BaseStudyController.SharedFormParameters.QCState, bean.qcStates.getFormValue());
 
                 %><a href="<%= datasetLink.getLocalURIString() %>"><%= innerHtml %></a><%
             }

@@ -20,14 +20,18 @@ import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.DataView;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.model.*;
 import org.labkey.study.query.DatasetUpdateService;
 import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.query.DataSetTable;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -51,11 +55,25 @@ public class StudyServiceImpl implements StudyService.Service
     public String updateDatasetRow(User u, Container c, int datasetId, String lsid, Map<String, Object> data, List<String> errors)
             throws SQLException
     {
+        return updateDatasetRow(u, c, datasetId, lsid, data, errors, null);
+    }
+
+    public String updateDatasetRow(User u, Container c, int datasetId, String lsid, Map<String, Object> data, List<String> errors, String auditComment)
+            throws SQLException
+    {
         Study study = StudyManager.getInstance().getStudy(c);
         DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
 
+        Integer defaultQcStateId = study.getDefaultDirectEntryQCState();
+        QCState defaultQCState = null;
+        if (defaultQcStateId != null)
+            defaultQCState = StudyManager.getInstance().getQCStateForRowId(c, defaultQcStateId.intValue());
+
         // Start a transaction, so that we can rollback if our insert fails
-        beginTransaction();
+        DbScope scope = StudySchema.getInstance().getSchema().getScope();
+        boolean transactionOwner = !scope.isTransactionActive();
+        if (transactionOwner)
+            beginTransaction();
         try
         {
             Map<String,Object> oldData = getDatasetRow(u, c, datasetId, lsid);
@@ -80,8 +98,8 @@ public class StudyServiceImpl implements StudyService.Service
             StudyManager.getInstance().deleteDatasetRows(study, def, Collections.singletonList(lsid));
 
             String tsv = createTSV(newData);
-            String[] result = StudyManager.getInstance().importDatasetTSV(study, def, tsv, System.currentTimeMillis(),
-                Collections.<String,String>emptyMap(), errors, true);
+            String[] result = StudyManager.getInstance().importDatasetTSV(study, u, def, tsv, System.currentTimeMillis(),
+                Collections.<String,String>emptyMap(), errors, true, defaultQCState);
 
             if (errors.size() > 0)
             {
@@ -89,14 +107,14 @@ public class StudyServiceImpl implements StudyService.Service
                 return null;
             }
             // Successfully updated
-            if(isTransactionActive())
+            if(transactionOwner)
                 commitTransaction();
 
             // lsid is not in the updated map by default since it is not editable,
             // however it can be changed by the update
             newData.put("lsid", result[0]);
 
-            addDatasetAuditEvent(u, c, def, oldData, newData);
+            addDatasetAuditEvent(u, c, def, oldData, newData, auditComment);
 
             return result[0];
         }
@@ -110,7 +128,7 @@ public class StudyServiceImpl implements StudyService.Service
         }
         finally
         {
-            if(isTransactionActive())
+            if(transactionOwner)
                 rollbackTransaction();
         }
     }
@@ -193,10 +211,21 @@ public class StudyServiceImpl implements StudyService.Service
         Study study = StudyManager.getInstance().getStudy(c);
         DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
         String tsv = createTSV(data);
+
+        Integer defaultQcStateId = study.getDefaultDirectEntryQCState();
+        QCState defaultQCState = null;
+        if (defaultQcStateId != null)
+            defaultQCState = StudyManager.getInstance().getQCStateForRowId(c, defaultQcStateId.intValue());
+
+        DbScope scope = StudySchema.getInstance().getSchema().getScope();
+        boolean transactionOwner = !scope.isTransactionActive();
         try
         {
-            String[] result = StudyManager.getInstance().importDatasetTSV(study,def, tsv, System.currentTimeMillis(),
-                Collections.<String,String>emptyMap(), errors, true);
+            if (transactionOwner)
+                beginTransaction();
+
+            String[] result = StudyManager.getInstance().importDatasetTSV(study, u, def, tsv, System.currentTimeMillis(),
+                Collections.<String,String>emptyMap(), errors, true, defaultQCState);
 
             if (result.length > 0)
             {
@@ -205,6 +234,9 @@ public class StudyServiceImpl implements StudyService.Service
                 auditDataMap.putAll(data);
                 auditDataMap.put("lsid", result[0]);
                 addDatasetAuditEvent(u, c, def, null, auditDataMap);
+
+                if (transactionOwner)
+                    commitTransaction();
 
                 return result[0];
             }
@@ -220,6 +252,11 @@ public class StudyServiceImpl implements StudyService.Service
         {
             throw UnexpectedException.wrap(se);
         }
+        finally
+        {
+            if (transactionOwner)
+                rollbackTransaction();
+        }
     }
 
     public void deleteDatasetRow(User u, Container c, int datasetId, String lsid) throws SQLException
@@ -230,9 +267,25 @@ public class StudyServiceImpl implements StudyService.Service
         // Need to fetch the old item in order to log the deletion
         Map<String,Object> oldData = getDatasetRow(u, c, datasetId, lsid);
 
-        StudyManager.getInstance().deleteDatasetRows(study, def, Collections.singletonList(lsid));
+        DbScope scope = StudySchema.getInstance().getSchema().getScope();
+        boolean transactionOwner = !scope.isTransactionActive();
+        try
+        {
+            if (transactionOwner)
+                beginTransaction();
 
-        addDatasetAuditEvent(u, c, def, oldData, null);
+            StudyManager.getInstance().deleteDatasetRows(study, def, Collections.singletonList(lsid));
+
+            addDatasetAuditEvent(u, c, def, oldData, null);
+
+            if (transactionOwner)
+                commitTransaction();
+        }
+        finally
+        {
+            if (transactionOwner)
+                rollbackTransaction();
+        }
     }
 
     private String createTSV(Map<String,Object> data)
@@ -272,6 +325,22 @@ public class StudyServiceImpl implements StudyService.Service
      */
     private void addDatasetAuditEvent(User u, Container c, DataSetDefinition def, Map<String,Object>oldRecord, Map<String,Object> newRecord)
     {
+        String comment;
+        if (oldRecord == null)
+            comment = "A new dataset record was inserted";
+        else if (newRecord == null)
+            comment = "A dataset record was deleted";
+        else
+            comment = "A dataset record was modified";
+        addDatasetAuditEvent(u, c, def, oldRecord, newRecord, comment);
+    }
+
+    /**
+     * if oldRecord is null, it's an insert, if newRecord is null, it's delete,
+     * if both are set, it's an edit
+     */
+    private void addDatasetAuditEvent(User u, Container c, DataSetDefinition def, Map<String,Object> oldRecord, Map<String,Object> newRecord, String auditComment)
+    {
         AuditLogEvent event = new AuditLogEvent();
         event.setCreatedBy(u);
 
@@ -287,27 +356,23 @@ public class StudyServiceImpl implements StudyService.Service
         event.setEventType(DatasetAuditViewFactory.DATASET_AUDIT_EVENT);
         DatasetAuditViewFactory.getInstance().ensureDomain(u);
 
-        String comment;
         String oldRecordString = null;
         String newRecordString = null;
         if (oldRecord == null)
         {
-            comment = "A new dataset record was inserted";
             newRecordString = encodeAuditMap(newRecord);
         }
         else if (newRecord == null)
         {
-            comment = "A dataset record was deleted";
             oldRecordString = encodeAuditMap(oldRecord);
         }
         else
         {
-            comment = "A dataset record was modified";
             oldRecordString = encodeAuditMap(oldRecord);
             newRecordString = encodeAuditMap(newRecord);
         }
 
-        event.setComment(comment);
+        event.setComment(auditComment);
 
         Map<String,Object> dataMap = new HashMap<String,Object>();
         if (oldRecordString != null) dataMap.put("oldRecordMap", oldRecordString);
@@ -386,6 +451,27 @@ public class StudyServiceImpl implements StudyService.Service
         // column metadata to indicate if info is editable
         Study study = StudyManager.getInstance().getStudy(container);
         return study.getSecurityType() == SecurityType.EDITABLE_DATASETS;
+    }
+
+    public void applyDefaultQCStateFilter(DataView view)
+    {
+        if (StudyManager.getInstance().showQCStates(view.getRenderContext().getContainer()))
+        {
+            QCStateSet stateSet = QCStateSet.getDefaultStates(view.getRenderContext().getContainer());
+            if (null != stateSet)
+            {
+                SimpleFilter filter = (SimpleFilter) view.getRenderContext().getBaseFilter();
+                if (null == filter)
+                {
+                    filter = new SimpleFilter();
+                    view.getRenderContext().setBaseFilter(filter);
+                }
+                FieldKey qcStateKey = FieldKey.fromParts(DataSetTable.QCSTATE_ID_COLNAME, "rowid");
+                Map<FieldKey, ColumnInfo> qcStateColumnMap = QueryService.get().getColumns(view.getDataRegion().getTable(), Collections.singleton(qcStateKey));
+                ColumnInfo qcStateColumn = qcStateColumnMap.get(qcStateKey);
+                filter.addClause(new SimpleFilter.SQLClause(stateSet.getStateInClause(qcStateColumn.getAlias()), null, qcStateColumn.getName()));
+            }
+        }
     }
 
     public String getSchemaName()

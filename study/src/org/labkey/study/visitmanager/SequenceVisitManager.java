@@ -1,5 +1,6 @@
 package org.labkey.study.visitmanager;
 
+import org.labkey.study.query.DataSetTable;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ResultSetUtil;
@@ -35,7 +36,7 @@ public class SequenceVisitManager extends VisitManager
         super(study);
     }
 
-    public Map<VisitMapKey, Integer> getVisitSummary(Cohort cohort) throws SQLException
+    public Map<VisitMapKey, Integer> getVisitSummary(Cohort cohort, QCStateSet qcStates) throws SQLException
     {
         Map<VisitMapKey, Integer> visitSummary = new HashMap<VisitMapKey, Integer>();
         DbSchema schema = StudySchema.getInstance().getSchema();
@@ -61,6 +62,7 @@ public class SequenceVisitManager extends VisitManager
                  sql = "SELECT DatasetId, SequenceNum, CAST(COUNT(*) AS INT)\n" +
                     "FROM " + studyData + " SD\n" +
                     "WHERE SD.Container = ? \n" +
+                     (qcStates != null ? "AND " + qcStates.getStateInClause(DataSetTable.QCSTATE_ID_COLNAME) + "\n" : "") +
                     "GROUP BY DatasetId, SequenceNum\n" +
                     "ORDER BY 1, 2";
                 rows = Table.executeQuery(schema, sql, new Object[] {_study.getContainer().getId()}, 0, false);
@@ -70,6 +72,7 @@ public class SequenceVisitManager extends VisitManager
                 sql = "SELECT DatasetId, SequenceNum, CAST(COUNT(*) AS INT)\n" +
                     "FROM " + studyData + " SD, " + participantTable + " P\n" +
                     "WHERE SD.Container = ? AND P.ParticipantId = SD.ParticipantId AND P.Container = SD.Container AND P.CohortID = ?\n" +
+                    (qcStates != null ? "AND " + qcStates.getStateInClause(DataSetTable.QCSTATE_ID_COLNAME) + "\n" : "") +
                     "GROUP BY DatasetId, SequenceNum\n" +
                     "ORDER BY 1, 2";
                 rows = Table.executeQuery(schema, sql, new Object[] {_study.getContainer().getId(), cohort.getRowId()}, 0, false);

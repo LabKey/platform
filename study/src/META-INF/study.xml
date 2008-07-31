@@ -24,11 +24,15 @@
       <ns:column columnName="entityid"/>
       <ns:column columnName="DateBased"/>
       <ns:column columnName="StartDate"/>
-      <ns:column columnName="SecurityType"/> 
+      <ns:column columnName="SecurityType"/>
       <ns:column columnName="participantcohortdatasetid"/>
       <ns:column columnName="participantcohortproperty"/>
-      <ns:column columnName="manualCohortAssignment"/>  
+      <ns:column columnName="manualCohortAssignment"/>
       <ns:column columnName="LSID"/>
+      <ns:column columnName="DefaultPipelineQCState"/>
+      <ns:column columnName="DefaultAssayQCState"/>
+      <ns:column columnName="DefaultDirectEntryQCState"/>
+      <ns:column columnName="ShowPrivateDataByDefault"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="Site" tableDbType="TABLE">
@@ -267,7 +271,25 @@
         <ns:propertyURI>http://cpas.labkey.com/Study#VisitDate</ns:propertyURI>
       </ns:column>
       <ns:column columnName="_key"/>
+        <ns:column columnName="QCState">
+          <ns:columnTitle>QC State</ns:columnTitle>
+          <ns:propertyURI>http://cpas.labkey.com/Study#QCState</ns:propertyURI>
+            <ns:fk>
+              <ns:fkColumnName>RowId</ns:fkColumnName>
+              <ns:fkTable>QCState</ns:fkTable>
+              <ns:fkDbSchema>study</ns:fkDbSchema>
+            </ns:fk>
+        </ns:column>
     </ns:columns>
+  </ns:table>
+  <ns:table tableName="QCState" tableDbType="TABLE">
+      <ns:columns>
+        <ns:column columnName="RowId"/>
+        <ns:column columnName="Label"/>
+        <ns:column columnName="Description"/>
+        <ns:column columnName="Container"/>
+        <ns:column columnName="PublicData"/>
+      </ns:columns>
   </ns:table>
   <ns:table tableName="SampleRequestSpecimen" tableDbType="TABLE">
     <ns:columns>

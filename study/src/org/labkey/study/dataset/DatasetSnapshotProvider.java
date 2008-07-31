@@ -186,8 +186,8 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 d.save(form.getViewContext().getUser());
 
                 // import the data
-                StudyManager.getInstance().importDatasetTSV(study, def, sb.toString(), System.currentTimeMillis(),
-                        Collections.<String,String>emptyMap(), errors, true);
+                StudyManager.getInstance().importDatasetTSV(study, form.getViewContext().getUser(), def, sb.toString(),
+                        System.currentTimeMillis(), Collections.<String,String>emptyMap(), errors, true, null);
 
                 if (startedTransaction)
                     schema.getScope().commitTransaction();
@@ -250,8 +250,8 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
                     // import the new data
                     List<String> errors = new ArrayList<String>();
-                    String[] newRows = StudyManager.getInstance().importDatasetTSV(study, dsDef, sb.toString(), System.currentTimeMillis(),
-                            Collections.<String,String>emptyMap(), errors, true);
+                    String[] newRows = StudyManager.getInstance().importDatasetTSV(study, form.getViewContext().getUser(), dsDef, sb.toString(), System.currentTimeMillis(),
+                            Collections.<String,String>emptyMap(), errors, true, null);
 
                     if (startedTransaction)
                         schema.getScope().commitTransaction();

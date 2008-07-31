@@ -43,6 +43,7 @@ import org.labkey.common.util.Pair;
 import org.labkey.study.chart.client.StudyChartService;
 import org.labkey.study.chart.client.model.GWTPair;
 import org.labkey.study.controllers.StudyController;
+import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
@@ -270,7 +271,8 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
             // if this is a participant chart, just filter on the first participant in the dataset so that
             // the chart preview will look more representative.
             int datasetId = NumberUtils.toInt((String)chart.getProperties().get(DataSetDefinition.DATASETKEY));
-            List<String> participants = StudyController.getParticipantListFromCache(_context, datasetId, bean.getViewName(), null);
+            String qcState = getActionURL().getParameter(BaseStudyController.SharedFormParameters.QCState);
+            List<String> participants = StudyController.getParticipantListFromCache(_context, datasetId, bean.getViewName(), null, qcState);
             if (!participants.isEmpty())
                 url.addParameter("participantId", participants.get(0));
         }

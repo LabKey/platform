@@ -76,7 +76,6 @@
     Map<Integer, String> expandedMap = StudyController.getExpandedState(context, bean.getDatasetId());
     boolean updateAccess = study.getContainer().hasPermission(user, ACL.PERM_UPDATE);
 %>
-<p/>
 
 <table class="labkey-participant-view">
 

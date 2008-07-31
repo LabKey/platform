@@ -63,6 +63,8 @@ public class StudyQuerySchema extends UserSchema
         if (StudyManager.getInstance().showCohorts(getContainer(), getUser()))
             ret.add("Cohort");
 
+        ret.add("QCState");
+
         ret.addAll(getDataSetDefinitions().keySet());
         return ret;
     }
@@ -174,6 +176,12 @@ public class StudyQuerySchema extends UserSchema
         if ("DataSetColumns".equals(name))
         {
             DataSetColumnsTable ret = new DataSetColumnsTable(this);
+            ret.setAlias(alias);
+            return ret;
+        }
+        if ("QCState".equals(name))
+        {
+            QCStateTable ret = new QCStateTable(this);
             ret.setAlias(alias);
             return ret;
         }

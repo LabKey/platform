@@ -1,0 +1,198 @@
+<%
+/*
+ * Copyright (c) 2006-2008 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+%>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.WebPartView" %>
+<%@ page import="org.labkey.study.model.*" %>
+<%@ page import="org.labkey.study.model.QCState" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%
+    JspView<StudyController.ManageQCStatesBean> me = (JspView<StudyController.ManageQCStatesBean>) HttpView.currentView();
+    StudyController.ManageQCStatesBean bean = me.getModelBean();
+%>
+<labkey:errors/><br>
+<form action="manageQCStates.post" name="manageQCStates" method="POST">
+<%= buttonImg("Done", "document.manageQCStates.reshowPage.value='false'; return true;")%>
+<%= buttonLink("Cancel", new ActionURL(StudyController.ManageStudyAction.class, me.getViewContext().getContainer()))%>
+<input type="hidden" name="reshowPage" value="true">
+<table width="800px">
+    <tr>
+        <td>
+    <%
+        WebPartView.startTitleFrame(out, "Currently Defined QC States", null, "100%", null);
+    %>
+        <table>
+    <%
+                if (bean.getQCStates() == null || bean.getQCStates().length == 0)
+                {
+            %>
+            <tr>
+                <td colspan="5">
+                    <em>No QC states have been defined for this study.</em>
+                </td>
+            </tr>
+            <%
+                }
+            %>
+            <tr>
+                <th>&nbsp;</th>
+                <th>State Name</th>
+                <th>State Description</th>
+                <th>Public Data<%= helpPopup("Public Data", "The 'Public Data' setting determines whether data in each QC state is shown to users by default.") %></th>
+                <th>&nbsp;</th>
+            </tr>
+            <%
+
+                for (QCState state : bean.getQCStates())
+                {
+            %>
+            <tr>
+                <td align="center">&nbsp;</td>
+                <td valign="top">
+                    <input type="hidden" name="ids" value="<%= state.getRowId() %>">
+                    <input type="text" name="labels" size="30"
+                           value="<%= state.getLabel() != null ? h(state.getLabel()) : "" %>">
+                </td>
+                <td>
+                    <input type="text" name="descriptions" size="50"
+                           value="<%= state.getDescription() != null ? h(state.getDescription()) : "" %>">
+                </td>
+                <td align="center"><input name="publicData" value="<%= state.getRowId() %>" type="checkbox" <%= state.isPublicData() ? "CHECKED" : "" %>/></td>
+                <td>
+                    <%=  StudyManager.getInstance().isQCStateInUse(state) ? "[in use]" + helpPopup("QC state in use", "This QC state cannot be deleted because it is currently referenced by at least one dataset row.") :
+                            textLink("Delete", new ActionURL(StudyController.DeleteQCStateAction.class, me.getViewContext().getContainer()).addParameter("id", state.getRowId()).getLocalURIString(),
+                                    "return confirm('Delete this QC state?  No additional study data will be deleted.')", null) %>
+                </td>
+            </tr>
+            <%
+                }
+            %>
+            <tr>
+                <th align="right">New QC state:</th>
+                <td><input type="text" name="newLabel" size="30"></td>
+                <td><input type="text" name="newDescription" size="50"></td>
+                <td align="center"><input type="checkbox" name="newPublicData" CHECKED></td>
+                <td>&nbsp;</td>
+            </tr>
+            <tr>
+                <td>&nbsp;</td>
+                <td colspan="4">
+                    <%= buttonImg("Save")%>
+                    <%= buttonLink("Delete Unused QC States",
+                            new ActionURL(StudyController.DeleteQCStateAction.class, me.getViewContext().getContainer()).addParameter("all", "true"),
+                            "return confirm('Delete all unused QC states?  No additional study data will be deleted.')")%>
+                    <%= buttonLink("Cancel", new ActionURL(StudyController.ManageStudyAction.class, me.getViewContext().getContainer()))%>
+                </td>
+            </tr>
+        </table>
+        <%
+            WebPartView.endTitleFrame(out);
+            WebPartView.startTitleFrame(out, "Default states for study data", null, "100%", null);
+        %>
+        <table width="100%" cellspacing="4">
+            <tr>
+                <td colspan="2">These settings allow different default QC states depending on data source.
+                    If set, all imported data without an explicit QC state will have the selected state automatically assigned.</td>
+            </tr>
+            <tr>
+                <th align="right" width="300px">Pipeline imported datasets:</th>
+                <td>
+                    <select name="defaultPipelineQCState">
+                        <option value="">[none]</option>
+                        <%
+                            for (QCState state : bean.getQCStates())
+                            {
+                                boolean selected = bean.getStudy().getDefaultPipelineQCState() != null &&
+                                                    bean.getStudy().getDefaultPipelineQCState().intValue() == state.getRowId();
+                        %>
+                        <option value="<%= state.getRowId() %>" <%= selected ? "SELECTED" : "" %>>
+                            <%= h(state.getLabel())%></option>
+                        <%
+                            }
+                        %>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <th align="right" width="300px">Assay data copied to this study:</th>
+                <td>
+                    <select name="defaultAssayQCState">
+                        <option value="">[none]</option>
+                        <%
+                            for (QCState state : bean.getQCStates())
+                            {
+                                boolean selected = bean.getStudy().getDefaultAssayQCState() != null &&
+                                                    bean.getStudy().getDefaultAssayQCState().intValue() == state.getRowId();
+                        %>
+                        <option value="<%= state.getRowId() %>" <%= selected ? "SELECTED" : "" %>><%= h(state.getLabel())%></option>
+                        <%
+                            }
+                        %>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <th align="right" width="300px">Directly inserted/updated dataset data:</th>
+                <td>
+                    <select name="defaultDirectEntryQCState">
+                        <option value="">[none]</option>
+                        <%
+                            for (QCState state : bean.getQCStates())
+                            {
+                                boolean selected = bean.getStudy().getDefaultDirectEntryQCState() != null &&
+                                                    bean.getStudy().getDefaultDirectEntryQCState().intValue() == state.getRowId();
+                        %>
+                        <option value="<%= state.getRowId() %>" <%= selected ? "SELECTED" : "" %>><%= h(state.getLabel())%></option>
+                        <%
+                            }
+                        %>
+                    </select>
+                </td>
+            </tr>
+        </table>
+        <%
+            WebPartView.endTitleFrame(out);
+            WebPartView.startTitleFrame(out, "Data visibility", null, "100%", null);
+        %>
+    <table width="100%" cellspacing="4">
+        <tr>
+            <td colspan="2">This setting determines whether users see non-public data by default.
+                Users can always explicitly choose to see data in any QC state.</td>
+        </tr>
+        <tr>
+            <th align="right" width="300px">Default visibility:</th>
+            <td>
+                <select name="showPrivateDataByDefault">
+                    <option value="false">Public data</option>
+                    <option value="true" <%= bean.getStudy().isShowPrivateDataByDefault() ? "SELECTED" : "" %>>All data</option>
+                </select>
+            </td>
+        </tr>
+    </table>
+
+        <%
+            WebPartView.endTitleFrame(out);
+        %>
+        </td>
+    </tr>
+</table>
+</form>

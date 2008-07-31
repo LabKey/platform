@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.study.model.*" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.study.controllers.BaseStudyController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpringSpecimenController.ReportConfigurationBean> me = (JspView<SpringSpecimenController.ReportConfigurationBean>) HttpView.currentView();
@@ -99,7 +100,7 @@
                 %>
                     <tr>
                         <td>
-                            <select name="cohortId">
+                            <select name="<%= BaseStudyController.SharedFormParameters.cohortId.name() %>">
                                 <option value="">All Cohorts</option>
                                 <%
                                     for (Cohort cohort : cohorts)

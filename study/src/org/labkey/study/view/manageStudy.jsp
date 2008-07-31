@@ -64,6 +64,11 @@
         <td>Manage reports and views for this Study</td>
         <td><%= PageFlowUtil.textLink("Manage Reports and Views", new ActionURL("Study-Reports", "manageReports.view", getStudy().getContainer())) %></td>
     </tr>
+    <tr>
+        <th align="left">Quality Control States</th>
+        <td>Manage QC states for this Study</td>
+        <td><%= PageFlowUtil.textLink("Manage QC States", new ActionURL("Study", "manageQCStates.view", getStudy().getContainer())) %></td>
+    </tr>
 </table>
 
 <h4>Specimen Request/Tracking Settings</h4>

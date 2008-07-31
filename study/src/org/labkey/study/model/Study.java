@@ -40,6 +40,10 @@ public class Study extends AbstractStudyEntity<Study> implements Extensible
     private Integer _participantCohortDataSetId;
     private boolean _manualCohortAssignment;
     private String _lsid;
+    private Integer _defaultPipelineQCState;
+    private Integer _defaultAssayQCState;
+    private Integer _defaultDirectEntryQCState;
+    private boolean _showPrivateDataByDefault;
 
     public Study()
     {
@@ -219,6 +223,46 @@ public class Study extends AbstractStudyEntity<Study> implements Extensible
     {
         verifyMutability();
         this._lsid = lsid;
+    }
+
+    public Integer getDefaultPipelineQCState()
+    {
+        return _defaultPipelineQCState;
+    }
+
+    public void setDefaultPipelineQCState(Integer defaultPipelineQCState)
+    {
+        _defaultPipelineQCState = defaultPipelineQCState;
+    }
+
+    public Integer getDefaultAssayQCState()
+    {
+        return _defaultAssayQCState;
+    }
+
+    public void setDefaultAssayQCState(Integer defaultAssayQCState)
+    {
+        _defaultAssayQCState = defaultAssayQCState;
+    }
+
+    public Integer getDefaultDirectEntryQCState()
+    {
+        return _defaultDirectEntryQCState;
+    }
+
+    public void setDefaultDirectEntryQCState(Integer defaultDirectEntryQCState)
+    {
+        _defaultDirectEntryQCState = defaultDirectEntryQCState;
+    }
+
+    public boolean isShowPrivateDataByDefault()
+    {
+        return _showPrivateDataByDefault;
+    }
+
+    public void setShowPrivateDataByDefault(boolean showPrivateDataByDefault)
+    {
+        _showPrivateDataByDefault = showPrivateDataByDefault;
     }
 
     public static class SummaryStatistics

@@ -24,6 +24,7 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.HtmlView;
 import org.labkey.study.controllers.StudyController;
+import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
@@ -59,8 +60,9 @@ public class StudyRunRReportView extends RunRReportView
                 if (def != null)
                     datasetId = def.getRowId();
 
+                String qcState = getViewContext().getActionURL().getParameter(BaseStudyController.SharedFormParameters.QCState);
                 List<String> participants = StudyController.getParticipantListFromCache(context, datasetId,
-                        getReport().getDescriptor().getProperty(ReportDescriptor.Prop.viewName), null);
+                        getReport().getDescriptor().getProperty(ReportDescriptor.Prop.viewName), null, qcState);
 
                 view.addView(ReportsController.getParticipantNavTrail(context, participants));
             }

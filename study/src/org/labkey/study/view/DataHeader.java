@@ -26,6 +26,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.common.util.Pair;
 import org.labkey.study.controllers.StudyController;
+import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.model.Cohort;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyManager;
@@ -101,7 +102,7 @@ public class DataHeader extends HttpView
         {
             if (!"Dataset.viewName".equalsIgnoreCase(parameter.getKey()) &&
                 !"prevView".equalsIgnoreCase(parameter.getKey()) &&
-                !"cohortId".equalsIgnoreCase(parameter.getKey()) &&
+                !BaseStudyController.SharedFormParameters.cohortId.name().equalsIgnoreCase(parameter.getKey()) &&
                 !"participantId".equalsIgnoreCase(parameter.getKey()) &&
                 !"tabId".equalsIgnoreCase(parameter.getKey()) &&
                 !"reportId".equalsIgnoreCase(parameter.getKey()) &&

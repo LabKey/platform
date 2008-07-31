@@ -26,19 +26,15 @@ import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
+import org.labkey.study.model.QCStateSet;
 import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.model.Cohort;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.Visit;
+import org.labkey.study.model.*;
 import org.labkey.study.reports.StudyRReport;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * User: brittp
@@ -54,10 +50,13 @@ public class DataSetQueryView extends QueryView
     private boolean _showSourceLinks;
     private boolean _forExport;
     public static final String DATAREGION = "Dataset";
+    private QCStateSet _qcStateSet;
+    private boolean _showEditLinks = true;
 
-    public DataSetQueryView(int datasetId, UserSchema schema, QuerySettings settings, Visit visit, Cohort cohort)
+    public DataSetQueryView(int datasetId, UserSchema schema, QuerySettings settings, Visit visit, Cohort cohort, QCStateSet qcStateSet)
     {
         super(schema, settings);
+        _qcStateSet = qcStateSet;
         getSettings().setAllowChooseQuery(false);
         getSettings().setAllowChooseView(false);
         _datasetId = datasetId;
@@ -107,6 +106,19 @@ public class DataSetQueryView extends QueryView
             ColumnInfo cohortColumn = cohortColumnMap.get(cohortKey);
             filter.addCondition(cohortColumn.getName(), _cohort.getRowId());
         }
+        if (null != _qcStateSet)
+        {
+            SimpleFilter filter = (SimpleFilter) view.getRenderContext().getBaseFilter();
+            if (null == filter)
+            {
+                filter = new SimpleFilter();
+                view.getRenderContext().setBaseFilter(filter);
+            }
+            FieldKey qcStateKey = FieldKey.fromParts(DataSetTable.QCSTATE_ID_COLNAME, "rowid");
+            Map<FieldKey, ColumnInfo> qcStateColumnMap = QueryService.get().getColumns(view.getDataRegion().getTable(), Collections.singleton(qcStateKey));
+            ColumnInfo qcStateColumn = qcStateColumnMap.get(qcStateKey);
+            filter.addClause(new SimpleFilter.SQLClause(_qcStateSet.getStateInClause(qcStateColumn.getAlias()), null, qcStateColumn.getName()));
+        }
 
         StudyManager.getInstance().applyDefaultFormats(getContainer(), view.getDataRegion().getDisplayColumns());
         ColumnInfo sourceLsidCol = view.getTable().getColumn("SourceLsid");
@@ -122,13 +134,17 @@ public class DataSetQueryView extends QueryView
             }
         }
         // Only show link to edit if permission allows it
-        if (!_forExport && StudyManager.getInstance().getDataSetDefinition(
+        if (_showEditLinks && !_forExport && StudyManager.getInstance().getDataSetDefinition(
                 StudyManager.getInstance().getStudy(getContainer()), _datasetId).canWrite(getViewContext().getUser()))
         {
             TableInfo tableInfo = view.getDataRegion().getTable();
             ColumnInfo lsidColumn = tableInfo.getColumn("lsid");
             view.getDataRegion().addDisplayColumn(0, new DatasetEditColumn(view.getRenderContext().getContainer(), lsidColumn));
         }
+
+        // allow posts from dataset data regions to determine which dataset was being displayed:
+        view.getDataRegion().addHiddenFormField(DataSetDefinition.DATASETKEY, "" + _datasetId);
+
         return view;
     }
 
@@ -223,6 +239,16 @@ public class DataSetQueryView extends QueryView
     public void setShowSourceLinks(boolean showSourceLinks)
     {
         _showSourceLinks = showSourceLinks;
+    }
+
+    public boolean isShowEditLinks()
+    {
+        return _showEditLinks;
+    }
+
+    public void setShowEditLinks(boolean showEditLinks)
+    {
+        _showEditLinks = showEditLinks;
     }
 
     public void setForExport(boolean forExport)

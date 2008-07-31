@@ -23,6 +23,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.study.model.QCState;
 import org.labkey.common.tools.TabLoader;
 import org.labkey.common.util.Pair;
 import org.labkey.common.util.CPUTimer;
@@ -608,6 +609,8 @@ public class DatasetBatch extends StudyBatch implements Serializable
             DbScope scope = schema.getScope();
             Container c = getInfo().getContainer();
             Study study = getStudyManager().getStudy(c);
+            QCState defaultQCState = study.getDefaultPipelineQCState() != null ?
+                    StudyManager.getInstance().getQCStateForRowId(c, study.getDefaultPipelineQCState().intValue()) : null;
 
             List<String> errors = new ArrayList<String>();
             validate(errors);
@@ -662,12 +665,14 @@ public class DatasetBatch extends StudyBatch implements Serializable
 
                     String[] imported = getStudyManager().importDatasetTSV(
                             study,
+                            getInfo().getUser(),
                             datasetDefinition,
                             text.toString(),
                             tsv.lastModified(),
                             columnMap,
                             errors,
-                            false); //Set to TRUE if/when MERGE is implemented
+                            false, //Set to TRUE if/when MERGE is implemented
+                            defaultQCState);
                     if (errors.size() == 0)
                     {
                         assert cpuCommit.start();

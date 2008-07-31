@@ -20,8 +20,6 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.collections.functors.InstantiateFactory;
-import org.apache.commons.collections.map.MultiValueMap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
@@ -42,12 +40,16 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.study.StudyService;
+import org.labkey.study.model.QCState;
+import org.labkey.study.model.QCStateSet;
 import org.labkey.common.tools.TabLoader;
 import org.labkey.common.util.CPUTimer;
 import org.labkey.study.QueryHelper;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudyCache;
 import org.labkey.study.StudySchema;
+import org.labkey.study.query.DataSetTable;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.designer.StudyDesignManager;
 import org.labkey.study.reports.ReportManager;
@@ -454,6 +456,156 @@ public class StudyManager
         {
             throw new RuntimeSQLException(x);
         }
+    }
+
+    private String getQCStateCacheName(Container container)
+    {
+        return container.getId() + "/" + QCState.class.toString();
+    }
+    
+    public QCState[] getQCStates(Container container)
+    {
+        try
+        {
+            QCState[] states = (QCState[]) DbCache.get(StudySchema.getInstance().getTableInfoQCState(), getQCStateCacheName(container));
+
+            if (states == null)
+            {
+                SimpleFilter filter = new SimpleFilter("Container", container);
+                states = Table.select(StudySchema.getInstance().getTableInfoQCState(), Table.ALL_COLUMNS, filter, new Sort("Label"), QCState.class);
+                DbCache.put(StudySchema.getInstance().getTableInfoQCState(), getQCStateCacheName(container), states, Cache.HOUR);
+            }
+            return states;
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
+
+    public boolean showQCStates(Container container)
+    {
+        return getQCStates(container).length > 0;
+    }
+
+    public boolean isQCStateInUse(QCState state)
+    {
+        try
+        {
+            Integer count = Table.executeSingleton(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM " +
+                    StudySchema.getInstance().getTableInfoStudyData() + " WHERE Container = ? AND QCState = ?",
+                    new Object[] { state.getContainer().getId(), state.getRowId() }, Integer.class);
+            return count != null && count.intValue() > 0;
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public QCState insertQCState(User user, QCState state) throws SQLException
+    {
+        QCState[] preInsertStates = getQCStates(state.getContainer());
+        DbCache.remove(StudySchema.getInstance().getTableInfoQCState(), getQCStateCacheName(state.getContainer()));
+        QCState newState = Table.insert(user, StudySchema.getInstance().getTableInfoQCState(), state);
+        // switching from zero to more than zero QC states affects the columns in our materialized datasets
+        // (adding a QC State column), so we unmaterialize them here:
+        if (preInsertStates == null || preInsertStates.length == 0)
+            clearCaches(state.getContainer(), true);
+        return newState;
+    }
+
+    public QCState updateQCState(User user, QCState state) throws SQLException
+    {
+        DbCache.remove(StudySchema.getInstance().getTableInfoQCState(), getQCStateCacheName(state.getContainer()));
+        return Table.update(user, StudySchema.getInstance().getTableInfoQCState(), state, state.getRowId(), null);
+    }
+
+    public void deleteQCState(QCState state) throws SQLException
+    {
+        QCState[] preDeleteStates = getQCStates(state.getContainer());
+        DbCache.remove(StudySchema.getInstance().getTableInfoQCState(), getQCStateCacheName(state.getContainer()));
+        Table.delete(StudySchema.getInstance().getTableInfoQCState(), state.getRowId(), null);
+
+        // removing our last QC state affects the columns in our materialized datasets
+        // (removing a QC State column), so we unmaterialize them here:
+        if (preDeleteStates.length == 1)
+            clearCaches(state.getContainer(), true);
+
+    }
+
+    public QCState getQCStateForRowId(Container container, int rowId)
+    {
+        QCState[] states = getQCStates(container);
+        for (QCState state : states)
+        {
+            if (state.getRowId() == rowId && state.getContainer().equals(container))
+                return state;
+        }
+        return null;
+    }
+
+    public List<String> updateDataQCState(Container container, User user, int datasetId, Collection<String> lsids, QCState newState, String comments) throws SQLException
+    {
+        DbScope scope = StudySchema.getInstance().getSchema().getScope();
+        boolean transactionOwner = !scope.isTransactionActive();
+        List<String> errors = new ArrayList<String>();
+        try
+        {
+            if (transactionOwner)
+                scope.beginTransaction();
+
+            for (String lsid : lsids)
+            {
+                Map<String, Object> row = StudyService.get().getDatasetRow(user, container, datasetId, lsid);
+                if (row != null)
+                {
+                    Integer oldStateId = (Integer) row.get(DataSetTable.QCSTATE_ID_COLNAME);
+                    QCState oldState = null;
+                    if (oldStateId != null)
+                        oldState = getQCStateForRowId(container, oldStateId.intValue());
+                    
+                    // check to see if we're actually changing state.  If not, no-op:
+                    if (safeIntegersEqual(newState != null ? newState.getRowId() : null, oldStateId))
+                        continue;
+
+                    StringBuilder auditComment = new StringBuilder("Record QC state was changed from ");
+                    if (oldState == null)
+                        auditComment.append("unspecified");
+                    else
+                        auditComment.append("\"").append(oldState.getLabel()).append("\"");
+                    auditComment.append(" to ");
+                    if (newState == null)
+                        auditComment.append("unspecified");
+                    else
+                        auditComment.append("\"").append(newState.getLabel()).append("\"");
+                    auditComment.append(".  User comment: ").append(comments);
+
+                    row.put(DataSetTable.QCSTATE_ID_COLNAME, newState != null ? newState.getRowId() : null);
+                    StudyService.get().updateDatasetRow(user, container, datasetId, lsid, row, errors, auditComment.toString());
+                }
+            }
+            if (transactionOwner && errors.size() == 0)
+                scope.commitTransaction();
+        }
+        finally
+        {
+            if (transactionOwner)
+            {
+                if (scope.isTransactionActive())
+                    scope.rollbackTransaction();
+            }
+        }
+        return errors;
+    }
+
+    private boolean safeIntegersEqual(Integer first, Integer second)
+    {
+        if (first == null && second == null)
+            return true;
+        if (first == null)
+            return false;
+        return first.equals(second);
     }
 
     public boolean showCohorts(Container container, User user)
@@ -1030,6 +1182,10 @@ public class StudyManager
             // reports
             //
             ReportManager.get().deleteReports(c, deletedTables);
+
+            // QC States
+            Table.delete(StudySchema.getInstance().getTableInfoQCState(), containerFilter);
+            assert deletedTables.add(StudySchema.getInstance().getTableInfoQCState());
             
             if (localTransaction)
             {
@@ -1172,158 +1328,10 @@ public class StudyManager
         }
     }
 
-
-    static final String allParticipantDataSql = "SELECT SD.DatasetId, PV.VisitRowId, SD.SequenceNum, SD._key, exp.ObjectProperty.*, exp.PropertyDescriptor.PropertyURI\n" +
-            "FROM study.studydata SD JOIN study.participantvisit PV ON SD.participantid=PV.participantid AND SD.sequencenum=PV.sequencenum\n" +
-            "LEFT OUTER JOIN exp.Object ON SD.lsid = exp.Object.objecturi\n" +
-            "LEFT OUTER JOIN exp.ObjectProperty ON exp.Object.ObjectId = exp.ObjectProperty.ObjectId\n" +
-            "JOIN exp.PropertyDescriptor ON exp.ObjectProperty.propertyid = exp.PropertyDescriptor.PropertyId\n" +
-            "WHERE SD.container=? AND PV.container=? AND exp.Object.container=? AND SD.participantid=?";
-
-
-    private static class VisitMultiMap extends MultiValueMap
+    public AllParticipantData getAllParticipantData(Study study, String participantId, QCStateSet qcStateSet)
     {
-        VisitMultiMap()
-        {
-            super(new TreeMap(), new InstantiateFactory(TreeSet.class));
-        }
+        return AllParticipantData.get(study, participantId, qcStateSet);    
     }
-
-
-    public AllParticipantData getAllParticpantData(Study study, String participantId)
-    {
-        Table.TableResultSet rs = null;
-        try
-        {
-        DbSchema schema = StudySchema.getInstance().getSchema();
-
-        rs = Table.executeQuery(schema, allParticipantDataSql,
-                new Object[] {study.getContainer().getId(), study.getContainer().getId(), study.getContainer().getId(), participantId});
-
-
-        // What we have here is a map of participant/sequencenum, in other words an entry for each "visit" or "event"
-        //
-        // Each event gets a map of keys, this is usually a one entry map with the key "", but it for multi-entry assays
-        // this map will have one entry for each key value
-        //
-        // this in turn, points to a map of propertyid/value, the actual patient data
-
-        Map<ParticipantDataMapKey,Map<String,Map<Integer,Object>>> allData = new HashMap<ParticipantDataMapKey, Map<String, Map<Integer, Object>>>(); 
-//        Map<ParticipantDataMapKey, Object> allData = new HashMap<ParticipantDataMapKey, Object>();
-
-
-        Set<Integer> datasetIds = new HashSet<Integer>();
-        MultiValueMap visitSeqMap = new VisitMultiMap();
-
-        int colDatasetId = rs.findColumn("DatasetId");
-        int colKey = rs.findColumn("_key");
-        int colVisitRowId = rs.findColumn("VisitRowId");
-        int colSequenceNum = rs.findColumn("SequenceNum");
-        int colPropertyId = rs.findColumn("propertyId");
-
-        while (rs.next())
-        {
-            ArrayListMap row = (ArrayListMap)rs.getRowMap();
-            Integer datasetId = (Integer) row.get(colDatasetId);
-            Double visitSequenceNum = (Double)row.get(colSequenceNum);
-            Integer visitRowId = (Integer)row.get(colVisitRowId);
-            Integer propertyId = (Integer)row.get(colPropertyId);
-            String key = StringUtils.trimToEmpty((String)row.get(colKey));
-
-            String typeTag = (String)row.get("TypeTag");
-            Object val;
-            switch (typeTag.charAt(0))
-            {
-                default:
-                case 's':
-                    val = row.get("StringValue");
-                    break;
-                case 'f':
-                    val = row.get("FloatValue");
-                    PropertyType pt = PropertyType.getFromURI(null, (String) row.get("RangeURI"));
-                    switch (pt)
-                    {
-                        case INTEGER:
-                            val = ((Double) val).intValue();
-                            break;
-                        case BOOLEAN:
-                            val = ((Double) val) == 0 ? Boolean.FALSE : Boolean.TRUE;
-                           break;
-                        default:
-                            break;
-                    }
-                    break;
-                case 'd':
-                    val = row.get("DateTimeValue");
-                    break;
-            }
-            if (visitRowId != null && visitSequenceNum != null)
-                visitSeqMap.put(visitRowId, visitSequenceNum);
-            datasetIds.add(datasetId);
-
-            // OK navigate the compound map and add value
-//            ParticipantDataMapKey m = new ParticipantDataMapKey(datasetId, visitSequenceNum, propertyId);
-            ParticipantDataMapKey mapKey = new ParticipantDataMapKey(datasetId, visitSequenceNum);
-            Map<String,Map<Integer,Object>> keyMap = allData.get(mapKey);
-            if (null == keyMap)
-                allData.put(mapKey, keyMap = new TreeMap<String,Map<Integer,Object>>());
-            Map<Integer,Object> propMap = keyMap.get(key);
-            if (null == propMap)
-                keyMap.put(key, propMap = new HashMap<Integer,Object>());
-            propMap.put(propertyId, val);
-        }
-
-        return new AllParticipantData(datasetIds, visitSeqMap, allData);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-        finally
-        {
-            if (rs != null) //noinspection EmptyCatchBlock
-                try { rs.close(); } catch (SQLException e) { }
-        }
-    }
-
-
-    public static class AllParticipantData
-    {
-        Set<Integer> dataSetIds;
-        MultiValueMap visitSequenceMap;
-        Map<ParticipantDataMapKey,Map<String,Map<Integer,Object>>> valueMap;
-
-        private AllParticipantData(Set<Integer> dataSetIds, MultiValueMap visitSeqMap, Map<ParticipantDataMapKey,Map<String,Map<Integer,Object>>> valueMap)
-        {
-            this.dataSetIds = dataSetIds;
-            this.visitSequenceMap = visitSeqMap;
-            this.valueMap = valueMap;
-        }
-
-        public Set<Integer> getDataSetIds()
-        {
-            return dataSetIds;
-        }
-
-        public Map<ParticipantDataMapKey,Map<String,Map<Integer,Object>>> getValueMap()
-        {
-            return valueMap;
-        }
-
-        public MultiValueMap getVisitSequenceMap()
-        {
-            return visitSequenceMap;
-        }
-
-        @Override
-        public String toString()
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.append(dataSetIds.toString()).append("\n").append(visitSequenceMap.keySet()).append("\n").append(valueMap.toString());
-            return sb.toString();
-        }
-    }
-
 
     public SnapshotBean createSnapshot(User user, SnapshotBean bean) throws SQLException, ServletException
     {
@@ -1676,6 +1684,13 @@ public class StudyManager
             col.errorValues = CONVERSION_ERROR;
         }
 
+        // make sure that our QC state columns are understood by this tab loader; we'll need to find QCStateLabel columns
+        // during import, and map them to values that will be populated in the QCState Id column.  As a result, we need to
+        // ensure QC label is in the loader's column set so it's found at import time, and that the QC ID is in the set so
+        // we can assign a value to the property before we insert the data.  brittp, 7.23.2008
+        loader.ensureColumn(new TabLoader.ColumnDescriptor(DataSetTable.QCSTATE_LABEL_COLNAME, String.class));
+        loader.ensureColumn(new TabLoader.ColumnDescriptor(DataSetDefinition.getQCStateURI(), Integer.class));
+
         Map<String, Object>[] maps = (Map<String, Object>[]) loader.load();
 
         return maps;
@@ -1757,25 +1772,28 @@ public class StudyManager
     }
 
 
-    public String[] importDatasetTSV(Study study, DataSetDefinition def, String tsv, long lastModified,
-            Map<String, String> columnMap, List<String> errors, boolean checkDuplicates)
+    public String[] importDatasetTSV(Study study, User user, DataSetDefinition def, String tsv, long lastModified,
+                                     Map<String, String> columnMap, List<String> errors, boolean checkDuplicates, QCState defaultQCState)
             throws IOException, ServletException, SQLException
     {
         Map<String, Object>[] dataMaps = parseTSV(def, tsv, columnMap, errors);
-        return importDatasetData(study, def, dataMaps, lastModified, errors, checkDuplicates);
+        return importDatasetData(study, user, def, dataMaps, lastModified, errors, checkDuplicates, defaultQCState);
     }
 
     /**
      * dataMaps must have strings which are property URIs
      */
-    public String[] importDatasetData(Study study, DataSetDefinition def, Map<String, Object>[] dataMaps, long lastModified,
-                                      List<String> errors, boolean checkDuplicates)
+    public String[] importDatasetData(Study study, User user, DataSetDefinition def, Map<String, Object>[] dataMaps, long lastModified,
+                                      List<String> errors, boolean checkDuplicates, QCState defaultQCState)
             throws IOException, ServletException, SQLException
     {
         Container c = study.getContainer();
         TableInfo tinfo = def.getTableInfo(null, false, false);
         String[] imported = new String[0];
 
+        Map<String, QCState> qcStateLabels =  new CaseInsensitiveHashMap<QCState>();
+        for (QCState state : StudyManager.getInstance().getQCStates(study.getContainer()))
+            qcStateLabels.put(state.getLabel(), state);
         //
         // Try to collect errors early.
         // Try not to be too repetitive, stop each loop after one error
@@ -1789,8 +1807,8 @@ public class StudyManager
 
             for (int i = 0; i < dataMaps.length; i++)
             {
-                Map<String,Object> m = dataMaps[i];
-                Object val = m.get(col.getPropertyURI());
+                Map<String,Object> dataMap = dataMaps[i];
+                Object val = dataMap.get(col.getPropertyURI());
                 if (null == val && !col.isNullable())
                 {
                     // Demographic data gets special handling for visit or date fields, depending on the type of study,
@@ -1803,9 +1821,9 @@ public class StudyManager
                             {
                                 // Yuck! The Map we get here isn't really a Map,
                                 // so we need to construct a copy and update our entry
-                                m = new CaseInsensitiveHashMap<Object>(m);
-                                m.put(col.getPropertyURI(), study.getStartDate());
-                                dataMaps[i] = m;
+                                dataMap = new CaseInsensitiveHashMap<Object>(dataMap);
+                                dataMap.put(col.getPropertyURI(), study.getStartDate());
+                                dataMaps[i] = dataMap;
                                 continue;
                             }
                         }
@@ -1814,11 +1832,11 @@ public class StudyManager
                             if (col.getName().equalsIgnoreCase("SequenceNum"))
                             {
                                 // See above
-                                m = new CaseInsensitiveHashMap<Object>(m);
+                                dataMap = new CaseInsensitiveHashMap<Object>(dataMap);
 
                                 // We introduce a sentinel, 0, as our SequenceNum
-                                m.put(col.getPropertyURI(), 0);
-                                dataMaps[i] = m;
+                                dataMap.put(col.getPropertyURI(), 0);
+                                dataMaps[i] = dataMap;
                                 continue;
                             }
                         }
@@ -1831,6 +1849,13 @@ public class StudyManager
                 {
                     errors.add("Row " + (i+1) + " data type error for field " + col.getName() + "."); // + " '" + String.valueOf(val) + "'.");
                     break;
+                }
+                else if (val != null && col.getName().equalsIgnoreCase(DataSetTable.QCSTATE_LABEL_COLNAME))
+                {
+                    // We have a non-null QC state column value.  We need to check to see if this is a known state,
+                    // and mark it for addition if not.
+                    if (!qcStateLabels.containsKey(val.toString()))
+                        qcStateLabels.put(val.toString(), null);
                 }
             }
         }
@@ -1910,6 +1935,44 @@ public class StudyManager
                 {
                     startedTransaction = true;
                     scope.beginTransaction();
+                }
+
+                // We first insert new QC states for any previously unknown QC labels found in the data:
+                Map<String, QCState> iterableStates = new HashMap<String, QCState>(qcStateLabels);
+                for (Map.Entry<String, QCState> state : iterableStates.entrySet())
+                {
+                    if (state.getValue() == null)
+                    {
+                        QCState newState = new QCState();
+                        // default to public data:
+                        newState.setPublicData(true);
+                        newState.setLabel(state.getKey());
+                        newState.setContainer(study.getContainer());
+                        newState = insertQCState(user, newState);
+                        qcStateLabels.put(state.getKey(), newState);
+                    }
+                }
+
+                // All QC states should now be stored in the database.  Next we iterate the row maps,
+                // swapping in the appropriate row id for each QC label, and applying the default QC state
+                // to null QC rows if appropriate:
+                String qcStatePropertyURI = DataSetDefinition.getQCStateURI();
+                for (Map<String, Object> dataMap : dataMaps)
+                {
+                    // only update the QC state ID if it isn't already explicitly specified:
+                    if (dataMap.get(qcStatePropertyURI) == null)
+                    {
+                        Object currentStateObj = dataMap.get(DataSetTable.QCSTATE_LABEL_COLNAME);
+                        String currentStateLabel = currentStateObj != null ? currentStateObj.toString() : null;
+                        if (currentStateLabel != null)
+                        {
+                            QCState state = qcStateLabels.get(currentStateLabel);
+                            assert state != null : "QC State " + currentStateLabel + " was expected but not found.";
+                            dataMap.put(qcStatePropertyURI, state.getRowId());
+                        }
+                        else if (defaultQCState != null)
+                            dataMap.put(qcStatePropertyURI, defaultQCState.getRowId());
+                    }
                 }
 
                 //
@@ -2184,8 +2247,8 @@ public class StudyManager
             if (null != conn)
             {
                 _stmt = conn.prepareStatement(
-                        "INSERT INTO " + tinfo + " (Container, DatasetId, ParticipantId, SequenceNum, LSID, _VisitDate, Created, Modified, SourceLsid, _key) " +
-                        "VALUES (?,?,?,?,?,?,?,?,?,?)");
+                        "INSERT INTO " + tinfo + " (Container, DatasetId, ParticipantId, SequenceNum, LSID, _VisitDate, Created, Modified, SourceLsid, _key, QCState) " +
+                        "VALUES (?,?,?,?,?,?,?,?,?,?, ?)");
                 _stmt.setString(1, _containerId);
                 _stmt.setInt(2, _datasetId);
             }
@@ -2220,7 +2283,8 @@ public class StudyManager
         static String visitDateURI = DataSetDefinition.getVisitDateURI();
         static String createdURI = DataSetDefinition.getCreatedURI();
         static String modifiedURI = DataSetDefinition.getModifiedURI();
-        String sourceLsidURI = DataSetDefinition.getSourceLsidURI();
+        static String sourceLsidURI = DataSetDefinition.getSourceLsidURI();
+        static String qcStateURI = DataSetDefinition.getQCStateURI();
 
 
         public String getURI(Map map)
@@ -2275,6 +2339,7 @@ public class StudyManager
             Long visitDate = toMs(map.get(_visitDatePropertyURI));
             assert !_study.isDateBased() || null != visitDate;
             String sourceLsid = (String) map.get(sourceLsidURI);
+            Integer qcState = (Integer) map.get(qcStateURI);
 
             _stmt.setString(3, ptid);
             _stmt.setDouble(4, visit);
@@ -2284,6 +2349,10 @@ public class StudyManager
             _stmt.setTimestamp(8, null == timeModified ? null : new Timestamp(timeModified));
             _stmt.setString(9, sourceLsid);
             _stmt.setString(10, key == null ? "" : String.valueOf(key));
+            if (qcState != null)
+                _stmt.setInt(11, qcState.intValue());
+            else
+                _stmt.setNull(11, Types.INTEGER);
             _stmt.execute();
             return uri;
         }
@@ -2561,6 +2630,8 @@ public class StudyManager
         int getDatasetId();
 
         String getRedirectUrl();
+
+        QCStateSet getQCStateSet();
     }
 
     public WebPartView<ParticipantViewConfig> getParticipantView(Container container, ParticipantViewConfig config)

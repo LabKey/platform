@@ -24,6 +24,7 @@ import org.labkey.api.reports.report.view.RunChartReportView;
 import org.labkey.api.reports.report.view.ChartUtil;
 import org.labkey.api.view.*;
 import org.labkey.study.controllers.StudyController;
+import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyManager;
@@ -66,8 +67,9 @@ public class StudyRunChartReportView extends RunChartReportView
                 if (def != null)
                     datasetId = def.getRowId();
 
+                String qcState = getViewContext().getActionURL().getParameter(BaseStudyController.SharedFormParameters.QCState);
                 List<String> participants = StudyController.getParticipantListFromCache(context, datasetId,
-                        getReport().getDescriptor().getProperty(ReportDescriptor.Prop.viewName), null);
+                        getReport().getDescriptor().getProperty(ReportDescriptor.Prop.viewName), null, qcState);
 
                 view.addView(ReportsController.getParticipantNavTrail(context, participants));
 

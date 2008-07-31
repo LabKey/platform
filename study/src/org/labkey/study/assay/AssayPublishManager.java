@@ -25,6 +25,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.TimepointType;
+import org.labkey.study.model.QCState;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.util.DateUtil;
@@ -35,10 +36,8 @@ import org.labkey.common.util.Pair;
 import org.labkey.study.StudySchema;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.Study;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.UploadLog;
+import org.labkey.study.controllers.BaseStudyController;
+import org.labkey.study.model.*;
 
 import javax.servlet.ServletException;
 import java.io.File;
@@ -175,9 +174,13 @@ public class AssayPublishManager implements AssayPublishService.Service
             dataset = StudyManager.getInstance().getDataSetDefinition(targetStudy, dataset.getRowId());
             if (ownsTransaction)
                 scope.commitTransaction();
+            Integer defaultQCStateId = targetStudy.getDefaultAssayQCState();
+            QCState defaultQCState = null;
+            if (defaultQCStateId != null)
+                defaultQCState = StudyManager.getInstance().getQCStateForRowId(targetContainer, defaultQCStateId.intValue());
             // unfortunately, the actual import cannot happen within our transaction: we eventually hit the
             // IllegalStateException in ContainerManager.ensureContainer.
-            String[] lsids = StudyManager.getInstance().importDatasetData(targetStudy, dataset, convertedDataMaps, new Date().getTime(), errors, true);
+            String[] lsids = StudyManager.getInstance().importDatasetData(targetStudy, user, dataset, convertedDataMaps, new Date().getTime(), errors, true, defaultQCState);
             if (lsids.length > 0 && protocol != null)
             {
                 for (Map.Entry<String, int[]> entry : getSourceLSID(dataMaps).entrySet())
@@ -207,6 +210,12 @@ public class AssayPublishManager implements AssayPublishService.Service
 
             ActionURL url = new ActionURL(StudyController.DatasetAction.class, targetContainer);
             url.addParameter(DataSetDefinition.DATASETKEY, dataset.getRowId());
+            if (StudyManager.getInstance().showQCStates(targetStudy.getContainer()))
+            {
+                QCStateSet allStates = QCStateSet.getAllStates(targetStudy.getContainer());
+                if (allStates != null)
+                    url.addParameter(BaseStudyController.SharedFormParameters.QCState, allStates.getFormValue());
+            }
 
             return url;
         }
@@ -442,7 +451,11 @@ public class AssayPublishManager implements AssayPublishService.Service
         try
         {
             ul = saveUploadData(user, dsd, tsv);
-            lsids = StudyManager.getInstance().importDatasetTSV(study, dsd, tsv, ul.getCreated().getTime(), columnMap, errors, true);
+            Integer defaultQCStateId = study.getDefaultDirectEntryQCState();
+            QCState defaultQCState = null;
+            if (defaultQCStateId != null)
+                defaultQCState = StudyManager.getInstance().getQCStateForRowId(study.getContainer(), defaultQCStateId.intValue());
+            lsids = StudyManager.getInstance().importDatasetTSV(study, user, dsd, tsv, ul.getCreated().getTime(), columnMap, errors, true, defaultQCState);
             if (errors.size() == 0)
                 StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user);
         }

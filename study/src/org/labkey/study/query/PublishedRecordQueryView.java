@@ -23,7 +23,9 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.study.model.QCStateSet;
 import org.labkey.api.view.DataView;
+import org.labkey.study.model.StudyManager;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -43,10 +45,18 @@ public class PublishedRecordQueryView extends DataSetQueryView
 
     public PublishedRecordQueryView(int datasetId, UserSchema schema, QuerySettings settings, String sourceLsid, int protocolId, int recordCount)
     {
-        super(datasetId, schema, settings, null, null);
+        super(datasetId, schema, settings, null, null, getStateSet(schema.getContainer()));
         _sourceLsid = sourceLsid;
         _protocolId = protocolId;
         _recordCount = recordCount;
+    }
+
+    private static QCStateSet getStateSet(Container container)
+    {
+        if (StudyManager.getInstance().showQCStates(container))
+            return QCStateSet.getAllStates(container);
+        else
+            return null;
     }
 
     protected TableInfo createTable()

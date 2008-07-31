@@ -3,7 +3,9 @@ package org.labkey.study.visitmanager;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.study.model.QCStateSet;
 import org.labkey.study.StudySchema;
+import org.labkey.study.query.DataSetTable;
 import org.labkey.study.model.*;
 
 import java.sql.ResultSet;
@@ -47,7 +49,7 @@ public class DateVisitManager extends VisitManager
         return "Timepoints";
     }
     
-    public Map<VisitMapKey, Integer> getVisitSummary(Cohort cohort) throws SQLException
+    public Map<VisitMapKey, Integer> getVisitSummary(Cohort cohort, QCStateSet qcStates) throws SQLException
     {
         Map<VisitMapKey, Integer> visitSummary = new HashMap<VisitMapKey, Integer>();
         DbSchema schema = StudySchema.getInstance().getSchema();
@@ -65,6 +67,7 @@ public class DateVisitManager extends VisitManager
                         "FROM " + studyData + " SD\n" +
                         "JOIN " + participantVisit + " PV ON SD.ParticipantId=PV.ParticipantId AND SD.SequenceNum=PV.SequenceNum AND SD.Container=PV.Container\n" +
                         "WHERE SD.Container = ? \n" +
+                        (qcStates != null ? "AND " + qcStates.getStateInClause(DataSetTable.QCSTATE_ID_COLNAME) + "\n" : "") +
                         "GROUP BY DatasetId, Day\n" +
                         "ORDER BY 1, 2",
                         new Object[] {_study.getContainer().getId()}, 0, false);
@@ -77,6 +80,7 @@ public class DateVisitManager extends VisitManager
                         "JOIN " + participantVisit + " PV ON SD.ParticipantId=PV.ParticipantId AND SD.SequenceNum=PV.SequenceNum AND SD.Container=PV.Container\n" +
                         "JOIN " + participantTable + " P ON SD.ParticipantId=P.ParticipantId AND SD.Container=P.Container\n" +
                         "WHERE SD.Container = ? AND P.CohortId = ?\n" +
+                        (qcStates != null ? "AND " + qcStates.getStateInClause(DataSetTable.QCSTATE_ID_COLNAME) + "\n" : "") +
                         "GROUP BY DatasetId, Day\n" +
                         "ORDER BY 1, 2",
                         new Object[] {_study.getContainer().getId(), cohort.getRowId()}, 0, false);

@@ -34,6 +34,7 @@ import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.QCStateSet;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -108,7 +109,7 @@ public class DatasetController extends BaseStudyController
 
             UpdateView view = new UpdateView(updateForm, errors);
             DataRegion dataRegion = view.getDataRegion();
-            dataRegion.addHiddenFormField("datasetId", Integer.toString(form.getDatasetId()));
+            dataRegion.addHiddenFormField(DataSetDefinition.DATASETKEY, Integer.toString(form.getDatasetId()));
 
             String referer = form.getReturnURL();
             if (referer == null)
@@ -119,7 +120,7 @@ public class DatasetController extends BaseStudyController
             if (referer == null)
             {
                 cancelURL = new ActionURL(StudyController.DatasetAction.class, getContainer());
-                cancelURL.addParameter("datasetId", form.getDatasetId());
+                cancelURL.addParameter(DataSetDefinition.DATASETKEY, form.getDatasetId());
             }
             else
             {
@@ -216,7 +217,12 @@ public class DatasetController extends BaseStudyController
                 return new ActionURL(form.getReturnURL());
             
             ActionURL url = new ActionURL(StudyController.DatasetAction.class, getContainer());
-            url.addParameter("datasetId", form.getDatasetId());
+            url.addParameter(DataSetDefinition.DATASETKEY, form.getDatasetId());
+            if (StudyManager.getInstance().showQCStates(form.getContainer()))
+            {
+                QCStateSet stateSet = QCStateSet.getAllStates(form.getContainer());
+                url.addParameter(BaseStudyController.SharedFormParameters.QCState, stateSet.getFormValue());
+            }
             return url;
         }
 
@@ -258,7 +264,7 @@ public class DatasetController extends BaseStudyController
 
                         TableViewForm objForm = new TableViewForm(datasetTable);
                         objForm.set("lsid", lsid);
-                        objForm.set("datasetId", datasetId);
+                        objForm.set(DataSetDefinition.DATASETKEY, datasetId);
 
                         DetailsView objView = new DetailsView(objForm);
                         objView.getDataRegion().setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
@@ -396,7 +402,7 @@ public class DatasetController extends BaseStudyController
         }
     }
 
-    public static class EditDatasetRowForm
+    public static class EditDatasetRowForm extends ViewForm
     {
         private String lsid;
         private int datasetId;

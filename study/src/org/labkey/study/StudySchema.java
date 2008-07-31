@@ -190,6 +190,11 @@ public class StudySchema
         return getSchema().getTable("Cohort");
     }
 
+    public TableInfo getTableInfoQCState()
+    {
+        return getSchema().getTable("QCState");
+    }
+
     public TableInfo getTableInfoParticipantView()
     {
         return getSchema().getTable("ParticipantView");

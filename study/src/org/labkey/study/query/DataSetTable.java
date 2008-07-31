@@ -16,24 +16,27 @@
 
 package org.labkey.study.query;
 
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.OORDisplayColumnFactory;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.query.*;
 import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.study.model.QCState;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.StudyManager;
 
 import javax.servlet.ServletException;
 import java.util.*;
 
 public class DataSetTable extends FilteredTable
 {
+    public static final String QCSTATE_ID_COLNAME = "QCState";
+    public static final String QCSTATE_LABEL_COLNAME = "QCStateLabel";
     StudyQuerySchema _schema;
     DataSetDefinition _dsd;
     TableInfo _fromTable;
@@ -104,6 +107,31 @@ public class DataSetTable extends FilteredTable
                 addWrapColumn(baseColumn);
                 //Don't add to visible cols...
             }
+            else if (baseColumn.getName().equalsIgnoreCase(QCSTATE_ID_COLNAME))
+            {
+                ColumnInfo qcStateColumn = new AliasedColumn(this, QCSTATE_ID_COLNAME, baseColumn);
+                qcStateColumn.setFk(new LookupForeignKey("RowId")
+                    {
+                        public TableInfo getLookupTableInfo()
+                        {
+                            return new QCStateTable(_schema);
+                        }
+                    });
+
+                qcStateColumn.setDisplayColumnFactory(new DisplayColumnFactory()
+                {
+                    public DisplayColumn createRenderer(ColumnInfo colInfo)
+                    {
+                        return new QCStateDisplayColumn(colInfo);
+                    }
+                });
+
+                addColumn(qcStateColumn);
+                if (StudyManager.getInstance().showQCStates(_schema.getContainer()))
+                    defaultVisibleCols.add(FieldKey.fromParts(baseColumn.getName()));
+                else
+                    qcStateColumn.setIsHidden(true);
+            }
             else
             {
                 ColumnInfo col = addWrapColumn(baseColumn);
@@ -128,6 +156,40 @@ public class DataSetTable extends FilteredTable
         lsidColumn.setKeyField(true);
         getColumn("SourceLSID").setIsHidden(true);
         setDefaultVisibleColumns(defaultVisibleCols);
+    }
+
+    private class QCStateDisplayColumn extends DataColumn
+    {
+        private Map<Integer, QCState> _qcStateCache;
+        public QCStateDisplayColumn(ColumnInfo col)
+        {
+            super(col);
+        }
+
+        public String getFormattedValue(RenderContext ctx)
+        {
+            Object value = getValue(ctx);
+            StringBuilder formattedValue = new StringBuilder(super.getFormattedValue(ctx));
+            if (value != null && value instanceof Integer)
+            {
+                QCState state = getStateCache(ctx).get((Integer) value);
+                if (state != null && state.getDescription() != null)
+                    formattedValue.append(PageFlowUtil.helpPopup("QC State " + state.getLabel(), state.getDescription()));
+            }
+            return formattedValue.toString();
+        }
+
+        private Map<Integer, QCState> getStateCache(RenderContext ctx)
+        {
+            if (_qcStateCache == null)
+            {
+                _qcStateCache = new HashMap<Integer, QCState>();
+                QCState[] states = StudyManager.getInstance().getQCStates(ctx.getContainer());
+                for (QCState state : states)
+                    _qcStateCache.put(state.getRowId(), state);
+            }
+            return _qcStateCache;
+        }
     }
 
     private static final Set<String> defaultHiddenCols = new CaseInsensitiveHashSet("VisitRowId", "Created", "Modified", "lsid");

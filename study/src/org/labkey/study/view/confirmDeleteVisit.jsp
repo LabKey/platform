@@ -33,7 +33,7 @@
 
     StudyManager manager = StudyManager.getInstance();
     VisitManager visitManager = manager.getVisitManager(study);
-    Map<VisitMapKey,Integer> summaryMap = visitManager.getVisitSummary(null);
+    Map<VisitMapKey,Integer> summaryMap = visitManager.getVisitSummary(null, null);
     int count = 0;
     for (Map.Entry<VisitMapKey,Integer> e : summaryMap.entrySet())
     {

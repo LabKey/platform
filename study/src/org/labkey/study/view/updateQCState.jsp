@@ -1,0 +1,66 @@
+<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.study.model.DataSetDefinition" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.DataRegionSelection" %>
+<%@ page import="org.labkey.study.model.QCState" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.api.view.WebPartView" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%
+    JspView<StudyController.UpdateQCStateForm> me = (JspView<StudyController.UpdateQCStateForm>) HttpView.currentView();
+    StudyController.UpdateQCStateForm bean = me.getModelBean();
+    Container container = me.getViewContext().getContainer();
+    QCState[] states = StudyManager.getInstance().getQCStates(container);
+%>
+<%
+    WebPartView.startTitleFrame(out, "QC State Change", null, null, null);
+%>
+<labkey:errors/>
+<form action="updateQCState.post" method="POST">
+    <input type="hidden" name="update" value="true" />
+    <input type="hidden" name="datasetId" value="<%= bean.getDatasetId() %>" />
+    <input type="hidden" name="<%= DataRegionSelection.DATA_REGION_SELECTION_KEY %>" value="<%= bean.getDataRegionSelectionKey() %>" />
+    <table>
+        <tr>
+            <th>New QC State</th>
+            <td>
+                <select name="newState">
+                    <option value=""></option>
+                <%
+                    for (QCState state : states)
+                    {
+                        boolean selected = bean.getNewState() != null && bean.getNewState().intValue() == state.getRowId();
+                %>
+                    <option value="<%= state.getRowId() %>" <%= selected ? "SELECTED" : "" %>><%= h(state.getLabel()) %></option>
+                <%
+                    }
+                %>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <th>Comments</th>
+            <td>
+                <textarea rows="10" cols="60" name="comments"><%= h(bean.getComments()) %></textarea><br>
+
+            </td>
+        </tr>
+        <tr>
+            <td>&nbsp;</td>
+            <td><%= buttonImg("Update Status") %> <%= buttonLink("Cancel", new ActionURL(StudyController.DatasetAction.class,
+                    container).addParameter(DataSetDefinition.DATASETKEY, bean.getDatasetId()))%></td>
+        </tr>
+    </table>
+</form>
+<%
+    WebPartView.endTitleFrame(out);
+    WebPartView.startTitleFrame(out, "Selected Data Rows", null, null, null);
+%>
+<% me.include(bean.getQueryView(), out); %>
+<%
+    WebPartView.endTitleFrame(out);
+%>

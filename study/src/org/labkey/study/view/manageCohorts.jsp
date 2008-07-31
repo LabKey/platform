@@ -29,6 +29,7 @@
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.study.controllers.BaseStudyController" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -183,7 +184,7 @@
                 {
                     %>
                 <input type="hidden" name="participantId" value="<%=entry.getKey().getParticipantId()%>">
-                <select name="cohortId"><%
+                <select name="<%= BaseStudyController.SharedFormParameters.cohortId.name() %>"><%
                     // Need to display selection drop-down for each participant
                     Cohort selectedCohort = entry.getValue();
                     

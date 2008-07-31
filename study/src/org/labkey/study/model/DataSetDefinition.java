@@ -26,6 +26,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.*;
 import org.labkey.api.view.HttpView;
 import org.labkey.study.StudySchema;
+import org.labkey.study.query.DataSetTable;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Category;
 import org.apache.commons.lang.StringUtils;
@@ -68,6 +69,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         "Created",
         "Modified",
         "sourcelsid",
+        "QCState",
         "lsid"
     };
 
@@ -613,6 +615,14 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             }
 
             columns.add(sequenceNumCol);
+
+            ColumnInfo qcStateCol = newDatasetColumnInfo(this, studyData.getColumn(DataSetTable.QCSTATE_ID_COLNAME));
+            // UNDONE: make the QC column user editable.  This is turned off for now because StudyDataTableInfo is not
+            // a FilteredTable, so it doesn't know how to restrict QC options to those in the current container.
+            // Note that QC state can still be modified via the standard update UI.
+            qcStateCol.setUserEditable(false);
+            columns.add(qcStateCol);
+
             // Property columns
             ColumnInfo[] columnsLookup = OntologyManager.getColumnsForType(def.getTypeURI(), this, c);
             columns.addAll(Arrays.asList(columnsLookup));
@@ -641,7 +651,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
 //          <UNDONE> just add a lookup column to the columnlist for VisitDate
             selectName = new SQLFragment(
-                    "(SELECT SD.lsid, SD.ParticipantId, SD.SourceLSID, SD.SequenceNum, SD.Created, SD.Modified, SD._VisitDate AS Date, PV.Day, PV.VisitRowId\n" +
+                    "(SELECT SD.lsid, SD.ParticipantId, SD.SourceLSID, SD.SequenceNum, SD.QCState, SD.Created, SD.Modified, SD._VisitDate AS Date, PV.Day, PV.VisitRowId\n" +
                     "  FROM " + studyData + " SD LEFT OUTER JOIN " + participantVisit + " PV ON SD.Container=PV.Container AND SD.ParticipantId=PV.ParticipantId AND SD.SequenceNum=PV.SequenceNum \n"+ 
                     "  WHERE SD.container='" + c.getId() + "' AND SD.datasetid=" + _datasetId + ") " + getAliasName());
             
@@ -763,6 +773,11 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     public static String getModifiedURI()
     {
         return uriForName("Modified");
+    }
+
+    public static String getQCStateURI()
+    {
+        return uriForName(DataSetTable.QCSTATE_ID_COLNAME);
     }
 
     @Override

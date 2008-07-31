@@ -66,7 +66,7 @@
     url.addParameter("returnUrl", currentUrl);
     StudyManager manager = StudyManager.getInstance();
     Study study = manager.getStudy(context.getContainer());
-    StudyManager.AllParticipantData all = manager.getAllParticpantData(study, bean.getParticipantId());
+    AllParticipantData all = manager.getAllParticipantData(study, bean.getParticipantId(), bean.getQCStateSet());
 
     Visit[] allVisits = manager.getVisits(study);
     ArrayList<Visit> visits = new ArrayList<Visit>(all.getVisitSequenceMap().size());
@@ -103,13 +103,13 @@
     // all.getVisitSequenceMap().get(visit.getRowId())) gives us sequences for a visit
     // still need max(#keys for sequence)
     Map<Double, Integer> countKeysForSequence = new HashMap<Double, Integer>();
-    for (Map.Entry entry : all.getValueMap().entrySet())
+    for (Map.Entry<ParticipantDataMapKey, AllParticipantData.RowSet> entry : all.getValueMap().entrySet())
     {
-        ParticipantDataMapKey key = (ParticipantDataMapKey) entry.getKey();
-        Map keyMap = (Map) entry.getValue();
+        ParticipantDataMapKey key = entry.getKey();
+        AllParticipantData.RowSet keyMap = entry.getValue();
         Integer count = countKeysForSequence.get(key.sequenceNum);
-        if (count == null || keyMap.size() > count)
-            countKeysForSequence.put(key.sequenceNum, keyMap.size());
+        if (count == null || keyMap.getKeyFieldCount() > count.intValue())
+            countKeysForSequence.put(key.sequenceNum, keyMap.getKeyFieldCount());
     }
 
     User user = (User) request.getUserPrincipal();
@@ -119,7 +119,6 @@
 
     int totalSeqKeyCount = 0;
 %>
-<p/>
 
 <table class="labkey-participant-view">
 
@@ -159,7 +158,7 @@
     </tr>
 
     <%
-        Map<ParticipantDataMapKey,Map<String,Map<Integer,Object>>> valueMap = all.getValueMap(); 
+        Map<ParticipantDataMapKey, AllParticipantData.RowSet> valueMap = all.getValueMap();
         ParticipantDataMapKey pdKey = new ParticipantDataMapKey(0, 0);
 
         for (DataSetDefinition dataSet : datasets)
@@ -225,13 +224,52 @@
                 </tr>
                 <%
             }
-
             int row = 0;
+            String className = row % 2 == 0 ? "labkey-alternate-row" : "labkey-row";
+            if (StudyManager.getInstance().showQCStates(context.getContainer()))
+            {
+                row++;
+                %>
+                <tr style="<%=expanded ? "" : "display:none"%>"><td class="<%= className %>" align="left" nowrap>QC State</td>
+                <%
+                for (Visit visit : visits)
+                {
+                    for (double seq : (Collection<Double>) all.getVisitSequenceMap().get(visit.getRowId()))
+                    {
+                        pdKey.sequenceNum = seq;
+                        AllParticipantData.RowSet keyMap = valueMap.get(pdKey);
+                        int countTD = 0;
+                        if (null != keyMap)
+                        {
+                            for (AllParticipantData.Row propMap : keyMap.getAll())
+                            {
+                                QCState state = propMap.getQCState();
+                                boolean hasDescription = state != null && state.getDescription() != null && state.getDescription().length() > 0;
+                                %>
+                                    <td class="<%=className%>">
+                                        <%= state == null ? "Unspecified" : h(state.getLabel())%><%= hasDescription ? helpPopup("QC State: " + state.getLabel(), state.getDescription()) : "" %>
+                                    </td>
+                                <%
+                                countTD++;
+                            }
+                        }
+                        // do we need to pad?
+                        int maxTD = countKeysForSequence.get(seq) == null ? 1 : countKeysForSequence.get(seq);
+                        if (countTD < maxTD)
+                        {
+                            %><td class="<%=className%>" colspan="<%=maxTD-countTD%>">&nbsp;</td><%
+                        }
+                    }
+                }
+                %>
+                </tr>
+                <%
+            }
             for (PropertyDescriptor pd : pds)
             {
                 if (pd == null) continue;
                 row++;
-                String className = row % 2 == 0 ? "labkey-alternate-row" : "labkey-row";
+                className = row % 2 == 0 ? "labkey-alternate-row" : "labkey-row";
                 String labelName = pd.getLabel();
                 if (StringUtils.isEmpty(labelName))
                     labelName = pd.getName();
@@ -243,11 +281,11 @@
                     {
                         // UNDONE
                         pdKey.sequenceNum = seq;
-                        Map<String,Map<Integer,Object>> keyMap = valueMap.get(pdKey);
+                        AllParticipantData.RowSet keyMap = valueMap.get(pdKey);
                         int countTD = 0;
                         if (null != keyMap)
                         {
-                            for (Map<Integer,Object> propMap : keyMap.values())
+                            for (AllParticipantData.Row propMap : keyMap.getAll())
                             {
                                 Object value = propMap.get(pd.getPropertyId());
                                 %><td><%= (null == value ? "&nbsp;" : h(ConvertUtils.convert(value)))%></td><%

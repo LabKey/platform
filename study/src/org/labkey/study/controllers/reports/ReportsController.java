@@ -31,7 +31,6 @@ import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.actions.ReportForm;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ChartDesignerBean;
 import org.labkey.api.reports.report.view.ChartUtil;
@@ -56,7 +55,6 @@ import org.labkey.study.model.Visit;
 import org.labkey.study.query.DataSetQueryView;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.reports.*;
-import org.labkey.study.view.DataHeader;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
@@ -1915,30 +1913,10 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    private void addParticipantListToCache(int datasetId, String queryName, String viewName)
-    {
-        ViewContext context = getViewContext();
-
-        final Study study = StudyManager.getInstance().getStudy(getContainer());
-        final StudyQuerySchema querySchema = new StudyQuerySchema(study, getUser(), true);
-        QuerySettings qs = new QuerySettings(context, DataSetQueryView.DATAREGION);
-        qs.setSchemaName(querySchema.getSchemaName());
-        qs.setQueryName(queryName);
-        qs.setViewName(viewName);
-        DataSetQueryView queryView = new DataSetQueryView(datasetId, querySchema, qs, null, null);
-
-        addParticipantListToCache(datasetId, queryView, viewName);
-    }
-
-    private void addParticipantListToCache(int datasetId, QueryView queryView, String viewName)
-    {
-        List<String> participants = StudyController.generateParticipantList(queryView);
-        StudyController.addParticipantListToCache(getViewContext(), datasetId, viewName, participants, null);
-    }
-
     public static HttpView getParticipantNavTrail(ViewContext context, List<String> participantList)
     {
         String participantId = context.getActionURL().getParameter("participantId");
+        String qcState = context.getActionURL().getParameter(SharedFormParameters.QCState);
 
         String previousParticipantURL = null;
         String nextParticipantURL = null;
@@ -1973,7 +1951,7 @@ public class ReportsController extends BaseStudyController
                 }
             }
         }
-        StudyController.ParticipantNavView view =  new StudyController.ParticipantNavView(previousParticipantURL, nextParticipantURL, null, title);
+        StudyController.ParticipantNavView view =  new StudyController.ParticipantNavView(previousParticipantURL, nextParticipantURL, null, qcState, title);
         view.setShowCustomizeLink(false);
 
         return view;
@@ -2037,7 +2015,10 @@ public class ReportsController extends BaseStudyController
             DataSetDefinition def = getDataSetDefinition();
 
             if (def != null)
-                _appendNavTrail(root, def.getDataSetId(), 0, 0);
+            {
+                String qcState = getViewContext().getActionURL().getParameter(SharedFormParameters.QCState);
+                _appendNavTrail(root, def.getDataSetId(), 0, 0, qcState);
+            }
             return root;
         }
     }
