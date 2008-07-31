@@ -58,7 +58,7 @@ public class ReportQueryView extends QueryView
     {
         DataRegion region = super.createDataRegion();
         region.setShadeAlternatingRows(true);
-        region.setShowColumnSeparators(true);
+        region.setShowBorders(true);
         return region;
     }
 

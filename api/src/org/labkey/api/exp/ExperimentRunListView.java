@@ -190,7 +190,7 @@ public class ExperimentRunListView extends QueryView
     {
         DataRegion result = super.createDataRegion();
         result.setShadeAlternatingRows(true);
-        result.setShowColumnSeparators(true);
+        result.setShowBorders(true);
         result.setName(_selectedFilter.getTableName());
         for (DisplayColumn column : result.getDisplayColumns())
         {

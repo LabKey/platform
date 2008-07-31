@@ -51,6 +51,7 @@ public abstract class DisplayColumn extends RenderColumn
     private String _description = null;
     protected boolean _htmlFiltered = true;
     private String _backgroundColor;
+    private String _displayClass;
 
     public abstract void renderGridCellContents(RenderContext ctx, Writer out) throws IOException;
 
@@ -339,16 +340,16 @@ public abstract class DisplayColumn extends RenderColumn
         {
             out.write(" " + headerClass);
         }
+        if (_displayClass != null)
+        {
+            out.write(" " + _displayClass);
+        }
         out.write("'");
     
         out.write(" style='");
         out.write(getDefaultHeaderStyle());
         out.write("'");
 
-        if (_backgroundColor != null)
-        {
-            out.write(" bgColor=\"" + _backgroundColor + "\"");
-        }
         if (null != getDescription())
         {
             out.write(" title=\"");
@@ -517,6 +518,10 @@ public abstract class DisplayColumn extends RenderColumn
         {
             out.write(" class='");
             out.write(getGridCellClass());
+            if (_displayClass != null)
+            {
+                out.write(" " + _displayClass);
+            }
             out.write("'");
         }
         if (_textAlign != null)
@@ -529,10 +534,6 @@ public abstract class DisplayColumn extends RenderColumn
             out.write(" style='");
             out.write(style);
             out.write("'");
-        }
-        if (_backgroundColor != null)
-        {
-            out.write(" bgColor=\"" + _backgroundColor + "\"");
         }
         if (_nowrap)
             out.write(" nowrap>");
@@ -744,8 +745,8 @@ public abstract class DisplayColumn extends RenderColumn
         _backgroundColor = backgroundColor;
     }
 
-    public String getBackgroundColor()
+    public void setDisplayClass(String className)
     {
-        return _backgroundColor;
+        _displayClass = className;
     }
 }

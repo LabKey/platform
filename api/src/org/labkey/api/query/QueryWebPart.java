@@ -112,7 +112,7 @@ public class QueryWebPart extends WebPartView
             {
                 QueryView queryView = _schema.createView(getViewContext(), _settings);
                 queryView.setShadeAlternatingRows(true);
-                queryView.setShowColumnSeparators(true);
+                queryView.setShowBorders(true);
                 view = queryView;
             }
         }

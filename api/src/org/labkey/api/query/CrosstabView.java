@@ -56,7 +56,7 @@ public class CrosstabView extends QueryView
 
             CrosstabDataRegion rgn = new CrosstabDataRegion(table, _numRowAxisCols, _numMeasures);
             rgn.setShadeAlternatingRows(true);
-            rgn.setShowColumnSeparators(true);
+            rgn.setShowBorders(true);
 
             //copied from QueryView.createDataRegion()
             //CONSIDER: why does QueryView mix creation and initialization into one method?

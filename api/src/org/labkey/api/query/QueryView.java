@@ -69,7 +69,7 @@ public class QueryView extends WebPartView<Object>
     private boolean _showRecordSelectors = false;
 
     private boolean _shadeAlternatingRows = false;
-    private boolean _showColumnSeparators = false;
+    private boolean _showBorders = false;
     private Report _report;
 
     private boolean _showExportButtons = true;
@@ -896,7 +896,7 @@ public class QueryView extends WebPartView<Object>
         rgn.setDisplayColumns(displayColumns);
 
         rgn.setShadeAlternatingRows(isShadeAlternatingRows());
-        rgn.setShowColumnSeparators(isShowColumnSeparators());
+        rgn.setShowBorders(isShowBorders());
         rgn.setShowPagination(isShowPagination());
         rgn.setShowPaginationCount(isShowPaginationCount());
 
@@ -1307,14 +1307,14 @@ public class QueryView extends WebPartView<Object>
         _shadeAlternatingRows = shadeAlternatingRows;
     }
 
-    public boolean isShowColumnSeparators()
+    public boolean isShowBorders()
     {
-        return _showColumnSeparators;
+        return _showBorders;
     }
 
-    public void setShowColumnSeparators(boolean showColumnSeparators)
+    public void setShowBorders(boolean showBorders)
     {
-        _showColumnSeparators = showColumnSeparators;
+        _showBorders = showBorders;
     }
 
     public boolean isShowPagination()

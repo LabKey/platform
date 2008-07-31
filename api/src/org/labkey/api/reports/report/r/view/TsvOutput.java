@@ -132,9 +132,9 @@ public class TsvOutput extends AbstractParamReplacement
                 for (Map m : data)
                 {
                     if (row % 2 == 0)
-                        out.write("<tr bgcolor=#f0f0f0>");
+                        out.write("<tr class=\"labkey-alternate-row\">");
                     else
-                        out.write("<tr bgcolor=#ffffff>");
+                        out.write("<tr class=\"labkey-row\">");
                     for (TabLoader.ColumnDescriptor col : display)
                     {
                         Object colVal = m.get(col.name);

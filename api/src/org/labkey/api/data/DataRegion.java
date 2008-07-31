@@ -75,8 +75,7 @@ public class DataRegion extends DisplayElement
     private boolean allowAsync = false;
 
     private boolean _shadeAlternatingRows = false;
-    private boolean _showColumnSeparators = false;
-    private boolean _showHeaderSeparator = true;
+    private boolean _showBorders = false;
     private boolean _showPagination = true;
     private boolean _showPaginationCount = true;
 
@@ -97,8 +96,6 @@ public class DataRegion extends DisplayElement
     public static final String SELECT_CHECKBOX_NAME = ".select";
     protected static final String TOGGLE_CHECKBOX_NAME = ".toggle";
     protected static final String COLUMN_SEPARATOR_COLOR = "#AAAAAA";
-    protected static final String COLUMN_SEPARATOR_STYLE_ARRIBS = "border-right:solid 1px " + COLUMN_SEPARATOR_COLOR;
-    protected static final String ALTERNATING_ROW_COLOR = "#EEEEEE";
 
     public void addDisplayColumn(DisplayColumn col)
     {
@@ -647,7 +644,7 @@ public class DataRegion extends DisplayElement
                 Table.TableResultSet tableRS = (Table.TableResultSet) rs;
                 if (!tableRS.isComplete())
                 {
-                    out.write("<span style=\"color:#008000\">");
+                    out.write("<span class=\"labkey-message\">");
                     out.write(tableRS.getTruncationMessage(_maxRows));
                     out.write("</span>");
                 }
@@ -804,13 +801,7 @@ public class DataRegion extends DisplayElement
         {
             colCount++;
         }
-        out.write("<tr><td ");
-        if (_showColumnSeparators)
-        {
-            out.write("style=\"" + COLUMN_SEPARATOR_STYLE_ARRIBS + ";border-right:solid 1px " + COLUMN_SEPARATOR_COLOR + "\"");
-        }
-
-        out.write("colspan=\"" + colCount + "\"><i>");
+        out.write("<tr><td colspan=\"" + colCount + "\"><i>");
         out.write(getNoRowsMessage());
         out.write("</i></td></tr>\n");
     }
@@ -861,14 +852,13 @@ public class DataRegion extends DisplayElement
 
     protected void renderGridStart(RenderContext ctx, Writer out, List<DisplayColumn> renderers) throws IOException
     {
-        if (isShowColumnSeparators())
+        if (isShowBorders())
         {
-            out.write("<table class=\"labkey-grid labkey-show-column-separators\"");
-
+            out.write("<table class=\"labkey-data-region labkey-show-borders\"");
         }
         else
         {
-            out.write("<table class=\"labkey-data-region labkey-show-header-separator\"");
+            out.write("<table class=\"labkey-data-region\"");
         }
 
         StringBuilder style = new StringBuilder();
@@ -905,14 +895,6 @@ public class DataRegion extends DisplayElement
         if (_showRecordSelectors)
         {
             out.write("<td class=\"labkey-selectors labkey-selector-header");
-            if (_showColumnSeparators)
-            {
-                out.write(" labkey-show-column-separators");
-            }
-            else if (_showHeaderSeparator)
-            {
-                out.write(" labkey-show-header-separator");
-            }
             out.write("\">");
 
             out.write("<input type=checkbox title='Check/uncheck all' name='");
@@ -925,16 +907,7 @@ public class DataRegion extends DisplayElement
         {
             if (renderer.getVisible(ctx))
             {
-                if (_showColumnSeparators)
-                {
-                    renderer.renderGridHeaderCell(ctx, out, "labkey-show-column-separators");
-                }
-                else if (_showHeaderSeparator)
-                {
-                    renderer.renderGridHeaderCell(ctx, out, "labkey-show-header-separator");
-                }
-                else
-                    renderer.renderGridHeaderCell(ctx, out);
+                renderer.renderGridHeaderCell(ctx, out);
             }
         }
 
@@ -960,29 +933,17 @@ public class DataRegion extends DisplayElement
                 if (singleAggregateType != result.getAggregate().getType())
                     singleAggregateType = null;
             }
-            StringBuilder tdStyle = new StringBuilder();
-            if (borderTop)
-                tdStyle.append("border-top:solid 1px ").append(COLUMN_SEPARATOR_COLOR).append(";");
-            if (borderBottom)
-                tdStyle.append("border-bottom:solid 1px ").append(COLUMN_SEPARATOR_COLOR).append(";");
 
-            out.write("<tr style=\"border-top:solid 1px;background-color:#" + WebTheme.getTheme().getNavBarColor() + "\">");
+            out.write("<tr class=\"labkey-aggregates-row\">");
             if (_showRecordSelectors)
             {
-                out.write("<td class='labkey-selectors'");
-                if (tdStyle.length() > 0)
-                    out.write(" style=\"" + tdStyle.toString() + "\"");
-                out.write(">");
+                out.write("<td class='labkey-selectors'>");
                 if (singleAggregateType != null)
                     out.write(singleAggregateType.getFriendlyName() + ":");
                 else
                     out.write("&nbsp;");
                 out.write("</td>");
             }
-
-            // after the first cell (record selector/aggregate title) we display a right border:
-            if (_showColumnSeparators)
-                tdStyle.append(COLUMN_SEPARATOR_STYLE_ARRIBS);
 
             boolean first = true;
             for (DisplayColumn renderer : renderers)
@@ -994,9 +955,6 @@ public class DataRegion extends DisplayElement
                         out.write(" class='" + renderer.getGridCellClass() + "'");
                     if (renderer.getTextAlign() != null)
                         out.write(" align='" + renderer.getTextAlign() + "'");
-
-                    if (tdStyle.length() > 0)
-                        out.write(" style='" + tdStyle.toString() + "'");
                     out.write(">");
                     // if we aren't showing record selectors, output our aggregate type
                     // at the beginning of the first row, regardless of whether or not its
@@ -1069,7 +1027,7 @@ public class DataRegion extends DisplayElement
     {
         if (_shadeAlternatingRows && rowIndex % 2 == 0)
         {
-            out.write("<tr class=\"labkey-alternating-row\">");
+            out.write("<tr class=\"labkey-alternate-row\">");
         }
         else
         {
@@ -1080,8 +1038,6 @@ public class DataRegion extends DisplayElement
             renderRecordSelector(ctx, out);
 
         String style = null;
-//        if (isShowColumnSeparators())
-//            style = COLUMN_SEPARATOR_STYLE_ARRIBS;
         for (DisplayColumn renderer : renderers)
             if (renderer.getVisible(ctx))
                 renderer.renderGridDataCell(ctx, out, style);
@@ -1792,26 +1748,6 @@ public class DataRegion extends DisplayElement
         return _shadeAlternatingRows;
     }
 
-    public boolean isShowHeaderSeparator()
-    {
-        return _showHeaderSeparator;
-    }
-
-    public boolean isShowColumnSeparators()
-    {
-        return _showColumnSeparators;
-    }
-
-    public void setShowColumnSeparators(boolean showColumnSeparators)
-    {
-        _showColumnSeparators = showColumnSeparators;
-    }
-
-    public void setShowHeaderSeparator(boolean showHeaderSeparator)
-    {
-        _showHeaderSeparator = showHeaderSeparator;
-    }
-
     public void setAggregates(Aggregate... aggregates)
     {
         setAggregates(Arrays.asList(aggregates));
@@ -1917,5 +1853,15 @@ public class DataRegion extends DisplayElement
     {
         String name = htmlEncode ? PageFlowUtil.filterQuote(getName()) : PageFlowUtil.jsString(getName());
         return "document.forms[" + name + "]";
+    }
+
+    public boolean isShowBorders()
+    {
+        return _showBorders;
+    }
+
+    public void setShowBorders(boolean showBorders)
+    {
+        _showBorders = showBorders;
     }
 }

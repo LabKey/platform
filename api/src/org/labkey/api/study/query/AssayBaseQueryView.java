@@ -46,7 +46,7 @@ public abstract class AssayBaseQueryView extends QueryView
         DataRegion dr = super.createDataRegion();
         dr.setShowRecordSelectors(showControls());
         dr.setShadeAlternatingRows(true);
-        dr.setShowColumnSeparators(true);
+        dr.setShowBorders(true);
         return dr;
     }
 

@@ -53,7 +53,7 @@ public class CrosstabDataRegion extends DataRegion
         if(_settings.getColumnAxis().getCaption() != null)
         {
             out.write("<tr>\n");
-            renderColumnGroupHeader(_numRowAxisCols + (getShowRecordSelectors() ? 1 : 0), _settings.getRowAxis().getCaption(), null, out, 2);
+            renderColumnGroupHeader(_numRowAxisCols + (getShowRecordSelectors() ? 1 : 0), _settings.getRowAxis().getCaption(), out, 2);
             renderColumnGroupHeader(renderers.size() - _numRowAxisCols - (getShowRecordSelectors() ? 1 : 0),
                     _settings.getColumnAxis().getCaption(), out);
             out.write("</tr>\n");
@@ -72,8 +72,7 @@ public class CrosstabDataRegion extends DataRegion
         for(int idxColMember = 0; idxColMember < colMembers.size(); ++idxColMember)
         {
             renderColumnGroupHeader(_numMeasures,
-                    getMemberCaptionWithUrl(colDim, colMembers.get(idxColMember)),
-                    idxColMember % 2 == 0 ? ALTERNATING_ROW_COLOR : null, out, 1);
+                    getMemberCaptionWithUrl(colDim, colMembers.get(idxColMember)), out, 1);
 
             if(idxColMember % 2 == 0)
             {
@@ -82,7 +81,7 @@ public class CrosstabDataRegion extends DataRegion
                 for (int idxMeasureCol = idxStart;
                     idxMeasureCol < idxStart + _numMeasures; ++idxMeasureCol)
                 {
-                    renderers.get(idxMeasureCol).setBackgroundColor(ALTERNATING_ROW_COLOR);
+                    renderers.get(idxMeasureCol).setDisplayClass("labkey-alternate-row");
                 }
             } //every other col dimension member
         } //for each col dimension member
@@ -112,10 +111,10 @@ public class CrosstabDataRegion extends DataRegion
 
     protected void renderColumnGroupHeader(int groupWidth, String caption, Writer out) throws IOException
     {
-        renderColumnGroupHeader(groupWidth, caption, null, out, 1);
+        renderColumnGroupHeader(groupWidth, caption, out, 1);
     }
 
-    protected void renderColumnGroupHeader(int groupWidth, String caption, String backgroundColor, Writer out, int groupHeight) throws IOException
+    protected void renderColumnGroupHeader(int groupWidth, String caption, Writer out, int groupHeight) throws IOException
     {
         if(groupWidth <= 0)
             return;
@@ -124,22 +123,14 @@ public class CrosstabDataRegion extends DataRegion
         out.write(String.valueOf(groupWidth));
         out.write("\" rowspan=\"");
         out.write(String.valueOf(groupHeight));
-        out.write("\" class=\"labkey-grid\"");
-        if (isShowColumnSeparators() || isShowHeaderSeparator())
+        out.write("\" class=\"labkey-data-region");
+        if (isShowBorders())
         {
-            out.write(" style=\"border: solid 1px " + COLUMN_SEPARATOR_COLOR + "\"");
+            out.write(" labkey-show-borders");
         }
-        out.write(">\n");
+        out.write("\">\n");
         out.write(caption);
         out.write("</td>\n");
-    }
-
-    protected void renderBorderStyle(String side, Writer out) throws IOException
-    {
-        out.write(side.startsWith("border") ? side : "border-" + side);
-        out.write(":1px solid ");
-        out.write(COLUMN_SEPARATOR_COLOR);
-        out.write(";");
     }
 
 } //CrosstabDatRegion
