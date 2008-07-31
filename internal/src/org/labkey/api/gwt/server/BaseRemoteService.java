@@ -18,6 +18,7 @@ package org.labkey.api.gwt.server;
 
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
@@ -54,6 +55,11 @@ public abstract class BaseRemoteService extends RemoteServiceServlet
     public User getUser()
     {
         return _context.getUser();
+    }
+
+    public ActionURL getActionURL()
+    {
+        return _context.getActionURL();
     }
 
     public ServletConfig getServletConfig()

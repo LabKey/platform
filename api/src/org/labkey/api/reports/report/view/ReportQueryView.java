@@ -26,6 +26,7 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.study.StudyService;
 
 import java.io.PrintWriter;
 import java.sql.ResultSet;
@@ -102,6 +103,7 @@ public class ReportQueryView extends QueryView
                 filter = _filter;
             view.getRenderContext().setBaseFilter(filter);
         }
+        StudyService.get().applyDefaultQCStateFilter(view);
         return view;
     }
 }

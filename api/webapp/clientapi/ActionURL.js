@@ -38,7 +38,7 @@ LABKEY.ActionURL = new function()
         {
             var nameValue = paramArray[i].split('=');
             if (nameValue.length == 2)
-                parameters[decodeURI(nameValue[0])] = decodeURI(nameValue[1]);
+                parameters[decodeURIComponent(nameValue[0])] = decodeURIComponent(nameValue[1]);
         }
         return parameters;
     }

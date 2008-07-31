@@ -41,7 +41,7 @@ function sendCheckbox(el, key, ids, checked)
     var url = replaceAction(path, "setCheck.api") +
               "?key=" + key +
               "&checked=" + checked;
-    for (var i in ids)
+    for (var i = 0; i < ids.length; i++)
         url += "&id=" + ids[i];
 
     var xmlhttp = new XMLRequest(url);

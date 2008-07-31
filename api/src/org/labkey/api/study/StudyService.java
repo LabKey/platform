@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.query.SchemaUpdateService;
 import org.labkey.api.query.SchemaUpdateServiceRegistry;
+import org.labkey.api.view.DataView;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -60,6 +61,19 @@ public class StudyService
          */
         public String updateDatasetRow(User u, Container c, int datasetId, String lsid, Map<String,Object> data, List<String> errors)
                 throws SQLException;
+        /**
+         * Update a single dataset row
+         * @return the new lsid for the updated row
+         * @param u the user performing the update
+         * @param c container the dataset is in
+         * @param datasetId the dataset defition id
+         * @param lsid the lsid of the dataset row
+         * @param data the data to be updated
+         * @param errors any errors during update will be added to this list
+         * @param auditComment a comment that will appear in the audit entry for this update
+         */
+        public String updateDatasetRow(User u, Container c, int datasetId, String lsid, Map<String,Object> data, List<String> errors, String auditComment)
+                throws SQLException;
 
         /**
          * Insert a single dataset row
@@ -96,6 +110,13 @@ public class StudyService
          * @return True if editable, false if not.
          */
         public boolean areDatasetsEditable(Container container);
+
+        /**
+         * Applies the administrator-configured default QC filter for a dataset data view.
+         * This ensures that users do not see data that should be hidden in the specified view.
+         * @param view The data view that should be filtered.
+         */
+        public void applyDefaultQCStateFilter(DataView view);
     }
 
     public static void register(Service serviceImpl)

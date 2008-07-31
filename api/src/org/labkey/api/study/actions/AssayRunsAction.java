@@ -35,16 +35,16 @@ public class AssayRunsAction extends BaseAssayAction<AssayRunsAction.ClearSelect
 {
     public static class ClearSelectionForm extends ProtocolIdForm
     {
-        private String _clearCataRegionSelectionKey;
+        private String _clearDataRegionSelectionKey;
 
-        public String getClearCataRegionSelectionKey()
+        public String getClearDataRegionSelectionKey()
         {
-            return _clearCataRegionSelectionKey;
+            return _clearDataRegionSelectionKey;
         }
 
-        public void setClearCataRegionSelectionKey(String clearCataRegionSelectionKey)
+        public void setClearDataRegionSelectionKey(String clearDataRegionSelectionKey)
         {
-            _clearCataRegionSelectionKey = clearCataRegionSelectionKey;
+            _clearDataRegionSelectionKey = clearDataRegionSelectionKey;
         }
     }
 
@@ -52,8 +52,8 @@ public class AssayRunsAction extends BaseAssayAction<AssayRunsAction.ClearSelect
 
     public ModelAndView getView(ClearSelectionForm summaryForm, BindException errors) throws Exception
     {
-        if (summaryForm.getClearCataRegionSelectionKey() != null)
-            DataRegionSelection.clearAll(getViewContext(), summaryForm.getClearCataRegionSelectionKey());
+        if (summaryForm.getClearDataRegionSelectionKey() != null)
+            DataRegionSelection.clearAll(getViewContext(), summaryForm.getClearDataRegionSelectionKey());
         _protocol = getProtocol(summaryForm);
         return new AssayRunsView(_protocol, false);
     }

@@ -110,7 +110,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
             {
                 return _returnURL;
             }
-            return AssayService.get().getAssayRunsURL(getViewContext().getContainer(), getProtocol()).addParameter("clearCataRegionSelectionKey", getDataRegionSelectionKey()).toString();
+            return AssayService.get().getAssayRunsURL(getViewContext().getContainer(), getProtocol()).addParameter("clearDataRegionSelectionKey", getDataRegionSelectionKey()).toString();
         }
 
         public List<Integer> getIds()

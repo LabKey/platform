@@ -267,7 +267,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         }
         else
         {
-            returnURL = getSummaryLink(_protocol).addParameter("clearCataRegionSelectionKey", publishConfirmForm.getDataRegionSelectionKey()).toString();
+            returnURL = getSummaryLink(_protocol).addParameter("clearDataRegionSelectionKey", publishConfirmForm.getDataRegionSelectionKey()).toString();
         }
         ActionButton cancelButton = new ActionButton("Cancel");
         cancelButton.setURL(returnURL);
