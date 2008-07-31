@@ -1083,6 +1083,7 @@ public class UserController extends SpringActionController
     public static class GetUsersForm
     {
         private String _group;
+        private Integer _groupId;
         private String _name;
 
         public String getGroup()
@@ -1093,6 +1094,16 @@ public class UserController extends SpringActionController
         public void setGroup(String group)
         {
             _group = group;
+        }
+
+        public Integer getGroupId()
+        {
+            return _groupId;
+        }
+
+        public void setGroupId(Integer groupId)
+        {
+            _groupId = groupId;
         }
 
         public String getName()
@@ -1126,14 +1137,15 @@ public class UserController extends SpringActionController
             List<Map<String,Object>> userResponseList = new ArrayList<Map<String,Object>>();
 
             //if requesting users in a specific group...
-            if(null != StringUtils.trimToNull(form.getGroup()))
+            if(null != StringUtils.trimToNull(form.getGroup()) || null != form.getGroupId())
             {
-                response.put("group", form.getGroup());
 
                 Container project = container.getProject();
 
                 //get users in given group/role name
-                Integer groupId = SecurityManager.getGroupId(container, form.getGroup(), false);
+                Integer groupId = form.getGroupId();
+                if(null == groupId)
+                    groupId = SecurityManager.getGroupId(container, form.getGroup(), false);
                 if(null == groupId)
                     throw new IllegalArgumentException("The group '" + form.getGroup() + "' does not exist in the project '"
                             + project.getPath() + "'");
@@ -1141,6 +1153,10 @@ public class UserController extends SpringActionController
                 Group group = SecurityManager.getGroup(groupId.intValue());
                 if(null == group)
                     throw new RuntimeException("Could not get group for group id " + groupId);
+
+                response.put("groupId", group.getUserId());
+                response.put("groupName", group.getName());
+                response.put("groupCaption", SecurityManager.getDisambiguatedGroupName(group));
 
                 users = SecurityManager.getGroupMembers(group);
             }

@@ -19,6 +19,7 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
+import org.apache.log4j.Logger;
 import org.labkey.api.action.*;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
@@ -1347,6 +1348,91 @@ public class SecurityController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             throw new UnsupportedOperationException();
+        }
+    }
+
+    public static class GetGroupPermsForm
+    {
+        private boolean _includeSubfolders = true;
+
+        public boolean isIncludeSubfolders()
+        {
+            return _includeSubfolders;
+        }
+
+        public void setIncludeSubfolders(boolean includeSubfolders)
+        {
+            _includeSubfolders = includeSubfolders;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class GetGroupPermsAction extends ApiAction<GetGroupPermsForm>
+    {
+        public ApiResponse execute(GetGroupPermsForm form, BindException errors) throws Exception
+        {
+            Container container = getViewContext().getContainer();
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            response.put("container", getContainerPerms(container, form.isIncludeSubfolders()));
+
+            return response;
+        }
+
+        protected Map<String,Object> getContainerPerms(Container container, boolean recurse)
+        {
+            ACL acl = container.getAcl();
+            Map<String,Object> containerPerms = new HashMap<String,Object>();
+            containerPerms.put("path", container.getPath());
+            containerPerms.put("id", container.getId());
+            containerPerms.put("name", container.getName());
+            containerPerms.put("isInheritingPerms", container.isInheritedAcl());
+            containerPerms.put("groups", getGroupPerms(container, acl));
+
+            if(recurse && container.hasChildren())
+            {
+                List<Map<String,Object>> childPerms = new ArrayList<Map<String,Object>>();
+                for(Container child : container.getChildren())
+                    childPerms.add(getContainerPerms(child, recurse));
+                
+                containerPerms.put("children", childPerms);
+            }
+
+            return containerPerms;
+        }
+
+        protected List<Map<String,Object>> getGroupPerms(Container container, ACL acl)
+        {
+            if(null == acl)
+                acl = container.getAcl();
+
+            Group[] groups = SecurityManager.getGroups(container.getProject(), true);
+            if(null == groups)
+                return null;
+
+            List<Map<String,Object>> groupsPerms = new ArrayList<Map<String,Object>>();
+            for(Group group : groups)
+            {
+                Map<String,Object> groupPerms = new HashMap<String,Object>();
+                groupPerms.put("id", group.getUserId());
+                groupPerms.put("name", SecurityManager.getDisambiguatedGroupName(group));
+                groupPerms.put("type", group.getType());
+
+                int perms = acl.getPermissions(group);
+                groupPerms.put("permissions", perms);
+
+                SecurityManager.PermissionSet role = SecurityManager.PermissionSet.findPermissionSet(perms);
+                if(null != role)
+                {
+                    groupPerms.put("role", role.toString());
+                    groupPerms.put("roleLabel", role.getLabel());
+                }
+
+                groupsPerms.add(groupPerms);
+            }
+
+            return groupsPerms;
         }
     }
 
