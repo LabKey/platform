@@ -95,7 +95,7 @@
 </script>
 
 &nbsp;&nbsp;
-<form class="labkey-email-notification" action="updateEmailNotification.view" method="post">
+<form class="labkey-email-notification" width="100%" action="updateEmailNotification.view" method="post">
     <table>
         <tr class="labkey-wp-header"><th class="labkey-admin-title" colspan=2><b>Email Notification</b></th></tr>
         <tr><td><labkey:errors /></td></tr>

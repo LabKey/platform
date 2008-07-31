@@ -37,7 +37,7 @@ public class ExtensibleObjectQueryView extends QueryView
     {
         super(new StudyQuerySchema(study, user, true));
         setShadeAlternatingRows(true);
-        setShowColumnSeparators(true);
+        setShowBorders(true);
         QuerySettings settings = getSchema().getSettings(context, null);
         settings.setQueryName(extensibleClass.getSimpleName());
         settings.setAllowChooseQuery(false);

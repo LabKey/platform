@@ -28,7 +28,7 @@
 </head>
 
 <body>
-<table class="labkey-daily-digest">
+<table class="labkey-form" width=100%>
     <tr><td><b>The following new posts were made yesterday in folder: <%=h(c.getPath())%></b></td></tr><%
 
     String previousThread = null;
@@ -78,7 +78,7 @@
 <br>
 <hr size="1">
 
-<table class="labkey-daily-digest">
+<table class="labkey-form" width=100%>
     <tr><td>You have received this email because you are signed up for a daily digest of new posts to <a href="<%=boardUrl%>"><%=boardPath%></a> at <a href="<%=siteUrl%>"><%=siteUrl%></a>.
   If you no longer wish to receive these notifications, please <a href="<%=removeUrl%>">change your email preferences</a>.</td></tr>
 </table>    

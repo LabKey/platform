@@ -23,7 +23,7 @@
 </head>
 
 <body>
-<table class="labkey-email-notification">
+<table class="labkey-form" width=100%>
     <tr><td class="labkey-response-header" colspan="2">
     <%
         int attachmentCount = announcement.getAttachments().size();
@@ -45,7 +45,7 @@
 <br>
 <hr size="1">
 
-<table class="labkey-email-notification">
+<table class="labkey-form" width=100%>
     <tr><td>You have received this email because <%
         switch(reason)
         {

@@ -41,24 +41,24 @@
 
 <table cellpadding=0>
 <tr>
-    <td class="normal" colspan=2>&nbsp;</td>
+    <td colspan=2>&nbsp;</td>
 </tr>
 
 <tr>
-    <td class="normal" colspan=2>Customize the look and feel of your LabKey Server installation (<%=bean.helpLink%>)</td>
+    <td colspan=2>Customize the look and feel of your LabKey Server installation (<%=bean.helpLink%>)</td>
 </tr>
 <tr style="height:1;"><td colspan=3 class=ms-titlearealine><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
 <tr>
-    <td class="ms-searchform">Web site description (appears in every page header)</td>
-    <td class="normal"><input type="text" name="systemDescription" size="50" value="<%= h(appProps.getSystemDescription()) %>"></td>
+    <td class="labkey-form-label">Web site description (appears in every page header)</td>
+    <td><input type="text" name="systemDescription" size="50" value="<%= h(appProps.getSystemDescription()) %>"></td>
 </tr>
 <tr>
-    <td class="ms-searchform">Web site short name (appears in every page header and in emails)</td>
-    <td class="normal"><input type="text" name="systemShortName" size="50" value="<%= h(appProps.getSystemShortName()) %>"></td>
+    <td class="labkey-form-label">Web site short name (appears in every page header and in emails)</td>
+    <td><input type="text" name="systemShortName" size="50" value="<%= h(appProps.getSystemShortName()) %>"></td>
 </tr>
 <tr>
-    <td class="ms-searchform">Web site theme (color scheme)</td>
-    <td class="normal">
+    <td class="labkey-form-label">Web site theme (color scheme)</td>
+    <td>
         <select name="themeName">
             <% for (WebTheme theme : bean.themes)
                 {
@@ -79,8 +79,8 @@
     </td>
 </tr>
 <tr>
-    <td class="ms-searchform">Default font size</td>
-    <td class="normal">
+    <td class="labkey-form-label">Default font size</td>
+    <td>
         <select name="themeFont">
             <% for (ThemeFont themeFont : bean.themeFonts)
                 {
@@ -97,8 +97,8 @@
     </td>
 </tr>
 <tr>
-    <td class="ms-searchform">Show left navigation bar</td>
-    <td class="normal">
+    <td class="labkey-form-label">Show left navigation bar</td>
+    <td>
         <%
             FolderDisplayMode currentMode = appProps.getFolderDisplayMode();  
             for (FolderDisplayMode mode : FolderDisplayMode.values())
@@ -109,18 +109,18 @@
     </td>
 </tr>
 <tr>
-    <td class="ms-searchform">Left-navigation bar width (pixels)</td>
-    <td class="normal">
+    <td class="labkey-form-label">Left-navigation bar width (pixels)</td>
+    <td>
         <input name="navigationBarWidth" value="<%=appProps.getNavigationBarWidth() %>" type="text" size="4">
     </td>
 </tr>
 <tr>
-    <td class="ms-searchform">Web site logo (appears in every page header; 147 x 56 pixels)</td>
+    <td class="labkey-form-label">Web site logo (appears in every page header; 147 x 56 pixels)</td>
     <td><input type="file" name="logoImage" size="50"></td>
 </tr>
 <tr>
     <td></td>
-    <td class="normal">
+    <td>
         <% if (null != bean.customLogo)
         { %>
             Currently using a custom logo. [<a href="resetLogo.view">Reset logo to default</a>]
@@ -130,16 +130,16 @@
     </td>
 </tr>
 <tr>
-    <td class="ms-searchform">Logo link (specifies page that logo links to)</td>
-    <td class="normal"><input type="text" name="logoHref" size="50" value="<%= h(appProps.getLogoHref()) %>"></td>
+    <td class="labkey-form-label">Logo link (specifies page that logo links to)</td>
+    <td><input type="text" name="logoHref" size="50" value="<%= h(appProps.getLogoHref()) %>"></td>
 </tr>
 <tr>
-    <td class="ms-searchform">Web site favorite icon (page icon displayed in user's favorites, .ico file only)</td>
-    <td class="normal"><input type="file" name="iconImage" size="50"></td>
+    <td class="labkey-form-label">Web site favorite icon (page icon displayed in user's favorites, .ico file only)</td>
+    <td><input type="file" name="iconImage" size="50"></td>
 </tr>
 <tr>
     <td></td>
-    <td class="normal">
+    <td>
         <% if (null != bean.customFavIcon)
         { %>
             Currently using a custom favorite icon. [<a href="resetFavicon.view">Reset favorite logo to default</a>]
@@ -149,7 +149,7 @@
     </td>
 </tr>
 <tr>
-    <td class="normal">&nbsp;</td>
+    <td>&nbsp;</td>
 </tr>
 
 <tr>

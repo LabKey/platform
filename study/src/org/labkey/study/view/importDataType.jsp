@@ -32,28 +32,28 @@
             "<table class=\"labkey-format-helper\">" +
             "<tr class=\"labkey-format-helper-header\"><th align=left>Symbol<th align=left>Location<th align=left>Localized?<th align=left>Meaning</tr>" +
             "<tr valign=top><td><code>0</code><td>Number<td>Yes<td>Digit</tr>" +
-            "<tr valign=top class=\"labkey-format-helper-alternate-row\"><td><code>#</code><td>Number<td>Yes<td>Digit, zero shows as absent</tr>" +
+            "<tr valign=top class=\"labkey-alternate-row\"><td><code>#</code><td>Number<td>Yes<td>Digit, zero shows as absent</tr>" +
             "<tr valign=top><td><code>.</code><td>Number<td>Yes<td>Decimal separator or monetary decimal separator</tr>" +
-            "<tr valign=top class=\"labkey-format-helper-alternate-row\"><td><code>-</code><td>Number<td>Yes<td>Minus sign</tr>" +
+            "<tr valign=top class=\"labkey-alternate-row\"><td><code>-</code><td>Number<td>Yes<td>Minus sign</tr>" +
             "<tr valign=top><td><code>,</code><td>Number<td>Yes<td>Grouping separator</tr></table>";
     String dateFormatHelp = 
             "The following table has a partial guide to pattern symbols:<br/>" +
             "<table class=\"labkey-format-helper\">" +
             "<tr class=\"labkey-format-helper-header\"><th align=left>Letter<th align=left>Date or Time Component<th align=left>Examples</tr>" +
             "<tr><td><code>G</code><td>Era designator<td><code>AD</code></tr>" +
-            "<tr class=\"labkey-format-helper-alternate-row\"><td><code>y</code><td>Year<td><code>1996</code>; <code>96</code></tr>" +
+            "<tr class=\"labkey-alternate-row\"><td><code>y</code><td>Year<td><code>1996</code>; <code>96</code></tr>" +
             "<tr><td><code>M</code><td>Month in year<td><code>July</code>; <code>Jul</code>; <code>07</code></tr>" +
-            "<tr class=\"labkey-format-helper-alternate-row\"><td><code>w</code><td>Week in year<td><code>27</code></td></tr>" +
+            "<tr class=\"labkey-alternate-row\"><td><code>w</code><td>Week in year<td><code>27</code></td></tr>" +
             "<tr><td><code>W</code><td>Week in month<td><code>2</code></td></tr>" +
-            "<tr class=\"labkey-format-helper-alternate-row\"><td><code>D</code><td>Day in year<td><code>189</code></td></tr>" +
+            "<tr class=\"labkey-alternate-row\"><td><code>D</code><td>Day in year<td><code>189</code></td></tr>" +
             "<tr><td><code>d</code><td>Day in month<td><code>10</code></tr>" +
-            "<tr class=\"labkey-format-helper-alternate-row\"><td><code>F</code><td>Day of week in month<td><code>2</code></tr>" +
+            "<tr class=\"labkey-alternate-row\"><td><code>F</code><td>Day of week in month<td><code>2</code></tr>" +
             "<tr><td><code>E</code><td>Day in week<td><code>Tuesday</code>; <code>Tue</code></tr>" +
-            "<tr class=\"labkey-format-helper-alternate-row\"><td><code>a</code><td>Am/pm marker<td><code>PM</code></tr>" +
+            "<tr class=\"labkey-alternate-row\"><td><code>a</code><td>Am/pm marker<td><code>PM</code></tr>" +
             "<tr><td><code>H</code><td>Hour in day (0-23)<td><code>0</code></tr>" +
-            "<tr class=\"labkey-format-helper-alternate-row\"><td><code>k</code><td>Hour in day (1-24)<td><code>24</code></tr>" +
+            "<tr class=\"labkey-alternate-row\"><td><code>k</code><td>Hour in day (1-24)<td><code>24</code></tr>" +
             "<tr><td><code>K</code><td>Hour in am/pm (0-11)<td><code>0</code></tr>" +
-            "<tr class=\"labkey-format-helper-alternate-row\"><td><code>h</code><td>Hour in am/pm (1-12)<td><code>12</code></tr></table>";
+            "<tr class=\"labkey-alternate-row\"><td><code>h</code><td>Hour in am/pm (1-12)<td><code>12</code></tr></table>";
 
 
 %>
@@ -65,7 +65,7 @@ Use this form to define the properties of a dataset.
 <p>
 Paste in a tab delimited file with the following fields.  Additional fields will just be ignored.
 </p>
-<table class="labkey-bulk-import-data-">
+<table class="labkey-form labkey-bulk-import-data-">
     <tr>
         <th align="left"><u>Column Header</u></th>
         <th align="left"><u>Description</u></th>
@@ -107,7 +107,7 @@ Paste in a tab delimited file with the following fields.  Additional fields will
 
 <form id="typeDefForm" name=typeDefForm action="defineDatasetType.post" method="POST" onsubmit="return doSubmit()" enctype="multipart/form-data">
     <input type=hidden name=create value="<%=form.isCreate()%>">
-    <table id=typeDefTable class="labkey-type-def">
+    <table id=typeDefTable class="labkey-form" width="100%">
         <tr>
             <td >
             <table>

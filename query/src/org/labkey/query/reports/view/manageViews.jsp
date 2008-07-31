@@ -98,7 +98,7 @@
     <div class="bd">
         <form action="<%=new ActionURL(ReportsController.RenameReportAction.class, context.getContainer())%>" method="post" onsubmit="dialogHelper.hide();">
             <input type="hidden" id="renameReportId" name="reportId" value=""/>
-            <table class="labkey-manage-view">
+            <table class="labkey-form">
                 <tr><td>View name:</td></tr>
                 <tr><td width="275"><input id="renameReportName" name="reportName" style="width:100%" value=""></td></tr>
                 <tr><td><input type="image" src="<%=PageFlowUtil.buttonSrc("Rename")%>"></td></tr>
@@ -112,7 +112,7 @@
     <div class="bd">
         <form action="<%=new ActionURL(ReportsController.ReportDescriptionAction.class, context.getContainer())%>" method="post" onsubmit="descriptionDialogHelper.hide();">
             <input type="hidden" id="descReportId" name="reportId" value=""/>
-            <table class="labkey-manage-view">
+            <table class="labkey-form">
                 <tr><td>View Description:</td></tr>
                 <tr><td width="370"><textarea id="descReportDescription" name="reportDescription" style="width:100%" rows="6"></textarea></td></tr>
                 <tr><td><input type="image" src="<%=PageFlowUtil.buttonSrc("Update")%>"></td></tr>
@@ -121,7 +121,7 @@
     </div>
 </div>
 
-<table class="labkey-manage-view">
+<table class="labkey-form">
 <%
     Map<String, List<ManageReportsBean.ReportRecord>> live = bean.getViews();
     for (Map.Entry<String, List<ManageReportsBean.ReportRecord>> entry : live.entrySet()) {

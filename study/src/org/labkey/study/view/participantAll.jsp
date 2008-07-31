@@ -117,24 +117,14 @@
     Map<Integer, String> expandedMap = StudyController.getExpandedState(context, bean.getDatasetId());
     boolean updateAccess = study.getContainer().hasPermission(user, ACL.PERM_UPDATE);
 
-    String shadeColor = "#EEEEEE";
-// UNDONE: move into stylesheet
-    String borderColor = "#808080";
-    String headerColor = "#CCCCCC";
-//    String styleTD = "border-right:solid 1px " + borderColor + ";";
-    String styleTH = "border-right:solid 1px " + borderColor + "; border-top:solid 2px " + borderColor + ";";
-
     int totalSeqKeyCount = 0;
 %>
-<style type="text/css">
-    .gth {<%=styleTH%> }
-</style>
 <p/>
 
 <table class="labkey-participant-view">
 
-    <tr bgcolor="<%=shadeColor%>">
-        <td class=gth><img alt="" width=180 height=1 src="<%=contextPath%>/_.gif"></td><%
+    <tr class="labkey-alternate-row">
+        <td class=labkey-participant-view-header><img alt="" width=180 height=1 src="<%=contextPath%>/_.gif"></td><%
 
             for (Visit visit : visits)
             {
@@ -145,13 +135,13 @@
                     seqKeyCount += c == null ? 1 : c;
                 }
                 totalSeqKeyCount += seqKeyCount;
-                %><td align="center" valign="top" bgcolor="<%=shadeColor%>" class="gth" colspan="<%=seqKeyCount%>"><%= h(visit.getDisplayString()) %></td><%
+                %><td align="center" valign="top" class="labkey-participant-view-header" colspan="<%=seqKeyCount%>"><%= h(visit.getDisplayString()) %></td><%
             }
         %>
     </tr>
 
-    <tr bgcolor="<%=shadeColor%>">
-        <td class=gth><img alt="" width=1 height=1 src="<%=contextPath%>/_.gif"></td><%
+    <tr class="labkey-alternate-row">
+        <td class=labkey-participant-view-header><img alt="" width=1 height=1 src="<%=contextPath%>/_.gif"></td><%
 
         for (Visit visit : visits)
         {
@@ -162,7 +152,7 @@
                 Integer keyCount = countKeysForSequence.get(seqNum);
                 if (null == keyCount)
                     keyCount = 1;
-                %><td align="center" valign="top" bgcolor="<%=shadeColor%>" class=gth  colspan="<%=keyCount%>"><%= null==date ? "&nbsp;" : ConvertUtils.convert(date) %></td><%
+                %><td align="center" valign="top" class=labkey-participant-view-header  colspan="<%=keyCount%>"><%= null==date ? "&nbsp;" : ConvertUtils.convert(date) %></td><%
             }
         }
         %>
@@ -195,13 +185,13 @@
             PropertyDescriptor[] pds = sortProperties(StudyController.getParticipantPropsFromCache(HttpView.getRootContext(), typeURI), dataSet, HttpView.getRootContext());
             if (!dataSet.canRead(user))
             {
-                %><tr class="labkey-header"><th nowrap align="left" bgcolor="<%=headerColor%>" style="border-top:solid 2px <%=borderColor%>; border-bottom:solid 2px <%=borderColor%>;"><%=h(dataSet.getDisplayString())%></th><td colspan="<%=totalSeqKeyCount%>" nowrap align="left" bgcolor="<%=headerColor%>" style="border-top:solid 2px <%=borderColor%>; border-bottom:solid 2px <%=borderColor%>;">(no access)</td></tr><%
+                %><tr class="labkey-header"><th nowrap align="left" class="labkey-chart-header"><%=h(dataSet.getDisplayString())%></th><td colspan="<%=totalSeqKeyCount%>" nowrap align="left" class="labkey-chart-header">(no access)</td></tr><%
                 continue;
             }
 
             %>
             <tr class="labkey-header">
-            <th nowrap colspan="<%=totalSeqKeyCount+1%>" align="left" bgcolor="<%=headerColor%>" style="border-top:solid 2px <%=borderColor%>; border-bottom:solid 2px <%=borderColor%>;"><a title="Click to expand" href="<%=new ActionURL("Study", "expandStateNotify", study.getContainer()).addParameter("datasetId", Integer.toString(pdKey.datasetId)).addParameter("id", Integer.toString(bean.getDatasetId()))%>" onclick="return collapseExpand(this, true);"><%=h(dataSet.getDisplayString())%></a><%
+            <th nowrap colspan="<%=totalSeqKeyCount+1%>" align="left" class="labkey-chart-header"><a title="Click to expand" href="<%=new ActionURL("Study", "expandStateNotify", study.getContainer()).addParameter("datasetId", Integer.toString(pdKey.datasetId)).addParameter("id", Integer.toString(bean.getDatasetId()))%>" onclick="return collapseExpand(this, true);"><%=h(dataSet.getDisplayString())%></a><%
             if (null != StringUtils.trimToNull(dataSet.getDescription()))
             {
                 %><%=PageFlowUtil.helpPopup(dataSet.getDisplayString(), dataSet.getDescription())%><%
@@ -231,7 +221,7 @@
             {
                 %>
                 <tr style="<%=expanded ? "" : "display:none"%>">
-                    <td colspan="<%=totalSeqKeyCount+1%>" class="studyShaded">[<a href="<%=url.replaceParameter("queryName", dataSet.getLabel()).replaceParameter("datasetId", String.valueOf(pdKey.datasetId))%>">add chart</a>]</td>
+                    <td colspan="<%=totalSeqKeyCount+1%>" class="labkey-alternate-row">[<a href="<%=url.replaceParameter("queryName", dataSet.getLabel()).replaceParameter("datasetId", String.valueOf(pdKey.datasetId))%>">add chart</a>]</td>
                 </tr>
                 <%
             }
@@ -241,12 +231,12 @@
             {
                 if (pd == null) continue;
                 row++;
-                String className = row % 2 == 0 ? "studyShaded" : "studyCell";
+                String className = row % 2 == 0 ? "labkey-alternate-row" : "labkey-row";
                 String labelName = pd.getLabel();
                 if (StringUtils.isEmpty(labelName))
                     labelName = pd.getName();
                 %>
-                <tr style="<%=expanded ? "" : "display:none"%>"><td class="<%=className%>" align="left" nowrap><%=h(labelName)%></td><%
+                <tr class="<%=className%>" style="<%=expanded ? "" : "display:none"%>"><td align="left" nowrap><%=h(labelName)%></td><%
                 for (Visit visit : visits)
                 {
                     for (double seq : (Collection<Double>) all.getVisitSequenceMap().get(visit.getRowId()))
@@ -260,7 +250,7 @@
                             for (Map<Integer,Object> propMap : keyMap.values())
                             {
                                 Object value = propMap.get(pd.getPropertyId());
-                                %><td class="<%=className%>"><%= (null == value ? "&nbsp;" : h(ConvertUtils.convert(value)))%></td><%
+                                %><td><%= (null == value ? "&nbsp;" : h(ConvertUtils.convert(value)))%></td><%
                                 countTD++;
                             }
                         }
@@ -268,7 +258,7 @@
                         int maxTD = countKeysForSequence.get(seq) == null ? 1 : countKeysForSequence.get(seq);
                         if (countTD < maxTD)
                         {
-                            %><td class="<%=className%>" colspan="<%=maxTD-countTD%>">&nbsp;</td><%
+                            %><td colspan="<%=maxTD-countTD%>">&nbsp;</td><%
                         }
                     }
                 }

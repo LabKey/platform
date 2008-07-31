@@ -42,15 +42,15 @@
 However, If this account is re-enabled, it would have the following permissions.</div>
 <% } %>
 
-<table class="labkey-alternating-grid">
+<table class="labkey-data-region labkey-show-borders">
     <tr>
-        <th class="labkey-alternating-grid-header">Container</th>
-        <th class="labkey-alternating-grid-header">Current Access</th>
+        <th>Container</th>
+        <th>Current Access</th>
 <%
     if (bean.showGroups())
     {
 %>
-        <th class="labkey-alternating-grid-header">Relevant Group(s)</th>
+        <th>Relevant Group(s)</th>
 <%
     }
 %>
@@ -62,15 +62,15 @@ However, If this account is re-enabled, it would have the following permissions.
         boolean inherited = row.isInheritedAcl() && !row.getContainer().isProject();
         ActionURL containerPermissionsLink = urlProvider(SecurityUrls.class).getProjectURL(row.getContainer());
 %>
-    <tr class="<%= rowNumber++ % 2 == 0 ?  "labkey-alternating-row" : "labkey-row"%>">
-        <td class="labkey-alternating-grid-cell" style="padding-left:<%= cellPadding + (10 * row.getDepth()) %>;">
+    <tr class="<%= rowNumber++ % 2 == 0 ?  "labkey-alternate-row" : "labkey-row"%>">
+        <td style="padding-left:<%= cellPadding + (10 * row.getDepth()) %>;">
             <a href="<%= containerPermissionsLink.getLocalURIString() %>"><%= row.getContainer().getName() %></a>
         </td>
-        <td class="labkey-alternating-grid-cell"><%= row.getAccess() %><%= inherited ? "*" : "" %></td>
+        <td ><%= row.getAccess() %><%= inherited ? "*" : "" %></td>
     <%
         if (bean.showGroups())
         {
-            out.print("<td class=\"labkey-alternating-grid-cell\">");
+            out.print("<td>");
             boolean first = true;
             for (Group group : row.getGroups())
             {

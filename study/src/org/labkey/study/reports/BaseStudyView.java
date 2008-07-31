@@ -37,12 +37,6 @@ import java.util.HashMap;
  */
 public class BaseStudyView<T> extends HttpView<T>
 {
-    static final String shadeColor = "#EEEEEE";
-    static final String borderColor = "#808080";
-    static final String styleTD = " style=\"border-right:solid 1px " + borderColor + ";\"";
-    static final String styleTH=" style=\"border-right:solid 1px " + borderColor + "; border-top:solid 2px " + borderColor + ";\"";
-
-
     Study _study;
     StudyManager _studyManager;
     DbSchema _schema;

@@ -65,7 +65,7 @@ public class IssuesQueryView extends QueryView
         view.getDataRegion().setShowRecordSelectors(true);
         view.getDataRegion().setRecordSelectorValueColumns("IssueId");
         view.getDataRegion().setShadeAlternatingRows(true);
-        view.getDataRegion().setShowColumnSeparators(true);
+        view.getDataRegion().setShowBorders(true);
 
         DisplayColumn issueid = view.getDataRegion().getDisplayColumn("IssueId");
         if (null != issueid)

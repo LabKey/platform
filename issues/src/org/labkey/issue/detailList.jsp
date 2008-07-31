@@ -44,7 +44,7 @@
 %>
 
 <form name="jumpToIssue" action="jumpToIssue.view" method="get">
-<table class="labkey-issue-jump"><tr>
+<table><tr>
     <td><%= textLink("new issue", IssuesController.issueURL(context.getContainer(), "insert").addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
     <td><%= textLink("view grid", IssuesController.issueURL(context.getContainer(), "list").addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
     <td><%= textLink("print", printLink)%></td>

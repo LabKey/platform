@@ -48,7 +48,7 @@ if (null == datasets || datasets.length == 0)
 }
 
 %>
-<table class="labkey-study-datasets">
+<table class="labkey-form" width="100%">
 
 <%
     List<DataSetDefinition> userDatasets = new ArrayList<DataSetDefinition>();

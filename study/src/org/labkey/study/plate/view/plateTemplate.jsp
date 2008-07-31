@@ -44,7 +44,7 @@
         %>
     </select>
 </form>
-<table class="labkey-plate-template">
+<table class="labkey-form">
     <tr>
         <td>&nbsp;</td>
         <%
@@ -85,8 +85,8 @@
                 }
 
         %>
-            <td style="border:solid 1px #808080">
-                <table class="labkey-plate-template-colors">
+            <td class="labkey-bordered">
+                <table class="labkey-form">
                     <%
                         if (currentGroupColors.isEmpty())
                         {

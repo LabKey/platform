@@ -38,7 +38,7 @@ public abstract class EditableGrid extends FlexTable
     {
         setCellSpacing(0);
         addTableListener(new RowHeaderClickListener());
-        setStyleName("labkey-grid");
+        setStyleName("labkey-data-region labkey-show-borders");
     }
     
     public void updateAll()
@@ -87,7 +87,7 @@ public abstract class EditableGrid extends FlexTable
     public void setReadOnly(boolean readOnly)
     {
         this.readOnly = readOnly;
-        setStyleName(readOnly ? "labkey-grid-read-only" : "labkey-grid");
+        setStyleName(readOnly ? "labkey-data-region-read-only labkey-show-borders" : "labkey-data-region labkey-show-borders");
     }
 
     private void initRow(int row)

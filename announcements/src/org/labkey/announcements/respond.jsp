@@ -119,7 +119,7 @@ if (settings.hasFormatPicker())
 
 <tr><td colspan="3"></td></tr>
 </table>
-<table class="labkey-file-picker">
+<table class="labkey-form" width=100%>
 	<tr class="labkey-wp-header">
 		<td title="Attachments" style="width:100%;" nowrap>
 		<div class="labkey-wp-title"><span>Attachments</span></div>

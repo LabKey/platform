@@ -453,7 +453,7 @@ public class SpecimenUtils
         rgn.setColumns(tableInfoRequestEvent.getColumns("Created", "EntryType", "Comments", "CreatedBy", "EntityId"));
         rgn.getDisplayColumn("EntityId").setVisible(false);
         rgn.setShadeAlternatingRows(true);
-        rgn.setShowColumnSeparators(true);
+        rgn.setShowBorders(true);
         DataColumn commentsColumn = (DataColumn) rgn.getDisplayColumn("Comments");
         commentsColumn.setWidth("50%");
         commentsColumn.setPreserveNewlines(true);

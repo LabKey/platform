@@ -38,7 +38,7 @@
 <% if (!bean.isPrint())
 {
 %><form name="jumpToIssue" action="jumpToIssue.view" method="get">
-    <table class="labkey-issue-jump"><tr>
+    <table><tr>
     <td><%= textLink("new issue", PageFlowUtil.getLastFilter(context, IssuesController.issueURL(context.getContainer(), "insert")))%></td>
     <td><%= textLink("view grid", PageFlowUtil.getLastFilter(context, IssuesController.issueURL(context.getContainer(), "list")))%></td>
     <td><%= textLink("update", IssuesController.issueURL(context.getContainer(), "update").addParameter("issueId", issueId))%></td><%

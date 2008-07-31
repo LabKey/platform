@@ -35,7 +35,7 @@
 
 <form name="createForm" action="createFolder.view" method="post">
     <%=formatMissedErrors("form")%>
-    <table class="labkey-form labkey-create-folder">
+    <table class="labkey-form">
         <tr><td colspan=2><%
         if (!c.isRoot())
         {

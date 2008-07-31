@@ -83,7 +83,7 @@
                 <tr>
                     <th align="left">Status</th>
                     <td>
-                        <span style="color:<%= requirement.isComplete() ? "green" : "red"%>;font-weight:bold;">
+                        <span class="<%= requirement.isComplete() ? "labkey-message" : "labkey-error"%>" style="font-weight:bold;">
                             <%= requirement.isComplete() ? "Complete" : "Incomplete" %>
                         </span>
                     </td>

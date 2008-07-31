@@ -97,7 +97,7 @@ function validateForm(form)
 <%
 if (bean.allowBroadcast)
 {
-%><table class="labkey-admin-broadcast-checkbox-area">
+%><table class="labkey-form" width=100%>
   <tr class="labkey-wp-header">
     <td title="Admin Broadcast" colspan="2" nowrap>
       <div class="labkey-wp-title"><span>Admin Broadcast</span></div>
@@ -109,7 +109,7 @@ if (bean.allowBroadcast)
   </tr>
 </table><%
 }%>
-<table class="labkey-file-picker">
+<table class="labkey-form" width=100%>
 	<tr class="labkey-wp-header">
 		<td title="Attachments" style="width:100%;" nowrap>
 		<div class="labkey-wp-title"><span>Attachments</span></div>

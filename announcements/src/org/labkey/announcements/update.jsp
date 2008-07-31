@@ -111,13 +111,13 @@ if (settings.hasExpires())
         bean.deleteURL.setFileName(attach.getName());
         out.print(" [<a href=\"#deleteAttachment\" onClick=\"window.open('");
         out.print(h(bean.deleteURL));
-        out.print("', null, 'height=200,width=450', false);\" style=\"color:green;\">");
+        out.print("', null, 'height=200,width=450', false);\" class=\"labkey-message\">");
         out.print("Delete");
         out.print("</a>]");
         out.print("<br>\n");
     }
 %>
-    [<a href="#addAttachment" onclick="window.open('<%=h(bean.addAttachmentURL)%>',null,'height=200,width=550', false);" style="color:green;">add attachment</a>]
+    [<a href="#addAttachment" onclick="window.open('<%=h(bean.addAttachmentURL)%>',null,'height=200,width=550', false);" class="labkey-message">add attachment</a>]
 	</td>
   </tr>
   <tr>

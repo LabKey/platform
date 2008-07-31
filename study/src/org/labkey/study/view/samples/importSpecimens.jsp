@@ -30,13 +30,13 @@
     List<SpecimenBatch.EntryDescription> entries = bean.getBatch().getEntryDescriptions();
 %>
 Specimen archive <b><%= bean.getBatch().getDefinitionFile().getName() %></b> contains the following files:<br><br>
-<table class="labkey-import-specimens">
+<table class="labkey-data-region labkey-show-borders">
     <%
         int row = 0;
         for (SpecimenBatch.EntryDescription entry : entries)
         {
     %>
-        <tr class="<%= row++ % 2 == 1 ? "labkey-row" : "labkey-alternating-row"%>">
+        <tr class="<%= row++ % 2 == 1 ? "labkey-row" : "labkey-alternate-row"%>">
             <th align="left"><%= h(entry.getName()) %></th>
             <td>
                 <table>

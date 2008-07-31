@@ -109,7 +109,7 @@
     <div class="bd">
         <form action="<%=new ActionURL(ReportsController.RenameReportAction.class, context.getContainer())%>" method="post" onsubmit="dialogHelper.hide();">
             <input type="hidden" id="renameReportId" name="reportId" value=""/>
-            <table class="labkey-manage-report">
+            <table class="labkey-form">
                 <tr><td>View name:</td></tr>
                 <tr><td width="275"><input id="renameReportName" name="reportName" style="width:100%" value=""></td></tr>
                 <tr><td><input type="image" src="<%=PageFlowUtil.buttonSrc("Rename")%>"></td></tr>
@@ -123,7 +123,7 @@
     <div class="bd">
         <form action="<%=new ActionURL(ReportsController.ReportDescriptionAction.class, context.getContainer())%>" method="post" onsubmit="descriptionDialogHelper.hide();">
             <input type="hidden" id="descReportId" name="reportId" value=""/>
-            <table class="labkey-manage-report">
+            <table class="labkey-form">
                 <tr><td>View Description:</td></tr>
                 <tr><td width="370"><textarea id="descReportDescription" name="reportDescription" style="width:100%" rows="6"></textarea></td></tr>
                 <tr><td><input type="image" src="<%=PageFlowUtil.buttonSrc("Update")%>"></td></tr>
@@ -154,7 +154,7 @@
         maxColumns--;
     }
     else if (bean.getAdminView())
-        out.print("<table class=\"labkey-manage-report\">");
+        out.print("<table class=\"labkey-form\">");
 
     Map<String, List<ManageReportsBean.ReportRecord>> live = bean.getViews();
     for (Map.Entry<String, List<ManageReportsBean.ReportRecord>> entry : live.entrySet()) {
@@ -264,7 +264,7 @@
 <%
     if (isAdmin) {
 %>
-        <table class="labkey-manage-report">
+        <table class="labkey-form">
             <tr><td>&nbsp</td></tr>
             <tr><td colspan="4">
             [<a href="<%= h(url.relativeUrl("createQueryReport.view", null, "Study-Reports")) %>">new grid view</a>]
@@ -278,7 +278,7 @@
     }
     else if (user.isAdministrator() || context.getContainer().hasPermission(user, ACL.PERM_ADMIN)) {
 %>
-        <table class="labkey-manage-report">
+        <table class="labkey-form">
             <tr><td>&nbsp</td></tr>
             <tr><td colspan="4">
             [<a href="<%= h(url.relativeUrl("manageReports.view", null, "Study-Reports")) %>">Manage Reports and Views</a>]
@@ -295,7 +295,7 @@
         if (!bean.getAdminView())
         {
             WebPartView.startTitleFrame(out, title, null, "100%", null);
-            out.write("<table class=\"labkey-manage-report\">");
+            out.write("<table class=\"labkey-form\">");
         }
         else
         {

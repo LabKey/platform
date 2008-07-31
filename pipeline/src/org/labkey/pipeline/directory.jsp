@@ -56,13 +56,13 @@
         }
     }%>
 
-<table class="labkey-pipeline-setup">
+<table class="labkey-form" width="100%">
 <tr><td valign="top"><%
 
     //
     // DIRECTORY TREE
     //
-    %><table class="labkey-directory-tree"><%
+    %><table class="labkey-form"><%
 
     for (int i=0 ; i<parents.size() ; i++)
     {
@@ -114,13 +114,12 @@
     //
     // FILES/ACTIONS in current directory
     //
-    %><table class="labkey-current-directory"><%
+    %><table class="labkey-form" width="100%"><%
 
     int row = 0;
     for (PipelineProvider.FileEntry entry : entries)
     {
-        String color = (0 == (row++)%2) ? "#ffffff" : "#ffffff";
-        %><tr style="background-color:<%=color%>"><td>&nbsp;</td><%
+        %><tr class="labkey-row"><td>&nbsp;</td><%
         %><td nowrap style="vertical-align: middle;"><a style="width:100%" href="<%=h(entry.getHref())%>"><img src="<%=h(entry.getImageURL())%>">&nbsp;<%=f(entry.getLabel())%></a></td><%
         Collection<PipelineProvider.FileAction> c = dirActions.getCollection(entry.getURI());
         dirActions.remove(entry.getURI());
@@ -149,10 +148,9 @@
         if (action.isRootAction())
             continue;
 
-        String color = (0 == (row++)%2) ? "#ffffff" : "#ffffff";
         if (action.getDescription() != null)
         {
-            %><tr style="background-color:<%=color%>"><td colspan="3"><%=action.getDescription()%></td></tr><%
+            %><tr class="labkey-row"><td colspan="3"><%=action.getDescription()%></td></tr><%
         }
 
         if (!showCheckboxes) {%><form id="files_form<%=++iForm%>" method="post" action="button_set"><input type="hidden" id="param"><%}
@@ -160,7 +158,7 @@
         for (File file : action.getFiles())
         {
             out.println();
-            %><tr style="background-color:<%=color%>"><%
+            %><tr class="labkey-row"><%
             if (showCheckboxes)
             {
                 if (action.getFiles().length == 1)

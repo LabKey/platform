@@ -48,7 +48,7 @@ public class ListQueryView extends QueryView
         DataView view = super.createDataView();
         DataRegion rgn = view.getDataRegion();
         rgn.setShadeAlternatingRows(true);
-        rgn.setShowColumnSeparators(true);
+        rgn.setShowBorders(true);
         return view;
     }
 

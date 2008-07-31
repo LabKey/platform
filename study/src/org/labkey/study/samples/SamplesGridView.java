@@ -221,7 +221,7 @@ public class SamplesGridView extends GridView
         rgn.setRecordSelectorValueColumns("RowId");
         rgn.setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
         rgn.setShadeAlternatingRows(true);
-        rgn.setShowColumnSeparators(true);
+        rgn.setShowBorders(true);
 
         rgn.setAggregates(new Aggregate(tableInfo.getColumn("Volume"), Aggregate.Type.SUM));
 

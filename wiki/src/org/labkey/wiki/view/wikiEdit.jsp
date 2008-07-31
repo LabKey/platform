@@ -1276,10 +1276,10 @@
     </tr>
 </table>
 <div id="<%=ID_PREFIX%>window-change-format" class="x-hidden">
-    <table class="labkey-wiki-page-format">
+    <table class="labkey-form">
         <tr>
             <td>
-                <span style="font-weight:bold;color:#FF0000">WARNING:</span>
+                <span class="labkey-error">WARNING:</span>
                 Changing the format of your page will change the way
                 your page is interpreted, causing it to appear at least differently,
                 if not incorrectly. In most cases, manual adjustment to the

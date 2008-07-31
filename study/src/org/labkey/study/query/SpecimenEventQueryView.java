@@ -58,7 +58,7 @@ public class SpecimenEventQueryView extends StudyQueryView
     {
         DataRegion rgn = super.createDataRegion();
         rgn.setShadeAlternatingRows(true);
-        rgn.setShowColumnSeparators(true);
+        rgn.setShowBorders(true);
         return rgn;
     }
 }

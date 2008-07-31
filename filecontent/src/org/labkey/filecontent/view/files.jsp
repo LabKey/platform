@@ -101,7 +101,7 @@
             <td><%=a.getCreated()%></td>
             <td><%=a.getCreatedBy() != 0 ? a.getCreatedByName(context) : ""%></td>
                 <%if (me.isShowAdmin() && context.hasPermission(ACL.PERM_DELETE)) {%>
-                        <td>[<a href="#deleteFile" onclick="window.open(<%=q(deleteUrl.getLocalURIString())%>, null, 'height=200,width=450', false)" style="color:green">Delete<%=(null != a.getFile() && a.getFile().exists()) ? " File" : " Row"%></a>]</td>
+                        <td>[<a href="#deleteFile" onclick="window.open(<%=q(deleteUrl.getLocalURIString())%>, null, 'height=200,width=450', false)" class="labkey-message">Delete<%=(null != a.getFile() && a.getFile().exists()) ? " File" : " Row"%></a>]</td>
                 <%      } %>
             </tr>
       <%}%>

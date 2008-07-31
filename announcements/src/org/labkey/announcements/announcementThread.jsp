@@ -83,7 +83,7 @@ if (!bean.print && null != discussionSrc)
 }
 %>
 
-<table class="labkey-announcements">
+<table class="labkey-form" width=100%>
 <tr>
     <td class="labkey-announcement-title" style="width:33%;" align=left><span><%=h(announcement.getTitle())%></span></td>
     <td style="padding-top:14px; padding-bottom:2px; width:33%;" align=center><%=h(announcement.getCreatedByName(bean.includeGroups, context))%></td>
@@ -169,11 +169,11 @@ if (0 < announcement.getResponses().size())
     %>
 <tr><td colspan="3">
 
-<table class="labkey-announcement-thread">
+<table class="labkey-form" width=100%>
     <tr>
     <td width="2%">&nbsp;</td>
     <td colspan="2" width="100%">
-        <table class="labkey-announcement-thread"><%
+        <table class="labkey-form" width=100%><%
 
         for (Announcement r : announcement.getResponses())
         {%>

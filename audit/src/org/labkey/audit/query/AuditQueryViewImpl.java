@@ -58,7 +58,7 @@ public class AuditQueryViewImpl extends AuditLogQueryView
         DataView view = super.createDataView();
 
         view.getDataRegion().setShadeAlternatingRows(true);
-        view.getDataRegion().setShowColumnSeparators(true);
+        view.getDataRegion().setShowBorders(true);
 
         if (!_columns.isEmpty())
         {

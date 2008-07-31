@@ -45,7 +45,7 @@ Use this form to import schemas for multiple datasets.
 Paste in a tab delimited file with the following columns, as well as columns for type
 name and type id.  Additional columns will just be ignored.
 </p>
-<table class="labkey-bulk-import-data-header">
+<table class="labkey-form">
     <tr>
         <th align="left"><u>Column Header</u></th>
         <th align="left"><u>Description</u></th>
@@ -92,7 +92,7 @@ name and type id.  Additional columns will just be ignored.
 </table>
 
 <form action="bulkImportDataTypes.post" method="POST" enctype="multipart/form-data">
-    <table class="labkey-bulk-import-data">
+    <table class="labkey-form">
         <tr>
             <td class=labkey-form-label>Column containing dataset Name<span style="color:red;">*</span></td>
         </tr>

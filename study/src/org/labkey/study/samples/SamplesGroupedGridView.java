@@ -110,7 +110,7 @@ public class SamplesGroupedGridView extends SamplesGridView
         rgn.setShowFilters(true);
         rgn.setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
         rgn.setShadeAlternatingRows(true);
-        rgn.setShowColumnSeparators(true);
+        rgn.setShowBorders(true);
 
         rgn.setAggregates(new Aggregate(tableInfo.getColumn("Volume"), Aggregate.Type.SUM),
                 new Aggregate(tableInfo.getColumn("LockedInRequest"), Aggregate.Type.SUM),

@@ -1298,7 +1298,7 @@ public class PipelineController extends SpringActionController
         public String getDisplay()
         {
             StringBuilder sb = new StringBuilder();
-            sb.append("[<a style=\"color:green\" href=\"").append(PageFlowUtil.filter(getHref())).append("\">")
+            sb.append("[<a class=\"labkey-message\" href=\"").append(PageFlowUtil.filter(getHref())).append("\">")
                     .append(PageFlowUtil.filter(getLabel())).append("</a>]");
             return sb.toString();
         }

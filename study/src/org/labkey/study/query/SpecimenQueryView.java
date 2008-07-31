@@ -540,7 +540,7 @@ public class SpecimenQueryView extends StudyQueryView
             containerIdCol.setVisible(false);
 
         rgn.setShadeAlternatingRows(true);
-        rgn.setShowColumnSeparators(true);
+        rgn.setShowBorders(true);
         rgn.setMaxRows(getMaxRows());
         rgn.setOffset(getOffset());
         rgn.setShowRows(getShowRows());
@@ -626,7 +626,7 @@ public class SpecimenQueryView extends StudyQueryView
                     columns.add(col);
             }
             StringBuilder builder = new StringBuilder();
-            builder.append("<table class=\"labkey-simple-html\">\n  <tr>\n");
+            builder.append("<table class=\"labkey-form\">\n  <tr>\n");
             for (DisplayColumn col : columns)
             {
                 String header = PageFlowUtil.filter(col.getCaption());

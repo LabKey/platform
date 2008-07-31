@@ -159,7 +159,7 @@
         <tr class="labkey-wp-header"><th colspan=2 class="labkey-admin-title">Custom Emails</th></tr>
         <tr><td colspan=2>Customize user emails:</td></tr>
         <tr><td></td></tr>
-        <tr><td>Email Type:</td>
+        <tr><td class="labkey-form-label">Email Type:</td>
             <td><select id="templateClass" name="templateClass" onchange="changeEmailTemplate();">
 <%
         for (EmailTemplate et : emailTemplates)
@@ -170,9 +170,9 @@
         }
 %>
         </select></td></tr>
-        <tr><td>Description:</td><td width="600"><div id="emailDescription"></div></td><td></td></tr>
-        <tr><td>Subject:</td><td width="600"><input id="emailSubject" name="emailSubject" style="width:100%" value="<%=bean.getEmailSubject()%>"></td><td></td></tr>
-        <tr><td>Message:</td><td><textarea id="emailMessage" name="emailMessage" style="width:100%" rows="20"><%=bean.getEmailMessage()%></textarea></td></tr>
+        <tr><td class="labkey-form-label">Description:</td><td width="600"><div id="emailDescription"></div></td><td></td></tr>
+        <tr><td class="labkey-form-label">Subject:</td><td width="600"><input id="emailSubject" name="emailSubject" style="width:100%" value="<%=bean.getEmailSubject()%>"></td><td></td></tr>
+        <tr><td class="labkey-form-label">Message:</td><td><textarea id="emailMessage" name="emailMessage" style="width:100%" rows="20"><%=bean.getEmailMessage()%></textarea></td></tr>
         <tr>
             <td></td><td>
             <%=PageFlowUtil.buttonLink("Cancel", urlProvider(AdminUrls.class).getAdminConsoleURL())%>&nbsp;

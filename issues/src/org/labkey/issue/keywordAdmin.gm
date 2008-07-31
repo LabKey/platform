@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.issue.IssuesController"%>
-<table class="labkey-issue-keyword-picker">
+<table class="labkey-form">
 <tr><%
     for (kwp in keywordPickers) {
         IssuesController.KeywordAdminView.KeywordPicker keywordPicker = kwp;

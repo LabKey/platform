@@ -29,19 +29,18 @@
     JspView<SpecimenVisitReportParameters> me = (JspView<SpecimenVisitReportParameters>) HttpView.currentView();
     SpecimenVisitReportParameters bean = me.getModelBean();
     String contextPath = request.getContextPath();
-    String alternateRow = "labkey-alternate-row";
 
     for (SpecimenVisitReport report : bean.getReports())
     {
         Visit[] visits = report.getVisits();
         int colCount = visits.length + report.getLabelDepth();
 %>
-<table class="labkey-specimen-visit-report labkey-grid">
+<table class="labkey-data-region labkey-show-borders">
     <tr>
         <th align="left" colspan="<%= colCount %>"><%= h(report.getTitle())%></th>
     </tr>
 
-    <tr class="<%=alternateRow%>">
+    <tr class="labkey-alternate-row labkey-study-report-header">
         <%
         if (report.getLabelDepth() > 0)
         {
@@ -52,7 +51,7 @@
         for (Visit visit : visits)
         {
             String label = visit.getDisplayString();
-            %><td align="center" valign="top" class=<%=alternateRow%>><%= h(label) %></td><%
+            %><td align="center" valign="top"><%= h(label) %></td><%
         }
         %>
     </tr>
@@ -88,9 +87,9 @@
                                 previousRow = "";
                             outputElement = !currentRow.equals(previousRow);
                         }
-                        String style = "border-bottom:0;border-top:solid " + (outputElement ? "1px" : "0px") + " #808080";
                     %>
-                        <td <%= i < currentTitleHierarchy.length - 1 ? "class=\"labkey-row\"" : ""%> style="<%= style %>">
+                        <td class="<%= i < currentTitleHierarchy.length - 1 ? "labkey-row" : ""%>
+                            <%= outputElement ? " labkey-study-report-output-element" : " labkey-study-report-element"%>">
                             <%= outputElement ? h(titleElement != null ? titleElement : "[unspecified]") : "&nbsp;" %>
                         </td>
                     <%

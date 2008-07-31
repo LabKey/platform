@@ -36,7 +36,7 @@
         }
         else
         {
-            /* separate border-collapse and border-spacing are the css equivalent of
+            /* separate border-collapse: separate and border-spacing are the css equivalent of
              cellspacing   */
             return "border-collapse: separate; border-spacing: " + i + "px; " +
                 "*border-spacing: expression(cellSpacing=" + i + ");";
@@ -50,29 +50,8 @@
     response.setContentType("text/css");
 
     AppProps app = AppProps.getInstance();
-    String titleColor = WebTheme.toRGB(theme.getTitleColor());
     String navBarWidth = app.getNavigationBarWidth();
     String mapPath = request.getContextPath() + "/_yui/build/menu/assets/map.gif";
-
-    String lightBlue = "#eeeeff";   // very light grayish blue
-    String darkerLightBlue = "#ccccff";   // light grayish blue
-    String linkRed = "#ff3300"; // lighter iron red
-    String errorRed = "red"; // error red
-
-    String row = "#FFFFFF";
-    String veryLightGray = "#EEEEEE";
-    String lightGray = "#dddddd";
-    String mediumLightGray = "#aaaaaa";
-    String mediumDarkGray = "#808080";
-    String darkGray = "#666666";
-    String veryDarkGray = "#444444";
-
-    String peakWarningBG = "#FFF8DC"; // light orangish                240
-    String nabLabel = "#FFFFA0"; //orangish                            220
-    String statusBorder = "#FFAD6A";  // darker orangish               170
-
-    String statusErrorBG = "#FF5A7A";  // red-pinkish                  160
-    String statusErrorBorder = "#C11B17";  // darker red-pinkish       83
 
     //BLUE
     //Navigation Bar Color (left panel menu)    E1ECFC   light bluish-gray
@@ -82,6 +61,32 @@
     //Title Bar Background Color                EBF4FF   light bluish-gray
     //Title Bar Border Color                    89A1B4    medium dark bluish-gray
 
+    String background          = "FFFFFF";
+    String navBackground       = "E1ECFC";
+    String navBorder           = "89A1B4";
+    String linkAndHeaderText   = "003399";
+    String formLabel           = "FFDF8C";
+    String mainTitle           = "666666";
+    String wpHeaderPanel       = "EBF4FF";
+    String message             = "008000";
+    String error               = "FF0000";
+    String text                = "000000";
+    String row                 = "FFFFFF";
+    String alternateRow        = "EEEEEE";
+    String highlightCell       = "AAAAAA";
+    String gridBorder          = "DDDDDD";
+    String gridBorderBold      = "AAAAAA";
+    String fullScreenBorder    = "336699";
+    String inactiveTab         = "444444";
+    String linkRed             = "ff3300";
+    String chartBorder         = "808080";
+    String chartHeaderBold     = "CCCCCC";
+    String notification        = "FFFFA0"; // light yellow
+    String peakWarningBG       = "FFF8DC"; // light orangish
+    String statusBorder        = "FFAD6A";  // darker orangish
+    String statusErrorBG       = "FF5A7A";  // red-pinkish
+    String statusErrorBorder   = "C11B17";  // darker red-pinkish
+
 %>
 
 <%-- index:
@@ -89,8 +94,7 @@
 defaults
 general
     -various
-    -data regions
-    -alternating row data region
+    -data region
 labkey outer frame
     -main
         -header-panel
@@ -106,6 +110,8 @@ module specific (alphabetical)
 GWT
 yui
 
+Deleted New Classes
+Old Classes
 --%>
 
 <%-- defaults --%>
@@ -118,17 +124,9 @@ body, div, td, th, table, img, form
     margin: 0px;
 }
 
-td, th
-{
-}
-
 th
 {
     font-weight: bold;
-}
-
-table
-{
 }
 
 body, div, td, table, img, form
@@ -138,7 +136,7 @@ body, div, td, table, img, form
 
 a, a:visited
 {
-    color: #<%=titleColor%>;
+    color: #<%=linkAndHeaderText%>;
     text-decoration: none;
 }
 
@@ -158,12 +156,12 @@ select
 
 body, td, .gwt-Label
 {
-    color: black;
+    color: #<%= text %>;
 }
 
 fieldset
 {
-    border: 1px solid #<%= theme.getGradientDarkString() %>;
+    border: 1px solid #<%= navBorder %>;
     height: 5em;
     padding-left: 5px;
     padding-right: 5px;
@@ -172,9 +170,9 @@ fieldset
 
 legend
 {
-    border: 1px solid #<%= theme.getGradientDarkString() %>;
+    border: 1px solid #<%= navBorder %>;
     padding: 2px 6px;
-    background-color: #<%= theme.getGradientLightString() %>;
+    background-color: #<%= wpHeaderPanel %>;
 }
 
 <%-- general --%>
@@ -183,7 +181,7 @@ table.labkey-form
     <%= cellSpacing(2) %>
 }
 
-.labkey-form td
+.labkey-form td, .labkey-form th
 {
     padding: 1px;
 }
@@ -194,7 +192,7 @@ table.labkey-form
 }
 
 td.labkey-form-label-nowrap {
-	background-color: #<%= theme.getEditFormColor() %>;
+	background-color: #<%= formLabel %>;
     padding: 4px;
     white-space: nowrap;
     vertical-align: top;
@@ -203,7 +201,7 @@ td.labkey-form-label-nowrap {
 
 td.labkey-form-label, th.labkey-form-label, div.labkey-form-label, .labkey-form-label
 {
-    background-color: #<%= theme.getEditFormColor() %>;
+    background-color: #<%= formLabel %>;
     padding-right:4px;
     padding-left:4px;
     padding-top:1px;
@@ -212,7 +210,7 @@ td.labkey-form-label, th.labkey-form-label, div.labkey-form-label, .labkey-form-
 
 td.labkey-form-label-text, th.labkey-form-label-text
 {
-    background-color: #<%= theme.getEditFormColor() %>;
+    background-color: #<%= formLabel %>;
     padding:4px;
 }
 
@@ -222,27 +220,27 @@ a.labkey-link, a.labkey-link:visited
 
 a.labkey-link:hover, a.labkey-link:visited:hover
 {
-    color: <%= linkRed %>;
+    color: #<%= linkRed %>;
     text-decoration: underline;
 }
 
 td.labkey-error, div.labkey-error, a.labkey-error, .labkey-error, .error
 {
-    color: <%= errorRed %>;
+    color: #<%= error %>;
     padding: 0px;
 }
 
 td.labkey-message, div.labkey-message, .labkey-message
 {
     font-size: <%= themeFont.getNormalSize() %>;
-    color: green;
+    color: #<%= message %>;
 }
 
 td.labkey-message-strong, div.labkey-message-strong, .labkey-message-strong
 {
     font-size: <%= themeFont.getNormalSize() %>;
     font-weight: bold;
-    color: green;
+    color: #<%= message %>;
 }
 
 div.labkey-button-bar, table.labkey-button-bar
@@ -288,12 +286,12 @@ td.labkey-expand-collapse-folders, .labkey-expand-collapse-folders
     text-align: left;
     padding-top:5px;
     vertical-align: top;
-    background: #<%= theme.getNavBarColor() %>;
+    background: #<%= navBackground %>;
 }
 
 td.labkey-header, .labkey-header
 {
-    color: #<%= titleColor %>;
+    color: #<%= linkAndHeaderText %>;
     text-align: left;
     text-decoration: none;
     vertical-align: top;
@@ -303,7 +301,7 @@ td.labkey-header, .labkey-header
 
 td.labkey-header.hover, .labkey-header.hover
 {
-    background: #<%= theme.getGradientLightString() %>;
+    background: #<%= wpHeaderPanel %>;
     cursor: pointer;
     cursor: hand;
 }
@@ -323,18 +321,18 @@ td.labkey-header.hover, .labkey-header.hover
 td.labkey-nav-header, .labkey-nav-header A, .labkey-nav-header A:link, .labkey-nav-header A:visited
 {
     font-weight: bold;
-	color: #<%=titleColor%>;
+	color: #<%=linkAndHeaderText%>;
     padding-left: 3px;
 }
 
 td.labkey-nav-frame, .labkey-nav-frame
 {
-    background: #<%= theme.getNavBarColor() %>;
+    background: #<%= navBackground %>;
 }
 
 .labkey-nav td
 {
-    background: #<%= theme.getNavBarColor() %>;
+    background: #<%= navBackground %>;
     font-size: <%= themeFont.getTextInputSize() %>;
 }
 
@@ -343,19 +341,19 @@ td.labkey-nav-frame, .labkey-nav-frame
     font-size: <%= themeFont.getNormalSize() %>;
     font-weight: normal;
     text-align: left;
-    color: black;
-    background: #<%= theme.getNavBarColor() %>;
+    color: #<%= text %>;
+    background: #<%= navBackground %>;
 }
 
 .labkey-nav a, .labkey-nav a:visited
 {
-    color: #<%=titleColor%>;
+    color: #<%=linkAndHeaderText%>;
 }
 
 .labkey-nav a:hover
 {
     text-decoration: underline;
-    color: <%= mediumDarkGray %>;
+    color: #<%= chartBorder %>;
 }
 
 div.labkey-read-only, .labkey-read-only
@@ -391,7 +389,7 @@ table.labkey-search, .labkey-search
 
 td.labkey-full-screen-table
 {
-    background-color: #<%= theme.getFullScreenBorderColor() %>;
+    background-color: #<%= fullScreenBorder %>;
     padding: 30px;
     height: 100%;
     vertical-align: middle;
@@ -402,13 +400,13 @@ table.labkey-full-screen-table
 {
     height: 100%;
     width: 100%;
-    background-color: white;
+    background-color: #<%=background%>;
     <%= cellSpacing(0) %>
 }
 
 td.labkey-full-screen-table-panel, .labkey-full-screen-table-panel
 {
-    background-color: <%=lightGray%>;
+    background-color: #<%=gridBorder%>;
     height: 20px;
 }
 
@@ -425,7 +423,7 @@ td.labkey-dialog-body, .labkey-dialog-body
 }
 
 td.labkey-title-area-line{
-    background-color: #<%= theme.getHeaderLineColor() %>;
+    background-color: #<%= navBorder %>;
     height: 1px;
     padding: 0px;
 }
@@ -461,6 +459,11 @@ form.labkey-email-notification table
 {
     width: 100%;
     <%= cellSpacing(3) %>
+}
+
+.labkey-email-notification td, .labkey-email-notification th
+{
+    padding: 4px;
 }
 
 div.labkey-pagination, td.labkey-pagination, th.labkey-pagination, table.labkey-pagination,
@@ -526,12 +529,12 @@ table.labkey-dialog
 {
     <%= cellSpacing(0) %>
     border: 1px;
-    border-color: black;
+    border-color: #<%= gridBorderBold %>;
 }
 
 .labkey-dialog th
 {
-    background-color: <%=lightGray%>;
+    background-color: #<%=gridBorder%>;
 }
 
 table.labkey-tab-strip
@@ -545,9 +548,14 @@ table.labkey-tab-strip
     padding: 0px;
 }
 
+td.labkey-highlight-tab
+{
+    background-color: #<%=navBackground%>;
+}
+
 td.labkey-response-header
 {
-    background-color: <%=lightGray%>;
+    background-color: #<%=gridBorder%>;
 }
 
 table.labkey-format-helper
@@ -562,20 +570,15 @@ table.labkey-format-helper
 
 tr.labkey-format-helper-header
 {
-    background-color: <%=darkerLightBlue%>;
-}
-
-tr.labkey-format-helper-alternate-row
-{
-    background-color: <%=lightBlue%>;
+    background-color: #<%=navBackground%>;
 }
 
 div.labkey-row-filter
 {
-    border: 1px solid black;
+    border: 1px solid #<%=gridBorderBold%>;
     padding:4px;
     position:absolute;
-    background-color:white;
+    background-color:#<%=background%>;
 }
 
 div.labkey-filter
@@ -596,10 +599,10 @@ div.labkey-filter
 div.labkey-completion
 {
     display:none;
-    border: 1px solid black;
+    border: 1px solid #<%=gridBorderBold%>;
     padding:1px; 
     position:absolute;
-    background-color:white;
+    background-color:#<%=background%>;
 }
 
 .labkey-completion table
@@ -625,70 +628,59 @@ table.labkey-completion-text
 
 .labkey-completion-highlight
 {
-    background-color: #<%= theme.getNavBarColor() %>;
+    background-color: #<%= navBackground %>;
 }
 
 .labkey-completion-nohighlight
 {
-    background-color: white;
+    background-color: #<%=background%>;
 }
 
 <%-- data region --%>
-table.labkey-grid
+table.labkey-data-region
 {
-    border: 1px solid <%=mediumLightGray%>;
     border-collapse: collapse;
     <%= cellSpacing(0) %>
 }
 
-table.labkey-grid-read-only {
-}
-
-.labkey-grid .labkey-col-header {
-    font-weight: bold;
-    background-color: <%=lightGray%>;
-    border: 1px solid black;
-    padding-left: .5em;
-    padding-right: .5em;
-}
-
-.labkey-grid .labkey-row-header {
-    font-weight: bold;
-    background-color: <%=lightGray%>;
-    border: 1px solid black;
-    padding-left: .5em;
-    padding-right: .5em;
-}
-
-.labkey-grid td {
-    padding-left: .5em;
-    padding-right: .5em;
-    padding-top: .1em;
-    padding-bottom: .1em;
-    border-left: 1px solid <%=lightGray%>;
-    border-right: 1px solid <%=lightGray%>;
-    border-bottom: 1px solid <%=lightGray%>;
-    width: auto;
-}
-
-.labkey-grid input {
-}
-
-.labkey-grid-read-only td {
-    padding-left: .5em;
-    padding-right: .5em;
-    padding-top: .1em;
-    padding-bottom: .1em;
-}
-
-table.labkey-data-region-footer
+.labkey-data-region A
 {
-    <%= cellSpacing(1) %>
+    color: #<%=linkAndHeaderText%>;
+    text-decoration: none;
 }
 
-.labkey-data-region-footer td, .labkey-data-region-footer tr
+.labkey-data-region TH, .labkey-data-region .labkey-selector-header
 {
-    padding: 2px;
+    border-bottom: solid 1px #<%=gridBorderBold%>;
+    vertical-align: top;
+}
+
+.labkey-data-region TD, .labkey-data-region TH
+{
+    padding: 1px;
+    padding-right:4px;
+}
+
+.labkey-data-region .labkey-header-cell
+{
+    border-bottom: solid 1px #<%=gridBorderBold%>;
+    border-right: solid 1px #<%=gridBorderBold%>;
+}
+
+.labkey-data-region .labkey-col-header {
+    font-weight: bold;
+    background-color: #<%=gridBorder%>;
+    border: 1px solid #<%=gridBorderBold%>;
+    padding-left: .5em;
+    padding-right: .5em;
+}
+
+.labkey-data-region .labkey-row-header {
+    font-weight: bold;
+    background-color: #<%=gridBorder%>;
+    border: 1px solid #<%=gridBorderBold%>;
+    padding-left: .5em;
+    padding-right: .5em;
 }
 
 table.labkey-data-region-header
@@ -703,57 +695,56 @@ table.labkey-data-region-header
     padding-right:4px;
 }
 
-table.labkey-data-region
+table.labkey-data-region-footer
 {
-    <%= cellSpacing(2) %>
+    <%= cellSpacing(1) %>
 }
 
-.labkey-data-region TD
+.labkey-data-region-footer td, .labkey-data-region-footer tr
 {
-    vertical-align: top;
-    padding: 1px;
-    padding-right:4px;
+    padding: 2px;
 }
 
-.labkey-data-region A
-{
-    color: #<%=titleColor%>;
-    text-decoration: none;
+.labkey-data-region-read-only td {
+    padding-left: .5em;
+    padding-right: .5em;
+    padding-top: .1em;
+    padding-bottom: .1em;
 }
 
-td.labkey-show-column-separators
+.labkey-show-borders td
 {
-    border: solid 1px <%=mediumLightGray%>;
+    border: solid 1px #<%=gridBorder%>;
 }
 
-th.labkey-show-column-separators
+.labkey-show-borders th, .labkey-show-borders .labkey-selector-header, .labkey-data-region .labkey-header-cell
 {
-    border-right: solid 1px <%=mediumLightGray%>;
-    border-bottom: solid 1px <%=mediumLightGray%>;
+    border: solid 1px #<%=gridBorderBold%>;
 }
 
-table.labkey-show-column-separators
+.labkey-row td, .labkey-row th, .labkey-row
 {
-    border-top: solid 1px <%=mediumLightGray%>;
-    border-left: solid 1px <%=mediumLightGray%>;
-    border-bottom: solid 1px <%=mediumLightGray%>;
+    background: #<%=row%>;
 }
 
-td.labkey-show-header-separator, table.labkey-show-header-separator, th.labkey-show-header-separator,
-    .labkey-show-header-separator
+.labkey-alternate-row td, .labkey-alternate-row th, .labkey-alternate-row
 {
-    border-bottom: solid 1px <%=mediumLightGray%>;
+    background: #<%=alternateRow%>;
 }
 
-table.labkey-show-header-separator
+td.labkey-highlight-cell, th.labkey-highlight-cell
 {
-    <%= cellSpacing(0) %>
-    border: 0px;
+    background: #<%=highlightCell%>;
+}
+
+.labkey-aggregates-row td
+{
+    background-color: #<%=navBackground%>;
 }
 
 th.labkey-grid-header, td.labkey-grid-header
 {
-    color: #<%= titleColor %>;
+    color: #<%= linkAndHeaderText %>;
     text-align: left;
     text-decoration: none;
     vertical-align: top;
@@ -763,7 +754,7 @@ th.labkey-grid-header, td.labkey-grid-header
 
 th.labkey-grid-header.hover, td.labkey-grid-header.hover
 {
-    background: #<%= theme.getGradientLightString() %>;
+    background: #<%= wpHeaderPanel %>;
     cursor: pointer;
     cursor: hand;
 }
@@ -799,43 +790,6 @@ img.labkey-grid-filter-icon
     display: inline;
 }
 
-<%-- alternating grid --%>
-table.labkey-alternating-grid
-{
-    border-bottom: solid 2px <%=mediumDarkGray%>;
-    <%= cellSpacing(3) %>
-    border-collapse: collapse;
-}
-
-.labkey-alternating-grid td, .labkey-alternating-grid th
-{
-    padding: 3px;
-}
-
-th.labkey-alternating-grid-header, td.labkey-alternating-grid-header, .labkey-alternating-grid-header
-{
-    font-weight: bold;
-    border-right:solid 1px <%=mediumDarkGray%>;
-    border-left:solid 1px <%=mediumDarkGray%>;
-    border-top:solid 2px <%=mediumDarkGray%>;
-}
-
-td.labkey-alternating-grid-cell, th.labkey-alternating-grid-cell
-{
-    border-right:solid 1px <%=mediumDarkGray%>;
-    border-left:solid 1px <%=mediumDarkGray%>;
-}
-
-.labkey-row td, .labkey-row th
-{
-    background: <%=row%>;
-}
-
-.labkey-alternating-row td, .labkey-alternating-row th
-{
-    background: <%=veryLightGray%>;
-}
-
 <%-- main --%>
 
 #bodyElement
@@ -847,9 +801,9 @@ td.labkey-alternating-grid-cell, th.labkey-alternating-grid-cell
 
 #helpDiv
 {
-    border:1px solid black;
+    border:1px solid #<%=gridBorderBold%>;
     position:absolute;
-    background-color:white;
+    background-color:#<%=background%>;
 }
 
 .labkey-main
@@ -878,9 +832,9 @@ td.labkey-alternating-grid-cell, th.labkey-alternating-grid-cell
 
 .labkey-site-nav-panel
 {
-    background: #<%= theme.getNavBarColor() %>;
-    border-top: 1px solid #<%= theme.getHeaderLineColor() %>;
-    border-right: 1px solid #<%= theme.getHeaderLineColor() %>;
+    background: #<%= navBackground %>;
+    border-top: 1px solid #<%= navBorder %>;
+    border-right: 1px solid #<%= navBorder %>;
     <%= cellSpacing(2) %>
     vertical-align: top;
     padding: 0px;
@@ -918,7 +872,7 @@ td.labkey-main-title-area
 
 #labkey-main-title
 {
-    color: <%=darkGray%>;
+    color: #<%=mainTitle%>;
 }
 
 a.labkey-main-title
@@ -926,7 +880,7 @@ a.labkey-main-title
     font-family: arial, helvetica, sans-serif;
     font-size:<%= themeFont.getPageTitleSize() %>;
     vertical-align: bottom;
-    color: <%=darkGray%>;
+    color: #<%=mainTitle%>;
     text-decoration: none;
 }
 
@@ -965,11 +919,11 @@ table.labkey-site-nav
 
 table.labkey-expandable-nav
 {
-    background-color: white;
+    background-color: #<%=background%>;
     border-left: 0px;
-    border-top: 1px solid #<%= theme.getHeaderLineColor() %>;
-    border-right: 1px solid #<%= theme.getHeaderLineColor() %>;
-    border-bottom: 1px solid #<%= theme.getHeaderLineColor() %>;
+    border-top: 1px solid #<%= navBorder %>;
+    border-right: 1px solid #<%= navBorder %>;
+    border-bottom: 1px solid #<%= navBorder %>;
     margin-top:5px;
     margin-right:5px;
     <%= cellSpacing(0) %>
@@ -1010,7 +964,7 @@ table.labkey-expandable-nav
 <%-- proj-nav-panel --%>
 .labkey-expandable-nav-body
 {
-    border-top: 1px solid #<%= theme.getHeaderLineColor() %>;
+    border-top: 1px solid #<%= navBorder %>;
     width: 100%;
     padding: 1px;
 }
@@ -1028,7 +982,7 @@ table.labkey-expandable-nav
 th.labkey-expandable-nav-title, .labkey-expandable-nav-title
 {
     font-weight: bold;
-    color: #<%=titleColor%>;
+    color: #<%=linkAndHeaderText%>;
     padding-left: 6px;
     padding-right: 4px;
     padding-top: 2px;
@@ -1038,21 +992,19 @@ th.labkey-expandable-nav-title, .labkey-expandable-nav-title
 }
 .labkey-expandable-nav-title a:link, .labkey-expandable-nav-title a:visited
 {
-    color:#<%=titleColor%>;
+    color:#<%=linkAndHeaderText%>;
     text-decoration:none;
     cursor:pointer;
 }
 .labkey-expandable-nav-title a:hover
 {
-    color:<%=linkRed%>;
-    text-decoration:underline;
     cursor:pointer;
 }
 
 th.labkey-expand-collapse-area, .labkey-expand-collapse-area
 {
     font-weight: bold;
-    color: #<%=titleColor%>;
+    color: #<%=linkAndHeaderText%>;
     padding-right: 4px;
     padding-top: 2px;
     padding-bottom: 2px;
@@ -1069,7 +1021,7 @@ span.labkey-nav-tree-selected
 
 tr.labkey-nav-tree-row
 {
-    color: #<%= titleColor %>;
+    color: #<%= linkAndHeaderText %>;
     text-decoration: none;
     vertical-align: top;
     padding-right:4px;
@@ -1077,7 +1029,7 @@ tr.labkey-nav-tree-row
 
 tr.labkey-nav-tree-row:hover
 {
-    background: #<%= theme.getGradientLightString() %>;
+    background: #<%= wpHeaderPanel %>;
     cursor: pointer;
     cursor: hand;
 }
@@ -1134,11 +1086,11 @@ td.labkey-nav-tab-selected, .labkey-nav-tab-selected
     padding-bottom:0.1em;
     padding-left:0.5em;
     padding-right:0.5em;
-    border-top:solid 1px #<%= theme.getHeaderLineColor() %>;
-    border-left:solid 1px #<%= theme.getHeaderLineColor() %>;
-    border-right:solid 1px #<%= theme.getHeaderLineColor() %>;
+    border-top:solid 1px #<%= navBorder %>;
+    border-left:solid 1px #<%= navBorder %>;
+    border-right:solid 1px #<%= navBorder %>;
     border-bottom:solid 1px #ffffff;
-    color: #<%=titleColor%>;
+    color: #<%=linkAndHeaderText%>;
     text-decoration: none;
     font-weight: bold;
 }
@@ -1149,12 +1101,12 @@ td.labkey-nav-tab-inactive, .labkey-nav-tab-inactive
     padding-bottom:0.1em;
     padding-left:0.5em;
     padding-right:0.5em;
-    border-top:solid 1px #<%= theme.getHeaderLineColor() %>;
-    border-left:solid 1px #<%= theme.getHeaderLineColor() %>;
-    border-right:solid 1px #<%= theme.getHeaderLineColor() %>;
-    border-bottom:solid 1px #<%= theme.getHeaderLineColor() %>;
+    border-top:solid 1px #<%= navBorder %>;
+    border-left:solid 1px #<%= navBorder %>;
+    border-right:solid 1px #<%= navBorder %>;
+    border-bottom:solid 1px #<%= navBorder %>;
     text-decoration: none;
-    color: <%=veryDarkGray%>;
+    color: #<%=inactiveTab%>;
 }
 
 td.labkey-nav-tab, .labkey-nav-tab
@@ -1163,13 +1115,13 @@ td.labkey-nav-tab, .labkey-nav-tab
     padding-bottom:0.1em;
     padding-left:0.5em;
     padding-right:0.5em;
-    border-top:solid 1px #<%= theme.getHeaderLineColor() %>;
-    border-left:solid 1px #<%= theme.getHeaderLineColor() %>;
-    border-right:solid 1px #<%= theme.getHeaderLineColor() %>;
-    border-bottom:solid 1px #<%= theme.getHeaderLineColor() %>;
+    border-top:solid 1px #<%= navBorder %>;
+    border-left:solid 1px #<%= navBorder %>;
+    border-right:solid 1px #<%= navBorder %>;
+    border-bottom:solid 1px #<%= navBorder %>;
     text-decoration: none;
     vertical-align:bottom;
-    color: #<%=titleColor%>;
+    color: #<%=linkAndHeaderText%>;
 }
 
 td.labkey-nav-tab-space, .labkey-nav-tab-space
@@ -1177,7 +1129,7 @@ td.labkey-nav-tab-space, .labkey-nav-tab-space
     border-top: 0px;
     border-left: 0px;
     border-right: 0px;
-    border-bottom: 1px solid #<%= theme.getHeaderLineColor() %>;
+    border-bottom: 1px solid #<%= navBorder %>;
 }
 
 #labkey-end-nav-tab-space
@@ -1202,7 +1154,7 @@ span.labkey-nav-page-header, .labkey-nav-page-header
 {
 	font-weight: bold;
 	font-size: <%= themeFont.getPageHeaderSize() %>;
-	color: #<%=titleColor%>;
+	color: #<%=linkAndHeaderText%>;
 }
 
 <%-- body-panel --%>
@@ -1216,25 +1168,25 @@ td.labkey-wp-body
 {
     width: 100%;
     padding-top: 2px;
-    background: white;
+    background: #<%=background%>;
 }
 
 tr.labkey-wp-header
 {
-    background-color: #<%= theme.getGradientLightString() %>;
+    background-color: #<%= wpHeaderPanel %>;
     font-weight: bold;
 }
 
 .labkey-wp-header th, .labkey-wp-header td
 {
-    border: 1px solid #<%= theme.getGradientDarkString() %>;
+    border: 1px solid #<%= navBorder %>;
 }
 
 .labkey-wp-header th, .labkey-wp-header td, .labkey-wp-title, th.labkey-wp-title,
     td.labkey-wp-title, div.labkey-wp-title, .labkey-wp-title span
 {
     font-weight: bold;
-    color: #<%=titleColor%>;
+    color: #<%=linkAndHeaderText%>;
     padding-left: 6px;
     padding-right: 4px;
     padding-top: 2px;
@@ -1245,14 +1197,14 @@ tr.labkey-wp-header
 
 .labkey-wp-header a:link, .labkey-wp-header a:visited
 {
-    color:#<%=titleColor%>;
+    color:#<%=linkAndHeaderText%>;
     text-decoration:none;
     cursor:pointer;
 }
 
 .labkey-wp-header a:hover
 {
-    color:<%=linkRed%>;
+    color:#<%=linkRed%>;
     text-decoration:underline;
     cursor:pointer;
 }
@@ -1271,7 +1223,7 @@ th.labkey-wp-title-right, td.labkey-wp-title-right
 th.labkey-admin-title
 {
     text-align: center;
-    color: black;
+    color: #<%=text%>;
 }
 
 table.labkey-wp-link-panel
@@ -1310,6 +1262,1004 @@ td.labkey-add-web-part, .labkey-add-web-part td
 <%-- module specific css --%>
 
 <%-- Announcement --%>
+
+table.labkey-admin-broadcast-checkbox-area
+{
+}
+
+.labkey-admin-broadcast-checkbox-area td, .labkey-admin-broadcast-checkbox-area th
+{
+}
+
+table.labkey-file-picker
+{
+}
+
+.labkey-file-picker td, .labkey-file-picker th
+{
+}
+
+td.labkey-announcement-title
+{
+    padding-top: 14px;
+    padding-bottom: 2px;
+}
+
+.labkey-announcement-title span, .labkey-announcement-title a {
+    font-weight: bold;
+    color: #<%=linkAndHeaderText%>
+}
+
+table.labkey-bulk-edit
+{
+    border:solid 1px #<%=gridBorderBold%>;
+    <%= cellSpacing(0) %>
+}
+
+.labkey-bulk-edit th
+{
+    border-bottom:solid 1px #<%=gridBorderBold%>;
+    color: #<%= linkAndHeaderText %>;
+    text-align: left;
+    text-decoration: none;
+    vertical-align: top;
+    padding: 1px;
+    padding-right:4px;
+}
+
+.labkey-bulk-edit a:hover
+{
+    background: #<%= wpHeaderPanel %>;
+    cursor: pointer;
+    cursor: hand;
+}
+
+.labkey-bulk-edit td, .labkey-bulk-edit th
+{
+    border-right:solid 1px #<%=gridBorderBold%>;
+}
+
+<%-- Elispot --%>
+
+
+<%-- Experiment --%>
+
+table.labkey-protocol-applications
+{
+   <%= cellSpacing(5) %>
+}
+
+<%-- Flow --%>
+
+.labkey-show-compensation-header
+{
+    border-right: solid 1px #<%=gridBorderBold%>;
+}
+
+.labkey-show-compensation-cell
+{
+    border-right: solid 1px #<%=gridBorderBold%>;
+}
+
+<%-- Issue --%>
+
+
+<%-- MS1 --%>
+
+table.labkey-peak-warning
+{
+    width: 100%;
+}
+
+.labkey-peak-warning td, .labkey-peak-warning th
+{
+    padding: 2px;
+    background-color:#<%=peakWarningBG%>;
+    border:1px solid #<%=chartBorder%>;
+}
+
+td.labkey-feature-caption
+{
+    background-color: #<%=alternateRow%>;
+}
+
+td.labkey-mz-filter
+{
+    background: #<%= navBackground %>;
+    text-align: center;
+    border-top: 1px solid #<%=gridBorderBold%>;
+    border-bottom: 1px solid #<%=gridBorderBold%>;
+}
+
+td.labkey-scan-filter
+{
+    background: #<%= navBackground %>;
+    display: none;
+    text-align: center;
+    vertical-align: top
+}
+
+<%-- MS2 --%>
+
+td.labkey-list-box, .labkey-list-box
+{
+    font-weight: bold;
+}
+
+table.labkey-prot-annots
+{
+    <%= cellSpacing(10) %>
+}
+
+table.labkey-filter-header
+{
+}
+
+table.labkey-show-peptide
+{
+    <%= cellSpacing(1) %>
+    width: 230;
+}
+
+.labkey-show-peptide td, .labkey-show-peptide th
+{
+    padding: 1px;
+}
+
+<%-- Nab --%>
+
+table.labkey-nab-run-label
+{
+    background-color: #<%=notification%>;
+}
+
+.labkey-nab-run-header
+{
+    text-align:left;
+    background-color:#<%=alternateRow%>;
+    border-top:solid 1px #<%=gridBorderBold%>;
+}
+
+<%-- Pipeline --%>
+
+
+<%-- Query --%>
+
+table.labkey-design-query
+{
+    <%= cellSpacing(0) %>
+}
+
+.labkey-design-query td, .labkey-design-query th
+{
+    padding: 0px;
+}
+
+<%-- Study --%>
+
+table.labkey-request-warnings
+{
+    <%= cellSpacing(10) %>
+}
+
+table.labkey-manage-display
+{
+    <%= cellSpacing(5) %>
+}
+
+table.labkey-manage-default-reqs
+{
+    <%= cellSpacing(10) %>
+}
+
+td.labkey-bordered, .labkey-bordered
+{
+   border: solid 1px #<%=chartBorder%>;
+}
+
+table.labkey-study-requirements
+{
+    <%=cellSpacing(0)%>;
+}
+
+.labkey-study-requirements td, .labkey-study-requirements th
+{
+    padding-right: 4px;
+}
+
+.labkey-study-requirements th
+{
+    border-bottom:solid 1px #<%=chartBorder%>;
+}
+
+.labkey-study-report-header td
+{
+    border-bottom: solid 1px #<%=chartBorder%>;
+}
+
+td.labkey-study-report-output-element
+{
+    border-bottom: 0;
+    border-top: solid 1px #<%=chartBorder%>;
+}
+
+td.labkey-study-report-element
+{
+    border-bottom: 0;
+    border-top: 0;
+}
+
+table.labkey-participant-view
+{
+    border-collapse: collapse;
+    <%= cellSpacing(0) %>
+    border-bottom: solid 2px #<%=chartBorder%>;
+}
+
+.labkey-participant-view-header
+{
+    border-right: solid 1px #<%=chartBorder%>;
+    border-top: solid 2px #<%=chartBorder%>;
+}
+
+.labkey-chart-header
+{
+    background-color: #<%=chartHeaderBold%>;
+    border-top: solid 2px #<%=chartBorder%>;
+    border-bottom: solid 2px #<%=chartBorder%>;
+}
+
+table.labkey-crosstab-report
+{
+    <%= cellSpacing(0) %>
+    border-collapse:collapse;
+}
+
+table.labkey-study-expandable-nav
+{
+    <%= cellSpacing(0) %>
+    width: 100%;
+}
+
+.labkey-study-expandable-nav td, .labkey-study-expandable-nav th
+{
+    padding: 0px;
+}
+
+.labkey-study-datasets th
+{
+    background-color: #<%=gridBorderBold%>;
+    text-align: left;
+}
+
+<%-- Wiki --%>
+
+table.labkey-wiki-edit
+{
+    width: 99%;
+}
+
+div.labkey-status-info, .labkey-status-info
+{
+    width: 99%;
+    text-align: center;
+    background-color: #<%=formLabel%>;
+    border: 1px solid #<%=statusBorder%>;
+    padding: 2px;
+    font-weight: bold;
+}
+
+div.labkey-status-error, .labkey-status-error
+{
+    width: 99%;
+    text-align: center;
+    background-color: #<%=statusErrorBG%>;
+    border: 1px solid #<%=statusErrorBorder%>;
+    color: #<%=background%>;
+    font-weight: bold;
+}
+
+table.labkey-form-layout
+{
+    width: 99%;
+}
+
+textarea.labkey-stretch-input, .labkey-stretch-input
+{
+    width: 100%;
+}
+
+table.labkey-tab-container
+{
+    width: 99%;
+    <%= cellSpacing(0) %>
+}
+
+td.labkey-wiki-tab-active
+{
+    border-left: 1px solid #<%=navBorder%>;
+    border-right: 1px solid #<%=navBorder%>;
+    border-top: 1px solid #<%=navBorder%>;
+    font-weight: bold;
+    padding: 4px 8px 4px 8px;
+    border-bottom: none;
+    background-color: #<%=alternateRow%>;
+    cursor: pointer;
+}
+
+td.labkey-wiki-tab-inactive
+{
+    border: 1px solid #<%=navBorder%>;
+    font-weight: normal;
+    background-color: #<%=navBackground%>;
+    padding: 4px 8px 4px 8px;
+    cursor: pointer;
+}
+
+td.labkey-wiki-tab-blank
+{
+    border-bottom: 1px solid #<%=navBorder%>;
+    padding: 4px 8px 4px 8px;
+}
+
+td.labkey-wiki-tab-content
+{
+    border-left: 1px solid #<%=navBorder%>;
+    border-right: 1px solid #<%=navBorder%>;
+    border-bottom: 1px solid #<%=navBorder%>;
+}
+
+td.labkey-wiki-field-content
+{
+    width: 99%;
+}
+
+span.labkey-command-link
+{
+    cursor: pointer;
+    color: #<%=WebTheme.toRGB(org.labkey.api.view.WebTheme.getTheme().getTitleColor())%>;
+    text-decoration:none;
+}
+
+<%-- GWT --%>
+.gwt-ToolTip {
+	background-color: #<%= formLabel %>;
+	font-family: verdana;
+	font-size: <%= themeFont.getNormalSize() %>;
+    padding-left: 4px;
+    padding-right: 4px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    border: solid 1px #<%=gridBorderBold%>;
+}
+
+.gwt-BorderedPanel {
+}
+
+.gwt-Button {
+}
+
+.gwt-Canvas {
+}
+
+.gwt-CheckBox {
+  font-size: <%=themeFont.getNormalSize()%>;
+}
+
+.gwt-DialogBox {
+  sborder: 8px solid #<%=navBorder%>;
+  border: 2px outset;
+  background-color: #<%=background%>;
+}
+
+.gwt-DialogBox .Caption {
+  background-color: #<%=wpHeaderPanel%>;
+  border: 1px solid #<%= navBorder %>;
+  padding: 3px;
+  margin: 2px;
+  font-weight: bold;
+  cursor: default;
+}
+
+.gwt-FileUpload {
+}
+
+.gwt-Frame {
+}
+
+.gwt-HorizontalSplitter .Bar {
+  width: 8px;
+  background-color: #<%=navBorder%>;
+}
+
+.gwt-VerticalSplitter .Bar {
+  height: 8px;
+  background-color: #<%=navBorder%>;
+}
+
+.gwt-MenuBar {
+  background-color: #<%=navBackground%>;
+  border: 1px solid #<%=navBorder%>;
+  cursor: default;
+}
+
+.gwt-MenuBar .gwt-MenuItem {
+  padding: 1px 4px 1px 4px;
+  font-size: <%=themeFont.getNormalSize()%>;
+  cursor: default;
+}
+
+.gwt-MenuBar .gwt-MenuItem-selected {
+  background-color: #<%=navBorder%>;
+}
+
+.gwt-PushButton-up-disabled
+{
+	filter:alpha(opacity=50);
+	-moz-opacity:0.5;
+	-khtml-opacity: 0.5;
+	opacity: 0.5;
+}
+
+.gwt-TabPanelBottom {
+  border: 1px solid #<%=navBorder%>;
+}
+
+.gwt-TabBar {
+  font-size: <%=themeFont.getNormalSize()%>;
+}
+
+.gwt-TabBar .gwt-TabBarFirst {
+  padding-left: 3px;
+}
+
+.gwt-TabBar .gwt-TabBarRest {
+  border-left: 1px solid #<%=navBorder%>;
+  padding-right: 3px;
+}
+
+.gwt-TabBar .gwt-TabBarItem {
+  border-top: 1px solid #<%=navBorder%>;
+  border-left: 1px solid #<%=navBorder%>;
+  padding: 2px;
+  cursor: pointer;
+  cursor: hand;
+}
+
+.gwt-TabBar .gwt-TabBarItem-selected {
+  font-weight: bold;
+  border-top: 1px solid #<%=navBorder%>;
+  border-left: 1px solid #<%=navBorder%>;
+  padding: 2px;
+  cursor: default;
+}
+
+.gwt-Tree {
+}
+
+.gwt-Tree .gwt-TreeItem {
+  font-size: <%=themeFont.getNormalSize()%>;
+}
+
+.gwt-Tree .gwt-TreeItem-selected {
+  font-weight:bold;
+}
+
+.gwt-StackPanel {
+}
+
+.gwt-StackPanel .gwt-StackPanelItem {
+  background-color: #<%=navBackground%>;
+  cursor: pointer;
+  cursor: hand;
+}
+
+.gwt-StackPanel .gwt-StackPanelItem-selected {
+}
+
+<%-- yui --%>
+
+/*
+Copyright (c) 2007, Yahoo! Inc. All rights reserved.
+Code licensed under the BSD License:
+http://developer.yahoo.net/yui/license.txt
+version: 2.2.2
+*/
+/* Menu styles */
+
+div.yuimenu {
+
+    background-color:#<%=background%>;
+    border:solid 1px #<%=navBorder%>;
+    padding:1px;
+
+}
+
+/* Submenus are positioned absolute and hidden by default */
+
+div.yuimenu div.yuimenu,
+div.yuimenubar div.yuimenu {
+
+    position:absolute;
+    visibility:hidden;
+
+}
+
+/* MenuBar Styles */
+
+div.yuimenubar {
+
+    background-color:<%=alternateRow%>;
+
+}
+
+/*
+    Applying a width triggers "haslayout" in IE so that the module's
+    body clears its floated elements
+*/
+div.clear, div.yuimenubar div.bd {
+
+    width:100%;
+
+}
+
+/*
+    Clear the module body for other browsers
+*/
+div.clear:after, div.yuimenubar div.bd:after {
+
+    content:'.';
+    display:block;
+    clear:both;
+    visibility:hidden;
+    height:0;
+
+}
+
+/* Matches the group title (H6) inside a Menu or MenuBar instance */
+
+div.yuimenu h6,
+div.yuimenubar h6 {
+
+    font-size:100%;
+    font-weight:normal;
+    margin:0;
+    border:solid 1px #<%=navBorder%>;
+    color:#<%=linkAndHeaderText%>;
+
+}
+
+div.yuimenubar h6 {
+
+    float:left;
+    display:inline; /* Prevent margin doubling in IE */
+    padding:4px 12px;
+    border-width:0 1px 0 0;
+
+}
+
+div.yuimenu h6 {
+
+    float:none;
+    display:block;
+    border-width:1px 0 0 0;
+    padding:5px 10px 0 10px;
+
+}
+
+/* Matches the UL inside a Menu or MenuBar instance */
+
+div.yuimenubar ul {
+
+    list-style-type:none;
+    margin:0;
+    padding:0;
+
+}
+
+div.yuimenu ul {
+
+    list-style-type:none;
+    border:solid 1px #<%=navBorder%>;
+    border-width:1px 0 0 0;
+    margin:0;
+    padding:4px 0;
+
+}
+
+div.yuimenu ul.first-of-type,
+div.yuimenu ul.hastitle,
+div.yuimenu h6.first-of-type {
+
+    border-width:0;
+
+}
+
+/*
+    Styles for the menu's header and footer elements that are used as controls
+    to scroll the menu's body element when the menu's height exceeds the
+    value of the "maxheight" configuration property.
+*/
+
+div.yuimenu div.topscrollbar,
+div.yuimenu div.bottomscrollbar {
+
+    height:16px;
+    background-image:url(<%=mapPath%>);
+    background-repeat:no-repeat;
+
+}
+
+
+div.yuimenu div.topscrollbar {
+
+    background-image:url(<%=mapPath%>);
+    background-position:center -72px;
+
+}
+
+
+div.yuimenu div.topscrollbar_disabled {
+
+    background-image:url(<%=mapPath%>);
+    background-position:center -88px;
+
+}
+
+
+div.yuimenu div.bottomscrollbar {
+
+    background-image:url(<%=mapPath%>);
+    background-position:center -104px;
+
+}
+
+
+div.yuimenu div.bottomscrollbar_disabled {
+
+    background-image:url(<%=mapPath%>);
+    background-position:center -120px;
+
+}
+
+
+/* MenuItem and MenuBarItem styles */
+
+div.yuimenu li,
+div.yuimenubar li {
+
+//    font-size:85%;
+    cursor:pointer;
+    cursor:hand;
+    white-space:nowrap;
+    text-align:left;
+
+}
+
+div.yuimenu li.yuimenuitem {
+
+    padding:2px 20px 2px 2px;
+
+}
+
+div.yuimenu li li,
+div.yuimenubar li li {
+
+    font-size:100%;
+
+}
+
+
+/* Matches the help text for a menu item */
+
+div.yuimenu li.hashelptext em.helptext {
+
+    font-style:normal;
+    margin:0 0 0 40px;
+
+}
+
+div.yuimenu li a,
+div.yuimenubar li a {
+
+    /*
+        "zoom:1" triggers "haslayout" in IE to ensure that the mouseover and
+        mouseout events bubble to the parent LI in IE.
+    */
+    zoom:1;
+    color:#<%=linkAndHeaderText%>;
+    text-decoration:none;
+
+}
+
+div.yuimenu li.hassubmenu,
+div.yuimenu li.hashelptext {
+
+    text-align:right;
+
+}
+
+div.yuimenu li.hassubmenu a.hassubmenu,
+div.yuimenu li.hashelptext a.hashelptext {
+
+    /*
+        Need to apply float immediately for IE or help text will jump to the
+        next line
+    */
+
+    *float:left;
+    *display:inline; /* Prevent margin doubling in IE */
+    text-align:left;
+
+}
+
+div.yuimenu.visible li.hassubmenu a.hassubmenu,
+div.yuimenu.visible li.hashelptext a.hashelptext {
+
+    /*
+        Apply the float only when the menu is visible to prevent the help
+        text from wrapping to the next line in Opera.
+    */
+
+    float:left;
+
+}
+
+
+/* Matches selected menu items */
+
+div.yuimenu li.selected,
+div.yuimenubar li.selected {
+
+    background-color:#<%=navBackground%>;
+
+}
+
+div.yuimenu li.selected a.selected,
+div.yuimenubar li.selected a.selected {
+
+    text-decoration:underline;
+
+}
+
+div.yuimenu li.selected a.selected,
+div.yuimenu li.selected em.selected,
+div.yuimenubar li.selected a.selected {
+
+    color:#<%=linkAndHeaderText%>;
+
+}
+
+
+/* Matches disabled menu items */
+
+div.yuimenu li.disabled,
+div.yuimenubar li.disabled {
+
+    cursor:default;
+
+}
+
+div.yuimenu li.disabled a.disabled,
+div.yuimenu li.disabled em.disabled,
+div.yuimenubar li.disabled a.disabled {
+
+    color:#b9b9b9;
+    cursor:default;
+
+}
+
+div.yuimenubar li.yuimenubaritem {
+
+    float:left;
+    display:inline; /* Prevent margin doubling in IE */
+    border-width:0 0 0 1px;
+    border-style:solid;
+    border-color:#<%=navBorder%>;
+    padding:4px 24px;
+    margin:0;
+
+}
+
+div.yuimenubar li.yuimenubaritem.first-of-type {
+
+    border-width:0;
+
+}
+
+
+/* Styles for the the submenu indicator for menu items */
+
+div.yuimenu li.hassubmenu em.submenuindicator,
+div.yuimenubar li.hassubmenu em.submenuindicator {
+
+    display:-moz-inline-box; /* Mozilla */
+    display:inline-block; /* IE, Opera and Safari */
+    vertical-align:middle;
+    height:8px;
+    width:8px;
+    text-indent:9px;
+    font:0/0 arial;
+    overflow:hidden;
+    background-image:url(<%=mapPath%>);
+    background-repeat:no-repeat;
+
+}
+
+div.yuimenubar li.hassubmenu em.submenuindicator {
+
+    background-position:0 -24px;
+    margin:0 0 0 10px;
+
+}
+
+div.yuimenubar li.hassubmenu em.submenuindicator.selected {
+
+    background-position:0 -32px;
+
+}
+
+div.yuimenubar li.hassubmenu em.submenuindicator.disabled {
+
+    background-position:0 -40px;
+
+}
+
+div.yuimenu li.hassubmenu em.submenuindicator {
+
+    background-position:0 0;
+    margin:0 -16px 0 10px;
+
+}
+
+div.yuimenu li.hassubmenu em.submenuindicator.selected {
+
+    background-position:0 -8px;
+
+}
+
+div.yuimenu li.hassubmenu em.submenuindicator.disabled {
+
+    background-position:0 -16px;
+
+}
+
+
+/* Styles for a menu item's "checked" state */
+
+div.yuimenu li.checked {
+
+    position:relative;
+
+}
+
+div.yuimenu li.checked em.checkedindicator {
+
+    height:8px;
+    width:8px;
+    text-indent:9px;
+    overflow:hidden;
+    background-image:url(<%=mapPath%>);
+    background-position:0 -48px;
+    background-repeat:no-repeat;
+    position:absolute;
+    left:6px;
+    _left:-16px; /* Underscore hack b/c this is for IE 6 only */
+    top:.5em;
+
+}
+
+div.yuimenu li.checked em.checkedindicator.selected {
+
+    background-position:0 -56px;
+
+}
+
+div.yuimenu li.checked em.checkedindicator.disabled {
+
+    background-position:0 -64px;
+
+}
+
+
+
+
+
+
+
+<%--  Deleted classes
+
+table.labkey-grid
+{
+    border: 1px solid #<%=gridBorderBold%>;
+    border-collapse: collapse;
+    <%= cellSpacing(0) %>
+}
+
+table.labkey-grid-read-only {
+}
+.labkey-grid td {
+    padding-left: .5em;
+    padding-right: .5em;
+    padding-top: .1em;
+    padding-bottom: .1em;
+    border-left: 1px solid #<%=gridBorder%>;
+    border-right: 1px solid #<%=gridBorder%>;
+    border-bottom: 1px solid #<%=gridBorder%>;
+    width: auto;
+}
+
+.labkey-grid input {
+}
+
+.labkey-grid-read-only td {
+    padding-left: .5em;
+    padding-right: .5em;
+    padding-top: .1em;
+    padding-bottom: .1em;
+}
+
+<%-- alternating grid
+table.labkey-alternating-grid
+{
+    border-bottom: solid 2px #<%=chartBorder%>;
+    <%= cellSpacing(3) %>
+    border-collapse: collapse;
+}
+
+.labkey-alternating-grid td, .labkey-alternating-grid th
+{
+    padding: 3px;
+}
+
+th.labkey-alternating-grid-header, td.labkey-alternating-grid-header, .labkey-alternating-grid-header
+{
+    font-weight: bold;
+    border-right:solid 1px #<%=chartBorder%>;
+    border-left:solid 1px #<%=chartBorder%>;
+    border-top:solid 2px #<%=chartBorder%>;
+}
+
+td.labkey-alternating-grid-cell, th.labkey-alternating-grid-cell
+{
+    border-right:solid 1px #<%=chartBorder%>;
+    border-left:solid 1px #<%=chartBorder%>;
+}
+--%>
+
+<%--
+td.labkey-show-column-separators
+{
+    border: solid 1px #<%=gridBorderBold%>;
+}
+
+th.labkey-show-column-separators
+{
+    border-right: solid 1px #<%=gridBorderBold%>;
+    border-bottom: solid 1px #<%=gridBorderBold%>;
+}
+
+table.labkey-show-column-separators
+{
+    border-top: solid 1px #<%=gridBorderBold%>;
+    border-left: solid 1px #<%=gridBorderBold%>;
+    border-bottom: solid 1px #<%=gridBorderBold%>;
+}
+
+td.labkey-show-header-separator, table.labkey-show-header-separator, th.labkey-show-header-separator,
+    .labkey-show-header-separator
+{
+    border-bottom: solid 1px #<%=gridBorderBold%>;
+}
+
+table.labkey-show-header-separator
+{
+    <%= cellSpacing(0) %>
+    border: 0px;
+}
+--%>
+
+<%-- Announcement -%>
 
 table.labkey-announcements
 {
@@ -1351,7 +2301,7 @@ td.labkey-announcement-title
 
 .labkey-announcement-title span, .labkey-announcement-title a {
     font-weight: bold;
-    color: #<%=titleColor%>
+    color: #<%=linkAndHeaderText%>
 }
 
 table.labkey-announcement-thread
@@ -1367,14 +2317,14 @@ table.labkey-announcement-thread
 
 table.labkey-bulk-edit
 {
-    border:solid 1px <%=mediumLightGray%>;
+    border:solid 1px #<%=gridBorderBold%>;
     <%= cellSpacing(0) %>
 }
 
 .labkey-bulk-edit th
 {
-    border-bottom:solid 1px <%=mediumLightGray%>;
-    color: #<%= titleColor %>;
+    border-bottom:solid 1px #<%=gridBorderBold%>;
+    color: #<%= linkAndHeaderText %>;
     text-align: left;
     text-decoration: none;
     vertical-align: top;
@@ -1384,14 +2334,14 @@ table.labkey-bulk-edit
 
 .labkey-bulk-edit a:hover
 {
-    background: #<%= theme.getGradientLightString() %>;
+    background: #<%= wpHeaderPanel %>;
     cursor: pointer;
     cursor: hand;
 }
 
 .labkey-bulk-edit td, .labkey-bulk-edit th
 {
-    border-right:solid 1px <%=mediumLightGray%>;
+    border-right:solid 1px #<%=gridBorderBold%>;
 }
 
 table.labkey-daily-digest
@@ -1416,21 +2366,21 @@ table.labkey-email-notification
     padding: 4px;
 }
 
-<%-- Elispot --%>
+<%-- Elispot -%>
 
 .labkey-plate-summary td, .labkey-plate-summary th
 {
     padding: 2px;
 }
 
-<%-- Experiment --%>
+<%-- Experiment -%>
 
 table.labkey-protocol-applications
 {
    <%= cellSpacing(5) %>
 }
 
-<%-- Flow --%>
+<%-- Flow -%>
 
 table.labkey-show-compensation
 {
@@ -1442,7 +2392,7 @@ table.labkey-show-compensation
     padding: 2px;
 }
 
-<%-- Issue --%>
+<%-- Issue -%>
 
 table.labkey-issue-keyword-view
 {
@@ -1488,7 +2438,7 @@ table.labkey-issue-keyword-picker
     padding: 0px;
 }
 
-<%-- MS1 --%>
+<%-- MS1 -%>
 
 table.labkey-peak-warning
 {
@@ -1499,7 +2449,7 @@ table.labkey-peak-warning
 {
     padding: 2px;
     background-color:<%=peakWarningBG%>;
-    border:1px solid <%=mediumDarkGray%>;
+    border:1px solid <%=chartBorder%>;
 }
 
 table.labkey-feature-detail
@@ -1524,18 +2474,18 @@ table.labkey-feature-data
 
 td.labkey-feature-caption
 {
-    background-color: <%=veryLightGray%>;
+    background-color: #<%=alternateRow%>;
 }
 
 td.labkey-mz-filter
 {
-    background: #<%= theme.getNavBarColor() %>;
+    background: #<%= navBackground %>;
     text-align: center;
-    border-top: 1px solid <%=mediumLightGray%>;
-    border-bottom: 1px solid <%=mediumLightGray%>;
+    border-top: 1px solid #<%=gridBorderBold%>;
+    border-bottom: 1px solid #<%=gridBorderBold%>;
 }
 
-table.labkey-mz-filter 
+table.labkey-mz-filter
 {
     <%= cellSpacing(0) %>
     width: 100%;
@@ -1548,7 +2498,7 @@ table.labkey-mz-filter
 
 td.labkey-scan-filter
 {
-    background: #<%= theme.getNavBarColor() %>;
+    background: #<%= navBackground %>;
     display: none;
     text-align: center;
     vertical-align: top
@@ -1579,7 +2529,7 @@ table.labkey-ms1-search
     <%= cellSpacing(4) %>
 }
 
-<%-- MS2 --%>
+<%-- MS2 -%>
 
 
 
@@ -1593,7 +2543,7 @@ table.labkey-prot-annots
     <%= cellSpacing(10) %>
 }
 
-.labkey-protein-search table
+table.labkey-protein-search
 {
     <%= cellSpacing(4) %>
 }
@@ -1614,7 +2564,7 @@ table.labkey-show-peptide
     padding: 1px;
 }
 
-<%-- Nab --%>
+<%-- Nab -%>
 
 table.labkey-nab-run-label
 {
@@ -1631,7 +2581,7 @@ table.labkey-nab-run
     padding: 3px;
 }
 
-<%-- Pipeline --%>
+<%-- Pipeline -%>
 
 table.labkey-pipeline-setup
 {
@@ -1679,7 +2629,7 @@ table.labkey-analyze
 }
 
 
-<%-- Query --%>
+<%-- Query -%>
 
 .labkey-manage-view td, .labkey-manage-view th
 {
@@ -1697,7 +2647,7 @@ table.labkey-design-query
 }
 
 
-<%-- Study --%>
+<%-- Study -%>
 
 .labkey-manage-report td, .labkey-manage-report th
 {
@@ -1741,13 +2691,13 @@ table.labkey-requirements
 
 td.labkey-requirement-cell, th.labkey-requirement-cell
 {
-    border-bottom: solid 1px <%=mediumDarkGray%>;
+    border-bottom: solid 1px <%=chartBorder%>;
 }
 
 tr.labkey-requirement-row
 {
-    border-bottom:solid 1px <%=mediumDarkGray%>;
-    border-top:solid 1px <%=mediumDarkGray%>;
+    border-bottom:solid 1px <%=chartBorder%>;
+    border-top:solid 1px <%=chartBorder%>;
 }
 
 table.labkey-lab-specimen-list
@@ -1798,7 +2748,7 @@ table.labkey-save-report
 table.labkey-participant-view
 {
     <%= cellSpacing(0) %>
-    border-bottom: solid 2px <%=mediumDarkGray%>;
+    border-bottom: solid 2px <%=chartBorder%>;
 }
 
 .labkey-participant-view td, .labkey-participant-view th
@@ -1922,11 +2872,11 @@ table.labkey-study-datasets
 
 .labkey-study-datasets th
 {
-    background-color: <%=mediumLightGray%>;
+    background-color: <%=gridBorderBold%>;
     text-align: left;
 }
 
-<%-- Wiki --%>
+<%-- Wiki -%>
 
 
 
@@ -1960,7 +2910,7 @@ div.labkey-status-info, .labkey-status-info
 {
     width: 99%;
     text-align: center;
-    background-color: <%=theme.getEditFormColor()%>;
+    background-color: <%=formLabel%>;
     border: 1px solid <%=statusBorder%>;
     padding: 2px;
     font-weight: bold;
@@ -1994,9 +2944,9 @@ table.labkey-tab-container
 
 td.labkey-wiki-tab-active
 {
-    border-left: 1px solid <%=theme.getHeaderLineColor()%>;
-    border-right: 1px solid <%=theme.getHeaderLineColor()%>;
-    border-top: 1px solid <%=theme.getHeaderLineColor()%>;
+    border-left: 1px solid <%=navBorder%>;
+    border-right: 1px solid <%=navBorder%>;
+    border-top: 1px solid <%=navBorder%>;
     font-weight: bold;
     padding: 4px 8px 4px 8px;
     border-bottom: none;
@@ -2006,7 +2956,7 @@ td.labkey-wiki-tab-active
 
 td.labkey-wiki-tab-inactive
 {
-    border: 1px solid <%=theme.getHeaderLineColor()%>;
+    border: 1px solid <%=navBorder%>;
     font-weight: normal;
     background-color: <%=darkerLightBlue%>;
     padding: 4px 8px 4px 8px;
@@ -2015,15 +2965,15 @@ td.labkey-wiki-tab-inactive
 
 td.labkey-wiki-tab-blank
 {
-    border-bottom: 1px solid <%=theme.getHeaderLineColor()%>;
+    border-bottom: 1px solid <%=navBorder%>;
     padding: 4px 8px 4px 8px;
 }
 
 td.labkey-wiki-tab-content
 {
-    border-left: 1px solid <%=theme.getHeaderLineColor()%>;
-    border-right: 1px solid <%=theme.getHeaderLineColor()%>;
-    border-bottom: 1px solid <%=theme.getHeaderLineColor()%>;
+    border-left: 1px solid <%=navBorder%>;
+    border-right: 1px solid <%=navBorder%>;
+    border-bottom: 1px solid <%=navBorder%>;
 }
 
 td.labkey-wiki-field-content
@@ -2068,600 +3018,7 @@ table.labkey-wiki-nav-tree
     padding: 2px;
 }
 
-<%-- GWT --%>
-.gwt-ToolTip {
-	background-color: #<%= theme.getEditFormColor() %>;
-	font-family: verdana;
-	font-size: <%= themeFont.getNormalSize() %>;
-    padding-left: 4px;
-    padding-right: 4px;
-    padding-top: 2px;
-    padding-bottom: 2px;
-    border: solid 1px black;
-}
-
-.gwt-BorderedPanel {
-}
-
-.gwt-Button {
-}
-
-.gwt-Canvas {
-}
-
-.gwt-CheckBox {
-  font-size: <%=themeFont.getNormalSize()%>;
-}
-
-.gwt-DialogBox {
-  sborder: 8px solid #<%=theme.getHeaderLineColor()%>;
-  border: 2px outset;
-  background-color: white;
-}
-
-.gwt-DialogBox .Caption {
-  background-color: #<%=theme.getGradientLightString()%>;
-  border: 1px solid #<%= theme.getGradientDarkString() %>;
-  padding: 3px;
-  margin: 2px;
-  font-weight: bold;
-  cursor: default;
-}
-
-.gwt-FileUpload {
-}
-
-.gwt-Frame {
-}
-
-.gwt-HorizontalSplitter .Bar {
-  width: 8px;
-  background-color: #<%=theme.getGradientDarkString()%>;
-}
-
-.gwt-VerticalSplitter .Bar {
-  height: 8px;
-  background-color: #<%=theme.getGradientDarkString()%>;
-}
-
-.gwt-MenuBar {
-  background-color: #<%=theme.getNavBarColor()%>;
-  border: 1px solid #<%=theme.getHeaderLineColor()%>;
-  cursor: default;
-}
-
-.gwt-MenuBar .gwt-MenuItem {
-  padding: 1px 4px 1px 4px;
-  font-size: <%=themeFont.getNormalSize()%>;
-  cursor: default;
-}
-
-.gwt-MenuBar .gwt-MenuItem-selected {
-  background-color: #<%=theme.getHeaderLineColor()%>;
-}
-
-.gwt-PushButton-up-disabled
-{
-	filter:alpha(opacity=50);
-	-moz-opacity:0.5;
-	-khtml-opacity: 0.5;
-	opacity: 0.5;
-}
-
-.gwt-TabPanelBottom {
-  border: 1px solid #<%=theme.getHeaderLineColor()%>;
-}
-
-.gwt-TabBar {
-  font-size: <%=themeFont.getNormalSize()%>;
-}
-
-.gwt-TabBar .gwt-TabBarFirst {
-  padding-left: 3px;
-}
-
-.gwt-TabBar .gwt-TabBarRest {
-  border-left: 1px solid #<%=theme.getHeaderLineColor()%>;
-  padding-right: 3px;
-}
-
-.gwt-TabBar .gwt-TabBarItem {
-  border-top: 1px solid #<%=theme.getHeaderLineColor()%>;
-  border-left: 1px solid #<%=theme.getHeaderLineColor()%>;
-  padding: 2px;
-  cursor: pointer;
-  cursor: hand;
-}
-
-.gwt-TabBar .gwt-TabBarItem-selected {
-  font-weight: bold;
-  border-top: 1px solid #<%=theme.getHeaderLineColor()%>;
-  border-left: 1px solid #<%=theme.getHeaderLineColor()%>;
-  padding: 2px;
-  cursor: default;
-}
-
-.gwt-Tree {
-}
-
-.gwt-Tree .gwt-TreeItem {
-  font-size: <%=themeFont.getNormalSize()%>;
-}
-
-.gwt-Tree .gwt-TreeItem-selected {
-  font-weight:bold;
-}
-
-.gwt-StackPanel {
-}
-
-.gwt-StackPanel .gwt-StackPanelItem {
-  background-color: #<%=theme.getNavBarColor()%>;
-  cursor: pointer;
-  cursor: hand;
-}
-
-.gwt-StackPanel .gwt-StackPanelItem-selected {
-}
-
-<%-- yui --%>
-
-/*
-Copyright (c) 2007, Yahoo! Inc. All rights reserved.
-Code licensed under the BSD License:
-http://developer.yahoo.net/yui/license.txt
-version: 2.2.2
-*/
-/* Menu styles */
-
-div.yuimenu {
-
-    background-color:white;
-    border:solid 1px #<%=theme.getHeaderLineColor()%>;
-    padding:1px;
-
-}
-
-/* Submenus are positioned absolute and hidden by default */
-
-div.yuimenu div.yuimenu,
-div.yuimenubar div.yuimenu {
-
-    position:absolute;
-    visibility:hidden;
-
-}
-
-/* MenuBar Styles */
-
-div.yuimenubar {
-
-    background-color:<%=veryLightGray%>;
-
-}
-
-/*
-    Applying a width triggers "haslayout" in IE so that the module's
-    body clears its floated elements
-*/
-div.clear, div.yuimenubar div.bd {
-
-    width:100%;
-
-}
-
-/*
-    Clear the module body for other browsers
-*/
-div.clear:after, div.yuimenubar div.bd:after {
-
-    content:'.';
-    display:block;
-    clear:both;
-    visibility:hidden;
-    height:0;
-
-}
-
-/* Matches the group title (H6) inside a Menu or MenuBar instance */
-
-div.yuimenu h6,
-div.yuimenubar h6 {
-
-    font-size:100%;
-    font-weight:normal;
-    margin:0;
-    border:solid 1px #<%=theme.getHeaderLineColor()%>;
-    color:#<%=titleColor%>;
-
-}
-
-div.yuimenubar h6 {
-
-    float:left;
-    display:inline; /* Prevent margin doubling in IE */
-    padding:4px 12px;
-    border-width:0 1px 0 0;
-
-}
-
-div.yuimenu h6 {
-
-    float:none;
-    display:block;
-    border-width:1px 0 0 0;
-    padding:5px 10px 0 10px;
-
-}
-
-/* Matches the UL inside a Menu or MenuBar instance */
-
-div.yuimenubar ul {
-
-    list-style-type:none;
-    margin:0;
-    padding:0;
-
-}
-
-div.yuimenu ul {
-
-    list-style-type:none;
-    border:solid 1px #<%=theme.getHeaderLineColor()%>;
-    border-width:1px 0 0 0;
-    margin:0;
-    padding:4px 0;
-
-}
-
-div.yuimenu ul.first-of-type,
-div.yuimenu ul.hastitle,
-div.yuimenu h6.first-of-type {
-
-    border-width:0;
-
-}
-
-/*
-    Styles for the menu's header and footer elements that are used as controls
-    to scroll the menu's body element when the menu's height exceeds the
-    value of the "maxheight" configuration property.
-*/
-
-div.yuimenu div.topscrollbar,
-div.yuimenu div.bottomscrollbar {
-
-    height:16px;
-    background-image:url(<%=mapPath%>);
-    background-repeat:no-repeat;
-
-}
-
-
-div.yuimenu div.topscrollbar {
-
-    background-image:url(<%=mapPath%>);
-    background-position:center -72px;
-
-}
-
-
-div.yuimenu div.topscrollbar_disabled {
-
-    background-image:url(<%=mapPath%>);
-    background-position:center -88px;
-
-}
-
-
-div.yuimenu div.bottomscrollbar {
-
-    background-image:url(<%=mapPath%>);
-    background-position:center -104px;
-
-}
-
-
-div.yuimenu div.bottomscrollbar_disabled {
-
-    background-image:url(<%=mapPath%>);
-    background-position:center -120px;
-
-}
-
-
-/* MenuItem and MenuBarItem styles */
-
-div.yuimenu li,
-div.yuimenubar li {
-
-//    font-size:85%;
-    cursor:pointer;
-    cursor:hand;
-    white-space:nowrap;
-    text-align:left;
-
-}
-
-div.yuimenu li.yuimenuitem {
-
-    padding:2px 20px 2px 2px;
-
-}
-
-div.yuimenu li li,
-div.yuimenubar li li {
-
-    font-size:100%;
-
-}
-
-
-/* Matches the help text for a menu item */
-
-div.yuimenu li.hashelptext em.helptext {
-
-    font-style:normal;
-    margin:0 0 0 40px;
-
-}
-
-div.yuimenu li a,
-div.yuimenubar li a {
-
-    /*
-        "zoom:1" triggers "haslayout" in IE to ensure that the mouseover and
-        mouseout events bubble to the parent LI in IE.
-    */
-    zoom:1;
-    color:#<%=titleColor%>;
-    text-decoration:none;
-
-}
-
-div.yuimenu li.hassubmenu,
-div.yuimenu li.hashelptext {
-
-    text-align:right;
-
-}
-
-div.yuimenu li.hassubmenu a.hassubmenu,
-div.yuimenu li.hashelptext a.hashelptext {
-
-    /*
-        Need to apply float immediately for IE or help text will jump to the
-        next line
-    */
-
-    *float:left;
-    *display:inline; /* Prevent margin doubling in IE */
-    text-align:left;
-
-}
-
-div.yuimenu.visible li.hassubmenu a.hassubmenu,
-div.yuimenu.visible li.hashelptext a.hashelptext {
-
-    /*
-        Apply the float only when the menu is visible to prevent the help
-        text from wrapping to the next line in Opera.
-    */
-
-    float:left;
-
-}
-
-
-/* Matches selected menu items */
-
-div.yuimenu li.selected,
-div.yuimenubar li.selected {
-
-    background-color:#<%=theme.getNavBarColor()%>;
-
-}
-
-div.yuimenu li.selected a.selected,
-div.yuimenubar li.selected a.selected {
-
-    text-decoration:underline;
-
-}
-
-div.yuimenu li.selected a.selected,
-div.yuimenu li.selected em.selected,
-div.yuimenubar li.selected a.selected {
-
-    color:#<%=titleColor%>;
-
-}
-
-
-/* Matches disabled menu items */
-
-div.yuimenu li.disabled,
-div.yuimenubar li.disabled {
-
-    cursor:default;
-
-}
-
-div.yuimenu li.disabled a.disabled,
-div.yuimenu li.disabled em.disabled,
-div.yuimenubar li.disabled a.disabled {
-
-    color:#b9b9b9;
-    cursor:default;
-
-}
-
-div.yuimenubar li.yuimenubaritem {
-
-    float:left;
-    display:inline; /* Prevent margin doubling in IE */
-    border-width:0 0 0 1px;
-    border-style:solid;
-    border-color:#<%=theme.getHeaderLineColor()%>;
-    padding:4px 24px;
-    margin:0;
-
-}
-
-div.yuimenubar li.yuimenubaritem.first-of-type {
-
-    border-width:0;
-
-}
-
-
-/* Styles for the the submenu indicator for menu items */
-
-div.yuimenu li.hassubmenu em.submenuindicator,
-div.yuimenubar li.hassubmenu em.submenuindicator {
-
-    display:-moz-inline-box; /* Mozilla */
-    display:inline-block; /* IE, Opera and Safari */
-    vertical-align:middle;
-    height:8px;
-    width:8px;
-    text-indent:9px;
-    font:0/0 arial;
-    overflow:hidden;
-    background-image:url(<%=mapPath%>);
-    background-repeat:no-repeat;
-
-}
-
-div.yuimenubar li.hassubmenu em.submenuindicator {
-
-    background-position:0 -24px;
-    margin:0 0 0 10px;
-
-}
-
-div.yuimenubar li.hassubmenu em.submenuindicator.selected {
-
-    background-position:0 -32px;
-
-}
-
-div.yuimenubar li.hassubmenu em.submenuindicator.disabled {
-
-    background-position:0 -40px;
-
-}
-
-div.yuimenu li.hassubmenu em.submenuindicator {
-
-    background-position:0 0;
-    margin:0 -16px 0 10px;
-
-}
-
-div.yuimenu li.hassubmenu em.submenuindicator.selected {
-
-    background-position:0 -8px;
-
-}
-
-div.yuimenu li.hassubmenu em.submenuindicator.disabled {
-
-    background-position:0 -16px;
-
-}
-
-
-/* Styles for a menu item's "checked" state */
-
-div.yuimenu li.checked {
-
-    position:relative;
-
-}
-
-div.yuimenu li.checked em.checkedindicator {
-
-    height:8px;
-    width:8px;
-    text-indent:9px;
-    overflow:hidden;
-    background-image:url(<%=mapPath%>);
-    background-position:0 -48px;
-    background-repeat:no-repeat;
-    position:absolute;
-    left:6px;
-    _left:-16px; /* Underscore hack b/c this is for IE 6 only */
-    top:.5em;
-
-}
-
-div.yuimenu li.checked em.checkedindicator.selected {
-
-    background-position:0 -56px;
-
-}
-
-div.yuimenu li.checked em.checkedindicator.disabled {
-
-    background-position:0 -64px;
-
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+--%>
 
 
 
@@ -2692,7 +3049,7 @@ reuse
     font-size: <%= themeFont.getNormalSize() %>;
 }
 .ms-nav td, .ms-nav .ms-input {
-    background: #<%= theme.getNavBarColor() %>;
+    background: #<%= navBackground %>;
     font-family: Verdana, sans-serif;
     font-size: <%= themeFont.getTextInputSize() %>;
 }
@@ -2702,14 +3059,14 @@ reuse
     font-weight: normal;
     text-align: left;
     color: black;
-    background: #<%= theme.getNavBarColor() %>;
+    background: #<%= navBackground %>;
 }
 .ms-nav a {
     text-decoration: none;
     font-family: Verdana, sans-serif;
     font-size: <%= themeFont.getNormalSize() %>;
     font-weight: normal;
-    color: #<%=titleColor%>;
+    color: #<%=linkAndHeaderText%>;
 }
 .ms-nav a:link {
 }
@@ -2718,7 +3075,7 @@ reuse
     color: #798073;
 }
 .ms-nav a:visited {
-   color: #<%=titleColor%>;
+   color: #<%=linkAndHeaderText%>;
 }
 
 
@@ -2727,9 +3084,9 @@ reuse
     background-color: white;
     border-collapse: collapse;
     border-left: 0px;
-    border-top: 1px solid #<%= theme.getHeaderLineColor() %>;
-    border-right: 1px solid #<%= theme.getHeaderLineColor() %>;
-    border-bottom: 1px solid #<%= theme.getHeaderLineColor() %>;
+    border-top: 1px solid #<%= navBorder %>;
+    border-right: 1px solid #<%= navBorder %>;
+    border-bottom: 1px solid #<%= navBorder %>;
     padding: 1px;
     margin-top:5px;
     margin-right:5px;
@@ -2739,17 +3096,17 @@ reuse
 
 .leftNavBoxBody
 {
-    border-top: 1px solid #<%= theme.getHeaderLineColor() %>;
+    border-top: 1px solid #<%= navBorder %>;
 }
 
 .ms-titlearealine{
-    background-color: #<%= theme.getHeaderLineColor() %>;
+    background-color: #<%= navBorder %>;
 }
 .ms-nav {
     font-size: <%= themeFont.getNormalSize() %>;
 }
 .ms-nav td, .ms-nav .ms-input {
-    background: #<%= theme.getNavBarColor() %>;
+    background: #<%= navBackground %>;
     font-family: Verdana, sans-serif;
     font-size: <%= themeFont.getTextInputSize() %>;
 }
@@ -2759,19 +3116,19 @@ reuse
     font-weight: normal;
     text-align: left;
     color: black;
-    background: #<%= theme.getNavBarColor() %>;
+    background: #<%= navBackground %>;
 }
 .ms-navheader, .ms-navheader A, .ms-navheader A:link, .ms-navheader A:visited {
     font-weight: bold;
-	color: #<%=titleColor%>;
+	color: #<%=linkAndHeaderText%>;
 }
 .ms-navframe {
-    background: #<%= theme.getNavBarColor() %>;
+    background: #<%= navBackground %>;
     border-right: none;
     border-left: 0px;
 }
 .ms-searchform {
-	background-color: #<%= theme.getEditFormColor() %>;
+	background-color: #<%= formLabel %>;
 	font-family: verdana;
 	font-size: <%= themeFont.getNormalSize() %>;
     padding-right:4px;
@@ -2782,7 +3139,7 @@ reuse
     font-weight: bold;
 }
 .ms-searchform-nowrap {
-	background-color: #<%= theme.getEditFormColor() %>;
+	background-color: #<%= formLabel %>;
 	font-family: verdana;
 	font-size: <%= themeFont.getNormalSize() %>;
     padding-right:4px;
@@ -2810,7 +3167,7 @@ reuse
 }
 
 .ms-top-color {
-    background-color: #<%= theme.getEditFormColor() %>;
+    background-color: #<%= formLabel %>;
     font-size: <%= themeFont.getNormalSize() %>;
     font-family: verdana;
     vertical-align: top;
@@ -2821,7 +3178,7 @@ reuse
     font-family: Verdana, sans-serif;
     font-size: <%= themeFont.getNormalSize() %>;
     font-weight: normal;
-    color: #<%=titleColor%>;
+    color: #<%=linkAndHeaderText%>;
 }
 .ms-nav a:link {
 }
@@ -2830,11 +3187,11 @@ reuse
     color: #798073;
 }
 .ms-nav a:visited {
-   color: #<%=titleColor%>;
+   color: #<%=linkAndHeaderText%>;
 } -%>
 .ms-announcementtitle, .ms-announcementtitle a {
     font-weight: bold;
-    color: #<%=titleColor%>
+    color: #<%=linkAndHeaderText%>
 }
 .ms-pagetitle {
     color: black;
@@ -2861,34 +3218,34 @@ reuse
    padding-bottom: 3px;
    padding-left: 10px;
    padding-right: 10px;
-   color: #<%=titleColor%>;
+   color: #<%=linkAndHeaderText%>;
 }
 .ms-tabinactive
 {
    font-family: verdana;
-   background-color: #<%= theme.getNavBarColor() %>;
-   border-color: #<%= theme.getNavBarColor() %>;
+   background-color: #<%= navBackground %>;
+   border-color: #<%= navBackground %>;
    border-width: 2px;
    border-style: solid;
    padding-top: 3px;
    padding-bottom: 3px;
    padding-right: 10px;
    padding-left: 10px;
-   color: #<%=titleColor%>;
+   color: #<%=linkAndHeaderText%>;
 }
 .ms-tabinactive a:link
 {
-   color: #<%=titleColor%>;
+   color: #<%=linkAndHeaderText%>;
    text-decoration: none;
 }
 .ms-tabinactive a:hover
 {
-   color: #<%=titleColor%>;
+   color: #<%=linkAndHeaderText%>;
    text-decoration: none;
 }
 .ms-tabinactive a:visited
 {
-   color: #<%=titleColor%>;
+   color: #<%=linkAndHeaderText%>;
    text-decoration: none;
 }
 
@@ -2933,19 +3290,19 @@ body, td, .gwt-Label
 .cpas-message, .labkey-message
     {
     font-size: <%= themeFont.getNormalSize() %>;
-    color: green;
+    color: <%= message %>;
     }
 
 .cpas-message-strong
     {
     font-size: <%= themeFont.getNormalSize() %>;
     font-weight: bold;
-    color: green;
+    color: <%= message %>;
     }
 
 .cpas-completion-highlight, .labkey-completion-highlight
     {
-    background-color: #<%= theme.getNavBarColor() %>;
+    background-color: #<%= navBackground %>;
     }
 
 .cpas-completion-nohighlight, .labkey-completion-nohighlight
@@ -2992,7 +3349,7 @@ TEXTAREA, .gwt-TextArea
 
 .dataRegion A
     {
-    color: #<%=titleColor%>;
+    color: #<%=linkAndHeaderText%>;
     text-decoration: none;
     }
 
@@ -3045,7 +3402,7 @@ TEXTAREA, .gwt-TextArea
     {
     font-family: verdana;
     font-size: <%= themeFont.getNormalSize() %>;
-    color: #<%= titleColor %>;
+    color: #<%= linkAndHeaderText %>;
     text-align: left;
     text-decoration: none;
     font-weight: normal;
@@ -3055,7 +3412,7 @@ TEXTAREA, .gwt-TextArea
 
 .header.hover
 {
-    background: #<%= theme.getGradientLightString() %>;
+    background: #<%= wpHeaderPanel %>;
     cursor: pointer;
     cursor: hand;
 }
@@ -3090,7 +3447,7 @@ TEXTAREA, .gwt-TextArea
 
 a.link
     {
-    color: #<%=titleColor%>;
+    color: #<%=linkAndHeaderText%>;
     text-decoration: none;
     }
 
@@ -3104,7 +3461,7 @@ a.link:hover
 
 a.link:visited
     {
-    color: #<%=titleColor%>;
+    color: #<%=linkAndHeaderText%>;
     text-decoration: none;
     }
 

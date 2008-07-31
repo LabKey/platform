@@ -92,18 +92,18 @@ Cohort: <select name="cohortId" onchange="document.changeCohortForm.submit()">
 }
 %>
 <br><br>
-<table class="labkey-alternating-grid labkey-show-column-separators">
+<table class="labkey-data-region labkey-show-borders">
 
-    <tr class="labkey-alternating-grid-header labkey-alternating-row">
+    <tr class="labkey-alternate-row">
         <td><img alt="" width=60 height=1 src="<%=contextPath%>/_.gif"></td>
-        <th>ALL</th><%
+        <td style="font-weight:bold;">ALL</td><%
 
         for (Visit visit : visits)
         {
             if (!bean.showAll && !visit.isShowByDefault())
                 continue;
             String label = visit.getDisplayString();
-            %><td class="labkey-alternating-grid-cell" align="center" valign="top"><%= h(label) %></td><%
+            %><td align="center" valign="top"><%= h(label) %></td><%
             //visitSummary.view?id=411.0
         }
         %>
@@ -141,21 +141,21 @@ Cohort: <select name="cohortId" onchange="document.changeCohortForm.submit()">
                 category = "Uncategorized";
             if (!category.equals(prevCategory))
             {
-                %><tr><th class="labkey-alternating-grid-cell" align="left" bgcolor="#AAAAAA" colspan="<%= visits.length + 2%>"><%= h(category) %></th></tr><%
+                %><tr><td class="labkey-highlight-cell" style="font-weight:bold;" align="left" colspan="<%= visits.length + 2%>"><%= h(category) %></td></tr><%
             }
             prevCategory = category;
         }
 
         String dataSetLabel = (dataSet.getLabel() != null ? dataSet.getLabel() : "" + dataSet.getDataSetId());
-        String className= row%2==0 ? "labkey-alternating-row" : "labkey-row";
+        String className= row%2==0 ? "labkey-alternate-row" : "labkey-row";
         %>
-        <tr class="<%= className %>" ><td align="center" class="labkey-alternating-grid-cell"><%= h(dataSetLabel) %><%
+        <tr class="<%= className %>" ><td align="center"><%= h(dataSetLabel) %><%
         if (null != StringUtils.trimToNull(dataSet.getDescription()))
         {
             %><%=PageFlowUtil.helpPopup(dataSetLabel, dataSet.getDescription())%><%
         }
         %></td>
-        <th class="labkey-alternating-grid-cell"><%
+        <td style="font-weight:bold;"><%
         int totalCount = 0;
         for (Visit visit : visits)
         {
@@ -180,7 +180,7 @@ Cohort: <select name="cohortId" onchange="document.changeCohortForm.submit()">
         {
             %><%=totalCount%><%
         }
-        %></th><%
+        %></td><%
 
         for (Visit visit : visits)
         {
@@ -209,7 +209,7 @@ Cohort: <select name="cohortId" onchange="document.changeCohortForm.submit()">
                 innerHtml = count == 0 ? "&nbsp;" : "" + count;
             }
 
-            %><td align="center" class="labkey-alternating-grid-cell"><%
+            %><td align="center"><%
 
             if ((isRequired || isOptional || count > 0) && userCanRead)
             {

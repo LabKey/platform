@@ -75,14 +75,6 @@
     DataSetDefinition[] datasets = manager.getDataSetDefinitions(study);
     Map<Integer, String> expandedMap = StudyController.getExpandedState(context, bean.getDatasetId());
     boolean updateAccess = study.getContainer().hasPermission(user, ACL.PERM_UPDATE);
-
-    String shadeColor = "#EEEEEE";
-// UNDONE: move into stylesheet
-    String borderColor = "#808080";
-    String headerColor = "#CCCCCC";
-//    String styleTD = "border-right:solid 1px " + borderColor + ";";
-    String styleTH = "border-right:solid 1px " + borderColor + "; border-top:solid 2px " + borderColor + ";";
-
 %>
 <p/>
 
@@ -108,13 +100,13 @@
             PropertyDescriptor[] pds = sortProperties(StudyController.getParticipantPropsFromCache(HttpView.getRootContext(), typeURI), dataSet, HttpView.getRootContext());
             if (!dataSet.canRead(user))
             {
-                %><tr class="labkey-header"><th nowrap align="left" bgcolor="<%=headerColor%>" style="border-top:solid 2px <%=borderColor%>; border-bottom:solid 2px <%=borderColor%>;"><%=h(dataSet.getDisplayString())%></th><td nowrap align="left" bgcolor="<%=headerColor%>" style="border-top:solid 2px <%=borderColor%>; border-bottom:solid 2px <%=borderColor%>;">(no access)</td></tr><%
+                %><tr class="labkey-header"><th nowrap align="left" class="labkey-chart-header"><%=h(dataSet.getDisplayString())%></th><td nowrap align="left" class="labkey-chart-header">(no access)</td></tr><%
                 continue;
             }
 
             %>
             <tr class="labkey-header">
-            <th nowrap colspan="<%=2%>" align="left" bgcolor="<%=headerColor%>" style="border-top:solid 2px <%=borderColor%>; border-bottom:solid 2px <%=borderColor%>;"><a title="Click to expand" href="<%=new ActionURL("Study", "expandStateNotify", study.getContainer()).addParameter("datasetId", Integer.toString(datasetId)).addParameter("id", Integer.toString(bean.getDatasetId()))%>" onclick="return collapseExpand(this, true);"><%=h(dataSet.getDisplayString())%></a><%
+            <th nowrap colspan="<%=2%>" align="left" class="labkey-chart-header"><a title="Click to expand" href="<%=new ActionURL("Study", "expandStateNotify", study.getContainer()).addParameter("datasetId", Integer.toString(datasetId)).addParameter("id", Integer.toString(bean.getDatasetId()))%>" onclick="return collapseExpand(this, true);"><%=h(dataSet.getDisplayString())%></a><%
             if (null != StringUtils.trimToNull(dataSet.getDescription()))
             {
                 %><%=PageFlowUtil.helpPopup(dataSet.getDisplayString(), dataSet.getDescription())%><%
@@ -177,7 +169,7 @@
                     addAction.addParameter("datasetId", datasetId);
                     addAction.addParameter("quf_participantid", bean.getParticipantId());
                     
-                    %><td colspan="2" class="studyShaded">[<a href="<%=addAction.getLocalURIString()%>">add</a>]</td> <%
+                    %><td colspan="2" class="labkey-alternate-row">[<a href="<%=addAction.getLocalURIString()%>">add</a>]</td> <%
                 }
 
                 continue;
@@ -186,8 +178,8 @@
             if (updateAccess)
             {
                 %>
-                <tr style="<%=expanded ? "" : "display:none"%>">
-                    <td colspan="2" class="studyShaded">
+                <tr class="labkey-alternate-row" style="<%=expanded ? "" : "display:none"%>">
+                    <td colspan="2">
                         [<a href="<%=url.replaceParameter("queryName", dataSet.getLabel()).replaceParameter("datasetId", String.valueOf(datasetId))%>">add chart</a>]
                         <%
                             if (editAccess)
@@ -208,15 +200,15 @@
             {
                 if (pd == null) continue;
                 row++;
-                String className = row % 2 == 0 ? "studyShaded" : "studyCell";
+                String className = row % 2 == 0 ? "labkey-alternate-row" : "labkey-row";
                 String labelName = pd.getLabel();
                 if (StringUtils.isEmpty(labelName))
                     labelName = pd.getName();
                 %>
-                <tr style="<%=expanded ? "" : "display:none"%>"><td class="<%=className%>" align="left" nowrap><%=h(labelName)%></td><%
+                <tr class="<%=className%>" style="<%=expanded ? "" : "display:none"%>"><td align="left" nowrap><%=h(labelName)%></td><%
 
                     Object value = datasetRow.get(pd.getName());
-                    %><td class="<%=className%>"><%= (null == value ? "&nbsp;" : h(ConvertUtils.convert(value)))%></td><%
+                    %><td><%= (null == value ? "&nbsp;" : h(ConvertUtils.convert(value)))%></td><%
                    
             %></tr><%
             }

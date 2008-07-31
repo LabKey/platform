@@ -100,7 +100,7 @@
 
 <form method="post" action="<%=PageFlowUtil.filter(context.getActionURL().relativeUrl("saveReportView", null, "Study-Reports"))%>" onsubmit="return validateForm();">
     <input type="hidden" name="datasetId" value="<%=bean.getDatasetId()%>">
-    <table class="labkey-save-report">
+    <table class="labkey-form">
     <tr>
 <%
     if (confirm)
@@ -169,7 +169,7 @@
     if (allowPlotView) {
 %>
     &nbsp;    
-    <table class="labkey-save-report">
+    <table class="labkey-form">
         <tr>
             <td><input id="plotViewCheck" type="checkbox" name="isPlotView" value="true" <%=bean.getIsPlotView() ? "checked" : ""%> onclick="participantPlot();"><b>Show chart for only one participant at a time</b></td>
         </tr>

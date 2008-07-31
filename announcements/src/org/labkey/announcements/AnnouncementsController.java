@@ -215,7 +215,7 @@ public class AnnouncementsController extends SpringActionController
             rgn.setTable(_comm.getTableInfoEmailPrefs());
             rgn.setShowFilters(false);
             rgn.setSortable(false);
-            rgn.setShowColumnSeparators(true);
+            rgn.setShowBorders(true);
             rgn.setShadeAlternatingRows(true);
 
             ButtonBar bb = new ButtonBar();

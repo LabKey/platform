@@ -62,13 +62,13 @@
 %>
 <% if (bean.isListView())
     WebPartView.startTitleFrame(out, category, null, "100%", null); %>
-<table class="labkey-auto-report-list">
+<table class="labkey-form">
 <%
         int formRowIndex = 0;
         String rowClass;
         for (SpecimenVisitReportParameters factory : bean.getFactories(category))
         {
-            rowClass = (formRowIndex++)%2==0 ? "labkey-alternating-row" : "labkey-row";
+            rowClass = (formRowIndex++)%2==0 ? "labkey-alternate-row" : "labkey-row";
             String showHideSuffix = "_" + categoryIndex + "_" + formRowIndex;
             String formName = "form" + showHideSuffix;
 %>
@@ -92,7 +92,7 @@
                     }
                 %>
                 <span id="reportParameters<%= showHideSuffix %>" style="display:<%= bean.isListView() ? "none" : "block" %>">
-                    <table class="labkey-report-parameters">
+                    <table class="labkey-form">
                 <%
                     if (factory.allowsCohortFilter())
                     {

@@ -71,7 +71,7 @@ public class SamplesWebPart extends JspView<SamplesWebPart.SamplesWebPartBean>
         private String getTypeListInnerHtml(List<? extends SpecimenTypeSummary.TypeCount> types, ActionURL parentURL)
         {
             StringBuilder builder = new StringBuilder();
-            builder.append("<table class=\"labkey-type-list-inner-html\">");
+            builder.append("<table class=\"labkey-study-expandable-nav\">");
             for (SpecimenTypeSummary.TypeCount count : types)
             {
                 ActionURL url = parentURL.clone();

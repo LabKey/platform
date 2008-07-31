@@ -797,7 +797,7 @@ public class StatusController extends SpringActionController
 
         StatusDataRegion rgn = new StatusDataRegion();
         rgn.setShadeAlternatingRows(true);
-        rgn.setShowColumnSeparators(true);
+        rgn.setShowBorders(true);
         rgn.setApiAction(apiAction);
         rgn.setColumns(PipelineStatusManager.getTableInfo().getColumns("Status, Created, FilePath, Description"));
         DisplayColumn col = rgn.getDisplayColumn("Status");
@@ -843,7 +843,7 @@ public class StatusController extends SpringActionController
     {
         StatusDataRegion rgn = new StatusDataRegion();
         rgn.setShadeAlternatingRows(true);
-        rgn.setShowColumnSeparators(true);
+        rgn.setShowBorders(true);
         rgn.setColumns(getTableInfo().getColumns("Status, Created, FilePath, Description, Provider, Container"));
         DisplayColumn col = rgn.getDisplayColumn("Status");
         col.setURL(urlDetailsData(c));

@@ -29,7 +29,7 @@
     Container c = me.getViewContext().getContainer();
 %>
 <!--ANNOUNCEMENTS-->
-<table class="labkey-announcements">
+<table class="labkey-form" width=100%>
     <tr>
         <td style="padding-top:2px; width:40%;" align="left"><%
             if (null != bean.insertURL)

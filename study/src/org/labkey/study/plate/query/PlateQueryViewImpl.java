@@ -83,7 +83,7 @@ public class PlateQueryViewImpl extends PlateQueryView
         region.setShowRecordSelectors(true);
         region.setRecordSelectorValueColumns("RowId");
         region.setShadeAlternatingRows(true);
-        region.setShowColumnSeparators(true);
+        region.setShowBorders(true);
 
         if (_hiddenFormFields != null)
         {

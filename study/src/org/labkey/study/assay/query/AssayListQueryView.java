@@ -42,7 +42,7 @@ public class AssayListQueryView extends QueryView
         setShowDetailsColumn(false);
         setShowRecordSelectors(false);
         setShadeAlternatingRows(true);
-        setShowColumnSeparators(true);
+        setShowBorders(true);
         getSettings().setAllowChooseQuery(false);
     }
 

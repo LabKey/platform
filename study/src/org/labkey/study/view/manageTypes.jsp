@@ -57,9 +57,9 @@
             "<table class=\"labkey-format-helper\">" +
             "<tr class=\"labkey-format-helper-header\"><th align=left>Symbol<th align=left>Location<th align=left>Localized?<th align=left>Meaning</tr>" +
             "<tr valign=top><td><code>0</code><td>Number<td>Yes<td>Digit</tr>" +
-            "<tr valign=top class=\"labkey-format-helper-alternate-row\"><td><code>#</code><td>Number<td>Yes<td>Digit, zero shows as absent</tr>" +
+            "<tr valign=top class=\"labkey-alternate-row\"><td><code>#</code><td>Number<td>Yes<td>Digit, zero shows as absent</tr>" +
             "<tr valign=top><td><code>.</code><td>Number<td>Yes<td>Decimal separator or monetary decimal separator</tr>" +
-            "<tr valign=top class=\"labkey-format-helper-alternate-row\"><td><code>-</code><td>Number<td>Yes<td>Minus sign</tr>" +
+            "<tr valign=top class=\"labkey-alternate-row\"><td><code>-</code><td>Number<td>Yes<td>Minus sign</tr>" +
             "<tr valign=top><td><code>,</code><td>Number<td>Yes<td>Grouping separator</tr></table>";
     String dateFormatHelp = "The format string for dates must be compatible with the format that the java class " +
             "<code>SimpleDateFormat</code> understands. For more information see the " +
@@ -68,19 +68,19 @@
             "<table class=\"labkey-format-helper\">" +
             "<tr class=\"labkey-format-helper-header\"><th align=left>Letter<th align=left>Date or Time Component<th align=left>Examples</tr>" +
             "<tr><td><code>G</code><td>Era designator<td><code>AD</code></tr>" +
-            "<tr class=\"labkey-format-helper-alternate-row\"><td><code>y</code><td>Year<td><code>1996</code>; <code>96</code></tr>" +
+            "<tr class=\"labkey-alternate-row\"><td><code>y</code><td>Year<td><code>1996</code>; <code>96</code></tr>" +
             "<tr><td><code>M</code><td>Month in year<td><code>July</code>; <code>Jul</code>; <code>07</code></tr>" +
-            "<tr class=\"labkey-format-helper-alternate-row\"><td><code>w</code><td>Week in year<td><code>27</code></td></tr>" +
+            "<tr class=\"labkey-alternate-row\"><td><code>w</code><td>Week in year<td><code>27</code></td></tr>" +
             "<tr><td><code>W</code><td>Week in month<td><code>2</code></td></tr>" +
-            "<tr class=\"labkey-format-helper-alternate-row\"><td><code>D</code><td>Day in year<td><code>189</code></td></tr>" +
+            "<tr class=\"labkey-alternate-row\"><td><code>D</code><td>Day in year<td><code>189</code></td></tr>" +
             "<tr><td><code>d</code><td>Day in month<td><code>10</code></tr>" +
-            "<tr class=\"labkey-format-helper-alternate-row\"><td><code>F</code><td>Day of week in month<td><code>2</code></tr>" +
+            "<tr class=\"labkey-alternate-row\"><td><code>F</code><td>Day of week in month<td><code>2</code></tr>" +
             "<tr><td><code>E</code><td>Day in week<td><code>Tuesday</code>; <code>Tue</code></tr>" +
-            "<tr class=\"labkey-format-helper-alternate-row\"><td><code>a</code><td>Am/pm marker<td><code>PM</code></tr>" +
+            "<tr class=\"labkey-alternate-row\"><td><code>a</code><td>Am/pm marker<td><code>PM</code></tr>" +
             "<tr><td><code>H</code><td>Hour in day (0-23)<td><code>0</code></tr>" +
-            "<tr class=\"labkey-format-helper-alternate-row\"><td><code>k</code><td>Hour in day (1-24)<td><code>24</code></tr>" +
+            "<tr class=\"labkey-alternate-row\"><td><code>k</code><td>Hour in day (1-24)<td><code>24</code></tr>" +
             "<tr><td><code>K</code><td>Hour in am/pm (0-11)<td><code>0</code></tr>" +
-            "<tr class=\"labkey-format-helper-alternate-row\"><td><code>h</code><td>Hour in am/pm (1-12)<td><code>12</code></tr></table>";
+            "<tr class=\"labkey-alternate-row\"><td><code>h</code><td>Hour in am/pm (1-12)<td><code>12</code></tr></table>";
 
 %>
 <table>

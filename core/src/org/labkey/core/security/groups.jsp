@@ -50,7 +50,7 @@ LABKEY.requiresScript('completion.js');
                 String groupPath = (container.isRoot() ? group.getName() : container.getPath() + "/" + group.getName());
                 List<Pair<Integer, String>> members = SecurityManager.getGroupMemberNamesAndIds(groupPath);
     %>
-            <tr>
+            <tr class="labkey-header">
                 <td width="10">
                     <a href="#" onclick="return toggleLink(this, false);">
                         <img src="<%=request.getContextPath()%>/_images/<%= groupsBean.isExpandedGroup(groupPath) ? "minus.gif" : "plus.gif" %>">
@@ -64,7 +64,7 @@ LABKEY.requiresScript('completion.js');
             <tr style="display:<%= groupsBean.isExpandedGroup(groupPath) ? "" : "none" %>">
                 <td>&nbsp;</td>
                 <td colspan="3">
-                    <table style="background-color:#EEEEEE">
+                    <table class="labkey-alternate-row">
                     <%
                     for (Pair<Integer, String> member : members)
                     {

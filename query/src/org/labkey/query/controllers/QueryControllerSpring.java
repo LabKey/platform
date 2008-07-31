@@ -358,7 +358,7 @@ public class QueryControllerSpring extends SpringActionController
                 getPageConfig().setTemplate(PageConfig.Template.Print);
             }
             queryView.setShadeAlternatingRows(true);
-            queryView.setShowColumnSeparators(true);
+            queryView.setShowBorders(true);
             return queryView;
         }
 

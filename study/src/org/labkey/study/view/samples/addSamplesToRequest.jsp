@@ -23,7 +23,6 @@
 <%
     JspView<SpringSpecimenController.AddToExistingRequestBean> me = (JspView<org.labkey.study.controllers.samples.SpringSpecimenController.AddToExistingRequestBean>) HttpView.currentView();
     SpringSpecimenController.AddToExistingRequestBean bean = me.getModelBean();
-    String headerTDStyle = "text-align:left;background-color:#EEEEEE;border-top:solid 1px";
 %>
 <%
     if (bean.getSpecimenQueryView() == null)
@@ -49,14 +48,14 @@
     }
 %>
     <table>
-        <tr>
-            <th style="<%= headerTDStyle %>">Available Specimen Requests</th>
+        <tr class="labkey-wp-header">
+            <th>Available Specimen Requests</th>
         </tr>
         <tr>
             <td><% me.include(bean.getRequestsGridView(), out); %><br></td>
         </tr>
-        <tr>
-            <th style="<%= headerTDStyle %>">Selected Vials</th>
+        <tr class="labkey-wp-header">
+            <th>Selected Vials</th>
         </tr>
         <tr>
             <td><% if (bean.getSpecimenQueryView() != null)

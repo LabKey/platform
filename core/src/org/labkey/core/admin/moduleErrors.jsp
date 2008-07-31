@@ -27,7 +27,7 @@
 
 %>
     <table id="dataregion_Gen Runs"
-           class="labkey-grid">
+           class="labkey-data-region labkey-show-borders">
         <tr><th><b>Module name</b></th><th><b>Stack trace</b></th></tr>
 
 <%

@@ -300,11 +300,6 @@
         <tr class="labkey-wp-header">
             <th align="left">Current Requirements</th>
         </tr>
-        <%
-        String borderColor = "#808080";
-        String styleTD = " style=\"border-bottom:solid 1px " + borderColor + ";\"";
-        String styleTH = " style=\"border-bottom:solid 1px " + borderColor + ";\" align=\"left\"";
-        %>
         <tr>
             <td>
                 <%
@@ -317,13 +312,13 @@
                     else
                     {
                 %>
-                    <table class="labkey-requirements">
-                        <tr style="border-bottom:solid 1px <%= borderColor %>;border-top:solid 1px <%= borderColor %>">
-                            <th <%= styleTH %>>Actor</th>
-                            <th <%= styleTH %>>Location</th>
-                            <th <%= styleTH %>>Description</th>
-                            <th <%= styleTH %>><%= requirements.length > 0 ? "Status" : "" %></th>
-                            <th <%= styleTH %>>&nbsp</th>
+                    <table class="labkey-study-requirements">
+                        <tr>
+                            <th align=left>Actor</th>
+                            <th align=left>Location</th>
+                            <th align=left>Description</th>
+                            <th align=left><%= requirements.length > 0 ? "Status" : "" %></th>
+                            <th align=left>&nbsp</th>
                         </tr>
                     <%
                         for (SampleRequestRequirement requirement : requirements)
@@ -338,15 +333,15 @@
                                 siteLabel = site.getDisplayName();
                     %>
                             <tr>
-                                <td <%= styleTD %>><%= h(requirement.getActor().getLabel()) %></td>
-                                <td <%= styleTD %>><%= h(siteLabel) %></td>
-                                <td <%= styleTD %>><%= requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;" %></td>
-                                <td <%= styleTD %>>
-                                    <span style="color:<%= requirement.isComplete() ? "green" : "red"%>;font-weight:bold;">
+                                <td><%= h(requirement.getActor().getLabel()) %></td>
+                                <td><%= h(siteLabel) %></td>
+                                <td><%= requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;" %></td>
+                                <td>
+                                    <span class="<%= requirement.isComplete() ? "labkey-message" : "labkey-error"%>" style="font-weight:bold;">
                                         <%= requirement.isComplete() ? "Complete" : "Incomplete" %>
                                     </span>
                                 </td>
-                                <td <%= styleTD %>>
+                                <td>
                                     <%= textLink("Details", "manageRequirement.view?id=" + requirement.getRequestId() + "&requirementId=" + requirement.getRowId())%>
                                 </td>
                             </tr>

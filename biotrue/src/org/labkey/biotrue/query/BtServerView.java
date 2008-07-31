@@ -55,7 +55,7 @@ public class BtServerView extends QueryView
             view.getDataRegion().setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
         }
         view.getDataRegion().setShadeAlternatingRows(true);
-        view.getDataRegion().setShowColumnSeparators(true);
+        view.getDataRegion().setShowBorders(true);
 
         return view;
     }

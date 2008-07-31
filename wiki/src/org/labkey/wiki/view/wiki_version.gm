@@ -18,7 +18,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.wiki.WikiManager"%>
 <!--wiki-->
-<table class="labkey-wiki-version">
+<table class="labkey-form" width="100%">
     <tr><td align=left colspan="2">
 <%
 if (!hasReadPermission)

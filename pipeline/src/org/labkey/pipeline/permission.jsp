@@ -54,7 +54,7 @@ Labkey FTP server if it is configured.
     Pair[] optionsGuest = new Pair[] {optionsFull[0],optionsFull[1]};
 
     int i=0;
-    %><b style="color:green;">Global groups</b><table><%  // FIELDSET is broken on firefox  <fieldset><legend>Global groups</legend>
+    %><b class="labkey-message">Global groups</b><table><%  // FIELDSET is broken on firefox  <fieldset><legend>Global groups</legend>
     for (Group g : groups)
     {
         if (g.isProjectGroup())
@@ -70,7 +70,7 @@ Labkey FTP server if it is configured.
         </select></td></tr><%
         i++;
     }
-    %></table><b style="color:green;">Project groups</b><table><%
+    %></table><b class="labkey-message">Project groups</b><table><%
     for (Group g : groups)
     {
         if (!g.isProjectGroup())

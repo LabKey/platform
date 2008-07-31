@@ -82,7 +82,7 @@ public class DataSetQueryView extends QueryView
         else
             view.getDataRegion().setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
         view.getDataRegion().setShadeAlternatingRows(true);
-        view.getDataRegion().setShowColumnSeparators(true);
+        view.getDataRegion().setShowBorders(true);
         view.getDataRegion().setRecordSelectorValueColumns("lsid");
         if (null != _visit)
         {

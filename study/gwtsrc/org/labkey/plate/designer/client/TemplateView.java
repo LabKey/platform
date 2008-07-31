@@ -357,7 +357,7 @@ public class TemplateView extends HorizontalPanel
             }
             else
             {
-                _propertyTabPanel.add(_warningPanel, "<font color=\"#FF0000\">Warnings (" + _cellWarnings.size() + ")</a>", true);
+                _propertyTabPanel.add(_warningPanel, "<font class=\"labkey-error\">Warnings (" + _cellWarnings.size() + ")</a>", true);
             }
             _propertyTabPanel.selectTab(currentTab);
         }

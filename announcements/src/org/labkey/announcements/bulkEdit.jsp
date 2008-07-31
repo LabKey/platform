@@ -55,7 +55,7 @@
         String rowClass = "labkey-row";
         //shade odd rows in gray
         if (i % 2 == 1)
-            rowClass = "labkey-alternating-row";
+            rowClass = "labkey-alternate-row";
 
         int userId = emailPref.getUserId();
         String email = emailPref.getEmail();

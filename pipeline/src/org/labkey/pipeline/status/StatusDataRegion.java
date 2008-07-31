@@ -52,7 +52,7 @@ public class StatusDataRegion extends DataRegion
     {
         String selectStyle = "";
         if (selected)
-            selectStyle = " style=\"background-color: #e1ecfc\"";
+            selectStyle = " class=\"labkey-highlight-tab\"";
         out.write("<td");
         out.write(selectStyle);
         out.write(">&nbsp;&nbsp;<a href=\"");

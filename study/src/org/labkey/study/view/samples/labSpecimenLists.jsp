@@ -42,7 +42,7 @@
     }
 %>
 
-<table class="labkey-lab-specimen-list">
+<table class="labkey-form">
     <tr>
         <th align="left"><%= originating ? "Originating" : "Providing" %> Location</th>
         <th align="left">Download options</th>
@@ -58,7 +58,7 @@
                     "&listType=" + bean.getType().toString() +
                     "&sourceSiteId=" + site.getRowId() + "&export=";
     %>
-    <tr class="<%= rowCount++ % 2 == 0 ? "labkey-alternating-row" : "labkey-row"%>" valign="top">
+    <tr class="<%= rowCount++ % 2 == 0 ? "labkey-alternate-row" : "labkey-row"%>" valign="top">
         <td><%= site.getDisplayName()%></td>
         <td>
             <table>
