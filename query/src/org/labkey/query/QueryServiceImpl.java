@@ -122,10 +122,13 @@ public class QueryServiceImpl extends QueryService
 
     public QueryDefinition getQueryDef(Container container, String schema, String name)
     {
+        return getQueryDefs(container, schema).get(name);
+/*
         QueryDef def = QueryManager.get().getQueryDef(container, schema, name);
         if (def != null)
             return new QueryDefinitionImpl(def);
         return null;
+*/
     }
 
     private Map<String, QuerySnapshotDefinition> getAllQuerySnapshotDefs(Container container, String schemaName)
