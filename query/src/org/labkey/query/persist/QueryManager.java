@@ -67,7 +67,7 @@ public class QueryManager
         }
     }
 
-    public QueryDef[] getQueryDefs(Container container, String schema, boolean inheritableOnly)
+    public QueryDef[] getQueryDefs(Container container, String schema, boolean inheritableOnly, boolean includeSnapshots)
     {
         try
         {
@@ -77,11 +77,20 @@ public class QueryManager
                 key.setSchema(schema);
             }
 
-            // omit snapshot query definitions 
+            int mask = 0;
+            int value = 0;
+
             if (inheritableOnly)
-                key.setFlagMask(FLAG_INHERITABLE | FLAG_SNAPSHOT, FLAG_INHERITABLE);
-            else
-                key.setFlagMask(FLAG_SNAPSHOT, 0);
+            {
+                mask |= FLAG_INHERITABLE;
+                value |= FLAG_INHERITABLE;
+            }
+
+            if (!includeSnapshots)
+                mask |= FLAG_SNAPSHOT;
+
+            if (mask != 0 || value != 0)
+                key.setFlagMask(mask, value);
 
             return key.select();
         }

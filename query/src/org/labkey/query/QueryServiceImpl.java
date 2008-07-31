@@ -82,7 +82,7 @@ public class QueryServiceImpl extends QueryService
     public Map<String, QueryDefinition> getQueryDefs(Container container, String schemaName)
     {
         Map<String, QueryDefinition> ret = new LinkedHashMap();
-        for (QueryDefinition queryDef : getAllQueryDefs(container, schemaName, true).values())
+        for (QueryDefinition queryDef : getAllQueryDefs(container, schemaName, true, false).values())
         {
             ret.put(queryDef.getName(), queryDef);
         }
@@ -91,13 +91,13 @@ public class QueryServiceImpl extends QueryService
 
     public List<QueryDefinition> getQueryDefs(Container container)
     {
-        return new ArrayList<QueryDefinition>(getAllQueryDefs(container, null, true).values());
+        return new ArrayList<QueryDefinition>(getAllQueryDefs(container, null, true, false).values());
     }
 
-    private Map<Map.Entry<String, String>, QueryDefinition> getAllQueryDefs(Container container, String schemaName, boolean inheritable)
+    private Map<Map.Entry<String, String>, QueryDefinition> getAllQueryDefs(Container container, String schemaName, boolean inheritable, boolean includeSnapshots)
     {
         Map<Map.Entry<String, String>, QueryDefinition> ret = new LinkedHashMap();
-        for (QueryDef queryDef : QueryManager.get().getQueryDefs(container, schemaName, false))
+        for (QueryDef queryDef : QueryManager.get().getQueryDefs(container, schemaName, false, includeSnapshots))
         {
             Map.Entry<String, String> key = new Pair(queryDef.getSchema(), queryDef.getName());
             ret.put(key, new QueryDefinitionImpl(queryDef));
@@ -108,7 +108,7 @@ public class QueryServiceImpl extends QueryService
         while (!containerCur.isRoot())
         {
             containerCur = containerCur.getParent();
-            for (QueryDef queryDef : QueryManager.get().getQueryDefs(containerCur, schemaName, true))
+            for (QueryDef queryDef : QueryManager.get().getQueryDefs(containerCur, schemaName, true, includeSnapshots))
             {
                 Map.Entry<String, String> key = new Pair(queryDef.getSchema(), queryDef.getName());
                 if (!ret.containsKey(key))
@@ -122,13 +122,12 @@ public class QueryServiceImpl extends QueryService
 
     public QueryDefinition getQueryDef(Container container, String schema, String name)
     {
-        return getQueryDefs(container, schema).get(name);
-/*
-        QueryDef def = QueryManager.get().getQueryDef(container, schema, name);
-        if (def != null)
-            return new QueryDefinitionImpl(def);
-        return null;
-*/
+        Map<String, QueryDefinition> ret = new LinkedHashMap();
+        for (QueryDefinition queryDef : getAllQueryDefs(container, schema, true, true).values())
+        {
+            ret.put(queryDef.getName(), queryDef);
+        }
+        return ret.get(name);
     }
 
     private Map<String, QuerySnapshotDefinition> getAllQuerySnapshotDefs(Container container, String schemaName)
