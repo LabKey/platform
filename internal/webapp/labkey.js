@@ -166,7 +166,25 @@ LABKEY.requiresClientAPI = function(immediate)
     if (arguments.length < 2) immediate = true;
     LABKEY.requiresCss(LABKEY.extJsRoot + '/resources/css/ext-all.css');
     LABKEY.requiresExtJs(immediate);
-    LABKEY.requiresScript('clientapi/clientapi' + (LABKEY.devMode ? '.js' : '.min.js'), immediate);
+    if(LABKEY.devMode)
+    {
+        //load individual scripts so that they get loaded from source tree
+        LABKEY.requiresScript("clientapi/ActionURL.js");
+        LABKEY.requiresScript("clientapi/Assay.js");
+        LABKEY.requiresScript("clientapi/Chart.js");
+        LABKEY.requiresScript("clientapi/EditorGridPanel.js");
+        LABKEY.requiresScript("clientapi/ExtJsConfig.js");
+        LABKEY.requiresScript("clientapi/Filter.js");
+        LABKEY.requiresScript("clientapi/GridView.js");
+        LABKEY.requiresScript("clientapi/NavTrail.js");
+        LABKEY.requiresScript("clientapi/Query.js");
+        LABKEY.requiresScript("clientapi/Store.js");
+        LABKEY.requiresScript("clientapi/Utils.js");
+        LABKEY.requiresScript("clientapi/WebPart.js");
+        LABKEY.requiresScript("clientapi/Security.js");
+    }
+    else
+        LABKEY.requiresScript('clientapi/clientapi' + (LABKEY.devMode ? '.js' : '.min.js'), immediate);
 }
 
 

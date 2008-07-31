@@ -657,6 +657,7 @@ api/webapp/clientapi/Filter.js -text
 api/webapp/clientapi/GridView.js -text
 api/webapp/clientapi/NavTrail.js -text
 api/webapp/clientapi/Query.js -text
+api/webapp/clientapi/Security.js -text
 api/webapp/clientapi/Store.js -text
 api/webapp/clientapi/Utils.js -text
 api/webapp/clientapi/WebPart.js -text

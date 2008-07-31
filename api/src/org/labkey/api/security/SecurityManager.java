@@ -2276,4 +2276,25 @@ public class SecurityManager
             _verificationUrlRequired = false;
         }
     }
+
+    /**
+     * Returns a group name that disambiguates between site/project Administrators
+     * and site/project Users
+     * @param group the group
+     * @return The disambiguated name of the group
+     */
+    public static String getDisambiguatedGroupName(Group group)
+    {
+        int id = group.getUserId();
+        switch(id)
+        {
+            case Group.groupAdministrators:
+                return "Site Administrators";
+            case Group.groupUsers:
+                return "All Site Users";
+            default:
+                return group.getName();
+        }
+    }
+
 }

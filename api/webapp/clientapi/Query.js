@@ -23,8 +23,8 @@
  *		delete data from LabKey public queries. <p/>
  *		{@link LABKEY.Query#selectRows} works for all LabKey public queries.  However,
  *		{@link LABKEY.Query#updateRows}, {@link LABKEY.Query#insertRows} and
- *		{@link LABKEY.Query#deleteRows} are only available for queries that 
- *		use either the "lists" schema or a user-defined schema. 
+ *		{@link LABKEY.Query#deleteRows} are only available for lists, study datasets, or
+ *		tables in a user-defined schema.
  *		These three methods may not be used to operate on rows returned by queries to other LabKey 
  *		module schemas (e.g., ms1, ms2, flow, etc). To update, insert or delete data returned by 
  * 		queries to these types of schemas, use the methods for their respective classes, 
