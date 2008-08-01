@@ -23,6 +23,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.Container;
+import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -604,22 +605,20 @@ abstract public class PipelineProvider
         entry.addAction(new FileAction(description, actionURL, files));
     }
 
-    protected void addAction(String pageflow, String action, String description, FileEntry entry, File[] files)
+    protected void addAction(Class<? extends Controller> action, String description, FileEntry entry, File[] files)
     {
         if (files == null || files.length == 0)
             return;
         ActionURL actionURL = entry.cloneHref();
-        actionURL.setPageFlow(pageflow);
         actionURL.setAction(action);
         entry.addAction(new FileAction(description, actionURL, files));
     }
 
-    protected void addFileActions(String pageflow, String action, String description, FileEntry entry, File[] files)
+    protected void addFileActions(Class<? extends Controller> action, String description, FileEntry entry, File[] files)
     {
         if (files == null || files.length == 0)
             return;
         ActionURL actionURL = entry.cloneHref();
-        actionURL.setPageFlow(pageflow);
         actionURL.setAction(action);
         String path = actionURL.getParameter(Params.path);
         for (File f : files)

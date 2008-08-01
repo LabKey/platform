@@ -23,8 +23,6 @@ import org.labkey.api.util.FileType;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
-import java.util.HashSet;
-import java.io.IOException;
 
 /**
  * <code>CommandTaskFactorySettings</code> may be used with Spring configuration
@@ -34,6 +32,7 @@ public class CommandTaskFactorySettings extends AbstractTaskFactorySettings
 {
     private String _cloneName;
     private String _statusName;
+    private String _protocolActionName;
     private Map<String, TaskPath> _inputPaths = new HashMap<String, TaskPath>();
     private Map<String, TaskPath> _outputPaths = new HashMap<String, TaskPath>();
     private ListToCommandArgs _converter = new ListToCommandArgs();
@@ -79,10 +78,14 @@ public class CommandTaskFactorySettings extends AbstractTaskFactorySettings
         _statusName = statusName;
     }
 
-    public FileType getInputType()
+    public String getProtocolActionName()
     {
-        TaskPath tp = _inputPaths.get(WorkDirectory.Function.input.toString());
-        return (tp == null ? null : tp.getType());
+        return _protocolActionName;
+    }
+
+    public void setProtocolActionName(String protocolActionName)
+    {
+        _protocolActionName = protocolActionName;
     }
 
     public void setInputType(FileType inputType)

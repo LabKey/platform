@@ -29,6 +29,17 @@ public class TaskPipelineSettings
     private TaskId _id;
     private Object[] _taskProgressionSpec = new Object[0];
 
+    /**
+     * ObjectId to use in the LSID for the generated Experiment protocol
+     */
+    private String _protocolIdentifier;
+
+    /**
+     * Name to show in the UI for the generated Experiment protocol
+     */
+    private String _protocolShortDescription;
+
+
     public TaskPipelineSettings(TaskId id)
     {
         _id = id;
@@ -73,5 +84,37 @@ public class TaskPipelineSettings
     public void setTaskProgressionSpec(Object[] taskProgressionSpec)
     {
         _taskProgressionSpec = taskProgressionSpec;
+    }
+
+    /**
+     * @param protocolIdentifier ObjectId to use in the LSID for the generated Experiment protocol
+     */
+    public void setProtocolObjectId(String protocolIdentifier)
+    {
+        _protocolIdentifier = protocolIdentifier;
+    }
+
+    /**
+     * @return ObjectId to use in the LSID for the generated Experiment protocol
+     */
+    public String getProtocolObjectId()
+    {
+        return _protocolIdentifier;
+    }
+
+    /**
+     * @return Name to show in the UI for the generated Experiment protocol
+     */
+    public String getProtocolName()
+    {
+        return _protocolShortDescription;
+    }
+
+    /**
+     * @param protocolShortDescription Name to show in the UI for the generated Experiment protocol
+     */
+    public void setProtocolName(String protocolShortDescription)
+    {
+        _protocolShortDescription = protocolShortDescription;
     }
 }

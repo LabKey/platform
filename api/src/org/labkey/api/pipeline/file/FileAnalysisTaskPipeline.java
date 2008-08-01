@@ -24,7 +24,7 @@ import java.io.FileFilter;
 /**
  * <code>FileAnalysisTaskPipeline</code>
  */
-public interface FileAnalysisTaskPipeline extends TaskPipeline
+public interface FileAnalysisTaskPipeline extends TaskPipeline<FileAnalysisTaskPipelineSettings>
 {
     /**
      * Returns a description of this pipeline to be displayed in the

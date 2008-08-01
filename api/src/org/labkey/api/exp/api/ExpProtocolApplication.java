@@ -57,4 +57,6 @@ public interface ExpProtocolApplication extends ExpObject
     String getComments();
 
     String getCpasType();
+
+    void save(User user);
 }

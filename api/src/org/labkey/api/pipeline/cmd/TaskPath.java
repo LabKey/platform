@@ -25,6 +25,7 @@ public class TaskPath
     private FileType _type;
     private String _name;
     private boolean _copyInput;
+    private String _role;
 
     public TaskPath()
     {
@@ -73,5 +74,15 @@ public class TaskPath
     public void setCopyInput(boolean copyInput)
     {
         _copyInput = copyInput;
+    }
+
+    public void setRole(String role)
+    {
+        _role = role;
+    }
+
+    public String getRole()
+    {
+        return _role;
     }
 }

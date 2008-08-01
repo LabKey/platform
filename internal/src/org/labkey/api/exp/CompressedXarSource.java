@@ -17,6 +17,7 @@
 package org.labkey.api.exp;
 
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.pipeline.PipelineJob;
 
 import java.io.*;
 import java.util.zip.ZipInputStream;
@@ -32,8 +33,9 @@ public class CompressedXarSource extends AbstractFileXarSource
 
     private final File _xarFile;
 
-    public CompressedXarSource(File xarFile)
+    public CompressedXarSource(File xarFile, PipelineJob job)
     {
+        super(job);
         _xarFile = xarFile;
     }
 

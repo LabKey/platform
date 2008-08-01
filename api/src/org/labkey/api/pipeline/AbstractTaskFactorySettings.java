@@ -31,6 +31,7 @@ abstract public class AbstractTaskFactorySettings implements TaskFactorySettings
     private Boolean _join;
     private String _location;
     private int _autoRetry = -1;
+    private String _groupParameterName;
 
     public AbstractTaskFactorySettings(TaskId id)
     {
@@ -86,6 +87,16 @@ abstract public class AbstractTaskFactorySettings implements TaskFactorySettings
     public boolean isJoin()
     {
         return isJoinSet() && _join.booleanValue();
+    }
+
+    public void setGroupParameterName(String name)
+    {
+        _groupParameterName = name;
+    }
+
+    public String getGroupParameterName()
+    {
+        return _groupParameterName;
     }
 
     public void setJoin(boolean join)

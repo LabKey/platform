@@ -20,11 +20,17 @@ package org.labkey.api.pipeline;
  * objects that can be used to create <code>Task</code> instances for processing
  * a pipeline job.
  */
-public interface TaskPipeline
+public interface TaskPipeline<SettingsType extends TaskPipelineSettings>
 {
     TaskId getId();
 
     TaskId[] getTaskProgression();
 
-    TaskPipeline cloneAndConfigure(TaskPipelineSettings settings, TaskId[] taskProgression) throws CloneNotSupportedException;
+    TaskPipeline cloneAndConfigure(SettingsType settings, TaskId[] taskProgression) throws CloneNotSupportedException;
+
+    /** @return ObjectId to use in the LSID for the generated Experiment protocol */
+    String getProtocolIdentifier();
+
+    /** @return Name to show in the UI for the generated Experiment protocol */
+    String getProtocolShortDescription();
 }

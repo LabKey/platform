@@ -78,7 +78,7 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
      * To find the .mzXML file in question, this chain must be walked
      * in reverse.
      */
-    private Map<String, List<String>> _fileExtHeirarchy;
+    private Map<String, List<String>> _fileExtHierarchy;
 
     /**
      * Support for generating XAR files for the <code>FileAnalysisTaskPipeline</code>
@@ -151,14 +151,14 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
         _sharedOutputExts = sharedOutputExts;
     }
 
-    public Map<String, List<String>> getFileExtHeirarchy()
+    public Map<String, List<String>> getFileExtHierarchy()
     {
-        return _fileExtHeirarchy;
+        return _fileExtHierarchy;
     }
 
-    public void setFileExtHeirarchy(Map<String, List<String>> fileExtHeirarchy)
+    public void setFileExtHierarchy(Map<String, List<String>> fileExtHierarchy)
     {
-        _fileExtHeirarchy = fileExtHeirarchy;
+        _fileExtHierarchy = fileExtHierarchy;
     }
 
     public FileAnalysisXarGeneratorSupport getXarGeneratorSupport()

@@ -41,6 +41,6 @@ public class DataType
 
     public boolean matches(Lsid lsid)
     {
-        return lsid != null && lsid.getNamespacePrefix().equals(_namespacePrefix);
+        return lsid != null && lsid.getNamespacePrefix() != null && lsid.getNamespacePrefix().equals(_namespacePrefix);
     }
 }

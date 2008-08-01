@@ -23,7 +23,6 @@ import org.labkey.api.exp.*;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryView;
@@ -75,8 +74,9 @@ public class ExperimentService
          */
         ExpData createData(Container container, DataType type);
         ExpData createData(Container container, DataType type, String name);
+        ExpData createData(Container container, String name, String lsid);
 
-        ExpMaterial createExpMaterial();
+        ExpMaterial createExpMaterial(Container container, String lsid, String name);
         ExpMaterial getExpMaterial(int rowid);
         ExpMaterial getExpMaterial(String lsid);
 
@@ -100,7 +100,8 @@ public class ExperimentService
         ExpProtocol getExpProtocol(int rowid);
         ExpProtocol getExpProtocol(String lsid);
         ExpProtocol getExpProtocol(Container container, String name);
-        ExpProtocol createExpProtocol(Container container, String name, ExpProtocol.ApplicationType type);
+        ExpProtocol createExpProtocol(Container container, ExpProtocol.ApplicationType type, String name);
+        ExpProtocol createExpProtocol(Container container, ExpProtocol.ApplicationType type, String name, String lsid);
 
         Map<String, PropertyDescriptor> getDataInputRoles(Container container);
         Map<String, PropertyDescriptor> getMaterialInputRoles(Container container);
@@ -138,9 +139,6 @@ public class ExperimentService
 
         public DbSchema getSchema();
 
-        /** @return the runs loaded from the XAR */
-        public List<ExpRun> loadXar(XarSource source, PipelineJob pipelineJob, boolean reloadExistingRuns) throws ExperimentException;
-
         ExpProtocolApplication getExpProtocolApplication(String lsid);
         ExpProtocolApplication[] getExpProtocolApplicationsForProtocolLSID(String protocolLSID) throws SQLException;
 
@@ -171,7 +169,7 @@ public class ExperimentService
          */
         List<ExpRun> runsDeletedWithInput(ExpRun[] runs) throws SQLException;
 
-        Map<String, ProtocolParameter> getProtocolParameters(int rowId) throws SQLException;
+        Map<String, ProtocolParameter> getProtocolParameters(int rowId);
 
         void deleteProtocolByRowIds(Container container, User user, int... rowIds) throws SQLException, ExperimentException;
         void deleteMaterialByRowIds(Container c, int... materialRowIds) throws SQLException;
@@ -189,7 +187,7 @@ public class ExperimentService
 
         void clearCaches();
 
-        ProtocolApplicationParameter[] getProtocolApplicationParameters(int rowId) throws SQLException;
+        ProtocolApplicationParameter[] getProtocolApplicationParameters(int rowId);
 
         void moveContainer(Container c, Container cOldParent, Container cNewParent) throws SQLException, ExperimentException;
 
@@ -234,10 +232,22 @@ public class ExperimentService
         public ProtocolImplementation getProtocolImplementation(String name);
 
         ExpProtocolApplication getExpProtocolApplication(int rowId);
-        ExpProtocolApplication[] getExpProtocolApplicationsForRun(int runId) throws SQLException;
+        ExpProtocolApplication[] getExpProtocolApplicationsForRun(int runId);
 
         ExpSampleSet createSampleSet();
 
         ExpProtocol[] getExpProtocols(Container container);
+
+        /**
+         * Kicks off a pipeline job to asynchronously load the XAR from disk
+         * @return the job responsible for doing the work
+         */
+        PipelineJob importXarAsync(ViewBackgroundInfo info, File file, String description) throws IOException;
+
+        /**
+         * Loads the xar synchronously, in the context of the pipelineJob
+         * @return the runs loaded from the XAR
+         */
+        public List<ExpRun> importXar(XarSource source, PipelineJob pipelineJob, boolean reloadExistingRuns) throws ExperimentException;
     }
 }

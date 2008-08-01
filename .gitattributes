@@ -268,7 +268,6 @@ api/src/org/labkey/api/pipeline/ClusterSettingsImpl.java -text
 api/src/org/labkey/api/pipeline/GlobusKeyPair.java -text
 api/src/org/labkey/api/pipeline/ParamParser.java -text
 api/src/org/labkey/api/pipeline/PipeRoot.java -text
-api/src/org/labkey/api/pipeline/PipelineAction.java -text
 api/src/org/labkey/api/pipeline/PipelineJob.java -text
 api/src/org/labkey/api/pipeline/PipelineJobData.java -text
 api/src/org/labkey/api/pipeline/PipelineJobException.java -text
@@ -281,6 +280,7 @@ api/src/org/labkey/api/pipeline/PipelineService.java -text
 api/src/org/labkey/api/pipeline/PipelineStatusFile.java -text
 api/src/org/labkey/api/pipeline/PipelineStatusUrls.java -text
 api/src/org/labkey/api/pipeline/PipelineUrls.java -text
+api/src/org/labkey/api/pipeline/RecordedAction.java -text
 api/src/org/labkey/api/pipeline/TaskFactory.java -text
 api/src/org/labkey/api/pipeline/TaskFactorySettings.java -text
 api/src/org/labkey/api/pipeline/TaskId.java -text
@@ -1526,8 +1526,6 @@ internal/src/org/labkey/api/data/XMLWriterTest.java -text
 internal/src/org/labkey/api/data/collections/CompareMap.java -text
 internal/src/org/labkey/api/exp/AbstractFileXarSource.java -text
 internal/src/org/labkey/api/exp/CompressedXarSource.java -text
-internal/src/org/labkey/api/exp/ExperimentPipelineJob.java -text
-internal/src/org/labkey/api/exp/ExperimentPipelineProvider.java -text
 internal/src/org/labkey/api/exp/FileXarSource.java -text
 internal/src/org/labkey/api/exp/property/DomainEditorServiceBase.java -text
 internal/src/org/labkey/api/exp/property/ExperimentProperty.java -text

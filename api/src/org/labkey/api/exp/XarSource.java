@@ -19,6 +19,7 @@ import org.fhcrc.cpas.exp.xml.ExperimentArchiveDocument;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineJob;
 import org.apache.xmlbeans.XmlException;
 
 import java.io.IOException;
@@ -44,6 +45,14 @@ public abstract class XarSource implements Serializable
     private final Map<String, Map<String, ExpData>> _data = new HashMap<String, Map<String, ExpData>>();
 
     private final Map<String, String> _dataFileURLs = new HashMap<String, String>();
+
+    private final XarContext _xarContext;
+
+    public XarSource(PipelineJob job)
+    {
+        _xarContext = new XarContext(job.getDescription(), job.getContainer(), job.getUser());
+    }
+
 
     public abstract ExperimentArchiveDocument getDocument() throws XmlException, IOException;
 
@@ -80,7 +89,12 @@ public abstract class XarSource implements Serializable
 
     public abstract File getLogFile() throws IOException;
 
-    public abstract void init() throws IOException, ExperimentException;
+    /**
+     * Called before trying to import this XAR to let the source set up any resources that are required 
+     */
+    public void init() throws IOException, ExperimentException
+    {
+    }
 
     public void setExperimentRunRowId(Integer experimentRowId)
     {
@@ -206,7 +220,7 @@ public abstract class XarSource implements Serializable
         return result;
     }
 
-    public boolean isUnderPipelineRoot(PipeRoot pr, Container container, File file) throws Exception
+    public boolean allowImport(PipeRoot pr, Container container, File file)
     {
         if (pr == null)
         {
@@ -214,5 +228,10 @@ public abstract class XarSource implements Serializable
         }
 
         return pr.isUnderRoot(file);
+    }
+
+    public XarContext getXarContext()
+    {
+        return _xarContext;
     }
 }

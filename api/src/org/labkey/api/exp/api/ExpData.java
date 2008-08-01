@@ -20,6 +20,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ExperimentDataHandler;
+import org.labkey.api.exp.XarSource;
+import org.labkey.api.pipeline.PipelineJob;
 import org.apache.activemq.broker.region.cursors.PendingMessageCursor;
 
 import java.net.URI;
@@ -28,6 +30,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.ArrayList;
 import java.io.File;
+import java.sql.SQLException;
 
 public interface ExpData extends ExpProtocolOutput
 {
@@ -53,4 +56,6 @@ public interface ExpData extends ExpProtocolOutput
     boolean isFileOnDisk();
 
     void setDataFileUrl(String s);
+
+    void importDataFile(PipelineJob job, XarSource xarSource) throws ExperimentException, SQLException;
 }

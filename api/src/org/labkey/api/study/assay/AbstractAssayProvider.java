@@ -176,10 +176,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         ExpMaterial material = ExperimentService.get().getExpMaterial(materialLSID);
         if (material == null)
         {
-            material = ExperimentService.get().createExpMaterial();
-            material.setContainer(currentContainer);
-            material.setLSID(materialLSID);
-            material.setName(sampleId);
+            material = ExperimentService.get().createExpMaterial(currentContainer, materialLSID, sampleId);
         }
         return material;
     }
@@ -296,7 +293,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     public static String getPresubstitutionLsid(String prefix)
     {
-        return "urn:lsid:${LSIDAuthority}:" + prefix + ".Folder-${Container.RowId}:" + ASSAY_NAME_SUBSTITUTION;
+        return "urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":" + ASSAY_NAME_SUBSTITUTION;
     }
 
     protected Domain createRunDomain(Container c, User user)
@@ -550,7 +547,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     {
         String protocolLsid = new Lsid(_protocolLSIDPrefix, "Folder-" + container.getRowId(), name).toString();
 
-        ExpProtocol protocol = ExperimentService.get().createExpProtocol(container, name, ExpProtocol.ApplicationType.ExperimentRun);
+        ExpProtocol protocol = ExperimentService.get().createExpProtocol(container, ExpProtocol.ApplicationType.ExperimentRun, name);
         protocol.setProtocolDescription(description);
         protocol.setLSID(protocolLsid);
         protocol.setMaxInputMaterialPerInstance(maxMaterials);
@@ -689,14 +686,14 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     public Pair<ExpProtocol, List<Domain>> getAssayTemplate(User user, Container targetContainer)
     {
-        ExpProtocol copy = ExperimentService.get().createExpProtocol(targetContainer, "Unknown", ExpProtocol.ApplicationType.ExperimentRun);
+        ExpProtocol copy = ExperimentService.get().createExpProtocol(targetContainer, ExpProtocol.ApplicationType.ExperimentRun, "Unknown");
         copy.setName(null);
         return new Pair<ExpProtocol, List<Domain>>(copy, createDefaultDomains(targetContainer, user));
     }
 
     public Pair<ExpProtocol, List<Domain>> getAssayTemplate(User user, Container targetContainer, ExpProtocol toCopy)
     {
-        ExpProtocol copy = ExperimentService.get().createExpProtocol(targetContainer, toCopy.getName(), toCopy.getApplicationType());
+        ExpProtocol copy = ExperimentService.get().createExpProtocol(targetContainer, toCopy.getApplicationType(), toCopy.getName());
         copy.setDescription(toCopy.getDescription());
 
         List<Domain> originalDomains = getDomains(toCopy);

@@ -1137,7 +1137,7 @@ public class Table
         }
         catch (SQLException x)
         {
-            throw new RuntimeException(x);
+            throw new RuntimeSQLException(x);
         }
     }
 

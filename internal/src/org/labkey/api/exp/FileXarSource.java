@@ -16,6 +16,8 @@
 
 package org.labkey.api.exp;
 
+import org.labkey.api.pipeline.PipelineJob;
+
 import java.io.File;
 import java.io.IOException;
 
@@ -25,14 +27,10 @@ import java.io.IOException;
  */
 public class FileXarSource extends AbstractFileXarSource
 {
-
-    public FileXarSource(File file)
+    public FileXarSource(File file, PipelineJob job)
     {
+        super(job);
         _xmlFile = file;
-    }
-
-    public void init() throws IOException
-    {
     }
 
     public File getLogFile() throws IOException

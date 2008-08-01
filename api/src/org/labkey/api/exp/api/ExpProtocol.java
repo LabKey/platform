@@ -21,9 +21,7 @@ import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.ProtocolParameter;
 
 import java.util.Map;
-import java.util.Date;
 import java.util.List;
-import java.sql.SQLException;
 
 public interface ExpProtocol extends ExpObject
 {
@@ -36,7 +34,7 @@ public interface ExpProtocol extends ExpObject
 
     void storeObjectProperties(Map<String, ObjectProperty> props);
 
-    Map<String, ProtocolParameter> retrieveProtocolParameters() throws SQLException;
+    Map<String, ProtocolParameter> retrieveProtocolParameters();
 
     String getInstrument();
 
@@ -57,11 +55,16 @@ public interface ExpProtocol extends ExpObject
     public ApplicationType getApplicationType();
     public ProtocolImplementation getImplementation();
     public String getDescription();
+    Integer getMaxInputDataPerInstance();
     Integer getMaxInputMaterialPerInstance();
     String getProtocolDescription();
     void setProtocolDescription(String description);
     void setMaxInputMaterialPerInstance(Integer maxMaterials);
     void setMaxInputDataPerInstance(Integer i);
+    Integer getOutputMaterialPerInstance();
+    Integer getOutputDataPerInstance();
+    String getOutputMaterialType();
+    String getOutputDataType();
 
     /**
      * Adds a step and persists it to the database

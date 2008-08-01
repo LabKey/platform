@@ -17,21 +17,20 @@ package org.labkey.api.pipeline;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.List;
-import java.util.Collections;
 
 /**
  * <code>AbstractTaskFactory</code>
  *
  * @author brendanx
  */
-abstract public class AbstractTaskFactory extends ClusterSettingsImpl implements TaskFactory, Cloneable
+abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFactorySettings> extends ClusterSettingsImpl implements TaskFactory<SettingsType>, Cloneable
 {
     private TaskId _id;
     private TaskId _dependencyId;
     private boolean _join;
     private String _executionLocation;
     private int _autoRetry = -1;
+    private String _groupParameterName;
 
     public AbstractTaskFactory(Class namespaceClass)
     {
@@ -48,19 +47,19 @@ abstract public class AbstractTaskFactory extends ClusterSettingsImpl implements
         _id = id;
     }
 
-    public TaskFactory cloneAndConfigure(TaskFactorySettings settings) throws CloneNotSupportedException
+    public AbstractTaskFactory cloneAndConfigure(SettingsType settings) throws CloneNotSupportedException
     {
         AbstractTaskFactory factory = (AbstractTaskFactory) clone();
 
-        return factory.configure((AbstractTaskFactorySettings) settings);
+        return factory.configure(settings);
     }
 
-    public List<String> getActionNames()
+    public String getGroupParameterName()
     {
-        return Collections.singletonList(getId().toString());
+        return _groupParameterName;
     }
 
-    private TaskFactory configure(AbstractTaskFactorySettings settings)
+    private AbstractTaskFactory configure(AbstractTaskFactorySettings settings)
     {
         _id = settings.getId();
         if (settings.getDependencyId() != null)
@@ -71,6 +70,8 @@ abstract public class AbstractTaskFactory extends ClusterSettingsImpl implements
             _executionLocation = settings.getLocation();
         if (settings.isAutoRetrySet())
             _autoRetry = settings.getAutoRetry();
+        if (settings.getGroupParameterName() != null)
+            _groupParameterName = settings.getGroupParameterName();
         return this;
     }
 

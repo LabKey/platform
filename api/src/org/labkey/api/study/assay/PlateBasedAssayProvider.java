@@ -36,7 +36,6 @@ import org.labkey.api.study.PlateTemplate;
 import org.labkey.api.study.WellGroupTemplate;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.InsertView;
 
@@ -239,11 +238,8 @@ public abstract class PlateBasedAssayProvider extends AbstractAssayProvider
 
                 while(ExperimentService.get().getExpMaterial(derivedLsid.toString()) != null)
                     derivedLsid.setObjectId(derivedLsid.getObjectId() + "-" + ++index);
-                ExpMaterial derivedMaterial = ExperimentService.get().createExpMaterial();
-                derivedMaterial.setLSID(derivedLsid.toString());
-                derivedMaterial.setName(wellgroup.getName());
+                ExpMaterial derivedMaterial = ExperimentService.get().createExpMaterial(context.getContainer(), derivedLsid.toString(), wellgroup.getName());
                 derivedMaterial.setCpasType(sampleSet.getLSID());
-                derivedMaterial.setContainer(context.getContainer());
                 Map<ExpMaterial, String> originalMaterialSet = Collections.singletonMap(originalMaterial, null);
                 Map<ExpMaterial, String> derivedMaterialSet = Collections.singletonMap(derivedMaterial, "PreparedMaterial");
                 derivedMaterials.put(derivedMaterial, wellgroup.getName());

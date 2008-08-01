@@ -36,6 +36,7 @@ import org.apache.log4j.spi.HierarchyEventListener;
 import org.apache.log4j.spi.LoggerFactory;
 import org.apache.log4j.spi.LoggerRepository;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -46,8 +47,8 @@ import java.net.URI;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.TimeUnit;
 
 abstract public class PipelineJob extends Job implements Serializable
 {
@@ -61,7 +62,7 @@ abstract public class PipelineJob extends Job implements Serializable
         return Logger.getLogger(PipelineJob.class.getName() + ".." + clazz.getName());
     }
 
-    public List<PipelineAction> getActions()
+    public List<RecordedAction> getActions()
     {
         return Collections.unmodifiableList(_actions);
     }
@@ -120,7 +121,7 @@ abstract public class PipelineJob extends Job implements Serializable
             return _job;
         }
 
-        public abstract List<PipelineAction> run() throws PipelineJobException;
+        public abstract List<RecordedAction> run() throws PipelineJobException;
     }
 
     /*
@@ -158,7 +159,7 @@ abstract public class PipelineJob extends Job implements Serializable
     private boolean _interrupted;
     private boolean _submitted;
     private int _errors;
-    private List<PipelineAction> _actions = new ArrayList<PipelineAction>();
+    private List<RecordedAction> _actions = new ArrayList<RecordedAction>();
 
     private String _loggerLevel = Level.DEBUG.toString();
     protected transient Logger _logger;
@@ -167,7 +168,7 @@ abstract public class PipelineJob extends Job implements Serializable
     private transient boolean _settingStatus;
     private transient PipelineQueue _queue;
 
-    public PipelineJob(String provider, ViewBackgroundInfo info) throws SQLException
+    public PipelineJob(String provider, ViewBackgroundInfo info)
     {
         _info = info;
         _provider = provider;
@@ -178,10 +179,17 @@ abstract public class PipelineJob extends Job implements Serializable
         if (info.getUrlHelper() != null)
         {
             Container c = info.getContainer();
-            PipeRoot pr = PipelineService.get().findPipelineRoot(c);
-            if (pr == null)
-                throw new SQLException("Failed to find pipeline root for " + c.getPath());
-            _rootURI = pr.getUri();
+            try
+            {
+                PipeRoot pr = PipelineService.get().findPipelineRoot(c);
+                if (pr == null)
+                    throw new IllegalStateException("Failed to find pipeline root for " + c.getPath());
+                _rootURI = pr.getUri();
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
         }
     }
 
@@ -560,7 +568,7 @@ abstract public class PipelineJob extends Job implements Serializable
                     return; // Bad task key.
 
                 setActiveTaskStatus(TaskStatus.running);
-                List<PipelineAction> actions = task.run();
+                List<RecordedAction> actions = task.run();
                 _actions.addAll(actions);
 
                 _started = true;
@@ -1258,6 +1266,17 @@ abstract public class PipelineJob extends Job implements Serializable
         setErrors(getErrors() + 1);
         if (getLogger() != null)
             getLogger().error(message, t);
+    }
+
+    public void debug(String message)
+    {
+        debug(message, null);
+    }
+
+    public void debug(String message, Throwable t)
+    {
+        if (getLogger() != null)
+            getLogger().debug(message, t);
     }
 
     public void warn(String message)

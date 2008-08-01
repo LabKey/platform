@@ -18,6 +18,7 @@ package org.labkey.api.exp;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CaseInsensitiveHashMap;
@@ -43,6 +44,22 @@ public class XarContext
 
     private final Map<String, String> _substitutions;
 
+    private static final String XAR_FILE_ID_NAME = "XarFileId";
+    private static final String EXPERIMENT_RUN_ID_NAME = "ExperimentRun.RowId";
+    private static final String CONTAINER_ID_NAME = "Container.RowId";
+    private static final String FOLDER_LSID_BASE_NAME = "FolderLSIDBase";
+    private static final String RUN_LSID_BASE_NAME = "RunLSIDBase";
+    private static final String LSID_AUTHORITY_NAME = "LSIDAuthority";
+
+    public static final String XAR_FILE_ID_SUBSTITUTION = createSubstitution(XAR_FILE_ID_NAME);
+    public static final String EXPERIMENT_RUN_ID_SUBSTITUTION = createSubstitution(EXPERIMENT_RUN_ID_NAME);
+    public static final String CONTAINER_ID_SUBSTITUTION = createSubstitution(CONTAINER_ID_NAME);
+    public static final String FOLDER_LSID_BASE_SUBSTITUTION = createSubstitution(FOLDER_LSID_BASE_NAME);
+    public static final String RUN_LSID_BASE_SUBSTITUTION = createSubstitution(RUN_LSID_BASE_NAME);
+    public static final String LSID_AUTHORITY_SUBSTITUTION = createSubstitution(LSID_AUTHORITY_NAME);
+    private static final String EXPERIMENT_RUN_LSID_NAME = "ExperimentRun.LSID";
+    private static final String EXPERIMENT_RUN_NAME_NAME = "ExperimentRun.Name";
+
     public XarContext(XarContext parent)
     {
         _jobDescription = parent._jobDescription;
@@ -66,15 +83,15 @@ public class XarContext
         path = path.replace('/', '.');
 
         _substitutions.put("Container.path", path);
-        _substitutions.put("Container.RowId", Integer.toString(c.getRowId()));
+        _substitutions.put(CONTAINER_ID_NAME, Integer.toString(c.getRowId()));
 
-        _substitutions.put("XarFileId", "Xar-" + GUID.makeGUID());
+        _substitutions.put(XAR_FILE_ID_NAME, "Xar-" + GUID.makeGUID());
         _substitutions.put("UserEmail", user.getEmail());
         _substitutions.put("UserName", user.getFullName());
-        _substitutions.put("FolderLSIDBase", "urn:lsid:${LSIDAuthority}:${LSIDNamespace.Prefix}.Folder-${Container.RowId}");
-        _substitutions.put("RunLSIDBase", "urn:lsid:${LSIDAuthority}:${LSIDNamespace.Prefix}.Run-${ExperimentRun.RowId}");
+        _substitutions.put(FOLDER_LSID_BASE_NAME, "urn:lsid:" + LSID_AUTHORITY_SUBSTITUTION + ":${LSIDNamespace.Prefix}.Folder-" + CONTAINER_ID_SUBSTITUTION);
+        _substitutions.put(RUN_LSID_BASE_NAME, "urn:lsid:" + LSID_AUTHORITY_SUBSTITUTION + ":${LSIDNamespace.Prefix}.Run-" + EXPERIMENT_RUN_ID_SUBSTITUTION);
 
-        _substitutions.put("LSIDAuthority", AppProps.getInstance().getDefaultLsidAuthority());
+        _substitutions.put(LSID_AUTHORITY_NAME, AppProps.getInstance().getDefaultLsidAuthority());
     }
     
     public String getJobDescription()
@@ -195,5 +212,17 @@ public class XarContext
     public void addSubstitution(String name, String value)
     {
         _substitutions.put(name, value);
+    }
+
+    public void setCurrentRun(ExpRun run)
+    {
+        addSubstitution(EXPERIMENT_RUN_ID_NAME, Integer.toString(run.getRowId()));
+        addSubstitution(EXPERIMENT_RUN_LSID_NAME, run.getLSID());
+        addSubstitution(EXPERIMENT_RUN_NAME_NAME, run.getName());
+    }
+
+    public static String createSubstitution(String name)
+    {
+        return "${" + name + "}";
     }
 }

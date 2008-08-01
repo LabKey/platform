@@ -92,10 +92,7 @@ public abstract class AbstractParticipantVisitResolver implements ParticipantVis
         ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
         if (material == null)
         {
-            material = ExperimentService.get().createExpMaterial();
-            material.setContainer(runContainer);
-            material.setLSID(lsid);
-            material.setName(name);
+            material = ExperimentService.get().createExpMaterial(runContainer, lsid, name);
         }
         return material;
     }

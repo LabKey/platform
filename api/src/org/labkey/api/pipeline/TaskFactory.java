@@ -28,7 +28,7 @@ import java.util.List;
  *
  * @author brendanx
  */
-public interface TaskFactory extends ClusterSettings
+public interface TaskFactory<SettingsType extends TaskFactorySettings> extends ClusterSettings
 {
     TaskId getId();
 
@@ -36,13 +36,22 @@ public interface TaskFactory extends ClusterSettings
 
     PipelineJob.Task createTask(PipelineJob job);
 
-    TaskFactory cloneAndConfigure(TaskFactorySettings settings) throws CloneNotSupportedException;
+    TaskFactory cloneAndConfigure(SettingsType settings) throws CloneNotSupportedException;
 
     FileType[] getInputTypes();
 
-    List<String> getActionNames();
+    /**
+     * All of the ProtocolAction names that this task may include when it runs. It need not execute all of them for
+     * each invocation.
+     * These names are used to build up a full Experiment Protocol for each pipeline to which this tasks belongs.
+     */
+    List<String> getProtocolActionNames();
 
+    /** The name of the status to be shown when this task is running, waiting, etc */
     String getStatusName();
+
+    /** The prefix for a parameter group. Used to collect task-specific properties like Globus configuration overrides */
+    String getGroupParameterName();
 
     boolean isJoin();
 

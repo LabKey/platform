@@ -18,6 +18,7 @@ package org.labkey.api.exp;
 
 import org.fhcrc.cpas.exp.xml.ExperimentArchiveDocument;
 import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.pipeline.PipelineJob;
 import org.apache.xmlbeans.XmlException;
 
 import java.io.IOException;
@@ -31,6 +32,11 @@ import java.io.File;
 public abstract class AbstractFileXarSource extends XarSource
 {
     protected File _xmlFile;
+
+    public AbstractFileXarSource(PipelineJob job)
+    {
+        super(job);
+    }
 
     public ExperimentArchiveDocument getDocument() throws XmlException, IOException
     {
@@ -75,7 +81,11 @@ public abstract class AbstractFileXarSource extends XarSource
         }
 
         File xarDirectory = getRoot();
-        File dataFile = new File(xarDirectory, dataFileURL);
+        File dataFile = new File(dataFileURL);
+        if (!dataFile.isAbsolute())
+        {
+            dataFile = new File(xarDirectory, dataFileURL);
+        }
         try
         {
             return dataFile.getCanonicalFile().toURI().toString();
