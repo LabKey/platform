@@ -1353,7 +1353,7 @@ public class SecurityController extends SpringActionController
 
     public static class GetGroupPermsForm
     {
-        private boolean _includeSubfolders = true;
+        private boolean _includeSubfolders = false;
 
         public boolean isIncludeSubfolders()
         {
@@ -1433,6 +1433,136 @@ public class SecurityController extends SpringActionController
             }
 
             return groupsPerms;
+        }
+    }
+
+    public static class GetUserPermsForm
+    {
+        private Integer _userId;
+        private String _userEmail;
+        private boolean _includeSubfolders = false;
+
+        public Integer getUserId()
+        {
+            return _userId;
+        }
+
+        public void setUserId(Integer userId)
+        {
+            _userId = userId;
+        }
+
+        public String getUserEmail()
+        {
+            return _userEmail;
+        }
+
+        public void setUserEmail(String userEmail)
+        {
+            _userEmail = userEmail;
+        }
+
+        public boolean isIncludeSubfolders()
+        {
+            return _includeSubfolders;
+        }
+
+        public void setIncludeSubfolders(boolean includeSubfolders)
+        {
+            _includeSubfolders = includeSubfolders;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class GetUserPermsAction extends ApiAction<GetUserPermsForm>
+    {
+        public ApiResponse execute(GetUserPermsForm form, BindException errors) throws Exception
+        {
+            //need either userid or user email name
+            if(null == form.getUserId() && null == form.getUserEmail())
+                throw new IllegalArgumentException("You must provide either a userId or a userEmail parameter!");
+
+            User user = null;
+            if(null != form.getUserId())
+                user = UserManager.getUser(form.getUserId().intValue());
+            if(null == user)
+                user = UserManager.getUser(new ValidEmail(form.getUserEmail()));
+
+            if(null == user)
+                throw new IllegalArgumentException("No user found that matches specified userId or email address");
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            Map<String,Object> userInfo = new HashMap<String,Object>();
+            userInfo.put("userId", user.getUserId());
+            userInfo.put("displayName", user.getDisplayName(getViewContext()));
+            response.put("user", userInfo);
+
+            response.put("container", getContainerPerms(getViewContext().getContainer(), user, form.isIncludeSubfolders()));
+            return response;
+        }
+
+        protected Map<String,Object> getContainerPerms(Container container, User user, boolean recurse)
+        {
+            Map<String,Object> permsInfo = new HashMap<String,Object>();
+
+            //add container info
+            permsInfo.put("id", container.getId());
+            permsInfo.put("name", container.getName());
+            permsInfo.put("path", container.getPath());
+
+            //add user's effective permissions
+            ACL acl = container.getAcl();
+            int perms = acl.getPermissions(user);
+            permsInfo.put("permissions", perms);
+
+            //see if those match a given role name
+            SecurityManager.PermissionSet role = SecurityManager.PermissionSet.findPermissionSet(perms);
+            if(null != role)
+            {
+                permsInfo.put("role", role.toString());
+                permsInfo.put("roleLabel", role.getLabel());
+            }
+            else
+            {
+                permsInfo.put("role", "Mixed");
+                permsInfo.put("roleLabel", "(Mixed)");
+            }
+
+            //add all groups the user belongs to in this container
+            List<Group> groups = SecurityManager.getGroups(container, user);
+            List<Map<String,Object>> groupsInfo = new ArrayList<Map<String,Object>>();
+            for(Group group : groups)
+            {
+                Map<String,Object> groupInfo = new HashMap<String,Object>();
+                groupInfo.put("id", group.getUserId());
+                groupInfo.put("name", SecurityManager.getDisambiguatedGroupName(group));
+
+                int groupPerms = acl.getPermissions(group);
+                groupInfo.put("permissions", groupPerms);
+
+                SecurityManager.PermissionSet groupRole = SecurityManager.PermissionSet.findPermissionSet(groupPerms);
+                if(null != groupRole)
+                {
+                    groupInfo.put("role", groupRole.toString());
+                    groupInfo.put("roleLabel", groupRole.getLabel());
+                }
+
+                groupsInfo.add(groupInfo);
+            }
+            permsInfo.put("groups", groupsInfo);
+
+            //recurse children if desired
+            if(recurse && container.hasChildren())
+            {
+                List<Map<String,Object>> childPerms = new ArrayList<Map<String,Object>>();
+                for(Container child : container.getChildren())
+                    childPerms.add(getContainerPerms(child, user, recurse));
+
+                permsInfo.put("children", childPerms);
+            }
+
+            return permsInfo;
         }
     }
 
