@@ -202,9 +202,21 @@ public class ApiQueryResponse implements ApiResponse
         if (dc.getDescription() != null)
             colModel.put("tooltip", dc.getDescription());
         if (dc.getWidth() != null)
-            colModel.put("width", dc.getWidth());
+        {
+            try
+            {
+                //try to parse as integer (which is what Ext wants)
+                colModel.put("width", Integer.parseInt(dc.getWidth()));
+            }
+            catch(NumberFormatException e)
+            {
+                //include it as a string
+                colModel.put("width", dc.getWidth());
+            }
+        }
         if(isEditable(dc) && null != colInfo.getDefaultValue())
             colModel.put("defaultValue", colInfo.getDefaultValue());
+        colModel.put("scale", dc.getColumnInfo().getScale());
         return colModel;
     }
 
