@@ -231,6 +231,43 @@ LABKEY.Security = new function()
                 success: getCallbackWrapper(config.successCallback, config.scope),
                 failure: getCallbackWrapper(config.errorCallback, config.scope)
             });
+        },
+
+        /**
+         * Returns the container tree under the current container (or the container specified in
+         * config.containerPath).
+         * @param config A configuration object with the following properties
+         * @param {boolean} [config.includeSubfolders] If set to true, the entire branch of containers will be returned.
+         * If false, only the immediate children of the starting container will be returned (defaults to false).
+         * @param {function} config.successsCallback A reference to a function to call with the API results. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>containersInfo:</b> an object with a property called 'containers', which is a tree of container information.</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
+         * the current container path will be used.
+         * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         */
+        getContainers : function(config)
+        {
+            var params = {};
+            if(undefined != config.includeSubfolders)
+                params.includeSubfolders = config.includeSubfolders
+
+            Ext.Ajax.request({
+                url: LABKEY.ActionURL.buildURL("project", "getContainers", config.containerPath),
+                method : 'GET',
+                params: params,
+                success: getCallbackWrapper(config.successCallback, config.scope),
+                failure: getCallbackWrapper(config.errorCallback, config.scope)
+            });
         }
 
     }
