@@ -1118,6 +1118,33 @@ public class SecurityManager
         return getProjectMembers(c, false);
     }
 
+    /**
+     * Returns a list of Group object to which the user belongs in the specified container.
+     * @param c The container
+     * @param u The user
+     * @return The list of groups that u belong to in container c
+     */
+    public static List<Group> getGroups(Container c, User u)
+    {
+        Container proj = null != c.getProject() ? c.getProject() : c;
+        int[] groupIds = u.getGroups();
+
+        List<Group> groupList = new ArrayList<Group>();
+        for (int groupId : groupIds)
+        {
+            //ignore user as group
+            if (groupId != u.getUserId())
+            {
+                Group g = SecurityManager.getGroup(groupId);
+
+                // Only global groups or groups in this project
+                if (null == g.getContainer() || g.getContainer().equals(proj.getId()))
+                    groupList.add(g);
+            }
+        }
+
+        return groupList;
+    }
 
     // Returns common separated list of group names this user belongs to in this container
     public static String getGroupList(Container c, User u)
