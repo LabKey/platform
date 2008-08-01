@@ -23,6 +23,7 @@ import org.apache.xmlbeans.XmlOptions;
 import org.fhcrc.cpas.exp.xml.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.Domain;
@@ -108,7 +109,7 @@ public class XarExporter
         this._xarXmlFileName = fileName;
     }
 
-    public void addExperimentRun(ExpRunImpl run) throws SQLException, ExperimentException
+    public void addExperimentRun(ExpRunImpl run) throws ExperimentException
     {
         if (_experimentRunLSIDs.contains(run.getLSID()))
         {
@@ -145,7 +146,7 @@ public class XarExporter
         {
             xRun.setProperties(properties);
         }
-        Protocol protocol = run.getProtocol().getDataObject();
+        ExpProtocolImpl protocol = run.getProtocol();
         xRun.setProtocolLSID(_lsidRelativizer.relativize(protocol.getLSID(), _relativizedLSIDs));
 
         addProtocol(protocol, true);
@@ -179,7 +180,7 @@ public class XarExporter
                 _inputMaterialLSIDs.add(material.getLSID());
 
                 MaterialBaseType xMaterial = inputDefs.addNewMaterial();
-                populateMaterial(xMaterial, material);
+                populateMaterial(xMaterial, new ExpMaterialImpl(material));
             }
         }
 
@@ -191,127 +192,129 @@ public class XarExporter
 
         for (ExpProtocolApplication application : applications)
         {
-            ProtocolApplicationBaseType xApplication = xApplications.addNewProtocolApplication();
-            xApplication.setAbout(_lsidRelativizer.relativize(application.getLSID(), _relativizedLSIDs));
-            xApplication.setActionSequence(application.getActionSequence());
-            Date activityDate = application.getActivityDate();
-            if (activityDate != null)
-            {
-                Calendar cal = new GregorianCalendar();
-                cal.setTime(application.getActivityDate());
-                xApplication.setActivityDate(cal);
-            }
-            if (application.getComments() != null)
-            {
-                xApplication.setComments(application.getComments());
-            }
-            xApplication.setCpasType(application.getCpasType());
-
-            InputOutputRefsType inputRefs = null;
-            Data[] inputDataRefs = ExperimentServiceImpl.get().getDataInputReferencesForApplication(application.getRowId());
-            DataInput[] dataInputs = ExperimentServiceImpl.get().getDataInputsForApplication(application.getRowId());
-            for (Data data : inputDataRefs)
-            {
-                if (inputRefs == null)
-                {
-                    inputRefs = xApplication.addNewInputRefs();
-                }
-                InputOutputRefsType.DataLSID dataLSID = inputRefs.addNewDataLSID();
-                dataLSID.setStringValue(_lsidRelativizer.relativize(data.getLSID(), _relativizedLSIDs));
-                String roleName = null;
-                for (DataInput dataInput : dataInputs)
-                {
-                    if (dataInput.getDataId() == data.getRowId() && dataInput.getPropertyId() != null)
-                    {
-                        for (PropertyDescriptor descriptor : dataInputRoles.values())
-                        {
-                            if (descriptor.getPropertyId() == dataInput.getPropertyId().intValue())
-                            {
-                                roleName = descriptor.getName();
-                            }
-                        }
-                    }
-                }
-                if (roleName != null)
-                {
-                    dataLSID.setRoleName(roleName);
-                }
-            }
-
-            Material[] inputMaterial = ExperimentServiceImpl.get().getMaterialInputReferencesForApplication(application.getRowId());
-            MaterialInput[] materialInputs = ExperimentServiceImpl.get().getMaterialInputsForApplication(application.getRowId());
-            for (Material material : inputMaterial)
-            {
-                if (inputRefs == null)
-                {
-                    inputRefs = xApplication.addNewInputRefs();
-                }
-                InputOutputRefsType.MaterialLSID materialLSID = inputRefs.addNewMaterialLSID();
-                materialLSID.setStringValue(_lsidRelativizer.relativize(material.getLSID(), _relativizedLSIDs));
-
-                String roleName = null;
-                for (MaterialInput materialInput : materialInputs)
-                {
-                    if (materialInput.getMaterialId() == material.getRowId() && materialInput.getPropertyId() != null)
-                    {
-                        for (PropertyDescriptor descriptor : materialInputRoles.values())
-                        {
-                            if (descriptor.getPropertyId() == materialInput.getPropertyId().intValue())
-                            {
-                                roleName = descriptor.getName();
-                            }
-                        }
-                    }
-                }
-                if (roleName != null)
-                {
-                    materialLSID.setRoleName(roleName);
-                }
-            }
-
-            xApplication.setName(application.getName());
-
-            ProtocolApplicationBaseType.OutputDataObjects outputDataObjects = xApplication.addNewOutputDataObjects();
-            Data[] outputData = ExperimentServiceImpl.get().getOutputDataForApplication(application.getRowId());
-            if (outputData.length > 0)
-            {
-                for (Data data : outputData)
-                {
-                    DataBaseType xData = outputDataObjects.addNewData();
-                    populateData(xData, data, run.getDataObject());
-                }
-            }
-
-            ProtocolApplicationBaseType.OutputMaterials outputMaterialObjects = xApplication.addNewOutputMaterials();
-            Material[] outputMaterials = ExperimentServiceImpl.get().getOutputMaterialForApplication(application.getRowId());
-            if (outputMaterials.length > 0)
-            {
-                for (Material material : outputMaterials)
-                {
-                    MaterialBaseType xMaterial = outputMaterialObjects.addNewMaterial();
-                    populateMaterial(xMaterial, material);
-                }
-            }
-
-            PropertyCollectionType appProperties = getProperties(application.getLSID(), run.getContainer());
-            if (appProperties != null)
-            {
-                xApplication.setProperties(appProperties);
-            }
-
-            ProtocolApplicationParameter[] parameters = ExperimentService.get().getProtocolApplicationParameters(application.getRowId());
-            if (parameters != null)
-            {
-                SimpleValueCollectionType xParameters = xApplication.addNewProtocolApplicationParameters();
-                for (ProtocolApplicationParameter parameter : parameters)
-                {
-                    SimpleValueType xValue = xParameters.addNewSimpleVal();
-                    populateXmlBeanValue(xValue, parameter);
-                }
-            }
-
-            xApplication.setProtocolLSID(_lsidRelativizer.relativize(application.getProtocol().getLSID(), _relativizedLSIDs));
+            addProtocolApplication(application, run, xApplications, dataInputRoles, materialInputRoles);
         }
+    }
+
+    private void addProtocolApplication(ExpProtocolApplication application, ExpRunImpl run, ExperimentRunType.ProtocolApplications xApplications, Map<String, PropertyDescriptor> dataInputRoles, Map<String, PropertyDescriptor> materialInputRoles)
+        throws ExperimentException
+    {
+        ProtocolApplicationBaseType xApplication = xApplications.addNewProtocolApplication();
+        xApplication.setAbout(_lsidRelativizer.relativize(application.getLSID(), _relativizedLSIDs));
+        xApplication.setActionSequence(application.getActionSequence());
+        Date activityDate = application.getActivityDate();
+        if (activityDate != null)
+        {
+            Calendar cal = new GregorianCalendar();
+            cal.setTime(application.getActivityDate());
+            xApplication.setActivityDate(cal);
+        }
+        if (application.getComments() != null)
+        {
+            xApplication.setComments(application.getComments());
+        }
+        xApplication.setCpasType(application.getCpasType());
+
+        InputOutputRefsType inputRefs = null;
+        Data[] inputDataRefs = ExperimentServiceImpl.get().getDataInputReferencesForApplication(application.getRowId());
+        DataInput[] dataInputs = ExperimentServiceImpl.get().getDataInputsForApplication(application.getRowId());
+        for (Data data : inputDataRefs)
+        {
+            if (inputRefs == null)
+            {
+                inputRefs = xApplication.addNewInputRefs();
+            }
+            InputOutputRefsType.DataLSID dataLSID = inputRefs.addNewDataLSID();
+            dataLSID.setStringValue(_lsidRelativizer.relativize(data.getLSID(), _relativizedLSIDs));
+            String roleName = null;
+            for (DataInput dataInput : dataInputs)
+            {
+                if (dataInput.getDataId() == data.getRowId() && dataInput.getPropertyId() != null)
+                {
+                    for (PropertyDescriptor descriptor : dataInputRoles.values())
+                    {
+                        if (descriptor.getPropertyId() == dataInput.getPropertyId().intValue())
+                        {
+                            roleName = descriptor.getName();
+                        }
+                    }
+                }
+            }
+            if (roleName != null)
+            {
+                dataLSID.setRoleName(roleName);
+            }
+        }
+
+        Material[] inputMaterial = ExperimentServiceImpl.get().getMaterialInputReferencesForApplication(application.getRowId());
+        MaterialInput[] materialInputs = ExperimentServiceImpl.get().getMaterialInputsForApplication(application.getRowId());
+        for (Material material : inputMaterial)
+        {
+            if (inputRefs == null)
+            {
+                inputRefs = xApplication.addNewInputRefs();
+            }
+            InputOutputRefsType.MaterialLSID materialLSID = inputRefs.addNewMaterialLSID();
+            materialLSID.setStringValue(_lsidRelativizer.relativize(material.getLSID(), _relativizedLSIDs));
+
+            String roleName = null;
+            for (MaterialInput materialInput : materialInputs)
+            {
+                if (materialInput.getMaterialId() == material.getRowId() && materialInput.getPropertyId() != null)
+                {
+                    for (PropertyDescriptor descriptor : materialInputRoles.values())
+                    {
+                        if (descriptor.getPropertyId() == materialInput.getPropertyId().intValue())
+                        {
+                            roleName = descriptor.getName();
+                        }
+                    }
+                }
+            }
+            if (roleName != null)
+            {
+                materialLSID.setRoleName(roleName);
+            }
+        }
+
+        xApplication.setName(application.getName());
+
+        ProtocolApplicationBaseType.OutputDataObjects outputDataObjects = xApplication.addNewOutputDataObjects();
+        Data[] outputData = ExperimentServiceImpl.get().getOutputDataForApplication(application.getRowId());
+        if (outputData.length > 0)
+        {
+            for (Data data : outputData)
+            {
+                DataBaseType xData = outputDataObjects.addNewData();
+                populateData(xData, data, run.getDataObject());
+            }
+        }
+
+        ProtocolApplicationBaseType.OutputMaterials outputMaterialObjects = xApplication.addNewOutputMaterials();
+        for (ExpMaterial material : application.getOutputMaterials())
+        {
+            MaterialBaseType xMaterial = outputMaterialObjects.addNewMaterial();
+            populateMaterial(xMaterial, material);
+        }
+
+        PropertyCollectionType appProperties = getProperties(application.getLSID(), run.getContainer());
+        if (appProperties != null)
+        {
+            xApplication.setProperties(appProperties);
+        }
+
+        ProtocolApplicationParameter[] parameters = ExperimentService.get().getProtocolApplicationParameters(application.getRowId());
+        if (parameters != null)
+        {
+            SimpleValueCollectionType xParameters = xApplication.addNewProtocolApplicationParameters();
+            for (ProtocolApplicationParameter parameter : parameters)
+            {
+                SimpleValueType xValue = xParameters.addNewSimpleVal();
+                populateXmlBeanValue(xValue, parameter);
+            }
+        }
+
+        xApplication.setProtocolLSID(_lsidRelativizer.relativize(application.getProtocol().getLSID(), _relativizedLSIDs));
     }
 
     private void populateXmlBeanValue(SimpleValueType xValue, AbstractParameter param)
@@ -340,23 +343,22 @@ public class XarExporter
         }
     }
 
-    private void populateMaterial(MaterialBaseType xMaterial, Material material)
-            throws SQLException, ExperimentException
+    private void populateMaterial(MaterialBaseType xMaterial, ExpMaterial material) throws ExperimentException
     {
         logProgress("Adding material " + material.getLSID());
         addSampleSet(material.getCpasType());
         xMaterial.setAbout(_lsidRelativizer.relativize(material.getLSID(), _relativizedLSIDs));
         xMaterial.setCpasType(material.getCpasType() == null ? "Material" : _lsidRelativizer.relativize(material.getCpasType(), _relativizedLSIDs));
         xMaterial.setName(material.getName());
-        PropertyCollectionType materialProperties = getProperties(material.getLSID(), ContainerManager.getForId(material.getContainer()));
+        PropertyCollectionType materialProperties = getProperties(material.getLSID(), material.getContainer());
         if (materialProperties != null)
         {
             xMaterial.setProperties(materialProperties);
         }
-        String sourceProtocolLSID = _lsidRelativizer.relativize(material.getSourceProtocolLSID(), _relativizedLSIDs);
-        if (sourceProtocolLSID != null)
+        ExpProtocol sourceProtocol = material.getSourceProtocol();
+        if (sourceProtocol != null)
         {
-            xMaterial.setSourceProtocolLSID(sourceProtocolLSID);
+            xMaterial.setSourceProtocolLSID(_lsidRelativizer.relativize(sourceProtocol.getLSID(), _relativizedLSIDs));
         }
     }
 
@@ -480,7 +482,7 @@ public class XarExporter
         return properties;
     }
 
-    private void populateData(DataBaseType xData, Data data, ExperimentRun run) throws SQLException, ExperimentException
+    private void populateData(DataBaseType xData, Data data, ExperimentRun run) throws ExperimentException
     {
         logProgress("Adding data " + data.getLSID());
         xData.setAbout(_lsidRelativizer.relativize(data.getLSID(), _relativizedLSIDs));
@@ -516,7 +518,7 @@ public class XarExporter
         }
     }
 
-    public void addProtocol(Protocol protocol, boolean includeChildren) throws SQLException, ExperimentException
+    public void addProtocol(ExpProtocol protocol, boolean includeChildren) throws ExperimentException
     {
         if (_protocolLSIDs.contains(protocol.getLSID()))
         {
@@ -533,8 +535,8 @@ public class XarExporter
         ProtocolBaseType xProtocol = protocolDefs.addNewProtocol();
 
         xProtocol.setAbout(_lsidRelativizer.relativize(protocol.getLSID(), _relativizedLSIDs));
-        xProtocol.setApplicationType(protocol.getApplicationType());
-        ContactType contactType = getContactType(protocol.getLSID(), ContainerManager.getForId(protocol.getContainer()));
+        xProtocol.setApplicationType(protocol.getApplicationType().toString());
+        ContactType contactType = getContactType(protocol.getLSID(), protocol.getContainer());
         if (contactType != null)
         {
             xProtocol.setContact(contactType);
@@ -544,7 +546,7 @@ public class XarExporter
             xProtocol.setInstrument(protocol.getInstrument());
         }
         xProtocol.setName(protocol.getName());
-        PropertyCollectionType properties = getProperties(protocol.getLSID(), ContainerManager.getForId(protocol.getContainer()), XarReader.CONTACT_PROPERTY);
+        PropertyCollectionType properties = getProperties(protocol.getLSID(), protocol.getContainer(), XarReader.CONTACT_PROPERTY);
         if (properties != null)
         {
             xProtocol.setProperties(properties);
@@ -611,9 +613,9 @@ public class XarExporter
 
         if (includeChildren)
         {
-            ProtocolAction[] protocolActions = ExperimentServiceImpl.get().getProtocolActions(protocol.getRowId());
+            List<ExpProtocolAction> protocolActions = protocol.getSteps();
 
-            if (protocolActions.length > 0)
+            if (protocolActions.size() > 0)
             {
                 ExperimentArchiveType.ProtocolActionDefinitions actionDefs = _archive.getProtocolActionDefinitions();
                 if (actionDefs == null)
@@ -623,7 +625,7 @@ public class XarExporter
 
                 ProtocolActionSetType actionSet = actionDefs.addNewProtocolActionSet();
                 actionSet.setParentProtocolLSID(_lsidRelativizer.relativize(protocol.getLSID(), _relativizedLSIDs));
-                for (ProtocolAction action : protocolActions)
+                for (ExpProtocolAction action : protocolActions)
                 {
                     addProtocolAction(action, actionSet);
                 }
@@ -631,14 +633,14 @@ public class XarExporter
         }
     }
 
-    private void addProtocolAction(ProtocolAction protocolAction, ProtocolActionSetType actionSet) throws SQLException, ExperimentException
+    private void addProtocolAction(ExpProtocolAction protocolAction, ProtocolActionSetType actionSet) throws ExperimentException
     {
-        Protocol protocol = ExperimentServiceImpl.get().getProtocol(protocolAction.getChildProtocolId());
-        Protocol parentProtocol = ExperimentServiceImpl.get().getProtocol(protocolAction.getParentProtocolId());
+        ExpProtocol protocol = protocolAction.getChildProtocol();
+        ExpProtocol parentProtocol = protocolAction.getParentProtocol();
         String lsid = protocol.getLSID();
 
         ProtocolActionType xProtocolAction = actionSet.addNewProtocolAction();
-        xProtocolAction.setActionSequence(protocolAction.getSequence());
+        xProtocolAction.setActionSequence(protocolAction.getActionSequence());
         xProtocolAction.setChildProtocolLSID(_lsidRelativizer.relativize(lsid, _relativizedLSIDs));
 
         ProtocolActionPredecessor[] predecessors = ExperimentServiceImpl.get().getProtocolActionPredecessors(parentProtocol.getLSID(), lsid);
@@ -694,15 +696,12 @@ public class XarExporter
         }
     }
 
-    private PropertyCollectionType getProperties(String lsid, Container parentContainer, String... ignoreProperties) throws SQLException, ExperimentException
+    private PropertyCollectionType getProperties(String lsid, Container parentContainer, String... ignoreProperties) throws ExperimentException
     {
-        Map<String, ObjectProperty> properties = OntologyManager.getPropertyObjects(lsid);
+        Map<String, ObjectProperty> properties = getObjectProperties(lsid);
 
         Set<String> ignoreSet = new HashSet<String>();
-        for (String ignore : ignoreProperties)
-        {
-            ignoreSet.add(ignore);
-        }
+        ignoreSet.addAll(Arrays.asList(ignoreProperties));
 
         PropertyCollectionType result = PropertyCollectionType.Factory.newInstance();
         boolean addedProperty = false;
@@ -797,6 +796,18 @@ public class XarExporter
         return result;
     }
 
+    private Map<String, ObjectProperty> getObjectProperties(String lsid)
+    {
+        try
+        {
+            return OntologyManager.getPropertyObjects(lsid);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
     public void dumpXML(OutputStream out) throws IOException, ExperimentException
     {
         XmlOptions validateOptions = new XmlOptions();
@@ -873,16 +884,16 @@ public class XarExporter
         }
     }
 
-    private ContactType getContactType(String parentLSID, Container parentContainer) throws SQLException, ExperimentException
+    private ContactType getContactType(String parentLSID, Container parentContainer) throws ExperimentException
     {
-        Map<String, Object> parentProperties = OntologyManager.getProperties(parentLSID);
+        Map<String, Object> parentProperties = getProperties(parentLSID);
         Object contactLSIDObject = parentProperties.get(XarReader.CONTACT_PROPERTY);
         if (!(contactLSIDObject instanceof String))
         {
             return null;
         }
         String contactLSID = (String)contactLSIDObject;
-        Map<String, Object> contactProperties = OntologyManager.getProperties(contactLSID);
+        Map<String, Object> contactProperties = getProperties(contactLSID);
 
         Object contactIdObject = contactProperties.get(XarReader.CONTACT_ID_PROPERTY);
         Object emailObject = contactProperties.get(XarReader.CONTACT_EMAIL_PROPERTY);
@@ -912,6 +923,18 @@ public class XarExporter
             contactType.setProperties(properties);
         }
         return contactType;
+    }
+
+    private Map<String, Object> getProperties(String contactLSID)
+    {
+        try
+        {
+            return OntologyManager.getProperties(contactLSID);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     public Document getDOMDocument()

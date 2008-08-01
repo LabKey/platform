@@ -16,9 +16,7 @@
 
 package org.labkey.experiment.xar;
 
-import org.apache.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.*;
-import org.labkey.api.data.Container;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.xar.Replacer;
@@ -27,7 +25,7 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.security.User;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.common.util.Pair;
 import org.labkey.experiment.api.*;
 
@@ -55,10 +53,10 @@ public class XarExpander extends AbstractXarImporter
     public static final String OUTPUT_MATERIAL_PER_INSTANCE_EXPRESSION_PARAMETER = "terms.fhcrc.org#XarTemplate.OutputMaterialPerInstanceExpression";
     public static final String OUTPUT_DATA_PER_INSTANCE_EXPRESSION_PARAMETER = "terms.fhcrc.org#XarTemplate.OutputDataPerInstanceExpression";
 
-    public XarExpander(Logger log, XarSource source, Container container,
-                       ExperimentRun run, List<Data> startingData, List<ExpMaterial> startingMaterials, ExperimentArchiveType experimentArchive, User user)
+    public XarExpander(XarSource source, PipelineJob job,
+                       ExperimentRun run, List<Data> startingData, List<ExpMaterial> startingMaterials, ExperimentArchiveType experimentArchive)
     {
-        super(source, container, log, user);
+        super(source, job);
 
         _run = run;
         _startingData = startingData;
@@ -152,7 +150,7 @@ public class XarExpander extends AbstractXarImporter
                 // check to see it divides evenly
                 if ((instanceCnt * maxInputMaterialsPerInstance) != predecessorMaterialsOutput.size())
                 {
-                    _log.warn("Step number " + step.getActionSequenceRef() + " protocol " + pbStep.stepProtocolLSID
+                    getLog().warn("Step number " + step.getActionSequenceRef() + " protocol " + pbStep.stepProtocolLSID
                             + ". Material inputs don't divide evenly into instances.  Number of instances rounded up.");
                     instanceCnt ++;
                 }
@@ -181,7 +179,7 @@ public class XarExpander extends AbstractXarImporter
                 // check to see it divides evenly
                 if ((instanceCnt * maxInputDataPerInstance) != predecessorDataOutput.size())
                 {
-                    _log.warn("Step number " + step.getActionSequenceRef() + " protocol " + pbStep.stepProtocolLSID
+                    getLog().warn("Step number " + step.getActionSequenceRef() + " protocol " + pbStep.stepProtocolLSID
                             + ". Data inputs don't divide evenly into instances. ");
                     instanceCnt ++;
                 }
@@ -305,7 +303,7 @@ public class XarExpander extends AbstractXarImporter
         {
             String declaredType = (inputDataLSID.isSetCpasType() ? inputDataLSID.getCpasType() : "Data");
             checkDataCpasType(declaredType);
-            String lsid = LsidUtils.resolveLsidFromTemplate(inputDataLSID.getStringValue(), context, declaredType, new AutoFileLSIDReplacer(inputDataLSID.getDataFileUrl(), _container, _xarSource));
+            String lsid = LsidUtils.resolveLsidFromTemplate(inputDataLSID.getStringValue(), context, declaredType, new AutoFileLSIDReplacer(inputDataLSID.getDataFileUrl(), getContainer(), _xarSource));
             inputDataLSID.setStringValue(lsid);
 
             if (pbStep.stepProtocolLSID.equals(_run.getProtocolLSID()))
@@ -390,7 +388,7 @@ public class XarExpander extends AbstractXarImporter
         else
         {
              if (cpasType != null && !"ProtocolApplication".equals(cpasType) && !"ExperimentRun".equals(cpasType) && !"ExperimentRunOutput".equals(cpasType))
-                _log.warn("Unrecognized ApplicationType '" + cpasType + "' found in Protocol definition.");
+                getLog().warn("Unrecognized ApplicationType '" + cpasType + "' found in Protocol definition.");
         }
     }
 
@@ -567,7 +565,7 @@ public class XarExpander extends AbstractXarImporter
         }
 
         String outputName = LsidUtils.resolveNameFromTemplate(pbStep.getOutputDataNameTemplate(effectiveParameters), context, fileResolver);
-        String outputLSID = LsidUtils.resolveLsidFromTemplate(pbStep.getOutputDataLSIDTemplate(effectiveParameters), context, outputType, new Replacer.CompoundReplacer(fileResolver, new AutoFileLSIDReplacer(outputUrl, _container, _xarSource)));
+        String outputLSID = LsidUtils.resolveLsidFromTemplate(pbStep.getOutputDataLSIDTemplate(effectiveParameters), context, outputType, new Replacer.CompoundReplacer(fileResolver, new AutoFileLSIDReplacer(outputUrl, getContainer(), _xarSource)));
         DataBaseType xbData = xbProtApp.getOutputDataObjects().addNewData();
         if (outputLSID == null)
         {
@@ -653,7 +651,7 @@ public class XarExpander extends AbstractXarImporter
                 throw new XarFormatException("Parameter not declared :  " + ontologyEntryURI);
 
             ProtocolParameter param = new ProtocolParameter();
-            param.setXMLBeanValue(value, _log);
+            param.setXMLBeanValue(value, getLog());
             mValues.put(param.getOntologyEntryURI(), param);
         }
     }

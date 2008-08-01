@@ -23,6 +23,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.experiment.api.property.DomainImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.fhcrc.cpas.exp.xml.ExperimentArchiveType;
@@ -39,27 +40,23 @@ import java.sql.SQLException;
  */
 public abstract class AbstractXarImporter
 {
-    protected final Logger _log;
     protected final XarSource _xarSource;
-    protected final Container _container;
+    protected final PipelineJob _job;
     protected ExperimentArchiveType _experimentArchive;
-    protected final User _user;
 
     protected Map<String, Domain> _loadedDomains = new HashMap<String, Domain>();
 
-    public AbstractXarImporter(XarSource source, Container targetContainer, Logger logger, User user)
+    public AbstractXarImporter(XarSource source, PipelineJob job)
     {
         _xarSource = source;
-        _container = targetContainer;
-        _log = logger;
-        _user = user;
+        _job = job;
     }
 
     protected void checkDataCpasType(String declaredType)
     {
         if (declaredType != null && !"Data".equals(declaredType))
         {
-            _log.warn("Unrecognized CpasType '" + declaredType + "' loaded for Data object.");
+            _job.getLogger().warn("Unrecognized CpasType '" + declaredType + "' loaded for Data object.");
         }
     }
 
@@ -72,7 +69,7 @@ public abstract class AbstractXarImporter
                 return;
             }
 
-            _log.warn("Unrecognized CpasType '" + declaredType + "' loaded for Material object.");
+            _job.getLogger().warn("Unrecognized CpasType '" + declaredType + "' loaded for Material object.");
         }
     }
 
@@ -83,4 +80,9 @@ public abstract class AbstractXarImporter
             logger.warn("Unrecognized CpasType '" + cpasType + "' loaded for ProtocolApplication object.");
         }
     }
+
+    protected User getUser() { return _job.getUser(); }
+    protected Logger getLog() { return _job.getLogger(); }
+    protected Container getContainer() { return _job.getContainer(); }
+    protected XarContext getRootContext() { return _xarSource.getXarContext(); }
 }

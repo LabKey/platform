@@ -27,9 +27,6 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.pipeline.PipeRoot;
-import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
@@ -62,11 +59,8 @@ public class XarReader extends AbstractXarImporter
 
     private List<DeferredDataLoad> _deferredDataLoads = new ArrayList<DeferredDataLoad>();
 
-    private final XarContext _xarContext;
-
     private List<ExpRun> _loadedRuns = new ArrayList<ExpRun>();
 
-    protected final PipelineJob _job;
     public static final String CONTACT_PROPERTY = "terms.fhcrc.org#Contact";
     public static final String CONTACT_ID_PROPERTY = "terms.fhcrc.org#ContactId";
     public static final String CONTACT_EMAIL_PROPERTY = "terms.fhcrc.org#Email";
@@ -79,12 +73,8 @@ public class XarReader extends AbstractXarImporter
 
     public XarReader(XarSource source, PipelineJob job)
     {
-        super(source, job.getContainer(), job.getLogger(), job.getUser());
-        _xarContext = new XarContext(job.getDescription(), job.getContainer(), job.getUser());
-        _job = job;
+        super(source, job);
     }
-
-    private User getUser() { return _user; }
 
     public void parseAndLoad(boolean reloadExistingRuns) throws ExperimentException
     {
@@ -165,11 +155,11 @@ public class XarReader extends AbstractXarImporter
                                 SchemaType swType = xd.schemaType().getTypeSystem().typeForClassname(wType);
                                 if (null != swType)
                                 {
-                                    _log.warn("Schema validation error: " + error.getMessage());
+                                    getLog().warn("Schema validation error: " + error.getMessage());
                                     xObjWild = xObj.changeType(swType);
                                     bHasDerivedTypeErrorsOnly = xObjWild.validate();
                                     if (bHasDerivedTypeErrorsOnly)
-                                        _log.warn("Fixed by change to wildcard type");
+                                        getLog().warn("Fixed by change to wildcard type");
                                     continue;
                                 }
                             }
@@ -247,8 +237,8 @@ public class XarReader extends AbstractXarImporter
             for (ExperimentType exp : _experimentArchive.getExperimentArray())
             {
                 loadExperiment(exp);
-                _log.info("Experiment/Run group import complete");
-                _log.info("");
+                getLog().info("Experiment/Run group import complete");
+                getLog().info("");
             }
 
             if (protocolDefs != null)
@@ -257,8 +247,8 @@ public class XarReader extends AbstractXarImporter
                 {
                     loadProtocol(p);
                 }
-                _log.info("Protocol import complete");
-                _log.info("");
+                getLog().info("Protocol import complete");
+                getLog().info("");
             }
 
             if (actionDefs != null)
@@ -268,8 +258,8 @@ public class XarReader extends AbstractXarImporter
                     loadActionSet(actionSet);
                 }
 
-                _log.info("Protocol action set import complete");
-                _log.info("");
+                getLog().info("Protocol action set import complete");
+                getLog().info("");
             }
 
             List<ExpMaterial> startingMaterials = new ArrayList<ExpMaterial>();
@@ -280,15 +270,15 @@ public class XarReader extends AbstractXarImporter
                 for (MaterialBaseType material : _experimentArchive.getStartingInputDefinitions().getMaterialArray())
                 {
                     // ignore dups of starting inputs
-                    startingMaterials.add(loadMaterial(material, null, null, _xarContext));
+                    startingMaterials.add(loadMaterial(material, null, null, getRootContext()));
                 }
                 for (DataBaseType data : _experimentArchive.getStartingInputDefinitions().getDataArray())
                 {
-                    startingData.add(loadData(data, null, null, _xarContext));
+                    startingData.add(loadData(data, null, null, getRootContext()));
                 }
 
-                _log.info("Starting input import complete");
-                _log.info("");
+                getLog().info("Starting input import complete");
+                getLog().info("");
             }
 
             if (experimentRuns != null)
@@ -306,17 +296,17 @@ public class XarReader extends AbstractXarImporter
 
             try
             {
-                FileUtil.deleteDir(ExperimentRunGraph.getFolderDirectory(_container.getRowId()));
+                FileUtil.deleteDir(ExperimentRunGraph.getFolderDirectory(getContainer().getRowId()));
             }
             catch (IOException e)
             {
                 // Non-fatal
-                _log.error("Failed to clear cached experiment run graphs for container " + _container, e);
+                getLog().error("Failed to clear cached experiment run graphs for container " + getContainer(), e);
             }
 
             for (DeferredDataLoad deferredDataLoad : _deferredDataLoads)
             {
-                loadDataFile(deferredDataLoad.getData());
+                deferredDataLoad.getData().importDataFile(_job, _xarSource);
             }
         }
         catch (SQLException e)
@@ -334,16 +324,16 @@ public class XarReader extends AbstractXarImporter
 
     private MaterialSource loadSampleSet(SampleSetType sampleSet) throws XarFormatException, SQLException
     {
-        String lsid = LsidUtils.resolveLsidFromTemplate(sampleSet.getAbout(), _xarContext, "SampleSet");
+        String lsid = LsidUtils.resolveLsidFromTemplate(sampleSet.getAbout(), getRootContext(), "SampleSet");
         MaterialSource existingMaterialSource = ExperimentServiceImpl.get().getMaterialSource(lsid);
 
-        _log.info("Importing SampleSet with LSID '" + lsid + "'");
+        getLog().info("Importing SampleSet with LSID '" + lsid + "'");
         MaterialSource materialSource = new MaterialSource();
         materialSource.setDescription(sampleSet.getDescription());
         materialSource.setName(sampleSet.getName());
         materialSource.setLSID(lsid);
-        materialSource.setContainer(_container.getId());
-        materialSource.setMaterialLSIDPrefix(LsidUtils.resolveLsidFromTemplate(sampleSet.getMaterialLSIDPrefix(), _xarContext, "Material"));
+        materialSource.setContainer(getContainer().getId());
+        materialSource.setMaterialLSIDPrefix(LsidUtils.resolveLsidFromTemplate(sampleSet.getMaterialLSIDPrefix(), getRootContext(), "Material"));
 
         if (existingMaterialSource != null)
         {
@@ -354,10 +344,10 @@ public class XarReader extends AbstractXarImporter
 
             if (!diffs.isEmpty())
             {
-                _log.error("The SampleSet specified with LSID '" + lsid + "' has " + diffs.size() + " differences from the one that has already been loaded");
+                getLog().error("The SampleSet specified with LSID '" + lsid + "' has " + diffs.size() + " differences from the one that has already been loaded");
                 for (IdentifiableEntity.Difference diff : diffs)
                 {
-                    _log.error(diff.toString());
+                    getLog().error(diff.toString());
                 }
                 throw new XarFormatException("SampleSet with LSID '" + lsid + "' does not match existing SampleSet");
             }
@@ -365,10 +355,10 @@ public class XarReader extends AbstractXarImporter
             return existingMaterialSource;
         }
 
-        materialSource = ExperimentServiceImpl.get().insertMaterialSource(_user, materialSource, null);
-        if (ExperimentService.get().lookupActiveSampleSet(_container) == null)
+        materialSource = ExperimentServiceImpl.get().insertMaterialSource(getUser(), materialSource, null);
+        if (ExperimentService.get().lookupActiveSampleSet(getContainer()) == null)
         {
-            ExperimentService.get().setActiveSampleSet(_container, new ExpSampleSetImpl(materialSource));
+            ExperimentService.get().setActiveSampleSet(getContainer(), new ExpSampleSetImpl(materialSource));
         }
 
         return materialSource;
@@ -376,11 +366,11 @@ public class XarReader extends AbstractXarImporter
 
     private Domain loadDomain(DomainDescriptorType xDomain) throws SQLException, XarFormatException
     {
-        String lsid = LsidUtils.resolveLsidFromTemplate(xDomain.getDomainURI(), _xarContext, "Domain");
-        DomainDescriptor existingDomainDescriptor = OntologyManager.getDomainDescriptor(lsid, _container);
+        String lsid = LsidUtils.resolveLsidFromTemplate(xDomain.getDomainURI(), getRootContext(), "Domain");
+        DomainDescriptor existingDomainDescriptor = OntologyManager.getDomainDescriptor(lsid, getContainer());
         DomainImpl existingDomain = existingDomainDescriptor == null ? null : new DomainImpl(existingDomainDescriptor);
 
-        DomainImpl domain = new DomainImpl(_container, lsid, xDomain.getName());
+        DomainImpl domain = new DomainImpl(getContainer(), lsid, xDomain.getName());
         domain.setDescription(xDomain.getDescription());
 
         Map<String, DomainProperty> newProps = new HashMap<String, DomainProperty>();
@@ -397,7 +387,7 @@ public class XarReader extends AbstractXarImporter
                 String propertyURI = xProp.getPropertyURI();
                 if (propertyURI != null && propertyURI.indexOf("${") != -1)
                 {
-                    propertyURI = LsidUtils.resolveLsidFromTemplate(propertyURI, _xarContext);
+                    propertyURI = LsidUtils.resolveLsidFromTemplate(propertyURI, getRootContext());
                 }
                 prop.setPropertyURI(propertyURI);
                 prop.getPropertyDescriptor().setConceptURI(xProp.getConceptURI());
@@ -406,7 +396,7 @@ public class XarReader extends AbstractXarImporter
                     String uri = xProp.getOntologyURI().trim();
                     if (uri.indexOf("${") != -1)
                     {
-                        uri = LsidUtils.resolveLsidFromTemplate(xProp.getOntologyURI(), _xarContext);
+                        uri = LsidUtils.resolveLsidFromTemplate(xProp.getOntologyURI(), getRootContext());
                     }
                     prop.getPropertyDescriptor().setOntologyURI(uri);
                 }
@@ -447,10 +437,10 @@ public class XarReader extends AbstractXarImporter
 
             if (!diffs.isEmpty())
             {
-                _log.error("The domain specified with LSID '" + lsid + "' has " + diffs.size() + " differences from the domain that has already been loaded");
+                getLog().error("The domain specified with LSID '" + lsid + "' has " + diffs.size() + " differences from the domain that has already been loaded");
                 for (IdentifiableEntity.Difference diff : diffs)
                 {
-                    _log.error(diff.toString());
+                    getLog().error(diff.toString());
                 }
                 throw new XarFormatException("Domain with LSID '" + lsid + "' does not match existing domain");
             }
@@ -460,7 +450,7 @@ public class XarReader extends AbstractXarImporter
 
         try
         {
-            domain.save(_user);
+            domain.save(getUser());
         }
         catch (ChangePropertyDescriptorException e)
         {
@@ -474,8 +464,8 @@ public class XarReader extends AbstractXarImporter
     {
         for (ProtocolActionSetType actionDef : actionDefs)
         {
-            String protocolLSID = LsidUtils.resolveLsidFromTemplate(actionDef.getParentProtocolLSID(), _xarContext, "Protocol");
-            Protocol existingProtocol = ExperimentServiceImpl.get().getProtocol(protocolLSID);
+            String protocolLSID = LsidUtils.resolveLsidFromTemplate(actionDef.getParentProtocolLSID(), getRootContext(), "Protocol");
+            ExpProtocol existingProtocol = ExperimentService.get().getExpProtocol(protocolLSID);
 
             if (existingProtocol != null)
             {
@@ -483,12 +473,12 @@ public class XarReader extends AbstractXarImporter
                 if (ExperimentService.get().getExpProtocolApplicationsForProtocolLSID(protocolLSID).length == 0 &&
                     ExperimentService.get().getExpRunsForProtocolIds(false, existingProtocol.getRowId()).isEmpty())
                 {
-                    _log.info("Deleting existing action set with parent protocol LSID '" + protocolLSID + "' so that the protocol specified in the file can be uploaded");
-                    ExperimentService.get().deleteProtocolByRowIds(_container, getUser(), existingProtocol.getRowId());
+                    getLog().info("Deleting existing action set with parent protocol LSID '" + protocolLSID + "' so that the protocol specified in the file can be uploaded");
+                    ExperimentService.get().deleteProtocolByRowIds(getContainer(), getUser(), existingProtocol.getRowId());
                 }
                 else
                 {
-                    _log.info("Existing action set with parent protocol LSID '" + protocolLSID + "' is referenced by other experiment runs, so it cannot be updated");
+                    getLog().info("Existing action set with parent protocol LSID '" + protocolLSID + "' is referenced by other experiment runs, so it cannot be updated");
                 }
             }
         }
@@ -498,7 +488,7 @@ public class XarReader extends AbstractXarImporter
     {
         for (ProtocolBaseType protocol : protocolDefs)
         {
-            String protocolLSID = LsidUtils.resolveLsidFromTemplate(protocol.getAbout(), _xarContext, "Protocol");
+            String protocolLSID = LsidUtils.resolveLsidFromTemplate(protocol.getAbout(), getRootContext(), "Protocol");
             ExpProtocol existingProtocol = ExperimentService.get().getExpProtocol(protocolLSID);
 
             if (existingProtocol != null)
@@ -506,12 +496,12 @@ public class XarReader extends AbstractXarImporter
                 // Delete any protocols from the XAR that are in the database but aren't referenced as part of a ProtocolActionSet
                 if (existingProtocol.getParentProtocols().length == 0)
                 {
-                    _log.info("Deleting existing protocol with LSID '" + protocolLSID + "' so that the protocol specified in the file can be uploaded");
-                    ExperimentService.get().deleteProtocolByRowIds(_container, getUser(), existingProtocol.getRowId());
+                    getLog().info("Deleting existing protocol with LSID '" + protocolLSID + "' so that the protocol specified in the file can be uploaded");
+                    ExperimentService.get().deleteProtocolByRowIds(getContainer(), getUser(), existingProtocol.getRowId());
                 }
                 else
                 {
-                    _log.info("Existing protocol with LSID '" + protocolLSID + "' is referenced by other experiment runs, so it cannot be updated");
+                    getLog().info("Existing protocol with LSID '" + protocolLSID + "' is referenced by other experiment runs, so it cannot be updated");
                 }
             }
         }
@@ -521,14 +511,14 @@ public class XarReader extends AbstractXarImporter
     {
         for (ExperimentRunType experimentRun : experimentRuns.getExperimentRunArray())
         {
-            String runLSID = LsidUtils.resolveLsidFromTemplate(experimentRun.getAbout(), _xarContext, "ExperimentRun", "ExperimentRun");
+            String runLSID = LsidUtils.resolveLsidFromTemplate(experimentRun.getAbout(), getRootContext(), "ExperimentRun", "ExperimentRun");
 
             // Clear out any existing runs with the same LSID
             ExpRun existingRun = ExperimentService.get().getExpRun(runLSID);
             if (existingRun != null && (deleteExistingRuns || !PageFlowUtil.nullSafeEquals(existingRun.getFilePathRoot(), _xarSource.getRoot().getPath())))
             {
-                _log.info("Deleting existing experiment run with LSID'" + runLSID + "' so that the run specified in the file can be uploaded");
-                ExperimentService.get().deleteExperimentRunsByRowIds(_container, getUser(), existingRun.getRowId());
+                getLog().info("Deleting existing experiment run with LSID'" + runLSID + "' so that the run specified in the file can be uploaded");
+                ExperimentService.get().deleteExperimentRunsByRowIds(getContainer(), getUser(), existingRun.getRowId());
             }
         }
     }
@@ -548,16 +538,16 @@ public class XarReader extends AbstractXarImporter
             Object lsidAuthorityTemplate = mProps.get("terms.fhcrc.org#XarTemplate.LSIDAuthority");
             if (lsidAuthorityTemplate instanceof String)
             {
-                _xarContext.addSubstitution("LSIDAuthority", (String)lsidAuthorityTemplate);
+                getRootContext().addSubstitution("LSIDAuthority", (String)lsidAuthorityTemplate);
             }
             Object lsidNamespaceSuffixTemplate = mProps.get("terms.fhcrc.org#XarTemplate.LSIDNamespaceSuffix");
             if (lsidNamespaceSuffixTemplate instanceof String)
             {
-                _xarContext.addSubstitution("LSIDNamespace.Suffix", (String)lsidNamespaceSuffixTemplate);
+                getRootContext().addSubstitution("LSIDNamespace.Suffix", (String)lsidNamespaceSuffixTemplate);
             }
         }
 
-        String experimentLSID = LsidUtils.resolveLsidFromTemplate(exp.getAbout(), _xarContext, "Experiment");
+        String experimentLSID = LsidUtils.resolveLsidFromTemplate(exp.getAbout(), getRootContext(), "Experiment");
         _experimentLSIDs.add(experimentLSID);
 
         TableInfo tiExperiment = ExperimentServiceImpl.get().getTinfoExperiment();
@@ -574,7 +564,7 @@ public class XarReader extends AbstractXarImporter
                 experiment.setContactId(exp.getContact().getContactId());
             experiment.setExperimentDescriptionURL(trimString(exp.getExperimentDescriptionURL()));
             experiment.setComments(trimString(exp.getComments()));
-            experiment.setContainer(_container.getId());
+            experiment.setContainer(getContainer().getId());
 
             experiment = Table.insert(getUser(), tiExperiment, experiment);
 
@@ -586,7 +576,7 @@ public class XarReader extends AbstractXarImporter
         }
         else
         {
-            if (!experiment.getContainer().equals(_container.getId()))
+            if (!experiment.getContainer().equals(getContainer().getId()))
             {
                 Container container = ContainerManager.getForId(experiment.getContainer());
                 throw new XarFormatException("This experiment already exists in another folder, " + (container == null ? "" : container.getPath()));
@@ -597,9 +587,9 @@ public class XarReader extends AbstractXarImporter
             throw new XarFormatException("Experiment insertion failed");
 
         if (null != exp.getContact())
-            _xarContext.addSubstitution("ContactId", exp.getContact().getContactId());
+            getRootContext().addSubstitution("ContactId", exp.getContact().getContactId());
 
-        _log.info("Finished loading Experiment with LSID '" + experimentLSID + "'");
+        getLog().info("Finished loading Experiment with LSID '" + experimentLSID + "'");
     }
 
     public List<ExpRun> getExperimentRuns()
@@ -609,7 +599,7 @@ public class XarReader extends AbstractXarImporter
 
     private void loadExperimentRun(ExperimentRunType a, List<ExpMaterial> startingMaterials, List<Data> startingData) throws SQLException, ExperimentException
     {
-        XarContext runContext = new XarContext(_xarContext);
+        XarContext runContext = new XarContext(getRootContext());
 
         String experimentLSID = null;
         if (a.isSetExperimentLSID())
@@ -632,19 +622,19 @@ public class XarReader extends AbstractXarImporter
         ExpRun existingRun = ExperimentService.get().getExpRun(runLSID);
         if (existingRun != null)
         {
-            _log.warn("Experiment run already exists, it will NOT be reimported, LSID '" + runLSID + "'");
+            getLog().warn("Experiment run already exists, it will NOT be reimported, LSID '" + runLSID + "'");
             for (ExpData d : ExperimentServiceImpl.get().getAllDataUsedByRun(existingRun.getRowId()))
             {
                 _deferredDataLoads.add(new DeferredDataLoad(d, existingRun));
             }
-            _log.info("Experiment run import complete, LSID '" + runLSID + "'");
-            _log.info("");
+            getLog().info("Experiment run import complete, LSID '" + runLSID + "'");
+            getLog().info("");
             return;
         }
 
         Lsid pRunLSID = new Lsid(runLSID);
-        String runProtocolLSID = LsidUtils.resolveLsidFromTemplate(a.getProtocolLSID(), _xarContext, "Protocol");
-        Protocol protocol = ExperimentServiceImpl.get().getProtocol(runProtocolLSID);
+        String runProtocolLSID = LsidUtils.resolveLsidFromTemplate(a.getProtocolLSID(), getRootContext(), "Protocol");
+        ExpProtocol protocol = ExperimentService.get().getExpProtocol(runProtocolLSID);
         if (protocol == null)
         {
             throw new XarFormatException("Unknown protocol " + runProtocolLSID + " referenced by ExperimentRun " + pRunLSID);
@@ -680,13 +670,12 @@ public class XarReader extends AbstractXarImporter
 
             vals.setLSID(pRunLSID.toString());
 
-            String name = trimString(a.getName());
-            vals.setName(name);
+            vals.setName(trimString(a.getName()));
             vals.setProtocolLSID(runProtocolLSID);
             vals.setComments(trimString(a.getComments()));
 
             vals.setFilePathRoot(_xarSource.getRoot().getPath());
-            vals.setContainer(_container.getId());
+            vals.setContainer(getContainer().getId());
 
             run = Table.insert(getUser(), tiExperimentRun, vals);
         }
@@ -699,11 +688,7 @@ public class XarReader extends AbstractXarImporter
             ExperimentService.get().addRunsToExperiment(e.getRowId(), runId);
         }
 
-
-        // now get substitution strings that are themselves templates
-        runContext.addSubstitution("ExperimentRun.RowId", Integer.toString(runId));
-        runContext.addSubstitution("ExperimentRun.LSID", pRunLSID.toString());
-        runContext.addSubstitution("ExperimentRun.Name", trimString(a.getName()));
+        runContext.setCurrentRun(new ExpRunImpl(run));
 
         PropertyCollectionType xbProps = a.getProperties();
 
@@ -730,7 +715,7 @@ public class XarReader extends AbstractXarImporter
                     throw new XarFormatException("Invalid ExperimentRun start action: " + stepProtocolLSID);
                 }
 
-                XarExpander expander = new XarExpander(_log, _xarSource, _container, run, startingData, startingMaterials, _experimentArchive, _user);
+                XarExpander expander = new XarExpander(_xarSource, _job, run, startingData, startingMaterials, _experimentArchive);
 
                 expander.expandSteps(steps, runContext, a);
                 loadProtocolApplications(a, run, runContext);
@@ -744,8 +729,8 @@ public class XarReader extends AbstractXarImporter
         ExpRun loadedRun = ExperimentService.get().getExpRun(runLSID);
         assert loadedRun != null;
         _loadedRuns.add(loadedRun);
-        _log.info("Finished loading ExperimentRun with LSID '" + runLSID + "'");
-        _log.info("");
+        getLog().info("Finished loading ExperimentRun with LSID '" + runLSID + "'");
+        getLog().info("");
     }
 
 
@@ -777,12 +762,17 @@ public class XarReader extends AbstractXarImporter
         TableInfo tiMaterialInput = ExperimentServiceImpl.get().getTinfoMaterialInput();
         TableInfo tiDataInput = ExperimentServiceImpl.get().getTinfoDataInput();
 
-        Long dateval = xmlProtocolApp.getActivityDate().getTimeInMillis();
-        java.sql.Timestamp sqlDateTime;
-        if (null != dateval)
-            sqlDateTime = new java.sql.Timestamp(dateval.longValue());
-        else
+        java.sql.Timestamp sqlDateTime = null;
+        if (!xmlProtocolApp.isNilActivityDate())
+        {
+            Calendar date = xmlProtocolApp.getActivityDate();
+            if (date != null)
+                sqlDateTime = new java.sql.Timestamp(date.getTimeInMillis());
+        }
+        if (sqlDateTime == null)
+        {
             sqlDateTime = new java.sql.Timestamp(System.currentTimeMillis());
+        }
 
         String protAppLSID = LsidUtils.resolveLsidFromTemplate(xmlProtocolApp.getAbout(), context, "ProtocolApplication");
 
@@ -802,7 +792,7 @@ public class XarReader extends AbstractXarImporter
             protocolApp.setLSID(protAppLSID);
             protocolApp.setName(trimString(xmlProtocolApp.getName()));
             String cpasType = trimString(xmlProtocolApp.getCpasType());
-            checkProtocolApplicationCpasType(cpasType, _log);
+            checkProtocolApplicationCpasType(cpasType, getLog());
             protocolApp.setCpasType(cpasType);
             protocolApp.setProtocolLSID(protocolLSID);
             protocolApp.setActivityDate(sqlDateTime);
@@ -858,7 +848,7 @@ public class XarReader extends AbstractXarImporter
                             // Consider (nicksh): we're passing null for the material here.
                             // Should we pass something so that the property descriptor gets created with the right
                             // rangeURI, or should it just be the active sample set?
-                            pdRole = ExperimentService.get().ensureMaterialInputRole(_container, roleName, null);
+                            pdRole = ExperimentService.get().ensureMaterialInputRole(getContainer(), roleName, null);
                             _materialInputRoleMap.put(roleName, pdRole);
                         }
                         catch (SQLException e)
@@ -879,7 +869,7 @@ public class XarReader extends AbstractXarImporter
         {
             String declaredType = (inputDataLSID.isSetCpasType() ? inputDataLSID.getCpasType() : "Data");
             checkDataCpasType(declaredType);
-            String lsid = LsidUtils.resolveLsidFromTemplate(inputDataLSID.getStringValue(), context, declaredType, new AutoFileLSIDReplacer(inputDataLSID.getDataFileUrl(), _container, _xarSource));
+            String lsid = LsidUtils.resolveLsidFromTemplate(inputDataLSID.getStringValue(), context, declaredType, new AutoFileLSIDReplacer(inputDataLSID.getDataFileUrl(), getContainer(), _xarSource));
 
             ExpData data = _xarSource.getData(firstApp ? null : new ExpRunImpl(experimentRun), new ExpProtocolApplicationImpl(protocolApp), lsid);
             if (firstApp)
@@ -903,7 +893,7 @@ public class XarReader extends AbstractXarImporter
                     {
                         try
                         {
-                            pdRole = ExperimentService.get().ensureDataInputRole(getUser(), _container, roleName, null);
+                            pdRole = ExperimentService.get().ensureDataInputRole(getUser(), getContainer(), roleName, null);
                             _dataInputRoleMap.put(roleName, pdRole);
                         }
                         catch (SQLException e)
@@ -931,7 +921,7 @@ public class XarReader extends AbstractXarImporter
         {
             loadData(d, experimentRun, protAppId, context);
         }
-        _log.info("Finished loading ProtocolApplication with LSID '" + protocolLSID + "'");
+        getLog().info("Finished loading ProtocolApplication with LSID '" + protocolLSID + "'");
     }
 
     private ExpMaterial loadMaterial(MaterialBaseType xbMaterial,
@@ -952,31 +942,31 @@ public class XarReader extends AbstractXarImporter
 
         String materialLSID = LsidUtils.resolveLsidFromTemplate(xbMaterial.getAbout(), context, declaredType, "Material");
 
-        Material material = ExperimentServiceImpl.get().getMaterial(materialLSID);
+        ExpMaterialImpl material = ExperimentServiceImpl.get().getExpMaterial(materialLSID);
         if (material == null)
         {
-            material = new Material();
-            material.setLSID(materialLSID);
-            material.setName(trimString(xbMaterial.getName()));
-            material.setCpasType(declaredType);
+            Material m = new Material();
+            m.setLSID(materialLSID);
+            m.setName(trimString(xbMaterial.getName()));
+            m.setCpasType(declaredType);
             if (xbMaterial.isSetSourceProtocolLSID())
             {
                 String sourceProtocolLSID = xbMaterial.getSourceProtocolLSID();
                 if (sourceProtocolLSID != null && !"".equals(sourceProtocolLSID))
                 {
                     sourceProtocolLSID = LsidUtils.resolveLsidFromTemplate(sourceProtocolLSID, context, "Protocol");
-                    material.setSourceProtocolLSID(sourceProtocolLSID);
+                    m.setSourceProtocolLSID(sourceProtocolLSID);
                 }
             }
 
             if (null != run)
-                material.setRunId(run.getRowId());
+                m.setRunId(run.getRowId());
 
-            material.setContainer(_container.getId());
+            m.setContainer(getContainer().getId());
 
             if (null != sourceApplicationId)
-                material.setSourceApplicationId(sourceApplicationId);
-            material = Table.insert(getUser(), tiMaterial, material);
+                m.setSourceApplicationId(sourceApplicationId);
+            m = Table.insert(getUser(), tiMaterial, m);
 
             PropertyCollectionType xbProps = xbMaterial.getProperties();
             if (null == xbProps)
@@ -984,17 +974,17 @@ public class XarReader extends AbstractXarImporter
             loadPropertyCollection(xbProps, materialLSID, run == null ? null : run.getLSID(), null);
 
             loadExtendedMaterialType(xbMaterial, materialLSID, run);
+            material = new ExpMaterialImpl(m);
         }
         else
         {
-            updateSourceInfo(material, xbMaterial.getSourceProtocolLSID(), sourceApplicationId, run == null ? null : run.getRowId(), context, tiMaterial);
+            updateSourceInfo(material.getDataObject(), xbMaterial.getSourceProtocolLSID(), sourceApplicationId, run == null ? null : run.getRowId(), context, tiMaterial);
         }
 
-        ExpMaterial expMaterial = new ExpMaterialImpl(material);
-        _xarSource.addMaterial(run == null ? null : run.getLSID(), expMaterial);
+        _xarSource.addMaterial(run == null ? null : run.getLSID(), material);
 
-        _log.info("Finished loading material with LSID '" + materialLSID + "'");
-        return expMaterial;
+        getLog().info("Finished loading material with LSID '" + materialLSID + "'");
+        return material;
     }
 
     private void updateSourceInfo(ProtocolOutput output, String sourceProtocolLSID, Integer sourceApplicationId,
@@ -1005,20 +995,20 @@ public class XarReader extends AbstractXarImporter
         String lsid = output.getLSID();
         boolean changed = false;
 
-        _log.info("Found an existing entry for " + description + " LSID " + lsid + ", not reloading its values from scratch");
+        getLog().info("Found an existing entry for " + description + " LSID " + lsid + ", not reloading its values from scratch");
 
         if (sourceProtocolLSID != null && !"".equals(sourceProtocolLSID))
         {
             String newSourceProtocolLSID = LsidUtils.resolveLsidFromTemplate(sourceProtocolLSID, context, "Protocol");
             if (output.getSourceProtocolLSID() == null)
             {
-                _log.info("Updating  " + description + " with LSID '" + lsid + "', setting SourceProtocolLSID");
+                getLog().info("Updating  " + description + " with LSID '" + lsid + "', setting SourceProtocolLSID");
                 output.setSourceProtocolLSID(newSourceProtocolLSID);
                 changed = true;
             }
             else if (output.getSourceProtocolLSID().equals(newSourceProtocolLSID))
             {
-                _log.info(description + " with LSID '" + lsid + "' already has a SourceProtocolLSID of '" + output.getSourceProtocolLSID() + "'");
+                getLog().info(description + " with LSID '" + lsid + "' already has a SourceProtocolLSID of '" + output.getSourceProtocolLSID() + "'");
             }
             else
             {
@@ -1029,7 +1019,7 @@ public class XarReader extends AbstractXarImporter
         {
             if (output.getSourceApplicationId() == null)
             {
-                _log.info("Updating " + description + " with LSID '" + lsid + "', setting SourceApplicationId");
+                getLog().info("Updating " + description + " with LSID '" + lsid + "', setting SourceApplicationId");
                 output.setSourceApplicationId(sourceApplicationId);
                 changed = true;
             }
@@ -1042,7 +1032,7 @@ public class XarReader extends AbstractXarImporter
         {
             if (output.getRunId() == null)
             {
-                _log.info("Updating " + description + " with LSID '" + lsid + "', setting its RunId");
+                getLog().info("Updating " + description + " with LSID '" + lsid + "', setting its RunId");
                 output.setRunId(runId);
                 changed = true;
             }
@@ -1055,71 +1045,6 @@ public class XarReader extends AbstractXarImporter
         if (changed)
         {
             Table.update(getUser(), tableInfo, output, output.getRowId(), null);
-        }
-    }
-
-    private void loadDataFile(ExpData data) throws ExperimentException, SQLException
-    {
-        String dataFileURL = data.getDataFileUrl();
-
-        if (dataFileURL == null)
-        {
-            return;
-        }
-
-        if (_xarSource.shouldIgnoreDataFiles())
-        {
-            _log.info("Skipping load of data file " + dataFileURL + " based on the XAR source");
-            return;
-        }
-
-        try
-        {
-            _log.info("Trying to load data file " + dataFileURL + " into the system");
-
-            File file = new File(new URI(dataFileURL));
-
-            if (!file.exists())
-            {
-                _log.warn("Unable to find the data file " + file.getPath() + " on disk.");
-                return;
-            }
-
-            // Check that the file is under the pipeline root
-            PipeRoot pr = PipelineService.get().findPipelineRoot(_container);
-            try
-            {
-                if (!_xarSource.isUnderPipelineRoot(pr, _container, file))
-                {
-                    if (pr == null)
-                    {
-                        _log.warn("No pipeline root was set, skipping load of file " + file.getPath());
-                        return;
-                    }
-                    _log.warn("The data file " + file.getCanonicalPath() + " is not under the folder's pipeline root, " + pr.getUri() + ". It will not be loaded directly, but may be loaded if referenced from other files that are under the pipeline root.");
-                    return;
-                }
-            }
-            catch (Exception e)
-            {
-                throw new XarFormatException("Error checking if file was under Pipeline Root", e);
-            }
-
-            ExperimentDataHandler handler = data.findDataHandler();
-            try
-            {
-                handler.importFile(ExperimentService.get().getExpData(data.getRowId()), file, _job.getInfo(), _job.getLogger(), _xarContext);
-            }
-            catch (ExperimentException e)
-            {
-                throw new XarFormatException(e);
-            }
-
-            _log.info("Finished trying to load data file " + dataFileURL + " into the system");
-        }
-        catch (URISyntaxException e)
-        {
-            throw new XarFormatException(e);
         }
     }
 
@@ -1139,7 +1064,7 @@ public class XarReader extends AbstractXarImporter
         }
         checkDataCpasType(declaredType);
 
-        String dataLSID = LsidUtils.resolveLsidFromTemplate(xbData.getAbout(), context, declaredType, new AutoFileLSIDReplacer(xbData.getDataFileUrl(), _container, _xarSource));
+        String dataLSID = LsidUtils.resolveLsidFromTemplate(xbData.getAbout(), context, declaredType, new AutoFileLSIDReplacer(xbData.getDataFileUrl(), getContainer(), _xarSource));
 
         ExpDataImpl databaseData = ExperimentServiceImpl.get().getExpData(dataLSID);
         if (databaseData != null)
@@ -1169,7 +1094,7 @@ public class XarReader extends AbstractXarImporter
                 }
             }
 
-            if (!databaseData.getContainer().equals(_container))
+            if (!databaseData.getContainer().equals(getContainer()))
             {
                 Container otherContainer = databaseData.getContainer();
                 String containerDesc = otherContainer == null ? databaseData.getContainer().getPath() : otherContainer.getPath();
@@ -1190,7 +1115,7 @@ public class XarReader extends AbstractXarImporter
                 sourceProtocolLSID = LsidUtils.resolveLsidFromTemplate(sourceProtocolLSID, context, "Protocol");
                 data.setSourceProtocolLSID(sourceProtocolLSID);
             }
-            data.setContainer(_container.getId());
+            data.setContainer(getContainer().getId());
 
             if (null != sourceApplicationId)
             {
@@ -1225,7 +1150,7 @@ public class XarReader extends AbstractXarImporter
                         File f = databaseData.getFile();
                         if (f != null)
                         {
-                            _xarContext.addData(new ExpDataImpl(data), simpleValue.getStringValue());
+                            getRootContext().addData(new ExpDataImpl(data), simpleValue.getStringValue());
                         }
                         break;
                     }
@@ -1236,7 +1161,7 @@ public class XarReader extends AbstractXarImporter
         }
 
         _xarSource.addData(experimentRun == null ? null : experimentRun.getLSID(), databaseData);
-        _log.info("Finished loading Data with LSID '" + dataLSID + "'");
+        getLog().info("Finished loading Data with LSID '" + dataLSID + "'");
         return databaseData.getDataObject();
     }
 
@@ -1249,7 +1174,7 @@ public class XarReader extends AbstractXarImporter
             fIn = new FileInputStream(existingFile);
             DigestInputStream dIn = new DigestInputStream(fIn, digest);
             byte[] b = new byte[4096];
-            while (dIn.read(b) != -1) {};
+            while (dIn.read(b) != -1) {}
             return digest.digest();
         }
         catch (IOException e)
@@ -1275,7 +1200,7 @@ public class XarReader extends AbstractXarImporter
             ProtocolApplicationParameter param = new ProtocolApplicationParameter();
             param.setProtocolApplicationId(protAppId);
             param.setRunId(protAppId);
-            param.setXMLBeanValue(simple, _log);
+            param.setXMLBeanValue(simple, getLog());
             ExperimentServiceImpl.get().loadParameter(getUser(), param, tiValueTable, "ProtocolApplicationId", protAppId);
         }
     }
@@ -1287,7 +1212,7 @@ public class XarReader extends AbstractXarImporter
         for (SimpleValueType simple : xbParams.getSimpleValArray())
         {
             ProtocolParameter param = new ProtocolParameter();
-            param.setXMLBeanValue(simple, _log);
+            param.setXMLBeanValue(simple, getLog());
             result.add(param);
         }
         return result;
@@ -1302,19 +1227,19 @@ public class XarReader extends AbstractXarImporter
 
         if (null != contact.getContactId() && !contact.getContactId().equals(""))
         {
-            childProps.put(CONTACT_ID_PROPERTY, new ObjectProperty(propertyURI, _container.getId(), CONTACT_ID_PROPERTY, trimString(contact.getContactId()), "Contact Id"));
+            childProps.put(CONTACT_ID_PROPERTY, new ObjectProperty(propertyURI, getContainer().getId(), CONTACT_ID_PROPERTY, trimString(contact.getContactId()), "Contact Id"));
         }
         if (null != contact.getEmail() && !contact.getEmail().equals(""))
         {
-            childProps.put(CONTACT_EMAIL_PROPERTY, new ObjectProperty(propertyURI, _container.getId(), CONTACT_EMAIL_PROPERTY, trimString(contact.getEmail()), "Contact Email"));
+            childProps.put(CONTACT_EMAIL_PROPERTY, new ObjectProperty(propertyURI, getContainer().getId(), CONTACT_EMAIL_PROPERTY, trimString(contact.getEmail()), "Contact Email"));
         }
         if (null != contact.getFirstName() && !contact.getFirstName().equals(""))
         {
-            childProps.put(CONTACT_FIRST_NAME_PROPERTY, new ObjectProperty(propertyURI, _container.getId(), CONTACT_FIRST_NAME_PROPERTY, trimString(contact.getFirstName()), "Contact First Name"));
+            childProps.put(CONTACT_FIRST_NAME_PROPERTY, new ObjectProperty(propertyURI, getContainer().getId(), CONTACT_FIRST_NAME_PROPERTY, trimString(contact.getFirstName()), "Contact First Name"));
         }
         if (null != contact.getLastName() && !contact.getLastName().equals(""))
         {
-            childProps.put(CONTACT_LAST_NAME_PROPERTY, new ObjectProperty(propertyURI, _container.getId(), CONTACT_LAST_NAME_PROPERTY, trimString(contact.getLastName()), "Contact Last Name"));
+            childProps.put(CONTACT_LAST_NAME_PROPERTY, new ObjectProperty(propertyURI, getContainer().getId(), CONTACT_LAST_NAME_PROPERTY, trimString(contact.getLastName()), "Contact Last Name"));
         }
 
         if (childProps.isEmpty())
@@ -1322,7 +1247,7 @@ public class XarReader extends AbstractXarImporter
             return null;
         }
 
-        ObjectProperty contactProperty = new ObjectProperty(parentLSID, _container.getId(), CONTACT_PROPERTY, new IdentifiableBase(propertyURI), "Contact");
+        ObjectProperty contactProperty = new ObjectProperty(parentLSID, getContainer().getId(), CONTACT_PROPERTY, new IdentifiableBase(propertyURI), "Contact");
         contactProperty.setChildProperties(childProps);
 
         return contactProperty;
@@ -1333,10 +1258,10 @@ public class XarReader extends AbstractXarImporter
         Integer id = _propertyIdMap.get(objectProperty.getPropertyURI());
         if (id != null)
         {
-            objectProperty.setPropertyId(id);
+            objectProperty.setPropertyId(id.intValue());
             return;
         }
-        PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(objectProperty.getPropertyURI(), _container);
+        PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(objectProperty.getPropertyURI(), getContainer());
         if (pd != null)
         {
             objectProperty.setPropertyId(pd.getPropertyId());
@@ -1347,7 +1272,7 @@ public class XarReader extends AbstractXarImporter
     private Map<String, ObjectProperty> readPropertyCollection(PropertyCollectionType xbValues,
                                                                String parentLSID, boolean checkForDuplicates) throws SQLException, XarFormatException
     {
-        Map<String, ObjectProperty> existingProps = OntologyManager.getPropertyObjects(_container.getId(), parentLSID);
+        Map<String, ObjectProperty> existingProps = OntologyManager.getPropertyObjects(getContainer().getId(), parentLSID);
         Map<String, ObjectProperty> result = new HashMap<String, ObjectProperty>();
 
         for (SimpleValueType simpleProp : xbValues.getSimpleValArray())
@@ -1356,15 +1281,15 @@ public class XarReader extends AbstractXarImporter
             String value = trimString(simpleProp.getStringValue());
             if (value != null && value.startsWith("urn:lsid:"))
             {
-                value = LsidUtils.resolveLsidFromTemplate(value, _xarContext);
+                value = LsidUtils.resolveLsidFromTemplate(value, getRootContext());
             }
 
             String ontologyEntryURI = trimString(simpleProp.getOntologyEntryURI());
             if (ontologyEntryURI != null && ontologyEntryURI.indexOf("${") != -1)
             {
-                ontologyEntryURI = LsidUtils.resolveLsidFromTemplate(simpleProp.getOntologyEntryURI(), _xarContext);
+                ontologyEntryURI = LsidUtils.resolveLsidFromTemplate(simpleProp.getOntologyEntryURI(), getRootContext());
             }
-            ObjectProperty objectProp = new ObjectProperty(parentLSID, _container.getId(), ontologyEntryURI, value, propType, simpleProp.getName());
+            ObjectProperty objectProp = new ObjectProperty(parentLSID, getContainer().getId(), ontologyEntryURI, value, propType, simpleProp.getName());
             setPropertyId(objectProp);
 
             if (ExternalDocsURLCustomPropertyRenderer.URI.equals(trimString(objectProp.getPropertyURI())))
@@ -1413,14 +1338,14 @@ public class XarReader extends AbstractXarImporter
             String ontologyEntryURI = trimString(propObjDecl.getOntologyEntryURI());
             if (ontologyEntryURI != null && ontologyEntryURI.indexOf("${") != -1)
             {
-                ontologyEntryURI = LsidUtils.resolveLsidFromTemplate(ontologyEntryURI, _xarContext);
+                ontologyEntryURI = LsidUtils.resolveLsidFromTemplate(ontologyEntryURI, getRootContext());
             }
             if (checkForDuplicates && existingProps.containsKey(ontologyEntryURI))
             {
                 throw new XarFormatException("Duplicate nested property for ParentURI " + parentLSID + ", OntologyEntryURI = " + propObjDecl.getOntologyEntryURI());
             }
 
-            String containerId = _container.getId();
+            String containerId = getContainer().getId();
             assert null != containerId;
             String uri = GUID.makeURN();
             ObjectProperty childProperty = new ObjectProperty(parentLSID, containerId, ontologyEntryURI, new IdentifiableBase(uri), propObjDecl.getName());
@@ -1449,7 +1374,7 @@ public class XarReader extends AbstractXarImporter
 
         if (!propsToInsert.isEmpty())
         {
-            ExperimentServiceImpl.get().savePropertyCollection(propsToInsert, ownerLSID, _container.getId(), false);
+            ExperimentServiceImpl.get().savePropertyCollection(propsToInsert, ownerLSID, getContainer().getId(), false);
         }
     }
 
@@ -1482,8 +1407,8 @@ public class XarReader extends AbstractXarImporter
 
     private void loadProtocol(ProtocolBaseType p) throws SQLException, ExperimentException
     {
-        String protocolLSID = LsidUtils.resolveLsidFromTemplate(p.getAbout(), _xarContext, "Protocol");
-        Protocol existingProtocol = ExperimentServiceImpl.get().getProtocol(protocolLSID);
+        String protocolLSID = LsidUtils.resolveLsidFromTemplate(p.getAbout(), getRootContext(), "Protocol");
+        ExpProtocolImpl existingProtocol = ExperimentServiceImpl.get().getExpProtocol(protocolLSID);
 
         Protocol xarProtocol = readProtocol(p);
 
@@ -1491,23 +1416,23 @@ public class XarReader extends AbstractXarImporter
 
         if (existingProtocol != null)
         {
-            List<IdentifiableEntity.Difference> diffs = existingProtocol.diff(xarProtocol);
+            List<IdentifiableEntity.Difference> diffs = existingProtocol.getDataObject().diff(xarProtocol);
             if (!diffs.isEmpty())
             {
-                _log.error("The protocol specified in the file with LSID '" + protocolLSID + "' has " + diffs.size() + " differences from the protocol that has already been loaded");
+                getLog().error("The protocol specified in the file with LSID '" + protocolLSID + "' has " + diffs.size() + " differences from the protocol that has already been loaded");
                 for (IdentifiableEntity.Difference diff : diffs)
                 {
-                    _log.error(diff.toString());
+                    getLog().error(diff.toString());
                 }
                 throw new XarFormatException("Protocol with LSID '" + protocolLSID + "' does not match existing protocol");
             }
-            protocol = existingProtocol;
-            _log.info("Protocol with LSID '" + protocolLSID + "' matches a protocol with the same LSID that has already been loaded.");
+            protocol = existingProtocol.getDataObject();
+            getLog().info("Protocol with LSID '" + protocolLSID + "' matches a protocol with the same LSID that has already been loaded.");
         }
         else
         {
             protocol = ExperimentServiceImpl.get().saveProtocol(getUser(), xarProtocol);
-            _log.info("Finished loading Protocol with LSID '" + protocolLSID + "'");
+            getLog().info("Finished loading Protocol with LSID '" + protocolLSID + "'");
         }
 
         _xarSource.addProtocol(new ExpProtocolImpl(protocol));
@@ -1518,7 +1443,7 @@ public class XarReader extends AbstractXarImporter
         TableInfo tiAction = ExperimentServiceImpl.get().getTinfoProtocolAction();
 
         //Check that the parent is defined already
-        String parentLSID = LsidUtils.resolveLsidFromTemplate(actionSet.getParentProtocolLSID(), _xarContext, "Protocol");
+        String parentLSID = LsidUtils.resolveLsidFromTemplate(actionSet.getParentProtocolLSID(), getRootContext(), "Protocol");
         ExpProtocol parentProtocol = _xarSource.getProtocol(parentLSID, "Parent");
 
         ProtocolActionType[] xActions = actionSet.getProtocolActionArray();
@@ -1536,7 +1461,7 @@ public class XarReader extends AbstractXarImporter
 
         for (ProtocolActionType xAction : xActions)
         {
-            String childLSID = LsidUtils.resolveLsidFromTemplate(xAction.getChildProtocolLSID(), _xarContext, "Protocol");
+            String childLSID = LsidUtils.resolveLsidFromTemplate(xAction.getChildProtocolLSID(), getRootContext(), "Protocol");
 
             int currentSeq = xAction.getActionSequence();
             if (currentSeq <= priorSeq)
@@ -1578,6 +1503,10 @@ public class XarReader extends AbstractXarImporter
             int actionRowId = action.getRowId();
 
             ProtocolActionType.PredecessorAction[] predecessors = xAction.getPredecessorActionArray();
+            if (predecessors == null)
+            {
+                predecessors = new ProtocolActionType.PredecessorAction[0];
+            }
             ProtocolActionPredecessor[] existingPredecessors = ExperimentServiceImpl.get().getProtocolActionPredecessors(parentLSID, childLSID);
 
             if (alreadyLoaded && predecessors.length != existingPredecessors.length)
@@ -1629,7 +1558,7 @@ public class XarReader extends AbstractXarImporter
     private Protocol readProtocol(ProtocolBaseType p) throws XarFormatException, SQLException
     {
         Protocol protocol = new Protocol();
-        protocol.setLSID(LsidUtils.resolveLsidFromTemplate(p.getAbout(), _xarContext, "Protocol"));
+        protocol.setLSID(LsidUtils.resolveLsidFromTemplate(p.getAbout(), getRootContext(), "Protocol"));
         protocol.setName(trimString(p.getName()));
         protocol.setProtocolDescription(trimString(p.getProtocolDescription()));
         String applicationType = trimString(p.getApplicationType());
@@ -1669,7 +1598,7 @@ public class XarReader extends AbstractXarImporter
         if (null != p.getContact())
             protocol.setContactId(p.getContact().getContactId());
 
-        protocol.setContainer(_container.getId());
+        protocol.setContainer(getContainer().getId());
 
         // Protocol parameters
         List<ProtocolParameter> params = Collections.emptyList();
@@ -1732,7 +1661,7 @@ public class XarReader extends AbstractXarImporter
             catch (ConversionException e)
             {
                 val = sVal.getStringValue();
-                _log.error("Failed to parse value " + val
+                getLog().error("Failed to parse value " + val
                         + ":   Declared as type " + valType + " ; returned as string instead", e);
             }
             mSimpleProperties.put(key, val);
@@ -1808,11 +1737,11 @@ public class XarReader extends AbstractXarImporter
                     }
                 }
 
-                OntologyManager.insertProperty(_container.getId(), new ObjectProperty(parentLSID, propertyURI, stringValue, propertyType), run.getLSID());
+                OntologyManager.insertProperty(getContainer().getId(), new ObjectProperty(parentLSID, propertyURI, stringValue, propertyType), run.getLSID());
             }
             catch (Exception e)
             {
-                _log.debug("Skipped element " + key + " exception " + e.getMessage(), e);
+                getLog().debug("Skipped element " + key + " exception " + e.getMessage(), e);
             }
 
         }

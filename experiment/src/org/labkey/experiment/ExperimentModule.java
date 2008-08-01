@@ -37,7 +37,6 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.query.SchemaUpdateServiceRegistry;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.Material;
@@ -50,6 +49,7 @@ import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.list.*;
 import org.labkey.experiment.types.TypesController;
 import org.labkey.experiment.xar.DefaultRunExpansionHandler;
+import org.labkey.experiment.pipeline.ExperimentPipelineProvider;
 
 import javax.naming.NamingException;
 import javax.servlet.ServletException;

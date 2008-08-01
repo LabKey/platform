@@ -20,7 +20,8 @@ import org.labkey.api.view.GridView;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.*;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.experiment.api.Protocol;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
 import java.util.Map;
@@ -33,7 +34,7 @@ import java.util.List;
 */
 public class ProtocolSuccessorPredecessorView extends GridView
 {
-    private Map<String, Protocol> _protocolCache = new HashMap<String, Protocol>();
+    private Map<String, ExpProtocol> _protocolCache = new HashMap<String, ExpProtocol>();
 
     protected ProtocolSuccessorPredecessorView(String parentProtocolLSID, int actionSequence, Container c, String lsidSelectColumn, String sequenceSelectColumn, String filterColumn, String title)
     {
@@ -60,14 +61,14 @@ public class ProtocolSuccessorPredecessorView extends GridView
 
     private static class ProtocolNameDisplayColumn extends AbstractProtocolDisplayColumn
     {
-        public ProtocolNameDisplayColumn(String lsidColumnName, Map<String, Protocol> protocolCache, String columnName)
+        public ProtocolNameDisplayColumn(String lsidColumnName, Map<String, ExpProtocol> protocolCache, String columnName)
         {
             super(lsidColumnName, protocolCache);
             setCaption(columnName);
             setWidth("250");
         }
 
-        protected String getProtocolValue(Protocol protocol)
+        protected String getProtocolValue(ExpProtocol protocol)
         {
             return PageFlowUtil.filter(protocol.getName());
         }
@@ -75,14 +76,14 @@ public class ProtocolSuccessorPredecessorView extends GridView
 
     private static class ProtocolDescriptionDisplayColumn extends AbstractProtocolDisplayColumn
     {
-        public ProtocolDescriptionDisplayColumn(String lsidColumnName, Map<String, Protocol> protocolCache)
+        public ProtocolDescriptionDisplayColumn(String lsidColumnName, Map<String, ExpProtocol> protocolCache)
         {
             super(lsidColumnName, protocolCache);
             setCaption("Description");
             setWidth("50%");
         }
 
-        protected String getProtocolValue(Protocol protocol)
+        protected String getProtocolValue(ExpProtocol protocol)
         {
             return PageFlowUtil.filter(protocol.getProtocolDescription());
         }
@@ -91,21 +92,21 @@ public class ProtocolSuccessorPredecessorView extends GridView
     private abstract static class AbstractProtocolDisplayColumn extends SimpleDisplayColumn
     {
         private final String _lsidColumnName;
-        private final Map<String, Protocol> _protocolCache;
+        private final Map<String, ExpProtocol> _protocolCache;
 
-        public AbstractProtocolDisplayColumn(String lsidColumnName, Map<String, Protocol> protocolCache)
+        public AbstractProtocolDisplayColumn(String lsidColumnName, Map<String, ExpProtocol> protocolCache)
         {
             _lsidColumnName = lsidColumnName;
             _protocolCache = protocolCache;
         }
 
-        protected Protocol getProtocol(RenderContext ctx)
+        protected ExpProtocol getProtocol(RenderContext ctx)
         {
             String lsid = (String) ctx.get(_lsidColumnName);
-            Protocol protocol = _protocolCache.get(lsid);
+            ExpProtocol protocol = _protocolCache.get(lsid);
             if (protocol == null)
             {
-                protocol = ExperimentServiceImpl.get().getProtocol(lsid);
+                protocol = ExperimentService.get().getExpProtocol(lsid);
                 _protocolCache.put(lsid, protocol);
             }
             return protocol;
@@ -113,7 +114,7 @@ public class ProtocolSuccessorPredecessorView extends GridView
 
         public String getValue(RenderContext ctx)
         {
-            Protocol protocol = getProtocol(ctx);
+            ExpProtocol protocol = getProtocol(ctx);
             if (protocol != null)
             {
                 return getProtocolValue(protocol);
@@ -124,7 +125,7 @@ public class ProtocolSuccessorPredecessorView extends GridView
             }
         }
 
-        protected abstract String getProtocolValue(Protocol protocol);
+        protected abstract String getProtocolValue(ExpProtocol protocol);
     }
 
 

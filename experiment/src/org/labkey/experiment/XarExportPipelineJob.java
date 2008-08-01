@@ -19,7 +19,7 @@ package org.labkey.experiment;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.api.exp.ExperimentPipelineProvider;
+import org.labkey.experiment.pipeline.ExperimentPipelineProvider;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.experiment.xar.XarExportSelection;
 

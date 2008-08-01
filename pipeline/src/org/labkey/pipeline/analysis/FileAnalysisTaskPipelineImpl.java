@@ -34,7 +34,7 @@ import java.util.Map;
 /**
  * <code>FileAnalysisTaskPipelineImp</code>
  */
-public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl implements FileAnalysisTaskPipeline, Cloneable
+public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisTaskPipelineSettings> implements FileAnalysisTaskPipeline, Cloneable
 {
     /**
      * The text that will appear in the button to start this pipeline.
@@ -52,12 +52,12 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl implements Fi
         super(new TaskId(FileAnalysisTaskPipeline.class));
     }
 
-    public TaskPipeline cloneAndConfigure(TaskPipelineSettings settings, TaskId[] taskProgression) throws CloneNotSupportedException
+    public TaskPipeline cloneAndConfigure(FileAnalysisTaskPipelineSettings settings, TaskId[] taskProgression) throws CloneNotSupportedException
     {
         FileAnalysisTaskPipelineImpl pipeline = (FileAnalysisTaskPipelineImpl)
                 super.cloneAndConfigure(settings, taskProgression);
 
-        return pipeline.configure((FileAnalysisTaskPipelineSettings) settings);
+        return pipeline.configure(settings);
     }
 
     private TaskPipeline configure(FileAnalysisTaskPipelineSettings settings)
@@ -107,7 +107,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl implements Fi
         }
 
         // Convert any input extension heirarchy into file types.
-        Map<String, List<String>> extHeirarchy = settings.getFileExtHeirarchy();
+        Map<String, List<String>> extHeirarchy = settings.getFileExtHierarchy();
         if (extHeirarchy != null || _typeHeirarchy == null)
             _typeHeirarchy = new HashMap<FileType, FileType[]>();
 

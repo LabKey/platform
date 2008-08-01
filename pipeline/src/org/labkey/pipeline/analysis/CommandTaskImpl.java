@@ -37,9 +37,10 @@ public class CommandTaskImpl extends PipelineJob.Task<CommandTaskImpl.Factory> i
 {
     private static final Logger _log = Logger.getLogger(CommandTaskImpl.class);
 
-    public static class Factory extends AbstractTaskFactory
+    public static class Factory extends AbstractTaskFactory<CommandTaskFactorySettings>
     {
         private String _statusName = "COMMAND";
+        private String _protocolActionName;
         private Map<String, TaskPath> _inputPaths = new HashMap<String, TaskPath>();
         private Map<String, TaskPath> _outputPaths = new HashMap<String, TaskPath>();
         private ListToCommandArgs _converter = new ListToCommandArgs();
@@ -59,17 +60,20 @@ public class CommandTaskImpl extends PipelineJob.Task<CommandTaskImpl.Factory> i
             super(new TaskId(CommandTask.class, name));
         }
 
-        public TaskFactory cloneAndConfigure(TaskFactorySettings settings) throws CloneNotSupportedException
+        public Factory cloneAndConfigure(CommandTaskFactorySettings settings) throws CloneNotSupportedException
         {
             Factory factory = (Factory) super.cloneAndConfigure(settings);
 
-            return factory.configure((CommandTaskFactorySettings) settings);
+            return factory.configure(settings);
         }
 
-        private TaskFactory configure(CommandTaskFactorySettings settings)
+        private Factory configure(CommandTaskFactorySettings settings)
         {
             if (settings.getStatusName() != null)
                 _statusName = settings.getStatusName();
+
+            if (settings.getProtocolActionName() != null)
+                _protocolActionName = settings.getProtocolActionName();
 
             if (settings.getInputPaths() != null && settings.getInputPaths().size() > 0)
                 _inputPaths = settings.getInputPaths();
@@ -101,6 +105,23 @@ public class CommandTaskImpl extends PipelineJob.Task<CommandTaskImpl.Factory> i
         public PipelineJob.Task createTask(PipelineJob job)
         {
             return new CommandTaskImpl(job, this);
+        }
+
+        protected String getProtocolActionName()
+        {
+            if (_protocolActionName == null)
+            {
+                return getId().getName();
+            }
+            else
+            {
+                return _protocolActionName;
+            }
+        }
+
+        public List<String> getProtocolActionNames()
+        {
+            return Collections.singletonList(_protocolActionName);
         }
 
         public String getStatusName()
@@ -263,7 +284,7 @@ public class CommandTaskImpl extends PipelineJob.Task<CommandTaskImpl.Factory> i
         return _wd.newFile(f, tp.getName());
     }
 
-    public void inputFile(TaskPath tp) throws IOException
+    public void inputFile(TaskPath tp, RecordedAction action) throws IOException
     {
         File fileInput = null;
         if (tp.getType() != null)
@@ -272,10 +293,13 @@ public class CommandTaskImpl extends PipelineJob.Task<CommandTaskImpl.Factory> i
             fileInput = _wd.newFile(WorkDirectory.Function.input, tp.getName());
         
         if (fileInput != null)
+        {
             _wd.inputFile(fileInput, tp.isCopyInput() || _factory.isCopyInput());
+            action.addInput(fileInput, tp.getRole());
+        }
     }
     
-    public void outputFile(TaskPath tp) throws IOException
+    public void outputFile(TaskPath tp, RecordedAction action) throws IOException
     {
         File fileWork = null;
         if (tp.getType() != null)
@@ -284,16 +308,21 @@ public class CommandTaskImpl extends PipelineJob.Task<CommandTaskImpl.Factory> i
             fileWork = _wd.newFile(WorkDirectory.Function.output, tp.getName());
 
         if (fileWork != null)
-            _wd.outputFile(fileWork);
+        {
+            File f = _wd.outputFile(fileWork);
+            action.addOutput(f, tp.getRole(), false);
+        }
     }
 
-    public List<PipelineAction> run() throws PipelineJobException
+    public List<RecordedAction> run() throws PipelineJobException
     {
         try
         {
             WorkDirFactory factory = PipelineJobService.get().getWorkDirFactory();
             _wd = factory.createWorkDirectory(getJob().getJobGUID(), getJobSupport(), getJob().getLogger());
 
+            RecordedAction action = new RecordedAction(_factory.getProtocolActionName());
+            
             // Input file location must be determined before creating the process command.
             if (!_factory.getInputPaths().isEmpty())
             {
@@ -303,7 +332,7 @@ public class CommandTaskImpl extends PipelineJob.Task<CommandTaskImpl.Factory> i
                     lock = _wd.ensureCopyingLock();
                     for (TaskPath input : _factory.getInputPaths().values())
                     {
-                        inputFile(input);
+                        inputFile(input, action);
                     }
                 }
                 finally
@@ -351,7 +380,7 @@ public class CommandTaskImpl extends PipelineJob.Task<CommandTaskImpl.Factory> i
                 {
                     lock = _wd.ensureCopyingLock();
                     for (TaskPath output : _factory.getOutputPaths().values())
-                        outputFile(output);
+                        outputFile(output, action);
                 }
                 finally
                 {
@@ -370,9 +399,7 @@ public class CommandTaskImpl extends PipelineJob.Task<CommandTaskImpl.Factory> i
                 if (fileInput != null)
                     fileInput.delete();
             }
-            PipelineAction action = new PipelineAction(_factory.getId().toString());
-            action.addAll(_wd);
-            action.addParameter(PipelineAction.COMMAND_LINE_PARAM, commandLine);
+            action.addParameter(RecordedAction.COMMAND_LINE_PARAM, commandLine);
             return Collections.singletonList(action);
         }
         catch (IOException e)

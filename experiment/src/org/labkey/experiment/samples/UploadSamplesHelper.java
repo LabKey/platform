@@ -18,9 +18,9 @@ package org.labkey.experiment.samples;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.security.User;
 import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.util.PageFlowUtil;
@@ -253,7 +253,7 @@ public class UploadSamplesHelper
                     for (Map<String, Object> map : maps)
                     {
                         String lsid = new Lsid(source.getMaterialLSIDPrefix() + decideName(map, idColPropertyURIs)).toString();
-                        Material material = ExperimentServiceImpl.get().getMaterial(lsid);
+                        ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
                         if (material == null)
                         {
                             newMaps.add(map);
@@ -266,12 +266,12 @@ public class UploadSamplesHelper
                     for (Map<String, Object> map : maps)
                     {
                         String lsid = new Lsid(source.getMaterialLSIDPrefix() + decideName(map, idColPropertyURIs)).toString();
-                        Material material = ExperimentServiceImpl.get().getMaterial(lsid);
+                        ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
                         if (material != null)
                         {
-                            if (!material.getContainer().equals(getContainer().getId()))
+                            if (!material.getContainer().equals(getContainer()))
                             {
-                                throw new SQLException("A material with LSID " + lsid + " is already loaded into the folder " + ContainerManager.getForId(material.getContainer()).getPath());
+                                throw new SQLException("A material with LSID " + lsid + " is already loaded into the folder " + material.getContainer().getPath());
                             }
                             OntologyManager.deleteOntologyObject(_form.getContainer().getId(), material.getLSID());
                             reusedMaterialLSIDs.add(lsid);

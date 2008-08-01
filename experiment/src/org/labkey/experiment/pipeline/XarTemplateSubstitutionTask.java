@@ -33,7 +33,7 @@ import java.util.Collections;
  */
 public class XarTemplateSubstitutionTask extends PipelineJob.Task<XarTemplateSubstitutionTask.Factory> implements XarTemplateSubstitutionId
 {
-    public static class Factory extends AbstractTaskFactory implements XarTemplateSubstitutionId.Factory
+    public static class Factory extends AbstractTaskFactory<XarTemplateSubstitutionFactorySettings> implements XarTemplateSubstitutionId.Factory
     {
         private FileType _inputType;
         private FileType _outputType = XarTemplateSubstitutionId.FT_PIPE_XAR_XML;
@@ -43,14 +43,14 @@ public class XarTemplateSubstitutionTask extends PipelineJob.Task<XarTemplateSub
             super(XarTemplateSubstitutionId.class);
         }
 
-        public TaskFactory cloneAndConfigure(TaskFactorySettings settings) throws CloneNotSupportedException
+        public Factory cloneAndConfigure(XarTemplateSubstitutionFactorySettings settings) throws CloneNotSupportedException
         {
             Factory factory = (Factory) super.cloneAndConfigure(settings);
 
-            return factory.configure((XarTemplateSubstitutionFactorySettings) settings);
+            return factory.configure(settings);
         }
 
-        private TaskFactory configure(XarTemplateSubstitutionFactorySettings settings)
+        private Factory configure(XarTemplateSubstitutionFactorySettings settings)
         {
             if (settings.getOutputExt() != null)
                 _outputType = new FileType(settings.getOutputExt());
@@ -81,6 +81,11 @@ public class XarTemplateSubstitutionTask extends PipelineJob.Task<XarTemplateSub
             return "SAVE EXPERIMENT";
         }
 
+        public List<String> getProtocolActionNames()
+        {
+            return Collections.emptyList();
+        }
+
         public boolean isJobComplete(PipelineJob job) throws IOException, SQLException
         {
             FileAnalysisJobSupport support = job.getJobSupport(FileAnalysisJobSupport.class);
@@ -101,7 +106,7 @@ public class XarTemplateSubstitutionTask extends PipelineJob.Task<XarTemplateSub
         return getJob().getJobSupport(FileAnalysisJobSupport.class);
     }
 
-    public List<PipelineAction> run() throws PipelineJobException
+    public List<RecordedAction> run() throws PipelineJobException
     {
         try
         {

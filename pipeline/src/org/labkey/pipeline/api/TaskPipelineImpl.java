@@ -23,7 +23,7 @@ import org.labkey.api.pipeline.TaskPipelineSettings;
  * <code>TaskPipelineImpl</code> implements the <code>TaskPipeline</code>
  * interface for use in the <code>TaskRegistry</code>.
  */
-public class TaskPipelineImpl implements TaskPipeline, Cloneable
+public class TaskPipelineImpl<SettingsType extends TaskPipelineSettings> implements TaskPipeline<SettingsType>, Cloneable
 {
     /**
      * Used to identify the pipeline in configuration.
@@ -34,6 +34,11 @@ public class TaskPipelineImpl implements TaskPipeline, Cloneable
      * Tasks to execute in the pipeline.
      */
     private TaskId[] _taskProgression;
+    
+    /** ObjectId to use in the LSID for the generated Experiment protocol */
+    private String _protocolIdentifier;
+    /** Name to show in the UI for the generated Experiment protocol */
+    private String _protocolShortDescription;
 
     public TaskPipelineImpl()
     {
@@ -45,20 +50,47 @@ public class TaskPipelineImpl implements TaskPipeline, Cloneable
         _id = id;
     }
 
-    public TaskPipeline cloneAndConfigure(TaskPipelineSettings settings,
+    public TaskPipeline cloneAndConfigure(SettingsType settings,
                                           TaskId[] taskProgression)
             throws CloneNotSupportedException
     {
-        TaskPipelineImpl pipeline = (TaskPipelineImpl) clone();
+        TaskPipelineImpl<SettingsType> pipeline = (TaskPipelineImpl) clone();
         
         return pipeline.configure(settings, taskProgression);
     }
 
-    private TaskPipeline configure(TaskPipelineSettings settings, TaskId[] taskProgression)
+    public String getProtocolIdentifier()
+    {
+        if (_protocolIdentifier != null)
+        {
+            return _protocolIdentifier;
+        }
+
+        return getName();
+    }
+
+    public String getProtocolShortDescription()
+    {
+        if (_protocolShortDescription != null)
+        {
+            return _protocolShortDescription;
+        }
+
+        return getProtocolIdentifier();
+    }
+
+    private TaskPipeline configure(SettingsType settings, TaskId[] taskProgression)
     {
         _id = settings.getId();
         if (settings.getTaskProgressionSpec() != null)
             _taskProgression = taskProgression;
+
+        if (settings.getProtocolObjectId() != null)
+            _protocolIdentifier = settings.getProtocolObjectId();
+
+        if (settings.getProtocolName() != null)
+            _protocolShortDescription = settings.getProtocolName();
+
         return this;
     }
 

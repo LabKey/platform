@@ -27,10 +27,8 @@ import org.labkey.api.util.URLHelper;
 import java.util.*;
 import java.sql.SQLException;
 
-public class ExpProtocolApplicationImpl extends ExpObjectImpl implements ExpProtocolApplication
+public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<ProtocolApplication> implements ExpProtocolApplication
 {
-    ProtocolApplication _app;
-
     private List<ExpMaterial> _inputMaterials;
     private List<ExpData> _inputDatas;
     private List<ExpMaterial> _outputMaterials;
@@ -38,12 +36,7 @@ public class ExpProtocolApplicationImpl extends ExpObjectImpl implements ExpProt
 
     public ExpProtocolApplicationImpl(ProtocolApplication app)
     {
-        _app = app;
-    }
-
-    public ProtocolApplication getDataObject()
-    {
-        return _app;
+        super(app);
     }
 
     public URLHelper detailsURL()
@@ -65,26 +58,6 @@ public class ExpProtocolApplicationImpl extends ExpObjectImpl implements ExpProt
     public void setContainerId(String containerId)
     {
         throw new UnsupportedOperationException();
-    }
-
-    public String getLSID()
-    {
-        return _app.getLSID();
-    }
-
-    public void setLSID(String lsid)
-    {
-        _app.setLSID(lsid);
-    }
-
-    public void setName(String name)
-    {
-        _app.setName(name);
-    }
-
-    public String getName()
-    {
-        return _app.getName();
     }
 
     public ExpDataInput[] getDataInputs()
@@ -149,42 +122,62 @@ public class ExpProtocolApplicationImpl extends ExpObjectImpl implements ExpProt
 
     public ExpProtocolImpl getProtocol()
     {
-        return ExperimentServiceImpl.get().getExpProtocol(_app.getProtocolLSID());
+        return ExperimentServiceImpl.get().getExpProtocol(_object.getProtocolLSID());
     }
 
     public int getRowId()
     {
-        return _app.getRowId();
+        return _object.getRowId();
     }
 
     public ExpRunImpl getRun()
     {
-        return ExperimentServiceImpl.get().getExpRun(_app.getRunId());
+        Integer runId = _object.getRunId();
+        return runId == null ? null : ExperimentServiceImpl.get().getExpRun(runId.intValue());
     }
 
     public int getActionSequence()
     {
-        return _app.getActionSequence();
+        return _object.getActionSequence();
     }
 
     public ExpProtocol.ApplicationType getApplicationType()
     {
-        return ExpProtocol.ApplicationType.valueOf(_app.getCpasType());
+        return ExpProtocol.ApplicationType.valueOf(_object.getCpasType());
     }
 
     public Date getActivityDate()
     {
-        return _app.getActivityDate();
+        return _object.getActivityDate();
     }
 
     public String getComments()
     {
-        return _app.getComments();
+        return _object.getComments();
     }
 
     public String getCpasType()
     {
-        return _app.getCpasType();
+        return _object.getCpasType();
+    }
+
+    public void save(User user)
+    {
+        try
+        {
+            if (getRowId() == 0)
+            {
+                _object = Table.insert(user, ExperimentServiceImpl.get().getTinfoProtocolApplication(), _object);
+            }
+            else
+            {
+                _object = Table.update(user, ExperimentServiceImpl.get().getTinfoProtocolApplication(), _object, getRowId(), null);
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     public void setInputMaterials(List<ExpMaterial> inputMaterialList)

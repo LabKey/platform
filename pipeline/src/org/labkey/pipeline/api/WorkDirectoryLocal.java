@@ -53,7 +53,6 @@ public class WorkDirectoryLocal extends AbstractWorkDirectory
 
     public File inputFile(File fileInput, boolean forceCopy) throws IOException
     {
-        logInputFile(fileInput);
         if (!forceCopy)
             return fileInput;
         return copyInputFile(fileInput);

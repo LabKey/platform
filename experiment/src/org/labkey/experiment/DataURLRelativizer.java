@@ -30,6 +30,7 @@ import java.io.IOException;
  */
 public enum DataURLRelativizer
 {
+    /** Uses the URL that's stored in the exp.data table */
     ORIGINAL_FILE_LOCATION("Original file location")
     {
         public URLRewriter createURLRewriter()
@@ -54,6 +55,7 @@ public enum DataURLRelativizer
             };
         }
     },
+    /** Writes a relative path that's points to the file within the zip */
     ARCHIVE("Experiment archive")
     {
         public URLRewriter createURLRewriter()
@@ -61,6 +63,7 @@ public enum DataURLRelativizer
             return new ArchiveURLRewriter();
         }
     },
+    /** Gives out a URL for downloading the file directly from the web server */
     WEB_ADDRESSABLE("Web addressable")
     {
         public URLRewriter createURLRewriter()

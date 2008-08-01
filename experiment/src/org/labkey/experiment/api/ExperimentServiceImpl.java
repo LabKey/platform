@@ -44,6 +44,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.experiment.ExperimentRunGraph;
 import org.labkey.experiment.XarReader;
 import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
+import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 
 import java.io.File;
 import java.io.IOException;
@@ -117,7 +118,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     + " WHERE PA.ProtocolLSID = ? ) ");
                 sql.add(childProtocol.getLSID());
             }
-            ExperimentRun[] runs = Table.executeQuery(getSchema(), sql.getSQL(), sql.getParams().toArray(new Object[0]), ExperimentRun.class);
+            ExperimentRun[] runs = Table.executeQuery(getSchema(), sql.getSQL(), sql.getParams().toArray(new Object[sql.getParams().size()]), ExperimentRun.class);
             return ExpRunImpl.fromRuns(runs);
         }
         catch (SQLException e)
@@ -183,46 +184,53 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    protected ExpDataImpl createData(Container container, String lsidString)
+    public ExpDataImpl createData(Container container, DataType type)
+    {
+        Lsid lsid = new Lsid(generateGuidLSID(container, type));
+        return createData(container, lsid.getObjectId(), lsid.toString());
+    }
+
+    public ExpDataImpl createData(Container container, DataType type, String name)
+    {
+        return createData(container, name, generateLSID(container, type, name));
+    }
+
+    public ExpDataImpl createData(Container container, String name, String lsid)
     {
         Data data = new Data();
-        Lsid lsid = new Lsid(lsidString);
-        data.setLSID(lsidString);
-        data.setName(lsid.getObjectId());
+        data.setLSID(lsid);
+        data.setName(name);
         data.setCpasType("Data");
         data.setContainer(container.getId());
         return new ExpDataImpl(data);
     }
 
-    public ExpDataImpl createData(Container container, DataType type)
-    {
-        return createData(container, type, generateGuidLSID(container, type));
-    }
-
-    public ExpDataImpl createData(Container container, DataType type, String name)
-    {
-        return createData(container, generateLSID(container, type, name));
-    }
-
     public ExpMaterialImpl getExpMaterial(int rowid)
     {
-        Material material = getMaterial(rowid);
-        if (material == null)
-            return null;
-        return new ExpMaterialImpl(material);
+        Material material = Table.selectObject(getTinfoMaterial(), rowid, Material.class);
+        return material == null ? null : new ExpMaterialImpl(material);
     }
 
-    public ExpMaterialImpl createExpMaterial()
+    public ExpMaterialImpl createExpMaterial(Container container, String lsid, String name)
     {
-        return new ExpMaterialImpl(new Material());
+        ExpMaterialImpl result = new ExpMaterialImpl(new Material());
+        result.setContainer(container);
+        result.setLSID(lsid);
+        result.setName(name);
+        return result;
     }
 
     public ExpMaterialImpl getExpMaterial(String lsid)
     {
-        Material material = getMaterial(lsid);
-        if (material == null)
-            return null;
-        return new ExpMaterialImpl(material);
+        try
+        {
+            Material result = Table.selectObject(getTinfoMaterial(), Table.ALL_COLUMNS, new SimpleFilter("LSID", lsid), null, Material.class);
+            return result == null ? null : new ExpMaterialImpl(result);
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
     }
 
     public ExpSampleSet getSampleSet(int rowid)
@@ -309,20 +317,30 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return ret;
     }
 
-    public ExpProtocol getExpProtocol(int rowid)
+    public ExpProtocolImpl getExpProtocol(int rowid)
     {
-        Protocol protocol = getProtocol(rowid);
-        if (protocol == null)
-            return null;
-        return new ExpProtocolImpl(protocol);
+        try
+        {
+            Protocol p = Table.selectObject(getTinfoProtocol(), Table.ALL_COLUMNS, new SimpleFilter("RowId", rowid), null, Protocol.class);
+            return p == null ? null : new ExpProtocolImpl(p);
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
     }
 
     public ExpProtocolImpl getExpProtocol(String lsid)
     {
-        Protocol protocol = getProtocol(lsid);
-        if (protocol == null)
-            return null;
-        return new ExpProtocolImpl(protocol);
+        try
+        {
+            Protocol result = Table.selectObject(getTinfoProtocol(), Table.ALL_COLUMNS, new SimpleFilter("LSID", lsid), null, Protocol.class);
+            return result == null ? null : new ExpProtocolImpl(result);
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
     }
 
     public ExpProtocolImpl[] getProtocolsForExperiment(int rowId)
@@ -340,19 +358,24 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ExpProtocolImpl getExpProtocol(Container container, String name)
     {
-        return getExpProtocol(generateLSID(container, "Protocol", name));
+        return getExpProtocol(generateLSID(container, ExpProtocol.class, name));
     }
 
-    public ExpProtocolImpl createExpProtocol(Container container, String name, ExpProtocol.ApplicationType type)
+    public ExpProtocolImpl createExpProtocol(Container container, ExpProtocol.ApplicationType type, String name)
     {
-        ExpProtocolImpl existing = getExpProtocol(container, name);
+        return createExpProtocol(container, type, name, generateLSID(container, ExpProtocol.class, name)); 
+    }
+
+    public ExpProtocolImpl createExpProtocol(Container container, ExpProtocol.ApplicationType type, String name, String lsid)
+    {
+        ExpProtocolImpl existing = getExpProtocol(lsid);
         if (existing != null)
         {
             throw new IllegalArgumentException("Protocol " + existing.getLSID() + " already exists.");
         }
         Protocol protocol = new Protocol();
         protocol.setName(name);
-        protocol.setLSID(generateLSID(container, "Protocol", name));
+        protocol.setLSID(lsid);
         protocol.setContainer(container.getId());
         protocol.setApplicationType(type.toString());
         protocol.setOutputDataType("Data");
@@ -562,7 +585,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return getExpSchema();
     }
 
-    public List<ExpRun> loadXar(XarSource source, PipelineJob pipelineJob, boolean reloadExistingRuns) throws ExperimentException
+    public List<ExpRun> importXar(XarSource source, PipelineJob pipelineJob, boolean reloadExistingRuns) throws ExperimentException
     {
         XarReader reader = new XarReader(source, pipelineJob);
         reader.parseAndLoad(reloadExistingRuns);
@@ -972,31 +995,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         getMaterialSourceCache().clear();
     }
 
-    public Protocol getProtocol(String protocolLSID)
-    {
-        try
-        {
-            return Table.selectObject(getTinfoProtocol(), Table.ALL_COLUMNS, new SimpleFilter("LSID", protocolLSID), null, Protocol.class);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-    }
-
-    public Protocol getProtocol(int rowId)
-    {
-        try
-        {
-            return Table.selectObject(getTinfoProtocol(), Table.ALL_COLUMNS, new SimpleFilter("RowId", rowId), null, Protocol.class);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-
-    }
-
     public ExpProtocolApplication getExpProtocolApplication(String lsid)
     {
         ProtocolApplication app = getProtocolApplication(lsid);
@@ -1028,34 +1026,24 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public Material getMaterial(int materialId)
-    {
-        return Table.selectObject(getTinfoMaterial(), materialId, Material.class);
-    }
-
-    public Material getMaterial(String lsid)
+    public List<Data> getRunInputData(String runLSID)
     {
         try
         {
-            return Table.selectObject(getTinfoMaterial(), Table.ALL_COLUMNS, new SimpleFilter("LSID", lsid), null, Material.class);
+            final String sql = "SELECT * FROM exp.ExperimentRunDataInputs WHERE RunLsid = ?";
+            Map[] maps = Table.executeQuery(getExpSchema(), sql, new Object[]{runLSID}, Map.class);
+            Map<String, List<Data>> data = getRunInputData(maps);
+            List<Data> result = data.get(runLSID);
+            if (result == null)
+            {
+                result = Collections.emptyList();
+            }
+            return result;
         }
-        catch (SQLException x)
+        catch (SQLException e)
         {
-            throw new RuntimeSQLException(x);
+            throw new RuntimeSQLException(e);
         }
-    }
-
-    public List<Data> getRunInputData(String runLSID) throws SQLException
-    {
-        final String sql = "SELECT * FROM exp.ExperimentRunDataInputs WHERE RunLsid = ?";
-        Map[] maps = Table.executeQuery(getExpSchema(), sql, new Object[]{runLSID}, Map.class);
-        Map<String, List<Data>> data = getRunInputData(maps);
-        List<Data> result = data.get(runLSID);
-        if (result == null)
-        {
-            result = Collections.emptyList();
-        }
-        return result;
     }
 
     private Map<String, List<Data>> getRunInputData(Map[] maps)
@@ -1077,17 +1065,24 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return outputMap;
     }
 
-    public List<Material> getRunInputMaterial(String runLSID) throws SQLException
+    public List<Material> getRunInputMaterial(String runLSID)
     {
-        final String sql = "SELECT * FROM " + getTinfoExperimentRunMaterialInputs() + " Where RunLSID = ?";
-        Map[] maps = Table.executeQuery(getExpSchema(), sql, new Object[]{runLSID}, Map.class);
-        Map<String, List<Material>> material = getRunInputMaterial(maps);
-        List<Material> result = material.get(runLSID);
-        if (result == null)
+        try
         {
-            result = Collections.emptyList();
+            final String sql = "SELECT * FROM " + getTinfoExperimentRunMaterialInputs() + " Where RunLSID = ?";
+            Map[] maps = Table.executeQuery(getExpSchema(), sql, new Object[]{runLSID}, Map.class);
+            Map<String, List<Material>> material = getRunInputMaterial(maps);
+            List<Material> result = material.get(runLSID);
+            if (result == null)
+            {
+                result = Collections.emptyList();
+            }
+            return result;
         }
-        return result;
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
 
@@ -1185,15 +1180,22 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return Table.insert(user, getTinfoData(), d);
     }
 
-    public Map<String, ProtocolParameter> getProtocolParameters(int protocolRowId) throws SQLException
+    public Map<String, ProtocolParameter> getProtocolParameters(int protocolRowId)
     {
-        ProtocolParameter[] params = Table.select(getTinfoProtocolParameter(), Table.ALL_COLUMNS, new SimpleFilter("ProtocolId", protocolRowId), null, ProtocolParameter.class);
-        Map<String, ProtocolParameter> result = new HashMap<String, ProtocolParameter>();
-        for (ProtocolParameter param : params)
+        try
         {
-            result.put(param.getOntologyEntryURI(), param);
+            ProtocolParameter[] params = Table.select(getTinfoProtocolParameter(), Table.ALL_COLUMNS, new SimpleFilter("ProtocolId", protocolRowId), null, ProtocolParameter.class);
+            Map<String, ProtocolParameter> result = new HashMap<String, ProtocolParameter>();
+            for (ProtocolParameter param : params)
+            {
+                result.put(param.getOntologyEntryURI(), param);
+            }
+            return result;
         }
-        return result;
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     public ExpDataImpl getExpDataByURL(File file, Container c) throws IOException
@@ -2320,11 +2322,18 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     }
 
 
-    public ProtocolActionPredecessor[] getProtocolActionPredecessors(String parentProtocolLSID, String childProtocolLSID) throws SQLException
+    public ProtocolActionPredecessor[] getProtocolActionPredecessors(String parentProtocolLSID, String childProtocolLSID)
     {
-        SimpleFilter filter = new SimpleFilter("ChildProtocolLSID", childProtocolLSID);
-        filter.addCondition("ParentProtocolLSID", parentProtocolLSID);
-        return Table.select(getTinfoProtocolActionPredecessorLSIDView(), Table.ALL_COLUMNS, filter, new Sort("+PredecessorSequence"), ProtocolActionPredecessor.class);
+        try
+        {
+            SimpleFilter filter = new SimpleFilter("ChildProtocolLSID", childProtocolLSID);
+            filter.addCondition("ParentProtocolLSID", parentProtocolLSID);
+            return Table.select(getTinfoProtocolActionPredecessorLSIDView(), Table.ALL_COLUMNS, filter, new Sort("+PredecessorSequence"), ProtocolActionPredecessor.class);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     public Data[] getOutputDataForApplication(int applicationId)
@@ -2358,12 +2367,19 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return ExpDataImpl.fromDatas(Table.select(getTinfoData(), Table.ALL_COLUMNS, new SimpleFilter("Container", c.getId()), null, Data.class));
     }
 
-    public Data[] getDataInputReferencesForApplication(int rowId) throws SQLException
+    public Data[] getDataInputReferencesForApplication(int rowId)
     {
-        String outputSQL = "SELECT exp.Data.* from exp.Data, exp.DataInput " +
-                "WHERE exp.Data.RowId = exp.DataInput.DataId " +
-                "AND exp.DataInput.TargetApplicationId = ?";
-        return Table.executeQuery(getExpSchema(), outputSQL, new Object[]{rowId}, Data.class);
+        try
+        {
+            String outputSQL = "SELECT exp.Data.* from exp.Data, exp.DataInput " +
+                    "WHERE exp.Data.RowId = exp.DataInput.DataId " +
+                    "AND exp.DataInput.TargetApplicationId = ?";
+            return Table.executeQuery(getExpSchema(), outputSQL, new Object[]{rowId}, Data.class);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     public DataInput[] getDataInputsForApplication(int applicationId)
@@ -2379,12 +2395,19 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public Material[] getMaterialInputReferencesForApplication(int rowId) throws SQLException
+    public Material[] getMaterialInputReferencesForApplication(int rowId)
     {
-        String outputSQL = "SELECT exp.Material.* from exp.Material, exp.MaterialInput " +
-                "WHERE exp.Material.RowId = exp.MaterialInput.MaterialId " +
-                "AND exp.MaterialInput.TargetApplicationId = ?";
-        return Table.executeQuery(getExpSchema(), outputSQL, new Object[]{rowId}, Material.class);
+        try
+        {
+            String outputSQL = "SELECT exp.Material.* from exp.Material, exp.MaterialInput " +
+                    "WHERE exp.Material.RowId = exp.MaterialInput.MaterialId " +
+                    "AND exp.MaterialInput.TargetApplicationId = ?";
+            return Table.executeQuery(getExpSchema(), outputSQL, new Object[]{rowId}, Material.class);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     public MaterialInput[] getMaterialInputsForApplication(int applicationId)
@@ -2400,10 +2423,17 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public ProtocolApplicationParameter[] getProtocolApplicationParameters(int rowId) throws SQLException
+    public ProtocolApplicationParameter[] getProtocolApplicationParameters(int rowId)
     {
-        SimpleFilter filter = new SimpleFilter("ProtocolApplicationId", rowId);
-        return Table.select(getTinfoProtocolApplicationParameter(), Table.ALL_COLUMNS, filter, null, ProtocolApplicationParameter.class);
+        try
+        {
+            SimpleFilter filter = new SimpleFilter("ProtocolApplicationId", rowId);
+            return Table.select(getTinfoProtocolApplicationParameter(), Table.ALL_COLUMNS, filter, null, ProtocolApplicationParameter.class);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     public ProtocolActionStepDetail getProtocolActionStepDetail(String parentProtocolLSID, Integer actionSequence) throws XarFormatException, SQLException
@@ -2670,12 +2700,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             ProtocolAction action2 = actions[1];
             assert action2.getSequence() == 10;
-            Protocol protocol2 = getProtocol(action2.getChildProtocolId());
+            ExpProtocol protocol2 = getExpProtocol(action2.getChildProtocolId());
 
             ProtocolApplication protApp2 = new ProtocolApplication();
             protApp2.setActivityDate(date);
             protApp2.setActionSequence(action2.getSequence());
-            protApp2.setCpasType(protocol2.getApplicationType());
+            protApp2.setCpasType(protocol2.getApplicationType().toString());
             protApp2.setRunId(run.getRowId());
             protApp2.setProtocolLSID(protocol2.getLSID());
 
@@ -2707,7 +2737,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     throw new IllegalArgumentException("Output material " + outputMaterial.getName() + " is already marked as being created by another run");
                 }
                 outputMaterial.setSourceApplication(new ExpProtocolApplicationImpl(protApp2));
-                outputMaterial.setSourceProtocol(new ExpProtocolImpl(protocol2));
+                outputMaterial.setSourceProtocol(protocol2);
                 outputMaterial.setRun(run);
                 Table.update(user, getTinfoMaterial(), ((ExpMaterialImpl)outputMaterial)._object, outputMaterial.getRowId(), null);
             }
@@ -2727,7 +2757,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     throw new IllegalArgumentException("Output data " + outputData.getName() + " is already marked as being created by another run");
                 }
                 outputData.setSourceApplication(new ExpProtocolApplicationImpl(protApp2));
-                outputData.setSourceProtocol(new ExpProtocolImpl(protocol2));
+                outputData.setSourceProtocol(protocol2);
                 outputData.setRun(run);
                 Table.update(user, getTinfoData(), ((ExpDataImpl)outputData).getDataObject(), outputData.getRowId(), null);
             }
@@ -2735,14 +2765,14 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             ProtocolAction action3 = actions[2];
             assert action3.getSequence() == 20;
 
-            Protocol outputProtocol = getProtocol(action3.getChildProtocolId());
+            ExpProtocol outputProtocol = getExpProtocol(action3.getChildProtocolId());
             assert outputProtocol.getApplicationType().equals("ExperimentRunOutput");
 
 
             ProtocolApplication protApp3 = new ProtocolApplication();
             protApp3.setActivityDate(date);
             protApp3.setActionSequence(action3.getSequence());
-            protApp3.setCpasType(outputProtocol.getApplicationType());
+            protApp3.setCpasType(outputProtocol.getApplicationType().toString());
             protApp3.setRunId(run.getRowId());
             protApp3.setProtocolLSID(outputProtocol.getLSID());
 
@@ -2816,10 +2846,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     private ExpProtocol ensureSampleDerivationProtocol(User user)
     {
-        Protocol protocol = getProtocol(SAMPLE_DERIVATION_PROTOCOL_LSID);
+        ExpProtocol protocol = getExpProtocol(SAMPLE_DERIVATION_PROTOCOL_LSID);
         if (protocol == null)
         {
-            ExpProtocolImpl baseProtocol = createExpProtocol(ContainerManager.getSharedContainer(), "Sample Derivation Protocol", ExpProtocol.ApplicationType.ExperimentRun);
+            ExpProtocolImpl baseProtocol = createExpProtocol(ContainerManager.getSharedContainer(), ExpProtocol.ApplicationType.ExperimentRun, "Sample Derivation Protocol");
             baseProtocol.setLSID(SAMPLE_DERIVATION_PROTOCOL_LSID);
             baseProtocol.setMaxInputDataPerInstance(0);
             baseProtocol.setProtocolDescription("Simple protocol for creating derived samples that may have different properties from the original sample.");
@@ -2832,7 +2862,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 throw new RuntimeSQLException(e);
             }
         }
-        return new ExpProtocolImpl(protocol);
+        return protocol;
     }
 
     public void registerExperimentDataHandler(ExperimentDataHandler handler)
@@ -2893,11 +2923,18 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new ExpProtocolApplicationImpl(app);
     }
 
-    public ExpProtocolApplication[] getExpProtocolApplicationsForRun(int runId) throws SQLException
+    public ExpProtocolApplication[] getExpProtocolApplicationsForRun(int runId)
     {
-        SimpleFilter filter = new SimpleFilter("RunId", runId);
-        Sort sort = new Sort("ActionSequence, RowId");
-        return ExpProtocolApplicationImpl.fromProtocolApplications(Table.select(getTinfoProtocolApplication(), Table.ALL_COLUMNS, filter, sort, ProtocolApplication.class));
+        try
+        {
+            SimpleFilter filter = new SimpleFilter("RunId", runId);
+            Sort sort = new Sort("ActionSequence, RowId");
+            return ExpProtocolApplicationImpl.fromProtocolApplications(Table.select(getTinfoProtocolApplication(), Table.ALL_COLUMNS, filter, sort, ProtocolApplication.class));
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     public ExpSampleSet createSampleSet()
@@ -2916,6 +2953,13 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         {
             throw new RuntimeSQLException(x);
         }
+    }
+
+    public PipelineJob importXarAsync(ViewBackgroundInfo info, File file, String description) throws IOException
+    {
+        ExperimentPipelineJob job = new ExperimentPipelineJob(info, file, description, false);
+        PipelineService.get().queueJob(job);
+        return job;
     }
 
     private void addMaterialInputs(Map<ExpMaterial, String> inputMaterials, Container c, ProtocolApplication protApp1, User user)

@@ -26,20 +26,18 @@ import java.util.Map;
 */
 public class JobClusterSettings extends AbstractClusterSettings
 {
-    private static final String PREFIX = "globus";
-
-    private final TaskId _activeTaskId;
+    private final String _groupParameterName;
     private final Map<String, String> _jobParams;
 
-    public JobClusterSettings(TaskId activeTaskId, Map<String, String> jobParams)
+    public JobClusterSettings(String groupParameterName, Map<String, String> jobParams)
     {
-        _activeTaskId = activeTaskId;
+        _groupParameterName = groupParameterName;
         _jobParams = jobParams;
     }
 
     private String getParam(String paramName)
     {
-        return _jobParams.get(PREFIX + " " + _activeTaskId + ", " + paramName); 
+        return _jobParams.get(_groupParameterName + ", globus " + paramName);
     }
 
     private Long getLongParam(String paramName)
@@ -61,26 +59,26 @@ public class JobClusterSettings extends AbstractClusterSettings
 
     public Long getMaxTime()
     {
-        return getLongParam("maxtime");
+        return getLongParam("max time");
     }
 
     public Long getMaxCPUTime()
     {
-        return getLongParam("maxcputime");
+        return getLongParam("max cpu-time");
     }
 
     public Long getMaxWallTime()
     {
-        return getLongParam("maxwalltime");
+        return getLongParam("max wall-time");
     }
 
     public Integer getHostCount()
     {
-        return getIntegerParam("hostcount");
+        return getIntegerParam("host count");
     }
 
     public Integer getMaxMemory()
     {
-        return getIntegerParam("maxmemory");
+        return getIntegerParam("max memory");
     }
 }

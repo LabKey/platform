@@ -15,7 +15,7 @@
  */
 package org.labkey.experiment.pipeline;
 
-import org.labkey.api.exp.ExperimentPipelineJob;
+import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.api.exp.FileXarSource;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.pipeline.XarTemplateSubstitutionId;
@@ -36,7 +36,7 @@ import java.util.Collections;
  */
 public class XarImportTask extends PipelineJob.Task<XarImportTask.Factory>
 {
-     public static class Factory extends AbstractTaskFactory
+     public static class Factory extends AbstractTaskFactory<XarImportFactorySettings>
     {
         private FileType _inputType = XarTemplateSubstitutionId.FT_PIPE_XAR_XML;
 
@@ -45,14 +45,14 @@ public class XarImportTask extends PipelineJob.Task<XarImportTask.Factory>
             super(XarImportTaskId.class);
         }
 
-        public TaskFactory cloneAndConfigure(TaskFactorySettings settings) throws CloneNotSupportedException
+        public Factory cloneAndConfigure(XarImportFactorySettings settings) throws CloneNotSupportedException
         {
             Factory factory = (Factory) super.cloneAndConfigure(settings);
 
-            return factory.configure((XarImportFactorySettings) settings);
+            return factory.configure(settings);
         }
 
-        private TaskFactory configure(XarImportFactorySettings settings)
+        private Factory configure(XarImportFactorySettings settings)
         {
             if (settings.getInputExt() != null)
                 _inputType = new FileType(settings.getInputExt());
@@ -75,6 +75,11 @@ public class XarImportTask extends PipelineJob.Task<XarImportTask.Factory>
             return "IMPORT EXPERIMENT";
         }
 
+        public List<String> getProtocolActionNames()
+        {
+            return Collections.emptyList();
+        }
+
         public boolean isJobComplete(PipelineJob job) throws IOException, SQLException
         {
             // Check parameters to see if loading is required.
@@ -92,14 +97,14 @@ public class XarImportTask extends PipelineJob.Task<XarImportTask.Factory>
         return getJob().getJobSupport(FileAnalysisJobSupport.class);
     }
 
-    public List<PipelineAction> run()
+    public List<RecordedAction> run()
     {
         String baseName = getJobSupport().getBaseName();
         File dirAnalysis = getJobSupport().getAnalysisDirectory();
 
         File fileExperimentXML = _factory.getInputTypes()[0].newFile(dirAnalysis, baseName);
 
-        FileXarSource source = new FileXarSource(fileExperimentXML);
+        FileXarSource source = new FileXarSource(fileExperimentXML, getJob());
         if (ExperimentPipelineJob.loadExperiment(getJob(), source, false))
         {
             ExpRun run = source.getExperimentRun();

@@ -36,6 +36,7 @@ import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.experiment.*;
+import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.api.*;
 import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.samples.UploadMaterialSetForm;
@@ -2467,16 +2468,13 @@ public class ExperimentController extends SpringActionController
             int i = 0;
             for (Map.Entry<String, Map<PropertyDescriptor, String>> entry : allProperties.entrySet())
             {
-                ExpMaterial outputMaterial = ExperimentService.get().createExpMaterial();
-                outputMaterial.setLSID(entry.getKey());
                 Map<PropertyDescriptor, String> props = entry.getValue();
                 String name = helper.determineMaterialName(props);
-                outputMaterial.setName(name);
+                ExpMaterial outputMaterial = ExperimentService.get().createExpMaterial(getContainer(), entry.getKey(), name);
                 if (sampleSet != null)
                 {
                     outputMaterial.setCpasType(sampleSet.getLSID());
                 }
-                outputMaterial.setContainer(getContainer());
                 outputMaterial.insert(getUser());
 
                 if (sampleSet != null)
@@ -2686,7 +2684,7 @@ public class ExperimentController extends SpringActionController
                 int suffix = 1;
                 do
                 {
-                    String template = "urn:lsid:${LSIDAuthority}:Experiment.Folder-${Container.RowId}:" + exp.getName();
+                    String template = "urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Experiment.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":" + exp.getName();
                     if (suffix > 1)
                     {
                         template = template + suffix;

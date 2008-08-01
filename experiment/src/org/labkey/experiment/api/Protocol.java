@@ -387,7 +387,7 @@ public class Protocol extends IdentifiableEntity
         _protocolParameters = Collections.unmodifiableMap(newParams);
     }
 
-    public Map<String, ProtocolParameter> retrieveProtocolParameters() throws SQLException
+    public Map<String, ProtocolParameter> retrieveProtocolParameters()
     {
         if (_protocolParameters == null)
         {

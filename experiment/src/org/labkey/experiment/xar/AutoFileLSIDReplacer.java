@@ -19,6 +19,7 @@ package org.labkey.experiment.xar;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.XarSource;
+import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.xar.Replacer;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExpData;
@@ -30,6 +31,10 @@ import org.labkey.api.util.PageFlowUtil;
  */
 public class AutoFileLSIDReplacer implements Replacer
 {
+    private static final String AUTO_FILE_LSID_NAME = "AutoFileLSID";
+
+    public static final String AUTO_FILE_LSID_SUBSTITUTION = XarContext.createSubstitution(AUTO_FILE_LSID_NAME);
+
     private final String _dataFileURL;
     private final Container _container;
     private final XarSource _source;
@@ -43,7 +48,7 @@ public class AutoFileLSIDReplacer implements Replacer
 
     public String getReplacement(String original) throws XarFormatException
     {
-        if (original.equals("AutoFileLSID"))
+        if (original.equals(AUTO_FILE_LSID_NAME))
         {
             if (_dataFileURL == null)
             {
@@ -59,7 +64,7 @@ public class AutoFileLSIDReplacer implements Replacer
             }
             else
             {
-                return "urn:lsid:${LSIDAuthority}:${LSIDNamespace.Prefix}.Folder-${Container.RowId}-${XarFileId}:" + PageFlowUtil.encode(_dataFileURL);
+                return "urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":${LSIDNamespace.Prefix}.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + "-${XarFileId}:" + PageFlowUtil.encode(_dataFileURL);
             }
         }
         return null;

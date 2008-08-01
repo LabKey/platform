@@ -36,6 +36,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Arrays;
 
+import com.sun.jmx.snmp.SnmpInt;
+
 public class ExpProtocolImpl extends ExpIdentifiableBaseImpl<Protocol> implements ExpProtocol
 {
     static private final Logger _log = Logger.getLogger(ExpProtocolImpl.class);
@@ -169,7 +171,7 @@ public class ExpProtocolImpl extends ExpIdentifiableBaseImpl<Protocol> implement
         _object.setContainer(containerId);
     }
 
-    public Map<String, ProtocolParameter> retrieveProtocolParameters() throws SQLException
+    public Map<String, ProtocolParameter> retrieveProtocolParameters()
     {
         return _object.retrieveProtocolParameters();
     }
@@ -203,5 +205,30 @@ public class ExpProtocolImpl extends ExpIdentifiableBaseImpl<Protocol> implement
             result[i] = new ExpProtocolImpl(protocols[i]);
         }
         return result;
+    }
+
+    public Integer getMaxInputDataPerInstance()
+    {
+        return _object.getMaxInputDataPerInstance();
+    }
+
+    public Integer getOutputDataPerInstance()
+    {
+        return _object.getOutputDataPerInstance();
+    }
+
+    public Integer getOutputMaterialPerInstance()
+    {
+        return _object.getOutputMaterialPerInstance();
+    }
+
+    public String getOutputDataType()
+    {
+        return _object.getOutputDataType();
+    }
+
+    public String getOutputMaterialType()
+    {
+        return _object.getOutputMaterialType();
     }
 }

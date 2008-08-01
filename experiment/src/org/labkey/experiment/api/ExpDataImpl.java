@@ -23,6 +23,9 @@ import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineJob;
 import org.apache.log4j.Logger;
 
 import java.sql.ResultSet;
@@ -69,12 +72,12 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
             SimpleFilter filter = new SimpleFilter();
             filter.addCondition("DataId", getRowId());
             rs = Table.select(ExperimentServiceImpl.get().getTinfoDataInput(), Collections.singleton("TargetApplicationId"), filter, null);
-            List<ExpProtocolApplication> ret = new ArrayList();
+            List<ExpProtocolApplication> ret = new ArrayList<ExpProtocolApplication>();
             while (rs.next())
             {
                 ret.add(ExperimentService.get().getExpProtocolApplication(rs.getInt(1)));
             }
-            return ret.toArray(new ExpProtocolApplication[0]);
+            return ret.toArray(new ExpProtocolApplication[ret.size()]);
         }
         catch (SQLException e)
         {
@@ -96,7 +99,7 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
                     "\nFROM exp.ProtocolApplication" +
                     "\nINNER JOIN exp.DataInput ON exp.ProtocolApplication.RowId = exp.DataInput.TargetApplicationId AND exp.DataInput.DataId = ?)");
             sql.add(getRowId());
-            ExperimentRun[] runs = Table.executeQuery(ExperimentService.get().getSchema(), sql.getSQL(), sql.getParams().toArray(new Object[0]), ExperimentRun.class);
+            ExperimentRun[] runs = Table.executeQuery(ExperimentService.get().getSchema(), sql.getSQL(), sql.getParams().toArray(new Object[sql.getParams().size()]), ExperimentRun.class);
             return ExpRunImpl.fromRuns(runs);
         }
         catch (SQLException e)
@@ -237,5 +240,71 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
     {
         String result = _object.getCpasType();
         return result == null ? "Data" : result;
+    }
+
+    public void importDataFile(PipelineJob job, XarSource xarSource) throws ExperimentException
+    {
+        String dataFileURL = getDataFileUrl();
+
+        if (dataFileURL == null)
+        {
+            return;
+        }
+
+        if (xarSource.shouldIgnoreDataFiles())
+        {
+            _log.info("Skipping load of data file " + dataFileURL + " based on the XAR source");
+            return;
+        }
+
+        try
+        {
+            _log.info("Trying to load data file " + dataFileURL + " into the system");
+
+            File file = new File(new URI(dataFileURL));
+
+            if (!file.exists())
+            {
+                _log.warn("Unable to find the data file " + file.getPath() + " on disk.");
+                return;
+            }
+
+            try
+            {
+                // Check that the file is under the pipeline root to prevent users from referencing a file that they
+                // don't have permission to import
+                PipeRoot pr = PipelineService.get().findPipelineRoot(job.getContainer());
+                if (!xarSource.allowImport(pr, job.getContainer(), file))
+                {
+                    if (pr == null)
+                    {
+                        _log.warn("No pipeline root was set, skipping load of file " + file.getPath());
+                        return;
+                    }
+                    _log.warn("The data file " + file.getAbsolutePath() + " is not under the folder's pipeline root, " + pr.getUri() + ". It will not be loaded directly, but may be loaded if referenced from other files that are under the pipeline root.");
+                    return;
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
+
+            ExperimentDataHandler handler = findDataHandler();
+            try
+            {
+                handler.importFile(this, file, job.getInfo(), job.getLogger(), xarSource.getXarContext());
+            }
+            catch (ExperimentException e)
+            {
+                throw new XarFormatException(e);
+            }
+
+            _log.info("Finished trying to load data file " + dataFileURL + " into the system");
+        }
+        catch (URISyntaxException e)
+        {
+            throw new XarFormatException(e);
+        }
     }
 }

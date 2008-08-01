@@ -37,7 +37,7 @@ import java.util.Arrays;
  * from any format which has been created during job processing.  This will
  * require better support in <code>PipelineJob</code>.
  */
-public class ConvertTaskFactory extends AbstractTaskFactory
+public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySettings>
 {
     private String _statusName = "CONVERSION";
     private TaskId[] _commands;
@@ -54,14 +54,14 @@ public class ConvertTaskFactory extends AbstractTaskFactory
         super(new TaskId(ConvertTaskId.class, name));
     }
 
-    public TaskFactory cloneAndConfigure(TaskFactorySettings settings) throws CloneNotSupportedException
+    public ConvertTaskFactory cloneAndConfigure(ConvertTaskFactorySettings settings) throws CloneNotSupportedException
     {
         ConvertTaskFactory factory = (ConvertTaskFactory) super.cloneAndConfigure(settings);
 
-        return factory.configure((ConvertTaskFactorySettings) settings);
+        return factory.configure(settings);
     }
 
-    private TaskFactory configure(ConvertTaskFactorySettings settings)
+    private ConvertTaskFactory configure(ConvertTaskFactorySettings settings)
     {
         if (settings.getStatusName() != null)
             _statusName = settings.getStatusName();
@@ -129,12 +129,13 @@ public class ConvertTaskFactory extends AbstractTaskFactory
         return null;
     }
 
-    public List<String> getActionNames()
+    public List<String> getProtocolActionNames()
     {
         List<String> result = new ArrayList<String>();
-        for (TaskId command : _commands)
+        for (TaskId tid : _commands)
         {
-            result.add(command.toString());
+            TaskFactory<?> factory = PipelineJobService.get().getTaskFactory(tid);
+            result.addAll(factory.getProtocolActionNames());
         }
         return result;
     }

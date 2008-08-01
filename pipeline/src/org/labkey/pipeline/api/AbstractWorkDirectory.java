@@ -16,7 +16,6 @@
 package org.labkey.pipeline.api;
 
 import org.labkey.api.pipeline.WorkDirectory;
-import org.labkey.api.pipeline.PipelineAction;
 import org.labkey.api.pipeline.WorkDirFactory;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.util.FileType;
@@ -30,8 +29,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.util.HashMap;
-import java.util.Set;
-import java.util.HashSet;
 
 /*
 * User: jeckels
@@ -48,9 +45,6 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
     protected File _dir;
     protected Logger _log;
     protected HashMap<File, File> _copiedInputs = new HashMap<File, File>();
-
-    protected Set<File> _inputs = new HashSet<File>();
-    protected Set<File> _outputs = new HashSet<File>();
 
     protected CopyingResource _copyingResource;
 
@@ -76,12 +70,6 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
     public File getDir()
     {
         return _dir;
-    }
-
-    public File logInputFile(File fileInput)
-    {
-        _inputs.add(fileInput);
-        return fileInput;
     }
 
     private void copyFile(File source, File target) throws IOException
@@ -147,7 +135,6 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
 
         if (Function.input.equals(f))
         {
-            logInputFile(file);
             // See if the file has already been copied into the working directory.
             // In which case, the copied version should be used.
             File fileWork = _copiedInputs.get(file);
@@ -173,33 +160,9 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         return outputFile(fileWork, _support.findOutputFile(nameDest));
     }
 
-    public Set<File> getInputs()
-    {
-        return _inputs;
-    }
-
-    public Set<File> getOutputs()
-    {
-        return _outputs;
-    }
-
-    public void populateAction(PipelineAction action)
-    {
-        for (File input : _inputs)
-        {
-            action.addInput(input.toURI());
-        }
-
-        for (File output : _outputs)
-        {
-            action.addOutput(output.toURI(), false);
-        }
-    }
-
     protected File outputFile(File fileWork, File fileDest) throws IOException
     {
         NetworkDrive.ensureDrive(fileDest.getAbsolutePath());
-        _outputs.add(fileDest);
         if (!fileWork.exists())
         {
             // If the work file does not exist, and the destination does

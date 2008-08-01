@@ -33,7 +33,6 @@ import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.DataURLRelativizer;
 import org.labkey.experiment.XarReader;
 import org.labkey.experiment.api.ExperimentServiceImpl;
-import org.labkey.experiment.api.ExperimentRun;
 import org.labkey.experiment.api.ExpRunImpl;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
@@ -141,7 +140,7 @@ public class MoveRunsPipelineJob extends PipelineJob
                             }
                         }
 
-                        MoveRunsXarSource xarSource = new MoveRunsXarSource(bOut.toString(), new File(experimentRun.getFilePathRoot()));
+                        MoveRunsXarSource xarSource = new MoveRunsXarSource(bOut.toString(), new File(experimentRun.getFilePathRoot()), this);
                         XarReader reader = new XarReader(xarSource, this);
                         reader.parseAndLoad(false);
 
@@ -197,8 +196,9 @@ public class MoveRunsPipelineJob extends PipelineJob
         private String _experimentName;
         private File _root;
 
-        public MoveRunsXarSource(String xml, File root) throws ExperimentException
+        public MoveRunsXarSource(String xml, File root, PipelineJob job) throws ExperimentException
         {
+            super(job);
             _xml = xml;
             _root = root;
 
@@ -276,10 +276,6 @@ public class MoveRunsPipelineJob extends PipelineJob
         public File getLogFile() throws IOException
         {
             return _logFile;
-        }
-
-        public void init() throws IOException
-        {
         }
 
         public String toString()

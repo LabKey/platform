@@ -122,7 +122,7 @@ public class PipelineJobRunnerGlobus implements Callable
 
         ClusterSettings settings = PipelineJobService.get().getGlobusClientProperties();
         settings = settings.mergeOverrides(job.getActiveTaskFactory());
-        settings = settings.mergeOverrides(new JobClusterSettings(job.getActiveTaskId(), job.getParameters()));
+        settings = settings.mergeOverrides(new JobClusterSettings(job.getActiveTaskFactory().getGroupParameterName(), job.getParameters()));
 
         try
         {
