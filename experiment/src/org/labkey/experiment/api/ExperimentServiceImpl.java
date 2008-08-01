@@ -2766,7 +2766,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             assert action3.getSequence() == 20;
 
             ExpProtocol outputProtocol = getExpProtocol(action3.getChildProtocolId());
-            assert outputProtocol.getApplicationType().equals("ExperimentRunOutput");
+            assert outputProtocol.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRunOutput;
 
 
             ProtocolApplication protApp3 = new ProtocolApplication();
