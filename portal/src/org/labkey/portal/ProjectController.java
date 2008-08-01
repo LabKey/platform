@@ -27,6 +27,7 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.User;
 import org.labkey.api.util.*;
 import org.labkey.api.util.Search.SearchResultsView;
 import org.labkey.api.view.*;
@@ -833,4 +834,58 @@ public class ProjectController extends SpringActionController
             return searchables;
         }
     }
+
+    public static class GetContainersForm
+    {
+        private boolean _includeSubfolders = false;
+
+        public boolean isIncludeSubfolders()
+        {
+            return _includeSubfolders;
+        }
+
+        public void setIncludeSubfolders(boolean includeSubfolders)
+        {
+            _includeSubfolders = includeSubfolders;
+        }
+    }
+
+    /**
+     * Returns all contains visible to the current user
+     */
+    @RequiresPermission(ACL.PERM_READ)
+    public class GetContainersAction extends ApiAction<GetContainersForm>
+    {
+        public ApiResponse execute(GetContainersForm form, BindException errors) throws Exception
+        {
+            return new ApiSimpleResponse("containers", getContainers(getViewContext().getContainer(),
+                    getViewContext().getUser(), form.isIncludeSubfolders()));
+        }
+
+        protected List<Map<String,Object>> getContainers(Container parent, User user, boolean recurse)
+        {
+            List<Map<String,Object>> containersInfo = new ArrayList<Map<String,Object>>();
+            for(Container child : parent.getChildren())
+            {
+                if(!child.hasPermission(user, ACL.PERM_READ))
+                    continue;
+
+                Map<String,Object> containerInfo = new HashMap<String,Object>();
+                containerInfo.put("name", child.getName());
+                containerInfo.put("id", child.getId());
+                containerInfo.put("path", child.getPath());
+                containerInfo.put("sortOrder", child.getSortOrder());
+                containerInfo.put("userPermissions", child.getAcl().getPermissions(user));
+
+                //recurse into children
+                if(recurse && child.hasChildren())
+                    containerInfo.put("children", getContainers(child, user, recurse));
+                
+                containersInfo.add(containerInfo);
+            }
+
+            return containersInfo;
+        }
+    }
+
 }
