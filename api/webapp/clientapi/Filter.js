@@ -77,8 +77,9 @@ LABKEY.Filter = new function()
             CONTAINS : getFilterType("Contains", "contains", true),
             DOES_NOT_CONTAIN : getFilterType("Does Not Contain", "doesnotcontain", true),
             DOES_NOT_START_WITH : getFilterType("Does Not Start With", "doesnotstartwith", true),
-            STARTS_WITH : getFilterType("Starts With", "startswith", true)
-		},
+            STARTS_WITH : getFilterType("Starts With", "startswith", true),
+            IN : getFilterType("Equals One Of", "in", true)
+        },
 
         /**
         * Creates a filter
