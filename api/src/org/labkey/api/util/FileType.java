@@ -28,6 +28,8 @@ public class FileType implements Serializable
 {
     private String _suffix;
     private Boolean _dir;
+    /** Include the basename of the file when building up the reference. Set to false to use the suffix as the full file name */ 
+    private boolean _includeBasename = true;
 
     /**
      * Constructor to use when type is assumed to be a file, but a call to isDirectory()
@@ -52,7 +54,17 @@ public class FileType implements Serializable
     public FileType(String suffix, boolean dir)
     {
         _suffix = suffix;
-        _dir = new Boolean(dir);
+        _dir = Boolean.valueOf(dir);
+    }
+
+    public boolean isIncludeBasename()
+    {
+        return _includeBasename;
+    }
+
+    public void setIncludeBasename(boolean includeBasename)
+    {
+        _includeBasename = includeBasename;
     }
 
     public String getSuffix()
@@ -62,7 +74,11 @@ public class FileType implements Serializable
 
     public String getName(String basename)
     {
-        return basename + _suffix;
+        if (_includeBasename)
+        {
+            return basename + _suffix;
+        }
+        return _suffix;
     }
 
     public String getBaseName(File file)
@@ -96,7 +112,11 @@ public class FileType implements Serializable
 
     public boolean isMatch(String name, String basename)
     {
-        return name.equals(basename + _suffix);
+        if (_includeBasename)
+        {
+            return name.equals(basename + _suffix);
+        }
+        return name.equals(_suffix);
     }
 
     public boolean equals(Object o)
@@ -106,14 +126,18 @@ public class FileType implements Serializable
 
         FileType fileType = (FileType) o;
 
-        if (!_suffix.equals(fileType._suffix)) return false;
-
-        return true;
+        if (_includeBasename != fileType._includeBasename) return false;
+        if (_dir != null ? !_dir.equals(fileType._dir) : fileType._dir != null) return false;
+        return !(_suffix != null ? !_suffix.equals(fileType._suffix) : fileType._suffix != null);
     }
 
     public int hashCode()
     {
-        return _suffix.hashCode();
+        int result;
+        result = (_suffix != null ? _suffix.hashCode() : 0);
+        result = 31 * result + (_dir != null ? _dir.hashCode() : 0);
+        result = 31 * result + (_includeBasename ? 1 : 0);
+        return result;
     }
 
     public static FileType[] findTypes(FileType[] types, File[] files)

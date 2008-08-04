@@ -41,8 +41,6 @@ public class ExperimentService
 
     public static final String MODULE_NAME = "Experiment";
 
-    public static final String EXPERIMENT_RUN_CPAS_TYPE = "ExperimentRun";
-    public static final String EXPERIMENT_RUN_OUTPUT_CPAS_TYPE = "ExperimentRunOutput";
     public static final String SCHEMA_LOCATION = "http://cpas.fhcrc.org/exp/xml http://www.labkey.org/download/XarSchema/V2.3/expTypes.xsd";
 
     static public Interface get()

@@ -31,9 +31,9 @@ public class RecordedAction
 {
     public static final ParameterType COMMAND_LINE_PARAM = new ParameterType("Command line", "terms.labkey.org#CommandLine", SimpleTypeNames.STRING);
 
-    private Set<DataFile> _inputs = new HashSet<DataFile>();
-    private Set<DataFile> _outputs = new HashSet<DataFile>();
-    private Map<ParameterType, Object> _params = new HashMap<ParameterType, Object>();
+    private Set<DataFile> _inputs = new LinkedHashSet<DataFile>();
+    private Set<DataFile> _outputs = new LinkedHashSet<DataFile>();
+    private Map<ParameterType, Object> _params = new LinkedHashMap<ParameterType, Object>();
 
     private String _name;
     private String _description;
