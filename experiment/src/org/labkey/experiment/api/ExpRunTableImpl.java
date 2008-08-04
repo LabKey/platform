@@ -256,7 +256,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         SQLFragment sql = new SQLFragment("(SELECT MIN(exp.datainput.dataid)" +
                 "\nFROM exp.datainput" +
                 "\nINNER JOIN exp.protocolapplication on exp.datainput.targetapplicationid = exp.protocolapplication.rowid" +
-                "\nWHERE exp.protocolapplication.cpastype = '" + ExperimentService.EXPERIMENT_RUN_CPAS_TYPE + "'" +
+                "\nWHERE exp.protocolapplication.cpastype = '" + ExpProtocol.ApplicationType.ExperimentRun + "'" +
                 "\nAND exp.protocolapplication.runid = " + ExprColumn.STR_TABLE_ALIAS + ".rowid" +
                 "\nAND ");
         if (pd == null)

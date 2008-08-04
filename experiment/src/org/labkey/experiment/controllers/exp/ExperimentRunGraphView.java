@@ -70,7 +70,7 @@ public class ExperimentRunGraphView extends WebPartView
                 out.println("[<a href=\"" + ExperimentController.ExperimentUrlsImpl.get().getRunGraphDetailURL(_run) + "\">graph detail view</a>]");
             }
             out.println("</p>");
-            out.println("<p>Click on an element of the experiment run below to see details</p>");
+            out.println("<p>Click on a node in the graph below for details. Run outputs have a bold outline.</p>");
             out.println("<img src=\"" + ExperimentController.ExperimentUrlsImpl.get().getDownloadGraphURL(_run, _detail, _focus) + "\" usemap=\"#graphmap\" >");
             out.println("<map name=\"graphmap\">");
 

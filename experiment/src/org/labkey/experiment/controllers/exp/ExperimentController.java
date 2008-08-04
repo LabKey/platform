@@ -561,7 +561,7 @@ public class ExperimentController extends SpringActionController
 
             try
             {
-                PageFlowUtil.streamFile(getViewContext().getResponse(), ExperimentRunGraph.getGifFile(getContainer().getRowId(), experimentRun.getRowId(), detail, focus).getAbsolutePath(), false);
+                PageFlowUtil.streamFile(getViewContext().getResponse(), ExperimentRunGraph.getImageFile(getContainer().getRowId(), experimentRun.getRowId(), detail, focus).getAbsolutePath(), false);
             }
             catch (FileNotFoundException e)
             {

@@ -41,11 +41,10 @@ public class DotGraph
     private static String DATA_COLOR = "#BBE3E3";
     private static String EXPRUN_COLOR = "#FF7F50";
     private static String LINKEDRUN_COLOR = "#CDB79E";
-    private static String GROUP_OPACITY = "00"; // doesn't seem to work
     private static String GROUP_COLOR = "#C0C0C0";
     private static String LABEL_FONT = "helvetica";
-    private static int LABEL_DEFAULT_FONTSIZE = 10;
-    private static int LABEL_SMALL_FONTSIZE = 8;
+    private static int LABEL_DEFAULT_FONTSIZE = 30;
+    private static int LABEL_SMALL_FONTSIZE = 24;
     private static int LABEL_CHAR_WIDTH = 20;
 
     SortedMap<Integer, DotNode> pendingMNodes;
@@ -181,11 +180,15 @@ public class DotGraph
         return gnode;
     }
 
-    public void addMaterial(ExpMaterial m, Integer groupId, Integer actionseq)
+    public void addMaterial(ExpMaterial m, Integer groupId, Integer actionseq, boolean output)
     {
         if (writtenMNodes.containsKey(m.getRowId()) || pendingMNodes.containsKey(m.getRowId()))
             return;
         DotNode node = new MNode(m);
+        if (output)
+        {
+            node.setBold(true);
+        }
         if (null != focusId && objectType.equals(TYPECODE_MATERIAL) && focusId.intValue() == m.getRowId())
             node.setFocus(true);
         if (null != groupId)
@@ -193,11 +196,15 @@ public class DotGraph
         pendingMNodes.put(m.getRowId(), node);
     }
 
-    public void addData(ExpData d, Integer groupId, Integer actionseq)
+    public void addData(ExpData d, Integer groupId, Integer actionseq, boolean output)
     {
         if (writtenDNodes.containsKey(d.getRowId()) || pendingDNodes.containsKey(d.getRowId()))
             return;
         DotNode node = new DNode(d);
+        if (output)
+        {
+            node.setBold(true);
+        }
         if (null != focusId && objectType.equals(TYPECODE_DATA) && focusId.intValue() == d.getRowId())
             node.setFocus(true);
         if (null != groupId)
@@ -309,11 +316,15 @@ public class DotGraph
                 connect += "\n" + outnodekey + "[shape=plaintext label=\"Output\"]";
             }
             else
-                connect += trgt.key;
+                connect += trgt.key + "[arrowsize = 2]";
         }
         if (label != null)
         {
-            connect += " [ label = \"" + label + "\" fontname=\"" + LABEL_FONT + "\" fontsize=" + LABEL_SMALL_FONTSIZE + " ]";
+            connect += " [ style=\"setlinewidth(3)\" label = \"" + label + "\" fontname=\"" + LABEL_FONT + "\" fontsize=" + LABEL_SMALL_FONTSIZE + " ]";
+        }
+        else
+        {
+            connect += " [ style=\"setlinewidth(3)\" ]";
         }
         if (!writtenConnects.contains(connect) && !pendingConnects.contains(connect))
             pendingConnects.add(connect);
@@ -322,10 +333,9 @@ public class DotGraph
     public void writePendingConnects()
     {
         String connect;
-        Iterator<String> it = pendingConnects.iterator();
-        while (it.hasNext())
+        for (String pendingConnect : pendingConnects)
         {
-            connect = it.next();
+            connect = pendingConnect;
             pwOut.println(connect);
             writtenConnects.add(connect);
         }
@@ -390,6 +400,7 @@ public class DotGraph
         Float height = null;
         Float width = null;
         boolean focus = false;
+        boolean bold = false;
 
         public DotNode(String nodeType, Integer nodeId, String nodeLabel)
         {
@@ -397,6 +408,11 @@ public class DotGraph
             type = nodeType;
             label = ((null == nodeLabel) ? "(no name)" : nodeLabel);
             key = nodeType + id;
+        }
+
+        public void setBold(boolean bold)
+        {
+            this.bold = bold;
         }
 
         public void setLink(String urlBase, String urlParams)
@@ -453,7 +469,7 @@ public class DotGraph
             if (null != shape)
                 out.println(key + "["
                         + "label=\"" + label + "\""
-                        + ",style=\"filled\" "
+                        + ",style=\"filled" + (bold ? ", setlinewidth(6)" : ", setlinewidth(2)") + "\" "
                         + ", fillcolor=\"" + color + "\" shape=" + shape
                         + ((null != height) ? ", height=\"" + height + "\"" : "")
                         + ((null != width) ? ", width=\"" + width + "\"" : "")

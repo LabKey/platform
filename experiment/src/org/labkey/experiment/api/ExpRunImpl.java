@@ -429,7 +429,7 @@ public class ExpRunImpl extends ExpIdentifiableBaseImpl<ExperimentRun> implement
         while (ancestorPAStack.size() > 0)
         {
             ExpProtocolApplication pa = ancestorPAStack.get(0);
-            if (pa.getCpasType().equals(ExperimentService.EXPERIMENT_RUN_CPAS_TYPE))
+            if (pa.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRun)
                 break;
             for (ExpMaterial m : pa.getInputMaterials())
             {
@@ -437,7 +437,7 @@ public class ExpRunImpl extends ExpIdentifiableBaseImpl<ExperimentRun> implement
                 if (getMaterialInputs().containsKey(m))
                 {
                     ExpProtocolApplication runNode = getProtocolApplications()[0];
-                    assert runNode.getCpasType().equals(ExperimentService.EXPERIMENT_RUN_CPAS_TYPE);
+                    assert runNode.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRun;
                     listPA.add(runNode);
                     continue;
                 }
@@ -450,7 +450,7 @@ public class ExpRunImpl extends ExpIdentifiableBaseImpl<ExperimentRun> implement
                 if (getDataInputs().containsKey(d))
                 {
                     ExpProtocolApplication runNode = getProtocolApplications()[0];
-                    assert runNode.getCpasType().equals(ExperimentService.EXPERIMENT_RUN_CPAS_TYPE);
+                    assert runNode.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRun;
                     listPA.add(runNode);
                     continue;
                 }

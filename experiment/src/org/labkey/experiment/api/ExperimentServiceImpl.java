@@ -2099,13 +2099,13 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     + " ON (M.RowId = MI.MaterialId) "
                     + " WHERE MI.TargetApplicationId IN "
                     + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getFromSQL() + " PA "
-                    + " WHERE PA.RunId = ? AND PA.CpasType= '" + ExperimentService.EXPERIMENT_RUN_CPAS_TYPE + "')"
+                    + " WHERE PA.RunId = ? AND PA.CpasType= '" + ExpProtocol.ApplicationType.ExperimentRun + "')"
                     + "  ORDER BY RowId ;";
             String materialInputSQL = "SELECT MI.* "
                     + " FROM " + getExpSchema().getTable("MaterialInput").getFromSQL() + " MI "
                     + " WHERE MI.TargetApplicationId IN "
                     + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getFromSQL() + " PA "
-                    + " WHERE PA.RunId = ? AND PA.CpasType= '" + ExperimentService.EXPERIMENT_RUN_CPAS_TYPE + "')"
+                    + " WHERE PA.RunId = ? AND PA.CpasType= '" + ExpProtocol.ApplicationType.ExperimentRun + "')"
                     + "  ORDER BY MI.MaterialId;";
             Object[] params = {new Integer(runId)};
             materials = ExpMaterialImpl.fromMaterials(Table.executeQuery(getExpSchema(), materialSQL, params, Material.class));
@@ -2137,13 +2137,13 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     + " ON (D.RowId = DI.DataId) "
                     + " WHERE DI.TargetApplicationId IN "
                     + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getFromSQL() + " PA "
-                    + " WHERE PA.RunId = ? AND PA.CpasType= '" + ExperimentService.EXPERIMENT_RUN_CPAS_TYPE + "')"
+                    + " WHERE PA.RunId = ? AND PA.CpasType= '" + ExpProtocol.ApplicationType.ExperimentRun + "')"
                     + "  ORDER BY RowId ;";
             String dataInputSQL = "SELECT DI.*"
                     + " FROM " + getTinfoDataInput().getFromSQL() + " DI "
                     + " WHERE DI.TargetApplicationId IN "
                     + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getFromSQL() + " PA "
-                    + " WHERE PA.RunId = ? AND PA.CpasType= '" + ExperimentService.EXPERIMENT_RUN_CPAS_TYPE + "')"
+                    + " WHERE PA.RunId = ? AND PA.CpasType= '" + ExpProtocol.ApplicationType.ExperimentRun + "')"
                     + "  ORDER BY DataId;";
             datas = ExpDataImpl.fromDatas(Table.executeQuery(getExpSchema(), dataSQL, params, Data.class));
             DataInput[] dataInputs = Table.executeQuery(getExpSchema(), dataInputSQL, params, DataInput.class); 
@@ -2198,7 +2198,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     pa.getInputMaterials().add(mat);
                     mat.getSuccessorApps().add(pa);
 
-                    if (pa.getCpasType().equals(ExperimentService.EXPERIMENT_RUN_OUTPUT_CPAS_TYPE))
+                    if (pa.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRunOutput)
                     {
                         expRun.getMaterialOutputs().add(mat);
                         outputMaterialMap.put(mat.getRowId(), mat);
@@ -2243,7 +2243,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     pa.getInputDatas().add(dat);
                     dat.getSuccessorApps().add(pa);
 
-                    if (pa.getCpasType().equals(ExperimentService.EXPERIMENT_RUN_OUTPUT_CPAS_TYPE))
+                    if (pa.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRunOutput)
                     {
                         expRun.getDataOutputs().add(dat);
                         outputDataMap.put(dat.getRowId(), dat);
@@ -2766,9 +2766,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             assert action3.getSequence() == 20;
 
             ExpProtocol outputProtocol = getExpProtocol(action3.getChildProtocolId());
-            assert outputProtocol.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRunOutput;
-
-
+            assert outputProtocol.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRunOutput : "Expected third protocol to be of type ExperimentRunOutput but was " + outputProtocol.getApplicationType();
+            
             ProtocolApplication protApp3 = new ProtocolApplication();
             protApp3.setActivityDate(date);
             protApp3.setActionSequence(action3.getSequence());

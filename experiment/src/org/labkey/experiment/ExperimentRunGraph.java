@@ -27,8 +27,12 @@ import org.labkey.experiment.api.ExpRunImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.ExpProtocolApplicationImpl;
 
+import javax.imageio.ImageIO;
 import java.io.*;
 import java.util.*;
+import java.util.List;
+import java.awt.*;
+import java.awt.image.BufferedImage;
 
 /**
  * User: migra
@@ -97,10 +101,10 @@ public class ExperimentRunGraph
 
     public static void generateRunGraph(ViewContext ctx, int containerId, int runId, boolean detail, String focus) throws ExperimentException, IOException, InterruptedException
     {
-        File gifFile = getGifFile(containerId, runId, detail, focus);
+        File imageFile = getImageFile(containerId, runId, detail, focus);
         File mapFile = getMapFile(containerId, runId, detail, focus);
 
-        if (!AppProps.getInstance().isDevMode() && gifFile.exists() && mapFile.exists())
+        if (!AppProps.getInstance().isDevMode() && imageFile.exists() && mapFile.exists())
         {
             return;
         }
@@ -147,7 +151,7 @@ public class ExperimentRunGraph
                 // add starting inputs to graph if they need grouping
                 List<ExpMaterial> inputMaterials = new ArrayList<ExpMaterial>(expRun.getMaterialInputs().keySet());
                 List<ExpData> inputDatas = new ArrayList<ExpData>(expRun.getDataInputs().keySet());
-                Integer groupId = expRun.getProtocolApplications()[0].getRowId();
+                int groupId = expRun.getProtocolApplications()[0].getRowId();
                 addStartingInputs(inputMaterials, inputDatas, groupId, dg, expRun.getRowId(), ctrlProps);
                 generateDetailGraph(expRun, dg, ctrlProps);
             }
@@ -156,31 +160,144 @@ public class ExperimentRunGraph
             out = null;
             String dotInput = writer.getBuffer().toString();
 
-            String gifName = gifFile.getName();
-            ProcessBuilder pb = new ProcessBuilder(dotExePath, "-Tgif", "-o" + gifName);
+            ProcessBuilder pb = new ProcessBuilder(dotExePath, "-Tpng", "-o" + imageFile.getName());
             pb.directory(getFolderDirectory(containerId));
             ProcessResult result = executeProcess(pb, dotInput);
             if (result._returnCode != 0)
             {
                 throw new IOException("Graph generation failed with error code " + result._returnCode + " - " + result._output);
             }
-            gifFile.deleteOnExit();
 
-            String mapName = mapFile.getName();
-            pb = new ProcessBuilder(dotExePath, "-Tcmap", "-o" + mapName);
+            imageFile.deleteOnExit();
+
+            pb = new ProcessBuilder(dotExePath, "-Tcmap", "-o" + mapFile.getName());
             pb.directory(getFolderDirectory(containerId));
             result = executeProcess(pb, dotInput);
+
             if (result._returnCode != 0)
             {
                 throw new IOException("Graph generation failed with error code " + result._returnCode + " - " + result._output);
             }
             mapFile.deleteOnExit();
+            
+            resizeFiles(imageFile, mapFile);
         }
         finally
         {
             if (null != out)
                 out.close();
         }
+    }
+
+    private static void resizeImageMap(File mapFile, double finalScale)
+        throws IOException
+    {
+        StringBuilder sb = new StringBuilder();
+        FileInputStream fIn = null;
+        try
+        {
+            // Read in the original file, line by line
+            fIn = new FileInputStream(mapFile);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(fIn));
+            String line;
+            while((line = reader.readLine()) != null)
+            {
+                // Get rid of the \n that does the line wrapping for the image since dot writes it as a literal in the image map's tooltip
+                line = line.replace("\\n", " ");
+                int coordsIndex = line.indexOf("coords=\"");
+                if (coordsIndex != -1)
+                {
+                    int openIndex = coordsIndex + "coords=\"".length();
+                    int closeIndex = line.indexOf("\"", openIndex);
+                    if (closeIndex != -1)
+                    {
+                        // Parse and scale the coordinates
+                        String coordsOriginal = line.substring(openIndex, closeIndex);
+                        String[] coords = coordsOriginal.split(",");
+                        StringBuilder newLine = new StringBuilder();
+                        newLine.append(line.substring(0, openIndex));
+                        String separator = "";
+                        for (String coord : coords)
+                        {
+                            newLine.append(separator);
+                            separator = ",";
+                            newLine.append((int)(Integer.parseInt(coord) * finalScale));
+                        }
+                        newLine.append(line.substring(closeIndex));
+                        line = newLine.toString();
+                    }
+                }
+                sb.append(line);
+            }
+        }
+        finally
+        {
+            if (fIn != null) { try { fIn.close(); } catch (IOException e) {} }
+        }
+
+        // Write the file back to the disk
+        FileOutputStream mapOut = null;
+        try
+        {
+            mapOut = new FileOutputStream(mapFile);
+            OutputStreamWriter mapWriter = new OutputStreamWriter(mapOut);
+            mapWriter.write(sb.toString());
+            mapWriter.flush();
+        }
+        finally
+        {
+            if (mapOut != null) { try { mapOut.close(); } catch (IOException e) {} }
+        }
+    }
+
+    /** Rewrite the output files so that they look nice and antialiased */
+    private static void resizeFiles(File imageFile, File imageMapFile) throws IOException
+    {
+        double finalScale = 1;
+
+        BufferedImage originalImage = ImageIO.read(imageFile);
+        BufferedImage bufferedResizedImage = null;
+
+        // Unfortunately these images don't anti-alias well in a single resize using Java's default
+        // algorithm, but they look fine if you do it in incremental steps
+        double incrementalScale = .85;
+        for (int i = 0; i < 6; i++)
+        {
+            finalScale *= incrementalScale;
+            int width = (int) (originalImage.getWidth() * incrementalScale);
+            int height = (int) (originalImage.getHeight() * incrementalScale);
+
+            // Create a new empty image buffer to render into
+            bufferedResizedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+            Graphics2D g2d = bufferedResizedImage.createGraphics();
+
+            // Set up the hints to make it look decent
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+            g2d.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY);
+            g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+
+            // Draw the resized image
+            g2d.drawImage(originalImage, 0, 0, width, height, null);
+            g2d.dispose();
+            originalImage = bufferedResizedImage;
+        }
+
+        FileOutputStream fOut = null;
+        try
+        {
+            // Write it back out to disk
+            fOut = new FileOutputStream(imageFile);
+            ImageIO.write(bufferedResizedImage, "png", fOut);
+            fOut.close();
+        }
+        finally
+        {
+            if (fOut != null) { try { fOut.close(); } catch (IOException e) {} }
+        }
+
+        // Need to rewrite the image map to change the coordinates according to the scaling factor
+        resizeImageMap(imageMapFile, finalScale);
     }
 
     private static ProcessResult executeProcess(ProcessBuilder pb, String stdIn) throws IOException, InterruptedException
@@ -196,8 +313,7 @@ public class ExperimentRunGraph
             writer.write(stdIn);
             writer.close();
             writer = null;
-            procReader = new BufferedReader(
-                    new InputStreamReader(p.getInputStream()));
+            procReader = new BufferedReader(new InputStreamReader(p.getInputStream()));
             String line;
             while ((line = procReader.readLine()) != null)
             {
@@ -250,13 +366,18 @@ public class ExperimentRunGraph
             String namePA = protApp.getName();
             int sequence = protApp.getActionSequence();
 
-            String cpasTypePA = protApp.getCpasType();
-            if (cpasTypePA.equals(ExperimentService.EXPERIMENT_RUN_CPAS_TYPE))
+            ExpProtocol.ApplicationType cpasTypePA = protApp.getApplicationType();
+            if (cpasTypePA == ExpProtocol.ApplicationType.ExperimentRun)
             {
                 assert firstApp;
                 firstApp = false;
                 continue;
             }
+            if (cpasTypePA == ExpProtocol.ApplicationType.ExperimentRunOutput)
+            {
+                continue;
+            }
+            
             List<ExpMaterial> inputMaterials = protApp.getInputMaterials();
             List<ExpData> inputDatas = protApp.getInputDatas();
             List<ExpMaterial> outputMaterials = protApp.getOutputMaterials();
@@ -275,7 +396,7 @@ public class ExperimentRunGraph
                 for (ExpMaterial material : inputMaterials)
                 {
                     Integer groupId = dg.getMGroupId(material.getRowId());
-                    dg.addMaterial(material, groupId, sequence);
+                    dg.addMaterial(material, groupId, sequence, expRun.getMaterialOutputs().contains(material));
 
                     // check if we need to start or stop grouping at this level of PAs
                     // first, if the number of nodesat this level is less than the max,
@@ -289,7 +410,7 @@ public class ExperimentRunGraph
                             groupIdPA = rowIdPA;
                         groupId = groupIdPA;
                     }
-                    if (cpasTypePA.equals(ExperimentService.EXPERIMENT_RUN_OUTPUT_CPAS_TYPE))
+                    if (cpasTypePA == ExpProtocol.ApplicationType.ExperimentRunOutput)
                         dg.addOutputNode(groupId, rowIdPA, namePA, sequence);
                     else
                         dg.addProtApp(groupId, rowIdPA, namePA, sequence);
@@ -304,7 +425,7 @@ public class ExperimentRunGraph
                 for (ExpData data : inputDatas)
                 {
                     Integer groupId = dg.getDGroupId(data.getRowId());
-                    dg.addData(data, groupId, sequence);
+                    dg.addData(data, groupId, sequence, expRun.getDataOutputs().contains(data));
 
                     // same check as above
                     if (ctrlProps.getPACountForSequence(sequence) <= ctrlProps.maxSiblingNodes)
@@ -316,7 +437,7 @@ public class ExperimentRunGraph
                         groupId = groupIdPA;
                     }
 
-                    if (cpasTypePA.equals(ExperimentService.EXPERIMENT_RUN_OUTPUT_CPAS_TYPE))
+                    if (cpasTypePA == ExpProtocol.ApplicationType.ExperimentRunOutput)
                         dg.addOutputNode(groupId, rowIdPA, namePA, sequence);
                     else
                         dg.addProtApp(groupId, rowIdPA, namePA, sequence);
@@ -340,7 +461,7 @@ public class ExperimentRunGraph
                             (outputMaterials.size() > ctrlProps.maxSiblingNodes) && (i >= ctrlProps.maxSiblingNodes - 1))
                         groupId = rowIdPA;
 
-                    dg.addMaterial(material, groupId, sequence);
+                    dg.addMaterial(material, groupId, sequence, expRun.getMaterialOutputs().contains(material));
                     dg.connectProtocolAppToMaterial(rowIdPA, material.getRowId());
                 }
             }
@@ -355,7 +476,7 @@ public class ExperimentRunGraph
                             (outputDatas.size() > ctrlProps.maxSiblingNodes) && (i >= ctrlProps.maxSiblingNodes - 1))
                         groupId = rowIdPA;
 
-                    dg.addData(data, groupId, sequence);
+                    dg.addData(data, groupId, sequence, expRun.getDataOutputs().contains(data));
                     dg.connectProtocolAppToData(rowIdPA, data.getRowId());
 
                 }
@@ -437,7 +558,7 @@ public class ExperimentRunGraph
                 groupId = null;
                 if ((outputMaterials.size() > ctrlProps.maxSiblingNodes) && (i >= ctrlProps.maxSiblingNodes - 1))
                     groupId = 1;
-                dg.addMaterial(material, groupId, null);
+                dg.addMaterial(material, groupId, null, expRun.getMaterialOutputs().contains(material));
                 dg.connectRunToMaterial(runId, material.getRowId());
                 for (ExpRun successorRun : material.getSuccessorRuns())
                 {
@@ -456,7 +577,7 @@ public class ExperimentRunGraph
                 groupId = null;
                 if ((outputDatas.size() > ctrlProps.maxSiblingNodes) && (i >= ctrlProps.maxSiblingNodes - 1))
                     groupId = 1;
-                dg.addData(data, groupId, null);
+                dg.addData(data, groupId, null, expRun.getDataOutputs().contains(data));
                 dg.connectRunToData(runId, data.getRowId());
                 for (ExpRun successorRun : data.getSuccessorRuns())
                 {
@@ -501,19 +622,17 @@ public class ExperimentRunGraph
         int curDI = 0;
         int curMO = 0;
         int curDO = 0;
-        int curS;
         int prevS = 0;
         int iLevelStart = 0;
         int iLevelEnd = 0;
         GraphCtrlProps ctrlProps = new GraphCtrlProps();
-        Integer countSeq;
 
         ExpProtocolApplication [] aSteps = exp.getProtocolApplications();
         for (int i = 0; i < aSteps.length; i++)
         {
-            curS = aSteps[i].getActionSequence();
+            int curS = aSteps[i].getActionSequence();
 
-            countSeq = ctrlProps.mPANodesPerSequence.get(curS);
+            Integer countSeq = ctrlProps.mPANodesPerSequence.get(curS);
             if (null==countSeq)
                 countSeq=new Integer(1);
             else
@@ -623,9 +742,9 @@ public class ExperimentRunGraph
         return new File(getBaseFileName(containerId, runId, detail, focus) + ".dot");
     }
 
-    public static File getGifFile(int containerId, int runId, boolean detail, String focus) throws IOException
+    public static File getImageFile(int containerId, int runId, boolean detail, String focus) throws IOException
     {
-        return new File(getBaseFileName(containerId, runId, detail, focus) + ".gif");
+        return new File(getBaseFileName(containerId, runId, detail, focus) + ".png");
     }
 
     private static String getBaseFileName(int containerId, int runId, boolean detail, String focus) throws IOException

@@ -213,7 +213,7 @@ public class XarExporter
         {
             xApplication.setComments(application.getComments());
         }
-        xApplication.setCpasType(application.getCpasType());
+        xApplication.setCpasType(application.getApplicationType().toString());
 
         InputOutputRefsType inputRefs = null;
         Data[] inputDataRefs = ExperimentServiceImpl.get().getDataInputReferencesForApplication(application.getRowId());

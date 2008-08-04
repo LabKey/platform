@@ -156,11 +156,6 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         return _object.getComments();
     }
 
-    public String getCpasType()
-    {
-        return _object.getCpasType();
-    }
-
     public void save(User user)
     {
         try

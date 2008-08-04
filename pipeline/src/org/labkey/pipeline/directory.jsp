@@ -116,7 +116,6 @@
     //
     %><table class="labkey-form" width="100%"><%
 
-    int row = 0;
     for (PipelineProvider.FileEntry entry : entries)
     {
         %><tr class="labkey-row"><td>&nbsp;</td><%
@@ -190,7 +189,7 @@
         }
         if (!showCheckboxes) {%></form><%}
     }
-    if (row == 0)
+    if (entries.isEmpty() && fileActions.isEmpty())
     {
         %><tr><td><i>no files</i></td></tr><%
     }

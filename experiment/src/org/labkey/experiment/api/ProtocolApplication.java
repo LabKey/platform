@@ -15,12 +15,10 @@
  */
 package org.labkey.experiment.api;
 
-import org.labkey.api.exp.api.ExpMaterial;
-import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.IdentifiableBase;
 
 import java.util.Date;
-import java.util.List;
 
 /**
  * User: migra
@@ -65,6 +63,7 @@ public class ProtocolApplication extends IdentifiableBase
 
     public void setCpasType(String cpasType)
     {
+        assert ExpProtocol.ApplicationType.valueOf(cpasType) != null : "Invalid cpasType: " + cpasType;
         this.cpasType = cpasType;
     }
 
