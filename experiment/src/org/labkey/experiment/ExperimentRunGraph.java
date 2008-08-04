@@ -213,7 +213,7 @@ public class ExperimentRunGraph
                     {
                         // Parse and scale the coordinates
                         String coordsOriginal = line.substring(openIndex, closeIndex);
-                        String[] coords = coordsOriginal.split(",");
+                        String[] coords = coordsOriginal.split(",|(\\s)");
                         StringBuilder newLine = new StringBuilder();
                         newLine.append(line.substring(0, openIndex));
                         String separator = "";
@@ -221,13 +221,14 @@ public class ExperimentRunGraph
                         {
                             newLine.append(separator);
                             separator = ",";
-                            newLine.append((int)(Integer.parseInt(coord) * finalScale));
+                            newLine.append((int)(Integer.parseInt(coord.trim()) * finalScale));
                         }
                         newLine.append(line.substring(closeIndex));
                         line = newLine.toString();
                     }
                 }
                 sb.append(line);
+                sb.append("\n");
             }
         }
         finally
