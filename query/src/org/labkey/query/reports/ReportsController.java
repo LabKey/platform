@@ -374,6 +374,9 @@ public class ReportsController extends SpringActionController
         public boolean handlePost(RReportBean form, BindException errors) throws Exception
         {
             //form.setIsDirty(true);
+            Report report = form.getReport();
+            if (report instanceof RReport)
+                ((RReport)report).clearCache();
             RunRReportView.updateReportCache(form, false);
             return true;
         }
