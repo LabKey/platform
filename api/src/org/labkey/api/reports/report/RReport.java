@@ -19,6 +19,7 @@ package org.labkey.api.reports.report;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
@@ -40,7 +41,6 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
-import org.labkey.api.admin.AdminUrls;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -60,6 +60,8 @@ public class RReport extends AbstractReport implements AttachmentParent, Report.
 
     public static final String FILE_PREFIX = "rpt";
     public static final String REPORT_DIR = "Reports";
+    public static final String CACHE_DIR = "cached";
+
     public static final String SUBSTITUTION_MAP = "substitutionMap.txt";
 
     public static final String INPUT_FILE_TSV = "input_data";
@@ -201,12 +203,79 @@ public class RReport extends AbstractReport implements AttachmentParent, Report.
                 view.addView(new HtmlView("<span class=\"labkey-error\">" + error + "</span>"));
             return view;
         }
-        RScriptRunner runner = createScriptRunner(this, viewContext);
+
         List<ParamReplacement> outputSubst = new ArrayList<ParamReplacement>();
-        runner.runScript(view, outputSubst);
+        if (!getCachedReport(outputSubst))
+        {
+            RScriptRunner runner = createScriptRunner(this, viewContext);
+            runner.runScript(view, outputSubst);
+            cacheResults(outputSubst);
+        }
         renderViews(this, view, outputSubst, false);
 
         return view;
+    }
+
+    protected void cacheResults(List<ParamReplacement> replacements)
+    {
+        if (getDescriptor().getReportId() != -1 &&
+            BooleanUtils.toBoolean(getDescriptor().getProperty(RReportDescriptor.Prop.cache)))
+        {
+            File cacheDir = getCacheDir();
+            try {
+                File mapFile = new File(cacheDir, SUBSTITUTION_MAP);
+                for (ParamReplacement param : replacements)
+                {
+                    File src = param.getFile();
+                    File dst = new File(cacheDir, src.getName());
+
+                    if (dst.createNewFile())
+                    {
+                        FileUtil.copyFile(src, dst);
+                        param.setFile(dst);
+                    }
+                }
+                ParamReplacementSvc.get().toFile(replacements, mapFile);
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public void clearCache()
+    {
+        File cacheDir = getCacheDir();
+        if (cacheDir.exists())
+            FileUtil.deleteDir(cacheDir);
+    }
+
+    protected boolean getCachedReport(List<ParamReplacement> replacements)
+    {
+        if (getDescriptor().getReportId() != -1 &&
+            BooleanUtils.toBoolean(getDescriptor().getProperty(RReportDescriptor.Prop.cache)))
+        {
+            File cacheDir = getCacheDir();
+            try {
+                for (ParamReplacement param : ParamReplacementSvc.get().fromFile(new File(cacheDir, SUBSTITUTION_MAP)))
+                {
+                    replacements.add(param);
+                }
+                return !replacements.isEmpty();
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+        return false;
+    }
+
+    public void beforeSave(ViewContext context)
+    {
+        super.beforeSave(context);
+        clearCache();
     }
 
     public void beforeDelete(ViewContext context)
@@ -282,6 +351,8 @@ public class RReport extends AbstractReport implements AttachmentParent, Report.
             settings.setSchemaName(schemaName);
             settings.setQueryName(queryName);
             settings.setViewName(viewName);
+            // need to reset the report id since we want to render the data grid, not the report
+            settings.setReportId(-1);
 
             UserSchema schema = base.createView(context, settings).getSchema();
             return new ReportQueryView(schema, settings);
@@ -346,50 +417,63 @@ public class RReport extends AbstractReport implements AttachmentParent, Report.
         return DefaultScriptRunner.createInputDataFile(this, context);
     }
 
+    protected File getTempRoot()
+    {
+        File tempRoot;
+        String tempFolderName = getTempFolder();
+        boolean isPipeline = BooleanUtils.toBoolean(getDescriptor().getProperty(RReportDescriptor.Prop.runInBackground));
+
+        if (StringUtils.isEmpty(tempFolderName))
+        {
+            try {
+                if (isPipeline && getDescriptor().getContainerId() != null)
+                {
+                    Container c = ContainerManager.getForId(getDescriptor().getContainerId());
+                    PipeRoot root = PipelineService.get().findPipelineRoot(c);
+                    tempRoot = root.resolvePath(REPORT_DIR);
+                    if (!tempRoot.exists())
+                        tempRoot.mkdirs();
+                }
+                else
+                {
+                    File tempDir = new File(System.getProperty("java.io.tmpdir"));
+                    tempRoot = new File(tempDir, REPORT_DIR);
+                    if (!tempRoot.exists())
+                        tempRoot.mkdirs();
+                }
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException("Error setting up temp directory", e);
+            }
+        }
+        else
+        {
+            tempRoot = new File(tempFolderName);
+        }
+        return tempRoot;
+    }
+
+    protected File getCacheDir()
+    {
+        File cacheDir = new File(getTempRoot(), "Report_" + getDescriptor().getReportId() + File.separator + CACHE_DIR);
+        if (!cacheDir.exists())
+            cacheDir.mkdirs();
+
+        return cacheDir;
+    }
+
     public File getReportDir()
     {
         boolean isPipeline = BooleanUtils.toBoolean(getDescriptor().getProperty(RReportDescriptor.Prop.runInBackground));
         if (_tempFolder == null || _tempFolderPipeline != isPipeline)
         {
-            File tempRoot;
-            String tempFolderName = getTempFolder();
-            if (StringUtils.isEmpty(tempFolderName))
-            {
-                try
-                {
-                    if (isPipeline && getDescriptor().getContainerId() != null)
-                    {
-                        Container c = ContainerManager.getForId(getDescriptor().getContainerId());
-                        PipeRoot root = PipelineService.get().findPipelineRoot(c);
-                        tempRoot = root.resolvePath(REPORT_DIR);
-                        if (!tempRoot.exists())
-                            tempRoot.mkdirs();
-                    }
-                    else
-                    {
-                        File file = File.createTempFile("RReport", "tmp");
-                        tempRoot = new File(file.getParentFile(), REPORT_DIR);
-                        if (!tempRoot.exists())
-                            tempRoot.mkdirs();
-                        file.delete();
-                    }
-                }
-                catch (Exception e)
-                {
-                    throw new RuntimeException("Error setting up temp directory", e);
-                }
-            }
-            else
-            {
-                tempRoot = new File(tempFolderName);
-            }
-
+            File tempRoot = getTempRoot();
             if (isPipeline)
                 _tempFolder = new File(tempRoot, "Report_" + getDescriptor().getReportId());
             else
-            {
                 _tempFolder = new File(tempRoot.getAbsolutePath() + File.separator + "Report_" + getDescriptor().getReportId(), String.valueOf(Thread.currentThread().getId()));
-            }
+
             _tempFolderPipeline = isPipeline;
             if (!_tempFolder.exists())
                 _tempFolder.mkdirs();

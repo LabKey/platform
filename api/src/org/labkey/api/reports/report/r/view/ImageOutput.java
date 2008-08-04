@@ -20,11 +20,14 @@ import org.labkey.api.reports.report.r.AbstractParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ReportUrls;
+import org.labkey.api.reports.report.RReportDescriptor;
+import org.labkey.api.reports.Report;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
+import org.apache.commons.lang.BooleanUtils;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -56,15 +59,27 @@ public class ImageOutput extends AbstractParamReplacement
 
     public HttpView render(ViewContext context)
     {
-        return new ImgReportView(this);
+        Report report = getReport();
+        boolean deleteFile = true;
+
+        if (report != null)
+        {
+            if (BooleanUtils.toBoolean(report.getDescriptor().getProperty(RReportDescriptor.Prop.cache)) ||
+                BooleanUtils.toBoolean(report.getDescriptor().getProperty(RReportDescriptor.Prop.runInBackground)))
+                deleteFile = false;
+        }
+        return new ImgReportView(this, deleteFile);
     }
 
     public static class ImgReportView extends ROutputView
     {
-        ImgReportView(ParamReplacement param)
+        private boolean _deleteFile;
+
+        ImgReportView(ParamReplacement param, boolean deleteFile)
         {
             super(param);
             setLabel("Image output");
+            _deleteFile = deleteFile;
         }
 
         @Override
@@ -89,7 +104,7 @@ public class ImageOutput extends AbstractParamReplacement
                         out.write("<img id=\"resultImage\" src=\"");
 
                         ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlStreamFile(getViewContext().getContainer());
-                        url.addParameters(PageFlowUtil.map("sessionKey", key, "deleteFile", Boolean.toString(true), "cacheFile", "true"));
+                        url.addParameters(PageFlowUtil.map("sessionKey", key, "deleteFile", Boolean.toString(_deleteFile), "cacheFile", "true"));
 
                         out.write(url.getLocalURIString());
                         out.write("\">");
@@ -105,7 +120,10 @@ public class ImageOutput extends AbstractParamReplacement
         private File moveToTemp(File file)
         {
             try {
-                File newFile = File.createTempFile("RReportImg", "tmp");
+                if (!_deleteFile)
+                    return file;
+
+                File newFile = File.createTempFile("RReportImg", ".jpg");
                 newFile.delete();
 
                 if (file.renameTo(newFile))

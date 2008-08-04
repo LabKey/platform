@@ -39,6 +39,7 @@ public class RReportBean extends ReportDesignBean
     protected boolean _runInBackground;
     protected List<String> _includedReports;
     protected boolean _isDirty;
+    protected boolean _cache = true;
 
     public RReportBean(){}
     public RReportBean(QuerySettings settings)
@@ -86,6 +87,16 @@ public class RReportBean extends ReportDesignBean
         _isDirty = dirty;
     }
 
+    public boolean isCache()
+    {
+        return _cache;
+    }
+
+    public void setCache(boolean cache)
+    {
+        _cache = cache;
+    }
+
     public Report getReport() throws Exception
     {
         Report report = super.getReport();
@@ -97,6 +108,7 @@ public class RReportBean extends ReportDesignBean
             {
                 if (getScript() != null) descriptor.setProperty(RReportDescriptor.Prop.script, getScript());
                 descriptor.setProperty(RReportDescriptor.Prop.runInBackground, Boolean.toString(isRunInBackground()));
+                descriptor.setProperty(RReportDescriptor.Prop.cache, Boolean.toString(isCache()));
                 //_includedReports = getViewContext().getList(RReportDescriptor.Prop.includedReports.toString());
                 ((RReportDescriptor)descriptor).setIncludedReports(_includedReports);
                 if (!isShareReport())
@@ -123,6 +135,8 @@ public class RReportBean extends ReportDesignBean
             list.add(new Pair<String, String>(RReportDescriptor.Prop.runInBackground.toString(), Boolean.toString(_runInBackground)));
         if (_isDirty)
             list.add(new Pair<String, String>("isDirty", Boolean.toString(_isDirty)));
+        if (_cache)
+            list.add(new Pair<String, String>(RReportDescriptor.Prop.cache.name(), Boolean.toString(_cache)));
         for (String report : getIncludedReports())
             list.add(new Pair<String, String>(RReportDescriptor.Prop.includedReports.toString(), report));
 

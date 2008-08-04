@@ -176,20 +176,23 @@ public class ParamReplacementSvc
          List<ParamReplacement> outputSubst = new ArrayList();
 
          try {
-             br = new BufferedReader(new FileReader(file));
-             String l;
-             while ((l = br.readLine()) != null)
+             if (file.exists())
              {
-                 String[] parts = l.split("\\t");
-                 if (parts.length == 3)
+                 br = new BufferedReader(new FileReader(file));
+                 String l;
+                 while ((l = br.readLine()) != null)
                  {
-                     ParamReplacement handler = getHandlerInstance(parts[0]);
-                     if (handler != null)
+                     String[] parts = l.split("\\t");
+                     if (parts.length == 3)
                      {
-                         handler.setName(parts[1]);
-                         handler.setFile(new File(parts[2]));
+                         ParamReplacement handler = getHandlerInstance(parts[0]);
+                         if (handler != null)
+                         {
+                             handler.setName(parts[1]);
+                             handler.setFile(new File(parts[2]));
 
-                         outputSubst.add(handler);
+                             outputSubst.add(handler);
+                         }
                      }
                  }
              }

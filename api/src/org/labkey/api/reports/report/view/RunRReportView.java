@@ -30,6 +30,8 @@ import org.labkey.api.view.*;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineStatusFile;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.QueryParam;
 import org.labkey.common.util.Pair;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
@@ -136,6 +138,7 @@ public class RunRReportView extends RunReportView
                 form.setShareReport((descriptor.getOwner() == null));
                 form.setIncludedReports(descriptor.getIncludedReports());
                 form.setInheritable((descriptor.getFlags() & ReportDescriptor.FLAG_INHERITABLE) != 0);
+                form.setCache(BooleanUtils.toBoolean(descriptor.getProperty(RReportDescriptor.Prop.cache)));
 
                 //if (descriptor.getProperty("redirectUrl") != null)
                 //    form.setRedirectUrl(descriptor.getProperty("redirectUrl"));
@@ -268,7 +271,12 @@ public class RunRReportView extends RunReportView
                 }
             }
             else
-                view.addView(form.getReport().renderReport(getViewContext()));
+            {
+                Report report = form.getReport();
+                if (form.getIsDirty() || hasFilterOrSort(getViewContext().getActionURL()))
+                    ((RReport)report).clearCache();
+                view.addView(report.renderReport(getViewContext()));
+            }
         }
         else if (TAB_DATA.equals(tabId))
         {
@@ -299,5 +307,21 @@ public class RunRReportView extends RunReportView
             else
                 return("<a href=\"javascript:void(0)\" onclick=\"switchTab('" + getUrl().replaceParameter("tabId", getId()).getLocalURIString() + "')\">" + getName() + "&nbsp;</a>");
         }
+    }
+
+    protected boolean hasFilterOrSort(ActionURL url)
+    {
+        for (Pair<String, String> param : url.getParameters())
+        {
+            if (isFilterOrSort(param.getKey()))
+                return true;
+        }
+        return false;
+    }
+
+    protected boolean isFilterOrSort(String param)
+    {
+        return (param.indexOf("~") >= 0 ||
+                param.indexOf(".sort") >= 0);
     }
 }

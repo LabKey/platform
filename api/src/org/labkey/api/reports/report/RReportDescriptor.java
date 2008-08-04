@@ -35,6 +35,7 @@ public class RReportDescriptor extends ReportDescriptor
         runInBackground,
         includedReports,
         script,
+        cache,
     }
 
     public RReportDescriptor()

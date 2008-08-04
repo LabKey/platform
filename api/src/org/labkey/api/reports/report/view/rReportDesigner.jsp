@@ -176,9 +176,10 @@
         if (isAdmin)
         {
             out.print("<tr><td><input type=\"checkbox\" name=\"inheritable\" " + (bean.isInheritable() ? "checked" : "") + " onchange=\"LABKEY.setDirty(true);return true;\">Make this view available in child folders.");
-            PageFlowUtil.helpPopup("Available in child folders", "If this check box is selected, this view will be available in data grids of child folders " +
-                "where the schema and table are the same as this data grid.");
+            out.print(PageFlowUtil.helpPopup("Available in child folders", "If this check box is selected, this view will be available in data grids of child folders " +
+                "where the schema and table are the same as this data grid."));
             out.println("</td></tr>");
+            out.println("<tr><td><input type=\"checkbox\" name=\"cache\" " + (bean.isCache() ? "checked" : "") + " onchange=\"LABKEY.setDirty(true);return true;\">Automatically cache this report for faster reloading.</td></tr>");
         }
     }
 
