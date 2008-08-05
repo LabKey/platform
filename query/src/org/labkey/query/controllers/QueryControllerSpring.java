@@ -16,8 +16,8 @@
 
 package org.labkey.query.controllers;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -28,8 +28,8 @@ import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotForm;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.security.*;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
@@ -63,7 +63,8 @@ import java.util.*;
 
 public class QueryControllerSpring extends SpringActionController
 {
-    static DefaultActionResolver _actionResolver = new DefaultActionResolver(QueryControllerSpring.class);
+    static DefaultActionResolver _actionResolver = new DefaultActionResolver(QueryControllerSpring.class,
+            DataRegionActions.SelectNoneAction.class, DataRegionActions.SetCheckAction.class);
 
     public QueryControllerSpring() throws Exception
     {
@@ -937,6 +938,9 @@ public class QueryControllerSpring extends SpringActionController
             if (queryDef == null)
                 HttpView.throwNotFound("Query not found");
             _form = form;
+            _form.setFf_description(queryDef.getDescription());
+            _form.setFf_inheritable(queryDef.canInherit());
+            _form.setFf_hidden(queryDef.isHidden());
             return new JspView<PropertiesForm>(QueryControllerSpring.class, "propertiesQuery.jsp", form, errors);
         }
 

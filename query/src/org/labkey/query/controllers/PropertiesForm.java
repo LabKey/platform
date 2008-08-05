@@ -17,10 +17,6 @@
 package org.labkey.query.controllers;
 
 import org.labkey.api.query.QueryForm;
-import org.labkey.api.query.QueryDefinition;
-import org.apache.struts.action.ActionMapping;
-
-import javax.servlet.http.HttpServletRequest;
 
 public class PropertiesForm extends QueryForm
 {

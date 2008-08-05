@@ -16,26 +16,25 @@
 
 package org.labkey.query;
 
-import org.labkey.api.security.User;
-import org.labkey.api.query.*;
-import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
-import org.labkey.api.data.*;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.WebPartView;
-import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.common.util.Pair;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-
-import java.util.*;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
-import org.labkey.query.persist.QueryManager;
-import org.labkey.query.persist.QueryDef;
+import org.labkey.api.data.*;
+import org.labkey.api.query.*;
+import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
+import org.labkey.api.security.User;
+import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.WebPartView;
+import org.labkey.common.util.Pair;
 import org.labkey.query.persist.DbUserSchemaDef;
+import org.labkey.query.persist.QueryDef;
+import org.labkey.query.persist.QueryManager;
 import org.labkey.query.persist.QuerySnapshotDef;
 import org.labkey.query.view.DbUserSchema;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.*;
 
 public class QueryServiceImpl extends QueryService
 {
@@ -117,6 +116,17 @@ public class QueryServiceImpl extends QueryService
                 }
             }
         }
+
+        // look in the Shared project
+        for (QueryDef queryDef : QueryManager.get().getQueryDefs(ContainerManager.getSharedContainer(), schemaName, true, includeSnapshots))
+        {
+            Map.Entry<String, String> key = new Pair(queryDef.getSchema(), queryDef.getName());
+            if (!ret.containsKey(key))
+            {
+                ret.put(key, new QueryDefinitionImpl(queryDef));
+            }
+        }
+
         return ret;
     }
 
