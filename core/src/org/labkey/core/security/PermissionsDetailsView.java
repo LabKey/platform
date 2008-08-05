@@ -88,7 +88,7 @@ public class PermissionsDetailsView extends WebPartView
         String htmlId = "group." + Integer.toHexString(id);
         out.print("<tr><td class=labkey-form-label>");
         out.print(displayName);
-        out.print("</td><td><select onchange=\"document.updatePermissions.inheritPermissions.checked=false;\" id=");
+        out.print("</td><td><select onchange=\"if(document.updatePermissions.inheritPermissions) document.updatePermissions.inheritPermissions.checked=false;\" id=");
         out.print(htmlId);
         out.print(" name=");
         out.print(htmlId);
@@ -123,13 +123,7 @@ public class PermissionsDetailsView extends WebPartView
     @Override
     public void renderView(Object model, PrintWriter out) throws IOException, ServletException
     {
-        boolean inherited = false;
-        ACL acl = SecurityManager.getACL(_c, _c.getId());
-        if (acl.isEmpty())
-        {
-            acl = _c.getAcl();
-            inherited = true;
-        }
+        ACL acl = _c.getAcl();
 
         if (SecurityManager.isAdminOnlyPermissions(_c))
         {
@@ -149,7 +143,7 @@ public class PermissionsDetailsView extends WebPartView
                 out.println((childrenAdminOnly ? "No" : "Some") + " child folders can be accessed by non-administrators.");
             }
         }
-        Group[] groups = SecurityManager.getGroups(_project, true);
+        Group[] projGroups = SecurityManager.getGroups(_project, false);
 
         // browse link
         //out.println("Go back to <a href=\"" + ActionURL.toPathString("Project", "begin", _c.getPath()) + "\">" + _c.getPath() + "</a>");
@@ -158,29 +152,31 @@ public class PermissionsDetailsView extends WebPartView
 
         if (!_c.isRoot())
         {
-            if (!_c.isProject())
-                out.println("<input type=checkbox name=inheritPermissions " + (inherited ? "checked" : "") + "> Inherit permissions from " + _c.getParent().getPath());
-            else
+            out.println("<input type=checkbox name=inheritPermissions " + (_c.isInheritedAcl() ? "checked" : "")
+                    + "> Inherit permissions from " + (_c.isProject() ? "Global Groups" : _c.getParent().getPath()));
+            out.println("<br/>");
+            if(_c.isProject())
             {
-                out.println("<input type=hidden name=inheritPermissions value=off>");
                 boolean subfoldersInherit = SecurityManager.shouldNewSubfoldersInheritPermissions(_c);
                 out.println("<input type=\"checkbox\" name=\"newSubfoldersInheritPermissions\" " + (subfoldersInherit ? "checked=\"true\"" : "") + "> Newly created subfolders should inherit permissions");
             }
         }
 
         out.println("<table class=\"labkey-form\">");
-        // the first pass through will output only the project groups:
-        Group guestsGroup = null;
+        for (Group group : projGroups)
+            renderGroupTableRow(group, acl, out, group.getName());
+
+        //render global groups
+        Group[] globalGroups = SecurityManager.getGroups(ContainerManager.getRoot(), true);
         Group usersGroup = null;
-        for (Group group : groups)
+        Group guestsGroup = null;
+        for(Group group : globalGroups)
         {
-            if (group.isGuests())
+            if(group.isGuests())
                 guestsGroup = group;
-            else if (group.isUsers())
+            else if(group.isUsers())
                 usersGroup = group;
-            else if (group.isProjectGroup())
-                renderGroupTableRow(group, acl, out, group.getName());
-            else
+            else if(group.isAdministrators())
             {
                 // for groups that we don't want to display, we still have to output a hidden input
                 // for the ACL value; otherwise, a submit with 'inherit' turned off will result in the
@@ -191,11 +187,16 @@ public class PermissionsDetailsView extends WebPartView
                 String htmlId = "group." + Integer.toHexString(id);
                 out.println("<input type=\"hidden\" name=\"" + htmlId + "\" value=\"" + perm + "\">");
             }
+            else
+                renderGroupTableRow(group, acl, out, group.getName());
         }
+
+        //always render all site users and groups last
         if (usersGroup != null)
             renderGroupTableRow(usersGroup, acl, out, "All site users");
         if (guestsGroup != null)
             renderGroupTableRow(guestsGroup, acl, out, "Guests");
+
         out.println("</table>");
         out.println("<input type=\"image\" src=\"" + PageFlowUtil.buttonSrc("Update") + "\">");
         out.println("<input name=objectId type=hidden value=\"" + _c.getId() + "\">");

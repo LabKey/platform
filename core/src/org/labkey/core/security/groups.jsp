@@ -103,13 +103,6 @@ LABKEY.requiresScript('completion.js');
     %>
 </table>
 
-<%
-    // we don't currently allow for new global groups; this functionality is available,
-    // but doesn't seem to have a sufficient use-case to justify the additional management
-    // complexity for end-users.
-    if (!container.isRoot())
-    {
-%>
 <form action=newGroup.post method=POST>
     <table class="labkey-form">
         <tr>
@@ -119,6 +112,3 @@ LABKEY.requiresScript('completion.js');
         </tr>
     </table>
 </form>
-<%
-    }
-%>
