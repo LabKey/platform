@@ -811,14 +811,14 @@ public class SecurityManager
 
     public static Group createGroup(Container c, String name, String type)
     {
-        String defaultOwnerId = c.isRoot() ? null : c.getId();
+        String defaultOwnerId = (null == c || c.isRoot()) ? null : c.getId();
         return createGroup(c, name, type, defaultOwnerId);
     }
 
 
     public static Group createGroup(Container c, String name, String type, String ownerId)
     {
-        String containerId = c.isRoot() ? null : c.getId();
+        String containerId = (null == c || c.isRoot()) ? null : c.getId();
         Group group = new Group();
         group.setName(StringUtils.trimToNull(name));
         group.setOwnerId(ownerId);
