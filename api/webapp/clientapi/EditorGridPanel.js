@@ -135,8 +135,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
      * if no lookup store exists for that column.
      */
     getLookupStore : function(columnName) {
-        if(this.lookupStores)
-            return this.lookupStores[columnName];
+        return this.store.getLookupStore(columnName);
     },
 
     /**
@@ -270,7 +269,9 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
     },
 
     getLookupRenderer : function(col, meta) {
-        var store = this.ensureLookupStore(col, meta);
+        var store = this.store.getLookupStore(meta.name, !col.required);
+        store.on("load", this.onLookupStoreLoad, this);
+        store.on("loadexception", this.onLookupStoreError, this);
         return function(data)
         {
             if(store.loadError)
@@ -284,35 +285,6 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
             else
                 return this.lookupNullCaption || "[none]";
         };
-    },
-
-    ensureLookupStore : function(col, meta) {
-        var store = this.lookupStores[meta.name];
-        if(!store)
-        {
-            store = this.createLookupStore(meta, !col.required);
-            store.on("load", this.onLookupStoreLoad, this);
-            store.on("loadexception", this.onLookupStoreError, this);
-            store.load();
-
-            this.lookupStores[meta.name] = store;
-        }
-        return store;
-    },
-
-    createLookupStore : function(meta, includeNullRecord)
-    {
-        var config = {
-            schemaName: meta.lookup.schema,
-            queryName: meta.lookup.table,
-            containerPath: this.store.containerPath
-        };
-        if(includeNullRecord)
-            config.nullRecord = {
-                displayColumn: meta.lookup.displayColumn,
-                nullCaption: this.lookupNullCaption || "[none]"
-            }
-        return new LABKEY.ext.Store(config);
     },
 
     onLookupStoreLoad : function(store, records, options) {
@@ -390,13 +362,13 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
     },
 
     getLookupEditor : function(col, meta) {
-        var store = this.ensureLookupStore(col, meta);
+        var store = this.store.getLookupStore(meta.name, !col.required);
         return new Ext.form.ComboBox({
             store: store,
             allowBlank: !col.required,
             typeAhead: false,
             triggerAction: 'all',
-            mode: 'local', //use local mode since the ensureLookupStore() method will already load the store
+            mode: 'local', //use local mode since the lookup store will already be loaded
             editable: false,
             displayField: meta.lookup.displayColumn,
             valueField: meta.lookup.keyColumn,

@@ -271,7 +271,59 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         return record.saveOperationInProgress;
     },
 
+    /**
+     * Returns a LabKey.ext.Store filled with the lookup values for a given
+     * column name if that column exists, and if it is a lookup column (i.e.,
+     * lookup meta-data was supplied by the server).
+     * @param columnName The column name
+     * @param includeNullRecord Pass true to include a null record at the top
+     * so that the user can set the column value back to null. Set the
+     * lookupNullCaption property in this Store's config to override the default
+     * caption of "[none]".
+     */
+    getLookupStore : function(columnName, includeNullRecord)
+    {
+        if(!this.lookupStores)
+            this.lookupStores = {};
+
+        var store = this.lookupStores[columnName];
+        if(!store)
+        {
+            //find the column metadata
+            var fieldMeta = this.findFieldMeta(columnName);
+            if(!fieldMeta)
+                return null;
+
+            //create the lookup store and kick off a load
+            var config = {
+                schemaName: fieldMeta.lookup.schema,
+                queryName: fieldMeta.lookup.table,
+                containerPath: this.containerPath
+            };
+            if(includeNullRecord)
+                config.nullRecord = {
+                    displayColumn: fieldMeta.lookup.displayColumn,
+                    nullCaption: this.lookupNullCaption || "[none]"
+                }
+
+            store = new LABKEY.ext.Store(config);
+            store.load();
+        }
+        return store;
+    },
+
     /*-- Private Methods --*/
+
+    findFieldMeta : function(columnName)
+    {
+        var fields = this.reader.meta.fields;
+        for(var idx = 0; idx < fields.length; ++idx)
+        {
+            if(fields[idx].name == columnName)
+                return fields[idx]
+        }
+        return null;
+    },
 
     onBeforeLoad: function(proxy, options) {
         //the selectRows.api can't handle the 'sort' and 'dir' params
