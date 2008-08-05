@@ -3,6 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
+
 function setAllCheckboxes(form, value, elementName)
 {
     var elems = form.elements;
@@ -37,10 +38,7 @@ function sendCheckbox(el, key, ids, checked)
 {
     if (!key || ids.length == 0)
         return;
-    var path = window.location.pathname;
-    var url = replaceAction(path, "setCheck.api") +
-              "?key=" + key +
-              "&checked=" + checked;
+    var url = LABKEY.ActionURL.buildURL("query", "setCheck.api", LABKEY.ActionURL.getContainer(), { 'key' : key, 'checked' : checked });
     for (var i = 0; i < ids.length; i++)
         url += "&id=" + ids[i];
 
@@ -51,7 +49,7 @@ function sendCheckbox(el, key, ids, checked)
 function selectNone(el, key)
 {
     var path = window.location.pathname;
-    var url = replaceAction(path, "selectNone.api") + "?key=" + key;
+    var url = LABKEY.ActionURL.buildURL("query", "selectNone.api", LABKEY.ActionURL.getContainer(), { 'key' : key });
     var xmlhttp = new XMLRequest(url);
     xmlhttp.get();
 
@@ -74,14 +72,6 @@ function getChildWithClassName(root, tagName, className)
             return child;
     }
     return undefined;
-}
-
-function replaceAction(path, action)
-{
-    var i = path.lastIndexOf("/");
-    if (i > 0)
-        return path.substring(0, i+1) + action;
-    return path + "/" + action;
 }
 
 function toggleLink(link, notify)

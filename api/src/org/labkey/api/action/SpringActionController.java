@@ -20,7 +20,8 @@ import org.apache.beehive.netui.pageflow.Forward;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
-import org.labkey.api.security.*;
+import org.labkey.api.security.ActionNames;
+import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.DialogTemplate;
@@ -451,9 +452,6 @@ public abstract class SpringActionController implements Controller, HasViewConte
         {
             _outerClass = outerClass;
             _pageFlowName = ViewServlet.getPageFlowName(_outerClass);
-
-            // firstly, add all shared actions.
-            addInnerClassActions(SharedActions.class);
 
             // Add all concrete inner classes of this controller
             addInnerClassActions(_outerClass);

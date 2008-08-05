@@ -25,10 +25,9 @@ import org.springframework.validation.BindException;
 import javax.servlet.http.HttpServletRequest;
 
 /**
- * User: kevink
- * Date: Jan 10, 2008 12:46:47 PM
+ * Actions used by both the Spring QueryController and Beehive ViewController.
  */
-public class SharedActions
+public class DataRegionActions
 {
 
     @RequiresPermission(ACL.PERM_READ)

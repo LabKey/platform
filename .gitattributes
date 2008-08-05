@@ -36,6 +36,7 @@ api/src/org/labkey/api/action/ApiSimpleResponse.java -text
 api/src/org/labkey/api/action/BaseViewAction.java -text
 api/src/org/labkey/api/action/BeehivePortingActionResolver.java -text
 api/src/org/labkey/api/action/ConfirmAction.java -text
+api/src/org/labkey/api/action/DataRegionActions.java -text
 api/src/org/labkey/api/action/ExportAction.java -text
 api/src/org/labkey/api/action/FormArrayList.java -text
 api/src/org/labkey/api/action/FormHandlerAction.java -text
@@ -51,7 +52,6 @@ api/src/org/labkey/api/action/PermissionCheckable.java -text
 api/src/org/labkey/api/action/QueryViewAction.java -text
 api/src/org/labkey/api/action/RedirectAction.java -text
 api/src/org/labkey/api/action/ReturnUrlForm.java -text
-api/src/org/labkey/api/action/SharedActions.java -text
 api/src/org/labkey/api/action/SimpleErrorView.java -text
 api/src/org/labkey/api/action/SimpleForwardAction.java -text
 api/src/org/labkey/api/action/SimpleRedirectAction.java -text
