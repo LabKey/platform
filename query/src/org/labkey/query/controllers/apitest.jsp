@@ -193,13 +193,21 @@
         }
     }
 
+    function onGetUrlKeyDown(event)
+    {
+        var evt = event || window.event;
+        var code = evt.charCode || evt.keyCode;
+        if(code === 13)
+            getUrl();
+    }
+
 </script>
 <div id="lblStatus" class="status">Enter a Url in the "Get Url" box and click "Get"</div>
 <table width="100%">
     <tr>
         <td width="1%">Get&nbsp;Url:</td>
         <td width="98%"><input type="text" id="txtUrlGet" style="width:100%"
-                               value=""/>
+                               value="" onkeydown="onGetUrlKeyDown(event)"/>
         </td>
         <td width="1%">
             <input type="button" value="Get" id="btnGet" onclick="getUrl()"/>
