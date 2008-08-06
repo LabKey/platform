@@ -86,8 +86,8 @@ public class PermissionsDetailsView extends WebPartView
         int perm = acl.getPermissions(id);
         if (perm == -1) perm = ACL.PERM_ALLOWALL; // HACK
         String htmlId = "group." + Integer.toHexString(id);
-        out.print("<tr><td class=labkey-form-label>");
-        out.print(displayName);
+        out.print("<tr><td class='labkey-form-label'>");
+        out.print(PageFlowUtil.filter(displayName));
         out.print("</td><td><select onchange=\"if(document.updatePermissions.inheritPermissions) document.updatePermissions.inheritPermissions.checked=false;\" id=");
         out.print(htmlId);
         out.print(" name=");
@@ -150,22 +150,24 @@ public class PermissionsDetailsView extends WebPartView
 
         out.println("<form name=\"updatePermissions\" action=\"updatePermissions.post\" method=\"POST\">");
 
-        if (!_c.isRoot())
+        if(_c.isProject())
+        {
+            boolean subfoldersInherit = SecurityManager.shouldNewSubfoldersInheritPermissions(_c);
+            out.println("<input type=\"checkbox\" name=\"newSubfoldersInheritPermissions\" " + (subfoldersInherit ? "checked=\"true\"" : "") + "> Newly created subfolders should inherit permissions");
+        }
+        else if(!_c.isRoot())
         {
             out.println("<input type=checkbox name=inheritPermissions " + (_c.isInheritedAcl() ? "checked" : "")
                     + "> Inherit permissions from " + (_c.isProject() ? "Global Groups" : _c.getParent().getPath()));
             out.println("<br/>");
-            if(_c.isProject())
-            {
-                boolean subfoldersInherit = SecurityManager.shouldNewSubfoldersInheritPermissions(_c);
-                out.println("<input type=\"checkbox\" name=\"newSubfoldersInheritPermissions\" " + (subfoldersInherit ? "checked=\"true\"" : "") + "> Newly created subfolders should inherit permissions");
-            }
         }
 
-        out.println("<table>");
+        out.println("<table><tr><td colspan='2' class='labkey-strong'>Project Groups</td></tr>");
         for (Group group : projGroups)
             renderGroupTableRow(group, acl, out, group.getName());
 
+        out.println("<tr><td colspan='2' class='labkey-strong'>Site Groups</td></tr>");
+        
         //render global groups
         Group[] globalGroups = SecurityManager.getGroups(ContainerManager.getRoot(), true);
         Group usersGroup = null;

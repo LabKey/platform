@@ -19,7 +19,6 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
-import org.apache.log4j.Logger;
 import org.labkey.api.action.*;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
@@ -278,7 +277,7 @@ public class SecurityController extends SpringActionController
     {
         JspView<GroupsBean> groupsView = new JspView<GroupsBean>("/org/labkey/core/security/groups.jsp", new GroupsBean(container, expandedGroup, messages), errors);
         if (null == container || container.isRoot())
-            groupsView.setTitle("Global Groups");
+            groupsView.setTitle("Site Groups");
         else
             groupsView.setTitle("Groups for project " + container.getProject().getName());
         return groupsView;
@@ -308,9 +307,13 @@ public class SecurityController extends SpringActionController
 
         ActionURL startURL = c.getFolderType().getStartURL(c, getUser());
         projectViews.addView(new HtmlView(PageFlowUtil.buttonLink("Done", startURL)));
-        body.addView(projectViews, "60%");
-        body.addView(new PermissionsDetailsView(c, "container"), "40%");
-
+        if(c.isRoot())
+            body.addView(projectViews);
+        else
+        {
+            body.addView(projectViews, "60%");
+            body.addView(new PermissionsDetailsView(c, "container"), "40%");
+        }
         if (wizard)
         {
             VBox outer = new VBox();
@@ -708,23 +711,24 @@ public class SecurityController extends SpringActionController
         return root;
     }
 
-    private ModelAndView renderGroup(String group, BindException errors, List<String> messages) throws Exception
+    private ModelAndView renderGroup(String groupName, BindException errors, List<String> messages) throws Exception
     {
-        if (group.startsWith("/"))
-            group = group.substring(1);
+        if (groupName.startsWith("/"))
+            groupName = groupName.substring(1);
 
         // validate that group is in the current project!
         Container c = getContainer();
-        ensureGroupInContainer(group, c);
-        List<Pair<Integer, String>> members = SecurityManager.getGroupMemberNamesAndIds(group);
+        ensureGroupInContainer(groupName, c);
+        List<Pair<Integer, String>> members = SecurityManager.getGroupMemberNamesAndIds(groupName);
 
         if (null == members)
             HttpView.throwNotFound();
 
-        VBox view = new VBox(new GroupView(group, members, messages, c.isRoot(), errors));
+        Group group = SecurityManager.getGroup(SecurityManager.getGroupId(groupName).intValue());
+        VBox view = new VBox(new GroupView(groupName, members, messages, group.isSystemGroup(), errors));
         if (getUser().isAdministrator())
         {
-            Integer id = SecurityManager.getGroupId(group);
+            Integer id = SecurityManager.getGroupId(groupName);
             if (id != null)
             {
                 view.addView(GroupAuditViewFactory.getInstance().createGroupView(getViewContext(), id));

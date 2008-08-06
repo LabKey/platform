@@ -30,7 +30,7 @@ import java.util.List;
 */
 public class GroupView extends JspView<GroupView.GroupBean>
 {
-    public GroupView(String groupName, List<Pair<Integer,String>> members, List<String> messages, boolean globalGroup, BindException errors)
+    public GroupView(String groupName, List<Pair<Integer,String>> members, List<String> messages, boolean systemGroup, BindException errors)
     {
         super("/org/labkey/core/security/group.jsp", new GroupBean(), errors);
 
@@ -39,7 +39,7 @@ public class GroupView extends JspView<GroupView.GroupBean>
         bean.groupName = groupName;
         bean.members = members;
         bean.messages = messages;
-        bean.isGlobalGroup = globalGroup;
+        bean.isSystemGroup = systemGroup;
         bean.ldapDomain = AuthenticationManager.getLdapDomain();
         bean.basePermissionsURL = ActionURL.toPathString("User", "userAccess", getViewContext().getContainer()) + "?userId=";
     }
@@ -49,7 +49,7 @@ public class GroupView extends JspView<GroupView.GroupBean>
         public String groupName;
         public List<Pair<Integer, String>> members;
         public List<String> messages;
-        public boolean isGlobalGroup;
+        public boolean isSystemGroup;
         public String ldapDomain;
         public String basePermissionsURL;
     }

@@ -156,7 +156,7 @@ Include the following message with the new user mail (optional):<br>
 </div>
 </form>
 <%
-if (!bean.isGlobalGroup)
+if (!bean.isSystemGroup)
     {
 %>
     <br><br><div id="delete-group">
