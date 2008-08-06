@@ -20,7 +20,7 @@ package org.labkey.api.pipeline;
 * User: jeckels
 * Date: Jul 16, 2008
 */
-public interface ClusterSettings
+public interface GlobusSettings
 {
     /** @return the name of the scheduler queue to which the job should be submitted */
     public String getQueue();
@@ -57,5 +57,5 @@ public interface ClusterSettings
      * @param overrides the set of properties to override
      * @return a new ClusterSettings object with the merged properties
      */
-    public ClusterSettings mergeOverrides(ClusterSettings overrides);
+    public GlobusSettings mergeOverrides(GlobusSettings overrides);
 }

@@ -180,4 +180,9 @@ public class RecordedAction
             return result;
         }
     }
+
+    public String toString()
+    {
+        return _description + " Inputs: " + _inputs + " Outputs: " + _outputs;
+    }
 }

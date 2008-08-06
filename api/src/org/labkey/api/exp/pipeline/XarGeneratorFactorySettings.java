@@ -26,9 +26,9 @@ public class XarGeneratorFactorySettings extends AbstractTaskFactorySettings
 {
     private String _outputExt = ".xar.xml";
 
-    public XarGeneratorFactorySettings()
+    public XarGeneratorFactorySettings(String name)
     {
-        super(new TaskId(XarGeneratorId.class));
+        super(new TaskId(XarGeneratorId.class, name));
     }
 
     public TaskId getCloneId()

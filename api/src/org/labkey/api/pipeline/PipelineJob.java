@@ -64,7 +64,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public List<RecordedAction> getActions()
     {
-        return Collections.unmodifiableList(_actions);
+        return _actions;
     }
 
     public enum TaskStatus
@@ -851,6 +851,7 @@ abstract public class PipelineJob extends Job implements Serializable
     public void mergeSplitJob(PipelineJob job)
     {
         // Add any errors that happened in the split job.
+        _actions.addAll(job.getActions());
         _errors += job._errors;
     }
 

@@ -19,7 +19,7 @@ package org.labkey.api.pipeline;
 * User: jeckels
 * Date: Jul 16, 2008
 */
-public class ClusterSettingsImpl extends AbstractClusterSettings
+public class GlobusSettingsImpl extends AbstractGlobusSettings
 {
     private Integer _maxMemory;
     private String _queue;

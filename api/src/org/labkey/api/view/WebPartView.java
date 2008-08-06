@@ -38,6 +38,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
     private Throwable _prepareException = null;
     private boolean _isPrepared = false;
     private boolean _isEmbedded = false;
+    private String _helpPopup;
 
     public static enum FrameType
     {
@@ -116,6 +117,10 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
         addObject("href", href);
     }
 
+    public void setTitlePopupHelp(String title, String body)
+    {
+        _helpPopup = PageFlowUtil.helpPopup(title, body);
+    }
 
     public void setTitleHref(ActionURL href)
     {
@@ -357,6 +362,11 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
                 if (null != href)
                     out.print("</a>");
             }
+            if (_helpPopup != null)
+            {
+                out.print(_helpPopup);
+            }
+            
             out.print("</th>\n<th class=\"labkey-wp-title-right\">");
             NavTree[] links = getCustomizeLinks().getChildren();
             if (links == null || links.length == 0)

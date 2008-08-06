@@ -19,11 +19,15 @@ package org.labkey.api.pipeline;
 * User: jeckels
 * Date: Jul 17, 2008
 */
-public abstract class AbstractClusterSettings implements ClusterSettings
+public abstract class AbstractGlobusSettings implements GlobusSettings
 {
-    public ClusterSettings mergeOverrides(ClusterSettings overrides)
+    public GlobusSettings mergeOverrides(GlobusSettings overrides)
     {
-        ClusterSettingsImpl result = new ClusterSettingsImpl();
+        GlobusSettingsImpl result = new GlobusSettingsImpl();
+        if (overrides == null)
+        {
+            overrides = new GlobusSettingsImpl();
+        }
         result.setHostCount(overrides.getHostCount() == null ? getHostCount() : overrides.getHostCount());
         result.setMaxCPUTime(overrides.getMaxCPUTime() == null ? getMaxCPUTime() : overrides.getMaxCPUTime());
         result.setMaxMemory(overrides.getMaxMemory() == null ? getMaxMemory() : overrides.getMaxMemory());

@@ -18,8 +18,8 @@ package org.labkey.api.pipeline;
 /**
  * <code>AbstractTaskFactorySettings</code> is used for Spring configuration of a
  * <code>TaskFactory</code> in the <code>TaskRegistry</code>.  Extend this
- * class, and override <code>TaskFactory.cloneAndConfigure()</code> to create
- * specific types of <code>TaskPipeline</code> objects that can be configured
+ * class, and override <code>TaskFactory.configure()</code> to create
+ * specific types of <code>TaskFactory</code> objects that can be configured
  * with Spring beans.
  *
  * @author brendanx

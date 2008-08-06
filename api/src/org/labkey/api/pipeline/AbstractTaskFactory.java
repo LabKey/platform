@@ -23,7 +23,7 @@ import java.sql.SQLException;
  *
  * @author brendanx
  */
-abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFactorySettings> extends ClusterSettingsImpl implements TaskFactory<SettingsType>, Cloneable
+abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFactorySettings, FactoryType extends AbstractTaskFactory<SettingsType, FactoryType>> implements TaskFactory<SettingsType>, Cloneable
 {
     private TaskId _id;
     private TaskId _dependencyId;
@@ -31,6 +31,7 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
     private String _executionLocation;
     private int _autoRetry = -1;
     private String _groupParameterName;
+    private GlobusSettings _globusSettings;
 
     public AbstractTaskFactory(Class namespaceClass)
     {
@@ -47,11 +48,11 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
         _id = id;
     }
 
-    public AbstractTaskFactory cloneAndConfigure(SettingsType settings) throws CloneNotSupportedException
+    public FactoryType cloneAndConfigure(SettingsType settings) throws CloneNotSupportedException
     {
-        AbstractTaskFactory factory = (AbstractTaskFactory) clone();
-
-        return factory.configure(settings);
+        FactoryType result = (FactoryType) clone();
+        result.configure(settings);
+        return result;
     }
 
     public String getGroupParameterName()
@@ -59,7 +60,17 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
         return _groupParameterName;
     }
 
-    private AbstractTaskFactory configure(AbstractTaskFactorySettings settings)
+    public GlobusSettings getGlobusSettings()
+    {
+        return _globusSettings;
+    }
+
+    public void setGlobusSettings(GlobusSettings globusSettings)
+    {
+        _globusSettings = globusSettings;
+    }
+
+    protected void configure(SettingsType settings)
     {
         _id = settings.getId();
         if (settings.getDependencyId() != null)
@@ -72,7 +83,6 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
             _autoRetry = settings.getAutoRetry();
         if (settings.getGroupParameterName() != null)
             _groupParameterName = settings.getGroupParameterName();
-        return this;
     }
 
     /**

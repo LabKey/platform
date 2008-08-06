@@ -28,7 +28,7 @@ import java.util.List;
  *
  * @author brendanx
  */
-public interface TaskFactory<SettingsType extends TaskFactorySettings> extends ClusterSettings
+public interface TaskFactory<SettingsType extends TaskFactorySettings>
 {
     TaskId getId();
 
@@ -62,6 +62,8 @@ public interface TaskFactory<SettingsType extends TaskFactorySettings> extends C
     boolean isAutoRetryEnabled(PipelineJob job) throws IOException, SQLException; 
 
     String getExecutionLocation();
+
+    GlobusSettings getGlobusSettings();
 
     int getAutoRetry();
 
