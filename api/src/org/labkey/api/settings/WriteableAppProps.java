@@ -329,7 +329,7 @@ public class WriteableAppProps extends AppProps
         //since this is a fixed membership map, we just need to run
         //one of the map's keys and compare values, noting what has changed
         boolean propsChanged = false;
-        StringBuilder html = new StringBuilder("<table class='labkey-form'>");
+        StringBuilder html = new StringBuilder("<table>");
 
         for(String key : _properties.keySet())
         {

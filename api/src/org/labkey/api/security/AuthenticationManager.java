@@ -425,7 +425,7 @@ public class AuthenticationManager
     public static HttpView getConfigurationView(URLFactory enable, URLFactory disable)
     {
         StringBuilder sb = new StringBuilder();
-        sb.append("<table class=\"labkey-form\">\n");
+        sb.append("<table>\n");
         sb.append("<tr><td colspan=\"4\">These are the installed authentication providers:<br><br></td></tr>\n");
 
         for (AuthenticationProvider authProvider : _allProviders)

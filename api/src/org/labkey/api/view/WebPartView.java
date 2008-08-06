@@ -295,7 +295,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
 
         case DIALOG:
         {
-            out.print("<table class=\"labkey-dialog\"><tr>");
+            out.print("<table class=\"labkey-bordered\"><tr>");
             out.print("<th>");
             out.print(  PageFlowUtil.filter(title));
             out.print(  "<br><img src='" + getViewContext().getContextPath() + "/_.gif' height=1 width=600>");
@@ -398,7 +398,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
                 if (title != null)
                 {
                     out.print("<tr>" +
-                            "<th class=\"labkey-expandable-nav-title\" title=\"");
+                            "<th class=\"labkey-header\" style=\"padding-left: 4px\" title=\"");
                     out.print(PageFlowUtil.filter(title));
                     out.print("\">");
 
@@ -463,7 +463,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
         try
         {
             out.write(
-                    "<table cellpadding=\"0\"" + (null!=width?"width=\"" + width + "\"" : "") + ">" +
+                    "<table " + (null!=width?"width=\"" + width + "\"" : "") + ">" +
                             "<tr>" +
                             "<td class=\"labkey-announcement-title\" align=left><span>");
             if (null != href)
@@ -472,7 +472,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
             if (null != href)
                 out.write("</a>");
             out.write("</span></td></tr>");
-            out.write("<tr style=\"height:1;\"><td class=\"labkey-title-area-line\"><img height=1 width=1 src=\"" + AppProps.getInstance().getContextPath() + "/_.gif\"></td></tr>");
+            out.write("<tr><td class=\"labkey-title-area-line\"><img height=1 width=1 src=\"" + AppProps.getInstance().getContextPath() + "/_.gif\"></td></tr>");
             out.write("<tr><td colspan=3 class=\"" + className + "\">");
         }
         catch (IOException x)

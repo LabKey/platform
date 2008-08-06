@@ -512,7 +512,7 @@ public class GroovyView<ModelClass> extends WebPartView<ModelClass>
         ViewContext context = getViewContext();
         StringBuffer message = new StringBuffer();
         String br = "";
-        message.append("<span style=\"color:red;\">");
+        message.append("<span class=\"labkey-error\">");
         for (ObjectError e : l)
         {
             message.append(br);

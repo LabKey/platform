@@ -569,7 +569,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         @Override
         protected void renderInternal(Object model, HttpServletRequest request, HttpServletResponse response) throws IOException
         {
-            response.getWriter().print("<div style=\"border:1 solid black;\">" + _name + "</div>");
+            response.getWriter().print("<div class=\"labkey-bordered\">" + _name + "</div>");
         }
     }
 

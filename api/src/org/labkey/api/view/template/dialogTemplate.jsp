@@ -36,12 +36,12 @@
     </script>
 </head>
 
-<body style="margin:0"<%= null != pageConfig.getFocus() ? " onload=\"document." + pageConfig.getFocus() + ".focus();\"" : "" %>>
+<body <%= null != pageConfig.getFocus() ? " onload=\"document." + pageConfig.getFocus() + ".focus();\"" : "" %>>
     <table class="labkey-main"><%
 
     if (pageConfig.shouldIncludeHeader())
     { %>
-    <tr id="labkey-header-panel" class="labkey-header-panel" style="height:56px;">
+    <tr id="labkey-header-panel" class="labkey-header-panel" height="56px">
         <td><% me.include(me.getView("header"), out); %></td>
     </tr>
     <tr>

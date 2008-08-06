@@ -118,7 +118,7 @@ if (bean.showHeader())
 
 if (null != me.getView("moduleNav"))
 {
-    %><td align=left valign=top class=normal style="width:200px; height:100%; padding:5;"><%
+    %><td align=left valign=top class=normal width="200px" height="100%" style="padding:5;"><%
         me.include(me.getView("moduleNav"), out);
     %></td><%
 }

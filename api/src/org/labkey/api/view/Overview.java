@@ -81,10 +81,10 @@ public class Overview
         public String toString()
         {
             StringBuilder ret = new StringBuilder("<li");
-            ret.append(" class=\"labkey-step");
+            ret.append(" style=\"padding-bottom:0.5em\" class=\"labkey-indented");
             if (_status == Status.disabled)
             {
-                ret.append(" labkey-step-disabled");
+                ret.append(" labkey-disabled");
             }
             ret.append("\">");
             ret.append("<b>");

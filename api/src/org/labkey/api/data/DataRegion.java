@@ -682,7 +682,7 @@ public class DataRegion extends DisplayElement
         if (renderButtons)
             renderFormHeader(out, MODE_GRID);
 
-        out.write("<table class=\"labkey-data-region-header\" id=\"" + PageFlowUtil.filter("dataregion_header_" + getName()) + "\">\n");
+        out.write("<table id=\"" + PageFlowUtil.filter("dataregion_header_" + getName()) + "\">\n");
         out.write("<tr><td nowrap>\n");
         if (renderButtons)
         {
@@ -702,7 +702,7 @@ public class DataRegion extends DisplayElement
 
     protected void renderFooter(RenderContext ctx, Writer out, Integer resultSetSize, boolean renderButtons) throws IOException
     {
-        out.write("<table class=\"labkey-data-region-footer\" id=\"" + PageFlowUtil.filter("dataregion_footer_" + getName()) + "\">\n");
+        out.write("<table id=\"" + PageFlowUtil.filter("dataregion_footer_" + getName()) + "\">\n");
         out.write("<tr><td nowrap>\n");
         if (renderButtons && _buttonBarPosition.atBottom())
         {
@@ -854,7 +854,12 @@ public class DataRegion extends DisplayElement
     {
         if (isShowBorders())
         {
-            out.write("<table class=\"labkey-data-region labkey-show-borders\"");
+            out.write("<table class=\"labkey-data-region labkey-show-borders");
+            if (_aggregateResults != null && !_aggregateResults.isEmpty())
+            {
+                out.write(" labkey-has-col-totals");
+            }
+            out.write("\"");
         }
         else
         {
@@ -894,13 +899,13 @@ public class DataRegion extends DisplayElement
 
         if (_showRecordSelectors)
         {
-            out.write("<td class=\"labkey-selectors labkey-selector-header");
+            out.write("<th valign=\"top\" class=\"labkey-selectors");
             out.write("\">");
 
             out.write("<input type=checkbox title='Check/uncheck all' name='");
             out.write(TOGGLE_CHECKBOX_NAME);
             out.write("' onClick='sendCheckboxes(this, " + PageFlowUtil.filterQuote(getSelectionKey()) + ", this.checked);'");
-            out.write("></td>");
+            out.write("></th>");
         }
 
         for (DisplayColumn renderer : renderers)
@@ -934,7 +939,7 @@ public class DataRegion extends DisplayElement
                     singleAggregateType = null;
             }
 
-            out.write("<tr class=\"labkey-aggregates-row\">");
+            out.write("<tr class=\"labkey-col-total\">");
             if (_showRecordSelectors)
             {
                 out.write("<td class='labkey-selectors'>");
@@ -951,8 +956,6 @@ public class DataRegion extends DisplayElement
                 if (renderer.getVisible(ctx))
                 {
                     out.write("<td");
-                    if (renderer.getGridCellClass() == null)
-                        out.write(" class='" + renderer.getGridCellClass() + "'");
                     if (renderer.getTextAlign() != null)
                         out.write(" align='" + renderer.getTextAlign() + "'");
                     out.write(">");

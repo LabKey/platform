@@ -164,7 +164,7 @@ public class QueryView extends WebPartView<Object>
 
     protected void renderErrors(PrintWriter out, String message, List<? extends Throwable> errors)
     {
-        out.print("<p style=\"color:red\">");
+        out.print("<p class=\"labkey-error\">");
         out.print(PageFlowUtil.filter(message));
         out.print("</p>");
         if (verboseErrors())

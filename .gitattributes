@@ -1561,7 +1561,6 @@ internal/src/org/labkey/api/view/Stats.java -text
 internal/src/org/labkey/api/view/StatsView.java -text
 internal/src/org/labkey/api/view/addWebPart.jsp -text
 internal/src/org/labkey/api/view/customizeClientAPIWebPart.jsp -text
-internal/src/org/labkey/api/view/filter.jsp -text
 internal/webapp/ColumnTree.css -text
 internal/webapp/ColumnTree.js -text
 internal/webapp/_.gif -text

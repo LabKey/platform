@@ -67,12 +67,12 @@ if (bean.containerLinks != null)
     {
         if (AppProps.getInstance().isUserRequestedAdminOnlyMode())
         {
-%><tr><td>&nbsp;</td><td class="labkey-nav labkey-error" style="padding:5px;">Admin only mode: only administrators can log in. When finished, turn this off in the <a href="<%=urlProvider(AdminUrls.class).getCustomizeSiteURL()%>">Admin Console</a>.</td></tr><%
+%><tr><td>&nbsp;</td><td class="labkey-error" style="padding:5px;">Admin only mode: only administrators can log in. When finished, turn this off in the <a href="<%=urlProvider(AdminUrls.class).getCustomizeSiteURL()%>">Admin Console</a>.</td></tr><%
     }
 
     if (bean.moduleFailures != null && bean.moduleFailures.size() > 0)
     {
-    %><tr><td>&nbsp;</td><td class="labkey-nav" style="padding:5px;">
+    %><tr><td>&nbsp;</td><td style="padding:5px;">
     <p class="labkey-error">There were errors loading the following modules during server startup:</p>
     <%= bean.moduleFailures.keySet() %>
     <p><a href="<%=PageFlowUtil.urlProvider(AdminUrls.class).getModuleErrorsURL(currentContext.getContainer()) %>">Error details</a></p>
@@ -83,7 +83,7 @@ if (bean.containerLinks != null)
     // download a new version, for example.
     if (bean.upgradeMessage != null)
     {
-    %><tr><td>&nbsp;</td><td class="labkey-nav" style="padding:5px;"><%= bean.upgradeMessage %></td></tr><%
+    %><tr><td>&nbsp;</td><td style="padding:5px;"><%= bean.upgradeMessage %></td></tr><%
     }
 }
 %>

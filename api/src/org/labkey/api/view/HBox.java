@@ -47,7 +47,7 @@ public class HBox extends VBox
         {
             if (_views != null && !_views.isEmpty())
             {
-                out.write("<table class=\"labkey-hbox\"><tr>");
+                out.write("<table width=\"100%\"><tr>");
                 for (ModelAndView view : _views)
                 {
                     if (null == view)

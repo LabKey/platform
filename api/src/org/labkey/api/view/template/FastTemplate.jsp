@@ -70,7 +70,7 @@ function sizeNavBar()
 <body onLoad=sizeNavBar() onResize=sizeNavBar() style="margin-top:0px; margin-left:0px; margin-right:0px;">
 <%
 me.include(me.getView("header"),out);
-%><TABLE style="width:146;" align=left>
+%><TABLE width="146" align=left>
 <tr>
 <td id="leftmenupanel" class="labkey-site-nav-panel">
 <img src=<%=contextPath%>/_.gif width=146 height=1><br><%

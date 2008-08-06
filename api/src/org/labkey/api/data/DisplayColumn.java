@@ -42,15 +42,10 @@ public abstract class DisplayColumn extends RenderColumn
     protected String _excelFormatString = null;
     protected Format _format = null;
     protected Format _tsvFormat = null;
-    protected String _gridHeaderClass = "labkey-grid-header";
-    protected String _gridCellClass = "labkey-grid-cell";
-    protected String _detailsCaptionClass = "labkey-details-caption";
-    protected String _detailsDataClass = "labkey-details-data";
-    protected String _inputCellClass = "labkey-input-cell";
+    protected String _gridHeaderClass = "labkey-col-header-filter";
     private String _inputPrefix = "";
     private String _description = null;
     protected boolean _htmlFiltered = true;
-    private String _backgroundColor;
     private String _displayClass;
 
     public abstract void renderGridCellContents(RenderContext ctx, Writer out) throws IOException;
@@ -268,16 +263,6 @@ public abstract class DisplayColumn extends RenderColumn
     public String getGridHeaderClass()
     {
         return _gridHeaderClass;
-    }
-
-    public void setGridCellClass(String cellClass)
-    {
-        _gridCellClass = cellClass;
-    }
-
-    public String getGridCellClass()
-    {
-        return _gridCellClass;
     }
 
     public void renderColTag(Writer out) throws IOException
@@ -514,15 +499,9 @@ public abstract class DisplayColumn extends RenderColumn
     public void renderGridDataCell(RenderContext ctx, Writer out, String style) throws IOException, SQLException
     {
         out.write("<td");
-        if (getGridCellClass() != null)
+        if (_displayClass != null)
         {
-            out.write(" class='");
-            out.write(getGridCellClass());
-            if (_displayClass != null)
-            {
-                out.write(" " + _displayClass);
-            }
-            out.write("'");
+            out.write(" class=' " + _displayClass + "'");
         }
         if (_textAlign != null)
         {
@@ -738,11 +717,6 @@ public abstract class DisplayColumn extends RenderColumn
     public void setDescription(String _description)
     {
         this._description = _description;
-    }
-
-    public void setBackgroundColor(String backgroundColor)
-    {
-        _backgroundColor = backgroundColor;
     }
 
     public void setDisplayClass(String className)

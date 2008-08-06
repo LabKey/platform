@@ -97,7 +97,7 @@ public class MenuView extends VBox
         hideShowLink.addParameter("showFolders", Boolean.toString(!showFolders));
         hideShowLink.addParameter("redir", HttpView.currentContext().getActionURL().toString());
 
-        out.print("<td id=\"expandCollapseFolders\" class=labkey-expand-collapse-folders>\n");
+        out.print("<td id=\"expandCollapseFolders\" style=\"padding-top:5px;\">\n");
         out.print("<a href=\"" + hideShowLink.getEncodedLocalURIString() + "\">");
         String img = (showFolders ? "collapse_" : "expand_") + "folders.gif";
         String title = "Click to " + (showFolders ? "hide" : "show") + " folders.";

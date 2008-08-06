@@ -101,7 +101,7 @@ function collapseExpand(elem, notify)
 
     while (nextRow != null)
     {
-         if (nextRow.className == "labkey-header")
+         if (nextRow.className.indexOf("labkey-header") != -1)
             break;
         toggleDisplay(nextRow);
         nextRow = getNextRow(nextRow);
@@ -425,7 +425,7 @@ LABKEY.addMarkup(
 '<div id="helpDiv" onMouseOver="mouseEnteredHelpDiv()" onMouseOut="mouseExitedHelpDiv()"' +
 '   style="display:none;">'+
 '  <table>'+
-'    <tr>'+
+'    <tr class="labkey-wp-header" width="100%">'+
 '      <td title="Help" class="labkey-wp-title-left" nowrap>'+
 '        <div><span id="helpDivTitle" class="labkey-wp-title">Title</span></div>'+
 '      </td>'+

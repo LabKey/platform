@@ -150,7 +150,7 @@
             <textarea id="script"
                       name="script"
                       <% if(readOnly){ %>readonly="true"<% } %>
-                      style="width:100%"
+                      style="width: 100%;"
                       cols="120"
                       wrap="on"
                       rows="20"><%=StringUtils.trimToEmpty(bean.getScript())%></textarea>
@@ -227,7 +227,7 @@
         <div class="bd">
             <table>
                 <tr><td>View name:</td></tr>
-                <tr><td width="275"><input id="reportName" name="reportName" style="width:100%" value="<%=StringUtils.trimToEmpty(bean.getReportName())%>"></td></tr>
+                <tr><td width="275"><input id="reportName" name="reportName" style="width: 100%;" value="<%=StringUtils.trimToEmpty(bean.getReportName())%>"></td></tr>
                 <tr><td>&nbsp;</td></tr>
                 <tr><td>
                     <a href="javascript:void(0)" onclick="javascript:doSaveReport(true)"><%=PageFlowUtil.buttonImg("Save")%></a>&nbsp;

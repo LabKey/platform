@@ -421,7 +421,7 @@ abstract public class JspBase extends HttpServlet implements HttpJspPage, HasVie
         ViewContext context = getViewContext();
         StringBuffer message = new StringBuffer();
         String br = "";
-        message.append("<span style=\"color:red;\">");
+        message.append("<span class=\"labkey-error\">");
         for (ObjectError e : l)
         {
             message.append(br);

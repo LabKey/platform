@@ -726,7 +726,7 @@ function handleKey(event)
     }
 }
 LABKEY.addMarkup('<div id="filterDiv" style="display:none;">' +
-'  <table class="labkey-filter" onkeypress="handleKey(event);">' +
+'  <table onkeypress="handleKey(event);">' +
 '    <tr>' +
 '      <td colspan=2 style="padding: 5px" nowrap>' +
 '        <select id="compare_1" name="compare_1" onchange="doChange(this)">' +

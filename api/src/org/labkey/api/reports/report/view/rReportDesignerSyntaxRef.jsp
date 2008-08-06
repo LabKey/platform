@@ -27,7 +27,7 @@
     <tr><td>&nbsp;</td></tr>
     <tr><td><i>Valid substitutions:</i></td>
     </tr>
-    <tr><td><table id="validSubstitutions" class="labkey-form">
+    <tr><td><table id="validSubstitutions">
         <tr><td class="labkey-form-label">input_data</td>
             <td>The input dataset, a tab-delimited table. LabKey Server automatically reads your chosen dataset into
                 a data frame called: <code>labkey.data</code>. If you desire tighter control over the method of data upload, you

@@ -119,7 +119,7 @@ function postProcess(responseXML)
         return;
     }
 
-    var completionText = "<table class='labkey-completion-text'>";
+    var completionText = "<table class='labkey-completion' width='100%'>";
     var completionList = completions.getElementsByTagName("completion")
     for (var i = 0; i < completionList.length; i++)
     {

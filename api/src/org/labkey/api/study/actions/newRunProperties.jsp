@@ -26,13 +26,13 @@
     JspView<AssayRunUploadForm> me = (JspView<AssayRunUploadForm>) HttpView.currentView();
     org.labkey.api.study.actions.AssayRunUploadForm bean = me.getModelBean();
 %>
-<table class="labkey-form">
+<table>
 <%
     if (bean.isSuccessfulUploadComplete())
     {
 %>
     <tr>
-        <td class="labkey-heading-1" colspan="2">Upload successful.  Upload another run below, or click Cancel to view previously uploaded runs.</td>
+        <td class="labkey-header-large" colspan="2">Upload successful.  Upload another run below, or click Cancel to view previously uploaded runs.</td>
     </tr>
     <tr>
         <td>&nbsp;</td>
