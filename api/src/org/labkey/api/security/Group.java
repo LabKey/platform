@@ -66,6 +66,12 @@ public class Group extends UserPrincipal
         return getContainer() != null;
     }
 
+    public boolean isSystemGroup()
+    {
+        int id = getUserId();
+        return (id == groupAdministrators || id == groupGuests || id == groupUsers || id == groupDevelopers);
+    }
+
     public String getContainer()
     {
         return container;
