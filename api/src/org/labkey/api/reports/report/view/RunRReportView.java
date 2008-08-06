@@ -30,8 +30,6 @@ import org.labkey.api.view.*;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineStatusFile;
-import org.labkey.api.query.CustomView;
-import org.labkey.api.query.QueryParam;
 import org.labkey.common.util.Pair;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
@@ -138,7 +136,7 @@ public class RunRReportView extends RunReportView
                 form.setShareReport((descriptor.getOwner() == null));
                 form.setIncludedReports(descriptor.getIncludedReports());
                 form.setInheritable((descriptor.getFlags() & ReportDescriptor.FLAG_INHERITABLE) != 0);
-                form.setCache(BooleanUtils.toBoolean(descriptor.getProperty(RReportDescriptor.Prop.cache)));
+                form.setCached(BooleanUtils.toBoolean(descriptor.getProperty(ReportDescriptor.Prop.cached)));
 
                 //if (descriptor.getProperty("redirectUrl") != null)
                 //    form.setRedirectUrl(descriptor.getProperty("redirectUrl"));

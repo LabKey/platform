@@ -81,6 +81,11 @@ public interface Report
     ActionURL getDownloadDataURL(ViewContext context);
 
     /**
+     * Optional support for server side report caching
+     */
+    void clearCache();
+
+    /**
      * Reports which are query or result set oriented, can implement this interface to
      * generate the result set from which results are rendered.
      */

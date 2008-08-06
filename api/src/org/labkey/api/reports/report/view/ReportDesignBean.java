@@ -17,6 +17,7 @@
 package org.labkey.api.reports.report.view;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.BooleanUtils;
 import org.labkey.api.action.FormArrayList;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySettings;
@@ -48,8 +49,9 @@ public class ReportDesignBean extends ReportForm
     protected String _reportDescription;
     protected ArrayList<ExParam> _exParam = new FormArrayList<ExParam>(ExParam.class);
     protected String _redirectUrl;
-    protected boolean _shareReport;
+    protected Boolean _shareReport;
     protected boolean _inheritable;
+    protected Boolean _cached;
 
     public ReportDesignBean(){}
     public ReportDesignBean(QuerySettings settings)
@@ -187,7 +189,7 @@ public class ReportDesignBean extends ReportForm
 
     public boolean isShareReport()
     {
-        return _shareReport;
+        return BooleanUtils.toBoolean(_shareReport);
     }
 
     public void setShareReport(boolean shareReport)
@@ -203,6 +205,16 @@ public class ReportDesignBean extends ReportForm
     public void setInheritable(boolean inheritable)
     {
         _inheritable = inheritable;
+    }
+
+    public boolean isCached()
+    {
+        return BooleanUtils.toBoolean(_cached);
+    }
+
+    public void setCached(boolean cached)
+    {
+        _cached = cached;
     }
 
     public Report getReport() throws Exception
@@ -226,6 +238,8 @@ public class ReportDesignBean extends ReportForm
                 descriptor.setFlags(descriptor.getFlags() | ReportDescriptor.FLAG_INHERITABLE);
             else
                 descriptor.setFlags(descriptor.getFlags() & ~ReportDescriptor.FLAG_INHERITABLE);
+            if (_cached != null)
+                descriptor.setProperty(ReportDescriptor.Prop.cached, _cached.toString());
 
             for (ExParam param : getExParam())
                 descriptor.setProperty(param.getKey(), param.getValue());
@@ -259,10 +273,12 @@ public class ReportDesignBean extends ReportForm
             list.add(new Pair<String, String>(ReportDescriptor.Prop.reportDescription.toString(), _reportDescription));
         if (_owner != -1)
             list.add(new Pair<String, String>("owner", Integer.toString(_owner)));
-        if (_shareReport)
-            list.add(new Pair<String, String>("shareReport", Boolean.toString(_shareReport)));
+        if (_shareReport != null)
+            list.add(new Pair<String, String>("shareReport", _shareReport.toString()));
         if (_inheritable)
             list.add(new Pair<String, String>("inheritable", Boolean.toString(_inheritable)));
+        if (_cached != null)
+            list.add(new Pair<String, String>(ReportDescriptor.Prop.cached.name(), _cached.toString()));
 
         int i=0;
         for (ExParam param : _exParam)

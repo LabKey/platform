@@ -40,10 +40,10 @@ import org.labkey.api.reports.report.view.RunRReportView;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.view.*;
 
-import java.io.File;
-import java.io.PrintWriter;
+import java.io.*;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
@@ -219,7 +219,7 @@ public class RReport extends AbstractReport implements AttachmentParent, Report.
     protected void cacheResults(List<ParamReplacement> replacements)
     {
         if (getDescriptor().getReportId() != -1 &&
-            BooleanUtils.toBoolean(getDescriptor().getProperty(RReportDescriptor.Prop.cache)))
+            BooleanUtils.toBoolean(getDescriptor().getProperty(ReportDescriptor.Prop.cached)))
         {
             File cacheDir = getCacheDir();
             try {
@@ -232,6 +232,19 @@ public class RReport extends AbstractReport implements AttachmentParent, Report.
                     if (dst.createNewFile())
                     {
                         FileUtil.copyFile(src, dst);
+                        if (param.getId().equals(ConsoleOutput.ID))
+                        {
+                            BufferedWriter bw = null;
+                            try {
+                                bw = new BufferedWriter(new FileWriter(dst, true));
+                                bw.write("\nLast cached update : " + DateUtil.formatDateTime() + "\n");
+                            }
+                            finally
+                            {
+                                if (bw != null)
+                                    try {bw.close();} catch (IOException ioe) {}
+                            }
+                        }
                         param.setFile(dst);
                     }
                 }
@@ -254,7 +267,7 @@ public class RReport extends AbstractReport implements AttachmentParent, Report.
     protected boolean getCachedReport(List<ParamReplacement> replacements)
     {
         if (getDescriptor().getReportId() != -1 &&
-            BooleanUtils.toBoolean(getDescriptor().getProperty(RReportDescriptor.Prop.cache)))
+            BooleanUtils.toBoolean(getDescriptor().getProperty(ReportDescriptor.Prop.cached)))
         {
             File cacheDir = getCacheDir();
             try {

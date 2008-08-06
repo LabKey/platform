@@ -23,6 +23,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.common.util.Pair;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.BooleanUtils;
 
 import java.util.List;
 import java.util.Collections;
@@ -36,10 +37,9 @@ import java.util.ArrayList;
 public class RReportBean extends ReportDesignBean
 {
     protected String _script;
-    protected boolean _runInBackground;
+    protected Boolean _runInBackground;
     protected List<String> _includedReports;
     protected boolean _isDirty;
-    protected boolean _cache = true;
 
     public RReportBean(){}
     public RReportBean(QuerySettings settings)
@@ -59,7 +59,7 @@ public class RReportBean extends ReportDesignBean
 
     public boolean isRunInBackground()
     {
-        return _runInBackground;
+        return BooleanUtils.toBoolean(_runInBackground);
     }
 
     public void setRunInBackground(boolean runInBackground)
@@ -87,16 +87,6 @@ public class RReportBean extends ReportDesignBean
         _isDirty = dirty;
     }
 
-    public boolean isCache()
-    {
-        return _cache;
-    }
-
-    public void setCache(boolean cache)
-    {
-        _cache = cache;
-    }
-
     public Report getReport() throws Exception
     {
         Report report = super.getReport();
@@ -107,9 +97,8 @@ public class RReportBean extends ReportDesignBean
             if (RReportDescriptor.class.isAssignableFrom(descriptor.getClass()))
             {
                 if (getScript() != null) descriptor.setProperty(RReportDescriptor.Prop.script, getScript());
-                descriptor.setProperty(RReportDescriptor.Prop.runInBackground, Boolean.toString(isRunInBackground()));
-                descriptor.setProperty(RReportDescriptor.Prop.cache, Boolean.toString(isCache()));
-                //_includedReports = getViewContext().getList(RReportDescriptor.Prop.includedReports.toString());
+                if (_runInBackground != null)
+                    descriptor.setProperty(RReportDescriptor.Prop.runInBackground, _runInBackground.toString());
                 ((RReportDescriptor)descriptor).setIncludedReports(_includedReports);
                 if (!isShareReport())
                     descriptor.setOwner(getUser().getUserId());
@@ -131,12 +120,10 @@ public class RReportBean extends ReportDesignBean
 
         if (!StringUtils.isEmpty(_script))
             list.add(new Pair<String, String>(RReportDescriptor.Prop.script.toString(), _script));
-        if (_runInBackground)
-            list.add(new Pair<String, String>(RReportDescriptor.Prop.runInBackground.toString(), Boolean.toString(_runInBackground)));
+        if (_runInBackground != null)
+            list.add(new Pair<String, String>(RReportDescriptor.Prop.runInBackground.toString(), _runInBackground.toString()));
         if (_isDirty)
             list.add(new Pair<String, String>("isDirty", Boolean.toString(_isDirty)));
-        if (_cache)
-            list.add(new Pair<String, String>(RReportDescriptor.Prop.cache.name(), Boolean.toString(_cache)));
         for (String report : getIncludedReports())
             list.add(new Pair<String, String>(RReportDescriptor.Prop.includedReports.toString(), report));
 

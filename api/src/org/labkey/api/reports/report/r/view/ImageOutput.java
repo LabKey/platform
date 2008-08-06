@@ -21,6 +21,7 @@ import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.RReportDescriptor;
+import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.Report;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -64,7 +65,7 @@ public class ImageOutput extends AbstractParamReplacement
 
         if (report != null)
         {
-            if (BooleanUtils.toBoolean(report.getDescriptor().getProperty(RReportDescriptor.Prop.cache)) ||
+            if (BooleanUtils.toBoolean(report.getDescriptor().getProperty(ReportDescriptor.Prop.cached)) ||
                 BooleanUtils.toBoolean(report.getDescriptor().getProperty(RReportDescriptor.Prop.runInBackground)))
                 deleteFile = false;
         }

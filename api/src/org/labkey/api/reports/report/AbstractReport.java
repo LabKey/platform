@@ -98,4 +98,8 @@ public abstract class AbstractReport implements Report
 
         return url;
     }
+
+    public void clearCache()
+    {
+    }
 }

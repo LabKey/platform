@@ -70,6 +70,7 @@ public class ReportDescriptor extends Entity
         viewName,
         dataRegionName,
         redirectUrl,
+        cached,
     }
 
     public ReportDescriptor()
