@@ -19,6 +19,7 @@ import org.globus.exec.client.GramJobListener;
 import org.globus.exec.client.GramJob;
 import org.globus.exec.generated.StateEnumeration;
 import org.globus.exec.generated.FaultType;
+import org.globus.wsrf.NotificationConsumerManager;
 import org.labkey.api.pipeline.PipelineJob;
 import org.mule.umo.UMOException;
 import org.oasis.wsrf.faults.BaseFaultType;
@@ -29,10 +30,12 @@ import java.io.IOException;
 public class GlobusListener implements GramJobListener
 {
     private final PipelineJob _job;
+    private final NotificationConsumerManager _notifConsumerManager;
 
-    public GlobusListener(PipelineJob job)
+    public GlobusListener(PipelineJob job, NotificationConsumerManager notifConsumerManager)
     {
         _job = job;
+        _notifConsumerManager = notifConsumerManager;
     }
 
     public void stateChanged(GramJob gramJob)

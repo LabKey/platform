@@ -159,27 +159,18 @@ public class ExperimentRunGraph
             out.close();
             out = null;
             String dotInput = writer.getBuffer().toString();
-
-            ProcessBuilder pb = new ProcessBuilder(dotExePath, "-Tpng", "-o" + imageFile.getName());
+            
+            ProcessBuilder pb = new ProcessBuilder(dotExePath, "-Tcmap", "-o" + mapFile.getName(), "-Tpng", "-o" + imageFile.getName());
             pb.directory(getFolderDirectory(containerId));
             ProcessResult result = executeProcess(pb, dotInput);
-            if (result._returnCode != 0)
-            {
-                throw new IOException("Graph generation failed with error code " + result._returnCode + " - " + result._output);
-            }
-
-            imageFile.deleteOnExit();
-
-            pb = new ProcessBuilder(dotExePath, "-Tcmap", "-o" + mapFile.getName());
-            pb.directory(getFolderDirectory(containerId));
-            result = executeProcess(pb, dotInput);
 
             if (result._returnCode != 0)
             {
                 throw new IOException("Graph generation failed with error code " + result._returnCode + " - " + result._output);
             }
             mapFile.deleteOnExit();
-            
+            imageFile.deleteOnExit();
+
             resizeFiles(imageFile, mapFile);
         }
         finally
@@ -202,8 +193,6 @@ public class ExperimentRunGraph
             String line;
             while((line = reader.readLine()) != null)
             {
-                // Get rid of the \n that does the line wrapping for the image since dot writes it as a literal in the image map's tooltip
-                line = line.replace("\\n", " ");
                 int coordsIndex = line.indexOf("coords=\"");
                 if (coordsIndex != -1)
                 {

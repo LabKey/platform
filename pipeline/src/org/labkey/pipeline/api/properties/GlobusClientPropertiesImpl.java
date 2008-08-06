@@ -17,14 +17,14 @@
 package org.labkey.pipeline.api.properties;
 
 import org.labkey.api.pipeline.PipelineJobService;
-import org.labkey.api.pipeline.ClusterSettingsImpl;
+import org.labkey.api.pipeline.GlobusSettingsImpl;
 
 import java.util.Map;
 
 /**
  * <code>GlobusClientPropertiesImpl</code> used for Spring configuration.
  */
-public class GlobusClientPropertiesImpl extends ClusterSettingsImpl implements PipelineJobService.GlobusClientProperties
+public class GlobusClientPropertiesImpl extends GlobusSettingsImpl implements PipelineJobService.GlobusClientProperties
 {
     private String _javaHome; // todo: make this unnecessary
     private String _labKeyDir;

@@ -44,7 +44,9 @@ public class ExperimentRunGraphView extends WebPartView
     {
         _run = run;
         _detail = detail;
-        setTitle(detail ? "Graph Detail View" : "Graph Summary View");
+        String title = detail ? "Graph Detail View" : "Graph Summary View";
+        setTitlePopupHelp(title, "Click on a node in the graph below for details. Run outputs have a bold outline.");
+        setTitle(title);
     }
 
     public void setFocus(String f)
@@ -70,7 +72,6 @@ public class ExperimentRunGraphView extends WebPartView
                 out.println("[<a href=\"" + ExperimentController.ExperimentUrlsImpl.get().getRunGraphDetailURL(_run) + "\">graph detail view</a>]");
             }
             out.println("</p>");
-            out.println("<p>Click on a node in the graph below for details. Run outputs have a bold outline.</p>");
             out.println("<img src=\"" + ExperimentController.ExperimentUrlsImpl.get().getDownloadGraphURL(_run, _detail, _focus) + "\" usemap=\"#graphmap\" >");
             out.println("<map name=\"graphmap\">");
 

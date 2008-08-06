@@ -37,7 +37,7 @@ public class CommandTaskImpl extends PipelineJob.Task<CommandTaskImpl.Factory> i
 {
     private static final Logger _log = Logger.getLogger(CommandTaskImpl.class);
 
-    public static class Factory extends AbstractTaskFactory<CommandTaskFactorySettings>
+    public static class Factory extends AbstractTaskFactory<CommandTaskFactorySettings, Factory>
     {
         private String _statusName = "COMMAND";
         private String _protocolActionName;
@@ -60,15 +60,10 @@ public class CommandTaskImpl extends PipelineJob.Task<CommandTaskImpl.Factory> i
             super(new TaskId(CommandTask.class, name));
         }
 
-        public Factory cloneAndConfigure(CommandTaskFactorySettings settings) throws CloneNotSupportedException
+        protected void configure(CommandTaskFactorySettings settings)
         {
-            Factory factory = (Factory) super.cloneAndConfigure(settings);
+            super.configure(settings);
 
-            return factory.configure(settings);
-        }
-
-        private Factory configure(CommandTaskFactorySettings settings)
-        {
             if (settings.getStatusName() != null)
                 _statusName = settings.getStatusName();
 
@@ -98,8 +93,6 @@ public class CommandTaskImpl extends PipelineJob.Task<CommandTaskImpl.Factory> i
 
             if (settings.isPreviewSet())
                 _preview = settings.isPreview();
-
-            return this;
         }
 
         public PipelineJob.Task createTask(PipelineJob job)

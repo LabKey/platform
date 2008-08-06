@@ -23,6 +23,7 @@ import org.labkey.api.exp.api.ExpSchema;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
+import org.labkey.api.util.PageFlowUtil;
 
 /**
  * User: jeckels
@@ -51,17 +52,18 @@ public class ExperimentRunGroupsView extends VBox
         };
         experimentsView.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTTOM);
         experimentsView.setShowDetailsColumn(false);
-        HtmlView explanationView = new HtmlView("Experiment run groups let you define sets of runs that are related. For example, you might create separate groups\n" +
-                "for your case and controls, so that you can easily select them.");
 
-        addView(explanationView);
         addView(experimentsView);
 
 
         Collapsible collapsible = new WebPartCollapsible("experimentRunGroup");
         NavTreeManager.applyExpandState(collapsible, getViewContext());
-        enableExpandCollapse("experimentRunGroup", collapsible == null || !collapsible.isCollapsed());
-        setTitle("Experiment Run Groups");
+        enableExpandCollapse("experimentRunGroup", !collapsible.isCollapsed());
+        setTitle("Run Groups");
+
+        setTitlePopupHelp("Run Groups", "Run groups let you define sets of runs that are related. For example, you might create separate groups\n" +
+                "for your case and controls, so that you can easily select them.");
+
         setFrame(FrameType.PORTAL);
     }
 }

@@ -459,6 +459,24 @@ public class DotGraph
 
         public void save(PrintWriter out, ActionURL url)
         {
+            String tooltip;
+            if (TYPECODE_DATA.equals(type))
+            {
+                tooltip = "Data: " + label;
+            }
+            else if (TYPECODE_MATERIAL.equals(type))
+            {
+                tooltip = "Material: " + label;
+            }
+            else
+            {
+                tooltip = label;
+            }
+            if (bold)
+            {
+                tooltip += " (Run Output)";
+            }
+
             if (focus)
                 color = EXPRUN_COLOR;
             if (label.length() > LABEL_CHAR_WIDTH)
@@ -467,8 +485,9 @@ public class DotGraph
             if (null != linkUrlBase)
                 link = url.relativeUrl(linkUrlBase, linkParams);
             if (null != shape)
+            {
                 out.println(key + "["
-                        + "label=\"" + label + "\""
+                        + "label=\"" + label + "\", tooltip=\"" + tooltip + "\" "
                         + ",style=\"filled" + (bold ? ", setlinewidth(6)" : ", setlinewidth(2)") + "\" "
                         + ", fillcolor=\"" + color + "\" shape=" + shape
                         + ((null != height) ? ", height=\"" + height + "\"" : "")
@@ -476,6 +495,7 @@ public class DotGraph
                         + ((null != width) || (null != height) ? ", fixedsize=true" : "")
                         + ((null != link) ? ",  URL=\"" + link + "\"" : "")
                         + "]");
+            }
         }
     }
 

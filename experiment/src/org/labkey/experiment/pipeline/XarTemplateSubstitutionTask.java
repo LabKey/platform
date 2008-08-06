@@ -33,7 +33,7 @@ import java.util.Collections;
  */
 public class XarTemplateSubstitutionTask extends PipelineJob.Task<XarTemplateSubstitutionTask.Factory> implements XarTemplateSubstitutionId
 {
-    public static class Factory extends AbstractTaskFactory<XarTemplateSubstitutionFactorySettings> implements XarTemplateSubstitutionId.Factory
+    public static class Factory extends AbstractTaskFactory<XarTemplateSubstitutionFactorySettings, Factory> implements XarTemplateSubstitutionId.Factory
     {
         private FileType _inputType;
         private FileType _outputType = XarTemplateSubstitutionId.FT_PIPE_XAR_XML;
@@ -43,22 +43,15 @@ public class XarTemplateSubstitutionTask extends PipelineJob.Task<XarTemplateSub
             super(XarTemplateSubstitutionId.class);
         }
 
-        public Factory cloneAndConfigure(XarTemplateSubstitutionFactorySettings settings) throws CloneNotSupportedException
+        protected void configure(XarTemplateSubstitutionFactorySettings settings)
         {
-            Factory factory = (Factory) super.cloneAndConfigure(settings);
+            super.configure(settings);
 
-            return factory.configure(settings);
-        }
-
-        private Factory configure(XarTemplateSubstitutionFactorySettings settings)
-        {
             if (settings.getOutputExt() != null)
                 _outputType = new FileType(settings.getOutputExt());
 
             if (settings.getInputExt() != null)
                 _inputType = new FileType(settings.getInputExt());
-
-            return this;
         }
 
         public PipelineJob.Task createTask(PipelineJob job)

@@ -999,7 +999,7 @@ pipeline/src/org/labkey/pipeline/mule/EPipelineQueueImpl.java -text
 pipeline/src/org/labkey/pipeline/mule/EPipelineStatus.java -text
 pipeline/src/org/labkey/pipeline/mule/GlobusListener.java -text
 pipeline/src/org/labkey/pipeline/mule/HttpCallbackPipelineStatusWriter.java -text
-pipeline/src/org/labkey/pipeline/mule/JobClusterSettings.java -text
+pipeline/src/org/labkey/pipeline/mule/JobGlobusSettings.java -text
 pipeline/src/org/labkey/pipeline/mule/LabKeySpringContainerContext.java -text
 pipeline/src/org/labkey/pipeline/mule/LoggerUtil.java -text
 pipeline/src/org/labkey/pipeline/mule/MuleListenerHelper.java -text

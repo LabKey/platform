@@ -37,7 +37,7 @@ import java.util.Arrays;
  * from any format which has been created during job processing.  This will
  * require better support in <code>PipelineJob</code>.
  */
-public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySettings>
+public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySettings, ConvertTaskFactory>
 {
     private String _statusName = "CONVERSION";
     private TaskId[] _commands;
@@ -54,15 +54,10 @@ public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySe
         super(new TaskId(ConvertTaskId.class, name));
     }
 
-    public ConvertTaskFactory cloneAndConfigure(ConvertTaskFactorySettings settings) throws CloneNotSupportedException
+    protected void configure(ConvertTaskFactorySettings settings)
     {
-        ConvertTaskFactory factory = (ConvertTaskFactory) super.cloneAndConfigure(settings);
+        super.configure(settings);
 
-        return factory.configure(settings);
-    }
-
-    private ConvertTaskFactory configure(ConvertTaskFactorySettings settings)
-    {
         if (settings.getStatusName() != null)
             _statusName = settings.getStatusName();
 
@@ -86,8 +81,6 @@ public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySe
             types.addAll(Arrays.asList(factory.getInputTypes()));
         }
         _initialTypes = types.toArray(new FileType[types.size()]);
-
-        return this;
     }
 
     public TaskId getActiveId(PipelineJob job)

@@ -36,7 +36,7 @@ import java.util.Collections;
  */
 public class XarImportTask extends PipelineJob.Task<XarImportTask.Factory>
 {
-     public static class Factory extends AbstractTaskFactory<XarImportFactorySettings>
+     public static class Factory extends AbstractTaskFactory<XarImportFactorySettings, Factory>
     {
         private FileType _inputType = XarTemplateSubstitutionId.FT_PIPE_XAR_XML;
 
@@ -45,19 +45,12 @@ public class XarImportTask extends PipelineJob.Task<XarImportTask.Factory>
             super(XarImportTaskId.class);
         }
 
-        public Factory cloneAndConfigure(XarImportFactorySettings settings) throws CloneNotSupportedException
+        protected void configure(XarImportFactorySettings settings)
         {
-            Factory factory = (Factory) super.cloneAndConfigure(settings);
+            super.configure(settings);
 
-            return factory.configure(settings);
-        }
-
-        private Factory configure(XarImportFactorySettings settings)
-        {
             if (settings.getInputExt() != null)
                 _inputType = new FileType(settings.getInputExt());
-
-            return this;
         }
 
         public PipelineJob.Task createTask(PipelineJob job)

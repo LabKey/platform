@@ -101,7 +101,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
      * passed in version gets used.
      *
      * @param id An enum ID that uniquely identifies the pipeline
-     * @return the difinitive TaskPipeline for this id
+     * @return the definitive TaskPipeline for this id
      */
     public TaskPipeline getTaskPipeline(TaskId id)
     {
@@ -113,7 +113,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
 
     public void addTaskPipeline(TaskPipelineSettings settings) throws CloneNotSupportedException
     {
-        TaskPipeline pipeline = getTaskPipeline(settings.getCloneId());
+        TaskPipeline<TaskPipelineSettings> pipeline = getTaskPipeline(settings.getCloneId());
         if (pipeline == null)
             throw new IllegalArgumentException("Base implementation " + settings.getCloneId() + " not found.");
 

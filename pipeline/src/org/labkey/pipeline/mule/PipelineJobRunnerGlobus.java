@@ -120,9 +120,9 @@ public class PipelineJobRunnerGlobus implements Callable
         String xmlJob = eventContext.getMessageAsString();
         final PipelineJob job = PipelineJobService.get().getJobStore().fromXML(xmlJob);
 
-        ClusterSettings settings = PipelineJobService.get().getGlobusClientProperties();
-        settings = settings.mergeOverrides(job.getActiveTaskFactory());
-        settings = settings.mergeOverrides(new JobClusterSettings(job.getActiveTaskFactory().getGroupParameterName(), job.getParameters()));
+        GlobusSettings settings = PipelineJobService.get().getGlobusClientProperties();
+        settings = settings.mergeOverrides(job.getActiveTaskFactory().getGlobusSettings());
+        settings = settings.mergeOverrides(new JobGlobusSettings(job.getActiveTaskFactory().getGroupParameterName(), job.getParameters()));
 
         try
         {
@@ -203,7 +203,7 @@ public class PipelineJobRunnerGlobus implements Callable
             gramJob.setCredentials(credentials);
 
             gramJob.setNotificationConsumerEPR(notificationConsumerEndpoint);
-            gramJob.addListener(new GlobusListener(job));
+            gramJob.addListener(new GlobusListener(job, notifConsumerManager));
 
             gramJob.submit(factoryEndpoint, false, false, jobURI);
             StringBuilder sb = new StringBuilder();
@@ -366,7 +366,7 @@ public class PipelineJobRunnerGlobus implements Callable
         return new File(statusFile.getParentFile(), name + ".cluster." + outputType);
     }
 
-    private JobDescriptionType createJobDescription(PipelineJob job, File serializedJobFile, ClusterSettings settings)
+    private JobDescriptionType createJobDescription(PipelineJob job, File serializedJobFile, GlobusSettings settings)
         throws URISyntaxException, IOException
     {
         // Set up the job description

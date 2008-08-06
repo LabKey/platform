@@ -15,8 +15,7 @@
  */
 package org.labkey.pipeline.mule;
 
-import org.labkey.api.pipeline.AbstractClusterSettings;
-import org.labkey.api.pipeline.TaskId;
+import org.labkey.api.pipeline.AbstractGlobusSettings;
 
 import java.util.Map;
 
@@ -24,12 +23,12 @@ import java.util.Map;
 * User: jeckels
 * Date: Jul 17, 2008
 */
-public class JobClusterSettings extends AbstractClusterSettings
+public class JobGlobusSettings extends AbstractGlobusSettings
 {
     private final String _groupParameterName;
     private final Map<String, String> _jobParams;
 
-    public JobClusterSettings(String groupParameterName, Map<String, String> jobParams)
+    public JobGlobusSettings(String groupParameterName, Map<String, String> jobParams)
     {
         _groupParameterName = groupParameterName;
         _jobParams = jobParams;
