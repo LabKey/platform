@@ -406,11 +406,11 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                         DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, id);
                         if (def != null)
                         {
-                            _log.info("Cache cleared notification on dataset : " + id);
+                            _log.debug("Cache cleared notification on dataset : " + id);
                             for (QuerySnapshotDefinition snapshotDef : getDependencies(def))
                             {
                                 try {
-                                    _log.info("Updating snapshot definition : " + snapshotDef.getName());
+                                    _log.debug("Updating snapshot definition : " + snapshotDef.getName());
                                     autoUpdateSnapshot(snapshotDef, HttpView.currentContext().getActionURL());
                                 }
                                 catch (Exception e)
@@ -466,7 +466,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
         public void run()
         {
-            _log.info("Automatically Updating Dataset Snapshot : " + _def.getName());
+            _log.debug("Automatically Updating Dataset Snapshot : " + _def.getName());
 
             try
             {
@@ -479,7 +479,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 context.setContainer(_def.getContainer());
                 context.setActionURL(_url);
 
-                //HttpView.initForRequest(context, AppProps.getInstance().createMockRequest(), null);
+                HttpView.initForRequest(context, AppProps.getInstance().createMockRequest(), null);
                 form.setViewContext(context);
                 form.init(_def);
 

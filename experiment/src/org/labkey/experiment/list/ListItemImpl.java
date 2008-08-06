@@ -30,6 +30,8 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.property.IPropertyType;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
@@ -381,7 +383,13 @@ public class ListItemImpl implements ListItem
                     {
                         String value;
                         if (prop.getLookup() == null)
-                            value = ObjectUtils.toString(entry.getValue(), null);
+                        {
+                            PropertyType type = prop.getPropertyDescriptor().getPropertyType();
+                            if (type == PropertyType.ATTACHMENT && entry.getValue() instanceof AttachmentFile)
+                                value = "attachment uploaded : " + ObjectUtils.toString(entry.getValue(), null);
+                            else
+                                value = ObjectUtils.toString(entry.getValue(), null);
+                        }
                         else
                         {
                             if (rowMap == null)

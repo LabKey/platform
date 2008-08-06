@@ -17,10 +17,7 @@
 package org.labkey.audit.model;
 
 import org.labkey.api.audit.AuditLogEvent;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.audit.AuditSchema;
 
@@ -60,5 +57,10 @@ public class LogManager
     {
         SimpleFilter filter = new SimpleFilter("RowId", rowId);
         return Table.selectObject(getTinfoAuditLog(), filter, null, AuditLogEvent.class);
+    }
+
+    public AuditLogEvent[] getEvents(Filter filter) throws SQLException
+    {
+        return Table.select(getTinfoAuditLog(), Table.ALL_COLUMNS, filter, null, AuditLogEvent.class);
     }
 }

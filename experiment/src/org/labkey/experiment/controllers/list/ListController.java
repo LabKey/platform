@@ -838,22 +838,9 @@ public class ListController extends SpringActionController
 
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            boolean empty = true;
-            String entityId = (String)getViewContext().get("entityId");
             int id = NumberUtils.toInt((String)getViewContext().get("rowId"));
             int listId = NumberUtils.toInt((String)getViewContext().get("listId"));
             _list = ListService.get().getList(listId);
-
-            VBox view = new VBox();
-            if (_list != null && entityId != null)
-            {
-                ListItem item = _list.getListItemForEntityId(entityId);
-                if (item != null)
-                {
-                    view.addView(new ListDetailsView(new ListQueryForm(listId, getViewContext()), item.getKey()));
-                    empty = false;
-                }
-            }
 
             AuditLogEvent event = AuditLogService.get().getEvent(id);
             if (event != null && event.getLsid() != null)
@@ -879,16 +866,11 @@ public class ListController extends SpringActionController
 
                     if (!StringUtils.isEmpty(oldRecord) || !StringUtils.isEmpty(newRecord))
                     {
-                        empty = false;
-                        view.addView(new ItemDetails(event, oldRecord, newRecord, isEncoded));
+                        return new ItemDetails(event, oldRecord, newRecord, isEncoded, getViewContext().getActionURL().getParameter("redirectURL"));
                     }
                 }
             }
-
-            if (empty)
-                return HttpView.throwNotFoundMV("Unable to find the audit history detail for this event");
-            else
-                return view;
+            return HttpView.throwNotFoundMV("Unable to find the audit history detail for this event");
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -904,13 +886,15 @@ public class ListController extends SpringActionController
         String _oldRecord;
         String _newRecord;
         boolean _isEncoded;
+        String _returnUrl;
 
-        public ItemDetails(AuditLogEvent event, String oldRecord, String newRecord, boolean isEncoded)
+        public ItemDetails(AuditLogEvent event, String oldRecord, String newRecord, boolean isEncoded, String returnUrl)
         {
             _event = event;
             _oldRecord = oldRecord;
             _newRecord = newRecord;
             _isEncoded = isEncoded;
+            _returnUrl = returnUrl;
         }
 
         protected void renderView(Object model, PrintWriter out) throws Exception
@@ -922,6 +906,12 @@ public class ListController extends SpringActionController
             else
             {
                 out.write("<table>\n");
+                out.write("<tr><td>");
+                if (_returnUrl != null)
+                    out.write(PageFlowUtil.buttonLink("Done", _returnUrl));
+                out.write("</tr></td>");
+                out.write("<tr><td></td></tr>");
+
                 out.write("<tr class=\"labkey-wp-header\"><th align=\"left\">Item Changes</th></tr>");
                 out.write("<tr><td>Comment:&nbsp;<i>" + PageFlowUtil.filter(_event.getComment()) + "</i></td></tr>");
                 out.write("<tr><td><table>\n");
@@ -987,6 +977,13 @@ public class ListController extends SpringActionController
             out.write("<tr><td/>\n");
             out.write("<tr><td colspan=\"2\">Summary:&nbsp;<i>");
             out.write(modified + " field(s) were modified</i></td></tr>");
+
+            out.write("<tr><td>&nbsp;</td></tr>");
+            out.write("<tr><td>");
+            if (_returnUrl != null)
+                out.write(PageFlowUtil.buttonLink("Done", _returnUrl));
+            out.write("</tr></td>");
+
             out.write("</table>\n");
         }
     }

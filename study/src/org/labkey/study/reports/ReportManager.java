@@ -22,6 +22,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.query.*;
+import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportDB;
@@ -36,10 +37,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.Study;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.Visit;
+import org.labkey.study.model.*;
 import org.labkey.common.util.Pair;
 
 import javax.servlet.ServletException;
@@ -52,7 +50,7 @@ import java.util.*;
  * Date: Mar 6, 2006
  * Time: 8:18:58 PM
  */
-public class ReportManager
+public class ReportManager implements StudyManager.StudyCachableListener
 {
     private static final String SCHEMA_NAME = "study";
     private static final String TABLE_NAME = "Report";
@@ -72,7 +70,7 @@ public class ReportManager
 
     private ReportManager()
     {
-
+        StudyManager.addCachableListener(this);
     }
 
     private DbSchema getSchema()
@@ -542,5 +540,30 @@ public class ReportManager
         public Integer getShowWithDataset(){return _showWithDataset;}
         public void setContainerId(String id){_containerId = id;}
         public String getContainerId(){return _containerId;}
+    }
+
+    public void cacheCleared(final StudyCachable c)
+    {
+        int id = NumberUtils.toInt(String.valueOf(c.getPrimaryKey()), -1);
+        if (id != -1)
+        {
+            Study study = StudyManager.getInstance().getStudy(c.getContainer());
+            ViewContext context = new ViewContext();
+            context.setContainer(c.getContainer());
+
+            if (study != null)
+            {
+                DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, id);
+                if (def != null)
+                {
+                    _log.debug("Cache cleared notification on dataset : " + id);
+                    String reportKey = ChartUtil.getReportKey(StudyManager.getSchemaName(), def.getLabel());
+                    for (Report report : ChartUtil.getReports(context, reportKey, true))
+                    {
+                        report.clearCache();
+                    }
+                }
+            }
+        }
     }
 }

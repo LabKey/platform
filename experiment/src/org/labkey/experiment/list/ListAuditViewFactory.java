@@ -22,9 +22,9 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SimpleAuditViewFactory;
 import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.data.*;
+import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
@@ -32,9 +32,10 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupURLExpression;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
+import org.labkey.experiment.controllers.list.ListController;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -264,7 +265,9 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
             if (c == null)
                 return null;
 
-            return new LookupURLExpression(new ActionURL("list", "listItemDetails", c), _columns).eval(ctx);
+            ActionURL url = new ActionURL(ListController.ListItemDetailsAction.class, c);
+            url.addParameter("redirectURL", ctx.getViewContext().getActionURL().getLocalURIString());
+            return new LookupURLExpression(url, _columns).eval(ctx);
         }
 
         @Override

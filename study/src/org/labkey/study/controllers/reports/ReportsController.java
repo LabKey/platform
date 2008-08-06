@@ -52,7 +52,6 @@ import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.Visit;
-import org.labkey.study.query.DataSetQueryView;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.reports.*;
 import org.springframework.validation.BindException;
@@ -2192,14 +2191,18 @@ public class ReportsController extends BaseStudyController
         {
             if (model instanceof RReportBean)
             {
+                RReportBean bean = (RReportBean)model;
+
                 out.print("<table><tr><td>");
                 out.print("<input type=\"checkbox\" value=\"participantId\" name=\"");
                 out.print(ReportDescriptor.Prop.filterParam);
                 out.print("\"");
-                out.print("participantId".equals(((RReportBean)model).getFilterParam()) ? "checked" : "");
-                out.print(">");
+                out.print("participantId".equals(bean.getFilterParam()) ? "checked" : "");
+                out.print(" onchange=\"LABKEY.setDirty(true);return true;\">");
                 out.print("Participant chart.&nbsp;" + PageFlowUtil.helpPopup("participant chart", "A participant chart view shows measures for only one participant at a time. A participant chart view allows the user to step through charts for each participant shown in any dataset grid."));
-                out.print("</td></tr></table>");
+                out.print("</td></tr>");
+                out.print("<tr><td><input type=\"checkbox\" name=\"cached\" " + (bean.isCached() ? "checked" : "") + " onchange=\"LABKEY.setDirty(true);return true;\">Automatically cached this report for faster reloading.</td></tr>");
+                out.print("</table>");
             }
         }
     }
