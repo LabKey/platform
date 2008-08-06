@@ -31,9 +31,9 @@
         <%}
         else
         {%>
-            <table style="width:100%;">
+            <table width="100%">
                 <tr>
-                    <td align=left><h3 class="labkey-heading-1"><%=PageFlowUtil.filter(wiki.latestVersion().getTitle())%></h3></td>
+                    <td align=left><h3 class="labkey-header-large"><%=PageFlowUtil.filter(wiki.latestVersion().getTitle())%></h3></td>
                     <td align=right><%=DateUtil.formatDate()%></td>
                 </tr>
             </table>

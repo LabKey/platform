@@ -29,8 +29,8 @@
     String errors = PageFlowUtil.getStrutsError(request, "main");
     String decimalFormatHelp =
             "The following table has an abbreviated guide to pattern symbols:<br/>" +
-            "<table class=\"labkey-format-helper\">" +
-            "<tr class=\"labkey-format-helper-header\"><th align=left>Symbol<th align=left>Location<th align=left>Localized?<th align=left>Meaning</tr>" +
+            "<table class=\"labkey-data-region labkey-show-borders\"><colgroup><col><col><col><col></colgroup>" +
+            "<tr class=\"labkey-frame\"><th align=left>Symbol<th align=left>Location<th align=left>Localized?<th align=left>Meaning</tr>" +
             "<tr valign=top><td><code>0</code><td>Number<td>Yes<td>Digit</tr>" +
             "<tr valign=top class=\"labkey-alternate-row\"><td><code>#</code><td>Number<td>Yes<td>Digit, zero shows as absent</tr>" +
             "<tr valign=top><td><code>.</code><td>Number<td>Yes<td>Decimal separator or monetary decimal separator</tr>" +
@@ -38,8 +38,8 @@
             "<tr valign=top><td><code>,</code><td>Number<td>Yes<td>Grouping separator</tr></table>";
     String dateFormatHelp = 
             "The following table has a partial guide to pattern symbols:<br/>" +
-            "<table class=\"labkey-format-helper\">" +
-            "<tr class=\"labkey-format-helper-header\"><th align=left>Letter<th align=left>Date or Time Component<th align=left>Examples</tr>" +
+            "<table class=\"labkey-data-region labkey-show-borders\"><colgroup><col><col><col></colgroup>" +
+            "<tr class=\"labkey-frame\"><th align=left>Letter<th align=left>Date or Time Component<th align=left>Examples</tr>" +
             "<tr><td><code>G</code><td>Era designator<td><code>AD</code></tr>" +
             "<tr class=\"labkey-alternate-row\"><td><code>y</code><td>Year<td><code>1996</code>; <code>96</code></tr>" +
             "<tr><td><code>M</code><td>Month in year<td><code>July</code>; <code>Jul</code>; <code>07</code></tr>" +
@@ -65,7 +65,7 @@ Use this form to define the properties of a dataset.
 <p>
 Paste in a tab delimited file with the following fields.  Additional fields will just be ignored.
 </p>
-<table class="labkey-form labkey-bulk-import-data-">
+<table>
     <tr>
         <th align="left"><u>Column Header</u></th>
         <th align="left"><u>Description</u></th>
@@ -107,7 +107,7 @@ Paste in a tab delimited file with the following fields.  Additional fields will
 
 <form id="typeDefForm" name=typeDefForm action="defineDatasetType.post" method="POST" onsubmit="return doSubmit()" enctype="multipart/form-data">
     <input type=hidden name=create value="<%=form.isCreate()%>">
-    <table id=typeDefTable class="labkey-form" width="100%">
+    <table id=typeDefTable width="100%">
         <tr>
             <td >
             <table>

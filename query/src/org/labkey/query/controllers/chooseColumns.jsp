@@ -111,7 +111,7 @@
 <table class="labkey-customize-view">
     <tr>
         <th>
-            <table>
+            <table width="100%">
                 <tr>
                     <td class="labkey-nav-tab labkey-nav-tab-space">
                         <img src="<%=request.getContextPath()%>/_.gif" height=1 width=5>
@@ -132,7 +132,7 @@
         </th>
         <th></th>
         <th colspan="2" align="left">
-            <table>
+            <table width="100%">
                 <tr>
                     <td class="labkey-nav-tab labkey-nav-tab-space">
                         <img src="<%=request.getContextPath()%>/_.gif" height=1 width=5>
@@ -155,7 +155,7 @@
                         onclick="designer.setActiveTab(designer.tabs.sort)">
                         Sort
                     </td>
-                    <td class="labkey-nav-tab-space" style="text-align:right;" width=100%>
+                    <td class="labkey-nav-tab-space" style="text-align:right;width:100%">
                         <labkey:helpPopup title="Fields In Grid / Filter / Sort">
                             <p>There are three tabs for choosing which fields are to be displayed in the grid, and setting the filter and sort.</p>
                             <p>Add fields from the Available Fields</p>
@@ -167,7 +167,7 @@
         </th>
     </tr>
     <tr>
-    <td valign="top" onSelectStart="return false;" onMouseDown="return false;" class="labkey-nav-tab" style="border-top:none;">
+    <td onSelectStart="return false;" onMouseDown="return false;" class="labkey-nav-tab" style="border-top:none;vertical-align:top;">
         <div style="height:400px;width:300px;overflow:auto;" id="columnPicker">
         </div>
     </td>
@@ -181,7 +181,7 @@
         </p>
     </td>
 
-    <td id="columns.list" valign="top" style="display:none;border-top:none;border-right:none;" class="labkey-nav-tab">
+    <td id="columns.list" style="display:none;border-top:none;border-right:none;vertical-align:top;" class="labkey-nav-tab">
         <div id="columns.list.div" style="height:400px;width:500px;overflow:auto;"></div>
     </td>
     <td valign="top" id="columns.controls" style="display:none;border-top:none;border-left:none;vertical-align:top;" class="labkey-nav-tab">
@@ -197,7 +197,7 @@
                                                        title="Delete"></a></p>
         <p><a href="#" onclick="designer.showColumnProperties();return false;"><img src="<%=request.getContextPath()%>/query/columnProperties.gif" alt="Set Field Caption" title="Set Field Caption"></a></p>
     </td>
-    <td id="filter.list" valign="top" style="display:none;border-top:none;border-right:none" class="labkey-nav-tab">
+    <td id="filter.list" style="display:none;border-top:none;border-right:none;vertical-align:top;" class="labkey-nav-tab">
         <div id="filter.list.div" style="height:400px;width:600px;overflow:auto;"></div>
     </td>
     <td id="filter.controls" valign="top" style="display:none;border-top:none;border-left:none;vertical-align:top;" class="labkey-nav-tab">
@@ -213,7 +213,7 @@
         <p><a href="#" onclick="designer.tabs.filter.remove();return false"><img src="<%=request.getContextPath()%>/query/delete.gif"
                                                                    alt="Delete" title="Delete"></a></p>
     </td>
-    <td id="sort.list" valign="top" style="display:none;border-top:none;border-right:none;" class="labkey-nav-tab">
+    <td id="sort.list" style="display:none;border-top:none;border-right:none;vertical-align:top;" class="labkey-nav-tab">
         <div id="sort.list.div" style="height:400px;width:500px;overflow:auto;"></div>
     </td>
     <td id="sort.controls" valign="top" style="display:none;border-top:none;border-left:none;vertical-align:top;" class="labkey-nav-tab">

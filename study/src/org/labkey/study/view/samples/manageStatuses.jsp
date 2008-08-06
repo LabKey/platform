@@ -42,15 +42,15 @@ function showSystemRows(value)
 
 </script>
 <form action="manageStatuses.post" name="manageStatuses" method="POST">
-<table class="labkey-manage-statuses">
+<table width="600px">
     <tr>
-        <td class="labkey-form-label-text">Allowing users to build up specimen requests over multiple
+        <td class="labkey-form-label" style="padding-top:4px;padding-bottom:4px;">Allowing users to build up specimen requests over multiple
             searches is generally more convenient, but requires the administrator to watch for abandoned unsubmitted requests.</td>
     </tr>
     <tr><td><input type="checkbox" name="useShoppingCart" <%= settings.isUseShoppingCart() ? "CHECKED" : "" %> onclick='showSystemRows(this.checked)'>
         Allow requests to be built over multiple searches before submission</td></tr>
     <tr>
-        <td class="labkey-form-label-text">The specimen request administrator moves requests through states for
+        <td class="labkey-form-label" style="padding-top:4px;padding-bottom:4px;">The specimen request administrator moves requests through states for
             organization and to communicate request progress to end-users.  All submitted requests will
             start in step number 1.</td>
     </tr>

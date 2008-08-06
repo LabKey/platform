@@ -120,10 +120,10 @@
     int totalSeqKeyCount = 0;
 %>
 
-<table class="labkey-participant-view">
+<table class="labkey-data-region">
 
     <tr class="labkey-alternate-row">
-        <td class=labkey-participant-view-header><img alt="" width=180 height=1 src="<%=contextPath%>/_.gif"></td><%
+        <td class="labkey-participant-view-header"><img alt="" width=180 height=1 src="<%=contextPath%>/_.gif"></td><%
 
             for (Visit visit : visits)
             {
@@ -134,13 +134,13 @@
                     seqKeyCount += c == null ? 1 : c;
                 }
                 totalSeqKeyCount += seqKeyCount;
-                %><td align="center" valign="top" class="labkey-participant-view-header" colspan="<%=seqKeyCount%>"><%= h(visit.getDisplayString()) %></td><%
+                %><td class="labkey-participant-view-header" colspan="<%=seqKeyCount%>"><%= h(visit.getDisplayString()) %></td><%
             }
         %>
     </tr>
 
     <tr class="labkey-alternate-row">
-        <td class=labkey-participant-view-header><img alt="" width=1 height=1 src="<%=contextPath%>/_.gif"></td><%
+        <td class="labkey-participant-view-header"><img alt="" width=1 height=1 src="<%=contextPath%>/_.gif"></td><%
 
         for (Visit visit : visits)
         {
@@ -151,7 +151,7 @@
                 Integer keyCount = countKeysForSequence.get(seqNum);
                 if (null == keyCount)
                     keyCount = 1;
-                %><td align="center" valign="top" class=labkey-participant-view-header  colspan="<%=keyCount%>"><%= null==date ? "&nbsp;" : ConvertUtils.convert(date) %></td><%
+                %><td class="labkey-participant-view-header" colspan="<%=keyCount%>"><%= null==date ? "&nbsp;" : ConvertUtils.convert(date) %></td><%
             }
         }
         %>
@@ -184,13 +184,13 @@
             PropertyDescriptor[] pds = sortProperties(StudyController.getParticipantPropsFromCache(HttpView.getRootContext(), typeURI), dataSet, HttpView.getRootContext());
             if (!dataSet.canRead(user))
             {
-                %><tr class="labkey-header"><th nowrap align="left" class="labkey-chart-header"><%=h(dataSet.getDisplayString())%></th><td colspan="<%=totalSeqKeyCount%>" nowrap align="left" class="labkey-chart-header">(no access)</td></tr><%
+                %><tr class="labkey-header"><th nowrap align="left" class="labkey-expandable-row-header"><%=h(dataSet.getDisplayString())%></th><td colspan="<%=totalSeqKeyCount%>" nowrap align="left" class="labkey-expandable-row-header">(no access)</td></tr><%
                 continue;
             }
 
             %>
             <tr class="labkey-header">
-            <th nowrap colspan="<%=totalSeqKeyCount+1%>" align="left" class="labkey-chart-header"><a title="Click to expand" href="<%=new ActionURL("Study", "expandStateNotify", study.getContainer()).addParameter("datasetId", Integer.toString(pdKey.datasetId)).addParameter("id", Integer.toString(bean.getDatasetId()))%>" onclick="return collapseExpand(this, true);"><%=h(dataSet.getDisplayString())%></a><%
+            <th nowrap colspan="<%=totalSeqKeyCount+1%>" align="left" class="labkey-expandable-row-header"><a title="Click to expand" href="<%=new ActionURL("Study", "expandStateNotify", study.getContainer()).addParameter("datasetId", Integer.toString(pdKey.datasetId)).addParameter("id", Integer.toString(bean.getDatasetId()))%>" onclick="return collapseExpand(this, true);"><%=h(dataSet.getDisplayString())%></a><%
             if (null != StringUtils.trimToNull(dataSet.getDescription()))
             {
                 %><%=PageFlowUtil.helpPopup(dataSet.getDisplayString(), dataSet.getDescription())%><%

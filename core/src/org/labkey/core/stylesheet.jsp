@@ -1,4 +1,4 @@
-<%
+la<%
 /*
  * Copyright (c) 2003-2008 Fred Hutchinson Cancer Research Center
  *
@@ -70,6 +70,7 @@
     String wpHeaderPanel       = "EBF4FF";
     String message             = "008000";
     String error               = "FF0000";
+    String errorBG             = "FFC5AA";  
     String text                = "000000";
     String row                 = "FFFFFF";
     String alternateRow        = "EEEEEE";
@@ -81,11 +82,8 @@
     String linkRed             = "ff3300";
     String chartBorder         = "808080";
     String chartHeaderBold     = "CCCCCC";
-    String notification        = "FFFFA0"; // light yellow
     String peakWarningBG       = "FFF8DC"; // light orangish
     String statusBorder        = "FFAD6A";  // darker orangish
-    String statusErrorBG       = "FF5A7A";  // red-pinkish
-    String statusErrorBorder   = "C11B17";  // darker red-pinkish
 
 %>
 
@@ -95,7 +93,7 @@ defaults
 general
     -various
     -data region
-labkey outer frame
+home template
     -main
         -header-panel
             -main-title
@@ -137,6 +135,7 @@ body, div, td, table, img, form
 a, a:visited
 {
     color: #<%=linkAndHeaderText%>;
+    cursor: pointer;
     text-decoration: none;
 }
 
@@ -176,30 +175,62 @@ legend
 }
 
 <%-- general --%>
-table.labkey-form
+td.labkey-header, .labkey-header
 {
-    <%= cellSpacing(2) %>
-}
-
-.labkey-form td, .labkey-form th
-{
+    color: #<%= linkAndHeaderText %>;
+    text-align: left;
+    text-decoration: none;
+    vertical-align: top;
     padding: 1px;
+    padding-right:4px;
 }
 
-.labkey-form th
+td.labkey-header.hover, .labkey-header.hover
+{
+    background: #<%= wpHeaderPanel %>;
+    cursor: pointer;
+    cursor: hand;
+}
+
+td.labkey-header-large, .labkey-header-large
+{
+    color: #<%= text %>;
+    text-align: left;
+    text-decoration: none;
+    vertical-align: top;
+    padding: 1px;
+    padding-right:4px;
+    font-size: <%= themeFont.getHeader_1Size() %>;
+    font-weight:bold;
+}
+
+td.labkey-header-large.hover, .labkey-header-large.hover
+{
+    background: #<%= wpHeaderPanel %>;
+    cursor: pointer;
+    cursor: hand;
+}
+
+td.labkey-announcement-title, .labkey-announcement-title
+{
+    padding-top: 14px;
+    padding-bottom: 2px;
+}
+
+.labkey-announcement-title span, .labkey-announcement-title a
 {
     font-weight: bold;
+    color: #<%=linkAndHeaderText%>
 }
 
-td.labkey-form-label-nowrap {
-	background-color: #<%= formLabel %>;
-    padding: 4px;
-    white-space: nowrap;
-    vertical-align: top;
-    text-align: right;
+td.labkey-title-area-line
+{
+    background-color: #<%= navBorder %>;
+    height: 1px;
+    padding: 0px;
 }
 
-td.labkey-form-label, th.labkey-form-label, div.labkey-form-label, .labkey-form-label
+.labkey-form-label, th.labkey-form-label, div.labkey-form-label, td.labkey-form-label
 {
     background-color: #<%= formLabel %>;
     padding-right:4px;
@@ -208,10 +239,12 @@ td.labkey-form-label, th.labkey-form-label, div.labkey-form-label, .labkey-form-
     padding-bottom:1px;
 }
 
-td.labkey-form-label-text, th.labkey-form-label-text
-{
-    background-color: #<%= formLabel %>;
-    padding:4px;
+td.labkey-form-label-nowrap {
+	background-color: #<%= formLabel %>;
+    padding: 4px;
+    white-space: nowrap;
+    vertical-align: top;
+    text-align: right;
 }
 
 a.labkey-link, a.labkey-link:visited
@@ -227,7 +260,7 @@ a.labkey-link:hover, a.labkey-link:visited:hover
 td.labkey-error, div.labkey-error, a.labkey-error, .labkey-error, .error
 {
     color: #<%= error %>;
-    padding: 0px;
+    padding: 5px;
 }
 
 td.labkey-message, div.labkey-message, .labkey-message
@@ -260,214 +293,38 @@ span.labkey-button-bar-item
     margin-right: 5px;
 }
 
-td.labkey-button-bar-right, .labkey-button-bar-right
+.labkey-indented, td.labkey-indented
 {
-    text-align: right;
-    width: 50%;
-}
-td.labkey-button-bar-left, .labkey-button-bar-left
-{
-    text-align: left;
-    width: 50%
+    padding-left: 2em;
 }
 
-table.labkey-small-button-bar
+li.labkey-indented
 {
-    <%= cellSpacing(2) %>
-}
-
-.labkey-small-button-bar td
-{
-    padding: 1px;
-}
-
-td.labkey-expand-collapse-folders, .labkey-expand-collapse-folders
-{
-    text-align: left;
-    padding-top:5px;
-    vertical-align: top;
-    background: #<%= navBackground %>;
-}
-
-td.labkey-header, .labkey-header
-{
-    color: #<%= linkAndHeaderText %>;
-    text-align: left;
-    text-decoration: none;
-    vertical-align: top;
-    padding: 1px;
-    padding-right:4px;
-}
-
-td.labkey-header.hover, .labkey-header.hover
-{
-    background: #<%= wpHeaderPanel %>;
-    cursor: pointer;
-    cursor: hand;
-}
-
-.labkey-heading-1
-{
-    font-weight:bold;
-    font-size: <%= themeFont.getHeader_1Size() %>;
-}
-
-.labkey-heading-1-1
-{
-    font-weight: normal;
-    font-size: <%= themeFont.getHeader_1_1Size() %>;
-}
-
-td.labkey-nav-header, .labkey-nav-header A, .labkey-nav-header A:link, .labkey-nav-header A:visited
-{
-    font-weight: bold;
-	color: #<%=linkAndHeaderText%>;
-    padding-left: 3px;
-}
-
-td.labkey-nav-frame, .labkey-nav-frame
-{
-    background: #<%= navBackground %>;
-}
-
-.labkey-nav td
-{
-    background: #<%= navBackground %>;
-    font-size: <%= themeFont.getTextInputSize() %>;
-}
-
-.labkey-nav th
-{
-    font-size: <%= themeFont.getNormalSize() %>;
-    font-weight: normal;
-    text-align: left;
-    color: #<%= text %>;
-    background: #<%= navBackground %>;
-}
-
-.labkey-nav a, .labkey-nav a:visited
-{
-    color: #<%=linkAndHeaderText%>;
-}
-
-.labkey-nav a:hover
-{
-    text-decoration: underline;
-    color: #<%= chartBorder %>;
-}
-
-div.labkey-read-only, .labkey-read-only
-{
-    padding: 4px;
-    vertical-align: top;
-    text-align: left;
-}
-
-table.labkey-search, .labkey-search
-{
-    <%= cellSpacing(4) %>
-}
-
-.labkey-help-pop-up
-{
-    font-weight: bold;
-    font-size: <%= themeFont.getHeader_1Size() %>;
-    text-decoration: none;
-}
-
-.labkey-overview .labkey-step
-{
-    padding-bottom: 0.5em;
     padding-left: 1em;
     text-indent: -1em;
 }
 
-.labkey-overview .labkey-step-disabled, .labkey-overview .labkey-step-disabled a:link, .labkey-overview .labkey-step-disabled a:visited
+td.labkey-bordered, .labkey-bordered
 {
-    color: silver;
+   border: solid 1px #<%=chartBorder%>;
 }
 
-td.labkey-full-screen-table
+.labkey-disabled, .labkey-disabled a:link, .labkey-disabled a:visited
 {
-    background-color: #<%= fullScreenBorder %>;
-    padding: 30px;
-    height: 100%;
-    vertical-align: middle;
-    text-align: center;
+    color: #<%= alternateRow %>;
 }
 
-table.labkey-full-screen-table
+.labkey-strong
 {
-    height: 100%;
-    width: 100%;
-    background-color: #<%=background%>;
-    <%= cellSpacing(0) %>
+    font-weight: bold;
 }
 
-td.labkey-full-screen-table-panel, .labkey-full-screen-table-panel
+td.labkey-frame, tr.labkey-nav-frame, .labkey-nav-frame
 {
-    background-color: #<%=gridBorder%>;
-    height: 20px;
+    background: #<%= navBackground %>;
 }
 
-td.labkey-dialog-body, .labkey-dialog-body
-{
-    height: 100%;
-    vertical-align: top;
-    padding: 10px;
-}
-
-.labkey-dialog-body table
-{
-    <%= cellSpacing(2) %>
-}
-
-td.labkey-title-area-line{
-    background-color: #<%= navBorder %>;
-    height: 1px;
-    padding: 0px;
-}
-
-table.labkey-hbox, .labkey-hbox
-{
-    width: 100%;
-    <%= cellSpacing(2) %>
-}
-
-table.labkey-manage-groups
-{
-    width: 100%;
-    <%= cellSpacing(2) %>
-}
-
-.labkey-manage-groups td
-{
-    padding: 1px;
-}
-
-table.labkey-admin-console
-{
-    <%= cellSpacing(10) %>
-}
-
-.labkey-admin-console td
-{
-    vertical-align: top;
-}
-
-form.labkey-email-notification table
-{
-    width: 100%;
-    <%= cellSpacing(3) %>
-}
-
-.labkey-email-notification td, .labkey-email-notification th
-{
-    padding: 4px;
-}
-
-div.labkey-pagination, td.labkey-pagination, th.labkey-pagination, table.labkey-pagination,
-    .labkey-pagination
+div.labkey-pagination
 {
     white-space: nowrap;
     margin: 4px;
@@ -478,63 +335,9 @@ div.labkey-pagination, td.labkey-pagination, th.labkey-pagination, table.labkey-
     font-weight: normal;
 }
 
-.labkey-create-folder tr
-{
-    padding: 2px;
-}
-
-table.labkey-customize-view
-{
-    <%= cellSpacing(0) %>
-    padding: 0px;
-}
-
-.labkey-customize-view table, .labkey-customize-view th
-{
-    padding: 0px;
-}
-
-.labkey-customize-view table
-{
-    <%= cellSpacing(0) %>
-}
-
 .labkey-selectors, td.labkey-selectors, th.labkey-selectors
 {
-}
-
-.labkey-selector-header, td.labkey-selector-header, th.labkey-selector-header
-{
-    vertical-align: top;
-}
-
-table.labkey-manage-statuses
-{
-    <%= cellSpacing(3) %>
-    width: 600px;
-}
-
-table.labkey-output
-{
-    width: 100%;
-    <%= cellSpacing(0) %>
-}
-
-.labkey-output td, .labkey-output th
-{
-    padding: 1px;
-}
-
-table.labkey-dialog
-{
-    <%= cellSpacing(0) %>
-    border: 1px;
-    border-color: #<%= gridBorderBold %>;
-}
-
-.labkey-dialog th
-{
-    background-color: #<%=gridBorder%>;
+    text-align: left;
 }
 
 table.labkey-tab-strip
@@ -548,59 +351,11 @@ table.labkey-tab-strip
     padding: 0px;
 }
 
-td.labkey-highlight-tab
-{
-    background-color: #<%=navBackground%>;
-}
-
-td.labkey-response-header
-{
-    background-color: #<%=gridBorder%>;
-}
-
-table.labkey-format-helper
-{
-    <%= cellSpacing(3) %>
-}
-
-.labkey-format-helper td, .labkey-format-helper th
-{
-    padding: 0px;
-}
-
-tr.labkey-format-helper-header
-{
-    background-color: #<%=navBackground%>;
-}
-
-div.labkey-row-filter
-{
-    border: 1px solid #<%=gridBorderBold%>;
-    padding:4px;
-    position:absolute;
-    background-color:#<%=background%>;
-}
-
-div.labkey-filter
-{
-    display:none;
-}
-
-.labkey-filter table
-{
-    <%= cellSpacing(0) %>
-}
-
-.labkey-filter td
-{
-    padding: 0px;
-}
-
 div.labkey-completion
 {
     display:none;
     border: 1px solid #<%=gridBorderBold%>;
-    padding:1px; 
+    padding:1px;
     position:absolute;
     background-color:#<%=background%>;
 }
@@ -636,11 +391,94 @@ table.labkey-completion-text
     background-color: #<%=background%>;
 }
 
+div.labkey-read-only, .labkey-read-only
+{
+    padding: 4px;
+    vertical-align: top;
+    text-align: left;
+}
+
+.labkey-help-pop-up
+{
+    font-weight: bold;
+    font-size: <%= themeFont.getHeader_1Size() %>;
+    text-decoration: none;
+}
+
+td.labkey-full-screen-table
+{
+    background-color: #<%= fullScreenBorder %>;
+    padding: 30px;
+    height: 100%;
+    vertical-align: middle;
+    text-align: center;
+}
+
+table.labkey-full-screen-table
+{
+    height: 100%;
+    width: 100%;
+    background-color: #<%=background%>;
+    <%= cellSpacing(0) %>
+}
+
+td.labkey-full-screen-table-panel, .labkey-full-screen-table-panel
+{
+    background-color: #<%=gridBorder%>;
+    height: 20px;
+}
+
+td.labkey-dialog-body, .labkey-dialog-body
+{
+    height: 100%;
+    vertical-align: top;
+    padding: 10px;
+}
+
+table.labkey-admin-console
+{
+    <%= cellSpacing(10) %>
+}
+
+.labkey-admin-console td
+{
+    vertical-align: top;
+}
+
+table.labkey-customize-view
+{
+    <%= cellSpacing(0) %>
+    padding: 0px;
+}
+
+.labkey-customize-view table, .labkey-customize-view th
+{
+    padding: 0px;
+}
+
+.labkey-customize-view table
+{
+    <%= cellSpacing(0) %>
+}
+
+table.labkey-output
+{
+    width: 100%;
+    <%= cellSpacing(0) %>
+}
+
+.labkey-output td, .labkey-output th
+{
+    padding: 1px;
+}
+
 <%-- data region --%>
 table.labkey-data-region
 {
+    background-color: #<%=background%>;
     border-collapse: collapse;
     <%= cellSpacing(0) %>
+    margin-bottom: 5px;
 }
 
 .labkey-data-region A
@@ -649,7 +487,7 @@ table.labkey-data-region
     text-decoration: none;
 }
 
-.labkey-data-region TH, .labkey-data-region .labkey-selector-header
+.labkey-data-region TH
 {
     border-bottom: solid 1px #<%=gridBorderBold%>;
     vertical-align: top;
@@ -661,65 +499,47 @@ table.labkey-data-region
     padding-right:4px;
 }
 
-.labkey-data-region .labkey-header-cell
+table.labkey-show-borders
 {
-    border-bottom: solid 1px #<%=gridBorderBold%>;
-    border-right: solid 1px #<%=gridBorderBold%>;
-}
-
-.labkey-data-region .labkey-col-header {
-    font-weight: bold;
-    background-color: #<%=gridBorder%>;
-    border: 1px solid #<%=gridBorderBold%>;
-    padding-left: .5em;
-    padding-right: .5em;
-}
-
-.labkey-data-region .labkey-row-header {
-    font-weight: bold;
-    background-color: #<%=gridBorder%>;
-    border: 1px solid #<%=gridBorderBold%>;
-    padding-left: .5em;
-    padding-right: .5em;
-}
-
-table.labkey-data-region-header
-{
-    <%= cellSpacing(2) %>
-}
-
-.labkey-data-region-header td
-{
-    vertical-align: top;
-    padding: 1px;
-    padding-right:4px;
-}
-
-table.labkey-data-region-footer
-{
-    <%= cellSpacing(1) %>
-}
-
-.labkey-data-region-footer td, .labkey-data-region-footer tr
-{
-    padding: 2px;
-}
-
-.labkey-data-region-read-only td {
-    padding-left: .5em;
-    padding-right: .5em;
-    padding-top: .1em;
-    padding-bottom: .1em;
+    border-right: solid 1px #<%=gridBorder%>;
+    border-bottom: solid 1px #<%=gridBorder%>;
+    *border: 0px none;
 }
 
 .labkey-show-borders td
 {
-    border: solid 1px #<%=gridBorder%>;
+    *border: solid 1px #<%=gridBorder%>;
 }
 
-.labkey-show-borders th, .labkey-show-borders .labkey-selector-header, .labkey-data-region .labkey-header-cell
+.labkey-show-borders col
+{
+    border-left: solid 1px #<%=gridBorder%>;
+}
+
+.labkey-show-borders tr
+{
+    border-top: solid 1px #<%=gridBorder%>;
+}
+
+.labkey-show-borders th, .labkey-show-borders .labkey-col-total, .labkey-show-borders .labkey-row-total,
+    .labkey-show-borders .labkey-col-header, .labkey-show-borders .labkey-row-header,
+    .labkey-show-borders .labkey-col-total td, .labkey-show-borders .labkey-col-header th,
+    .labkey-show-borders .labkey-stat-title
 {
     border: solid 1px #<%=gridBorderBold%>;
+}
+
+<%-- These two classes are needed for IE if you have column or row totals so the border
+     from the cells don't override the bottom row or last column.  IE doesn't allow borders
+     to be set on rows or columns  --%>
+.labkey-has-row-totals td
+{
+    *border-right: 0px none;
+}
+
+.labkey-has-col-totals td
+{
+    *border-bottom: 0px none;
 }
 
 .labkey-row td, .labkey-row th, .labkey-row
@@ -732,47 +552,45 @@ table.labkey-data-region-footer
     background: #<%=alternateRow%>;
 }
 
-td.labkey-highlight-cell, th.labkey-highlight-cell
-{
-    background: #<%=highlightCell%>;
-}
-
-.labkey-aggregates-row td
-{
-    background-color: #<%=navBackground%>;
-}
-
-th.labkey-grid-header, td.labkey-grid-header
+th.labkey-col-header-filter, td.labkey-col-header-filter, .labkey-col-header-filter th
 {
     color: #<%= linkAndHeaderText %>;
-    text-align: left;
-    text-decoration: none;
-    vertical-align: top;
-    padding: 1px;
-    padding-right:4px;
 }
 
-th.labkey-grid-header.hover, td.labkey-grid-header.hover
+th.labkey-col-header-filter.hover, td.labkey-col-header-filter.hover, .labkey-col-header-filter th:hover
 {
     background: #<%= wpHeaderPanel %>;
     cursor: pointer;
     cursor: hand;
 }
 
-td.labkey-grid-cell
+.labkey-data-region .labkey-col-header, .labkey-data-region .labkey-row-header,
+    .labkey-data-region .labkey-col-total, .labkey-data-region .labkey-row-total,
+    .labkey-data-region .labkey-col-total td, .labkey-data-region .labkey-col-header th
 {
+    font-weight: bold;
+    background-color: #<%=alternateRow%>;
 }
 
-td.labkey-input-cell
+.labkey-data-region .labkey-data-region-title, .labkey-data-region th.labkey-data-region-title
 {
+    background-color: #<%=background%>;
+    border: 0px;
+    border-top: hidden;
+    border-left: hidden;
+    font-weight: bold;
 }
 
-td.labkey-details-caption
+td.labkey-highlight-cell, th.labkey-highlight-cell
 {
+    background: #<%=highlightCell%>;
+    font-weight:bold;
 }
 
-td.labkey-details-data
+td.labkey-blank-cell, th.labkey-blank-cell
 {
+    background: #<%=background%>;
+    border: 0px;
 }
 
 img.labkey-grid-filter-icon
@@ -790,7 +608,7 @@ img.labkey-grid-filter-icon
     display: inline;
 }
 
-<%-- main --%>
+<%-- Home Template --%>
 
 #bodyElement
 {
@@ -804,6 +622,12 @@ img.labkey-grid-filter-icon
     border:1px solid #<%=gridBorderBold%>;
     position:absolute;
     background-color:#<%=background%>;
+}
+
+#helpDiv table
+{
+    width: 100%;
+    <%=cellSpacing(0)%>;
 }
 
 .labkey-main
@@ -979,28 +803,6 @@ table.labkey-expandable-nav
     padding: 0px;
 }
 
-th.labkey-expandable-nav-title, .labkey-expandable-nav-title
-{
-    font-weight: bold;
-    color: #<%=linkAndHeaderText%>;
-    padding-left: 6px;
-    padding-right: 4px;
-    padding-top: 2px;
-    padding-bottom: 2px;
-    text-align: left;
-    white-space:nowrap;
-}
-.labkey-expandable-nav-title a:link, .labkey-expandable-nav-title a:visited
-{
-    color:#<%=linkAndHeaderText%>;
-    text-decoration:none;
-    cursor:pointer;
-}
-.labkey-expandable-nav-title a:hover
-{
-    cursor:pointer;
-}
-
 th.labkey-expand-collapse-area, .labkey-expand-collapse-area
 {
     font-weight: bold;
@@ -1041,8 +843,13 @@ td.labkey-nav-tree-node
 
 td.labkey-nav-tree-text
 {
-    padding: 3px;
+    padding: 0.3em;
     width: 100%;
+}
+
+td.labkey-nav-tree-total
+{
+    padding-top: 0.3em;
 }
 
 table.labkey-nav-tree-child
@@ -1149,7 +956,6 @@ td.labkey-nav-page-header
     padding-left: 12px;
 }
 
-
 span.labkey-nav-page-header, .labkey-nav-page-header
 {
 	font-weight: bold;
@@ -1220,12 +1026,6 @@ th.labkey-wp-title-right, td.labkey-wp-title-right
     border-left:  0px none;
 }
 
-th.labkey-admin-title
-{
-    text-align: center;
-    color: #<%=text%>;
-}
-
 table.labkey-wp-link-panel
 {
     width: 100%;
@@ -1240,87 +1040,21 @@ img.labkey-wp-header
     padding-top: 2px;
 }
 
-<%-- add-web-part    --%>
-table.labkey-add-web-part-row
-{
-    width: 100%;
-    <%= cellSpacing(1) %>
-    padding-top: 1px;
-}
-
-table.labkey-add-web-part
-{
-    <%= cellSpacing(2) %>
-    padding-left: 1px;
-}
-
-td.labkey-add-web-part, .labkey-add-web-part td
-{
-    padding: 1px;
-}
-
 <%-- module specific css --%>
 
 <%-- Announcement --%>
 
-table.labkey-admin-broadcast-checkbox-area
+table.labkey-announcement-thread
 {
+    <%=cellSpacing(0)%>
 }
 
-.labkey-admin-broadcast-checkbox-area td, .labkey-admin-broadcast-checkbox-area th
+.labkey-announcement-thread td
 {
-}
-
-table.labkey-file-picker
-{
-}
-
-.labkey-file-picker td, .labkey-file-picker th
-{
-}
-
-td.labkey-announcement-title
-{
-    padding-top: 14px;
-    padding-bottom: 2px;
-}
-
-.labkey-announcement-title span, .labkey-announcement-title a {
-    font-weight: bold;
-    color: #<%=linkAndHeaderText%>
-}
-
-table.labkey-bulk-edit
-{
-    border:solid 1px #<%=gridBorderBold%>;
-    <%= cellSpacing(0) %>
-}
-
-.labkey-bulk-edit th
-{
-    border-bottom:solid 1px #<%=gridBorderBold%>;
-    color: #<%= linkAndHeaderText %>;
-    text-align: left;
-    text-decoration: none;
-    vertical-align: top;
-    padding: 1px;
-    padding-right:4px;
-}
-
-.labkey-bulk-edit a:hover
-{
-    background: #<%= wpHeaderPanel %>;
-    cursor: pointer;
-    cursor: hand;
-}
-
-.labkey-bulk-edit td, .labkey-bulk-edit th
-{
-    border-right:solid 1px #<%=gridBorderBold%>;
+    padding: 3px;
 }
 
 <%-- Elispot --%>
-
 
 <%-- Experiment --%>
 
@@ -1331,25 +1065,9 @@ table.labkey-protocol-applications
 
 <%-- Flow --%>
 
-.labkey-show-compensation-header
-{
-    border-right: solid 1px #<%=gridBorderBold%>;
-}
-
-.labkey-show-compensation-cell
-{
-    border-right: solid 1px #<%=gridBorderBold%>;
-}
-
 <%-- Issue --%>
 
-
 <%-- MS1 --%>
-
-table.labkey-peak-warning
-{
-    width: 100%;
-}
 
 .labkey-peak-warning td, .labkey-peak-warning th
 {
@@ -1358,12 +1076,7 @@ table.labkey-peak-warning
     border:1px solid #<%=chartBorder%>;
 }
 
-td.labkey-feature-caption
-{
-    background-color: #<%=alternateRow%>;
-}
-
-td.labkey-mz-filter
+td.labkey-ms1-filter
 {
     background: #<%= navBackground %>;
     text-align: center;
@@ -1371,57 +1084,16 @@ td.labkey-mz-filter
     border-bottom: 1px solid #<%=gridBorderBold%>;
 }
 
-td.labkey-scan-filter
-{
-    background: #<%= navBackground %>;
-    display: none;
-    text-align: center;
-    vertical-align: top
-}
-
-<%-- MS2 --%>
-
-td.labkey-list-box, .labkey-list-box
-{
-    font-weight: bold;
-}
+<%-- MS2 --%>-
 
 table.labkey-prot-annots
 {
     <%= cellSpacing(10) %>
 }
 
-table.labkey-filter-header
-{
-}
-
-table.labkey-show-peptide
-{
-    <%= cellSpacing(1) %>
-    width: 230;
-}
-
-.labkey-show-peptide td, .labkey-show-peptide th
-{
-    padding: 1px;
-}
-
 <%-- Nab --%>
 
-table.labkey-nab-run-label
-{
-    background-color: #<%=notification%>;
-}
-
-.labkey-nab-run-header
-{
-    text-align:left;
-    background-color:#<%=alternateRow%>;
-    border-top:solid 1px #<%=gridBorderBold%>;
-}
-
 <%-- Pipeline --%>
-
 
 <%-- Query --%>
 
@@ -1436,6 +1108,22 @@ table.labkey-design-query
 }
 
 <%-- Study --%>
+table.labkey-study-expandable-nav
+{
+    <%= cellSpacing(0) %>
+    width: 100%;
+}
+
+.labkey-study-expandable-nav td, .labkey-study-expandable-nav th
+{
+    padding-top: 0em;
+    padding-bottom: 0em;
+}
+
+.labkey-study-expandable-nav .labkey-nav-tree-node
+{
+    padding-top: 0.3em;
+}
 
 table.labkey-request-warnings
 {
@@ -1452,92 +1140,21 @@ table.labkey-manage-default-reqs
     <%= cellSpacing(10) %>
 }
 
-td.labkey-bordered, .labkey-bordered
+.labkey-data-region .labkey-participant-view-header
 {
-   border: solid 1px #<%=chartBorder%>;
+    font-weight: bold;
+    border: solid 1px #<%=chartBorder%>;
 }
 
-table.labkey-study-requirements
+.labkey-data-region .labkey-expandable-row-header
 {
-    <%=cellSpacing(0)%>;
-}
-
-.labkey-study-requirements td, .labkey-study-requirements th
-{
-    padding-right: 4px;
-}
-
-.labkey-study-requirements th
-{
-    border-bottom:solid 1px #<%=chartBorder%>;
-}
-
-.labkey-study-report-header td
-{
-    border-bottom: solid 1px #<%=chartBorder%>;
-}
-
-td.labkey-study-report-output-element
-{
-    border-bottom: 0;
-    border-top: solid 1px #<%=chartBorder%>;
-}
-
-td.labkey-study-report-element
-{
-    border-bottom: 0;
-    border-top: 0;
-}
-
-table.labkey-participant-view
-{
-    border-collapse: collapse;
-    <%= cellSpacing(0) %>
-    border-bottom: solid 2px #<%=chartBorder%>;
-}
-
-.labkey-participant-view-header
-{
-    border-right: solid 1px #<%=chartBorder%>;
-    border-top: solid 2px #<%=chartBorder%>;
-}
-
-.labkey-chart-header
-{
-    background-color: #<%=chartHeaderBold%>;
-    border-top: solid 2px #<%=chartBorder%>;
-    border-bottom: solid 2px #<%=chartBorder%>;
-}
-
-table.labkey-crosstab-report
-{
-    <%= cellSpacing(0) %>
-    border-collapse:collapse;
-}
-
-table.labkey-study-expandable-nav
-{
-    <%= cellSpacing(0) %>
-    width: 100%;
-}
-
-.labkey-study-expandable-nav td, .labkey-study-expandable-nav th
-{
-    padding: 0px;
-}
-
-.labkey-study-datasets th
-{
-    background-color: #<%=gridBorderBold%>;
     text-align: left;
+    background-color: #<%=chartHeaderBold%>;
+    border: solid 1px #<%=chartBorder%>;
+    padding-left: 10px;
 }
 
 <%-- Wiki --%>
-
-table.labkey-wiki-edit
-{
-    width: 99%;
-}
 
 div.labkey-status-info, .labkey-status-info
 {
@@ -1553,25 +1170,14 @@ div.labkey-status-error, .labkey-status-error
 {
     width: 99%;
     text-align: center;
-    background-color: #<%=statusErrorBG%>;
-    border: 1px solid #<%=statusErrorBorder%>;
-    color: #<%=background%>;
+    background-color: #<%=errorBG%>;
+    border: 1px solid #<%=error%>;
+    color: #<%=error%>;
     font-weight: bold;
-}
-
-table.labkey-form-layout
-{
-    width: 99%;
-}
-
-textarea.labkey-stretch-input, .labkey-stretch-input
-{
-    width: 100%;
 }
 
 table.labkey-tab-container
 {
-    width: 99%;
     <%= cellSpacing(0) %>
 }
 
@@ -1607,18 +1213,6 @@ td.labkey-wiki-tab-content
     border-left: 1px solid #<%=navBorder%>;
     border-right: 1px solid #<%=navBorder%>;
     border-bottom: 1px solid #<%=navBorder%>;
-}
-
-td.labkey-wiki-field-content
-{
-    width: 99%;
-}
-
-span.labkey-command-link
-{
-    cursor: pointer;
-    color: #<%=WebTheme.toRGB(org.labkey.api.view.WebTheme.getTheme().getTitleColor())%>;
-    text-decoration:none;
 }
 
 <%-- GWT --%>

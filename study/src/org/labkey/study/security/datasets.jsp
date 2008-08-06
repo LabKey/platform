@@ -131,7 +131,13 @@ else
         out.write("<input type=\"hidden\" name=\"redirect\" value=\"" + h(redir) + "\">");
 
     int row = 0;
-    %><br/><table class="labkey-data-region labkey-show-borders">
+    %><br/><table class="labkey-data-region labkey-show-borders"><colgroup>
+    <%
+    for (int i = 0; i < restictedGroups.size() + 1; i++)
+    {
+        %><col><%
+    }
+    %></colgroup>
     <tr class="<%=row++%2==0?"labkey-alternate-row":"labkey-row"%>"><th>&nbsp;</th><%
     for (Group g : restictedGroups)
     {

@@ -86,7 +86,7 @@
 
 <form action="" method="post" onsubmit="validateForm();">
     <table>
-        <tr class="labkey-wp-header"><th colspan=2 class="labkey-admin-title">R View Configuration</th></tr>
+        <tr class="labkey-wp-header"><th colspan=2>R View Configuration</th></tr>
         <tr><td>&nbsp;</td></tr>
         <tr><td></td><td><i>Specify the absolute path of the R program (R.exe on Windows, R for Unix and Mac) :</i><br/></td></tr>
 

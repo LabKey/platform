@@ -35,23 +35,32 @@
         Visit[] visits = report.getVisits();
         int colCount = visits.length + report.getLabelDepth();
 %>
-<table class="labkey-data-region labkey-show-borders">
+<table class="labkey-data-region labkey-show-borders"><colgroup>
+    <%
+        for (int i = 0; i < colCount; i++)
+        {
+    %>
+        <col>
+    <%
+        }
+    %></colgroup>
     <tr>
-        <th align="left" colspan="<%= colCount %>"><%= h(report.getTitle())%></th>
+        <th class="labkey-data-region-title" colspan="2">&nbsp;</th>
+        <th align="left" class="labkey-data-region-title" colspan="<%= colCount - 1 %>"><%= h(report.getTitle())%></th>
     </tr>
 
-    <tr class="labkey-alternate-row labkey-study-report-header">
+    <tr class="labkey-alternate-row">
         <%
         if (report.getLabelDepth() > 0)
         {
         %>
-        <td colspan="<%= report.getLabelDepth() %>">&nbsp;</td>
+        <th class="labkey-data-region-title" colspan="<%= report.getLabelDepth() %>">&nbsp;</th>
         <%
         }
         for (Visit visit : visits)
         {
             String label = visit.getDisplayString();
-            %><td align="center" valign="top"><%= h(label) %></td><%
+            %><th class="labkey-col-header" align="center"><%= h(label) %></th><%
         }
         %>
     </tr>
@@ -89,7 +98,7 @@
                         }
                     %>
                         <td class="<%= i < currentTitleHierarchy.length - 1 ? "labkey-row" : ""%>
-                            <%= outputElement ? " labkey-study-report-output-element" : " labkey-study-report-element"%>">
+                            <%= outputElement ? " labkey-row-header" : " labkey-blank-cell"%>">
                             <%= outputElement ? h(titleElement != null ? titleElement : "[unspecified]") : "&nbsp;" %>
                         </td>
                     <%

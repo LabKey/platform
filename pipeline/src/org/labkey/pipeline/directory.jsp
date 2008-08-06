@@ -56,13 +56,13 @@
         }
     }%>
 
-<table class="labkey-form" width="100%">
+<table width="100%">
 <tr><td valign="top"><%
 
     //
     // DIRECTORY TREE
     //
-    %><table class="labkey-form"><%
+    %><table><%
 
     for (int i=0 ; i<parents.size() ; i++)
     {
@@ -70,7 +70,7 @@
         boolean bold = i == parents.size()-1;
         %><tr><td colspan=5 style="padding-left:<%=i*10%>;"><%
         if (bold) {%><b><%}
-        %><a style="width:100%" href="<%=h(entry.getHref())%>"><img src="<%=h(entry.getImageURL()) %>">&nbsp;<%=f(entry.getLabel())%></a><%
+        %><a width="100%" href="<%=h(entry.getHref())%>"><img src="<%=h(entry.getImageURL()) %>">&nbsp;<%=f(entry.getLabel())%></a><%
         if (bold) {%></b><%}
         %></td></tr><%
         out.println();
@@ -114,12 +114,12 @@
     //
     // FILES/ACTIONS in current directory
     //
-    %><table class="labkey-form" width="100%"><%
+    %><table width="100%"><%
 
     for (PipelineProvider.FileEntry entry : entries)
     {
         %><tr class="labkey-row"><td>&nbsp;</td><%
-        %><td nowrap style="vertical-align: middle;"><a style="width:100%" href="<%=h(entry.getHref())%>"><img src="<%=h(entry.getImageURL())%>">&nbsp;<%=f(entry.getLabel())%></a></td><%
+        %><td nowrap style="vertical-align: middle;"><a width="100%" href="<%=h(entry.getHref())%>"><img src="<%=h(entry.getImageURL())%>">&nbsp;<%=f(entry.getLabel())%></a></td><%
         Collection<PipelineProvider.FileAction> c = dirActions.getCollection(entry.getURI());
         dirActions.remove(entry.getURI());
         if (c != null)

@@ -41,7 +41,7 @@
     }
 %>
 
-<table class="labkey-form">
+<table>
 <%
     for (Report report : bean.getReports())
     {

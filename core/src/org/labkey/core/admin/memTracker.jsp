@@ -90,7 +90,7 @@ for (MemTracker.HeldReference reference : bean.references)
         String secondLine = split.length >= 2 ? split[2] : "";
 
 %>
-    <tr style="background:<%=(counter % 2 == 0) ? "#ffffff" : "#f0f0f0"%>;">
+    <tr class="<%=(counter % 2 == 0) ? "labkey-row" : "labkey-alternate-row"%>">
         <td valign=top><img id="toggleImg<%=counter%>" src="<%=contextPath%>/_images/plus.gif" alt="expand/collapse" onclick='toggle(<%=counter%>)'></td>
         <td valign=top><%= reference.getClassName() %></td>
         <td valign=top>

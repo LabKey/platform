@@ -31,21 +31,22 @@
 %>
 Specimen archive <b><%= bean.getBatch().getDefinitionFile().getName() %></b> contains the following files:<br><br>
 <table class="labkey-data-region labkey-show-borders">
+    <colgroup><col><col></colgroup>
     <%
         int row = 0;
         for (SpecimenBatch.EntryDescription entry : entries)
         {
     %>
         <tr class="<%= row++ % 2 == 1 ? "labkey-row" : "labkey-alternate-row"%>">
-            <th align="left"><%= h(entry.getName()) %></th>
+            <td class="labkey-row-header" align="left"><%= h(entry.getName()) %></td>
             <td>
                 <table>
                     <tr>
-                        <th align="right">Size</th>
+                        <th align="right" style="border: 0px">Size</th>
                         <td><%= entry.getSize() / 1000 %> kb</td>
                     </tr>
                     <tr>
-                        <th align="right">Modified</th>
+                        <th align="right" style="border: 0px">Modified</th>
                         <td><%= h(formatDateTime(entry.getDate())) %></td>
                     </tr>
                 </table>
@@ -72,7 +73,7 @@ Specimen archive <b><%= bean.getBatch().getDefinitionFile().getName() %></b> con
             if (bean.isPreviouslyRun())
             {
     %>
-    <span style="color:red">WARNING: A file by this name appears to have been previously imported.</span><br>
+    <span class="labkey-error">WARNING: A file by this name appears to have been previously imported.</span><br>
     To import a file by this name, the old log file must be deleted.<br><br>
     <a href="<%= ActionURL.toPathString("Pipeline-Status", "showList", bean.getContainer())%>">
         Click here</a> to view previous pipeline runs.<br><br>

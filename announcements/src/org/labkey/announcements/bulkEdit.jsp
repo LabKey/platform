@@ -37,8 +37,9 @@
 </table>
 
 
-<table class="labkey-bulk-edit">
-    <tr>
+<table class="labkey-data-region labkey-show-borders">
+    <colgroup><col><col><col><col><col><col></colgroup>
+    <tr class="labkey-col-header-filter">
         <th>Email</th>
         <th>First Name</th>
         <th>Last Name</th>
@@ -108,9 +109,6 @@
             <%
             i++;
     }%>
-<tr>
-    <td colspan="5"></td>
-</tr>
 </table>
 <input type="hidden" name="<%=ReturnUrlForm.Params.returnUrl%>" value="<%=bean.returnURL%>">
 <input type="image" src="<%=PageFlowUtil.submitSrc()%>">&nbsp;<input type=image src="<%=PageFlowUtil.buttonSrc("Cancel")%>" value="Cancel" onclick="javascript:window.history.back(); return false;">

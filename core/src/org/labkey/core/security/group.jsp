@@ -90,7 +90,7 @@ else
     %>
     <div id="current-members">
     Group members
-    <br><table class="labkey-form">
+    <br><table>
         <tr>
             <th>Remove</th>
             <th>Email</th>

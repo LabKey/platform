@@ -25,14 +25,14 @@
 <!--ANNOUNCEMENTS-->
 <table width="100%">
 <tr>
-<td align="left" style="padding-top:2px;width:33%;"><%
+<td align="left" width="33%"><%
 if (null != bean.insertURL)
     {
     %>[<a href="<%=bean.insertURL%>">new <%=h(bean.settings.getConversationName().toLowerCase())%></a>]&nbsp;<%
     }
 %></td>
-<td align="center" style="padding-top:2px;width:33%;"><%=h(bean.filterText)%></td>
-<td align="right"  style="padding-top:2px;width:33%;"><%
+<td align="center" width="33%"><%=h(bean.filterText)%></td>
+<td align="right"  width="33%"><%
 if (null != bean.emailPrefsURL)
     {
     %>[<a href="<%=bean.emailPrefsURL%>">email&nbsp;preferences</a>]<%

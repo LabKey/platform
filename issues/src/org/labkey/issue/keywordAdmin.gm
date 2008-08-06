@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.issue.IssuesController"%>
-<table class="labkey-form">
+<table>
 <tr><%
     for (kwp in keywordPickers) {
         IssuesController.KeywordAdminView.KeywordPicker keywordPicker = kwp;
@@ -25,7 +25,7 @@
     <!--<%=keywordPicker.plural%>-->
     <td style="vertical-align:top">
     <div class="labkey-form-label"><b><%=keywordPicker.plural%></b></div>
-    <form id="form<%=keywordPicker.plural%>" method="POST" action="deleteKeyword.post" style="margin:0px;">
+    <form id="form<%=keywordPicker.plural%>" method="POST" action="deleteKeyword.post">
 <%
     if (keywordPicker.keywords.length == 0)
         out.println("    <i>no " + keywordPicker.plural + "</i><br>");
@@ -59,7 +59,7 @@
         IssuesController.KeywordAdminView.KeywordPicker keywordPicker = kwp;
 %>
 <td>
-    <form method="POST" name="add<%=keywordPicker.name%>" action="addKeyword.post" style="margin:0px;">
+    <form method="POST" name="add<%=keywordPicker.name%>" action="addKeyword.post">
     <input name="keyword" value=""><br>
     <input type="image" src="<%=PageFlowUtil.buttonSrc("Add " + keywordPicker.name)%>" value="Add <%=keywordPicker.name%>"><br>
     <input type="hidden" name="type" value="<%=keywordPicker.type%>">

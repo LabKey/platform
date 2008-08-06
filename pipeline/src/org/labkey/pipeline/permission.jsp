@@ -25,7 +25,7 @@
 <%@ page import="org.labkey.pipeline.PipelineController" %>
 <%@ page import="java.io.IOException" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<div style="width:240px;">
+<div width="240px">
 <%
     PipelineController.PermissionView me = (PipelineController.PermissionView)HttpView.currentView();
     ViewContext context = me.getViewContext();

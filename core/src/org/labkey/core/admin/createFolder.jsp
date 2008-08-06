@@ -35,7 +35,7 @@
 
 <form name="createForm" action="createFolder.view" method="post">
     <%=formatMissedErrors("form")%>
-    <table class="labkey-form">
+    <table>
         <tr><td colspan=2><%
         if (!c.isRoot())
         {
@@ -82,7 +82,7 @@
         </tr>
     </table>
 
-    <table class="labkey-small-button-bar">
+    <table class="labkey-button-bar">
         <tr>
             <td><input type="image" src='<%=PageFlowUtil.buttonSrc("Next")%>'></td>
             <td><%

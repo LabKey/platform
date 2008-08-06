@@ -52,7 +52,7 @@ public class StatusDataRegion extends DataRegion
     {
         String selectStyle = "";
         if (selected)
-            selectStyle = " class=\"labkey-highlight-tab\"";
+            selectStyle = " class=\"labkey-frame\"";
         out.write("<td");
         out.write(selectStyle);
         out.write(">&nbsp;&nbsp;<a href=\"");
@@ -86,7 +86,7 @@ public class StatusDataRegion extends DataRegion
 
         boolean selSeen = false;
 
-        out.write("<table class=\"labkey-data-region-header\"><tr>");
+        out.write("<table><tr>");
         out.write("<td>Show:</td>");
 
         String name = "StatusFiles.Status~neqornull";

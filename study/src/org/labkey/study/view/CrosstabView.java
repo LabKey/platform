@@ -45,15 +45,6 @@ public class CrosstabView extends WebPartView
     ResultSet resultSet;
     Map<String, ColumnInfo> colMap;
 
-    private static final String BLACK = "black";
-    private static final String GRAY = "gray";
-    private static final CellStyle COL_HEADER_STYLE = new CellStyle(true, BLACK, null, BLACK, null);
-    private static final CellStyle ROW_HEADER_STYLE = new CellStyle(true, null, BLACK, GRAY, GRAY);
-    private static final CellStyle DATA_STYLE = new CellStyle(false, null, null, GRAY, null);
-    private static final CellStyle STAT_NAME_STYLE = new CellStyle(false, null, null, GRAY, GRAY);
-    private static final CellStyle ROW_TOTAL_STYLE = new CellStyle(true, null, BLACK, GRAY, BLACK);
-    private static final CellStyle COL_TOTAL_STYLE = new CellStyle(true, null, null, BLACK, null);
-
     @Override
     protected void renderView(Object model, PrintWriter pw) throws Exception
     {
@@ -71,26 +62,33 @@ public class CrosstabView extends WebPartView
         Crosstab crossTab = new Crosstab(resultSet, rowField, colField, statField, statSet);
         List<Object> colHeaders = crossTab.getColHeaders();
 
-        pw.write("<table id=\"report\" class=\"labkey-crosstab-report\"><tr>\n");
+        pw.write("<table id=\"report\" class=\"labkey-data-region labkey-show-borders labkey-has-row-totals labkey-has-col-totals\">\n<colgroup>");
+        if (statSet.size() > 1)
+            pw.write("<col>");
+        for (int i = 0; i < colHeaders.size() + 1; i++)
+        {
+             pw.write("<col>");
+        }
+
+        pw.write("</colgroup>\n<tr>\n");
         if (null != colField)
         {
-            pw.write("\t<td>&nbsp;</td>\n");
+            pw.write("\t<th class=\"labkey-data-region-title\">&nbsp;</th>\n");
             if (statSet.size() > 1)
-                pw.write("\t<td>&nbsp;</td>\n");
+                pw.write("\t<th class=\"labkey-data-region-title\">&nbsp;</th>\n");
 
-            pw.printf("\t<td style=\"%s\" colspan=\"%d\">%s</td>\n", "font-weight:bold;border-bottom 1px solid black", colHeaders.size(), str(getFieldLabel(colField)));
-            pw.write("\t<td style=\"font-weight:bold;border-bottom:1px solid black;\">&nbsp;</td>\n</tr>\n");
+            pw.printf("\t<th class=\"labkey-data-region-title\" colspan=\"%d\">%s</th>\n", colHeaders.size(), str(getFieldLabel(colField)));
+            pw.write("\t<th class=\"labkey-data-region-title\" style=\"border-right:hidden\">&nbsp;</th>\n</tr>\n");
         }
-        pw.printf("\t<td style=\"font-weight:bold;border-bottom:1px solid black;border-right:1px solid black\">%s</td>\n", str(getFieldLabel(rowField)));
+        pw.printf("\t<th class=\"labkey-data-region-title\">%s</th>\n", str(getFieldLabel(rowField)));
         if (statSet.size() > 1)
-            pw.write("\t<td style=\"font-weight:bold;border:1px solid black\">&nbsp;</td>\n");
+            pw.write("\t<td class=\"labkey-col-header\">&nbsp;</td>\n");
 
         if (null != colField)
             for (Object colVal : colHeaders)
-                pw.printf("\t<td style=\"%s\">%s</td>\n", COL_HEADER_STYLE, str(colVal));
+                pw.printf("\t<td class=\"labkey-col-header\">%s</td>\n", str(colVal));
 
-        CellStyle style = COL_HEADER_STYLE.clone().right(BLACK).left(BLACK);
-        pw.printf("<td style=\"%s\">", style);
+        pw.printf("<td class=\"labkey-col-header\"");
         Stats.StatDefinition stat = null;
         if (statSet.size() == 1)
             stat = statSet.toArray(new Stats.StatDefinition[1])[0];
@@ -108,7 +106,7 @@ public class CrosstabView extends WebPartView
         {
             for (Object rowVal : crossTab.getRowHeaders())
             {
-                pw.printf("<tr>\n\t<td style=\"%s\" rowspan=\"%d\">%s</td>\n", ROW_HEADER_STYLE, statSet.size(), rowVal);
+                pw.printf("<tr>\n\t<td class=\"labkey-row-header\" rowspan=\"%d\">%s</td>\n", statSet.size(), rowVal);
 
                 int statRow = 0;
                 for (Stats.StatDefinition rowStat : statSet.toArray(new Stats.StatDefinition[0]))
@@ -117,13 +115,15 @@ public class CrosstabView extends WebPartView
                     {
                         if (statRow > 0)
                             pw.write("<tr>");
-                        pw.printf("\t<td style=\"%s\">%s</td>\n", STAT_NAME_STYLE, rowStat.getName());
+                        pw.printf("\t<td class=\"labkey-stat-title\">%s</td>\n", rowStat.getName());
                     }
 
                     for (Object colVal : colHeaders)
-                        pw.printf("\t<td style=\"%s\">%s</td>\n", DATA_STYLE, crossTab.getStats(rowVal, colVal).getFormattedStat(rowStat));
+                    {
+                        pw.printf("\t<td>%s</td>\n", crossTab.getStats(rowVal, colVal).getFormattedStat(rowStat));
+                    }
 
-                    pw.printf("\t<td style=\"%s\">%s</td>\n", ROW_TOTAL_STYLE, crossTab.getStats(rowVal, Crosstab.TOTAL_COLUMN).getFormattedStat(rowStat));
+                    pw.printf("\t<td class=\"labkey-row-total\">%s</td>\n", crossTab.getStats(rowVal, Crosstab.TOTAL_COLUMN).getFormattedStat(rowStat));
 
                     statRow++;
                     if (statSet.size() > 1 && statRow < statSet.size())
@@ -135,39 +135,28 @@ public class CrosstabView extends WebPartView
         }
 
         //Now totals for the cols
-        pw.printf("<tr>\n\t<td style=\"%s\" rowspan=\"%d\">Total</td>\n", ROW_HEADER_STYLE.clone().bottom(BLACK), statSet.size());
+        pw.printf("<tr>\n\t<td class=\"labkey-row-header\" rowspan=\"%d\">Total</td>\n", statSet.size());
 
         int statRow = 0;
         for (Stats.StatDefinition rowStat : statSet)
         {
             if (statSet.size() > 1)
             {
-                CellStyle cs = STAT_NAME_STYLE;
                 if (statRow > 0)
                 {
                     pw.write("<tr>");
-                    if (statRow == statSet.size() -1)
-                        cs = cs.clone().bottom(BLACK);
                 }
-                else
-                    cs = cs.clone().top(BLACK);
 
-                pw.printf("\t<td style=\"%s\">%s</td>\n", cs, rowStat.getName());
+                pw.printf("\t<td class=\"labkey-stat-title\">%s</td>\n", rowStat.getName());
             }
 
 
             if (null != colField)
                 for (Object colVal : colHeaders)
                 {
-                    CellStyle cs = COL_TOTAL_STYLE;
-                    if (statRow == 0)
-                        cs = cs.clone().top(BLACK).bottom(GRAY);
-                    else if (statRow < statSet.size() - 1)
-                        cs = cs.clone().bottom(BLACK);
-
-                    pw.printf("\t<td style=\"%s\">%s</td>\n", cs, crossTab.getStats(Crosstab.TOTAL_ROW, colVal).getFormattedStat(rowStat));
+                    pw.printf("\t<td class=\"labkey-col-total\">%s</td>\n", crossTab.getStats(Crosstab.TOTAL_ROW, colVal).getFormattedStat(rowStat));
                 }
-            pw.write("<td style=\"font-weight:bold;border-left: 1px solid black; border-right:1px solid black; border-bottom:1px solid black\">");
+            pw.write("<td class=\"labkey-col-total\">");
             Stats stats = crossTab.getStats(Crosstab.TOTAL_ROW, Crosstab.TOTAL_COLUMN);
             pw.write(stats.getFormattedStat(rowStat));
             pw.write("</td>");
@@ -259,82 +248,4 @@ public class CrosstabView extends WebPartView
         return PageFlowUtil.filter(ConvertUtils.convert(val));
     }
 
-    private static class CellBorder
-    {
-        String color;
-        int weight = 1;
-        String edge;
-
-        public CellBorder(String edge)
-        {
-            this.edge = edge;
-        }
-
-        public String toString()
-        {
-            if (null != color)
-                return "border-" + edge + ":" +  weight + "px solid " + color + ";";
-            else
-                return "";
-        }
-    }
-
-    private static class CellStyle implements Cloneable
-    {
-        CellBorder top = new CellBorder("top");
-        CellBorder left = new CellBorder("left");
-        CellBorder bottom = new CellBorder("bottom");
-        CellBorder right = new CellBorder("right");
-
-        boolean bold;
-
-        public CellStyle()
-        {
-
-        }
-
-        public CellStyle(boolean bold, String topColor, String leftColor, String bottomColor, String rightColor)
-        {
-            this.bold = bold;
-            top.color = topColor;
-            left.color = leftColor;
-            bottom.color = bottomColor;
-            right.color = rightColor;
-        }
-
-        public CellStyle top(String color)
-        {
-            this.top.color = color;
-            return this;
-        }
-        public CellStyle left(String color)
-        {
-            this.left.color = color;
-            return this;
-        }
-
-        public CellStyle bottom(String color)
-        {
-            this.bottom.color = color;
-            return this;
-        }
-
-        public CellStyle right(String color)
-        {
-            this.right.color = color;
-            return this;
-        }
-
-
-        public String toString()
-        {
-            return (bold ? "font-weight:bold;" : "") +
-                    top + left + bottom + right;
-        }
-
-        public CellStyle clone()
-        {
-            return new CellStyle(bold, top.color, left.color, bottom.color, right.color);
-        }
-    }
 }

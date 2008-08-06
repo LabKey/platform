@@ -79,7 +79,7 @@ public class SamplesWebPart extends JspView<SamplesWebPart.SamplesWebPartBean>
 
 
 
-                builder.append("<tr class=\"labkey-header\"><td style=\"padding-top:5px\">");
+                builder.append("<tr class=\"labkey-header\"><td class=\"labkey-nav-tree-node\">");
                 if (!children.isEmpty())
                 {
                     builder.append("<a href=\"#\" onclick=\"return toggleLink(this, false);\">");
@@ -102,12 +102,12 @@ public class SamplesWebPart extends JspView<SamplesWebPart.SamplesWebPartBean>
                             "Description"), CompareType.ISBLANK, null);
                 }
 
-                builder.append("<td style=\"width:100%;padding-top:3px;padding-left:3px\"><a href=\"").append(url).append("\">");
+                builder.append("<td class=\"labkey-nav-tree-text\" width=\"100%\"><a href=\"").append(url).append("\">");
                 if (count.getLabel() != null && count.getLabel().length() > 0)
                     builder.append(PageFlowUtil.filter(count.getLabel()));
                 else
                     builder.append("[unknown]");
-                builder.append("</a></td>\n\t<td align=\"right\" style=\"padding-top:3px\">");
+                builder.append("</a></td>\n\t<td align=\"right\" class=\"labkey-nav-tree-total\">");
                 builder.append(count.getVialCount());
                 builder.append("</td></tr>\n");
                 if (!children.isEmpty())

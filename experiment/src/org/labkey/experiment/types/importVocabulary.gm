@@ -34,7 +34,7 @@ Specifically it should be a tab-delimited text file with no column headers, and 
 <table>
     <tr><th align=left valign=top nowrap>Code</th><td valign=top>not used internally</td><td valign=top><code>C25298</code></td></tr>
     <tr><th align=left valign=top nowrap>UMLS</th><td valign=top>8 char UMLS code, not used internally</td><td valign=top><code>C0428880</code></td></tr>
-    <tr><th align=left valign=top nowrap>Name<span style="color:red;">*</span></th><td valign=top>Alphanumeric with - and _, required</td><td valign=top><code>Systolic_Pressure</code></td></tr>
+    <tr><th align=left valign=top nowrap>Name<span class="labkey-error">*</span></th><td valign=top>Alphanumeric with - and _, required</td><td valign=top><code>Systolic_Pressure</code></td></tr>
     <tr><th align=left valign=top nowrap>Label</th><td valign=top>Display name</td><td valign=top><code>Systolic Pressure</code></td></tr>
     <tr><th align=left valign=top nowrap>Parent</th><td valign=top>More general concept for this term</td><td valign=top><code>Personal_Attribute</code></td></tr>
     <tr><th align=left valign=top nowrap>SemanticType</th><td valign=top>Type of concept, | separated if more than one</td><td valign=top><code>Quantitative Concept</code></td></tr>

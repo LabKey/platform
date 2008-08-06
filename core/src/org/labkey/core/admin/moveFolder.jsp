@@ -56,7 +56,7 @@
     <tr><td>&nbsp;</td></tr>
     </table>
 
-    <table class="labkey-small-button-bar"><tr>
+    <table class="labkey-button-bar"><tr>
     <td><a href="<%=h(AdminController.getManageFoldersURL(c))%>"><img src='<%=PageFlowUtil.buttonSrc("Cancel")%>'></a></td><%
     if (form.isShowAll())
     {

@@ -2150,7 +2150,7 @@ public class WikiController extends SpringActionController
             if (getElements().length > 1)
             {
                 out.println("<br>");
-                out.println("<table class=\"labkey-form\" width=\"100%\">");
+                out.println("<table width=\"100%\">");
                 out.println("<tr>\n<td>");
 
                 if(prevLink != null)

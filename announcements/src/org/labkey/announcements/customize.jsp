@@ -61,7 +61,7 @@
         }
     %>
     <tr>
-        <td class="labkey-form-label" valign="middle" style="padding-top:2;">Security</td>
+        <td class="labkey-form-label" valign="middle">Security</td>
         <td>
             <table>
                 <tr>

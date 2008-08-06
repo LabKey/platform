@@ -41,7 +41,7 @@
 <script type="text/javascript">
 LABKEY.requiresScript('completion.js');
 </script>
-<table class="labkey-manage-groups">
+<table width="100%">
     <%
         for (Group group : groupsBean.getGroups())
         {
@@ -104,7 +104,7 @@ LABKEY.requiresScript('completion.js');
 </table>
 
 <form action=newGroup.post method=POST>
-    <table class="labkey-form">
+    <table>
         <tr>
             <td class="labkey-form-label">Create new group</td>
             <td><input type="text" size="30" name="name"></td>

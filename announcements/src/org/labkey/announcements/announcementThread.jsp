@@ -83,11 +83,11 @@ if (!bean.print && null != discussionSrc)
 }
 %>
 
-<table class="labkey-form" width=100%>
+<table width=100%>
 <tr>
-    <td class="labkey-announcement-title" style="width:33%;" align=left><span><%=h(announcement.getTitle())%></span></td>
-    <td style="padding-top:14px; padding-bottom:2px; width:33%;" align=center><%=h(announcement.getCreatedByName(bean.includeGroups, context))%></td>
-    <td style="padding-top:14px; padding-bottom:2px; width:33%;" align="right" nowrap><%
+    <td class="labkey-announcement-title" width="33%" align=left><span><%=h(announcement.getTitle())%></span></td>
+    <td class="labkey-announcement-title" width="33%" align=center><%=h(announcement.getCreatedByName(bean.includeGroups, context))%></td>
+    <td class="labkey-announcement-title" width="33%" align="right" nowrap><%
 
 if (false && !bean.print && null != discussionSrc)
 {
@@ -103,7 +103,7 @@ if (bean.perm.allowUpdate(announcement) && !bean.print)
 }
 %>&nbsp;<%=h(DateUtil.formatDateTime(announcement.getCreated()))%></td>
 </tr>
-<tr style="height:1px;">
+<tr>
     <td colspan=3 class="labkey-title-area-line"><img alt="" height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td>
 </tr><%
 
@@ -169,17 +169,17 @@ if (0 < announcement.getResponses().size())
     %>
 <tr><td colspan="3">
 
-<table class="labkey-form" width=100%>
+<table width=100%>
     <tr>
     <td width="2%">&nbsp;</td>
     <td colspan="2" width="100%">
-        <table class="labkey-form" width=100%><%
+        <table class="labkey-announcement-thread" width=100%><%
 
         for (Announcement r : announcement.getResponses())
         {%>
-            <tr>
-                <td class="labkey-response-header"><a name="row:<%=r.getRowId()%>"></a><%=h(r.getCreatedByName(bean.includeGroups, context)) + " responded:"%></td>
-                <td class="labkey-response-header" align="right"><%
+            <tr class="labkey-alternate-row">
+                <td class="labkey-bordered" style="border-right: 0 none"><a name="row:<%=r.getRowId()%>"></a><%=h(r.getCreatedByName(bean.includeGroups, context)) + " responded:"%></td>
+                <td class="labkey-bordered" style="border-left: 0 none" align="right"><%
                 if (bean.perm.allowUpdate(r) && !bean.print)
                 {
                     ActionURL update = AnnouncementsController.getUpdateURL(c, r.getEntityId(), returnUrl);

@@ -56,7 +56,7 @@
         {
 %>
     <tr>
-        <td style="padding-left:20px">None</td>
+        <td class="labkey-indented">None</td>
     </tr>
 <%
         }
@@ -66,7 +66,7 @@
             {
 %>
     <tr>
-        <td style="padding-left:20px"><%= template.getName() %></td>
+        <td class="labkey-indented"><%= template.getName() %></td>
     </tr>
 <%
             }

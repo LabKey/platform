@@ -44,7 +44,7 @@
     BindException errors = bean.getErrors();
 %>
 
-<form style="margin:0" method="POST" enctype="multipart/form-data" action="<%=IssuesController.issueURL(context.getContainer(),bean.getAction()+".post")%>">
+<form method="POST" enctype="multipart/form-data" action="<%=IssuesController.issueURL(context.getContainer(),bean.getAction()+".post")%>">
 
     <table>
     <%
@@ -59,7 +59,7 @@
         out.print("<tr><td>Fields marked with an asterisk <span class=\"labkey-error\">*</span> are required.</td></tr>");
     %>
     </table>
-    <table class="labkey-small-button-bar"><tr>
+    <table class="labkey-button-bar"><tr>
         <td><input name="<%=bean.getAction()%>" type="image" value="Submit" onClick="LABKEY.setSubmit(true); return true;" src="<%=ButtonServlet.buttonSrc("Submit")%>"></td>
         <td><%= buttonLink("View Grid", IssuesController.issueURL(context.getContainer(), "list").addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
     </tr></table>
@@ -152,11 +152,11 @@
     if (bean.getBody() != null)
     {
 %>
-    <textarea id="comment" name="comment" cols="150" rows="20" style="width:100%" onchange="LABKEY.setDirty(true);return true;"><%=PageFlowUtil.filter(bean.getBody())%></textarea>
+    <textarea id="comment" name="comment" cols="150" rows="20" style="width: 100%;" onchange="LABKEY.setDirty(true);return true;"><%=PageFlowUtil.filter(bean.getBody())%></textarea>
 <%
     } else {
 %>
-    <textarea id="comment" name="comment" cols="150" rows="20" style="width:100%" onchange="LABKEY.setDirty(true);return true;"></textarea>
+    <textarea id="comment" name="comment" cols="150" rows="20" style="width: 100%;" onchange="LABKEY.setDirty(true);return true;"></textarea>
 <%
     }
 

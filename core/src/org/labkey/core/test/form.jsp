@@ -81,7 +81,7 @@
 
 --%>
 <br><br><br>
-<div style="background-color:#f8f8f8;">
+<div class="labkey-alternate-row">
 <hr><b>errors</b><br>
 <%
 for (ObjectError e : getAllErrors(pageContext))

@@ -98,9 +98,9 @@
     <div class="bd">
         <form action="<%=new ActionURL(ReportsController.RenameReportAction.class, context.getContainer())%>" method="post" onsubmit="dialogHelper.hide();">
             <input type="hidden" id="renameReportId" name="reportId" value=""/>
-            <table class="labkey-form">
+            <table>
                 <tr><td>View name:</td></tr>
-                <tr><td width="275"><input id="renameReportName" name="reportName" style="width:100%" value=""></td></tr>
+                <tr><td width="275"><input id="renameReportName" name="reportName" width="100%" value=""></td></tr>
                 <tr><td><input type="image" src="<%=PageFlowUtil.buttonSrc("Rename")%>"></td></tr>
             </table>
         </form>
@@ -112,16 +112,16 @@
     <div class="bd">
         <form action="<%=new ActionURL(ReportsController.ReportDescriptionAction.class, context.getContainer())%>" method="post" onsubmit="descriptionDialogHelper.hide();">
             <input type="hidden" id="descReportId" name="reportId" value=""/>
-            <table class="labkey-form">
+            <table>
                 <tr><td>View Description:</td></tr>
-                <tr><td width="370"><textarea id="descReportDescription" name="reportDescription" style="width:100%" rows="6"></textarea></td></tr>
+                <tr><td width="370"><textarea id="descReportDescription" name="reportDescription" style="width: 100%;" rows="6"></textarea></td></tr>
                 <tr><td><input type="image" src="<%=PageFlowUtil.buttonSrc("Update")%>"></td></tr>
             </table>
         </form>
     </div>
 </div>
 
-<table class="labkey-form">
+<table>
 <%
     Map<String, List<ManageReportsBean.ReportRecord>> live = bean.getViews();
     for (Map.Entry<String, List<ManageReportsBean.ReportRecord>> entry : live.entrySet()) {
@@ -169,7 +169,7 @@
         out.write("<tr width=\"100%\"><td colspan=\"7\" class=\"labkey-announcement-title\" align=left><span>");
         out.write(PageFlowUtil.filter(title));
         out.write("</span></td></tr>");
-        out.write("<tr width=\"100%\" style=\"height:1;\"><td colspan=\"7\" class=\"labkey-title-area-line\"><img height=\"1\" width=\"1\" src=\"" + AppProps.getInstance().getContextPath() + "/_.gif\"></td></tr>");
+        out.write("<tr width=\"100%\"><td colspan=\"7\" class=\"labkey-title-area-line\"><img height=\"1\" width=\"1\" src=\"" + AppProps.getInstance().getContextPath() + "/_.gif\"></td></tr>");
         out.write("<tr><td align=\"center\" class=\"labkey-form-label\">title</td><td align=\"center\" class=\"labkey-form-label\">created by</td><td align=\"center\" class=\"labkey-form-label\">public</td></tr>");
     }
 %>

@@ -104,13 +104,13 @@
             {
                 if (query.getParseErrors(currentSchema).size() != 0)
             { %>
-                <span style="color:red">(has errors)</span>
+                <span class="labkey-error">(has errors)</span>
                 <% }
                 }
                 catch (Throwable t)
                 {
                 %>
-                <span style="color:red">An exception occurred: <%=h(t.toString())%></span>
+                <span class="labkey-error">An exception occurred: <%=h(t.toString())%></span>
                 <%}
                 %>
 

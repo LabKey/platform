@@ -41,7 +41,7 @@
 <% if (null != form.getMessage())
     {
 %>
-    <div style="color:red"><%=form.getMessage()%></div>
+    <div class="labkey-error"><%=form.getMessage()%></div>
 <%
     }
     if (ctx.getUser().isAdministrator())

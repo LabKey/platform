@@ -36,7 +36,7 @@
 <table class="labkey-admin-console"><tr>
 <td>
 
-<table class="labkey-data-region"><%
+<table><%
     for (SettingsLinkType type : SettingsLinkType.values())
     { %>
 
@@ -113,7 +113,7 @@
     for (Module module : bean.modules)
     {%>
     <tr class="labkey-header">
-        <td style="vertical-align:middle">
+        <td valign="middle">
             <a href="#" onclick="return toggleLink(this, false);">
                 <img src="<%= contextPath %>/_images/plus.gif">
             </a>

@@ -45,14 +45,14 @@ Use this form to import schemas for multiple datasets.
 Paste in a tab delimited file with the following columns, as well as columns for type
 name and type id.  Additional columns will just be ignored.
 </p>
-<table class="labkey-form">
+<table>
     <tr>
         <th align="left"><u>Column Header</u></th>
         <th align="left"><u>Description</u></th>
         <th align="left"><u>Sample Value</u></th>
     </tr>
     <tr>
-        <th align=left valign=top nowrap>Property<span style="color:red;">*</span></th>
+        <th align=left valign=top nowrap>Property<span class="labkey-error">*</span></th>
         <td valign=top>The column name as it will appear when data is later imported</td>
         <td valign=top><code>PTID</code></td>
     </tr>
@@ -67,7 +67,7 @@ name and type id.  Additional columns will just be ignored.
         <td valign=top><code>SCHARP#Participant_ID</code></td>
     </tr>
     <tr>
-        <th align=left valign=top nowrap>RangeURI<span style="color:red;">*</span></th>
+        <th align=left valign=top nowrap>RangeURI<span class="labkey-error">*</span></th>
         <td valign=top>The storage type of this value</td>
         <td valign=top><code>xsd:int</code></td>
     </tr>
@@ -87,32 +87,32 @@ name and type id.  Additional columns will just be ignored.
         <td valign=top><code>true</code></td>
     </tr>
     <tr>
-        <th align="left" colspan="3"><span style="color:red;">*Required</span></th>
+        <th align="left" colspan="3"><span class="labkey-error">*Required</span></th>
     </tr>
 </table>
 
 <form action="bulkImportDataTypes.post" method="POST" enctype="multipart/form-data">
-    <table class="labkey-form">
+    <table>
         <tr>
-            <td class=labkey-form-label>Column containing dataset Name<span style="color:red;">*</span></td>
+            <td class=labkey-form-label>Column containing dataset Name<span class="labkey-error">*</span></td>
         </tr>
         <tr>
             <td><input name="typeNameColumn" style="width:100%" value="<%=h(bean.getTypeNameColumn())%>"></td>
         </tr>
         <tr>
-            <td class=labkey-form-label>Column containing dataset Label<span style="color:red;">*</span></td>
+            <td class=labkey-form-label>Column containing dataset Label<span class="labkey-error">*</span></td>
         </tr>
         <tr>
             <td><input name="labelColumn" style="width:100%" value="<%=h(bean.getLabelColumn())%>"></td>
         </tr>
         <tr>
-            <td class=labkey-form-label>Column containing dataset Id<span style="color:red;">*</span></td>
+            <td class=labkey-form-label>Column containing dataset Id<span class="labkey-error">*</span></td>
         </tr>
         <tr>
             <td><input name="typeIdColumn" style="width:100%" value="<%=h(bean.getTypeIdColumn())%>"></td>
         </tr>
         <tr>
-            <td class=labkey-form-label>Type Definition<span style="color:red;">*</span> (tab delimited)</td>
+            <td class=labkey-form-label>Type Definition<span class="labkey-error">*</span> (tab delimited)</td>
         </tr>
         <tr>
             <td><textarea name=tsv rows=25 cols=80><%=h(bean.getTsv())%></textarea></td>

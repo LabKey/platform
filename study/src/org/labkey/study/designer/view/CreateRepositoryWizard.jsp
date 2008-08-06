@@ -109,7 +109,7 @@ Each study needs specimen ids for the specimens included in the study. To upload
     <li>Paste data copied from the downloaded workbook and paste in the box below.</li>
 </ol>
     <br>
-    <textarea style="border:1px solid black;" rows="20" cols="80" name="specimenTSV"><%=h(form.getSpecimenTSV())%></textarea>
+    <textarea class="labkey-bordered" rows="20" cols="80" name="specimenTSV"><%=h(form.getSpecimenTSV())%></textarea>
         <input type="hidden" value="false"  name="ignoreWarnings">
     <br>
     <%=PageFlowUtil.buttonLink("Back", "javascript:window.history.back();")%>
@@ -127,7 +127,7 @@ if (form.getWizardStep() == DesignerController.WizardStep.UPLOAD_SAMPLES)
 %>
 Paste a tab-delimited dataset copied from the workbook downloaded in the previous set. Copy the area
     containing specimen information and paste it here.<br>
-<textarea style="border:1px solid black;" rows="20" cols="80" name="specimenTSV"><%=h(form.getSpecimenTSV())%></textarea>
+<textarea class="labkey-bordered" rows="20" cols="80" name="specimenTSV"><%=h(form.getSpecimenTSV())%></textarea>
     <input type="hidden" value="false"  name="ignoreWarnings">
 <br>
 <%=PageFlowUtil.buttonLink("Back", "javascript:window.history.back();")%>

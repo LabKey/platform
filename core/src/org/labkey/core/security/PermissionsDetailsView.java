@@ -162,7 +162,7 @@ public class PermissionsDetailsView extends WebPartView
             }
         }
 
-        out.println("<table class=\"labkey-form\">");
+        out.println("<table>");
         for (Group group : projGroups)
             renderGroupTableRow(group, acl, out, group.getName());
 

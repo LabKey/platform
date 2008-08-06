@@ -31,7 +31,7 @@ Site[] sites = s.getSites();
 boolean isAdmin = user.isAdministrator() || s.getContainer().hasPermission(user, ACL.PERM_ADMIN);
  %>
 
-<div style="width:600px">
+<div width="600px">
 Spreadheet Export allows you to export data from one site exclusively, or to export all data from all sites simultaneously.
 Before you export, you can select the source site or sites using the "Site" drop-down menu.
 <ul>

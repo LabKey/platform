@@ -63,7 +63,7 @@ function validateForm(form)
     }
     if (settings.hasMemberList())
     {
-        %><tr><td class='labkey-form-label'>Members</td><td><%=bean.memberList%></td><td style="width:100%;"><i><%
+        %><tr><td class='labkey-form-label'>Members</td><td><%=bean.memberList%></td><td width="100%"><i><%
         if (settings.isSecure())
         {
             %> This <%=settings.getConversationName().toLowerCase()%> is private; only editors and the users on this list can view it.  These users will also<%
@@ -76,9 +76,9 @@ function validateForm(form)
     }
     if (settings.hasExpires())
     {
-        %><tr><td class='labkey-form-label'>Expires</td><td><input type='text' size='23' name='expires' value='<%=h(form.get("expires"))%>' ></td><td style="width:100%;"><i>By default the Expires field is set to one month from today. <br>Expired messages are not deleted, they are just no longer shown on the Portal page.</i></td></tr><%
+        %><tr><td class='labkey-form-label'>Expires</td><td><input type='text' size='23' name='expires' value='<%=h(form.get("expires"))%>' ></td><td width="100%"><i>By default the Expires field is set to one month from today. <br>Expired messages are not deleted, they are just no longer shown on the Portal page.</i></td></tr><%
     }
-    %><tr><td class='labkey-form-label'>Body</td><td colspan='2' style="width:100%;"><textarea cols='120' rows='15' id="body" name='body' style="width:100%;"><%=h(form.get("body"))%></textarea></td></tr><%
+    %><tr><td class='labkey-form-label'>Body</td><td colspan='2' style="width: 100%;"><textarea cols='120' rows='15' id="body" name='body' style="width: 100%;"><%=h(form.get("body"))%></textarea></td></tr><%
     if (settings.hasFormatPicker())
     {
         %><tr><td class="labkey-form-label">Render As</td><td colspan="2">
@@ -97,7 +97,7 @@ function validateForm(form)
 <%
 if (bean.allowBroadcast)
 {
-%><table class="labkey-form" width=100%>
+%><table width=100%>
   <tr class="labkey-wp-header">
     <td title="Admin Broadcast" colspan="2" nowrap>
       <div class="labkey-wp-title"><span>Admin Broadcast</span></div>
@@ -109,9 +109,9 @@ if (bean.allowBroadcast)
   </tr>
 </table><%
 }%>
-<table class="labkey-form" width=100%>
+<table width=100%>
 	<tr class="labkey-wp-header">
-		<td title="Attachments" style="width:100%;" nowrap>
+		<td title="Attachments" width="100%" nowrap>
 		<div class="labkey-wp-title"><span>Attachments</span></div>
 		</td>
 	</tr>

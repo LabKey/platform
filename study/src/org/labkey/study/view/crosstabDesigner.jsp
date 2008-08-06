@@ -45,13 +45,13 @@
     <table>
         <tr>
             <td></td>
-            <td style="border:1px solid black;font-weight:bold">Column Field<%=fieldDropDown("colField", cols, bean.getColField(), false, true)%></td>
+            <td class="labkey-bordered" style="font-weight:bold">Column Field<%=fieldDropDown("colField", cols, bean.getColField(), false, true)%></td>
 
         </tr>
     <tr>
-        <td style="border:1px solid black;font-weight:bold">Row<br>Field<br><%=fieldDropDown("rowField", cols, bean.getRowField(), false, true)%>
+        <td class="labkey-bordered" style="font-weight:bold">Row<br>Field<br><%=fieldDropDown("rowField", cols, bean.getRowField(), false, true)%>
         </td>
-        <td style="border: 1px solid black;font-weight:bold" width="100%">Compute Statistics for Field<br><%=fieldDropDown("statField", cols, bean.getStatField(), true, false)%><br>
+        <td class="labkey-bordered" style="font-weight:bold" width="100%">Compute Statistics for Field<br><%=fieldDropDown("statField", cols, bean.getStatField(), true, false)%><br>
             <br>
             Compute<br>
             <table><tr><td>

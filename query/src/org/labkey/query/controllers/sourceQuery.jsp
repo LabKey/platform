@@ -28,7 +28,7 @@
 <form method="POST" action="<%=form.urlFor(QueryAction.sourceQuery)%>">
     <input type="hidden" name="ff_redirect" id="ff_redirect" value="<%=form.ff_redirect%>">
     <p>SQL:<br>
-<textarea  style="width: 100%" rows="20" cols="80" wrap="off"
+<textarea style="width: 100%;" rows="20" cols="80" wrap="off"
           name="ff_queryText"<%=canEdit ? "" : " READONLY"%>><%=h(form.ff_queryText)%></textarea><br>
 </p><%
 if (canEdit)
@@ -37,7 +37,7 @@ if (canEdit)
 }
     %><labkey:button text="Design View" onclick="submit_onclick('designQuery')" />&nbsp;<labkey:button text="Run Query" onclick="submit_onclick('executeQuery')" />
 <p>Metadata XML:<br>
-    <textarea style="width: 100%" rows="20" cols="80" wrap="off" name="ff_metadataText"<%=canEdit ? "" : " READONLY"%>><%=h(form.ff_metadataText)%></textarea>
+    <textarea style="width: 100%;" rows="20" cols="80" wrap="off" name="ff_metadataText"<%=canEdit ? "" : " READONLY"%>><%=h(form.ff_metadataText)%></textarea>
 </p>
 
 </form>

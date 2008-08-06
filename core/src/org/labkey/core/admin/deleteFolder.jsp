@@ -109,7 +109,7 @@
             <tr><td>&nbsp;</td></tr>
         </table>
 
-        <table class="labkey-small-button-bar"><tr>
+        <table class="labkey-button-bar"><tr>
             <td><form action="deleteFolder.post<%=recurse ? "?recurse=1" : ""%>" method="post"><input type=image src='<%=PageFlowUtil.buttonSrc("Delete")%>'></form></td>
             <td><a href="manageFolders.view"><img src='<%=PageFlowUtil.buttonSrc("Cancel")%>'></a></td>
         </tr></table><%
@@ -124,7 +124,7 @@
     <tr><td>&nbsp;</td></tr>
 </table>
 
-<table class="labkey-small-button-bar">
+<table class="labkey-button-bar">
     <tr>
         <td><a href="deleteFolder.view?recurse=1"><img src="<%=PageFlowUtil.buttonSrc("Delete All Folders")%>"></a></td>
         <td><a href="manageFolders.view"><img src="<%=PageFlowUtil.buttonSrc("Cancel")%>"></a></td>

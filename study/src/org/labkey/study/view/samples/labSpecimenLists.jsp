@@ -42,7 +42,7 @@
     }
 %>
 
-<table class="labkey-form">
+<table>
     <tr>
         <th align="left"><%= originating ? "Originating" : "Providing" %> Location</th>
         <th align="left">Download options</th>

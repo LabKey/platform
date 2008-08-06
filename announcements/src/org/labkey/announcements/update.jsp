@@ -58,7 +58,7 @@ if (settings.hasAssignedTo())
 
 if (settings.hasMemberList())
 {
-    %><tr><td class="labkey-form-label">Members</td><td><%=bean.memberList%></td><td style="width:100%;"><i><%
+    %><tr><td class="labkey-form-label">Members</td><td><%=bean.memberList%></td><td width="100%"><i><%
     if (settings.isSecure())
     {
         %> This <%=settings.getConversationName().toLowerCase()%> is private; only editors and the users on this list can view it.  These users will also<%
@@ -72,14 +72,14 @@ if (settings.hasMemberList())
 
 if (settings.hasExpires())
 {
-    %><tr><td class="labkey-form-label">Expires</td><td><input name="expires" size="23" value="<%=h(DateUtil.formatDate(ann.getExpires()))%>"></td><td style="width:100%;"><i>Expired messages are not deleted, they are just no longer shown on the Portal page.</i></td></tr><%
+    %><tr><td class="labkey-form-label">Expires</td><td><input name="expires" size="23" value="<%=h(DateUtil.formatDate(ann.getExpires()))%>"></td><td width="100%"><i>Expired messages are not deleted, they are just no longer shown on the Portal page.</i></td></tr><%
 }
 
 %>
   <tr>
     <td class='labkey-form-label'>Body</td>
-    <td style="width:100%;" colspan="2">
-        <textarea cols="120" rows ="15" name='body' style="width:100%;"><%=h(ann.getBody())%></textarea>
+    <td width="100%" colspan="2">
+        <textarea cols="120" rows ="15" name='body' style="width: 100%;"><%=h(ann.getBody())%></textarea>
     </td>
   </tr>
 <%
@@ -122,7 +122,7 @@ if (settings.hasExpires())
   </tr>
   <tr>
     <td colspan=3 align=left>
-      <table class="labkey-small-button-bar">
+      <table class="labkey-button-bar">
         <tr>
           <td><input type='image' src='<%=PageFlowUtil.buttonSrc("Submit")%>' name='update.post' value='Submit' onClick='this.form.action="update.post";this.form.method="post";' >&nbsp;<%=PageFlowUtil.buttonLink("Cancel", bean.returnURL)%></td>
         </tr>

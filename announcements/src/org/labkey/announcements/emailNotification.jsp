@@ -23,13 +23,13 @@
 </head>
 
 <body>
-<table class="labkey-form" width=100%>
-    <tr><td class="labkey-response-header" colspan="2">
+<table width=100%>
+    <tr class="labkey-alternate-row"><td colspan="2" class="labkey-bordered" style="border-right: 0 none">
     <%
         int attachmentCount = announcement.getAttachments().size();
     %>
     <%=announcement.getCreatedByName(includeGroups, HttpView.currentContext()) + (announcement.getParent() != null ? " responded" : " created a new " + settings.getConversationName().toLowerCase()) + (attachmentCount > 0 ? " and attached " + attachmentCount + " document" + (attachmentCount > 1 ? "s" : "") : "")%></td>
-    <td class="labkey-response-header" align="right"><%=formatDateTime(announcement.getCreated())%></td></tr><%
+    <td align="right" class="labkey-bordered" style="border-left: 0 none"><%=formatDateTime(announcement.getCreated())%></td></tr><%
 
     if (null != body)
     { %>
@@ -45,7 +45,7 @@
 <br>
 <hr size="1">
 
-<table class="labkey-form" width=100%>
+<table width=100%>
     <tr><td>You have received this email because <%
         switch(reason)
         {

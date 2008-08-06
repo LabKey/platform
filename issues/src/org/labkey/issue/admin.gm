@@ -17,20 +17,20 @@
 %>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <br>
-<table class="labkey-form">
+<table>
 <tr><td><a href="list.view?.lastFilter=true"><img src="<%=PageFlowUtil.buttonSrc("Back to Issues")%>"></a></td></tr>
 <tr><td>&nbsp;</td></tr>
 </table>
 <% currentView.include(currentView.getView("keywordView")); %>
 <br>
 
-<table class="labkey-form"><tr>
+<table><tr>
 <td valign=top>
     <% currentView.include(currentView.getView("requiredFieldsView")); %>
 </td>
 <td valign=top>
     <form action="setCustomColumnConfiguration.post" method="post">
-    <table class="labkey-form">
+    <table>
     <tr><td colspan=2 align=center><div class="labkey-form-label"><b>Custom Fields</b></div></td></tr>
     <tr><td colspan=2>Enter captions below to use custom fields in this issues list:</td></tr>
     <tr><td colspan=2>&nbsp;</td></tr>

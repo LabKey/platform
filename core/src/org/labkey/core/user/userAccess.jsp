@@ -43,6 +43,15 @@ However, If this account is re-enabled, it would have the following permissions.
 <% } %>
 
 <table class="labkey-data-region labkey-show-borders">
+    <colgroup><col><col></colgroup>
+    <%
+    if (bean.showGroups())
+    {
+%>
+        <col>
+<%
+    }
+%>
     <tr>
         <th>Container</th>
         <th>Current Access</th>

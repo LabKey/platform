@@ -73,7 +73,7 @@ Ext.ux.CustomHtmlComponent = Ext.extend(Ext.ux.HtmlComponent,
 </script>
 
 <div class="extContainer">
-<div id="moduleNav" style="overflow:auto;width:200px;height:100%;border:1px solid #c3daf9;"></div>
+<div id="moduleNav" width="200px" height="100%" style="overflow:auto;border:1px solid #c3daf9;"></div>
 </div>
 
 <script type="text/javascript">

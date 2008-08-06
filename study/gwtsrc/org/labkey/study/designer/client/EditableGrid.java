@@ -87,7 +87,7 @@ public abstract class EditableGrid extends FlexTable
     public void setReadOnly(boolean readOnly)
     {
         this.readOnly = readOnly;
-        setStyleName(readOnly ? "labkey-data-region-read-only labkey-show-borders" : "labkey-data-region labkey-show-borders");
+        setStyleName(readOnly ? "labkey-read-only labkey-data-region labkey-show-borders" : "labkey-data-region labkey-show-borders");
     }
 
     private void initRow(int row)

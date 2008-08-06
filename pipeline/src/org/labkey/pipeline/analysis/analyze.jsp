@@ -106,7 +106,7 @@
         <td>
 <%  if ("".equals(form.getProtocol()))
     { %>
-            <textarea style="width: 100%" name="configureXml" cols="150" rows="20"><%=form.getConfigureXml()%></textarea><br>
+            <textarea style="width: 100%;" name="configureXml" cols="150" rows="20"><%=form.getConfigureXml()%></textarea><br>
 <%  }
     else
     { %>

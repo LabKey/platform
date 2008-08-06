@@ -168,7 +168,7 @@ function restoreDefaultPage()
 <input type="hidden" name="pageId" value="${webPart.pageId}">
 <input type="hidden" name="index" value="${webPart.index}">
 
-<table class="labkey-form">
+<table>
     <tr>
         <td colspan="2">
             To display a different wiki page in this web part, first select the folder containing the page

@@ -24,7 +24,7 @@
 <%=PageFlowUtil.getStrutsError(request, "main")%>
 
 <form action="manageRepositorySettings.post" method="POST">
-    <table  class="labkey-form">
+    <table >
         <tr>
             <th align="left">Specimen Repository</th>
         </tr>

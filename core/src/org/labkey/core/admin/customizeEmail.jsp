@@ -155,8 +155,8 @@
 </script>
 
 <form action="customizeEmail.view" method="post">
-    <table class="labkey-form">
-        <tr class="labkey-wp-header"><th colspan=2 class="labkey-admin-title">Custom Emails</th></tr>
+    <table>
+        <tr class="labkey-wp-header"><th colspan=2>Custom Emails</th></tr>
         <tr><td colspan=2>Customize user emails:</td></tr>
         <tr><td></td></tr>
         <tr><td class="labkey-form-label">Email Type:</td>
@@ -187,7 +187,7 @@
             The list of valid substitutions for this email type is (current values appear to the right, although
             some are not known until the email is generated):</i></td>
         </tr>
-        <tr><td></td><td><table id="validSubstitutions" class="labkey-form"></table></td></tr>
+        <tr><td></td><td><table id="validSubstitutions"></table></td></tr>
         <tr><td>&nbsp;</td></tr>
         <tr><td></td><td><i>The values of many of these parameters can be configured on
             the <a href="<%=urlProvider(AdminUrls.class).getCustomizeSiteURL()%>">Site Settings Page</a>.</i>

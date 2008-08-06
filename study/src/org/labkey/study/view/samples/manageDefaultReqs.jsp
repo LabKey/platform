@@ -57,7 +57,7 @@ function verifyNewRequirement(prefix)
     </tr>
     <tr>
         <td>
-            <table class="labkey-study-requirements">
+            <table width=100% class="labkey-data-region">
                 <tr>
                     <th align="left">&nbsp;</th>
                     <th align="left">Actor</th>
@@ -104,7 +104,7 @@ function verifyNewRequirement(prefix)
     </tr>
     <tr>
         <td>
-            <table class="labkey-study-requirements">
+            <table width=100% class="labkey-data-region">
                 <tr>
                     <th align="left">&nbsp;</th>
                     <th align="left">Actor</th>
@@ -151,7 +151,7 @@ function verifyNewRequirement(prefix)
         </tr>
         <tr>
             <td>
-                <table class="labkey-study-requirements">
+                <table width=100% class="labkey-data-region">
                     <tr>
                         <th align="left">&nbsp;</th>
                         <th align="left">Actor</th>
@@ -197,7 +197,7 @@ function verifyNewRequirement(prefix)
         </tr>
         <tr>
             <td>
-                <table class="labkey-study-requirements">
+                <table width=100% class="labkey-data-region">
                     <tr>
                         <th align="left">&nbsp;</th>
                         <th align="left">Actor</th>

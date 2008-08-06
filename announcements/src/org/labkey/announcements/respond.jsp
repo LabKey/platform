@@ -72,7 +72,7 @@ if (settings.hasAssignedTo())
 
 if (settings.hasMemberList())
 {
-    %><tr><td class="labkey-form-label">Members</td><td><%=bean.memberList%></td><td style="width:100%;"><i><%
+    %><tr><td class="labkey-form-label">Members</td><td><%=bean.memberList%></td><td width="100%"><i><%
     if (settings.isSecure())
     {
         %> This <%=settings.getConversationName().toLowerCase()%> is private; only editors and the users on this list can view it.  These users will also<%
@@ -86,12 +86,12 @@ if (settings.hasMemberList())
 
 if (settings.hasExpires())
 {
-    %><tr><td class="labkey-form-label">Expires</td><td><input type="text" size="23" name="expires" value="<%=h(form.get("expires"))%>" ></td><td style="width:100%;"><i>Expired messages are not deleted, they are just no longer shown on the Portal page.</i></td></tr><%
+    %><tr><td class="labkey-form-label">Expires</td><td><input type="text" size="23" name="expires" value="<%=h(form.get("expires"))%>" ></td><td width="100%"><i>Expired messages are not deleted, they are just no longer shown on the Portal page.</i></td></tr><%
 }
 
 %>
     <tr>
-    <td class="labkey-form-label">Body</td><td colspan=2 style="width:100%;"><textarea cols="60" rows="15" id="body" name="body" style="width:100%;"><%=h(form.get("body"))%></textarea>
+    <td class="labkey-form-label">Body</td><td colspan=2 width="100%"><textarea cols="60" rows="15" id="body" name="body" width="100%"><%=h(form.get("body"))%></textarea>
         <input type="hidden" name="parentId" value="<%=bean.parentAnnouncement.getEntityId()%>"/>
     </td>
 </tr><%
@@ -119,9 +119,9 @@ if (settings.hasFormatPicker())
 
 <tr><td colspan="3"></td></tr>
 </table>
-<table class="labkey-form" width=100%>
+<table width=100%>
 	<tr class="labkey-wp-header">
-		<td title="Attachments" style="width:100%;" nowrap>
+		<td title="Attachments" width="100%" nowrap>
 		<div class="labkey-wp-title"><span>Attachments</span></div>
 		</td>
 	</tr>

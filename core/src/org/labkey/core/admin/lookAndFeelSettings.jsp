@@ -47,7 +47,7 @@
 <tr>
     <td colspan=2>Customize the look and feel of your LabKey Server installation (<%=bean.helpLink%>)</td>
 </tr>
-<tr style="height:1;"><td colspan=3 class=ms-titlearealine><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
+<tr><td colspan=3 class=labkey-title-area-line><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
 <tr>
     <td class="labkey-form-label">Web site description (appears in every page header)</td>
     <td><input type="text" name="systemDescription" size="50" value="<%= h(appProps.getSystemDescription()) %>"></td>

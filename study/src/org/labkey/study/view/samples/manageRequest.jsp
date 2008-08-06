@@ -312,7 +312,7 @@
                     else
                     {
                 %>
-                    <table class="labkey-study-requirements">
+                    <table class="labkey-data-region">
                         <tr>
                             <th align=left>Actor</th>
                             <th align=left>Location</th>

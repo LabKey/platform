@@ -18,9 +18,9 @@
 <%@ page import="org.labkey.api.util.DateUtil"%>
 <div style="padding:10px;">
 
-<table style="width:100%;">
+<table width="100%">
     <tr>
-        <td align=left><h3 class="labkey-heading-1">Table of Contents</h3></td>
+        <td align=left><h3 class="labkey-header-large">Table of Contents</h3></td>
         <td align=right><%=userEmail%><br><%=DateUtil.formatDate()%></td>
     </tr>
 </table>

@@ -63,7 +63,7 @@
 %>
 <% if (bean.isListView())
     WebPartView.startTitleFrame(out, category, null, "100%", null); %>
-<table class="labkey-form">
+<table>
 <%
         int formRowIndex = 0;
         String rowClass;
@@ -93,7 +93,7 @@
                     }
                 %>
                 <span id="reportParameters<%= showHideSuffix %>" style="display:<%= bean.isListView() ? "none" : "block" %>">
-                    <table class="labkey-form">
+                    <table>
                 <%
                     if (factory.allowsCohortFilter())
                     {

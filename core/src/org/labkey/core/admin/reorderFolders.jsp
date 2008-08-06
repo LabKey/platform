@@ -120,7 +120,7 @@ function toggleItemSelector()
     <input type="radio" name="resetToAlphabetical" value="false" <%= isCustomOrder ? "checked" : "" %> onChange="toggleItemSelector();" /> Use custom <%= reorderingProjects ? "project" : "folder" %> order
 </p>
 <p>
-    <table class="labkey-form">
+    <table>
         <tr>
             <td>
                 <select name="items" size="<%= containers.size() %>"  <%= isCustomOrder ? "" : "DISABLED" %>>

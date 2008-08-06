@@ -53,7 +53,7 @@
 
     <%=formatErrorsForPath("form")%>
 
-    <table style="border:1px solid black; background-color:#eeeeee">
+    <table class="labkey-bordered labkey-alternate-row">
         <tr><th>strings</th></tr>
         <tr><td>a</td><td><input name="strings" value="<%=h(get(form.getStrings(),0))%>"></td></tr>
         <tr><td>a</td><td><input name="strings" value="<%=h(get(form.getStrings(),1))%>"></td></tr>
@@ -62,7 +62,7 @@
     <p />
     <% for (int i=0 ; i<2 ; i++)
     {%>
-        <table style="border:1px solid black; background-color:#eeeeee">
+        <table class="labkey-bordered labkey-alternate-row">
             <%errorRow(out,"form.beans["+i+"].a");%>
             <tr><td>a</td><td><input type=checkbox name="beans[<%=i%>].a" <%=form.getBeans().get(i).getA()?"checked":""%>><input type=hidden name="<%=SpringActionController.FIELD_MARKER%>beans[<%=i%>].a"></td></tr>
             <%errorRow(out,"form.beans["+i+"].b");%>
@@ -100,7 +100,7 @@
 
 --%>
 <br><br><br>
-<div style="background-color:#f8f8f8;">
+<div class="labkey-alternate-row">
 <hr><b>errors</b><br>
 <%
 for (ObjectError e : getAllErrors(pageContext))

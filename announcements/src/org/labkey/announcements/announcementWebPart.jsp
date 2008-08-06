@@ -29,9 +29,9 @@
     Container c = me.getViewContext().getContainer();
 %>
 <!--ANNOUNCEMENTS-->
-<table class="labkey-form" width=100%>
+<table width=100%>
     <tr>
-        <td style="padding-top:2px; width:40%;" align="left"><%
+        <td width="40%" align="left"><%
             if (null != bean.insertURL)
             {
         %>[<a href="<%=bean.insertURL%>">new <%=bean.settings.getConversationName().toLowerCase()%></a>]&nbsp;<%
@@ -41,8 +41,8 @@
         %>[<a href="<%=bean.listURL%>">view list</a>]<%
     }
 %></td>
-        <td style="padding-top:2px; width:20%;" align="center"><%=bean.filterText%></td>
-        <td style="padding-top:2px; width:40%;" align="right"><%
+        <td  width="20%" align="center"><%=bean.filterText%></td>
+        <td  width="40%" align="right"><%
             if (null != bean.emailPrefsURL)
             {
         %>[<a href="<%=bean.emailPrefsURL%>">email&nbsp;preferences</a>]<%
@@ -64,14 +64,14 @@
     for (Announcement a : bean.announcements)
     { %>
     <tr>
-        <td class="labkey-announcement-title" style="width:40%;" align="left"><span><a href="<%=h(a.getThreadUrl(c))%>rowId=<%=a.getRowId()%>"><%=h(a.getTitle())%></a></span><%
+        <td class="labkey-announcement-title" width="40%" align="left"><span><a href="<%=h(a.getThreadUrl(c))%>rowId=<%=a.getRowId()%>"><%=h(a.getTitle())%></a></span><%
         if (a.getResponseCount() > 0)
             out.print(" (" + a.getResponseCount() + (a.getResponseCount() == 1 ? "&nbsp;response)" : "&nbsp;responses)"));
         %></td>
-        <td style="padding-top:14; padding-bottom:2; width:20%;" align="center"><%=h(a.getCreatedByName(bean.includeGroups, me.getViewContext()))%></td>
-        <td style="padding-top:14; padding-bottom:2; width:40%;" align="right" nowrap><%=DateUtil.formatDateTime(a.getCreated())%></td>
+        <td class="labkey-announcement-title" width="20%" align="center"><%=h(a.getCreatedByName(bean.includeGroups, me.getViewContext()))%></td>
+        <td class="labkey-announcement-title" width="40%" align="right" nowrap><%=DateUtil.formatDateTime(a.getCreated())%></td>
     </tr>
-    <tr style="height:1;"><td colspan=3 class="labkey-title-area-line"><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
+    <tr><td colspan=3 class="labkey-title-area-line"><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
     <tr><td colspan=3><%=a.translateBody(c)%></td></tr>
 <%
     if (a.getAttachments().size() > 0)

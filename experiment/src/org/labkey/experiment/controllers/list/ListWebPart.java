@@ -56,7 +56,7 @@ public class ListWebPart extends WebPartView<ViewContext>
     protected void renderView(ViewContext model, PrintWriter out) throws Exception
     {
         Map<String, ListDefinition> lists = ListService.get().getLists(model.getContainer());
-        out.write("<table class=\"labkey-form\">");
+        out.write("<table>");
         if (lists.isEmpty())
         {
             out.write("<tr><td>There are no user-defined lists in this folder.</td></tr>");

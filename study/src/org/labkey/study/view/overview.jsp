@@ -122,18 +122,26 @@
     %>
 </form>
 <br><br>
-<table class="labkey-data-region labkey-show-borders">
+<table class="labkey-data-region labkey-show-borders"><colgroup><col><col>
+    <%
 
-    <tr class="labkey-alternate-row">
-        <td><img alt="" width=60 height=1 src="<%=contextPath%>/_.gif"></td>
-        <td style="font-weight:bold;">ALL</td><%
+        for (Visit visit : visits)
+        {
+            if (!bean.showAll && !visit.isShowByDefault())
+                continue;
+            %><col><%
+        }
+        %></colgroup>
+    <tr class="labkey-alternate-row labkey-col-header">
+        <th class="labkey-data-region-title"><img alt="" width=60 height=1 src="<%=contextPath%>/_.gif"></th>
+        <th style="font-weight:bold;">ALL</th><%
 
         for (Visit visit : visits)
         {
             if (!bean.showAll && !visit.isShowByDefault())
                 continue;
             String label = visit.getDisplayString();
-            %><td align="center" valign="top"><%= h(label) %></td><%
+            %><th align="center" valign="top"><%= h(label) %></th><%
             //visitSummary.view?id=411.0
         }
         %>
@@ -171,7 +179,7 @@
                 category = "Uncategorized";
             if (!category.equals(prevCategory))
             {
-                %><tr><td class="labkey-highlight-cell" style="font-weight:bold;" align="left" colspan="<%= visits.length + 2%>"><%= h(category) %></td></tr><%
+                %><tr><td class="labkey-highlight-cell" align="left" colspan="<%= visits.length + 2%>"><%= h(category) %></td></tr><%
             }
             prevCategory = category;
         }
@@ -179,7 +187,7 @@
         String dataSetLabel = (dataSet.getLabel() != null ? dataSet.getLabel() : "" + dataSet.getDataSetId());
         String className= row%2==0 ? "labkey-alternate-row" : "labkey-row";
         %>
-        <tr class="<%= className %>" ><td align="center"><%= h(dataSetLabel) %><%
+        <tr class="<%= className %>" ><td align="center" class="labkey-row-header"><%= h(dataSetLabel) %><%
         if (null != StringUtils.trimToNull(dataSet.getDescription()))
         {
             %><%=PageFlowUtil.helpPopup(dataSetLabel, dataSet.getDescription())%><%

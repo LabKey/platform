@@ -29,10 +29,10 @@ Paste in a tab delimited file with the following fields.  Additional fields may 
 the DomainURI (the name of the type), or will just be ignored.
 </p>
 <table>
-    <tr><th align=left valign=top nowrap>Property<span style="color:red;">*</span></th><td valign=top>The property name as it will appear when data is later imported,required</td><td valign=top><code>PTID</code></td></tr>
+    <tr><th align=left valign=top nowrap>Property<span class="labkey-error">*</span></th><td valign=top>The property name as it will appear when data is later imported,required</td><td valign=top><code>PTID</code></td></tr>
     <tr><th align=left valign=top nowrap>Label</th><td valign=top>Display Name</td><td valign=top><code>Participant ID</code></td></tr>
     <tr><th align=left valign=top nowrap>ConceptURI</th><td valign=top>The concept links to a definition</td><td valign=top><code>SCHARP#Participant_ID</code></td></tr>
-    <tr><th align=left valign=top nowrap>RangeURI<span style="color:red;">*</span></th><td valign=top>The storage type of this value, required</td><td valign=top><code>xsd:int</code></td></tr>
+    <tr><th align=left valign=top nowrap>RangeURI<span class="labkey-error">*</span></th><td valign=top>The storage type of this value, required</td><td valign=top><code>xsd:int</code></td></tr>
 </table>
 
 <p>

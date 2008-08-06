@@ -100,7 +100,7 @@
 
 <form method="post" action="<%=PageFlowUtil.filter(context.getActionURL().relativeUrl("saveReportView", null, "Study-Reports"))%>" onsubmit="return validateForm();">
     <input type="hidden" name="datasetId" value="<%=bean.getDatasetId()%>">
-    <table class="labkey-form">
+    <table>
     <tr>
 <%
     if (confirm)
@@ -151,14 +151,14 @@
 %>
         <tr>
             <td><input type="checkbox" value="true" name="shareReport" <%=bean.getShareReport() ? "checked" : ""%>>Make this view available to all users.</td>
-            <td colspan=2>description:<textarea name="description" style="width:100%" rows="2"><%=StringUtils.trimToEmpty(bean.getDescription())%></textarea></td>
+            <td colspan=2>description:<textarea name="description" style="width: 100%;" rows="2"><%=StringUtils.trimToEmpty(bean.getDescription())%></textarea></td>
         </tr>
 <%
     } else {
 %>
         <tr>
             <td></td>
-            <td colspan=2>description:&nbsp;<textarea name="description" style="width:100%" rows="2"><%=StringUtils.trimToEmpty(bean.getDescription())%></textarea></td>
+            <td colspan=2>description:&nbsp;<textarea name="description" style="width: 100%;" rows="2"><%=StringUtils.trimToEmpty(bean.getDescription())%></textarea></td>
         </tr>
 <%
     }
@@ -169,7 +169,7 @@
     if (allowPlotView) {
 %>
     &nbsp;    
-    <table class="labkey-form">
+    <table>
         <tr>
             <td><input id="plotViewCheck" type="checkbox" name="isPlotView" value="true" <%=bean.getIsPlotView() ? "checked" : ""%> onclick="participantPlot();"><b>Show chart for only one participant at a time</b></td>
         </tr>

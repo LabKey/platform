@@ -55,8 +55,8 @@
 
 <form action="" method="post">
     <table cellpadding="0" class="normal">
-        <tr><td colspan="10" style="padding-top:14; padding-bottom:2"><span class="ms-announcementtitle">Snapshot Name and Type</span></td></tr>
-        <tr><td colspan="10" width="100%" class="ms-titlearealine"><img height="1" width="1" src="<%=AppProps.getInstance().getContextPath() + "/_.gif"%>"></td></tr>
+        <tr><td colspan="10" class="labkey-announcement-title"><span>Snapshot Name and Type</span></td></tr>
+        <tr><td colspan="10" width="100%" class="labkey-title-area-line"><img height="1" width="1" src="<%=AppProps.getInstance().getContextPath() + "/_.gif"%>"></td></tr>
 
         <tr><td>&nbsp;</td></tr>
         <tr><td>Snapshot Name:</td><td><input type="text" name="snapshotName" <%=isEdit ? "readonly" : ""%> value="<%=StringUtils.trimToEmpty(bean.getSnapshotName())%>"></td></tr>
@@ -65,8 +65,8 @@
         <tr><td>Automatic Refresh</td><td><input disabled="<%=isAutoUpdateable ? "" : "disabled"%>" onclick="onAutoUpdate();" type="radio" name="automaticRefresh"></td>
             <td><select id="updateDelay" style="display:none"><labkey:options value="<%=bean.getUpdateDelay()%>" map="<%=updateDelay%>"></labkey:options></select></td>
         </tr>
-        <tr><td colspan="10" style="padding-top:14; padding-bottom:2"><span class="ms-announcementtitle">Snapshot Column Selection</span></td></tr>
-        <tr><td colspan="10" width="100%" class="ms-titlearealine"><img height="1" width="1" src="<%=AppProps.getInstance().getContextPath() + "/_.gif"%>"></td></tr>
+        <tr><td colspan="10" class="labkey-announcement-title"><span>Snapshot Column Selection</span></td></tr>
+        <tr><td colspan="10" width="100%" class="labkey-title-area-line"><img height="1" width="1" src="<%=AppProps.getInstance().getContextPath() + "/_.gif"%>"></td></tr>
 
         <tr><td></td><td><table class="normal">
             <tr><td></td><th>Name</th><th>Label</th><th>Type</th><th>Description</th></tr>
