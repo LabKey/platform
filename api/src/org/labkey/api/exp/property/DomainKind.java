@@ -32,13 +32,18 @@ abstract public class DomainKind
     abstract public String getTypeLabel(Domain domain);
     abstract public boolean isDomainType(String domainURI);
     abstract public SQLFragment sqlObjectIdsInDomain(Domain domain);
+
 //    abstract public String generateDomainURI(Container container, String name);
+
     abstract public Map.Entry<TableInfo, ColumnInfo> getTableInfo(User user, Domain domain, Container[] containers);
     abstract public ActionURL urlShowData(Domain domain);
     abstract public ActionURL urlEditDefinition(Domain domain);
 
-    // return the "system" properties for this domain
+    /**
+     * return the "system" properties for this domain
+     */
     abstract public DomainProperty[] getDomainProperties(String domainURI);
+    
     public boolean canEditDefinition(User user, Domain domain)
     {
         return domain.getContainer().hasPermission(user, ACL.PERM_ADMIN);

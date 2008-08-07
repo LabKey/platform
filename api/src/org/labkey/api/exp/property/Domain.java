@@ -16,13 +16,13 @@
 
 package org.labkey.api.exp.property;
 
-import org.labkey.api.security.User;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.view.ActionURL;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainNotFoundException;
-
-import java.sql.SQLException;
+import org.labkey.api.security.User;
+import org.labkey.api.view.ActionURL;
 
 public interface Domain extends IPropertyType
 {
@@ -43,6 +43,8 @@ public interface Domain extends IPropertyType
     ActionURL urlShowData();
 
     DomainProperty addProperty();
+
+    ColumnInfo[] getColumns(TableInfo sourceTable, ColumnInfo lsidColumn, User user);
 
     void delete(User user) throws DomainNotFoundException;
     void save(User user) throws ChangePropertyDescriptorException;
