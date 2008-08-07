@@ -32,7 +32,7 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.chart.ChartRenderer;
 import org.labkey.api.reports.chart.ChartRendererFactory;
 import org.labkey.api.reports.report.view.ChartDesignerBean;
-import org.labkey.api.reports.report.view.ChartUtil;
+import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -73,7 +73,7 @@ public class ChartServiceImpl extends BaseRemoteService implements ChartService
             Report report = bean.getReport();
             if (report != null)
             {
-                final String key = ChartUtil.getReportQueryKey(report.getDescriptor());
+                final String key = ReportUtil.getReportQueryKey(report.getDescriptor());
                 if (!reportNameExists(_context, chart.getReportName(), key))
                 {
                     ReportService.get().saveReport(_context, key, report);

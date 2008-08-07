@@ -21,7 +21,7 @@ import org.labkey.api.query.*;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.QueryReport;
-import org.labkey.api.reports.report.view.ChartUtil;
+import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -220,7 +220,7 @@ public class DataSetQueryView extends QueryView
                 bean.setDataRegionName(getDataRegionName());
 
                 bean.setRedirectUrl(getViewContext().getActionURL().toString());
-                url = ChartUtil.getRReportDesignerURL(_viewContext, bean);
+                url = ReportUtil.getRReportDesignerURL(_viewContext, bean);
                 break;
         }
         return url;

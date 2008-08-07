@@ -17,11 +17,10 @@
 package org.labkey.study.reports;
 
 import org.apache.commons.lang.math.NumberUtils;
-import org.apache.commons.lang.StringUtils;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.RunChartReportView;
-import org.labkey.api.reports.report.view.ChartUtil;
+import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.view.*;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.BaseStudyController;
@@ -87,7 +86,7 @@ public class StudyRunChartReportView extends RunChartReportView
     {
         for (Report report : reports)
         {
-            ActionURL url = ChartUtil.getPlotChartURL(getViewContext(), report);
+            ActionURL url = ReportUtil.getPlotChartURL(getViewContext(), report);
             if (participantId != null)
                 url.addParameter(PARTICIPANT_KEY, participantId);
 

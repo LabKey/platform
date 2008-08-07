@@ -2639,40 +2639,24 @@ public class StudyController extends BaseStudyController
         if (plist == null)
         {
             // not in cache, or session expired, try to regenerate the list
-            plist = generateParticipantListFromURL(context);
+            plist = generateParticipantListFromURL(context, dataset, viewName, cohort, encodedQCState);
             map.put(key, plist);
         }
         return plist;
     }
 
-    private static List<String> generateParticipantListFromURL(ViewContext context)
+    private static List<String> generateParticipantListFromURL(ViewContext context, int dataset, String viewName, Cohort cohort, String encodedQCState)
     {
         try {
             final StudyManager studyMgr = StudyManager.getInstance();
             final Study study = studyMgr.getStudy(context.getContainer());
-            String cohortIdStr = context.getActionURL().getParameter("CohortId");
             QCStateSet qcStateSet = null;
             if (StudyManager.getInstance().showQCStates(context.getContainer()))
             {
-                String qcState = context.getActionURL().getParameter(SharedFormParameters.QCState);
-                qcStateSet = QCStateSet.getSelectedStates(context.getContainer(), qcState);
+                qcStateSet = QCStateSet.getSelectedStates(context.getContainer(), encodedQCState);
             }
 
-            Cohort cohort = null;
-            if (cohortIdStr != null && StudyManager.getInstance().showCohorts(context.getContainer(), context.getUser()))
-            {
-                try
-                {
-                    cohort = StudyManager.getInstance().getCohortForRowId(context.getContainer(), context.getUser(), Integer.parseInt(cohortIdStr));
-                }
-                catch (NumberFormatException e)
-                {
-                    // fall through with null cohort
-                }
-            }
-
-            int datasetId = null == context.get(DataSetDefinition.DATASETKEY) ? 0 : Integer.parseInt((String) context.get(DataSetDefinition.DATASETKEY));
-            DataSetDefinition def = studyMgr.getDataSetDefinition(study, datasetId);
+            DataSetDefinition def = studyMgr.getDataSetDefinition(study, dataset);
             if (null == def)
                 return Collections.emptyList();
             String typeURI = def.getTypeURI();
@@ -2691,7 +2675,9 @@ public class StudyController extends BaseStudyController
             QuerySettings qs = new QuerySettings(context, DataSetQueryView.DATAREGION);
             qs.setSchemaName(querySchema.getSchemaName());
             qs.setQueryName(def.getLabel());
-            DataSetQueryView queryView = new DataSetQueryView(datasetId, querySchema, qs, visit, cohort, qcStateSet);
+            qs.setViewName(viewName);
+            DataSetQueryView queryView = new DataSetQueryView(dataset, querySchema, qs, visit, cohort, qcStateSet);
+
             return generateParticipantList(queryView);
         }
         catch (Exception e)

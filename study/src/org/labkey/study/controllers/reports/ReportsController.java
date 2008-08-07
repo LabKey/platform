@@ -33,7 +33,7 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ChartDesignerBean;
-import org.labkey.api.reports.report.view.ChartUtil;
+import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.view.ReportDesignBean;
 import org.labkey.api.security.ACL;
@@ -505,7 +505,7 @@ public class ReportsController extends BaseStudyController
             Report report = form.getReport();
             Report oldReport;
             final String redirect = (String)getViewContext().get("redirect");
-            final String key = ChartUtil.getReportQueryKey(report.getDescriptor());
+            final String key = ReportUtil.getReportQueryKey(report.getDescriptor());
 
             if (!reportNameExists(getViewContext(), form.getViewName(), key))
             {
@@ -622,10 +622,10 @@ public class ReportsController extends BaseStudyController
                 if (def != null)
                 {
                     queryName = def.getLabel();
-                    return ChartUtil.getReportKey(StudyManager.getSchemaName(), queryName);
+                    return ReportUtil.getReportKey(StudyManager.getSchemaName(), queryName);
                 }
             }
-            return ChartUtil.getReportQueryKey(form.getReport().getDescriptor());
+            return ReportUtil.getReportQueryKey(form.getReport().getDescriptor());
         }
 
         public ActionURL getSuccessURL(SaveReportViewForm form)
@@ -1859,10 +1859,10 @@ public class ReportsController extends BaseStudyController
             for (Pair<String, String> param : form.getParameters())
                 props.put(param.getKey(), param.getValue());
 
-            for (ReportDesignBean.ExParam param : form.getExParam())
-                props.put(param.getKey(), param.getValue());
             props.put("isAdmin", String.valueOf(getContainer().hasPermission(getUser(), ACL.PERM_ADMIN)));
             props.put("isGuest", String.valueOf(getUser().isGuest()));
+            props.put("isParticipantChart", getViewContext().getActionURL().getParameter("isParticipantChart"));
+            props.put("participantId", getViewContext().getActionURL().getParameter("participantId"));
 
             _datasetId = NumberUtils.toInt((String)getViewContext().get(DataSetDefinition.DATASETKEY));
             DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(StudyManager.getInstance().getStudy(getContainer()), _datasetId);
@@ -1923,7 +1923,7 @@ public class ReportsController extends BaseStudyController
 
         if (!participantList.isEmpty())
         {
-            if (participantId == null)
+            if (participantId == null || !participantList.contains(participantId))
             {
                 participantId = participantList.get(0);
                 context.put("participantId", participantId);
@@ -2201,7 +2201,7 @@ public class ReportsController extends BaseStudyController
                 out.print(" onchange=\"LABKEY.setDirty(true);return true;\">");
                 out.print("Participant chart.&nbsp;" + PageFlowUtil.helpPopup("participant chart", "A participant chart view shows measures for only one participant at a time. A participant chart view allows the user to step through charts for each participant shown in any dataset grid."));
                 out.print("</td></tr>");
-                out.print("<tr><td><input type=\"checkbox\" name=\"cached\" " + (bean.isCached() ? "checked" : "") + " onchange=\"LABKEY.setDirty(true);return true;\">Automatically cached this report for faster reloading.</td></tr>");
+                out.print("<tr><td><input type=\"checkbox\" name=\"cached\" " + (bean.isCached() ? "checked" : "") + " onchange=\"LABKEY.setDirty(true);return true;\">Automatically cache this report for faster reloading.</td></tr>");
                 out.print("</table>");
             }
         }

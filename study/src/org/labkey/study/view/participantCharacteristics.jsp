@@ -28,7 +28,7 @@
 <%@ page import="org.labkey.api.reports.ReportService" %>
 <%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
 <%@ page import="org.labkey.api.reports.report.view.ChartDesignerBean" %>
-<%@ page import="org.labkey.api.reports.report.view.ChartUtil" %>
+<%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
 <%@ page import="org.labkey.api.security.ACL" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
@@ -59,15 +59,16 @@
 
     chartBean.setReportType(StudyChartQueryReport.TYPE);
     chartBean.setSchemaName(schema.getSchemaName());
-    chartBean.addParam("isParticipantChart", "true");
-    chartBean.addParam("participantId", bean.getParticipantId());
     String currentUrl = bean.getRedirectUrl();
     if (currentUrl == null)
         currentUrl = context.getActionURL().getLocalURIString();
 
-    ActionURL url = ChartUtil.getChartDesignerURL(context, chartBean);
-    url.setPageFlow("Study-Reports");
+    ActionURL url = ReportUtil.getChartDesignerURL(context, chartBean);
+    url.setAction(ReportsController.DesignChartAction.class);
     url.addParameter("returnUrl", currentUrl);
+    url.addParameter("isParticipantChart", "true");
+    url.addParameter("participantId", bean.getParticipantId());
+
     StudyManager manager = StudyManager.getInstance();
     Study study = manager.getStudy(context.getContainer());
 

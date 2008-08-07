@@ -119,6 +119,16 @@ public class ReportsController extends SpringActionController
         {
             return new ActionURL(ManageViewsAction.class, c);
         }
+
+        public ActionURL urlPlotChart(Container c)
+        {
+            return new ActionURL(PlotChartAction.class, c);
+        }
+
+        public ActionURL urlDeleteReport(Container c)
+        {
+            return new ActionURL(DeleteReportAction.class, c);
+        }
     }
 
     public ReportsController() throws Exception
@@ -207,7 +217,7 @@ public class ReportsController extends SpringActionController
             {
                 ActionURL url;
                 if (report.getDescriptor().getReportId() != -1)
-                    url = ChartUtil.getPlotChartURL(getViewContext(), form.getReport());
+                    url = ReportUtil.getPlotChartURL(getViewContext(), form.getReport());
                 else
                 {
                     url = new ActionURL(PlotChartAction.class, getContainer());
@@ -261,8 +271,8 @@ public class ReportsController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            String reportId = getViewContext().getRequest().getParameter(ChartUtil.REPORT_ID);
-            String forwardUrl = getViewContext().getRequest().getParameter(ChartUtil.FORWARD_URL);
+            String reportId = getViewContext().getRequest().getParameter(ReportDescriptor.Prop.reportId.name());
+            String forwardUrl = getViewContext().getRequest().getParameter(ReportUtil.FORWARD_URL);
             Report report = null;
 
             if (reportId != null)
@@ -604,7 +614,7 @@ public class ReportsController extends SpringActionController
                 // on new reports, check for duplicates
                 if (_report.getDescriptor().getReportId() == -1)
                 {
-                    if (reportNameExists(_report.getDescriptor().getReportName(), ChartUtil.getReportQueryKey(_report.getDescriptor())))
+                    if (reportNameExists(_report.getDescriptor().getReportName(), ReportUtil.getReportQueryKey(_report.getDescriptor())))
                     {
                         errors.reject("saveRReport", "There is already a report with the name of: '" + _report.getDescriptor().getReportName() +
                                 "'. Please specify a different name.");
@@ -623,7 +633,7 @@ public class ReportsController extends SpringActionController
             if (_report != null)
             {
                 validatePermissions();
-                ReportService.get().saveReport(getViewContext(), ChartUtil.getReportQueryKey(_report.getDescriptor()), _report);
+                ReportService.get().saveReport(getViewContext(), ReportUtil.getReportQueryKey(_report.getDescriptor()), _report);
             }
             return true;
         }
@@ -846,7 +856,7 @@ public class ReportsController extends SpringActionController
                     return null;
                 }
             }
-            ChartUtil.renderErrorImage(getViewContext().getResponse().getOutputStream(), 450, 100, "Resource not found");
+            ReportUtil.renderErrorImage(getViewContext().getResponse().getOutputStream(), 450, 100, "Resource not found");
             return null;
         }
 

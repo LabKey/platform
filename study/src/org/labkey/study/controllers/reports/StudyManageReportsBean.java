@@ -16,22 +16,18 @@
 
 package org.labkey.study.controllers.reports;
 
-import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.QueryReport;
-import org.labkey.api.reports.report.RReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.RReport;
-import org.labkey.api.reports.report.view.ChartUtil;
+import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ManageReportsBean;
-import org.labkey.api.reports.report.view.RunRReportView;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.TabStripView;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
@@ -211,7 +207,7 @@ public class StudyManageReportsBean extends ManageReportsBean
         {
             // dataset report key encoding is: <schemaName>/<queryName>/<viewName>
             String key = r.getDescriptor().getReportKey();
-            String[] parts = ChartUtil.splitReportKey(key);
+            String[] parts = ReportUtil.splitReportKey(key);
 
             if (ReportManager.ALL_DATASETS_KEY.equals(key))
             {

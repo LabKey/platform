@@ -17,11 +17,9 @@ package org.labkey.study.reports;
 
 import org.labkey.api.reports.report.view.DefaultReportUIProvider;
 import org.labkey.api.reports.report.view.ChartDesignerBean;
-import org.labkey.api.reports.report.view.ChartUtil;
+import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.RReportBean;
-import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.RReport;
-import org.labkey.api.reports.Report;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.query.QuerySettings;
@@ -48,7 +46,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
         ChartDesignerBean chartBean = new ChartDesignerBean(settings);
         chartBean.setReportType(StudyChartQueryReport.TYPE);
 
-        ActionURL url = ChartUtil.getChartDesignerURL(context, chartBean);
+        ActionURL url = ReportUtil.getChartDesignerURL(context, chartBean);
         url.addParameter(DataSetDefinition.DATASETKEY, NumberUtils.toInt(context.getActionURL().getParameter(DataSetDefinition.DATASETKEY), 0));
         url.setAction(ReportsController.DesignChartAction.class);
 
@@ -64,7 +62,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
                 rBean.setReportType(StudyRReport.TYPE);
                 rBean.setRedirectUrl(context.getActionURL().getLocalURIString());
 
-                designers.put(StudyRReport.TYPE, ChartUtil.getRReportDesignerURL(context, rBean).getLocalURIString());
+                designers.put(StudyRReport.TYPE, ReportUtil.getRReportDesignerURL(context, rBean).getLocalURIString());
             }
             else
                 designers.put(StudyRReport.TYPE, "javascript:alert('You do not have the required authorization to create R Views.')");

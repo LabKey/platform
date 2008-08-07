@@ -35,7 +35,7 @@ import org.labkey.api.reports.chart.ChartRenderer;
 import org.labkey.api.reports.chart.ChartRendererFactory;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ChartDesignerBean;
-import org.labkey.api.reports.report.view.ChartUtil;
+import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -202,9 +202,9 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
             DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, showWithDataset);
             if (def != null)
                 queryName = def.getLabel();
-            return ChartUtil.getReportKey(StudyManager.getSchemaName(), queryName);
+            return ReportUtil.getReportKey(StudyManager.getSchemaName(), queryName);
         }
-        return ChartUtil.getReportQueryKey(descriptor);
+        return ReportUtil.getReportQueryKey(descriptor);
     }
 
     private boolean reportNameExists(ViewContext context, String reportName, String key)

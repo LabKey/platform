@@ -22,13 +22,12 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.query.*;
-import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportDB;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ReportQueryView;
-import org.labkey.api.reports.report.view.ChartUtil;
+import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ACL;
@@ -113,7 +112,7 @@ public class ReportManager implements StudyManager.StudyCachableListener
     {
         SimpleFilter filter = new SimpleFilter();
         Container container = context.getContainer();
-        String reportKey = ChartUtil.getReportKey(StudyManager.getSchemaName(), def.getLabel());
+        String reportKey = ReportUtil.getReportKey(StudyManager.getSchemaName(), def.getLabel());
 
         List<Pair<String, String>> labels = new ArrayList<Pair<String, String>>();
 
@@ -404,7 +403,7 @@ public class ReportManager implements StudyManager.StudyCachableListener
                 descriptor.setCreated(report.getCreated());
                 descriptor.setReportName(report.getLabel());
                 descriptor.initFromQueryString(report.getParams());
-                descriptor.setReportKey(ChartUtil.getReportQueryKey(descriptor));
+                descriptor.setReportKey(ReportUtil.getReportQueryKey(descriptor));
 
                 return newReport;
             }
@@ -474,7 +473,7 @@ public class ReportManager implements StudyManager.StudyCachableListener
                 DataSetDefinition def = getDataSetDefinition(showWithDataset, containerId);
                 if (def != null)
                     queryName = def.getLabel();
-                return ChartUtil.getReportKey(StudyManager.getSchemaName(), queryName);
+                return ReportUtil.getReportKey(StudyManager.getSchemaName(), queryName);
             }
             return key;
         }
@@ -557,8 +556,8 @@ public class ReportManager implements StudyManager.StudyCachableListener
                 if (def != null)
                 {
                     _log.debug("Cache cleared notification on dataset : " + id);
-                    String reportKey = ChartUtil.getReportKey(StudyManager.getSchemaName(), def.getLabel());
-                    for (Report report : ChartUtil.getReports(context, reportKey, true))
+                    String reportKey = ReportUtil.getReportKey(StudyManager.getSchemaName(), def.getLabel());
+                    for (Report report : ReportUtil.getReports(context, reportKey, true))
                     {
                         report.clearCache();
                     }

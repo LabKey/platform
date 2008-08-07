@@ -28,7 +28,7 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ChartReport;
 import org.labkey.api.reports.report.ChartReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
-import org.labkey.api.reports.report.view.ChartUtil;
+import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Cache;
 import org.labkey.api.view.*;
@@ -156,7 +156,7 @@ public class EnrollmentReport extends ChartReport
 
         if (errorMessage != null)
         {
-            ChartUtil.renderErrorImage(viewContext.getResponse().getOutputStream(), this, errorMessage);
+            ReportUtil.renderErrorImage(viewContext.getResponse().getOutputStream(), this, errorMessage);
             //return new VBox(ExceptionUtil.getErrorView(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, errorMessage, null, viewContext.getRequest(), false));
         }
         return null;
