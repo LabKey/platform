@@ -19,30 +19,29 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.StudySchema;
-import org.labkey.study.controllers.CohortController;
+import org.labkey.study.controllers.StudyController;
 
 /**
+ * This is a domain kind for the Study object itself
+ *
  * User: jgarms
- * Date: Jul 17, 2008
- * Time: 1:37:53 PM
+ * Date: Jul 30, 2008
+ * Time: 2:35:46 PM
  */
-public class CohortDomainKind extends BaseStudyDomainKind
+public class StudyDomainKind extends BaseStudyDomainKind
 {
-
     protected Class<? extends Extensible> getSupportedClass()
     {
-        return Cohort.class;
+        return Study.class;
     }
 
     protected TableInfo getTableInfo()
     {
-        return StudySchema.getInstance().getTableInfoCohort();
+        return StudySchema.getInstance().getTableInfoStudy();
     }
 
     public ActionURL urlEditDefinition(Domain domain)
     {
-        // This isn't really the edit url, but instead the destination after editing
-        return new ActionURL(CohortController.ManageCohortsAction.class, domain.getContainer());
+        return new ActionURL(StudyController.ManageStudyAction.class, domain.getContainer());
     }
-
 }

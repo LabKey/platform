@@ -31,7 +31,7 @@ import java.io.Serializable;
  * Date: Jan 6, 2006
  * Time: 10:28:55 AM
  */
-public class Visit extends AbstractStudyEntity<Visit> implements Extensible, Cloneable, Serializable
+public class Visit extends AbstractStudyEntity<Visit> implements Cloneable, Serializable
 {
     // standard strings to use in URLs etc
     public static final String VISITKEY = "visitRowId";
@@ -90,7 +90,6 @@ public class Visit extends AbstractStudyEntity<Visit> implements Extensible, Clo
     private Character _typeCode;
     private Integer _visitDateDatasetid = 0;
     private Integer _cohortId;
-    private String _lsid;
     
     public Visit()
     {
@@ -185,7 +184,7 @@ public class Visit extends AbstractStudyEntity<Visit> implements Extensible, Clo
     {
         if (_typeCode == null)
             return null;
-        return Type.getByCode(_typeCode);
+        return Type.getByCode(_typeCode.charValue());
     }
 
 
@@ -197,7 +196,7 @@ public class Visit extends AbstractStudyEntity<Visit> implements Extensible, Clo
     
     public void setVisitDateDatasetId(Integer visitDateDatasetId)
     {
-        _visitDateDatasetid = visitDateDatasetId == null ? 0 : visitDateDatasetId;
+        _visitDateDatasetid = visitDateDatasetId == null ? 0 : visitDateDatasetId.intValue();
     }
 
 
@@ -274,15 +273,5 @@ public class Visit extends AbstractStudyEntity<Visit> implements Extensible, Clo
         if (_cohortId == null)
             return null;
         return Table.selectObject(StudySchema.getInstance().getTableInfoCohort(), _cohortId, Cohort.class);
-    }
-
-    public String getLsid()
-    {
-        return _lsid;
-    }
-
-    public void setLsid(String lsid)
-    {
-        _lsid = lsid;
     }
 }

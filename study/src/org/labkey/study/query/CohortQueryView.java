@@ -38,11 +38,9 @@ import java.io.Writer;
  */
 public class CohortQueryView extends ExtensibleObjectQueryView
 {
-    private final boolean allowEditing;
-
     public CohortQueryView(User user, Study study, ViewContext viewContext, boolean allowEditing)
     {
-        super(user, study, Cohort.class, viewContext);
+        super(user, study, Cohort.class, viewContext, allowEditing);
         QuerySettings settings = getSettings();
         // We don't have many cohorts typically. Let's cut down on the number of buttons,
         // as this isn't a complex view
@@ -50,14 +48,13 @@ public class CohortQueryView extends ExtensibleObjectQueryView
         settings.setShowRows(ShowRows.ALL);
         setShowPagination(false);
         setShowPaginationCount(false);
-        this.allowEditing = allowEditing;
     }
 
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
         super.populateButtonBar(view, bar);
 
-        if (allowEditing)
+        if (allowEditing())
         {
             ActionURL insertURL = new ActionURL(CohortController.InsertAction.class, getSchema().getContainer());
             ActionButton insertButton = new ActionButton(insertURL, "Insert New");
@@ -75,7 +72,7 @@ public class CohortQueryView extends ExtensibleObjectQueryView
     protected DataView createDataView()
     {
         DataView view = super.createDataView();
-        if (allowEditing &&
+        if (allowEditing() &&
                 getUser().isAdministrator() &&
                 StudyManager.getInstance().showCohorts(getContainer(), getUser()))
         {

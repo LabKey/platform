@@ -2,11 +2,8 @@ package org.labkey.study.query;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.PropertyForeignKey;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.Cohort;
 import org.labkey.study.model.StudyManager;
@@ -60,24 +57,11 @@ public class CohortTable extends StudyTable
         Domain domain = PropertyService.get().getDomain(schema.getContainer(), domainURI);
         if (domain != null)
         {
-            DomainProperty[] domainProperties = domain.getProperties();
-            for (DomainProperty property : domainProperties)
+            ColumnInfo[] extraColumns = domain.getColumns(this, lsidColumn, schema.getUser());
+            for (ColumnInfo extraColumn : extraColumns)
             {
-                ColumnInfo column = new ExprColumn(this,
-                    property.getName(),
-                    PropertyForeignKey.getValueSql(
-                        lsidColumn.getValueSql(ExprColumn.STR_TABLE_ALIAS),
-                        property.getValueSQL(),
-                        property.getPropertyId(),
-                        true),
-                    property.getSqlType());
-
-                column.setScale(property.getScale());
-                column.setInputType(property.getInputType());
-                column.setDescription(property.getDescription());
-                property.initColumn(schema.getUser(), column);
-                safeAddColumn(column);
-                visibleColumns.add(FieldKey.fromParts(column.getName()));
+                safeAddColumn(extraColumn);
+                visibleColumns.add(FieldKey.fromParts(extraColumn.getName()));
             }
         }
         

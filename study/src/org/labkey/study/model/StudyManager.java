@@ -35,23 +35,24 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
-import org.labkey.api.util.*;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.study.StudyService;
+import org.labkey.api.util.Cache;
+import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.study.StudyService;
-import org.labkey.study.model.QCState;
-import org.labkey.study.model.QCStateSet;
 import org.labkey.common.tools.TabLoader;
 import org.labkey.common.util.CPUTimer;
 import org.labkey.study.QueryHelper;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudyCache;
 import org.labkey.study.StudySchema;
-import org.labkey.study.query.DataSetTable;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.designer.StudyDesignManager;
+import org.labkey.study.query.DataSetTable;
 import org.labkey.study.reports.ReportManager;
 import org.labkey.study.visitmanager.DateVisitManager;
 import org.labkey.study.visitmanager.SequenceVisitManager;
@@ -256,18 +257,11 @@ public class StudyManager
             throw new IllegalStateException("Visit container does not match study");
         visit.setContainer(study.getContainer());
 
-        // Lsid requires the row id, which does not get created until this object has been inserted into the db
-        if (visit.getLsid() != null)
-            throw new IllegalStateException("Attempt to create a visit with lsid already set");
-        visit.setLsid(LSID_REQUIRED);
         visit = _visitHelper.create(user, visit);
 
         if (visit.getRowId() == 0)
             throw new IllegalStateException("Visit rowId has not been set properly");
 
-        visit.setLsid(createLsid(visit, visit.getRowId()));
-
-        updateVisit(user, visit);
         return visit.getRowId();
     }
 

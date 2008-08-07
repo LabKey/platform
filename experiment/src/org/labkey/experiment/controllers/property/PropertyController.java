@@ -28,7 +28,6 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.*;
-import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -74,7 +73,6 @@ public class PropertyController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild("Experiment", ExperimentController.ExperimentUrlsImpl.get().getBeginURL(getContainer()));
             return root.addChild("Edit Fields in " + _domain.getLabel());
         }
     }

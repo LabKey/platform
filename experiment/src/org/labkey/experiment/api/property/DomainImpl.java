@@ -26,6 +26,8 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.PropertyForeignKey;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpressionFactory;
@@ -396,6 +398,31 @@ public class DomainImpl implements Domain
                 return entry.getKey().getDetailsURL(Collections.singletonMap((String) null, parent));
             }
         });
+    }
+
+    public ColumnInfo[] getColumns(TableInfo sourceTable, ColumnInfo lsidColumn, User user)
+    {
+        DomainProperty[] domainProperties = getProperties();
+        ColumnInfo[] columns = new ColumnInfo[domainProperties.length];
+        for (int i=0; i<domainProperties.length; i++)
+        {
+            DomainProperty property = domainProperties[i];
+            ColumnInfo column = new ExprColumn(sourceTable,
+                property.getName(),
+                PropertyForeignKey.getValueSql(
+                    lsidColumn.getValueSql(ExprColumn.STR_TABLE_ALIAS),
+                    property.getValueSQL(),
+                    property.getPropertyId(),
+                    true),
+                property.getSqlType());
+
+            column.setScale(property.getScale());
+            column.setInputType(property.getInputType());
+            column.setDescription(property.getDescription());
+            property.initColumn(user, column);
+            columns[i] = column;
+        }
+        return columns;
     }
 
     private DomainDescriptor edit()

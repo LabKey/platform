@@ -46,10 +46,7 @@ import org.labkey.api.wiki.WikiService;
 import org.labkey.study.assay.*;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.assay.query.AssaySchema;
-import org.labkey.study.controllers.DatasetController;
-import org.labkey.study.controllers.CohortController;
-import org.labkey.study.controllers.StudyController;
-import org.labkey.study.controllers.StudyDefinitionController;
+import org.labkey.study.controllers.*;
 import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.controllers.designer.DesignerController;
 import org.labkey.study.controllers.plate.PlateController;
@@ -91,14 +88,13 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
     public static final WebPartFactory assayListWebPartFactory = new AssayListWebPartFactory();
     public static final WebPartFactory assayDetailsWebPartFactory = new AssayDetailsWebPartFactory();
     public static final WebPartFactory participantWebPartFactory = new ParticipantWebPartFactory();
-    public static final WebPartFactory visitWebPartFactory = new VisitWebPartFactory();
 
     public StudyModule()
     {
-        super(NAME, 8.25, "/org/labkey/study", true, reportsPartFactory, reportsWidePartFactory, samplesPartFactory,
+        super(NAME, 8.26, "/org/labkey/study", true, reportsPartFactory, reportsWidePartFactory, samplesPartFactory,
                 samplesWidePartFactory, datasetsPartFactory, manageStudyPartFactory,
                 enrollmentChartPartFactory, studyDesignsWebPartFactory, studyDesignSummaryWebPartFactory,
-                assayListWebPartFactory, assayDetailsWebPartFactory, participantWebPartFactory, visitWebPartFactory);
+                assayListWebPartFactory, assayDetailsWebPartFactory, participantWebPartFactory);
 
         addController("study", StudyController.class);
         addController("study-reports", ReportsController.class);
@@ -109,7 +105,7 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
         addController("assay", AssayController.class);
         addController("dataset", DatasetController.class);
         addController("study-definition", StudyDefinitionController.class);
-        addController("study-manage", CohortController.class);
+        addController("cohort", CohortController.class);
 
         PlateService.register(new PlateManager());
         AssayService.setInstance(new AssayManager());
@@ -121,6 +117,7 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
         PropertyService.get().registerDomainKind(new DatasetDomainKind());
         PropertyService.get().registerDomainKind(new AssayDomainKind());
         PropertyService.get().registerDomainKind(new CohortDomainKind());
+        PropertyService.get().registerDomainKind(new StudyDomainKind());
 
         Search.register(new StudySearch());
 

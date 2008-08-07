@@ -63,7 +63,6 @@
       <ns:column columnName="SequenceNumMax"/>
       <ns:column columnName="SequenceNumMin"/>
       <ns:column columnName="cohortid"/>
-      <ns:column columnName="LSID"/>  
     </ns:columns>
   </ns:table>
   <ns:table tableName="VisitMap" tableDbType="TABLE">

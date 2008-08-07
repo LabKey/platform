@@ -21,7 +21,6 @@ import org.labkey.api.security.User;
 import org.labkey.study.model.Cohort;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.Visit;
 
 import java.sql.SQLException;
 
@@ -68,15 +67,6 @@ public class StudyUpgrader
         {
             study.setLsid(manager.createLsid(study, study.getContainer().getRowId()));
             manager.updateStudy(user, study);
-        }
-
-        for (Visit visit : study.getVisits())
-        {
-            if (UPGRADE_REQUIRED.equals(visit.getLsid()))
-            {
-                visit.setLsid(manager.createLsid(visit, visit.getRowId()));
-                manager.updateVisit(user, visit);
-            }
         }
 
         for (Cohort cohort : study.getCohorts(user))

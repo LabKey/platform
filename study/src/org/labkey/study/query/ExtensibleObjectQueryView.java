@@ -33,9 +33,17 @@ import org.labkey.study.model.Study;
  */
 public class ExtensibleObjectQueryView extends QueryView
 {
-    public ExtensibleObjectQueryView(User user, Study study, Class<? extends Extensible> extensibleClass, ViewContext context)
+    private final boolean allowEditing;
+
+    public ExtensibleObjectQueryView(
+        User user,
+        Study study,
+        Class<? extends Extensible> extensibleClass,
+        ViewContext context,
+        boolean allowEditing)
     {
         super(new StudyQuerySchema(study, user, true));
+        this.allowEditing = allowEditing;
         setShadeAlternatingRows(true);
         setShowBorders(true);
         QuerySettings settings = getSchema().getSettings(context, null);
@@ -53,5 +61,10 @@ public class ExtensibleObjectQueryView extends QueryView
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
         bar.add(createExportMenuButton(false));
+    }
+
+    public boolean allowEditing()
+    {
+        return allowEditing;
     }
 }
