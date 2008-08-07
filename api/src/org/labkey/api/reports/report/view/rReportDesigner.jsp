@@ -21,7 +21,7 @@
 <%@ page import="org.labkey.api.reports.Report"%>
 <%@ page import="org.labkey.api.reports.report.RReportDescriptor"%>
 <%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
-<%@ page import="org.labkey.api.reports.report.view.ChartUtil" %>
+<%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
 <%@ page import="org.labkey.api.reports.report.view.RReportBean" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportDesignBean" %>
 <%@ page import="org.labkey.api.reports.report.view.RunRReportView" %>
@@ -40,7 +40,7 @@
 <%
     JspView<RReportBean> me = (JspView<RReportBean>) HttpView.currentView();
     RReportBean bean = me.getModelBean();
-    List<Report> sharedReports = ChartUtil.getAvailableSharedRScripts(HttpView.currentContext(), bean);
+    List<Report> sharedReports = ReportUtil.getAvailableSharedRScripts(HttpView.currentContext(), bean);
     List<String> includedReports = bean.getIncludedReports();
     String renderAction = (String)HttpView.currentRequest().getAttribute("renderAction");
     ViewContext context = HttpView.currentContext();
@@ -210,16 +210,6 @@
     <input type="hidden" name="reportId" value="<%=bean.getReportId()%>">
     <input type="hidden" name="cacheKey" value="<%=RunRReportView.getReportCacheKey(bean.getReportId(), HttpView.currentContext().getContainer())%>">
     <input type="hidden" name="showDebug" value="true">
-
-<%
-    int i=0;
-    for (ReportDesignBean.ExParam param : bean.getExParam()) {
-%>
-    <input type="hidden" name="exParam[<%=i%>].key" value="<%=param.getKey()%>">
-    <input type="hidden" name="exParam[<%=i++%>].value" value="<%=param.getValue()%>">
-<%
-    }
-%>
 
     <div style="display:none;" id="saveDialog">
         <div class="hd">Save View</div>

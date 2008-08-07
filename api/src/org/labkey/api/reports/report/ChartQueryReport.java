@@ -30,7 +30,7 @@ import org.labkey.api.reports.chart.ChartRenderer;
 import org.labkey.api.reports.chart.ChartRendererFactory;
 import org.labkey.api.reports.chart.ChartRenderInfo;
 import org.labkey.api.reports.chart.RenderInfo;
-import org.labkey.api.reports.report.view.ChartUtil;
+import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.reports.report.view.RunChartReportView;
 import org.labkey.api.reports.Report;
@@ -146,7 +146,7 @@ public class ChartQueryReport extends ChartReport implements Report.ImageMapGene
                 sb.append(error);
                 sb.append("\n");
             }
-            ChartUtil.renderErrorImage(context.getResponse().getOutputStream(), this, sb.toString());
+            ReportUtil.renderErrorImage(context.getResponse().getOutputStream(), this, sb.toString());
         }
         return null;
     }

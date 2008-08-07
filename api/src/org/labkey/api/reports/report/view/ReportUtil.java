@@ -16,7 +16,6 @@
 
 package org.labkey.api.reports.report.view;
 
-import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
@@ -37,7 +36,6 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.sql.SQLException;
@@ -47,11 +45,10 @@ import java.sql.SQLException;
  * User: Karl Lum
  * Date: Apr 20, 2007
  */
-public class ChartUtil
+public class ReportUtil
 {
-    private static final Logger _log = Logger.getLogger(ChartUtil.class);
+    private static final Logger _log = Logger.getLogger(ReportUtil.class);
 
-    public static final String REPORT_ID = "reportId";
     public static final String FORWARD_URL = "forwardUrl";
 
     public static ActionURL getChartDesignerURL(ViewContext context, ChartDesignerBean bean)
@@ -88,101 +85,49 @@ public class ChartUtil
         if (bean.getReportId() != -1)
             url.addParameter(ReportDescriptor.Prop.reportId, String.valueOf(bean.getReportId()));
 
-        int i=0;
-        for (ReportDesignBean.ExParam param : bean.getExParam())
-        {
-            url.addParameter("exParam[" + i + "].key", param.getKey());
-            url.addParameter("exParam[" + i + "].value", param.getValue());
-            i++;
-        }
         return url;
     }
 
     public static ActionURL getPlotChartURL(ViewContext context, Report report)
     {
-        ActionURL url = new ActionURL("reports", "plotChart", context.getContainer());
+        ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlPlotChart(context.getContainer());
 
         if (report != null)
         {
             ActionURL filterUrl = RenderContext.getSortFilterURLHelper(context);
-            url.addParameter(REPORT_ID, String.valueOf(report.getDescriptor().getReportId()));
+            url.addParameter(ReportDescriptor.Prop.reportId, String.valueOf(report.getDescriptor().getReportId()));
             for (Pair<String, String> param : filterUrl.getParameters())
                 url.addParameter(param.getKey(), param.getValue());
         }
         return url;
-    }
-
-    public static String getShowReportTag(ViewContext context, Report report)
-    {
-        StringBuilder sb = new StringBuilder();
-        if (RReport.TYPE.equals(report.getDescriptor().getReportType()))
-        {
-            sb.append("<a href='");
-
-/*
-            if (BooleanUtils.toBoolean(report.getDescriptor().getProperty("runInBackground")))
-                sb.append(getRunBackgroundRReportURL(context, report).toString());
-            else
-*/
-                sb.append(getRunReportURL(context, report).toString());
-            sb.append("'>");
-            sb.append(PageFlowUtil.filter(report.getDescriptor().getProperty("reportName")));
-            sb.append("</a>");
-        }
-        else
-        {
-            sb.append("<img src='");
-            sb.append(getPlotChartURL(context, report).toString());
-            sb.append("'>");
-        }
-        return sb.toString();
     }
 
     public static ActionURL getRunReportURL(ViewContext context, Report report)
     {
-        ActionURL url = new ActionURL("reports", "runReport", context.getContainer());
+        ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlRunReport(context.getContainer());
 
         if (report != null)
         {
-            //ActionURL filterUrl = RenderContext.getSortFilterURLHelper(context);
             if (report.getDescriptor().getReportId() != -1)
-                url.addParameter(REPORT_ID, String.valueOf(report.getDescriptor().getReportId()));
+                url.addParameter(ReportDescriptor.Prop.reportId, String.valueOf(report.getDescriptor().getReportId()));
             if (context.getActionURL().getParameter("redirectUrl") != null)
                 url.addParameter("redirectUrl", context.getActionURL().getParameter("redirectUrl"));
             else
                 url.addParameter("redirectUrl", context.getActionURL().getLocalURIString());
-            //for (Pair<String, String> param : filterUrl.getParameters())
-            //    url.addParameter(param.getKey(), param.getValue());
         }
         return url;
     }
-
-/*
-    public static ActionURL getRunBackgroundRReportURL(ViewContext context, Report report)
-    {
-        ActionURL url = new ActionURL("reports", "runBackgroundRReport", context.getContainer());
-
-        if (report != null)
-        {
-            ActionURL filterUrl = RenderContext.getSortFilterURLHelper(context);
-            url.addParameter(REPORT_ID, String.valueOf(report.getDescriptor().getReportId()));
-            for (Pair<String, String> param : filterUrl.getParameters())
-                url.addParameter(param.getKey(), param.getValue());
-        }
-        return url;
-    }
-*/
 
     public static ActionURL getDeleteReportURL(ViewContext context, Report report, ActionURL forwardURL)
     {
         if (forwardURL == null)
             throw new UnsupportedOperationException("A forward URL must be specified");
 
-        ActionURL url = new ActionURL("reports", "deleteReport", context.getContainer());
+        ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlDeleteReport(context.getContainer());
 
         if (report != null)
         {
-            url.addParameter(REPORT_ID, String.valueOf(report.getDescriptor().getReportId()));
+            url.addParameter(ReportDescriptor.Prop.reportId, String.valueOf(report.getDescriptor().getReportId()));
             url.addParameter(FORWARD_URL, forwardURL.toString());
         }
         return url;
@@ -259,7 +204,7 @@ public class ChartUtil
     {
         List<Report> scripts = new ArrayList<Report>();
 
-        String reportKey = ChartUtil.getReportKey(bean.getSchemaName(), bean.getQueryName());
+        String reportKey = ReportUtil.getReportKey(bean.getSchemaName(), bean.getQueryName());
         String reportName = bean.getReportName();
         for (Report r : getReports(context, reportKey, true))
         {

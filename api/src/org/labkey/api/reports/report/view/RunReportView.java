@@ -97,7 +97,7 @@ public abstract class RunReportView extends TabStripView
 
     protected boolean isReportInherited(Report report)
     {
-        return ChartUtil.isReportInherited(getViewContext().getContainer(), report);
+        return ReportUtil.isReportInherited(getViewContext().getContainer(), report);
     }
 
     public BindException getErrors()

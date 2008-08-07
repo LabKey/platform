@@ -22,10 +22,11 @@ import org.labkey.api.data.*;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ReportUrls;
-import org.labkey.api.reports.report.view.ChartUtil;
 import org.labkey.api.reports.report.view.RReportBean;
+import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.RunReportView;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
@@ -219,8 +220,8 @@ public class QueryView extends WebPartView<Object>
      */
     protected void addReportsToChangeViewPicker(Map<String, String> options)
     {
-        String reportKey = ChartUtil.getReportKey(getSchema().getSchemaName(), getSettings().getQueryName());
-        for (Report report : ChartUtil.getReports(getViewContext(), reportKey, true))
+        String reportKey = ReportUtil.getReportKey(getSchema().getSchemaName(), getSettings().getQueryName());
+        for (Report report : ReportUtil.getReports(getViewContext(), reportKey, true))
         {
             options.put(REPORTID_PARAM + report.getDescriptor().getReportId(), report.getDescriptor().getReportName());
         }
@@ -342,7 +343,7 @@ public class QueryView extends WebPartView<Object>
                 bean.setDataRegionName(getDataRegionName());
 
                 bean.setRedirectUrl(getViewContext().getActionURL().toString());
-                return ChartUtil.getRReportDesignerURL(_viewContext, bean);
+                return ReportUtil.getRReportDesignerURL(_viewContext, bean);
         }
         return ret;
     }
@@ -694,9 +695,9 @@ public class QueryView extends WebPartView<Object>
 
     protected void addReportViews(MenuButton menu, ActionURL target)
     {
-        String reportKey = ChartUtil.getReportKey(getSchema().getSchemaName(), getSettings().getQueryName());
+        String reportKey = ReportUtil.getReportKey(getSchema().getSchemaName(), getSettings().getQueryName());
         Map<String, List<Report>> views = new TreeMap<String, List<Report>>();
-        for (Report report : ChartUtil.getReports(getViewContext(), reportKey, true))
+        for (Report report : ReportUtil.getReports(getViewContext(), reportKey, true))
         {
             if (!views.containsKey(report.getType()))
                 views.put(report.getType(), new ArrayList<Report>());

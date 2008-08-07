@@ -37,7 +37,7 @@ import java.util.ArrayList;
 public class RReportBean extends ReportDesignBean
 {
     protected String _script;
-    protected Boolean _runInBackground;
+    protected boolean _runInBackground;
     protected List<String> _includedReports;
     protected boolean _isDirty;
 
@@ -59,7 +59,7 @@ public class RReportBean extends ReportDesignBean
 
     public boolean isRunInBackground()
     {
-        return BooleanUtils.toBoolean(_runInBackground);
+        return _runInBackground;
     }
 
     public void setRunInBackground(boolean runInBackground)
@@ -97,8 +97,7 @@ public class RReportBean extends ReportDesignBean
             if (RReportDescriptor.class.isAssignableFrom(descriptor.getClass()))
             {
                 if (getScript() != null) descriptor.setProperty(RReportDescriptor.Prop.script, getScript());
-                if (_runInBackground != null)
-                    descriptor.setProperty(RReportDescriptor.Prop.runInBackground, _runInBackground.toString());
+                descriptor.setProperty(RReportDescriptor.Prop.runInBackground, _runInBackground);
                 ((RReportDescriptor)descriptor).setIncludedReports(_includedReports);
                 if (!isShareReport())
                     descriptor.setOwner(getUser().getUserId());
@@ -120,10 +119,10 @@ public class RReportBean extends ReportDesignBean
 
         if (!StringUtils.isEmpty(_script))
             list.add(new Pair<String, String>(RReportDescriptor.Prop.script.toString(), _script));
-        if (_runInBackground != null)
-            list.add(new Pair<String, String>(RReportDescriptor.Prop.runInBackground.toString(), _runInBackground.toString()));
+        if (_runInBackground)
+            list.add(new Pair<String, String>(RReportDescriptor.Prop.runInBackground.toString(), String.valueOf(_runInBackground)));
         if (_isDirty)
-            list.add(new Pair<String, String>("isDirty", Boolean.toString(_isDirty)));
+            list.add(new Pair<String, String>("isDirty", String.valueOf(_isDirty)));
         for (String report : getIncludedReports())
             list.add(new Pair<String, String>(RReportDescriptor.Prop.includedReports.toString(), report));
 

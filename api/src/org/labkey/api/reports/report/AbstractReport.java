@@ -17,7 +17,7 @@ package org.labkey.api.reports.report;
 
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.view.ChartUtil;
+import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -68,7 +68,7 @@ public abstract class AbstractReport implements Report
 
     public ActionURL getRunReportURL(ViewContext context)
     {
-        return ChartUtil.getRunReportURL(context, this);
+        return ReportUtil.getRunReportURL(context, this);
     }
 
     public ActionURL getEditReportURL(ViewContext context)

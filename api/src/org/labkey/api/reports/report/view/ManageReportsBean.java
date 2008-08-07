@@ -18,7 +18,6 @@ package org.labkey.api.reports.report.view;
 
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.reports.Report;
-import org.labkey.api.reports.ReportService;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.security.User;
@@ -69,7 +68,7 @@ public class ManageReportsBean
             _views = createReportRecordMap();
 
             beforeGetViews(_views);
-            for (Report r : ChartUtil.getReports(_context, null, true))
+            for (Report r : ReportUtil.getReports(_context, null, true))
             {
                 if (!StringUtils.isEmpty(r.getDescriptor().getReportName()))
                     createReportRecord(r, _views);
@@ -104,7 +103,7 @@ public class ManageReportsBean
         ReportRecordImpl rec = new ReportRecordImpl(r,
                 r.getDescriptor().getReportName(),
                 displayURL != null ? displayURL.getLocalURIString() : null,
-                ChartUtil.getDeleteReportURL(_context, r, _context.getActionURL()).getLocalURIString());
+                ReportUtil.getDeleteReportURL(_context, r, _context.getActionURL()).getLocalURIString());
         if (editURL != null)
             rec.setEditURL(editURL.getLocalURIString());
         getList(r.getTypeDescription(), views).add(rec);

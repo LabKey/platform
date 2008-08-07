@@ -47,11 +47,10 @@ public class ReportDesignBean extends ReportForm
     protected String _reportType;
     protected String _reportName;
     protected String _reportDescription;
-    protected ArrayList<ExParam> _exParam = new FormArrayList<ExParam>(ExParam.class);
     protected String _redirectUrl;
-    protected Boolean _shareReport;
+    protected boolean _shareReport;
     protected boolean _inheritable;
-    protected Boolean _cached;
+    protected boolean _cached;
 
     public ReportDesignBean(){}
     public ReportDesignBean(QuerySettings settings)
@@ -142,21 +141,6 @@ public class ReportDesignBean extends ReportForm
         _reportName = reportName;
     }
 
-    public void addParam(String name, String value)
-    {
-        _exParam.add(new ExParam(name, value));
-    }
-
-    public ArrayList<ExParam> getExParam()
-    {
-        return _exParam;
-    }
-
-    public void setExParam(ArrayList<ExParam> param)
-    {
-        _exParam = param;
-    }
-
     public String getRedirectUrl()
     {
         return _redirectUrl;
@@ -189,7 +173,7 @@ public class ReportDesignBean extends ReportForm
 
     public boolean isShareReport()
     {
-        return BooleanUtils.toBoolean(_shareReport);
+        return _shareReport;
     }
 
     public void setShareReport(boolean shareReport)
@@ -209,7 +193,7 @@ public class ReportDesignBean extends ReportForm
 
     public boolean isCached()
     {
-        return BooleanUtils.toBoolean(_cached);
+        return _cached;
     }
 
     public void setCached(boolean cached)
@@ -238,11 +222,7 @@ public class ReportDesignBean extends ReportForm
                 descriptor.setFlags(descriptor.getFlags() | ReportDescriptor.FLAG_INHERITABLE);
             else
                 descriptor.setFlags(descriptor.getFlags() & ~ReportDescriptor.FLAG_INHERITABLE);
-            if (_cached != null)
-                descriptor.setProperty(ReportDescriptor.Prop.cached, _cached.toString());
-
-            for (ExParam param : getExParam())
-                descriptor.setProperty(param.getKey(), param.getValue());
+            descriptor.setProperty(ReportDescriptor.Prop.cached, _cached);
         }
         return report;
     }
@@ -273,36 +253,13 @@ public class ReportDesignBean extends ReportForm
             list.add(new Pair<String, String>(ReportDescriptor.Prop.reportDescription.toString(), _reportDescription));
         if (_owner != -1)
             list.add(new Pair<String, String>("owner", Integer.toString(_owner)));
-        if (_shareReport != null)
-            list.add(new Pair<String, String>("shareReport", _shareReport.toString()));
+        if (_shareReport)
+            list.add(new Pair<String, String>("shareReport", String.valueOf(_shareReport)));
         if (_inheritable)
-            list.add(new Pair<String, String>("inheritable", Boolean.toString(_inheritable)));
-        if (_cached != null)
-            list.add(new Pair<String, String>(ReportDescriptor.Prop.cached.name(), _cached.toString()));
+            list.add(new Pair<String, String>("inheritable", String.valueOf(_inheritable)));
+        if (_cached)
+            list.add(new Pair<String, String>(ReportDescriptor.Prop.cached.name(), String.valueOf(_cached)));
 
-        int i=0;
-        for (ExParam param : _exParam)
-        {
-            list.add(new Pair<String, String>("exParam[" + i + "].key", param.getKey()));
-            list.add(new Pair<String, String>("exParam[" + i++ + "].value", param.getValue()));
-        }
         return list;
-    }
-
-    public static class ExParam
-    {
-        String _key;
-        String _value;
-
-        public ExParam(){}
-        public ExParam(String key, String value)
-        {
-            _key = key;
-            _value = value;
-        }
-        public void setKey(String key){_key = key;}
-        public String getKey(){return _key;}
-        public void setValue(String value){_value = value;}
-        public String getValue(){return _value;}
     }
 }

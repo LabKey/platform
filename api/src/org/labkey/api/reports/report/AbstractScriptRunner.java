@@ -23,6 +23,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.common.util.Pair;
 
 import java.io.File;
@@ -126,6 +127,14 @@ public abstract class AbstractScriptRunner implements RScriptRunner
         else
             labkey.append("labkey.url.params <- NULL\n");
 
+        // session information
+        if (_context.getRequest() != null)
+        {
+            labkey.append("labkey.sessionCookieName = \"JSESSIONID\"\n");
+            labkey.append("labkey.sessionCookieContents = \"");
+            labkey.append(PageFlowUtil.getCookieValue(_context.getRequest().getCookies(), "JSESSIONID", ""));
+            labkey.append("\"\n");
+        }
         return labkey.toString();
     }
 

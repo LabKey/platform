@@ -17,7 +17,6 @@
 package org.labkey.api.reports.report.view;
 
 import org.labkey.api.reports.Report;
-import org.labkey.api.reports.ReportService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.HtmlView;
@@ -62,7 +61,8 @@ public class RunChartReportView extends RunReportView
     {
         if (TAB_VIEW.equals(tabId))
         {
-            return new HtmlView(ChartUtil.getShowReportTag(getViewContext(), getReport()));
+            ActionURL url = ReportUtil.getPlotChartURL(getViewContext(), getReport());
+            return new HtmlView("<img src='" + url.getLocalURIString() + "'>");
         }
         else if (TAB_DATA.equals(tabId))
         {

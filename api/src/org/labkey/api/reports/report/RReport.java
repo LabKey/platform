@@ -34,7 +34,7 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.r.view.*;
-import org.labkey.api.reports.report.view.ChartUtil;
+import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.reports.report.view.RunRReportView;
 import org.labkey.api.security.UserManager;
@@ -555,14 +555,14 @@ public class RReport extends AbstractReport implements AttachmentParent, Report.
 
     public ActionURL getRunReportURL(ViewContext context)
     {
-        return ChartUtil.getRunReportURL(context, this);
+        return ReportUtil.getRunReportURL(context, this);
     }
 
     public ActionURL getEditReportURL(ViewContext context)
     {
         if (getDescriptor().canEdit(context))
         {
-            return ChartUtil.getRunReportURL(context, this).addParameter(TabStripView.TAB_PARAM, RunRReportView.TAB_SOURCE);
+            return ReportUtil.getRunReportURL(context, this).addParameter(TabStripView.TAB_PARAM, RunRReportView.TAB_SOURCE);
         }
         return null;
     }

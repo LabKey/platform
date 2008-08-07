@@ -25,7 +25,7 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.r.view.ConsoleOutput;
-import org.labkey.api.reports.report.view.ChartUtil;
+import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -169,12 +169,12 @@ public class DefaultScriptRunner extends AbstractScriptRunner
     {
         if (report != null)
         {
-            if (ChartUtil.canReadReport(report, _context.getUser()))
+            if (ReportUtil.canReadReport(report, _context.getUser()))
             {
                 // if it's not in this container, check that it was shared
                 if (!_context.getContainer().getId().equals(report.getDescriptor().getContainerId()))
                 {
-                    return ChartUtil.isReportInherited(_context.getContainer(), report);                    
+                    return ReportUtil.isReportInherited(_context.getContainer(), report);
                 }
                 else
                     return true;

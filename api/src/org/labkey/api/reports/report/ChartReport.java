@@ -16,21 +16,9 @@
 
 package org.labkey.api.reports.report;
 
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.plot.Plot;
-import org.jfree.chart.plot.XYPlot;
 import org.labkey.api.reports.Report;
-import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.chart.ChartRenderer;
-import org.labkey.api.reports.chart.ChartRendererFactory;
-import org.labkey.api.reports.report.view.ChartUtil;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
-import javax.imageio.ImageIO;
-import javax.servlet.http.HttpServletResponse;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 import java.sql.ResultSet;
 
 /**
