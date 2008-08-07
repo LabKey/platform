@@ -485,6 +485,12 @@ public class ProjectController extends SpringActionController
         public boolean handlePost(CustomizePortletForm form, BindException errors) throws Exception
         {
             Portal.WebPart webPart = Portal.getPart(form.getPageId(), form.getIndex());
+
+            // Security check -- subclasses may have overridden isEditable for certain types of users
+            WebPartFactory desc = Portal.getPortalPart(webPart.getName());
+            if (!desc.isEditable())
+                throw new IllegalStateException("This is not an editable web part");
+
             populatePropertyMap(getViewContext().getRequest(), webPart);
             Portal.updatePart(getUser(), webPart);
             return true;
