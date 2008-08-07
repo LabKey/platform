@@ -15,6 +15,8 @@
  */
 package org.labkey.api.view;
 
+import org.labkey.api.security.User;
+
 import java.util.Map;
 
 /**
@@ -69,5 +71,12 @@ public abstract class ClientAPIWebPartFactory extends WebPartFactory
     protected String getTitle()
     {
         return name;
+    }
+
+    public boolean isEditable()
+    {
+        // We're only editable if the user is a site admin or developer
+        User user = HttpView.currentContext().getUser();
+        return user.isAdministrator() || user.isDeveloper();
     }
 }
