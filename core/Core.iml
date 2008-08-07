@@ -51,7 +51,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../build/labkeyWebapp/explodedWar/WEB-INF/jsp/core_jsp.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../build/deploy/labkeyWebapp/WEB-INF/jsp/core_jsp.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
