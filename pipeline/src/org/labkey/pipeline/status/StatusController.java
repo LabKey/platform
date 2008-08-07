@@ -36,6 +36,7 @@ import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
+import org.labkey.pipeline.api.PipelineJobServiceImpl;
 import static org.labkey.pipeline.api.PipelineStatusManager.*;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -1121,19 +1122,23 @@ public class StatusController extends SpringActionController
 
         public void handleCallback(RequeueRunningJobsForm form) throws Exception
         {
+            if (PipelineService.get().getPipelineQueue().isLocal())
+            {
+                // todo: This currently just causes the return code 404 to be displayed during remote
+                //       server start-up.  Would be better to give the server administrator this message.
+                HttpView.throwNotFound("Remote servers not supported.  Change configuration to use a remote queue.");
+            }
+
             if (null == form.getLocation())
             {
                 HttpView.throwNotFound("No location specified");
             }
 
-            TaskJmsSelectorFilter filter = new TaskJmsSelectorFilter();
-            filter.setLocation(form.getLocation());
-
             List<PipelineJob> pendingJobs = PipelineService.get().getPipelineQueue().findJobs(form.getLocation());
             Set<String> jobIds = new HashSet<String>();
             for (PipelineJob job : pendingJobs)
             {
-                jobIds.add(job.getJobGUID());
+                jobIds.add(job.getJobGUID().toLowerCase());
             }
 
             TaskPipelineRegistry registry = PipelineJobService.get();
@@ -1142,18 +1147,13 @@ public class StatusController extends SpringActionController
                 if (taskFactory.getExecutionLocation().equals(form.getLocation()))
                 {
                     TaskId id = taskFactory.getId();
-                    PipelineStatusFileImpl[] statusFiles = PipelineStatusManager.getQueuedStatusFilesForActiveTaskId(id.toString());
-                    for (PipelineStatusFileImpl statusFile : statusFiles)
+                    PipelineStatusFileImpl[] statusFiles =
+                            PipelineStatusManager.getQueuedStatusFilesForActiveTaskId(id.toString());
+                    for (PipelineStatusFileImpl sf : statusFiles)
                     {
-                        if (statusFile.getJobStore() != null)
-                        {
-                            PipelineJob job = PipelineJobService.get().getJobStore().fromXML(statusFile.getJobStore());
-                            if (!jobIds.contains(job.getJobGUID()))
-                            {
-                                job.updateStatusForTask();
-                                EPipelineQueueImpl.dispatchJob(job);
-                            }
-                        }
+                        // NOTE: JobIds end up all uppercase in the database, but they are lowercase in jobs
+                        if (sf.getJobStore() != null && !jobIds.contains(sf.getJob().toLowerCase()))
+                            PipelineJobServiceImpl.get().getJobStore().retry(sf);
                     }
                 }
             }
@@ -1300,7 +1300,7 @@ public class StatusController extends SpringActionController
 
             // If the status entry does not already exist, then this must be an existing
             // file with a .status extension.
-            return (PipelineJob.FT_CLUSTER_STATUS.isType(filePath) &&
+            return (PipelineJob.FT_PERL_STATUS.isType(filePath) &&
                     NetworkDrive.exists(new File(filePath)));
         }
     }

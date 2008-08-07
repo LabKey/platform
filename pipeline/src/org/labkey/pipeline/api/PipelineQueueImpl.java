@@ -76,6 +76,12 @@ public class PipelineQueueImpl implements PipelineQueue
         submitJobs();
     }
 
+    public boolean isLocal()
+    {
+        // Only place for this queue is local server memory.
+        return true;
+    }
+
     public boolean isTransient()
     {
         // Only place for this queue is local server memory.

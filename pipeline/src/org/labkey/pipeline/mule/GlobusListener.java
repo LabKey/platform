@@ -81,6 +81,22 @@ public class GlobusListener implements GramJobListener
             {
                 _job.error("Failed up update job status to " + newStatus, e);
             }
+
+            if (!newStatus.isActive())
+            {
+                // Attempt to clean-up Globus. (not yet working)               
+                try
+                {
+                    _notifConsumerManager.removeNotificationConsumer(gramJob.getNotificationConsumerEPR());
+                    _notifConsumerManager.stopListening();
+                    gramJob.removeListener(this);
+                    gramJob.destroy();
+                }
+                catch (Exception e)
+                {
+                    _job.warn("Exception trying to clean up GRAM", e);
+                }
+            }
         }
     }
 

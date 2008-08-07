@@ -17,6 +17,7 @@ package org.labkey.pipeline.analysis;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.pipeline.XarTemplateSubstitutionId;
+import org.labkey.api.exp.pipeline.XarGeneratorId;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.PipeRoot;
@@ -131,7 +132,7 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
                             File parent = f.getParentFile();
                             String baseName = typeInput.getBaseName(f);
                             return !fileExists(factory.getOutputType().newFile(parent, baseName)) &&
-                                    !fileExists(XarTemplateSubstitutionId.FT_XAR_XML.newFile(parent, baseName));
+                                    !fileExists(XarGeneratorId.FT_XAR_XML.newFile(parent, baseName));
                         }
                     };
                 

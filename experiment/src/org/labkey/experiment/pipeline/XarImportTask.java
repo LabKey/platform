@@ -21,6 +21,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.pipeline.XarTemplateSubstitutionId;
 import org.labkey.api.exp.pipeline.XarImportFactorySettings;
 import org.labkey.api.exp.pipeline.XarImportTaskId;
+import org.labkey.api.exp.pipeline.XarGeneratorId;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.util.FileType;
@@ -38,7 +39,7 @@ public class XarImportTask extends PipelineJob.Task<XarImportTask.Factory>
 {
      public static class Factory extends AbstractTaskFactory<XarImportFactorySettings, Factory>
     {
-        private FileType _inputType = XarTemplateSubstitutionId.FT_PIPE_XAR_XML;
+        private FileType _inputType = XarGeneratorId.FT_PIPE_XAR_XML;
 
         public Factory()
         {

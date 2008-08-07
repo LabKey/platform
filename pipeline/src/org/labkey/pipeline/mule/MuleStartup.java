@@ -83,7 +83,8 @@ public class MuleStartup
                 HttpURLConnection connection = (HttpURLConnection)url.openConnection();
                 if (connection.getResponseCode() != HttpURLConnection.HTTP_OK)
                 {
-                    _log.error("Got response code " + connection.getResponseCode() + " from server when trying requeue lost jobs");
+                    // The exception adds the stack trace to the log, which causes it to stand out more.
+                    throw new IOException("Got response code " + connection.getResponseCode() + " from server trying requeue lost jobs");
                 }
             }
             catch (IOException e)

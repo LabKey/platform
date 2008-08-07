@@ -25,6 +25,7 @@ import org.labkey.api.jsp.FormPage;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisJob;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
+import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocol;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
@@ -43,6 +44,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.sql.SQLException;
 
 /**
  * <code>AnalysisController</code>
@@ -84,9 +86,9 @@ public class AnalysisController extends SpringActionController
         private FileAnalysisTaskPipeline _taskPipeline;
         private File _dirRoot;
         private File _dirData;
-        private File _dirAnalysis;
         private FileAnalysisPipelineProvider _provider;
         private FileAnalysisProtocol _protocol;
+        private String[] _protocolNames;
 
         public ActionURL getSuccessURL(AnalyzeForm form)
         {
@@ -132,11 +134,32 @@ public class AnalysisController extends SpringActionController
 
             FileAnalysisProtocolFactory protocolFactory = _provider.getProtocolFactory(_taskPipeline);
 
-            String protocolName = form.getProtocol();
+            PipelineProtocolFactory factory = _provider.getProtocolFactory(_taskPipeline);
+            _protocolNames = factory.getProtocolNames(_dirRoot.toURI(), _dirData);
 
-            if (protocolName.length() != 0)
+            String protocolName = form.getProtocol();
+            if ("".equals(protocolName))
             {
-                _dirAnalysis = protocolFactory.getAnalysisDir(_dirData, protocolName);
+                // If protocol is empty check for a saved protocol
+                protocolName = PipelineService.get().getLastProtocolSetting(factory,
+                        getContainer(), getUser());
+                // Make sure it is still around.
+                if (protocolName == null ||
+                        (!"".equals(protocolName) && !Arrays.asList(_protocolNames).contains(protocolName)))
+                {
+                    protocolName = "";
+                }
+            }
+            // New protocol chosen from form
+            else if ("<New Protocol>".equals(form.getProtocol()))
+            {
+                protocolName = "";
+            }
+            form.setProtocol(protocolName);
+
+            if (!"".equals(protocolName))
+            {
+                File dirAnalysis = protocolFactory.getAnalysisDir(_dirData, protocolName);
 
                 try
                 {
@@ -147,6 +170,10 @@ public class AnalysisController extends SpringActionController
 
                         // Don't allow the instance file to override the protocol name.
                         _protocol.setName(protocolName);
+
+                        // If the the protocol exists, then check for existing jobs
+                        // and their status.
+                        form.initStatus(_protocol, _dirData, dirAnalysis);
                     }
                     else
                     {
@@ -201,16 +228,7 @@ public class AnalysisController extends SpringActionController
                 }
 
                 Container c = getContainer();
-                /*  TODO: Running status
-                File[] annotatedFiles = MS2PipelineManager.getAnalysisFiles(_dirData, _dirAnalysis, FileStatus.ANNOTATED, c);
-                File[] unprocessedFile = MS2PipelineManager.getAnalysisFiles(_dirData, _dirAnalysis, FileStatus.UNKNOWN, c);
-                List<File> mzXMLFileList = new ArrayList<File>();
-                mzXMLFileList.addAll(Arrays.asList(annotatedFiles));
-                mzXMLFileList.addAll(Arrays.asList(unprocessedFile));
-                File[] mzXMLFiles = mzXMLFileList.toArray(new File[mzXMLFileList.size()]);
-                if (mzXMLFiles.length == 0)
-                    throw new IllegalArgumentException("Analysis for this protocol is already complete.");
-                */
+
                 _protocol.getFactory().ensureDefaultParameters(_dirRoot);
 
                 File fileParameters = _protocol.getParametersFile(_dirData);
@@ -232,6 +250,12 @@ public class AnalysisController extends SpringActionController
                     filesInputList.add(new File(_dirData, fileInputName));
                 }
                 File[] filesInput = filesInputList.toArray(new File[filesInputList.size()]);
+
+                if (form.isActiveJobs())
+                {
+                    errors.reject("Active jobs already exist for this protocol.");
+                    return false;
+                }
 
                 AbstractFileAnalysisJob job =
                         _protocol.createPipelineJob(getViewBackgroundInfo(), filesInput, fileParameters, false);
@@ -270,25 +294,8 @@ public class AnalysisController extends SpringActionController
                         "</bioml>");
             }
 
-            PipelineProtocolFactory factory = _provider.getProtocolFactory(_taskPipeline);
-            String[] protocolNames = factory.getProtocolNames(_dirRoot.toURI(), _dirData);
-            if (!reshow || "".equals(form.getProtocol()))
-            {
-                // If protocol is empty check for a saved protocol
-                String protocolName = PipelineService.get().getLastProtocolSetting(factory,
-                        getContainer(), getUser());
-                if (protocolName != null && !"".equals(protocolName))
-                {
-                    // Make sure it is still around.
-                    if (Arrays.asList(protocolNames).contains(protocolName))
-                        form.setProtocol(protocolName);
-                }
-            }
-
             AnalyzePage page = (AnalyzePage) FormPage.get(AnalysisController.class, form, "analyze.jsp");
-
-            page.setProtocolNames(protocolNames);
-
+            page.setProtocolNames(_protocolNames);
             return page.createView(errors);
         }
 
@@ -477,9 +484,67 @@ public class AnalysisController extends SpringActionController
         private String protocolName = "";
         private String protocolDescription = "";
         private String[] fileInputNames = new String[0];
+        private String[] fileInputStatus = null;
         private String configureXml = "";
         private boolean saveProtocol = false;
         private boolean runAnalysis = false;
+        private boolean activeJobs = false;
+
+        private static final String UNKNOWN_STATUS = "UNKNOWN";
+        
+        public void initStatus(FileAnalysisProtocol protocol, File dirData, File dirAnalysis)
+        {
+            if (fileInputStatus != null)
+                return;
+            
+            activeJobs = false;
+
+            int len = fileInputNames.length;
+            fileInputStatus = new String[len + 1];
+            for (int i = 0; i < len; i++)
+                fileInputStatus[i] = initStatusFile(protocol, dirData, dirAnalysis, fileInputNames[i], true);
+            fileInputStatus[len] = initStatusFile(protocol,  dirData, dirAnalysis, null, false);
+        }
+
+        private String initStatusFile(FileAnalysisProtocol protocol, File dirData, File dirAnalysis,
+                                  String fileInputName, boolean statusSingle)
+        {
+            File fileStatus = null;
+
+            if (!statusSingle)
+            {
+                fileStatus = PipelineJob.FT_LOG.newFile(dirAnalysis,
+                        AbstractFileAnalysisProtocol.getDataSetBaseName(dirData));
+            }
+            else if (fileInputName != null)
+            {
+                File fileInput = new File(dirData, fileInputName);
+                FileType ft = protocol.findInputType(fileInput);
+                if (ft != null)
+                    fileStatus = PipelineJob.FT_LOG.newFile(dirAnalysis, ft.getBaseName(fileInput));
+            }
+
+            if (fileStatus != null)
+            {
+                String path = PipelineJobService.statusPathOf(fileStatus.getAbsolutePath());
+                try
+                {
+                    PipelineStatusFile sf = PipelineService.get().getStatusFile(path);
+                    if (sf == null)
+                        return null;
+
+                    activeJobs = activeJobs || sf.isActive();
+                    return sf.getStatus();
+                }
+                catch (SQLException e)
+                {
+                }
+            }
+
+            // Failed to get status.  Assume job is active, and return unknown status.
+            activeJobs = true;
+            return UNKNOWN_STATUS;
+        }
 
         public TaskId getTaskId()
         {
@@ -571,6 +636,16 @@ public class AnalysisController extends SpringActionController
         public void setFileInputNames(String[] fileInputNames)
         {
             this.fileInputNames = fileInputNames;
+        }
+
+        public String[] getFileInputStatus()
+        {
+            return fileInputStatus;
+        }
+
+        public boolean isActiveJobs()
+        {
+            return activeJobs;
         }
 
         public boolean isSaveProtocol()

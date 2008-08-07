@@ -261,7 +261,7 @@ public class PipelineJobRunnerGlobus implements Callable
         assert status != PipelineJob.TaskStatus.waiting :
                 "Reset cluster task status to 'waiting' is not allowed.";
 
-        if (status.isFinished())
+        if (!status.isActive())
         {
             appendAndDeleteLogFile(job, OutputType.out);
             appendAndDeleteLogFile(job, OutputType.err);

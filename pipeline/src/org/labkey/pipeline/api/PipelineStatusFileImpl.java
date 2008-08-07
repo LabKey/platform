@@ -24,12 +24,21 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 
 import java.io.*;
+import java.util.HashSet;
+import java.util.Arrays;
 
 /**
  * @author B. MacLean
  */
 public class PipelineStatusFileImpl extends Entity implements Serializable, PipelineStatusFile
 {
+    private static HashSet<String> _inactiveStatuses = new HashSet<String>(Arrays.asList(
+            PipelineJob.COMPLETE_STATUS,
+            PipelineJob.CANCELLED_STATUS,
+            PipelineJob.ERROR_STATUS,
+            PipelineJob.SPLIT_STATUS    // Depends on status of split jobs
+    ));
+
     protected int _rowId;
     protected String _job;
     protected String _jobParent;
@@ -80,10 +89,10 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         }
         // If there is an active task and this is waiting state, then checkpoint the
         // job to the database for retry.
-        else if (job.getActiveTaskId() != null &&
+        else if (job.getActiveTaskFactory() != null &&
                 PipelineJob.TaskStatus.waiting.equals(job.getActiveTaskStatus()))
         {
-            setActiveTaskId(job.getActiveTaskId().toString());
+            setActiveTaskId(job.getActiveTaskFactory().getActiveId(job).toString());
             setJobStore(PipelineJobService.get().getJobStore().toXML(job));
         }
 
@@ -135,6 +144,11 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
             if (_activeTaskId == null || _activeTaskId.length() == 0)
                 _activeTaskId = curSF._activeTaskId;
         }
+    }
+
+    public boolean isActive()
+    {
+        return !_inactiveStatuses.contains(_status);
     }
 
     public int getRowId()
@@ -281,6 +295,13 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         this._hadError = hadError;
     }
 
+    /**
+     * Synchronize a .status file on disk with the status stored in the database.
+     * This is only necessary for the Perl Pipeline, which runs its state machine
+     * by scanning the file system.
+     *
+     * @throws IOException error writing status
+     */
     public void synchDiskStatus() throws IOException
     {
         // If the disk file is not a .status file, then do nothing.

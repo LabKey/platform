@@ -60,6 +60,7 @@ public class EPipelineQueueImpl implements PipelineQueue
     }
 
     private ConnectionFactory _factoryJms;
+    private boolean _local;
     private boolean _transient;
 
     public EPipelineQueueImpl(ConnectionFactory factory)
@@ -73,8 +74,8 @@ public class EPipelineQueueImpl implements PipelineQueue
 
             // Detect default server configuration for the Enterprise Pipeline, which does
             // not persist JMS messages between server restarts.
-            if (brokerUrl.startsWith("vm:") && brokerUrl.indexOf("persistent=false") > 0)
-                _transient = true;
+            _local = brokerUrl.startsWith("vm:");
+            _transient = (brokerUrl.indexOf("persistent=false") > 0);
         }
         _factoryJms = factory;
     }
@@ -213,8 +214,11 @@ public class EPipelineQueueImpl implements PipelineQueue
             }
             catch (UMOException e)
             {
-                // CONSIDER: Throw something?
                 _log.error(e);
+
+                // If dispatch failed, make sure the job is set to error,
+                // so it can be retried.
+                job.error(e.getMessage(), e);
             }
         }
         else
@@ -226,6 +230,11 @@ public class EPipelineQueueImpl implements PipelineQueue
         }
     }
 
+    public boolean isLocal()
+    {
+        return _local;
+    }
+
     public boolean isTransient()
     {
         return _transient;
@@ -233,6 +242,9 @@ public class EPipelineQueueImpl implements PipelineQueue
 
     public static void dispatchJob(PipelineJob job) throws UMOException
     {
+        assert RequestContext.getEvent() == null :
+                "RequestContext found dispatching job.";
+
         MuleClient client = null;
         try
         {
@@ -243,7 +255,7 @@ public class EPipelineQueueImpl implements PipelineQueue
         {
             if (client != null)
             {
-                client.dispose();
+                try { client.dispose(); } catch (Exception e) {}
                 RequestContext.clear();
             }
         }        

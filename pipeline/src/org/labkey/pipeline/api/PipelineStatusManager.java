@@ -23,6 +23,9 @@ import org.labkey.api.pipeline.*;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.io.File;
 
 /**
  * <code>PipelineStatusManager</code> provides access to the StatusFiles table
@@ -79,6 +82,13 @@ public class PipelineStatusManager
                 getStatusFile(new SimpleFilter("Job", jobId)));
     }
 
+    /**
+     * Get a <code>PipelineStatusFileImpl</code> using a specific filter.
+     *
+     * @param filter the filter to use in the select statement
+     * @return the corresponding <code>PipelineStatusFileImpl</code>
+     * @throws SQLException database error
+     */
     private static PipelineStatusFileImpl getStatusFile(Filter filter) throws SQLException
     {
         PipelineStatusFileImpl[] asf =
@@ -189,6 +199,14 @@ public class PipelineStatusManager
         return sfExist.getJobStore();
     }
 
+    /**
+     * Returns an array of <code>PipelineStatusFiles</code> for jobs not marked COMPLETE,
+     * all of which were created by splitting another job.
+     *
+     * @param parentId the jobGUID for the joined task that created split tasks
+     * @return array of <code>PipelineStatusFiles<code> not marked COMPLETE
+     * @throws SQLException database error
+     */
     public static PipelineStatusFileImpl[] getIncompleteStatusFiles(String parentId) throws SQLException
     {
         SimpleFilter filter = new SimpleFilter();
@@ -196,7 +214,6 @@ public class PipelineStatusManager
         filter.addCondition("JobParent", parentId, CompareType.EQUAL);
 
         return Table.select(pipeline.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
-
     }
 
     public static PipelineStatusFileImpl[] getQueuedStatusFilesForActiveTaskId(String activeTaskId) throws SQLException

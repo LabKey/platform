@@ -53,7 +53,7 @@ LABKEY.pipeline.StatusUpdate = function(controller, action)
         {
             if (b)
                 el.update('Failed to retrieve updated status. ' + msg);
-            el.setVisible(b);
+            el.setDisplayed(b ? "" : "none");
         }
     }
 

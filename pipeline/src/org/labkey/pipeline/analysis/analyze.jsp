@@ -29,6 +29,7 @@
     PipelineUrls up = urlProvider(PipelineUrls.class);
 
     boolean hasWork = false;
+    boolean hasRun = false;
 %>
 
 <labkey:errors />
@@ -52,7 +53,7 @@
     <tr><td class='labkey-form-label'>Analysis Protocol:</td>
         <td><select name="protocol"
                             onchange="changeProtocol(this)">
-            <option value="">&lt;New Protocol&gt;</option>
+            <option>&lt;New Protocol&gt;</option>
 <%
     for (String protocol : getProtocolNames())
     {
@@ -88,13 +89,21 @@
         out.print("No files found");
     else
     {
-        hasWork = true; %>
+        hasWork = !form.isActiveJobs(); %>
         <table>
 <%
-        for (String fileName : form.getFileInputNames())
+        String[] inputNames = form.getFileInputNames();
+        String[] inputStatus = form.getFileInputStatus();
+        for (int i = 0; i < inputNames.length; i++)
         {
-            %><tr><td><%=h(fileName)%>
-                <input type="hidden" name="fileInputNames" value="<%=h(fileName)%>"></td>
+            String status = "";
+            if (inputStatus != null && inputStatus[i] != null)
+            {
+                status = " (<b>" + h(inputStatus[i]) + "</b>)";
+                hasRun = true;
+            }
+            %><tr><td><%=h(inputNames[i])%><%=status%>
+                <input type="hidden" name="fileInputNames" value="<%=h(inputNames[i])%>"></td>
             <td>&nbsp;</td></tr><%
         } %>
         </table><%
@@ -121,7 +130,18 @@
     }
     if (hasWork)
     {
-        %><tr><td colspan="2"><labkey:button text="Analyze"/>&nbsp;<labkey:button text="Cancel" href="<%=up.urlReferer(getContainer())%>"/></td></tr><%
+        if (hasRun)
+        {
+            %><tr><td colspan="2"><labkey:button text="Retry"/>&nbsp;<labkey:button text="Cancel" href="<%=up.urlReferer(getContainer())%>"/></td></tr><%            
+        }
+        else
+        {
+            %><tr><td colspan="2"><labkey:button text="Analyze"/>&nbsp;<labkey:button text="Cancel" href="<%=up.urlReferer(getContainer())%>"/></td></tr><%
+        }
+    }
+    else
+    {
+        %><tr><td colspan="2"><labkey:button text="Cancel" href="<%=up.urlReferer(getContainer())%>"/></td></tr><%        
     }
 %>
 </table>
