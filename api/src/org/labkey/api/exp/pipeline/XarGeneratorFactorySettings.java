@@ -24,7 +24,7 @@ import org.labkey.api.pipeline.TaskId;
 */
 public class XarGeneratorFactorySettings extends AbstractTaskFactorySettings
 {
-    private String _outputExt = ".xar.xml";
+    private String _outputExt;
 
     public XarGeneratorFactorySettings(String name)
     {

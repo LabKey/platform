@@ -31,6 +31,11 @@ public class ImageButton extends PushButton implements ClickListener
     private boolean _enabled = true;
     private String _text;
 
+    private static Image getUpFaceImage(String text)
+    {
+        return new Image(PropertyUtil.getContextPath() + "/" + URL.encodeComponent(text) + ".button");
+    }
+
     public ImageButton(String text, ClickListener listener)
     {
         this(text);
@@ -39,7 +44,7 @@ public class ImageButton extends PushButton implements ClickListener
 
     public ImageButton(String text)
     {
-        super(new Image(PropertyUtil.getContextPath() + "/" + URL.encodeComponent(text) + ".button"));
+        super(getUpFaceImage(text));
 
         addClickListener(this);
 
@@ -95,7 +100,11 @@ public class ImageButton extends PushButton implements ClickListener
 
     public void setText(String text)
     {
-        _text = text;
+        if (_text.equals(text))
+            return;
+
+        _text = text;        
+        getUpFace().setImage(getUpFaceImage(text));
     }
 
     /** to make life simple, just override onClick instead of registering a listener */

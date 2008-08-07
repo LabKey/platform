@@ -60,6 +60,8 @@ public interface PipelineStatusFile
     }
 
     Container lookupContainer();
+
+    boolean isActive();
     
     int getRowId();
 

@@ -53,7 +53,7 @@ import java.util.concurrent.TimeUnit;
 abstract public class PipelineJob extends Job implements Serializable
 {
     public static final FileType FT_LOG = new FileType(".log");
-    public static final FileType FT_CLUSTER_STATUS = new FileType(".status");
+    public static final FileType FT_PERL_STATUS = new FileType(".status");
 
     private static Logger _log = Logger.getLogger(PipelineJob.class);
 
@@ -71,34 +71,22 @@ abstract public class PipelineJob extends Job implements Serializable
     {
         waiting
         {
-            public boolean isFinished()
-            {
-                return false;
-            }
+            public boolean isActive() { return true; }
         },
         running
         {
-            public boolean isFinished()
-            {
-                return false;
-            }
+            public boolean isActive() { return true; }
         },
         complete
         {
-            public boolean isFinished()
-            {
-                return true;
-            }
+            public boolean isActive() { return false; }
         },
         error
         {
-            public boolean isFinished()
-            {
-                return true;
-            }
+            public boolean isActive() { return false; }
         };
 
-        public abstract boolean isFinished();
+        public abstract boolean isActive();
     }
     
     /**
@@ -280,6 +268,11 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public void setActiveTaskId(TaskId activeTaskId)
     {
+        setActiveTaskId(activeTaskId, true);
+    }
+    
+    public void setActiveTaskId(TaskId activeTaskId, boolean updateStatus)
+    {
         if (activeTaskId == null || !activeTaskId.equals(_activeTaskId))
         {
             _activeTaskId = activeTaskId;
@@ -289,7 +282,9 @@ abstract public class PipelineJob extends Job implements Serializable
             _activeTaskStatus = TaskStatus.complete;
         else
             _activeTaskStatus = TaskStatus.waiting;
-        updateStatusForTask();
+
+        if (updateStatus)
+            updateStatusForTask();
     }
 
     public TaskStatus getActiveTaskStatus()
@@ -702,13 +697,13 @@ abstract public class PipelineJob extends Job implements Serializable
 
             if (factory.isJoin() && isSplit())
             {
-                setActiveTaskId(factory.getId());   // ID is just a marker for state machine
+                setActiveTaskId(factory.getId(), false);   // ID is just a marker for state machine
                 join();
                 return false;
             }
             else if (!factory.isJoin() && isSplittable())
             {
-                setActiveTaskId(factory.getId());   // ID is just a marker for state machine
+                setActiveTaskId(factory.getId(), false);   // ID is just a marker for state machine
                 split();
                 return false;
             }
@@ -860,7 +855,7 @@ abstract public class PipelineJob extends Job implements Serializable
         PipelineJobService.get().getJobStore().storeJob(this);
     }
 
-    public void split()
+    private void split()
     {
         try
         {
@@ -876,7 +871,7 @@ abstract public class PipelineJob extends Job implements Serializable
         }
     }
     
-    public void join()
+    private void join()
     {
         try
         {

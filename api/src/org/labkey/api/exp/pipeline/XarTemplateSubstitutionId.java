@@ -25,9 +25,6 @@ import java.io.IOException;
  */
 public interface XarTemplateSubstitutionId
 {
-    final FileType FT_XAR_XML = new FileType(".xar.xml");
-    final FileType FT_PIPE_XAR_XML = new FileType(".pipe.xar.xml");
-
     interface Factory
     {
         FileType[] getInputTypes();

@@ -155,6 +155,11 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         return _baseName;
     }
 
+    public String getJoinedBaseName()
+    {
+        return AbstractFileAnalysisProtocol.getDataSetBaseName(_dirData);
+    }
+
     public File getDataDirectory()
     {
         return _dirData;

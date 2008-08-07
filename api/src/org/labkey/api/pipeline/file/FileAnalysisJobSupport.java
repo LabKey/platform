@@ -31,23 +31,28 @@ public interface FileAnalysisJobSupport
         extends XarTemplateSubstitutionId.JobSupport, XarImportTaskId.JobSupport
 {
     /**
-     * Returns the directory of the pipeline-root running this job.
+     * @return the directory of the pipeline-root running this job.
      */
     File getRootDir();
 
     /**
-     * Base name of the original input file.
+     * @return the base name for the full set of files.
+     */
+    String getJoinedBaseName();
+
+    /**
+     * @return base name of the original input file.
      */
     String getBaseName();
 
     /**
-     * Returns the directory in which the original input file resides.
+     * @return the directory in which the original input file resides.
      */
     File getDataDirectory();
 
     /**
-     * Returns the directory where the input files reside, and where the
-     * final analysis should end up.
+     * @return the directory where the input files reside, and where the
+     *      final analysis should end up.
      */
     File getAnalysisDirectory();
 
@@ -66,22 +71,22 @@ public interface FileAnalysisJobSupport
     File findOutputFile(String name);
 
     /**
-     * Returns a parameter parser object for writing parameters to a file.
+     * @return a parameter parser object for writing parameters to a file.
      */
     ParamParser createParamParser();
 
     /**
-     * Returns name-value map of the BioML parameters.
+     * @return name-value map of the BioML parameters.
      */
     Map<String, String> getParameters();
 
     /**
-     * Returns the parameters input file used to drive the pipeline.
+     * @return the parameters input file used to drive the pipeline.
      */
     File getParametersFile();
 
     /**
-     * Returns an array of all spectra files analyzed.
+     * @return an array of all spectra files analyzed.
      */
     File[] getInputFiles();
 }

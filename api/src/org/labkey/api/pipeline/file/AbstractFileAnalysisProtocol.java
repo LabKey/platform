@@ -22,6 +22,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisJob;
 import org.labkey.api.pipeline.PipelineProtocol;
 import org.labkey.api.pipeline.ParamParser;
+import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocolFactory;
 
 import java.io.BufferedWriter;

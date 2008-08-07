@@ -56,7 +56,7 @@ public class PipelinePerlClusterSupport
         // delete the status file also to keep from leaving a stalled
         // job around forever.  If the job is still running, it will
         // recreate the status entry in this case.
-        if (PipelineJob.FT_CLUSTER_STATUS.isType(sf.getFilePath()))
+        if (PipelineJob.FT_PERL_STATUS.isType(sf.getFilePath()))
         {
             File fileStatus = new File(sf.getFilePath());
             if (PipelineJob.ERROR_STATUS.equals(sf.getStatus()))
@@ -109,7 +109,7 @@ public class PipelinePerlClusterSupport
         }
 
         // Show cluster specific files
-        if (PipelineJob.FT_CLUSTER_STATUS.isMatch(name, basename))
+        if (PipelineJob.FT_PERL_STATUS.isMatch(name, basename))
             return true;
         if (name.startsWith("pipe") && name.endsWith(".log"))
             return true;
