@@ -1562,6 +1562,7 @@ internal/src/org/labkey/api/view/addWebPart.jsp -text
 internal/src/org/labkey/api/view/customizeClientAPIWebPart.jsp -text
 internal/webapp/ColumnTree.css -text
 internal/webapp/ColumnTree.js -text
+internal/webapp/DataRegion.js -text
 internal/webapp/_.gif -text
 internal/webapp/_icons/_deleted.gif -text
 internal/webapp/_icons/_generic.gif -text
