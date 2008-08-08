@@ -17,8 +17,8 @@
 package org.labkey.study.controllers;
 
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.log4j.Logger;
@@ -42,9 +42,9 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.query.*;
-import org.labkey.api.query.snapshot.QuerySnapshotService;
-import org.labkey.api.query.snapshot.QuerySnapshotForm;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
+import org.labkey.api.query.snapshot.QuerySnapshotForm;
+import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ChartQueryReport;
@@ -54,8 +54,6 @@ import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.StudyService;
-import org.labkey.study.model.QCState;
-import org.labkey.study.model.QCStateSet;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
@@ -76,6 +74,7 @@ import org.labkey.study.pipeline.DatasetBatch;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.query.DataSetQueryView;
 import org.labkey.study.query.PublishedRecordQueryView;
+import org.labkey.study.query.StudyPropertiesQueryView;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.reports.*;
 import org.labkey.study.visitmanager.VisitManager;
@@ -983,7 +982,9 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return new StudyJspView<Object>(getStudy(true), "manageStudy.jsp", null, errors);
+            StudyPropertiesQueryView propView = new StudyPropertiesQueryView(getUser(), getStudy(), HttpView.currentContext(), true);
+
+            return new StudyJspView<StudyPropertiesQueryView>(getStudy(true), "manageStudy.jsp", propView, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)

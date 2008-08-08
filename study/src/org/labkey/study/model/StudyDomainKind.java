@@ -30,7 +30,7 @@ import org.labkey.study.controllers.StudyController;
  */
 public class StudyDomainKind extends BaseStudyDomainKind
 {
-    protected Class<? extends Extensible> getSupportedClass()
+    protected Class<? extends ExtensibleStudyEntity> getSupportedClass()
     {
         return Study.class;
     }

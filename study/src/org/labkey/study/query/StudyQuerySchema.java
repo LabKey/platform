@@ -47,6 +47,7 @@ public class StudyQuerySchema extends UserSchema
     public Set<String> getTableNames()
     {
         Set<String> ret = new LinkedHashSet<String>();
+        ret.add("StudyProperties");
         ret.add("Participant");
         ret.add("Site");
         ret.add("Visit");
@@ -107,6 +108,12 @@ public class StudyQuerySchema extends UserSchema
     @Override
     public TableInfo getTable(String name, String alias)
     {
+        if ("StudyProperties".equals(name))
+        {
+            StudyPropertiesTable ret = new StudyPropertiesTable(this);
+            ret.setAlias(alias);
+            return ret;
+        }
         if ("Cohort".equals(name))
         {
             CohortTable ret = new CohortTable(this);

@@ -19,7 +19,7 @@ package org.labkey.study.query;
 import org.labkey.study.StudySchema;
 import org.labkey.api.query.AliasedColumn;
 
-public class DerivativeTypeTable extends StudyTable
+public class DerivativeTypeTable extends BaseStudyTable
 {
     public DerivativeTypeTable(StudyQuerySchema schema)
     {

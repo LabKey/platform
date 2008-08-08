@@ -31,7 +31,7 @@ import org.labkey.study.model.StudyManager;
  * Date: Jan 26, 2007
  * Time: 10:13:50 AM
  */
-public class SpecimenEventQueryView extends StudyQueryView
+public class SpecimenEventQueryView extends BaseStudyQueryView
 {
     protected SpecimenEventQueryView(ViewContext context, UserSchema schema,
                                      QuerySettings settings, SimpleFilter filter, Sort sort)

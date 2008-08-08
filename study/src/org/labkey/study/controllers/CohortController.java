@@ -18,10 +18,6 @@ package org.labkey.study.controllers;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.data.*;
-import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.ObjectProperty;
-import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.ACL;
@@ -44,7 +40,6 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -213,13 +208,25 @@ public class CohortController extends BaseStudyController
         public void setReshow(boolean reshow) {this.reshow = reshow;}
     }
 
-        private abstract class InsertUpdateAction extends FormViewAction<EditCohortForm>
+    private abstract class InsertUpdateAction extends FormViewAction<EditCohortForm>
     {
-        protected abstract TableInfo getTableInfo();
         protected abstract boolean isInsert();
         protected abstract NavTree appendExtraNavTrail(NavTree root);
 
         protected String cohortLabel; // Will be null on insert
+
+        protected CohortTable getTableInfo()
+        {
+            try
+            {
+                StudyQuerySchema schema = new StudyQuerySchema(getStudy(), getUser(), true);
+                return new CohortTable(schema);
+            }
+            catch (ServletException se)
+            {
+                throw UnexpectedException.wrap(se);
+            }
+        }
 
         public ModelAndView getView(EditCohortForm form, boolean reshow, BindException errors) throws Exception
         {
@@ -330,7 +337,7 @@ public class CohortController extends BaseStudyController
                         StudyManager.getInstance().updateCohort(getUser(), cohort);
                     }
                 }
-                savePropertyBag(cohort, dataMap);
+                cohort.savePropertyBag(dataMap);
 
                 if (StudyService.get().isTransactionActive())
                     StudyService.get().commitTransaction();
@@ -361,19 +368,6 @@ public class CohortController extends BaseStudyController
     @RequiresPermission(ACL.PERM_ADMIN)
     public class InsertAction extends InsertUpdateAction
     {
-        protected TableInfo getTableInfo()
-        {
-            try
-            {
-                StudyQuerySchema schema = new StudyQuerySchema(getStudy(), getUser(), true);
-                return new CohortTable(schema);
-            }
-            catch (ServletException se)
-            {
-                throw UnexpectedException.wrap(se);
-            }
-        }
-
         protected boolean isInsert()
         {
             return true;
@@ -399,30 +393,5 @@ public class CohortController extends BaseStudyController
             root.addChild("Update Cohort: " + cohortLabel);
             return root;
         }
-    }
-
-    private void savePropertyBag(Cohort cohort, Map<String, Object> props) throws SQLException
-    {
-        Container container = getContainer();
-        String ownerLsid = cohort.getLsid();
-        String classLsid = StudyManager.getInstance().getDomainURI(container, Cohort.class);
-
-        Map<String, ObjectProperty> resourceProperties = OntologyManager.getPropertyObjects(container.getId(), ownerLsid);
-        if (resourceProperties != null && !resourceProperties.isEmpty())
-        {
-            OntologyManager.deleteOntologyObject(ownerLsid, container, false);
-        }
-        ObjectProperty[] objectProperties = new ObjectProperty[props.size()];
-        int idx = 0;
-        for (Map.Entry<String, Object> entry : props.entrySet())
-        {
-            String propertyURI = Lsid.isLsid(entry.getKey()) ? entry.getKey() : classLsid + "#" + entry.getKey();
-            if (entry.getValue() != null)
-                objectProperties[idx++] = new ObjectProperty(ownerLsid, container.getId(), propertyURI, entry.getValue());
-            else
-                objectProperties[idx++] = new ObjectProperty(ownerLsid, container.getId(), propertyURI, entry.getValue(), PropertyType.STRING);
-        }
-        if (objectProperties.length > 0)
-            OntologyManager.insertProperties(container.getId(), objectProperties, ownerLsid);
     }
 }

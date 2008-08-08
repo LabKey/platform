@@ -16,17 +16,14 @@
 
 package org.labkey.study.query;
 
-import org.labkey.api.query.FilteredTable;
-import org.labkey.api.query.AliasedColumn;
-import org.labkey.api.query.LookupForeignKey;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.FilteredTable;
 
-public class StudyTable extends FilteredTable
+public abstract class BaseStudyTable extends FilteredTable
 {
     protected StudyQuerySchema _schema;
-    public StudyTable(StudyQuerySchema schema, TableInfo realTable)
+    public BaseStudyTable(StudyQuerySchema schema, TableInfo realTable)
     {
         super(realTable, schema.getContainer());
         _schema = schema;

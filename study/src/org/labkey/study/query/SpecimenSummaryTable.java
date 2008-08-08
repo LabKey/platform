@@ -23,7 +23,7 @@ import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.LookupForeignKey;
 
-public class SpecimenSummaryTable extends StudyTable
+public class SpecimenSummaryTable extends BaseStudyTable
 {
     public SpecimenSummaryTable(StudyQuerySchema schema)
     {

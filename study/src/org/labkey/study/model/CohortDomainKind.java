@@ -29,7 +29,7 @@ import org.labkey.study.controllers.CohortController;
 public class CohortDomainKind extends BaseStudyDomainKind
 {
 
-    protected Class<? extends Extensible> getSupportedClass()
+    protected Class<? extends ExtensibleStudyEntity> getSupportedClass()
     {
         return Cohort.class;
     }

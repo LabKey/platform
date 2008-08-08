@@ -2602,7 +2602,7 @@ public class StudyManager
     /**
      * Returns a domain URI for use by Ontology Manager
      */
-    public String getDomainURI(Container container, Class<? extends Extensible> clazz)
+    public String getDomainURI(Container container, Class<? extends ExtensibleStudyEntity> clazz)
     {
         return new Lsid(clazz.getSimpleName(),
                 "Folder-" + container.getRowId(),
@@ -2612,7 +2612,7 @@ public class StudyManager
     /**
      * Creates and lsid for this individual extensible object
      */
-    public String createLsid(Extensible o, int uniqueId)
+    public String createLsid(ExtensibleStudyEntity o, int uniqueId)
     {
         return new Lsid(o.getClass().getSimpleName(), "Folder-" + o.getContainer().getRowId(), Integer.toString(uniqueId)).toString();
     }

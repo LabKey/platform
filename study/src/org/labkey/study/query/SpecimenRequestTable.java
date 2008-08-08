@@ -31,7 +31,7 @@ import java.util.ArrayList;
  * Date: Apr 20, 2007
  * Time: 2:55:18 PM
  */
-public class SpecimenRequestTable extends StudyTable
+public class SpecimenRequestTable extends BaseStudyTable
 {
     public SpecimenRequestTable(StudyQuerySchema schema)
     {

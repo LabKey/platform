@@ -106,6 +106,7 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
         addController("dataset", DatasetController.class);
         addController("study-definition", StudyDefinitionController.class);
         addController("cohort", CohortController.class);
+        addController("study-properties", StudyPropertiesController.class);
 
         PlateService.register(new PlateManager());
         AssayService.setInstance(new AssayManager());

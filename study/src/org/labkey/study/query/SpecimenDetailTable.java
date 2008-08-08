@@ -24,7 +24,7 @@ import java.io.Writer;
 import java.io.IOException;
 import java.util.Set;
 
-public class SpecimenDetailTable extends StudyTable
+public class SpecimenDetailTable extends BaseStudyTable
 {
     public SpecimenDetailTable(StudyQuerySchema schema)
     {

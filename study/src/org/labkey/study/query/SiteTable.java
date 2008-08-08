@@ -21,7 +21,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.study.StudySchema;
 
-public class SiteTable extends StudyTable
+public class SiteTable extends BaseStudyTable
 {
     static public ForeignKey fkFor(StudyQuerySchema schema)
     {

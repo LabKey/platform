@@ -16,17 +16,16 @@
 
 package org.labkey.study.query;
 
+import org.labkey.api.data.*;
+import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.QueryAction;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.DataView;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DataView;
 import org.labkey.api.view.DisplayElement;
-import org.labkey.api.data.*;
+import org.labkey.api.view.ViewContext;
 
-import java.io.PrintWriter;
 import java.util.List;
 
 /**
@@ -34,13 +33,13 @@ import java.util.List;
  * Date: Jan 26, 2007
  * Time: 10:03:34 AM
  */
-public class StudyQueryView extends QueryView
+public abstract class BaseStudyQueryView extends QueryView
 {
     protected SimpleFilter _filter;
     protected Sort _sort;
     private List<DisplayElement> _buttons;
 
-    public StudyQueryView(ViewContext context, UserSchema schema, QuerySettings settings,
+    public BaseStudyQueryView(ViewContext context, UserSchema schema, QuerySettings settings,
                           SimpleFilter filter, Sort sort)
     {
         super(schema, settings);

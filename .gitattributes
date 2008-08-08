@@ -1745,6 +1745,7 @@ study/src/org/labkey/study/controllers/DatasetController.java -text
 study/src/org/labkey/study/controllers/DatasetServiceImpl.java -text
 study/src/org/labkey/study/controllers/StudyController.java -text
 study/src/org/labkey/study/controllers/StudyDefinitionController.java -text
+study/src/org/labkey/study/controllers/StudyPropertiesController.java -text
 study/src/org/labkey/study/controllers/assay/AssayController.java -text
 study/src/org/labkey/study/controllers/designer/DesignerController.java -text
 study/src/org/labkey/study/controllers/plate/PlateController.java -text
@@ -1781,7 +1782,7 @@ study/src/org/labkey/study/model/CohortDomainKind.java -text
 study/src/org/labkey/study/model/CustomParticipantView.java -text
 study/src/org/labkey/study/model/DataSetDefinition.java -text
 study/src/org/labkey/study/model/DatasetDomainKind.java -text
-study/src/org/labkey/study/model/Extensible.java -text
+study/src/org/labkey/study/model/ExtensibleStudyEntity.java -text
 study/src/org/labkey/study/model/Participant.java -text
 study/src/org/labkey/study/model/ParticipantDataMapKey.java -text
 study/src/org/labkey/study/model/ParticipantDataset.java -text
@@ -1834,6 +1835,8 @@ study/src/org/labkey/study/plate/view/copyTemplate.jsp -text
 study/src/org/labkey/study/plate/view/plateTemplate.jsp -text
 study/src/org/labkey/study/plate/view/plateTemplateList.jsp -text
 study/src/org/labkey/study/query/AdditiveTypeTable.java -text
+study/src/org/labkey/study/query/BaseStudyQueryView.java -text
+study/src/org/labkey/study/query/BaseStudyTable.java -text
 study/src/org/labkey/study/query/CohortQueryView.java -text
 study/src/org/labkey/study/query/CohortTable.java -text
 study/src/org/labkey/study/query/DataSetColumnsTable.java -text
@@ -1860,10 +1863,10 @@ study/src/org/labkey/study/query/SpecimenQueryView.java -text
 study/src/org/labkey/study/query/SpecimenRequestQueryView.java -text
 study/src/org/labkey/study/query/SpecimenRequestTable.java -text
 study/src/org/labkey/study/query/SpecimenSummaryTable.java -text
+study/src/org/labkey/study/query/StudyPropertiesQueryView.java -text
+study/src/org/labkey/study/query/StudyPropertiesTable.java -text
 study/src/org/labkey/study/query/StudyQuerySchema.java -text
-study/src/org/labkey/study/query/StudyQueryView.java -text
 study/src/org/labkey/study/query/StudySchemaProvider.java -text
-study/src/org/labkey/study/query/StudyTable.java -text
 study/src/org/labkey/study/query/VisitTable.java -text
 study/src/org/labkey/study/reports/AbstractReportView.java -text
 study/src/org/labkey/study/reports/AttachmentReport.java -text

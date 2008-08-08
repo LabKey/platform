@@ -15,17 +15,27 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.security.User"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.api.view.ActionURL"%>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.CohortController" %>
+<%@ page import="org.labkey.study.controllers.StudyDefinitionController" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.study.query.StudyPropertiesQueryView" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <h4>General Study Information</h4>
 <%
+    JspView<StudyPropertiesQueryView> me = (JspView<StudyPropertiesQueryView>) HttpView.currentView();
     String visitLabel = StudyManager.getInstance().getVisitManager(getStudy()).getPluralLabel();
     ActionURL manageCohortsURL = new ActionURL(CohortController.ManageCohortsAction.class, getStudy().getContainer());
+    User user = HttpView.currentContext().getUser();
+    int numProperties = getStudy().getNumExtendedProperties(user);
+
+    String propString = numProperties == 1 ? "property" : "properties";
+
 %>
 <table>
     <tr>
@@ -33,6 +43,27 @@
         <td><%= h(getStudy().getLabel()) %></td>
         <td><%= textLink("Change Label", "manageStudyProperties.view") %></td>
     </tr>
+    <tr>
+        <th align="left">Additional Properties</th>
+        <td>This study has <%=numProperties%> additional <%=propString%></td>
+        <td><%= textLink("Edit Definition", new ActionURL(StudyDefinitionController.EditStudyDefinitionAction.class, getStudy().getContainer()).getLocalURIString()) %></td>
+    </tr>
+
+    <% if (numProperties > 0)
+    {
+    %>
+
+    <tr>
+        <td colspan="3">
+
+            <%me.include(me.getModelBean(), out);%>
+
+        </td>
+    </tr>
+    <%
+    }
+    %>
+
     <tr>
         <th align="left">Datasets</th>
         <td>This study defines <%= getDataSets().length %> Datasets</td>

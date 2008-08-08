@@ -28,7 +28,7 @@ import java.util.ArrayList;
  * Date: Jan 26, 2007
  * Time: 9:49:46 AM
  */
-public class SpecimenEventTable extends StudyTable
+public class SpecimenEventTable extends BaseStudyTable
 {
     private static final String[] DEFAULT_VISIBLE_COLS = {
     "LabId",

@@ -40,7 +40,7 @@ import java.util.Set;
  * Date: Apr 20, 2007
  * Time: 2:49:42 PM
  */
-public class SpecimenRequestQueryView extends StudyQueryView
+public class SpecimenRequestQueryView extends BaseStudyQueryView
 {
     private NavTree[] _extraLinks;
     private boolean _allowSortAndFilter = true;

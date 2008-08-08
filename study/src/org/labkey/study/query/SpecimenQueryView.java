@@ -39,7 +39,7 @@ import java.util.*;
  * Date: Aug 23, 2006
  * Time: 3:38:44 PM
  */
-public class SpecimenQueryView extends StudyQueryView
+public class SpecimenQueryView extends BaseStudyQueryView
 {
     private static class VialRestrictedDataRegion extends DataRegion
     {

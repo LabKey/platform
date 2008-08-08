@@ -29,7 +29,7 @@ import java.util.List;
  * User: brittp
  * Created: Jan 18, 2008 12:53:27 PM
  */
-public class CohortTable extends StudyTable
+public class CohortTable extends BaseStudyTable
 {
     public CohortTable(StudyQuerySchema schema)
     {

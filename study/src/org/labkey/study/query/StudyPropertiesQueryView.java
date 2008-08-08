@@ -1,0 +1,87 @@
+/*
+ * Copyright (c) 2008 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.labkey.study.query;
+
+import org.labkey.api.data.*;
+import org.labkey.api.security.User;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DataView;
+import org.labkey.api.view.ViewContext;
+import org.labkey.study.controllers.StudyPropertiesController;
+import org.labkey.study.model.ExtensibleStudyEntity;
+import org.labkey.study.model.Study;
+
+import java.io.IOException;
+import java.io.Writer;
+
+/**
+ * User: jgarms
+ * Date: Aug 7, 2008
+ * Time: 5:42:15 PM
+ */
+public class StudyPropertiesQueryView extends ExtensibleObjectQueryView
+{
+    public StudyPropertiesQueryView(User user, Study study, ViewContext viewContext, boolean allowEditing)
+    {
+        super(user, study, Study.class, viewContext, allowEditing);
+        setShadeAlternatingRows(false);
+    }
+
+    protected String getQueryName(Class<? extends ExtensibleStudyEntity> extensibleClass)
+    {
+        return "StudyProperties";
+    }
+
+    protected void populateButtonBar(DataView view, ButtonBar bar)
+    {
+        // no buttons
+    }
+
+    protected DataView createDataView()
+    {
+        DataView view = super.createDataView();
+        if (allowEditing() &&
+                getUser().isAdministrator())
+        {
+            view.getDataRegion().addDisplayColumn(0, new EditColumn(view.getRenderContext().getContainer()));
+        }
+        return view;
+    }
+
+    private class EditColumn extends SimpleDisplayColumn
+    {
+        private final Container container;
+
+        public EditColumn(Container container)
+        {
+            this.container = container;
+            setWidth(null);
+        }
+
+        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        {
+            out.write("[<a href=\"");
+
+            ActionURL actionURL = new ActionURL(StudyPropertiesController.UpdateAction.class, container);
+
+            out.write(PageFlowUtil.filter(actionURL.getLocalURIString()));
+            out.write("\">");
+            out.write("edit");
+            out.write("</a>]");
+        }
+    }
+}

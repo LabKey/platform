@@ -20,7 +20,10 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.study.SampleManager;
+import org.labkey.study.query.StudyQuerySchema;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -30,7 +33,7 @@ import java.util.*;
  * Date: Jan 6, 2006
  * Time: 10:28:32 AM
  */
-public class Study extends AbstractStudyEntity<Study> implements Extensible
+public class Study extends ExtensibleStudyEntity<Study>
 {
     private String _label;
     private boolean _dateBased;
@@ -263,6 +266,18 @@ public class Study extends AbstractStudyEntity<Study> implements Extensible
     public void setShowPrivateDataByDefault(boolean showPrivateDataByDefault)
     {
         _showPrivateDataByDefault = showPrivateDataByDefault;
+    }
+
+    public int getNumExtendedProperties(User user)
+    {
+        StudyQuerySchema schema = new StudyQuerySchema(this, user, true);
+        String domainURI = StudyManager.getInstance().getDomainURI(schema.getContainer(), Study.class);
+        Domain domain = PropertyService.get().getDomain(schema.getContainer(), domainURI);
+
+        if (domain == null)
+            return 0;
+
+        return domain.getProperties().length;
     }
 
     public static class SummaryStatistics

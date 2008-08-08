@@ -18,7 +18,7 @@ package org.labkey.study.model;
  * User: brittp
  * Created: Jan 15, 2008 4:27:38 PM
  */
-public class Cohort extends AbstractStudyEntity<Cohort> implements Extensible
+public class Cohort extends ExtensibleStudyEntity<Cohort>
 {
     private int _rowId = 0;
     private String _lsid;

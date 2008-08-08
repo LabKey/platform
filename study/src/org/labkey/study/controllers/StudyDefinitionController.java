@@ -28,7 +28,8 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.study.model.Cohort;
-import org.labkey.study.model.Extensible;
+import org.labkey.study.model.ExtensibleStudyEntity;
+import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.ExtensibleObjectQueryView;
 import org.springframework.validation.BindException;
@@ -53,7 +54,7 @@ public class StudyDefinitionController extends BaseStudyController
 
     private abstract class EditDefinitionAction extends SimpleRedirectAction
     {
-        protected abstract Class<? extends Extensible> getClassToEdit();
+        protected abstract Class<? extends ExtensibleStudyEntity> getClassToEdit();
 
         public ActionURL getRedirectURL(Object o) throws Exception
         {
@@ -80,11 +81,20 @@ public class StudyDefinitionController extends BaseStudyController
         }
     }
 
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class EditStudyDefinitionAction extends EditDefinitionAction
+    {
+        protected Class<? extends ExtensibleStudyEntity> getClassToEdit()
+        {
+            return Study.class;
+        }
+    }
+
     private abstract class ViewAction extends QueryViewAction<QueryViewAction.QueryExportForm, QueryView>
     {
         public ViewAction() {super(QueryExportForm.class);}
 
-        protected abstract Class<? extends Extensible> getClassToView();
+        protected abstract Class<? extends ExtensibleStudyEntity> getClassToView();
 
         protected abstract String getPluralName();
 
@@ -103,7 +113,7 @@ public class StudyDefinitionController extends BaseStudyController
     @RequiresPermission(ACL.PERM_ADMIN)
     public class CohortViewAction extends ViewAction
     {
-        protected Class<? extends Extensible> getClassToView()
+        protected Class<? extends ExtensibleStudyEntity> getClassToView()
         {
             StudyManager.getInstance().assertCohortsViewable(getContainer(), getUser());
             return Cohort.class;

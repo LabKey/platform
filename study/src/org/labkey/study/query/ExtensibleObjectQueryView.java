@@ -21,7 +21,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.study.model.Extensible;
+import org.labkey.study.model.ExtensibleStudyEntity;
 import org.labkey.study.model.Study;
 
 /**
@@ -38,7 +38,7 @@ public class ExtensibleObjectQueryView extends QueryView
     public ExtensibleObjectQueryView(
         User user,
         Study study,
-        Class<? extends Extensible> extensibleClass,
+        Class<? extends ExtensibleStudyEntity> extensibleClass,
         ViewContext context,
         boolean allowEditing)
     {
@@ -47,9 +47,14 @@ public class ExtensibleObjectQueryView extends QueryView
         setShadeAlternatingRows(true);
         setShowBorders(true);
         QuerySettings settings = getSchema().getSettings(context, null);
-        settings.setQueryName(extensibleClass.getSimpleName());
+        settings.setQueryName(getQueryName(extensibleClass));
         settings.setAllowChooseQuery(false);
         setSettings(settings);
+    }
+
+    protected String getQueryName(Class<? extends ExtensibleStudyEntity> extensibleClass)
+    {
+        return extensibleClass.getSimpleName();
     }
 
     protected DataView createDataView()

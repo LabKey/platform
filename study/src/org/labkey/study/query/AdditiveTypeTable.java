@@ -19,7 +19,7 @@ package org.labkey.study.query;
 import org.labkey.study.StudySchema;
 import org.labkey.api.query.AliasedColumn;
 
-public class AdditiveTypeTable extends StudyTable
+public class AdditiveTypeTable extends BaseStudyTable
 {
     public AdditiveTypeTable(StudyQuerySchema schema)
     {

@@ -23,7 +23,7 @@ import org.labkey.api.query.LookupForeignKey;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyManager;
 
-public class VisitTable extends StudyTable
+public class VisitTable extends BaseStudyTable
 {
     public VisitTable(StudyQuerySchema schema)
     {

@@ -72,7 +72,7 @@ public abstract class BaseStudyDomainKind extends DomainKind
         return new DomainProperty[0];
     }
 
-    protected abstract Class<? extends Extensible> getSupportedClass();
+    protected abstract Class<? extends ExtensibleStudyEntity> getSupportedClass();
 
     protected abstract TableInfo getTableInfo();
 }
