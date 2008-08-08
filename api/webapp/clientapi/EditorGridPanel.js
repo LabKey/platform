@@ -103,7 +103,8 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
             selModel: new Ext.grid.CheckboxSelectionModel({
                 moveEditorOnEnter: false
             }),
-            viewConfig: {forceFit: true}
+            viewConfig: {forceFit: true},
+            id: Ext.id(undefined, 'labkey-ext-grid')
         });
 
         //need to setup the default panel config *before*
@@ -216,7 +217,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
             if(col.editable && !col.editor)
                 col.editor = this.getDefaultEditor(col, config.lookups);
             if(!col.renderer)
-                col.renderer = this.getDefaultRenderer(col, config.lookups);
+                col.renderer = this.getDefaultRenderer(col, config.lookups, config.id);
 
             //remember the first editable column (used during add record)
             if(!this.firstEditableColumn && col.editable)
@@ -236,11 +237,15 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         if(config.selModel.on && config.autoSave)
             config.selModel.on("rowselect", this.onRowSelect, this);
 
-        //fire the "columnmodelcustomize" event
+        //fire the "columnmodelcustomize" event to allow clients
+        //to modify our default configuration of the column model
         this.fireEvent("columnmodelcustomize", config.columns, this);
+
+        //add custom renderers for multiline/long-text columns
+        this.setLongTextRenderers(config);
     },
 
-    getDefaultRenderer : function(col, lookups) {
+    getDefaultRenderer : function(col, lookups, gridId) {
         var meta = this.metaMap[col.dataIndex];
 
         if(meta.lookup && lookups)
@@ -249,7 +254,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         switch (meta.type)
         {
             case "date":
-                return function(data)
+                return function(data, metadata, record, rowIndex, colIndex, store)
                 {
                     if (!data)
                         return;
@@ -260,10 +265,10 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
                         return date.format("Y-m-d H:i:s")
                 };
                 break;
+            case "string":
             case "boolean":
             case "int":
             case "float":
-            case "string":
             default:
         }
     },
@@ -375,6 +380,36 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
             tpl : '<tpl for="."><div class="x-combo-list-item">{[values["' + meta.lookup.displayColumn + '"]]}</div></tpl>', //FIX: 5860
             listClass: 'labkey-grid-editor'
         });
+    },
+
+    setLongTextRenderers : function(config) {
+        var col;
+        for(var idx = 0; idx < config.columns.length; ++idx)
+        {
+            col = config.columns[idx];
+            if(col.multiline || (undefined === col.multiline && col.scale > 255))
+            {
+                if(col.editable)
+                {
+                    col.renderer = function(data, metadata, record, rowIndex, colIndex, store)
+                    {
+                        var mouseOverScript = "Ext.getCmp('" + config.id + "').onMouseOverLongCell(this, " + rowIndex + "," + colIndex + ")";
+                        var mouseOutScript = "Ext.getCmp('" + config.id + "').onMouseOutLongCell(this, " + rowIndex + "," + colIndex + ")";
+                        metadata.attr = "onmouseout=\"" + mouseOutScript + "\" onmouseover=\"" + mouseOverScript + "\"";
+                        return data;
+                    }
+                }
+                else
+                {
+                    col.renderer = function(data, metadata, record, rowIndex, colIndex, store)
+                    {
+                        //set quick-tip attributes and let Ext QuickTips do the work
+                        metadata.attr = "ext:qtitle=\"Notes\" ext:qtip=\"" + Ext.util.Format.htmlEncode(data) + "\"";
+                        return data;
+                    }
+                }
+            }
+        }
     },
 
     setupDefaultPanelConfig : function(config) {
@@ -541,16 +576,106 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
             this.saveChanges();
     },
 
-    onBodyClick : function(evt) {
-        //if the user clicked outside the grid,
-        //save changes
-        var target = evt.getTarget(undefined, undefined, true);
-        if(target.up("#" + this.id))
-            return
-
-        if(target.up(".labkey-grid-editor"))
+    onMouseOverLongCell : function(elem, rowIndex, colIndex)
+    {
+        if(this.longTextWin)
+            this.longTextWin.hideTask.cancel();
+        
+        //ignore if we're still on the same cell
+        if(this.longTextWin && this.longTextWin.cellId == elem.id)
             return;
 
-        this.saveChanges();
+        //commit the current editor
+        this.commitLongText();
+
+        //get the record associated with the row index
+        //and the column name associated with the column index
+        var record = this.getStore().getAt(rowIndex);
+        var colName = this.getColumnModel().getDataIndex(colIndex);
+
+        //get the Ext.Element version of the cell element
+        //so that we can get absolute coordinates
+        var extElem = Ext.get(elem);
+
+        //create the window if necessary
+        if(!this.longTextWin)
+        {
+            this.longTextWin = new Ext.Window({
+                closeAction: 'hide',
+                height: 400,
+                width: 300,
+                layout: 'fit',
+                items: [new Ext.form.TextArea()],
+                buttons: [
+                    {
+                        text: 'Close',
+                        handler: function(){this.closeLongTextWin()},
+                        scope: this
+                    }
+                ],
+                listeners: {
+                    hide: {
+                        fn: this.onCloseLongTextWin,
+                        scope: this
+                    }
+                }
+            });
+            this.longTextWin.hideTask = new Ext.util.DelayedTask(this.closeLongTextWin, this);
+        }
+
+        //set window and editor values
+        this.longTextWin.setTitle(colName);
+        this.longTextWin.getComponent(0).setValue(record.get(colName));
+        this.longTextWin.cellId = elem.id;
+        this.longTextWin.record = record;
+        this.longTextWin.colName = colName;
+
+        //position and show
+        var width = this.longTextWin.getEl() ? this.longTextWin.getSize().width : this.longTextWin.width;
+        var left = extElem.getLeft() + 15;
+        if(left + width >= Ext.getBody().getWidth())
+            left = extElem.getRight() - width - 15;
+        this.longTextWin.setPosition(left, extElem.getBottom());
+        this.longTextWin.show();
+
+        if(!this.longTextWin.addedListeners)
+        {
+            this.longTextWin.getEl().on("mouseover", function(){this.longTextWin.hideTask.cancel();}, this);
+            this.longTextWin.getEl().on("mouseout", function(){if(!this.longTextWin.hasFocus) this.longTextWin.hideTask.delay(500);}, this);
+            this.longTextWin.getComponent(0).getEl().on("focus", function(){this.longTextWin.hasFocus = true}, this);
+            this.longTextWin.getComponent(0).getEl().on("blur", function(){delete this.longTextWin.hasFocus; this.longTextWin.hideTask.delay(500);}, this);
+            this.longTextWin.addedListeners = true;
+        }
+
+    },
+
+    commitLongText : function()
+    {
+        if(this.longTextWin && this.longTextWin.record)
+            this.longTextWin.record.set(this.longTextWin.colName, this.longTextWin.getComponent(0).getValue());
+    },
+
+    onMouseOutLongCell : function(elem, rowIndex, colIndex)
+    {
+        if(this.longTextWin && this.longTextWin.cellId == elem.id)
+            this.longTextWin.hideTask.delay(500);
+    },
+
+    closeLongTextWin : function()
+    {
+        if(this.longTextWin)
+        {
+            this.commitLongText();
+            this.longTextWin.hideTask.cancel();
+            this.longTextWin.hide();
+        }
+    },
+
+    onCloseLongTextWin : function()
+    {
+        delete this.longTextWin.cellId;
+        delete this.longTextWin.colName;
+        delete this.longTextWin.record;
+        delete this.longTextWin.hasFocus;
     }
 });

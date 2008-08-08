@@ -307,6 +307,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
                 }
 
             store = new LABKEY.ext.Store(config);
+            this.lookupStores[columnName] = store;
             store.load();
         }
         return store;

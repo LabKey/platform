@@ -169,11 +169,11 @@ LABKEY.requiresClientAPI = function(immediate)
     if(LABKEY.devMode)
     {
         //load individual scripts so that they get loaded from source tree
+        LABKEY.requiresScript("clientapi/ExtJsConfig.js");
         LABKEY.requiresScript("clientapi/ActionURL.js");
         LABKEY.requiresScript("clientapi/Assay.js");
         LABKEY.requiresScript("clientapi/Chart.js");
         LABKEY.requiresScript("clientapi/EditorGridPanel.js");
-        LABKEY.requiresScript("clientapi/ExtJsConfig.js");
         LABKEY.requiresScript("clientapi/Filter.js");
         LABKEY.requiresScript("clientapi/GridView.js");
         LABKEY.requiresScript("clientapi/NavTrail.js");
