@@ -56,6 +56,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.sql.SQLException;
@@ -63,8 +64,7 @@ import java.util.*;
 
 public class QueryControllerSpring extends SpringActionController
 {
-    static DefaultActionResolver _actionResolver = new DefaultActionResolver(QueryControllerSpring.class,
-            DataRegionActions.SelectNoneAction.class, DataRegionActions.SetCheckAction.class);
+    static DefaultActionResolver _actionResolver = new DefaultActionResolver(QueryControllerSpring.class);
 
     public QueryControllerSpring() throws Exception
     {
@@ -1925,6 +1925,143 @@ public class QueryControllerSpring extends SpringActionController
             //new ManageViewsAction().appendNavTrail(root);
             root.addChild("Create New Grid View");
             return root;
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_READ)
+    public static class SelectNoneAction extends ApiAction<SelectForm>
+    {
+        public SelectNoneAction()
+        {
+            super(SelectForm.class);
+        }
+
+        public ApiResponse execute(final SelectForm form, BindException errors) throws Exception
+        {
+            DataRegionSelection.clearAll(getViewContext(), form.getKey());
+            return new SelectionResponse(0);
+        }
+    }
+
+    public static class SelectForm
+    {
+        protected String key;
+
+        public String getKey()
+        {
+            return key;
+        }
+
+        public void setKey(String key)
+        {
+            this.key = key;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public static class SelectAllAction extends ApiAction<SelectAllForm>
+    {
+        public SelectAllAction()
+        {
+            super(SelectAllForm.class);
+        }
+
+        public void validateForm(SelectAllForm form, Errors errors)
+        {
+            if (form.getSchemaName() == null ||
+                form.getQueryName() == null)
+            {
+                errors.reject(ERROR_MSG, "schemaName and queryName required");
+            }
+        }
+
+        public ApiResponse execute(final SelectAllForm form, BindException errors) throws Exception
+        {
+            int count = DataRegionSelection.selectAll(
+                    getViewContext(), form.getKey(), form);
+            return new SelectionResponse(count);
+        }
+    }
+
+    public class SelectAllForm extends QueryForm
+    {
+        protected String key;
+
+        public String getKey()
+        {
+            return key;
+        }
+
+        public void setKey(String key)
+        {
+            this.key = key;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public static class SetCheckAction extends ApiAction<SetCheckForm>
+    {
+        public SetCheckAction()
+        {
+            super(SetCheckForm.class);
+        }
+
+        public ApiResponse execute(final SetCheckForm form, BindException errors) throws Exception
+        {
+            String[] ids = form.getId(getViewContext().getRequest());
+            List<String> selection = new ArrayList<String>();
+            if (ids != null)
+            {
+                for (String id : ids)
+                {
+                    if (StringUtils.isNotBlank(id))
+                        selection.add(id);
+                }
+            }
+
+            int count = DataRegionSelection.setSelected(
+                    getViewContext(), form.getKey(),
+                    selection, form.isChecked());
+            return new SelectionResponse(count);
+        }
+
+    }
+
+    public static class SetCheckForm extends SelectForm
+    {
+        protected String[] ids;
+        protected boolean checked;
+
+        public String[] getId(HttpServletRequest request)
+        {
+            // 5025 : DataRegion checkbox names may contain comma
+            // Beehive parses a single parameter value with commas into an array
+            // which is not what we want.
+            return request.getParameterValues("id");
+        }
+
+        public void setId(String[] ids)
+        {
+            this.ids = ids;
+        }
+
+        public boolean isChecked()
+        {
+            return checked;
+        }
+
+        public void setChecked(boolean checked)
+        {
+            this.checked = checked;
+        }
+    }
+
+    public static class SelectionResponse extends ApiSimpleResponse
+    {
+        public SelectionResponse(int count)
+        {
+            super("count", count);
         }
     }
 

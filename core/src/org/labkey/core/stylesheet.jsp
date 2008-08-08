@@ -581,6 +581,14 @@ th.labkey-col-header-filter.hover, td.labkey-col-header-filter.hover, .labkey-co
     font-weight: bold;
 }
 
+.labkey-data-region-msg {
+    background-color:#FFDF8C;
+    border:1px solid #FFAD6A;
+    margin-bottom:4px;
+    text-align:center;
+    width:100%;
+}
+
 td.labkey-highlight-cell, th.labkey-highlight-cell
 {
     background: #<%=highlightCell%>;
