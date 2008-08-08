@@ -16,11 +16,17 @@
 
 package org.labkey.api.data;
 
-import org.apache.commons.lang.StringUtils;
-import org.labkey.api.view.ViewContext;
+import org.labkey.api.query.QueryForm;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpSession;
+import java.io.IOException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 
 /**
@@ -125,25 +131,16 @@ public class DataRegionSelection
     /**
      * Sets the checked state for the given ids in the session state.
      */
-    public static int setSelected(ViewContext context, String key, String[] ids, boolean checked)
+    public static int setSelected(ViewContext context, String key, Collection<String> selection, boolean checked)
     {
         synchronized (lock)
         {
             Set<String> selectedValues = getSet(context, key, true);
-            List<String> select = new ArrayList<String>();
-            if (ids != null)
-            {
-                for (String id : ids)
-                {
-                    if (StringUtils.isNotBlank(id))
-                        select.add(id);
-                }
-            }
 
             if (checked)
-                selectedValues.addAll(select);
+                selectedValues.addAll(selection);
             else
-                selectedValues.removeAll(select);
+                selectedValues.removeAll(selection);
             return selectedValues.size();
         }
     }
@@ -185,6 +182,56 @@ public class DataRegionSelection
     public static void clearAll(ViewContext context)
     {
         clearAll(context, null);
+    }
+
+    public static int selectAll(ViewContext context, String key, String schemaName, String queryName, String viewName, String sortFilter)
+            throws SQLException, IOException
+    {
+        QueryForm form = new QueryForm();
+        form.setSchemaName(schemaName);
+        form.setQueryName(queryName);
+        form.setViewName(viewName);
+        ActionURL url = new ActionURL();
+        url.setRawQuery(sortFilter);
+        form.getQuerySettings().setSortFilterURL(url);
+
+        return selectAll(context, key, form);
+    }
+
+    public static int selectAll(ViewContext context, String key, QueryForm form)
+            throws SQLException, IOException
+    {
+        QueryView view = new QueryView(form);
+        TableInfo table = view.getTable();
+        ResultSet rs = view.getResultset();
+
+        List<String> selection = createSelectionList(rs, table);
+        return setSelected(context, key, selection, true);
+    }
+
+    private static List<String> createSelectionList(ResultSet rs, TableInfo table)
+            throws SQLException
+    {
+        List<String> selected = new LinkedList<String>();
+        List<ColumnInfo> pkColumns = table.getPkColumns();
+        while (rs.next())
+        {
+            String and = "";
+            StringBuilder checkboxName = new StringBuilder();
+            for (ColumnInfo column : pkColumns)
+            {
+                Object v = column.getValue(rs);
+                if (null != v)
+                {
+                    checkboxName.append(and);
+                    checkboxName.append(PageFlowUtil.filter(v.toString()));
+                    and = ",";
+                }
+            }
+            selected.add(checkboxName.toString());
+        }
+
+        return selected;
     }
 
     public interface DataSelectionKeyForm

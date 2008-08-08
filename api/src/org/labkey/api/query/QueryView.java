@@ -22,7 +22,6 @@ import org.labkey.api.data.*;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.RReportBean;
@@ -578,13 +577,13 @@ public class QueryView extends WebPartView<Object>
         {
             boolean checked = pageSize.intValue() == maxRows;
             pageSizeMenu.addMenuItem(String.valueOf(pageSize) + " per page", "#",
-                    "setMaxRows(" + PageFlowUtil.jsString(regionName) + ", " + String.valueOf(pageSize) + ")", checked);
+                    "LABKEY.DataRegions[" + PageFlowUtil.jsString(regionName) + "].setMaxRows(" + String.valueOf(pageSize) + ")", checked);
         }
         pageSizeMenu.addSeparator();
         pageSizeMenu.addMenuItem("Show Selected", "#",
-                "setShowSelected(" + PageFlowUtil.jsString(regionName) + ")", showingSelected);
+                "LABKEY.DataRegions[" + PageFlowUtil.jsString(regionName) + "].showSelected()", showingSelected);
         pageSizeMenu.addMenuItem("Show All", "#",
-                "setShowAll(" + PageFlowUtil.jsString(regionName) + ")", showingAll);
+                "LABKEY.DataRegions[" + PageFlowUtil.jsString(regionName) + "].showAll()", showingAll);
 
         return pageSizeMenu;
     }

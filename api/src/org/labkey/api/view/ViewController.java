@@ -20,9 +20,6 @@ import org.apache.beehive.netui.pageflow.PageFlowControllerFIXED;
 import org.apache.beehive.netui.pageflow.annotations.Jpf;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionMessage;
-import org.labkey.api.action.ApiJsonWriter;
-import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.DataRegionActions;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Ownable;
@@ -453,28 +450,6 @@ public class ViewController extends PageFlowControllerFIXED
     protected Forward sendAjaxCompletions(List<AjaxCompletion> completions) throws IOException
     {
         PageFlowUtil.sendAjaxCompletions(getResponse(), completions);
-        return null;
-    }
-
-    // kevink: support data region selection on Beehive controllers
-    @Jpf.Action
-    public Forward setCheck(DataRegionActions.SetCheckForm form) throws Exception
-    {
-        DataRegionActions.SetCheckAction action = new DataRegionActions.SetCheckAction();
-        action.setViewContext(getViewContext());
-        ApiResponse response = action.execute(form, null);
-        new ApiJsonWriter(getResponse()).write(response);
-        return null;
-    }
-
-    // kevink: support data region selection on Beehive controllers
-    @Jpf.Action
-    public Forward selectNone(DataRegionActions.SelectNoneForm form) throws Exception
-    {
-        DataRegionActions.SelectNoneAction action = new DataRegionActions.SelectNoneAction();
-        action.setViewContext(getViewContext());
-        ApiResponse response = action.execute(form, null);
-        new ApiJsonWriter(getResponse()).write(response);
         return null;
     }
 

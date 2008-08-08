@@ -25,7 +25,6 @@ import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.WebTheme;
 import org.labkey.common.util.BoundMap;
 import org.labkey.common.util.Pair;
 
@@ -679,6 +678,8 @@ public class DataRegion extends DisplayElement
 
     protected void renderHeader(RenderContext ctx, Writer out, Integer resultSetSize, boolean renderButtons) throws IOException
     {
+        renderHeaderScript(ctx, out);
+
         if (renderButtons)
             renderFormHeader(out, MODE_GRID);
 
@@ -697,6 +698,46 @@ public class DataRegion extends DisplayElement
         if (_showPagination)
             renderPagination(ctx, out, resultSetSize);
         out.write("</td></tr>\n");
+
+        renderMessageBox(ctx, out);
+    }
+
+    protected void renderHeaderScript(RenderContext ctx, Writer out) throws IOException
+    {
+        out.write("<script type=\"text/javascript\">\n");
+        out.write("LABKEY.requiresScript('DataRegion.js');\n");
+        out.write("</script>\n");
+        out.write("<script type=\"text/javascript\">\n");
+        out.write("Ext.lib.Event.onAvailable('" + PageFlowUtil.encodeJavascriptStringLiteral("dataregion_" + getName()) + "',\n");
+        out.write("function () {new LABKEY.DataRegion({\n");
+        out.write("'name' : '" + PageFlowUtil.filter(getName()) + "',\n");
+//        out.write("'schemaName' : '" + "xxx" + "',\n");
+//        out.write("'queryName' : '" + "xxx" + "',\n");
+//        out.write("'viewName' : '" + "xxx" + "',\n");
+//        out.write("'filter' : '" + new SimpleFilter(ctx.getBaseFilter()).toQueryString(getName()) + "',\n");
+//        out.write("'sort' : '" + ctx.getBaseSort() + "',\n");
+        out.write("'complete' : " + _complete + ",\n");
+        out.write("'offset' : " + _offset + ",\n");
+        out.write("'maxRows' : " + _maxRows + ",\n");
+        out.write("'totalRows' : " + _totalRows + ",\n");
+        out.write("'selectionKey' : '" + PageFlowUtil.filter(_selectionKey) + "',\n");
+        out.write("'selectorCols' : '" + PageFlowUtil.filter(_recordSelectorValueColumns) + "'\n");
+        out.write("})});\n");
+        out.write("</script>\n");
+    }
+
+    protected void renderMessageBox(RenderContext ctx, Writer out) throws IOException
+    {
+        out.write("<tr><td colspan=\"2\">");
+        out.write("<table class=\"labkey-data-region-msg\" style=\"display:none;\" id=\"" + PageFlowUtil.filter("dataregion_msgbox_" + getName()) + "\">");
+        out.write("<tr>");
+        out.write("<td></td>");
+        out.write("<td align=\"right\">");
+        out.write("<img onclick=\"LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].hideMessage();\" title=\"Close this message\" alt=\"close\" src=\"" + ctx.getViewContext().getContextPath() + "/_images/partdelete.gif\">");
+        out.write("</td>");
+        out.write("</tr>");
+        out.write("</table>");
+        out.write("</td></tr>");
         out.write("</table>");
     }
 
@@ -718,15 +759,6 @@ public class DataRegion extends DisplayElement
 
         if (renderButtons)
             renderFormEnd(ctx, out);
-
-        if (_showPagination)
-        {
-            out.write("<script type='text/javascript'>\n");
-            out.write("YAHOO.util.Event.onAvailable('" + PageFlowUtil.encodeJavascriptStringLiteral("dataregion_" + getName()) + "', function () { resizeContainer('" + PageFlowUtil.encodeJavascriptStringLiteral(getName()) + "', true); }, null, null, false);\n");
-            out.write("YAHOO.util.Event.addListener(window, \"load\", function () { resizeContainer('" + PageFlowUtil.encodeJavascriptStringLiteral(getName()) + "', false); });\n");
-            out.write("YAHOO.util.Event.addListener(window, \"resize\", function () { resizeContainer('" + PageFlowUtil.encodeJavascriptStringLiteral(getName()) + "', false); });\n");
-            out.write("</script>\n");
-        }
     }
 
     protected void renderPagination(RenderContext ctx, Writer out, Integer resultSetSize)
@@ -784,7 +816,7 @@ public class DataRegion extends DisplayElement
 
     protected void paginateLink(Writer out, String title, String text, long newOffset) throws IOException
     {
-        out.write("<a title=\"" + title + "\" href='javascript:setOffset(" + PageFlowUtil.filterQuote(getName()) + ", " + newOffset + ");'>" + text + "</a> ");
+        out.write("<a title=\"" + title + "\" href='javascript:LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].setOffset(" + newOffset + ");'>" + text + "</a> ");
     }
 
     protected void renderNoRowsMessage(RenderContext ctx, Writer out, List<DisplayColumn> renderers) throws IOException
@@ -849,7 +881,6 @@ public class DataRegion extends DisplayElement
         renderTable(ctx, out);
     }
 
-
     protected void renderGridStart(RenderContext ctx, Writer out, List<DisplayColumn> renderers) throws IOException
     {
         if (isShowBorders())
@@ -904,7 +935,7 @@ public class DataRegion extends DisplayElement
 
             out.write("<input type=checkbox title='Check/uncheck all' name='");
             out.write(TOGGLE_CHECKBOX_NAME);
-            out.write("' onClick='sendCheckboxes(this, " + PageFlowUtil.filterQuote(getSelectionKey()) + ", this.checked);'");
+            out.write("' onClick='LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].selectPage(this.checked);'");
             out.write("></th>");
         }
 
@@ -1148,7 +1179,7 @@ public class DataRegion extends DisplayElement
 
         if (!isRecordSelectorEnabled(ctx))
             out.write(" DISABLED");
-        out.write(" onclick=\"sendCheckbox(this, " + PageFlowUtil.filterQuote(getSelectionKey()) + ", [this.value], this.checked);\"");
+        out.write(" onclick=\"LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].selectRow(this);\"");
         out.write(">");
         renderExtraRecordSelectorContent(ctx, out);
         out.write("</td>");

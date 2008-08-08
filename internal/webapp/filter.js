@@ -617,68 +617,6 @@ function doSort(tableName, columnName, sortDirection)
     setSearchString(tableName, buildQueryString(paramValPairs));
 }
 
-function setMaxRows(tableName, value)
-{
-    setParam(tableName, ".maxRows", value, [tableName + ".offset", tableName + ".maxRows", tableName + ".showAllRows", tableName + ".showSelected"]);
-}
-
-function setOffset(tableName, value)
-{
-    setParam(tableName, ".offset", value, [tableName + ".offset", tableName + ".showAllRows"]);
-}
-
-function setShowAll(tableName)
-{
-    setParam(tableName, ".showAllRows", "true", [tableName + ".offset", tableName + ".maxRows", tableName + ".showAllRows", tableName + ".showSelected"]);
-}
-
-function setShowSelected(tableName)
-{
-    setParam(tableName, ".showSelected", "true", [tableName + ".offset", tableName + ".maxRows", tableName + ".showAllRows"]);
-}
-
-function setParam(tableName, param, value, skipPrefixes)
-{
-    var paramValPairs = getParamValPairs(skipPrefixes);
-    if (value)
-    {
-        paramValPairs[paramValPairs.length] = [tableName + param, value];
-    }
-    setSearchString(tableName, buildQueryString(paramValPairs));
-}
-
-function resizeContainer(tableName, onload)
-{
-    var table = document.getElementById("dataregion_" + tableName);
-    if (!table)
-        return;
-    var newWidth = Math.min(table.offsetWidth, YAHOO.util.Dom.getViewportWidth() - YAHOO.util.Dom.getX(table.parentNode));
-
-    // ensure contents of header and footer fit into width
-    var header = document.getElementById("dataregion_header_" + tableName);
-    var footer = document.getElementById("dataregion_footer_" + tableName);
-
-    if (header)
-        header.width = newWidth;
-    if (footer)
-        footer.width = newWidth;
-    
-    // on load, make the pagination visible
-    if (onload)
-    {
-        showPagination(header);
-        showPagination(footer);
-    }
-}
-
-function showPagination(el)
-{
-    if (!el) return;
-    var pagination = YAHOO.util.Dom.getElementsByClassName("labkey-pagination", "div", el)[0];
-    if (pagination)
-        pagination.style.visibility = "visible";
-}
-
 // If at least one checkbox on the form is selected then GET/POST url.  Otherwise, display an error.
 function verifySelected(form, url, method, pluralNoun, confirmText)
 {

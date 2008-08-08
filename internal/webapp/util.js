@@ -22,44 +22,6 @@ function setAllCheckboxes(form, value, elementName)
     return ids;
 }
 
-function sendCheckboxes(el, key, value)
-{
-    var form = el;
-    do
-    {
-        form = form.parentNode;
-    } while (form.tagName != "FORM");
-
-    sendCheckbox(el, key, setAllCheckboxes(form, value, '.select'), value);
-    return false;
-}
-
-function sendCheckbox(el, key, ids, checked)
-{
-    if (!key || ids.length == 0)
-        return;
-    var url = LABKEY.ActionURL.buildURL("query", "setCheck.api", LABKEY.ActionURL.getContainer(), { 'key' : key, 'checked' : checked });
-    for (var i = 0; i < ids.length; i++)
-        url += "&id=" + ids[i];
-
-    var xmlhttp = new XMLRequest(url);
-    xmlhttp.get();
-}
-
-function selectNone(el, key)
-{
-    var path = window.location.pathname;
-    var url = LABKEY.ActionURL.buildURL("query", "selectNone.api", LABKEY.ActionURL.getContainer(), { 'key' : key });
-    var xmlhttp = new XMLRequest(url);
-    xmlhttp.get();
-
-    var form = el;
-    do
-    {
-        form = form.parentNode;
-    } while (form.tagName != "FORM");
-    setAllCheckboxes(form, false);
-}
 
 function getChildWithClassName(root, tagName, className)
 {
