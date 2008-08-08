@@ -202,6 +202,19 @@ LABKEY.Utils = new function()
             }
 
             return result;
+        },
+
+        /**
+         * Returns a URL to the appropriate file icon image based on the specified file name.
+         * Note that file name can be a full path or just the file name and extension.
+         * If the file name does not include an extension, the URL for a generic image will be returned
+         * @param {String} fileName The file name.
+         * @return {String} The URL suitable for use in the src attribute of an img element.
+         */
+        getFileIconUrl : function(fileName) {
+            var idx = fileName.lastIndexOf(".");
+            var extension = (idx >= 0) ? fileName.substring(idx + 1) : "_generic";
+            return LABKEY.ActionURL.getContextPath() + "/_icons/" + extension + ".gif";
         }
     }
 }

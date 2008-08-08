@@ -15,15 +15,18 @@
  */
 package org.labkey.api.action;
 
-import org.labkey.api.data.*;
-import org.labkey.api.query.QueryView;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.view.ViewContext;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.view.ViewContext;
 
 import java.sql.ResultSet;
-import java.util.*;
 import java.text.SimpleDateFormat;
+import java.util.*;
 
 /**
  * API response class for a query view
@@ -35,6 +38,7 @@ import java.text.SimpleDateFormat;
  */
 public class ApiQueryResponse implements ApiResponse
 {
+    private static final String URL_COL_PREFIX = "_labkeyurl_";
     private Map<String, Object> _props = new HashMap<String, Object>();
     private TableInfo _tinfo = null;
     private ResultSet _rs = null;
@@ -104,7 +108,19 @@ public class ApiQueryResponse implements ApiResponse
         for(DisplayColumn dc : _displayColumns)
         {
             if(dc.isQueryColumn())
-                fields.add(getMetaData(dc));
+            {
+                Map<String,Object> fmdata = getMetaData(dc);
+                //if the column type is file, include an extra column for the url
+                if("file".equalsIgnoreCase(dc.getColumnInfo().getInputType()))
+                {
+                    fmdata.put("file", true);
+                    Map<String,Object> urlmdata = new HashMap<String,Object>();
+                    urlmdata.put("name", URL_COL_PREFIX + dc.getColumnInfo().getName());
+                    urlmdata.put("type", "string");
+                    fields.add(urlmdata);
+                }
+                fields.add(fmdata);
+            }
         }
 
         mdata.put("root", "rows");
@@ -253,6 +269,12 @@ public class ApiQueryResponse implements ApiResponse
             row.put(dc.getColumnInfo().getName(), _dateFormat.format(value));
         else
             row.put(dc.getColumnInfo().getName(), value);
+
+        //if the display column has a url, include that as another row property
+        //with the name "<URL_COL_PREFIX><colname>"
+        String url = dc.getURL(_ctx);
+        if(null != url)
+            row.put(URL_COL_PREFIX + dc.getColumnInfo().getName(), url);
     }
 
     protected boolean isEditable(DisplayColumn dc)

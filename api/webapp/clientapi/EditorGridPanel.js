@@ -205,10 +205,14 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         config.columns = config.store.reader.jsonData.columnModel;
 
         //set the renderers and editors for the various columns
+        //build a column model index as we run the columns for the
+        //customize event
+        var colModelIndex = {};
         var col;
         for(var idx = 0; idx < config.columns.length; ++idx)
         {
             col = config.columns[idx];
+            colModelIndex[col.dataIndex] = col;
 
             //set col.editable false unless the config.editable is true
             if(!config.editable)
@@ -239,7 +243,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
 
         //fire the "columnmodelcustomize" event to allow clients
         //to modify our default configuration of the column model
-        this.fireEvent("columnmodelcustomize", config.columns, this);
+        this.fireEvent("columnmodelcustomize", config.columns, colModelIndex);
 
         //add custom renderers for multiline/long-text columns
         this.setLongTextRenderers(config);
@@ -251,25 +255,43 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         if(meta.lookup && lookups)
             return this.getLookupRenderer(col, meta);
 
-        switch (meta.type)
+        return function(data, cellMetaData, record, rowIndex, colIndex, store)
         {
-            case "date":
-                return function(data, metadata, record, rowIndex, colIndex, store)
-                {
-                    if (!data)
-                        return;
+            if(null == data)
+                return data;
+
+            //format data into a string
+            var displayValue;
+            switch (meta.type)
+            {
+                case "date":
                     var date = new Date(data);
                     if (date.getHours() == 0 && date.getMinutes() == 0 && date.getSeconds() == 0)
-                        return date.format("Y-m-d");
+                        displayValue = date.format("Y-m-d");
                     else
-                        return date.format("Y-m-d H:i:s")
-                };
-                break;
-            case "string":
-            case "boolean":
-            case "int":
-            case "float":
-            default:
+                        displayValue = date.format("Y-m-d H:i:s")
+                    break;
+                case "string":
+                case "boolean":
+                case "int":
+                case "float":
+                default:
+                    displayValue = data.toString();
+            }
+
+            //if meta.file is true, add an <img> for the file icon
+            if(meta.file)
+            {
+                displayValue = "<img src=\"" + LABKEY.Utils.getFileIconUrl(data) + "\" alt=\"icon\" title=\"Click to download file\"/>&nbsp;" + displayValue;
+                //since the icons are 16x16, cut the default padding down to just 1px
+                cellMetaData.attr = "style=\"padding: 1px 1px 1px 1px\"";
+            }
+
+            //wrap in <a> if url is present in the record
+            if(record.get("_labkeyurl_" + col.dataIndex))
+                return "<a href=\"" + record.get("_labkeyurl_" + col.dataIndex) + "\">" + displayValue + "</a>";
+            else
+                return displayValue;
         }
     },
 
