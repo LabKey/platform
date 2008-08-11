@@ -14,4 +14,5 @@
  * limitations under the License.
  */
 
-ALTER TABLE pipeline.StatusFiles ADD CONSTRAINT UQ_StatusFiles_FilePath UNIQUE (FilePath);
+CREATE INDEX IX_StatusFiles_Job ON pipeline.StatusFiles (Job)
+GO
