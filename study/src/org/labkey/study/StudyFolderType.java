@@ -65,7 +65,7 @@ public class StudyFolderType extends DefaultFolderType
 
         Set<Module> active = getDefaultModuleSet();
         active.add(module);
-        Set<String> dependencies = module.getModuleDependencies();
+        Set<String> dependencies = module.getMetaData().getModuleDependencies();
         for (String moduleName : dependencies)
             active.add(ModuleLoader.getInstance().getModule(moduleName));
        _activeModulesForOwnedFolder = active;

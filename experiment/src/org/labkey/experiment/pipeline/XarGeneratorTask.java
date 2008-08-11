@@ -241,80 +241,89 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
 
     private void insertRun() throws SQLException, PipelineJobException
     {
-        ExperimentService.get().beginTransaction();
-        List<RecordedAction> actions = new ArrayList<RecordedAction>(getJob().getActions());
-
-        Map<String, ExpProtocol> protocolCache = new HashMap<String, ExpProtocol>();
-        List<String> protocolSequence = new ArrayList<String>();
-        Set<URI> runOutputs = new HashSet<URI>();
-        Map<URI, String> runInputsWithRoles = new HashMap<URI, String>();
-
-        // Build up the sequence of steps for this pipeline definition, which gets turned into a protocol
-        for (TaskId taskId : getJob().getTaskPipeline().getTaskProgression())
+        ExpRunImpl run;
+        try
         {
-            TaskFactory<?> factory = PipelineJobService.get().getTaskFactory(taskId);
-
-            for (String name : factory.getProtocolActionNames())
+            synchronized (ExperimentService.get().getImportLock())
             {
-                addProtocol(protocolCache, name);
-                protocolSequence.add(name);
-            }
-        }
+                ExperimentService.get().beginTransaction();
+                RecordedActionSet actionSet = getJob().getActionSet();
+                List<RecordedAction> actions = new ArrayList<RecordedAction>(actionSet.getActions());
 
-        String protocolObjectId = getJob().getTaskPipeline().getProtocolIdentifier();
-        Lsid lsid = new Lsid(ExperimentService.get().generateLSID(getJob().getContainer(), ExpProtocol.class, protocolObjectId));
+                Map<String, ExpProtocol> protocolCache = new HashMap<String, ExpProtocol>();
+                List<String> protocolSequence = new ArrayList<String>();
+                Set<URI> runOutputs = new HashSet<URI>();
+                Map<URI, String> runInputsWithRoles = new HashMap<URI, String>();
 
-        ExpProtocol parentProtocol = ensureProtocol(protocolCache, protocolSequence, lsid, getJob().getTaskPipeline().getProtocolShortDescription());
-
-        for (RecordedAction action : actions)
-        {
-            if (protocolCache.get(action.getName()) == null)
-            {
-                throw new IllegalArgumentException("Could not find a matching action declaration for " + action.getName());
-            }
-
-            for (RecordedAction.DataFile dataFile : action.getInputs())
-            {
-                if (runInputsWithRoles.get(dataFile.getURI()) == null)
+                // Build up the sequence of steps for this pipeline definition, which gets turned into a protocol
+                for (TaskId taskId : getJob().getTaskPipeline().getTaskProgression())
                 {
-                    // Don't stomp over the role specified the first time a file was used as an input
-                    runInputsWithRoles.put(dataFile.getURI(), dataFile.getRole());
+                    TaskFactory<?> factory = PipelineJobService.get().getTaskFactory(taskId);
+
+                    for (String name : factory.getProtocolActionNames())
+                    {
+                        addProtocol(protocolCache, name);
+                        protocolSequence.add(name);
+                    }
                 }
-            }
-            for (RecordedAction.DataFile dataFile : action.getOutputs())
-            {
-                if (!dataFile.isTransient())
+
+                String protocolObjectId = getJob().getTaskPipeline().getProtocolIdentifier();
+                Lsid lsid = new Lsid(ExperimentService.get().generateLSID(getJob().getContainer(), ExpProtocol.class, protocolObjectId));
+
+                ExpProtocol parentProtocol = ensureProtocol(protocolCache, protocolSequence, lsid, getJob().getTaskPipeline().getProtocolShortDescription());
+
+                runInputsWithRoles.putAll(actionSet.getOtherInputs());
+
+                for (RecordedAction action : actions)
                 {
-                    runOutputs.add(dataFile.getURI());
+                    if (protocolCache.get(action.getName()) == null)
+                    {
+                        throw new IllegalArgumentException("Could not find a matching action declaration for " + action.getName());
+                    }
+
+                    for (RecordedAction.DataFile dataFile : action.getInputs())
+                    {
+                        if (runInputsWithRoles.get(dataFile.getURI()) == null)
+                        {
+                            // Don't stomp over the role specified the first time a file was used as an input
+                            runInputsWithRoles.put(dataFile.getURI(), dataFile.getRole());
+                        }
+                    }
+                    for (RecordedAction.DataFile dataFile : action.getOutputs())
+                    {
+                        if (!dataFile.isTransient())
+                        {
+                            runOutputs.add(dataFile.getURI());
+                        }
+                    }
                 }
+
+                // Files count as inputs to the run if they're used by one of the actions and weren't produced by one of
+                // the actions.
+                for (RecordedAction action : actions)
+                {
+                    for (RecordedAction.DataFile dataFile : action.getOutputs())
+                    {
+                        runInputsWithRoles.remove(dataFile.getURI());
+                    }
+                }
+
+                XarSource source = new XarGeneratorSource(getJob(), _factory.getXarFile(getJob()));
+                run = insertRun(actionSet.getActions(), source, runOutputs, runInputsWithRoles, parentProtocol);
+
+                writeXarToDisk(run);
+
+                ExperimentService.get().commitTransaction();
             }
         }
-
-        // Files count as inputs to the run if they're used by one of the actions and weren't produced by one of
-        // the actions.
-        for (RecordedAction action : actions)
+        finally
         {
-            for (RecordedAction.DataFile dataFile : action.getOutputs())
-            {
-                runInputsWithRoles.remove(dataFile.getURI());
-            }
-        }
-
-        XarSource source = new XarGeneratorSource(getJob(), _factory.getXarFile(getJob()));
-        ExpRunImpl run = insertRun(actions, source, runOutputs, runInputsWithRoles, parentProtocol);
-
-        writeXarToDisk(run);
-
-        ExperimentService.get().commitTransaction();
-
-        if (getJob() instanceof FileAnalysisJobSupport)
-        {
-            ((FileAnalysisJobSupport)getJob()).setExperimentRunRowId(run.getRowId());
+            ExperimentService.get().closeTransaction();
         }
 
         // Consider these actions complete. There may be additional runs created later in this job, and they
         // shouldn't duplicate the actions.
-        getJob().getActions().clear();
+        getJob().clearActionSet(run);
     }
 
     private ExpRunImpl insertRun(List<RecordedAction> actions, XarSource source, Set<URI> runOutputs, Map<URI, String> runInputsWithRoles, ExpProtocol parentProtocol)
@@ -556,10 +565,10 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
         FileOutputStream fOut = null;
         try
         {
-            fOut = new FileOutputStream(f);
             XarExporter exporter = new XarExporter(LSIDRelativizer.FOLDER_RELATIVE, DataURLRelativizer.ORIGINAL_FILE_LOCATION);
             exporter.addExperimentRun(run);
 
+            fOut = new FileOutputStream(f);
             exporter.dumpXML(fOut);
             fOut.close();
             fOut = null;

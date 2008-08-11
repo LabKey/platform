@@ -25,14 +25,14 @@ import org.springframework.context.support.FileSystemXmlApplicationContext;
 */
 public class LabKeySpringContainerContext extends SpringContainerContext
 {
-    private static FileSystemXmlApplicationContext context;
+    private static BeanFactory context;
 
     public BeanFactory getBeanFactory()
     {
         return context;
     }
 
-    public static void setContext(FileSystemXmlApplicationContext context)
+    public static void setContext(BeanFactory context)
     {
         LabKeySpringContainerContext.context = context;
     }

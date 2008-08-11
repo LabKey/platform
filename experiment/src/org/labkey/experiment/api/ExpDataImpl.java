@@ -253,19 +253,19 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
 
         if (xarSource.shouldIgnoreDataFiles())
         {
-            _log.info("Skipping load of data file " + dataFileURL + " based on the XAR source");
+            job.info("Skipping load of data file " + dataFileURL + " based on the XAR source");
             return;
         }
 
         try
         {
-            _log.info("Trying to load data file " + dataFileURL + " into the system");
+            job.info("Trying to load data file " + dataFileURL + " into the system");
 
             File file = new File(new URI(dataFileURL));
 
             if (!file.exists())
             {
-                _log.warn("Unable to find the data file " + file.getPath() + " on disk.");
+                job.warn("Unable to find the data file " + file.getPath() + " on disk.");
                 return;
             }
 
@@ -278,10 +278,10 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
                 {
                     if (pr == null)
                     {
-                        _log.warn("No pipeline root was set, skipping load of file " + file.getPath());
+                        job.warn("No pipeline root was set, skipping load of file " + file.getPath());
                         return;
                     }
-                    _log.warn("The data file " + file.getAbsolutePath() + " is not under the folder's pipeline root, " + pr.getUri() + ". It will not be loaded directly, but may be loaded if referenced from other files that are under the pipeline root.");
+                    job.warn("The data file " + file.getAbsolutePath() + " is not under the folder's pipeline root, " + pr.getUri() + ". It will not be loaded directly, but may be loaded if referenced from other files that are under the pipeline root.");
                     return;
                 }
             }
@@ -300,7 +300,7 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
                 throw new XarFormatException(e);
             }
 
-            _log.info("Finished trying to load data file " + dataFileURL + " into the system");
+            job.info("Finished trying to load data file " + dataFileURL + " into the system");
         }
         catch (URISyntaxException e)
         {

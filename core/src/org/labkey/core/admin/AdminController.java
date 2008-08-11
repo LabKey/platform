@@ -2030,7 +2030,7 @@ public class AdminController extends SpringActionController
             }
 
             getPageConfig().setTemplate(Template.Dialog);
-            return new JspView<TestNetworkDriveBean>("/org/labkey/core/admin/testNetworkDrive.jsp", bean);
+            return new JspView<TestNetworkDriveBean>("/org/labkey/core/admin/testNetworkDrive.jsp", bean, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)

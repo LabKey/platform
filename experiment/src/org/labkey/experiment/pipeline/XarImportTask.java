@@ -103,7 +103,10 @@ public class XarImportTask extends PipelineJob.Task<XarImportTask.Factory>
         {
             ExpRun run = source.getExperimentRun();
             if (run != null)
-                getJobSupport().setExperimentRunRowId(run.getRowId());
+            {
+                // TODO - need another way to send in the run info without clearing the action set? OK for now at least
+                getJob().clearActionSet(run);
+            }
         }
 
         return Collections.emptyList();

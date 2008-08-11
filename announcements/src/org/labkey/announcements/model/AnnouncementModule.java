@@ -275,15 +275,6 @@ public class AnnouncementModule extends DefaultModule implements Search.Searchab
         return PageFlowUtil.set(CommSchema.getInstance().getSchemaName());
     }
 
-    @Override
-    public Set<String> getModuleDependencies()
-    {
-        Set<String> result = new HashSet<String>();
-        result.add("Wiki");
-        return result;
-    }
-
-
     public Collection<String> getSummary(Container c)
     {
         List<String> list = new ArrayList<String>(1);

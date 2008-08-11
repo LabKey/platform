@@ -212,16 +212,6 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
         return PageFlowUtil.set(StudySchema.getInstance().getSchema());
     }
 
-    public Set<String> getModuleDependencies()
-    {
-        Set<String> result = new HashSet<String>();
-        result.add("Experiment");
-        result.add("Pipeline");
-        result.add("Wiki");
-        result.add("Portal");
-        return result;
-    }
-
     private void registerFolderType()
     {
         ModuleLoader.getInstance().registerFolderType(new StudyFolderType(this));

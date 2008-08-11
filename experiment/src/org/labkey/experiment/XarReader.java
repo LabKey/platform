@@ -105,7 +105,7 @@ public class XarReader extends AbstractXarImporter
                 for (int i = a.getExperimentLog().getExperimentLogEntryArray().length - 1; i >= 0; i--)
                     a.getExperimentLog().removeExperimentLogEntry(i);
 
-                fos = new FileOutputStream(expDir + "/experiment.xml");
+                fos = new FileOutputStream(new File(expDir, "experiment.xar.xml"));
                 XmlOptions xOpt = new XmlOptions().setSavePrettyPrint();
                 document.save(fos, xOpt);
             }
@@ -191,107 +191,110 @@ public class XarReader extends AbstractXarImporter
         boolean existingTransaction = ExperimentService.get().getSchema().getScope().isTransactionActive();
         try
         {
-            if (!existingTransaction)
+            synchronized(ExperimentService.get().getImportLock())
             {
-                ExperimentService.get().getSchema().getScope().beginTransaction();
-            }
-
-            ExperimentArchiveType.ExperimentRuns experimentRuns = _experimentArchive.getExperimentRuns();
-            // Start by clearing out existing things that we're going to be importing
-            if (experimentRuns != null)
-            {
-                deleteExistingExperimentRuns(experimentRuns, deleteExistingRuns);
-            }
-
-            ExperimentArchiveType.ProtocolActionDefinitions actionDefs = _experimentArchive.getProtocolActionDefinitions();
-            if (actionDefs != null)
-            {
-                deleteUniqueActions(actionDefs.getProtocolActionSetArray());
-            }
-
-            ExperimentArchiveType.ProtocolDefinitions protocolDefs = _experimentArchive.getProtocolDefinitions();
-            if (protocolDefs != null)
-            {
-                deleteUniqueProtocols(protocolDefs.getProtocolArray());
-            }
-
-            ExperimentArchiveType.DomainDefinitions domainDefs = _experimentArchive.getDomainDefinitions();
-            if (domainDefs != null)
-            {
-                for (DomainDescriptorType domain : _experimentArchive.getDomainDefinitions().getDomainArray())
+                if (!existingTransaction)
                 {
-                    loadDomain(domain);
-                }
-            }
-            
-            ExperimentArchiveType.SampleSets sampleSets = _experimentArchive.getSampleSets();
-            if (sampleSets != null)
-            {
-                for (SampleSetType sampleSet : sampleSets.getSampleSetArray())
-                {
-                    loadSampleSet(sampleSet);
-                }
-            }
-
-            // Then start loading
-            for (ExperimentType exp : _experimentArchive.getExperimentArray())
-            {
-                loadExperiment(exp);
-                getLog().info("Experiment/Run group import complete");
-                getLog().info("");
-            }
-
-            if (protocolDefs != null)
-            {
-                for (ProtocolBaseType p : protocolDefs.getProtocolArray())
-                {
-                    loadProtocol(p);
-                }
-                getLog().info("Protocol import complete");
-                getLog().info("");
-            }
-
-            if (actionDefs != null)
-            {
-                for (ProtocolActionSetType actionSet : actionDefs.getProtocolActionSetArray())
-                {
-                    loadActionSet(actionSet);
+                    ExperimentService.get().getSchema().getScope().beginTransaction();
                 }
 
-                getLog().info("Protocol action set import complete");
-                getLog().info("");
-            }
-
-            List<ExpMaterial> startingMaterials = new ArrayList<ExpMaterial>();
-            List<Data> startingData = new ArrayList<Data>();
-
-            if (_experimentArchive.getStartingInputDefinitions() != null)
-            {
-                for (MaterialBaseType material : _experimentArchive.getStartingInputDefinitions().getMaterialArray())
+                ExperimentArchiveType.ExperimentRuns experimentRuns = _experimentArchive.getExperimentRuns();
+                // Start by clearing out existing things that we're going to be importing
+                if (experimentRuns != null)
                 {
-                    // ignore dups of starting inputs
-                    startingMaterials.add(loadMaterial(material, null, null, getRootContext()));
-                }
-                for (DataBaseType data : _experimentArchive.getStartingInputDefinitions().getDataArray())
-                {
-                    startingData.add(loadData(data, null, null, getRootContext()));
+                    deleteExistingExperimentRuns(experimentRuns, deleteExistingRuns);
                 }
 
-                getLog().info("Starting input import complete");
-                getLog().info("");
-            }
-
-            if (experimentRuns != null)
-            {
-                for (ExperimentRunType experimentRun : experimentRuns.getExperimentRunArray())
+                ExperimentArchiveType.ProtocolActionDefinitions actionDefs = _experimentArchive.getProtocolActionDefinitions();
+                if (actionDefs != null)
                 {
-                    loadExperimentRun(experimentRun, startingMaterials, startingData);
+                    deleteUniqueActions(actionDefs.getProtocolActionSetArray());
                 }
-            }
 
-            if (!existingTransaction)
-            {
-                ExperimentService.get().getSchema().getScope().commitTransaction();
+                ExperimentArchiveType.ProtocolDefinitions protocolDefs = _experimentArchive.getProtocolDefinitions();
+                if (protocolDefs != null)
+                {
+                    deleteUniqueProtocols(protocolDefs.getProtocolArray());
+                }
+
+                ExperimentArchiveType.DomainDefinitions domainDefs = _experimentArchive.getDomainDefinitions();
+                if (domainDefs != null)
+                {
+                    for (DomainDescriptorType domain : _experimentArchive.getDomainDefinitions().getDomainArray())
+                    {
+                        loadDomain(domain);
+                    }
+                }
+
+                ExperimentArchiveType.SampleSets sampleSets = _experimentArchive.getSampleSets();
+                if (sampleSets != null)
+                {
+                    for (SampleSetType sampleSet : sampleSets.getSampleSetArray())
+                    {
+                        loadSampleSet(sampleSet);
+                    }
+                }
+
+                // Then start loading
+                for (ExperimentType exp : _experimentArchive.getExperimentArray())
+                {
+                    loadExperiment(exp);
+                    getLog().info("Experiment/Run group import complete");
+                    getLog().info("");
+                }
+
+                if (protocolDefs != null)
+                {
+                    for (ProtocolBaseType p : protocolDefs.getProtocolArray())
+                    {
+                        loadProtocol(p);
+                    }
+                    getLog().info("Protocol import complete");
+                    getLog().info("");
+                }
+
+                if (actionDefs != null)
+                {
+                    for (ProtocolActionSetType actionSet : actionDefs.getProtocolActionSetArray())
+                    {
+                        loadActionSet(actionSet);
+                    }
+
+                    getLog().info("Protocol action set import complete");
+                    getLog().info("");
+                }
+
+                List<ExpMaterial> startingMaterials = new ArrayList<ExpMaterial>();
+                List<Data> startingData = new ArrayList<Data>();
+
+                if (_experimentArchive.getStartingInputDefinitions() != null)
+                {
+                    for (MaterialBaseType material : _experimentArchive.getStartingInputDefinitions().getMaterialArray())
+                    {
+                        // ignore dups of starting inputs
+                        startingMaterials.add(loadMaterial(material, null, null, getRootContext()));
+                    }
+                    for (DataBaseType data : _experimentArchive.getStartingInputDefinitions().getDataArray())
+                    {
+                        startingData.add(loadData(data, null, null, getRootContext()));
+                    }
+
+                    getLog().info("Starting input import complete");
+                    getLog().info("");
+                }
+
+                if (experimentRuns != null)
+                {
+                    for (ExperimentRunType experimentRun : experimentRuns.getExperimentRunArray())
+                    {
+                        loadExperimentRun(experimentRun, startingMaterials, startingData);
+                    }
+                }
+
+                if (!existingTransaction)
+                {
+                    ExperimentService.get().getSchema().getScope().commitTransaction();
+                }
             }
 
             try

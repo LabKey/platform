@@ -15,17 +15,16 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.core.admin.TestNetworkDriveBean" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+
 <%
     JspView<TestNetworkDriveBean> me = (JspView<TestNetworkDriveBean>) HttpView.currentView();
     TestNetworkDriveBean bean = me.getModelBean();
-
-    String errors = PageFlowUtil.getStrutsError(request, "main");
 %>
-<span class="labkey-error"><%=errors%></span>
+<labkey:errors />
 
 <% if (bean.getFiles() != null) {  %>
     <p><b>Success!</b></p>

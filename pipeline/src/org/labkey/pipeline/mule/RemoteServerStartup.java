@@ -17,33 +17,32 @@ package org.labkey.pipeline.mule;
 
 import org.mule.config.builders.MuleXmlConfigurationBuilder;
 import org.mule.config.ConfigurationException;
-import org.springframework.context.support.FileSystemXmlApplicationContext;
+import org.springframework.beans.factory.BeanFactory;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
+import org.labkey.pipeline.AbstractPipelineStartup;
 import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.PipelineService;
 import org.apache.log4j.Logger;
 
 import java.net.URLEncoder;
 import java.net.URL;
 import java.net.HttpURLConnection;
 import java.io.IOException;
+import java.io.File;
+import java.util.List;
+import java.util.Map;
 
 /*
 * User: jeckels
 * Date: Jun 26, 2008
 */
-public class MuleStartup
+public class RemoteServerStartup extends AbstractPipelineStartup
 {
-    private static Logger _log = Logger.getLogger(MuleStartup.class);
+    private static Logger _log = Logger.getLogger(RemoteServerStartup.class);
 
-    public void run(String[] springConfigPaths, String[] args) throws ConfigurationException, IOException
+    public void run(List<File> moduleFiles, List<File> moduleConfigFiles, List<File> customConfigFiles, String[] args) throws ConfigurationException, IOException
     {
-        LoggerUtil.initLogging("org/labkey/pipeline/mule/config/remote.log4j.properties");
-
-        // Set up the PipelineJobService so that Spring can configure it
-        PipelineJobServiceImpl.initDefaults();
-
-        // Initialize the Spring context
-        FileSystemXmlApplicationContext context = new FileSystemXmlApplicationContext(springConfigPaths);
+        Map<String, BeanFactory> factories = initContext("org/labkey/pipeline/mule/config/remote.log4j.properties", moduleFiles, moduleConfigFiles, customConfigFiles);
 
         PipelineJobService.RemoteServerProperties props = PipelineJobServiceImpl.get().getRemoteServerProperties();
         if (props == null)
@@ -54,7 +53,7 @@ public class MuleStartup
         if (muleConfig == null)
             muleConfig = "org/labkey/pipeline/mule/config/remoteMuleConfig.xml";
 
-        LabKeySpringContainerContext.setContext(context);
+        LabKeySpringContainerContext.setContext(factories.get(PipelineService.MODULE_NAME));
 
         requeueLostJobs();
 

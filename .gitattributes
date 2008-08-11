@@ -954,6 +954,7 @@ pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/pipeline-8.20-8.21.sql -t
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/pipeline-8.21-8.22.sql -text
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/pipeline-8.22-8.23.sql -text
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/pipeline-8.23-8.24.sql -text
+pipeline/src/org/labkey/pipeline/AbstractPipelineStartup.java -text
 pipeline/src/org/labkey/pipeline/DirectoryView.java -text
 pipeline/src/org/labkey/pipeline/FileContentPipelineProvider.java -text
 pipeline/src/org/labkey/pipeline/PipelineController.java -text
@@ -994,7 +995,7 @@ pipeline/src/org/labkey/pipeline/api/properties/GlobusClientPropertiesImpl.java 
 pipeline/src/org/labkey/pipeline/api/properties/RemoteServerPropertiesImpl.java -text
 pipeline/src/org/labkey/pipeline/browse/BrowseViewImpl.java -text
 pipeline/src/org/labkey/pipeline/browse/browse.jsp -text
-pipeline/src/org/labkey/pipeline/cluster/ClusterJobRunner.java -text
+pipeline/src/org/labkey/pipeline/cluster/ClusterStartup.java -text
 pipeline/src/org/labkey/pipeline/cluster/NoOpPipelineStatusWriter.java -text
 pipeline/src/org/labkey/pipeline/directory.jsp -text
 pipeline/src/org/labkey/pipeline/emailNotificationSetup.jsp -text
@@ -1007,13 +1008,13 @@ pipeline/src/org/labkey/pipeline/mule/JobGlobusSettings.java -text
 pipeline/src/org/labkey/pipeline/mule/LabKeySpringContainerContext.java -text
 pipeline/src/org/labkey/pipeline/mule/LoggerUtil.java -text
 pipeline/src/org/labkey/pipeline/mule/MuleListenerHelper.java -text
-pipeline/src/org/labkey/pipeline/mule/MuleStartup.java -text
 pipeline/src/org/labkey/pipeline/mule/PipelineJobExceptionStrategy.java -text
 pipeline/src/org/labkey/pipeline/mule/PipelineJobRunner.java -text
 pipeline/src/org/labkey/pipeline/mule/PipelineJobRunnerGlobus.java -text
 pipeline/src/org/labkey/pipeline/mule/PipelineProgressionRunner.java -text
 pipeline/src/org/labkey/pipeline/mule/PipelineStatusSetter.java -text
 pipeline/src/org/labkey/pipeline/mule/PipelineTaskRunner.java -text
+pipeline/src/org/labkey/pipeline/mule/RemoteServerStartup.java -text
 pipeline/src/org/labkey/pipeline/mule/config/cluster.log4j.properties -text
 pipeline/src/org/labkey/pipeline/mule/config/remote.log4j.properties -text
 pipeline/src/org/labkey/pipeline/mule/config/remoteMuleConfig.xml -text

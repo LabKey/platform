@@ -58,13 +58,4 @@ public class caBIGModule extends DefaultModule
     {
         return TabDisplayMode.DISPLAY_NEVER;
     }
-
-    @Override
-    public Set<String> getModuleDependencies()
-    {
-        Set<String> result = new HashSet<String>();
-        result.add("Experiment");
-        result.add("MS2");
-        return result;
-    }
 }

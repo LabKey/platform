@@ -389,10 +389,6 @@ public class PipelineJobRunnerGlobus implements Callable
         {
             jobDescription.setQueue(settings.getQueue());
         }
-        if (settings.getHostCount() != null)
-        {
-            jobDescription.setHostCount(new PositiveInteger(settings.getHostCount().toString()));
-        }
         if (settings.getMaxCPUTime() != null)
         {
             jobDescription.setMaxCpuTime(settings.getMaxCPUTime());

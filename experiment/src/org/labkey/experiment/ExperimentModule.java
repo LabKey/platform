@@ -461,13 +461,4 @@ public class ExperimentModule extends SpringModule
             Table.execute(exp, sqlUpdate + sqlFrom + sqlMaterialToUpdate, new Object[]{pd.getPropertyId(), m.getRowId()});
         }
     }
-
-
-    @Override
-    public Set<String> getModuleDependencies()
-    {
-        Set<String> result = new HashSet<String>();
-        result.add("Pipeline");
-        return result;
-    }
 }

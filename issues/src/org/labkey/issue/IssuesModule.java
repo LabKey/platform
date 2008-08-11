@@ -191,13 +191,6 @@ public class IssuesModule extends DefaultModule implements ContainerManager.Cont
         return PageFlowUtil.set(IssuesSchema.getInstance().getSchemaName());
     }
 
-    public Set<String> getModuleDependencies()
-    {
-        Set<String> result = new HashSet<String>();
-        result.add("Wiki");
-        return result;
-    }
-
     public void userAddedToSite(User user)
     {
     }

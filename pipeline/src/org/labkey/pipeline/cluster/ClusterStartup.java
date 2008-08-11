@@ -17,37 +17,36 @@
 package org.labkey.pipeline.cluster;
 
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.module.ModuleMetaData;
+import org.labkey.api.module.ModuleDependencySorter;
+import org.labkey.pipeline.xstream.PathMapper;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
 import org.labkey.pipeline.mule.LoggerUtil;
+import org.labkey.pipeline.AbstractPipelineStartup;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 
 import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * User: jeckels
  * Date: Apr 8, 2008
  */
-public class ClusterJobRunner
+public class ClusterStartup extends AbstractPipelineStartup
 {
-    public void run(String[] springConfigPaths, String[] args) throws IOException, URISyntaxException
+    public void run(List<File> moduleFiles, List<File> moduleConfigFiles, List<File> customConfigFiles, String[] args) throws IOException, URISyntaxException
     {
-        LoggerUtil.initLogging("org/labkey/pipeline/mule/config/cluster.log4j.properties");
-
-        // Set up the PipelineJobService so that Spring can configure it
-        PipelineJobServiceImpl.initDefaults();
-
-        // Initialize the Spring context
-        FileSystemXmlApplicationContext context = new FileSystemXmlApplicationContext(springConfigPaths);
+        initContext("org/labkey/pipeline/mule/config/cluster.log4j.properties", moduleFiles, moduleConfigFiles, customConfigFiles);
 
         if (args.length < 1)
         {
             throw new IllegalArgumentException("First arg should be URI to XML file, based on the web server's file system");
         }
 
-        String localFile = PipelineJobService.get().getPathMapper().remoteToLocal(args[0]);
+        String localFile = PathMapper.getInstance().remoteToLocal(args[0]);
 
         File file = new File(new URI(localFile));
         if (!file.isFile())

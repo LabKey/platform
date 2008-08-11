@@ -122,45 +122,48 @@ public class MoveRunsPipelineJob extends PipelineJob
 
                     Map<String,Integer> dataFiles = new HashMap<String,Integer>();
 
-                    ExperimentServiceImpl.get().getSchema().getScope().beginTransaction();
-                    try
+                    synchronized (ExperimentService.get().getImportLock())
                     {
-                        for (ExpData oldData : ExperimentServiceImpl.get().getAllDataUsedByRun(runId))
+                        ExperimentServiceImpl.get().getSchema().getScope().beginTransaction();
+                        try
                         {
-                            ExperimentDataHandler handler = oldData.findDataHandler();
-                            handler.beforeMove(oldData, _sourceContainer, getUser());
-                        }
-
-                        ExpData[] datas = ExperimentService.get().deleteExperimentRunForMove(runId, _sourceContainer, getUser());
-                        for (ExpData data : datas)
-                        {
-                            if (data.getDataFileUrl() != null)
+                            for (ExpData oldData : ExperimentServiceImpl.get().getAllDataUsedByRun(runId))
                             {
-                                dataFiles.put(data.getDataFileUrl(),data.getRowId());
+                                ExperimentDataHandler handler = oldData.findDataHandler();
+                                handler.beforeMove(oldData, _sourceContainer, getUser());
                             }
-                        }
 
-                        MoveRunsXarSource xarSource = new MoveRunsXarSource(bOut.toString(), new File(experimentRun.getFilePathRoot()), this);
-                        XarReader reader = new XarReader(xarSource, this);
-                        reader.parseAndLoad(false);
-
-                        List<String> runLSIDs = reader.getProcessedRunsLSIDs();
-                        assert runLSIDs.size() == 1 : "Expected a single run to be loaded";
-
-                        for (String dataURL : dataFiles.keySet())
-                        {
-                            ExpData newData = ExperimentService.get().getExpDataByURL(xarSource.getCanonicalDataFileURL(dataURL), getContainer());
-                            if (newData != null)
+                            ExpData[] datas = ExperimentService.get().deleteExperimentRunForMove(runId, _sourceContainer, getUser());
+                            for (ExpData data : datas)
                             {
-                                ExperimentDataHandler handler = newData.findDataHandler();
-                                handler.runMoved(newData, _sourceContainer, getContainer(), experimentRun.getLSID(), runLSIDs.get(0), getUser(), dataFiles.get(dataURL));
+                                if (data.getDataFileUrl() != null)
+                                {
+                                    dataFiles.put(data.getDataFileUrl(),data.getRowId());
+                                }
                             }
+
+                            MoveRunsXarSource xarSource = new MoveRunsXarSource(bOut.toString(), new File(experimentRun.getFilePathRoot()), this);
+                            XarReader reader = new XarReader(xarSource, this);
+                            reader.parseAndLoad(false);
+
+                            List<String> runLSIDs = reader.getProcessedRunsLSIDs();
+                            assert runLSIDs.size() == 1 : "Expected a single run to be loaded";
+
+                            for (String dataURL : dataFiles.keySet())
+                            {
+                                ExpData newData = ExperimentService.get().getExpDataByURL(xarSource.getCanonicalDataFileURL(dataURL), getContainer());
+                                if (newData != null)
+                                {
+                                    ExperimentDataHandler handler = newData.findDataHandler();
+                                    handler.runMoved(newData, _sourceContainer, getContainer(), experimentRun.getLSID(), runLSIDs.get(0), getUser(), dataFiles.get(dataURL));
+                                }
+                            }
+                            ExperimentServiceImpl.get().getSchema().getScope().commitTransaction();
                         }
-                        ExperimentServiceImpl.get().getSchema().getScope().commitTransaction();
-                    }
-                    finally
-                    {
-                        ExperimentServiceImpl.get().getSchema().getScope().closeConnection();
+                        finally
+                        {
+                            ExperimentServiceImpl.get().getSchema().getScope().closeConnection();
+                        }
                     }
                 }
                 else

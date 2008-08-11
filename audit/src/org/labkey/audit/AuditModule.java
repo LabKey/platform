@@ -70,9 +70,4 @@ public class AuditModule extends DefaultModule
     {
         return PageFlowUtil.set(AuditSchema.getInstance().getSchema());
     }
-
-    public Set<String> getModuleDependencies()
-    {
-        return Collections.singleton("Experiment"); 
-    }
 }

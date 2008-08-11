@@ -1,0 +1,101 @@
+/*
+ * Copyright (c) 2008 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.labkey.pipeline;
+
+import org.labkey.pipeline.mule.LoggerUtil;
+import org.labkey.pipeline.api.PipelineJobServiceImpl;
+import org.labkey.api.module.ModuleMetaData;
+import org.labkey.api.module.ModuleDependencySorter;
+import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.springframework.context.support.FileSystemXmlApplicationContext;
+import org.springframework.beans.factory.BeanFactory;
+import org.apache.log4j.Logger;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+
+/**
+ * User: jeckels
+ * Date: Aug 7, 2008
+ */
+public abstract class AbstractPipelineStartup
+{
+    private static Logger _log = Logger.getLogger(AbstractPipelineStartup.class);
+
+    /**
+     * @return map from module name to BeanFactory
+     */
+    protected Map<String, BeanFactory> initContext(String log4JConfigPath, List<File> moduleFiles, List<File> moduleConfigFiles, List<File> customConfigFiles) throws IOException
+    {
+        LoggerUtil.initLogging(log4JConfigPath);
+
+        // Set up the PipelineJobService so that Spring can configure it
+        PipelineJobServiceImpl.initDefaults();
+
+        List<ModuleMetaData> metaDatas = new ArrayList<ModuleMetaData>();
+        for (File moduleFile : moduleFiles)
+        {
+            metaDatas.add(new ModuleMetaData(moduleFile));
+        }
+        ModuleDependencySorter sorter = new ModuleDependencySorter();
+        metaDatas = sorter.sortModulesByDependencies(metaDatas);
+
+        Map<String, BeanFactory> result = new CaseInsensitiveHashMap<BeanFactory>();
+
+        for (ModuleMetaData metaData : metaDatas)
+        {
+            List<String> springConfigPaths = new ArrayList<String>();
+            File moduleConfig = findFile(moduleConfigFiles, metaData.getName() + "Context.xml");
+            if (moduleConfig != null)
+            {
+                springConfigPaths.add(moduleConfig.getAbsoluteFile().toURI().toString());
+            }
+            File customConfig = findFile(customConfigFiles, metaData.getName() + "Config.xml");
+            if (customConfig != null)
+            {
+                springConfigPaths.add(customConfig.getAbsoluteFile().toURI().toString());
+            }
+
+            if (!springConfigPaths.isEmpty())
+            {
+                _log.info("Loading Spring configuration for the " + metaData.getName() + " module from " + springConfigPaths);
+
+                // Initialize the Spring context
+                BeanFactory context = new FileSystemXmlApplicationContext(springConfigPaths.toArray(new String[springConfigPaths.size()]));
+                result.put(metaData.getName(), context);
+
+            }
+        }
+
+        return result;
+    }
+
+    private File findFile(List<File> files, String name)
+    {
+        for (File file : files)
+        {
+            if (file.getName().equalsIgnoreCase(name))
+            {
+                return file;
+            }
+        }
+        return null;
+    }
+
+}

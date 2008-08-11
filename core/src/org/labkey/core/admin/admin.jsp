@@ -122,13 +122,13 @@
         <td>Version</td>
         <td><%=module.getFormattedVersion()%></td>
     </tr><%
-        for (String property : module.getMetaData().keySet())
+        for (String property : module.getMetaData().getAllProperties().keySet())
         {%>
     <tr style="display:none">
         <td></td>
         <td></td>
         <td><%=h(property)%></td>
-        <td><%=h(module.getMetaData().get( property ))%></td>
+        <td><%=h(module.getMetaData().getAllProperties().get( property ))%></td>
     </tr><%
         }
     }%>
