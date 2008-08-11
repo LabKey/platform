@@ -100,6 +100,19 @@ public class SecurityController extends SpringActionController
 
             return url;
         }
+
+        public ActionURL getUpdateMembersURL(Container container, String groupPath, String deleteEmail, boolean quickUI)
+        {
+            ActionURL url = new ActionURL(UpdateMembersAction.class, container);
+
+            if (quickUI)
+                url.addParameter("quickUI", "1");
+
+            url.addParameter("group", groupPath);
+            url.addParameter("delete", deleteEmail);
+
+            return url;
+        }
     }
 
     private void ensureGroupInContainer(String group, Container c)
@@ -1151,8 +1164,7 @@ public class SecurityController extends SpringActionController
                 if (result == null)
                 {
                     User user = UserManager.getUser(email);
-                    ActionURL url = new ActionURL(UserController.DetailsAction.class, ContainerManager.getRoot());
-                    url.addParameter("userId", String.valueOf(user.getUserId()));
+                    ActionURL url = PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(user.getUserId());
                     result = email + " was already a registered system user.  Click <a href=\"" + url.getEncodedLocalURIString() + "\">here</a> to see this user's profile and history.";
                 }
                 else if (userToClone != null)

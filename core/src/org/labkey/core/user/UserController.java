@@ -17,7 +17,6 @@
 package org.labkey.core.user;
 
 import org.apache.commons.collections15.MultiMap;
-import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionMessage;
@@ -50,14 +49,47 @@ public class UserController extends SpringActionController
 
     public UserController() throws Exception
     {
-        super();
         setActionResolver(_actionResolver);
     }
 
 
-    public static ActionURL getUserURL(String action)
+    public static class UserUrlsImpl implements UserUrls
     {
-        return new ActionURL("user", action, "");
+        public ActionURL getSiteUsersURL()
+        {
+            return new ActionURL(ShowUsersAction.class, ContainerManager.getRoot());
+        }
+
+        public ActionURL getUserAccessURL(Container container, int userId)
+        {
+            ActionURL url = getUserAccessURL(container);
+            url.addParameter("userId", userId);
+            return url;
+        }
+
+        public ActionURL getUserAccessURL(Container container)
+        {
+            return new ActionURL(UserAccessAction.class, container);
+        }
+
+        public ActionURL getUserDetailsURL(int userId)
+        {
+            ActionURL url = getUserDetailsURL();
+            url.addParameter("userId", userId);
+            return url;
+        }
+
+        public ActionURL getUserDetailsURL()
+        {
+            return new ActionURL(DetailsAction.class, ContainerManager.getRoot());
+        }
+
+        public ActionURL getUserUpdateURL(ActionURL returnURL)
+        {
+            ActionURL url = new ActionURL(ShowUpdateAction.class, ContainerManager.getRoot());
+            url.addReturnURL(returnURL);
+            return url;            
+        }
     }
 
 
@@ -104,14 +136,14 @@ public class UserController extends SpringActionController
         rgn.setDisplayColumns(displayColumns);
 
         SimpleDisplayColumn accountDetails = new SimpleDisplayColumn("[Details]");
-        accountDetails.setURL(ActionURL.toPathString("User", "details.view", "") + "?userId=${UserId}");
+        accountDetails.setURL(new UserUrlsImpl().getUserDetailsURL() + "userId=${UserId}");
         accountDetails.setDisplayModes(DataRegion.MODE_GRID);
         rgn.addDisplayColumn(0, accountDetails);
 
         if (isAdministrator)
         {
             SimpleDisplayColumn securityDetails = new SimpleDisplayColumn("[Permissions]");
-            securityDetails.setURL(ActionURL.toPathString("User", "userAccess.view", "") + "?userId=${UserId}");
+            securityDetails.setURL(new UserUrlsImpl().getUserAccessURL(ContainerManager.getRoot()) + "userId=${UserId}");
             securityDetails.setDisplayModes(DataRegion.MODE_GRID);
             rgn.addDisplayColumn(1, securityDetails);
         }
@@ -187,7 +219,7 @@ public class UserController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return HttpView.redirect(new ActionURL("User", "showUsers", ""));
+            return HttpView.redirect(new UserUrlsImpl().getSiteUsersURL());
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -216,7 +248,7 @@ public class UserController extends SpringActionController
 
         public ActionURL getSuccessURL(Object o)
         {
-            return new ActionURL("User", "showUsers", "");
+            return new UserUrlsImpl().getSiteUsersURL();
         }
     }
 
@@ -300,7 +332,7 @@ public class UserController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild("Site Users", new ActionURL("User", "showUsers", getViewContext().getContainer()));
+            root.addChild("Site Users", new UserUrlsImpl().getSiteUsersURL());
             return root.addChild("Site Users History");
         }
     }
@@ -359,7 +391,7 @@ public class UserController extends SpringActionController
                 if (isValidRequiredField(name))
                     columnNames.add(name);
             }
-            List<ColumnInfo> cols = CoreSchema.getInstance().getTableInfoUsers().getColumns(columnNames.toArray(new String[0]));
+            List<ColumnInfo> cols = CoreSchema.getInstance().getTableInfoUsers().getColumns(columnNames.toArray(new String[columnNames.size()]));
             UserPreference bean = new UserPreference(cols, UserManager.getRequiredUserFields());
             JspView<UserPreference> view = new JspView<UserPreference>("/org/labkey/core/user/userPreferences.jsp", bean);
 
@@ -385,12 +417,12 @@ public class UserController extends SpringActionController
 
         public ActionURL getSuccessURL(UserPreferenceForm userPreferenceForm)
         {
-            return new ActionURL("User", "showUsers", getContainer());
+            return new UserUrlsImpl().getSiteUsersURL();
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild("Site Users", new ActionURL("User", "showUsers", getViewContext().getContainer()));
+            root.addChild("Site Users", new UserUrlsImpl().getSiteUsersURL());
             return root.addChild("User Preferences");
         }
     }
@@ -603,28 +635,12 @@ public class UserController extends SpringActionController
         {
             if (_showNavTrail)
             {
-                root.addChild("Site Users", new ActionURL("User", "showUsers", getViewContext().getContainer()));
-                root.addChild("User Details", ActionURL.toPathString("User", "details", getViewContext().getContainer()) + "?userId=" + _userId);
+                root.addChild("Site Users", new UserUrlsImpl().getSiteUsersURL());
+                root.addChild("User Details", new UserUrlsImpl().getUserDetailsURL(_userId));
                 root.addChild("Permissions");
                 return root.addChild("Access Details: " + UserManager.getEmailForId(_userId));
             }
             return null;
-        }
-    }
-
-
-    public static ActionURL getDetailsURL(int userId)
-    {
-        ActionURL url = getUserURL("details");
-        return url.addParameter("userId", userId);
-    }
-
-
-    public static class DetailsURLFactoryImpl implements UserManager.UserDetailsURLFactory
-    {
-        public ActionURL getURL(int userId)
-        {
-            return getDetailsURL(userId);
         }
     }
 
@@ -723,7 +739,7 @@ public class UserController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild("Site Users", new ActionURL("User", "showUsers", getViewContext().getContainer()));
+            root.addChild("Site Users", new UserUrlsImpl().getSiteUsersURL());
             root.addChild("User Details");
             return root.addChild(UserManager.getEmailForId(_detailsUserId));
         }
@@ -741,14 +757,6 @@ public class UserController extends SpringActionController
         {
             return null;
         }
-    }
-
-
-    public static ActionURL getUpdateURL(ActionURL returnURL)
-    {
-        ActionURL url = getUserURL("showUpdate");
-        url.addReturnURL(returnURL);
-        return url;
     }
 
 
@@ -833,8 +841,7 @@ public class UserController extends SpringActionController
 
         public ActionURL getSuccessURL(UpdateForm form)
         {
-            ActionURL details = new ActionURL("User", "details", getContainer());
-            details.addParameter("userId", ObjectUtils.toString(form.getPkVal()));
+            ActionURL details = new UserUrlsImpl().getUserDetailsURL((Integer)form.getPkVal());
             String returnUrl = form.getStrings().get(ReturnUrlForm.Params.returnUrl.toString());
             if (null != returnUrl)
                 details.addParameter(ReturnUrlForm.Params.returnUrl, returnUrl);
@@ -844,7 +851,7 @@ public class UserController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild("Site Users", new ActionURL("User", "showUsers", getViewContext().getContainer()));
+            root.addChild("Site Users", new UserUrlsImpl().getSiteUsersURL());
             root.addChild("User Details");
             return root.addChild(UserManager.getEmailForId(_userId));
         }
@@ -924,15 +931,13 @@ public class UserController extends SpringActionController
 
         public ActionURL getSuccessURL(UserForm form)
         {
-            ActionURL redirectURL = getViewContext().cloneActionURL();
-            redirectURL.setAction("details");
-            return redirectURL.addParameter("userId", form.getUserId());
+            return new UserUrlsImpl().getUserDetailsURL(Integer.parseInt(form.getUserId()));
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild("Site Users", new ActionURL("User", "showUsers", getViewContext().getContainer()));
-            root.addChild("User Details", ActionURL.toPathString("User", "details", getViewContext().getContainer()) + "?userId=" + _userId);
+            root.addChild("Site Users", new UserUrlsImpl().getSiteUsersURL());
+            root.addChild("User Details", new UserUrlsImpl().getUserDetailsURL(_userId));
             return root.addChild("Change Email Address: " + UserManager.getEmailForId(_userId));
         }
     }
@@ -1133,7 +1138,7 @@ public class UserController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("container", container.getPath());
 
-            List<User> users = null;
+            List<User> users;
             List<Map<String,Object>> userResponseList = new ArrayList<Map<String,Object>>();
 
             //if requesting users in a specific group...

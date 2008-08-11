@@ -225,6 +225,7 @@ core/src/META-INF/core/scripts/postgresql/core-2.30-2.31.sql -text
 core/src/META-INF/core/scripts/postgresql/core-2.30-8.10.sql -text
 core/src/META-INF/core/scripts/postgresql/core-2.31-2.32.sql -text
 core/src/META-INF/core/scripts/postgresql/core-8.20-8.21.sql -text
+core/src/META-INF/core/scripts/postgresql/core-8.21-8.22.sql -text
 core/src/META-INF/core/scripts/postgresql/core-create.sql -text
 core/src/META-INF/core/scripts/postgresql/core-drop.sql -text
 core/src/META-INF/core/scripts/postgresql/obsolete/bootstrap.sql -text
@@ -279,6 +280,7 @@ core/src/META-INF/core/scripts/sql[!!-~]server/core-2.30-2.31.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-2.30-8.10.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-2.31-2.32.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-8.20-8.21.sql -text
+core/src/META-INF/core/scripts/sql[!!-~]server/core-8.21-8.22.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-create.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-drop.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/obsolete/bootstrap.sql -text

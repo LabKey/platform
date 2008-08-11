@@ -418,7 +418,7 @@ if (null == webThemeErrors)
 <%
 if (!themeFound)
 {%>
-New themes will not be visible to other users until you save changes to the Customize Site page.
+New themes will not be visible to other users until you save changes on the Look and Feel Settings page.
 <%}%>
 </td>
 </tr>
@@ -428,24 +428,24 @@ New themes will not be visible to other users until you save changes to the Cust
 </form>
 <script>
 function changeTheme(sel)
-    {
+{
     var search = document.location.search;
     var params = search.split('&');
     var searchNew = "";
     for (var i = 0; i < params.length; i++)
-        {
+    {
         if (params[i].indexOf("themeName=") != 0)
-            {
+        {
             if (searchNew != "")
                 searchNew += "&";
             searchNew += params[i];
-            }
         }
+    }
     var opt = sel.options[sel.selectedIndex];
     if (opt.text.indexOf("<") != 0)
-        searchNew += "&themeName=" + opt.text;
+        searchNew += "&themeName=" + escape(opt.text);
     document.location.search = searchNew;
-    }
+}
 
 </script>
 <script for=window event=onload>

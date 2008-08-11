@@ -29,6 +29,7 @@ import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.*;
 import org.labkey.api.data.*;
+import org.labkey.api.data.ContainerManager.ContainerParent;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.jsp.FormPage;
@@ -37,11 +38,8 @@ import org.labkey.api.ms2.MS2Service;
 import org.labkey.api.ms2.SearchClient;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.settings.*;
 import org.labkey.api.settings.AdminConsole.SettingsLinkType;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.PreferenceService;
-import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.*;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
@@ -113,7 +111,6 @@ public class AdminController extends SpringActionController
 
     public AdminController() throws Exception
     {
-        super();
         setActionResolver(_actionResolver);
     }
 
@@ -271,6 +268,11 @@ public class AdminController extends SpringActionController
         public ActionURL getCustomizeFolderURL(Container c)
         {
             return new ActionURL(CustomizeAction.class, c);
+        }
+
+        public ActionURL getMemTrackerURL()
+        {
+            return new ActionURL(MemTrackerAction.class, ContainerManager.getRoot());
         }
     }
 
@@ -945,109 +947,6 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
-    public class ResetFaviconAction extends SimpleRedirectAction
-    {
-        public void checkPermissions() throws TermsOfUseException, UnauthorizedException
-        {
-            super.checkPermissions();
-
-            if (getContainer().isRoot() && !getUser().isAdministrator())
-                throw new UnauthorizedException();
-        }
-
-        public ActionURL getRedirectURL(Object o) throws Exception
-        {
-            deleteExistingFavicon();
-            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
-
-            return new AdminUrlsImpl().getLookAndFeelSettingsURL(getContainer());
-        }
-    }
-
-
-    private void deleteExistingFavicon() throws SQLException
-    {
-        AttachmentService.get().deleteAttachment(ContainerManager.RootContainer.get(), AttachmentCache.FAVICON_FILE_NAME);
-        AttachmentCache.clearFavIconCache();
-    }
-
-
-    @RequiresSiteAdmin
-    public class ResetLogoAction extends SimpleRedirectAction
-    {
-        public void checkPermissions() throws TermsOfUseException, UnauthorizedException
-        {
-            super.checkPermissions();
-
-            if (getContainer().isRoot() && !getUser().isAdministrator())
-                throw new UnauthorizedException();
-        }
-
-        public ActionURL getRedirectURL(Object o) throws Exception
-        {
-            deleteExistingLogo();
-            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
-            return new AdminUrlsImpl().getLookAndFeelSettingsURL(getContainer());
-        }
-    }
-
-
-    private void deleteExistingLogo() throws SQLException
-    {
-        ContainerManager.RootContainer rootContainer = ContainerManager.RootContainer.get();
-        Attachment[] attachments = AttachmentService.get().getAttachments(rootContainer);
-        for (Attachment attachment : attachments)
-        {
-            if (attachment.getName().startsWith(AttachmentCache.LOGO_FILE_NAME_PREFIX))
-            {
-                AttachmentService.get().deleteAttachment(rootContainer, attachment.getName());
-                AttachmentCache.clearLogoCache();
-            }
-        }
-    }
-
-
-    private void handleIconFile(MultipartFile file) throws SQLException, IOException, ServletException, AttachmentService.DuplicateFilenameException
-    {
-        User user = getViewContext().getUser();
-
-        if (!file.getOriginalFilename().toLowerCase().endsWith(".ico"))
-        {
-            throw new ServletException("FavIcon must be a .ico file");
-        }
-
-        deleteExistingFavicon();
-
-        AttachmentFile renamed = new SpringAttachmentFile(file);
-        renamed.setFilename(AttachmentCache.FAVICON_FILE_NAME);
-        AttachmentService.get().addAttachments(user, ContainerManager.RootContainer.get(), Collections.<AttachmentFile>singletonList(renamed));
-        AttachmentCache.clearFavIconCache();
-    }
-
-
-    private void handleLogoFile(MultipartFile file) throws ServletException, SQLException, IOException, AttachmentService.DuplicateFilenameException
-    {
-        User user = getViewContext().getUser();
-
-        // Set the name to something we'll recognize as a logo file
-        String uploadedFileName = file.getOriginalFilename();
-        int index = uploadedFileName.lastIndexOf(".");
-        if (index == -1)
-        {
-            throw new ServletException("No file extension on the uploaded image");
-        }
-
-        // Get rid of any existing logos
-        deleteExistingLogo();
-
-        AttachmentFile renamed = new SpringAttachmentFile(file);
-        renamed.setFilename(AttachmentCache.LOGO_FILE_NAME_PREFIX + uploadedFileName.substring(index));
-        AttachmentService.get().addAttachments(user, ContainerManager.RootContainer.get(), Collections.<AttachmentFile>singletonList(renamed));
-        AttachmentCache.clearLogoCache();
-    }
-
-
     private void validateNetworkDrive(SiteSettingsForm form, BindException errors)
     {
         if (form.getNetworkDriveLetter() == null || form.getNetworkDriveLetter().trim().length() > 1)
@@ -1063,6 +962,62 @@ public class AdminController extends SpringActionController
         {
             errors.reject(ERROR_MSG, "If you specify a network drive letter, you must also specify a path");
         }
+    }
+
+
+    private void handleLogoFile(MultipartFile file, Container c) throws ServletException, SQLException, IOException, AttachmentService.DuplicateFilenameException
+    {
+        User user = getViewContext().getUser();
+
+        // Set the name to something we'll recognize as a logo file
+        String uploadedFileName = file.getOriginalFilename();
+        int index = uploadedFileName.lastIndexOf(".");
+        if (index == -1)
+        {
+            throw new ServletException("No file extension on the uploaded image");
+        }
+
+        ContainerParent parent = new ContainerParent(c);
+        // Get rid of any existing logo
+        deleteExistingLogo(c);
+
+        AttachmentFile renamed = new SpringAttachmentFile(file);
+        renamed.setFilename(AttachmentCache.LOGO_FILE_NAME_PREFIX + uploadedFileName.substring(index));
+        AttachmentService.get().addAttachments(user, parent, Collections.<AttachmentFile>singletonList(renamed));
+        AttachmentCache.clearLogoCache();
+    }
+
+
+    private void handleIconFile(MultipartFile file, Container c) throws SQLException, IOException, ServletException, AttachmentService.DuplicateFilenameException
+    {
+        User user = getViewContext().getUser();
+
+        if (!file.getOriginalFilename().toLowerCase().endsWith(".ico"))
+        {
+            throw new ServletException("FavIcon must be a .ico file");
+        }
+
+        deleteExistingFavicon(getContainer());
+
+        ContainerParent parent = new ContainerParent(c);
+        AttachmentFile renamed = new SpringAttachmentFile(file);
+        renamed.setFilename(AttachmentCache.FAVICON_FILE_NAME);
+        AttachmentService.get().addAttachments(user, parent, Collections.<AttachmentFile>singletonList(renamed));
+        AttachmentCache.clearFavIconCache();
+    }
+
+
+    private void handleCustomStylesheetFile(MultipartFile file, Container c) throws SQLException, IOException, ServletException, AttachmentService.DuplicateFilenameException
+    {
+        User user = getViewContext().getUser();
+
+        deleteExistingCustomStylesheet(getContainer());
+
+        ContainerParent parent = new ContainerParent(c);
+        AttachmentFile renamed = new SpringAttachmentFile(file);
+        renamed.setFilename(AttachmentCache.STYLESHEET_FILE_NAME);
+        AttachmentService.get().addAttachments(user, parent, Collections.<AttachmentFile>singletonList(renamed));
+//        TODO: AttachmentCache.clearCustomStylesheetCache();  all for root or single container for project
     }
 
 
@@ -1087,7 +1042,7 @@ public class AdminController extends SpringActionController
 
             if (c.isRoot() || c.isProject())
             {
-                LookAndFeelBean bean = new LookAndFeelBean(form.getThemeName());
+                LookAndFeelBean bean = new LookAndFeelBean(c, form.getThemeName());
                 return new JspView<LookAndFeelBean>("/org/labkey/core/admin/lookAndFeelSettings.jsp", bean, errors);
             }
             else
@@ -1098,15 +1053,16 @@ public class AdminController extends SpringActionController
 
         public boolean handlePost(LookAndFeelSettingsForm form, BindException errors) throws Exception
         {
-            WriteableAppProps props = AppProps.getWriteableInstance();
-
+            Container c = getViewContext().getContainer();
+            WriteableLookAndFeelAppProps props = LookAndFeelAppProps.getWriteableInstance(c);
             Map<String, MultipartFile> fileMap = getFileMap();
+
             MultipartFile logoFile = fileMap.get("logoImage");
             if (logoFile != null && !logoFile.isEmpty())
             {
                 try
                 {
-                    handleLogoFile(logoFile);
+                    handleLogoFile(logoFile, c);
                 }
                 catch (Exception e)
                 {
@@ -1120,7 +1076,21 @@ public class AdminController extends SpringActionController
             {
                 try
                 {
-                    handleIconFile(iconFile);
+                    handleIconFile(iconFile, c);
+                }
+                catch (Exception e)
+                {
+                    errors.reject(ERROR_MSG, e.getMessage());
+                    return false;
+                }
+            }
+
+            MultipartFile customStylesheetFile = fileMap.get("customStylesheet");
+            if (customStylesheetFile != null && !customStylesheetFile.isEmpty())
+            {
+                try
+                {
+                    handleCustomStylesheetFile(customStylesheetFile, c);
                 }
                 catch (Exception e)
                 {
@@ -1136,16 +1106,15 @@ public class AdminController extends SpringActionController
                     WebTheme theme = WebTheme.getTheme(form.getThemeName());
                     if (theme != null)
                     {
-                        WebTheme.setTheme(theme);
+                        WebTheme.setTheme(c, theme);
                         props.setThemeName(theme.getFriendlyName());
                     }
+                    // TODO: Eliminate the caching
                     ThemeFont themeFont = ThemeFont.getThemeFont(form.getThemeFont());
                     if (themeFont != null)
                     {
-                        ThemeFont.setThemeFont(themeFont);
                         props.setThemeFont(themeFont.getFriendlyName());
                     }
-                    AttachmentCache.clearGradientCache();
                     ButtonServlet.resetColorScheme();
                 }
             }
@@ -1153,6 +1122,29 @@ public class AdminController extends SpringActionController
             {
             }
 
+            // Need to strip out any extraneous characters from the email address.
+            // E.g. "LabKey <info@labkey.com>" -> "info@labkey.com"
+            try
+            {
+                String address = StringUtils.trimToEmpty(form.getSystemEmailAddress());
+                // Manually check for a space or a quote, as these will later
+                // fail to send via JavaMail.
+                if (address.contains(" ") || address.contains("\""))
+                    throw new ValidEmail.InvalidEmailException(address);
+
+                // this will throw an InvalidEmailException for some types
+                // of invalid email addresses
+                new ValidEmail(form.getSystemEmailAddress());
+                props.setSystemEmailAddresses(address);
+            }
+            catch (ValidEmail.InvalidEmailException e)
+            {
+                errors.reject(ERROR_MSG, "Invalid System Email Address: ["
+                        + e.getBadEmail() + "]. Please enter a valid email address.");
+                return false;
+            }
+
+            props.setCompanyName(form.getCompanyName());
             props.setSystemDescription(form.getSystemDescription());
             props.setLogoHref(form.getLogoHref());
             props.setSystemShortName(form.getSystemShortName());
@@ -1166,12 +1158,13 @@ public class AdminController extends SpringActionController
             {
             }
             props.setFolderDisplayMode(folderDisplayMode);
-
-            props.incrementLookAndFeelRevision();
             props.save();
 
             //write an audit log event
             props.writeAuditLogEvent(getViewContext().getUser(), props.getOldProperties());
+
+            // Bump the look & feel revision so browsers retrieve the new logos, stylesheets, etc.
+            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
 
             return true;
         }
@@ -1183,9 +1176,107 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendAdminNavTrail(root, "Look and Feel Settings", this.getClass());
+            Container c = getViewContext().getContainer();
+
+            if (c.isRoot())
+                return appendAdminNavTrail(root, "Look and Feel Settings", this.getClass());
+
+            root.addChild("Look and Feel Settings");
+            return root;
         }
     }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class ResetLogoAction extends SimpleRedirectAction
+    {
+        public void checkPermissions() throws TermsOfUseException, UnauthorizedException
+        {
+            super.checkPermissions();
+
+            if (getContainer().isRoot() && !getUser().isAdministrator())
+                throw new UnauthorizedException();
+        }
+
+        public ActionURL getRedirectURL(Object o) throws Exception
+        {
+            deleteExistingLogo(getContainer());
+            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
+            return new AdminUrlsImpl().getLookAndFeelSettingsURL(getContainer());
+        }
+    }
+
+
+    private void deleteExistingLogo(Container c) throws SQLException
+    {
+        ContainerParent parent = new ContainerParent(c);
+        Attachment[] attachments = AttachmentService.get().getAttachments(parent);
+        for (Attachment attachment : attachments)
+        {
+            if (attachment.getName().startsWith(AttachmentCache.LOGO_FILE_NAME_PREFIX))
+            {
+                AttachmentService.get().deleteAttachment(parent, attachment.getName());
+                AttachmentCache.clearLogoCache();
+            }
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class ResetFaviconAction extends SimpleRedirectAction
+    {
+        public void checkPermissions() throws TermsOfUseException, UnauthorizedException
+        {
+            super.checkPermissions();
+
+            if (getContainer().isRoot() && !getUser().isAdministrator())
+                throw new UnauthorizedException();
+        }
+
+        public ActionURL getRedirectURL(Object o) throws Exception
+        {
+            deleteExistingFavicon(getContainer());
+            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
+
+            return new AdminUrlsImpl().getLookAndFeelSettingsURL(getContainer());
+        }
+    }
+
+
+    private void deleteExistingFavicon(Container c) throws SQLException
+    {
+        ContainerParent parent = new ContainerParent(c);
+        AttachmentService.get().deleteAttachment(parent, AttachmentCache.FAVICON_FILE_NAME);
+        AttachmentCache.clearFavIconCache();
+    }
+
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class DeleteCustomStylesheetAction extends SimpleRedirectAction
+    {
+        public void checkPermissions() throws TermsOfUseException, UnauthorizedException
+        {
+            super.checkPermissions();
+
+            if (getContainer().isRoot() && !getUser().isAdministrator())
+                throw new UnauthorizedException();
+        }
+
+        public ActionURL getRedirectURL(Object o) throws Exception
+        {
+            deleteExistingCustomStylesheet(getContainer());
+            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
+            return new AdminUrlsImpl().getLookAndFeelSettingsURL(getContainer());
+        }
+    }
+
+
+    private void deleteExistingCustomStylesheet(Container c) throws SQLException
+    {
+        ContainerParent parent = new ContainerParent(c);
+        AttachmentService.get().deleteAttachment(parent, AttachmentCache.STYLESHEET_FILE_NAME);
+        // TODO: AttachmentCache.clearCustomStylesheet();
+    }
+
 
     @RequiresSiteAdmin
     public class ShowCustomizeSiteAction extends FormViewAction<SiteSettingsForm>
@@ -1280,33 +1371,8 @@ public class AdminController extends SpringActionController
 
             WriteableAppProps props = AppProps.getWriteableInstance();
 
-            props.setCompanyName(form.getCompanyName());
             props.setDefaultDomain(form.getDefaultDomain());
             props.setDefaultLsidAuthority(form.getDefaultLsidAuthority());
-            props.setReportAProblemPath(form.getReportAProblemPath());
-
-            // Need to strip out any extraneous characters from the email address.
-            // E.g. "LabKey <info@labkey.com>" -> "info@labkey.com"
-            try
-            {
-                String address = StringUtils.trimToEmpty(form.getSystemEmailAddress());
-                // Manually check for a space or a quote, as these will later
-                // fail to send via JavaMail.
-                if (address.contains(" ") || address.contains("\""))
-                    throw new ValidEmail.InvalidEmailException(address);
-
-                // this will throw an InvalidEmailException for some types
-                // of invalid email addresses
-                new ValidEmail(form.getSystemEmailAddress());
-                props.setSystemEmailAddresses(address);
-            }
-            catch (ValidEmail.InvalidEmailException e)
-            {
-                errors.reject(ERROR_MSG, "Invalid System Email Address: ["
-                        + e.getBadEmail() + "]. Please enter a valid email address.");
-                return false;
-            }
-
             props.setPerlPipelineEnabled(form.isPerlPipelineEnabled());
             props.setPipelineToolsDir(form.getPipelineToolsDirectory());
             props.setCallbackPassword(form.getCallbackPassword());
@@ -1414,17 +1480,21 @@ public class AdminController extends SpringActionController
     {
         public String helpLink = "<a href=\"" + (new HelpTopic("configAdmin", HelpTopic.Area.SERVER)).getHelpTopicLink() + "\" target=\"labkey\">more info...</a>";
         public List<WebTheme> themes = WebTheme.getWebThemes();
-        public WebTheme currentTheme = WebTheme.getTheme();
         public List<ThemeFont> themeFonts = ThemeFont.getThemeFonts();
-        public ThemeFont currentThemeFont = ThemeFont.getThemeFont();
+        public ThemeFont currentThemeFont;
+        public WebTheme currentTheme;
         public Attachment customLogo;
         public Attachment customFavIcon;
+        public Attachment customStylesheet;
         public WebTheme newTheme = null;
 
-        private LookAndFeelBean(String newThemeName) throws SQLException
+        private LookAndFeelBean(Container c, String newThemeName) throws SQLException
         {
-            customLogo = AttachmentCache.lookupLogoAttachment();
-            customFavIcon = AttachmentCache.lookupFavIconAttachment();
+            customLogo = AttachmentCache.lookupLogoAttachment(c);
+            customFavIcon = AttachmentCache.lookupFavIconAttachment(new ContainerParent(c));
+            currentTheme = WebTheme.getTheme(c);
+            currentThemeFont = ThemeFont.getThemeFont(c);
+            customStylesheet = AttachmentCache.lookupCustomStylesheetAttachment(new ContainerParent(c));
 
             //if new color scheme defined, get new theme name from url
             if (newThemeName != null)
@@ -1458,6 +1528,8 @@ public class AdminController extends SpringActionController
         private String _folderDisplayMode;
         private String _navigationBarWidth;
         private String _logoHref;
+        private String _companyName;
+        private String _systemEmailAddress;
 
         public String getSystemDescription()
         {
@@ -1528,6 +1600,26 @@ public class AdminController extends SpringActionController
         {
             _logoHref = logoHref;
         }
+
+        public String getCompanyName()
+        {
+            return _companyName;
+        }
+
+        public void setCompanyName(String companyName)
+        {
+            _companyName = companyName;
+        }
+
+        public String getSystemEmailAddress()
+        {
+            return _systemEmailAddress;
+        }
+
+        public void setSystemEmailAddress(String systemEmailAddress)
+        {
+            _systemEmailAddress = systemEmailAddress;
+        }
     }
 
     public static class SiteSettingsForm
@@ -1536,9 +1628,6 @@ public class AdminController extends SpringActionController
         private boolean _testInPage = false;
 
         private String _reportAProblemPath;
-        private String _companyName;
-
-        private String _systemEmailAddress;
         private String _defaultDomain;
         private String _defaultLsidAuthority;
         private boolean _perlPipelineEnabled;
@@ -1570,16 +1659,6 @@ public class AdminController extends SpringActionController
         private String _baseServerUrl;
         private String _microarrayFeatureExtractionServer;
         private String _callbackPassword;
-
-        public String getCompanyName()
-        {
-            return _companyName;
-        }
-
-        public void setCompanyName(String companyName)
-        {
-            _companyName = companyName;
-        }
 
         public String getReportAProblemPath()
         {
@@ -1659,16 +1738,6 @@ public class AdminController extends SpringActionController
         public void setPipelineFTPSecure(boolean pipelineFTPSecure)
         {
             _pipelineFTPSecure = pipelineFTPSecure;
-        }
-
-        public String getSystemEmailAddress()
-        {
-            return _systemEmailAddress;
-        }
-
-        public void setSystemEmailAddress(String systemEmailAddress)
-        {
-            _systemEmailAddress = systemEmailAddress;
         }
 
         public void setDefaultDomain(String defaultDomain)
@@ -2883,7 +2952,7 @@ public class AdminController extends SpringActionController
             String themeName = form.getThemeName();
             String friendlyName = form.getFriendlyName();
 
-            _successURL = new AdminUrlsImpl().getCustomizeSiteURL(form.isUpgradeInProgress());
+            _successURL = new AdminUrlsImpl().getLookAndFeelSettingsURL(getContainer());
 
             if (null != getViewContext().getRequest().getParameter("Delete.x"))
             {
@@ -2904,7 +2973,6 @@ public class AdminController extends SpringActionController
                     , form.getGradientLightColor(), form.getGradientDarkColor()
                     );
 
-                AttachmentCache.clearGradientCache();
                 ButtonServlet.resetColorScheme();
                 //parameter to use to set customize page drop-down to user's last choice on define themes page
                 _successURL.addParameter("themeName", themeName);
@@ -2922,7 +2990,7 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            // TODO: showCustomizeSite.view should be on nav trail
+            // TODO: Look & Feel Settings page should be on nav trail
 
             return appendAdminNavTrail(root, "Web Themes", this.getClass());
         }

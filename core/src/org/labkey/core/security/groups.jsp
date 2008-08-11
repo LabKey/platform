@@ -15,17 +15,16 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.security.Group" %>
+<%@ page import="org.labkey.api.security.SecurityManager" %>
+<%@ page import="org.labkey.api.security.SecurityUrls" %>
+<%@ page import="org.labkey.api.security.UserUrls" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.common.util.Pair" %>
 <%@ page import="org.labkey.core.security.SecurityController" %>
-<%@ page import="org.labkey.api.security.SecurityManager" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.security.Group" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.core.security.SecurityController" %>
-<%@ page import="org.labkey.api.security.SecurityUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -71,9 +70,9 @@ LABKEY.requiresScript('completion.js');
                     %>
                         <tr>
                             <td><%= h(member.getValue()) %></td>
-                            <td><%= textLink("remove", ActionURL.toPathString("Security", "updateMembers", container) + "?quickUI=true&group=" + u(groupPath) + "&delete=" + u(member.getValue()),
+                            <td><%= textLink("remove", urlProvider(SecurityUrls.class).getUpdateMembersURL(container, groupPath, member.getValue(), true),
                                     "return confirm(" + h(PageFlowUtil.jsString("Remove " + member.getValue() + " from group " + group.getName() + "?")) + ")", null) %></td>
-                            <td><%= textLink("permissions", ActionURL.toPathString("User", "userAccess", container) + "?userId=" + member.getKey()) %></td>
+                            <td><%= textLink("permissions", urlProvider(UserUrls.class).getUserAccessURL(container, member.getKey())) %></td>
                         </tr>
                     <%
                     }

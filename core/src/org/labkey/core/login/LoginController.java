@@ -27,6 +27,7 @@ import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
+import org.labkey.api.settings.WriteableLookAndFeelAppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
@@ -254,7 +255,7 @@ public class LoginController extends SpringActionController
             // If this is user's first log in or some required field isn't filled in then go to update page
             if (!form.getSkipProfile() && (_user.isFirstLogin() || UserController.requiresUpdate(_user)))
             {
-                return UserController.getUpdateURL(form.getReturnActionURL()).getLocalURIString();  // TODO: Add the redirect param so user eventually gets back to requested page
+                return PageFlowUtil.urlProvider(UserUrls.class).getUserUpdateURL(form.getReturnActionURL()).getLocalURIString();
             }
             else
             {
@@ -944,8 +945,9 @@ public class LoginController extends SpringActionController
 
                 //set default "from" address for system emails to first registered user
                 String userEmail = newUserBean.getEmail();
-                WriteableAppProps appProps = AppProps.getWriteableInstance();
-                appProps.setSystemEmailAddresses(userEmail);
+                WriteableLookAndFeelAppProps laf = WriteableLookAndFeelAppProps.getWriteableInstance(ContainerManager.getRoot());
+                laf.setSystemEmailAddresses(userEmail);
+                laf.save();
 
                 //set default domain and default LSID authority to user email domain
                 int atSign = userEmail.indexOf("@");
@@ -953,10 +955,11 @@ public class LoginController extends SpringActionController
                 if (atSign > 0 && atSign < userEmail.length() - 1)
                 {
                     String defaultDomain = userEmail.substring(atSign + 1, userEmail.length());
+                    WriteableAppProps appProps = AppProps.getWriteableInstance();
                     appProps.setDefaultDomain(defaultDomain);
                     appProps.setDefaultLsidAuthority(defaultDomain);
+                    appProps.save();
                 }
-                appProps.save();
 
                 _verificationURL = SecurityManager.createVerificationURL(getContainer(), newUserBean.getEmail(), newUserBean.getVerification(), null);
 

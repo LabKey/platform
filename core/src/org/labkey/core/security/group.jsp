@@ -15,17 +15,19 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.security.UserUrls" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.core.security.SecurityController" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.common.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.common.util.Pair" %>
 <%@ page import="org.labkey.core.security.GroupView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     GroupView.GroupBean bean = ((JspView<GroupView.GroupBean>)HttpView.currentView()).getModelBean();
+    Container c = getViewContext().getContainer();
 %>
 <script type="text/javascript">
     LABKEY.requiresScript('completion.js');
@@ -110,7 +112,7 @@ else
                 <%= h(email) %>
             </td>
             <td>
-                <a href="<%= bean.basePermissionsURL + userId %>">[Permissions]</a>
+                <a href="<%=h(urlProvider(UserUrls.class).getUserAccessURL(c, userId))%>">[Permissions]</a>
             </td>
         </tr>
         <%
@@ -123,7 +125,7 @@ else
             <td colspan=3>
                 <input type="image" src="<%=PageFlowUtil.buttonSrc("Select All")%>" onclick="return selectAllCheckboxes(this.form, true);">
                 <input type="image" src="<%=PageFlowUtil.buttonSrc("Clear All")%>" onclick="return selectAllCheckboxes(this.form, false);">
-                <%= PageFlowUtil.buttonLink("Export All to Excel", urlGroup.toString())%>
+                <%= PageFlowUtil.buttonLink("Export All to Excel", urlGroup)%>
             </td>
         </tr>
 

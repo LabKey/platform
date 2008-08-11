@@ -23,9 +23,12 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
+import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.module.*;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.security.*;
 import org.labkey.api.security.AuthenticationManager.Priority;
 import org.labkey.api.security.SecurityManager;
@@ -33,8 +36,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
-import org.labkey.api.query.QuerySchema;
-import org.labkey.api.query.DefaultSchema;
 import org.labkey.core.admin.AdminController;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.analytics.AnalyticsController;
@@ -73,10 +74,9 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
     private static Logger _log = Logger.getLogger(CoreModule.class);
     private static final String NAME = CORE_MODULE_NAME;
 
-
     public CoreModule()
     {
-        super(NAME, 8.21, "/org/labkey/core", false,
+        super(NAME, 8.22, "/org/labkey/core", false,
             new WebPartFactory("Contacts")
             {
                 public WebPartView getWebPartView(ViewContext ctx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
@@ -132,7 +132,7 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
 
     // Note: Core module is special -- versionUpdate gets called during Tomcat startup so we don't hit the Logins, ACLs,
     // Members, UsersData, etc. tables before they're created (bootstrap time) or modified (upgrade time).  This code
-    // is not thread-safe -- it should be called once at startup.
+    // is not thread-safe -- it is called once at startup.
     @Override
     public ActionURL versionUpdate(ModuleContext moduleContext, ViewContext viewContext)
     {
@@ -251,8 +251,8 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
             GroupManager.bootstrapGroup(Group.groupDevelopers, "Developers", GroupManager.PrincipalType.ROLE);
         if (installedVersion > 0 && installedVersion < 8.12)
             migrateLdapSettings();
-
-        // TODO: New internalAfterSchemaUpdate method in base class to avoid calling this.  super.afterSchemaUpdate(moduleContext, viewContext);
+        if (installedVersion > 0 && installedVersion < 8.22)
+            migrateLookAndFeelSettings();
     }
 
     @Override
@@ -264,12 +264,12 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
     {
         try
         {
-            Map<String, String> props = PropertyManager.getSiteConfigProperties();
+            Map<String, String> props = AppProps.getInstance().getProperties(ContainerManager.getRoot());
             String domain = props.get("LDAPDomain");
 
             if (null != domain && domain.trim().length() > 0)
             {
-                PropertyManager.PropertyMap map = PropertyManager.getWritableProperties("LDAPAuthentication", true);
+                PropertyMap map = PropertyManager.getWritableProperties("LDAPAuthentication", true);
                 map.put("Servers", props.get("LDAPServers"));
                 map.put("Domain", props.get("LDAPDomain"));
                 map.put("PrincipalTemplate", props.get("LDAPPrincipalTemplate"));
@@ -288,9 +288,30 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
         }
     }
 
+    private void migrateLookAndFeelSettings()
+    {
+        PropertyMap configProps = PropertyManager.getWritableProperties(-1, ContainerManager.getRoot().getId(), "SiteConfig", true);
+        PropertyMap lafProps = PropertyManager.getWritableProperties(-1, ContainerManager.getRoot().getId(), "LookAndFeel", true);
+
+        for (String settingName : new String[] {"systemDescription", "systemShortName", "themeName", "folderDisplayMode",
+                "navigationBarWidth", "logoHref", "themeFont", "companyName", "systemEmailAddress", "reportAProblemPath"})
+        {
+            migrateSetting(configProps, lafProps, settingName);
+        }
+
+        PropertyManager.saveProperties(configProps);
+        PropertyManager.saveProperties(lafProps);
+    }
+
+    private void migrateSetting(PropertyMap configProps, PropertyMap lafProps, String propertyName)
+    {
+        lafProps.put(propertyName, configProps.get(propertyName));
+        configProps.remove(propertyName);
+    }
+
     private static void saveAuthenticationProviders(boolean enableLdap)
     {
-        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties("Authentication", true);
+        PropertyMap map = PropertyManager.getWritableProperties("Authentication", true);
         String activeAuthProviders = map.get("Authentication");
 
         if (null == activeAuthProviders)
@@ -397,7 +418,6 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
     @Override
     public ActionURL getTabURL(Container c, User user)
     {
-        String containerPath = c == null ? null : c.getPath();
         if (user == null)
         {
             return AppProps.getInstance().getHomePageActionURL();
@@ -412,9 +432,7 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
         }
         else
         {
-            ActionURL result = new ActionURL("User", "details.view", containerPath);
-            result.addParameter("pk", Integer.toString(user.getUserId()));
-            return result;
+            return PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(user.getUserId());
         }
     }
 
@@ -597,7 +615,6 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
         AuthenticationManager.setLoginURLFactory(new LoginController.LoginURLFactoryImpl());
         AuthenticationManager.setLogoutURL(LoginController.getLogoutURL());
         AuthenticationManager.initialize();
-        UserManager.registerUserDetailsURLFactory(new UserController.DetailsURLFactoryImpl());
     }
 
 

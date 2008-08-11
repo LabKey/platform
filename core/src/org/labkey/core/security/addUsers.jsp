@@ -15,12 +15,10 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.core.user.UserController" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.core.user.UserController.*" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <script type="text/javascript">LABKEY.requiresScript('completion.js');</script>
@@ -53,7 +51,7 @@
         {
             if (textElem.value != null && textElem.value.length > 0)
             {
-                var target = "<%= new ActionURL(UserController.UserAccessAction.class, ContainerManager.getRoot())%>newEmail=" + textElem.value;
+                var target = "<%= new UserUrlsImpl().getUserAccessURL(ContainerManager.getRoot())%>newEmail=" + textElem.value;
                 window.open(target, "permissions", "height=450,width=500,scrollbars=yes,status=yes,toolbar=no,menubar=no,location=no,resizable=yes");
             }
         }
