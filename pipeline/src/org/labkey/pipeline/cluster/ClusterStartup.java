@@ -17,19 +17,13 @@
 package org.labkey.pipeline.cluster;
 
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.module.ModuleMetaData;
-import org.labkey.api.module.ModuleDependencySorter;
-import org.labkey.pipeline.xstream.PathMapper;
-import org.labkey.pipeline.api.PipelineJobServiceImpl;
-import org.labkey.pipeline.mule.LoggerUtil;
+import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.pipeline.AbstractPipelineStartup;
-import org.springframework.context.support.FileSystemXmlApplicationContext;
 
 import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
-import java.util.ArrayList;
 
 /**
  * User: jeckels
@@ -46,8 +40,8 @@ public class ClusterStartup extends AbstractPipelineStartup
             throw new IllegalArgumentException("First arg should be URI to XML file, based on the web server's file system");
         }
 
-        String localFile = PathMapper.getInstance().remoteToLocal(args[0]);
-
+        String localFile = PipelineJobService.get().getPathMapper().remoteToLocal(args[0]);
+        
         File file = new File(new URI(localFile));
         if (!file.isFile())
         {
