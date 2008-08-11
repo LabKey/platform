@@ -47,6 +47,7 @@ public class CohortTable extends BaseStudyTable
         ColumnInfo rowIdColumn = addWrapColumn(_rootTable.getColumn("RowId"));
         rowIdColumn.setIsHidden(true);
         rowIdColumn.setUserEditable(false);
+        rowIdColumn.setKeyField(true);
 
         // Add extended columns
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>();

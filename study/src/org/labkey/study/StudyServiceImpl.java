@@ -19,9 +19,9 @@ package org.labkey.study;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
-import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.CaseInsensitiveHashMap;
@@ -29,9 +29,10 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.DataView;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.model.*;
+import org.labkey.study.query.CohortUpdateService;
+import org.labkey.study.query.DataSetTable;
 import org.labkey.study.query.DatasetUpdateService;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.query.DataSetTable;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -485,7 +486,13 @@ public class StudyServiceImpl implements StudyService.Service
         if(!areDatasetsEditable(container))
             return null;
 
+        if ("Cohort".equals(queryName))
+            return new CohortUpdateService();
+
         int datasetId = getDatasetId(container, queryName);
-        return datasetId >= 0 ? new DatasetUpdateService(datasetId) : null;
+        if (datasetId >= 0)
+            return new DatasetUpdateService(datasetId);
+
+        return null;
     }
 }

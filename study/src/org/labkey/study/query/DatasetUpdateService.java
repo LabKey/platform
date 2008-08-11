@@ -15,16 +15,15 @@
  */
 package org.labkey.study.query;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
-import org.labkey.api.data.Container;
 import org.labkey.api.study.StudyService;
 
-import java.util.Map;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ArrayList;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /*
 * User: Dave
@@ -41,7 +40,7 @@ import java.sql.SQLException;
  */
 public class DatasetUpdateService implements QueryUpdateService
 {
-    private int _datasetId = -1;
+    private final int _datasetId;
 
     public DatasetUpdateService(int datasetId)
     {

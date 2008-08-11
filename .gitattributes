@@ -1845,6 +1845,7 @@ study/src/org/labkey/study/query/BaseStudyQueryView.java -text
 study/src/org/labkey/study/query/BaseStudyTable.java -text
 study/src/org/labkey/study/query/CohortQueryView.java -text
 study/src/org/labkey/study/query/CohortTable.java -text
+study/src/org/labkey/study/query/CohortUpdateService.java -text
 study/src/org/labkey/study/query/DataSetColumnsTable.java -text
 study/src/org/labkey/study/query/DataSetQueryView.java -text
 study/src/org/labkey/study/query/DataSetTable.java -text
