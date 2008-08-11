@@ -37,6 +37,11 @@ public class StudyPropertiesTable extends BaseStudyTable
     {
         super(schema, StudySchema.getInstance().getTableInfoStudy());
 
+        ColumnInfo containerColumn = addWrapColumn(_rootTable.getColumn("container"));
+        containerColumn.setUserEditable(false);
+        containerColumn.setIsHidden(true);
+        containerColumn.setKeyField(true);
+
         ColumnInfo lsidColumn = addWrapColumn(_rootTable.getColumn("LSID"));
         lsidColumn.setUserEditable(false);
         lsidColumn.setIsHidden(true);

@@ -42,7 +42,17 @@ public class CohortUpdateService implements QueryUpdateService
 {
     public Map<String, Object> deleteRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        throw new UnsupportedOperationException();
+        Map<String,Object> oldRow = getRow(user, container, keys);
+
+        int rowId = keyFromMap(keys);
+        Cohort cohort = StudyManager.getInstance().getCohortForRowId(container, user, rowId);
+
+        if (cohort == null)
+            throw new IllegalArgumentException("No cohort found for rowId: " + rowId);
+
+        StudyManager.getInstance().deleteCohort(cohort);
+
+        return oldRow;
     }
 
     @SuppressWarnings("unchecked")
@@ -79,7 +89,7 @@ public class CohortUpdateService implements QueryUpdateService
 
     public Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldKeys) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
-        int rowId = keyFromMap(row);
+        int rowId = oldKeys != null ? keyFromMap(oldKeys) : keyFromMap(row);
         Cohort cohort = StudyManager.getInstance().getCohortForRowId(container, user, rowId);
         if (cohort == null)
             throw new IllegalArgumentException("No cohort found for rowId: " + rowId);

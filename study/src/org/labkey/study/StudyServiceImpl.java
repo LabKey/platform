@@ -22,6 +22,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.CaseInsensitiveHashMap;
@@ -29,10 +30,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.DataView;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.model.*;
-import org.labkey.study.query.CohortUpdateService;
-import org.labkey.study.query.DataSetTable;
-import org.labkey.study.query.DatasetUpdateService;
-import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.query.*;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -446,14 +444,6 @@ public class StudyServiceImpl implements StudyService.Service
         return StudySchema.getInstance().getSchema().getScope().isTransactionActive();
     }
 
-    public boolean areDatasetsEditable(Container container)
-    {
-        // TODO: remove this method entirely, and use
-        // column metadata to indicate if info is editable
-        Study study = StudyManager.getInstance().getStudy(container);
-        return study.getSecurityType() == SecurityType.EDITABLE_DATASETS;
-    }
-
     public void applyDefaultQCStateFilter(DataView view)
     {
         if (StudyManager.getInstance().showQCStates(view.getRenderContext().getContainer()))
@@ -482,17 +472,34 @@ public class StudyServiceImpl implements StudyService.Service
 
     public QueryUpdateService getQueryUpdateService(String queryName, Container container, User user)
     {
-        //check to make sure datasets are updatable in this study
-        if(!areDatasetsEditable(container))
-            return null;
-
         if ("Cohort".equals(queryName))
-            return new CohortUpdateService();
+        {
+            if (container.getAcl().hasPermission(user, ACL.PERM_ADMIN))
+                return new CohortUpdateService();
+            else
+                throw new RuntimeException("User is not allowed to update cohorts");
+        }
+        else if ("StudyProperties".equals(queryName))
+        {
+            if (container.getAcl().hasPermission(user, ACL.PERM_ADMIN))
+                return new StudyPropertiesUpdateService();
+            else
+                throw new RuntimeException("User is not allowed to update study properties");
+        }
 
         int datasetId = getDatasetId(container, queryName);
         if (datasetId >= 0)
-            return new DatasetUpdateService(datasetId);
+        {
+            // Check permission
+            Study study = StudyManager.getInstance().getStudy(container);
+            DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
+            if (def.canWrite(user))
+                return new DatasetUpdateService(datasetId);
+            else
+                throw new RuntimeException("User is not allowed to update dataset: " + queryName);
+        }
 
         return null;
     }
+
 }
