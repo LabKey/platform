@@ -24,7 +24,8 @@ if ("GET".equals(request.getMethod()))
     <meta http-equiv="Refresh" content="0; URL=./project/home/begin.view">
     <link rel="shortcut icon" href="./favicon.image" />
     <link rel="icon" href="./favicon.image" />
-    <link rel="stylesheet" href="./core/stylesheet.view" type="text/css">
+    <link rel="stylesheet" href="./stylesheet.css" type="text/css">
+    <link rel="stylesheet" href="./core/themestylesheet.view" type="text/css">
     </head>
     <body bgcolor="#FFFFFF" text="#000000">
     <script type="text/javascript"><!--

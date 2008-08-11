@@ -118,7 +118,7 @@ public class NavTreeMenu extends WebPartView implements Collapsible
                 if (element.hasChildren())
                     indentForExpansionGifs = true;
             }
-            out.print("<table>");
+            out.print("<table class=\"labkey-nav-tree\">");
             for (NavTree element : _elements)
                 renderLinks(element, 0, "", element.getId(), getViewContext(), out, indentForExpansionGifs);
             out.print("</table>");

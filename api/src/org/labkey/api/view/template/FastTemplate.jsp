@@ -18,14 +18,12 @@
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.WebTheme" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%
     HttpView me = HttpView.currentView();
     PageConfig bean = (PageConfig) me.getModelBean();
     String contextPath = request.getContextPath();
-    String headerLineColor = "#" + WebTheme.getTheme().getHeaderLineColor();
 %>
 <html>
 <head>

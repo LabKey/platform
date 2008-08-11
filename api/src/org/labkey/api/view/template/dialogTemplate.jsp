@@ -41,7 +41,7 @@
 
     if (pageConfig.shouldIncludeHeader())
     { %>
-    <tr id="labkey-header-panel" class="labkey-header-panel" height="56px">
+    <tr id="headerpanel" class="labkey-header-panel" height="56px">
         <td><% me.include(me.getView("header"), out); %></td>
     </tr>
     <tr>
@@ -49,7 +49,7 @@
     </tr><%
     } %>
     <tr>
-        <td class="labkey-full-screen-table">
+        <td class="labkey-full-screen-background">
             <table class="labkey-full-screen-table">
                 <tr><td class="labkey-full-screen-table-panel"><img src="<%=contextPath%>/_.gif" width=400 height=1></td></tr>
                 <tr>

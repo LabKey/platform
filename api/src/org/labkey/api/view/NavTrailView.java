@@ -160,11 +160,10 @@ public class NavTrailView extends HttpView
         // TABSTRIP
         //
 
-        _out.print("<table class=\"labkey-nav-bar\" id=\"navBar\" ");
-        WebTheme theme = WebTheme.getTheme();
+        _out.print("<table id=\"navBar\" class=\"labkey-nav-bar");
         if (tabs.size() == 1)
-            _out.print("style=\"border-top: 1px solid #" + theme.getHeaderLineColor() + "\"");
-        _out.print("><tr>\n");
+            _out.print(" labkey-header-line");
+        _out.print("\"><tr>\n");
 
         int tabHeight = ButtonServlet.getTabHeight();
         int lastTabHeight = tabHeight - ButtonServlet.getTabCornerHeight();
@@ -178,9 +177,9 @@ public class NavTrailView extends HttpView
                 drawTab(tab, tab==firstTab, tab==lastTab, lastTabHeight, tabHeight);
             endTabstrip(lastTab);
         }
-        _out.print("<td id=\"labkey-end-nav-tab-space\"");
+        _out.print("<td id=\"labkey-end-tab-space\"");
         if (tabs.size() > 1)
-            _out.print(" class=\"labkey-nav-tab-space\"");
+            _out.print(" class=\"labkey-tab-space\"");
         _out.print("\">");
 
         if (null != connectionsInUse || _pageConfig.getExploratoryFeatures())
@@ -238,7 +237,7 @@ public class NavTrailView extends HttpView
             lastCaption = _crumbTrail.get(_crumbTrail.size()-1).getKey();
         if (lastCaption != null)
         {
-            _out.print("<span id=\"labkey-nav-trail-current-page\" class=\"labkey-nav-page-header\">");_out.print(filter(_title));_out.print("</span>");
+            _out.print("<span id=\"labkey-nav-trail-current-page\">");_out.print(filter(_title));_out.print("</span>");
         }
         _out.print("</td>");
         if (!hasCrumbTrail)
@@ -265,9 +264,8 @@ public class NavTrailView extends HttpView
         String link = tab.getValue();
         String name = tab.getKey();
         boolean active = link != null;
-        String className = tab.isSelected() ? "labkey-nav-tab-selected" : active ? "labkey-nav-tab" : "labkey-nav-tab-inactive";
-        WebTheme theme = WebTheme.getTheme();
-        _out.print("<td class=\"labkey-nav-tab-space\"><img width=\"5\" src=\"");
+        String className = tab.isSelected() ? "labkey-tab-selected" : active ? "labkey-tab" : "labkey-tab-inactive";
+        _out.print("<td class=\"labkey-tab-space\"><img width=\"5\" src=\"");
         _out.print(_contextPath);
         _out.print("/_.gif\"></td>");
         _out.print("<td><table><tr>");
@@ -286,7 +284,7 @@ public class NavTrailView extends HttpView
 
     void endTabstrip(NavTree lastTab)
     {
-        _out.print("<td class=\"labkey-nav-tab-space\"" +
+        _out.print("<td class=\"labkey-tab-space\"" +
                 " width=\"100%\"><img src=\"");
         _out.print(_contextPath);
         _out.print("/_.gif\"></td>\n");

@@ -1006,7 +1006,7 @@ public class ModuleLoader implements Filter
     private boolean isAdminURL(HttpServletRequest request)
     {
         String uri = request.getRequestURI().toLowerCase();
-        return uri.matches(".*admin.*") || uri.matches(".*login.*") || uri.matches(".*\\Qstylesheet.view\\E");
+        return uri.matches(".*admin.*") || uri.matches(".*login.*") || uri.matches(".*\\Qthemestylesheet.view\\E");
     }
 
     ModuleContext saveModuleContext(ModuleContext context)

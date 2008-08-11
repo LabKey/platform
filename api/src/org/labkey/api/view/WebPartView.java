@@ -383,7 +383,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
                     if (null != linkHref && 0 < linkHref.length())
                         out.print("<a href=\"" + PageFlowUtil.filter(linkHref) + "\">");
                     if (null != link.getImageSrc())
-                        out.print("<img class=\"labkey-wp-header\" src=\"" + link.getImageSrc() +
+                        out.print("<img src=\"" + link.getImageSrc() +
                                 "\" title=\"" + PageFlowUtil.filter(linkText) + "\">");
                     else
                         out.print(PageFlowUtil.filter(linkText));

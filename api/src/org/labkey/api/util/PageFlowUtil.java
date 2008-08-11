@@ -1373,9 +1373,13 @@ public class PageFlowUtil
 
         sb.append("    <link href=\"");
         sb.append(contextPath);
-        sb.append("/core/stylesheet.view?revision=");
+        sb.append("/stylesheet.css\" type=\"text/css\" rel=\"stylesheet\"/>\n");
+
+        sb.append("    <link href=\"");
+        sb.append(contextPath);
+        sb.append("/core/themestylesheet.view?revision=");
         sb.append(lookAndFeelRevision);
-        sb.append("\" type=\"text/css\" rel=\"stylesheet\"/>");
+        sb.append("\" type=\"text/css\" rel=\"stylesheet\"/>\n");   
 
         sb.append("    <link href=\"");
         sb.append(contextPath);

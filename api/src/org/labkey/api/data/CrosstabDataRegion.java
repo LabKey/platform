@@ -81,7 +81,7 @@ public class CrosstabDataRegion extends DataRegion
                 for (int idxMeasureCol = idxStart;
                     idxMeasureCol < idxStart + _numMeasures; ++idxMeasureCol)
                 {
-                    renderers.get(idxMeasureCol).setDisplayClass("labkey-alternate-row");
+                    renderers.get(idxMeasureCol).addDisplayClass("labkey-alternate-row");
                 }
             } //every other col dimension member
         } //for each col dimension member

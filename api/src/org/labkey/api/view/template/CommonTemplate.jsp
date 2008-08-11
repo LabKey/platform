@@ -82,9 +82,8 @@ if (null != gwtModules && gwtModules.size() > 0)
 
 if (bean.showHeader())
 {
-    String headerLineColor = "#" + WebTheme.getTheme().getHeaderLineColor();
 %>
-        <tr id="labkey-header-panel" class="labkey-header-panel">
+        <tr id="headerpanel" class="labkey-header-panel">
             <td colspan=3>
                 <!-- HEADER -->
                 <% me.include(me.getView("header"),out); %>

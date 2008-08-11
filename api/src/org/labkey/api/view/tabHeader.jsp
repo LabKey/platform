@@ -31,20 +31,20 @@
 %>
 <table class="labkey-tab-strip">
     <tr>
-        <td class="labkey-nav-tab-space">
+        <td class="labkey-tab-space">
             <img src="<%=request.getContextPath()%>/_.gif" height=1 width=5>
         </td>
     <%
         for (TabStripView.TabInfo tab : tabs)
         {
-            out.println("<td class=\"" + (tab.getId().equals(currentTab) ? "labkey-nav-tab-selected" : "labkey-nav-tab-inactive") + "\">" + tab.render(HttpView.currentContext()) + "</td>");
+            out.println("<td class=\"" + (tab.getId().equals(currentTab) ? "labkey-tab-selected" : "labkey-tab") + "\">" + tab.render(HttpView.currentContext()) + "</td>");
         }
     %>
-        <td class="labkey-nav-tab-space" style="text-align:right;" width=100%>
+        <td class="labkey-tab-space" style="text-align:right;" width=100%>
             <img src="<%=request.getContextPath()%>/_.gif" height=1 width=5>
         </td>
     </tr>
     <tr>
-        <td colspan="<%=tabs.size() + 2%>" class="labkey-nav-tab" style="border-top:none;text-align:left;" width=100%>
+        <td colspan="<%=tabs.size() + 2%>" class="labkey-tab" style="border-top:none;text-align:left;" width=100%>
             <img src="<%=request.getContextPath()%>/_.gif" height=1 width=5>
 

@@ -260,6 +260,18 @@ public abstract class DisplayColumn extends RenderColumn
         _gridHeaderClass = headerClass;
     }
 
+    public void addGridHeaderClass(String headerClass)
+    {
+        if (_gridHeaderClass == null)
+        {
+            _gridHeaderClass = headerClass;
+        }
+        else if (!_gridHeaderClass.contains(headerClass))
+        {
+            _gridHeaderClass = _gridHeaderClass + " " + headerClass;
+        }
+    }
+
     public String getGridHeaderClass()
     {
         return _gridHeaderClass;
@@ -719,8 +731,15 @@ public abstract class DisplayColumn extends RenderColumn
         this._description = _description;
     }
 
-    public void setDisplayClass(String className)
+    public void addDisplayClass(String className)
     {
-        _displayClass = className;
+        if (_displayClass == null)
+        {
+            _displayClass = className;
+        }
+        else if (!_displayClass.contains(className))
+        {
+            _displayClass = _displayClass + " " + className;
+        }
     }
 }
