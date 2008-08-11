@@ -44,7 +44,6 @@ public class GroupedResultSet extends Table.ResultSetImpl
     private int _rowOffset = 0;
     private int _lastRow = 0;
     private int _groupCount = 0;
-    private Object _previousValue = new Object();
 
     private boolean _ignoreNext;
     private boolean _scrollableRS = true;
@@ -136,6 +135,15 @@ public class GroupedResultSet extends Table.ResultSetImpl
             _ignoreNext = false;
             return true;
         }
+        Object previousValue;
+        if (getRow() > 0)
+        {
+            previousValue = getObject(_columnIndex);
+        }
+        else
+        {
+            previousValue = new Object();
+        }
         Object currentValue;
         do
         {
@@ -145,8 +153,7 @@ public class GroupedResultSet extends Table.ResultSetImpl
             }
             currentValue = getObject(_columnIndex);
         }
-        while (currentValue.equals(_previousValue));
-        _previousValue = currentValue;
+        while (currentValue.equals(previousValue));
 
         if (_lastRow != 0)
         {
@@ -172,20 +179,6 @@ public class GroupedResultSet extends Table.ResultSetImpl
     public ResultSet getNextResultSet() throws SQLException
     {
         return new NestedResultSet(this);
-    }
-
-    public boolean previous() throws SQLException
-    {
-        boolean result = super.previous();
-        if (getRow() > 0)
-        {
-            _previousValue = getObject(_columnIndex);
-        }
-        else
-        {
-            _previousValue = new Object();
-        }
-        return result;
     }
 
     public class NestedResultSet extends Table.ResultSetImpl
@@ -247,7 +240,6 @@ public class GroupedResultSet extends Table.ResultSetImpl
                 super.beforeFirst();
             else
                 super.absolute(_rowOffset);
-            _previousValue = new Object();
         }
 
         public boolean absolute(int i) throws SQLException
