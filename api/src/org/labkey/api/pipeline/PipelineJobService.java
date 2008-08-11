@@ -15,6 +15,8 @@
  */
 package org.labkey.api.pipeline;
 
+import org.labkey.api.pipeline.file.PathMapper;
+
 import java.io.FileNotFoundException;
 import java.util.Map;
 
@@ -105,6 +107,8 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
     abstract public ParamParser createParamParser();
 
     abstract public WorkDirFactory getWorkDirFactory();
+
+    abstract public PathMapper getPathMapper();
 
     abstract public PipelineStatusFile.StatusWriter getStatusWriter();
 

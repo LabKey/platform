@@ -57,12 +57,6 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
     private List<String> _initialInputExts;
 
     /**
-     * Extensions for files that should be copied back to the directory
-     * containing the initial inputs, and hence shared with future analyses.
-     */
-    private List<String> _sharedOutputExts;
-
-    /**
      * Maps the extension for a specific input/output file type to the list of
      * extensions for types from which it was derrived.
      * <p>
@@ -139,16 +133,6 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
     {
         _initialInputExts = new ArrayList<String>();
         _initialInputExts.add(ext);
-    }
-
-    public List<String> getSharedOutputExts()
-    {
-        return _sharedOutputExts;
-    }
-
-    public void setSharedOutputExts(List<String> sharedOutputExts)
-    {
-        _sharedOutputExts = sharedOutputExts;
     }
 
     public Map<String, List<String>> getFileExtHierarchy()

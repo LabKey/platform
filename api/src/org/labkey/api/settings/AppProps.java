@@ -95,6 +95,7 @@ public class AppProps
     protected static final String FOLDER_DISPLAY_MODE = "folderDisplayMode";
     protected static final String CABIG_ENABLED = "caBIGEnabled";
     protected static final String CALLBACK_PASSWORD_PROP = "callbackPassword";
+    protected static final String MAIL_RECORDER_ENABLED = "mailRecorderEnabled";
 
     private static final String SERVER_SESSION_GUID = GUID.makeGUID();
 
@@ -548,6 +549,11 @@ public class AppProps
     public String getServerSessionGUID()
     {
         return SERVER_SESSION_GUID;
+    }
+
+    public boolean isMailRecorderEnabled()
+    {
+        return isDevMode() && lookupBooleanValue(MAIL_RECORDER_ENABLED, false);
     }
 
     public boolean isDevMode()

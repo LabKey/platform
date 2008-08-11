@@ -86,7 +86,7 @@ public interface FileAnalysisJobSupport
     File getParametersFile();
 
     /**
-     * @return an array of all spectra files analyzed.
+     * @return an array of all input files analyzed.
      */
     File[] getInputFiles();
 }

@@ -30,7 +30,7 @@ abstract public class AbstractTaskFactorySettings implements TaskFactorySettings
     private TaskId _dependencyId;
     private Boolean _join;
     private String _location;
-    private int _autoRetry = -1;
+    private Integer _autoRetry;
     private String _groupParameterName;
 
     public AbstractTaskFactorySettings(TaskId id)
@@ -89,6 +89,11 @@ abstract public class AbstractTaskFactorySettings implements TaskFactorySettings
         return isJoinSet() && _join.booleanValue();
     }
 
+    public void setJoin(boolean join)
+    {
+        _join = join;
+    }
+
     public void setGroupParameterName(String name)
     {
         _groupParameterName = name;
@@ -97,11 +102,6 @@ abstract public class AbstractTaskFactorySettings implements TaskFactorySettings
     public String getGroupParameterName()
     {
         return _groupParameterName;
-    }
-
-    public void setJoin(boolean join)
-    {
-        _join = join;
     }
 
     public String getLocation()
@@ -116,12 +116,12 @@ abstract public class AbstractTaskFactorySettings implements TaskFactorySettings
 
     public boolean isAutoRetrySet()
     {
-        return _autoRetry != -1;
+        return _autoRetry != null;
     }
 
     public int getAutoRetry()
     {
-        return _autoRetry;
+        return _autoRetry.intValue();
     }
 
     public void setAutoRetry(int autoRetry)

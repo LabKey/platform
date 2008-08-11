@@ -87,6 +87,14 @@ abstract public class PipelineService
 
     abstract public String getPipelineProperty(Container container, String name) throws SQLException;
 
+    /**
+     * For Perl Pipeline use only.  Use PipelineJobService.get().getStatusWriter().setStatusFile() instead.
+     *
+     * @param info Background info necessary for database access
+     * @param sf The StatusFiles record
+     * @throws Exception file i/o or database error
+     */
+    @Deprecated
     abstract public void setStatusFile(ViewBackgroundInfo info, PipelineStatusFile sf) throws Exception;
 
     abstract public BrowseView getBrowseView(BrowseForm form);

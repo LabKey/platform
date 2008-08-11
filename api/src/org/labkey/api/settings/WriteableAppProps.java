@@ -29,7 +29,6 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.*;
 
 import java.net.URISyntaxException;
@@ -294,6 +293,11 @@ public class WriteableAppProps extends AppProps
     public void setCaBIGEnabled(boolean enabled)
     {
         storeBooleanValue(CABIG_ENABLED, enabled);
+    }
+
+    public void setMailRecorderEnabled(boolean enabled)
+    {
+        storeBooleanValue(MAIL_RECORDER_ENABLED, enabled);        
     }
 
     public void setMicroarrayFeatureExtractionServer(String name)

@@ -479,18 +479,29 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public void restoreQueue(PipelineQueue queue)
     {
+        // Recursive split and join combinations may cause the queue
+        // to be restored to a job with a queue already.  Would be good
+        // to have better safe-guards against double-queueing of jobs.
+        if (queue == _queue)
+            return;
         if (null != _queue)
             throw new IllegalStateException();
         _queue = queue;
     }
     
-    public void setQueue(PipelineQueue queue, String initialState)
+    public boolean setQueue(PipelineQueue queue, String initialState)
     {
         restoreQueue(queue);
         
         // Initialize the task pipeline
         if (getTaskPipeline() != null)
+        {
             runStateMachine();
+
+            // If initialization put this job into a state where it is
+            // waiting, then it should not be put on the queue.
+            return !isSplitWaiting();
+        }
         // Initialize status for non-task pipline jobs.
         else if (_logFile != null)
         {
@@ -504,6 +515,8 @@ abstract public class PipelineJob extends Job implements Serializable
                 warn("Failed to checkpoint '" + getDescription() + "' job before queuing.", e);
             }
         }
+
+        return true;
     }
 
     public void clearQueue()
@@ -671,7 +684,7 @@ abstract public class PipelineJob extends Job implements Serializable
             {
                 factory = PipelineJobService.get().getTaskFactory(progression[i]);
                 // Stop, if this task requires a change in join state
-                if ((factory.isJoin() && isSplit()) || (!factory.isJoin() && isSplittable()))
+                if ((factory.isJoin() && isSplitJob()) || (!factory.isJoin() && isSplittable()))
                     break;
                 // Stop, if this task is part of processing this job, and not complete
                 if (factory.isParticipant(this) && !factory.isJobComplete(this))
@@ -695,7 +708,7 @@ abstract public class PipelineJob extends Job implements Serializable
         {
             assert factory != null : "Factory not found.";
 
-            if (factory.isJoin() && isSplit())
+            if (factory.isJoin() && isSplitJob())
             {
                 setActiveTaskId(factory.getId(), false);   // ID is just a marker for state machine
                 join();
@@ -717,7 +730,15 @@ abstract public class PipelineJob extends Job implements Serializable
         else
         {
             // Job is complete
-            setActiveTaskId(null);
+            if (isSplitJob())
+            {
+                setActiveTaskId(null, false);
+                join();
+            }
+            else
+            {
+                setActiveTaskId(null);
+            }
             return false;
         }
     }
@@ -767,64 +788,26 @@ abstract public class PipelineJob extends Job implements Serializable
     }
 
     /**
-     * Returns true if all tasks in this progression to be run are split with no
-     * potential joins.
-     *
-     * @return true if all tasks are split
+     * @return true if this is a split job, as determined by whether it has a parent.
      */
-    public boolean isAllSplit()
+    public boolean isSplitJob()
     {
-        if (!isSplittable())
-            return false;
-
-        TaskPipeline tp = getTaskPipeline();
-        if (tp == null)
-            return false;
-
-        boolean seenSplit = false;
-        boolean seenId = (getActiveTaskId() == null);
-        for (TaskId id : tp.getTaskProgression())
-        {
-            // Skip everything up to the active TaskId
-            if (!seenId)
-            {
-                if (id == getActiveTaskId())
-                    seenId = true;
-                else
-                    continue;
-            }
-            
-            TaskFactory factory = PipelineJobService.get().getTaskFactory(id);
-            if (factory.isJoin())
-            {
-                try
-                {
-                    if (factory.isParticipant(this))
-                        return false;
-                }
-                catch (Exception e)
-                {
-                    // If participant check fails, assume it is.
-                    return false;
-                }
-            }
-            else
-            {
-                seenSplit = true;
-            }
-        }
-
-        return seenSplit;
+        return getParentGUID() != null;
     }
 
     /**
-     * Returns true if this is a split job, as determined by whether it has a parent.
-     *
-     * @return true if this is a split job
+     * @return true if this is a join job waiting for split jobs to complete.
      */
-    public boolean isSplit()
+    public boolean isSplitWaiting()
     {
-        return getParentGUID() != null;
+        // Return false, if this job cannot be split.
+        if (!isSplittable())
+            return false;
+
+        // A join job with an active task that is not a join task,
+        // is waiting for a split to complete.
+        TaskFactory factory = getActiveTaskFactory();
+        return (factory != null && !factory.isJoin());
     }
 
     /**
@@ -845,8 +828,10 @@ abstract public class PipelineJob extends Job implements Serializable
      */
     public void mergeSplitJob(PipelineJob job)
     {
-        // Add any errors that happened in the split job.
+        // Add experiment actions recored.
         _actions.addAll(job.getActions());
+
+        // Add any errors that happened in the split job.
         _errors += job._errors;
     }
 
