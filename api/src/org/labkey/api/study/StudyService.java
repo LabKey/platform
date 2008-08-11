@@ -105,13 +105,6 @@ public class StudyService
         public boolean isTransactionActive();
 
         /**
-         * Returns true if datasets in the container's study are editable, false if not.
-         * @param container The container.
-         * @return True if editable, false if not.
-         */
-        public boolean areDatasetsEditable(Container container);
-
-        /**
          * Applies the administrator-configured default QC filter for a dataset data view.
          * This ensures that users do not see data that should be hidden in the specified view.
          * @param view The data view that should be filtered.
