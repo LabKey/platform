@@ -28,7 +28,6 @@ public abstract class AbstractGlobusSettings implements GlobusSettings
         {
             overrides = new GlobusSettingsImpl();
         }
-        result.setHostCount(overrides.getHostCount() == null ? getHostCount() : overrides.getHostCount());
         result.setMaxCPUTime(overrides.getMaxCPUTime() == null ? getMaxCPUTime() : overrides.getMaxCPUTime());
         result.setMaxMemory(overrides.getMaxMemory() == null ? getMaxMemory() : overrides.getMaxMemory());
         result.setMaxTime(overrides.getMaxTime() == null ? getMaxTime() : overrides.getMaxTime());

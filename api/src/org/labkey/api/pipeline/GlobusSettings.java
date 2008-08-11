@@ -42,12 +42,6 @@ public interface GlobusSettings
     public Long getMaxWallTime();
 
     /**
-     * @return Only applies to clusters of SMP computers, such as newer IBM SP systems.
-     * Defines the number of nodes (pizza boxes) to distribute the "count" processes across. 
-     */
-    public Integer getHostCount();
-
-    /**
      * @return Explicitly set the maximum amount of memory per executable process. The units is in Megabytes.
      */
     public Integer getMaxMemory();

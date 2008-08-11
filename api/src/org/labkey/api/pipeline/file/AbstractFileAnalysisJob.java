@@ -56,6 +56,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     private Map<String, String> _parametersOverrides;
 
     private transient Map<String, String> _parameters;
+    private static final String ANALYSIS_PARAMETERS_ROLE_NAME = "AnalysisParameters";
 
     public AbstractFileAnalysisJob(AbstractFileAnalysisProtocol protocol,
                            String providerName,
@@ -73,6 +74,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         _protocolName = protocolName;
 
         _fileParameters = fileParameters;
+        getActionSet().add(_fileParameters, ANALYSIS_PARAMETERS_ROLE_NAME);
         _dirAnalysis = _fileParameters.getParentFile();
 
         // Load parameter files
@@ -118,6 +120,14 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         _inputTypes = FileType.findTypes(job._inputTypes, _filesInput);
         _baseName = (_inputTypes.length == 0 ? fileInput.getName() : _inputTypes[0].getBaseName(fileInput));
         setLogFile(FT_LOG.newFile(_dirAnalysis, _baseName), false);
+    }
+
+    public void clearActionSet(ExpRun run)
+    {
+        super.clearActionSet(run);
+        getActionSet().add(_fileParameters, ANALYSIS_PARAMETERS_ROLE_NAME);
+
+        _experimentRunRowId = run.getRowId();
     }
 
     public boolean isSplittable()
@@ -178,11 +188,6 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     public Integer getExperimentRunRowId()
     {
         return _experimentRunRowId;
-    }
-
-    public void setExperimentRunRowId(int rowId)
-    {
-        _experimentRunRowId = rowId;
     }
 
     public File getParametersFile()

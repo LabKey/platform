@@ -252,6 +252,7 @@ api/src/org/labkey/api/module/Module.java -text
 api/src/org/labkey/api/module/ModuleContext.java -text
 api/src/org/labkey/api/module/ModuleDependencySorter.java -text
 api/src/org/labkey/api/module/ModuleLoader.java -text
+api/src/org/labkey/api/module/ModuleMetaData.java -text
 api/src/org/labkey/api/module/SafeFlushResponseWrapper.java -text
 api/src/org/labkey/api/module/SpringModule.java -text
 api/src/org/labkey/api/ms1/MS1Service.java -text
@@ -280,6 +281,7 @@ api/src/org/labkey/api/pipeline/PipelineStatusFile.java -text
 api/src/org/labkey/api/pipeline/PipelineStatusUrls.java -text
 api/src/org/labkey/api/pipeline/PipelineUrls.java -text
 api/src/org/labkey/api/pipeline/RecordedAction.java -text
+api/src/org/labkey/api/pipeline/RecordedActionSet.java -text
 api/src/org/labkey/api/pipeline/TaskFactory.java -text
 api/src/org/labkey/api/pipeline/TaskFactorySettings.java -text
 api/src/org/labkey/api/pipeline/TaskId.java -text

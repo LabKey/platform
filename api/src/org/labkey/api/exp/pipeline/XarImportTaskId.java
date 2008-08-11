@@ -20,15 +20,4 @@ package org.labkey.api.exp.pipeline;
  */
 public interface XarImportTaskId
 {
-    /**
-     * Interface for support required from the PipelineJob to run this task,
-     * beyond the base PipelineJob methods.
-     */
-    interface JobSupport
-    {
-        /**
-         * Sets the rowId of the loaded run on the PipelineJob.
-         */
-        void setExperimentRunRowId(int rowId);
-    }
 }

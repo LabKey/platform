@@ -198,7 +198,7 @@ public class MothershipReport implements Runnable
 
     public void addServerSessionParams()
     {
-        Map<String, String> coreModuleProperties = ModuleLoader.getInstance().getCoreModule().getMetaData();
+        Map<String, String> coreModuleProperties = ModuleLoader.getInstance().getCoreModule().getMetaData().getAllProperties();
         String svnRevision = coreModuleProperties.get("SVNRevision");
         if (svnRevision != null)
         {

@@ -24,7 +24,6 @@ import java.sql.SQLException;
  */
 public class ResultSetCollapser extends Table.ResultSetImpl
 {
-    private Object _lastValue = new Object();
     private String _columnName;
     private Table.TableResultSet _tableRS;
 
@@ -58,11 +57,21 @@ public class ResultSetCollapser extends Table.ResultSetImpl
 
     public boolean next() throws SQLException
     {
+        Object lastValue;
+
+        if (getRow() > 0)
+        {
+            lastValue = getObject(_columnName);
+        }
+        else
+        {
+            lastValue = new Object();
+        }
+
         while(super.next())
         {
-            if (!_lastValue.equals(getObject(_columnName)))
+            if (!lastValue.equals(getObject(_columnName)))
             {
-                _lastValue= getInt(_columnName);
                 return true;
             }
         }

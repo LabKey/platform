@@ -60,7 +60,7 @@ public abstract class DefaultModule implements Module
     private UpdateState _afterSchemaUpdateState = UpdateState.NotStarted;
     private enum UpdateState { NotStarted, InProgress, Complete }
 
-    private Map<String, String> _metaData;
+    private ModuleMetaData _metaData;
     private boolean _loadFromSource;
     private String _buildPath;
 
@@ -382,11 +382,11 @@ public abstract class DefaultModule implements Module
         return Collections.emptySet();
     }
 
-    public void setMetaData(Map<String, String> metaData)
+    public void setMetaData(ModuleMetaData metaData)
     {
-        _metaData = Collections.unmodifiableMap(metaData);
+        _metaData = metaData;
         _loadFromSource = false;
-        _buildPath = _metaData.get("BuildPath");
+        _buildPath = _metaData.getBuildPath();
 
         if (AppProps.getInstance().isDevMode() && _buildPath != null)
         {
@@ -396,7 +396,7 @@ public abstract class DefaultModule implements Module
         }
     }
 
-    public Map<String, String> getMetaData()
+    public ModuleMetaData getMetaData()
     {
         return _metaData;
     }

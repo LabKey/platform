@@ -41,6 +41,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.exp.api.ExpRun;
 
 import java.io.*;
 import java.net.URI;
@@ -62,9 +63,18 @@ abstract public class PipelineJob extends Job implements Serializable
         return Logger.getLogger(PipelineJob.class.getName() + ".." + clazz.getName());
     }
 
-    public List<RecordedAction> getActions()
+    public RecordedActionSet getActionSet()
     {
-        return _actions;
+        return _actionSet;
+    }
+
+    /**
+     * Clear out the set of recorded actions
+     * @param run run that represents the previous set of recorded actions
+     */
+    public void clearActionSet(ExpRun run)
+    {
+        _actionSet = new RecordedActionSet();
     }
 
     public enum TaskStatus
@@ -147,7 +157,7 @@ abstract public class PipelineJob extends Job implements Serializable
     private boolean _interrupted;
     private boolean _submitted;
     private int _errors;
-    private List<RecordedAction> _actions = new ArrayList<RecordedAction>();
+    private RecordedActionSet _actionSet = new RecordedActionSet();
 
     private String _loggerLevel = Level.DEBUG.toString();
     protected transient Logger _logger;
@@ -179,6 +189,8 @@ abstract public class PipelineJob extends Job implements Serializable
                 throw new RuntimeSQLException(e);
             }
         }
+
+        _actionSet = new RecordedActionSet();
     }
 
     public PipelineJob(PipelineJob job)
@@ -204,6 +216,8 @@ abstract public class PipelineJob extends Job implements Serializable
 
         _activeTaskId = job._activeTaskId;
         _activeTaskStatus = job._activeTaskStatus;
+
+        _actionSet = new RecordedActionSet(job.getActionSet());
 
     }
 
@@ -571,13 +585,13 @@ abstract public class PipelineJob extends Job implements Serializable
 
             if (!factory.isJobComplete(this))
             {
-                Task task = factory.createTask(this);
+                Task<?> task = factory.createTask(this);
                 if (task == null)
                     return; // Bad task key.
 
                 setActiveTaskStatus(TaskStatus.running);
                 List<RecordedAction> actions = task.run();
-                _actions.addAll(actions);
+                _actionSet.add(actions);
 
                 _started = true;
 
@@ -829,7 +843,7 @@ abstract public class PipelineJob extends Job implements Serializable
     public void mergeSplitJob(PipelineJob job)
     {
         // Add experiment actions recored.
-        _actions.addAll(job.getActions());
+        _actionSet.add(job.getActionSet());
 
         // Add any errors that happened in the split job.
         _errors += job._errors;

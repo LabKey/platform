@@ -131,6 +131,7 @@ public class ExperimentService
         boolean isTransactionActive();
         void beginTransaction() throws SQLException;
         void commitTransaction() throws SQLException;
+        void closeTransaction();
         void rollbackTransaction();
 
         QueryView createExperimentRunWebPart(ViewContext context, ExperimentRunFilter filter, boolean moveButton, boolean exportXARButton);
@@ -247,5 +248,11 @@ public class ExperimentService
          * @return the runs loaded from the XAR
          */
         public List<ExpRun> importXar(XarSource source, PipelineJob pipelineJob, boolean reloadExistingRuns) throws ExperimentException;
+
+        /**
+         * Provides access to an object that should be locked before inserting experiment runs, protocols, etc.
+         * @return lock object on which to synchronize
+         */
+        public Object getImportLock();
     }
 }

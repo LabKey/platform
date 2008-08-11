@@ -58,7 +58,7 @@ public class AssayDataLinkDisplayColumn extends DataColumn
             }
             ActionURL url = AssayService.get().getAssayDataURL(ctx.getContainer(), protocol, runId.intValue());
             out.write("<a href=\"" + url.getLocalURIString() + "\" title=\"View the data for just this run\">" +
-                    PageFlowUtil.filter(ctx.get(getDisplayColumn().getName())) + "</a>");
+                    PageFlowUtil.filter(getDisplayColumn().getValue(ctx)) + "</a>");
         }
     }
 
@@ -67,8 +67,10 @@ public class AssayDataLinkDisplayColumn extends DataColumn
         super.addQueryColumns(columns);
         if (_protocolColumnInfo == null)
         {
-            FieldKey protocolIdKey = FieldKey.fromParts(ExpRunTable.Column.Protocol.name(), ExpProtocolTable.Column.RowId.name());
-            FieldKey runIdKey = FieldKey.fromParts(ExpRunTable.Column.RowId.name());
+            FieldKey thisColKey = FieldKey.fromString(getColumnInfo().getName());
+            FieldKey parentColKey = thisColKey.getParent();
+            FieldKey protocolIdKey = new FieldKey(new FieldKey(parentColKey, ExpRunTable.Column.Protocol.name()), ExpProtocolTable.Column.RowId.name());
+            FieldKey runIdKey = new FieldKey(parentColKey, ExpRunTable.Column.RowId.name());
             Map<FieldKey,ColumnInfo> extraCols = QueryService.get().getColumns(getColumnInfo().getParentTable(), Arrays.asList(protocolIdKey, runIdKey));
             _protocolColumnInfo = extraCols.get(protocolIdKey);
             _runIdColumnInfo = extraCols.get(runIdKey);

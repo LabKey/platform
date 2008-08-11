@@ -165,6 +165,7 @@ public class SpringModule extends DefaultModule implements ServletContext
         String contextConfigFiles = getContextConfigLocation();
         if (contextConfigFiles != null)
         {
+            _log.info("Loading Spring configuration for the " + getName() + " module from " + contextConfigFiles);
             _initParameters.put(ContextLoader.CONFIG_LOCATION_PARAM, contextConfigFiles);
 
             try
@@ -184,6 +185,7 @@ public class SpringModule extends DefaultModule implements ServletContext
             catch (Exception x)
             {
                 _log.error("Failed to load spring application context for module: " + getName(), x);
+                ModuleLoader.getInstance().setModuleFailure(getName(), x);
             }
         }
     }

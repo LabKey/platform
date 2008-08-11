@@ -28,7 +28,7 @@ import java.util.Map;
  * @author brendanx
  */
 public interface FileAnalysisJobSupport
-        extends XarTemplateSubstitutionId.JobSupport, XarImportTaskId.JobSupport
+        extends XarTemplateSubstitutionId.JobSupport
 {
     /**
      * @return the directory of the pipeline-root running this job.

@@ -48,11 +48,6 @@ public class GlobusSettingsImpl extends AbstractGlobusSettings
         return _maxWallTime;
     }
 
-    public Integer getHostCount()
-    {
-        return _hostCount;
-    }
-
     public Integer getMaxMemory()
     {
         return _maxMemory;
@@ -81,10 +76,5 @@ public class GlobusSettingsImpl extends AbstractGlobusSettings
     public void setMaxWallTime(Long maxWallTime)
     {
         _maxWallTime = maxWallTime;
-    }
-
-    public void setHostCount(Integer hostCount)
-    {
-        _hostCount = hostCount;
     }
 }

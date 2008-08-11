@@ -31,21 +31,21 @@ import java.util.Set;
  */
 public class ModuleDependencySorter
 {
-    public List<Module> sortModulesByDependencies(List<Module> moduleList)
+    public List<ModuleMetaData> sortModulesByDependencies(List<ModuleMetaData> moduleMetaDatas)
     {
-        List<Pair<Module, Set<String>>> dependencies = new ArrayList<Pair<Module, Set<String>>>();
-        for (Module module : moduleList)
+        List<Pair<ModuleMetaData, Set<String>>> dependencies = new ArrayList<Pair<ModuleMetaData, Set<String>>>();
+        for (ModuleMetaData module : moduleMetaDatas)
         {
-            Pair<Module, Set<String>> dependencyInfo = new Pair<Module, Set<String>>(module, new HashSet<String>(module.getModuleDependencies()));
+            Pair<ModuleMetaData, Set<String>> dependencyInfo = new Pair<ModuleMetaData, Set<String>>(module, new HashSet<String>(module.getModuleDependencies()));
             dependencies.add(dependencyInfo);
         }
 
-        List<Module> result = new ArrayList<Module>();
+        List<ModuleMetaData> result = new ArrayList<ModuleMetaData>();
         while (!dependencies.isEmpty())
         {
-            Module module = findModuleWithoutDependencies(dependencies);
+            ModuleMetaData module = findModuleWithoutDependencies(dependencies);
             result.add(module);
-            for (Pair<Module, Set<String>> dependencyInfo : dependencies)
+            for (Pair<ModuleMetaData, Set<String>> dependencyInfo : dependencies)
             {
                 dependencyInfo.getValue().remove(module.getName());
             }
@@ -54,7 +54,7 @@ public class ModuleDependencySorter
         // Core is special and needs to be first
         for (int i = 0; i < result.size(); i++)
         {
-            Module module = result.get(i);
+            ModuleMetaData module = result.get(i);
             if (module.getName().toLowerCase().equals("core"))
             {
                 result.remove(i);
@@ -66,11 +66,11 @@ public class ModuleDependencySorter
         return result;
     }
 
-    private Module findModuleWithoutDependencies(List<Pair<Module, Set<String>>> dependencies)
+    private ModuleMetaData findModuleWithoutDependencies(List<Pair<ModuleMetaData, Set<String>>> dependencies)
     {
         for (int i = 0; i < dependencies.size(); i++)
         {
-            Pair<Module, Set<String>> dependencyInfo = dependencies.get(i);
+            Pair<ModuleMetaData, Set<String>> dependencyInfo = dependencies.get(i);
             if (dependencyInfo.getValue().isEmpty())
             {
                 dependencies.remove(i);
@@ -79,7 +79,7 @@ public class ModuleDependencySorter
         }
 
         StringBuilder sb = new StringBuilder();
-        for (Pair<Module, Set<String>> dependencyInfo : dependencies)
+        for (Pair<ModuleMetaData, Set<String>> dependencyInfo : dependencies)
         {
             if (sb.length() > 0)
             {
@@ -98,9 +98,9 @@ public class ModuleDependencySorter
         {
             try
             {
-                List<Module> testModules = new ArrayList<Module>();
-                testModules.add(new DummyModule("a", "b"));
-                testModules.add(new DummyModule("b", "a"));
+                List<ModuleMetaData> testModules = new ArrayList<ModuleMetaData>();
+                testModules.add(new ModuleMetaData("a", "b"));
+                testModules.add(new ModuleMetaData("b", "a"));
                 ModuleDependencySorter sorter = new ModuleDependencySorter();
                 sorter.sortModulesByDependencies(testModules);
                 fail("Should have detected a problem");
@@ -112,8 +112,8 @@ public class ModuleDependencySorter
         {
             try
             {
-                List<Module> testModules = new ArrayList<Module>();
-                testModules.add(new DummyModule("a", "a"));
+                List<ModuleMetaData> testModules = new ArrayList<ModuleMetaData>();
+                testModules.add(new ModuleMetaData("a", "a"));
                 ModuleDependencySorter sorter = new ModuleDependencySorter();
                 sorter.sortModulesByDependencies(testModules);
                 fail("Should have detected a problem");
@@ -125,11 +125,11 @@ public class ModuleDependencySorter
         {
             try
             {
-                List<Module> testModules = new ArrayList<Module>();
-                testModules.add(new DummyModule("a", "b"));
-                testModules.add(new DummyModule("b", "c"));
-                testModules.add(new DummyModule("d", "e"));
-                testModules.add(new DummyModule("e"));
+                List<ModuleMetaData> testModules = new ArrayList<ModuleMetaData>();
+                testModules.add(new ModuleMetaData("a", "b"));
+                testModules.add(new ModuleMetaData("b", "c"));
+                testModules.add(new ModuleMetaData("d", "e"));
+                testModules.add(new ModuleMetaData("e"));
                 ModuleDependencySorter sorter = new ModuleDependencySorter();
                 sorter.sortModulesByDependencies(testModules);
                 fail("Should have detected a problem");
@@ -139,17 +139,17 @@ public class ModuleDependencySorter
 
         public void testGoodDependencies()
         {
-            List<Module> testModules = new ArrayList<Module>();
-            testModules.add(new DummyModule("a", "b"));
-            testModules.add(new DummyModule("b", "c", "d"));
-            testModules.add(new DummyModule("c", "h"));
-            testModules.add(new DummyModule("d", "e"));
-            testModules.add(new DummyModule("e"));
-            testModules.add(new DummyModule("f", "g"));
-            testModules.add(new DummyModule("g"));
-            testModules.add(new DummyModule("h"));
+            List<ModuleMetaData> testModules = new ArrayList<ModuleMetaData>();
+            testModules.add(new ModuleMetaData("a", "b"));
+            testModules.add(new ModuleMetaData("b", "c", "d"));
+            testModules.add(new ModuleMetaData("c", "h"));
+            testModules.add(new ModuleMetaData("d", "e"));
+            testModules.add(new ModuleMetaData("e"));
+            testModules.add(new ModuleMetaData("f", "g"));
+            testModules.add(new ModuleMetaData("g"));
+            testModules.add(new ModuleMetaData("h"));
             ModuleDependencySorter sorter = new ModuleDependencySorter();
-            List<Module> sortedModules = sorter.sortModulesByDependencies(testModules);
+            List<ModuleMetaData> sortedModules = sorter.sortModulesByDependencies(testModules);
             assertEquals(sortedModules.size(), testModules.size());
             assertEquals(sortedModules.get(0).getName(), "e");
             assertEquals(sortedModules.get(1).getName(), "d");

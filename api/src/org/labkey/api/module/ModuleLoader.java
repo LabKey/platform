@@ -47,7 +47,6 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import java.util.jar.Manifest;
 
 /**
  * User: migra
@@ -73,7 +72,6 @@ public class ModuleLoader implements Filter
     private static CoreSchema _core = CoreSchema.getInstance();
 
     private File _webappDir;
-    private Collection<File> _moduleDirectories;
 
     private static final Object UPGRADE_LOCK = new Object();
     private boolean _beforeUpgradeComplete = false;
@@ -199,15 +197,65 @@ public class ModuleLoader implements Filter
         // Register BeanUtils converters
         ConvertHelper.registerHelpers();
 
-        List<Module> moduleList = new ArrayList<Module>();
-
         _webappDir = new File(servletCtx.getRealPath(".")).getCanonicalFile();
 
         Set<File> unclaimedFiles = listCurrentFiles(_webappDir);
 
         removeAPIFiles(unclaimedFiles, _webappDir);
 
-        extractModules(servletCtx, moduleList, unclaimedFiles);
+
+        Set<File> moduleFiles;
+        try
+        {
+            ClassLoader webappClassLoader = getClass().getClassLoader();
+            Method m = webappClassLoader.getClass().getMethod("getModuleFiles");
+            moduleFiles = (Set<File>)m.invoke(webappClassLoader);
+        }
+        catch (NoSuchMethodException e)
+        {
+            throw new RuntimeException("Could not find getModuleFiles() method - you probably need to copy labkeyBootstrap.jar into $CATALINA_HOME/server/lib and/or edit your labkey.xml to include <Loader loaderClass=\"org.labkey.bootstrap.LabkeyServerBootstrapClassLoader\" />", e);
+        }
+        catch (InvocationTargetException e)
+        {
+            throw new RuntimeException(e);
+        }
+
+        List<ModuleMetaData> moduleList = new ArrayList<ModuleMetaData>();
+        for (File moduleFile : moduleFiles)
+        {
+            try
+            {
+                moduleList.add(new ModuleMetaData(moduleFile));
+            }
+            catch (Throwable t)
+            {
+                _log.error("Unable to instantiate module " + moduleFile, t);
+                _moduleFailures.put(moduleFile.getName(), t);
+            }
+        }
+
+        ModuleDependencySorter sorter = new ModuleDependencySorter();
+        moduleList = sorter.sortModulesByDependencies(moduleList);
+        _modules = new ArrayList<Module>();
+        for (ModuleMetaData moduleMetaData : moduleList)
+        {
+            try
+            {
+                Module module = moduleMetaData.createModule(getClass().getClassLoader());
+                assert moduleMetaData.getName().equalsIgnoreCase(module.getName());
+                _modules.add(module);
+                moduleMap.put(module.getName(), module);
+            }
+            catch (Throwable t)
+            {
+                _log.error("Unable to instantiate module " + moduleMetaData.getName(), t);
+                _moduleFailures.put(moduleMetaData.getName(), t);
+            }
+        }
+
+
+
+        extractModules(moduleFiles, servletCtx, unclaimedFiles);
 
         File webinfDir = new File(_webappDir, "WEB-INF");
         File webinfLibDir = new File(webinfDir, "lib");
@@ -220,14 +268,6 @@ public class ModuleLoader implements Filter
                 FileUtil.deleteDir(unclaimedFile);
             }
         }
-
-        ModuleDependencySorter sorter = new ModuleDependencySorter();
-        moduleList = sorter.sortModulesByDependencies(moduleList);
-
-        _modules = Collections.unmodifiableList(moduleList);
-
-        for (Module module : _modules)
-            moduleMap.put(module.getName(), module);
 
         ensureDataBases();
 
@@ -265,11 +305,6 @@ public class ModuleLoader implements Filter
         assert (ModuleState.ReadyToRun == coreCtx.getModuleState());
 
         _log.info("LabKey Server startup is complete");
-    }
-
-    public Collection<File> getModuleDirectories()
-    {
-        return _moduleDirectories;
     }
 
     public File getWebappDir()
@@ -321,54 +356,8 @@ public class ModuleLoader implements Filter
         return result;
     }
 
-    private Module createModule(String moduleClassName, ClassLoader classLoader, Map<String, String> metaData)
+    private void extractModules(Set<File> moduleFiles, ServletContext context, Set<File> unclaimedFiles) throws ServletException, IllegalAccessException, InstantiationException, ClassNotFoundException
     {
-        if (moduleClassName == null || moduleClassName.length() == 0)
-            return null;
-        try
-        {
-            Class<Module> clazz = (Class<Module>)classLoader.loadClass(moduleClassName);
-
-            Module result = clazz.newInstance();
-            result.setMetaData(metaData);
-            return result;
-        }
-        catch (ClassNotFoundException e)
-        {
-            _log.error("Unable to instantiate module " + moduleClassName, e);
-            _moduleFailures.put(moduleClassName, e);
-        }
-        catch (IllegalAccessException e)
-        {
-            _log.error("Unable to instantiate module " + moduleClassName, e);
-            _moduleFailures.put(moduleClassName, e);
-        }
-        catch (InstantiationException e)
-        {
-            _log.error("Unable to instantiate module " + moduleClassName, e);
-            _moduleFailures.put(moduleClassName, e);
-        }
-        catch (Throwable t)
-        {
-            _log.error("Unable to instantiate module "+ moduleClassName, t);
-            _moduleFailures.put(moduleClassName, t);
-        }
-        return null;
-    }
-
-    private void extractModules(ServletContext context, List<Module> moduleList, Set<File> unclaimedFiles) throws ServletException, IllegalAccessException, InstantiationException, ClassNotFoundException
-    {
-//        File deploymentFile;
-//        try
-//        {
-//            deploymentFile = copyWSDD(context.getRealPath("/WEB-INF"));
-//        }
-//        catch (IOException e)
-//        {
-//            throw new ServletException(e);
-//        }
-//        unclaimedFiles.remove(deploymentFile);
-
         File webappContentDir;
         File webInfJspDir;
         File webInfClassesDir;
@@ -383,104 +372,29 @@ public class ModuleLoader implements Filter
             throw new ServletException(e);
         }
 
-        Set<File> moduleFiles;
-        try
-        {
-            ClassLoader webappClassLoader = getClass().getClassLoader();
-            Method m = webappClassLoader.getClass().getMethod("getModuleFiles");
-            moduleFiles = (Set<File>)m.invoke(webappClassLoader);
-        }
-        catch (NoSuchMethodException e)
-        {
-            throw new RuntimeException("Could not find getModuleFiles() method - you probably need to copy labkeyBootstrap.jar into $CATALINA_HOME/server/lib and/or edit your labkey.xml to include <Loader loaderClass=\"org.labkey.bootstrap.LabkeyServerBootstrapClassLoader\" />", e);
-        }
-        catch (InvocationTargetException e)
-        {
-            throw new RuntimeException(e);
-        }
-
-        try
-        {
-            ClassLoader webappClassLoader = getClass().getClassLoader();
-            Method m = webappClassLoader.getClass().getMethod("getModuleDirectories");
-            _moduleDirectories = (Collection<File>)m.invoke(webappClassLoader);
-        }
-        catch (NoSuchMethodException e)
-        {
-            throw new RuntimeException("Could not find getModuleDirectories() method - you probably need to copy labkeyBootstrap.jar into $CATALINA_HOME/server/lib and/or edit your labkey.xml to include <Loader loaderClass=\"org.labkey.bootstrap.LabkeyServerBootstrapClassLoader\" />", e);
-        }
-        catch (InvocationTargetException e)
-        {
-            throw new RuntimeException(e);
-        }
-
         for (File moduleFile : moduleFiles)
         {
             JarFile jarFile = null;
             try
             {
                 jarFile = new JarFile(moduleFile);
-                JarEntry moduleEntry = jarFile.getJarEntry("META-INF/MANIFEST.MF");
-                if (moduleEntry != null)
+
+                Enumeration<JarEntry> entries = jarFile.entries();
+                while (entries.hasMoreElements())
                 {
-                    Properties props = new Properties();
-                    InputStream in = null;
-                    try
+                    JarEntry entry = entries.nextElement();
+                    String name = entry.getName().toLowerCase();
+                    if (!name.startsWith("meta-inf/"))
                     {
-                        in = jarFile.getInputStream(moduleEntry);
-                        // we cannot use "props.load(in);" as long paths get wrapped and we will get wrong value
-                        Manifest manifest=new Manifest(in);
-                        for(Map.Entry<Object, Object> entry : manifest.getMainAttributes().entrySet()) {
-                            props.put(entry.getKey().toString(),entry.getValue().toString());
-                        }
+                        extractEntry(jarFile, entry, entry.getName(), webappContentDir, unclaimedFiles);
                     }
-                    finally
+                    else if (name.startsWith("meta-inf/_pageflow/"))
                     {
-                        if (in != null) { try { in.close(); } catch (IOException e) {} }
+                        extractEntry(jarFile, entry, entry.getName().substring("meta-inf/".length()), webInfClassesDir, unclaimedFiles);
                     }
-
-                    String moduleClassName = props.getProperty("ModuleClass");
-                    String buildPath = props.getProperty("BuildPath");
-
-                    if (null != buildPath)
+                    else if (name.startsWith("meta-inf/jsp/") && name.endsWith("_jsp.jar"))
                     {
-                        buildPath = buildPath.replaceAll("\\\\\\\\","\\\\");
-                        props.setProperty("BuildPath", buildPath);
-                    }
-
-                    Map<String, String> propsMap = new HashMap(props);
-
-                    Enumeration<JarEntry> entries = jarFile.entries();
-                    while (entries.hasMoreElements())
-                    {
-                        JarEntry entry = entries.nextElement();
-                        String name = entry.getName().toLowerCase();
-                        if (!name.startsWith("meta-inf/"))
-                        {
-                            extractEntry(jarFile, entry, entry.getName(), webappContentDir, unclaimedFiles);
-                        }
-                        else if (name.startsWith("meta-inf/_pageflow/"))
-                        {
-                            extractEntry(jarFile, entry, entry.getName().substring("meta-inf/".length()), webInfClassesDir, unclaimedFiles);
-                        }
-//                        else if (name.equals("meta-inf/deploy.wsdd"))
-//                        {
-//                            appendWebService(jarFile, entry, deploymentFile);
-//                        }
-                        else if (name.startsWith("meta-inf/jsp/") && name.endsWith("_jsp.jar"))
-                        {
-                            extractEntry(jarFile, entry, entry.getName().substring("meta-inf/jsp/".length()), webInfJspDir, unclaimedFiles);
-                        }
-                    }
-
-                    Module module = createModule(moduleClassName, getClass().getClassLoader(), propsMap);
-                    if (module == null)
-                    {
-                        _log.error("Unable to determine module information for file: " + moduleFile);
-                    }
-                    else
-                    {
-                        moduleList.add(module);
+                        extractEntry(jarFile, entry, entry.getName().substring("meta-inf/jsp/".length()), webInfJspDir, unclaimedFiles);
                     }
                 }
             }
@@ -496,94 +410,6 @@ public class ModuleLoader implements Filter
         }
     }
 
-/*    private File copyWSDD(String realPath) throws IOException
-    {
-        FileInputStream fIn = null;
-        FileOutputStream fOut = null;
-        File originalFile = new File(realPath, "server-config-original.wsdd");
-        File copyFile = new File(realPath, "server-config.wsdd");
-        try
-        {
-            fIn = new FileInputStream(originalFile);
-            fOut = new FileOutputStream(copyFile);
-            byte[] b = new byte[4096];
-            int i;
-            while ((i = fIn.read(b)) != -1)
-            {
-                fOut.write(b, 0, i);
-            }
-        }
-        finally
-        {
-            if (fIn != null) { try { fIn.close(); } catch (IOException e) {} }
-            if (fOut != null) { try { fOut.close(); } catch (IOException e) {} }
-        }
-        return copyFile;
-    }
-
-    private void appendWebService(JarFile jarFile, JarEntry entry, File deploymentFile) throws ServletException
-    {
-        try
-        {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder moduleBuilder = factory.newDocumentBuilder();
-            Document moduleDocument = moduleBuilder.parse(jarFile.getInputStream(entry));
-            NodeList moduleDeploymentNodes = moduleDocument.getElementsByTagName("deployment");
-
-            if (moduleDeploymentNodes.getLength() == 1)
-            {
-                Document serverDocument = moduleBuilder.parse(deploymentFile);
-                NodeList serverDeploymentNodes = serverDocument.getElementsByTagName("deployment");
-                if (serverDeploymentNodes.getLength() == 1)
-                {
-                    Element serverDeploymentNode = (Element)serverDeploymentNodes.item(0);
-
-                    Element deploymentNode = (Element)moduleDeploymentNodes.item(0);
-                    NodeList nodesToCopy = deploymentNode.getElementsByTagName("service");
-                    for (int i = 0; i < nodesToCopy.getLength(); i++)
-                    {
-                        Node n = nodesToCopy.item(i);
-                        Node newNode = serverDocument.importNode(n, true);
-                        serverDeploymentNode.appendChild(newNode);
-                    }
-                }
-
-                Source source = new DOMSource(serverDocument);
-
-                FileOutputStream fOut = null;
-                try
-                {
-                    fOut = new FileOutputStream(deploymentFile);
-                    Result result = new StreamResult(fOut);
-
-                    // Write the DOM document to the file
-                    Transformer xformer = TransformerFactory.newInstance().newTransformer();
-                    xformer.transform(source, result);
-                }
-                finally
-                {
-                    if (fOut != null) { try { fOut.close(); } catch (IOException e) {} }
-                }
-            }
-        }
-        catch (TransformerException e)
-        {
-            throw new ServletException(e);
-        }
-        catch (IOException e)
-        {
-            throw new ServletException(e);
-        }
-        catch (ParserConfigurationException e)
-        {
-            throw new ServletException(e);
-        }
-        catch (SAXException e)
-        {
-            throw new ServletException(e);
-        }
-    }
-*/
     private void extractEntry(JarFile jarFile, JarEntry entry, String directory, File destinationDirectory, Set<File> unclaimedFiles) throws IOException
     {
         InputStream in = jarFile.getInputStream(entry);
@@ -838,6 +664,11 @@ public class ModuleLoader implements Filter
     public Throwable getStartupFailure()
     {
         return _startupFailure;
+    }
+
+    public void setModuleFailure(String moduleName, Throwable t)
+    {
+        _moduleFailures.put(moduleName, t);
     }
 
     public Map<String, Throwable> getModuleFailures()

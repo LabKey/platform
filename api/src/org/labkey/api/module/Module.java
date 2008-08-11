@@ -181,8 +181,8 @@ public interface Module
      */
     public Set<String> getModuleDependencies();
 
-    public void setMetaData(Map<String, String> metaData);
-    public Map<String, String> getMetaData();
+    public void setMetaData(ModuleMetaData metaData);
+    public ModuleMetaData getMetaData();
     public InputStream getResourceStreamFromWebapp(ServletContext ctx, String filename) throws FileNotFoundException;
     public InputStream getResourceStream(String filename) throws FileNotFoundException;
     public Pair<InputStream, Long> getResourceStreamIfChanged(String filename, long tsPrevious) throws FileNotFoundException;

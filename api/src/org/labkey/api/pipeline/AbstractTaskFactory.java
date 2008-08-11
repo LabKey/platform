@@ -83,6 +83,8 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
             _autoRetry = settings.getAutoRetry();
         if (settings.getGroupParameterName() != null)
             _groupParameterName = settings.getGroupParameterName();
+        if (settings.getGlobusSettings() != null)
+            _globusSettings = settings.getGlobusSettings();
     }
 
     /**
