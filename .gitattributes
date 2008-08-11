@@ -927,6 +927,7 @@ pipeline/src/META-INF/pipeline/scripts/postgresql/pipeline-2.30-8.10.sql -text
 pipeline/src/META-INF/pipeline/scripts/postgresql/pipeline-8.20-8.21.sql -text
 pipeline/src/META-INF/pipeline/scripts/postgresql/pipeline-8.21-8.22.sql -text
 pipeline/src/META-INF/pipeline/scripts/postgresql/pipeline-8.22-8.23.sql -text
+pipeline/src/META-INF/pipeline/scripts/postgresql/pipeline-8.23-8.24.sql -text
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/obsolete/cpas-0.00-0.58.sql -text
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/obsolete/cpas-0.00-0.64.sql -text
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/obsolete/cpas-0.63-0.64.sql -text
@@ -950,6 +951,7 @@ pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/pipeline-2.30-8.10.sql -t
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/pipeline-8.20-8.21.sql -text
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/pipeline-8.21-8.22.sql -text
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/pipeline-8.22-8.23.sql -text
+pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/pipeline-8.23-8.24.sql -text
 pipeline/src/org/labkey/pipeline/DirectoryView.java -text
 pipeline/src/org/labkey/pipeline/FileContentPipelineProvider.java -text
 pipeline/src/org/labkey/pipeline/PipelineController.java -text
@@ -1030,12 +1032,13 @@ pipeline/src/org/labkey/pipeline/pipelineStatus.jsp -text
 pipeline/src/org/labkey/pipeline/setup.jsp -text
 pipeline/src/org/labkey/pipeline/status/DescriptionDisplayColumn.java -text
 pipeline/src/org/labkey/pipeline/status/FileDisplayColumn.java -text
+pipeline/src/org/labkey/pipeline/status/JobDisplayColumn.java -text
 pipeline/src/org/labkey/pipeline/status/ProviderButtonBar.java -text
 pipeline/src/org/labkey/pipeline/status/StatusController.java -text
 pipeline/src/org/labkey/pipeline/status/StatusDataRegion.java -text
 pipeline/src/org/labkey/pipeline/status/escalateJobFailure.jsp -text
 pipeline/src/org/labkey/pipeline/xstream/FileXStreamConverter.java -text
-pipeline/src/org/labkey/pipeline/xstream/PathMapper.java -text
+pipeline/src/org/labkey/pipeline/xstream/PathMapperImpl.java -text
 pipeline/src/org/labkey/pipeline/xstream/TaskIdXStreamConverter.java -text
 pipeline/src/org/labkey/pipeline/xstream/URIXStreamConverter.java -text
 pipeline/webapp/WEB-INF/classes/client-config.wsdd -text

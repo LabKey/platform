@@ -17,9 +17,11 @@ package org.labkey.pipeline.api;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.pipeline.*;
+import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.util.URIUtil;
 import org.labkey.pipeline.api.properties.ApplicationPropertiesImpl;
 import org.labkey.pipeline.api.properties.ConfigPropertiesImpl;
+import org.labkey.pipeline.xstream.PathMapperImpl;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -70,6 +72,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
     private PipelineStatusFile.JobStore _jobStore;
 
     private WorkDirFactory _workDirFactory;
+    private PathMapper _pathMapper = new PathMapperImpl();  // Default to empty
 
     public PipelineJobServiceImpl()
     {
@@ -253,6 +256,16 @@ public class PipelineJobServiceImpl extends PipelineJobService
     public void setWorkDirFactory(WorkDirFactory workDirFactory)
     {
         _workDirFactory = workDirFactory;
+    }
+
+    public PathMapper getPathMapper()
+    {
+        return _pathMapper;
+    }
+
+    public void setPathMapper(PathMapper pathMapper)
+    {
+        _pathMapper = pathMapper;
     }
 
     public ApplicationProperties getAppProperties()

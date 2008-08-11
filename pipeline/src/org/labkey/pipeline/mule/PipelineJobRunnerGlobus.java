@@ -46,10 +46,11 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.NetworkDrive;
-import org.labkey.pipeline.xstream.PathMapper;
+import org.labkey.pipeline.xstream.PathMapperImpl;
 import org.mule.umo.UMOEventContext;
 import org.mule.umo.UMOException;
 import org.mule.umo.lifecycle.Callable;
+import org.mule.impl.RequestContext;
 
 import javax.xml.namespace.QName;
 import java.io.*;
@@ -68,7 +69,7 @@ public class PipelineJobRunnerGlobus implements Callable
     private static Logger _log = Logger.getLogger(PipelineJobRunnerGlobus.class);
 
     private String _globusEndpoint;
-    private PathMapper _pathMapper = PathMapper.createMapper();
+    private PathMapperImpl _pathMapper = new PathMapperImpl();
 
     private static final String GLOBUS_LOCATION = "GLOBUS_LOCATION";
 
@@ -280,7 +281,11 @@ public class PipelineJobRunnerGlobus implements Callable
         // Only re-queue the job if status is 'complete' (not 'running' or 'error').
         if (status == PipelineJob.TaskStatus.complete || status == PipelineJob.TaskStatus.error)
         {
-            EPipelineQueueImpl.dispatchJob(job);
+            // And only, if this update didn't happen in the process of
+            // handling an existing Mule request, in which case, Mule will
+            // requeue if necessary.
+            if (RequestContext.getEvent() == null)
+                EPipelineQueueImpl.dispatchJob(job);
         }
     }
 

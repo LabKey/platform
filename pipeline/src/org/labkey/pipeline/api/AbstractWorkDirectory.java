@@ -173,12 +173,15 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         }
         ensureDescendent(fileWork);
         File fileReplace = null;
+        File fileCopy = null;
         CopyingResource resource = null;
         try
         {
             resource = ensureCopyingLock();
             if (fileDest.exists())
             {
+                // If the destination exists, rename it out of the way while we try to
+                // replace it. Rename within the same directory is always an atomic action.
                 fileReplace = FT_MOVE.newFile(fileDest.getParentFile(), fileDest.getName());
                 _log.info("Moving " + fileDest + " to " + fileReplace);
                 if (!fileDest.renameTo(fileReplace))
@@ -187,21 +190,47 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
                 }
             }
             _log.info("Moving " + fileWork + " to " + fileDest);
-            if (!fileWork.renameTo(fileDest))
+            if (fileWork.renameTo(fileDest))
+                fileWork = null;
+            else
             {
                 // File.renameTo() is the most efficient way to move a file, but it annoyingly doesn't necessarily
-                // work across different file systems.
-                FileUtils.copyFile(fileWork, fileDest);
-                if (!fileWork.delete())
+                // work across different file systems.  Use a copy to a .copy file, and then an
+                // atomic rename within the same directory to the destination.
+                fileCopy = FT_COPY.newFile(fileDest.getParentFile(), fileDest.getName());
+                FileUtils.copyFile(fileWork, fileCopy);
+                if (!fileCopy.renameTo(fileDest))
                 {
                     throw new IOException("Failed to move file " + fileWork + " to " + fileDest);
                 }
+                fileCopy = null;
             }
             if (fileReplace != null)
-                fileReplace.delete();
+            {
+                File fileRemove = fileReplace;
+                fileReplace = null;    // Output file is successfully in place.
+
+                _log.info("Removing " + fileRemove);
+                fileRemove.delete();
+            }
+            if (fileWork != null && !fileWork.delete())
+            {
+                throw new IOException("Failed to remove file " + fileWork);
+            }
         }
         finally
         {
+            if (fileCopy != null)
+            {
+                // Clean-up corrupted .copy file.
+                fileCopy.delete();
+            }
+            if (fileReplace != null)
+            {
+                // Failed to get output file in place.  Attempt to rename original back into position.
+                fileReplace.renameTo(fileDest);
+            }
+
             if (resource != null)
             {
                 resource.release();

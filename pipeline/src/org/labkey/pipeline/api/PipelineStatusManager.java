@@ -23,9 +23,7 @@ import org.labkey.api.pipeline.*;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.io.File;
+import java.io.IOException;
 
 /**
  * <code>PipelineStatusManager</code> provides access to the StatusFiles table
@@ -122,13 +120,59 @@ public class PipelineStatusManager
         if (null == sfExist)
         {
             sfSet.beforeInsert(user, c.getId());
-            Table.insert(user, pipeline.getTableInfoStatusFiles(), sfSet);
+            PipelineStatusFileImpl sfNew = Table.insert(user, pipeline.getTableInfoStatusFiles(), sfSet);
+
+            // Make sure rowID is correct, since it might be used in email.
+            sfSet.setRowId(sfNew.getRowId());
         }
         else
         {
             sfSet.beforeUpdate(user, sfExist);
             Table.update(user, pipeline.getTableInfoStatusFiles(), sfSet,
                     new Integer(sfExist.getRowId()), null);
+        }
+    }
+
+    public static void setStatusFile(PipelineJob job, PipelineStatusFileImpl sf)
+            throws SQLException, Container.ContainerException
+    {
+        String status = sf.getStatus();
+        String info = sf.getInfo();
+
+        // Try to synchronize disk status first (for Perl Pipelin only)
+        // If this fails, then the Perl Pipeline will not register the change
+        // in status.
+        try
+        {
+            sf.synchDiskStatus();
+        }
+        catch (IOException eio)
+        {
+            // Make sure the status changes to ERROR, to allow the user to Retry.
+            status = PipelineJob.ERROR_STATUS;
+            sf.setStatus(status);
+            sf.setInfo("type=disk; attempting " + status + (info == null ? "" : " - " + info) + "; " +
+                    eio.getMessage());
+        }
+
+        setStatusFile(job.getInfo(), sf);
+
+        if (PipelineJob.ERROR_STATUS.equals(status))
+        {
+            // Count this error on the job.
+            job.setErrors(job.getErrors() + 1);
+
+            PipelineManager.sendNotificationEmail(sf, job.getContainer());
+        }
+        else if (PipelineJob.COMPLETE_STATUS.equals(status))
+        {
+            // Make sure the Enterprise Pipeline recognizes this as a completed
+            // job, even if did it not have a TaskPipeline.
+            job.setActiveTaskId(null, false);
+
+            // Notify if this is not a split job
+            if (job.getParentGUID() == null)
+                PipelineManager.sendNotificationEmail(sf, job.getContainer());
         }
     }
 
@@ -197,6 +241,14 @@ public class PipelineStatusManager
                 new Object[] { new Integer(sfExist.getRowId()) });
 
         return sfExist.getJobStore();
+    }
+
+    public static PipelineStatusFileImpl[] getSplitStatusFiles(String parentId) throws SQLException
+    {
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition("JobParent", parentId, CompareType.EQUAL);
+
+        return Table.select(pipeline.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
     }
 
     /**

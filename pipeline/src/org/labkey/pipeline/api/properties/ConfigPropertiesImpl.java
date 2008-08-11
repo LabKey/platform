@@ -17,10 +17,8 @@
 package org.labkey.pipeline.api.properties;
 
 import org.labkey.api.pipeline.PipelineJobService;
-import org.labkey.pipeline.xstream.PathMapper;
 
 import java.util.Map;
-import java.io.File;
 
 /**
  * <code>ConfigPropertiesImpl</code> used for Spring configuration.

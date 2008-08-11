@@ -39,6 +39,11 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
             PipelineJob.SPLIT_STATUS    // Depends on status of split jobs
     ));
 
+    private static HashSet<String> _emailStatuses = new HashSet<String>(Arrays.asList(
+            PipelineJob.COMPLETE_STATUS,
+            PipelineJob.ERROR_STATUS
+    ));
+
     protected int _rowId;
     protected String _job;
     protected String _jobParent;
@@ -76,16 +81,21 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         setFilePath(job.getStatusFile().getAbsolutePath());
         setStatus(status);
         setInfo(info);
+
         if (PipelineJob.COMPLETE_STATUS.equals(status))
         {
-            // Make sure the Enterprise Pipeline recognizes this as a completed
-            // job, even if did not have a TaskPipeline.
-            job.setActiveTaskId(null);
-            job.setActiveTaskStatus(PipelineJob.TaskStatus.complete);
-
             ActionURL urlData = job.getStatusHref();
             if (urlData != null)
                 setDataUrl(urlData.getLocalURIString());
+        }
+        // Store the job that was split, so we will have a place to merge
+        // changes from the split-jobs.
+        else if (PipelineJob.SPLIT_STATUS.equals(status))
+        {
+            // The taskId is not really valid for the joined job at this point,
+            // so avoid asking the TaskFactory about it.
+            setActiveTaskId(job.getActiveTaskId().toString());
+            setJobStore(PipelineJobService.get().getJobStore().toXML(job));
         }
         // If there is an active task and this is waiting state, then checkpoint the
         // job to the database for retry.
@@ -95,20 +105,6 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
             setActiveTaskId(job.getActiveTaskFactory().getActiveId(job).toString());
             setJobStore(PipelineJobService.get().getJobStore().toXML(job));
         }
-
-        try
-        {
-            synchDiskStatus();
-        }
-        catch (IOException eio)
-        {
-            setStatus(PipelineJob.ERROR_STATUS);
-            setInfo("type=disk; attempting " + status + (info == null ? "" : " - " + info) + "; " +
-                    eio.getMessage());
-        }
-
-        if (PipelineJob.ERROR_STATUS.equals(getStatus()))
-            job.setErrors(job.getErrors() + 1);
     }
 
     public void beforeUpdate(User user, Entity cur)
@@ -116,6 +112,8 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         super.beforeUpdate(user, cur);
 
         PipelineStatusFileImpl curSF = (PipelineStatusFileImpl) cur;
+
+        _rowId = curSF._rowId;
 
         // Preserve original values across updates, if not explicitly changed.
         if (_email == null || _email.length() == 0)
@@ -149,6 +147,11 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
     public boolean isActive()
     {
         return !_inactiveStatuses.contains(_status);
+    }
+
+    public boolean isEmailStatus()
+    {
+        return _jobParent == null && _emailStatuses.contains(_status);
     }
 
     public int getRowId()

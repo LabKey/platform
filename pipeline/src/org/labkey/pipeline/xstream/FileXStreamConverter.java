@@ -22,6 +22,9 @@ import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.file.PathMapper;
+
 /**
  * FileXStreamConverter class
  * File marshalling handler for XML.<p/>
@@ -39,13 +42,13 @@ public class FileXStreamConverter implements SingleValueConverter
     /**
      * Load local file for UMO from URI file spec on LabKey Server.
      * @param str remote URI string
-     * @return
+     * @return A file object converted to the local file system
      */
     public Object fromString(String str)
     {
         try
         {
-            return new File(new URI(PathMapper.getInstance().remoteToLocal(str)));
+            return new File(new URI(getPathMapper().remoteToLocal(str)));
         }
         catch (URISyntaxException e)
         {
@@ -56,10 +59,15 @@ public class FileXStreamConverter implements SingleValueConverter
     /**
      * Marshal file from UMO on local file system to URI file spec on LabKey Server.
      * @param obj local file
-     * @return
+     * @return A remote URI string
      */
     public String toString(Object obj)
     {
-        return PathMapper.getInstance().localToRemote(((File) obj).toURI().toString());
+        return getPathMapper().localToRemote(((File) obj).toURI().toString());
+    }
+
+    private PathMapper getPathMapper()
+    {
+        return PipelineJobService.get().getPathMapper();
     }
 }

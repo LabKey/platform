@@ -89,73 +89,101 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
         PipelineStatusManager.storeJob(job.getJobGUID(), toXML(job));
     }
 
+    // Synchronize all spliting and joining to avoid SQL deadlocks.  Splitting
+    // and joining currently only touches a single table, but it can do so a
+    // fair number of times, which has caused deadlocks.  SQL indexes have been
+    // added in an effort to prevent the deadlocks on the database side, but
+    // this seems like the safest fix with only one server accessing the database.
+    private static final Object _splitLock = new Object();
+
+    // The split record was created in an effort to reduce the SQL round-trips
+    // for a split that triggers re-joining on the same thread stack.  It seems
+    // to work, but it is not totally clear that the resulting complexity is
+    // worth the savings, especially now that all splitting and joining is
+    // synchronized to avoid SQL deadlocks.
     private ThreadLocal<SplitRecord> _splitRecord = new ThreadLocal<SplitRecord>();
 
     public void split(PipelineJob job) throws IOException, SQLException
     {
-        DbScope scope = PipelineSchema.getInstance().getSchema().getScope();
-        boolean active = scope.isTransactionActive();
-        try
+        synchronized (_splitLock)
         {
-            beginTransaction(scope, active);
-
-            PipelineJob[] jobs = job.createSplitJobs();
-
-            beginSplit(job, jobs);
-
-            // Queue all the split jobs.
-            for (PipelineJob jobSplit : jobs)
-                PipelineService.get().queueJob(jobSplit);
-
-            // If there were any split jobs left incomplete, then store the job, and
-            // wait for them to complete.
-            if (getIncompleteSplitCount(job.getJobGUID()) > 0)
+            DbScope scope = PipelineSchema.getInstance().getSchema().getScope();
+            boolean active = scope.isTransactionActive();
+            try
             {
-                storeJob(job);
-                job.setStatus(PipelineJob.SPLIT_STATUS);
+                beginTransaction(scope, active);
+
+                // Make sure the join job has an existing status record before creating
+                // the rows for the split jobs.  Just to ensure a consistent creation order.
+                if (PipelineStatusManager.getJobStatusFile(job.getJobGUID()) == null)
+                    job.setStatus(PipelineJob.SPLIT_STATUS);
+
+                PipelineJob[] jobs = job.createSplitJobs();
+
+                beginSplit(job, jobs);
+
+                // Queue all the split jobs.
+                for (PipelineJob jobSplit : jobs)
+                    PipelineService.get().queueJob(jobSplit);
+
+                // If there were any split jobs left incomplete, then store the job, and
+                // wait for them to complete.
+                if (getIncompleteSplitCount(job.getJobGUID()) > 0)
+                {
+                    job.setStatus(PipelineJob.SPLIT_STATUS);
+                }
+                commitTransaction(scope, active);
             }
-            commitTransaction(scope, active);
-        }
-        finally
-        {
-            endSplit();
-            closeTransaction(scope, active);
+            finally
+            {
+                endSplit();
+                closeTransaction(scope, active);
+            }
         }
     }
 
     public void join(PipelineJob job) throws IOException, SQLException
     {
-        DbScope scope = PipelineSchema.getInstance().getSchema().getScope();
-        boolean active = scope.isTransactionActive();
-        try
+        synchronized (_splitLock)
         {
-            TaskId tid = job.getActiveTaskId();
-
-            beginTransaction(scope, active);
-            
-            // Avoid deadlock by doing this select first.
-            int count = getIncompleteSplitCount(job.getParentGUID());
-
-            setCompleteSplit(job);
-
-            PipelineJob jobJoin = getJob(job.getParentGUID());
-            jobJoin.mergeSplitJob(job);
-            if (count == 1)
+            DbScope scope = PipelineSchema.getInstance().getSchema().getScope();
+            boolean active = scope.isTransactionActive();
+            try
             {
-                // All split jobs have completed; begin running the joined job again
-                jobJoin.setActiveTaskId(tid, false);
-                PipelineService.get().queueJob(jobJoin);
+                TaskId tid = job.getActiveTaskId();
+
+                beginTransaction(scope, active);
+
+                // Avoid deadlock by doing this select first.
+                int count = getIncompleteSplitCount(job.getParentGUID());
+
+                setCompleteSplit(job);
+
+                PipelineJob jobJoin = getJoinJob(job.getParentGUID());
+                jobJoin.mergeSplitJob(job);
+                if (count == 1)
+                {
+                    // All split jobs are complete
+                    if (tid == null)
+                        jobJoin.setActiveTaskId(null);  // Complete the parent
+                    else
+                    {
+                        // begin running the joined job again
+                        jobJoin.setActiveTaskId(tid, false);
+                        PipelineService.get().queueJob(jobJoin);
+                    }
+                }
+                else
+                {
+                    // More split jobs left; store the join job until they complete
+                    storeJoinJob(jobJoin);
+                }
+                commitTransaction(scope, active);
             }
-            else
+            finally
             {
-                // More split jobs left; store the join job until they complete
-                storeJob(jobJoin);
+                closeTransaction(scope, active);
             }
-            commitTransaction(scope, active);
-        }
-        finally
-        {
-            closeTransaction(scope, active);
         }
     }
 
@@ -179,19 +207,24 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
 
     private static class SplitRecord
     {
-        private PipelineJob _job;
+        private PipelineJob _joinJob;
         private List<PipelineJob> _splitJobs;
 
         public SplitRecord(PipelineJob job, PipelineJob[] splitJobs)
         {
-            _job = job;
+            _joinJob = job;
             // Need list with editable content.
             _splitJobs = new ArrayList<PipelineJob>(Arrays.asList(splitJobs));
         }
 
         public boolean isJoinJob(String jobId)
         {
-            return jobId.equals(_job.getJobGUID());
+            return jobId.equals(_joinJob.getJobGUID());
+        }
+
+        public PipelineJob getJoinJob()
+        {
+            return _joinJob;
         }
 
         public int getIncompleteCount()
@@ -215,6 +248,15 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
         _splitRecord.set(null);
     }
 
+    private PipelineJob getJoinJob(String parentJobId) throws SQLException
+    {
+        SplitRecord rec = _splitRecord.get();
+        if (rec != null && rec.isJoinJob(parentJobId))
+            return rec.getJoinJob();
+
+        return getJob(parentJobId);
+    }
+
     private int getIncompleteSplitCount(String parentJobId) throws SQLException
     {
         SplitRecord rec = _splitRecord.get();
@@ -223,6 +265,15 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
 
         // Check the database.
         return PipelineStatusManager.getIncompleteStatusFiles(parentJobId).length;
+    }
+
+    private void storeJoinJob(PipelineJob job) throws SQLException
+    {
+        SplitRecord rec = _splitRecord.get();
+        if (rec != null && rec.isJoinJob(job.getJobGUID()))
+            return;
+
+        storeJob(job);
     }
 
     private void setCompleteSplit(PipelineJob job)

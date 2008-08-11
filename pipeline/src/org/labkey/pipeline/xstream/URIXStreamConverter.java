@@ -21,6 +21,9 @@ import com.thoughtworks.xstream.converters.SingleValueConverter;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import org.labkey.api.pipeline.file.PathMapper;
+import org.labkey.api.pipeline.PipelineJobService;
+
 /**
  * URIXStreamConveter class
  * URI marshalling handler for XML.<p/>
@@ -38,13 +41,13 @@ public class URIXStreamConverter implements SingleValueConverter
     /**
      * Load local URI for UMO from URI file spec on LabKey Server.
      * @param str remote URI string
-     * @return
+     * @return A URI object converted to the local file system
      */
     public Object fromString(String str)
     {
         try
         {
-            return new URI(PathMapper.getInstance().remoteToLocal(str));
+            return new URI(getPathMapper().remoteToLocal(str));
         }
         catch (URISyntaxException e)
         {
@@ -55,10 +58,15 @@ public class URIXStreamConverter implements SingleValueConverter
     /**
      * Marshal URI from UMO on local file system to URI file spec on LabKey Server.
      * @param obj local URI
-     * @return
+     * @return A remote URI string
      */
     public String toString(Object obj)
     {
-        return PathMapper.getInstance().localToRemote(obj == null ? null : obj.toString());
+        return getPathMapper().localToRemote(obj == null ? null : obj.toString());
+    }
+
+    private PathMapper getPathMapper()
+    {
+        return PipelineJobService.get().getPathMapper();
     }
 }

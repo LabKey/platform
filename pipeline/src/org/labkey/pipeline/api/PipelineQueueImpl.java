@@ -71,9 +71,11 @@ public class PipelineQueueImpl implements PipelineQueue
             _log.warn(e);  // This is not currently a hard dependency.
         }
 
-        _pending.add(job);
-        job.setQueue(this, initialState);
-        submitJobs();
+        if (job.setQueue(this, initialState))
+        {
+            _pending.add(job);
+            submitJobs();
+        }
     }
 
     public boolean isLocal()
@@ -113,21 +115,6 @@ public class PipelineQueueImpl implements PipelineQueue
         removed = _submitted.remove(job);
         assert removed;
         submitJobs();
-
-        try
-        {
-            File statusFile = job.getStatusFile();
-            if (statusFile != null)
-            {
-                PipelineStatusFileImpl sf = PipelineStatusManager.getStatusFile(statusFile.getAbsolutePath());
-                if (sf != null)
-                    PipelineManager.sendNotificationEmail(sf, job.getContainer());
-            }
-        }
-        catch (Exception e)
-        {
-            _log.error("Failed trying to send email notification for a pipeline job", e);
-        }
     }
 
     /**

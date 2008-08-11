@@ -253,15 +253,7 @@ public class PipelineServiceImpl extends PipelineService
 
     public void queueJob(PipelineJob job) throws IOException
     {
-        if (job.isAllSplit())
-        {
-            for (PipelineJob jobSplit : job.createSplitJobs())
-                getPipelineQueue().addJob(jobSplit);
-        }
-        else
-        {
-            getPipelineQueue().addJob(job);
-        }
+        getPipelineQueue().addJob(job);
     }
 
     public void queueJob(PipelineJob job, String initialState) throws IOException
@@ -397,7 +389,7 @@ public class PipelineServiceImpl extends PipelineService
 
     public void setStatusFile(PipelineJob job, String status, String statusInfo) throws Exception
     {
-        setStatusFile(job.getInfo(), new PipelineStatusFileImpl(job, status, statusInfo));
+        PipelineStatusManager.setStatusFile(job, new PipelineStatusFileImpl(job, status, statusInfo));
     }
 
     public void ensureError(PipelineJob job) throws Exception

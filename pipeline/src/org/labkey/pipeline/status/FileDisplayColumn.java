@@ -101,7 +101,7 @@ public class FileDisplayColumn extends SimpleDisplayColumn
                 {
                     fis = new FileInputStream(new File(dir, fileName));
                     out.write("<a href=\"");
-                    out.write(PageFlowUtil.filter("showFile.view?filename=" + PageFlowUtil.encode(fileName) + "&rowId=" + rowIdI));
+                    out.write(StatusController.urlShowFile(ctx.getContainer(), rowIdI.intValue(), fileName).getLocalURIString());
                     out.write("\">");
                     out.write(PageFlowUtil.filter(fileName));
                     out.write("</a><br>\n");

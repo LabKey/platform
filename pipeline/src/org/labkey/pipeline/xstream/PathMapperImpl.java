@@ -15,12 +15,8 @@
  */
 package org.labkey.pipeline.xstream;
 
-import org.mule.MuleManager;
-import org.mule.umo.manager.ObjectNotFoundException;
-import org.mule.umo.manager.UMOContainerContext;
 import org.apache.log4j.Logger;
-import org.springframework.beans.factory.BeanFactory;
-import org.springframework.beans.factory.support.DefaultListableBeanFactory;
+import org.labkey.api.pipeline.file.PathMapper;
 
 import java.util.Map;
 
@@ -31,20 +27,9 @@ import java.util.Map;
  *
  * @author bmaclean
  */
-public class PathMapper
+public class PathMapperImpl implements PathMapper
 {
-    private static Logger _log = Logger.getLogger(PathMapper.class);
-    private static PathMapper instance;
-
-    public static synchronized PathMapper getInstance()
-    {
-        // Create an empty path mapper, if one wasn't created during spring
-        // context construction.
-        if (instance == null)
-            instance = new PathMapper();
-
-        return instance;
-    }
+    private static Logger _log = Logger.getLogger(PathMapperImpl.class);
 
     /**
      * Prefix mappings:
@@ -58,20 +43,8 @@ public class PathMapper
     private boolean _remoteIgnoreCase;
     private boolean _localIgnoreCase;
 
-    public static PathMapper createMapper()
+    public PathMapperImpl()
     {
-        return new PathMapper(false);
-    }
-
-    private PathMapper()
-    {
-        this(true);
-    }
-
-    private PathMapper(boolean registerIfFirst)
-    {
-        if (registerIfFirst && instance == null)
-            instance = this;
     }
 
     public Map<String, String> getPathMap()

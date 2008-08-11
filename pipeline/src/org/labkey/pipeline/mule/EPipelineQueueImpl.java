@@ -204,29 +204,30 @@ public class EPipelineQueueImpl implements PipelineQueue
             _log.warn(e);  // This is not currently a hard dependency.
         }
 
-        job.setQueue(this, initialState);
-        
-        if (RequestContext.getEvent() == null)
+        if (job.setQueue(this, initialState))
         {
-            try
+            if (RequestContext.getEvent() == null)
             {
-                dispatchJob(job);
-            }
-            catch (UMOException e)
-            {
-                _log.error(e);
+                try
+                {
+                    dispatchJob(job);
+                }
+                catch (UMOException e)
+                {
+                    _log.error(e);
 
-                // If dispatch failed, make sure the job is set to error,
-                // so it can be retried.
-                job.error(e.getMessage(), e);
+                    // If dispatch failed, make sure the job is set to error,
+                    // so it can be retried.
+                    job.error(e.getMessage(), e);
+                }
             }
-        }
-        else
-        {
-            _log.debug("MuleClient does not work reliably from inside an event. Using outbound routing.");
-            if (_outboundJobs.get() == null)
-                _outboundJobs.set(new ArrayList<PipelineJob>());
-            _outboundJobs.get().add(job);
+            else
+            {
+                _log.debug("MuleClient does not work reliably from inside an event. Using outbound routing.");
+                if (_outboundJobs.get() == null)
+                    _outboundJobs.set(new ArrayList<PipelineJob>());
+                _outboundJobs.get().add(job);
+            }
         }
     }
 

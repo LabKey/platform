@@ -43,7 +43,6 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     private String _protocolFactoryName;
     private boolean _initialFileTypesFromTask;
     private FileType[] _initialFileTypes;
-    private FileType[] _sharedOutputTypes;
     private Map<FileType, FileType[]> _typeHeirarchy;
     private FileAnalysisXarGeneratorSupport _xarGeneratorSupport;
 
@@ -91,20 +90,6 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         // Misconfiguration: the user will never be able to start this pipeline
         if (_initialFileTypes == null || _initialFileTypes.length == 0)
                 throw new IllegalArgumentException("File analysis pipelines require at least on initial file type.");
-
-        // Convert any shared output extensions to array of file types.
-        List<String> sharedOutputExts = settings.getSharedOutputExts();
-        if (sharedOutputExts == null)
-        {
-            if (_sharedOutputTypes == null)
-                _sharedOutputTypes = new FileType[0];
-        }
-        else
-        {
-            _sharedOutputTypes = new FileType[sharedOutputExts.size()];
-            for (int i = 0; i < _sharedOutputTypes.length; i++)
-                _sharedOutputTypes[i] = new FileType(sharedOutputExts.get(i));            
-        }
 
         // Convert any input extension heirarchy into file types.
         Map<String, List<String>> extHeirarchy = settings.getFileExtHierarchy();
@@ -159,10 +144,34 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
 
     public File findInputFile(FileAnalysisJobSupport support, String name)
     {
-        return findInputFile(support.getRootDir(), support.getAnalysisDirectory(), name);
+        return findFile(support.getRootDir(), support.getAnalysisDirectory(), name);
     }
 
     public File findInputFile(File dirRoot, File dirAnalysis, String name)
+    {
+        return findFile(dirRoot, dirAnalysis, name);
+    }
+
+    public File findOutputFile(FileAnalysisJobSupport support, String name)
+    {
+        return findFile(support.getRootDir(), support.getAnalysisDirectory(), name);
+    }
+
+    /**
+     * Finds a file by name for a task in a <code>FileAnalysisTaskPipeline</code>.
+     * Finding input and output files used to be very different, with one looking
+     * at a list of shared files, and another a full type heirarchy.  In the end,
+     * it seems simplest to have everything refer to the type heirarchy.
+     * <p>
+     * It may be possible one day to remove the rest of the input v. output
+     * complexity.
+     * 
+     * @param dirRoot The pipeline root directory, outside which access is not allowed
+     * @param dirAnalysis The analysis directory where most generated files end up
+     * @param name The name of the file to locate
+     * @return A file that specifically locates a processing input or output
+     */
+    private File findFile(File dirRoot, File dirAnalysis, String name)
     {
         File file = findAncestorFile(dirRoot, dirAnalysis, name);
         if (file != null)
@@ -170,25 +179,6 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
 
         // Path of last resort is always to look in the current directory.
         return new File(dirAnalysis, name);
-    }
-
-    public File findOutputFile(FileAnalysisJobSupport support, String name)
-    {
-        for (FileType ft : _sharedOutputTypes)
-        {
-            if (ft.isType(name))
-            {
-                File file = findAncestorFile(support.getRootDir(), support.getAnalysisDirectory(), name);
-                if (file != null)
-                    return file;
-
-                // If it is shared, then the default is the input data directory.
-                return new File(support.getDataDirectory(), name);
-            }
-        }
-
-        // Path of last resort is always to look in the current directory.
-        return new File(support.getAnalysisDirectory(), name);
     }
 
     /**

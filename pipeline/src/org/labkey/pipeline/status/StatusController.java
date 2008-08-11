@@ -26,17 +26,18 @@ import org.labkey.api.pipeline.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
-import org.labkey.api.util.*;
+import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.MailHelper;
+import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.settings.AdminConsole;
 import org.labkey.pipeline.PipelineController;
-import org.labkey.pipeline.mule.EPipelineQueueImpl;
-import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
+import org.labkey.pipeline.api.PipelineJobServiceImpl;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
-import org.labkey.pipeline.api.PipelineJobServiceImpl;
 import static org.labkey.pipeline.api.PipelineStatusManager.*;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -382,6 +383,13 @@ public class StatusController extends SpringActionController
         }
     }
 
+    public static ActionURL urlShowFile(Container c, int rowId, String filename)
+    {
+        return new ActionURL(ShowFileAction.class, c)
+                .addParameter(RowIdForm.Params.rowId, Integer.toString(rowId))
+                .addParameter(ShowFileForm.Params.filename, filename);
+    }
+
     @RequiresPermission(ACL.PERM_READ)
     public class ShowFileAction extends SimpleStreamAction<ShowFileForm>
     {
@@ -438,6 +446,8 @@ public class StatusController extends SpringActionController
 
     public static class ShowFileForm extends RowIdForm
     {
+        enum Params { filename }
+
         private String _filename;
 
         public String getFilename()
@@ -938,9 +948,13 @@ public class StatusController extends SpringActionController
     {
         DataRegion rgn = new DataRegion();
 
-        rgn.setColumns(getTableInfo().getColumns("Created, Modified, Job, JobStore, Provider, Container, Email, Status, Info, FilePath, DataUrl"));
+        rgn.setColumns(getTableInfo().getColumns("Created, Modified, Job, JobParent, JobStore, Provider, Container, Email, Status, Info, FilePath, DataUrl"));
         rgn.addDisplayColumn(new FileDisplayColumn());
+        rgn.addDisplayColumn(new JobDisplayColumn(false));
+        rgn.addDisplayColumn(new JobDisplayColumn(true));
         DisplayColumn col = rgn.getDisplayColumn("Job");
+        col.setVisible(false);
+        col = rgn.getDisplayColumn("JobParent");
         col.setVisible(false);
         col = rgn.getDisplayColumn("JobStore");
         col.setVisible(false);
@@ -953,7 +967,7 @@ public class StatusController extends SpringActionController
 
         ButtonBar bb = new ProviderButtonBar();
 
-        ActionButton showGrid = new ActionButton("showList.view?.lastFilter=true", "Grid");
+        ActionButton showGrid = new ActionButton("showList.view?.lastFilter=true", "Show Grid");
         showGrid.setActionType(ActionButton.Action.LINK);
         showGrid.setDisplayPermission(ACL.PERM_READ);
         bb.add(showGrid);

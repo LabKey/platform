@@ -26,7 +26,7 @@
             
             <property name="specification" value="1.1"/>
         </properties>
-        <threading-profile id="receiver" maxBufferSize="0" maxThreadsActive="2"
+        <threading-profile id="receiver" maxBufferSize="0" maxThreadsActive="1"
                 maxThreadsIdle="0" threadTTL="100" poolExhaustedAction="WAIT"/>
 
         <exception-strategy className="org.labkey.pipeline.mule.PipelineJobExceptionStrategy" />
@@ -120,8 +120,8 @@
                 </router>
             </outbound-router>
 
-            <threading-profile maxThreadsActive="2" maxThreadsIdle="0" threadTTL="100"/>
-            <pooling-profile maxActive="2" maxIdle="0" initialisationPolicy="INITIALISE_NONE"/>
+            <threading-profile maxThreadsActive="1" maxThreadsIdle="0" threadTTL="100"/>
+            <pooling-profile maxActive="1" maxIdle="0" initialisationPolicy="INITIALISE_NONE"/>
 
             <exception-strategy className="org.labkey.pipeline.mule.PipelineJobExceptionStrategy" />
         </mule-descriptor>
