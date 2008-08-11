@@ -16,8 +16,8 @@
 
 package org.labkey.api.view;
 
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.settings.AppProps;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;

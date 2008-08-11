@@ -16,23 +16,18 @@
 package org.labkey.api.security;
 
 import org.labkey.api.action.UrlProvider;
-import org.labkey.api.data.Container;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.data.Container;
 
 /**
  * User: adam
- * Date: Jul 25, 2008
- * Time: 11:48:29 AM
+ * Date: Jul 30, 2008
+ * Time: 5:26:28 PM
  */
-
-public interface SecurityUrls extends UrlProvider
+public interface UserUrls extends UrlProvider
 {
-    ActionURL getBeginURL(Container container);
-    ActionURL getManageGroupURL(Container container, String groupName);
-    ActionURL getGroupPermissionURL(Container container, int id);
-    ActionURL getProjectURL(Container container);
-    ActionURL getContainerURL(Container container);
-    ActionURL getShowRegistrationEmailURL(Container container, String email, String mailPrefix);
-    ActionURL getUpdateMembersURL(Container container, String groupPath, String deleteEmail, boolean quickUI);
-    String getCompleteUserURLPrefix(Container container);
+    ActionURL getSiteUsersURL();
+    ActionURL getUserAccessURL(Container container, int userId);
+    ActionURL getUserDetailsURL(int userId);
+    ActionURL getUserUpdateURL(ActionURL returnURL);          // TODO: Add userId?
 }

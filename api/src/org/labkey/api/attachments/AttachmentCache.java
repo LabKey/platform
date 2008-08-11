@@ -17,11 +17,12 @@
 package org.labkey.api.attachments;
 
 import org.labkey.api.data.CacheableWriter;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * User: jeckels
@@ -29,67 +30,53 @@ import java.util.Map;
  */
 public class AttachmentCache
 {
-    public static final String LOGO_FILE_NAME_PREFIX = "cpas-site-logo";
-    public static final String FAVICON_FILE_NAME = "cpas-site-favicon.ico";
+    public static final String LOGO_FILE_NAME_PREFIX = "labkey-logo";
+    public static final String FAVICON_FILE_NAME = "labkey-favicon.ico";
+    public static final String STYLESHEET_FILE_NAME = "labkey-stylesheet.css";
 
-    private static CacheableWriter _cachedLogo;
-    private static CacheableWriter _cachedFavIcon;
-    private static CacheableWriter _cachedGradient;
-    private static Map<String, CacheableWriter> _authLogoMap = new HashMap<String, CacheableWriter>();
+    private static Map<Container, CacheableWriter> _logoCache = new ConcurrentHashMap<Container, CacheableWriter>(100, 0.75f, 4);        // Site + project, so size to one per project
+    private static Map<Container, CacheableWriter> _favIconCache = new ConcurrentHashMap<Container, CacheableWriter>(100, 0.75f, 4);     // Site + project, so size to one per project
+    private static Map<String, CacheableWriter> _authLogoMap = new ConcurrentHashMap<String, CacheableWriter>(5, 0.75f, 4);              // Site-wide
 
     public static void clearLogoCache()
     {
-        _cachedLogo = null;
+        _logoCache.clear();
     }
 
     public static void clearFavIconCache()
     {
-        _cachedFavIcon = null;
+        _favIconCache.clear();
     }
 
-    public static CacheableWriter getCachedLogo()
+    public static CacheableWriter getCachedLogo(Container c)
     {
-        return _cachedLogo;
+        return _logoCache.get(c);
     }
 
-    public static CacheableWriter getCachedFavIcon()
+    public static CacheableWriter getCachedFavIcon(Container c)
     {
-        return _cachedFavIcon;
+        return _favIconCache.get(c);
     }
 
-    public static void cacheLogo(CacheableWriter logo)
+    public static void cacheLogo(Container c, CacheableWriter logo)
     {
-        _cachedLogo = logo;
+        _logoCache.put(c, logo);
     }
 
-    public static void cacheFavIcon(CacheableWriter favIcon)
+    public static void cacheFavIcon(Container c, CacheableWriter favIcon)
     {
-        _cachedFavIcon = favIcon;
+        _favIconCache.put(c, favIcon);
     }
 
-    public static void cacheGradient(CacheableWriter gradient)
+    public static Attachment lookupFavIconAttachment(AttachmentParent parent) throws SQLException
     {
-        _cachedGradient = gradient;
+        return lookupAttachment(parent, FAVICON_FILE_NAME);
     }
 
-    public static CacheableWriter getCachedGradient()
+    public static Attachment lookupLogoAttachment(Container c) throws SQLException
     {
-        return _cachedGradient;
-    }
-
-    public static void clearGradientCache()
-    {
-        _cachedGradient = null;
-    }
-
-    public static Attachment lookupFavIconAttachment() throws SQLException
-    {
-        return lookupAttachment(FAVICON_FILE_NAME);
-    }
-
-    public static Attachment lookupLogoAttachment() throws SQLException
-    {
-        Attachment[] attachments = AttachmentService.get().getAttachments(ContainerManager.RootContainer.get());
+        AttachmentParent parent = new ContainerManager.ContainerParent(c);
+        Attachment[] attachments = AttachmentService.get().getAttachments(parent);
         for (Attachment attachment : attachments)
         {
             if (attachment.getName().startsWith(LOGO_FILE_NAME_PREFIX))
@@ -100,9 +87,14 @@ public class AttachmentCache
         return null;
     }
 
-    public static Attachment lookupAttachment(String name) throws SQLException
+    public static Attachment lookupCustomStylesheetAttachment(AttachmentParent parent) throws SQLException
     {
-        return AttachmentService.get().getAttachment(ContainerManager.RootContainer.get(), name);
+        return lookupAttachment(parent, STYLESHEET_FILE_NAME);
+    }
+
+    public static Attachment lookupAttachment(AttachmentParent parent, String name) throws SQLException
+    {
+        return AttachmentService.get().getAttachment(parent, name);
     }
 
 

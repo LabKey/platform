@@ -18,10 +18,10 @@ package org.labkey.api.util;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.beehive.netui.pageflow.Forward;
-import org.apache.commons.lang.ObjectUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.ObjectUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMessage;
@@ -33,10 +33,12 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.view.*;
-import org.labkey.api.security.User;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.ImageURL;
+import org.labkey.api.settings.TemplateResourceHandler;
+import org.labkey.api.view.*;
 import org.labkey.common.util.Pair;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
@@ -1099,6 +1101,14 @@ public class PageFlowUtil
                 ">" + text + "</a>]";
     }
 
+    public static String textLink(String text, ActionURL url, String onClickScript, String id)
+    {
+        return "[<a href=\"" + filter(url) + "\"" +
+                (id != null ? " id=\"" + id + "\"" : "") +
+                (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
+                ">" + text + "</a>]";
+    }
+
     public static String textLink(String text, ActionURL url)
     {
         return textLink(text, url.getLocalURIString(), null, null);
@@ -1356,19 +1366,21 @@ public class PageFlowUtil
 
     public static String getStandardIncludes()
     {
+        // TODO: Hack -- container needs to be passed in
+        Container c = HttpView.currentContext().getContainer();
+
         String contextPath = AppProps.getInstance().getContextPath();
         int lookAndFeelRevision = AppProps.getInstance().getLookAndFeelRevision();
+
+        ImageURL faviconURL = TemplateResourceHandler.FAVICON.getURL(c);
         StringBuilder sb = new StringBuilder();
+
         sb.append("    <link rel=\"shortcut icon\" href=\"");
-        sb.append(contextPath);
-        sb.append("/favicon.image?revision=");
-        sb.append(lookAndFeelRevision);
+        sb.append(PageFlowUtil.filter(faviconURL));
         sb.append("\" />\n");
 
         sb.append("    <link rel=\"icon\" href=\"");
-        sb.append(contextPath);
-        sb.append("/favicon.image?revision=");
-        sb.append(lookAndFeelRevision);
+        sb.append(PageFlowUtil.filter(faviconURL));
         sb.append("\" />\n");
 
         sb.append("    <link href=\"");
@@ -1380,6 +1392,9 @@ public class PageFlowUtil
         sb.append("/core/themestylesheet.view?revision=");
         sb.append(lookAndFeelRevision);
         sb.append("\" type=\"text/css\" rel=\"stylesheet\"/>\n");   
+
+// TODO: Add something like this for webtheme stylesheet       sb.append("/core" + c.getPath() + "/stylesheet.view?revision=");
+//        sb.append("/core" + c.getPath() + "/stylesheet.view?revision=");
 
         sb.append("    <link href=\"");
         sb.append(contextPath);

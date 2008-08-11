@@ -30,7 +30,8 @@ import java.util.TimeZone;
  * User: jeckels
  * Date: Nov 18, 2005
  */
-public class CacheableWriter implements DocumentWriter {
+public class CacheableWriter implements DocumentWriter
+{
     private String _contentType;
     private String _disposition;
     private int _size;

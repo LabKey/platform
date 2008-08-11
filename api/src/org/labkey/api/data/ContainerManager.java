@@ -497,27 +497,41 @@ public class ContainerManager
 
 
     // Used for attaching system resources (favorite icon, logo) to the root container
-    public static class RootContainer implements AttachmentParent
+    public static class ContainerParent implements AttachmentParent
     {
-        String _id;  // All we need is the id
+        Container _c;
 
-        public RootContainer(String id)
+        public ContainerParent(Container c)
         {
-            _id = id;
+            _c = c;
         }
 
         public String getEntityId()
         {
-            return _id;
+            return _c.getId();
         }
 
         public String getContainerId()
         {
-            return _id;
+            return _c.getId();
+        }
+
+        public Container getContainer()
+        {
+            return _c;
         }
 
         public void setAttachments(Collection<Attachment> attachments)
         {
+        }
+    }
+
+    // Used for attaching system resources (favorite icon, logo) to the root container
+    public static class RootContainer extends ContainerParent
+    {
+        private RootContainer(Container c)
+        {
+            super(c);
         }
 
         public static RootContainer get()
@@ -527,7 +541,7 @@ public class ContainerManager
             if (null == root)
                 return null;
             else
-                return new RootContainer(root.getId());
+                return new RootContainer(root);
         }
     }
 

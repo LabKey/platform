@@ -17,9 +17,10 @@
 package org.labkey.api.view;
 
 import org.apache.commons.lang.StringUtils;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.settings.LookAndFeelAppProps;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -117,42 +118,27 @@ public class ThemeFont
         return  StringUtils.replace(_friendlyName, " ", "-");
     }
 
-    private static ThemeFont _theme_font = null;
     public final static ThemeFont DEFAULT_THEME_FONT = SMALL;
     protected static List<ThemeFont> webThemeFontList = new ArrayList<ThemeFont>();
 
-    public static void setThemeFont(ThemeFont themeFont) throws SQLException
-    {
-        _theme_font = themeFont;
-    }
-
+    @Deprecated
     public static ThemeFont getThemeFont()
     {
-        if (_theme_font == null)
-        {
-            ThemeFont themeFont = null;
-            try
-            {
-                String webThemeFont = AppProps.getInstance().getThemeFont();
-                themeFont = ThemeFont.getThemeFont(webThemeFont);
-            }
-            catch (IllegalArgumentException e)
-            {
-                themeFont = DEFAULT_THEME_FONT;
-            }
-            _theme_font = (null == themeFont) ? DEFAULT_THEME_FONT :  themeFont;
-        }
+        return getThemeFont(ContainerManager.getRoot());
+    }
 
-        return _theme_font;
+    public static ThemeFont getThemeFont(Container c)
+    {
+        LookAndFeelAppProps laf = LookAndFeelAppProps.getInstance(c);
+        return ThemeFont.getThemeFont(laf.getThemeFont());
     }
 
     public static ThemeFont getThemeFont(String themeFont)
     {
         if (null != themeFont && 0 < themeFont.length ())
         {
-            List<ThemeFont> tmpThemeFontList = ThemeFont.getThemeFonts();
             // locate the name
-            for (ThemeFont webThemeFont : webThemeFontList)
+            for (ThemeFont webThemeFont : ThemeFont.getThemeFonts())
             {
                 if (webThemeFont.getFriendlyName().equals(themeFont))
                 {

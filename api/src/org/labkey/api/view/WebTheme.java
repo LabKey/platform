@@ -15,27 +15,29 @@
  */
 package org.labkey.api.view;
 
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.WriteableAppProps;
+import org.labkey.api.settings.LookAndFeelAppProps;
+import org.labkey.api.settings.WriteableLookAndFeelAppProps;
 
+import java.awt.*;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.ArrayList;
-import java.awt.Color;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * User: jeckels
  * Date: Oct 11, 2005
  */
-// WCH: 20060629 - enum to class
 public class WebTheme
-// END-WCH: 20060629
 {
-// WCH: 20060629
     protected final static WebTheme BLUE = new WebTheme("Blue", "e1ecfc", "89a1b4", "ffdf8c", "336699", "ebf4ff", "89a1b4");
     protected final static WebTheme BROWN = new WebTheme("Brown", "cccc99", "929146", "e1e1c4", "666633", "e1e1c4", "929146");
-// END-WCH: 20060629
 
     private final String _navBarColor;
     private final String _headerLineColor;
@@ -104,7 +106,6 @@ public class WebTheme
         return _fullScreenBorderColor;
     }
 
-// WCH: 20060629 for storing the settings
     public String toString()
     {
         return _friendlyName;
@@ -145,49 +146,62 @@ public class WebTheme
     {
         return toRGB(_gradientDarkColor);
     }
-// END-WCH: 20060629
 
+    private static Map<Container, WebTheme> _themeCache = new ConcurrentHashMap<Container, WebTheme>();
     private static WebTheme _theme = null;
     public final static WebTheme DEFAULT_THEME = BLUE;
 
-    public static void setTheme(WebTheme theme) throws SQLException
+    public static void setTheme(Container c, WebTheme theme) throws SQLException
     {
-        _theme = theme;
+        _themeCache.put(c, theme);
     }
 
+    @Deprecated
     public static WebTheme getTheme()
     {
-        if (_theme == null)
+        return getTheme(ContainerManager.getRoot());
+    }
+
+    public static WebTheme getTheme(Container c)
+    {
+        Container settingsContainer = LookAndFeelAppProps.getSettingsContainer(c);
+        return lookupTheme(settingsContainer);
+    }
+
+    private static WebTheme lookupTheme(Container c)
+    {
+        WebTheme theme = _themeCache.get(c);
+
+        if (null != theme)
+            return theme;
+
+        try
         {
-// WCH: 20060629
-            WebTheme theme = null;
-            try
-            {
-                String webThemeName = AppProps.getInstance().getThemeName();
-                theme = WebTheme.getTheme (webThemeName);
-            }
-            catch (IllegalArgumentException e)
-            {
-                theme = DEFAULT_THEME;
-            }
-            _theme = (null == theme) ? DEFAULT_THEME :  theme;
-// END-WCH: 20060629
+            LookAndFeelAppProps laf = LookAndFeelAppProps.getInstance(c);
+
+            if (laf.hasProperties())
+                theme = WebTheme.getTheme(laf.getThemeName());
+        }
+        catch (IllegalArgumentException e)
+        {
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
         }
 
-        return _theme;
+        if (null == theme)
+        {
+            if (c.isRoot())
+               theme = DEFAULT_THEME;
+            else
+               theme = lookupTheme(c.getParent());   // Recurse up the chain
+        }
+
+        _themeCache.put(c, theme);
+        return theme;
     }
 
-    public Color getGradientLightColor()
-    {
-        return _gradientLightColor;
-    }
-
-    public Color getGradientDarkColor()
-    {
-        return _gradientDarkColor;
-    }
-
-// WCH: 20060629
     // handle Web Theme color management
     protected static final String THEME_NAMES_KEY = "themeNames";
     protected static final String THEME_COLORS_KEY = "themeColors-";
@@ -201,9 +215,9 @@ public class WebTheme
 
             try
             {
-                PropertyManager.PropertyMap properties = PropertyManager.getWebThemeConfigProperties();
-                String themeNames = (String) properties.get(THEME_NAMES_KEY);
-                String[] themeNamesArray = (null == themeNames ? "" : (String) themeNames).split(";");
+                PropertyManager.PropertyMap properties = AppProps.getWebThemeConfigProperties();
+                String themeNames = properties.get(THEME_NAMES_KEY);
+                String[] themeNamesArray = (null == themeNames ? "" : themeNames).split(";");
                 if (null != themeNamesArray)
                 {
                     // load the color settings from database
@@ -215,20 +229,20 @@ public class WebTheme
                         // let's get the colours
                         // we read the colors separated by ';' in order
                         StringBuffer key = new StringBuffer();
-                        key.append (THEME_COLORS_KEY);
-                        key.append (themeName);
-                        String themeColours = (String) properties.get(key.toString ());
-                        String[] themeColoursArray = (null == themeColours ? "" : (String) themeColours).split(";");
+                        key.append(THEME_COLORS_KEY);
+                        key.append(themeName);
+                        String themeColours = properties.get(key.toString());
+                        String[] themeColoursArray = (null == themeColours ? "" : themeColours).split(";");
                         if (null == themeColoursArray || 0 == themeColoursArray.length)
                         {
-                            // no colour define, let's just skip it
+                            // no colour defined, let's just skip it
                             continue;
                         }
                         else
                         {
                             if (6 != themeColoursArray.length)
                             {
-                                // no right number of colours define, let's just skip it
+                                // incorrect number of colours defined, let's just skip it
                                 continue;
                             }
 
@@ -262,8 +276,6 @@ public class WebTheme
                     // some colour loaded
                     loadDefault = false;
                 }
-
-
             }
             catch (SQLException e)
             {
@@ -273,8 +285,8 @@ public class WebTheme
             if (loadDefault)
             {
                 // load the default as we need to continue
-                _webThemeList.add (BLUE);
-                _webThemeList.add (BROWN);
+                _webThemeList.add(BLUE);
+                _webThemeList.add(BROWN);
             }
         }
         return _webThemeList;
@@ -299,19 +311,19 @@ public class WebTheme
     private static void updateWebTheme(WebTheme webTheme)
     {
         if (null == webTheme) return;
-        String webThemeName = webTheme.getFriendlyName ();
-        if (null != webThemeName && 0 < webThemeName.length ())
+        String webThemeName = webTheme.getFriendlyName();
+        if (null != webThemeName && 0 < webThemeName.length())
         {
             List<WebTheme> webThemeList = WebTheme.getWebThemes();
             boolean themeFound = false;
             // locate the name
             for (int i = 0; i < webThemeList.size(); i++)
             {
-                WebTheme theme = webThemeList.get (i);
+                WebTheme theme = webThemeList.get(i);
                 if (theme.getFriendlyName().equals(webThemeName))
                 {
                     themeFound = true;
-                    webThemeList.set (i, webTheme);
+                    webThemeList.set(i, webTheme);
                     if (_theme == theme)
                     {
                         _theme = webTheme;
@@ -321,7 +333,7 @@ public class WebTheme
             }
             if (!themeFound)
             {
-                _webThemeList.add (webTheme);
+                _webThemeList.add(webTheme);
             }
         }
     }
@@ -337,30 +349,29 @@ public class WebTheme
         return true;
     }
 
-    public static void deleteWebTheme(String friendlyName)
-        throws SQLException
+    public static void deleteWebTheme(String friendlyName) throws SQLException
     {
-        if (null == friendlyName || 0 == friendlyName.length ()) return;
+        if (null == friendlyName || 0 == friendlyName.length()) return;
 
         boolean themeFound = false;
         List<WebTheme> webThemeList = WebTheme.getWebThemes();
         for (int i = 0; i < webThemeList.size(); i++)
         {
-            WebTheme theme = webThemeList.get (i);
+            WebTheme theme = webThemeList.get(i);
             if (theme.getFriendlyName().equals(friendlyName))
             {
                 themeFound = true;
 
                 //if this is the current theme, set the current theme to the default and save proactively.
-                if(_theme.equals(theme))
+                if (_theme.equals(theme))
                 {
                     _theme = DEFAULT_THEME;
-                    WriteableAppProps props = AppProps.getWriteableInstance();
+                    WriteableLookAndFeelAppProps props = WriteableLookAndFeelAppProps.getWriteableInstance(ContainerManager.getRoot());
                     props.setThemeName(_theme.getFriendlyName());
                     props.save();
                 }
 
-                _webThemeList.remove (i);
+                _webThemeList.remove(i);
 
                 break;
             }
@@ -371,11 +382,10 @@ public class WebTheme
         }
     }
 
-    public static void saveWebThemes()
-        throws SQLException
+    public static void saveWebThemes() throws SQLException
     {
         // let's save the changes
-        PropertyManager.PropertyMap properties = PropertyManager.getWebThemeConfigProperties();
+        PropertyManager.PropertyMap properties = AppProps.getWebThemeConfigProperties();
 
         // keep a copy of all the themes
         {
@@ -389,11 +399,11 @@ public class WebTheme
                 }
                 else
                 {
-                    buffer.append (";");
+                    buffer.append(";");
                 }
-                buffer.append (theme.getFriendlyName());
+                buffer.append(theme.getFriendlyName());
             }
-            properties.put(THEME_NAMES_KEY, buffer.toString ());
+            properties.put(THEME_NAMES_KEY, buffer.toString());
         }
 
         // let's update the theme's definition
@@ -401,19 +411,18 @@ public class WebTheme
         {
             StringBuffer key = new StringBuffer();
             key.append(THEME_COLORS_KEY);
-            key.append(theme.getFriendlyName ());
+            key.append(theme.getFriendlyName());
             StringBuffer buffer = new StringBuffer();
             buffer.append(theme.getNavBarColor ());
-            buffer.append(";").append(theme.getHeaderLineColor ());
-            buffer.append(";").append(theme.getEditFormColor ());
-            buffer.append(";").append(theme.getFullScreenBorderColor ());
-            buffer.append(";").append(theme.getGradientLightString ());
-            buffer.append(";").append(theme.getGradientDarkString ());
+            buffer.append(";").append(theme.getHeaderLineColor());
+            buffer.append(";").append(theme.getEditFormColor());
+            buffer.append(";").append(theme.getFullScreenBorderColor());
+            buffer.append(";").append(theme.getGradientLightString());
+            buffer.append(";").append(theme.getGradientDarkString());
             properties.put(key.toString (), buffer.toString ());
         }
         PropertyManager.saveProperties(properties);
     }
-// END-WCH: 20060629
 
     public Color getTitleColor()
     {

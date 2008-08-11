@@ -189,6 +189,11 @@ abstract public class JspBase extends HttpServlet implements HttpJspPage, HasVie
         return PageFlowUtil.textLink(text, href, onClickScript, id);
     }
 
+    public String textLink(String text, ActionURL url, String onClickScript, String id)
+    {
+        return PageFlowUtil.textLink(text, url, onClickScript, id);
+    }
+
     public String textLink(String text, ActionURL url)
     {
         return PageFlowUtil.textLink(text, url);

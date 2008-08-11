@@ -19,7 +19,6 @@ import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.*;
 import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.security.User;
 
 
 /**

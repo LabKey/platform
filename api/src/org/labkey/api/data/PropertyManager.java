@@ -34,17 +34,6 @@ import java.util.*;
  */
 public class PropertyManager
 {
-    private static final String SITE_CONFIG_NAME = "SiteConfig";
-    private static final int SITE_CONFIG_USER_ID = -1;
-
-    //WCH: 20060629 - for Customisable web colour theme
-    private static final String WEB_THEME_CONFIG_NAME = "WebThemeConfig";
-    //END-WCH: 20060629
-
-    //WCH: 20060630 - for Customisable web theme font size
-    private static final String WEB_THEME_FONT_NAME = "WebThemeFont";
-    //END-WCH: 20060630
-
     private static class PropertySchema
     {
         private static PropertySchema instance = null;
@@ -108,34 +97,6 @@ public class PropertyManager
     {
         return _cachePrefix + String.valueOf(parameters[0]) + "/" + _toEmptyString(parameters[1]) + "/" + _toEmptyString(parameters[2]);
     }
-
-
-    public static Map<String, String> getSiteConfigProperties() throws SQLException
-    {
-        return getProperties(SITE_CONFIG_USER_ID, ContainerManager.getRoot().getId(), SITE_CONFIG_NAME, true);
-    }
-
-
-    public static PropertyMap getWritableSiteConfigProperties() throws SQLException
-    {
-        return getWritableProperties(SITE_CONFIG_USER_ID, ContainerManager.getRoot().getId(), SITE_CONFIG_NAME, true);
-    }
-
-    //WCH: 20060629 - for Customisable web colour theme
-    public static PropertyMap getWebThemeConfigProperties() throws SQLException
-    {
-        //return PropertyManager.getProperties(SITE_CONFIG_USER_ID, ContainerManager.getRoot().getId(), WEB_THEME_CONFIG_NAME, true, true);
-        return getWritableProperties(SITE_CONFIG_USER_ID, ContainerManager.getRoot().getId(), WEB_THEME_CONFIG_NAME, true);
-    }
-    //END-WCH: 20060629
-
-    //WCH: 20060630 - for Customisable web theme font size
-    public static PropertyMap getWebThemeFontProperties() throws SQLException
-    {
-        //return PropertyManager.getProperties(SITE_CONFIG_USER_ID, ContainerManager.getRoot().getId(), WEB_THEME_FONT_NAME, true, true);
-        return getWritableProperties(SITE_CONFIG_USER_ID, ContainerManager.getRoot().getId(), WEB_THEME_FONT_NAME, true);
-    }
-    //END-WCH: 20060630
 
     // For global system properties that get attached to the root container
     public static Map<String, String> getProperties(String category, boolean create)
@@ -233,9 +194,9 @@ public class PropertyManager
     public static Map<String, String> getProperties(int userId, String objectId, String category, boolean create)
     {
         Object[] parameters = new Object[]{userId, objectId, category};
-        TableInfo tinfo = null;
+        TableInfo tinfo;
+        String cacheKey;
 
-        String cacheKey = null;
         if (_cacheProperties)
         {
             tinfo = prop.getTableInfoProperties();

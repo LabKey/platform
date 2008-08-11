@@ -15,24 +15,29 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.security.AuthenticationManager"%><%@ page import="org.labkey.api.security.User" %><%@ page import="org.labkey.api.security.UserManager" %><%@ page import="org.labkey.api.settings.AppProps" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.template.TemplateHeaderView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.admin.AdminUrls"%><%@ page import="org.labkey.api.security.AuthenticationManager" %><%@ page import="org.labkey.api.security.User" %><%@ page import="org.labkey.api.security.UserUrls" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.admin.AdminUrls" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.view.template.TemplateHeaderView" %>
+<%@ page import="org.labkey.api.settings.LookAndFeelAppProps" %>
+<%@ page import="org.labkey.api.settings.TemplateResourceHandler" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     TemplateHeaderView.TemplateHeaderBean bean = ((TemplateHeaderView) HttpView.currentView()).getModelBean();
     ViewContext currentContext = org.labkey.api.view.HttpView.currentContext();
+    Container c = currentContext.getContainer();
     String contextPath = currentContext.getContextPath();
-    ActionURL currentUrl = currentContext.getActionURL();
+    ActionURL currentURL = currentContext.getActionURL();
     AppProps app = AppProps.getInstance();
+    LookAndFeelAppProps laf = LookAndFeelAppProps.getInstance(currentContext.getContainer());
 %>
 <table id="header"><tr>
-<td class="labkey-main-icon"><a href="<%=h(app.getLogoHref())%>"><img src="<%=contextPath%>/logo.image?revision=<%=app.getLookAndFeelRevision()%>" alt="<%=h(app.getSystemShortName())%>"><br><img alt="<%=h(app.getLogoHref())%>" src="<%=contextPath%>/_.gif" width="146" height="1" border="0"></a></td>
-<td class="labkey-main-title-area"><span><a id="labkey-main-title" class="labkey-main-title" href="<%= app.getHomePageUrl() %>"><%=h(app.getSystemShortName())%></a></span><br><span class="normal"><a href="<%= app.getHomePageUrl() %>"><%= h(app.getSystemDescription())%></a><%
+<td class="labkey-main-icon"><a href="<%=h(laf.getLogoHref())%>"><img src="<%=h(TemplateResourceHandler.LOGO.getURL(c))%>" alt="<%=h(laf.getSystemShortName())%>"><br><img alt="<%=h(laf.getLogoHref())%>" src="<%=contextPath%>/_.gif" width="146" height="1" border="0"></a></td>
+<td class="labkey-main-title-area"><span><a id="labkey-main-title" class="labkey-main-title" href="<%= app.getHomePageUrl() %>"><%=h(laf.getSystemShortName())%></a></span><br><span class="normal"><a href="<%= app.getHomePageUrl() %>"><%= h(laf.getSystemDescription())%></a><%
 if (bean.containerLinks != null)
     {
     for (String containerLink : bean.containerLinks)
@@ -48,17 +53,17 @@ if (bean.containerLinks != null)
     if (null != user && !user.isGuest())
     {
         out.print(user.getFriendlyName() + "<br>");%>
-        <a href="<%=h(UserManager.getUserDetailsURL(user.getUserId()))%>">My&nbsp;Account&nbsp;&nbsp;</a><a href="<%=h(AuthenticationManager.getLogoutURL())%>"><%=user.isImpersonated() ? "Stop&nbsp;Impersonating" : "Sign&nbsp;out"%></a><%
+        <a href="<%=h(urlProvider(UserUrls.class).getUserDetailsURL(user.getUserId()))%>">My&nbsp;Account&nbsp;&nbsp;</a><a href="<%=h(AuthenticationManager.getLogoutURL())%>"><%=user.isImpersonated() ? "Stop&nbsp;Impersonating" : "Sign&nbsp;out"%></a><%
     }
     else if (bean.pageConfig.shouldIncludeLoginLink())
     {
-        String authLogoHtml = AuthenticationManager.getHeaderLogoHtml(currentUrl);
+        String authLogoHtml = AuthenticationManager.getHeaderLogoHtml(currentURL);
 
         if (null != authLogoHtml)
             out.print(authLogoHtml + "&nbsp;");
 
         %>
-        <a href="<%=AuthenticationManager.getLoginURL(currentUrl)%>">Sign&nbsp;in</a><%
+        <a href="<%=AuthenticationManager.getLoginURL(currentURL)%>">Sign&nbsp;in</a><%
     }
 
 %></td></tr>

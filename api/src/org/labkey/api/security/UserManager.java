@@ -25,7 +25,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.AjaxCompletion;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
 import org.labkey.common.util.Pair;
 
 import java.beans.PropertyChangeListener;
@@ -48,7 +47,6 @@ public class UserManager
     public static final String USER_AUDIT_EVENT = "UserAuditEvent";
 
     private static Long _userCount = null;
-    private static UserDetailsURLFactory _userDetailsURLFactory;
 
     public static SimpleFilter createSimpleFilter(String colName, Object value)
     {
@@ -59,27 +57,6 @@ public class UserManager
     //
     // UserListener
     //
-
-    public interface UserDetailsURLFactory
-    {
-        ActionURL getURL(int userId);
-    }
-
-    public static void registerUserDetailsURLFactory(UserDetailsURLFactory factory)
-    {
-        if (null != _userDetailsURLFactory)
-            throw new IllegalStateException("User details URL factory has already been set");
-
-        _userDetailsURLFactory = factory;
-    }
-
-    public static ActionURL getUserDetailsURL(int userId)
-    {
-        if (null == _userDetailsURLFactory)
-            throw new IllegalStateException("User details URL factory has not been set");
-
-        return _userDetailsURLFactory.getURL(userId);
-    }
 
     public interface UserListener extends PropertyChangeListener
     {

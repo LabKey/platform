@@ -19,8 +19,8 @@ package org.labkey.api.view;
 import org.labkey.api.settings.AppProps;
 
 import javax.servlet.*;
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 public class StaticContentCachingFilter implements Filter

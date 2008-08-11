@@ -41,10 +41,11 @@ public class ProjectAdminMenu extends NavTreeMenu
     {
         Container c = context.getContainer();
 
-        NavTree[] admin = new NavTree[3];
+        NavTree[] admin = new NavTree[4];
         admin[0] = new NavTree("Permissions", PageFlowUtil.urlProvider(SecurityUrls.class).getBeginURL(c));
-        admin[1] = new NavTree("Manage Folders", PageFlowUtil.urlProvider(AdminUrls.class).getManageFoldersURL(c));
-        admin[2] = new NavTree("Customize Folder", PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeFolderURL(c));
+        admin[1] = new NavTree("Project Settings", PageFlowUtil.urlProvider(AdminUrls.class).getLookAndFeelSettingsURL(c));
+        admin[2] = new NavTree("Manage Folders", PageFlowUtil.urlProvider(AdminUrls.class).getManageFoldersURL(c));
+        admin[3] = new NavTree("Customize Folder", PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeFolderURL(c));
         return admin;
     }
 

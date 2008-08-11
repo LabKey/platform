@@ -15,15 +15,17 @@
  */
 package org.labkey.api.view;
 
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.security.ACL;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.PageFlowUtil;
 import static org.labkey.api.util.PageFlowUtil.filter;
-import org.labkey.api.security.ACL;
 import org.labkey.api.view.template.PageConfig;
 
 import java.io.PrintWriter;
@@ -69,9 +71,9 @@ public class NavTrailView extends HttpView
     }
 
 
-    private static List<Module> getSortedModuleList(final ViewContext context)
+    private static List<Module> getSortedModuleList()
     {
-        List<Module> sortedModuleList = new ArrayList();
+        List<Module> sortedModuleList = new ArrayList<Module>();
         // special-case the portal module: we want it to always be at the far left.
         Module portal = null;
         for (Module module : ModuleLoader.getInstance().getModules())
@@ -116,7 +118,7 @@ public class NavTrailView extends HttpView
             assert activeModule != null : "Pageflow '" + currentPageflow + "' is not claimed by any module.  " +
                     "This pageflow name must be added to the list of names returned by 'getPageFlowNameToClass' " +
                     "from at least one module.";
-            List<Module> moduleList = getSortedModuleList(context);
+            List<Module> moduleList = getSortedModuleList();
             for (Module module : moduleList)
             {
                 boolean selected = (module == activeModule);
@@ -188,7 +190,7 @@ public class NavTrailView extends HttpView
 
             if (null != connectionsInUse)
             {
-                _out.print(formatLink(connectionsInUse, ActionURL.toPathString("admin", "memTracker.view", "")));
+                _out.print(formatLink(connectionsInUse, PageFlowUtil.urlProvider(AdminUrls.class).getMemTrackerURL()));
 
                 if (_pageConfig.getExploratoryFeatures())
                     _out.print("&nbsp;&nbsp;");
@@ -300,6 +302,11 @@ public class NavTrailView extends HttpView
         return formatLink(display, href, null);
     }
 
+    private String formatLink(String display, ActionURL url)
+    {
+        return formatLink(display, url.getLocalURIString(), null);
+    }
+
     private String formatLink(String display, String href, String script)
     {
         if (null == display)
@@ -321,5 +328,4 @@ public class NavTrailView extends HttpView
             return sb.toString();
         }
     }
-
 }

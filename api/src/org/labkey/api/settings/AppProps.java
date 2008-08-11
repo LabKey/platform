@@ -15,24 +15,17 @@
  */
 package org.labkey.api.settings;
 
-import org.apache.log4j.Logger;
-import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ThemeFont;
 import org.labkey.api.view.ViewServlet;
-import org.labkey.api.view.WebTheme;
 import org.springframework.mock.web.MockHttpServletRequest;
 
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
 import javax.servlet.http.HttpServletRequest;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.Date;
-import java.util.Map;
 import java.util.Random;
 
 /**
@@ -40,11 +33,9 @@ import java.util.Random;
  * Date: Apr 11, 2005
  * Time: 1:10:18 PM
  */
-public class AppProps
+public class AppProps extends AbstractWriteableSettingsGroup
 {
-    private static AppProps ourInstance = null;
-
-    private static Logger _log = Logger.getLogger(AppProps.class);
+    private static AppProps _instance = null;
 
     private static String _contextPath;
     private static int _serverPort = -1;
@@ -54,17 +45,10 @@ public class AppProps
     private static String _homePageURLString = null;
     private static ActionURL _homePageURL = null;
 
-    protected static final String DEFAULT_DOMAIN_PROP = "defaultDomain";
-    protected static final String COMPANY_NAME_PROP = "companyName";
-    protected static final String LOGO_HREF_PROP = "logoHref";
     protected static final String LOOK_AND_FEEL_REVISION = "logoRevision";
-    protected static final String REPORT_A_PROBLEM_PATH_PROP = "reportAProblemPath";
+    protected static final String DEFAULT_DOMAIN_PROP = "defaultDomain";
     protected static final String BASE_SERVER_URL_PROP = "baseServerURL";
-    protected static final String SYSTEM_DESCRIPTION_PROP = "systemDescription";
-    protected static final String SYSTEM_EMAIL_ADDRESS_PROP = "systemEmailAddress";
-    protected static final String SYSTEM_SHORT_NAME_PROP = "systemShortName";
     protected static final String DEFAULT_LSID_AUTHORITY_PROP = "defaultLsidAuthority";
-    protected static final String THEME_NAME_PROP = "themeName";
     protected static final String PIPELINE_PERL_CLUSTER_PROP = "hasPipelineCluster";
     protected static final String PIPELINE_TOOLS_DIR_PROP = "pipelineToolsDirectory";    
     protected static final String PIPELINE_FTPHOST_PROP = "pipelineFTPHost";
@@ -83,102 +67,40 @@ public class AppProps
     protected static final String MASCOT_USERACCOUNT_PROP = "MascotUserAccount";
     protected static final String MASCOT_USERPASSWORD_PROP = "MascotUserPassword";
     protected static final String MASCOT_HTTPPROXY_PROP = "MascotHTTPProxy";
-    protected static final String THEME_FONT_PROP = "themeFont";
     protected static final String SYSTEM_MAINTENANCE_INTERVAL = "systemMaintenanceInterval";  // NEVER, DAILY
     protected static final String SYSTEM_MAINTENANCE_TIME = "systemMaintenanceTime"; // 02:00
     protected static final String MEMORY_USAGE_DUMP_INTERVAL = "memoryUsageDumpInterval";
-    protected static final String NAVIGATION_BAR_WIDTH = "navigationBarWidth";
     protected static final String NETWORK_DRIVE_LETTER = "networkDriveLetter";
     protected static final String NETWORK_DRIVE_PATH = "networkDrivePath";
     protected static final String NETWORK_DRIVE_USER = "networkDriveUser";
     protected static final String NETWORK_DRIVE_PASSWORD = "networkDrivePassword";
-    protected static final String FOLDER_DISPLAY_MODE = "folderDisplayMode";
     protected static final String CABIG_ENABLED = "caBIGEnabled";
     protected static final String CALLBACK_PASSWORD_PROP = "callbackPassword";
     protected static final String MAIL_RECORDER_ENABLED = "mailRecorderEnabled";
+
+    protected static final String SITE_CONFIG_NAME = "SiteConfig";
+
+    //WCH: 20060629 - for Customisable web colour theme
+    protected static final String WEB_THEME_CONFIG_NAME = "WebThemeConfig";
+    //END-WCH: 20060629
+
+    //WCH: 20060630 - for Customisable web theme font size
+    protected static final String WEB_THEME_FONT_NAME = "WebThemeFont";
+    //END-WCH: 20060630
 
     private static final String SERVER_SESSION_GUID = GUID.makeGUID();
 
     public static synchronized AppProps getInstance()
     {
-        if (null == ourInstance)
-            ourInstance = new AppProps();
+        if (null == _instance)
+            _instance = new AppProps();
 
-        return ourInstance;
+        return _instance;
     }
 
-    private String lookupJNDIStringValue(String name)
+    protected String getGroupName()
     {
-        try
-        {
-            InitialContext ctx = new InitialContext();
-            Context envCtx = (Context) ctx.lookup("java:comp/env");
-            return (String) envCtx.lookup(name);
-        }
-        catch (NamingException e)
-        {
-            // That's OK, this is an old place to store the values anyway
-            return null;
-        }
-    }
-
-    private boolean lookupBooleanValue(String name, boolean defaultValue)
-    {
-        return "TRUE".equalsIgnoreCase(lookupStringValue(name, defaultValue ? "TRUE" : "FALSE" ) );
-    }
-
-    private int lookupIntValue(String name, int defaultValue)
-    {
-        try
-        {
-            return Integer.parseInt(lookupStringValue(name, Integer.toString(defaultValue)));
-        }
-        catch(NumberFormatException e)
-        {
-            return defaultValue;
-        }
-    }
-
-    protected Map<String, String> getProperties() throws SQLException
-    {
-        return PropertyManager.getSiteConfigProperties();
-    }
-
-    private String lookupStringValue(String name, String defaultValue)
-    {
-        try
-        {
-            Map props = getProperties();
-            String value = (String) props.get(name);
-            if (value != null)
-            {
-                return value;
-            }
-
-            // Upgrade from CPAS 1.0 case... values aren't in the database yet, get them from cpas.xml
-            value = lookupJNDIStringValue(name);
-
-            if (value == null)
-            {
-                value = defaultValue;
-            }
-
-            if (value != null)
-            {
-                PropertyManager.PropertyMap p = PropertyManager.getWritableSiteConfigProperties();
-                p.put(name, value);
-                PropertyManager.saveProperties(p);
-            }
-
-            return value;
-        }
-        catch (SQLException e)
-        {
-            // Real database problem... log it and return default
-            _log.error("Problem getting property value", e);
-        }
-
-        return defaultValue;
+        return SITE_CONFIG_NAME;
     }
 
     public void setContextPath(HttpServletRequest request)
@@ -312,6 +234,13 @@ public class AppProps
         return lookupStringValue(DEFAULT_DOMAIN_PROP, "");
     }
 
+    public String getBaseServerUrl()
+    {
+        return URLHelper.getBaseServer(_scheme, _serverName, _serverPort).toString();
+    }
+
+    // CONSIDER: All the following should probably be migrated into look & feel settings, making them overrideable at the project level
+
     public String getHomePageName()
     {
         //return getSystemShortName() + " Home";
@@ -335,71 +264,68 @@ public class AppProps
         return _homePageURL;
     }
 
-    public String getCompanyName()
-    {
-        return lookupStringValue(COMPANY_NAME_PROP, "Demo Installation");
-    }
-
-    public String getLogoHref()
-    {
-        return lookupStringValue(LOGO_HREF_PROP, getHomePageUrl());
-    }
-
-    public String getUnsubstitutedReportAProblemPath()
-    {
-        return lookupStringValue(REPORT_A_PROBLEM_PATH_PROP, "${contextPath}/project" + Container.DEFAULT_SUPPORT_PROJECT_PATH + "/begin.view");
-    }
-
-    public String getReportAProblemPath()
-    {
-        String path = getUnsubstitutedReportAProblemPath();
-
-        if ("/dev/issues".equals(path))
-        {
-            try
-            {
-                path = "${contextPath}/Issues/dev/issues/insert.view";
-                WriteableAppProps writeable = getWriteableInstance();
-                writeable.setReportAProblemPath(path);
-                writeable.save();
-            }
-            catch (SQLException e)
-            {
-                _log.error("Unable to reset ReportAProblem", e);
-            }
-        }
-
-        return path.replace("${contextPath}", getContextPath());
-    }
-
-    public String getBaseServerUrl()
-    {
-        return URLHelper.getBaseServer(_scheme, _serverName, _serverPort).toString();
-    }
-
+    // For convenience, leave all the look & feel getters on AppProps, but defer to look & feel property settings
+    // TODO: Deprecate & migrate to look & feel getters
     public String getSystemDescription()
     {
-        return lookupStringValue(SYSTEM_DESCRIPTION_PROP, "");
-    }
-
-    public String getSystemEmailAddress()
-    {
-        return lookupStringValue(SYSTEM_EMAIL_ADDRESS_PROP, "cpas@fhcrc.org");
+        return LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getSystemDescription();
     }
 
     public String getSystemShortName()
     {
-        return lookupStringValue(SYSTEM_SHORT_NAME_PROP, "LabKey Server");
+        return LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getSystemShortName();
+    }
+
+    public String getThemeName()
+    {
+        return LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getThemeName();
+    }
+
+    public FolderDisplayMode getFolderDisplayMode()
+    {
+        return LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getFolderDisplayMode();
+    }
+
+    public String getNavigationBarWidth()
+    {
+        return LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getNavigationBarWidth();
+    }
+
+    public String getThemeFont()
+    {
+        return LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getThemeFont();
+    }
+
+    public String getLogoHref()
+    {
+        return LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getLogoHref();
+    }
+
+    public String getCompanyName()
+    {
+        return LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getCompanyName();
+    }
+
+    public String getSystemEmailAddress()
+    {
+        return LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getSystemEmailAddress();
+    }
+
+    public String getReportAProblemPath()
+    {
+        return LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getReportAProblemPath();
+    }
+
+//  End look & feel properties
+
+    public int getLookAndFeelRevision()
+    {
+        return lookupIntValue(LOOK_AND_FEEL_REVISION, 0);
     }
 
     public String getDefaultLsidAuthority()
     {
         return lookupStringValue(DEFAULT_LSID_AUTHORITY_PROP, "localhost");
-    }
-
-    public String getThemeName()
-    {
-        return lookupStringValue(THEME_NAME_PROP, WebTheme.DEFAULT_THEME.toString());
     }
 
     public boolean isPerlPipelineEnabled()
@@ -458,11 +384,6 @@ public class AppProps
         return lookupIntValue(MEMORY_USAGE_DUMP_INTERVAL, 0);
     }
 
-    public int getLookAndFeelRevision()
-    {
-        return lookupIntValue(LOOK_AND_FEEL_REVISION, 0);
-    }
-
     public ExceptionReportingLevel getExceptionReportingLevel()
     {
         try
@@ -519,11 +440,6 @@ public class AppProps
     public boolean isPipelineFTPSecure()
     {
         return lookupBooleanValue(PIPELINE_FTPSECURE_PROP, false);
-    }
-
-    public String getThemeFont()
-    {
-        return lookupStringValue(THEME_FONT_PROP, ThemeFont.DEFAULT_THEME_FONT.getFriendlyName());
     }
 
     public String getNetworkDriveLetter()
@@ -591,30 +507,12 @@ public class AppProps
 
     public static WriteableAppProps getWriteableInstance() throws SQLException
     {
-        return new WriteableAppProps();
-    }
-
-    public String getNavigationBarWidth()
-    {
-        return lookupStringValue(NAVIGATION_BAR_WIDTH, "146");
+        return new WriteableAppProps(ContainerManager.getRoot());
     }
 
     public boolean isCaBIGEnabled()
     {
         return lookupBooleanValue(CABIG_ENABLED, false);
-    }
-
-    public FolderDisplayMode getFolderDisplayMode()
-    {
-        try
-        {
-            FolderDisplayMode mode = FolderDisplayMode.fromString(lookupStringValue(FOLDER_DISPLAY_MODE, FolderDisplayMode.ALWAYS.toString()));
-            return mode; 
-        }
-        catch (IllegalArgumentException e)
-        {
-            return FolderDisplayMode.ALWAYS;
-        }
     }
 
     public String getMicroarrayFeatureExtractionServer()
@@ -657,5 +555,19 @@ public class AppProps
             defaultPassword.append((char)letter);
         }
         return lookupStringValue(CALLBACK_PASSWORD_PROP, defaultPassword.toString());
+    }
+
+    //WCH: 20060629 - for Customisable web colour theme
+    public static PropertyManager.PropertyMap getWebThemeConfigProperties() throws SQLException
+    {
+        //return PropertyManager.getProperties(SITE_CONFIG_USER_ID, ContainerManager.getRoot().getId(), WEB_THEME_CONFIG_NAME, true, true);
+        return PropertyManager.getWritableProperties(SITE_CONFIG_USER_ID, ContainerManager.getRoot().getId(), WEB_THEME_CONFIG_NAME, true);
+    }
+
+    // TODO: Delete?  Not used...
+    public static PropertyManager.PropertyMap getWebThemeFontProperties() throws SQLException
+    {
+        //return PropertyManager.getProperties(SITE_CONFIG_USER_ID, ContainerManager.getRoot().getId(), WEB_THEME_FONT_NAME, true, true);
+        return PropertyManager.getWritableProperties(SITE_CONFIG_USER_ID, ContainerManager.getRoot().getId(), WEB_THEME_FONT_NAME, true);
     }
 }

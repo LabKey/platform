@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2008 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.labkey.api.settings;
+
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.data.Container;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+
+/**
+ * User: adam
+ * Date: Aug 6, 2008
+ * Time: 10:44:58 AM
+ */
+public class ImageURL extends ActionURL
+{
+    private static Pattern urlPattern = Pattern.compile("(/.*)?/(\\w*)\\.(.*)");
+
+    public ImageURL(String resource, Container c)
+    {
+        super("", resource, c);
+        addParameter("revision", AppProps.getInstance().getLookAndFeelRevision());
+    }
+
+    public ImageURL(HttpServletRequest request) throws ServletException
+    {
+        Matcher m = urlPattern.matcher(request.getServletPath());
+        if (!m.matches())
+            throw new ServletException("invalid path");
+
+        setContextPath(request.getContextPath());
+        setExtraPath(m.group(1));
+        setPageFlow("");
+        setAction(m.group(2));
+    }
+}

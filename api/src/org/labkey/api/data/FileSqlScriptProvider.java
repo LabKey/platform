@@ -17,13 +17,13 @@
 package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptException;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
-import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.CaseInsensitiveHashSet;
 
 import java.io.*;
 import java.util.*;

@@ -16,22 +16,22 @@
 
 package org.labkey.api.jsp;
 
+import org.apache.log4j.Logger;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.common.util.Pair;
-import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.module.ModuleLoader;
-import org.apache.log4j.Logger;
 
-import javax.servlet.jsp.HttpJspPage;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
-import java.util.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.jsp.HttpJspPage;
+import java.io.File;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.net.MalformedURLException;
-import java.io.File;
+import java.util.*;
 
 public class JspLoader
 {
