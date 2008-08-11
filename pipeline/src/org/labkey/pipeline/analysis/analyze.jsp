@@ -18,7 +18,6 @@
 <%@ page import="org.labkey.api.pipeline.PipelineUrls"%>
 <%@ page import="org.labkey.api.util.HelpTopic"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
-<%@ page import="org.labkey.api.view.ThemeFont"%>
 <%@ page import="org.labkey.pipeline.analysis.AnalysisController" %>
 <%@ page import="java.io.File" %>
 <%@ page extends="org.labkey.pipeline.analysis.AnalyzePage" %>
@@ -34,7 +33,7 @@
 
 <labkey:errors />
 
-<span style="font-size:<%=ThemeFont.getThemeFont().getHeader_1Size()%>">A file analysis protocol is defined by the set of parameters used to run the commands in the pipeline.</span>
+<span class="labkey-header-large">A file analysis protocol is defined by the set of parameters used to run the commands in the pipeline.</span>
 <br><br>
 <%
     if(getProtocolNames().length > 0)

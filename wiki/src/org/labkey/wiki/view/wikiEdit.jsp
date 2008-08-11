@@ -24,7 +24,6 @@
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="org.labkey.api.security.ACL" %>
-<%@ page import="org.labkey.api.view.WebTheme" %>
 <%
     JspView<WikiEditModel> me = (JspView<WikiEditModel>) HttpView.currentView();
     WikiEditModel model = me.getModelBean();
@@ -596,8 +595,8 @@
     function switchToSource()
     {
         setTabStripVisible(true);
-        document.getElementById("wiki-tab-visual").className = "labkey-wiki-tab-inactive";
-        document.getElementById("wiki-tab-source").className = "labkey-wiki-tab-active";
+        document.getElementById("wiki-tab-visual").className = "labkey-wiki-tab labkey-tab labkey-tab-shaded";
+        document.getElementById("wiki-tab-source").className = "labkey-wiki-tab labkey-tab-selected";
         if(tinyMCE.getEditorId("body"))
             tinyMCE.removeMCEControl(tinyMCE.getEditorId("body"));
         _editor = "source";
@@ -629,8 +628,8 @@
         else
         {
             setTabStripVisible(true);
-            document.getElementById("wiki-tab-visual").className = "labkey-wiki-tab-active";
-            document.getElementById("wiki-tab-source").className = "labkey-wiki-tab-inactive";
+            document.getElementById("wiki-tab-visual").className = "labkey-wiki-tab labkey-tab-selected";
+            document.getElementById("wiki-tab-source").className = "labkey-wiki-tab labkey-tab labkey-tab-shaded";
             if(!tinyMCE.getEditorId("body"))
                 tinyMCE.addMCEControl(document.getElementById(_idPrefix + "body"), "body");
             _editor = "visual";
@@ -1091,7 +1090,7 @@
 
 </script>
 
-<div id="status" class="labkey-status-info" style="display:none;">(status)</div>
+<div id="status" class="labkey-status-info" style="display:none;" width="99%">(status)</div>
 
 <table class="labkey-button-bar" width=99%;>
     <tr>
@@ -1152,15 +1151,20 @@
                         <br/><span id="wiki-current-format"></span>
                     </td>
                     <td width="99%">
-                        <table class="labkey-tab-container" width="99%">
+                        <table class="labkey-no-spacing" width="99%">
                             <tr id="wiki-tab-strip" style="display:none">
-                                <td class="labkey-wiki-tab-blank">&nbsp;</td>
-                                <td id="wiki-tab-visual" class="labkey-wiki-tab-active" onclick="userSwitchToVisual()">Visual</td>
-                                <td id="wiki-tab-source" class="labkey-wiki-tab-inactive" onclick="userSwitchToSource()">Source</td>
-                                <td class="labkey-wiki-tab-blank" width="100%">&nbsp;</td>
+                                <td class="labkey-tab-space">&nbsp;</td>
+                                <td class="labkey-tab-space">&nbsp;</td>
+                                <td id="wiki-tab-visual" class="labkey-wiki-tab labkey-tab-selected" onclick="userSwitchToVisual()">Visual</td>
+                                <td class="labkey-tab-space">&nbsp;</td>
+                                <td id="wiki-tab-source" class="labkey-wiki-tab labkey-tab labkey-tab-shaded" onclick="userSwitchToSource()">Source</td>
+                                <td class="labkey-tab-space" style="width:100%">&nbsp;</td>
                             </tr>
+                            <tr><td colspan="6" style="padding:0px"></td></tr>
+                        </table>
+                        <table class="labkey-no-spacing" width="99%">
                             <tr>
-                                <td colspan="4" id="wiki-tab-content">
+                                <td id="wiki-tab-content">
                                     <form action="">
                                     <textarea rows="30" cols="80" style="width:100%" id="<%=ID_PREFIX%>body"
                                               name="body" onkeypress="setWikiDirty()" onchange="setWikiDirty()"></textarea>

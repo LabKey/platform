@@ -188,10 +188,14 @@ public class DailyDigest
         page.siteUrl = ActionURL.getBaseServerURL();
         page.removeUrl = new ActionURL("announcements", "showEmailPreferences", c.getPath()).getURIString();
 
-        URLHelper cssURL = new URLHelper(request);
-        cssURL.setPath("/core/stylesheet.view");
-        cssURL.setRawQuery(null);
-        page.cssURL = cssURL.getURIString();
+        URLHelper staticStylesheetURL = new URLHelper(request);
+        staticStylesheetURL.setPath(request.getContextPath() + "/stylesheet.css");
+        staticStylesheetURL.setRawQuery(null);
+        page.staticStylesheetURL = staticStylesheetURL.getURIString();
+        URLHelper themeStylesheetURL = new URLHelper(request);
+        themeStylesheetURL.setPath(request.getContextPath() + "/core/themestylesheet.view");
+        themeStylesheetURL.setRawQuery(null);
+        page.themeStylesheetURL = themeStylesheetURL.getURIString();
         page.includeGroups = perm.includeGroups();
 
         return page;

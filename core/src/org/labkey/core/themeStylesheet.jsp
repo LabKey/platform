@@ -1,0 +1,435 @@
+
+<%@ page import="org.labkey.api.view.ThemeFont" %>
+<%@ page import="org.labkey.api.view.WebTheme" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
+
+<%
+
+    response.setContentType("text/css");
+    WebTheme theme = WebTheme.getTheme();
+    ThemeFont themeFont = ThemeFont.getThemeFont();
+    AppProps app = AppProps.getInstance();
+    String navBarWidth = app.getNavigationBarWidth();
+
+    String formLabel           = theme.getEditFormColor();
+    String fullScreenBorder    = theme.getFullScreenBorderColor();
+    String wpHeaderPanel       = WebTheme.toRGB(theme.getGradientLightColor());
+    String navBorder           = theme.getHeaderLineColor();
+    String navBackground       = theme.getNavBarColor();
+    String linkAndHeaderText   = theme.getTitleColorString();
+
+    theme.getGradientDarkColor();
+
+    /*
+
+    index:
+
+    defaults
+    general
+        -various
+        -data region
+    home template
+        -main
+            -header-panel
+                -main-title
+            -site-nav-panel
+                -expandable-nav
+                -nav-tree
+            -proj
+                -proj-nav-panel
+                -body-panel
+                -side-panel
+    module specific (alphabetical)
+    GWT
+    yui
+
+    */
+
+%>
+
+/* defaults */
+body, div, td, th, table, img, form
+{
+    font-size: <%= themeFont.getNormalSize() %>;
+}
+
+input, .gwt-TextBox
+{
+	font-size:<%= themeFont.getTextInputSize() %>;
+}
+
+a, a:visited
+{
+    color: #<%=linkAndHeaderText%>;
+}
+
+select
+{
+	font-size:<%= themeFont.getTextInputSize() %>;
+}
+
+legend
+{
+    border: 1px solid #<%= navBorder %>;
+    background-color: #<%= wpHeaderPanel %>;
+}
+
+fieldset
+{
+    border: 1px solid #<%= navBorder %>;
+}
+
+/* general */
+
+table.labkey-header-line
+{
+    border-top: 1px solid #<%= theme.getHeaderLineColor() %>;
+}
+
+.labkey-header.hover
+{
+    background: #<%= wpHeaderPanel %>;
+}
+
+.labkey-header-large.hover
+{
+    background: #<%= wpHeaderPanel %>;
+}
+
+.labkey-header-large
+{
+    font-size: <%= themeFont.getHeader_1Size() %>;
+}
+
+.labkey-message
+{
+    font-size: <%= themeFont.getNormalSize() %>;
+}
+
+.labkey-message-strong
+{
+    font-size: <%= themeFont.getNormalSize() %>;
+}
+
+.labkey-form-label
+{
+    background-color: #<%= formLabel %>;
+}
+
+.labkey-form-label-nowrap {
+	background-color: #<%= formLabel %>;
+}
+
+span.labkey-help-pop-up
+{
+    font-size: <%= themeFont.getHeader_1Size() %>;
+}
+
+.labkey-full-screen-background
+{
+    background-color: #<%= fullScreenBorder %>;
+}
+
+th.labkey-col-header-filter.hover, td.labkey-col-header-filter.hover, .labkey-col-header-filter th:hover
+{
+    background: #<%= wpHeaderPanel %>;
+}
+
+td.labkey-title-area-line
+{
+    background-color: #<%= navBorder %>;
+}
+
+.labkey-frame
+{
+    background: #<%= navBackground %>;
+}
+
+.labkey-nav-bordered
+{
+   border: solid 1px #<%= navBorder %>;
+}
+
+.labkey-bordered-heavy
+{
+   border-style: solid;
+   border-width: 2px;
+}
+
+.labkey-completion-highlight
+{
+    background-color: #<%= navBackground %>;
+}
+
+.labkey-header
+{
+    color: #<%= linkAndHeaderText %>;
+}
+
+.labkey-announcement-title span, .labkey-announcement-title a
+{
+    color: #<%=linkAndHeaderText%>
+}
+
+.labkey-data-region A
+{
+    color: #<%=linkAndHeaderText%>;
+}
+
+th.labkey-col-header-filter, td.labkey-col-header-filter, .labkey-col-header-filter th
+{
+    color: #<%= linkAndHeaderText %>;
+}
+
+th.labkey-expand-collapse-area
+{
+    color: #<%=linkAndHeaderText%>;
+}
+
+/* home template */
+
+a.labkey-main-title
+{
+    font-size:<%= themeFont.getPageTitleSize() %>;
+}
+
+.labkey-site-nav-panel
+{
+    background: #<%= navBackground %>;
+    border-top: 1px solid #<%= navBorder %>;
+    border-right: 1px solid #<%= navBorder %>;
+}
+
+table.labkey-expandable-nav
+{
+    border-top: 1px solid #<%= navBorder %>;
+    border-right: 1px solid #<%= navBorder %>;
+    border-bottom: 1px solid #<%= navBorder %>;
+    width: <%= navBarWidth %>px;
+}
+
+.labkey-expandable-nav-body
+{
+    border-top: 1px solid #<%= navBorder %>;
+}
+
+tr.labkey-nav-tree-row
+{
+    color: #<%= linkAndHeaderText %>;
+}
+
+tr.labkey-nav-tree-row:hover
+{
+    background: #<%= wpHeaderPanel %>;
+}
+
+td.labkey-nav-page-header
+{
+	font-size: <%= themeFont.getPageHeaderSize() %>;
+	color: #<%=linkAndHeaderText%>;
+}
+
+.labkey-wp-header th, .labkey-wp-header td, .labkey-wp-title
+{
+    color: #<%=linkAndHeaderText%>;
+}
+
+.labkey-wp-header a:link, .labkey-wp-header a:visited
+{
+    color:#<%=linkAndHeaderText%>;
+}
+
+tr.labkey-wp-header
+{
+    background-color: #<%= wpHeaderPanel %>;
+}
+
+.labkey-wp-header th, .labkey-wp-header td
+{
+    border: 1px solid #<%= navBorder %>;
+}
+
+th.labkey-wp-title-left, td.labkey-wp-title-left
+{
+    border-right: 0px none;
+}
+
+th.labkey-wp-title-right, td.labkey-wp-title-right
+{
+    border-left:  0px none;
+}
+
+/* module specific */
+
+/* MS1 */
+
+td.labkey-ms1-filter
+{
+    background: #<%= navBackground %>;
+}
+
+/* Wiki */
+
+div.labkey-status-info, .labkey-status-info
+{
+    background-color: #<%=formLabel%>;
+}
+
+td.labkey-tab-selected
+{
+    border-top:solid 1px #<%= navBorder %>;
+    border-left:solid 1px #<%= navBorder %>;
+    border-right:solid 1px #<%= navBorder %>;
+    color: #<%=linkAndHeaderText%>;
+}
+
+td.labkey-tab
+{
+    border-top:solid 1px #<%= navBorder %>;
+    border-left:solid 1px #<%= navBorder %>;
+    border-right:solid 1px #<%= navBorder %>;
+    border-bottom:solid 1px #<%= navBorder %>;
+    color: #<%=linkAndHeaderText%>;
+}
+
+td.labkey-tab-inactive
+{
+    border-top:solid 1px #<%= navBorder %>;
+    border-left:solid 1px #<%= navBorder %>;
+    border-right:solid 1px #<%= navBorder %>;
+    border-bottom:solid 1px #<%= navBorder %>;
+}
+
+td.labkey-tab-space
+{
+    border-bottom: 1px solid #<%= navBorder %>;
+}
+
+td.labkey-tab-shaded
+{
+    background-color: #<%= navBackground %>;
+}
+
+td.labkey-wiki-tab
+{
+    color: #000000;
+}
+
+td.labkey-wiki-tab-content
+{
+    border-left: 1px solid #<%=navBorder%>;
+    border-right: 1px solid #<%=navBorder%>;
+    border-bottom: 1px solid #<%=navBorder%>;
+}
+
+/* GWT */
+
+.gwt-CheckBox {
+  font-size: <%=themeFont.getNormalSize()%>;
+}
+
+.gwt-MenuBar .gwt-MenuItem {
+  font-size: <%=themeFont.getNormalSize()%>;
+}
+
+.gwt-TabBar {
+  font-size: <%=themeFont.getNormalSize()%>;
+}
+
+.gwt-Tree .gwt-TreeItem {
+  font-size: <%=themeFont.getNormalSize()%>;
+}
+
+.gwt-ToolTip {
+	background-color: #<%= formLabel %>;
+	font-size: <%= themeFont.getNormalSize() %>;
+}
+
+.gwt-DialogBox .Caption {
+  background-color: #<%=wpHeaderPanel%>;
+  border: 1px solid #<%= navBorder %>;
+}
+
+.gwt-DialogBox {
+  sborder: 8px solid #<%=navBorder%>;
+}
+
+.gwt-HorizontalSplitter .Bar {
+  background-color: #<%=navBorder%>;
+}
+
+.gwt-VerticalSplitter .Bar {
+  background-color: #<%=navBorder%>;
+}
+
+.gwt-MenuBar {
+  background-color: #<%=navBackground%>;
+  border: 1px solid #<%=navBorder%>;
+}
+
+.gwt-MenuBar .gwt-MenuItem-selected {
+  background-color: #<%=navBorder%>;
+}
+
+.gwt-TabPanelBottom {
+  border: 1px solid #<%=navBorder%>;
+}
+
+.gwt-TabBar .gwt-TabBarRest {
+  border-left: 1px solid #<%=navBorder%>;
+}
+
+.gwt-TabBar .gwt-TabBarItem {
+  border-top: 1px solid #<%=navBorder%>;
+  border-left: 1px solid #<%=navBorder%>;
+}
+
+.gwt-TabBar .gwt-TabBarItem-selected {
+  border-top: 1px solid #<%=navBorder%>;
+  border-left: 1px solid #<%=navBorder%>;
+}
+
+.gwt-StackPanel .gwt-StackPanelItem {
+  background-color: #<%=navBackground%>;
+}
+
+/* yui */
+
+div.yuimenu {
+    border:solid 1px #<%=navBorder%>;
+}
+
+div.yuimenu h6,
+div.yuimenubar h6 {
+    border:solid 1px #<%=navBorder%>;
+    color:#<%=linkAndHeaderText%>;
+
+}
+
+div.yuimenu ul {
+    border:solid 1px #<%=navBorder%>;
+}
+
+div.yuimenubar li.yuimenubaritem {
+    border-color:#<%=navBorder%>;
+}
+
+div.yuimenu li.selected,
+div.yuimenubar li.selected {
+    background-color:#<%=navBackground%>;
+}
+
+div.yuimenu li a,
+div.yuimenubar li a {
+    color:#<%=linkAndHeaderText%>;
+
+}
+
+div.yuimenu li.selected a.selected,
+div.yuimenu li.selected em.selected,
+div.yuimenubar li.selected a.selected {
+
+    color:#<%=linkAndHeaderText%>;
+
+}

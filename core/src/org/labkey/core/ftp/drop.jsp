@@ -20,7 +20,6 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.view.WebTheme" %>
 <%@ page import="org.labkey.core.ftp.FtpPage" %>
 <%@ page import="org.labkey.core.webdav.DavController" %>
 <%@ page import="org.labkey.api.util.GUID" %>
@@ -36,17 +35,8 @@
     menu.addChild("Browse Files","javascript:browseFiles();");
     menu.addChild("New Folder","javascript:showMkdirDialog();");
 
-    WebTheme theme = org.labkey.api.view.WebTheme.getTheme();
-    String border = "#" + theme.getHeaderLineColor();
-    String highlight ="#" + theme.getHeaderLineColor();
 %>
-<style type="text/css">
-    TD.myTabSelected, TD.myTab, TD.myTabSelected A, TD.myTab A {font-weight:bold; color:#ffffff;}
-    TD.myTabSelected, TD.myTab {padding-left:5px; padding-right:5px; padding-top:2px; padding-bottom:2px;}
-    TD.myTabSelected {background-color:<%= highlight %>; border-bottom:1px solid <%=highlight%>; border-left:1px solid #ffffff; border-top:1px solid #ffffff; border-right:1px solid #ffffff; }
-    TD.myTab {background-color:#808080; border:1px solid #ffffff; }
-    TD.myTabEmpty {background-color:#ffffff;}
-</style>
+
 <script type="text/javascript">LABKEY.requiresYahoo("yahoo");</script>
 <script type="text/javascript">LABKEY.requiresYahoo("event");</script>
 <script type="text/javascript">LABKEY.requiresYahoo("dom");</script>
@@ -55,7 +45,6 @@
 <script type="text/javascript">LABKEY.requiresYahoo("container");</script>
 <script type="text/javascript">LABKEY.requiresScript("utils/dialogBox.js");</script>
 <script type="text/javascript">
-LABKEY.borderColor = '<%=border%>'; 
 LABKEY.requiresScript("applet.js",true);
 LABKEY.requiresScript("dropApplet.js",true);
 </script>
@@ -63,7 +52,7 @@ LABKEY.requiresScript("dropApplet.js",true);
     <a id="ftpLocation" href="<%=h(dropPage.getUserURL())%>"><%=dropPage.getURL()%></a>
 </h3></div>
 <table id=ftpOuterTable width="100%"><tr>
-    <td valign="top" width=200 height=100%><div id="appletDiv" style="border:solid 1px <%=border%>; padding:2px; margin:1px; width:200px; height:200px;"><script type="text/javascript">
+    <td valign="top" width=200 height=100%><div id="appletDiv" class="labkey-nav-bordered" style="padding:2px; margin:1px; width:200px; height:200px;"><script type="text/javascript">
 LABKEY.writeApplet({
     id:"dropApplet",
     archive:"<%=request.getContextPath()%>/_applets/applets-8.2.jar?guid=<%=GUID.makeHash()%><%=AppProps.getInstance().getServerSessionGUID()%>",
@@ -131,11 +120,13 @@ YAHOO.util.Event.addListener(window, "resize", onWindowResize);
 <td width=1><img src="<%=contextPath%>/_img.gif" width=1 height=204></td>
 
 <td valign="top" width=100% height=100%>
-    <table>
-        <tr><td class="myTabEmpty">&nbsp;</td><td id="transfersTab" class="myTabSelected" onclick="showTransfers()"><a href="#">transfers</a></td><!--<td id="filesTab" class="myTab" onclick="showFiles()"><a href="#">files</a></td>--><td id="consoleTab" class="myTab" onclick="showConsole()"><a href="#">console</a></td><td class="myTabEmpty" width="100%">&nbsp;</td></tr>
-        <tr><td colspan="20" width="100%" height="3" style="background-color:<%=highlight%>;"><img src="<%=contextPath%>/_.gif" width=600 height=3></td></tr>
-    <tr>
-        <td colspan="20" valign="top" width="100%" height="100%" style="border-bottom:1px solid <%=border%>;border-left:1px solid <%=border%>;border-right:1px solid <%=border%>;">
+    <table class="labkey-no-spacing" width="700px">
+        <tr><td class="labkey-tab-space">&nbsp;</td><td class="labkey-tab-space">&nbsp;</td><td id="transfersTab" class="labkey-tab-selected" onclick="showTransfers()"><a href="#">transfers</a></td><td class="labkey-tab-space">&nbsp;</td><!--<td id="filesTab" class="labkey-tab labkey-tab-shaded" onclick="showFiles()"><a href="#">files</a></td><td class="labkey-tab-space">&nbsp;</td>--><td id="consoleTab" class="labkey-tab labkey-tab-shaded" onclick="showConsole()"><a href="#">console</a></td><td class="labkey-tab-space" width="100%">&nbsp;</td></tr>
+        <tr><td colspan="20" style="padding:0px"></td></tr>
+    </table>
+    <table class="labkey-no-spacing" width="700px">
+        <tr>
+        <td colspan="20" valign="top" width="100%" height="100%" class="labkey-nav-bordered" style="border-top:0px;">
             <div id="scrollDiv" style="overflow:scroll; width:100%;">
             <div id="ftpConsole" style="display:none; font-family:courier,monospace;">&nbsp;</div><div id="ftpTransfers" style="display:inline;">&nbsp;</div><!--<div id="ftpListing" style="display:none; font-family:courier,monospace;">&nbsp;</div>-->
             </div>

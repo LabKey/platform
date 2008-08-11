@@ -28,7 +28,8 @@ abstract public class EmailNotificationPage extends JspBase
     public String boardURL;
     public String srcURL;
     public String siteURL;
-    public String cssURL;
+    public String staticStylesheetURL;
+    public String themeStylesheetURL;
     public Announcement announcement;
     public String body;
     public AnnouncementManager.Settings settings;

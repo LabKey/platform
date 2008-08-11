@@ -396,6 +396,7 @@ core/src/org/labkey/core/test/TestController.java -text
 core/src/org/labkey/core/test/complex.jsp -text
 core/src/org/labkey/core/test/form.jsp -text
 core/src/org/labkey/core/test/tags.jsp -text
+core/src/org/labkey/core/themeStylesheet.jsp -text
 core/src/org/labkey/core/user/changeEmail.jsp -text
 core/src/org/labkey/core/user/userAccess.jsp -text
 core/src/org/labkey/core/user/userPreferences.jsp -text
@@ -408,6 +409,7 @@ core/src/org/labkey/core/webdav/apache/XMLWriter.java -text
 core/src/org/labkey/core/webdav/list.jsp -text
 core/webapp/FileTree.js -text
 core/webapp/dropApplet.js -text
+core/webapp/stylesheet.css -text
 demo/module.properties -text
 demo/src/META-INF/demo.xml -text
 demo/src/META-INF/demo/scripts/postgresql/demo-0.00-1.00.sql -text

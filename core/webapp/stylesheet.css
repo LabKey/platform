@@ -1,0 +1,1735 @@
+
+/*
+
+index:
+
+defaults
+general
+    -various
+    -data region
+home template
+    -main
+        -header-panel
+            -main-title
+        -site-nav-panel
+            -expandable-nav
+            -nav-tree
+        -proj
+            -proj-nav-panel
+            -body-panel
+            -side-panel
+module specific (alphabetical)
+GWT
+yui
+
+*/
+
+/* defaults */
+
+body, div, td, th, table, img, form
+{
+    font-family: verdana, arial, helvetica, sans-serif;
+    font-size: 8pt;
+    border: 0px none;
+    margin: 0px;
+}
+
+th
+{
+    font-weight: bold;
+}
+
+body, div, td, table, img, form
+{
+    font-weight: normal;
+}
+
+a, a:visited
+{
+    color: #003399;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+a:hover, a:visited:hover
+{
+}
+
+input, .gwt-TextBox
+{
+	font-size:10pt;
+}
+
+select
+{
+	font-size:10pt;
+}
+
+body, td, .gwt-Label
+{
+    color: #000000;
+}
+
+fieldset
+{
+    border: 1px solid #89A1B4;
+    height: 5em;
+    padding-left: 5px;
+    padding-right: 5px;
+    padding-bottom: 0;
+}
+
+legend
+{
+    border: 1px solid #89A1B4;
+    padding: 2px 6px;
+    background-color: #EBF4FF;
+}
+
+/* General */
+
+.labkey-header
+{
+    color: #003399;
+    text-align: left;
+    text-decoration: none;
+    vertical-align: top;
+    padding: 1px;
+    padding-right:4px;
+}
+
+.labkey-header:hover
+{
+    background: #EBF4FF;
+    cursor: pointer;
+    cursor: hand;
+}
+
+.labkey-header:active
+{
+    outline: none;
+}
+
+.labkey-header-large
+{
+    color: #000000;
+    text-align: left;
+    text-decoration: none;
+    vertical-align: top;
+    padding: 1px;
+    padding-right:4px;
+    font-size: 10pt;
+    font-weight:bold;
+}
+
+.labkey-header-large.hover
+{
+    background: #EBF4FF;
+    cursor: pointer;
+    cursor: hand;
+}
+
+.labkey-announcement-title
+{
+    padding-top: 14px;
+    padding-bottom: 2px;
+}
+
+.labkey-announcement-title span, .labkey-announcement-title a
+{
+    font-weight: bold;
+    color: #003399
+}
+
+td.labkey-title-area-line
+{
+    background-color: #89A1B4;
+    height: 1px;
+    padding: 0px;
+}
+
+.labkey-form-label
+{
+    background-color: #FFDF8C;
+    padding-right:4px;
+    padding-left:4px;
+    padding-top:1px;
+    padding-bottom:1px;
+}
+
+.labkey-form-label-nowrap {
+	background-color: #FFDF8C;
+    padding: 4px;
+    white-space: nowrap;
+    vertical-align: top;
+    text-align: right;
+}
+
+table.labkey-no-spacing
+{
+    border-spacing: 0px;
+    *border-collapse: collapse;
+    *border-spacing: expression(cellSpacing=0);    
+}
+
+a.labkey-link, a.labkey-link:visited
+{
+}
+
+a.labkey-link:hover, a.labkey-link:visited:hover
+{
+    color: #ff3300;
+    text-decoration: underline;
+}
+
+.labkey-error, .error
+{
+    color: #FF0000;
+    padding: 5px;
+}
+
+.labkey-message
+{
+    font-size: 8pt;
+    color: #008000;
+}
+
+.labkey-message-strong
+{
+    font-size: 8pt;
+    font-weight: bold;
+    color: #008000;
+}
+
+.labkey-status-info
+{
+    text-align: center;
+    background-color: #FFDF8C;
+    border: 1px solid #FFAD6A;
+    padding: 2px;
+    font-weight: bold;
+}
+
+.labkey-status-error
+{
+    text-align: center;
+    background-color: #FFC5AA;
+    border: 1px solid #FF0000;
+    color: #FF0000;
+    font-weight: bold;
+}
+
+div.labkey-button-bar, table.labkey-button-bar
+{
+    white-space: nowrap;
+    margin-top: 4px;
+    margin-bottom: 2px;
+}
+
+.labkey-button-bar td
+{
+    padding-right: 5px;
+}
+
+a.labkey-button {
+    background: transparent url('./_images/button_a.gif') no-repeat scroll top right;
+    color: #080808;
+    display: block;
+    float: left;
+    height: 19px;
+    margin-right: 5px;
+    padding-right: 5px;
+    text-decoration: none;
+}
+
+a.labkey-button:visited
+{
+    color: #080808;
+}
+
+a.labkey-button span {
+    background: transparent url('./_images/button_span.gif') no-repeat;
+    display: block;
+    line-height: 15px;
+    padding: 2px 0 2px 5px;
+}
+
+a.labkey-button:hover {
+    background: transparent url('./_images/button_hover_a.gif') no-repeat scroll top right;
+    color: #111111;
+}
+
+a.labkey-button:hover span {
+    background: transparent url('./_images/button_hover_span.gif') no-repeat;
+    padding: 2px 0 2px 5px;
+}
+
+a.labkey-button:active {
+    background: transparent url('./_images/button_press_a.gif') no-repeat scroll top right;
+    color: #000000;
+    outline: none;
+}
+
+a.labkey-button:active span {
+    background: transparent url('./_images/button_press_span.gif') no-repeat;
+    padding: 3px 0 1px 5px;
+}
+
+span.labkey-button-bar-item
+{
+    margin-right: 5px;
+}
+
+.labkey-indented
+{
+    padding-left: 2em;
+}
+
+li.labkey-indented
+{
+    padding-left: 1em;
+    text-indent: -1em;
+}
+
+.labkey-bordered
+{
+   border: solid 1px #808080;
+}
+
+.labkey-nav-bordered
+{
+   border: solid 1px #89A1B4;
+}
+
+.labkey-bordered-heavy
+{
+   border-style: solid;
+   border-width: 2px;
+}
+
+.labkey-disabled, .labkey-disabled a:link, .labkey-disabled a:visited
+{
+    color: #EEEEEE;
+}
+
+.labkey-strong
+{
+    font-weight: bold;
+}
+
+.labkey-frame
+{
+    background: #E1ECFC;
+}
+
+div.labkey-pagination
+{
+    white-space: nowrap;
+    margin: 4px;
+}
+
+.labkey-pagination em
+{
+    font-weight: normal;
+}
+
+.labkey-selectors, td.labkey-selectors, th.labkey-selectors
+{
+    text-align: left;
+}
+
+table.labkey-tab-strip
+{
+    width: 100%;
+    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+}
+
+.labkey-tab-strip td, .labkey-tab-strip th
+{
+    padding: 0px;
+}
+
+div.labkey-completion
+{
+    display:none;
+    border: 1px solid #AAAAAA;
+    padding:1px;
+    position:absolute;
+    background-color:#FFFFFF;
+}
+
+.labkey-completion table
+{
+    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+}
+
+.labkey-completion td
+{
+    padding: 0px;
+}
+
+table.labkey-completion-text
+{
+    width: 100%;
+    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+}
+
+.labkey-completion-text td, .labkey-completion-text th
+{
+    padding: 0px;
+}
+
+.labkey-completion-highlight
+{
+    background-color: #E1ECFC;
+}
+
+.labkey-completion-nohighlight
+{
+    background-color: #FFFFFF;
+}
+
+.labkey-read-only
+{
+    padding: 4px;
+    vertical-align: top;
+    text-align: left;
+}
+
+span.labkey-help-pop-up
+{
+    font-weight: bold;
+    font-size: 10pt;
+    text-decoration: none;
+}
+
+.labkey-full-screen-background
+{
+    background-color: #336699;
+    padding: 30px;
+    height: 100%;
+    vertical-align: middle;
+    text-align: center;
+}
+
+.labkey-full-screen-table
+{
+    height: 100%;
+    width: 100%;
+    background-color: #FFFFFF;
+    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+}
+
+td.labkey-full-screen-table-panel, .labkey-full-screen-table-panel
+{
+    background-color: #DDDDDD;
+    height: 20px;
+}
+
+.labkey-dialog-body
+{
+    height: 100%;
+    vertical-align: top;
+    padding: 10px;
+}
+
+table.labkey-admin-console
+{
+    border-collapse: separate; border-spacing: 10px; *border-spacing: expression(cellSpacing=10);
+}
+
+.labkey-admin-console td
+{
+    vertical-align: top;
+}
+
+table.labkey-customize-view
+{
+    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+    padding: 0px;
+}
+
+.labkey-customize-view table, .labkey-customize-view th
+{
+    padding: 0px;
+}
+
+.labkey-customize-view table
+{
+    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+}
+
+table.labkey-output
+{
+    width: 100%;
+    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+}
+
+/* Data Region */
+
+table.labkey-data-region
+{
+    background-color: #FFFFFF;
+    border-collapse: collapse;
+    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+    margin-bottom: 5px;
+}
+
+.labkey-data-region A
+{
+    color: #003399;
+    text-decoration: none;
+}
+
+.labkey-data-region TH
+{
+    border-bottom: solid 1px #AAAAAA;
+    vertical-align: top;
+}
+
+.labkey-data-region TD, .labkey-data-region TH
+{
+    padding: 1px;
+    padding-right:4px;
+}
+
+/* Use this in the table class tag if you want your data region to have borders */
+table.labkey-show-borders
+{
+    border: solid 1px #DDDDDD;
+    *border: 0px none;  /* hack for IE 7 and below since IE gives precedence to table borders over cell borders */
+}
+
+.labkey-show-borders td
+{
+    border-top: 0px;     /* Safari gives precedence to the color drawn last for borders, which means
+                            the borders usually win bottom and right over top and left (It is supposed to be
+                            the opposite, which is how Firefox correctly does it. So we use a
+                            combination of table borders and cell borders for Safari and Firefox*/
+    border-left: 0px;
+    border-right: solid 1px #DDDDDD;
+    border-bottom: solid 1px #DDDDDD;
+    *border: solid 1px #DDDDDD;  /* Hack for IE 7 and below since IE gives precendence to table borders over cell borders */
+}
+
+/*  If the table includes row or column totals, then it needs these respective classes
+in the table tag.  They are necessary so that the borders take precedence correctly when they collapse */
+.labkey-has-row-totals td, .labkey-has-col-totals td
+{
+    border: 0px;      /* Firefox and Safari use column and row borders along with table borders, since
+                        we want the bold borders for the column and row header and totals and stat titles
+                        to take precedence over them */
+    *border: solid 1px #DDDDDD;  /* Again, IE 7 and below gives precendence to table borders over cell borders, also it doesn't do
+                                    column or row borders, but it does do correct precedence for cells
+                                     (top and left over bottom and right) so we can use cell borders */
+}
+
+/* These classes are used in CrossTab data regions and for aggregate rows */
+.labkey-show-borders th, .labkey-show-borders .labkey-col-total, .labkey-show-borders .labkey-row-total,
+    .labkey-show-borders .labkey-col-header, .labkey-show-borders .labkey-row-header,
+    .labkey-show-borders .labkey-col-total td, .labkey-show-borders .labkey-col-header th,
+    .labkey-show-borders .labkey-stat-title
+{
+    border: solid 1px #AAAAAA;
+}
+
+.labkey-has-row-totals col, .labkey-has-col-totals col
+{
+    border-right: solid 1px #DDDDDD;
+    border-left: solid 1px #DDDDDD;
+}
+
+.labkey-has-row-totals tr, .labkey-has-col-totals tr
+{
+    border-top: solid 1px #DDDDDD;
+    border-bottom: solid 1px #DDDDDD;
+}
+
+.labkey-has-row-totals td
+{
+    *border-right: 0px none; 
+}
+
+.labkey-has-col-totals td
+{
+    *border-bottom: 0px none;
+}
+
+.labkey-row td, .labkey-row th, tr.labkey-row
+{
+    background: #FFFFFF;
+}
+
+.labkey-alternate-row td, .labkey-alternate-row th, tr.labkey-alternate-row
+{
+    background: #EEEEEE;
+}
+
+th.labkey-col-header-filter, td.labkey-col-header-filter, tr.labkey-col-header-filter th
+{
+    color: #003399;
+}
+
+th.labkey-col-header-filter.hover, td.labkey-col-header-filter.hover, tr.labkey-col-header-filter th:hover
+{
+    background: #EBF4FF;
+    cursor: pointer;
+    cursor: hand;
+}
+
+.labkey-data-region .labkey-col-header, .labkey-data-region .labkey-row-header,
+    .labkey-data-region .labkey-col-total, .labkey-data-region .labkey-row-total,
+    .labkey-data-region .labkey-col-total td, .labkey-data-region .labkey-col-header th
+{
+    font-weight: bold;
+    background-color: #EEEEEE;
+}
+
+.labkey-data-region .labkey-data-region-title
+{
+    background-color: #FFFFFF;
+    border: 0px;
+    border-top: hidden;
+    border-left: hidden;
+    font-weight: bold;
+}
+
+td.labkey-highlight-cell, th.labkey-highlight-cell
+{
+    background: #AAAAAA;
+    font-weight:bold;
+}
+
+td.labkey-blank-cell, th.labkey-blank-cell
+{
+    background: #FFFFFF;
+    border: 0px;
+}
+
+img.labkey-grid-filter-icon
+{
+    background-repeat: no-repeat;
+    display: none;
+    height: 8px;
+    width: 11px;
+    margin-left:2px;
+    vertical-align: middle;
+}
+
+.labkey-filtered .labkey-grid-filter-icon {
+    background-image: url(../_images/filter_on.gif);
+    display: inline;
+}
+
+/* Home Template */
+
+#bodyElement
+{
+    margin-top:0;
+    margin-left:0;
+    margin-right:0;
+}
+
+#helpDiv
+{
+    border:1px solid #AAAAAA;
+    position:absolute;
+    background-color:#FFFFFF;
+}
+
+#helpDiv table
+{
+    width: 100%;
+    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);;
+}
+
+.labkey-main
+{
+    width: 100%;
+    height: 100%;
+    padding: 0px;
+    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+}
+
+#headerpanel
+{
+    height: 56px;
+}
+
+.labkey-header-panel table
+{
+    width: 100%;
+    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+}
+
+.labkey-header-panel td, .labkey-header-panel th
+{
+    padding: 0px;
+}
+
+.labkey-site-nav-panel
+{
+    background: #E1ECFC;
+    border-top: 1px solid #89A1B4;
+    border-right: 1px solid #89A1B4;
+    border-collapse: separate; border-spacing: 2px; *border-spacing: expression(cellSpacing=2);
+    vertical-align: top;
+    padding: 0px;
+}
+
+.labkey-proj
+{
+    width: 100%;
+    height: 100%;
+    vertical-align: top;
+    padding: 0px;
+    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+}
+
+
+td.labkey-main-icon
+{
+    vertical-align: middle;
+    height: 56px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+td.labkey-main-title-area
+{
+    vertical-align: bottom;
+    padding: 5px;
+    width: 100%;
+}
+
+.labkey-main-title-area span
+{
+    vertical-align: bottom;
+}
+
+#labkey-main-title
+{
+    color: #666666;
+}
+
+a.labkey-main-title
+{
+    font-family: arial, helvetica, sans-serif;
+    font-size:14pt;
+    vertical-align: bottom;
+    color: #666666;
+    text-decoration: none;
+}
+
+a.labkey-main-title:hover {
+    text-decoration: underline;
+}
+
+td.labkey-main-nav
+{
+    padding: 5px;
+    vertical-align: bottom;
+    white-space: nowrap;
+}
+
+table.labkey-site-nav
+{
+    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+}
+
+.labkey-site-nav td, .labkey-site-nav th
+{
+    padding: 0px;
+}
+
+.labkey-expandable-nav-panel
+{
+    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+}
+
+.labkey-expandable-nav
+{
+    padding: 0px;
+}
+
+table.labkey-expandable-nav
+{
+    background-color: #FFFFFF;
+    border-left: 0px;
+    border-top: 1px solid #89A1B4;
+    border-right: 1px solid #89A1B4;
+    border-bottom: 1px solid #89A1B4;
+    margin-top:5px;
+    margin-right:5px;
+    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+    border-collapse: collapse;
+    width: 146px;
+}
+
+.labkey-expandable-nav tr
+{
+    width: 100%;
+}
+
+
+
+.labkey-proj-nav-panel
+{
+    width: 100%;
+    vertical-align: top;
+    padding: 0px;
+}
+
+.labkey-body-panel
+{
+    padding: 5px;
+    width: 100%;
+    height: 100%;
+    vertical-align: top;
+}
+
+.labkey-side-panel
+{
+    padding: 5px;
+    width: 240px;
+    height: 100%;
+    vertical-align: top;
+}
+
+
+.labkey-expandable-nav-body
+{
+    border-top: 1px solid #89A1B4;
+    width: 100%;
+    padding: 1px;
+}
+
+.labkey-expandable-nav-body table
+{
+    border-collapse: separate; border-spacing: 2px; *border-spacing: expression(cellSpacing=2);
+}
+
+.labkey-expandable-nav-body td, .labkey-expandable-nav-body th
+{
+    padding: 0px;
+}
+
+th.labkey-expand-collapse-area
+{
+    font-weight: bold;
+    color: #003399;
+    padding-right: 4px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    white-space: nowrap;
+    text-align: right;
+}
+
+table.labkey-nav-tree
+{
+    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+}
+
+span.labkey-nav-tree-selected
+{
+    font-weight:bold;
+}
+
+tr.labkey-nav-tree-row
+{
+    color: #003399;
+    text-decoration: none;
+    vertical-align: top;
+    padding-right:4px;
+}
+
+tr.labkey-nav-tree-row:hover
+{
+    background: #EBF4FF;
+    cursor: pointer;
+    cursor: hand;
+}
+
+td.labkey-nav-tree-node
+{
+    padding-top: 0.5em;
+}
+
+td.labkey-nav-tree-text
+{
+    padding: 0.3em;
+    width: 100%;
+}
+
+td.labkey-nav-tree-total
+{
+    padding-top: 0.3em;
+}
+
+table.labkey-nav-tree-child
+{
+    border-collapse: collapse;
+    width: 100%;
+    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+}
+
+.labkey-nav-tree-child a
+{
+    padding: 0.1em;
+}
+
+.labkey-nav-tree-indenter
+{
+    width: 9px;
+    background-image: url('./_.gif');
+}
+
+
+table.labkey-nav-bar, .labkey-nav-bar
+{
+    width: 100%;
+    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+}
+
+table.labkey-header-line
+{
+    border-top: 1px solid #89a1b4;
+}
+
+.labkey-nav-bar table
+{
+    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+}
+
+.labkey-nav-bar td, .labkey-nav-bar th
+{
+    padding: 0px;
+}
+
+td.labkey-tab-selected, .labkey-tab-selected
+{
+    padding-top:0.1em;
+    padding-bottom:0.1em;
+    padding-left:0.5em;
+    padding-right:0.5em;
+    border-top:solid 1px #89A1B4;
+    border-left:solid 1px #89A1B4;
+    border-right:solid 1px #89A1B4;
+    border-bottom:solid 1px #ffffff;
+    color: #003399;
+    text-decoration: none;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+td.labkey-tab, .labkey-tab
+{
+    padding-top:0.1em;
+    padding-bottom:0.1em;
+    padding-left:0.5em;
+    padding-right:0.5em;
+    border-top:solid 1px #89A1B4;
+    border-left:solid 1px #89A1B4;
+    border-right:solid 1px #89A1B4;
+    border-bottom:solid 1px #89A1B4;
+    color: #003399;
+    text-decoration: none;
+    vertical-align:bottom;
+    cursor: pointer;
+}
+
+td.labkey-tab-inactive
+{
+    padding-top:0.1em;
+    padding-bottom:0.1em;
+    padding-left:0.5em;
+    padding-right:0.5em;
+    border-top:solid 1px #89A1B4;
+    border-left:solid 1px #89A1B4;
+    border-right:solid 1px #89A1B4;
+    border-bottom:solid 1px #89A1B4;
+    text-decoration: none;
+    color: #444444;
+}
+
+td.labkey-tab-shaded, .labkey-tab-shaded
+{
+    background-color: #E1ECFC;
+}
+
+.labkey-tab-selected a, .labkey-tab a, .labkey-tab-inactive a
+{
+    outline: none;
+}
+
+td.labkey-tab-space, .labkey-tab-space
+{
+    border-top: 0px;
+    border-left: 0px;
+    border-right: 0px;
+    border-bottom: 1px solid #89A1B4;
+}
+
+#labkey-end-tab-space
+{
+    padding-right: 5px;
+    white-space: nowrap;
+}
+
+td.labkey-crumb-trail
+{
+    padding-top:5px;
+    padding-left:5px;
+}
+
+td.labkey-nav-page-header
+{
+    padding-left: 12px;
+}
+
+.labkey-nav-page-header
+{
+	font-weight: bold;
+	font-size: 11pt;
+	color: #003399;
+}
+
+
+table.labkey-wp
+{
+    width: 100%;
+    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+}
+
+td.labkey-wp-body
+{
+    width: 100%;
+    padding-top: 2px;
+    background: #FFFFFF;
+}
+
+tr.labkey-wp-header
+{
+    background-color: #EBF4FF;
+    font-weight: bold;
+}
+
+.labkey-wp-header th, .labkey-wp-header td
+{
+    border: 1px solid #89A1B4;
+}
+
+.labkey-wp-header th, .labkey-wp-header td, .labkey-wp-title
+{
+    font-weight: bold;
+    color: #003399;
+    padding-left: 6px;
+    padding-right: 4px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    text-align: left;
+    white-space:nowrap;
+}
+
+.labkey-wp-header a:link, .labkey-wp-header a:visited
+{
+    color:#003399;
+    text-decoration:none;
+    cursor:pointer;
+}
+
+.labkey-wp-header a:hover
+{
+    color:#ff3300;
+    text-decoration:underline;
+    cursor:pointer;
+}
+
+.labkey-wp-header img
+{
+    opacity: 0.6;
+    filter: alpha(opacity=60);
+    -moz-opacity: 0.6;
+    padding-top: 2px;
+    vertical-align: top;
+}
+
+th.labkey-wp-title-left, td.labkey-wp-title-left
+{
+    border-right: 0px none;
+}
+
+th.labkey-wp-title-right, td.labkey-wp-title-right
+{
+    text-align:  right;
+    border-left:  0px none;
+}
+
+table.labkey-wp-link-panel
+{
+    width: 100%;
+}
+
+/* Module Specific */
+
+/* Announcement */
+
+table.labkey-announcement-thread
+{
+    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+}
+
+.labkey-announcement-thread td
+{
+    padding: 3px;
+}
+
+/*  Experiment */
+
+table.labkey-protocol-applications
+{
+   border-collapse: separate; border-spacing: 5px; *border-spacing: expression(cellSpacing=5);
+}
+
+/* Flow */
+
+.labkey-flow-graph
+{
+    height: 300px;
+    width: 300px;
+}
+a.labkey-selected-link
+{
+    cursor:default;
+    text-decoration:none;
+    font-weight:bold;
+}
+
+/* MS1 */
+
+.labkey-peak-warning td, .labkey-peak-warning th
+{
+    padding: 2px;
+    background-color:#FFF8DC;
+    border:1px solid #808080;
+}
+
+td.labkey-ms1-filter
+{
+    background: #E1ECFC;
+    text-align: center;
+    border-top: 1px solid #AAAAAA;
+    border-bottom: 1px solid #AAAAAA;
+}
+
+/* MS2 */
+
+table.labkey-prot-annots
+{
+    border-collapse: separate; border-spacing: 10px; *border-spacing: expression(cellSpacing=10);
+}
+
+/* Query */
+
+/* Study */
+
+table.labkey-study-expandable-nav
+{
+    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+    width: 100%;
+}
+
+.labkey-study-expandable-nav td, .labkey-study-expandable-nav th
+{
+    padding-top: 0em;
+    padding-bottom: 0em;
+}
+
+.labkey-study-expandable-nav .labkey-nav-tree-node
+{
+    padding-top: 0.3em;
+}
+
+table.labkey-request-warnings
+{
+    border-collapse: separate; border-spacing: 10px; *border-spacing: expression(cellSpacing=10);
+}
+
+table.labkey-manage-display
+{
+    border-collapse: separate; border-spacing: 5px; *border-spacing: expression(cellSpacing=5);
+}
+
+table.labkey-manage-default-reqs
+{
+    border-collapse: separate; border-spacing: 10px; *border-spacing: expression(cellSpacing=10);
+}
+
+.labkey-data-region .labkey-participant-view-header
+{
+    font-weight: bold;
+    border: solid 1px #808080;
+}
+
+.labkey-data-region .labkey-expandable-row-header
+{
+    text-align: left;
+    background-color: #CCCCCC;
+    border: solid 1px #808080;
+    padding-left: 10px;
+}
+
+/* Wiki */
+
+td.labkey-wiki-tab, .labkey-wiki-tab
+{
+    color: #000000;
+    padding: 4px 8px 4px 8px;
+}
+
+td.labkey-wiki-tab-content
+{
+    border-left: 1px solid #89A1B4;
+    border-right: 1px solid #89A1B4;
+    border-bottom: 1px solid #89A1B4;
+}
+
+/* GWT */
+
+.gwt-ToolTip {
+	background-color: #FFDF8C;
+	font-family: verdana;
+	font-size: 8pt;
+    padding-left: 4px;
+    padding-right: 4px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    border: solid 1px #AAAAAA;
+}
+
+.gwt-BorderedPanel {
+}
+
+.gwt-Button {
+}
+
+.gwt-Canvas {
+}
+
+.gwt-CheckBox {
+  font-size: 8pt;
+}
+
+.gwt-DialogBox {
+  sborder: 8px solid #89A1B4;
+  border: 2px outset;
+  background-color: #FFFFFF;
+}
+
+.gwt-DialogBox .Caption {
+  background-color: #EBF4FF;
+  border: 1px solid #89A1B4;
+  padding: 3px;
+  margin: 2px;
+  font-weight: bold;
+  cursor: default;
+}
+
+.gwt-FileUpload {
+}
+
+.gwt-Frame {
+}
+
+.gwt-HorizontalSplitter .Bar {
+  width: 8px;
+  background-color: #89A1B4;
+}
+
+.gwt-VerticalSplitter .Bar {
+  height: 8px;
+  background-color: #89A1B4;
+}
+
+.gwt-MenuBar {
+  background-color: #E1ECFC;
+  border: 1px solid #89A1B4;
+  cursor: default;
+}
+
+.gwt-MenuBar .gwt-MenuItem {
+  padding: 1px 4px 1px 4px;
+  font-size: 8pt;
+  cursor: default;
+}
+
+.gwt-MenuBar .gwt-MenuItem-selected {
+  background-color: #89A1B4;
+}
+
+.gwt-PushButton-up-disabled
+{
+	filter:alpha(opacity=50);
+	-moz-opacity:0.5;
+	-khtml-opacity: 0.5;
+	opacity: 0.5;
+}
+
+.gwt-TabPanelBottom {
+  border: 1px solid #89A1B4;
+}
+
+.gwt-TabBar {
+  font-size: 8pt;
+}
+
+.gwt-TabBar .gwt-TabBarFirst {
+  padding-left: 3px;
+}
+
+.gwt-TabBar .gwt-TabBarRest {
+  border-left: 1px solid #89A1B4;
+  padding-right: 3px;
+}
+
+.gwt-TabBar .gwt-TabBarItem {
+  border-top: 1px solid #89A1B4;
+  border-left: 1px solid #89A1B4;
+  padding: 2px;
+  cursor: pointer;
+  cursor: hand;
+}
+
+.gwt-TabBar .gwt-TabBarItem-selected {
+  font-weight: bold;
+  border-top: 1px solid #89A1B4;
+  border-left: 1px solid #89A1B4;
+  padding: 2px;
+  cursor: default;
+}
+
+.gwt-Tree {
+}
+
+.gwt-Tree .gwt-TreeItem {
+  font-size: 8pt;
+}
+
+.gwt-Tree .gwt-TreeItem-selected {
+  font-weight:bold;
+}
+
+.gwt-StackPanel {
+}
+
+.gwt-StackPanel .gwt-StackPanelItem {
+  background-color: #E1ECFC;
+  cursor: pointer;
+  cursor: hand;
+}
+
+.gwt-StackPanel .gwt-StackPanelItem-selected {
+}
+
+
+
+/*
+Copyright (c) 2007, Yahoo! Inc. All rights reserved.
+Code licensed under the BSD License:
+http://developer.yahoo.net/yui/license.txt
+version: 2.2.2
+*/
+/* Menu styles */
+
+div.yuimenu {
+
+    background-color:#FFFFFF;
+    border:solid 1px #89A1B4;
+    padding:1px;
+
+}
+
+/* Submenus are positioned absolute and hidden by default */
+
+div.yuimenu div.yuimenu,
+div.yuimenubar div.yuimenu {
+
+    position:absolute;
+    visibility:hidden;
+
+}
+
+/* MenuBar Styles */
+
+div.yuimenubar {
+
+    background-color: #EEEEEE;
+}
+
+/*
+    Applying a width triggers "haslayout" in IE so that the module's
+    body clears its floated elements
+*/
+div.clear, div.yuimenubar div.bd {
+
+    width:100%;
+
+}
+
+/*
+    Clear the module body for other browsers
+*/
+div.clear:after, div.yuimenubar div.bd:after {
+
+    content:'.';
+    display:block;
+    clear:both;
+    visibility:hidden;
+    height:0;
+
+}
+
+/* Matches the group title (H6) inside a Menu or MenuBar instance */
+
+div.yuimenu h6,
+div.yuimenubar h6 {
+
+    font-size:100%;
+    font-weight:normal;
+    margin:0;
+    border:solid 1px #89A1B4;
+    color:#003399;
+
+}
+
+div.yuimenubar h6 {
+
+    float:left;
+    display:inline; /* Prevent margin doubling in IE */
+    padding:4px 12px;
+    border-width:0 1px 0 0;
+
+}
+
+div.yuimenu h6 {
+
+    float:none;
+    display:block;
+    border-width:1px 0 0 0;
+    padding:5px 10px 0 10px;
+
+}
+
+/* Matches the UL inside a Menu or MenuBar instance */
+
+div.yuimenubar ul {
+
+    list-style-type:none;
+    margin:0;
+    padding:0;
+
+}
+
+div.yuimenu ul {
+
+    list-style-type:none;
+    border:solid 1px #89A1B4;
+    border-width:1px 0 0 0;
+    margin:0;
+    padding:4px 0;
+
+}
+
+div.yuimenu ul.first-of-type,
+div.yuimenu ul.hastitle,
+div.yuimenu h6.first-of-type {
+
+    border-width:0;
+
+}
+
+/*
+    Styles for the menu's header and footer elements that are used as controls
+    to scroll the menu's body element when the menu's height exceeds the
+    value of the "maxheight" configuration property.
+*/
+
+div.yuimenu div.topscrollbar,
+div.yuimenu div.bottomscrollbar {
+
+    height:16px;
+    background-image:url(./_yui/build/menu/assets/map.gif);
+    background-repeat:no-repeat;
+
+}
+
+
+div.yuimenu div.topscrollbar {
+
+    background-image:url(./_yui/build/menu/assets/map.gif);
+    background-position:center -72px;
+
+}
+
+
+div.yuimenu div.topscrollbar_disabled {
+
+    background-image:url(./_yui/build/menu/assets/map.gif);
+    background-position:center -88px;
+
+}
+
+
+div.yuimenu div.bottomscrollbar {
+
+    background-image:url(./_yui/build/menu/assets/map.gif);
+    background-position:center -104px;
+
+}
+
+
+div.yuimenu div.bottomscrollbar_disabled {
+
+    background-image:url(./_yui/build/menu/assets/map.gif);
+    background-position:center -120px;
+
+}
+
+
+/* MenuItem and MenuBarItem styles */
+
+div.yuimenu li,
+div.yuimenubar li {
+
+//    font-size:85%;
+    cursor:pointer;
+    cursor:hand;
+    white-space:nowrap;
+    text-align:left;
+
+}
+
+div.yuimenu li.yuimenuitem {
+
+    padding:2px 20px 2px 2px;
+
+}
+
+div.yuimenu li li,
+div.yuimenubar li li {
+
+    font-size:100%;
+
+}
+
+
+/* Matches the help text for a menu item */
+
+div.yuimenu li.hashelptext em.helptext {
+
+    font-style:normal;
+    margin:0 0 0 40px;
+
+}
+
+div.yuimenu li a,
+div.yuimenubar li a {
+
+    /*
+        "zoom:1" triggers "haslayout" in IE to ensure that the mouseover and
+        mouseout events bubble to the parent LI in IE.
+    */
+    zoom:1;
+    color:#003399;
+    text-decoration:none;
+
+}
+
+div.yuimenu li.hassubmenu,
+div.yuimenu li.hashelptext {
+
+    text-align:right;
+
+}
+
+div.yuimenu li.hassubmenu a.hassubmenu,
+div.yuimenu li.hashelptext a.hashelptext {
+
+    /*
+        Need to apply float immediately for IE or help text will jump to the
+        next line
+    */
+
+    *float:left;
+    *display:inline; /* Prevent margin doubling in IE */
+    text-align:left;
+
+}
+
+div.yuimenu.visible li.hassubmenu a.hassubmenu,
+div.yuimenu.visible li.hashelptext a.hashelptext {
+
+    /*
+        Apply the float only when the menu is visible to prevent the help
+        text from wrapping to the next line in Opera.
+    */
+
+    float:left;
+
+}
+
+
+/* Matches selected menu items */
+
+div.yuimenu li.selected,
+div.yuimenubar li.selected {
+
+    background-color:#E1ECFC;
+
+}
+
+div.yuimenu li.selected a.selected,
+div.yuimenubar li.selected a.selected {
+
+    text-decoration:underline;
+
+}
+
+div.yuimenu li.selected a.selected,
+div.yuimenu li.selected em.selected,
+div.yuimenubar li.selected a.selected {
+
+    color:#003399;
+
+}
+
+
+/* Matches disabled menu items */
+
+div.yuimenu li.disabled,
+div.yuimenubar li.disabled {
+
+    cursor:default;
+
+}
+
+div.yuimenu li.disabled a.disabled,
+div.yuimenu li.disabled em.disabled,
+div.yuimenubar li.disabled a.disabled {
+
+    color:#b9b9b9;
+    cursor:default;
+
+}
+
+div.yuimenubar li.yuimenubaritem {
+
+    float:left;
+    display:inline; /* Prevent margin doubling in IE */
+    border-width:0 0 0 1px;
+    border-style:solid;
+    border-color:#89A1B4;
+    padding:4px 24px;
+    margin:0;
+
+}
+
+div.yuimenubar li.yuimenubaritem.first-of-type {
+
+    border-width:0;
+
+}
+
+
+/* Styles for the the submenu indicator for menu items */
+
+div.yuimenu li.hassubmenu em.submenuindicator,
+div.yuimenubar li.hassubmenu em.submenuindicator {
+
+    display:-moz-inline-box; /* Mozilla */
+    display:inline-block; /* IE, Opera and Safari */
+    vertical-align:middle;
+    height:8px;
+    width:8px;
+    text-indent:9px;
+    font:0/0 arial;
+    overflow:hidden;
+    background-image:url(./_yui/build/menu/assets/map.gif);
+    background-repeat:no-repeat;
+
+}
+
+div.yuimenubar li.hassubmenu em.submenuindicator {
+
+    background-position:0 -24px;
+    margin:0 0 0 10px;
+
+}
+
+div.yuimenubar li.hassubmenu em.submenuindicator.selected {
+
+    background-position:0 -32px;
+
+}
+
+div.yuimenubar li.hassubmenu em.submenuindicator.disabled {
+
+    background-position:0 -40px;
+
+}
+
+div.yuimenu li.hassubmenu em.submenuindicator {
+
+    background-position:0 0;
+    margin:0 -16px 0 10px;
+
+}
+
+div.yuimenu li.hassubmenu em.submenuindicator.selected {
+
+    background-position:0 -8px;
+
+}
+
+div.yuimenu li.hassubmenu em.submenuindicator.disabled {
+
+    background-position:0 -16px;
+
+}
+
+
+/* Styles for a menu item's "checked" state */
+
+div.yuimenu li.checked {
+
+    position:relative;
+
+}
+
+div.yuimenu li.checked em.checkedindicator {
+
+    height:8px;
+    width:8px;
+    text-indent:9px;
+    overflow:hidden;
+    background-image:url(./_yui/build/menu/assets/map.gif);
+    background-position:0 -48px;
+    background-repeat:no-repeat;
+    position:absolute;
+    left:6px;
+    _left:-16px; /* Underscore hack b/c this is for IE 6 only */
+    top:.5em;
+
+}
+
+div.yuimenu li.checked em.checkedindicator.selected {
+
+    background-position:0 -56px;
+
+}
+
+div.yuimenu li.checked em.checkedindicator.disabled {
+
+    background-position:0 -64px;
+
+}

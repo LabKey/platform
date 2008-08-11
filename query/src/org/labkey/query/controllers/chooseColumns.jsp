@@ -113,13 +113,13 @@
         <th>
             <table width="100%">
                 <tr>
-                    <td class="labkey-nav-tab labkey-nav-tab-space">
+                    <td class="labkey-tab-space">
                         <img src="<%=request.getContextPath()%>/_.gif" height=1 width=5>
                     </td>
-                    <td class="labkey-nav-tab-selected" style="cursor:pointer">
+                    <td class="labkey-tab-selected" style="cursor:pointer">
                         Available&nbsp;Fields
                     </td>
-                    <td class="labkey-nav-tab-space" style="text-align:right;" width=100%>
+                    <td class="labkey-tab-space" style="text-align:right;" width=100%>
 
                         <labkey:helpPopup title="Available Fields">
                             <p>Click on the available fields to select them.  Click the 'Add' button to add selected fields to the grid view.</p>
@@ -134,28 +134,28 @@
         <th colspan="2" align="left">
             <table width="100%">
                 <tr>
-                    <td class="labkey-nav-tab labkey-nav-tab-space">
+                    <td class="labkey-tab-space">
                         <img src="<%=request.getContextPath()%>/_.gif" height=1 width=5>
                     </td>
-                    <td style="cursor:pointer" class="labkey-nav-tab" id="columns.tab"
+                    <td style="cursor:pointer" class="labkey-tab" id="columns.tab"
                         onclick="designer.setActiveTab(designer.tabs.columns)">
                         Fields&nbsp;In&nbsp;Grid
                     </td>
-                    <td class="labkey-nav-tab-space" style="padding-left:0px;padding-right:0px;">
+                    <td class="labkey-tab-space" style="padding-left:0px;padding-right:0px;">
                         <img src="<%=request.getContextPath()%>/_.gif" height=1 width=5>
                     </td>
-                    <td style="cursor:pointer" id="filter.tab" class="labkey-nav-tab"
+                    <td style="cursor:pointer" id="filter.tab" class="labkey-tab"
                         onclick="designer.setActiveTab(designer.tabs.filter)">
                         Filter
                     </td>
-                    <td class="labkey-nav-tab-space" style="padding-left:0px;padding-right:0px;">
+                    <td class="labkey-tab-space" style="padding-left:0px;padding-right:0px;">
                         <img src="<%=request.getContextPath()%>/_.gif" height=1 width=5>
                     </td>
-                    <td style="cursor:pointer" id="sort.tab" class="labkey-nav-tab"
+                    <td style="cursor:pointer" id="sort.tab" class="labkey-tab"
                         onclick="designer.setActiveTab(designer.tabs.sort)">
                         Sort
                     </td>
-                    <td class="labkey-nav-tab-space" style="text-align:right;width:100%">
+                    <td class="labkey-tab-space" style="text-align:right;width:100%">
                         <labkey:helpPopup title="Fields In Grid / Filter / Sort">
                             <p>There are three tabs for choosing which fields are to be displayed in the grid, and setting the filter and sort.</p>
                             <p>Add fields from the Available Fields</p>
@@ -167,7 +167,7 @@
         </th>
     </tr>
     <tr>
-    <td onSelectStart="return false;" onMouseDown="return false;" class="labkey-nav-tab" style="border-top:none;vertical-align:top;">
+    <td onSelectStart="return false;" onMouseDown="return false;" class="labkey-tab" style="border-top:none;vertical-align:top;">
         <div style="height:400px;width:300px;overflow:auto;" id="columnPicker">
         </div>
     </td>
@@ -181,10 +181,10 @@
         </p>
     </td>
 
-    <td id="columns.list" style="display:none;border-top:none;border-right:none;vertical-align:top;" class="labkey-nav-tab">
+    <td id="columns.list" style="display:none;border-top:none;border-right:none;vertical-align:top;" class="labkey-tab">
         <div id="columns.list.div" style="height:400px;width:500px;overflow:auto;"></div>
     </td>
-    <td valign="top" id="columns.controls" style="display:none;border-top:none;border-left:none;vertical-align:top;" class="labkey-nav-tab">
+    <td valign="top" id="columns.controls" style="display:none;border-top:none;border-left:none;vertical-align:top;" class="labkey-tab">
         <br>
 
         <p><a href="#" onclick="designer.moveUp();return false"><img src="<%=request.getContextPath()%>/query/moveup.gif"
@@ -197,10 +197,10 @@
                                                        title="Delete"></a></p>
         <p><a href="#" onclick="designer.showColumnProperties();return false;"><img src="<%=request.getContextPath()%>/query/columnProperties.gif" alt="Set Field Caption" title="Set Field Caption"></a></p>
     </td>
-    <td id="filter.list" style="display:none;border-top:none;border-right:none;vertical-align:top;" class="labkey-nav-tab">
+    <td id="filter.list" style="display:none;border-top:none;border-right:none;vertical-align:top;" class="labkey-tab">
         <div id="filter.list.div" style="height:400px;width:600px;overflow:auto;"></div>
     </td>
-    <td id="filter.controls" valign="top" style="display:none;border-top:none;border-left:none;vertical-align:top;" class="labkey-nav-tab">
+    <td id="filter.controls" valign="top" style="display:none;border-top:none;border-left:none;vertical-align:top;" class="labkey-tab">
         <br>
 
         <p><a href="#" onclick="designer.tabs.filter.moveUp();return false"><img src="<%=request.getContextPath()%>/query/moveup.gif"
@@ -213,10 +213,10 @@
         <p><a href="#" onclick="designer.tabs.filter.remove();return false"><img src="<%=request.getContextPath()%>/query/delete.gif"
                                                                    alt="Delete" title="Delete"></a></p>
     </td>
-    <td id="sort.list" style="display:none;border-top:none;border-right:none;vertical-align:top;" class="labkey-nav-tab">
+    <td id="sort.list" style="display:none;border-top:none;border-right:none;vertical-align:top;" class="labkey-tab">
         <div id="sort.list.div" style="height:400px;width:500px;overflow:auto;"></div>
     </td>
-    <td id="sort.controls" valign="top" style="display:none;border-top:none;border-left:none;vertical-align:top;" class="labkey-nav-tab">
+    <td id="sort.controls" valign="top" style="display:none;border-top:none;border-left:none;vertical-align:top;" class="labkey-tab">
         <br>
 
         <p><a href="#" onclick="designer.tabs.sort.moveUp();return false"><img src="<%=request.getContextPath()%>/query/moveup.gif"

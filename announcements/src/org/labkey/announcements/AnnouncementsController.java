@@ -1803,10 +1803,14 @@ public class AnnouncementsController extends SpringActionController
         ActionURL boardURL = getBeginURL(c);
         page.boardURL = boardURL.getURIString();
 
-        URLHelper cssURL = new URLHelper(request);
-        cssURL.setPath("/core/stylesheet.view");
-        cssURL.setRawQuery(null);
-        page.cssURL = cssURL.getURIString();
+        URLHelper staticStylesheetURL = new URLHelper(request);
+        staticStylesheetURL.setPath(request.getContextPath() + "/stylesheet.css");
+        staticStylesheetURL.setRawQuery(null);
+        page.staticStylesheetURL = staticStylesheetURL.getURIString();
+        URLHelper themeStylesheetURL = new URLHelper(request);
+        themeStylesheetURL.setPath(request.getContextPath() + "/core/themestylesheet.view");
+        themeStylesheetURL.setRawQuery(null);
+        page.themeStylesheetURL = themeStylesheetURL.getURIString();
 
         page.removeUrl = removeUrl;
         page.siteURL = ActionURL.getBaseServerURL();

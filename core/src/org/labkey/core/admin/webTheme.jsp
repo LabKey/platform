@@ -64,14 +64,14 @@ function updateNavigationColor ()
     var cssName=cssRules[i].selectorText.toLowerCase();
     if ((cssName.indexOf('.labkey-nav td')!=-1)
       || (cssName.indexOf('.labkey-nav th')!=-1)
-      || (cssName.indexOf('.labkey-nav-frame')!=-1)
+      || (cssName.indexOf('.labkey-frame')!=-1)
       || (cssName.indexOf('.labkey-completion-highlight')!=-1)
       || (cssName.indexOf('labkey-nav-header')!=-1)
       //|| (cssName.indexOf('header')!=-1 && cssName!=".navpageheader")
       || (cssName.indexOf('tr.labkey-wp-header')!=-1)
       ) {
       cssRules[i].style.backgroundColor="#"+color;
-    } else if (cssName.indexOf('.labkey-nav-tab-inactive')!=-1) {
+    } else if (cssName.indexOf('.labkey-tab-inactive')!=-1) {
       cssRules[i].style.backgroundColor="#"+color;
       cssRules[i].style.borderColor="#"+color; // TODO: check
     }
@@ -108,9 +108,9 @@ function updateHeaderLineColor ()
     var cssName=cssRules[i].selectorText.toLowerCase();
     if (cssName.indexOf('labkey-title-area-line')!=-1) {
       cssRules[i].style.backgroundColor="#"+color;
-    } else if (cssName.indexOf('.labkey-nav-tab')!=-1 && cssName!='.labkey-nav-tab-selected') {
+    } else if (cssName.indexOf('.labkey-tab')!=-1 && cssName!='.labkey-tab-selected') {
       cssRules[i].style.borderBottom="1px solid #"+color;
-    } else if (cssName.indexOf('.labkey-nav-tab-inactive')!=-1) {
+    } else if (cssName.indexOf('.labkey-tab-inactive')!=-1) {
       cssRules[i].style.borderBottom="1px solid #"+color;
     }
   }

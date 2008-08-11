@@ -92,11 +92,11 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermission(ACL.PERM_NONE)
-    public class StylesheetAction extends BaseStylesheetAction
+    public class ThemestylesheetAction extends BaseStylesheetAction
     {
         String getCssPageName()
         {
-            return "/org/labkey/core/stylesheet.jsp";
+            return "/org/labkey/core/themeStylesheet.jsp";
         }
     }
 

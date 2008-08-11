@@ -24,15 +24,13 @@ function dropApplet_Update()
 
 function dropApplet_DragEnter()
 {
-  _id("appletDiv").style.border = "solid 2px black";
+  _id("appletDiv").className = "labkey-nav-bordered labkey-bordered-heavy";
   _id("appletDiv").style.margin = "1px";
 }
 
 function dropApplet_DragExit()
 {
-    if (!LABKEY.borderColor)
-        LABKEY.borderColor = "#336699";
-    _id("appletDiv").style.border = "solid 1px " + LABKEY.borderColor;
+    _id("appletDiv").className = "labkey-nav-bordered";
     _id("appletDiv").style.margin = "2px";
 }
 
@@ -107,7 +105,7 @@ function _updateDropUI()
         if (!transfersTableInit)
         {
             ftpTransfers.innerHTML =
-                "<table>" +
+                "<table class='labkey-data-region'>" +
                 "<tr><th>&nbsp;</th><th width=150>file<br><img src=\"" + LABKEY.contextPath + "/_.gif\" width=150 height=1></th><th>modified<br><img src=\"" + LABKEY.contextPath + "/_.gif\" width=150 height=1></th><th width=100>size<br><img src=\"" + LABKEY.contextPath + "/_.gif\" width=100 height=1></th><th style=\"width:200px;\">status<br><img src=\"" + LABKEY.contextPath + "/_.gif\" width=210 height=1></th></tr>" +
                 "</table>";
             transfersTableInit = true;
@@ -403,9 +401,9 @@ function toggleVisible(show)
 
 function toggleSelected(select)
 {
-    if (_id(select)) _id(select).className="myTabSelected";
+    if (_id(select)) _id(select).className="labkey-tab-selected";
     for (var i=1 ; i<arguments.length ; i++)
-        if (_id(arguments[i])) _id(arguments[i]).className="myTab";
+        if (_id(arguments[i])) _id(arguments[i]).className="labkey-tab labkey-tab-shaded";
 }
 
 function showConsole()

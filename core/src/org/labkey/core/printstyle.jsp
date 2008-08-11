@@ -24,15 +24,13 @@
 
 .no-print,
 #leftmenupanel, #headerpanel, #navpanel,
-.dataregion_header,
-.dataregion_footer,
-.button-bar
+.labkey-button-bar
 {
     display: none;
 }
 
-.grid .details,
-.grid .selectors
+.labkey-data-region .labkey-details,
+.labkey-data-region .labkey-selectors
 {
     visibility: collapse;
     display: none;

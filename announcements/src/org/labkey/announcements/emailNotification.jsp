@@ -19,7 +19,8 @@
 <%@ page extends="org.labkey.announcements.EmailNotificationPage" %>
 <html>
 <head>
-<link href="<%=cssURL%>" rel="stylesheet" type="text/css">
+<link href="<%=staticStylesheetURL%>" rel="stylesheet" type="text/css">
+<link href="<%=themeStylesheetURL%>" rel="stylesheet" type="text/css">
 </head>
 
 <body>
