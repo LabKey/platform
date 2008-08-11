@@ -64,7 +64,19 @@ function setElementDisplayByCheckbox(checkbox, element)
         <tr>
             <th align="right">Reply-to Address:</th>
             <td>
-                <input type="text" size="40" name="replyTo" value="<%= h(bean.getReplyTo()) %>">
+                Replies to specimen request notications should go to:<br>
+                <%
+                    boolean replyToCurrentUser = SampleManager.RequestNotificationSettings.REPLY_TO_CURRENT_USER_VALUE.equals(bean.getReplyTo());
+                %>
+                <input type='radio' value='true' id='replyToCurrentUser' name='replyToCurrentUser' value='true' <%= replyToCurrentUser ? "CHECKED" : "" %>
+                        onclick="document.getElementById('replyTo').value = '<%= h(SampleManager.RequestNotificationSettings.REPLY_TO_CURRENT_USER_VALUE) %>'; setElementDisplayByCheckbox('replyToFixedUser', 'replyTo');">
+                The administrator who generated each notification<br>
+                <input type='radio' value='true' id='replyToFixedUser'  name='replyToCurrentUser'  value='false' <%= !replyToCurrentUser ? "CHECKED" : "" %>
+                        onclick="setElementDisplayByCheckbox('replyToFixedUser', 'replyTo'); document.getElementById('replyTo').value = '<%= !replyToCurrentUser ? h(bean.getReplyTo()) : "" %>';">
+                A fixed email address<br><br>
+                <input type="text" size="40" name="replyTo"
+                       id='replyTo' value="<%= h(bean.getReplyTo()) %>" 
+                       style="display:<%= replyToCurrentUser ? "none" : "" %>">
             </td>
         </tr>
         <tr>
@@ -83,7 +95,7 @@ function setElementDisplayByCheckbox(checkbox, element)
             <td colspan="2" class="labkey-form-label">Notification can be sent whenever a new specimen request is submitted.</td>
         </tr>
         <tr>
-            <td><input type='checkbox' value='true' id='newRequestNotifyCheckbox'
+            <td colspan="2"><input type='checkbox' value='true' id='newRequestNotifyCheckbox'
                         name='newRequestNotifyCheckbox'
                         onclick="setElementDisplayByCheckbox('newRequestNotifyCheckbox', 'newRequestNotifyArea');"
                         <%= newRequestNotifyChecked ? " checked" : ""%>>Send Notification of New Requests</td>
@@ -103,7 +115,7 @@ function setElementDisplayByCheckbox(checkbox, element)
                 Please keep security issues in mind when adding users to this list.</td>
         </tr>
         <tr>
-            <td><input type='checkbox' value='true' id='ccCheckbox'
+            <td colspan="2"><input type='checkbox' value='true' id='ccCheckbox'
                         name='ccCheckbox'
                         onclick="setElementDisplayByCheckbox('ccCheckbox', 'ccArea');"
                         <%= ccChecked ? " checked" : ""%>>Always Send CC</td>

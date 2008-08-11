@@ -287,7 +287,7 @@ public class SpecimenUtils
 
         SampleManager.RequestNotificationSettings settings =
                 SampleManager.getInstance().getRequestNotificationSettings(getContainer());
-        MailHelper.ViewMessage message = MailHelper.createMessage(settings.getReplyTo(), null);
+        MailHelper.ViewMessage message = MailHelper.createMessage(settings.getReplyToEmailAddress(getUser()), null);
         String subject = settings.getSubjectSuffix().replaceAll("%requestId%", "" + sampleRequest.getRowId());
         message.setSubject(getStudy().getLabel() + ": " + subject);
         JspView<NotificationBean> notifyView = new JspView<NotificationBean>("/org/labkey/study/view/samples/notification.jsp",
@@ -399,6 +399,40 @@ public class SpecimenUtils
         }
     }
 
+    private <T> Set<T> intersect(Set<T> left, Set<T> right)
+    {
+        Set<T> intersection = new HashSet<T>();
+        for (T item : left)
+        {
+            if (right.contains(item))
+                intersection.add(item);
+        }
+        return intersection;
+    }
+
+    public Collection<Integer> getPreferredProvidingLocations(Collection<List<Specimen>> specimensBySample) throws SQLException
+    {
+        Set<Integer> locationIntersection = null;
+        for (List<Specimen> vials : specimensBySample)
+        {
+            Set<Integer> currentLocations = new HashSet<Integer>();
+            for (Specimen vial : vials)
+            {
+                if (vial.getCurrentLocation() != null)
+                    currentLocations.add(vial.getCurrentLocation());
+            }
+            if (locationIntersection == null)
+                locationIntersection = currentLocations;
+            else
+            {
+                locationIntersection = intersect(locationIntersection, currentLocations);
+                if (locationIntersection.isEmpty())
+                    return locationIntersection;
+            }
+        }
+        return locationIntersection;
+    }
+
     public void ensureSpecimenRequestsConfigured() throws ServletException, SQLException
     {
         SampleRequestStatus[] statuses = SampleManager.getInstance().getRequestStatuses(getContainer(), getUser());
@@ -406,7 +440,7 @@ public class SpecimenUtils
             HttpView.throwRedirect(new ActionURL(SpringSpecimenController.SpecimenRequestConfigRequired.class, getContainer()));
     }
 
-    public Specimen[] getSpecimensFromIds(int[] requestedSampleIds) throws SQLException, ServletException
+    public Specimen[] getSpecimensFromIds(int[] requestedSampleIds) throws SQLException
     {
         Specimen[] requestedSpecimens = null;
         if (requestedSampleIds != null)
@@ -424,27 +458,154 @@ public class SpecimenUtils
 
     }
 
-    public Specimen[] getSpecimensFromIds(Collection<String> ids) throws SQLException, ServletException
+    public Specimen[] getSpecimensFromIds(Collection<String> ids) throws SQLException
     {
         return getSpecimensFromIds(BaseStudyController.toIntArray(ids));
     }
 
-    public Specimen[] getSpecimensFromSamples(Collection<String> ids) throws SQLException, ServletException
+    public List<SampleManager.SpecimenSummaryKey> getKeysForSpecimenFormIds(Collection<String> ids)
     {
         List<SampleManager.SpecimenSummaryKey> keys = new ArrayList<SampleManager.SpecimenSummaryKey>();
         for (String s : ids)
             keys.add(new SampleManager.SpecimenSummaryKey(s));
-
-        Map<SampleManager.SpecimenSummaryKey,List<Specimen>> map = SampleManager.getInstance().getVialsForSamples(getContainer(), keys.toArray(new SampleManager.SpecimenSummaryKey[ids.size()]));
-        int[] rowIds = new int[map.size()];
-        int i = 0;
-
-        for (List<Specimen> specimenList : map.values())
-            rowIds[i++] = specimenList.get(0).getRowId();
-        
-        return getSpecimensFromIds(rowIds);
+        return keys;
     }
 
+    public static class AmbiguousLocationException extends Exception
+    {
+        private Container _container;
+        private Collection<Integer> _possibleLocationIds;
+        private Site[] _possibleLocations = null;
+
+        public AmbiguousLocationException(Container container, Collection<Integer> possibleLocationIds)
+        {
+            _container = container;
+            _possibleLocationIds = possibleLocationIds;
+        }
+
+        public Collection<Integer> getPossibleLocationIds()
+        {
+            return _possibleLocationIds;
+        }
+
+        public Site[] getPossibleLocations()
+        {
+            if (_possibleLocations == null)
+            {
+                _possibleLocations = new Site[_possibleLocationIds.size()];
+                int idx = 0;
+                try
+                {
+                    for (Integer id : _possibleLocationIds)
+                        _possibleLocations[idx++] = StudyManager.getInstance().getSite(_container, id.intValue());
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeSQLException(e);
+                }
+            }
+            return _possibleLocations;
+        }
+    }
+
+    public static class RequestedSpecimens
+    {
+        private Collection<Integer> _providingLocationIds;
+        private Specimen[] _specimens;
+        private Site[] _providingLocations;
+
+        public RequestedSpecimens(Specimen[] specimens, Collection<Integer> providingLocationIds)
+        {
+            _specimens = specimens;
+            _providingLocationIds = providingLocationIds;
+        }
+
+        public RequestedSpecimens(Specimen[] specimens)
+        {
+            _specimens = specimens;
+            _providingLocationIds = new HashSet<Integer>();
+            if (specimens != null)
+            {
+                for (Specimen vial : specimens)
+                    _providingLocationIds.add(vial.getCurrentLocation());
+            }
+        }
+
+        public Site[] getProvidingLocations()
+        {
+            if (_providingLocations == null)
+            {
+                if (_specimens == null || _specimens.length == 0)
+                    _providingLocations = new Site[0];
+                else
+                {
+                    Container container = _specimens[0].getContainer();
+                    _providingLocations = new Site[_providingLocationIds.size()];
+                    int siteIndex = 0;
+                    try
+                    {
+                        for (Integer siteId : _providingLocationIds)
+                            _providingLocations[siteIndex++] = StudyManager.getInstance().getSite(container, siteId.intValue());
+                    }
+                    catch (SQLException e)
+                    {
+                        throw new RuntimeSQLException(e);
+                    }
+                }
+            }
+            return _providingLocations;
+        }
+
+        public Specimen[] getSpecimens()
+        {
+            return _specimens;
+        }
+    }
+
+    public RequestedSpecimens getRequestableByVialFormValue(Set<String> formValues) throws SQLException
+    {
+        Specimen[] requestedSamples = getSpecimensFromIds(formValues);
+        return new RequestedSpecimens(requestedSamples);
+    }
+
+    public RequestedSpecimens getRequestableBySampleFormValue(Set<String> formValues, Integer preferredLocation) throws SQLException, AmbiguousLocationException
+    {
+        List<SampleManager.SpecimenSummaryKey> keys = getKeysForSpecimenFormIds(formValues);
+        Map<SampleManager.SpecimenSummaryKey,List<Specimen>> samplesForKeys = SampleManager.getInstance().getVialsForSampleKeys(getContainer(), keys);
+        if (preferredLocation == null)
+        {
+            Collection<Integer> preferredLocations = getPreferredProvidingLocations(samplesForKeys.values());
+            if (preferredLocations.size() == 1)
+                preferredLocation = preferredLocations.iterator().next();
+            else if (preferredLocations.size() > 1)
+                throw new AmbiguousLocationException(getContainer(), preferredLocations);
+        }
+        Specimen[] requestedSamples = new Specimen[keys.size()];
+
+        int i = 0;
+        Set<Integer> providingLocations = new HashSet<Integer>();
+        for (List<Specimen> vials : samplesForKeys.values())
+        {
+            Specimen selectedVial = null;
+            if (preferredLocation == null)
+                selectedVial = vials.get(0);
+            else
+            {
+                for (Iterator<Specimen> it = vials.iterator(); it.hasNext() && selectedVial == null;)
+                {
+                    Specimen vial = it.next();
+                    if (vial.getCurrentLocation() != null && vial.getCurrentLocation().intValue() == preferredLocation.intValue())
+                        selectedVial = vial;
+                }
+            }
+            if (selectedVial == null)
+                throw new IllegalStateException("Vial was not available from specified location " + preferredLocation);
+            providingLocations.add(selectedVial.getCurrentLocation());
+            requestedSamples[i++] = selectedVial;
+        }
+        return new RequestedSpecimens(requestedSamples, providingLocations);
+    }
+    
     public GridView getRequestEventGridView(HttpServletRequest request, SimpleFilter filter)
     {
         DataRegion rgn = new DataRegion();
@@ -586,5 +747,5 @@ public class SpecimenUtils
             label = "rowId" + site.getRowId();
         return label.replaceAll("\\W+", "_");
     }
-    
+
 }

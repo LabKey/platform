@@ -613,6 +613,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
     {
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
+        rgn.setMaxRows(0);
         RenderContext renderContext = view.getRenderContext();
         ResultSet rs = null;
         try

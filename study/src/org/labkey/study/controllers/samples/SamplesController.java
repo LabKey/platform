@@ -775,7 +775,7 @@ public class SamplesController extends BaseController
                 errors = new ActionErrors();
                 errors.add("main", new ActionMessage("Error", "Reply-to cannot be empty."));
             }
-            else
+            else if (!SampleManager.RequestNotificationSettings.REPLY_TO_CURRENT_USER_VALUE.equals(replyTo))
             {
                 try
                 {

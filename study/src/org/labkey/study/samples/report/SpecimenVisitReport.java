@@ -78,7 +78,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
 
    protected abstract String getCellHtml(Visit visit, CELLDATA summary);
 
-    protected abstract String getCellExcelText(Visit visit, CELLDATA summary);
+    protected abstract String[] getCellExcelText(Visit visit, CELLDATA summary);
 
     public boolean isNumericData()
     {
@@ -160,10 +160,22 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
             return SpecimenVisitReport.this.getCellHtml(visit, summary);
         }
 
-        public String getCellText(Visit visit)
+        public String[] getCellExcelText(Visit visit)
         {
             CELLDATA summary = _visitData.get(visit.getSequenceNumMin());
             return SpecimenVisitReport.this.getCellExcelText(visit, summary);
+        }
+
+        public int getMaxExcelRowHeight(Visit[] visits)
+        {
+            int max = 1;
+            for (Visit visit : visits)
+            {
+                int currentHeight = getCellExcelText(visit).length;
+                if (currentHeight > max)
+                    max = currentHeight;
+            }
+            return max;
         }
 
         public String[] getTitleHierarchy()
@@ -193,5 +205,42 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
             }
         }
         return filter;
+    }
+
+    protected boolean hasContent(String[] strArray)
+    {
+        if (strArray == null || strArray.length == 0)
+            return false;
+        for (String str : strArray)
+        {
+            if (str != null && str.length() > 0)
+                return true;
+        }
+        return false;
+    }
+
+    protected String buildCellHtml(Visit visit, CELLDATA summary, String linkHtml)
+    {
+        String[] summaryString = getCellExcelText(visit, summary);
+        StringBuilder cellHtml = new StringBuilder();
+        if (hasContent(summaryString))
+        {
+            if (linkHtml != null)
+                cellHtml.append("<a href=\"").append(linkHtml).append("\">");
+            boolean first = true;
+            for (String str : summaryString)
+            {
+                if (str != null && str.length() > 0)
+                {
+                    if (!first)
+                        cellHtml.append("<br>");
+                    first = false;
+                    cellHtml.append(str);
+                }
+            }
+            if (linkHtml != null)
+                cellHtml.append(summaryString).append("</a>");
+        }
+        return cellHtml.toString();
     }
 }

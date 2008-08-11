@@ -624,6 +624,7 @@ public class SampleManager
 
     public static class RequestNotificationSettings
     {
+        public static final String REPLY_TO_CURRENT_USER_VALUE = "[current user]";
         private static final String KEY_REPLYTO = "ReplyTo";
         private static final String KEY_CC = "CC";
         private static final String KEY_SUBJECTSUFFIX = "SubjectSuffix";
@@ -646,6 +647,14 @@ public class SampleManager
             _cc = (String) map.get(KEY_CC);
             _subjectSuffix = (String) map.get(KEY_SUBJECTSUFFIX);
             _newRequestNotify = (String) map.get(KEY_NEWREQUESTNOTIFY);
+        }
+
+        public String getReplyToEmailAddress(User currentAdmin)
+        {
+            if (SampleManager.RequestNotificationSettings.REPLY_TO_CURRENT_USER_VALUE.equals(getReplyTo()))
+                return currentAdmin.getEmail();
+            else
+                return getReplyTo();
         }
 
         public String getReplyTo()
@@ -754,6 +763,11 @@ public class SampleManager
                 addresses.add(tester.getAddress());
             }
             return addresses.toArray(new Address[addresses.size()]);
+        }
+
+        public boolean isReplyToCurrentUser()
+        {
+            return SampleManager.RequestNotificationSettings.REPLY_TO_CURRENT_USER_VALUE.equals(getReplyTo());
         }
     }
 
@@ -1447,10 +1461,10 @@ public class SampleManager
         return Table.select(StudySchema.getInstance().getTableInfoSpecimenSummary(), Table.ALL_COLUMNS, filter, null, Specimen.class);
     }
 
-    public Map<SpecimenSummaryKey,List<Specimen>> getVialsForSamples(Container container, SpecimenSummaryKey[] specimenNumbers) throws SQLException
+    public Map<SpecimenSummaryKey,List<Specimen>> getVialsForSampleKeys(Container container, List<SampleManager.SpecimenSummaryKey> keys) throws SQLException
     {
         SimpleFilter filter = new SimpleFilter("Container", container.getId());
-        filter.addClause(getSpecimenFilter(specimenNumbers));
+        filter.addClause(getSpecimenFilter(keys));
         filter.addCondition("Available", true);
         SQLFragment sql = new SQLFragment("SELECT * FROM " + StudySchema.getInstance().getTableInfoSpecimenDetail().getAliasName() + " ");
         sql.append(filter.getSQLFragment(StudySchema.getInstance().getSqlDialect()));
@@ -1556,11 +1570,11 @@ public class SampleManager
         }
     }
 
-    private SimpleFilter.SQLClause getSpecimenFilter(SpecimenSummaryKey[] specimens)
+    private SimpleFilter.SQLClause getSpecimenFilter(List<SampleManager.SpecimenSummaryKey> specimens)
     {
         String sep = "";
         StringBuilder filterFragment = new StringBuilder();
-        List<Object> allParams = new ArrayList<Object>(specimens.length * 3);
+        List<Object> allParams = new ArrayList<Object>(specimens.size() * 3);
         for (SpecimenSummaryKey ssi : specimens)
         {
             filterFragment.append(sep);

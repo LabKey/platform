@@ -53,8 +53,6 @@ import org.labkey.api.view.*;
 import org.labkey.api.data.*;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QueryAction;
-import org.labkey.api.query.QueryView;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
@@ -482,7 +480,12 @@ public class SpringSpecimenController extends BaseStudyController
             HttpView.throwUnauthorized();
     }
 
-    public static class AddToSampleRequestForm extends IdForm
+    public static interface HiddenFormInputGenerator
+    {
+        String getHiddenFormInputs();
+    }
+
+    public static class AddToSampleRequestForm extends IdForm implements HiddenFormInputGenerator
     {
         public enum PARAMS
         {
@@ -499,6 +502,16 @@ public class SpringSpecimenController extends BaseStudyController
         public void setSpecimenIds(String specimenIds)
         {
             _specimenIds = specimenIds;
+        }
+
+        public String getHiddenFormInputs()
+        {
+            StringBuilder builder = new StringBuilder();
+            if (getId() != 0)
+                builder.append("<input type=\"hidden\" name=\"id\" value=\"").append(getId()).append("\">\n");
+            if (_specimenIds != null)
+                builder.append("<input type=\"hidden\" name=\"specimenIds\" value=\"").append(PageFlowUtil.filter(_specimenIds)).append("\">");
+            return builder.toString();
         }
     }
 
@@ -650,6 +663,7 @@ public class SpringSpecimenController extends BaseStudyController
         private List<ActorNotificationRecipientSet> _possibleNotifications;
         protected List<String> _missingSpecimens = null;
         private Boolean _submissionResult;
+        private Site[] _providingSites;
 
         public ManageRequestBean(ViewContext context, SampleRequest sampleRequest, boolean forExport, Boolean submissionResult) throws SQLException, ServletException
         {
@@ -750,6 +764,21 @@ public class SpringSpecimenController extends BaseStudyController
         public Boolean isSuccessfulSubmission()
         {
             return _submissionResult != null && _submissionResult.booleanValue();
+        }
+
+        public Site[] getProvidingSites() throws SQLException
+        {
+            if (_providingSites == null)
+            {
+                Set<Integer> siteSet = new HashSet<Integer>();
+                for (Specimen specimen : _sampleRequest.getSpecimens())
+                    siteSet.add(specimen.getCurrentLocation());
+                _providingSites = new Site[siteSet.size()];
+                int i = 0;
+                for (Integer siteId : siteSet)
+                    _providingSites[i++] = StudyManager.getInstance().getSite(getContainer(), siteId);
+            }
+            return _providingSites;
         }
     }
 
@@ -1031,13 +1060,54 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    public static class CreateSampleRequestForm
+    public static class CreateSampleRequestForm extends ViewForm implements HiddenFormInputGenerator
     {
         private String[] _inputs;
         private int _destinationSite;
         private int[] _sampleIds;
         private boolean[] _required;
         private boolean _fromGroupedView;
+        private Integer _preferredLocation;
+
+        public String getHiddenFormInputs()
+        {
+            StringBuilder builder = new StringBuilder();
+            if (_inputs != null)
+            {
+                for (String input : _inputs)
+                    builder.append("<input type=\"hidden\" name=\"inputs\" value=\"").append(PageFlowUtil.filter(input)).append("\">\n");
+            }
+            if (_destinationSite != 0)
+                builder.append("<input type=\"hidden\" name=\"destinationSite\" value=\"").append(_destinationSite).append("\">\n");
+            if (_sampleIds != null)
+            {
+                for (int sampleId : _sampleIds)
+                    builder.append("<input type=\"hidden\" name=\"sampleIds\" value=\"").append(sampleId).append("\">\n");
+            }
+            else
+            {
+                String dataRegionSelectionKey = getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY);
+                if (dataRegionSelectionKey != null)
+                {
+                    builder.append("<input type=\"hidden\" name=\"").append(DataRegionSelection.DATA_REGION_SELECTION_KEY);
+                    builder.append("\" value=\"").append(dataRegionSelectionKey).append("\">\n");
+                    Set<String> specimenFormValues = DataRegionSelection.getSelected(getViewContext(), false);
+                    for (String formValue : specimenFormValues)
+                    {
+                        builder.append("<input type=\"hidden\" name=\"").append(DataRegion.SELECT_CHECKBOX_NAME).append("\" value=\"");
+                        builder.append(PageFlowUtil.filter(formValue)).append("\">\n");
+                    }
+                }
+            }
+
+            if (_required != null)
+            {
+                for (boolean required : _required)
+                    builder.append("<input type=\"hidden\" name=\"required\" value=\"").append(required).append("\">\n");
+            }
+            builder.append("<input type=\"hidden\" name=\"fromGroupedView\" value=\"").append(_fromGroupedView).append("\">\n");
+            return builder.toString();
+        }
 
         public int[] getSampleIds()
         {
@@ -1088,6 +1158,16 @@ public class SpringSpecimenController extends BaseStudyController
         {
             this._fromGroupedView = _fromGroupedView;
         }
+
+        public Integer getPreferredLocation()
+        {
+            return _preferredLocation;
+        }
+
+        public void setPreferredLocation(Integer preferredLocation)
+        {
+            _preferredLocation = preferredLocation;
+        }
     }
 
     public static class NewRequestBean extends SamplesViewBean
@@ -1097,11 +1177,13 @@ public class SpringSpecimenController extends BaseStudyController
         private String[] _inputValues;
         private int _selectedSite;
         private BindException _errors;
+        private Site[] _providingLocations;
 
-        public NewRequestBean(ViewContext context, Specimen[] specimens, int selectedSite, String[] inputValues, BindException errors) throws SQLException
+        public NewRequestBean(ViewContext context, SpecimenUtils.RequestedSpecimens requestedSpecimens, int selectedSite, String[] inputValues, BindException errors) throws SQLException
         {
-            super(context, specimens, false, false, false, false);
+            super(context, requestedSpecimens.getSpecimens(), false, false, false, false);
             _errors = errors;
+            _providingLocations = requestedSpecimens.getProvidingLocations();
             _inputs = SampleManager.getInstance().getNewSpecimenRequestInputs(context.getContainer());
             _selectedSite = selectedSite;
             _inputValues = inputValues;
@@ -1130,6 +1212,11 @@ public class SpringSpecimenController extends BaseStudyController
         public BindException getErrors()
         {
             return _errors;
+        }
+
+        public Site[] getProvidingLocations()
+        {
+            return _providingLocations;
         }
     }
 
@@ -1199,7 +1286,7 @@ public class SpringSpecimenController extends BaseStudyController
             _sampleRequest.setEntityId(GUID.makeGUID());
             if (form.getDestinationSite() > 0)
                 _sampleRequest.setDestinationSiteId(form.getDestinationSite());
-                _sampleRequest.setStatusId(SampleManager.getInstance().getInitialRequestStatus(getContainer(), getUser(), false).getRowId());
+            _sampleRequest.setStatusId(SampleManager.getInstance().getInitialRequestStatus(getContainer(), getUser(), false).getRowId());
             _sampleRequest = SampleManager.getInstance().createRequest(getUser(), _sampleRequest, true);
             List<Specimen> samples;
             if (sampleIds != null && sampleIds.length > 0)
@@ -1230,23 +1317,72 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
+    public static class SelectSpecimenProviderBean
+    {
+        private HiddenFormInputGenerator _sourceForm;
+        private Site[] _possibleSites;
+        private ActionURL _formTarget;
+
+        public SelectSpecimenProviderBean(HiddenFormInputGenerator sourceForm, Site[] possibleSites, ActionURL formTarget)
+        {
+            _sourceForm = sourceForm;
+            _possibleSites = possibleSites;
+            _formTarget = formTarget;
+        }
+
+        public Site[] getPossibleSites()
+        {
+            return _possibleSites;
+        }
+
+        public ActionURL getFormTarget()
+        {
+            return _formTarget;
+        }
+
+        public HiddenFormInputGenerator getSourceForm()
+        {
+            return _sourceForm;
+        }
+    }
+
     private ModelAndView getCreateSampleRequestView(CreateSampleRequestForm form, BindException errors) throws SQLException, ServletException
     {
         getUtils().ensureSpecimenRequestsConfigured();
         
         Specimen[] requestedSamples = getUtils().getSpecimensFromIds(form.getSampleIds());
 
+        SpecimenUtils.RequestedSpecimens specimens = null;
         if ((requestedSamples == null || requestedSamples.length == 0) &&
                 "post".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
         {
-            if (form.isFromGroupedView())
-                requestedSamples = getUtils().getSpecimensFromSamples(DataRegionSelection.getSelected(getViewContext(), true));
-            else
-                requestedSamples = getUtils().getSpecimensFromIds(DataRegionSelection.getSelected(getViewContext(), true));
+            if (getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY) != null)
+            {
+                if (form.isFromGroupedView())
+                {
+                    Set<String> specimenFormValues = DataRegionSelection.getSelected(getViewContext(), true);
+                    try
+                    {
+                        specimens = getUtils().getRequestableBySampleFormValue(specimenFormValues, form.getPreferredLocation());
+                    }
+                    catch (SpecimenUtils.AmbiguousLocationException e)
+                    {
+                        // Even though this method (getCreateSampleRequestView) is used from multiple places, only HandleCreateSampleRequestAction
+                        // receives a post; therefore, it's safe to say that the selectSpecimenProvider.jsp form should always post to
+                        // HandleCreateSampleRequestAction.
+                        return new JspView<SelectSpecimenProviderBean>("/org/labkey/study/view/samples/selectSpecimenProvider.jsp",
+                                new SelectSpecimenProviderBean(form, e.getPossibleLocations(), new ActionURL(ShowCreateSampleRequestAction.class, getContainer())));
+                    }
+                }
+                else
+                    specimens = getUtils().getRequestableByVialFormValue(DataRegionSelection.getSelected(getViewContext(), true));
+            }
         }
+        else
+            specimens = new SpecimenUtils.RequestedSpecimens(requestedSamples);
 
         return new JspView<NewRequestBean>("/org/labkey/study/view/samples/requestSamples.jsp",
-                new NewRequestBean(getViewContext(), requestedSamples, form.getDestinationSite(), form.getInputs(), errors));
+                new NewRequestBean(getViewContext(), specimens, form.getDestinationSite(), form.getInputs(), errors));
     }
 
     @RequiresPermission(ACL.PERM_INSERT)
@@ -1266,16 +1402,18 @@ public class SpringSpecimenController extends BaseStudyController
     public static class AddToExistingRequestBean extends SamplesViewBean
     {
         private SpecimenRequestQueryView _requestsGrid;
+        private Site[] _providingLocations;
 
-        public AddToExistingRequestBean(ViewContext context, Specimen[] specimens) throws SQLException, ServletException
+        public AddToExistingRequestBean(ViewContext context, SpecimenUtils.RequestedSpecimens requestedSpecimens) throws SQLException, ServletException
         {
-            super(context, specimens, false, false, false, true);
+            super(context, requestedSpecimens.getSpecimens(), false, false, false, true);
+            _providingLocations = requestedSpecimens.getProvidingLocations();
             StringBuilder params = new StringBuilder();
-            params.append(IdForm.PARAMS.id.name() + "=${requestId}&" + AddToSampleRequestForm.PARAMS.specimenIds + "=");
+            params.append(IdForm.PARAMS.id.name()).append("=${requestId}&" + AddToSampleRequestForm.PARAMS.specimenIds + "=");
             String separator = "";
-            if (specimens != null)
+            if (requestedSpecimens.getSpecimens() != null)
             {
-                for (Specimen specimen : specimens)
+                for (Specimen specimen : requestedSpecimens.getSpecimens())
                 {
                     params.append(separator).append(specimen.getRowId());
                     separator=",";
@@ -1299,6 +1437,11 @@ public class SpringSpecimenController extends BaseStudyController
         {
             return _requestsGrid;
         }
+
+        public Site[] getProvidingLocations()
+        {
+            return _providingLocations;
+        }
     }
 
     protected void requiresAdmin() throws ServletException
@@ -1314,16 +1457,27 @@ public class SpringSpecimenController extends BaseStudyController
         {
             if (!SampleManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()))
                 requiresAdmin();
-            Specimen[] requestedSamples = null;
+            SpecimenUtils.RequestedSpecimens specimens = null;
             if (getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY) != null)
             {
                 if (form.isFromGroupedView())
-                    requestedSamples = getUtils().getSpecimensFromSamples(DataRegionSelection.getSelected(getViewContext(), true));
+                {
+                    Set<String> specimenFormValues = DataRegionSelection.getSelected(getViewContext(), true);
+                    try
+                    {
+                        specimens = getUtils().getRequestableBySampleFormValue(specimenFormValues, form.getPreferredLocation());
+                    }
+                    catch (SpecimenUtils.AmbiguousLocationException e)
+                    {
+                        return new JspView<SelectSpecimenProviderBean>("/org/labkey/study/view/samples/selectSpecimenProvider.jsp",
+                                new SelectSpecimenProviderBean(form, e.getPossibleLocations(), new ActionURL(ShowAddToSampleRequestAction.class, getContainer())));
+                    }
+                }
                 else
-                    requestedSamples = getUtils().getSpecimensFromIds(DataRegionSelection.getSelected(getViewContext(), true));
+                    specimens = getUtils().getRequestableByVialFormValue(DataRegionSelection.getSelected(getViewContext(), true));
             }
             return new JspView<AddToExistingRequestBean>("/org/labkey/study/view/samples/addSamplesToRequest.jsp",
-                    new AddToExistingRequestBean(getViewContext(), requestedSamples));
+                    new AddToExistingRequestBean(getViewContext(), specimens));
         }
 
         public NavTree appendNavTrail(NavTree root)

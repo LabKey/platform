@@ -148,12 +148,17 @@
 %>
     <table class="labkey-request-warnings">
 <%
-    if (bean.hasMissingSpecimens())
+    boolean multipleSites = bean.getProvidingSites().length > 1;
+    if (bean.hasMissingSpecimens() || multipleSites)
     {
 %>
         <tr class="labkey-wp-header">
             <th align="left">Request  Warnings</th>
         </tr>
+<%
+        if (bean.hasMissingSpecimens())
+        {
+%>
         <tr>
             <td class="labkey-form-label">
                 <span class="labkey-error"><b>WARNING: Missing Specimens</b></span><br><br>
@@ -176,6 +181,25 @@
             </td>
         </tr>
 <%
+        }
+        if (multipleSites)
+        {
+%>
+        <tr>
+            <td class="labkey-form-label">
+                <span class="labkey-error"><b>WARNING: Multiple providing locations.</b></span><br>
+                Requests containing vials from multiple providing locations may require increased processing time.
+                Providing locations for this request are:<br>
+                <%
+                    for (Site site : bean.getProvidingSites())
+                    {
+                        %><b><%= h(site.getLabel()) %></b><br><%
+                    }
+                %>
+            </td>
+        </tr>
+<%
+        }
     }
     if (bean.isRequestManager() && (bean.isFinalState() || bean.isRequirementsComplete()))
     {

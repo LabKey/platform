@@ -72,10 +72,10 @@ public class RequestParticipantReport extends SpecimenVisitReport<SampleManager.
         }
     }
 
-    protected String getCellExcelText(Visit visit, SampleManager.RequestSummaryByVisitType summary)
+    protected String[] getCellExcelText(Visit visit, SampleManager.RequestSummaryByVisitType summary)
     {
         if (summary == null || summary.getVialCount() == null)
-            return "";
+            return new String[] {};
         StringBuilder summaryString = new StringBuilder();
         if (_parameters.isViewVialCount())
             summaryString.append(summary.getVialCount());
@@ -85,7 +85,7 @@ public class RequestParticipantReport extends SpecimenVisitReport<SampleManager.
                 summaryString.append("/");
             summaryString.append(summary.getTotalVolume());
         }
-        return summaryString.toString();
+        return new String[] { summaryString.toString() };
     }
 
     protected String getCellHtml(Visit visit, SampleManager.RequestSummaryByVisitType summary)
@@ -102,18 +102,10 @@ public class RequestParticipantReport extends SpecimenVisitReport<SampleManager.
             link = updateURLFilterParameter(link, "SpecimenDetail.DerivativeType/Description", summary.getDerivative());
         if (level == SampleManager.SpecimenTypeLevel.Additive)
             link = updateURLFilterParameter(link, "SpecimenDetail.AdditiveType/Description", summary.getAdditive());
-
         String linkHtml = link.getLocalURIString();
         if (_filter != null)
             linkHtml += "&" + getFilterQueryString(visit, summary);
-        String summaryString = getCellExcelText(visit, summary);
-        StringBuilder cellHtml = new StringBuilder();
-        if (summaryString.length() > 0)
-        {
-            cellHtml.append("<a href=\"").append(linkHtml).append("\">");
-            cellHtml.append(summaryString).append("</a>");
-        }
-        return cellHtml.toString();
+        return buildCellHtml(visit, summary, linkHtml);
     }
 
     protected String getFilterQueryString(Visit visit, SampleManager.RequestSummaryByVisitType summary)

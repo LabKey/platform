@@ -2017,6 +2017,7 @@ study/src/org/labkey/study/view/samples/requestSamples.jsp -text
 study/src/org/labkey/study/view/samples/sample.jsp -text
 study/src/org/labkey/study/view/samples/samplesHeader.jsp -text
 study/src/org/labkey/study/view/samples/search.jsp -text
+study/src/org/labkey/study/view/samples/selectSpecimenProvider.jsp -text
 study/src/org/labkey/study/view/samples/specimenVisitReport.jsp -text
 study/src/org/labkey/study/view/samples/uploadSimpleSpecimens.jsp -text
 study/src/org/labkey/study/view/samples/viewRequestsHeader.jsp -text

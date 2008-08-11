@@ -23,11 +23,9 @@ import javax.servlet.ServletOutputStream;
 
 import jxl.write.*;
 import jxl.write.Number;
-import jxl.biff.DisplayFormat;
-import jxl.format.*;
 
-import java.io.IOException;
-import java.util.Collection;/*
+import java.util.Collection;
+/*
  * User: brittp
  * Date: May 20, 2008
  * Time: 9:34:36 AM
@@ -94,21 +92,26 @@ public class SpecimenReportExcelWriter
             int rowIndex = 2;
             for (SpecimenVisitReport.Row rowData : rows)
             {
+                int maxRowHeight = rowData.getMaxExcelRowHeight(visits);
                 int columnIndex = 0;
                 for (String titleElement : rowData.getTitleHierarchy())
                     sheet.addCell(new Label(columnIndex++, rowIndex, titleElement));
                 for (Visit visit : visits)
                 {
-                    String value = rowData.getCellText(visit);
-                    if (value != null && value.length() > 0)
+                    String[] valueSet = rowData.getCellExcelText(visit);
+                    if (valueSet != null && valueSet.length > 0)
                     {
-                        sheet.addCell(numericData ?
-                                new Number(columnIndex, rowIndex, Double.parseDouble(value)) :
-                                new Label(columnIndex, rowIndex, value));
+                        for (int i = 0; i < valueSet.length; i++)
+                        {
+                            String value = valueSet[i];
+                            sheet.addCell(numericData ?
+                                    new Number(columnIndex, rowIndex + i, Double.parseDouble(value)) :
+                                    new Label(columnIndex, rowIndex + i, value));
+                        }
                     }
                     columnIndex++;
                 }
-                rowIndex++;
+                rowIndex += maxRowHeight;
             }
         }
         sheet.getSettings().setVerticalFreeze(2);

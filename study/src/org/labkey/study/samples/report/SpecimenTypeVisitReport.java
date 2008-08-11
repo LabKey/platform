@@ -88,27 +88,21 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SampleManager.S
         return summaryString.toString();
     }
 
-    protected String getCellExcelText(Visit visit, SampleManager.SummaryByVisitType summary)
+    protected String[] getCellExcelText(Visit visit, SampleManager.SummaryByVisitType summary)
     {
         if (summary == null || summary.getVialCount() == null)
-            return "";
+            return new String[] {};
 
-        StringBuilder summaryString = new StringBuilder(getCellSummaryText(summary));
-        if (_parameters.isViewPtidList())
+        int ptidCount = _parameters.isViewPtidList() ? summary.getParticipantIds().size() : 0;
+        String[] strArray = new String[1 + ptidCount];
+        strArray[0] = getCellSummaryText(summary);
+        if (ptidCount > 0)
         {
-            if (summaryString.length() > 0)
-                summaryString.append("; ");
-            if (summary.getParticipantIds() != null)
-            {
-                for (Iterator<String> it = summary.getParticipantIds().iterator(); it.hasNext();)
-                {
-                    summaryString.append(it.next());
-                    if (it.hasNext())
-                        summaryString.append(", ");
-                }
-            }
+            int currentIndex = 1;
+            for (String s : summary.getParticipantIds())
+                strArray[currentIndex++] = s;
         }
-        return summaryString.toString();
+        return strArray;
     }
 
     protected String getCellHtml(Visit visit, SampleManager.SummaryByVisitType summary)

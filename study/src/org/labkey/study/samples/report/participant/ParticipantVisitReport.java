@@ -80,10 +80,10 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SampleManager.Su
         return _showCohorts ? 2 : 1;
     }
 
-    protected String getCellExcelText(Visit visit, SampleManager.SummaryByVisitParticipant summary)
+    protected String[] getCellExcelText(Visit visit, SampleManager.SummaryByVisitParticipant summary)
     {
         if (summary == null || summary.getVialCount() == null)
-            return "";
+            return new String[] {};
 
         StringBuilder summaryString = new StringBuilder();
         if (_parameters.isViewVialCount())
@@ -94,7 +94,7 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SampleManager.Su
                 summaryString.append("/");
             summaryString.append(summary.getTotalVolume());
         }
-        return summaryString.toString();
+        return new String[] { summaryString.toString() };
     }
 
     protected String getCellHtml(Visit visit, SampleManager.SummaryByVisitParticipant summary)
@@ -112,13 +112,6 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SampleManager.Su
             if (filterQueryString != null && filterQueryString.length() > 0)
                 linkHtml += "&" + getFilterQueryString(visit, summary);
         }
-        String summaryString = getCellExcelText(visit, summary);
-        StringBuilder cellHtml = new StringBuilder();
-        if (summaryString.length() > 0)
-        {
-            cellHtml.append("<a href=\"").append(linkHtml).append("\">");
-            cellHtml.append(summaryString).append("</a>");
-        }
-        return cellHtml.toString();
+        return buildCellHtml(visit, summary, linkHtml);
     }
 }
