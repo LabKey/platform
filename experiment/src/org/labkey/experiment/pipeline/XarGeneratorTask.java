@@ -334,7 +334,12 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
         run.setFilePathRoot(source.getRoot());
         run.save(getJob().getUser());
 
+        Map<String, ExpProtocolAction> expActionMap = new HashMap<String, ExpProtocolAction>();
         List<ExpProtocolAction> expActions = parentProtocol.getSteps();
+        for (ExpProtocolAction action : expActions)
+        {
+            expActionMap.put(action.getChildProtocol().getName(), action);
+        }
 
         Map<URI, ExpData> datas = new LinkedHashMap<URI, ExpData>();
 
@@ -349,11 +354,10 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
         }
 
         // Set up the inputs and outputs for the individual actions
-        for (int i = 0; i < actions.size(); i++)
+        for (RecordedAction action : actions)
         {
-            RecordedAction action = actions.get(i);
-            // The first ExpProtocolAction is the input step, not a real work step, so shift by one
-            ExpProtocolAction step = expActions.get(i + 1);
+            // Look up the step by its name
+            ExpProtocolAction step = expActionMap.get(action.getName());
 
             ExpProtocolApplication app = run.addProtocolApplication(getJob().getUser(), step, ExpProtocol.ApplicationType.ProtocolApplication, action.getName());
             if (!action.getName().equals(action.getDescription()))
