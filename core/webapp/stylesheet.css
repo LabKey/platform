@@ -1733,3 +1733,9 @@ div.yuimenu li.checked em.checkedindicator.disabled {
     background-position:0 -64px;
 
 }
+
+.x-form-field-wrap .labkey-trigger-elipsis
+{
+    background-image: url(./_images/elipsis.gif) !important;
+    cursor: pointer;
+}
