@@ -16,12 +16,12 @@
  */
 %>
 <%@ page import="org.apache.commons.lang.StringUtils"%>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.WebTheme" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<AdminController.WebThemesBean> me = (HttpView<AdminController.WebThemesBean>) HttpView.currentView();
@@ -209,12 +209,12 @@ function updateFullScreenBorderColor ()
   }
 }
 
-function updateGradientColor ()
+function updateTitleBarColor()
 {
-    var lightColor=document.getElementsByName("gradientLightColor")[0].value;
-    if (!isValidColor(lightColor)) return;
-    var darkColor=document.getElementsByName("gradientDarkColor")[0].value;
-    if (!isValidColor(darkColor)) return;
+    var backgroundColor=document.getElementsByName("titleBarBackgroundColor")[0].value;
+    if (!isValidColor(backgroundColor)) return;
+    var borderColor=document.getElementsByName("titleBarBorderColor")[0].value;
+    if (!isValidColor(borderColor)) return;
 
     var i;
     var cssRules=getCssRules();
@@ -223,10 +223,10 @@ function updateGradientColor ()
         var cssName=cssRules[i].selectorText.toLowerCase();
         if (cssName.indexOf('labkey-wp-header') != -1)
         {
-            cssRules[i].style.backgroundColor="#"+darkColor;
+            cssRules[i].style.backgroundColor="#" + borderColor;
             var imageLink="url(\"gradient.image?lightColor="+lightColor+"&darkColor="+darkColor+"\")";
-            cssRules[i].style.backgroundColor = "#" + lightColor;
-            cssRules[i].style.border = "1px solid #" + darkColor;
+            cssRules[i].style.backgroundColor = "#" + backgroundColor;
+            cssRules[i].style.border = "1px solid #" + borderColor;
         }
     }
 }
@@ -237,7 +237,7 @@ function updateAll()
   updateHeaderLineColor();
   updateFormFieldNameColor();
   updateFullScreenBorderColor();
-  updateGradientColor();
+  updateTitleBarColor();
 }
 </script>
 
@@ -339,15 +339,15 @@ if (null == webThemeErrors)
 <tr>
     <td class="labkey-form-label">Title Bar Background Color</td>
     <td>
-        <input type="text" name="gradientLightColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getGradientLightString() : StringUtils.trimToEmpty(bean.form.getGradientLightColor()))%>" <%=disabled%> onfocus="updateGradientColor()" onblur="updateGradientColor()">
-        <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if ("".equals(disabled)) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.forms[0].gradientLightColor)"<%}%>>
+        <input type="text" name="titleBarBackgroundColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getTitleBarBackgroundString() : StringUtils.trimToEmpty(bean.form.getTitleBarBackgroundColor()))%>" <%=disabled%> onfocus="updateTitleBarColor()" onblur="updateTitleBarColor()">
+        <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if ("".equals(disabled)) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.forms[0].titleBarBackgroundColor)"<%}%>>
     </td>
 </tr>
 <tr>
     <td class="labkey-form-label">Title Bar Border Color</td>
     <td>
-        <input type="text" name="gradientDarkColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getGradientDarkString () : StringUtils.trimToEmpty(bean.form.getGradientDarkColor()))%>" <%=disabled%> onfocus="updateGradientColor()" onblur="updateGradientColor()">
-        <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if ("".equals(disabled)) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.forms[0].gradientDarkColor)"<%}%>>
+        <input type="text" name="titleBarBorderColor" size="6" maxlength="6" value="<%=((null != selectedTheme) ? selectedTheme.getTitleBarBorderString () : StringUtils.trimToEmpty(bean.form.getTitleBarBorderColor()))%>" <%=disabled%> onfocus="updateTitleBarColor()" onblur="updateTitleBarColor()">
+        <img src="<%=request.getContextPath()%>/_images/select_arrow.gif"<% if ("".equals(disabled)) {%> onmouseover="this.src='<%=request.getContextPath()%>/_images/select_arrow_over.gif'" onmouseout="this.src='<%=request.getContextPath()%>/_images/select_arrow.gif'" onclick="showColorPicker(this,document.forms[0].titleBarBorderColor)"<%}%>>
     </td>
 </tr>
 <tr>

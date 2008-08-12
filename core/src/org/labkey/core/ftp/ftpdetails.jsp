@@ -18,16 +18,17 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.core.ftp.FtpPage" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     ViewContext context = getViewContext();
-    String contextPath = context.getContextPath();
     FtpPage dropPage = (FtpPage)getModelBean();
+    Container c = context.getContainer();
 %>
 <html>
 <head>
 <title>FTP Instructions</title>
-<%=org.labkey.api.util.PageFlowUtil.getStandardIncludes()%>
+<%=org.labkey.api.util.PageFlowUtil.getStandardIncludes(c)%>
 <style type="text/css">
 div.content { margin:10px; }
 </style>

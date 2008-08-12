@@ -2970,7 +2970,7 @@ public class AdminController extends SpringActionController
                     themeName
                     , form.getNavBarColor(), form.getHeaderLineColor()
                     , form.getEditFormColor(), form.getFullScreenBorderColor()
-                    , form.getGradientLightColor(), form.getGradientDarkColor()
+                    , form.getTitleBarBackgroundColor(), form.getTitleBarBorderColor()
                     );
 
                 ButtonServlet.resetColorScheme();
@@ -3030,8 +3030,8 @@ public class AdminController extends SpringActionController
         String _headerLineColor;
         String _editFormColor;
         String _fullScreenBorderColor;
-        String _gradientLightColor;
-        String _gradientDarkColor;
+        String _titleBarBackgroundColor;
+        String _titleBarBorderColor;
 
         private boolean upgradeInProgress;
 
@@ -3077,24 +3077,24 @@ public class AdminController extends SpringActionController
             _fullScreenBorderColor = fullScreenBorderColor;
         }
 
-        public String getGradientDarkColor()
+        public String getTitleBarBorderColor()
         {
-            return _gradientDarkColor;
+            return _titleBarBorderColor;
         }
 
-        public void setGradientDarkColor(String gradientDarkColor)
+        public void setTitleBarBorderColor(String titleBarBorderColor)
         {
-            _gradientDarkColor = gradientDarkColor;
+            _titleBarBorderColor = titleBarBorderColor;
         }
 
-        public String getGradientLightColor()
+        public String getTitleBarBackgroundColor()
         {
-            return _gradientLightColor;
+            return _titleBarBackgroundColor;
         }
 
-        public void setGradientLightColor(String gradientLightColor)
+        public void setTitleBarBackgroundColor(String titleBarBackgroundColor)
         {
-            _gradientLightColor = gradientLightColor;
+            _titleBarBackgroundColor = titleBarBackgroundColor;
         }
 
         public String getHeaderLineColor()
@@ -3173,11 +3173,11 @@ public class AdminController extends SpringActionController
             }
 
             if (_navBarColor == null || _headerLineColor == null || _editFormColor == null ||
-                    _fullScreenBorderColor == null || _gradientLightColor == null ||
-                    _gradientDarkColor == null ||
+                    _fullScreenBorderColor == null || _titleBarBackgroundColor == null ||
+                    _titleBarBorderColor == null ||
                     !isValidColor(_navBarColor) || !isValidColor(_headerLineColor) || !isValidColor(_editFormColor) ||
-                    !isValidColor(_fullScreenBorderColor) || !isValidColor(_gradientLightColor) ||
-                    !isValidColor(_gradientDarkColor))
+                    !isValidColor(_fullScreenBorderColor) || !isValidColor(_titleBarBackgroundColor) ||
+                    !isValidColor(_titleBarBorderColor))
             {
                 errors.reject(ERROR_MSG, "You must provide a valid 6-character hexadecimal value for each field.");
             }

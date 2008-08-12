@@ -25,18 +25,21 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.LookAndFeelAppProps;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.PageFlowUtil.Content;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.admin.CoreUrls;
 import org.springframework.validation.BindException;
+import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * User: jeckels
@@ -47,70 +50,127 @@ public class CoreController extends SpringActionController
     private static final long SECS_IN_DAY = 60 * 60 * 24;
     private static final long MILLIS_IN_DAY = 1000 * SECS_IN_DAY;
 
-    private static Map<Class, PageFlowUtil.Content> _cssContent = Collections.synchronizedMap(new HashMap<Class, PageFlowUtil.Content>());
+    private static Content _printCssContent = null;
+    private static Map<Container, Content> _themeStylesheetCache = new ConcurrentHashMap<Container, Content>();
+    private static Map<Container, Content> _customStylesheetCache = new ConcurrentHashMap<Container, Content>();
+//    private static Map<Container, Content> _cssContent = new ConcurrentHashMap<Container, Content>();
     private static ActionResolver _actionResolver = new DefaultActionResolver(CoreController.class);
 
     public CoreController()
     {
-        super();
         setActionResolver(_actionResolver);
+    }
+
+    public static class CoreUrlsImpl implements CoreUrls
+    {
+        private ActionURL getRevisionURL(Class<? extends Controller> actionClass, Container c)
+        {
+            ActionURL url = new ActionURL(actionClass, c);
+            url.addParameter("revision", AppProps.getInstance().getLookAndFeelRevision());
+            return url;
+        }
+
+        public ActionURL getThemeStylesheetURL()
+        {
+            return getRevisionURL(ThemeStylesheetAction.class, ContainerManager.getRoot());
+        }
+
+        public ActionURL getThemeStylesheetURL(Container c)
+        {
+            Container project = c.getProject();
+            LookAndFeelAppProps laf = LookAndFeelAppProps.getInstance(project);
+
+            if (laf.hasProperties())
+                return getRevisionURL(ThemeStylesheetAction.class, project);
+            else
+                return null;
+        }
+
+        public ActionURL getCustomStylesheetURL()
+        {
+            return null;  // TODO
+        }
+
+        public ActionURL getCustomStylesheetURL(Container c)
+        {
+            return null;  // TODO
+        }
+
+        public ActionURL getPrintStylesheetURL()
+        {
+            return getRevisionURL(PrintStylesheetAction.class, ContainerManager.getRoot());
+        }
     }
 
     abstract class BaseStylesheetAction extends ExportAction
     {
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
-            // This action gets called a LOT, so cache the generated .css
-            PageFlowUtil.Content c = _cssContent.get(getClass());
             HttpServletRequest request = getViewContext().getRequest();
-            Integer dependsOn = AppProps.getInstance().getLookAndFeelRevision();
-            if (null == c || !dependsOn.equals(c.dependencies) || null != request.getParameter("nocache") || AppProps.getInstance().isDevMode())
-            {
-                JspView view = new JspView(getCssPageName());
-                view.setFrame(WebPartView.FrameType.NONE);
-                c = PageFlowUtil.getViewContent(view, request, response);
-                c.dependencies = dependsOn;
-                c.encoded = compressCSS(c.content);
-                _cssContent.put(this.getClass(), c);
-            }
+            Content content = getContent(request, response);
 
             response.setContentType("text/css");
             response.setDateHeader("Expires", System.currentTimeMillis() + MILLIS_IN_DAY * 10);
-            response.setDateHeader("Last-Modified", c.modified);
+            response.setDateHeader("Last-Modified", content.modified);
             if (StringUtils.trimToEmpty(request.getHeader("Accept-Encoding")).contains("gzip"))
             {
                 response.setHeader("Content-Encoding", "gzip");
-                response.getOutputStream().write(c.encoded);
+                response.getOutputStream().write(content.encoded);
             }
             else
             {
-                response.getWriter().write(c.content);
+                response.getWriter().write(content.content);
             }
         }
 
-        abstract String getCssPageName();
+        abstract Content getContent(HttpServletRequest request, HttpServletResponse response) throws Exception;
     }
 
     @RequiresPermission(ACL.PERM_NONE)
-    public class ThemestylesheetAction extends BaseStylesheetAction
+    public class ThemeStylesheetAction extends BaseStylesheetAction
     {
-        String getCssPageName()
+        Content getContent(HttpServletRequest request, HttpServletResponse response) throws Exception
         {
-            return "/org/labkey/core/themeStylesheet.jsp";
+            Container c = getViewContext().getContainer();
+            Content content = _themeStylesheetCache.get(c);
+            Integer dependsOn = AppProps.getInstance().getLookAndFeelRevision();
+            if (null == content || !dependsOn.equals(content.dependencies) || null != request.getParameter("nocache") || AppProps.getInstance().isDevMode())
+            {
+                JspView view = new JspView("/org/labkey/core/themeStylesheet.jsp");
+                view.setFrame(WebPartView.FrameType.NONE);
+                content = PageFlowUtil.getViewContent(view, request, response);
+                content.dependencies = dependsOn;
+                content.encoded = compressCSS(content.content);
+                _themeStylesheetCache.put(c, content);
+            }
+
+            return content;
         }
     }
 
+    // TODO: Replace this action with a static file, printStylesheet.css?
     @RequiresPermission(ACL.PERM_NONE)
-    public class PrintstyleAction extends BaseStylesheetAction
+    public class PrintStylesheetAction extends BaseStylesheetAction
     {
-        String getCssPageName()
+        Content getContent(HttpServletRequest request, HttpServletResponse response) throws Exception
         {
-            return "/org/labkey/core/printstyle.jsp";
+            Content content = _printCssContent;
+
+            if (null == content || null != request.getParameter("nocache") || AppProps.getInstance().isDevMode())
+            {
+                JspView view = new JspView("/org/labkey/core/printstyle.jsp");
+                view.setFrame(WebPartView.FrameType.NONE);
+                content = PageFlowUtil.getViewContent(view, request, response);
+                content.encoded = compressCSS(content.content);
+                _printCssContent = content;
+            }
+
+            return content;
         }
     }
 
 
-    byte[] compressCSS(String s)
+    private byte[] compressCSS(String s)
     {
         String c = s.trim();
         // this works but probably unnecesary with gzip

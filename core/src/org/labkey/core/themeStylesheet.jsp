@@ -13,8 +13,8 @@
 
     String formLabel           = theme.getEditFormColor();
     String fullScreenBorder    = theme.getFullScreenBorderColor();
-    String wpHeaderPanel       = theme.getGradientLightString();
-    String navBorder           = theme.getGradientDarkString();
+    String wpHeaderPanel       = theme.getTitleBarBackgroundString();
+    String navBorder           = theme.getTitleBarBorderString();
     String navBackground       = theme.getNavBarColor();
     String linkAndHeaderText   = theme.getTitleColorString();
 
