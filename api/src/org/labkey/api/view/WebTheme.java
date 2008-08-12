@@ -44,11 +44,11 @@ public class WebTheme
     private final String _editFormColor;
     private final String _friendlyName;
     private final String _fullScreenBorderColor;
-    private final Color _gradientLightColor;
-    private final Color _gradientDarkColor;
+    private final Color _titleBarBackgroundColor;
+    private final Color _titleBarBorderColor;
     private final Color _titleColor;
 
-    private WebTheme(String friendlyName, String navBarColor, String headerLineColor, String editFormColor, String fullScreenBorderColor, String gradientLightColor, String gradientDarkColor)
+    private WebTheme(String friendlyName, String navBarColor, String headerLineColor, String editFormColor, String fullScreenBorderColor, String titleBarBackgroundColor, String titleBarBorderColor)
     {
         _friendlyName = friendlyName;
 
@@ -56,8 +56,8 @@ public class WebTheme
         _headerLineColor = headerLineColor;
         _editFormColor = editFormColor;
         _fullScreenBorderColor = fullScreenBorderColor;
-        _gradientLightColor = parseColor(gradientLightColor);
-        _gradientDarkColor = parseColor(gradientDarkColor);
+        _titleBarBackgroundColor = parseColor(titleBarBackgroundColor);
+        _titleBarBorderColor = parseColor(titleBarBorderColor);
         // UNDONE: save restore this color
         _titleColor = new Color(0x003399);
 
@@ -137,14 +137,14 @@ public class WebTheme
     }
 
 
-    public String getGradientLightString()
+    public String getTitleBarBackgroundString()
     {
-        return toRGB(_gradientLightColor);
+        return toRGB(_titleBarBackgroundColor);
     }
 
-    public String getGradientDarkString()
+    public String getTitleBarBorderString()
     {
-        return toRGB(_gradientDarkColor);
+        return toRGB(_titleBarBorderColor);
     }
 
     private static Map<Container, WebTheme> _themeCache = new ConcurrentHashMap<Container, WebTheme>();
@@ -184,10 +184,6 @@ public class WebTheme
         }
         catch (IllegalArgumentException e)
         {
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
         }
 
         if (null == theme)
@@ -250,8 +246,8 @@ public class WebTheme
                             String headerLineColor = themeColoursArray[1];
                             String editFormColor = themeColoursArray[2];
                             String fullScreenBorderColor = themeColoursArray[3];
-                            String gradientLightColor = themeColoursArray[4];
-                            String gradientDarkColor = themeColoursArray[5];
+                            String titleBarBackgroundColor = themeColoursArray[4];
+                            String titleBarBorderColor = themeColoursArray[5];
 
                             try
                             {
@@ -259,7 +255,7 @@ public class WebTheme
                                         themeName,
                                         navBarColor, headerLineColor,
                                         editFormColor, fullScreenBorderColor,
-                                        gradientLightColor, gradientDarkColor);
+                                        titleBarBackgroundColor, titleBarBorderColor);
 
                                 _webThemeList.add(webTheme);
                             }
@@ -338,10 +334,10 @@ public class WebTheme
         }
     }
 
-    public static boolean updateWebTheme(String friendlyName, String navBarColor, String headerLineColor, String editFormColor, String fullScreenBorderColor, String gradientLightColor, String gradientDarkColor)
+    public static boolean updateWebTheme(String friendlyName, String navBarColor, String headerLineColor, String editFormColor, String fullScreenBorderColor, String titleBarBackgroundColor, String titleBarBorderColor)
         throws SQLException
     {
-        WebTheme updateTheme = new WebTheme (friendlyName, navBarColor, headerLineColor, editFormColor, fullScreenBorderColor, gradientLightColor, gradientDarkColor);
+        WebTheme updateTheme = new WebTheme (friendlyName, navBarColor, headerLineColor, editFormColor, fullScreenBorderColor, titleBarBackgroundColor, titleBarBorderColor);
         WebTheme.updateWebTheme(updateTheme);
 
         saveWebThemes();
@@ -417,8 +413,8 @@ public class WebTheme
             buffer.append(";").append(theme.getHeaderLineColor());
             buffer.append(";").append(theme.getEditFormColor());
             buffer.append(";").append(theme.getFullScreenBorderColor());
-            buffer.append(";").append(theme.getGradientLightString());
-            buffer.append(";").append(theme.getGradientDarkString());
+            buffer.append(";").append(theme.getTitleBarBackgroundString());
+            buffer.append(";").append(theme.getTitleBarBorderString());
             properties.put(key.toString (), buffer.toString ());
         }
         PropertyManager.saveProperties(properties);

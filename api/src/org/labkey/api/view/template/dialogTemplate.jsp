@@ -15,21 +15,23 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.template.DialogTemplate" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.template.DialogTemplate" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     DialogTemplate me = (DialogTemplate) HttpView.currentView();
     PageConfig pageConfig = me.getModelBean();
     String contextPath = request.getContextPath();
+    Container c = me.getViewContext().getContainer();
 %>
 <html>
 <head>
     <title><%=h(pageConfig.getTitle())%></title>
-<%= PageFlowUtil.getStandardIncludes() %>
+<%= PageFlowUtil.getStandardIncludes(c) %>
     <script type="text/javascript" src="<%=contextPath%>/labkey.js?<%=AppProps.getInstance().getServerSessionGUID()%>"></script>
     <script type="text/javascript" language="javascript">
         LABKEY.init(<%=PageFlowUtil.jsInitObject()%>);

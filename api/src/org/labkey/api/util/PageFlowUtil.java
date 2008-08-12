@@ -32,6 +32,7 @@ import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
@@ -39,6 +40,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ImageURL;
 import org.labkey.api.settings.TemplateResourceHandler;
 import org.labkey.api.view.*;
+import org.labkey.api.admin.CoreUrls;
 import org.labkey.common.util.Pair;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
@@ -1364,16 +1366,11 @@ public class PageFlowUtil
         }
     }
 
-    public static String getStandardIncludes()
+    public static String getStandardIncludes(Container c)
     {
-        // TODO: Hack -- container needs to be passed in
-        Container c = HttpView.currentContext().getContainer();
-
-        String contextPath = AppProps.getInstance().getContextPath();
-        int lookAndFeelRevision = AppProps.getInstance().getLookAndFeelRevision();
+        StringBuilder sb = new StringBuilder();
 
         ImageURL faviconURL = TemplateResourceHandler.FAVICON.getURL(c);
-        StringBuilder sb = new StringBuilder();
 
         sb.append("    <link rel=\"shortcut icon\" href=\"");
         sb.append(PageFlowUtil.filter(faviconURL));
@@ -1383,24 +1380,52 @@ public class PageFlowUtil
         sb.append(PageFlowUtil.filter(faviconURL));
         sb.append("\" />\n");
 
-        sb.append("    <link href=\"");
-        sb.append(contextPath);
-        sb.append("/stylesheet.css\" type=\"text/css\" rel=\"stylesheet\"/>\n");
+        ImageURL stylesheetURL = new ImageURL("stylesheet.css", ContainerManager.getRoot());
 
         sb.append("    <link href=\"");
-        sb.append(contextPath);
-        sb.append("/core/themestylesheet.view?revision=");
-        sb.append(lookAndFeelRevision);
-        sb.append("\" type=\"text/css\" rel=\"stylesheet\"/>\n");   
+        sb.append(PageFlowUtil.filter(stylesheetURL));
+        sb.append("\" type=\"text/css\" rel=\"stylesheet\"/>\n");
 
-// TODO: Add something like this for webtheme stylesheet       sb.append("/core" + c.getPath() + "/stylesheet.view?revision=");
-//        sb.append("/core" + c.getPath() + "/stylesheet.view?revision=");
+        CoreUrls coreUrls = urlProvider(CoreUrls.class);
 
         sb.append("    <link href=\"");
-        sb.append(contextPath);
-        sb.append("/core/printstyle.view?revision=");
-        sb.append(lookAndFeelRevision);
-        sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\"/>");
+        sb.append(PageFlowUtil.filter(coreUrls.getThemeStylesheetURL()));
+        sb.append("\" type=\"text/css\" rel=\"stylesheet\"/>\n");
+
+        sb.append("    <link href=\"");
+        sb.append(PageFlowUtil.filter(coreUrls.getPrintStylesheetURL()));
+        sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\"/>\n");
+
+        ActionURL rootCustomStylesheetURL = coreUrls.getCustomStylesheetURL();
+
+        if (null != rootCustomStylesheetURL)
+        {
+            sb.append("    <link href=\"");
+            sb.append(PageFlowUtil.filter(rootCustomStylesheetURL));
+            sb.append("\" type=\"text/css\" rel=\"stylesheet\"/>\n");
+        }
+
+        if (!c.isRoot())
+        {
+            ActionURL containerThemeStylesheetURL = coreUrls.getThemeStylesheetURL(c);
+
+            if (null != containerThemeStylesheetURL)
+            {
+                sb.append("    <link href=\"");
+                sb.append(PageFlowUtil.filter(containerThemeStylesheetURL));
+                sb.append("\" type=\"text/css\" rel=\"stylesheet\"/>\n");
+            }
+
+            ActionURL containerCustomStylesheetURL = coreUrls.getCustomStylesheetURL(c);
+
+            if (null != containerCustomStylesheetURL)
+            {
+                sb.append("    <link href=\"");
+                sb.append(PageFlowUtil.filter(containerCustomStylesheetURL));
+                sb.append("\" type=\"text/css\" rel=\"stylesheet\"/>\n");
+            }
+        }
+
         return sb.toString();
     }
 

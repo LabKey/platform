@@ -265,6 +265,7 @@ public class AppProps extends AbstractWriteableSettingsGroup
     }
 
     // ===== Look and feel settings have been migrated to LookAndFeelAppProps.  Need to delete these.
+
     @Deprecated
     public String getSystemDescription()
     {

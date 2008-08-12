@@ -18,9 +18,13 @@
 <%@ page buffer="none" %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page import="org.labkey.api.analytics.AnalyticsService" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.*" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.GWTView" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.ViewServlet" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.api.view.template.PrintTemplate" %>
 <%@ page import="java.util.Set" %>
@@ -33,13 +37,14 @@
     base.setAction((String)null);
     base.deleteParameters();
     Set<String> gwtModules = GWTView.getModulesForRootContext();
+    Container c = me.getViewContext().getContainer();
 %>
 <html>
 <head>
     <title><%= h(bean.getTitle()) %></title>
     <!-- <%=url.getURIString()%> -->
     <!-- <base href="<%=h(base.getURIString())%>" /> -->
-<%= PageFlowUtil.getStandardIncludes() %>
+<%= PageFlowUtil.getStandardIncludes(c) %>
     <%
 if (null != bean.getStyleSheet())
     {

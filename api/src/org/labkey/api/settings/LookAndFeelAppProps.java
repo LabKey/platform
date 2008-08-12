@@ -67,9 +67,16 @@ public class LookAndFeelAppProps extends AbstractWriteableSettingsGroup
         _c = getSettingsContainer(c);
     }
 
-    public boolean hasProperties() throws SQLException
+    public boolean hasProperties()
     {
-        return getProperties(_c).size() > 0;
+        try
+        {
+            return getProperties(_c).size() > 0;
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);            
+        }
     }
 
     protected String lookupStringValue(String name, String defaultValue)

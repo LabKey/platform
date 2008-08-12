@@ -182,7 +182,7 @@ public class NavTrailView extends HttpView
         _out.print("<td id=\"labkey-end-tab-space\"");
         if (tabs.size() > 1)
             _out.print(" class=\"labkey-tab-space\"");
-        _out.print("\">");
+        _out.print(">");
 
         if (null != connectionsInUse || _pageConfig.getExploratoryFeatures())
         {

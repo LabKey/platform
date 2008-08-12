@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -24,11 +25,12 @@
     HttpView me = HttpView.currentView();
     PageConfig bean = (PageConfig) me.getModelBean();
     String contextPath = request.getContextPath();
+    Container c = me.getViewContext().getContainer();
 %>
 <html>
 <head>
 <title><%=h(bean.getTitle())%></title>
-<%= PageFlowUtil.getStandardIncludes() %>
+<%= PageFlowUtil.getStandardIncludes(c) %>
 <%
 if (null != bean.getStyleSheet())
     {
