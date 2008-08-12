@@ -166,23 +166,4 @@ public class ModuleDependencySorter
             return new TestSuite(TestCase.class);
         }
     }
-
-    static class DummyModule extends DefaultModule
-    {
-        private Set<String> _dependencies = new HashSet<String>();
-
-        public DummyModule(String name, String... dependencies)
-        {
-            super(name, 1.0, null, false);
-            for (String dependency : dependencies)
-            {
-                _dependencies.add(dependency);
-            }
-        }
-
-        public Set<String> getModuleDependencies()
-        {
-            return _dependencies;
-        }
-    }
 }

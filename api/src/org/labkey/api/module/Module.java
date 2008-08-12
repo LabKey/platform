@@ -30,6 +30,7 @@ import java.io.InputStream;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.List;
 
 /**
  * User: migra
@@ -172,19 +173,13 @@ public interface Module
      */
     public Set<String> getSchemaNames();
 
-    /**
-     * Module dependencies ensure that the SQL scripts for modules
-     * are run in the correct order. For example, in order for module
-     * A to create a foreign key that refers to a table defined in
-     * module B, it needs its scripts to run after the table has been created
-     * @return the names of the modules on which this module depends
-     */
-    public Set<String> getModuleDependencies();
-
     public void setMetaData(ModuleMetaData metaData);
     public ModuleMetaData getMetaData();
     public InputStream getResourceStreamFromWebapp(ServletContext ctx, String filename) throws FileNotFoundException;
     public InputStream getResourceStream(String filename) throws FileNotFoundException;
     public Pair<InputStream, Long> getResourceStreamIfChanged(String filename, long tsPrevious) throws FileNotFoundException;
     public String getBuildPath();
+
+    /** Get a list of attributions (in HTML) that should be shown before users can log in. */
+    public List<String> getAttributions();
 }

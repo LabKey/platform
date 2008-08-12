@@ -91,8 +91,6 @@ public abstract class DefaultModule implements Module
         {
             if (INSTANTIATED_MODULES.contains(getClass()))
                 throw new IllegalStateException("An instance of " + getClass() + " has already been created. Modules should be singletons");
-            if (getClass() != ModuleDependencySorter.DummyModule.class)
-                INSTANTIATED_MODULES.add(getClass());
         }
 
         _name = name;
@@ -377,11 +375,6 @@ public abstract class DefaultModule implements Module
         return Collections.emptySet();
     }
 
-    public Set<String> getModuleDependencies()
-    {
-        return Collections.emptySet();
-    }
-
     public void setMetaData(ModuleMetaData metaData)
     {
         _metaData = metaData;
@@ -404,6 +397,11 @@ public abstract class DefaultModule implements Module
     public String getBuildPath()
     {
         return _buildPath;
+    }
+
+    public List<String> getAttributions()
+    {
+        return Collections.emptyList();
     }
 
     public InputStream getResourceStreamFromWebapp(ServletContext ctx, String path) throws FileNotFoundException

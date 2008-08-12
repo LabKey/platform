@@ -33,6 +33,7 @@ abstract public class AbstractTaskFactorySettings implements TaskFactorySettings
     private Integer _autoRetry;
     private String _groupParameterName;
     private GlobusSettings _globusSettings;
+    private WorkDirFactory _workDirectoryFactory;
 
     public AbstractTaskFactorySettings(TaskId id)
     {
@@ -138,5 +139,15 @@ abstract public class AbstractTaskFactorySettings implements TaskFactorySettings
     public void setGlobusSettings(GlobusSettings globusSettings)
     {
         _globusSettings = globusSettings;
+    }
+
+    public WorkDirFactory getWorkDirectoryFactory()
+    {
+        return _workDirectoryFactory;
+    }
+
+    public void setWorkDirectoryFactory(WorkDirFactory workDirectoryFactory)
+    {
+        _workDirectoryFactory = workDirectoryFactory;
     }
 }

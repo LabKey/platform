@@ -856,17 +856,6 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/web/activemq-core-4.1.1.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/web/activemq-core-4.1.1-sources.zip!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
           <root url="jar://$MODULE_DIR$/../../external/lib/web/backport-util-concurrent-3.1.jar!/" />
         </CLASSES>
         <JAVADOC />
@@ -916,17 +905,6 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/web/mule-1.4.4-embedded.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/web/mule-1.4.4-src.zip!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
           <root url="jar://$MODULE_DIR$/../../external/lib/web/spring-mock-2.5.5.jar!/" />
         </CLASSES>
         <JAVADOC />
@@ -946,15 +924,6 @@
       <library>
         <CLASSES>
           <root url="jar://$MODULE_DIR$/../../external/lib/web/commons-httpclient-3.1.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/web/geronimo-jms_1.1_spec-1.0.1.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />

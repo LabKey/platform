@@ -15,6 +15,9 @@
  */
 package org.labkey.api.pipeline;
 
+import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
+import org.apache.log4j.Logger;
+
 import java.io.IOException;
 import java.sql.SQLException;
 
@@ -32,6 +35,7 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
     private int _autoRetry = -1;
     private String _groupParameterName;
     private GlobusSettings _globusSettings;
+    private WorkDirFactory _workDirectoryFactory;
 
     public AbstractTaskFactory(Class namespaceClass)
     {
@@ -85,6 +89,8 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
             _groupParameterName = settings.getGroupParameterName();
         if (settings.getGlobusSettings() != null)
             _globusSettings = settings.getGlobusSettings();
+        if (settings.getWorkDirectoryFactory() != null)
+            _workDirectoryFactory = settings.getWorkDirectoryFactory();
     }
 
     /**
@@ -211,6 +217,26 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
         if (_autoRetry == -1)
             return PipelineJobService.get().getDefaultAutoRetry();
         return _autoRetry;
+    }
+
+    public WorkDirectory createWorkDirectory(String jobGUID, FileAnalysisJobSupport jobSupport, Logger logger) throws IOException
+    {
+        WorkDirFactory factory = _workDirectoryFactory;
+        if (factory == null)
+        {
+            factory = PipelineJobService.get().getWorkDirFactory();
+        }
+        return factory.createWorkDirectory(jobGUID, jobSupport, logger);
+    }
+
+    public WorkDirFactory getWorkDirFactory()
+    {
+        return _workDirectoryFactory;
+    }
+
+    public void setWorkDirFactory(WorkDirFactory workDirectoryFactory)
+    {
+        _workDirectoryFactory = workDirectoryFactory;
     }
 
     /**
