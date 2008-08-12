@@ -19,6 +19,10 @@
  */
 
 Ext.namespace('LABKEY', 'LABKEY.ext');
+Ext.QuickTips.init();
+Ext.apply(Ext.QuickTips.getQuickTip(), {
+    dismissDelay: 15000
+})
 /**
  * Constructs a new LabKey EditorGridPanel using the supplied configuration.
  * @class LabKey extension to the <a href="http://extjs.com/deploy/dev/docs/?class=Ext.grid.EditorGridPanel">Ext.grid.EditorGridPanel</a>,
@@ -411,25 +415,17 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
             col = config.columns[idx];
             if(col.multiline || (undefined === col.multiline && col.scale > 255))
             {
+                col.renderer = function(data, metadata, record, rowIndex, colIndex, store)
+                {
+                    //set quick-tip attributes and let Ext QuickTips do the work
+                    metadata.attr = "ext:qtitle=\"Notes\" ext:qtip=\"" + Ext.util.Format.htmlEncode(data) + "\"";
+                    return data;
+                }
+
                 if(col.editable)
-                {
-                    col.renderer = function(data, metadata, record, rowIndex, colIndex, store)
-                    {
-                        var mouseOverScript = "Ext.getCmp('" + config.id + "').onMouseOverLongCell(this, " + rowIndex + "," + colIndex + ")";
-                        var mouseOutScript = "Ext.getCmp('" + config.id + "').onMouseOutLongCell(this, " + rowIndex + "," + colIndex + ")";
-                        metadata.attr = "onmouseout=\"" + mouseOutScript + "\" onmouseover=\"" + mouseOverScript + "\"";
-                        return data;
-                    }
-                }
-                else
-                {
-                    col.renderer = function(data, metadata, record, rowIndex, colIndex, store)
-                    {
-                        //set quick-tip attributes and let Ext QuickTips do the work
-                        metadata.attr = "ext:qtitle=\"Notes\" ext:qtip=\"" + Ext.util.Format.htmlEncode(data) + "\"";
-                        return data;
-                    }
-                }
+                    col.editor = new LABKEY.ext.LongTextField({
+                        columnName: col.dataIndex
+                    });
             }
         }
     },
@@ -596,108 +592,5 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
     onTab : function() {
         if(this.autoSave)
             this.saveChanges();
-    },
-
-    onMouseOverLongCell : function(elem, rowIndex, colIndex)
-    {
-        if(this.longTextWin)
-            this.longTextWin.hideTask.cancel();
-        
-        //ignore if we're still on the same cell
-        if(this.longTextWin && this.longTextWin.cellId == elem.id)
-            return;
-
-        //commit the current editor
-        this.commitLongText();
-
-        //get the record associated with the row index
-        //and the column name associated with the column index
-        var record = this.getStore().getAt(rowIndex);
-        var colName = this.getColumnModel().getDataIndex(colIndex);
-
-        //get the Ext.Element version of the cell element
-        //so that we can get absolute coordinates
-        var extElem = Ext.get(elem);
-
-        //create the window if necessary
-        if(!this.longTextWin)
-        {
-            this.longTextWin = new Ext.Window({
-                closeAction: 'hide',
-                height: 400,
-                width: 300,
-                layout: 'fit',
-                items: [new Ext.form.TextArea()],
-                buttons: [
-                    {
-                        text: 'Close',
-                        handler: function(){this.closeLongTextWin()},
-                        scope: this
-                    }
-                ],
-                listeners: {
-                    hide: {
-                        fn: this.onCloseLongTextWin,
-                        scope: this
-                    }
-                }
-            });
-            this.longTextWin.hideTask = new Ext.util.DelayedTask(this.closeLongTextWin, this);
-        }
-
-        //set window and editor values
-        this.longTextWin.setTitle(colName);
-        this.longTextWin.getComponent(0).setValue(record.get(colName));
-        this.longTextWin.cellId = elem.id;
-        this.longTextWin.record = record;
-        this.longTextWin.colName = colName;
-
-        //position and show
-        var width = this.longTextWin.getEl() ? this.longTextWin.getSize().width : this.longTextWin.width;
-        var left = extElem.getLeft() + 15;
-        if(left + width >= Ext.getBody().getWidth())
-            left = extElem.getRight() - width - 15;
-        this.longTextWin.setPosition(left, extElem.getBottom());
-        this.longTextWin.show();
-
-        if(!this.longTextWin.addedListeners)
-        {
-            this.longTextWin.getEl().on("mouseover", function(){this.longTextWin.hideTask.cancel();}, this);
-            this.longTextWin.getEl().on("mouseout", function(){if(!this.longTextWin.hasFocus) this.longTextWin.hideTask.delay(500);}, this);
-            this.longTextWin.getComponent(0).getEl().on("focus", function(){this.longTextWin.hasFocus = true}, this);
-            this.longTextWin.getComponent(0).getEl().on("blur", function(){delete this.longTextWin.hasFocus; this.longTextWin.hideTask.delay(500);}, this);
-            this.longTextWin.addedListeners = true;
-        }
-
-    },
-
-    commitLongText : function()
-    {
-        if(this.longTextWin && this.longTextWin.record)
-            this.longTextWin.record.set(this.longTextWin.colName, this.longTextWin.getComponent(0).getValue());
-    },
-
-    onMouseOutLongCell : function(elem, rowIndex, colIndex)
-    {
-        if(this.longTextWin && this.longTextWin.cellId == elem.id)
-            this.longTextWin.hideTask.delay(500);
-    },
-
-    closeLongTextWin : function()
-    {
-        if(this.longTextWin)
-        {
-            this.commitLongText();
-            this.longTextWin.hideTask.cancel();
-            this.longTextWin.hide();
-        }
-    },
-
-    onCloseLongTextWin : function()
-    {
-        delete this.longTextWin.cellId;
-        delete this.longTextWin.colName;
-        delete this.longTextWin.record;
-        delete this.longTextWin.hasFocus;
     }
 });

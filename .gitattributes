@@ -666,6 +666,7 @@ api/webapp/clientapi/EditorGridPanel.js -text
 api/webapp/clientapi/ExtJsConfig.js -text
 api/webapp/clientapi/Filter.js -text
 api/webapp/clientapi/GridView.js -text
+api/webapp/clientapi/LongTextEditor.js -text
 api/webapp/clientapi/NavTrail.js -text
 api/webapp/clientapi/Query.js -text
 api/webapp/clientapi/Security.js -text
@@ -1630,6 +1631,7 @@ internal/webapp/_images/delete.gif -text
 internal/webapp/_images/dot.gif -text
 internal/webapp/_images/downarrow.gif -text
 internal/webapp/_images/downarrow_disabled.gif -text
+internal/webapp/_images/elipsis.gif -text
 internal/webapp/_images/exclaim.gif -text
 internal/webapp/_images/expand_folders.gif -text svneol=unset#unset
 internal/webapp/_images/favicon.ico -text
