@@ -354,7 +354,8 @@ public class AuthenticationManager
                 User user = SecurityManager.createUserIfNecessary(email);
                 if(!user.isActive())
                 {
-                    _log.error("Inactive user " + user.getEmail() + " attempted to login");
+                    AuditLogService.get().addEvent(user, null, UserManager.USER_AUDIT_EVENT, user.getUserId(),
+                            "Inactive user " + user.getEmail() + " attempted to login");
                     return null;
                 }
 
