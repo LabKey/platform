@@ -23,14 +23,93 @@ import java.util.List;
 
 public interface PipelineQueue
 {
-    PipelineJobData getJobData(Container c);
-    void starting(PipelineJob job, Thread thread);
-    void done(PipelineJob job);
-    boolean cancelJob(Container c, int jobId);
-    List<PipelineJob> findJobs(String location);
-    PipelineJob findJob(Container c, String statusFile);
+    /**
+     * Add a <code>PipelineJob</code> to this queue to be run.
+     *
+     * @param job Job to be run
+     * @throws IOException Error in initialization
+     */
     void addJob(PipelineJob job) throws IOException;
-    void addJob(PipelineJob job, String initialState) throws IOException;
+
+    /**
+     * Cancel a previously added <code>PipelineJob</code>.  The job may be still on the
+     * queue or running.
+     *
+     * @param c Filter for jobs started from this container.  Use null for any job.
+     * @param jobId The GUID assigned to the job of interest
+     * @return True if the job was successfully cancelled
+     */
+    boolean cancelJob(Container c, String jobId);
+
+    /**
+     * This method is used to restore lost jobs, when the LabKey Server or a remote
+     * JMS listener restarts.  The known contents of the queue are inspected against
+     * jobs in the StatusFiles table.
+     * 
+     * @param location The location by which to filter the jobs
+     * @return A list of jobs currently know to the queue
+     */
+    List<PipelineJob> findJobs(String location);
+
+    /**
+     * @return True if this queue is running in the LabKey Server VM.
+     */
     boolean isLocal();
+
+    /**
+     * @return True if this queue has no durable storage.
+     */
     boolean isTransient();
+
+    /**
+     * Pipeline queue maintenance life-cycle event which is only called by the mini-
+     * pipeline.  Avoid putting important functionality in the implementation
+     * for this method.  It is intended to enable queue management in the
+     * mini-pipeline.
+     *
+     * @param job The pipeline job that is starting
+     * @param thread The thread on which it will run
+     */
+    void starting(PipelineJob job, Thread thread);
+
+    /**
+     * Pipeline queue maintenance life-cycle event which is only called by the mini-
+     * pipeline.  Avoid putting important functionality in the implementation
+     * for this method.  It is intended to enable queue management in the
+     * mini-pipeline.
+     *
+     * @param job The pipeline job that is ending
+     */
+    void done(PipelineJob job);
+
+    /**
+     * Attempt to find a job running in memory on the LabKey Server with the
+     * specified status file path.  This only works on the mini-pipeline, and
+     * is currently only used in a single case to show enriched information
+     * about the running job's state for the flow <code>JobStatusView</code>.
+     * <p/>
+     * Avoid adding any new dependencies on this code, and especially anything
+     * that does not degrade gracefully, when no in memory job is returned for
+     * something the pipeline status indicates is running.  It may be running
+     * on another machine.
+     *
+     * @param c The container in which the job was started
+     * @param statusFile The file path associated with this job for its status
+     * @return An job actively running in memory on this server
+     */
+    @Deprecated
+    PipelineJob findJobInMemory(Container c, String statusFile);
+
+    /**
+     * An old way for getting data about running jobs that assumes they are all
+     * in memory on the LabKey Server.  This is still supported for some backward
+     * compatibility, but in the EnterprisePipeline it is not very useful, since
+     * if just reads from the JMS queue, and a lot may now be pulled from that
+     * queue longe before it is completed.
+     *
+     * @param c Filter for jobs started in this container. Use null for all jobs.
+     * @return Jobs on the queue separated into running and pending lists
+     */
+    @Deprecated
+    PipelineJobData getJobDataInMemory(Container c);
 }

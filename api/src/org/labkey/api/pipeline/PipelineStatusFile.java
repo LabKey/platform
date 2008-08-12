@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 
 import java.sql.SQLException;
 import java.io.IOException;
+import java.util.Date;
 
 /**
  * <code>PipelineStatusFile</code>
@@ -31,6 +32,10 @@ public interface PipelineStatusFile
     public interface StatusReader
     {
         PipelineStatusFile getStatusFile(String path) throws SQLException;
+
+        PipelineStatusFile[] getQueuedStatusFiles() throws SQLException;
+
+        PipelineStatusFile[] getQueuedStatusFiles(Container c) throws SQLException;
     }
 
     public interface StatusWriter
@@ -62,22 +67,18 @@ public interface PipelineStatusFile
     Container lookupContainer();
 
     boolean isActive();
-    
+
+    Date getCreated();
+
+    Date getModified();
+
     int getRowId();
 
-    void setRowId(int rowId);
+    String getJobId();
 
-    String getJob();
-
-    void setJob(String job);
-
-    String getJobParent();
-
-    void setJobParent(String jobParent);
+    String getJobParentId();
 
     String getProvider();
-
-    void setProvider(String provider);
 
     String getStatus();
 
@@ -89,25 +90,17 @@ public interface PipelineStatusFile
 
     String getFilePath();
 
-    void setFilePath(String filePath);
-
     String getDataUrl();
-
-    void setDataUrl(String dataUrl);
 
     String getDescription();
 
-    void setDescription(String description);
-
     String getEmail();
-
-    void setEmail(String email);
 
     boolean isHadError();
 
-    void setHadError(boolean hadError);
-
     String getJobStore();
+
+    PipelineJob createJobInstance();
 
     @Deprecated
     void synchDiskStatus() throws IOException;

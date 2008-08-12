@@ -81,8 +81,6 @@ abstract public class PipelineService
 
     abstract public void queueJob(PipelineJob job) throws IOException;
 
-    abstract public void queueJob(PipelineJob job, String initialState) throws IOException;
-
     abstract public void setPipelineProperty(Container container, String name, String value) throws SQLException;
 
     abstract public String getPipelineProperty(Container container, String name) throws SQLException;
