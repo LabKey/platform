@@ -16,21 +16,25 @@
 package org.labkey.api.view.template;
 
 import org.apache.commons.collections.ArrayStack;
-import org.labkey.common.util.Pair;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.util.*;
-import org.labkey.api.wiki.WikiService;
-import org.labkey.api.view.menu.MenuView;
-import org.labkey.api.view.menu.MenuService;
+import org.labkey.api.settings.LookAndFeelAppProps;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.*;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.view.menu.MenuService;
+import org.labkey.api.view.menu.MenuView;
+import org.labkey.api.wiki.WikiService;
+import org.labkey.common.util.Pair;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 
 public class HomeTemplate extends PrintTemplate
@@ -194,7 +198,7 @@ public class HomeTemplate extends PrintTemplate
             String startPageLabel;
             if (singleTabFolder)
             {
-                startPageLabel = container.equals(ContainerManager.getHomeContainer()) ? AppProps.getInstance().getSystemShortName() : container.getName();
+                startPageLabel = container.equals(ContainerManager.getHomeContainer()) ? LookAndFeelAppProps.getInstance(container).getSystemShortName() : container.getName();
                 ownerStartUrl = container.getDefaultModule().getTabURL(container, context.getUser());
             }
             else

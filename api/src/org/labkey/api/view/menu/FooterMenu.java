@@ -16,16 +16,17 @@
 
 package org.labkey.api.view.menu;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.LookAndFeelAppProps;
 import org.labkey.api.util.HelpTopic;
-import org.labkey.api.view.NavTree;
-import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.template.PageConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,6 +49,7 @@ public class FooterMenu extends NavTreeMenu
     {
         List<NavTree> menu = new ArrayList<NavTree>();
         User user = context.getUser();
+        Container c = context.getContainer();
 
         if (context.hasPermission(ACL.PERM_ADMIN) && !"post".equalsIgnoreCase(context.getRequest().getMethod()))
             menu.add(new NavTree((context.isAdminMode() ? "Hide" : "Show") + " Admin", MenuService.get().getSwitchAdminModeURL(context)));
@@ -70,10 +72,10 @@ public class FooterMenu extends NavTreeMenu
             menu.add(ntPermalink);
         }
         
-        AppProps appProps = AppProps.getInstance();
-        String reportAProblemPath = appProps.getReportAProblemPath();
+        LookAndFeelAppProps laf = LookAndFeelAppProps.getInstance(c);
+        String reportAProblemPath = laf.getReportAProblemPath();
         if (reportAProblemPath != null && reportAProblemPath.trim().length() > 0 && !user.isGuest())
-            menu.add(new NavTree("Support", appProps.getReportAProblemPath()));
+            menu.add(new NavTree("Support", reportAProblemPath));
 
         //
         // HELP

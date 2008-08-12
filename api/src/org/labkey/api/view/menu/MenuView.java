@@ -16,17 +16,20 @@
 
 package org.labkey.api.view.menu;
 
-import org.labkey.api.view.*;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.LookAndFeelAppProps;
 import org.labkey.api.util.FolderDisplayMode;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.VBox;
+import org.labkey.api.view.WebPartView;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
-import java.io.PrintWriter;
 
 /**
  * User: brittp
@@ -44,8 +47,8 @@ public class MenuView extends VBox
     @Override
     public void renderView(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
-        boolean showFolders = HttpView.currentContext().isShowFolders();
-        FolderDisplayMode displayMode = AppProps.getInstance().getFolderDisplayMode();
+        boolean showFolders = getViewContext().isShowFolders();
+        FolderDisplayMode displayMode = LookAndFeelAppProps.getInstance(getViewContext().getContainer()).getFolderDisplayMode();
         boolean renderFolderExpander = !HttpView.currentContext().isAdminMode() && (displayMode == FolderDisplayMode.OPTIONAL_OFF || displayMode == FolderDisplayMode.OPTIONAL_ON);
 
         PrintWriter out = response.getWriter();

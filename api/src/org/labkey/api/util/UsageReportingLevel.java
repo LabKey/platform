@@ -22,6 +22,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.LookAndFeelAppProps;
 import org.labkey.common.util.Pair;
 
 import java.net.MalformedURLException;
@@ -72,10 +73,12 @@ public enum UsageReportingLevel
     {
         addLowUsageReportingParams(report);
 
-        report.addParam("logoLink", AppProps.getInstance().getLogoHref());
-        report.addParam("organizationName", AppProps.getInstance().getCompanyName());
-        report.addParam("systemDescription", AppProps.getInstance().getSystemDescription());
-        report.addParam("systemShortName", AppProps.getInstance().getSystemShortName());
+        LookAndFeelAppProps laf = LookAndFeelAppProps.getInstance(ContainerManager.getRoot());
+
+        report.addParam("logoLink", laf.getLogoHref());
+        report.addParam("organizationName", laf.getCompanyName());
+        report.addParam("systemDescription", laf.getSystemDescription());
+        report.addParam("systemShortName", laf.getSystemShortName());
 
         // Add the first administrator's email address
         List<Pair<Integer, String>> members = SecurityManager.getGroupMemberNamesAndIds("Administrators");

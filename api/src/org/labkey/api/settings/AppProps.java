@@ -264,59 +264,44 @@ public class AppProps extends AbstractWriteableSettingsGroup
         return _homePageURL;
     }
 
-    // For convenience, leave all the look & feel getters on AppProps, but defer to look & feel property settings
-    // TODO: Deprecate & migrate to look & feel getters
+    // ===== Look and feel settings have been migrated to LookAndFeelAppProps.  Need to delete these.
+    @Deprecated
     public String getSystemDescription()
     {
         return LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getSystemDescription();
     }
 
+    @Deprecated
     public String getSystemShortName()
     {
         return LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getSystemShortName();
     }
 
-    public String getThemeName()
-    {
-        return LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getThemeName();
-    }
-
-    public FolderDisplayMode getFolderDisplayMode()
-    {
-        return LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getFolderDisplayMode();
-    }
-
+    @Deprecated
     public String getNavigationBarWidth()
     {
         return LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getNavigationBarWidth();
     }
 
-    public String getThemeFont()
-    {
-        return LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getThemeFont();
-    }
-
-    public String getLogoHref()
-    {
-        return LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getLogoHref();
-    }
-
+    @Deprecated
     public String getCompanyName()
     {
         return LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getCompanyName();
     }
 
+    @Deprecated
     public String getSystemEmailAddress()
     {
         return LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getSystemEmailAddress();
     }
 
+    @Deprecated
     public String getReportAProblemPath()
     {
         return LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getReportAProblemPath();
     }
 
-//  End look & feel properties
+    // ===== End deprecated look & feel properties
 
     public int getLookAndFeelRevision()
     {

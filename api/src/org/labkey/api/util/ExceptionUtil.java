@@ -19,13 +19,11 @@ package org.labkey.api.util;
 import org.apache.beehive.netui.pageflow.ActionNotFoundException;
 import org.apache.beehive.netui.pageflow.Forward;
 import org.apache.log4j.Logger;
-import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SqlDialect;
+import org.labkey.api.data.*;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.LookAndFeelAppProps;
 import org.labkey.api.view.*;
 
 import javax.servlet.ServletException;
@@ -563,7 +561,7 @@ public class ExceptionUtil
             {
                 if (((UnauthorizedException)ex).isRequestBasicAuth())
                 {
-                    response.setHeader("WWW-Authenticate", "Basic realm=\"" + AppProps.getInstance().getSystemDescription() + "\"");
+                    response.setHeader("WWW-Authenticate", "Basic realm=\"" + LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getSystemDescription() + "\"");
                     responseStatus = HttpServletResponse.SC_UNAUTHORIZED;
                     message = "You must log in to view this content.";
                     resetResponse = false;
