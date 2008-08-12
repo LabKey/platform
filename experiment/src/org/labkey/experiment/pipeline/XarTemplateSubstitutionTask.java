@@ -22,6 +22,7 @@ import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.NetworkDrive;
+import org.apache.log4j.Logger;
 
 import java.io.*;
 import java.sql.SQLException;
@@ -104,8 +105,7 @@ public class XarTemplateSubstitutionTask extends PipelineJob.Task<XarTemplateSub
     {
         try
         {
-            WorkDirFactory factory = PipelineJobService.get().getWorkDirFactory();
-            WorkDirectory wd = factory.createWorkDirectory(getJob().getJobGUID(), getJobSupport(), getJob().getLogger());
+            WorkDirectory wd = _factory.createWorkDirectory(getJob().getJobGUID(), getJobSupport(), getJob().getLogger());
 
             File fileExperimentXML = wd.newFile(_factory.getOutputType());
 

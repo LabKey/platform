@@ -42,16 +42,14 @@ import org.labkey.pipeline.api.*;
 import org.labkey.pipeline.api.properties.ApplicationPropertiesSiteSettings;
 import org.labkey.pipeline.mule.EPipelineContextListener;
 import org.labkey.pipeline.status.StatusController;
+import org.mule.MuleManager;
 
 import java.beans.PropertyChangeEvent;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 /**
  */
@@ -233,4 +231,14 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             }
         }
     }
+
+    public List<String> getAttributions()
+    {
+        if (!MuleManager.isInstanciated())
+        {
+            return Collections.emptyList();
+        }
+        return Arrays.asList("<a href=\"http://www.mulesource.com\" target=\"top\"><img src=\"http://www.mulesource.com/images/mulesource_license_logo.gif\" alt=\"MuleSource\" width=\"252\" height=\"52\"></a>");
+    }
+
 }

@@ -885,6 +885,8 @@ mousemodels/src/org/labkey/mousemodel/mouse/bulkUpdate.vm -text
 mousemodels/src/org/labkey/mousemodel/mouse/showPhoto.jsp -text
 mousemodels/src/org/labkey/mousemodel/sample/EnterSampleLocations.vm -text
 mousemodels/src/org/labkey/mousemodel/sample/slides.jsp -text
+pipeline/lib/activemq-core-4.1.1-sources.zip -text
+pipeline/lib/activemq-core-4.1.1.jar -text
 pipeline/lib/addressing-1.0.jar -text
 pipeline/lib/cog-axis.jar -text
 pipeline/lib/cog-jglobus-1.2-060802.jar -text
@@ -893,6 +895,10 @@ pipeline/lib/concurrent.jar -text
 pipeline/lib/cryptix-asn1.jar -text
 pipeline/lib/cryptix.LICENSE -text
 pipeline/lib/cryptix32.jar -text
+pipeline/lib/geronimo-j2ee-connector_1.5_spec-1.0.1.jar -text
+pipeline/lib/geronimo-j2ee-management_1.0_spec-1.0.jar -text
+pipeline/lib/geronimo-jms_1.1_spec-1.0.1.jar -text
+pipeline/lib/geronimo-jta_1.0.1B_spec-1.0.1.jar -text
 pipeline/lib/globus_delegation_service.jar -text
 pipeline/lib/globus_delegation_stubs.jar -text
 pipeline/lib/globus_wsrf_rft_stubs.jar -text
@@ -900,6 +906,10 @@ pipeline/lib/gram-client.jar -text
 pipeline/lib/gram-stubs.jar -text
 pipeline/lib/gram-utils.jar -text
 pipeline/lib/jce-jdk13-131.jar -text
+pipeline/lib/jug-2.0.0-asl.jar -text
+pipeline/lib/mule-1.4.4-embedded.jar -text
+pipeline/lib/mule-1.4.4-src.zip -text
+pipeline/lib/mule-configuration.dtd -text
 pipeline/lib/puretls.LICENSE -text
 pipeline/lib/puretls.jar -text
 pipeline/lib/wsrf_core.jar -text

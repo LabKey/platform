@@ -23,6 +23,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Project;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.Module;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.settings.AppProps;
@@ -39,7 +40,6 @@ import org.labkey.api.wiki.WikiService;
 import org.labkey.core.admin.AdminController;
 import org.labkey.core.user.UserController;
 import org.labkey.common.util.Pair;
-import org.mule.MuleManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -54,6 +54,8 @@ import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * User: adam
@@ -918,11 +920,14 @@ public class LoginController extends SpringActionController
 
             HttpView view = new JspView<String>("/org/labkey/core/login/initialUser.jsp", form.getEmail(), errors);
 
-            if (MuleManager.isInstanciated())
+            List<String> attributions = new ArrayList<String>();
+            for (Module module : ModuleLoader.getInstance().getModules())
             {
-                JspView view_attrib = new JspView("/org/labkey/core/login/attribution.jsp");
-                view = new VBox(view, view_attrib);
+                attributions.addAll(module.getAttributions());
             }
+
+            JspView<List<String>> view_attrib = new JspView<List<String>>("/org/labkey/core/login/attribution.jsp", attributions);
+            view = new VBox(view, view_attrib);
 
             PageConfig page = getPageConfig();
             page.setTemplate(PageConfig.Template.Dialog);

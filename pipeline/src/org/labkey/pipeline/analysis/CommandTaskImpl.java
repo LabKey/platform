@@ -337,8 +337,7 @@ public class CommandTaskImpl extends PipelineJob.Task<CommandTaskImpl.Factory> i
     {
         try
         {
-            WorkDirFactory factory = PipelineJobService.get().getWorkDirFactory();
-            _wd = factory.createWorkDirectory(getJob().getJobGUID(), getJobSupport(), getJob().getLogger());
+            _wd = _factory.createWorkDirectory(getJob().getJobGUID(), getJobSupport(), getJob().getLogger());
 
             RecordedAction action = new RecordedAction(_factory.getProtocolActionName());
             

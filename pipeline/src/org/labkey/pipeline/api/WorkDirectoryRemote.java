@@ -23,6 +23,10 @@ import org.apache.log4j.Logger;
 import java.io.*;
 import java.nio.channels.FileLock;
 import java.nio.channels.FileChannel;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Used to copy files from (and back to) a remote file system so that they can be used directly on the local file system 
@@ -36,6 +40,8 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
     private static final int PERL_PIPELINE_LOCKS_DEFAULT = 5;
     
     private final File _lockDirectory;
+
+    private static final Map<File, Lock> _locks = new HashMap<File, Lock>();
 
     public File inputFile(File fileInput, boolean forceCopy) throws IOException
     {
@@ -203,39 +209,56 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
             bOut.write(b, 0, i);
         }
         String line = new String(bOut.toByteArray(), "UTF-8").trim();
-        if (line.length() == 0)
-        {
-            throw new IOException("Could not get the total number of locks from the master lock file " + masterLockFile);
-        }
-        String[] parts = line.split(" ");
         int totalLocks = PERL_PIPELINE_LOCKS_DEFAULT;
-        int currentIndex;
-        try
+        int currentIndex = 0;
+        if (line.length() > 0)
         {
-            currentIndex = Integer.parseInt(parts[0]);
-        }
-        catch (NumberFormatException e)
-        {
-            throw new IOException("Could not parse the current lock index from the master lock file " + masterLockFile + ", the value was: " + parts[0]);
-        }
-        if (parts.length > 1)
-        {
+            String[] parts = line.split(" ");
             try
             {
-                totalLocks = Integer.parseInt(parts[1]);
+                currentIndex = Integer.parseInt(parts[0]);
             }
             catch (NumberFormatException e)
             {
-                throw new IOException("Could not parse the total number of locks from the master lock file " + masterLockFile + ", the value was: " + parts[1]);
+                throw new IOException("Could not parse the current lock index from the master lock file " + masterLockFile + ", the value was: " + parts[0]);
             }
+
+            if (parts.length > 1)
+            {
+                try
+                {
+                    totalLocks = Integer.parseInt(parts[1]);
+                }
+                catch (NumberFormatException e)
+                {
+                    throw new IOException("Could not parse the total number of locks from the master lock file " + masterLockFile + ", the value was: " + parts[1]);
+                }
+            }
+
+            if (totalLocks < 1)
+                totalLocks = PERL_PIPELINE_LOCKS_DEFAULT;
         }
-        if (totalLocks < 1)
-            totalLocks = PERL_PIPELINE_LOCKS_DEFAULT;
+
         if (currentIndex >= totalLocks)
         {
             currentIndex = 0;
         }
         return new MasterLockInfo(totalLocks, currentIndex);
+    }
+
+    /**
+     * File system locks are fine to communicate locking between two different processes, but they don't work for
+     * multiple threads inside the same VM. We need to do Java-level locking as well.
+     */
+    private static synchronized Lock getInMemoryLockObject(File f)
+    {
+        Lock result = _locks.get(f);
+        if (result == null)
+        {
+            result = new ReentrantLock();
+            _locks.put(f, result);
+        }
+        return result;
     }
 
     protected CopyingResource createCopyingLock() throws IOException
@@ -247,6 +270,9 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
 
         _log.info("Starting to acquire lock for copying files");
 
+        MasterLockInfo lockInfo;
+
+        // Synchronize to prevent multiple threads from trying to lock the master file from within the same VM
         synchronized (WorkDirectoryRemote.class)
         {
             RandomAccessFile randomAccessFile = null;
@@ -259,17 +285,9 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
                 FileChannel masterChannel = randomAccessFile.getChannel();
                 masterLock = masterChannel.lock();
 
-                MasterLockInfo lockInfo = parseMasterLock(randomAccessFile, masterLockFile);
+                lockInfo = parseMasterLock(randomAccessFile, masterLockFile);
                 int nextIndex = (lockInfo.getCurrentLock() + 1) % lockInfo.getTotalLocks();
                 rewriteMasterLock(randomAccessFile, new MasterLockInfo(lockInfo.getTotalLocks(), nextIndex));
-                
-                _log.info("Acquiring lock #" + lockInfo.getCurrentLock());
-                File f = new File(_lockDirectory, "lock" + lockInfo.getCurrentLock());
-                FileChannel lockChannel = new FileOutputStream(f, true).getChannel();
-                FileLockCopyingResource result = new FileLockCopyingResource(lockChannel, lockInfo.getCurrentLock());
-                _log.info("Lock #" + lockInfo.getCurrentLock() + " acquired");
-                
-                return result;
             }
             finally
             {
@@ -277,6 +295,14 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
                 if (masterLock != null) { try { masterLock.release(); } catch (IOException e) {} }
             }
         }
+
+        _log.info("Acquiring lock #" + lockInfo.getCurrentLock());
+        File f = new File(_lockDirectory, "lock" + lockInfo.getCurrentLock());
+        FileChannel lockChannel = new FileOutputStream(f, true).getChannel();
+        FileLockCopyingResource result = new FileLockCopyingResource(lockChannel, lockInfo.getCurrentLock(), f);
+        _log.info("Lock #" + lockInfo.getCurrentLock() + " acquired");
+
+        return result;
     }
 
     private void rewriteMasterLock(RandomAccessFile masterFile, MasterLockInfo lockInfo)
@@ -322,13 +348,20 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
         private final int _lockNumber;
         private FileLock _lock;
         private Throwable _creationStack;
+        private Lock _memoryLock;
 
-        public FileLockCopyingResource(FileChannel channel, int lockNumber) throws IOException
+        public FileLockCopyingResource(FileChannel channel, int lockNumber, File f) throws IOException
         {
             _channel = channel;
             _lockNumber = lockNumber;
-            _lock = _channel.lock();
             _creationStack = new Throwable();
+
+            // Lock the memory part first to eliminate multi-threaded access to the same file
+            _memoryLock = getInMemoryLockObject(f);
+            _memoryLock.lock();
+
+            // Lock the file part second
+            _lock = _channel.lock();
         }
 
         protected void finalize() throws Throwable
@@ -345,12 +378,17 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
         {
             if (_lock != null)
             {
+                // Unlock the file part first
                 try { _lock.release(); } catch (IOException e) {}
                 try { _channel.close(); } catch (IOException e) {}
                 _log.info("Lock #" + _lockNumber + " released");
                 _lock = null;
                 _channel = null;
                 super.release();
+
+                // Unlock the memory part last
+                _memoryLock.unlock();
+                _memoryLock = null;
             }
         }
     }

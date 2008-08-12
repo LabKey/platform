@@ -625,4 +625,12 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
     {
         return true;
     }
+
+    public List<String> getAttributions()
+    {
+        return Arrays.asList(
+            "<a href=\"http://www.apache.org\" target=\"top\"><img src=\"http://www.apache.org/images/asf_logo.gif\" alt=\"Apache\" width=\"185\" height=\"50\"></a>",
+            "<a href=\"http://www.springframework.org\" target=\"top\"><img src=\"http://static.springframework.org/images/spring21.png\" alt=\"Spring\" width=\"100\" height=\"48\"></a>"
+        );
+    }
 }
