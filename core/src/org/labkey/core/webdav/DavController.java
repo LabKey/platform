@@ -25,11 +25,13 @@ import org.json.JSONWriter;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.LookAndFeelAppProps;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
@@ -415,7 +417,7 @@ public class DavController extends SpringActionController
                 }
                 else
                 {
-                    getResponse().setRealm(AppProps.getInstance().getSystemDescription());
+                    getResponse().setRealm(LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getSystemDescription());
                     getResponse().sendError(WebdavStatus.SC_UNAUTHORIZED, resource.getPath());
                 }
             }

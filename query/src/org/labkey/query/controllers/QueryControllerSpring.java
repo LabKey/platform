@@ -28,7 +28,7 @@ import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotForm;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.security.*;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.LookAndFeelAppProps;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -443,7 +443,7 @@ public class QueryControllerSpring extends SpringActionController
             {
                 if (!getUser().isGuest())
                     HttpView.throwUnauthorized();
-                getViewContext().getResponse().setHeader("WWW-Authenticate", "Basic realm=\"" + AppProps.getInstance().getSystemDescription() + "\"");
+                getViewContext().getResponse().setHeader("WWW-Authenticate", "Basic realm=\"" + LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getSystemDescription() + "\"");
                 getViewContext().getResponse().setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 return null;
             }

@@ -28,12 +28,12 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.LookAndFeelAppProps;
 import org.labkey.api.util.*;
 import org.labkey.api.util.Search.SearchResultsView;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.settings.AppProps;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -129,7 +129,7 @@ public class ProjectController extends SpringActionController
             }
             else if (c.equals(ContainerManager.getHomeContainer()))
             {
-                title = AppProps.getInstance().getSystemShortName();
+                title = LookAndFeelAppProps.getInstance(c).getSystemShortName();
                 appendPath = false;
             }
             else

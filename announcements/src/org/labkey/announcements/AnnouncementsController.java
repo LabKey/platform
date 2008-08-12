@@ -42,6 +42,7 @@ import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.LookAndFeelAppProps;
 import org.labkey.common.util.Pair;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -1575,7 +1576,6 @@ public class AnnouncementsController extends SpringActionController
         {
             public Announcement[] announcements;
             public String url;
-            public AppProps app = AppProps.getInstance();
 
             private RssBean(Announcement[] announcements, String url)
             {

@@ -28,6 +28,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableLookAndFeelAppProps;
+import org.labkey.api.settings.LookAndFeelAppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
@@ -695,7 +696,7 @@ public class LoginController extends SpringActionController
             }
             catch (SecurityManager.UserManagementException e)
             {
-                errors.reject("password", "Resetting password failed.  Contact the " + AppProps.getInstance().getSystemShortName() + " team.");
+                errors.reject("password", "Resetting password failed.  Contact the " + LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getSystemShortName() + " team.");
                 return false;
             }
 
@@ -706,7 +707,7 @@ public class LoginController extends SpringActionController
             }
             catch (SecurityManager.UserManagementException e)
             {
-                errors.reject("password", "Resetting verification failed.  Contact the " + AppProps.getInstance().getSystemShortName() + " team.");
+                errors.reject("password", "Resetting verification failed.  Contact the " + LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getSystemShortName() + " team.");
                 return false;
             }
 
