@@ -20,7 +20,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.action.*;
 import org.labkey.api.data.*;
-import org.labkey.api.data.Container;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.xar.LsidUtils;
@@ -36,9 +35,9 @@ import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.experiment.*;
-import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.api.*;
 import org.labkey.experiment.controllers.property.PropertyController;
+import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.samples.UploadMaterialSetForm;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 import org.labkey.experiment.xar.XarExportSelection;
@@ -54,7 +53,6 @@ import java.io.*;
 import java.net.URI;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.List;
 
 /**
  * User: jeckels
@@ -2204,6 +2202,7 @@ public class ExperimentController extends SpringActionController
     {
         private String _comment;
         private String _flagSessionId;
+        private boolean _redirect = true;
 
         public String getComment()
         {
@@ -2223,6 +2222,16 @@ public class ExperimentController extends SpringActionController
         public void setFlagSessionId(String flagSessionId)
         {
             _flagSessionId = flagSessionId;
+        }
+
+        public boolean isRedirect()
+        {
+            return _redirect;
+        }
+
+        public void setRedirect(boolean redirect)
+        {
+            _redirect = redirect;
         }
     }
 
@@ -2250,7 +2259,8 @@ public class ExperimentController extends SpringActionController
                 HttpView.throwUnauthorized();
             obj.setComment(getUser(), form.getComment());
 
-            HttpView.throwRedirect(obj.urlFlag(!StringUtils.isEmpty(form.getComment())));
+            if (form.isRedirect())
+                HttpView.throwRedirect(obj.urlFlag(!StringUtils.isEmpty(form.getComment())));
             return null;
         }
 
