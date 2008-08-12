@@ -80,57 +80,10 @@ public class EPipelineQueueImpl implements PipelineQueue
         _factoryJms = factory;
     }
 
-    public PipelineJobData getJobData(Container c)
+    public boolean cancelJob(Container c, String jobId)
     {
-        PipelineJobData data =  new PipelineJobData();
-        Map endpoints = MuleManager.getInstance().getEndpoints();
-        UMOEndpoint ep = (UMOEndpoint) endpoints.get("JobQueue");
-        if (ep == null)
-            return data;
-
-        Connection conn = null;
-        try
-        {
-            conn = _factoryJms.createConnection();
-            Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            QueueBrowser browser = session.createBrowser(session.createQueue(ep.getEndpointURI().getAddress()));
-            conn.start();
-            for (Enumeration msgs = browser.getEnumeration(); msgs.hasMoreElements() ;)
-            {
-                Message msg = (Message) msgs.nextElement();
-
-                PipelineJob job = PipelineJobService.get().getJobStore().fromXML(((TextMessage)msg).getText());
-                data.addPendingJob(job);
-            }
-        }
-        catch (JMSException e)
-        {
-            _log.error("Error browsing message queue at '" + ep.getEndpointURI(), e);
-        }
-        finally
-        {
-            if (conn != null)
-            {
-                try
-                {   conn.close(); }
-                catch (JMSException e)
-                {}
-            }
-        }
-
-        return data;
-    }
-
-    public void starting(PipelineJob job, Thread thread)
-    {
-    }
-
-    public void done(PipelineJob job)
-    {
-    }
-
-    public boolean cancelJob(Container c, int jobId)
-    {
+        // todo: implement this!
+        
         return false;
     }
 
@@ -180,17 +133,7 @@ public class EPipelineQueueImpl implements PipelineQueue
         return result;
     }
 
-    public PipelineJob findJob(Container c, String statusFile)
-    {
-        return null;
-    }
-
     public void addJob(PipelineJob job) throws IOException
-    {
-        addJob(job, PipelineJob.WAITING_STATUS);
-    }
-
-    public void addJob(PipelineJob job, String initialState) throws IOException
     {
         try
         {
@@ -204,7 +147,7 @@ public class EPipelineQueueImpl implements PipelineQueue
             _log.warn(e);  // This is not currently a hard dependency.
         }
 
-        if (job.setQueue(this, initialState))
+        if (job.setQueue(this, PipelineJob.WAITING_STATUS))
         {
             if (RequestContext.getEvent() == null)
             {
@@ -260,5 +203,25 @@ public class EPipelineQueueImpl implements PipelineQueue
                 RequestContext.clear();
             }
         }        
+    }
+
+    public PipelineJob findJobInMemory(Container c, String statusFile)
+    {
+        throw new UnsupportedOperationException("No useful information about jobs in memory.");
+    }
+
+    public PipelineJobData getJobDataInMemory(Container c)
+    {
+        throw new UnsupportedOperationException("No useful information about jobs in memory.");
+    }
+
+    public void starting(PipelineJob job, Thread thread)
+    {
+        throw new UnsupportedOperationException("Mini-pipeline maintenance notification not supported.");
+    }
+
+    public void done(PipelineJob job)
+    {
+        throw new UnsupportedOperationException("Mini-pipeline maintenance notification not supported.");
     }
 }

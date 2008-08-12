@@ -926,7 +926,10 @@ public class StatusController extends SpringActionController
             completeStatus.setDisplayPermission(ACL.PERM_UPDATE);
         bb.add(completeStatus);
 
-        if (user.isAdministrator() && c.isRoot())
+        // Display the "Show Queue" button, if this is not the Enterprise Pipeline,
+        // the user is an administrator, and this is the pipeline administration page.
+        if (!PipelineService.get().isEnterprisePipeline() &&
+                user.isAdministrator() && c.isRoot())
         {
             ActionButton showQueue = new ActionButton((String)null, "Show Queue");
             showQueue.setURL(PipelineController.urlStatus(c, true));
@@ -1166,7 +1169,7 @@ public class StatusController extends SpringActionController
                     for (PipelineStatusFileImpl sf : statusFiles)
                     {
                         // NOTE: JobIds end up all uppercase in the database, but they are lowercase in jobs
-                        if (sf.getJobStore() != null && !jobIds.contains(sf.getJob().toLowerCase()))
+                        if (sf.getJobStore() != null && !jobIds.contains(sf.getJobId().toLowerCase()))
                             PipelineJobServiceImpl.get().getJobStore().retry(sf);
                     }
                 }

@@ -99,10 +99,12 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         }
         // If there is an active task and this is waiting state, then checkpoint the
         // job to the database for retry.
-        else if (job.getActiveTaskFactory() != null &&
-                PipelineJob.TaskStatus.waiting.equals(job.getActiveTaskStatus()))
+        else if (PipelineJob.WAITING_STATUS.equals(status) ||
+                (job.getActiveTaskFactory() != null &&
+                    PipelineJob.TaskStatus.waiting.equals(job.getActiveTaskStatus())))
         {
-            setActiveTaskId(job.getActiveTaskFactory().getActiveId(job).toString());
+            if (job.getActiveTaskFactory() != null)
+                setActiveTaskId(job.getActiveTaskFactory().getActiveId(job).toString());
             setJobStore(PipelineJobService.get().getJobStore().toXML(job));
         }
     }
@@ -164,6 +166,11 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         this._rowId = rowId;
     }
 
+    public String getJobId()
+    {
+        return getJob();
+    }
+
     public String getJob()
     {
         return _job;
@@ -172,6 +179,11 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
     public void setJob(String job)
     {
         this._job = job;
+    }
+
+    public String getJobParentId()
+    {
+        return getJobParent();
     }
 
     public String getJobParent()
@@ -192,6 +204,14 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
     public void setJobStore(String jobStore)
     {
         _jobStore = jobStore;
+    }
+
+    public PipelineJob createJobInstance()
+    {
+        if (_jobStore == null)
+            return null;
+
+        return PipelineJobService.get().getJobStore().fromXML(_jobStore);
     }
 
     public String getActiveTaskId()

@@ -50,11 +50,6 @@ public class PipelineQueueImpl implements PipelineQueue
 
     public synchronized void addJob(PipelineJob job) throws IOException
     {
-        addJob(job, PipelineJob.WAITING_STATUS);
-    }
-
-    public synchronized void addJob(PipelineJob job, String initialState)
-    {
         if (null == job)
             throw new NullPointerException();
         _logDebug("PENDING:   " + job.toString());
@@ -71,7 +66,7 @@ public class PipelineQueueImpl implements PipelineQueue
             _log.warn(e);  // This is not currently a hard dependency.
         }
 
-        if (job.setQueue(this, initialState))
+        if (job.setQueue(this, PipelineJob.WAITING_STATUS))
         {
             _pending.add(job);
             submitJobs();
@@ -93,6 +88,9 @@ public class PipelineQueueImpl implements PipelineQueue
 
     public synchronized void starting(PipelineJob job, Thread thread)
     {
+        // WARNING: This method is for pipeline maintenance only.  Do not put
+        //          important functionality side-effects in here, since this
+        //          function is not supported in the Enterprise Pipeline.
         _logDebug("RUNNING:   " + job.toString());
         boolean removed = _pending.remove(job);
         assert removed;
@@ -103,13 +101,11 @@ public class PipelineQueueImpl implements PipelineQueue
 
     public synchronized void done(PipelineJob job)
     {
+        // WARNING: This method is for pipeline maintenance only.  Do not put
+        //          important functionality side-effects in here, since this
+        //          function is not supported in the Enterprise Pipeline.
         _logDebug("COMPLETED: " + job.toString());
         ConnectionWrapper.dumpLeaksForThread(Thread.currentThread());
-        File serializedFile = PipelineJob.getSerializedFile(job.getStatusFile());
-        if (serializedFile != null && serializedFile.exists())
-        {
-            serializedFile.delete();
-        }
         boolean removed = _running.remove(job);
         assert removed;
         removed = _submitted.remove(job);
@@ -186,12 +182,12 @@ public class PipelineQueueImpl implements PipelineQueue
         }
     }
 
-    public synchronized boolean cancelJob(Container c, int jobId)
+    public synchronized boolean cancelJob(Container c, String jobId)
     {
         for (ListIterator<PipelineJob> it = _pending.listIterator(); it.hasNext();)
         {
             PipelineJob job = it.next();
-            if (job.getJobId() == jobId && inContainer(c, job))
+            if (job.getJobGUID().equals(jobId) && inContainer(c, job))
             {
                 if (job.cancel(false))
                 {
@@ -203,7 +199,7 @@ public class PipelineQueueImpl implements PipelineQueue
         for (ListIterator<PipelineJob> it = _running.listIterator(); it.hasNext();)
         {
             PipelineJob job = it.next();
-            if (job.getJobId() == jobId && inContainer(c, job))
+            if (job.getJobGUID().equals(jobId) && inContainer(c, job))
             {
                 if (job.interrupt())
                 {
@@ -217,20 +213,17 @@ public class PipelineQueueImpl implements PipelineQueue
 
     public List<PipelineJob> findJobs(String location)
     {
+        String locationDefault = PipelineJobService.get().getDefaultExecutionLocation();
+
+        // For the mini-pipeline the only location is the default location.
+        // Just return an empty list for any other location that is requested.
         List<PipelineJob> result = new ArrayList<PipelineJob>();
-        for (PipelineJob job : _pending)
+        if (location.equals(locationDefault))
         {
-            if (job.getActiveTaskFactory().getExecutionLocation().equals(location))
-            {
+            for (PipelineJob job : _pending)
                 result.add(job);
-            }
-        }
-        for (PipelineJob job : _running)
-        {
-            if (job.getActiveTaskFactory().getExecutionLocation().equals(location))
-            {
+            for (PipelineJob job : _running)
                 result.add(job);
-            }
         }
         return result;
     }
@@ -244,9 +237,9 @@ public class PipelineQueueImpl implements PipelineQueue
         return new File(compare).equals(new File(statusFile));
     }
 
-    public PipelineJob findJob(Container c, String statusFile)
+    public PipelineJob findJobInMemory(Container c, String statusFile)
     {
-        PipelineJobData jd = getJobData(c);
+        PipelineJobData jd = getJobDataInMemory(c);
         statusFile = PipelineJobService.statusPathOf(statusFile);
         for (PipelineJob job : jd.getRunningJobs())
         {
@@ -261,7 +254,7 @@ public class PipelineQueueImpl implements PipelineQueue
         return null;
     }
 
-    public synchronized PipelineJobData getJobData(Container c)
+    public synchronized PipelineJobData getJobDataInMemory(Container c)
     {
         PipelineJobData ret = new PipelineJobData();
 
@@ -388,28 +381,28 @@ public class PipelineQueueImpl implements PipelineQueue
             for (int i = 0; i < 4; i++)
                 queue.addJob(jobs[i]);
             Thread.sleep(1);
-            data = queue.getJobData(containerA);
+            data = queue.getJobDataInMemory(containerA);
             //assertEquals(2, data.getPendingJobs().size() + data.getRunningJobs().size() + data.getCompletedJobs().size());
-            data = queue.getJobData(containerB);
+            data = queue.getJobDataInMemory(containerB);
             //assertEquals(2, data.getPendingJobs().size() + data.getRunningJobs().size() + data.getCompletedJobs().size());
 
             // wait a bit
             Thread.sleep(100);
-            data = queue.getJobData(null);
+            data = queue.getJobDataInMemory(null);
             //assertEquals(4, data.getPendingJobs().size() + data.getRunningJobs().size() + data.getCompletedJobs().size());
 
             // add remaining jobs
             for (int i = 4; i < jobs.length; i++)
                 queue.addJob(jobs[i]);
             Thread.sleep(1);
-            data = queue.getJobData(null);
+            data = queue.getJobDataInMemory(null);
             //assertEquals(jobs.length, data.getPendingJobs().size() + data.getRunningJobs().size() + data.getCompletedJobs().size());
 
             // wait for last submitted job to finish
             PipelineJob last = jobs[jobs.length - 1];
             last.get();
             assertTrue(last.isDone());
-            data = queue.getJobData(null);
+            data = queue.getJobDataInMemory(null);
             //assertEquals(jobs.length, data.getPendingJobs().size() + data.getRunningJobs().size() + data.getCompletedJobs().size());
             assertFalse(data.getPendingJobs().contains(last));
             //assertTrue(data.getCompletedJobs().contains(last) || data.getRunningJobs().contains(last));
@@ -419,14 +412,14 @@ public class PipelineQueueImpl implements PipelineQueue
                 job.get();
                 assertTrue(job.isDone());
             }
-            data = queue.getJobData(null);
+            data = queue.getJobDataInMemory(null);
             Thread.sleep(10);
-            data = queue.getJobData(null);
+            data = queue.getJobDataInMemory(null);
 
-            data = queue.getJobData(containerA);
-            data = queue.getJobData(null);
+            data = queue.getJobDataInMemory(containerA);
+            data = queue.getJobDataInMemory(null);
 
-            data = queue.getJobData(null);
+            data = queue.getJobDataInMemory(null);
 
 
             assertEquals(0, queue._runner.getJobCount());

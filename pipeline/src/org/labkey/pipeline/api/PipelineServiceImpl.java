@@ -256,11 +256,6 @@ public class PipelineServiceImpl extends PipelineService
         getPipelineQueue().addJob(job);
     }
 
-    public void queueJob(PipelineJob job, String initialState) throws IOException
-    {
-        getPipelineQueue().addJob(job, initialState);
-    }
-
     public void setPipelineProperty(Container container, String name, String value) throws SQLException
     {
         PipelineManager.setPipelineProperty(container, name, value);
@@ -380,6 +375,16 @@ public class PipelineServiceImpl extends PipelineService
     public PipelineStatusFile getStatusFile(String path) throws SQLException
     {
         return PipelineStatusManager.getStatusFile(path);
+    }
+
+    public PipelineStatusFile[] getQueuedStatusFiles() throws SQLException
+    {
+        return PipelineStatusManager.getQueuedStatusFiles();
+    }
+
+    public PipelineStatusFile[] getQueuedStatusFiles(Container c) throws SQLException
+    {
+        return PipelineStatusManager.getQueuedStatusFilesForContainer(c);
     }
 
     public void setStatusFile(ViewBackgroundInfo info, PipelineStatusFile sf) throws Exception

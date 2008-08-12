@@ -52,7 +52,7 @@ private Object outputJob(String status, PipelineJob job,
 
     if (status.equals("pending") && canCancel)
     {
-        ret.append("<td><a href=\"cancelJob.view?jobId=").append(job.getJobId())
+        ret.append("<td><a href=\"cancelJob.view?jobId=").append(job.getJobGUID())
                 .append(isAllContainers ? "&allcontainers=1" : "")
                 .append("\"><img src=\"")
                 .append(PageFlowUtil.buttonSrc("cancel"))

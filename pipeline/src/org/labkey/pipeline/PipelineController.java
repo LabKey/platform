@@ -1169,11 +1169,15 @@ public class PipelineController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
+            // Job data is only available from the mini-pipeline.
+            if (PipelineService.get().isEnterprisePipeline())
+                return HttpView.throwNotFoundMV();
+            
             setHelpTopic(getHelpTopic("pipeline/status"));
 
             PipelineQueue queue = PipelineService.get().getPipelineQueue();
             return new JspView<StatusModel>("/org/labkey/pipeline/pipelineStatus.jsp",
-                    new StatusModel(queue.getJobData(getJobDataContainer())));
+                    new StatusModel(queue.getJobDataInMemory(getJobDataContainer())));
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1202,6 +1206,12 @@ public class PipelineController extends SpringActionController
     {
         public ActionURL getRedirectURL(JobIdForm form) throws Exception
         {
+            // This is not a valid URL for cancelling a job in the Enterprise
+            // Pipeline, since it redirects to the mini-pipeline queue status
+            // page.
+            if (PipelineService.get().isEnterprisePipeline())
+                HttpView.throwNotFoundMV();
+
             PipelineQueue queue = PipelineService.get().getPipelineQueue();
             boolean success = queue.cancelJob(getJobDataContainer(), form.getJobId());
             return urlStatus();
@@ -1210,14 +1220,14 @@ public class PipelineController extends SpringActionController
 
     public static class JobIdForm
     {
-        private int _jobId;
+        private String _jobId;
 
-        public int getJobId()
+        public String getJobId()
         {
             return _jobId;
         }
 
-        public void setJobId(int jobId)
+        public void setJobId(String jobId)
         {
             _jobId = jobId;
         }

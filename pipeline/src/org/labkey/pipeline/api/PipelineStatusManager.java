@@ -276,6 +276,14 @@ public class PipelineStatusManager
         return Table.select(pipeline.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
     }
 
+    public static PipelineStatusFile[] getQueuedStatusFilesForContainer(Container c) throws SQLException
+    {
+        SimpleFilter filter = createQueueFilter();
+        filter.addCondition("Container", c.getId(), CompareType.EQUAL);
+
+        return Table.select(pipeline.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
+    }
+
     public static PipelineStatusFileImpl[] getQueuedStatusFiles() throws SQLException
     {
         SimpleFilter filter = createQueueFilter();
