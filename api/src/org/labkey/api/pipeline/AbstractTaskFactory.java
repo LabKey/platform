@@ -31,11 +31,11 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
     private TaskId _id;
     private TaskId _dependencyId;
     private boolean _join;
+    private boolean _largeWork;
     private String _executionLocation;
-    private int _autoRetry = -1;
     private String _groupParameterName;
+    private int _autoRetry = -1;
     private GlobusSettings _globusSettings;
-    private WorkDirFactory _workDirectoryFactory;
 
     public AbstractTaskFactory(Class namespaceClass)
     {
@@ -81,6 +81,8 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
             _dependencyId = settings.getDependencyId();
         if (settings.isJoinSet())
             _join = settings.isJoin();
+        if (settings.isLargeWorkSet())
+            _largeWork = settings.isLargeWork();
         if (settings.getLocation() != null)
             _executionLocation = settings.getLocation();
         if (settings.isAutoRetrySet())
@@ -89,8 +91,6 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
             _groupParameterName = settings.getGroupParameterName();
         if (settings.getGlobusSettings() != null)
             _globusSettings = settings.getGlobusSettings();
-        if (settings.getWorkDirectoryFactory() != null)
-            _workDirectoryFactory = settings.getWorkDirectoryFactory();
     }
 
     /**
@@ -176,6 +176,16 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
         _join = join;
     }
 
+    public boolean isLargeWork()
+    {
+        return _largeWork;
+    }
+
+    public void setLargeWork(boolean largeWork)
+    {
+        _largeWork = largeWork;
+    }
+
     public String getExecutionLocation()
     {
         if (_executionLocation == null)
@@ -221,22 +231,10 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
 
     public WorkDirectory createWorkDirectory(String jobGUID, FileAnalysisJobSupport jobSupport, Logger logger) throws IOException
     {
-        WorkDirFactory factory = _workDirectoryFactory;
-        if (factory == null)
-        {
-            factory = PipelineJobService.get().getWorkDirFactory();
-        }
+        PipelineJobService service = PipelineJobService.get();
+        WorkDirFactory factory = (_largeWork ? service.getLargeWorkDirFactory() :
+                service.getWorkDirFactory());
         return factory.createWorkDirectory(jobGUID, jobSupport, logger);
-    }
-
-    public WorkDirFactory getWorkDirFactory()
-    {
-        return _workDirectoryFactory;
-    }
-
-    public void setWorkDirFactory(WorkDirFactory workDirectoryFactory)
-    {
-        _workDirectoryFactory = workDirectoryFactory;
     }
 
     /**

@@ -29,11 +29,11 @@ abstract public class AbstractTaskFactorySettings implements TaskFactorySettings
     private TaskId _id;
     private TaskId _dependencyId;
     private Boolean _join;
+    private Boolean _largeWork;
     private String _location;
     private Integer _autoRetry;
     private String _groupParameterName;
     private GlobusSettings _globusSettings;
-    private WorkDirFactory _workDirectoryFactory;
 
     public AbstractTaskFactorySettings(TaskId id)
     {
@@ -96,6 +96,21 @@ abstract public class AbstractTaskFactorySettings implements TaskFactorySettings
         _join = join;
     }
 
+    public boolean isLargeWorkSet()
+    {
+        return _largeWork != null;
+    }
+
+    public boolean isLargeWork()
+    {
+        return isLargeWorkSet() && _largeWork.booleanValue();
+    }
+
+    public void setLargeWork(Boolean largeWork)
+    {
+        _largeWork = largeWork;
+    }
+
     public void setGroupParameterName(String name)
     {
         _groupParameterName = name;
@@ -139,15 +154,5 @@ abstract public class AbstractTaskFactorySettings implements TaskFactorySettings
     public void setGlobusSettings(GlobusSettings globusSettings)
     {
         _globusSettings = globusSettings;
-    }
-
-    public WorkDirFactory getWorkDirectoryFactory()
-    {
-        return _workDirectoryFactory;
-    }
-
-    public void setWorkDirectoryFactory(WorkDirFactory workDirectoryFactory)
-    {
-        _workDirectoryFactory = workDirectoryFactory;
     }
 }

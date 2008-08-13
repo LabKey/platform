@@ -108,6 +108,8 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
 
     abstract public WorkDirFactory getWorkDirFactory();
 
+    abstract public WorkDirFactory getLargeWorkDirFactory();
+
     abstract public PathMapper getPathMapper();
 
     abstract public PipelineStatusFile.StatusWriter getStatusWriter();
