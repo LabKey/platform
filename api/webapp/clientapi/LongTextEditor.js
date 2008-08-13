@@ -45,8 +45,8 @@ LABKEY.ext.LongTextField = Ext.extend(Ext.form.TriggerField, {
     },
 
     onSaveChanges : function() {
-        this.setValue(this.popup.getComponent(0).getValue());
         this.hidePopup();
+        this.setValue(this.popup.getComponent(0).getValue());
     },
 
     onCancel : function() {
