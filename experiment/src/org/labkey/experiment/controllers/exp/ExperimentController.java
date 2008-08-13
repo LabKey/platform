@@ -811,7 +811,8 @@ public class ExperimentController extends SpringActionController
 
             if (_data.isInlineImage() && _data.isFileOnDisk())
             {
-                HtmlView imageView = new HtmlView("<img src=\"showFile.view?rowId=" + _data.getRowId() + "\"/>");
+                ActionURL showFileURL = new ActionURL(ShowFileAction.class, getContainer()).addParameter("rowId", _data.getRowId());
+                HtmlView imageView = new HtmlView("<img src=\"" + showFileURL + "\"/>");
                 return new VBox(vbox, imageView);
             }
             return vbox;
@@ -3317,5 +3318,11 @@ public class ExperimentController extends SpringActionController
             url.addParameter("domainId", domainId);
             return url;
         }
+
+        public ActionURL getShowFileURL(Container c, ExpData data)
+        {
+            return new ActionURL(ShowFileAction.class, c).addParameter("rowId", data.getRowId());
+        }
+
     }
 }

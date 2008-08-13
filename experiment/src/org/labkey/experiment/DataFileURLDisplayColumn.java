@@ -15,17 +15,20 @@
  */
 package org.labkey.experiment;
 
-import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.MimeMap;
+import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.util.MimeMap;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.experiment.controllers.exp.ExperimentController;
 
-import java.io.*;
-import java.net.URISyntaxException;
+import java.io.File;
+import java.io.IOException;
+import java.io.Writer;
 import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
  * User: jeckels
@@ -66,7 +69,7 @@ public class DataFileURLDisplayColumn extends SimpleDisplayColumn
                 viewURL = urlHelper.toString();
             }
 
-            String downloadURL = "showFile.view?rowId=" + _data.getRowId();
+            ActionURL downloadURL = new ActionURL(ExperimentController.ShowFileAction.class, ctx.getContainer()).addParameter("rowId", _data.getRowId());
 
             if (_data.isFileOnDisk())
             {
