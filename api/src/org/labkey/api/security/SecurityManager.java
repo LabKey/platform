@@ -2081,7 +2081,7 @@ public class SecurityManager
 
     public static boolean isAdminOnlyPermissions(Container c)
     {
-        ACL acl = c.getAcl(); //NOTE: Could be  inherited, but we don't care...
+        ACL acl = c.getAcl(); //NOTE: Could be inherited, but we don't care...
         Integer administratorsGroupInteger = getGroupId(c.getProject(), "Administrators", false);
         int adminGroupId = null != administratorsGroupInteger ? administratorsGroupInteger.intValue() : Group.groupAdministrators;
         boolean adminOnly = true;

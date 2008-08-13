@@ -69,6 +69,16 @@ public class CacheableWriter implements DocumentWriter
         return _bOut;
     }
 
+    public byte[] getBytes()
+    {
+        if (_bytes == null)
+        {
+            _bytes = _bOut.toByteArray();
+        }
+
+        return _bytes;
+    }
+
     public void writeToResponse(HttpServletResponse response, Calendar expires) throws IOException
     {
         response.reset();
@@ -83,10 +93,6 @@ public class CacheableWriter implements DocumentWriter
             response.setHeader("Content-Disposition", _disposition);
         }
         response.setContentLength(_size);
-        if (_bytes == null)
-        {
-            _bytes = _bOut.toByteArray();
-        }
-        response.getOutputStream().write(_bytes);
+        response.getOutputStream().write(getBytes());
     }
 }

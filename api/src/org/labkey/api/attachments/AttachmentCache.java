@@ -18,7 +18,8 @@ package org.labkey.api.attachments;
 
 import org.labkey.api.data.CacheableWriter;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.ContainerManager.ContainerParent;
 
 import java.sql.SQLException;
 import java.util.Map;
@@ -75,7 +76,7 @@ public class AttachmentCache
 
     public static Attachment lookupLogoAttachment(Container c) throws SQLException
     {
-        AttachmentParent parent = new ContainerManager.ContainerParent(c);
+        AttachmentParent parent = new ContainerParent(c);
         Attachment[] attachments = AttachmentService.get().getAttachments(parent);
         for (Attachment attachment : attachments)
         {
@@ -87,9 +88,18 @@ public class AttachmentCache
         return null;
     }
 
-    public static Attachment lookupCustomStylesheetAttachment(AttachmentParent parent) throws SQLException
+    // We don't cache custom stylesheets -- CoreController caches them in encoded form
+    public static Attachment lookupCustomStylesheetAttachment(AttachmentParent parent)
     {
-        return lookupAttachment(parent, STYLESHEET_FILE_NAME);
+        // TODO: Put the try/catch in lookupAttachment(parent, name) instead
+        try
+        {
+            return lookupAttachment(parent, STYLESHEET_FILE_NAME);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     public static Attachment lookupAttachment(AttachmentParent parent, String name) throws SQLException

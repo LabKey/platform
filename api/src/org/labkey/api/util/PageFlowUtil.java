@@ -900,7 +900,12 @@ public class PageFlowUtil
 
     public static class Content
     {
-        Content(String s, byte[] e, long m)
+        public Content(String s)
+        {
+            this(s, null, System.currentTimeMillis());
+        }
+
+        public Content(String s, byte[] e, long m)
         {
             content = s;
             encoded = e;
@@ -926,7 +931,7 @@ public class PageFlowUtil
             };
         mv.getView().render(mv.getModel(), request, sresponse);
         String sheet = writer.toString();
-        Content c = new Content(sheet, null, System.currentTimeMillis());
+        Content c = new Content(sheet);
         return c;
     }
 
@@ -1368,6 +1373,13 @@ public class PageFlowUtil
 
     public static String getStandardIncludes(Container c)
     {
+        StringBuilder sb = getFaviconIncludes(c);
+        sb.append(getStylesheetIncludes(c, false));
+        return sb.toString();
+    }
+
+    public static StringBuilder getFaviconIncludes(Container c)
+    {
         StringBuilder sb = new StringBuilder();
 
         ImageURL faviconURL = TemplateResourceHandler.FAVICON.getURL(c);
@@ -1380,6 +1392,13 @@ public class PageFlowUtil
         sb.append(PageFlowUtil.filter(faviconURL));
         sb.append("\" />\n");
 
+        return sb;
+    }
+
+    public static StringBuilder getStylesheetIncludes(Container c, boolean email)
+    {
+        StringBuilder sb = new StringBuilder();
+
         ImageURL stylesheetURL = new ImageURL("stylesheet.css", ContainerManager.getRoot());
 
         sb.append("    <link href=\"");
@@ -1388,13 +1407,16 @@ public class PageFlowUtil
 
         CoreUrls coreUrls = urlProvider(CoreUrls.class);
 
+        if (!email)
+        {
+            sb.append("    <link href=\"");
+            sb.append(PageFlowUtil.filter(coreUrls.getPrintStylesheetURL()));
+            sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\"/>\n");
+        }
+
         sb.append("    <link href=\"");
         sb.append(PageFlowUtil.filter(coreUrls.getThemeStylesheetURL()));
         sb.append("\" type=\"text/css\" rel=\"stylesheet\"/>\n");
-
-        sb.append("    <link href=\"");
-        sb.append(PageFlowUtil.filter(coreUrls.getPrintStylesheetURL()));
-        sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\"/>\n");
 
         ActionURL rootCustomStylesheetURL = coreUrls.getCustomStylesheetURL();
 
@@ -1426,7 +1448,7 @@ public class PageFlowUtil
             }
         }
 
-        return sb.toString();
+        return sb;
     }
 
 
