@@ -20,8 +20,15 @@ import org.apache.commons.lang.StringUtils;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.CoreUrls;
+import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentCache;
+import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CacheableWriter;
+import org.labkey.api.data.ContainerManager.ContainerParent;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.settings.AppProps;
@@ -32,14 +39,15 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.admin.CoreUrls;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.ServletException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.io.IOException;
 
 /**
  * User: jeckels
@@ -49,11 +57,11 @@ public class CoreController extends SpringActionController
 {
     private static final long SECS_IN_DAY = 60 * 60 * 24;
     private static final long MILLIS_IN_DAY = 1000 * SECS_IN_DAY;
+    private static final Content NO_CONTENT = new Content(null);  // Marker for cache
 
     private static Content _printCssContent = null;
     private static Map<Container, Content> _themeStylesheetCache = new ConcurrentHashMap<Container, Content>();
     private static Map<Container, Content> _customStylesheetCache = new ConcurrentHashMap<Container, Content>();
-//    private static Map<Container, Content> _cssContent = new ConcurrentHashMap<Container, Content>();
     private static ActionResolver _actionResolver = new DefaultActionResolver(CoreController.class);
 
     public CoreController()
@@ -86,19 +94,33 @@ public class CoreController extends SpringActionController
                 return null;
         }
 
+        public ActionURL getPrintStylesheetURL()
+        {
+            return getRevisionURL(PrintStylesheetAction.class, ContainerManager.getRoot());
+        }
+
         public ActionURL getCustomStylesheetURL()
         {
-            return null;  // TODO
+            return getCustomStylesheetURL(ContainerManager.getRoot());
         }
 
         public ActionURL getCustomStylesheetURL(Container c)
         {
-            return null;  // TODO
-        }
+            Container settingsContainer = LookAndFeelAppProps.getSettingsContainer(c);
+            Content css;
+            try
+            {
+                css = getCustomStylesheetContent(settingsContainer);
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
 
-        public ActionURL getPrintStylesheetURL()
-        {
-            return getRevisionURL(PrintStylesheetAction.class, ContainerManager.getRoot());
+            if (NO_CONTENT == css)
+                return null;
+            else
+                return getRevisionURL(CustomStylesheetAction.class, settingsContainer);
         }
     }
 
@@ -108,6 +130,10 @@ public class CoreController extends SpringActionController
         {
             HttpServletRequest request = getViewContext().getRequest();
             Content content = getContent(request, response);
+
+            // No custom stylesheet for this container
+            if (NO_CONTENT == content)
+                return;
 
             response.setContentType("text/css");
             response.setDateHeader("Expires", System.currentTimeMillis() + MILLIS_IN_DAY * 10);
@@ -134,7 +160,7 @@ public class CoreController extends SpringActionController
             Container c = getViewContext().getContainer();
             Content content = _themeStylesheetCache.get(c);
             Integer dependsOn = AppProps.getInstance().getLookAndFeelRevision();
-            if (null == content || !dependsOn.equals(content.dependencies) || null != request.getParameter("nocache") || AppProps.getInstance().isDevMode())
+            if (null == content || !dependsOn.equals(content.dependencies) || AppProps.getInstance().isDevMode())
             {
                 JspView view = new JspView("/org/labkey/core/themeStylesheet.jsp");
                 view.setFrame(WebPartView.FrameType.NONE);
@@ -156,7 +182,7 @@ public class CoreController extends SpringActionController
         {
             Content content = _printCssContent;
 
-            if (null == content || null != request.getParameter("nocache") || AppProps.getInstance().isDevMode())
+            if (null == content || AppProps.getInstance().isDevMode())
             {
                 JspView view = new JspView("/org/labkey/core/printstyle.jsp");
                 view.setFrame(WebPartView.FrameType.NONE);
@@ -170,7 +196,46 @@ public class CoreController extends SpringActionController
     }
 
 
-    private byte[] compressCSS(String s)
+    @RequiresPermission(ACL.PERM_NONE)
+    public class CustomStylesheetAction extends BaseStylesheetAction
+    {
+        Content getContent(HttpServletRequest request, HttpServletResponse response) throws Exception
+        {
+            return getCustomStylesheetContent(getContainer());
+        }
+    }
+
+
+    private static Content getCustomStylesheetContent(Container c) throws IOException, ServletException
+    {
+        Content content = _customStylesheetCache.get(c);
+        Integer dependsOn = AppProps.getInstance().getLookAndFeelRevision();
+        if (null == content || !dependsOn.equals(content.dependencies) || AppProps.getInstance().isDevMode())
+        {
+            AttachmentParent parent = new ContainerParent(c);
+            Attachment cssAttachment = AttachmentCache.lookupCustomStylesheetAttachment(parent);
+
+            if (null == cssAttachment)
+            {
+                content = NO_CONTENT;
+            }
+            else
+            {
+                CacheableWriter writer = new CacheableWriter();
+                AttachmentService.get().writeDocument(writer, parent, cssAttachment.getName(), false);
+                content = new Content(new String(writer.getBytes()));
+                content.dependencies = dependsOn;
+                content.encoded = compressCSS(content.content);
+            }
+
+            _customStylesheetCache.put(c, content);
+        }
+
+        return content;
+    }
+
+
+    private static byte[] compressCSS(String s)
     {
         String c = s.trim();
         // this works but probably unnecesary with gzip

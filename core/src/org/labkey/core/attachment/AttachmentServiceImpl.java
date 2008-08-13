@@ -995,11 +995,11 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     }
     private String sqlRootDocument()
     {
-        return  "SELECT DocumentType, DocumentSize, Document FROM " + coreTables().getTableInfoDocuments() + " WHERE Parent IS NULL AND DocumentName = ?";
+        return "SELECT DocumentType, DocumentSize, Document FROM " + coreTables().getTableInfoDocuments() + " WHERE Parent IS NULL AND DocumentName = ?";
     }
     private String sqlCascadeDelete()
     {
-        return  "DELETE FROM " + coreTables().getTableInfoDocuments() + " WHERE Parent = ?";
+        return "DELETE FROM " + coreTables().getTableInfoDocuments() + " WHERE Parent = ?";
     }
     private String sqlDelete()
     {

@@ -1017,7 +1017,7 @@ public class AdminController extends SpringActionController
         AttachmentFile renamed = new SpringAttachmentFile(file);
         renamed.setFilename(AttachmentCache.STYLESHEET_FILE_NAME);
         AttachmentService.get().addAttachments(user, parent, Collections.<AttachmentFile>singletonList(renamed));
-//        TODO: AttachmentCache.clearCustomStylesheetCache();  all for root or single container for project
+//        TODO: AttachmentCache.clearCustomStylesheetCache();  all for root or single container for project -- OR NOT, retrieval checks lookAndFeelRevision
     }
 
 
