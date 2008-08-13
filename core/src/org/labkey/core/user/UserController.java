@@ -1173,7 +1173,7 @@ public class UserController extends SpringActionController
                 if(container.isRoot())
                     users = Arrays.asList(UserManager.getActiveUsers());
                 else
-                    users = SecurityManager.getProjectMembers(container);
+                    users = SecurityManager.getProjectMembers(container, true);
             }
 
             if(null != users)
