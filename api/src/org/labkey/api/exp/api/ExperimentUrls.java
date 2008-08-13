@@ -17,8 +17,8 @@
 package org.labkey.api.exp.api;
 
 import org.labkey.api.action.UrlProvider;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.Container;
+import org.labkey.api.view.ActionURL;
 
 /**
  * User: jeckels
@@ -51,5 +51,7 @@ public interface ExperimentUrls extends UrlProvider
     ActionURL getAddRunsToExperimentURL(Container container, ExpExperiment expExperiment);
 
     ActionURL getDomainEditorURL(Container container, int domainId);
+
+    ActionURL getShowFileURL(Container container, ExpData run);
 
 }
