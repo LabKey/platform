@@ -72,6 +72,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
     private PipelineStatusFile.JobStore _jobStore;
 
     private WorkDirFactory _workDirFactory;
+    private WorkDirFactory _largeWorkDirFactory;
     private PathMapper _pathMapper = new PathMapperImpl();  // Default to empty
 
     public PipelineJobServiceImpl()
@@ -256,6 +257,16 @@ public class PipelineJobServiceImpl extends PipelineJobService
     public void setWorkDirFactory(WorkDirFactory workDirFactory)
     {
         _workDirFactory = workDirFactory;
+    }
+
+    public WorkDirFactory getLargeWorkDirFactory()
+    {
+        return (_largeWorkDirFactory != null ? _largeWorkDirFactory : _workDirFactory);
+    }
+
+    public void setLargeWorkDirFactory(WorkDirFactory largeWorkDirFactory)
+    {
+        _largeWorkDirFactory = largeWorkDirFactory;
     }
 
     public PathMapper getPathMapper()

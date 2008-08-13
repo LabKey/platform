@@ -48,6 +48,42 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
 
     protected CopyingResource _copyingResource;
 
+    public static abstract class AbstractFactory implements WorkDirFactory
+    {
+        private String _outputPermissions;
+
+        public void setPermissions(File outputFile) throws IOException
+        {
+            if (_outputPermissions != null)
+            {
+                Runtime.getRuntime().exec(new String[] {
+                        "chmod",
+                        _outputPermissions,
+                        outputFile.toString()
+                });
+            }
+        }
+
+        /**
+         * @return chmod permissions mask for Unix systems
+         */
+        public String getOutputPermissions()
+        {
+            return _outputPermissions;
+        }
+
+        /**
+         * Specify a permissions mask to pass to chmod on Unix systems.  Some cluster
+         * scheduling software give processing nodes very restrictive umask settings.
+         *
+         * @param outputPermissions chmod permissions mask (e.g. "0664")
+         */
+        public void setOutputPermissions(String outputPermissions)
+        {
+            _outputPermissions = outputPermissions;
+        }
+    }
+
     public AbstractWorkDirectory(FileAnalysisJobSupport support, WorkDirFactory factory, File dir, Logger log) throws IOException
     {
         _support = support;
@@ -236,6 +272,9 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
                 resource.release();
             }
         }
+
+        _factory.setPermissions(fileDest);
+
         return fileDest;
     }
 

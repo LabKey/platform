@@ -30,7 +30,7 @@ import java.io.IOException;
  */
 public class WorkDirectoryLocal extends AbstractWorkDirectory
 {
-    public static class Factory implements WorkDirFactory
+    public static class Factory extends AbstractFactory
     {
         public WorkDirectory createWorkDirectory(String jobId, FileAnalysisJobSupport support, Logger log) throws IOException
         {
@@ -38,11 +38,6 @@ public class WorkDirectoryLocal extends AbstractWorkDirectory
                     support.getBaseName());
 
             return new WorkDirectoryLocal(support, this, dir, log);
-        }
-
-        public void setPermissions(File outputFile)
-        {
-            
         }
     }
 
