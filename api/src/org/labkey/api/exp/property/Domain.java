@@ -31,6 +31,7 @@ public interface Domain extends IPropertyType
     String getName();
     String getDescription();
     int getTypeId();
+    String getTypeURI();
 
     Container[] getInstanceContainers();
     Container[] getInstanceContainers(User user, int perm);

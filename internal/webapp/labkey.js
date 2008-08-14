@@ -173,6 +173,7 @@ LABKEY.requiresClientAPI = function(immediate)
         LABKEY.requiresScript("clientapi/ActionURL.js");
         LABKEY.requiresScript("clientapi/Assay.js");
         LABKEY.requiresScript("clientapi/Chart.js");
+        LABKEY.requiresScript("clientapi/Domain.js");
         LABKEY.requiresScript("clientapi/LongTextEditor.js");
         LABKEY.requiresScript("clientapi/EditorGridPanel.js");
         LABKEY.requiresScript("clientapi/Filter.js");

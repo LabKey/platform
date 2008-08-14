@@ -16,14 +16,13 @@
 package org.labkey.api.action;
 
 import org.apache.commons.beanutils.BeanUtils;
-import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ObjectFactory;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.List;
-import java.util.ArrayList;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Use this for simple responses from Api actions.
@@ -57,6 +56,15 @@ public class ApiSimpleResponse extends HashMap<String,Object> implements ApiResp
     public Map<String, Object> getProperties()
     {
         return this;
+    }
+
+    /**
+     * Puts a bean at the root of the response, with no containing key.
+     */
+    public <T> void putBean(T bean, String... props) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException
+    {
+        Map<String,Object> map = getBeanMap(bean, props);
+        putAll(map);
     }
 
     public <T> void putBean(String key, T bean, String... props) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException

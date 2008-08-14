@@ -15,6 +15,7 @@
  */
 package org.labkey.api.query;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
@@ -82,5 +83,8 @@ public interface SchemaUpdateService
      * @return true if in a transaction, false otherwise.
      */
     public boolean isTransactionActive();
+
+    @Nullable
+    public String getDomainURI(String queryName, Container container, User user);
 
 }

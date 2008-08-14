@@ -51,6 +51,7 @@ api/src/org/labkey/api/action/PermissionCheckable.java -text
 api/src/org/labkey/api/action/QueryViewAction.java -text
 api/src/org/labkey/api/action/RedirectAction.java -text
 api/src/org/labkey/api/action/ReturnUrlForm.java -text
+api/src/org/labkey/api/action/SimpleApiJsonForm.java -text
 api/src/org/labkey/api/action/SimpleErrorView.java -text
 api/src/org/labkey/api/action/SimpleForwardAction.java -text
 api/src/org/labkey/api/action/SimpleRedirectAction.java -text
@@ -664,6 +665,7 @@ api/webapp/WEB-INF/spring.tld -text
 api/webapp/clientapi/ActionURL.js -text
 api/webapp/clientapi/Assay.js -text
 api/webapp/clientapi/Chart.js -text
+api/webapp/clientapi/Domain.js -text
 api/webapp/clientapi/EditorGridPanel.js -text
 api/webapp/clientapi/ExtJsConfig.js -text
 api/webapp/clientapi/Filter.js -text
@@ -1542,6 +1544,7 @@ internal/src/org/labkey/api/exp/AbstractFileXarSource.java -text
 internal/src/org/labkey/api/exp/CompressedXarSource.java -text
 internal/src/org/labkey/api/exp/FileXarSource.java -text
 internal/src/org/labkey/api/exp/property/DomainEditorServiceBase.java -text
+internal/src/org/labkey/api/exp/property/DomainUtil.java -text
 internal/src/org/labkey/api/exp/property/ExperimentProperty.java -text
 internal/src/org/labkey/api/exp/property/SystemProperty.java -text
 internal/src/org/labkey/api/gwt/server/BaseRemoteService.java -text
