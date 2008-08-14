@@ -18,11 +18,9 @@ package org.labkey.api.action;
 
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.ExportRScriptModel;
 import org.labkey.api.security.ACL;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.TermsOfUseException;
-import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
@@ -94,6 +92,10 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
             result.setPrintView(true);
             return result;
         }
+        else if(QueryAction.exportRScript.name().equals(form.getExportType()))
+        {
+            return exportRScript(createInitializedQueryView(form, errors, true, form.getExportRegion()));
+        }
         else
         {
             getViewContext().requiresPermission(ACL.PERM_READ);
@@ -112,6 +114,15 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
         if (null != result)
             result.setUseQueryViewActionExportURLs(true);
         return result;
+    }
+
+    protected ModelAndView exportRScript(ViewType view)
+    {
+        getPageConfig().setTemplate(PageConfig.Template.None);
+        getViewContext().getResponse().setContentType("text/plain");
+        JspView<ExportRScriptModel> jspview = new JspView<ExportRScriptModel>("/org/labkey/api/query/exportRScript.jsp", new ExportRScriptModel(view));
+        jspview.setFrame(WebPartView.FrameType.NONE);
+        return jspview;
     }
 
     protected abstract ViewType createQueryView(Form form, BindException errors, boolean forExport, String dataRegion) throws Exception;

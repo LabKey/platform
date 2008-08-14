@@ -360,6 +360,7 @@ api/src/org/labkey/api/query/DefaultSchema.java -text
 api/src/org/labkey/api/query/DetailsURL.java -text
 api/src/org/labkey/api/query/DomainForeignKey.java -text
 api/src/org/labkey/api/query/DuplicateKeyException.java -text
+api/src/org/labkey/api/query/ExportRScriptModel.java -text
 api/src/org/labkey/api/query/ExprColumn.java -text
 api/src/org/labkey/api/query/FieldKey.java -text
 api/src/org/labkey/api/query/FilteredTable.java -text
@@ -402,6 +403,7 @@ api/src/org/labkey/api/query/UserIdRenderer.java -text
 api/src/org/labkey/api/query/UserSchema.java -text
 api/src/org/labkey/api/query/ValidationError.java -text
 api/src/org/labkey/api/query/ValidationException.java -text
+api/src/org/labkey/api/query/exportRScript.jsp -text
 api/src/org/labkey/api/query/snapshot/AbstractSnapshotProvider.java -text
 api/src/org/labkey/api/query/snapshot/QuerySnapshotDefinition.java -text
 api/src/org/labkey/api/query/snapshot/QuerySnapshotForm.java -text

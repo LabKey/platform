@@ -30,6 +30,7 @@ public enum QueryAction
     exportRowsExcel,
     exportExcelTemplate,
     exportRowsTsv,
+    exportRScript,
     printRows,
     deleteQueryRows,
     chooseColumns,

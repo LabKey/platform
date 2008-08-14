@@ -306,6 +306,7 @@ public class QueryView extends WebPartView<Object>
 
             case exportRowsExcel:
             case exportRowsTsv:
+            case exportRScript:
             case printRows:
             {
                 if (_useQueryViewActionExportURLs)
@@ -532,6 +533,7 @@ public class QueryView extends WebPartView<Object>
         {
             exportMenuButton.addMenuItem("Excel Web Query (.iqy)", urlFor(QueryAction.excelWebQueryDefinition).getLocalURIString());
         }
+        exportMenuButton.addMenuItem("Export R Script", urlFor(QueryAction.exportRScript).getLocalURIString());
         return exportMenuButton;
     }
 
