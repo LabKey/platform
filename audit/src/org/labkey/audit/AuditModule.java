@@ -17,26 +17,31 @@
 package org.labkey.audit;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.DbSchema;
+import org.labkey.api.audit.SimpleAuditViewFactory;
+import org.labkey.api.data.*;
+import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ViewContext;
+import org.labkey.audit.model.LogManager;
 import org.labkey.audit.query.AuditQuerySchema;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Set;
+import java.sql.SQLException;
+import java.util.*;
 
 public class AuditModule extends DefaultModule
 {
     public static final String NAME = "Audit";
     private static final Logger _log = Logger.getLogger(AuditModule.class);
+    private static Runnable _startupTask;
 
     public AuditModule()
     {
-        super(NAME, 8.22, null, true);
+        super(NAME, 8.23, null, true);
         AuditLogService.registerProvider(AuditLogImpl.get());
         addController("audit", AuditController.class);
     }
@@ -59,6 +64,9 @@ public class AuditModule extends DefaultModule
         AuditQuerySchema.register();
         AuditLogService.get().addAuditViewFactory(new SiteSettingsAuditViewFactory());
         AuditController.registerAdminConsoleLinks();
+
+        if (_startupTask != null)
+            _startupTask.run();
     }
 
     public Set<String> getSchemaNames()
@@ -69,5 +77,75 @@ public class AuditModule extends DefaultModule
     public Set<DbSchema> getSchemasToTest()
     {
         return PageFlowUtil.set(AuditSchema.getInstance().getSchema());
+    }
+
+    public void afterSchemaUpdate(ModuleContext moduleContext, ViewContext context)
+    {
+        if (moduleContext.getInstalledVersion() < 8.23)
+        {
+            _startupTask = new Runnable() {
+                public void run()
+                {
+                    convertAuditDataMaps();
+                }
+            };
+        }
+    }
+
+    /**
+     * Audit used to use PageFlowUtil.encodeObject to store audit detail information, this was bad for a number of reasons. Need to convert
+     * those records to the newer, uncompressed format. Fortunately, there were only two event types at the time that used this encoding.
+     */
+    private void convertAuditDataMaps()
+    {
+        boolean startedTransaction = false;
+        DbSchema schema = AuditSchema.getInstance().getSchema();
+
+        try {
+            if (!schema.getScope().isTransactionActive())
+            {
+                schema.getScope().beginTransaction();
+                startedTransaction = true;
+            }
+            Container objectContainer = ContainerManager.getSharedContainer();
+            SimpleFilter filter = new SimpleFilter();
+            filter.addWhereClause("(Lsid IS NOT NULL) AND (EventType = ? OR EventType = ?)", new Object[]{"ListAuditEvent", "DatasetAuditEvent"});
+
+            for (AuditLogEvent event : LogManager.get().getEvents(filter))
+            {
+                Map<String, ObjectProperty> dataMap = OntologyManager.getPropertyObjects(objectContainer.getId(), event.getLsid());
+                if (dataMap != null)
+                {
+                    Map<String, Object> newDataMap = new HashMap<String, Object>();
+
+                    for (ObjectProperty prop : dataMap.values())
+                    {
+                        if (prop.value() == null)
+                            continue;
+                        Map<String, String> decodedMap = SimpleAuditViewFactory._safeDecodeFromDataMap(String.valueOf(prop.value()));
+                        if (!decodedMap.isEmpty())
+                        {
+                            // re-encode the data map and replace the previous object property
+                            OntologyManager.deleteProperty(event.getLsid(), prop.getPropertyURI(), objectContainer, objectContainer);
+                            newDataMap.put(prop.getName(), SimpleAuditViewFactory.encodeForDataMap(decodedMap, true));
+                        }
+                    }
+                    if (!newDataMap.isEmpty())
+                        AuditLogImpl.addEventProperties(event.getLsid(), AuditLogService.get().getDomainURI(event.getEventType()), newDataMap);
+                }
+            }
+
+            if (startedTransaction)
+                schema.getScope().commitTransaction();
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+        finally
+        {
+            if (startedTransaction && schema.getScope().isTransactionActive())
+                schema.getScope().rollbackTransaction();
+        }
     }
 }

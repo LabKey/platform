@@ -362,6 +362,45 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
 
     public AuditLogEvent addEvent(AuditLogEvent event, Map<String, Object> dataMap, String domainURI)
     {
+        boolean startedTransaction = false;
+        DbSchema schema = AuditSchema.getInstance().getSchema();
+
+        try {
+            if (!schema.getScope().isTransactionActive())
+            {
+                schema.getScope().beginTransaction();
+                startedTransaction = true;
+            }
+
+            event = addEvent(event);
+            String parentLsid = domainURI + ':' + event.getRowId();
+
+            SQLFragment updateSQL = new SQLFragment();
+            updateSQL.append("UPDATE " + LogManager.get().getTinfoAuditLog() + " SET lsid = ? WHERE rowid = ?");
+            updateSQL.add(parentLsid);
+            updateSQL.add(event.getRowId());
+            Table.execute(LogManager.get().getSchema(), updateSQL);
+
+            addEventProperties(parentLsid, domainURI, dataMap);
+
+            if (startedTransaction)
+                schema.getScope().commitTransaction();
+
+            return event;
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeException(e);
+        }
+        finally
+        {
+            if (startedTransaction && schema.getScope().isTransactionActive())
+                schema.getScope().rollbackTransaction();
+        }
+    }
+
+    public static void addEventProperties(String parentLsid, String domainURI, Map<String, Object> dataMap)
+    {
         Container c = ContainerManager.getSharedContainer();
         Domain domain = PropertyService.get().getDomain(c, domainURI);
 
@@ -382,26 +421,10 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
                 throw new IllegalStateException("Specified property: " + entry.getKey() + " is not available in domain: " + domainURI);
             }
         }
-        event = addEvent(event);
-        String parentLsid = domainURI + ':' + event.getRowId();
-
-        try {
-            SQLFragment updateSQL = new SQLFragment();
-            updateSQL.append("UPDATE " + LogManager.get().getTinfoAuditLog() + " SET lsid = ? WHERE rowid = ?");
-            updateSQL.add(parentLsid);
-            updateSQL.add(event.getRowId());
-            Table.execute(LogManager.get().getSchema(), updateSQL);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeException(e);
-        }
-
         for (ObjectProperty prop : properties)
             prop.setObjectURI(parentLsid);
 
         OntologyManager.insertProperties(c.getId(), properties, parentLsid);
-        return event;
     }
 
     public String getDomainURI(String eventType)
