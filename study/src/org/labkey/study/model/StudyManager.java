@@ -22,6 +22,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExpObject;
@@ -783,6 +784,7 @@ public class StudyManager
         }
     }
 
+    @Nullable
     public DataSetDefinition getDataSetDefinition(Study s, String label)
     {
         try

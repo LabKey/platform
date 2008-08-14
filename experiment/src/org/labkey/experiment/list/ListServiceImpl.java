@@ -127,6 +127,7 @@ public class ListServiceImpl implements ListService.Interface
         return ListSchema.NAME;
     }
 
+    
     public QueryUpdateService getQueryUpdateService(String queryName, Container container, User user)
     {
         Map<String, ListDefinition> listDefs =  getLists(container);
@@ -138,5 +139,18 @@ public class ListServiceImpl implements ListService.Interface
             throw new NotFoundException("List '" + queryName + "' was not found in the container '" + container.getPath() + "'.");
 
         return new ListQueryUpdateService(listDef);
+    }
+
+    public String getDomainURI(String queryName, Container container, User user)
+    {
+        Map<String, ListDefinition> listDefs =  getLists(container);
+        if(null == listDefs)
+            throw new NotFoundException("No lists found in the container '" + container.getPath() + "'.");
+
+        ListDefinition listDef = listDefs.get(queryName);
+        if(null == listDef)
+            throw new NotFoundException("List '" + queryName + "' was not found in the container '" + container.getPath() + "'.");
+
+        return listDef.getDomain().getTypeURI();
     }
 }

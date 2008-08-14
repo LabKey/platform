@@ -327,11 +327,6 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         }
     }
 
-    public boolean canUpdate(User user, Domain domain)
-    {
-        return getContainer().hasPermission(getUser(), ACL.PERM_INSERT);
-    }
-
     public boolean canUpdateProtocol(ExpProtocol protocol)
     {
         Container c = getContainer();

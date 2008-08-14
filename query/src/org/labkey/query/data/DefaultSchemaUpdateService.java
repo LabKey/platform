@@ -75,4 +75,9 @@ public class DefaultSchemaUpdateService implements SchemaUpdateService
     {
         return _schema.getDbSchema().getScope().isTransactionActive();
     }
+
+    public String getDomainURI(String queryName, Container container, User user)
+    {
+        return null;
+    }
 }

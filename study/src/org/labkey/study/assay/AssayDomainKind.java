@@ -24,6 +24,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
+import org.labkey.api.security.ACL;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayProvider;
@@ -116,5 +117,10 @@ public class AssayDomainKind extends DomainKind
     public DomainProperty[] getDomainProperties(String domainURI)
     {
         return new DomainProperty[0];
+    }
+
+    public boolean canEditDefinition(User user, Domain domain)
+    {
+        return domain.getContainer().hasPermission(user, ACL.PERM_INSERT);
     }
 }

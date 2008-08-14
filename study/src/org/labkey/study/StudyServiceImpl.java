@@ -16,6 +16,7 @@
 
 package org.labkey.study;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
@@ -470,6 +471,7 @@ public class StudyServiceImpl implements StudyService.Service
         return StudyQuerySchema.SCHEMA_NAME;
     }
 
+    @Nullable
     public QueryUpdateService getQueryUpdateService(String queryName, Container container, User user)
     {
         if ("Cohort".equals(queryName))
@@ -502,4 +504,24 @@ public class StudyServiceImpl implements StudyService.Service
         return null;
     }
 
+    @Nullable
+    public String getDomainURI(String queryName, Container container, User user)
+    {
+        if ("Cohort".equals(queryName))
+            return StudyManager.getInstance().getDomainURI(container, Cohort.class);
+        if ("StudyProperties".equals(queryName))
+            return StudyManager.getInstance().getDomainURI(container, Study.class);
+
+        Study study = StudyManager.getInstance().getStudy(container);
+        DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, queryName);
+        if (def != null)
+        {
+            if (def.canRead(user))
+                return def.getTypeURI();
+            else
+                throw new RuntimeException("User does not have permission to read that dataset");
+        }
+
+        return null;
+    }
 }
