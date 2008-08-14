@@ -96,7 +96,7 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
     /**
      * By default tasks participate, but may be made conditional on other tasks.
      * Override to remove a task from processing under certain conditions.
-     *  
+     *
      * @param job the <code>PipelineJob</code> about which task is being interrogated
      * @return true if task is part of processing this job
      * @throws IOException
@@ -109,7 +109,7 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
             TaskFactory factory = PipelineJobService.get().getTaskFactory(_dependencyId);
             return factory.isParticipant(job);
         }
-        
+
         return true;
     }
 

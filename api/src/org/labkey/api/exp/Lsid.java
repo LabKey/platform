@@ -182,9 +182,10 @@ public class Lsid
         return authority;
     }
 
-    public void setAuthority(String authority)
+    public Lsid setAuthority(String authority)
     {
         this.authority = authority;
+        return this;
     }
 
     public String getNamespace()
@@ -197,9 +198,10 @@ public class Lsid
         return objectId;
     }
 
-    public void setObjectId(String objectId)
+    public Lsid setObjectId(String objectId)
     {
         this.objectId = objectId;
+        return this;
     }
 
     public String getVersion()
@@ -207,16 +209,18 @@ public class Lsid
         return version;
     }
 
-    public void setVersion(String version)
+    public Lsid setVersion(String version)
     {
         this.version = version;
+        return this;
     }
 
 
-    public void setNamespace(String namespace)
+    public Lsid setNamespace(String namespace)
     {
         this.namespace = namespace;
         resetPrefix();
+        return this;
     }
 
     public String getNamespacePrefix()
@@ -229,16 +233,18 @@ public class Lsid
         return suffix;
     }
 
-    public void setNamespacePrefix(String prefix)
+    public Lsid setNamespacePrefix(String prefix)
     {
         this.prefix = prefix;
         namespace = (prefix == null ? "" : prefix) + (suffix == null ? "" : ("." + suffix));
+        return this;
     }
 
-    public void setNamespaceSuffix(String suffix)
+    public Lsid setNamespaceSuffix(String suffix)
     {
         this.suffix = suffix;
         namespace = (prefix == null ? "" : prefix) + (suffix == null ? "" : ("." + suffix));
+        return this;
     }
 
     private void resetPrefix()
