@@ -99,7 +99,7 @@ if (bean.showHeader())
             <td id="leftmenupanel" class="labkey-site-nav-panel">
 <%            if (HttpView.currentContext().isShowFolders())
                 {%>
-    		    <img src="<%= request.getContextPath() %>/_.gif" width="<%=AppProps.getInstance().getNavigationBarWidth()%>" height=1><br>
+    		    <img src="<%= request.getContextPath() %>/_.gif" class="labkey-site-nav-expander" height=1><br>
             <%  } %>
                 <% me.include(me.getView("menu") ,out); %>
             </td>

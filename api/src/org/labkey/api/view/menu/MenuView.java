@@ -76,7 +76,7 @@ public class MenuView extends VBox
                 }
                 else
                 {
-                    out.println("<tr><td class=\"labkey-expandable-nav\" colspan=" + (renderFolderExpander ? "2" : "1") + "><!-- menuview element -->");
+                    out.println("<tr><td style=\"padding: 0px;\" colspan=" + (renderFolderExpander ? "2" : "1") + "><!-- menuview element -->");
                     include(view);
                     out.println("<!--/ menuview element --></td></tr>");
                 }

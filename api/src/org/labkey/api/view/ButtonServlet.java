@@ -67,15 +67,11 @@ public class ButtonServlet extends HttpServlet
     static String tabTextHeight;     // initialize in initButtonStyles()
     static String buttonTextHeight;  // initialize in initButtonStyles()
     static HashMap<Style, Button> buttonStyles = initButtonStyles();
-    static boolean tabHeightDirty = true;
-    static int tabHeight = computeTabHeight ();
 
     public static void resetColorScheme()
     {
         buttonMap.clear();
         buttonStyles = initButtonStyles();
-        tabHeightDirty = true;
-        tabHeight = computeTabHeight ();
     }
 
     static HashMap<Style, Button> initButtonStyles()
@@ -165,36 +161,6 @@ public class ButtonServlet extends HttpServlet
         m.put(Style.boldMenu, boldDropDown);
 
         return m;
-    }
-
-    static int computeTabHeight ()
-    {
-        if (!tabHeightDirty)
-            return tabHeight;
-
-        // just a best-guess value
-        int height = (int) java.lang.Math.floor(Integer.parseInt(tabTextHeight)*1.4) +  getTabCornerHeight();
-
-        Button template = buttonStyles.get(Style.tab);
-        if (null != template)
-        {
-            Button button = template.copy();
-            if (null != button)
-            {
-                button.setText("Gg");
-                height = button.getHeight();
-            }
-        }
-
-        tabHeight = height;
-        tabHeightDirty = false;
-        
-        return height;
-    }
-
-    public static int getTabHeight ()
-    {
-        return tabHeight;
     }
 
     public static int getTabCornerHeight ()

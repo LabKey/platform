@@ -167,17 +167,11 @@ public class NavTrailView extends HttpView
             _out.print(" labkey-header-line");
         _out.print("\"><tr>\n");
 
-        int tabHeight = ButtonServlet.getTabHeight();
-        int lastTabHeight = tabHeight - ButtonServlet.getTabCornerHeight();
-
         if (tabs.size() > 1)
         {
-            NavTree firstTab = tabs.get(0);
-            NavTree lastTab = tabs.get(tabs.size() - 1);
-            startTabstrip(firstTab);
             for (NavTree tab : tabs)
-                drawTab(tab, tab==firstTab, tab==lastTab, lastTabHeight, tabHeight);
-            endTabstrip(lastTab);
+                drawTab(tab);
+            endTabstrip();
         }
         _out.print("<td id=\"labkey-end-tab-space\"");
         if (tabs.size() > 1)
@@ -257,11 +251,7 @@ public class NavTrailView extends HttpView
         _out.print("</td>");
     }
 
-    void startTabstrip(NavTree firstTab)
-    {
-    }
-
-    void drawTab(NavTree tab, boolean isFirst, boolean isLast, int lastTabHeight, int tabHeight)
+    void drawTab(NavTree tab)
     {
         String link = tab.getValue();
         String name = tab.getKey();
@@ -284,7 +274,7 @@ public class NavTrailView extends HttpView
         _out.print("</tr></table></td>\n");
     }
 
-    void endTabstrip(NavTree lastTab)
+    void endTabstrip()
     {
         _out.print("<td class=\"labkey-tab-space\"" +
                 " width=\"100%\"><img src=\"");
