@@ -53,6 +53,9 @@ LABKEY.Filter = new function()
     function getFilter(columnName, value, filterType)
     {
         return {
+            getColumnName: function() {return columnName;},
+            getValue: function() {return value},
+            getFilterType: function() {return filterType},
             getURLParameterName : function() { return "query." + columnName + "~" + filterType.getURLSuffix() },
             getURLParameterValue : function() { return filterType.isDataValueRequired() ? value : undefined }
         }

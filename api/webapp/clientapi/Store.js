@@ -334,6 +334,15 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
                     ? "-" + options.sort
                     : options.sort;
 
+        var userFilters = this.getUserFilters();
+        if (userFilters)
+        {
+            for (var i = 0; i < userFilters.length; i++)
+            {
+                var filter = userFilters[i];
+                options[filter.getURLParameterName()] = filter.getURLParameterValue();
+            }
+        }
         //delete options.dir;
         //delete options.sort;
     },
@@ -454,6 +463,15 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         }
 
         return true;
-    }
+    },
 
+    getUserFilters: function()
+    {
+        return this.userFilters || [];
+    },
+
+    setUserFilters: function(filters)
+    {
+        this.userFilters = filters;
+    }
 });

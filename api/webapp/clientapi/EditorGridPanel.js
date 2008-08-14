@@ -39,6 +39,7 @@ Ext.apply(Ext.QuickTips.getQuickTip(), {
  * @param {integer} [config.pageSize] Defines how many rows are shown at a time in the grid (default is 20).
  * @param {boolean} [config.editable] Set to true if you want the user to be able to edit, insert, or delete rows (default is false).
  * @param {boolean} [config.autoSave] Set to false if you do not want changes automatically saved when the user leaves the row (default is true).
+ * @param {boolean} [config.enableFilters] True to enable filtering of columns (default is false)
  * @param {string} [config.loadingCaption] The string to display in a cell when loading the lookup values (default is "[loading...]").
  * @param {string} [config.lookupNullCaption] The string to display for a null value in a lookup column (default is "[none]").
  * @property {map} lookupStores  A map of lookup data stores where the key is the column name,
@@ -101,6 +102,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
             }),
             pageSize: 20,
             editable: false,
+            enableFilters: false,
             autoSave: true,
             loadingCaption: "[loading...]",
             lookupNullCaption : "[none]",
@@ -170,6 +172,10 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
 
         //subscribe to events
         this.on("beforeedit", this.onBeforeEdit, this);
+
+        //set up filtering
+        if (this.enableFilters)
+            this.initFilterMenu();
     },
 
     onStoreLoadException : function(proxy, options, response, error) {
@@ -592,5 +598,296 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
     onTab : function() {
         if(this.autoSave)
             this.saveChanges();
+    },
+
+    initFilterMenu : function()
+    {
+        var filterItem = new Ext.menu.Item({text:"Filter...", scope:this, handler:function() {this.handleFilter()}});
+        var hmenu = this.getView().hmenu;
+        hmenu.getEl().addClass("extContainer");
+        hmenu.addItem(filterItem);
+    },
+
+    handleFilter :function ()
+    {
+        var view = this.getView();
+        var col = view.cm.config[view.hdCtxIndex];
+
+        this.showFilterWindow(col);
+    },
+
+    showFilterWindow: function(col)
+    {
+        var colName = col.dataIndex;
+        var meta = this.getStore().findFieldMeta(colName);
+        var grid = this; //Stash for later use in callbacks.
+
+        var filterColName = meta.lookup ? colName + "/" + meta.lookup.displayColumn : colName;
+        var filterColType;
+        if (meta.lookup)
+        {
+            var lookupStore = this.store.getLookupStore(filterColName);
+            if (null != lookupStore)
+            {
+                meta = lookupStore.findFieldMeta(meta.lookup.displayColumn);
+                filterColType = meta ? meta.type : "string";
+            }
+            else
+                filterColType = "string";
+        }
+        else
+            filterColType = meta.type;
+
+        var ft = LABKEY.Filter.Types;
+        var filterTypes = {
+            "int":[ft.EQUAL, ft.NEQ_OR_NULL, ft.ISBLANK, ft.NONBLANK, ft.GT, ft.LT, ft.GTE, ft.LTE, ft.IN],
+            "string":[ft.EQUAL, ft.NEQ_OR_NULL, ft.ISBLANK, ft.NONBLANK, ft.GT, ft.LT, ft.GTE, ft.LTE, ft.CONTAINS, ft.DOES_NOT_CONTAIN, ft.DOES_NOT_START_WITH, ft.STARTS_WITH, ft.IN],
+            "boolean":[ft.EQUAL, ft.NEQ_OR_NULL, ft.ISBLANK, ft.NONBLANK],
+            "float":[ft.EQUAL, ft.NEQ_OR_NULL, ft.ISBLANK, ft.NONBLANK, ft.GT, ft.LT, ft.GTE, ft.LTE, ft.IN],
+            "date":[ft.DATE_EQUAL, ft.DATE_NOT_EQUAL, ft.ISBLANK, ft.NONBLANK, ft.GT, ft.LT, ft.GTE, ft.LTE, ft.IN]
+        };
+        var defaultFilterTypes = {
+            "int":ft.EQUAL, "string":ft.STARTS_WITH, "boolean":ft.EQUAL, "float":ft.GTE,  "date":ft.DATE_EQUAL
+        }
+
+        //Option lists for drop-downs. Filled in on-demand based on filter type
+        var dropDownOptions = [];
+        var colFilters = this.getColumnFilters(colName);
+        function createFilterDropDown(index, dataType, curFilter)
+        {
+            //Do the ext magic for the options. Gets easier in ext 2.2
+            if (dropDownOptions.length == 0)
+                Ext.each(filterTypes[dataType], function (filterType) {
+                    dropDownOptions.push([filterType.getURLSuffix(), filterType.getDisplayText()]);
+                });
+            var options = (index > 0) ? [['', 'no other filter']].concat(dropDownOptions) : dropDownOptions;
+            var store = new Ext.data.SimpleStore({'id': 0, fields: ['value', 'text'], data :options });
+            var combo = new Ext.form.ComboBox({
+                store:store,
+                forceSelection:true,
+                valueField:'value',
+                displayField:'text',
+                mode:'local',
+                allowBlank:false,
+                triggerAction:'all',
+                value:curFilter ? curFilter.getFilterType().getURLSuffix() : ((index > 0) ? '' : defaultFilterTypes[dataType].getURLSuffix())
+            });
+            combo.on("select", function(combo, record, itemNo) {
+                var filter = findFilterType(index);
+                valueEditors[index].setVisible(filter != null && filter.isDataValueRequired())
+            })
+
+            return combo;
+        }
+
+
+        function findFilterType(index)
+        {
+            var abbrev = dropDowns[index].getValue();
+            for (var key in ft)
+                if (ft[key].getURLSuffix && ft[key].getURLSuffix() == abbrev)
+                    return ft[key];
+
+            return null;
+        }
+
+        var dropDowns = [createFilterDropDown(0, filterColType, colFilters.length >= 1 ? colFilters[0] : null), createFilterDropDown(1, filterColType, colFilters.length >= 2 ? colFilters[1] : null)];
+        var valueEditors = [
+            new Ext.form.TextField({value:colFilters.length > 0 ? colFilters[0].getValue() : "",width:250}),
+            new Ext.form.TextField({value:colFilters.length > 1 ? colFilters[1].getValue() : "",width:250, hidden:colFilters.length < 2, hideMode:'visibility'})]
+
+
+        function validateEntry(index)
+        {
+            var filterType = findFilterType(index);
+            if (!filterType.isDataValueRequired())
+                return true;
+
+            if (filterType == ft.IN)
+                return validateMultiple(valueEditors[index].getValue());
+            else
+                return validate(valueEditors[index].getValue())
+        }
+
+        function validateMultiple(allValues, mappedType, fieldName)
+        {
+            var values = allValues.split(";");
+            var result = '';
+            var separator = '';
+            for (var i = 0; i < values.length; i++)
+            {
+                var value = validate(values[i].trim(), mappedType, fieldName);
+                if (value == undefined)
+                    return undefined;
+
+                result = result + separator + value;
+                separator = ";";
+            }
+            return result;
+        }
+
+        function validate(value)
+        {
+            if (filterColType == "int")
+            {
+                var intVal = parseInt(value);
+                if (isNaN(intVal))
+                {
+                    alert(value + " is not a valid integer for field '" + colName + "'.");
+                    return undefined;
+                }
+                else
+                    return "" + intVal;
+            }
+            else if (filterColType == "float")
+            {
+                var decVal = parseFloat(value);
+                if (isNaN(decVal))
+                {
+                    alert(value + " is not a valid decimal number for field '" + colName + "'.");
+                    return undefined;
+                }
+                else
+                    return "" + decVal;
+            }
+            else if (filterColType == "date")
+            {
+                var year, month, day, hour, minute;
+                hour = 0;
+                minute = 0;
+
+                //Javascript does not parse ISO dates, but if date matches we're done
+                if (value.match(/^\s*(\d\d\d\d)-(\d\d)-(\d\d)\s*$/) ||
+                    value.match(/^\s*(\d\d\d\d)-(\d\d)-(\d\d)\s*(\d\d):(\d\d)\s*$/))
+                {
+                    return value;
+                }
+                else
+                {
+                    var dateVal = new Date(value);
+                    if (isNaN(dateVal))
+                    {
+                        alert(value + " is not a valid date for field '" + colName + "'.");
+                        return undefined;
+                    }
+                    //Try to do something decent with 2 digit years!
+                    //if we have mm/dd/yy (but not mm/dd/yyyy) in the date
+                    //fix the broken date parsing
+                    if (value.match(/\d+\/\d+\/\d{2}(\D|$)/))
+                    {
+                        if (dateVal.getFullYear() < new Date().getFullYear() - 80)
+                            dateVal.setFullYear(dateVal.getFullYear() + 100);
+                    }
+                    year = dateVal.getFullYear();
+                    month = dateVal.getMonth() + 1;
+                    day = dateVal.getDate();
+                    hour = dateVal.getHours();
+                    minute = dateVal.getMinutes();
+                }
+                var str = "" + year + "-" + twoDigit(month) + "-" + twoDigit(day);
+                if (hour != 0 || minute != 0)
+                    str += " " + twoDigit(hour) + ":" + twoDigit(minute);
+
+                return str;
+            }
+            else if (filterColType == "boolean")
+            {
+                var upperVal = value.toUpperCase();
+                if (upperVal == "TRUE" || value == "1" || upperVal == "Y" || upperVal == "ON" || upperVal == "T")
+                    return "1";
+                if (upperVal == "FALSE" || value == "0" || upperVal == "N" || upperVal == "OFF" || upperVal == "F")
+                    return "0";
+                else
+                {
+                    alert(value + " is not a valid boolean for field '" + colName + "'. Try true,false; yes,no; on,off; or 1,0.");
+                    return undefined
+                }
+            }
+            else
+                return value;
+        }
+
+        function twoDigit(num)
+        {
+            if (num < 10)
+                return "0" + num;
+            else
+                return "" + num;
+        }
+
+        var win = new Ext.Window({
+            title:"Show Rows Where " + colName,
+            width:400,
+            autoHeight:true,
+            modal:true,
+            items:[dropDowns[0], valueEditors[0], new Ext.form.Label({text:" and"}),
+                    dropDowns[1], valueEditors[1]],
+            //layout:'column',
+            buttons:[
+                {
+                    text:"OK",
+                    handler:function() {
+                        var filters = [];
+                        var value;
+                        value = validateEntry(0);
+                        if (!value)
+                            return;
+
+                        var filterType = findFilterType(0);
+                        filters.push(LABKEY.Filter.create(filterColName, value, filterType));
+                        filterType = findFilterType(1);
+                        if (filterType)
+                        {
+                            value = validateEntry(1);
+                            if (!value)
+                                return;
+                            filters.push(LABKEY.Filter.create(filterColName, ""+tf.getValue(), filterType));
+                        }
+                        grid.setColumnFilters(colName, filters);
+                        win.close();
+                    }
+                },
+                {
+                    text:"Cancel",
+                    handler:function() {win.close()}
+                },
+                {
+                    text:"Clear Filter",
+                    handler:function() {grid.setColumnFilters(colName, []); win.close()}
+                },
+                {
+                    text:"Clear All Filters",
+                    handler:function() {grid.getStore().setUserFilters([]); grid.getStore().load({params:{start:0, limit:grid.pageSize}}); win.close()}
+                }
+            ]
+        });
+        win.show();
+        //Focus doesn't work right away (who knows why?) so defer it...
+        function f() {valueEditors[0].focus()};
+        f.defer(100);
+    },
+
+    getColumnFilters: function(colName)
+    {
+        var colFilters = [];
+        Ext.each(this.getStore().getUserFilters(), function(filter) {
+            if (filter.getColumnName() == colName)
+                colFilters.push(filter)
+        });
+        return colFilters;
+    },
+
+    setColumnFilters: function(colName, filters)
+    {
+        var newFilters = [];
+        Ext.each(this.getStore().getUserFilters(), function(filter) {
+            if (filter.getColumnName() != colName)
+                newFilters.push(filter)
+        });
+        if (filters)
+            Ext.each(filters, function(filter) {newFilters.push(filter)});
+
+        this.getStore().setUserFilters(newFilters);
+        this.getStore().load({params:{start:0, limit:this.pageSize}});
     }
 });
