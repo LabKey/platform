@@ -16,10 +16,12 @@
 
 package org.labkey.api.audit;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -28,14 +30,17 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.DataView;
 
-import java.beans.XMLEncoder;
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
+import javax.mail.MessagingException;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.InflaterInputStream;
 
 /**
  * Created by IntelliJ IDEA.
@@ -44,6 +49,8 @@ import java.util.Map;
  */
 public abstract class SimpleAuditViewFactory implements AuditLogService.AuditViewFactory
 {
+    private static final Logger _log = Logger.getLogger(SimpleAuditViewFactory.class);
+
     public String getName()
     {
         return getEventType();
@@ -68,14 +75,53 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
         
     }
 
+    private static Object _82decodeObject(String s) throws IOException
+    {
+        s = StringUtils.trimToNull(s);
+        if (null == s)
+            return null;
+
+        try
+        {
+            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(s.getBytes());
+            InputStream isBase64 = javax.mail.internet.MimeUtility.decode(byteArrayInputStream, "base64");
+            InputStream isCompressed = new InflaterInputStream(isBase64);
+            ObjectInputStream ois = new ObjectInputStream(isCompressed);
+            return ois.readObject();
+        }
+        catch (MessagingException x)
+        {
+            throw new IOException(x.getMessage());
+        }
+        catch (ClassNotFoundException x)
+        {
+            throw new IOException(x.getMessage());
+        }
+    }
+
+    public static Map<String, String> _safeDecodeFromDataMap(String properties)
+    {
+        try {
+            if (properties != null)
+            {
+                Object o = _82decodeObject(properties);
+                if (Map.class.isAssignableFrom(o.getClass()))
+                    return (Map<String, String>)o;
+            }
+        }
+        catch (IOException e)
+        {
+            _log.info("unable to decode object : " + properties);
+        }
+        return Collections.emptyMap();
+    }
+
     public static Map<String, String> decodeFromDataMap(String properties)
     {
         try {
             if (properties != null)
             {
-                Object o = PageFlowUtil.decodeObject(properties);
-                if (Map.class.isAssignableFrom(o.getClass()))
-                    return (Map<String, String>)o;
+                return PageFlowUtil.mapFromQueryString(properties);
             }
             return Collections.emptyMap();
         }
@@ -92,13 +138,13 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
     public static String encodeForDataMap(Map<String, String> properties, boolean validateSize)
     {
         try {
-            String data = PageFlowUtil.encodeObject(properties);
+            String data = PageFlowUtil.toQueryString(properties.entrySet());
             int count = 0;
 
             while (validateSize && data.length() > MAX_FIELD_SIZE)
             {
                 _truncateEntry(properties, (data.length() - MAX_FIELD_SIZE));
-                data = PageFlowUtil.encodeObject(properties);
+                data = PageFlowUtil.toQueryString(properties.entrySet());
                 if (count++ > 4) 
                     break;
             }
@@ -134,22 +180,6 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
         }
         else
             properties.put(largest, "contents too large to display");
-    }
-
-    protected static String _encode(Map<String, String> properties)
-    {
-        try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            XMLEncoder enc = new XMLEncoder(new BufferedOutputStream(baos));
-            enc.writeObject(properties);
-            enc.close();
-
-            return baos.toString();
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
     }
 
     protected void ensureProperties(User user, Domain domain, PropertyInfo[] properties) throws ChangePropertyDescriptorException
