@@ -18,9 +18,9 @@ package org.labkey.experiment;
 
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.experiment.api.ExperimentRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.util.FileUtil;
 
 import java.io.File;
@@ -32,7 +32,7 @@ import java.io.IOException;
  */
 public class ArchiveURLRewriter extends URLRewriter
 {
-    public String rewriteURL(File f, ExpData data, ExperimentRun run) throws ExperimentException
+    public String rewriteURL(File f, ExpData data, ExpRun run) throws ExperimentException
     {
         String directoryName;
         File rootDir;

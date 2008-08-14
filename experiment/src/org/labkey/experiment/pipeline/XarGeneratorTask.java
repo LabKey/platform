@@ -30,6 +30,7 @@ import org.labkey.experiment.api.ExpRunImpl;
 import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.DataURLRelativizer;
+import org.labkey.experiment.ExperimentRunGraph;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 
 import java.io.IOException;
@@ -38,6 +39,7 @@ import java.io.FileOutputStream;
 import java.sql.SQLException;
 import java.util.*;
 import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
  * Creates an experiment run to represent the work that the task's job has done so far.
@@ -122,9 +124,29 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
         
     }
 
-    private ExpData addData(Map<URI, ExpData> datas, URI uri, XarSource source) throws PipelineJobException
+    private ExpData addData(Map<URI, ExpData> datas, URI originalURI, XarSource source) throws PipelineJobException
     {
-        ExpData data = datas.get(uri);
+        ExpData data = datas.get(originalURI);
+        if (data != null)
+        {
+            return data;
+        }
+
+        URI uri;
+        try
+        {
+            uri = new URI(source.getCanonicalDataFileURL(originalURI.toString()));
+        }
+        catch (XarFormatException e)
+        {
+            throw new PipelineJobException(e);
+        }
+        catch (URISyntaxException e)
+        {
+            throw new PipelineJobException(e);
+        }
+
+        data = datas.get(uri);
 
         // Check if we've already dealt with this one
         if (data == null)
@@ -191,6 +213,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
                 }
             }
             datas.put(uri, data);
+            datas.put(originalURI, data);
         }
         return data;
     }
@@ -211,15 +234,15 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
     {
         try
         {
-            if (!NetworkDrive.exists(getTempXarFile()))
+            if (!NetworkDrive.exists(getLoadingXarFile()))
             {
                 insertRun();
             }
 
             // Load the data files for this run
-            ExperimentService.get().importXar(new FileXarSource(getTempXarFile(), getJob()), getJob(), false);
+            ExperimentService.get().importXar(new FileXarSource(getLoadingXarFile(), getJob()), getJob(), false);
             
-            getTempXarFile().renameTo(_factory.getXarFile(getJob()));
+            getLoadingXarFile().renameTo(_factory.getXarFile(getJob()));
         }
         catch (SQLException e)
         {
@@ -314,6 +337,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
                 writeXarToDisk(run);
 
                 ExperimentService.get().commitTransaction();
+                ExperimentRunGraph.clearCache(run.getContainer());
             }
         }
         finally
@@ -564,17 +588,19 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
 
     private void writeXarToDisk(ExpRunImpl run) throws PipelineJobException
     {
-        File f = getTempXarFile();
+        File f = getLoadingXarFile();
+        File tempFile = new File(f.getPath() + ".temp");
 
         FileOutputStream fOut = null;
         try
         {
-            XarExporter exporter = new XarExporter(LSIDRelativizer.FOLDER_RELATIVE, DataURLRelativizer.ORIGINAL_FILE_LOCATION);
+            XarExporter exporter = new XarExporter(LSIDRelativizer.FOLDER_RELATIVE, DataURLRelativizer.RUN_RELATIVE_LOCATION);
             exporter.addExperimentRun(run);
 
-            fOut = new FileOutputStream(f);
+            fOut = new FileOutputStream(tempFile);
             exporter.dumpXML(fOut);
             fOut.close();
+            tempFile.renameTo(f);
             fOut = null;
         }
         catch (ExperimentException e)
@@ -594,8 +620,8 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
         }
     }
 
-    private File getTempXarFile()
+    private File getLoadingXarFile()
     {
-        return new File(_factory.getXarFile(getJob()) + ".temp");
+        return new File(_factory.getXarFile(getJob()) + ".loading");
     }
 }

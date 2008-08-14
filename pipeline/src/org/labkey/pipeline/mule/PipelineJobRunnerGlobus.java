@@ -16,7 +16,6 @@
 package org.labkey.pipeline.mule;
 
 import org.apache.axis.message.addressing.EndpointReferenceType;
-import org.apache.axis.types.PositiveInteger;
 import org.apache.axis.types.NonNegativeInteger;
 import org.apache.log4j.Logger;
 import org.apache.commons.io.FileUtils;
@@ -60,6 +59,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.InvalidKeyException;
 import java.security.Security;
+import java.security.Provider;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -82,7 +82,8 @@ public class PipelineJobRunnerGlobus implements Callable
             File webinfDir = new File(webappDir, "WEB-INF"); 
             System.setProperty(GLOBUS_LOCATION, webinfDir.getAbsolutePath());
         }
-        
+
+        Security.removeProvider(BouncyCastleProvider.PROVIDER_NAME);
         Security.addProvider(new BouncyCastleProvider());
     }
 

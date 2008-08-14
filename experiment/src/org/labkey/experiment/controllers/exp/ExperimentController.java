@@ -539,7 +539,7 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(ACL.PERM_READ)
     public class ShowRunGraphAction extends AbstractShowRunAction
     {
-        protected HttpView createLowerView(ExpRun experimentRun)
+        protected HttpView createLowerView(ExpRunImpl experimentRun)
         {
             return new ExperimentRunGraphView(experimentRun, false);
         }
@@ -554,16 +554,22 @@ public class ExperimentController extends SpringActionController
             boolean detail = form.isDetail();
             String focus = form.getFocus();
 
-            ExpRun experimentRun = form.lookupRun();
+            ExpRunImpl experimentRun = form.lookupRun();
             ensureCorrectContainer(getContainer(), experimentRun, getViewContext());
+
+            ExperimentRunGraph.RunGraphFiles files = ExperimentRunGraph.generateRunGraph(getViewContext(), experimentRun, detail, focus);
 
             try
             {
-                PageFlowUtil.streamFile(getViewContext().getResponse(), ExperimentRunGraph.getImageFile(getContainer().getRowId(), experimentRun.getRowId(), detail, focus).getAbsolutePath(), false);
+                PageFlowUtil.streamFile(getViewContext().getResponse(), files.getImageFile().getAbsolutePath(), false);
             }
             catch (FileNotFoundException e)
             {
                 getViewContext().getResponse().sendRedirect(getViewContext().getRequest().getContextPath() + "/Experiment/ExperimentRunNotFound.gif");
+            }
+            finally
+            {
+                files.release();
             }
             return null;
         }
@@ -576,7 +582,7 @@ public class ExperimentController extends SpringActionController
 
     private abstract class AbstractShowRunAction extends SimpleViewAction<ExperimentRunForm>
     {
-        private ExpRun _experimentRun;
+        private ExpRunImpl _experimentRun;
 
         public ModelAndView getView(ExperimentRunForm form, BindException errors) throws Exception
         {
@@ -596,7 +602,7 @@ public class ExperimentController extends SpringActionController
             return vbox;
         }
 
-        protected abstract HttpView createLowerView(ExpRun experimentRun);
+        protected abstract HttpView createLowerView(ExpRunImpl experimentRun);
 
         public NavTree appendNavTrail(NavTree root)
         {
@@ -679,7 +685,7 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(ACL.PERM_READ)
     public class ShowRunTextAction extends AbstractShowRunAction
     {
-        protected HttpView createLowerView(ExpRun expRun)
+        protected HttpView createLowerView(ExpRunImpl expRun)
         {
             JspView<RunInputOutputBean> inputView = new JspView<RunInputOutputBean>("/org/labkey/experiment/ExperimentRunInputOutput.jsp", new RunInputOutputBean(expRun.getMaterialInputs(), expRun.getDataInputs()));
             inputView.setFrame(WebPartView.FrameType.TITLE);
@@ -717,7 +723,7 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(ACL.PERM_READ)
     public class ShowRunGraphDetailAction extends AbstractShowRunAction
     {
-        protected HttpView createLowerView(ExpRun run)
+        protected HttpView createLowerView(ExpRunImpl run)
         {
             ExperimentRunGraphView gw = new ExperimentRunGraphView(run, true);
             if (null != getViewContext().getActionURL().getParameter("focus"))

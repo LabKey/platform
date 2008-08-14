@@ -23,14 +23,16 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.data.Container;
 import org.labkey.experiment.api.ExpProtocolApplicationImpl;
 import org.labkey.experiment.api.ExpRunImpl;
-import org.labkey.experiment.api.ExperimentServiceImpl;
 
 import javax.imageio.ImageIO;
 import java.io.*;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.Lock;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 
@@ -48,6 +50,12 @@ public class ExperimentRunGraph
     private static int MAX_WIDTH_BIG_FONT = 3;
     private static int MAX_SIBLINGS = 5;
     private static int MIN_SIBLINGS = 3;
+
+    /**
+     * It's safe for lots of threads to be reading but only one should be creating or deleting at a time.
+     * We could make separate locks for each folder but leaving it with one global lock for now.
+     */
+    private static final ReentrantReadWriteLock LOCK = new ReentrantReadWriteLock();
 
     public synchronized static File getBaseDirectory() throws IOException
     {
@@ -72,9 +80,9 @@ public class ExperimentRunGraph
         return baseDirectory;
     }
 
-    public synchronized static File getFolderDirectory(int folderId) throws IOException
+    private synchronized static File getFolderDirectory(Container container) throws IOException
     {
-        File result = new File(getBaseDirectory(), "Folder" + folderId);
+        File result = new File(getBaseDirectory(), "Folder" + container.getRowId());
         result.mkdirs();
         for (int i = 0; i < 5; i++)
         {
@@ -99,89 +107,126 @@ public class ExperimentRunGraph
         return result;
     }
 
-    public static void generateRunGraph(ViewContext ctx, int containerId, int runId, boolean detail, String focus) throws ExperimentException, IOException, InterruptedException
+    /**
+     * Creates a run graph, given the configuration parameters. Note that this creates a lock on the directory
+     * that contains the files, which must be cleared by calling release() on the resulting RunGraphFiles object. 
+     */
+    public static RunGraphFiles generateRunGraph(ViewContext ctx, ExpRunImpl run, boolean detail, String focus) throws ExperimentException, IOException, InterruptedException
     {
-        File imageFile = getImageFile(containerId, runId, detail, focus);
-        File mapFile = getMapFile(containerId, runId, detail, focus);
+        boolean success = false;
 
-        if (!AppProps.getInstance().isDevMode() && imageFile.exists() && mapFile.exists())
-        {
-            return;
-        }
+        File imageFile = new File(getBaseFileName(run, detail, focus) + ".png");
+        File mapFile = new File(getBaseFileName(run, detail, focus) + ".map");
 
-        if (!testDotPath())
-        {
-            StringBuffer sb = new StringBuffer();
-            sb.append("Unable to display graph view: cannot run ");
-            sb.append(dotExePath);
-            sb.append(" due to system configuration error. \n<BR>");
-            sb.append("For help on fixing your system configuration, please consult the Graphviz section of the <a href=\"");
-             sb.append((new HelpTopic("thirdPartyCode", HelpTopic.Area.SERVER)).getHelpTopicLink());
-             sb.append("\" target=\"_blank\">LabKey Server documentation on third party components</a>.<br>");
-            throw new ExperimentException(sb.toString());
-        }
-
-        ActionURL url = ctx.getActionURL();
-        PrintWriter out = null;
-        Integer focusId = null;
-        String typeCode = null;
+        // First acquire a read lock so we know that another thread won't be deleting these files out from under us
+        Lock readLock = LOCK.readLock();
+        readLock.lock();
 
         try
         {
-            ExpRunImpl expRun = ExperimentServiceImpl.get().getExpRun(runId);
-            if (null != focus)
+
+            if (!AppProps.getInstance().isDevMode() && imageFile.exists() && mapFile.exists())
             {
-                typeCode = focus.substring(0, 1);
-                focusId = Integer.parseInt(focus.substring(1));
-                expRun.trimRunTree(focusId, typeCode);
+                success = true;
+                return new RunGraphFiles(mapFile, imageFile, readLock);
             }
-            StringWriter writer = new StringWriter();
-            out = new PrintWriter(writer);
-            GraphCtrlProps ctrlProps = analyzeGraph(expRun);
-
-            DotGraph dg = new DotGraph(out, url, ctrlProps.fUseSmallFonts);
-
-            if (!detail)
-                generateSummaryGraph(expRun, dg, ctrlProps);
-            else
-            {
-                if (null != focusId)
-                    dg.setFocus(focusId, typeCode);
-
-                // add starting inputs to graph if they need grouping
-                List<ExpMaterial> inputMaterials = new ArrayList<ExpMaterial>(expRun.getMaterialInputs().keySet());
-                List<ExpData> inputDatas = new ArrayList<ExpData>(expRun.getDataInputs().keySet());
-                int groupId = expRun.getProtocolApplications()[0].getRowId();
-                addStartingInputs(inputMaterials, inputDatas, groupId, dg, expRun.getRowId(), ctrlProps);
-                generateDetailGraph(expRun, dg, ctrlProps);
-            }
-            dg.dispose();
-            out.close();
-            out = null;
-            String dotInput = writer.getBuffer().toString();
-            
-            ProcessBuilder pb = new ProcessBuilder(dotExePath, "-Tcmap", "-o" + mapFile.getName(), "-Tpng", "-o" + imageFile.getName());
-            pb.directory(getFolderDirectory(containerId));
-            ProcessResult result = executeProcess(pb, dotInput);
-
-            if (result._returnCode != 0)
-            {
-                throw new IOException("Graph generation failed with error code " + result._returnCode + " - " + result._output);
-            }
-            mapFile.deleteOnExit();
-            imageFile.deleteOnExit();
-
-            resizeFiles(imageFile, mapFile);
         }
         finally
         {
-            if (null != out)
+            // If we found useful files, don't release the lock because the caller will want to read them
+            if (!success)
+            {
+                readLock.unlock();
+            }
+        }
+
+        // We need to create files to open up a write lock
+        Lock writeLock = LOCK.writeLock();
+        writeLock.lock();
+        try
+        {
+            if (!testDotPath())
+            {
+                StringBuffer sb = new StringBuffer();
+                sb.append("Unable to display graph view: cannot run ");
+                sb.append(dotExePath);
+                sb.append(" due to system configuration error. \n<BR>");
+                sb.append("For help on fixing your system configuration, please consult the Graphviz section of the <a href=\"");
+                 sb.append((new HelpTopic("thirdPartyCode", HelpTopic.Area.SERVER)).getHelpTopicLink());
+                 sb.append("\" target=\"_blank\">LabKey Server documentation on third party components</a>.<br>");
+                throw new ExperimentException(sb.toString());
+            }
+
+            ActionURL url = ctx.getActionURL();
+            PrintWriter out = null;
+            Integer focusId = null;
+            String typeCode = null;
+
+            try
+            {
+                if (null != focus)
+                {
+                    typeCode = focus.substring(0, 1);
+                    focusId = Integer.parseInt(focus.substring(1));
+                    run.trimRunTree(focusId, typeCode);
+                }
+                StringWriter writer = new StringWriter();
+                out = new PrintWriter(writer);
+                GraphCtrlProps ctrlProps = analyzeGraph(run);
+
+                DotGraph dg = new DotGraph(out, url, ctrlProps.fUseSmallFonts);
+
+                if (!detail)
+                    generateSummaryGraph(run, dg, ctrlProps);
+                else
+                {
+                    if (null != focusId)
+                        dg.setFocus(focusId, typeCode);
+
+                    // add starting inputs to graph if they need grouping
+                    List<ExpMaterial> inputMaterials = new ArrayList<ExpMaterial>(run.getMaterialInputs().keySet());
+                    List<ExpData> inputDatas = new ArrayList<ExpData>(run.getDataInputs().keySet());
+                    int groupId = run.getProtocolApplications()[0].getRowId();
+                    addStartingInputs(inputMaterials, inputDatas, groupId, dg, run.getRowId(), ctrlProps);
+                    generateDetailGraph(run, dg, ctrlProps);
+                }
+                dg.dispose();
                 out.close();
+                out = null;
+                String dotInput = writer.getBuffer().toString();
+
+                ProcessBuilder pb = new ProcessBuilder(dotExePath, "-Tcmap", "-o" + mapFile.getName(), "-Tpng", "-o" + imageFile.getName());
+                pb.directory(getFolderDirectory(run.getContainer()));
+                ProcessResult result = executeProcess(pb, dotInput);
+
+                if (result._returnCode != 0)
+                {
+                    throw new IOException("Graph generation failed with error code " + result._returnCode + " - " + result._output);
+                }
+                mapFile.deleteOnExit();
+                imageFile.deleteOnExit();
+
+                resizeFiles(imageFile, mapFile);
+                // Start the procedure of downgrade our lock from write to read so that the caller can use the files 
+                readLock.lock();
+                return new RunGraphFiles(mapFile, imageFile, readLock);
+            }
+            finally
+            {
+                if (null != out)
+                    out.close();
+            }
+        }
+        finally
+        {
+            writeLock.unlock();
         }
     }
 
-    private static void resizeImageMap(File mapFile, double finalScale)
-        throws IOException
+    /**
+     * Shrink all the coordinates in an image map by a fixed ratio
+     */
+    private static void resizeImageMap(File mapFile, double finalScale) throws IOException
     {
         StringBuilder sb = new StringBuilder();
         FileInputStream fIn = null;
@@ -324,6 +369,30 @@ public class ExperimentRunGraph
         }
         int returnCode = p.waitFor();
         return new ProcessResult(returnCode, sb.toString());
+    }
+
+    /**
+     * Clears out the cache of files for this container. Must be called after any operation that changes the way a graph
+     * would be generated. Typically this includes deleting or inserting any run in the container, because that
+     * can change the connections between the runs, which is reflected in the graphs.
+     */
+    public static void clearCache(Container container)
+    {
+        Lock deleteLock = LOCK.writeLock();
+        deleteLock.lock();
+        try
+        {
+            FileUtil.deleteDir(getFolderDirectory(container));
+        }
+        catch (IOException e)
+        {
+            // Non-fatal
+            _log.error("Failed to clear cached experiment run graphs for container " + container, e);
+        }
+        finally
+        {
+            deleteLock.unlock();
+        }
     }
 
     private static class ProcessResult
@@ -695,7 +764,6 @@ public class ExperimentRunGraph
 
     private static boolean testDotPath()
     {
-
         try
         {
             File testVersion = new File(getBaseDirectory(), "dottest.txt");
@@ -711,39 +779,76 @@ public class ExperimentRunGraph
         }
         catch (IOException e)
         {
-            //e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            return false;
         }
         catch (InterruptedException e)
         {
-            //e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            return false;
         }
         return false;
 
     }
 
 
-    public static File getMapFile(int containerId, int runId, boolean detail, String focus) throws IOException
-    {
-        return new File(getBaseFileName(containerId, runId, detail, focus) + ".map");
-    }
-
-    public static File getDotFile(int containerId, int runId, boolean detail, String focus) throws IOException
-    {
-        return new File(getBaseFileName(containerId, runId, detail, focus) + ".dot");
-    }
-
-    public static File getImageFile(int containerId, int runId, boolean detail, String focus) throws IOException
-    {
-        return new File(getBaseFileName(containerId, runId, detail, focus) + ".png");
-    }
-
-    private static String getBaseFileName(int containerId, int runId, boolean detail, String focus) throws IOException
+    private static String getBaseFileName(ExpRun run, boolean detail, String focus) throws IOException
     {
         String fileName;
         if (null != focus)
-            fileName = getFolderDirectory(containerId) + File.separator + "run" + runId + "Focus" + focus;
+            fileName = getFolderDirectory(run.getContainer()) + File.separator + "run" + run.getRowId() + "Focus" + focus;
         else
-            fileName = getFolderDirectory(containerId) + File.separator + "run" + runId + (detail ? "Detail" : "");
+            fileName = getFolderDirectory(run.getContainer()) + File.separator + "run" + run.getRowId() + (detail ? "Detail" : "");
         return fileName;
+    }
+
+    /**
+     * Results for run graph generation. Must be released once the files have been consumed by the caller.
+     */
+    public static class RunGraphFiles
+    {
+        private final File _mapFile;
+        private final File _imageFile;
+        private Lock _lock;
+        private final Throwable _allocation = new Throwable();
+
+        public RunGraphFiles(File mapFile, File imageFile, Lock lock)
+        {
+            _mapFile = mapFile;
+            _imageFile = imageFile;
+            _lock = lock;
+        }
+
+        public File getMapFile()
+        {
+            return _mapFile;
+        }
+
+        public File getImageFile()
+        {
+            return _imageFile;
+        }
+
+        protected void finalize() throws Throwable
+        {
+            super.finalize();
+            if (_lock != null)
+            {
+                _log.error("Lock was not released. Creation was at:", _allocation);
+                release();
+            }
+        }
+
+        /**
+         * Release the lock on the files.
+         */
+        public void release()
+        {
+            if (_lock != null)
+            {
+                _lock.unlock();
+                _lock = null;
+            }
+        }
+
+
     }
 }

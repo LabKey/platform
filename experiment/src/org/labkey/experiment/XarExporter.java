@@ -32,6 +32,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.experiment.api.*;
 import org.labkey.experiment.xar.XarExportSelection;
+import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 import org.w3c.dom.Document;
 
 import javax.xml.namespace.QName;
@@ -52,7 +53,6 @@ import java.util.zip.ZipOutputStream;
  */
 public class XarExporter
 {
-    private final LSIDRelativizer _lsidRelativizer;
     private final URLRewriter _urlRewriter;
     private final ExperimentArchiveDocument _document;
     private final ExperimentArchiveType _archive;
@@ -72,12 +72,12 @@ public class XarExporter
     private Set<String> _sampleSetLSIDs = new HashSet<String>();
     private Set<String> _domainLSIDs = new HashSet<String>();
 
-    private LSIDRelativizer.RelativizedLSIDs _relativizedLSIDs = new LSIDRelativizer.RelativizedLSIDs();
+    private final LSIDRelativizer.RelativizedLSIDs _relativizedLSIDs;
     private Logger _log;
 
     public XarExporter(LSIDRelativizer lsidRelativizer, DataURLRelativizer urlRelativizer)
     {
-        _lsidRelativizer = lsidRelativizer;
+        _relativizedLSIDs = new LSIDRelativizer.RelativizedLSIDs(lsidRelativizer);
         _urlRewriter = urlRelativizer.createURLRewriter();
 
         _document = ExperimentArchiveDocument.Factory.newInstance();
@@ -123,7 +123,7 @@ public class XarExporter
             runs = _archive.addNewExperimentRuns();
         }
         ExperimentRunType xRun = runs.addNewExperimentRun();
-        xRun.setAbout(_lsidRelativizer.relativize(run.getLSID(), _relativizedLSIDs));
+        xRun.setAbout(_relativizedLSIDs.relativize(run.getLSID()));
 
         // The XAR schema only supports one experiment (run group) association per run, so choose the first one that it belongs to
         // At the moment, the UI only lets you export one experiment (run group) at a time anyway
@@ -131,7 +131,7 @@ public class XarExporter
         {
             if (entry.getValue().contains(run.getLSID()))
             {
-                xRun.setExperimentLSID(_lsidRelativizer.relativize(entry.getKey(), _relativizedLSIDs));
+                xRun.setExperimentLSID(_relativizedLSIDs.relativize(entry.getKey()));
                 break;
             }
         }
@@ -147,7 +147,7 @@ public class XarExporter
             xRun.setProperties(properties);
         }
         ExpProtocolImpl protocol = run.getProtocol();
-        xRun.setProtocolLSID(_lsidRelativizer.relativize(protocol.getLSID(), _relativizedLSIDs));
+        xRun.setProtocolLSID(_relativizedLSIDs.relativize(protocol.getLSID()));
 
         addProtocol(protocol, true);
 
@@ -164,7 +164,7 @@ public class XarExporter
                 _inputDataLSIDs.add(data.getLSID());
 
                 DataBaseType xData = inputDefs.addNewData();
-                populateData(xData, data, run.getDataObject());
+                populateData(xData, data, run);
             }
         }
 
@@ -200,7 +200,7 @@ public class XarExporter
         throws ExperimentException
     {
         ProtocolApplicationBaseType xApplication = xApplications.addNewProtocolApplication();
-        xApplication.setAbout(_lsidRelativizer.relativize(application.getLSID(), _relativizedLSIDs));
+        xApplication.setAbout(_relativizedLSIDs.relativize(application.getLSID()));
         xApplication.setActionSequence(application.getActionSequence());
         Date activityDate = application.getActivityDate();
         if (activityDate != null)
@@ -225,7 +225,12 @@ public class XarExporter
                 inputRefs = xApplication.addNewInputRefs();
             }
             InputOutputRefsType.DataLSID dataLSID = inputRefs.addNewDataLSID();
-            dataLSID.setStringValue(_lsidRelativizer.relativize(data.getLSID(), _relativizedLSIDs));
+            dataLSID.setStringValue(_relativizedLSIDs.relativize(data.getLSID()));
+            if (AutoFileLSIDReplacer.AUTO_FILE_LSID_SUBSTITUTION.equals(dataLSID.getStringValue()))
+            {
+                ExpDataImpl expData = new ExpDataImpl(data);
+                dataLSID.setDataFileUrl(_urlRewriter.rewriteURL(expData.getFile(), expData, run));
+            }
             String roleName = null;
             for (DataInput dataInput : dataInputs)
             {
@@ -255,7 +260,7 @@ public class XarExporter
                 inputRefs = xApplication.addNewInputRefs();
             }
             InputOutputRefsType.MaterialLSID materialLSID = inputRefs.addNewMaterialLSID();
-            materialLSID.setStringValue(_lsidRelativizer.relativize(material.getLSID(), _relativizedLSIDs));
+            materialLSID.setStringValue(_relativizedLSIDs.relativize(material.getLSID()));
 
             String roleName = null;
             for (MaterialInput materialInput : materialInputs)
@@ -286,7 +291,7 @@ public class XarExporter
             for (Data data : outputData)
             {
                 DataBaseType xData = outputDataObjects.addNewData();
-                populateData(xData, data, run.getDataObject());
+                populateData(xData, data, run);
             }
         }
 
@@ -314,7 +319,7 @@ public class XarExporter
             }
         }
 
-        xApplication.setProtocolLSID(_lsidRelativizer.relativize(application.getProtocol().getLSID(), _relativizedLSIDs));
+        xApplication.setProtocolLSID(_relativizedLSIDs.relativize(application.getProtocol().getLSID()));
     }
 
     private void populateXmlBeanValue(SimpleValueType xValue, AbstractParameter param)
@@ -335,7 +340,7 @@ public class XarExporter
             value != null &&
             value.indexOf("urn:lsid:") == 0)
         {
-            return _lsidRelativizer.relativize(value, _relativizedLSIDs);
+            return _relativizedLSIDs.relativize(value);
         }
         else
         {
@@ -347,8 +352,8 @@ public class XarExporter
     {
         logProgress("Adding material " + material.getLSID());
         addSampleSet(material.getCpasType());
-        xMaterial.setAbout(_lsidRelativizer.relativize(material.getLSID(), _relativizedLSIDs));
-        xMaterial.setCpasType(material.getCpasType() == null ? "Material" : _lsidRelativizer.relativize(material.getCpasType(), _relativizedLSIDs));
+        xMaterial.setAbout(_relativizedLSIDs.relativize(material.getLSID()));
+        xMaterial.setCpasType(material.getCpasType() == null ? "Material" : _relativizedLSIDs.relativize(material.getCpasType()));
         xMaterial.setName(material.getName());
         PropertyCollectionType materialProperties = getProperties(material.getLSID(), material.getContainer());
         if (materialProperties != null)
@@ -358,7 +363,7 @@ public class XarExporter
         ExpProtocol sourceProtocol = material.getSourceProtocol();
         if (sourceProtocol != null)
         {
-            xMaterial.setSourceProtocolLSID(_lsidRelativizer.relativize(sourceProtocol.getLSID(), _relativizedLSIDs));
+            xMaterial.setSourceProtocolLSID(_relativizedLSIDs.relativize(sourceProtocol.getLSID()));
         }
     }
 
@@ -379,8 +384,8 @@ public class XarExporter
             _archive.addNewSampleSets();
         }
         SampleSetType xSampleSet = _archive.getSampleSets().addNewSampleSet();
-        xSampleSet.setAbout(_lsidRelativizer.relativize(sampleSet.getLSID(), _relativizedLSIDs));
-        xSampleSet.setMaterialLSIDPrefix(_lsidRelativizer.relativize(sampleSet.getMaterialLSIDPrefix(), _relativizedLSIDs));
+        xSampleSet.setAbout(_relativizedLSIDs.relativize(sampleSet.getLSID()));
+        xSampleSet.setMaterialLSIDPrefix(_relativizedLSIDs.relativize(sampleSet.getMaterialLSIDPrefix()));
         xSampleSet.setName(sampleSet.getName());
         if (sampleSet.getDescription() != null)
         {
@@ -410,7 +415,7 @@ public class XarExporter
         {
             xDomain.setDescription(domain.getDescription());
         }
-        xDomain.setDomainURI((_lsidRelativizer.relativize(domain.getTypeURI(), _relativizedLSIDs)));
+        xDomain.setDomainURI(_relativizedLSIDs.relativize(domain.getTypeURI()));
         for (DomainProperty domainProp : domain.getProperties())
         {
             PropertyDescriptor prop = domainProp.getPropertyDescriptor();
@@ -421,7 +426,7 @@ public class XarExporter
                 xProp.setDescription(domainProp.getDescription());
             }
             xProp.setName(domainProp.getName());
-            xProp.setPropertyURI(_lsidRelativizer.relativize(domainProp.getPropertyURI(), _relativizedLSIDs));
+            xProp.setPropertyURI(_relativizedLSIDs.relativize(domainProp.getPropertyURI()));
             if (prop.getConceptURI() != null)
             {
                 xProp.setConceptURI(prop.getConceptURI());
@@ -482,11 +487,11 @@ public class XarExporter
         return properties;
     }
 
-    private void populateData(DataBaseType xData, Data data, ExperimentRun run) throws ExperimentException
+    private void populateData(DataBaseType xData, Data data, ExpRun run) throws ExperimentException
     {
         logProgress("Adding data " + data.getLSID());
-        xData.setAbout(_lsidRelativizer.relativize(data.getLSID(), _relativizedLSIDs));
-        xData.setCpasType(data.getCpasType() == null ? "Data" : _lsidRelativizer.relativize(data.getCpasType(), _relativizedLSIDs));
+        xData.setAbout(_relativizedLSIDs.relativize(data.getLSID()));
+        xData.setCpasType(data.getCpasType() == null ? "Data" : _relativizedLSIDs.relativize(data.getCpasType()));
 
         File f = data.getFile();
         String url = null;
@@ -511,7 +516,7 @@ public class XarExporter
         {
             xData.setProperties(dataProperties);
         }
-        String sourceProtocolLSID = _lsidRelativizer.relativize(data.getSourceProtocolLSID(), _relativizedLSIDs);
+        String sourceProtocolLSID = _relativizedLSIDs.relativize(data.getSourceProtocolLSID());
         if (sourceProtocolLSID != null)
         {
             xData.setSourceProtocolLSID(sourceProtocolLSID);
@@ -534,7 +539,7 @@ public class XarExporter
         }
         ProtocolBaseType xProtocol = protocolDefs.addNewProtocol();
 
-        xProtocol.setAbout(_lsidRelativizer.relativize(protocol.getLSID(), _relativizedLSIDs));
+        xProtocol.setAbout(_relativizedLSIDs.relativize(protocol.getLSID()));
         xProtocol.setApplicationType(protocol.getApplicationType().toString());
         ContactType contactType = getContactType(protocol.getLSID(), protocol.getContainer());
         if (contactType != null)
@@ -624,7 +629,7 @@ public class XarExporter
                 }
 
                 ProtocolActionSetType actionSet = actionDefs.addNewProtocolActionSet();
-                actionSet.setParentProtocolLSID(_lsidRelativizer.relativize(protocol.getLSID(), _relativizedLSIDs));
+                actionSet.setParentProtocolLSID(_relativizedLSIDs.relativize(protocol.getLSID()));
                 for (ExpProtocolAction action : protocolActions)
                 {
                     addProtocolAction(action, actionSet);
@@ -641,7 +646,7 @@ public class XarExporter
 
         ProtocolActionType xProtocolAction = actionSet.addNewProtocolAction();
         xProtocolAction.setActionSequence(protocolAction.getActionSequence());
-        xProtocolAction.setChildProtocolLSID(_lsidRelativizer.relativize(lsid, _relativizedLSIDs));
+        xProtocolAction.setChildProtocolLSID(_relativizedLSIDs.relativize(lsid));
 
         ProtocolActionPredecessor[] predecessors = ExperimentServiceImpl.get().getProtocolActionPredecessors(parentProtocol.getLSID(), lsid);
         for (ProtocolActionPredecessor predecessor : predecessors)
@@ -669,7 +674,7 @@ public class XarExporter
         _experimentLSIDToRunLSIDs.put(experiment.getLSID(), runLsids);
 
         ExperimentType xExperiment = _archive.addNewExperiment();
-        xExperiment.setAbout(_lsidRelativizer.relativize(experiment.getLSID(), _relativizedLSIDs));
+        xExperiment.setAbout(_relativizedLSIDs.relativize(experiment.getLSID()));
         if (experiment.getComments() != null)
         {
             xExperiment.setComments(experiment.getComments());
@@ -718,7 +723,7 @@ public class XarExporter
                 PropertyObjectType subProperty = result.addNewPropertyObject();
                 PropertyObjectDeclarationType propDec = subProperty.addNewPropertyObjectDeclaration();
                 propDec.setName(value.getName());
-                propDec.setOntologyEntryURI(_lsidRelativizer.relativize(value.getPropertyURI(), _relativizedLSIDs));
+                propDec.setOntologyEntryURI(_relativizedLSIDs.relativize(value.getPropertyURI()));
                 propDec.setValueType(SimpleTypeNames.PROPERTY_URI);
 
                 PropertyCollectionType childProperties = getProperties(value.getStringValue(), parentContainer);
@@ -731,7 +736,7 @@ public class XarExporter
             {
                 SimpleValueType simpleValue = result.addNewSimpleVal();
                 simpleValue.setName(value.getName());
-                simpleValue.setOntologyEntryURI(_lsidRelativizer.relativize(value.getPropertyURI(), _relativizedLSIDs));
+                simpleValue.setOntologyEntryURI(_relativizedLSIDs.relativize(value.getPropertyURI()));
 
                 switch(value.getPropertyType())
                 {

@@ -18,8 +18,10 @@ package org.labkey.experiment;
 
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.view.ActionURL;
-import org.labkey.experiment.api.ExperimentRun;
+import org.labkey.api.util.FileUtil;
+import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,7 +39,7 @@ public enum DataURLRelativizer
         {
             return new URLRewriter()
             {
-                public String rewriteURL(File f, ExpData data, ExperimentRun experimentRun) throws ExperimentException
+                public String rewriteURL(File f, ExpData data, ExpRun experimentRun) throws ExperimentException
                 {
                     try
                     {
@@ -63,6 +65,37 @@ public enum DataURLRelativizer
             return new ArchiveURLRewriter();
         }
     },
+    /**
+     * Tries to make a path relative to the run's location 
+     */
+    RUN_RELATIVE_LOCATION("Path relative to experiment run")
+    {
+        public URLRewriter createURLRewriter()
+        {
+            return new URLRewriter()
+            {
+                public String rewriteURL(File f, ExpData data, ExpRun expRun) throws ExperimentException
+                {
+                    try
+                    {
+                        if (f == null)
+                        {
+                            return null;
+                        }
+                        if (expRun == null || expRun.getFilePathRoot() == null)
+                        {
+                            return f.getCanonicalPath();
+                        }
+                        return FileUtil.relativizeUnix(new File(expRun.getFilePathRoot()), f);
+                    }
+                    catch (IOException e)
+                    {
+                        throw new ExperimentException(e);
+                    }
+                }
+            };
+        }
+    },
     /** Gives out a URL for downloading the file directly from the web server */
     WEB_ADDRESSABLE("Web addressable")
     {
@@ -70,13 +103,13 @@ public enum DataURLRelativizer
         {
             return new URLRewriter()
             {
-                public String rewriteURL(File f, ExpData data, ExperimentRun experimentRun)
+                public String rewriteURL(File f, ExpData data, ExpRun experimentRun)
                 {
                     if (data == null)
                     {
                         return null;
                     }
-                    ActionURL dataURL = new ActionURL("Experiment", "showFile", data.getContainer());
+                    ActionURL dataURL = new ActionURL(ExperimentController.ShowFileAction.class, data.getContainer());
                     dataURL.addParameter("rowId", Integer.toString(data.getRowId()));
                     return dataURL.getURIString();
                 }

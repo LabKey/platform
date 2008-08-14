@@ -18,8 +18,8 @@ package org.labkey.experiment;
 
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.experiment.api.ExperimentRun;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.util.NetworkDrive;
 
 import java.io.File;
@@ -36,7 +36,7 @@ public abstract class URLRewriter
 {
     protected Map<File, FileInfo> _files = new HashMap<File, FileInfo>();
 
-    public abstract String rewriteURL(File f, ExpData data, ExperimentRun experimentRun) throws ExperimentException;
+    public abstract String rewriteURL(File f, ExpData data, ExpRun experimentRun) throws ExperimentException;
 
     public Collection<FileInfo> getFileInfos()
     {

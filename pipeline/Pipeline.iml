@@ -240,7 +240,9 @@
           <root url="jar://$MODULE_DIR$/lib/activemq-core-4.1.1.jar!/" />
         </CLASSES>
         <JAVADOC />
-        <SOURCES />
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/lib/activemq-core-4.1.1-sources.zip!/" />
+        </SOURCES>
       </library>
     </orderEntry>
     <orderEntryProperties />

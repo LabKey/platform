@@ -19,12 +19,11 @@ package org.labkey.experiment.controllers.exp;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.api.ExpRun;
 import org.labkey.experiment.ExperimentRunGraph;
+import org.labkey.experiment.api.ExpRunImpl;
 import org.apache.log4j.Logger;
 
 import java.io.PrintWriter;
-import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
@@ -36,11 +35,11 @@ public class ExperimentRunGraphView extends WebPartView
 {
     private static final Logger _log = Logger.getLogger(ExperimentRunGraphView.class);
 
-    private ExpRun _run;
+    private ExpRunImpl _run;
     private boolean _detail;
     private String _focus;
 
-    public ExperimentRunGraphView(ExpRun run, boolean detail)
+    public ExperimentRunGraphView(ExpRunImpl run, boolean detail)
     {
         _run = run;
         _detail = detail;
@@ -61,7 +60,6 @@ public class ExperimentRunGraphView extends WebPartView
         try
         {
             ViewContext context = getViewContext();
-            ExperimentRunGraph.generateRunGraph(context, context.getContainer().getRowId(), _run.getRowId(), _detail, _focus);
             out.println("[<a href=\"" + ExperimentController.ExperimentUrlsImpl.get().getRunTextURL(_run) + "\">text view</a>]");
             if (_detail)
             {
@@ -75,15 +73,22 @@ public class ExperimentRunGraphView extends WebPartView
             out.println("<img src=\"" + ExperimentController.ExperimentUrlsImpl.get().getDownloadGraphURL(_run, _detail, _focus) + "\" usemap=\"#graphmap\" >");
             out.println("<map name=\"graphmap\">");
 
-            File mapFile = ExperimentRunGraph.getMapFile(context.getContainer().getRowId(), _run.getRowId(), _detail, _focus);
-            FileReader reader = new FileReader(mapFile);
-            char charBuf[] = new char[4096];
-            int count;
-            while ((count = reader.read(charBuf)) > 0)
-                out.write(charBuf, 0, count);
+            ExperimentRunGraph.RunGraphFiles files = ExperimentRunGraph.generateRunGraph(context, _run, _detail, _focus);
+            try
+            {
+                FileReader reader = new FileReader(files.getMapFile());
+                char charBuf[] = new char[4096];
+                int count;
+                while ((count = reader.read(charBuf)) > 0)
+                    out.write(charBuf, 0, count);
 
-            reader.close();
-            out.write("</map>");
+                reader.close();
+                out.write("</map>");
+            }
+            finally
+            {
+                files.release();
+            }
         }
         catch (ExperimentException e)
         {

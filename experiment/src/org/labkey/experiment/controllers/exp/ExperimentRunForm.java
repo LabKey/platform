@@ -20,6 +20,8 @@ import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.experiment.api.ExpRunImpl;
+import org.labkey.experiment.api.ExperimentServiceImpl;
 
 /**
  * User: jeckels
@@ -52,12 +54,12 @@ public class ExperimentRunForm extends ViewForm
         _lsid = lsid;
     }
 
-    public ExpRun lookupRun()
+    public ExpRunImpl lookupRun()
     {
-        ExpRun run = ExperimentService.get().getExpRun(getRowId());
+        ExpRunImpl run = ExperimentServiceImpl.get().getExpRun(getRowId());
         if (run == null && getLsid() != null)
         {
-            run = ExperimentService.get().getExpRun(getLsid());
+            run = ExperimentServiceImpl.get().getExpRun(getLsid());
         }
         if (run == null)
         {

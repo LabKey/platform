@@ -20,6 +20,7 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.XarContext;
+import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -33,139 +34,102 @@ public enum LSIDRelativizer
 {
     ABSOLUTE("Absolute")
     {
-        public String relativize(String lsid, RelativizedLSIDs lsids)
+        protected String relativize(Lsid lsid, RelativizedLSIDs lsids)
         {
-            return lsid;
+            return lsid.toString();
         }
     },
     FOLDER_RELATIVE("Folder relative")
     {
-        public String relativize(String s, RelativizedLSIDs lsids)
+        protected String relativize(Lsid lsid, RelativizedLSIDs lsids)
         {
-            if (s == null)
-            {
-                return null;
-            }
-
-            String result = lsids.getExistingLSID(s);
-            if (result != null)
-            {
-                return result;
-            }
-
-            Lsid lsid = new Lsid(s);
             String prefix = lsid.getNamespacePrefix();
             String suffix = lsid.getNamespaceSuffix();
-            if (prefix == null)
+
+            if ("ExperimentRun".equals(prefix))
             {
-                result = s;
+                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":ExperimentRun.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}", lsid.getObjectId(), lsid.getVersion(), null);
             }
-            else if (prefix.equals("ExperimentRun"))
+            else if ("ProtocolApplication".equals(prefix))
             {
-                result = lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":ExperimentRun.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}", lsid.getObjectId(), lsid.getVersion(), null);
+                return lsids.uniquifyRelativizedLSID("${RunLSIDBase}", lsid.getObjectId(), lsid.getVersion(), null);
             }
-            else if (prefix.equals("ProtocolApplication"))
+            else if ("Sample".equals(prefix) || "Material".equals(prefix))
             {
-                result = lsids.uniquifyRelativizedLSID("${RunLSIDBase}", lsid.getObjectId(), lsid.getVersion(), null);
+                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}-" + lsids.getNextSampleId(), lsid.getObjectId(), lsid.getVersion(), null);
             }
-            else if (prefix.equals("Sample"))
+            else if ("Data".equals(prefix))
             {
-                result = lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Sample.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}-" + lsids.getNextSampleId(), lsid.getObjectId(), lsid.getVersion(), null);
-            }
-            else if (prefix.equals("Material"))
-            {
-                result = lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Material.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}-" + lsids.getNextMaterialId(), lsid.getObjectId(), lsid.getVersion(), null);
-            }
-            else if (prefix.equals("Data"))
-            {
-                result = lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Data.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}-" + lsids.getNextDataId(), lsid.getObjectId(), lsid.getVersion(), null);
+                return AutoFileLSIDReplacer.AUTO_FILE_LSID_SUBSTITUTION;
             }
             else if (suffix != null && SUFFIX_PATTERN.matcher(suffix).matches())
             {
-                result = lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + "", lsid.getObjectId(), lsid.getVersion(), null);
+                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + "", lsid.getObjectId(), lsid.getVersion(), null);
             }
-            else
-            {
-                result = s;
-            }
-            lsids.putLSID(s, result);
-            return result;
+
+            return lsid.toString();
         }
     },
     PARTIAL_FOLDER_RELATIVE("Partial folder relative")
     {
-        public String relativize(String s, RelativizedLSIDs lsids)
+        public String relativize(Lsid lsid, RelativizedLSIDs lsids)
         {
-            if (s == null)
-            {
-                return null;
-            }
-
-            String result = lsids.getExistingLSID(s);
-            if (result != null)
-            {
-                return result;
-            }
-
-            Lsid lsid = new Lsid(s);
             String prefix = lsid.getNamespacePrefix();
             String suffix = lsid.getNamespaceSuffix();
             if (prefix == null)
             {
-                result = s;
+                return lsid.toString();
             }
-            else if (prefix.equals("ExperimentRun"))
+            if ("ExperimentRun".equals(prefix))
             {
-                result = lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":ExperimentRun.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}", lsid.getObjectId(), lsid.getVersion(), null);
+                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":ExperimentRun.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}", lsid.getObjectId(), lsid.getVersion(), null);
             }
-            else if (prefix.equals("ProtocolApplication"))
+            else if ("ProtocolApplication".equals(prefix))
             {
-                result = lsids.uniquifyRelativizedLSID("${RunLSIDBase}", lsid.getObjectId(), lsid.getVersion(), null);
+                return lsids.uniquifyRelativizedLSID("${RunLSIDBase}", lsid.getObjectId(), lsid.getVersion(), null);
             }
-            else if (prefix.equals("Sample"))
+            else if ("Sample".equals(prefix))
             {
-                result = lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Sample.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}-" + lsids.getNextSampleId(), lsid.getObjectId(), lsid.getVersion(), null);
+                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Sample.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}-" + lsids.getNextSampleId(), lsid.getObjectId(), lsid.getVersion(), null);
             }
-            else if (prefix.equals("Material"))
-            {
-                if (lsid.getNamespaceSuffix().startsWith("Folder-"))
-                {
-                    result = stripFolderSuffix(lsid, lsids);
-                }
-                else
-                {
-                    result = lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Material.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}-" + lsids.getNextMaterialId(), lsid.getObjectId(), lsid.getVersion(), null);
-                }
-            }
-            else if (prefix.equals("Data"))
+            else if ("Material".equals(prefix))
             {
                 if (lsid.getNamespaceSuffix().startsWith("Folder-"))
                 {
-                    result = stripFolderSuffix(lsid, lsids);
+                    return stripFolderSuffix(lsid, lsids);
                 }
                 else
                 {
-                    result = lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Data.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}-" + lsids.getNextDataId(), lsid.getObjectId(), lsid.getVersion(), null);
+                    return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Material.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}-" + lsids.getNextMaterialId(), lsid.getObjectId(), lsid.getVersion(), null);
+                }
+            }
+            else if ("Data".equals(prefix))
+            {
+                if (lsid.getNamespaceSuffix().startsWith("Folder-"))
+                {
+                    return stripFolderSuffix(lsid, lsids);
+                }
+                else
+                {
+                    return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Data.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}-" + lsids.getNextDataId(), lsid.getObjectId(), lsid.getVersion(), null);
                 }
             }
             else
             {
                 if (suffix != null && suffix.startsWith("Folder-"))
                 {
-                    result = stripFolderSuffix(lsid, lsids);
+                    return stripFolderSuffix(lsid, lsids);
                 }
                 else
                 {
-                    result = lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + "", lsid.getObjectId(), lsid.getVersion(), null);
+                    return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + "", lsid.getObjectId(), lsid.getVersion(), null);
                 }
             }
-            lsids.putLSID(s, result);
-            return result;
         }
     };
     private final String _description;
 
-    public abstract String relativize(String lsid, RelativizedLSIDs lsids);
+    protected abstract String relativize(Lsid lsid, RelativizedLSIDs lsids);
 
     private static final Pattern SUFFIX_PATTERN = Pattern.compile("Folder-[0-9]+"); 
 
@@ -193,13 +157,36 @@ public enum LSIDRelativizer
 
     public static class RelativizedLSIDs
     {
+        private final LSIDRelativizer _relativizer;
+
         private Map<String, String> _lsids = new HashMap<String, String>();
 
         private int _nextDataId = 1;
         private int _nextSampleId = 1;
         private int _nextMaterialId = 1;
 
-        public RelativizedLSIDs() {}
+        public RelativizedLSIDs(LSIDRelativizer relativizer)
+        {
+            _relativizer = relativizer;
+        }
+
+        public String relativize(String s)
+        {
+            if (s == null)
+            {
+                return null;
+            }
+
+            String result = getExistingLSID(s);
+            if (result != null)
+            {
+                return result;
+            }
+
+            result = _relativizer.relativize(new Lsid(s), this);
+            putLSID(s, result);
+            return result;
+        }
 
         private String getExistingLSID(String originalLSID)
         {
@@ -285,24 +272,24 @@ public enum LSIDRelativizer
     {
         public void testOverlappingLSIDs()
         {
-            RelativizedLSIDs set = new RelativizedLSIDs();
-            assertEquals("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Protocol.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":MS2.PreSearch", FOLDER_RELATIVE.relativize("urn:lsid:localhost:Protocol.Folder-1:MS2.PreSearch", set));
-            assertEquals("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Protocol.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":MS2.PreSearch:Export1", FOLDER_RELATIVE.relativize("urn:lsid:localhost:Protocol.Folder-2:MS2.PreSearch", set));
-            assertEquals("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Protocol.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":MS2.PreSearch:Export2", FOLDER_RELATIVE.relativize("urn:lsid:localhost:Protocol.Folder-3:MS2.PreSearch", set));
+            RelativizedLSIDs set = new RelativizedLSIDs(FOLDER_RELATIVE);
+            assertEquals("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Protocol.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":MS2.PreSearch", set.relativize("urn:lsid:localhost:Protocol.Folder-1:MS2.PreSearch"));
+            assertEquals("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Protocol.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":MS2.PreSearch:Export1", set.relativize("urn:lsid:localhost:Protocol.Folder-2:MS2.PreSearch"));
+            assertEquals("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Protocol.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":MS2.PreSearch:Export2", set.relativize("urn:lsid:localhost:Protocol.Folder-3:MS2.PreSearch"));
 
             // Make sure they resolve to the same thing as they did the first time
-            assertEquals("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Protocol.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":MS2.PreSearch", FOLDER_RELATIVE.relativize("urn:lsid:localhost:Protocol.Folder-1:MS2.PreSearch", set));
-            assertEquals("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Protocol.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":MS2.PreSearch:Export1", FOLDER_RELATIVE.relativize("urn:lsid:localhost:Protocol.Folder-2:MS2.PreSearch", set));
-            assertEquals("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Protocol.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":MS2.PreSearch:Export2", FOLDER_RELATIVE.relativize("urn:lsid:localhost:Protocol.Folder-3:MS2.PreSearch", set));
+            assertEquals("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Protocol.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":MS2.PreSearch", set.relativize("urn:lsid:localhost:Protocol.Folder-1:MS2.PreSearch"));
+            assertEquals("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Protocol.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":MS2.PreSearch:Export1", set.relativize("urn:lsid:localhost:Protocol.Folder-2:MS2.PreSearch"));
+            assertEquals("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Protocol.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":MS2.PreSearch:Export2", set.relativize("urn:lsid:localhost:Protocol.Folder-3:MS2.PreSearch"));
 
-            assertEquals("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Protocol.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":MS2.PreSearch:v1", FOLDER_RELATIVE.relativize("urn:lsid:localhost:Protocol.Folder-1:MS2.PreSearch:v1", set));
-            assertEquals("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Protocol.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":MS2.PreSearch:v1-Export1", FOLDER_RELATIVE.relativize("urn:lsid:localhost:Protocol.Folder-2:MS2.PreSearch:v1", set));
-            assertEquals("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Protocol.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":MS2.PreSearch:v1-Export2", FOLDER_RELATIVE.relativize("urn:lsid:localhost:Protocol.Folder-3:MS2.PreSearch:v1", set));
+            assertEquals("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Protocol.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":MS2.PreSearch:v1", set.relativize("urn:lsid:localhost:Protocol.Folder-1:MS2.PreSearch:v1"));
+            assertEquals("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Protocol.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":MS2.PreSearch:v1-Export1", set.relativize("urn:lsid:localhost:Protocol.Folder-2:MS2.PreSearch:v1"));
+            assertEquals("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Protocol.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":MS2.PreSearch:v1-Export2", set.relativize("urn:lsid:localhost:Protocol.Folder-3:MS2.PreSearch:v1"));
 
             // Make sure they resolve to the same thing as they did the first time
-            assertEquals("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Protocol.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":MS2.PreSearch:v1", FOLDER_RELATIVE.relativize("urn:lsid:localhost:Protocol.Folder-1:MS2.PreSearch:v1", set));
-            assertEquals("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Protocol.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":MS2.PreSearch:v1-Export1", FOLDER_RELATIVE.relativize("urn:lsid:localhost:Protocol.Folder-2:MS2.PreSearch:v1", set));
-            assertEquals("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Protocol.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":MS2.PreSearch:v1-Export2", FOLDER_RELATIVE.relativize("urn:lsid:localhost:Protocol.Folder-3:MS2.PreSearch:v1", set));
+            assertEquals("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Protocol.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":MS2.PreSearch:v1", set.relativize("urn:lsid:localhost:Protocol.Folder-1:MS2.PreSearch:v1"));
+            assertEquals("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Protocol.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":MS2.PreSearch:v1-Export1", set.relativize("urn:lsid:localhost:Protocol.Folder-2:MS2.PreSearch:v1"));
+            assertEquals("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Protocol.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":MS2.PreSearch:v1-Export2", set.relativize("urn:lsid:localhost:Protocol.Folder-3:MS2.PreSearch:v1"));
         }
 
         public static Test suite()

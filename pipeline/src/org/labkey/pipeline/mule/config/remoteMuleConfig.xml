@@ -5,7 +5,15 @@
 
 <mule-configuration id="LabKey_Pipeline" version="1.0">
 
-    <mule-environment-properties serverUrl=""/>
+    <mule-environment-properties serverUrl="">
+        <connection-strategy className="org.mule.providers.SimpleRetryConnectionStrategy">
+            <properties>
+                <property name="retryCount" value="-1"/>
+                <property name="frequency" value="5000"/>
+                <property name="doThreading" value="true" />
+            </properties>
+        </connection-strategy>
+    </mule-environment-properties>
 
     <container-context name="pipeline" className="org.labkey.pipeline.mule.LabKeySpringContainerContext" />
 

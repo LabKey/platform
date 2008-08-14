@@ -297,15 +297,7 @@ public class XarReader extends AbstractXarImporter
                 }
             }
 
-            try
-            {
-                FileUtil.deleteDir(ExperimentRunGraph.getFolderDirectory(getContainer().getRowId()));
-            }
-            catch (IOException e)
-            {
-                // Non-fatal
-                getLog().error("Failed to clear cached experiment run graphs for container " + getContainer(), e);
-            }
+            ExperimentRunGraph.clearCache(getContainer());
 
             for (DeferredDataLoad deferredDataLoad : _deferredDataLoads)
             {

@@ -97,7 +97,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return ExperimentServiceImpl.class;
     }
 
-    public ExpRun getExpRun(String lsid)
+    public ExpRunImpl getExpRun(String lsid)
     {
         ExperimentRun run = getExperimentRun(lsid);
         if (run == null)
@@ -754,6 +754,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         sql += "  DELETE FROM exp.ExperimentRun WHERE RowId = " + runId + " ; ";
 
         Table.execute(getExpSchema(), sql, new Object[]{});
+
+        ExperimentRunGraph.clearCache(container);
     }
 
 
@@ -1388,16 +1390,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 {
                     ExperimentDataHandler handler = data.findDataHandler();
                     handler.deleteData(data, container, user);
-                }
-
-                try
-                {
-                    FileUtil.deleteDir(ExperimentRunGraph.getFolderDirectory(container.getRowId()));
-                }
-                catch (IOException e)
-                {
-                    // Non-fatal
-                    _log.error("Failed to clear cached experiment run graphs for container " + container, e);
                 }
             }
 

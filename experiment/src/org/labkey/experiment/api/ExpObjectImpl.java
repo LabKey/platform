@@ -77,8 +77,7 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
         }
         catch (SQLException e)
         {
-            _log.error("Error", e);
-            return Collections.emptyMap();
+            throw new RuntimeSQLException(e);
         }
     }
 
