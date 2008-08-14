@@ -45,10 +45,17 @@ function isValidColor(color)
 function getCssRules()
 {
     // MSIE is from js_color_picker_v2.js
-    if (MSIE)
-        return document.styleSheets[0].rules;
-    else
-        return document.styleSheets[0].cssRules;
+    var i;
+    for (i = 0; i < document.styleSheets.length; i++)
+    {
+        if (document.styleSheets[i].href != null && document.styleSheets[i].href.indexOf("themeStylesheet.view") != -1)
+        {
+            if (MSIE)
+                return document.styleSheets[i].rules;
+            else
+                return document.styleSheets[i].cssRules;
+        }
+    }
 }
 
 function updateNavigationColor ()
@@ -62,38 +69,15 @@ function updateNavigationColor ()
   {
     // theme.getNavBarColor()
     var cssName=cssRules[i].selectorText.toLowerCase();
-    if ((cssName.indexOf('.labkey-nav td')!=-1)
-      || (cssName.indexOf('.labkey-nav th')!=-1)
-      || (cssName.indexOf('.labkey-frame')!=-1)
-      || (cssName.indexOf('.labkey-completion-highlight')!=-1)
-      || (cssName.indexOf('labkey-nav-header')!=-1)
-      //|| (cssName.indexOf('header')!=-1 && cssName!=".navpageheader")
-      || (cssName.indexOf('tr.labkey-wp-header')!=-1)
-      ) {
+    if ((cssName.indexOf('labkey-frame')!=-1)
+      || (cssName.indexOf('labkey-site-nav-panel')!=-1)
+      || (cssName.indexOf('labkey-tab-shaded')!=-1)
+      || (cssName.indexOf('labkey-nav-tree-row:hover')!=-1)
+      )
+    {
       cssRules[i].style.backgroundColor="#"+color;
-    } else if (cssName.indexOf('.labkey-tab-inactive')!=-1) {
-      cssRules[i].style.backgroundColor="#"+color;
-      cssRules[i].style.borderColor="#"+color; // TODO: check
     }
   }
-}
-
-function descendLeftNav(element, color)
-{
-    if (element.className == "labkey-expandable-nav")
-    {
-        element.style.borderTopColor = color;
-        element.style.borderBottomColor = color;
-        element.style.borderRightColor = color;
-    }
-    else if (element.className == "labkey-expandable-nav-body")
-    {
-        element.style.borderTopColor = color;
-    }
-
-    var childList = element.childNodes;
-    for (var i = 0; i < childList.length; i++)
-        descendLeftNav(childList[i], color);
 }
 
 function updateHeaderLineColor ()
@@ -108,25 +92,34 @@ function updateHeaderLineColor ()
     var cssName=cssRules[i].selectorText.toLowerCase();
     if (cssName.indexOf('labkey-title-area-line')!=-1) {
       cssRules[i].style.backgroundColor="#"+color;
-    } else if (cssName.indexOf('.labkey-tab')!=-1 && cssName!='.labkey-tab-selected') {
+    } else if ((cssName.indexOf('labkey-nav-bordered')!=-1)
+      || (cssName.indexOf('labkey-tab')!=-1 && cssName!='labkey-tab-selected')
+      || (cssName.indexOf('labkey-tab-inactive')!=-1)){
+      cssRules[i].style.border="1px solid #"+color;
+    } else if (cssName.indexOf('labkey-site-nav-panel')!=-1){
+      cssRules[i].style.borderTop="1px solid #"+color;
+      cssRules[i].style.borderRight="1px solid #"+color;
+    } else if (cssName.indexOf('labkey-expandable-nav')!=-1){
+      cssRules[i].style.borderTop="1px solid #"+color;
+      cssRules[i].style.borderRight="1px solid #"+color;
       cssRules[i].style.borderBottom="1px solid #"+color;
-    } else if (cssName.indexOf('.labkey-tab-inactive')!=-1) {
-      cssRules[i].style.borderBottom="1px solid #"+color;
+    } else if (cssName.indexOf('labkey-expandable-nav-body')!=-1){
+      cssRules[i].style.borderTop="1px solid #"+color;
+    } else if (cssName.indexOf('labkey-tab-selected')!=-1){
+      cssRules[i].style.borderTop="1px solid #"+color;
+      cssRules[i].style.borderRight="1px solid #"+color;
+      cssRules[i].style.borderLeft="1px solid #"+color;
+    } else if (cssName.indexOf('labkey-header-line')!=-1){
+      cssRules[i].style.borderTop="1px solid #"+color;
     }
+
   }
 
   var panel=document.getElementById("leftmenupanel");
-  panel.style.borderTop="1px solid #"+color;
-  panel.style.borderRight="1px solid #"+color;
-
-  descendLeftNav(panel, color);
 
   //updateSrc("saveButton", "border", "%23" + color); just for testing
   updateSrc("navPortal", "border", "%23" + color)
   updateSrc("navAdmin", "border", "%23" + color)
-
-  var navBar=document.getElementById("navBar");
-  navBar.style.borderTopColor = color;
 }
 
 function updateSrc(id, key, value)
@@ -203,7 +196,7 @@ function updateFullScreenBorderColor ()
   {
     //theme.getFullScreenBorderColor()
     var cssName=cssRules[i].selectorText.toLowerCase();
-    if (cssName.indexOf('labkey-full-screen-table')!=-1) {
+    if (cssName.indexOf('labkey-full-screen-background')!=-1) {
       cssRules[i].style.backgroundColor="#"+color;
     }
   }
@@ -223,10 +216,17 @@ function updateTitleBarColor()
         var cssName=cssRules[i].selectorText.toLowerCase();
         if (cssName.indexOf('labkey-wp-header') != -1)
         {
-            cssRules[i].style.backgroundColor="#" + borderColor;
-            var imageLink="url(\"gradient.image?lightColor="+lightColor+"&darkColor="+darkColor+"\")";
             cssRules[i].style.backgroundColor = "#" + backgroundColor;
-            cssRules[i].style.border = "1px solid #" + borderColor;
+        } else if (cssName.indexOf('labkey-wp-title-left') != -1)
+        {
+            cssRules[i].style.borderTop = "1px solid #" + borderColor;
+            cssRules[i].style.borderBottom = "1px solid #" + borderColor;
+            cssRules[i].style.borderLeft = "1px solid #" + borderColor;
+        } else if (cssName.indexOf('labkey-wp-title-right') != -1)
+        {
+            cssRules[i].style.borderTop = "1px solid #" + borderColor;
+            cssRules[i].style.borderBottom = "1px solid #" + borderColor;
+            cssRules[i].style.borderRight = "1px solid #" + borderColor;
         }
     }
 }
@@ -393,16 +393,16 @@ if (null == webThemeErrors)
 
 <form name="login" method="post" onsubmit="javascript:return false;">
 <tr>
-  <td colspan="3" class="labkey-full-screen-table">
+  <td colspan="3" class="labkey-full-screen-background">
     <table class="labkey-full-screen-table">
-      <tr class="labkey-alternate-row"><td height="20"><img src="login_files/_.gif" height="1" width="100%"></td></tr>
+      <tr class="labkey-full-screen-table-panel"><td height="20"><img src="login_files/_.gif" height="1" width="100%"></td></tr>
       <tr><td class="labkey-wp-body" style="padding: 10px;" align="left" height="100%" valign="top"><div>
         <table>
           <tr><td colspan="2">Changes to full-screen color preferences will be displayed here.</td></tr>
           <tr><td colspan="2">&nbsp;</td></tr>
         </table>
       </div></td></tr>
-      <tr class="labkey-alternate-row"><td height="20"><img src="login_files/_.gif" height="1" width="100%"></td></tr>
+      <tr class="labkey-full-screen-table-panel"><td height="20"><img src="login_files/_.gif" height="1" width="100%"></td></tr>
     </table>
    </td>
 </tr>
@@ -430,6 +430,10 @@ New themes will not be visible to other users until you save changes on the Look
 function changeTheme(sel)
 {
     var search = document.location.search;
+    if (search.indexOf("?") == 0)
+    {
+        search = search.substring(1);
+    }
     var params = search.split('&');
     var searchNew = "";
     for (var i = 0; i < params.length; i++)
@@ -443,7 +447,14 @@ function changeTheme(sel)
     }
     var opt = sel.options[sel.selectedIndex];
     if (opt.text.indexOf("<") != 0)
-        searchNew += "&themeName=" + escape(opt.text);
+        if (searchNew.length == 0)
+        {
+            searchNew = "themeName=" + escape(opt.text);
+        }
+        else
+        {
+            searchNew += "&themeName=" + escape(opt.text);
+        }
     document.location.search = searchNew;
 }
 

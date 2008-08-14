@@ -99,7 +99,7 @@
         Font Size Samples:
             <% for (ThemeFont themeFont : bean.themeFonts)
                 {
-                out.print("<span class=\"" + themeFont.getId() + "\">&nbsp;&nbsp;" + themeFont.toString() + "</span>");
+                out.print("<span style=\"font-size:" + themeFont.getNormalSize() + "\">&nbsp;&nbsp;" + themeFont.toString() + "</span>");
                 }
             %>
     </td>

@@ -14,7 +14,8 @@
     String formLabel           = theme.getEditFormColor();
     String fullScreenBorder    = theme.getFullScreenBorderColor();
     String wpHeaderPanel       = theme.getTitleBarBackgroundString();
-    String navBorder           = theme.getTitleBarBorderString();
+    String wpHeaderPanelBorder = theme.getTitleBarBorderString();
+    String navBorder           = theme.getHeaderLineColor();
     String navBackground       = theme.getNavBarColor();
     String linkAndHeaderText   = theme.getTitleColorString();
 
@@ -244,7 +245,7 @@ tr.labkey-wp-header
 
 .labkey-wp-header th, .labkey-wp-header td
 {
-    border: 1px solid #<%= navBorder %>;
+    border: 1px solid #<%= wpHeaderPanelBorder %>;
 }
 
 th.labkey-wp-title-left, td.labkey-wp-title-left

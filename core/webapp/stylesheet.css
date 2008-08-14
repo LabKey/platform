@@ -100,7 +100,7 @@ legend
 
 .labkey-header:hover
 {
-    background: #EBF4FF;
+    background-color: #EBF4FF;
     cursor: pointer;
     cursor: hand;
 }
@@ -124,7 +124,7 @@ legend
 
 .labkey-header-large.hover
 {
-    background: #EBF4FF;
+    background-color: #EBF4FF;
     cursor: pointer;
     cursor: hand;
 }
@@ -231,48 +231,64 @@ div.labkey-button-bar, table.labkey-button-bar
     padding-right: 5px;
 }
 
-a.labkey-button {
-    background: transparent url('./_images/button_a.gif') no-repeat scroll top right;
-    color: #080808;
-    display: block;
-    float: left;
-    height: 19px;
-    margin-right: 5px;
-    padding-right: 5px;
-    text-decoration: none;
-}
-
-a.labkey-button:visited
+/* under construction */
+a.labkey-button, a.labkey-button:visited
 {
+    background-color: #E9E9E9;
+    border: 1px solid black;
+    margin-right: 0.3em;
+    padding: 0.1em;
+    height: 1.2em;
+    width: 4em;
+    white-space: nowrap;
+}
+
+a.labkey-button:hover
+{
+    background-color: #F2F2F2;
+}
+
+a.labkey-button:active
+{
+    position: relative;
+    top: 0.1em;
+    background-color: #DEDEDE;
+}
+
+a.labkey-button input, a.labkey-button:visited input
+{
+    background-color: transparent;
+    font-size: 1em;
+    font-family: verdana, arial, helvetica, sans-serif;
+    margin:0;
+    border:0;
     color: #080808;
+    cursor: pointer;
+    cursor: hand;
 }
 
-a.labkey-button span {
-    background: transparent url('./_images/button_span.gif') no-repeat;
-    display: block;
-    line-height: 15px;
-    padding: 2px 0 2px 5px;
+a.labkey-button:hover input
+{
+    color: #0F0F0F;
 }
 
-a.labkey-button:hover {
-    background: transparent url('./_images/button_hover_a.gif') no-repeat scroll top right;
-    color: #111111;
-}
-
-a.labkey-button:hover span {
-    background: transparent url('./_images/button_hover_span.gif') no-repeat;
-    padding: 2px 0 2px 5px;
-}
-
-a.labkey-button:active {
-    background: transparent url('./_images/button_press_a.gif') no-repeat scroll top right;
+a.labkey-button:active input
+{
     color: #000000;
-    outline: none;
 }
 
-a.labkey-button:active span {
-    background: transparent url('./_images/button_press_span.gif') no-repeat;
-    padding: 3px 0 1px 5px;
+a.labkey-button .labkey-button-arrow
+{
+    background-color: transparent;
+    margin-top: 0.1em;
+    margin-bottom: 0.1em;
+    margin-right: 0.3em;
+    width: 0.728em;
+    height: 0.364em;
+    position: relative;
+    bottom: 0.1em;
+    padding: 0;
+    border: 0;
 }
 
 span.labkey-button-bar-item
@@ -319,7 +335,7 @@ li.labkey-indented
 
 .labkey-frame
 {
-    background: #E1ECFC;
+    background-color: #E1ECFC;
 }
 
 div.labkey-pagination
@@ -572,7 +588,7 @@ th.labkey-col-header-filter, td.labkey-col-header-filter, tr.labkey-col-header-f
 
 th.labkey-col-header-filter.hover, td.labkey-col-header-filter.hover, tr.labkey-col-header-filter th:hover
 {
-    background: #EBF4FF;
+    background-color: #EBF4FF;
     cursor: pointer;
     cursor: hand;
 }
@@ -669,7 +685,7 @@ img.labkey-grid-filter-icon
 
 .labkey-site-nav-panel
 {
-    background: #E1ECFC;
+    background-color: #E1ECFC;
     border-top: 1px solid #89A1B4;
     border-right: 1px solid #89A1B4;
     border-collapse: separate; border-spacing: 2px; *border-spacing: expression(cellSpacing=2);
@@ -732,6 +748,11 @@ td.labkey-main-nav
     white-space: nowrap;
 }
 
+.labkey-site-nav-expander
+{
+    width: 146px;
+}
+
 table.labkey-site-nav
 {
     border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
@@ -771,8 +792,6 @@ table.labkey-expandable-nav
     width: 100%;
 }
 
-
-
 .labkey-proj-nav-panel
 {
     width: 100%;
@@ -802,16 +821,6 @@ table.labkey-expandable-nav
     border-top: 1px solid #89A1B4;
     width: 100%;
     padding: 1px;
-}
-
-.labkey-expandable-nav-body table
-{
-    border-collapse: separate; border-spacing: 2px; *border-spacing: expression(cellSpacing=2);
-}
-
-.labkey-expandable-nav-body td, .labkey-expandable-nav-body th
-{
-    padding: 0px;
 }
 
 th.labkey-expand-collapse-area
@@ -845,13 +854,14 @@ tr.labkey-nav-tree-row
 
 tr.labkey-nav-tree-row:hover
 {
-    background: #EBF4FF;
+    background-color: #EBF4FF;
     cursor: pointer;
     cursor: hand;
 }
 
 td.labkey-nav-tree-node
 {
+    padding: 0px;
     padding-top: 0.5em;
 }
 
@@ -863,6 +873,7 @@ td.labkey-nav-tree-text
 
 td.labkey-nav-tree-total
 {
+    padding: 0em;
     padding-top: 0.3em;
 }
 
@@ -928,10 +939,7 @@ td.labkey-tab, .labkey-tab
     padding-bottom:0.1em;
     padding-left:0.5em;
     padding-right:0.5em;
-    border-top:solid 1px #89A1B4;
-    border-left:solid 1px #89A1B4;
-    border-right:solid 1px #89A1B4;
-    border-bottom:solid 1px #89A1B4;
+    border:solid 1px #89A1B4;
     color: #003399;
     text-decoration: none;
     vertical-align:bottom;
@@ -944,10 +952,7 @@ td.labkey-tab-inactive
     padding-bottom:0.1em;
     padding-left:0.5em;
     padding-right:0.5em;
-    border-top:solid 1px #89A1B4;
-    border-left:solid 1px #89A1B4;
-    border-right:solid 1px #89A1B4;
-    border-bottom:solid 1px #89A1B4;
+    border:solid 1px #89A1B4;
     text-decoration: none;
     color: #444444;
 }
