@@ -29,7 +29,6 @@ import org.labkey.api.query.snapshot.QuerySnapshotForm;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.security.*;
 import org.labkey.api.settings.LookAndFeelAppProps;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
@@ -396,6 +395,27 @@ public class QueryControllerSpring extends SpringActionController
         }
 
         abstract void _export(QueryForm form, QueryView view) throws Exception;
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class ExportRScriptAction extends SimpleViewAction<QueryForm>
+    {
+        public ModelAndView getView(QueryForm form, BindException errors) throws Exception
+        {
+            assertQueryExists(form);
+            QueryView view = QueryView.create(form);
+            getPageConfig().setTemplate(PageConfig.Template.None);
+
+            getViewContext().getResponse().setContentType("text/plain");
+            JspView<ExportRScriptModel> jspview = new JspView<ExportRScriptModel>("/org/labkey/api/query/exportRScript.jsp", new ExportRScriptModel(view));
+            jspview.setFrame(WebPartView.FrameType.NONE);
+            return jspview;
+        }
 
         public NavTree appendNavTrail(NavTree root)
         {
