@@ -75,11 +75,6 @@ public abstract class AbstractFileXarSource extends XarSource
 
     public String canonicalizeDataFileURL(String dataFileURL) throws XarFormatException
     {
-        if (dataFileURL.startsWith("/") || dataFileURL.startsWith("\\"))
-        {
-            dataFileURL = dataFileURL.substring(1);
-        }
-
         File xarDirectory = getRoot();
         File dataFile = new File(dataFileURL);
         if (!dataFile.isAbsolute())
