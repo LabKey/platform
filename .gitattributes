@@ -262,6 +262,7 @@ core/src/META-INF/core/scripts/postgresql/obsolete/prop-2.03-2.04.sql -text
 core/src/META-INF/core/scripts/postgresql/portal-0.00-1.00.sql -text
 core/src/META-INF/core/scripts/postgresql/portal-1.50-1.60.sql -text
 core/src/META-INF/core/scripts/postgresql/portal-1.60-1.70.sql -text
+core/src/META-INF/core/scripts/postgresql/portal-8.22-8.23.sql -text
 core/src/META-INF/core/scripts/postgresql/prop-0.00-1.00.sql -text
 core/src/META-INF/core/scripts/postgresql/prop-2.00-2.10.sql -text
 core/src/META-INF/core/scripts/postgresql/prop-create.sql -text
@@ -322,6 +323,7 @@ core/src/META-INF/core/scripts/sql[!!-~]server/obsolete/prop-2.03-2.04.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/portal-0.00-1.00.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/portal-1.50-1.60.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/portal-1.60-1.70.sql -text
+core/src/META-INF/core/scripts/sql[!!-~]server/portal-8.22-8.23.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/prop-0.00-1.00.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/prop-2.00-2.10.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/prop-create.sql -text
@@ -1779,6 +1781,7 @@ study/src/org/labkey/study/controllers/security/SecurityController.java -text
 study/src/org/labkey/study/dataset/DatasetAuditViewFactory.java -text
 study/src/org/labkey/study/dataset/DatasetSnapshotProvider.java -text
 study/src/org/labkey/study/designer/MapArrayExcelWriter.java -text
+study/src/org/labkey/study/designer/SaveException.java -text
 study/src/org/labkey/study/designer/StudyDefinitionServiceImpl.java -text
 study/src/org/labkey/study/designer/StudyDesignInfo.java -text
 study/src/org/labkey/study/designer/StudyDesignManager.java -text

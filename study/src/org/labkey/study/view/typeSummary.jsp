@@ -22,18 +22,29 @@
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.api.view.ViewContext"%>
 <%@ page import="org.labkey.study.model.DataSetDefinition"%>
+<%@ page import="org.labkey.study.model.Study" %>
+<%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DataSetDefinition> me = (JspView<DataSetDefinition>) HttpView.currentView();
     DataSetDefinition dataset = me.getModelBean();
+    Study study = dataset.getStudy();
 
     ViewContext context = HttpView.currentContext();
     int permissions = context.getContainer().getAcl().getPermissions(context.getUser());
-    List<ColumnInfo> cols = dataset.getTableInfo(context.getUser(), true, false).getColumns();
+    List<ColumnInfo> allCols = dataset.getTableInfo(context.getUser(), true, false).getColumns();
 
-// UNDONE: clean way to get count of system fields???
-    int systemCount = 7;
+    List<ColumnInfo> systemColumns = new ArrayList<ColumnInfo>();
+    List<ColumnInfo> userColumns = new ArrayList<ColumnInfo>();
+
+    for (ColumnInfo col : allCols)
+    {
+        if (DataSetDefinition.isDefaultFieldName(col.getName(), study))
+            systemColumns.add(col);
+        else
+            userColumns.add(col);
+    }
 %>
 <table>
     <tr>
@@ -46,9 +57,8 @@
         <th>Description</th>
     </tr><%
 
-    for (int i=0 ; i<systemCount ; i++)
+    for (ColumnInfo col : systemColumns)
     {
-        ColumnInfo col = cols.get(i);
         %><tr>
             <td><%=h(col.getName())%></td>
             <td><%=h(col.getCaption())%></td>
@@ -61,9 +71,8 @@
 
 %><tr><td colspan=6><hr height=1></td></tr><%
 
-    for (int i = systemCount; i < cols.size(); i++)
+    for (ColumnInfo col : userColumns)
     {
-        ColumnInfo col = cols.get(i);
         boolean isKeyColumn = (StringUtils.equalsIgnoreCase(col.getName(), dataset.getKeyPropertyName()));
 %>
         <tr>

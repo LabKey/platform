@@ -257,7 +257,7 @@ public class Designer implements EntryPoint
                     }
                     else
                     {
-                        Window.alert("Save failure: " + info.getErrorMessage() + " Please contact your administrator");
+                        Window.alert("Could not save: " + info.getErrorMessage());
                     }
                 }
             });

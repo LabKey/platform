@@ -76,7 +76,7 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
 
     public CoreModule()
     {
-        super(NAME, 8.22, "/org/labkey/core", false,
+        super(NAME, 8.23, "/org/labkey/core", false,
             new WebPartFactory("Contacts")
             {
                 public WebPartView getWebPartView(ViewContext ctx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException

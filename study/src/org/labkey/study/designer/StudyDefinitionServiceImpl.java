@@ -67,7 +67,14 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
             result.setSaveSuccessful(true);
             return result;
         }
-        catch (Exception x)
+        catch (SaveException se)
+        {
+            GWTStudyDesignVersion result = new GWTStudyDesignVersion();
+            result.setSaveSuccessful(false);
+            result.setErrorMessage(se.getMessage());
+            return result;
+        }
+        catch (SQLException x)
         {
             _log.error(x);
             ExceptionUtil.logExceptionToMothership(getThreadLocalRequest(), x);

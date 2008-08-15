@@ -70,6 +70,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         "Modified",
         "sourcelsid",
         "QCState",
+        "visitRowId",
         "lsid"
     };
 

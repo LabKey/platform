@@ -17,6 +17,7 @@
 package org.labkey.study.controllers;
 
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.beanutils.converters.BooleanConverter;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
@@ -1871,8 +1872,8 @@ public class StudyController extends BaseStudyController
                     }
 
                     // Deal with managed key field
-                    String autoKeyString = (String)props.get("AutoKey");
-                    boolean managedKey = "true".equalsIgnoreCase(autoKeyString);
+                    BooleanConverter booleanConverter = new BooleanConverter(false);
+                    Boolean managedKey = (Boolean)booleanConverter.convert(Boolean.class, props.get("AutoKey"));
 
                     if (managedKey)
                     {

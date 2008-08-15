@@ -113,7 +113,7 @@ public class StudyDesignManager
      * @param newName Label for this study design
      * @return
      */
-    public StudyDesignInfo copyStudyDesign(User user, StudyDesignInfo source, Container newContainer, String newName) throws SQLException {
+    public StudyDesignInfo copyStudyDesign(User user, StudyDesignInfo source, Container newContainer, String newName) throws SaveException, SQLException {
         StudyDesignInfo dest = new StudyDesignInfo();
         dest.setLabel(newName);
         dest.setContainer(newContainer);
@@ -203,7 +203,7 @@ public class StudyDesignManager
         return Table.executeSingleton(getSchema(), sql, new Object[] {c.getId(), studyId}, Integer.class);
     }
 
-    public StudyDesignVersion saveStudyDesign(User user, Container container, StudyDesignVersion version) throws SQLException
+    public StudyDesignVersion saveStudyDesign(User user, Container container, StudyDesignVersion version) throws SaveException, SQLException
     {
         int studyDesignId = version.getStudyId();
         StudyDesignInfo designInfo;
@@ -212,6 +212,12 @@ public class StudyDesignManager
             designInfo = new StudyDesignInfo();
             designInfo.setLabel(version.getLabel());
             designInfo.setContainer(container);
+
+            // Check if there is a name conflict
+            if (getStudyDesign(container, version.getLabel()) != null)
+            {
+                throw new SaveException("The name '" + version.getLabel() + "' is already in use");
+            }
             designInfo = insertStudyDesign(user, designInfo);
             version.setStudyId(designInfo.getStudyId());
         }
