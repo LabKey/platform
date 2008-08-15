@@ -379,7 +379,7 @@ public class WikiManager
 
             //delete stored web part information for this container (e.g., page to display in wiki web part)
             Table.execute(Portal.getSchema(),
-                    "UPDATE " + Portal.getTableInfoPortalWebParts() + " SET Properties = NULL WHERE (Name LIKE '%Wiki%') AND lower(Properties) LIKE lower('%" + c.getId() + "%')",
+                    "UPDATE " + Portal.getTableInfoPortalWebParts() + " SET Properties = NULL WHERE (Name LIKE '%Wiki%') AND Properties LIKE '%" + c.getId() + "%'",
                     null);
 
             ContainerUtil.purgeTable(comm.getTableInfoPages(), c, null);
