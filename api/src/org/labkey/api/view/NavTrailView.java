@@ -162,9 +162,9 @@ public class NavTrailView extends HttpView
         // TABSTRIP
         //
 
-        _out.print("<table id=\"navBar\" class=\"labkey-nav-bar");
+        _out.print("<table id=\"navBar\" class=\"labkey-tab-strip");
         if (tabs.size() == 1)
-            _out.print(" labkey-header-line");
+            _out.print(" labkey-title-area-line");
         _out.print("\"><tr>\n");
 
         if (tabs.size() > 1)
@@ -204,7 +204,7 @@ public class NavTrailView extends HttpView
         // CRUMB TRAIL
         //
 
-        _out.print("<table class=\"labkey-nav-bar\">\n");
+        _out.print("<table class=\"labkey-tab-strip\">\n");
         boolean hasCrumbTrail = null != _crumbTrail && _crumbTrail.size() > 1;
         _out.print("<tr><td colspan=");
         _out.print(hasCrumbTrail ? "1" : "2");

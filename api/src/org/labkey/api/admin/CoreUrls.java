@@ -30,5 +30,4 @@ public interface CoreUrls extends UrlProvider
     ActionURL getThemeStylesheetURL(Container c);
     ActionURL getCustomStylesheetURL();
     ActionURL getCustomStylesheetURL(Container c);
-    ActionURL getPrintStylesheetURL();
 }

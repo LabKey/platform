@@ -1405,14 +1405,15 @@ public class PageFlowUtil
         sb.append(PageFlowUtil.filter(stylesheetURL));
         sb.append("\" type=\"text/css\" rel=\"stylesheet\"/>\n");
 
-        CoreUrls coreUrls = urlProvider(CoreUrls.class);
-
         if (!email)
         {
+            ImageURL printStyleURL = new ImageURL("printStyle.css", ContainerManager.getRoot());
             sb.append("    <link href=\"");
-            sb.append(PageFlowUtil.filter(coreUrls.getPrintStylesheetURL()));
+            sb.append(PageFlowUtil.filter(printStyleURL));
             sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\"/>\n");
         }
+
+        CoreUrls coreUrls = urlProvider(CoreUrls.class);
 
         sb.append("    <link href=\"");
         sb.append(PageFlowUtil.filter(coreUrls.getThemeStylesheetURL()));
