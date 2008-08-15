@@ -80,11 +80,6 @@ fieldset
 
 /* general */
 
-table.labkey-header-line
-{
-    border-top: 1px solid #<%= theme.getHeaderLineColor() %>;
-}
-
 .labkey-header.hover
 {
     background: #<%= wpHeaderPanel %>;
@@ -134,9 +129,9 @@ th.labkey-col-header-filter.hover, td.labkey-col-header-filter.hover, .labkey-co
     background: #<%= wpHeaderPanel %>;
 }
 
-td.labkey-title-area-line
+.labkey-title-area-line
 {
-    background-color: #<%= navBorder %>;
+    border-top: 1px solid #<%= navBorder %>;
 }
 
 .labkey-frame

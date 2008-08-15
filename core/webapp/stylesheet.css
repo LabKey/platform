@@ -88,6 +88,9 @@ legend
 
 /* General */
 
+/* labkey-header is used for small headers, but it's most important use is in
+ expandable menus where it is used by the javascript to properly expand and collapse
+ lists*/
 .labkey-header
 {
     color: #003399;
@@ -110,6 +113,7 @@ legend
     outline: none;
 }
 
+/* Used for a slightly larger and black header */
 .labkey-header-large
 {
     color: #000000;
@@ -129,6 +133,8 @@ legend
     cursor: hand;
 }
 
+/* Used for the titles in announcement threads and elsewhere for
+ a normal size bold header */
 .labkey-announcement-title
 {
     padding-top: 14px;
@@ -141,13 +147,15 @@ legend
     color: #003399
 }
 
-td.labkey-title-area-line
+/* Used for the single pixel horizontal dividing lines across the site */
+.labkey-title-area-line
 {
-    background-color: #89A1B4;
+    border-top: 1px solid #89A1B4;
     height: 1px;
     padding: 0px;
 }
 
+/*  Used across the site whenever there is a label with a colored background */
 .labkey-form-label
 {
     background-color: #FFDF8C;
@@ -165,6 +173,8 @@ td.labkey-title-area-line
     text-align: right;
 }
 
+/* Used in some cases where there are tables with cells that have borders or colored backgrounds that
+  should be touching */
 table.labkey-no-spacing
 {
     border-spacing: 0px;
@@ -172,6 +182,7 @@ table.labkey-no-spacing
     *border-spacing: expression(cellSpacing=0);    
 }
 
+/* Used for links where you want an underline when hovering */
 a.labkey-link, a.labkey-link:visited
 {
 }
@@ -182,18 +193,21 @@ a.labkey-link:hover, a.labkey-link:visited:hover
     text-decoration: underline;
 }
 
+/* Used for the error messages across the site */
 .labkey-error, .error
 {
     color: #FF0000;
     padding: 5px;
 }
 
+/* Used for messages across the site */
 .labkey-message
 {
     font-size: 8pt;
     color: #008000;
 }
 
+/* Used for bold messages across the site */
 .labkey-message-strong
 {
     font-size: 8pt;
@@ -201,6 +215,8 @@ a.labkey-link:hover, a.labkey-link:visited:hover
     color: #008000;
 }
 
+/* Used for the status box that pops up on some forms, such as the wiki editor, which tells the user
+ whether its through saving or not */
 .labkey-status-info
 {
     text-align: center;
@@ -210,6 +226,8 @@ a.labkey-link:hover, a.labkey-link:visited:hover
     font-weight: bold;
 }
 
+/* Used for the status box that pops up on some forms, such as the wiki editor, which tells the user
+ that there has been an error */
 .labkey-status-error
 {
     text-align: center;
@@ -219,6 +237,7 @@ a.labkey-link:hover, a.labkey-link:visited:hover
     font-weight: bold;
 }
 
+/* Used for button bars across the site */
 div.labkey-button-bar, table.labkey-button-bar
 {
     white-space: nowrap;
@@ -231,7 +250,8 @@ div.labkey-button-bar, table.labkey-button-bar
     padding-right: 5px;
 }
 
-/* under construction */
+/* Used for the new css buttons, which consist of a link (<a>) wrapped around
+ an input (and an image in the case where there is an down arrow ) */
 a.labkey-button, a.labkey-button:visited
 {
     background-color: #E9E9E9;
@@ -277,6 +297,8 @@ a.labkey-button:active input
     color: #000000;
 }
 
+/* This is the class for the down arrow that can be included in a button.
+ The images src should be ./_images/button_arrow.gif */
 a.labkey-button .labkey-button-arrow
 {
     background-color: transparent;
@@ -291,53 +313,66 @@ a.labkey-button .labkey-button-arrow
     border: 0;
 }
 
+/* Used for the old buttons to give them spacing */
 span.labkey-button-bar-item
 {
     margin-right: 5px;
 }
 
+/* Used across the site for simple indenting */
 .labkey-indented
 {
     padding-left: 2em;
 }
 
+/* Used for indenting of lists, this particular case is only used in one place right now */
 li.labkey-indented
 {
     padding-left: 1em;
     text-indent: -1em;
 }
 
+/* Not used for most of the bordering, but there are a number of simple areas that use a dark border */
 .labkey-bordered
 {
    border: solid 1px #808080;
 }
 
+/* Not used for most of the bordering, but there are a some of simple cases that use the nav border */
 .labkey-nav-bordered
 {
    border: solid 1px #89A1B4;
 }
 
+/* This is used to give a heavier border, but keep the border color, for highlighting bordered
+regions on mouseover */
 .labkey-bordered-heavy
 {
    border-style: solid;
    border-width: 2px;
 }
 
+/* This lightens the text to make it look inactive. (limited use) */
 .labkey-disabled, .labkey-disabled a:link, .labkey-disabled a:visited
 {
     color: #EEEEEE;
 }
 
+/* This is used for bold text in a couple places. */
 .labkey-strong
 {
     font-weight: bold;
 }
 
+/* This is used in simple cases to give an area the same background as the
+ side panel */
 .labkey-frame
 {
     background-color: #E1ECFC;
 }
 
+/* "Pagination" is used with data views that don't display all the data on one page.  This
+ class is for the area with the links to change between the pages*/
 div.labkey-pagination
 {
     white-space: nowrap;
@@ -349,14 +384,21 @@ div.labkey-pagination
     font-weight: normal;
 }
 
+/* Used for checkboxes in Data Regions */
 .labkey-selectors, td.labkey-selectors, th.labkey-selectors
 {
     text-align: left;
 }
 
+/* Used for tabs */
 table.labkey-tab-strip
 {
     width: 100%;
+    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+}
+
+.labkey-tab-strip table
+{
     border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
 }
 
@@ -365,6 +407,7 @@ table.labkey-tab-strip
     padding: 0px;
 }
 
+/* Used for text fields with auto completion */
 div.labkey-completion
 {
     display:none;
@@ -405,6 +448,8 @@ table.labkey-completion-text
     background-color: #FFFFFF;
 }
 
+/* This is used to adjust some views so that when elements are taken away, they still
+ looks similar */
 .labkey-read-only
 {
     padding: 4px;
@@ -412,6 +457,7 @@ table.labkey-completion-text
     text-align: left;
 }
 
+/* Used to style the question mark that provides help tips */
 span.labkey-help-pop-up
 {
     font-weight: bold;
@@ -419,6 +465,7 @@ span.labkey-help-pop-up
     text-decoration: none;
 }
 
+/* Used for full screen pages such as for login or upgrade */
 .labkey-full-screen-background
 {
     background-color: #336699;
@@ -442,6 +489,7 @@ td.labkey-full-screen-table-panel, .labkey-full-screen-table-panel
     height: 20px;
 }
 
+/* Used for the middle part of full-screen pages */
 .labkey-dialog-body
 {
     height: 100%;
@@ -449,6 +497,7 @@ td.labkey-full-screen-table-panel, .labkey-full-screen-table-panel
     padding: 10px;
 }
 
+/* Used for the Admin Console page under Manage Site */
 table.labkey-admin-console
 {
     border-collapse: separate; border-spacing: 10px; *border-spacing: expression(cellSpacing=10);
@@ -459,6 +508,7 @@ table.labkey-admin-console
     vertical-align: top;
 }
 
+/* Used for the customize view page for data regions */
 table.labkey-customize-view
 {
     border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
@@ -475,14 +525,10 @@ table.labkey-customize-view
     border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
 }
 
-table.labkey-output
-{
-    width: 100%;
-    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
-}
-
 /* Data Region */
 
+/* There are some odd styles that are used so that the data
+regions look the same in IE, Safari, and Firefox */
 table.labkey-data-region
 {
     background-color: #FFFFFF;
@@ -513,34 +559,39 @@ table.labkey-data-region
 table.labkey-show-borders
 {
     border: solid 1px #DDDDDD;
-    *border: 0px none;  /* hack for IE 7 and below since IE gives precedence to table borders over cell borders */
+    /* Part of a hack for IE 7 and below since IE gives precedence to table borders over cell borders */
+    *border: 0px none;  
 }
 
 .labkey-show-borders td
 {
-    border-top: 0px;     /* Safari gives precedence to the color drawn last for borders, which means
-                            the borders usually win bottom and right over top and left (It is supposed to be
-                            the opposite, which is how Firefox correctly does it. So we use a
-                            combination of table borders and cell borders for Safari and Firefox*/
+    /* Safari gives precedence to the color drawn last for borders, which means
+    the borders usually win bottom and right over top and left (It is supposed to be
+    the opposite, which is how Firefox correctly does it. So we use a
+    combination of table borders and cell borders for Safari and Firefox*/
+    border-top: 0px;
     border-left: 0px;
     border-right: solid 1px #DDDDDD;
     border-bottom: solid 1px #DDDDDD;
-    *border: solid 1px #DDDDDD;  /* Hack for IE 7 and below since IE gives precendence to table borders over cell borders */
+    /* Part of a hack for IE 7 and below since IE gives precendence to table borders over cell borders */
+    *border: solid 1px #DDDDDD;
 }
 
 /*  If the table includes row or column totals, then it needs these respective classes
 in the table tag.  They are necessary so that the borders take precedence correctly when they collapse */
 .labkey-has-row-totals td, .labkey-has-col-totals td
 {
-    border: 0px;      /* Firefox and Safari use column and row borders along with table borders, since
-                        we want the bold borders for the column and row header and totals and stat titles
-                        to take precedence over them */
-    *border: solid 1px #DDDDDD;  /* Again, IE 7 and below gives precendence to table borders over cell borders, also it doesn't do
-                                    column or row borders, but it does do correct precedence for cells
-                                     (top and left over bottom and right) so we can use cell borders */
+    /* Firefox and Safari use column and row borders along with table borders, since
+    we want the bold borders for the column and row header and totals and stat titles
+    to take precedence over them */
+    border: 0px;
+    /* Again, IE 7 and below gives precendence to table borders over cell borders, also it doesn't do
+    column or row borders, but it does do correct precedence for cells
+     (top and left over bottom and right) so we can use cell borders */
+    *border: solid 1px #DDDDDD;
 }
 
-/* These classes are used in CrossTab data regions and for aggregate rows */
+/* These classes are used in Cross Tab data regions and for aggregate rows */
 .labkey-show-borders th, .labkey-show-borders .labkey-col-total, .labkey-show-borders .labkey-row-total,
     .labkey-show-borders .labkey-col-header, .labkey-show-borders .labkey-row-header,
     .labkey-show-borders .labkey-col-total td, .labkey-show-borders .labkey-col-header th,
@@ -571,16 +622,20 @@ in the table tag.  They are necessary so that the borders take precedence correc
     *border-bottom: 0px none;
 }
 
+/* Used for the normal rows in data regions, sometimes these rows are not given a class */
 .labkey-row td, .labkey-row th, tr.labkey-row
 {
     background: #FFFFFF;
 }
 
+/* Used for the shaded alternate rows */
 .labkey-alternate-row td, .labkey-alternate-row th, tr.labkey-alternate-row
 {
     background: #EEEEEE;
 }
 
+/* This is used for the headers on data regions that highlight on mouseover and give a drop down
+of filter options when clicked */
 th.labkey-col-header-filter, td.labkey-col-header-filter, tr.labkey-col-header-filter th
 {
     color: #003399;
@@ -601,6 +656,7 @@ th.labkey-col-header-filter.hover, td.labkey-col-header-filter.hover, tr.labkey-
     background-color: #EEEEEE;
 }
 
+/* Used for the unbordered empty or title cells sometimes put on tables */
 .labkey-data-region .labkey-data-region-title
 {
     background-color: #FFFFFF;
@@ -610,18 +666,21 @@ th.labkey-col-header-filter.hover, td.labkey-col-header-filter.hover, tr.labkey-
     font-weight: bold;
 }
 
+/* Used to highlight cells with a darker color, limited use right now */
 td.labkey-highlight-cell, th.labkey-highlight-cell
 {
     background: #AAAAAA;
     font-weight:bold;
 }
 
+/* Used for blank cells in the data region such as when the main row headers have sub row headers */
 td.labkey-blank-cell, th.labkey-blank-cell
 {
     background: #FFFFFF;
     border: 0px;
 }
 
+/* Used for the little icon on the column filter headers */
 img.labkey-grid-filter-icon
 {
     background-repeat: no-repeat;
@@ -639,6 +698,7 @@ img.labkey-grid-filter-icon
 
 /* Home Template */
 
+/* The body tag for the page */
 #bodyElement
 {
     margin-top:0;
@@ -646,6 +706,7 @@ img.labkey-grid-filter-icon
     margin-right:0;
 }
 
+/* Help pop ups */
 #helpDiv
 {
     border:1px solid #AAAAAA;
@@ -659,6 +720,7 @@ img.labkey-grid-filter-icon
     border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);;
 }
 
+/* The table that is the entire page */
 .labkey-main
 {
     width: 100%;
@@ -667,11 +729,13 @@ img.labkey-grid-filter-icon
     border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
 }
 
+/* The top panel with the title and logo */
 #headerpanel
 {
     height: 56px;
 }
 
+/* The top panel with the title and logo */
 .labkey-header-panel table
 {
     width: 100%;
@@ -683,6 +747,7 @@ img.labkey-grid-filter-icon
     padding: 0px;
 }
 
+/* The side panel with the navigation and admin expandable menus */
 .labkey-site-nav-panel
 {
     background-color: #E1ECFC;
@@ -693,6 +758,7 @@ img.labkey-grid-filter-icon
     padding: 0px;
 }
 
+/* The project area (the rest of the page besides the side and top panels) */
 .labkey-proj
 {
     width: 100%;
@@ -702,7 +768,7 @@ img.labkey-grid-filter-icon
     border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
 }
 
-
+/* The icon in the header panel */
 td.labkey-main-icon
 {
     vertical-align: middle;
@@ -711,6 +777,7 @@ td.labkey-main-icon
     margin-right: auto;
 }
 
+/* The middle of the header panel */
 td.labkey-main-title-area
 {
     vertical-align: bottom;
@@ -723,6 +790,7 @@ td.labkey-main-title-area
     vertical-align: bottom;
 }
 
+/* The site title */
 #labkey-main-title
 {
     color: #666666;
@@ -741,6 +809,7 @@ a.labkey-main-title:hover {
     text-decoration: underline;
 }
 
+/* The right side links and username on the header panel */
 td.labkey-main-nav
 {
     padding: 5px;
@@ -748,26 +817,19 @@ td.labkey-main-nav
     white-space: nowrap;
 }
 
+/* The strip at the top of the left side panel that is used to set its minimum width */
 .labkey-site-nav-expander
 {
     width: 146px;
 }
 
-table.labkey-site-nav
-{
-    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
-}
-
-.labkey-site-nav td, .labkey-site-nav th
-{
-    padding: 0px;
-}
-
+/* The table that contains the expandable nav panels */
 .labkey-expandable-nav-panel
 {
     border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
 }
 
+/* The individual expandable nav menus */
 .labkey-expandable-nav
 {
     padding: 0px;
@@ -792,6 +854,7 @@ table.labkey-expandable-nav
     width: 100%;
 }
 
+/* The top of the project area where there are tabs, the crumb trail, and the project title */
 .labkey-proj-nav-panel
 {
     width: 100%;
@@ -799,6 +862,7 @@ table.labkey-expandable-nav
     padding: 0px;
 }
 
+/* The rest of the project area besides the project nav panel */
 .labkey-body-panel
 {
     padding: 5px;
@@ -807,6 +871,7 @@ table.labkey-expandable-nav
     vertical-align: top;
 }
 
+/* The right side panel that is seen in views like portal */
 .labkey-side-panel
 {
     padding: 5px;
@@ -815,7 +880,7 @@ table.labkey-expandable-nav
     vertical-align: top;
 }
 
-
+/* The area under the top line on an expandable nav menu */
 .labkey-expandable-nav-body
 {
     border-top: 1px solid #89A1B4;
@@ -823,6 +888,7 @@ table.labkey-expandable-nav
     padding: 1px;
 }
 
+/* The cell that contains the expand/collapse image */
 th.labkey-expand-collapse-area
 {
     font-weight: bold;
@@ -834,6 +900,7 @@ th.labkey-expand-collapse-area
     text-align: right;
 }
 
+/* The table that contains all the expandable nodes in the expandable menus */
 table.labkey-nav-tree
 {
     border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
@@ -844,6 +911,7 @@ span.labkey-nav-tree-selected
     font-weight:bold;
 }
 
+/* Each line of the expandable nav menus */
 tr.labkey-nav-tree-row
 {
     color: #003399;
@@ -859,24 +927,28 @@ tr.labkey-nav-tree-row:hover
     cursor: hand;
 }
 
+/* The area on the left of a nav tree row which can be blank or have an expand/collapse button */
 td.labkey-nav-tree-node
 {
     padding: 0px;
     padding-top: 0.5em;
 }
 
+/* The link in an expandable nav menu */
 td.labkey-nav-tree-text
 {
     padding: 0.3em;
     width: 100%;
 }
 
+/* The expandable nav rows sometimes have a total like in the Study module */
 td.labkey-nav-tree-total
 {
     padding: 0em;
     padding-top: 0.3em;
 }
 
+/* The area shown by clicking the expander of an expandable nav menu */
 table.labkey-nav-tree-child
 {
     border-collapse: collapse;
@@ -889,34 +961,14 @@ table.labkey-nav-tree-child
     padding: 0.1em;
 }
 
+/* Used to indent the text on the children in expandable nav menus */
 .labkey-nav-tree-indenter
 {
     width: 9px;
     background-image: url('./_.gif');
 }
 
-
-table.labkey-nav-bar, .labkey-nav-bar
-{
-    width: 100%;
-    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
-}
-
-table.labkey-header-line
-{
-    border-top: 1px solid #89a1b4;
-}
-
-.labkey-nav-bar table
-{
-    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
-}
-
-.labkey-nav-bar td, .labkey-nav-bar th
-{
-    padding: 0px;
-}
-
+/* The tab has no bottom border so it looks like it is forward */
 td.labkey-tab-selected, .labkey-tab-selected
 {
     padding-top:0.1em;
@@ -933,6 +985,7 @@ td.labkey-tab-selected, .labkey-tab-selected
     cursor: pointer;
 }
 
+/* The tab has a bottom border so it looks like it is back */
 td.labkey-tab, .labkey-tab
 {
     padding-top:0.1em;
@@ -946,6 +999,7 @@ td.labkey-tab, .labkey-tab
     cursor: pointer;
 }
 
+/* This tab has a bottom border and its text is shaded so it looks like it is back and unselectable */
 td.labkey-tab-inactive
 {
     padding-top:0.1em;
@@ -957,6 +1011,7 @@ td.labkey-tab-inactive
     color: #444444;
 }
 
+/* This tab is shaded so its looks like it is back */
 td.labkey-tab-shaded, .labkey-tab-shaded
 {
     background-color: #E1ECFC;
@@ -967,6 +1022,7 @@ td.labkey-tab-shaded, .labkey-tab-shaded
     outline: none;
 }
 
+/* This is used for breaks in between tabs */
 td.labkey-tab-space, .labkey-tab-space
 {
     border-top: 0px;
@@ -975,18 +1031,21 @@ td.labkey-tab-space, .labkey-tab-space
     border-bottom: 1px solid #89A1B4;
 }
 
+/* This is used as the final tab in a tab strip */
 #labkey-end-tab-space
 {
     padding-right: 5px;
     white-space: nowrap;
 }
 
+/* This is used for the links at the top of the project area to the containing folders  */
 td.labkey-crumb-trail
 {
     padding-top:5px;
     padding-left:5px;
 }
 
+/* This is the title that is contained at the top of the project area */
 td.labkey-nav-page-header
 {
     padding-left: 12px;
@@ -999,13 +1058,14 @@ td.labkey-nav-page-header
 	color: #003399;
 }
 
-
+/* This is the table that contains each web part in the portal view */
 table.labkey-wp
 {
     width: 100%;
     border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
 }
 
+/* This is the body of the web part */
 td.labkey-wp-body
 {
     width: 100%;
@@ -1013,6 +1073,8 @@ td.labkey-wp-body
     background: #FFFFFF;
 }
 
+/* This is used for the top strip on web parts, but is also used for headers elsewhere such as the
+help pop up */
 tr.labkey-wp-header
 {
     background-color: #EBF4FF;
@@ -1059,17 +1121,21 @@ tr.labkey-wp-header
     vertical-align: top;
 }
 
+/* This is used for the left side of the wp header and often contains the title */
 th.labkey-wp-title-left, td.labkey-wp-title-left
 {
     border-right: 0px none;
 }
 
+/* This is used for the right side of the wp header and often contains buttons */
 th.labkey-wp-title-right, td.labkey-wp-title-right
 {
     text-align:  right;
     border-left:  0px none;
 }
 
+/* This is the panel of links right below the web part that is on the right side and has "edit",
+"manage", "history", and "print" links */
 table.labkey-wp-link-panel
 {
     width: 100%;
@@ -1087,6 +1153,13 @@ table.labkey-announcement-thread
 .labkey-announcement-thread td
 {
     padding: 3px;
+}
+
+/* API */
+table.labkey-output
+{
+    width: 100%;
+    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
 }
 
 /*  Experiment */

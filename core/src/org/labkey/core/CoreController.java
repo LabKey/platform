@@ -94,11 +94,6 @@ public class CoreController extends SpringActionController
                 return null;
         }
 
-        public ActionURL getPrintStylesheetURL()
-        {
-            return getRevisionURL(PrintStylesheetAction.class, ContainerManager.getRoot());
-        }
-
         public ActionURL getCustomStylesheetURL()
         {
             return getCustomStylesheetURL(ContainerManager.getRoot());
@@ -173,28 +168,6 @@ public class CoreController extends SpringActionController
             return content;
         }
     }
-
-    // TODO: Replace this action with a static file, printStylesheet.css?
-    @RequiresPermission(ACL.PERM_NONE)
-    public class PrintStylesheetAction extends BaseStylesheetAction
-    {
-        Content getContent(HttpServletRequest request, HttpServletResponse response) throws Exception
-        {
-            Content content = _printCssContent;
-
-            if (null == content || AppProps.getInstance().isDevMode())
-            {
-                JspView view = new JspView("/org/labkey/core/printstyle.jsp");
-                view.setFrame(WebPartView.FrameType.NONE);
-                content = PageFlowUtil.getViewContent(view, request, response);
-                content.encoded = compressCSS(content.content);
-                _printCssContent = content;
-            }
-
-            return content;
-        }
-    }
-
 
     @RequiresPermission(ACL.PERM_NONE)
     public class CustomStylesheetAction extends BaseStylesheetAction

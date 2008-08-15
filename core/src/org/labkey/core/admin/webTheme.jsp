@@ -109,9 +109,7 @@ function updateHeaderLineColor ()
       cssRules[i].style.borderTop="1px solid #"+color;
       cssRules[i].style.borderRight="1px solid #"+color;
       cssRules[i].style.borderLeft="1px solid #"+color;
-    } else if (cssName.indexOf('labkey-header-line')!=-1){
-      cssRules[i].style.borderTop="1px solid #"+color;
-    }
+    } 
 
   }
 

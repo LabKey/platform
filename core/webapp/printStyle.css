@@ -1,0 +1,31 @@
+
+@page { size: 8.5in 11in; margin: 0.79in }
+
+.no-print,
+#leftmenupanel, #headerpanel, #navpanel,
+.labkey-button-bar
+{
+    display: none;
+}
+
+.labkey-data-region .labkey-details,
+.labkey-data-region .labkey-selectors
+{
+    visibility: collapse;
+    display: none;
+}
+
+h1, h2, h3, h4, h5, h6
+{
+    page-break-after: avoid;
+}
+
+p, blockquote, ul, ol, dl, pre
+{
+    page-break-inside: avoid;
+}
+
+div.pagebreak
+{
+    page-break-before: always;
+}
