@@ -16,18 +16,19 @@
 
 package org.labkey.api.exp.property;
 
-import org.labkey.api.security.User;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.security.User;
+import org.labkey.api.view.ActionURL;
 
 public interface DomainProperty
 {
     int getPropertyId();
     Container getContainer();
     String getPropertyURI();
+    String getRangeURI();
     String getName();
     String getDescription();
     String getFormatString();
@@ -62,4 +63,9 @@ public interface DomainProperty
 
     @Deprecated
     PropertyDescriptor getPropertyDescriptor();
+
+    IPropertyValidator[] getValidators();
+    void addValidator(IPropertyValidator validator);
+    void removeValidator(IPropertyValidator validator);
+    void removeValidator(int validatorId);
 }

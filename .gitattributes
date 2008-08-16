@@ -220,12 +220,15 @@ api/src/org/labkey/api/exp/pipeline/XarImportFactorySettings.java -text
 api/src/org/labkey/api/exp/pipeline/XarImportTaskId.java -text
 api/src/org/labkey/api/exp/pipeline/XarTemplateSubstitutionFactorySettings.java -text
 api/src/org/labkey/api/exp/pipeline/XarTemplateSubstitutionId.java -text
+api/src/org/labkey/api/exp/property/DefaultPropertyValidator.java -text
 api/src/org/labkey/api/exp/property/Domain.java -text
 api/src/org/labkey/api/exp/property/DomainKind.java -text
 api/src/org/labkey/api/exp/property/DomainProperty.java -text
 api/src/org/labkey/api/exp/property/IPropertyType.java -text
+api/src/org/labkey/api/exp/property/IPropertyValidator.java -text
 api/src/org/labkey/api/exp/property/Lookup.java -text
 api/src/org/labkey/api/exp/property/PropertyService.java -text
+api/src/org/labkey/api/exp/property/ValidatorKind.java -text
 api/src/org/labkey/api/exp/xar/LsidUtils.java -text
 api/src/org/labkey/api/exp/xar/MapReplacer.java -text
 api/src/org/labkey/api/exp/xar/Replacer.java -text

@@ -17,6 +17,7 @@
 package org.labkey.api.exp.property;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.PropertyDescriptor;
 
 public class PropertyService
 {
@@ -41,5 +42,11 @@ public class PropertyService
         Domain createDomain(Container container, String typeURI, String name);
         DomainKind getDomainKind(String typeURI);
         void registerDomainKind(DomainKind type);
+
+        /** register a property validator type */
+        void registerValidatorKind(ValidatorKind kind);
+        ValidatorKind getValidatorKind(String typeURI);
+        IPropertyValidator createValidator(String typeURI);
+        IPropertyValidator[] getPropertyValidators(PropertyDescriptor desc);
     }
 }
