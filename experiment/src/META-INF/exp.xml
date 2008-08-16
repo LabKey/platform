@@ -689,5 +689,22 @@
         <ns:column columnName="MaterialSourceLSID"/>
       </ns:columns>
     </ns:table>
-
+    <ns:table tableName="PropertyValidator" tableDbType="TABLE">
+      <ns:columns>
+        <ns:column columnName="RowId"/>
+        <ns:column columnName="Name"/>
+        <ns:column columnName="Description"/>
+        <ns:column columnName="TypeURI"/>
+        <ns:column columnName="Expression"/>
+        <ns:column columnName="ErrorMessage"/>
+        <ns:column columnName="Properties"/>
+        <ns:column columnName="Container"/>
+      </ns:columns>
+    </ns:table>
+    <ns:table tableName="ValidatorReference" tableDbType="TABLE">
+      <ns:columns>
+        <ns:column columnName="ValidatorId"/>
+        <ns:column columnName="PropertyId"/>
+      </ns:columns>
+    </ns:table>
 </ns:tables>

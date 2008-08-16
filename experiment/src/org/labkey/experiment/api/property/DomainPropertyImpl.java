@@ -16,15 +16,22 @@
 
 package org.labkey.experiment.api.property;
 
-import org.labkey.api.exp.property.*;
-import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.view.ActionURL;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.exp.ChangePropertyDescriptorException;
+import org.labkey.api.exp.DomainDescriptor;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.*;
 import org.labkey.api.query.PropertyForeignKey;
 import org.labkey.api.security.User;
+import org.labkey.api.view.ActionURL;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DomainPropertyImpl implements DomainProperty
 {
@@ -33,12 +40,18 @@ public class DomainPropertyImpl implements DomainProperty
     PropertyDescriptor _pdOld;
     PropertyDescriptor _pd;
     boolean _deleted;
+    List<PropertyValidatorImpl> _validators = new ArrayList<PropertyValidatorImpl>();
 
 
     public DomainPropertyImpl(DomainImpl type, PropertyDescriptor pd)
     {
         _domain = type;
         _pd = pd.clone();
+
+        for (PropertyValidator validator : DomainPropertyManager.get().getValidators(this))
+        {
+            _validators.add(new PropertyValidatorImpl(validator));
+        }
     }
 
     public int getPropertyId()
@@ -127,6 +140,11 @@ public class DomainPropertyImpl implements DomainProperty
     public void setRangeURI(String rangeURI)
     {
         edit().setRangeURI(rangeURI);
+    }
+
+    public String getRangeURI()
+    {
+        return _pd.getRangeURI();
     }
 
     public void setFormat(String s)
@@ -239,5 +257,90 @@ public class DomainPropertyImpl implements DomainProperty
         if (_pdOld == null)
             return false;
         return !_pdOld.getRangeURI().equals(_pd.getRangeURI());
+    }
+
+    public boolean isNew()
+    {
+        return _pd.getPropertyId() == 0;
+    }
+
+    public boolean isDirty()
+    {
+        if (_pdOld != null) return true;
+
+        for (PropertyValidatorImpl v : _validators)
+        {
+            if (v.isDirty() || v.isNew())
+                return true;
+        }
+        return false;
+    }
+
+    public void delete(User user) throws SQLException
+    {
+        for (IPropertyValidator validator : getValidators())
+            DomainPropertyManager.get().removePropertyValidator(user, this, validator);
+
+        DomainKind kind = getDomain().getDomainKind();
+        if (null != kind)
+            kind.deletePropertyDescriptor(getDomain(), user, _pd);
+        OntologyManager.deletePropertyDescriptor(_pd);
+    }
+
+    public void save(User user, DomainDescriptor dd) throws SQLException, ChangePropertyDescriptorException
+    {
+        if (isNew())
+            _pd = OntologyManager.insertOrUpdatePropertyDescriptor(_pd, dd);
+        else if (_pdOld != null)
+            _pd = OntologyManager.updatePropertyDescriptor(user, _domain.getTypeURI(), _pdOld, _pd);
+
+        _pdOld = null;
+
+        for (PropertyValidatorImpl validator : _validators)
+        {
+            if (validator.isDeleted())
+                DomainPropertyManager.get().removePropertyValidator(user, this, validator);
+            else
+                DomainPropertyManager.get().savePropertyValidator(user, this, validator);
+        }
+    }
+
+    public IPropertyValidator[] getValidators()
+    {
+        return _validators.toArray(new PropertyValidatorImpl[0]);
+    }
+
+    public void addValidator(IPropertyValidator validator)
+    {
+        if (validator != null)
+        {
+            PropertyValidator impl = new PropertyValidator();
+            impl.copy(validator);
+            _validators.add(new PropertyValidatorImpl(impl));
+        }
+    }
+
+    public void removeValidator(IPropertyValidator validator)
+    {
+        int idx = _validators.indexOf(validator);
+        if (idx != -1)
+        {
+            PropertyValidatorImpl impl = _validators.get(idx);
+            impl.delete();
+        }
+    }
+
+    public void removeValidator(int validatorId)
+    {
+        if (validatorId == 0) return;
+
+        for (PropertyValidatorImpl imp : _validators)
+        {
+            if (imp.getRowId() == validatorId)
+            {
+                imp.delete();
+                break;
+            }
+        }
     }
 }

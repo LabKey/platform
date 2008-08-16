@@ -454,6 +454,7 @@ experiment/src/META-INF/experiment/scripts/postgresql/exp-2.32-2.33.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-2.33-2.34.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-8.10-8.11.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-8.10-8.20.sql -text
+experiment/src/META-INF/experiment/scripts/postgresql/exp-8.20-8.21.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-create.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-drop.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/obsolete/deleteOrphans.sql -text
@@ -522,6 +523,7 @@ experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-2.33-2.34.sql -te
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.10-8.11.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.10-8.20.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.11-8.12.sql -text
+experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.20-8.21.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-create.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-drop.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/obsolete/deleteOrphans.sql -text
@@ -665,8 +667,12 @@ experiment/src/org/labkey/experiment/api/flag/FlagForeignKey.java -text
 experiment/src/org/labkey/experiment/api/flag/setFlagScript.jsp -text
 experiment/src/org/labkey/experiment/api/property/DomainImpl.java -text
 experiment/src/org/labkey/experiment/api/property/DomainPropertyImpl.java -text
+experiment/src/org/labkey/experiment/api/property/DomainPropertyManager.java -text
 experiment/src/org/labkey/experiment/api/property/PrimitiveType.java -text
 experiment/src/org/labkey/experiment/api/property/PropertyServiceImpl.java -text
+experiment/src/org/labkey/experiment/api/property/PropertyValidator.java -text
+experiment/src/org/labkey/experiment/api/property/PropertyValidatorImpl.java -text
+experiment/src/org/labkey/experiment/api/property/RegExValidator.java -text
 experiment/src/org/labkey/experiment/controllers/exp/ApplicationOutputGrid.java -text
 experiment/src/org/labkey/experiment/controllers/exp/ExperimentController.java -text
 experiment/src/org/labkey/experiment/controllers/exp/ExperimentForm.java -text

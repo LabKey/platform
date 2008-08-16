@@ -16,22 +16,23 @@
 
 package org.labkey.experiment.api.property;
 
-import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
-import org.labkey.api.exp.property.IPropertyType;
+import org.labkey.api.exp.property.*;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.data.Container;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 import java.sql.SQLException;
 
 public class PropertyServiceImpl implements PropertyService.Interface
 {
     List<DomainKind> _domainTypes = new ArrayList<DomainKind>();
+    Map<String, ValidatorKind> _validatorTypes = new HashMap<String, ValidatorKind>();
 
 
     public IPropertyType getType(Container container, String typeURI)
@@ -96,5 +97,37 @@ public class PropertyServiceImpl implements PropertyService.Interface
         {
             return new Domain[0];
         }
+    }
+
+    public void registerValidatorKind(ValidatorKind validatorKind)
+    {
+        if (_validatorTypes.containsKey(validatorKind.getTypeURI()))
+            throw new IllegalArgumentException("Validator type : " + validatorKind.getTypeURI() + " is already registered");
+
+        _validatorTypes.put(validatorKind.getTypeURI(), validatorKind);
+    }
+
+    public ValidatorKind getValidatorKind(String typeURI)
+    {
+        return _validatorTypes.get(typeURI);
+    }
+
+    public IPropertyValidator createValidator(String typeURI)
+    {
+        ValidatorKind kind = getValidatorKind(typeURI);
+        if (kind != null)
+            return kind.createInstance();
+        return null;
+    }
+
+    public IPropertyValidator[] getPropertyValidators(PropertyDescriptor desc)
+    {
+        List<IPropertyValidator> validators = new ArrayList<IPropertyValidator>();
+
+        for (PropertyValidator v :DomainPropertyManager.get().getValidators(desc))
+        {
+            validators.add(new PropertyValidatorImpl(v));            
+        }
+        return validators.toArray(new IPropertyValidator[0]);
     }
 }

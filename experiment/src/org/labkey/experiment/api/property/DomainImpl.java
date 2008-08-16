@@ -223,25 +223,21 @@ public class DomainImpl implements Domain
             {
                 if (impl._deleted)
                 {
-                    DomainKind kind = getDomainKind();
-                    if (null != kind)
-                        kind.deletePropertyDescriptor(this, user, impl._pd);
-                    OntologyManager.deletePropertyDescriptor(impl._pd);
+                    impl.delete(user);
                     propChanged = true;
                 }
-                else if (impl._pd.getPropertyId() == 0)
+                else if (impl.isNew())
                 {
                     if (impl._pd.isRequired())
                         keyColumnsChanged = true;
-                    impl._pd = OntologyManager.insertOrUpdatePropertyDescriptor(impl._pd, _dd);
+                    impl.save(user, _dd);
                     propChanged = true;
                 }
-                else if (impl._pdOld != null)
+                else if (impl.isDirty())
                 {
-                    if (!impl._pdOld.isRequired() && impl._pd.isRequired())
+                    if ((impl._pdOld != null && !impl._pdOld.isRequired()) && impl._pd.isRequired())
                         keyColumnsChanged = true;
-                    impl._pd = OntologyManager.updatePropertyDescriptor(user, getTypeURI(), impl._pdOld, impl._pd);
-                    impl._pdOld = null;
+                    impl.save(user, _dd);
                     propChanged = true;
                 }
             }
