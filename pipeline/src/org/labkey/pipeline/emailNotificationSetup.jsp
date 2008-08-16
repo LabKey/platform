@@ -104,8 +104,8 @@
         </td></tr>
     </table>
     <table>
-        <tr><td colspan="2"><input type=checkbox id="notifyOnSuccess" name="notifyOnSuccess" onclick="return updateControls(this, false);" <%=displaySuccess.equals("none") ? "" : "checked"%>>Send Email notifications if the pipeline job succeeds</td></tr>
-        <tr style="display:<%=displaySuccess%>"><td>&nbsp;&nbsp;&nbsp;</td><td><input value="true" type=checkbox id="notifyOwnerOnSuccess" name="notifyOwnerOnSuccess" <%=notifyOwnerOnSuccess ? "checked" : ""%>><%=getTitle(PipelineEmailPreferences.PREF_NOTIFY_OWNER_ON_SUCCESS, c, "Send To Owner")%></td></tr>
+        <tr><td colspan="2"><input type=checkbox id="notifyOnSuccess" name="notifyOnSuccess" onclick="return updateControls(this, false);" <%=displaySuccess.equals("none") ? "" : "checked"%>>Send email notifications if the pipeline job succeeds</td></tr>
+        <tr style="display:<%=displaySuccess%>"><td>&nbsp;&nbsp;&nbsp;</td><td><input value="true" type=checkbox id="notifyOwnerOnSuccess" name="notifyOwnerOnSuccess" <%=notifyOwnerOnSuccess ? "checked" : ""%>><%=getTitle(PipelineEmailPreferences.PREF_NOTIFY_OWNER_ON_SUCCESS, c, "Send to owner")%></td></tr>
         <tr style="display:<%=displaySuccess%>"><td></td><td><%=getTitle(PipelineEmailPreferences.PREF_NOTIFY_USERS_ON_SUCCESS, c, "Additional users to notify<br/><i>Enter one or more email addresses, each on its own line:</i>")%></td></tr>
         <tr style="display:<%=displaySuccess%>"><td></td><td>
             <textarea id="notifyUsersOnSuccess" name="notifyUsersOnSuccess" style="width: 100%;" rows="5"
@@ -130,8 +130,8 @@
         <tr><td></td></tr>
     </table>
     <table>
-        <tr><td colspan="2"><input type=checkbox id="notifyOnError" name="notifyOnError" onclick="return updateControls(this, false);" <%=displayError.equals("none") ? "" : "checked"%>>Send Email notification(s) if the pipeline job fails</td></tr>
-        <tr style="display:<%=displayError%>"><td>&nbsp;&nbsp;&nbsp;</td><td><input type=checkbox id="notifyOwnerOnError" name="notifyOwnerOnError" <%=notifyOwnerOnError ? "checked" : ""%>><%=getTitle(PipelineEmailPreferences.PREF_NOTIFY_OWNER_ON_ERROR, c, "Send To Owner")%></td></tr>
+        <tr><td colspan="2"><input type=checkbox id="notifyOnError" name="notifyOnError" onclick="return updateControls(this, false);" <%=displayError.equals("none") ? "" : "checked"%>>Send email notification(s) if the pipeline job fails</td></tr>
+        <tr style="display:<%=displayError%>"><td>&nbsp;&nbsp;&nbsp;</td><td><input type=checkbox id="notifyOwnerOnError" name="notifyOwnerOnError" <%=notifyOwnerOnError ? "checked" : ""%>><%=getTitle(PipelineEmailPreferences.PREF_NOTIFY_OWNER_ON_ERROR, c, "Send to owner")%></td></tr>
         <tr style="display:<%=displayError%>"><td></td><td><%=getTitle(PipelineEmailPreferences.PREF_NOTIFY_USERS_ON_ERROR, c, "Additional users to notify:")%></td></tr>
         <tr style="display:<%=displayError%>"><td></td><td>
             <textarea id="notifyUsersOnError" name="notifyUsersOnError" style="width: 100%;" rows="5"

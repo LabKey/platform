@@ -112,7 +112,7 @@ function toggleGlobusVisible()
         %>
         <tr><td colspan="3" style="font-size: 4px">&nbsp;</td></tr>
         <tr>
-            <td colspan="2"><input type="image" src="<%= PageFlowUtil.buttonSrc("Set") %>"> <labkey:button text="View Status" href="<%= bean.getDoneURL() %>" /></td>
+            <td colspan="2"><labkey:button text="Set"/></td>
         </tr>
     </table>
 </form>
