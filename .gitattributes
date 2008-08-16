@@ -1485,6 +1485,7 @@ internal/gwtsrc/org/labkey/api/gwt/client/model/GWTComparisonMember.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/model/GWTComparisonResult.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/model/GWTDomain.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/model/GWTPropertyDescriptor.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/model/GWTPropertyValidator.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/ChartService.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/ChartServiceAsync.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/ConceptPickerPanel.java -text
