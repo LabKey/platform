@@ -44,15 +44,25 @@ public class MailHelper
 
     static
     {
-        try
+        setSession(null);
+    }
+
+    public static void setSession(Session session)
+    {
+        if (session != null)
+            _session = session;
+        else
         {
-            InitialContext ctx = new InitialContext();
-            Context envCtx = (Context) ctx.lookup("java:comp/env");
-            _session = (Session) envCtx.lookup("mail/Session");
-        }
-        catch (Exception e)
-        {
-            _log.log(Level.ERROR, "Exception loading mail session", e);
+            try
+            {
+                InitialContext ctx = new InitialContext();
+                Context envCtx = (Context) ctx.lookup("java:comp/env");
+                _session = (Session) envCtx.lookup("mail/Session");
+            }
+            catch (Exception e)
+            {
+                _log.log(Level.ERROR, "Exception loading mail session", e);
+            }            
         }
     }
 

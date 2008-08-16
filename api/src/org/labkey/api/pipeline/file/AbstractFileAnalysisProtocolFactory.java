@@ -169,7 +169,12 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
 
     public T load(URI uriRoot, String name) throws IOException
     {
-        return loadInstance(getProtocolFile(uriRoot, name));
+        T instance = loadInstance(getProtocolFile(uriRoot, name));
+
+        // Don't allow the XML to override the name passed in.  This
+        // can be extremely confusing.
+        instance.setName(name);
+        return instance;
     }
 
     public T loadInstance(File file) throws IOException
