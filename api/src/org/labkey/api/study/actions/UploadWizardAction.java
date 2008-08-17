@@ -20,6 +20,8 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.ACL;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -551,6 +553,10 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
                     errors.reject(SpringActionController.ERROR_MSG,
                             pd.getNonBlankLabel() + " must be of type " + ColumnInfo.getFriendlyTypeName(pd.getPropertyType().getJavaType()) + ".");
                 }
+            }
+            for (IPropertyValidator validator : PropertyService.get().getPropertyValidators(pd))
+            {
+                validator.validate(value, errors);
             }
         }
         return errors.getErrorCount() == 0;

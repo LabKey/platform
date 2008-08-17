@@ -26,15 +26,13 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.*;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.gwt.client.model.GWTPropertyValidator;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 
 import java.lang.reflect.InvocationTargetException;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * User: jgarms
@@ -76,26 +74,9 @@ public class DomainUtil
                 list.add(p);
             }
 
-            PropertyDescriptor[] pds = OntologyManager.getPropertiesForType(typeURI, domainContainer);
-            for (PropertyDescriptor pd : pds)
+            for (DomainProperty prop : domain.getProperties())
             {
-                GWTPropertyDescriptor p = new GWTPropertyDescriptor();
-                PropertyUtils.copyProperties(p, pd);
-                // We translate the lookupContainer entityid into a path, because that's a value the user will
-                // understand.
-                if (pd.getLookupContainer() != null)
-                {
-                    Container c = ContainerManager.getForId(pd.getLookupContainer());
-                    if (c != null)
-                    {
-                        p.setLookupContainer(c.getPath());
-                    }
-                    else
-                    {
-                        // If the container doesn't exist, we just blank out the value, since they won't be able to set it anyway.
-                        p.setLookupContainer("");
-                    }
-                }
+                GWTPropertyDescriptor p = getPropertyDescriptor(prop);
                 list.add(p);
             }
 
@@ -117,6 +98,46 @@ public class DomainUtil
             Logger.getLogger(DomainEditorServiceBase.class).error("unexpected error", e);
             throw new RuntimeException(e);
         }
+    }
+
+    public static GWTPropertyDescriptor getPropertyDescriptor(DomainProperty prop)
+    {
+        GWTPropertyDescriptor gwtProp = new GWTPropertyDescriptor();
+
+        gwtProp.setPropertyId(prop.getPropertyId());
+        gwtProp.setDescription(prop.getDescription());
+        gwtProp.setFormat(prop.getFormatString());
+        gwtProp.setLabel(prop.getLabel());
+        gwtProp.setName(prop.getName());
+        gwtProp.setPropertyURI(prop.getPropertyURI());
+        gwtProp.setRangeURI(prop.getType().getTypeURI());
+        gwtProp.setRequired(prop.isRequired());
+
+        List<GWTPropertyValidator> validators = new ArrayList<GWTPropertyValidator>();
+        for (IPropertyValidator pv : prop.getValidators())
+        {
+            GWTPropertyValidator gpv = new GWTPropertyValidator();
+            Lsid lsid = new Lsid(pv.getTypeURI());
+
+            gpv.setName(pv.getName());
+            gpv.setDescription(pv.getDescription());
+            gpv.setExpression(pv.getExpressionValue());
+            gpv.setRowId(pv.getRowId());
+            gpv.setType(lsid.getObjectId());
+            gpv.setErrorMessage(pv.getErrorMessage());
+            gpv.setProperties(new HashMap(pv.getProperties()));
+
+            validators.add(gpv);
+        }
+        gwtProp.setPropertyValidators(validators);
+
+        if (prop.getLookup() != null)
+        {
+            gwtProp.setLookupContainer(prop.getLookup().getContainer() == null ? null : prop.getLookup().getContainer().getPath());
+            gwtProp.setLookupQuery(prop.getLookup().getQueryName());
+            gwtProp.setLookupSchema(prop.getLookup().getSchemaName());
+        }                                                   
+        return gwtProp;
     }
 
     @SuppressWarnings("unchecked")
@@ -201,13 +222,15 @@ public class DomainUtil
                     break;
                 }
             }
+            // UNDONE: DomainProperty does not support all PropertyDescriptor fields
+            DomainProperty p = d.getProperty(pd.getPropertyId());
+
             if (old == null)
                 continue;
+            updatePropertyValidators(p, old, pd);
             if (old.equals(pd))
                 continue;
 
-            // UNDONE: DomainProperty does not support all PropertyDescriptor fields
-            DomainProperty p = d.getProperty(pd.getPropertyId());
             try
             {
                 _copyProperties(p, pd, errors);
@@ -281,6 +304,63 @@ public class DomainUtil
             }
             Lookup lu = new Lookup(c, pd.getLookupSchema(), pd.getLookupQuery());
             p.setLookup(lu);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void updatePropertyValidators(DomainProperty dp, GWTPropertyDescriptor oldPd, GWTPropertyDescriptor newPd)
+    {
+        Map<Integer, GWTPropertyValidator> newProps = new HashMap<Integer, GWTPropertyValidator>();
+        for (GWTPropertyValidator v : (List<GWTPropertyValidator>)newPd.getPropertyValidators())
+        {
+            if (v.getRowId() != 0)
+                newProps.put(v.getRowId(), v);
+            else
+            {
+                String typeURI = new Lsid(ValidatorKind.NAMESPACE, v.getType()).toString();
+                IPropertyValidator pv = PropertyService.get().createValidator(typeURI);
+
+                _copyValidator(pv, v);
+                dp.addValidator(pv);
+            }
+        }
+
+        if (oldPd != null)
+        {
+            List<GWTPropertyValidator> deleted = new ArrayList<GWTPropertyValidator>();
+            for (GWTPropertyValidator v : (List<GWTPropertyValidator>)oldPd.getPropertyValidators())
+            {
+                GWTPropertyValidator prop = newProps.get(v.getRowId());
+                if (v.equals(prop))
+                    newProps.remove(v.getRowId());
+                else if (prop == null)
+                    deleted.add(v);
+            }
+
+            // update any new or changed
+            for (IPropertyValidator pv : dp.getValidators())
+                _copyValidator(pv, newProps.get(pv.getRowId()));
+
+            // deal with removed validators
+            for (GWTPropertyValidator gpv : deleted)
+                dp.removeValidator(gpv.getRowId());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void _copyValidator(IPropertyValidator pv, GWTPropertyValidator gpv)
+    {
+        if (pv != null && gpv != null)
+        {
+            pv.setName(gpv.getName());
+            pv.setDescription(gpv.getDescription());
+            pv.setExpressionValue(gpv.getExpression());
+            pv.setErrorMessage(gpv.getErrorMessage());
+
+            for (Map.Entry<String, String> entry : ((Map<String, String>)gpv.getProperties()).entrySet())
+            {
+                pv.setProperty(entry.getKey(), entry.getValue());
+            }
         }
     }
 }

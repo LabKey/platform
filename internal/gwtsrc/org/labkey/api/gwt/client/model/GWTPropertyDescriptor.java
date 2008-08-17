@@ -16,8 +16,15 @@
 
 package org.labkey.api.gwt.client.model;
 
-import org.labkey.api.gwt.client.util.*;
 import com.google.gwt.user.client.rpc.IsSerializable;
+import org.labkey.api.gwt.client.util.BooleanProperty;
+import org.labkey.api.gwt.client.util.IPropertyWrapper;
+import org.labkey.api.gwt.client.util.IntegerProperty;
+import org.labkey.api.gwt.client.util.StringProperty;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -44,6 +51,11 @@ public class GWTPropertyDescriptor implements IsSerializable
     private StringProperty lookupContainer = new StringProperty();
     private StringProperty lookupSchema = new StringProperty();
     private StringProperty lookupQuery = new StringProperty();
+
+    /**
+     * @gwt.typeArgs <org.labkey.api.gwt.client.model.GWTPropertyValidator>
+     */
+    private List validators = new ArrayList();
 
     // not really part of the property descriptor, but this was easier than
     // having a side list of editable/non-editable properties
@@ -72,6 +84,11 @@ public class GWTPropertyDescriptor implements IsSerializable
         setLookupSchema(s.getLookupSchema());
         setLookupQuery(s.getLookupQuery());
 
+        for (Iterator it = s.getPropertyValidators().iterator(); it.hasNext();)
+        {
+            GWTPropertyValidator v = new GWTPropertyValidator((GWTPropertyValidator)it.next());
+            validators.add(v);
+        }
         this.isEditable = s.isEditable;
     }
 
@@ -310,5 +327,15 @@ public class GWTPropertyDescriptor implements IsSerializable
     public void setEditable(boolean editable)
     {
         isEditable = editable;
+    }
+
+    public List getPropertyValidators()
+    {
+        return validators;
+    }
+
+    public void setPropertyValidators(List validators)
+    {
+        this.validators = validators;
     }
 }

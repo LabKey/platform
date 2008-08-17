@@ -1507,6 +1507,9 @@ internal/gwtsrc/org/labkey/api/gwt/client/ui/TypePicker.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/VennDiagramView.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/WebPartPanel.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/WindowUtil.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/property/RangeValidatorDialog.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/property/RegexValidatorDialog.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/property/ValidatorDialog.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/reports/AbstractChartPanel.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/reports/ChartAxisOptionsPanel.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/reports/ChartMeasurementsPanel.java -text

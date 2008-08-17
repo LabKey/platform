@@ -16,25 +16,32 @@
 
 package org.labkey.api.gwt.client.ui;
 
-import com.google.gwt.user.client.ui.*;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Element;
+import com.google.gwt.user.client.ui.*;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.gwt.client.model.GWTPropertyValidator;
+import org.labkey.api.gwt.client.ui.property.RegexValidatorDialog;
+import org.labkey.api.gwt.client.ui.property.ValidatorDialog;
+import org.labkey.api.gwt.client.ui.property.RangeValidatorDialog;
+import org.labkey.api.gwt.client.util.PropertyUtil;
 
-import java.util.List;
-import java.util.ArrayList;
+import java.util.*;
 
 /**
  * User: jeckels
  * Date: Feb 6, 2008
  */
-public class PropertyPane extends FlexTable
+public class PropertyPane extends FlexTable implements ValidatorDialog.UpdateListener
 {
     private TextBox _formatTextBox = new TextBox();
     private HelpPopup _formatHelpPopup = new HelpPopup("Format Strings", "");
 
     private TextArea _descriptionTextArea = new TextArea();
     private CheckBox _requiredCheckBox = new CheckBox();
+    private List _validators = new ArrayList();
+    private FlexTable _validatorTable;
+    private ImageButton _rangeButton;
 
     private GWTPropertyDescriptor _currentPD;
 
@@ -158,6 +165,68 @@ public class PropertyPane extends FlexTable
         DOM.setElementProperty(_descriptionTextArea.getElement(), "id", "propertyDescription");
         _descriptionTextArea.setSize("240px", "50px");
         setWidget(row, 1, _descriptionTextArea);
+
+        row++;
+
+        getFlexCellFormatter().setHorizontalAlignment(row, 0, HasHorizontalAlignment.ALIGN_CENTER);
+        getFlexCellFormatter().setColSpan(row, 0, 2);
+        setWidget(row, 0, new HTML("<b>Property Validators</b>"));
+
+        row++;
+
+        setWidget(row++, 1, new RegexButton("Add New Regular Expression"));
+        _rangeButton = new RangeButton("Add New Range");
+        setWidget(row++, 1, _rangeButton);
+
+        _validatorTable = new FlexTable();
+        int col = 1;
+
+        _validatorTable.getFlexCellFormatter().setWidth(0, col, "150px");
+        _validatorTable.setHTML(0, col++, "<i>Name</i>");
+        _validatorTable.getFlexCellFormatter().setWidth(0, col, "150px");
+        _validatorTable.setHTML(0, col++, "<i>Description</i>");
+        _validatorTable.getFlexCellFormatter().setWidth(0, col, "85px");
+        _validatorTable.setHTML(0, col++, "<i>Type</i>");
+
+        setWidget(row, 0, _validatorTable);
+        getFlexCellFormatter().setColSpan(row, 0, 2);
+    }
+
+    private void refreshValidators()
+    {
+        int row = 1;
+        int rowCount = _validatorTable.getRowCount() - 1;
+
+        while (rowCount > 0)
+            _validatorTable.removeRow(rowCount--);
+
+        for (Iterator it = _validators.iterator(); it.hasNext(); row++)
+        {
+            final GWTPropertyValidator pv = (GWTPropertyValidator)it.next();
+            HorizontalPanel panel = new HorizontalPanel();
+
+            String src = PropertyUtil.getContextPath() + "/_images/partdelete.gif";
+            Image i = new Image(src);
+            i.addClickListener(new ClickListener(){
+                public void onClick(Widget sender)
+                {
+                    _validators.remove(pv);
+                    refreshValidators();
+                }
+            });
+
+            panel.add(i);
+            panel.add(new HTML("&nbsp;"));
+            if (pv.getType().equals(GWTPropertyValidator.TYPE_RANGE))
+                panel.add(new RangeButton("...", pv));
+            else if (pv.getType().equals(GWTPropertyValidator.TYPE_REGEX))
+                panel.add(new RegexButton("...", pv));
+
+            _validatorTable.setWidget(row, 0, panel);
+            _validatorTable.setWidget(row, 1, new HTML(pv.getName()));
+            _validatorTable.setWidget(row, 2, new HTML(pv.getDescription()));
+            _validatorTable.setWidget(row++, 3, new HTML(pv.getType()));
+        }
     }
 
     public void copyValuesToPropertyDescriptor()
@@ -180,6 +249,9 @@ public class PropertyPane extends FlexTable
                 changed = changed || !_currentPD.isRequired() == _requiredCheckBox.isChecked();  
                 _currentPD.setRequired(_requiredCheckBox.isChecked());
             }
+
+            _currentPD.setPropertyValidators(_validators);
+
             if (changed)
             {
                 fireChangeListeners();
@@ -220,15 +292,15 @@ public class PropertyPane extends FlexTable
     private boolean canFormat(String rangeURI)
     {
         // for now, we only support format strings for datetime and numeric types
-        if (rangeURI.equals(TypePicker.xsdDateTime) ||
-            rangeURI.equals(TypePicker.xsdDouble) ||
-            rangeURI.equals(TypePicker.xsdInt))
+        if (TypePicker.xsdDateTime.equals(rangeURI) ||
+            TypePicker.xsdDouble.equals(rangeURI) ||
+            TypePicker.xsdInt.equals(rangeURI))
         {
             return true;
         }
         return false;
     }
-    
+
     private String trimValue(String text)
     {
         if (text == null)
@@ -280,7 +352,9 @@ public class PropertyPane extends FlexTable
             _descriptionTextArea.setText(newPD.getDescription());
 
             _requiredCheckBox.setChecked(newPD.isRequired());
-
+            _validators = _currentPD.getPropertyValidators();
+            refreshValidators();
+            
             DOM.setStyleAttribute(getElement(), "visibility", "visible");
             DOM.setStyleAttribute(_backgroundElement, "backgroundColor", "#eeeeee");
         }
@@ -299,12 +373,77 @@ public class PropertyPane extends FlexTable
             _formatTextBox.setEnabled(false);
             _formatTextBox.setText("<no format set>");
             _formatHelpPopup.setVisible(false);
+            _rangeButton.setVisible(false);
         }
         else
         {
             _formatTextBox.setEnabled(_editable);
             _formatHelpPopup.setVisible(true);
             _formatHelpPopup.setBody(newPD.getRangeURI().equals(TypePicker.xsdDateTime) ? FORMAT_HELP_DATE : FORMAT_HELP_NUMBER);
+            _rangeButton.setVisible(true);
+        }
+    }
+
+    public void propertyChanged(GWTPropertyValidator validator)
+    {
+        if (validator.isNew() && validator.getRowId() == 0)
+        {
+            validator.setNew(false);
+            _validators.add(validator);
+        }
+        refreshValidators();
+        copyValuesToPropertyDescriptor();
+    }
+
+    class RegexButton extends ImageButton
+    {
+        String _label;
+        GWTPropertyValidator _validator;
+
+        RegexButton(String label)
+        {
+            this(label, null);
+        }
+
+        RegexButton(String label, GWTPropertyValidator validator)
+        {
+            super(label);
+            _validator = validator;
+        }
+
+        public void onClick(Widget sender)
+        {
+            RegexValidatorDialog dlg = new RegexValidatorDialog(_validator == null ? new GWTPropertyValidator() : _validator);
+
+            dlg.setListener(PropertyPane.this);
+            dlg.setPopupPosition(sender.getAbsoluteLeft() - 150, sender.getAbsoluteTop() + 25);
+            dlg.show();
+        }
+    }
+
+    class RangeButton extends ImageButton
+    {
+        String _label;
+        GWTPropertyValidator _validator;
+
+        RangeButton(String label)
+        {
+            this(label, null);
+        }
+
+        RangeButton(String label, GWTPropertyValidator validator)
+        {
+            super(label);
+            _validator = validator;
+        }
+
+        public void onClick(Widget sender)
+        {
+            RangeValidatorDialog dlg = new RangeValidatorDialog(_validator == null ? new GWTPropertyValidator() : _validator);
+
+            dlg.setListener(PropertyPane.this);
+            dlg.setPopupPosition(sender.getAbsoluteLeft() - 150, sender.getAbsoluteTop() + 25);
+            dlg.show();
         }
     }
 }
