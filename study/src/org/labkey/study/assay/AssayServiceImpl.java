@@ -25,6 +25,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainEditorServiceBase;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.gwt.client.assay.AssayException;
 import org.labkey.api.gwt.client.assay.AssayService;
@@ -105,26 +106,8 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             List<GWTPropertyDescriptor> gwtProps = new ArrayList<GWTPropertyDescriptor>();
             for (DomainProperty prop : domain.getProperties())
             {
-                GWTPropertyDescriptor gwtProp = new GWTPropertyDescriptor();
-                if (!copy)
-                {
-                    gwtProp.setPropertyId(prop.getPropertyId());
-                }
-                gwtProp.setDescription(prop.getDescription());
-                gwtProp.setFormat(prop.getFormatString());
-                gwtProp.setLabel(prop.getLabel());
-                gwtProp.setName(prop.getName());
-                gwtProp.setPropertyURI(prop.getPropertyURI());
-                gwtProp.setRangeURI(prop.getType().getTypeURI());
-                gwtProp.setRequired(prop.isRequired());
+                GWTPropertyDescriptor gwtProp = getPropertyDescriptor(prop, copy);
 
-
-                if (prop.getLookup() != null)
-                {
-                    gwtProp.setLookupContainer(prop.getLookup().getContainer() == null ? null : prop.getLookup().getContainer().getPath());
-                    gwtProp.setLookupQuery(prop.getLookup().getQueryName());
-                    gwtProp.setLookupSchema(prop.getLookup().getSchemaName());
-                }
                 gwtProps.add(gwtProp);
                 if (provider.isRequiredDomainProperty(domain, prop.getName()))
                     requiredPropertyDescriptors.add(prop.getName());
@@ -149,6 +132,15 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             setPlateTemplateList(provider, result);
         }
         return result;
+    }
+
+    private GWTPropertyDescriptor getPropertyDescriptor(DomainProperty prop, boolean copy)
+    {
+        GWTPropertyDescriptor gwtProp = DomainUtil.getPropertyDescriptor(prop);
+        if (copy)
+            gwtProp.setPropertyId(0);
+
+        return gwtProp;
     }
 
     private void setPlateTemplateList(AssayProvider provider, GWTProtocol protocol)

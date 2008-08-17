@@ -36,6 +36,7 @@ import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.jsp.FormPage;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.security.ACL;
@@ -341,9 +342,12 @@ public class ListController extends SpringActionController
                     }
                     if (property != null)
                     {
+                        validate(property, formValue, errors);
                         item.setProperty(property, formValue);
                     }
                 }
+                if (errors.hasErrors())
+                    return false;
                 item.save(getUser());
 
                 _returnURL = form.getReturnActionURL();
@@ -360,6 +364,17 @@ public class ListController extends SpringActionController
             }
 
             return false;
+        }
+
+        private boolean validate(DomainProperty prop, Object value, BindException errors)
+        {
+            boolean ret = true;
+
+            for (IPropertyValidator validator : prop.getValidators())
+            {
+                if (!validator.validate(value, errors)) ret = false;
+            }
+            return ret;
         }
 
         public ActionURL getSuccessURL(ListDefinitionForm listDefinitionForm)

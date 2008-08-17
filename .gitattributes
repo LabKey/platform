@@ -672,6 +672,7 @@ experiment/src/org/labkey/experiment/api/property/PrimitiveType.java -text
 experiment/src/org/labkey/experiment/api/property/PropertyServiceImpl.java -text
 experiment/src/org/labkey/experiment/api/property/PropertyValidator.java -text
 experiment/src/org/labkey/experiment/api/property/PropertyValidatorImpl.java -text
+experiment/src/org/labkey/experiment/api/property/RangeValidator.java -text
 experiment/src/org/labkey/experiment/api/property/RegExValidator.java -text
 experiment/src/org/labkey/experiment/controllers/exp/ApplicationOutputGrid.java -text
 experiment/src/org/labkey/experiment/controllers/exp/ExperimentController.java -text

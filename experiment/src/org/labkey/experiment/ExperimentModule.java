@@ -42,6 +42,7 @@ import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.Material;
 import org.labkey.experiment.api.property.PropertyServiceImpl;
 import org.labkey.experiment.api.property.RegExValidator;
+import org.labkey.experiment.api.property.RangeValidator;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.controllers.list.ListController;
 import org.labkey.experiment.controllers.list.ListWebPart;
@@ -237,6 +238,7 @@ public class ExperimentModule extends SpringModule
         OntologyManager.initCaches();
 
         PropertyService.get().registerValidatorKind(new RegExValidator());
+        PropertyService.get().registerValidatorKind(new RangeValidator());
 
         super.startup(context);
     }
