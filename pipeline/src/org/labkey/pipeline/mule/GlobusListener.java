@@ -87,12 +87,24 @@ public class GlobusListener implements GramJobListener
                 // Attempt to clean-up Globus. (not yet working)               
                 try
                 {
-                    _notifConsumerManager.removeNotificationConsumer(gramJob.getNotificationConsumerEPR());
-                    _notifConsumerManager.stopListening();
+                    try
+                    {
+                        gramJob.unbind();
+                    }
+                    catch (NullPointerException e)
+                    {
+                        // This is a very ugly hack, a workaround for a partial implementation inside of GramJob.
+                        // GramJob supports setting the NotificationConsumerEPR, but it doesn't clean up correctly
+                        // since it doesn't have a reference to the NotificationConsumerManager. At the end of the
+                        // unbind() method it NPEs because it doesn't have a reference. So, we catch that NPE
+                        // and finish the cleanup ourselves.
+                        _notifConsumerManager.removeNotificationConsumer(gramJob.getNotificationConsumerEPR());
+                        _notifConsumerManager.stopListening();
+                    }
                     gramJob.removeListener(this);
                     gramJob.destroy();
                 }
-                catch (Exception e)
+                catch (Throwable e)
                 {
                     _job.warn("Exception trying to clean up GRAM", e);
                 }

@@ -76,7 +76,7 @@ public class ExperimentModule extends SpringModule
 
     public ExperimentModule()
     {
-        super(ExperimentService.MODULE_NAME, 8.21, "/org/labkey/experiment", true, createWebPartList());
+        super(ExperimentService.MODULE_NAME, 8.22, "/org/labkey/experiment", true, createWebPartList());
         addController("experiment", ExperimentController.class);
         addController("experiment-types", TypesController.class);
         addController("property", PropertyController.class);

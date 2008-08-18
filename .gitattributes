@@ -455,6 +455,7 @@ experiment/src/META-INF/experiment/scripts/postgresql/exp-2.33-2.34.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-8.10-8.11.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-8.10-8.20.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-8.20-8.21.sql -text
+experiment/src/META-INF/experiment/scripts/postgresql/exp-8.21-8.22.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-create.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-drop.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/obsolete/deleteOrphans.sql -text
@@ -524,6 +525,7 @@ experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.10-8.11.sql -te
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.10-8.20.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.11-8.12.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.20-8.21.sql -text
+experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.21-8.22.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-create.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-drop.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/obsolete/deleteOrphans.sql -text
@@ -911,6 +913,8 @@ pipeline/lib/geronimo-jms_1.1_spec-1.0.1.jar -text
 pipeline/lib/geronimo-jta_1.0.1B_spec-1.0.1.jar -text
 pipeline/lib/globus_delegation_service.jar -text
 pipeline/lib/globus_delegation_stubs.jar -text
+pipeline/lib/globus_wsrf_rendezvous_service.jar -text
+pipeline/lib/globus_wsrf_rendezvous_stubs.jar -text
 pipeline/lib/globus_wsrf_rft_stubs.jar -text
 pipeline/lib/gram-client.jar -text
 pipeline/lib/gram-stubs.jar -text
