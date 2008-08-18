@@ -96,6 +96,9 @@ public class Search
         return result;
     }
 
+    /**
+     * containers may be empty if there is no container column
+     */
     public static SQLFragment getSQLFragment(String selectColumnNames, String innerSelectColumnNames, String fromClause, String containerColumnName, SimpleFilter whereFilter, Set<Container> containers, SearchTermParser parser, SqlDialect dialect, String... searchColumnNames)
     {
         List<String> containerIds = new ArrayList<String>(containers.size());
@@ -105,6 +108,9 @@ public class Search
         return getSQLFragment(selectColumnNames, innerSelectColumnNames, fromClause, containerColumnName, whereFilter, containerIds, parser, dialect, searchColumnNames);
     }
 
+    /**
+     * containers may be empty if there is no container column
+     */
     public static SQLFragment getSQLFragment(String selectColumnNames, String innerSelectColumnNames, String fromClause, String containerColumnName, SimpleFilter whereFilter, Collection<String> containerIds, SearchTermParser parser, SqlDialect dialect, String... searchColumnNames)
     {
         SQLFragment searchSql = new SQLFragment("SELECT " + selectColumnNames + ", TermCount FROM\n(\n\tSELECT " + selectColumnNames);
@@ -161,7 +167,10 @@ public class Search
         searchSql.append("\n\t\t");
 
         SimpleFilter filter = (null == whereFilter ? new SimpleFilter() : whereFilter);
-        filter.addClause(new SimpleFilter.InClause(containerColumnName, containerIds));
+
+        if (containerIds.size() > 0)
+            filter.addClause(new SimpleFilter.InClause(containerColumnName, containerIds));
+        
         searchSql.append(filter.getSQLFragment(dialect));
 
         searchSql.append("\n\t) x\n\tGROUP BY " + selectColumnNames + "\n) y\n");
@@ -467,6 +476,11 @@ public class Search
         public boolean hasTerms()
         {
             return !_andTerms.isEmpty() || !_orTerms.isEmpty();
+        }
+
+        public String getQuery()
+        {
+            return _query;
         }
 
         /**
