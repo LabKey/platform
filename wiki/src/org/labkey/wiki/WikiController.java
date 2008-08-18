@@ -1879,7 +1879,7 @@ public class WikiController extends SpringActionController
             else
             {
                 cToc = ContainerManager.getForId(id.toString());
-                assert (cToc != null);
+                assert (cToc != null) : "Could not find container for id: " + id;
             }
 
             return cToc;

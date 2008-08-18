@@ -1875,7 +1875,7 @@ public class StudyController extends BaseStudyController
                     BooleanConverter booleanConverter = new BooleanConverter(false);
                     Boolean managedKey = (Boolean)booleanConverter.convert(Boolean.class, props.get("AutoKey"));
 
-                    if (managedKey)
+                    if (managedKey.booleanValue())
                     {
                         if (!info.keyManaged)
                             info.keyManaged = true;
