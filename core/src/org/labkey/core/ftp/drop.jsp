@@ -55,7 +55,7 @@ LABKEY.requiresScript("dropApplet.js",true);
     <td valign="top" width=200 height=100%><div id="appletDiv" class="labkey-nav-bordered" style="padding:2px; margin:1px; width:200px; height:200px;"><script type="text/javascript">
 LABKEY.writeApplet({
     id:"dropApplet",
-    archive:"<%=request.getContextPath()%>/_applets/applets-8.2.jar?guid=<%=GUID.makeHash()%><%=AppProps.getInstance().getServerSessionGUID()%>",
+    archive:"<%=request.getContextPath()%>/_applets/applets-8.3.jar?guid=<%=GUID.makeHash()%><%=AppProps.getInstance().getServerSessionGUID()%>",
     code:"org.labkey.applets.drop.DropApplet",
     width:200,
     height:200,
