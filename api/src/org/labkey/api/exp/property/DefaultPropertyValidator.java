@@ -15,6 +15,9 @@
  */
 package org.labkey.api.exp.property;
 
+import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.ValidationError;
+
 import java.util.List;
 
 /*
@@ -24,7 +27,7 @@ import java.util.List;
 */
 public abstract class DefaultPropertyValidator implements ValidatorKind
 {
-    protected void createErrorMessage(IPropertyValidator validator, Object value, List<String> errors)
+    protected void createErrorMessage(IPropertyValidator validator, Object value, List<ValidationError> errors)
     {
         StringBuffer sb = new StringBuffer();
 
@@ -37,6 +40,6 @@ public abstract class DefaultPropertyValidator implements ValidatorKind
             sb.append("Additional information : ");
             sb.append(validator.getErrorMessage());
         }
-        errors.add(sb.toString());
+        errors.add(new SimpleValidationError(sb.toString()));
     }
 }

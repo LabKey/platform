@@ -16,34 +16,35 @@
 
 package org.labkey.api.study.actions;
 
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.ACL;
+import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.beanutils.ConvertUtils;
+import org.labkey.api.action.SpringActionController;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.study.assay.*;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.NetworkDrive;
-import org.labkey.api.view.*;
-import org.labkey.api.data.*;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.action.SpringActionController;
-import org.springframework.web.servlet.ModelAndView;
+import org.labkey.api.query.ValidationError;
+import org.labkey.api.security.ACL;
+import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.study.assay.*;
+import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.*;
 import org.springframework.validation.BindException;
-import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.beanutils.ConversionException;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
-import java.util.*;
-import java.sql.SQLException;
-import java.io.Writer;
-import java.io.IOException;
 import java.io.File;
+import java.io.IOException;
+import java.io.Writer;
+import java.sql.SQLException;
+import java.util.*;
 
 /**
  * User: brittp
@@ -554,10 +555,14 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
                             pd.getNonBlankLabel() + " must be of type " + ColumnInfo.getFriendlyTypeName(pd.getPropertyType().getJavaType()) + ".");
                 }
             }
+            List<ValidationError> validationErrors = new ArrayList<ValidationError>();
             for (IPropertyValidator validator : PropertyService.get().getPropertyValidators(pd))
             {
-                validator.validate(value, errors);
+                validator.validate(value, validationErrors);
             }
+
+            for (ValidationError ve : validationErrors)
+                errors.reject(SpringActionController.ERROR_MSG, ve.getMessage());
         }
         return errors.getErrorCount() == 0;
     }

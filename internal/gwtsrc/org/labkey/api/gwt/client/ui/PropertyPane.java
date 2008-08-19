@@ -42,6 +42,7 @@ public class PropertyPane extends FlexTable implements ValidatorDialog.UpdateLis
     private List _validators = new ArrayList();
     private FlexTable _validatorTable;
     private ImageButton _rangeButton;
+    private boolean _validatorChanged;
 
     private GWTPropertyDescriptor _currentPD;
 
@@ -250,7 +251,9 @@ public class PropertyPane extends FlexTable implements ValidatorDialog.UpdateLis
                 _currentPD.setRequired(_requiredCheckBox.isChecked());
             }
 
+            changed = changed || _validatorChanged;
             _currentPD.setPropertyValidators(_validators);
+            _validatorChanged = false;
 
             if (changed)
             {
@@ -391,6 +394,7 @@ public class PropertyPane extends FlexTable implements ValidatorDialog.UpdateLis
             validator.setNew(false);
             _validators.add(validator);
         }
+        _validatorChanged = true;
         refreshValidators();
         copyValuesToPropertyDescriptor();
     }

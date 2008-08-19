@@ -39,6 +39,11 @@ public class ValidationException extends Exception
     {
     }
 
+    public ValidationException(List<ValidationError> errors)
+    {
+        _errors = errors;
+    }
+
     public ValidationException(String message)
     {
         _errors.add(new SimpleValidationError(message));

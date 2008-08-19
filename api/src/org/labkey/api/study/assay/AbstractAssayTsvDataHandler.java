@@ -16,22 +16,23 @@
 
 package org.labkey.api.study.assay;
 
-import org.labkey.api.exp.api.*;
-import org.labkey.api.exp.*;
-import org.labkey.api.view.ViewBackgroundInfo;
+import org.apache.log4j.Logger;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.exp.*;
+import org.labkey.api.exp.api.*;
+import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.User;
+import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.study.ParticipantVisit;
-import org.labkey.api.security.User;
-import org.apache.log4j.Logger;
+import org.labkey.api.view.ViewBackgroundInfo;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
 import java.sql.SQLException;
+import java.util.*;
 
 /**
  * User: jeckels
@@ -136,6 +137,10 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 ExperimentService.get().commitTransaction();
                 transaction = false;
             }
+        }
+        catch (ValidationException ve)
+        {
+            throw new ExperimentException(ve.toString(), ve);
         }
         catch (SQLException e)
         {

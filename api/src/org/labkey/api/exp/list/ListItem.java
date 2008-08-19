@@ -16,13 +16,14 @@
 
 package org.labkey.api.exp.list;
 
-import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.security.User;
-import org.labkey.api.data.Container;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.data.Container;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.User;
 
-import java.sql.SQLException;
 import java.io.IOException;
+import java.sql.SQLException;
 
 public interface ListItem
 {
@@ -35,6 +36,6 @@ public interface ListItem
     public Object getProperty(DomainProperty property);
     public void setProperty(DomainProperty property, Object value);
 
-    public void save(User user) throws SQLException, IOException, AttachmentService.DuplicateFilenameException;
+    public void save(User user) throws SQLException, IOException, AttachmentService.DuplicateFilenameException, ValidationException;
     public void delete(User user, Container c) throws SQLException;
 }

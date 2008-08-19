@@ -22,18 +22,22 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.util.GUID;
-import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.query.ValidationError;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.common.util.CPUTimer;
 
 import java.io.File;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
-import java.text.SimpleDateFormat;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 /**
  * User: migra
@@ -99,7 +103,7 @@ public class OntologyManager
 
     public static final int MAX_PROPS_IN_BATCH = 10000;
 
-    public static String[] insertTabDelimited(Container c, Integer ownerObjectId, ImportHelper helper, PropertyDescriptor[] descriptors, Map[] rows, boolean ensureObjects) throws SQLException
+    public static String[] insertTabDelimited(Container c, Integer ownerObjectId, ImportHelper helper, PropertyDescriptor[] descriptors, Map[] rows, boolean ensureObjects) throws SQLException, ValidationException
     {
 		CPUTimer total  = new CPUTimer("insertTabDelimited");
 		CPUTimer before = new CPUTimer("beforeImport");
@@ -124,6 +128,7 @@ public class OntologyManager
 			objInsert.setContainer(containerId);
 			objInsert.setOwnerObjectId(ownerObjectId);
 
+            List<ValidationError> errors = new ArrayList<ValidationError>();
 			for (Map map : rows)
 			{
 				assert before.start();
@@ -155,6 +160,8 @@ public class OntologyManager
                         else
                             continue;
                     }
+                    else
+                        validateProperty(pd, value, errors);
                     PropertyRow row = new PropertyRow(objectId, pd.getPropertyId(), value, propertyTypes[i]);
 					propsToInsert.add(row);
 				}
@@ -168,7 +175,10 @@ public class OntologyManager
                 }
             }
 
-			assert insert.start();
+            if (!errors.isEmpty())
+                throw new ValidationException(errors);
+
+            assert insert.start();
 			insertPropertiesBulk(propsToInsert);
 			assert insert.stop();
 		}
@@ -190,6 +200,15 @@ public class OntologyManager
 		return lsidList.toArray(new String[lsidList.size()]);
 	}
 
+    private static boolean validateProperty(PropertyDescriptor prop, Object value, List<ValidationError> errors)
+    {
+        boolean ret = true;
+        for (IPropertyValidator validator : PropertyService.get().getPropertyValidators(prop))
+        {
+            if (!validator.validate(value, errors)) ret = false;
+        }
+        return ret;
+    }
 
 	public interface ImportHelper
 	{

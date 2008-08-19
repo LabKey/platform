@@ -275,6 +275,15 @@ public class GWTPropertyDescriptor implements IsSerializable
         if (getRangeURI() != null ? !getRangeURI().equals(that.getRangeURI()) : that.getRangeURI() != null) return false;
         if (getSearchTerms() != null ? !getSearchTerms().equals(that.getSearchTerms()) : that.getSearchTerms() != null) return false;
         if (getSemanticType() != null ? !getSemanticType().equals(that.getSemanticType()) : that.getSemanticType() != null) return false;
+
+        if (getPropertyValidators().size() != that.getPropertyValidators().size()) return false;
+        GWTPropertyValidator[] cur = (GWTPropertyValidator[])getPropertyValidators().toArray(new GWTPropertyValidator[0]);
+        GWTPropertyValidator[] prev = (GWTPropertyValidator[])that.getPropertyValidators().toArray(new GWTPropertyValidator[0]);
+
+        for (int i=0; i < cur.length; i++)
+        {
+            if (!cur[i].equals(prev[i])) return false;
+        }
         return true;
     }
 
@@ -296,6 +305,11 @@ public class GWTPropertyDescriptor implements IsSerializable
         result = 31 * result + (lookupContainer.getString() != null ? lookupContainer.getString().hashCode() : 0);
         result = 31 * result + (lookupSchema.getString() != null ? lookupSchema.getString().hashCode() : 0);
         result = 31 * result + (lookupQuery.getString() != null ? lookupQuery.getString().hashCode() : 0);
+
+        for (Iterator it = getPropertyValidators().iterator(); it.hasNext();)
+        {
+            result = 31 * result + it.next().hashCode();
+        }
         return result;
     }
 
