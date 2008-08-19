@@ -66,12 +66,15 @@ public class UserAuditViewFactory extends SimpleAuditViewFactory
 
     public QueryView createDefaultQueryView(ViewContext context)
     {
-        return createUserHistoryView(context);
+        return createUserHistoryView(context, null);
     }
 
-    public AuditLogQueryView createUserHistoryView(ViewContext context)
+    public AuditLogQueryView createUserHistoryView(ViewContext context, SimpleFilter extraFilter)
     {
         SimpleFilter filter = new SimpleFilter("EventType", UserManager.USER_AUDIT_EVENT);
+
+        if (null != extraFilter)
+            filter.addAllClauses(extraFilter);
 
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, getEventType());
         view.setSort(new Sort("-Date"));

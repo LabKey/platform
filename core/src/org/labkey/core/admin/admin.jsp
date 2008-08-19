@@ -15,22 +15,23 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.module.Module" %>
-<%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%@ page import="org.labkey.api.settings.AdminConsole" %>
-<%@ page import="org.labkey.api.settings.AdminConsole.*" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.settings.AdminConsole.AdminLink" %>
+<%@ page import="org.labkey.api.settings.AdminConsole.SettingsLinkType" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.common.util.Pair" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.core.user.UserController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<AdminController.AdminBean> me = (HttpView<AdminController.AdminBean>) HttpView.currentView();
     AdminController.AdminBean bean = me.getModelBean();
 
     ViewContext context = HttpView.currentContext();
-    org.labkey.api.security.User user = context.getUser();
+    Container c = context.getContainer();
     String contextPath = context.getContextPath();
 %>
 <table class="labkey-admin-console"><tr>
@@ -48,32 +49,9 @@
     <tr><td colspan="2">&nbsp;</td></tr><%
     }
 %>
-    <tr><td colspan="2">
-    <form method="get" action="impersonate.view">
-        <table>
-        <tr><td><b>Impersonate User</b></td></tr>
-        <tr><td><%
-            if (user.isImpersonated())
-            {
-        %>
-        Already impersonating; click <a href="<%=h(AuthenticationManager.getLogoutURL())%>">here</a> to change back to <%=h(user.getImpersonatingUser().getDisplayName(context))%>.<%
-            }
-            else
-            {
-        %>
-            <select id="email" name="email" style="width:200"><%
-                for (String email : bean.emails)
-                {%>
-                <option value="<%=h(email)%>" <%=(email.equals(user.getEmail())) ? "selected" : ""%>><%=h(email)%></option ><%
-                }
-            %>
-            </select><br>
-            <input style="vertical-align:bottom" type=image src="<%=PageFlowUtil.buttonSrc("Impersonate")%>"><%
-            }
-            %>
-        </td></tr>
-        </table>
-    </form>
+    <tr><td colspan="2"><%
+        this.include(new UserController.ImpersonateView(c), out);
+    %>
     </td></tr>
 
     <tr><td colspan="2">&nbsp;</td></tr>

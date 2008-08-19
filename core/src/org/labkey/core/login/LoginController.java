@@ -217,7 +217,7 @@ public class LoginController extends SpringActionController
 
                 if (null != _user)
                 {
-                    SecurityManager.setAuthenticatedUser(request, _user, null);
+                    SecurityManager.setAuthenticatedUser(request, _user, null, null);
 
                     return true;
                 }

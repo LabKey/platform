@@ -17,8 +17,6 @@ package org.labkey.issue.model;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
-import org.apache.commons.collections15.MultiMap;
-import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
@@ -27,8 +25,8 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.*;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.IssuesModule;
 
@@ -589,7 +587,6 @@ public class IssueManager
         SqlDialect dialect = _issuesSchema.getSchema().getSqlDialect();
         String from = _tinfoIssues + " i LEFT OUTER JOIN " + _tinfoComments + " c ON i.IssueId = c.IssueId";
         SQLFragment searchSql = Search.getSQLFragment("Container, Title, IssueId", "Container, Title, i.IssueId", from, "Container", null, containers, parser, dialect, "Comment"); // No need to search title since it ends up in the comment
-        MultiMap<String, String> map = new MultiHashMap<String, String>();
         ResultSet rs = null;
 
         try
@@ -626,7 +623,7 @@ public class IssueManager
         String requiredFields = IssuesController.DEFAULT_REQUIRED_FIELDS;
         Map<String, String> map = PropertyManager.getProperties(container.getId(), ISSUES_PREF_MAP, false);
         if (map != null)
-            requiredFields = (String)map.get(ISSUES_REQUIRED_FIELDS);
+            requiredFields = map.get(ISSUES_REQUIRED_FIELDS);
         return requiredFields;
     }
 

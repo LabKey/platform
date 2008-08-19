@@ -30,6 +30,8 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PrintTemplate;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.portal.ProjectUrls;
 import org.labkey.core.query.GroupAuditViewFactory;
 import org.labkey.core.query.UserAuditViewFactory;
 import org.labkey.core.security.SecurityController;
@@ -43,8 +45,7 @@ import java.util.*;
 
 public class UserController extends SpringActionController
 {
-    static DefaultActionResolver _actionResolver = new DefaultActionResolver(UserController.class);
-
+    private static DefaultActionResolver _actionResolver = new DefaultActionResolver(UserController.class);
     private static Logger _log = Logger.getLogger(UserController.class);
 
     public UserController() throws Exception
@@ -58,6 +59,11 @@ public class UserController extends SpringActionController
         public ActionURL getSiteUsersURL()
         {
             return new ActionURL(ShowUsersAction.class, ContainerManager.getRoot());
+        }
+
+        public ActionURL getProjectMembersURL(Container container)
+        {
+            return new ActionURL(ShowUsersAction.class, container);
         }
 
         public ActionURL getUserAccessURL(Container container, int userId)
@@ -74,14 +80,14 @@ public class UserController extends SpringActionController
 
         public ActionURL getUserDetailsURL(int userId)
         {
-            ActionURL url = getUserDetailsURL();
+            ActionURL url = getUserDetailsURL(ContainerManager.getRoot());
             url.addParameter("userId", userId);
             return url;
         }
 
-        public ActionURL getUserDetailsURL()
+        public ActionURL getUserDetailsURL(Container c)
         {
-            return new ActionURL(DetailsAction.class, ContainerManager.getRoot());
+            return new ActionURL(DetailsAction.class, c);
         }
 
         public ActionURL getUserUpdateURL(ActionURL returnURL)
@@ -90,18 +96,28 @@ public class UserController extends SpringActionController
             url.addReturnURL(returnURL);
             return url;            
         }
+
+        public ActionURL getImpersonateURL(Container c)
+        {
+            return new ActionURL(ImpersonateAction.class, c);
+        }
     }
 
 
     // Note: the column list is dynamic, changing based on the current user's permissions.
-    public static String getUserColumnNames(User user)
+    public static String getUserColumnNames(User user, Container c)
     {
         String columnNames = "Email, DisplayName, FirstName, LastName, Phone, Mobile, Pager, IM, Description";
 
-        if (user != null && user.isAdministrator())
+        if (user != null && (user.isAdministrator() || c.hasPermission(user, ACL.PERM_ADMIN)))
             columnNames = columnNames + ", UserId, LastLogin, Active";
 
         return columnNames;
+    }
+
+    public static String getDefaultUserColumnNames()
+    {
+        return getUserColumnNames(null, null);
     }
 
     private class SiteUserDataRegion extends DataRegion
@@ -117,10 +133,15 @@ public class UserController extends SpringActionController
     private DataRegion getGridRegion(boolean isOwnRecord)
     {
         final User user = getUser();
-        boolean isAdministrator = user.isAdministrator();
+        Container c = getContainer();
+        boolean isSiteAdmin = user.isAdministrator();
+        boolean isAnyAdmin = isSiteAdmin || c.hasPermission(user, ACL.PERM_ADMIN);
+
+        assert isOwnRecord || isAnyAdmin;
+
         SiteUserDataRegion rgn = new SiteUserDataRegion();
 
-        List<ColumnInfo> cols = CoreSchema.getInstance().getTableInfoUsers().getColumns(getUserColumnNames(user));
+        List<ColumnInfo> cols = CoreSchema.getInstance().getTableInfoUsers().getColumns(getUserColumnNames(user, c));
         List<DisplayColumn> displayColumns = new ArrayList<DisplayColumn>();
         final String requiredFields = UserManager.getRequiredUserFields();
         for (ColumnInfo col : cols)
@@ -136,21 +157,21 @@ public class UserController extends SpringActionController
         rgn.setDisplayColumns(displayColumns);
 
         SimpleDisplayColumn accountDetails = new SimpleDisplayColumn("[Details]");
-        accountDetails.setURL(new UserUrlsImpl().getUserDetailsURL() + "userId=${UserId}");
+        accountDetails.setURL(new UserUrlsImpl().getUserDetailsURL(c) + "userId=${UserId}");
         accountDetails.setDisplayModes(DataRegion.MODE_GRID);
         rgn.addDisplayColumn(0, accountDetails);
 
-        if (isAdministrator)
+        if (isAnyAdmin)
         {
             SimpleDisplayColumn securityDetails = new SimpleDisplayColumn("[Permissions]");
-            securityDetails.setURL(new UserUrlsImpl().getUserAccessURL(ContainerManager.getRoot()) + "userId=${UserId}");
+            securityDetails.setURL(new UserUrlsImpl().getUserAccessURL(c) + "userId=${UserId}");
             securityDetails.setDisplayModes(DataRegion.MODE_GRID);
             rgn.addDisplayColumn(1, securityDetails);
         }
 
         ButtonBar gridButtonBar = new ButtonBar();
 
-        if (isAdministrator)
+        if (isSiteAdmin)
         {
             rgn.setShowRecordSelectors(true);
 
@@ -159,22 +180,26 @@ public class UserController extends SpringActionController
             delete.setActionType(ActionButton.Action.GET);
             gridButtonBar.add(delete);
 
+            // Could allow project admins to do this... but they already can add users when adding to a group
             ActionButton insert = new ActionButton("showAddUsers", "Add Users");
             ActionURL actionURL = new ActionURL(SecurityController.AddUsersAction.class, ContainerManager.getRoot());
             insert.setURL(actionURL.getLocalURIString());
             insert.setActionType(ActionButton.Action.LINK);
             gridButtonBar.add(insert);
 
+            ActionButton preferences = new ActionButton("showUserPreferences.view", "Preferences");
+            preferences.setActionType(ActionButton.Action.LINK);
+            gridButtonBar.add(preferences);
+        }
+
+        if (isAnyAdmin)
+        {
             ActionButton export = new ActionButton("export", "Export to Excel");
             ActionURL exportURL = getViewContext().cloneActionURL();
             exportURL.setAction("export");
             export.setURL(exportURL.getEncodedLocalURIString());
             export.setActionType(ActionButton.Action.LINK);
             gridButtonBar.add(export);
-
-            ActionButton preferences = new ActionButton("showUserPreferences.view", "Preferences");
-            preferences.setActionType(ActionButton.Action.LINK);
-            gridButtonBar.add(preferences);
 
             if (AuditLogService.get().isViewable())
             {
@@ -188,23 +213,23 @@ public class UserController extends SpringActionController
         ActionButton showGrid = new ActionButton("showUsers.view?.lastFilter=true", "Show Grid");
         showGrid.setActionType(ActionButton.Action.LINK);
 
-        if (isOwnRecord || isAdministrator)
+        ButtonBar detailsButtonBar = new ButtonBar();
+        if (isAnyAdmin)
+            detailsButtonBar.add(showGrid);
+        if (isOwnRecord || isSiteAdmin)
         {
-            ButtonBar detailsButtonBar = new ButtonBar();
-            if (isAdministrator)
-                detailsButtonBar.add(showGrid);
             ActionButton edit = new ActionButton("showUpdate.view", "Edit");
             edit.setActionType(ActionButton.Action.GET);
             detailsButtonBar.add(edit);
-            rgn.setButtonBar(detailsButtonBar, DataRegion.MODE_DETAILS);
+
         }
+        rgn.setButtonBar(detailsButtonBar, DataRegion.MODE_DETAILS);
 
         ButtonBar updateButtonBar = new ButtonBar();
         ActionButton update = new ActionButton("showUpdate.post", "Submit");
         //update.setActionType(ActionButton.Action.LINK);
         updateButtonBar.add(update);
-
-        if (isAdministrator)
+        if (isSiteAdmin)
             updateButtonBar.add(showGrid);
         rgn.setButtonBar(updateButtonBar, DataRegion.MODE_UPDATE);
 
@@ -284,68 +309,125 @@ public class UserController extends SpringActionController
         return false;
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermission(ACL.PERM_ADMIN)   // Root requires site admin; any other container requires PERM_ADMIN (see below)
     public class ShowUsersAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
+            SimpleFilter filter = authorizeAndGetProjectMemberFilter();
             DataRegion rgn = getGridRegion(false);
             GridView gridView = new GridView(rgn);
             gridView.setSort(new Sort("email"));
             gridView.getViewContext().setPermissions(ACL.PERM_READ);
+            gridView.setFilter(filter);
 
-            return gridView;
+            HttpView impersonateView = new ImpersonateView(getContainer());
+
+            return new VBox(gridView, impersonateView);
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Site Users");
+            if (getContainer().isRoot())
+                return root.addChild("Site Users");
+            else
+                return root.addChild("Project Members");
         }
     }
 
-    @RequiresSiteAdmin
-    public class ShowUsers extends SimpleViewAction
+
+    // Site admins can act on any user
+    // Project admins can only act on users who are project members
+    private void authorizeUserAction(Integer userId) throws UnauthorizedException
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            DataRegion rgn = getGridRegion(false);
-            GridView gridView = new GridView(rgn);
-            gridView.setSort(new Sort("email"));
-            gridView.getViewContext().setPermissions(ACL.PERM_READ);
+        Container c = getContainer();
+        User user = getUser();
+        boolean isSiteAdmin = user.isAdministrator();
+        boolean hasAdminPerm = c.hasPermission(user, ACL.PERM_ADMIN);
 
-            return gridView;
+        if (c.isRoot())
+        {
+            // Must be site admin to view at the root (all users)
+            if (!isSiteAdmin)
+                HttpView.throwUnauthorized();
         }
-
-        public NavTree appendNavTrail(NavTree root)
+        else
         {
-            return root.addChild("Site Users");
+            // Must be project admin to view outside the root...
+            if (!hasAdminPerm)
+                HttpView.throwUnauthorized();
+
+            // ...and user must be a project member
+            if (!SecurityManager.getProjectMembersIds(c).contains(userId))
+                HttpView.throwUnauthorized("Can only impersonate project members");
         }
     }
 
-    @RequiresSiteAdmin
+
+    private SimpleFilter authorizeAndGetProjectMemberFilter() throws UnauthorizedException
+    {
+        return authorizeAndGetProjectMemberFilter("UserId");
+    }
+
+
+    private SimpleFilter authorizeAndGetProjectMemberFilter(String userIdColumnName) throws UnauthorizedException
+    {
+        Container c = getContainer();
+        SimpleFilter filter = new SimpleFilter();
+
+        if (c.isRoot())
+        {
+            if (!getUser().isAdministrator())
+                throw new UnauthorizedException();
+        }
+        else
+        {
+            SQLFragment sql = SecurityManager.getProjectMembersSQL(c.getProject());
+            sql.insert(0, userIdColumnName + " IN (SELECT members.UserId ");
+            sql.append(")");
+
+            filter.addWhereClause(sql.getSQL(), sql.getParamsArray());
+        }
+
+        return filter;
+    }
+
+
+    @RequiresPermission(ACL.PERM_ADMIN)
     public class ShowUserHistoryAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return UserAuditViewFactory.getInstance().createUserHistoryView(getViewContext());
+            SimpleFilter projectMemberFilter = authorizeAndGetProjectMemberFilter("IntKey1");
+            return UserAuditViewFactory.getInstance().createUserHistoryView(getViewContext(), projectMemberFilter);
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild("Site Users", new UserUrlsImpl().getSiteUsersURL());
-            return root.addChild("Site Users History");
+            if (getContainer().isRoot())
+            {
+                root.addChild("Site Users", new UserUrlsImpl().getSiteUsersURL());
+                return root.addChild("Site Users History");
+            }
+            else
+            {
+                root.addChild("Project Members", new UserUrlsImpl().getProjectMembersURL(getContainer()));
+                return root.addChild("Project Members History");
+            }
         }
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermission(ACL.PERM_ADMIN)
     public class ExportAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             try
             {
-                DataRegion rgn = getGridRegion(false);
+                Filter filter = authorizeAndGetProjectMemberFilter();
                 RenderContext ctx = new RenderContext(getViewContext());
+                ctx.setBaseFilter(filter);
+                DataRegion rgn = getGridRegion(false);
                 ExcelWriter ew = new ExcelWriter(rgn.getResultSet(ctx), rgn.getDisplayColumns());
                 ew.setAutoSize(true);
                 ew.setSheetName("Users");
@@ -385,7 +467,7 @@ public class UserController extends SpringActionController
         public ModelAndView getView(UserPreferenceForm userPreferenceForm, boolean reshow, BindException errors) throws Exception
         {
             List<String> columnNames = new ArrayList<String>();
-            for (String name : getUserColumnNames(null).split(","))
+            for (String name : getDefaultUserColumnNames().split(","))
             {
                 name = name.trim();
                 if (isValidRequiredField(name))
@@ -611,14 +693,20 @@ public class UserController extends SpringActionController
             if (requestedUser == null)
                 return HttpView.throwNotFoundMV();
             List<AccessDetailRow> rows = new ArrayList<AccessDetailRow>();
-            buildAccessDetailList(ContainerManager.getContainerTree(), ContainerManager.getRoot(), rows, requestedUser, 0);
+
+            Container c = getContainer();
+            MultiMap<Container, Container> containerTree =  c.isRoot() ? ContainerManager.getContainerTree() : ContainerManager.prune(ContainerManager.getContainerTree(), c.getProject());
+            buildAccessDetailList(containerTree, c.isRoot() ? ContainerManager.getRoot() : null, rows, requestedUser, 0);
             AccessDetail details = new AccessDetail(rows);
             details.setActive(requestedUser.isActive());
             JspView<AccessDetail> accessView = new JspView<AccessDetail>("/org/labkey/core/user/userAccess.jsp", details);
 
             VBox view = new VBox(accessView);
-            if (getUser().isAdministrator())
-                view.addView(GroupAuditViewFactory.getInstance().createUserView(getViewContext(), Integer.parseInt(form.getUserId())));
+
+            if (c.isRoot())
+                view.addView(GroupAuditViewFactory.getInstance().createSiteUserView(getViewContext(), Integer.parseInt(form.getUserId())));
+            else
+                view.addView(GroupAuditViewFactory.getInstance().createProjectMemberView(getViewContext(), Integer.parseInt(form.getUserId())));
 
             if (form.getRenderInHomeTemplate())
             {
@@ -635,13 +723,32 @@ public class UserController extends SpringActionController
         {
             if (_showNavTrail)
             {
-                root.addChild("Site Users", new UserUrlsImpl().getSiteUsersURL());
-                root.addChild("User Details", new UserUrlsImpl().getUserDetailsURL(_userId));
+                addUserDetailsNavTrail(root, _userId);
                 root.addChild("Permissions");
                 return root.addChild("Access Details: " + UserManager.getEmailForId(_userId));
             }
             return null;
         }
+    }
+
+
+    private void addUserDetailsNavTrail(NavTree root, Integer userId)
+    {
+        Container c = getContainer();
+        if (c.isRoot())
+        {
+            if (getUser().isAdministrator())
+                root.addChild("Site Users", new UserUrlsImpl().getSiteUsersURL());
+        }
+        else
+        {
+            root.addChild("Project Members", new UserUrlsImpl().getProjectMembersURL(c));
+        }
+
+        if (null == userId)
+            root.addChild("User Details");
+        else
+            root.addChild("User Details", new UserUrlsImpl().getUserDetailsURL(c).addParameter("userId", userId));
     }
 
 
@@ -656,13 +763,22 @@ public class UserController extends SpringActionController
             int userId = user.getUserId();
             _detailsUserId = Integer.valueOf(form.getUserId());
             boolean isOwnRecord = (_detailsUserId == userId);
+
+            // Anyone can view their own record; otherwise, make sure current user can view the details of this user
+            if (!isOwnRecord)
+                authorizeUserAction(_detailsUserId);
+
+            Container c = getContainer();
+            boolean isSiteAdmin = user.isAdministrator();
+            boolean hasAdminPerm = c.hasPermission(user, ACL.PERM_ADMIN);
+            boolean isAnyAdmin = isSiteAdmin || hasAdminPerm;
+
             DataRegion rgn = getGridRegion(isOwnRecord);
             String displayEmail = UserManager.getEmailForId(_detailsUserId);
+            ButtonBar bb = rgn.getButtonBar(DataRegion.MODE_DETAILS);
 
-            if (user.isAdministrator())
+            if (isSiteAdmin)
             {
-                ButtonBar bb = rgn.getButtonBar(DataRegion.MODE_DETAILS);
-
                 if (!SecurityManager.isLdapEmail(new ValidEmail(displayEmail)))
                 {
                     ActionButton reset = new ActionButton("reset", "Reset Password");
@@ -678,7 +794,10 @@ public class UserController extends SpringActionController
                 ActionURL changeEmailURL = getViewContext().cloneActionURL().setAction("showChangeEmail");
                 changeEmail.setURL(changeEmailURL.getLocalURIString());
                 bb.add(changeEmail);
+            }
 
+            if (isAnyAdmin)
+            {
                 ActionButton viewPermissions = new ActionButton("", "View Permissions");
                 viewPermissions.setActionType(ActionButton.Action.LINK);
                 ActionURL viewPermissionsURL = getViewContext().cloneActionURL().setAction("userAccess");
@@ -698,10 +817,10 @@ public class UserController extends SpringActionController
                 else
                 {
                     Container doneContainer;
-                    if (null == getContainer() || getContainer().isRoot())
+                    if (null == c || c.isRoot())
                         doneContainer = ContainerManager.getHomeContainer();
                     else
-                        doneContainer = getContainer().getProject();
+                        doneContainer = c.getProject();
 
                     doneButton = new ActionButton("", "Go to " + doneContainer.getName());
                     doneButton.setActionType(ActionButton.Action.LINK);
@@ -712,17 +831,13 @@ public class UserController extends SpringActionController
 
                 rgn.getButtonBar(DataRegion.MODE_DETAILS).add(doneButton);
             }
-            else
-            {
-                if (!user.isAdministrator())
-                    HttpView.throwUnauthorized();
-            }
 
             DetailsView detailsView = new DetailsView(rgn, _detailsUserId);
             detailsView.getViewContext().setPermissions(ACL.PERM_READ);
 
             VBox view = new VBox(detailsView);
-            if (user.isAdministrator())
+
+            if (isAnyAdmin)
             {
                 SimpleFilter filter = new SimpleFilter("IntKey1", _detailsUserId);
                 filter.addCondition("EventType", UserManager.USER_AUDIT_EVENT);
@@ -734,13 +849,13 @@ public class UserController extends SpringActionController
 
                 view.addView(queryView);
             }
+
             return view;
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild("Site Users", new UserUrlsImpl().getSiteUsersURL());
-            root.addChild("User Details");
+            addUserDetailsNavTrail(root, null);
             return root.addChild(UserManager.getEmailForId(_detailsUserId));
         }
     }
@@ -851,8 +966,8 @@ public class UserController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild("Site Users", new UserUrlsImpl().getSiteUsersURL());
-            root.addChild("User Details");
+            addUserDetailsNavTrail(root, _userId);
+            root.addChild("Update");
             return root.addChild(UserManager.getEmailForId(_userId));
         }
     }
@@ -869,7 +984,7 @@ public class UserController extends SpringActionController
         if (user != null && required != null && required.length() > 0)
         {
             DataRegion rgn = new DataRegion();
-            List<ColumnInfo> columns = CoreSchema.getInstance().getTableInfoUsers().getColumns(getUserColumnNames(null));
+            List<ColumnInfo> columns = CoreSchema.getInstance().getTableInfoUsers().getColumns(getDefaultUserColumnNames());
             rgn.setColumns(columns);
 
             TableInfo info = rgn.getTable();
@@ -1131,7 +1246,7 @@ public class UserController extends SpringActionController
 
         public ApiResponse execute(GetUsersForm form, BindException errors) throws Exception
         {
-            Container container = getViewContext().getContainer();
+            Container container = getContainer();
             if(container.isRoot() && !getViewContext().getUser().isAdministrator())
                 throw new UnauthorizedException("Only system administrators may see users in the root container!");
 
@@ -1201,6 +1316,78 @@ public class UserController extends SpringActionController
 
             response.put("users", userResponseList);
             return response;
+        }
+    }
+
+
+    public static class ImpersonateBean
+    {
+        public List<String> emails;
+
+        public ImpersonateBean(Container c)
+        {
+            if (c.isRoot())
+                emails = UserManager.getUserEmailList();
+            else
+                emails = UserManager.getUserEmailList();  // TODO: Change this to filter to project users
+        }
+    }
+
+
+    public static class ImpersonateView extends JspView<ImpersonateBean>
+    {
+        public ImpersonateView(Container c)
+        {
+            super("/org/labkey/core/user/impersonate.jsp", new ImpersonateBean(c));
+        }
+    }
+
+
+    public static class ImpersonateForm
+    {
+        private String _email;
+
+        public String getEmail()
+        {
+            return _email;
+        }
+
+        public void setEmail(String email)
+        {
+            _email = email;
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class ImpersonateAction extends SimpleRedirectAction<ImpersonateForm>
+    {
+        public ActionURL getRedirectURL(ImpersonateForm form) throws Exception
+        {
+            if (getUser().isImpersonated())
+                throw new UnauthorizedException("Can't impersonate; you're already impersonating");
+
+            String rawEmail = form.getEmail();
+            ValidEmail email = new ValidEmail(rawEmail);
+
+            if (!UserManager.userExists(email))
+                throw new NotFoundException("User doesn't exist");
+
+            final User impersonatedUser = UserManager.getUser(email);
+
+            authorizeUserAction(impersonatedUser.getUserId());
+            Container c = getContainer();
+
+            if (c.isRoot())
+            {
+                SecurityManager.impersonate(getViewContext(), impersonatedUser, null);
+                return AppProps.getInstance().getHomePageActionURL();
+            }
+            else
+            {
+                SecurityManager.impersonate(getViewContext(), impersonatedUser, c);
+                return PageFlowUtil.urlProvider(ProjectUrls.class).urlStart(c);
+            }
         }
     }
 }

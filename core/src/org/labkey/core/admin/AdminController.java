@@ -167,7 +167,6 @@ public class AdminController extends SpringActionController
         public String mode = AppProps.getInstance().isDevMode() ? "Development" : "Production";
         public String servletContainer = ModuleLoader.getServletContext().getServerInfo();
         public DbSchema schema = CoreSchema.getInstance().getSchema();
-        public List<String> emails = UserManager.getUserEmailList();
         public List<Pair<String, Long>> active = UserManager.getActiveUsers(System.currentTimeMillis() - DateUtils.MILLIS_PER_HOUR);
         public String userEmail;
 
@@ -227,7 +226,7 @@ public class AdminController extends SpringActionController
 
         public ActionURL getLookAndFeelSettingsURL(Container c)
         {
-            return new ActionURL(LookAndFeelSettingsAction.class, c);
+            return new ActionURL(LookAndFeelSettingsAction.class, LookAndFeelAppProps.getSettingsContainer(c));
         }
 
         public ActionURL getMaintenanceURL()
@@ -1017,7 +1016,8 @@ public class AdminController extends SpringActionController
         AttachmentFile renamed = new SpringAttachmentFile(file);
         renamed.setFilename(AttachmentCache.STYLESHEET_FILE_NAME);
         AttachmentService.get().addAttachments(user, parent, Collections.<AttachmentFile>singletonList(renamed));
-//        TODO: AttachmentCache.clearCustomStylesheetCache();  all for root or single container for project -- OR NOT, retrieval checks lookAndFeelRevision
+
+        // Don't need to clear cache -- lookAndFeelRevision gets checked on retrieval
     }
 
 
@@ -1149,6 +1149,7 @@ public class AdminController extends SpringActionController
             props.setLogoHref(form.getLogoHref());
             props.setSystemShortName(form.getSystemShortName());
             props.setNavigationBarWidth(form.getNavigationBarWidth());
+            props.setReportAProblemPath(form.getReportAProblemPath());
             FolderDisplayMode folderDisplayMode = FolderDisplayMode.ALWAYS;
             try
             {
@@ -1274,7 +1275,9 @@ public class AdminController extends SpringActionController
     {
         ContainerParent parent = new ContainerParent(c);
         AttachmentService.get().deleteAttachment(parent, AttachmentCache.STYLESHEET_FILE_NAME);
-        // TODO: AttachmentCache.clearCustomStylesheet();
+
+        // This custom stylesheet is still cached in CoreController, but look & feel revision checking should ensure
+        // that it gets cleared out on the next request.
     }
 
 
@@ -1530,6 +1533,7 @@ public class AdminController extends SpringActionController
         private String _logoHref;
         private String _companyName;
         private String _systemEmailAddress;
+        private String _reportAProblemPath;
 
         public String getSystemDescription()
         {
@@ -1601,6 +1605,16 @@ public class AdminController extends SpringActionController
             _logoHref = logoHref;
         }
 
+        public String getReportAProblemPath()
+        {
+            return _reportAProblemPath;
+        }
+
+        public void setReportAProblemPath(String reportAProblemPath)
+        {
+            _reportAProblemPath = reportAProblemPath;
+        }
+
         public String getCompanyName()
         {
             return _companyName;
@@ -1627,7 +1641,6 @@ public class AdminController extends SpringActionController
         private boolean _upgradeInProgress = false;
         private boolean _testInPage = false;
 
-        private String _reportAProblemPath;
         private String _defaultDomain;
         private String _defaultLsidAuthority;
         private boolean _perlPipelineEnabled;
@@ -1659,16 +1672,6 @@ public class AdminController extends SpringActionController
         private String _baseServerUrl;
         private String _microarrayFeatureExtractionServer;
         private String _callbackPassword;
-
-        public String getReportAProblemPath()
-        {
-            return _reportAProblemPath;
-        }
-
-        public void setReportAProblemPath(String reportAProblemPath)
-        {
-            _reportAProblemPath = reportAProblemPath;
-        }
 
         public String getMascotServer()
         {
@@ -2105,27 +2108,6 @@ public class AdminController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
-        }
-    }
-
-
-    @RequiresSiteAdmin
-    public class ImpersonateAction extends SimpleRedirectAction
-    {
-        public ActionURL getRedirectURL(Object o) throws Exception
-        {
-            if (getUser().isImpersonated())
-                throw new UnauthorizedException("Can't impersonate; you're already impersonating");
-
-            String rawEmail = getViewContext().getActionURL().getParameter("email");
-            ValidEmail email = new ValidEmail(rawEmail);
-
-            if (!UserManager.userExists(email))
-                throw new NotFoundException("User doesn't exist");
-
-            final User impersonatedUser = UserManager.getUser(email);
-            SecurityManager.impersonate(getViewContext(), impersonatedUser);
-            return AppProps.getInstance().getHomePageActionURL();
         }
     }
 

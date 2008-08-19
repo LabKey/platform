@@ -35,12 +35,6 @@
 
 <form name="preferences" enctype="multipart/form-data" method="post">
 
-<table>
-<tr>
-    <td><input type="image" src="<%=PageFlowUtil.buttonSrc("Save")%>"/></td>
-</tr>
-</table>
-
 <table cellpadding=0>
 <tr>
     <td colspan=2>&nbsp;</td>
@@ -51,15 +45,15 @@
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
 <tr>
-    <td class="labkey-form-label">Web site description (appears in every page header)</td>
+    <td class="labkey-form-label">Header description (appears in every page header)</td>
     <td><input type="text" name="systemDescription" size="50" value="<%= h(laf.getSystemDescription()) %>"></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Web site short name (appears in every page header and in emails)</td>
+    <td class="labkey-form-label">Header short name (appears in every page header and in emails)</td>
     <td><input type="text" name="systemShortName" size="50" value="<%= h(laf.getSystemShortName()) %>"></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Web site theme (color scheme)</td>
+    <td class="labkey-form-label">Web theme (color scheme)</td>
     <td>
         <select name="themeName">
             <% for (WebTheme theme : bean.themes)
@@ -87,7 +81,7 @@
     </td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Default font size</td>
+    <td class="labkey-form-label">Font size</td>
     <td>
         <select name="themeFont">
             <% for (ThemeFont themeFont : bean.themeFonts)
@@ -117,7 +111,7 @@
     </td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Left-navigation bar width (pixels)</td>
+    <td class="labkey-form-label">Left navigation bar width (pixels)</td>
     <td>
         <input name="navigationBarWidth" value="<%=laf.getNavigationBarWidth() %>" type="text" size="4">
     </td>
@@ -127,13 +121,39 @@
     <td class="labkey-form-label">Logo link (specifies page that logo links to)</td>
     <td><input type="text" name="logoHref" size="50" value="<%= h(laf.getLogoHref()) %>"></td>
 </tr>
-
+<tr>
+    <td class="labkey-form-label">Support link (specifies page where users can request support)</td>
+    <td><input type="text" name="reportAProblemPath" size="50" value="<%= h(laf.getUnsubstitutedReportAProblemPath()) %>"></td>
+</tr>
 <tr>
     <td>&nbsp;</td>
 </tr>
 
 <tr>
-    <td class="labkey-form-label">Web site logo (appears in every page header; 147 x 56 pixels)</td>
+    <td colspan=2>Customize settings used in system emails (<%=bean.helpLink%>)</td>
+</tr>
+<tr><td colspan=3 class=labkey-title-area-line><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
+<tr>
+    <td class="labkey-form-label">System email address (<i>from</i> address for system notification emails)</td>
+    <td><input type="text" name="systemEmailAddress" size="50" value="<%= h(laf.getSystemEmailAddress()) %>"></td>
+</tr>
+<tr>
+    <td class="labkey-form-label">Organization name (appears in notification emails sent by system)</td>
+    <td><input type="text" name="companyName" size="50" value="<%= h(laf.getCompanyName()) %>"></td>
+</tr>
+<tr>
+    <td>&nbsp;</td>
+</tr>
+
+<tr>
+    <td><input type="image" src='<%=PageFlowUtil.buttonSrc("Save Settings")%>' /></td>
+</tr>
+<tr>
+    <td>&nbsp;</td>
+</tr>
+
+<tr>
+    <td class="labkey-form-label">Header logo (appears in every page header; 147 x 56 pixels)</td>
     <td><input type="file" name="logoImage" size="50"></td>
 </tr>
 <tr>
@@ -149,7 +169,7 @@
 </tr>
 
 <tr>
-    <td class="labkey-form-label">Web site favorite icon (displayed in user's favorites or bookmarks, .ico file only)</td>
+    <td class="labkey-form-label">Favorite icon (displayed in user's favorites or bookmarks, .ico file only)</td>
     <td><input type="file" name="iconImage" size="50"></td>
 </tr>
 <tr>
@@ -179,24 +199,6 @@
         <% } %>
     </td>
 </tr>
-<tr>
-    <td class="labkey-form-label">System email address (<i>from</i> address for system notification emails)</td>
-    <td><input type="text" name="systemEmailAddress" size="50" value="<%= h(laf.getSystemEmailAddress()) %>"></td>
-</tr>
-<tr>
-    <td class="labkey-form-label">Organization name (appears in notification emails sent by system)</td>
-    <td><input type="text" name="companyName" size="50" value="<%= h(laf.getCompanyName()) %>"></td>
-</tr>
-<tr>
-    <td class="labkey-form-label">Support link (specifies page where users can request support)</td>
-    <td><input type="text" name="reportAProblemPath" size="50" value="<%= h(laf.getUnsubstitutedReportAProblemPath()) %>"></td>
-</tr>
 
-<tr>
-    <td>&nbsp;</td>
-</tr>
-<tr>
-    <td><input type="image" src='<%=PageFlowUtil.buttonSrc("Save")%>' /></td>
-</tr>
 </table>
 </form>

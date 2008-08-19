@@ -47,7 +47,7 @@ public class CoreQuerySchema extends UserSchema
 
         //only site admins are allowed to see all site users,
         //so if the user is not a site admin, add a filter that will
-        //generate an empty set (CONSIDER: should we thrown an exception here instead?)
+        //generate an empty set (CONSIDER: should we throw an exception here instead?)
         if(!getUser().isAdministrator())
             addNullSetFilter(users);
 

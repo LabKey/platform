@@ -128,14 +128,28 @@ public class GroupAuditViewFactory extends SimpleAuditViewFactory
         }
     }
 
-    public AuditLogQueryView createUserView(ViewContext context, int userId)
+    public AuditLogQueryView createSiteUserView(ViewContext context, int userId)
+    {
+        return createUserView(context, userId, "Access Modification History:", new String[]{"Date", "CreatedBy", "ProjectId", "IntKey2", "Comment"}, null);
+    }
+
+    public AuditLogQueryView createProjectMemberView(ViewContext context, int userId)
+    {
+        SimpleFilter filter = new SimpleFilter("ProjectId", context.getContainer().getProject());
+        return createUserView(context, userId, "Access Modification History For This Project:", new String[]{"Date", "CreatedBy", "IntKey2", "Comment"}, filter);
+    }
+
+    private AuditLogQueryView createUserView(ViewContext context, int userId, String title, String[] visibleColumns, SimpleFilter extraFilter)
     {
         SimpleFilter filter = new SimpleFilter("IntKey1", userId);
         filter.addCondition("EventType", GroupManager.GROUP_AUDIT_EVENT);
 
+        if (null != extraFilter)
+            filter.addAllClauses(extraFilter);
+
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, getEventType());
-        view.setTitle("<br/><b>Access Modification History:</b>");
-        view.setVisibleColumns(new String[]{"Date", "CreatedBy", "IntKey2", "Comment"});
+        view.setTitle("<br/><b>" + title + "</b>");
+        view.setVisibleColumns(visibleColumns);
         view.setSort(new Sort("-Date"));
 
         return view;
