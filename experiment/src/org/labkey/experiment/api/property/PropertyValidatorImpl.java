@@ -25,6 +25,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.query.ValidationError;
+import org.labkey.api.query.SimpleValidationError;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.apache.beehive.netui.pageflow.PageFlowUtils;
 import org.springframework.validation.BindException;
@@ -140,12 +142,12 @@ public class PropertyValidatorImpl implements IPropertyValidator
     public IPropertyValidator save(User user, Container container) throws SQLException
     {
         ValidatorKind kind = getType();
-        List<String> errors = new ArrayList<String>();
+        List<ValidationError> errors = new ArrayList<ValidationError>();
 
         if (!kind.isValid(this, errors))
         {
             StringBuffer sb = new StringBuffer();
-            for (String error : errors)
+            for (ValidationError error : errors)
             {
                 sb.append(error);
                 sb.append("\n");
@@ -178,27 +180,15 @@ public class PropertyValidatorImpl implements IPropertyValidator
         Table.delete(DomainPropertyManager.get().getTinfoValidator(), new Integer(getRowId()), null);
     }
 
-    public boolean validate(Object value, List<String> errors)
+    public boolean validate(Object value, List<ValidationError> errors)
     {
         ValidatorKind kind = getType();
 
         if (kind != null)
             return kind.validate(this, value, errors);
         else
-            errors.add("Validator type : " + getTypeURI() + " does not exist.");
+            errors.add(new SimpleValidationError("Validator type : " + getTypeURI() + " does not exist."));
         return false;
-    }
-
-    public boolean validate(Object value, BindException errors)
-    {
-        List<String> errorList = new ArrayList<String>();
-        if (!validate(value, errorList))
-        {
-            for (String error : errorList)
-                errors.reject(SpringActionController.ERROR_MSG, error);
-            return false;
-        }
-        return true;
     }
 
     public boolean isNew()

@@ -22,6 +22,7 @@ import org.labkey.api.exp.property.DefaultPropertyValidator;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.gwt.client.model.GWTPropertyValidator;
+import org.labkey.api.query.ValidationError;
 import org.labkey.common.util.Pair;
 
 import java.util.ArrayList;
@@ -57,12 +58,12 @@ public class RangeValidator extends DefaultPropertyValidator implements Validato
         return validator;
     }
 
-    public boolean isValid(IPropertyValidator validator, List<String> errors)
+    public boolean isValid(IPropertyValidator validator, List<ValidationError> errors)
     {
         return true;
     }
 
-    public boolean validate(IPropertyValidator validator, Object value, List<String> errors)
+    public boolean validate(IPropertyValidator validator, Object value, List<ValidationError> errors)
     {
         for (Pair<String, String> constraint : parseExpression(validator.getExpressionValue()))
         {

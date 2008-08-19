@@ -15,8 +15,8 @@
  */
 package org.labkey.experiment.controllers.list;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.ObjectUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleRedirectAction;
@@ -39,6 +39,8 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.jsp.FormPage;
 import org.labkey.api.query.QueryUpdateForm;
+import org.labkey.api.query.ValidationError;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.util.CaseInsensitiveHashMap;
@@ -342,7 +344,6 @@ public class ListController extends SpringActionController
                     }
                     if (property != null)
                     {
-                        validate(property, formValue, errors);
                         item.setProperty(property, formValue);
                     }
                 }
@@ -358,23 +359,17 @@ public class ListController extends SpringActionController
 
                 return true;
             }
+            catch (ValidationException ve)
+            {
+                for (ValidationError error : ve.getErrors())
+                    errors.reject(ERROR_MSG, error.getMessage());
+            }
             catch (Exception e)   // TODO: Check for specific errors and get rid of catch(Exception)
             {
                 errors.reject(ERROR_MSG, "An exception occurred: " + e);
             }
 
             return false;
-        }
-
-        private boolean validate(DomainProperty prop, Object value, BindException errors)
-        {
-            boolean ret = true;
-
-            for (IPropertyValidator validator : prop.getValidators())
-            {
-                if (!validator.validate(value, errors)) ret = false;
-            }
-            return ret;
         }
 
         public ActionURL getSuccessURL(ListDefinitionForm listDefinitionForm)
@@ -774,6 +769,12 @@ public class ListController extends SpringActionController
                     ExperimentService.get().commitTransaction();
                     transaction = false;
                 }
+            }
+            catch (ValidationException ve)
+            {
+                for (ValidationError error : ve.getErrors())
+                    errors.reject(ERROR_MSG, error.getMessage());
+                return false;
             }
             finally
             {

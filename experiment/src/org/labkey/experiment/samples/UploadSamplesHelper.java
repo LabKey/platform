@@ -19,8 +19,9 @@ package org.labkey.experiment.samples;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.*;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.util.PageFlowUtil;
@@ -308,7 +309,7 @@ public class UploadSamplesHelper
     }
 
     public void insertTabDelimitedMaterial(Map[] rows, PropertyDescriptor[] descriptors, List<String> idCols, String objectPrefix, String cpasType, Set<String> reusedMaterialLSIDs)
-            throws SQLException
+            throws SQLException, ValidationException
     {
         if (rows.length == 0)
             return;

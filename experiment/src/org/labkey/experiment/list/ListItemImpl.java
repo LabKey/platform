@@ -30,25 +30,26 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.exp.property.IPropertyType;
+import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.query.QueryUpdateForm;
+import org.labkey.api.query.ValidationError;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.view.HttpView;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.DetailsView;
-import org.labkey.api.query.QueryUpdateForm;
+import org.labkey.api.view.HttpView;
 import org.labkey.experiment.controllers.list.ListItemAttachmentParent;
 
-import java.sql.SQLException;
+import java.io.IOException;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.io.IOException;
 
 public class ListItemImpl implements ListItem
 {
@@ -206,7 +207,7 @@ public class ListItemImpl implements ListItem
         return ensureProperties().get(property.getPropertyURI());
     }
 
-    public void save(User user) throws SQLException, IOException, AttachmentService.DuplicateFilenameException
+    public void save(User user) throws SQLException, IOException, AttachmentService.DuplicateFilenameException, ValidationException
     {
         boolean fTransaction = false;
         try
@@ -224,6 +225,19 @@ public class ListItemImpl implements ListItem
             for (DomainProperty dp : _list.getDomain().getProperties())
             {
                 dps.put(dp.getPropertyURI(), dp);
+            }
+
+            if (_properties != null)
+            {
+                List<ValidationError> errors = new ArrayList<ValidationError>();
+                for (Map.Entry<String, Object> entry : _properties.entrySet())
+                {
+                    DomainProperty dp = dps.get(entry.getKey());
+                    if (dp != null)
+                        validateProperty(dp, entry.getValue(), errors);
+                }
+                if (!errors.isEmpty())
+                    throw new ValidationException(errors);
             }
 
             oldRecord = _formatItemRecord(user, _oldProperties, dps, (_itmOld != null ? _itmOld.getKey() : null));
@@ -304,6 +318,16 @@ public class ListItemImpl implements ListItem
                 ExperimentService.get().rollbackTransaction();
             }
         }
+    }
+
+    private boolean validateProperty(DomainProperty prop, Object value, List<ValidationError> errors)
+    {
+        boolean ret = true;
+        for (IPropertyValidator validator : prop.getValidators())
+        {
+            if (!validator.validate(value, errors)) ret = false;
+        }
+        return ret;
     }
 
     public void setProperty(DomainProperty property, Object value)

@@ -140,7 +140,7 @@ public class ListQueryUpdateService extends AbstractQueryUpdateService<ListItem,
         }
     }
 
-    protected void saveItem(User user, ListItem item) throws QueryUpdateServiceException, SQLException
+    protected void saveItem(User user, ListItem item) throws QueryUpdateServiceException, SQLException, ValidationException
     {
         try
         {

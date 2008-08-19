@@ -20,6 +20,8 @@ import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.DefaultPropertyValidator;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.gwt.client.model.GWTPropertyValidator;
+import org.labkey.api.query.ValidationError;
+import org.labkey.api.query.SimpleValidationError;
 import org.apache.commons.lang.BooleanUtils;
 
 import java.util.List;
@@ -59,7 +61,7 @@ public class RegExValidator extends DefaultPropertyValidator implements Validato
         return validator;
     }
 
-    public boolean isValid(IPropertyValidator validator, List<String> errors)
+    public boolean isValid(IPropertyValidator validator, List<ValidationError> errors)
     {
         try {
             Pattern.compile(validator.getExpressionValue());
@@ -67,12 +69,12 @@ public class RegExValidator extends DefaultPropertyValidator implements Validato
         }
         catch (PatternSyntaxException se)
         {
-            errors.add(se.getMessage());            
+            errors.add(new SimpleValidationError(se.getMessage()));
         }
         return false;
     }
 
-    public boolean validate(IPropertyValidator validator, Object value, List<String> errors)
+    public boolean validate(IPropertyValidator validator, Object value, List<ValidationError> errors)
     {
         try {
             Pattern expression = Pattern.compile(validator.getExpressionValue());
@@ -89,7 +91,7 @@ public class RegExValidator extends DefaultPropertyValidator implements Validato
         }
         catch (PatternSyntaxException se)
         {
-            errors.add(se.getMessage());
+            errors.add(new SimpleValidationError(se.getMessage()));
         }
         return false;
     }

@@ -31,6 +31,8 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.ValidationError;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.Group;
@@ -2006,6 +2008,11 @@ public class StudyManager
                 }
             }
             _dataSetHelper.clearCache(def);
+        }
+        catch (ValidationException ve)
+        {
+            for (ValidationError error : ve.getErrors())
+                errors.add(error.getMessage());
         }
         finally
         {
