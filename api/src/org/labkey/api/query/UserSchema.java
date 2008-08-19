@@ -74,7 +74,7 @@ abstract public class UserSchema extends AbstractSchema
 
     public Set<String> getSchemaNames()
     {
-        Set<String> ret = new HashSet(super.getSchemaNames());
+        Set<String> ret = new HashSet<String>(super.getSchemaNames());
         ret.add("Folder");
         return ret;
     }
@@ -121,7 +121,7 @@ abstract public class UserSchema extends AbstractSchema
 
     public List<String> getTableAndQueryNames(boolean visibleOnly)
     {
-        Set<String> set = new HashSet();
+        Set<String> set = new HashSet<String>();
         set.addAll(visibleOnly ? getVisibleTableNames() : getTableNames());
         for (Map.Entry<String, QueryDefinition> entry : QueryService.get().getQueryDefs(getContainer(), getSchemaName()).entrySet())
         {
@@ -130,7 +130,7 @@ abstract public class UserSchema extends AbstractSchema
                 set.add(entry.getKey());
             }
         }
-        List<String> ret = new ArrayList(set);
+        List<String> ret = new ArrayList<String>(set);
 
         Collections.sort(ret, new Comparator<String>()
         {

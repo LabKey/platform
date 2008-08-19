@@ -364,13 +364,13 @@ public class PageFlowUtil
     }
 
 
-    public static String toQueryString(Collection<? extends Map.Entry<? extends Object, ? extends Object>> c)
+    public static String toQueryString(Collection<? extends Map.Entry<?,?>> c)
     {
         if (null == c || c.isEmpty())
             return null;
         String strAnd = "";
         StringBuffer sb = new StringBuffer();
-        for (Map.Entry<? extends Object, ? extends Object> entry : c)
+        for (Map.Entry<?,?> entry : c)
         {
             sb.append(strAnd);
             Object key = entry.getKey();
@@ -425,9 +425,9 @@ public class PageFlowUtil
     }
 
 
-    public static Map<Object, Object> map(Object... args)
+    public static <T> Map<T, T> map(T... args)
     {
-        HashMap<Object, Object> m = new HashMap<Object, Object>();
+        HashMap<T, T> m = new HashMap<T, T>();
         for (int i = 0; i < args.length; i += 2)
             m.put(args[i], args[i + 1]);
         return m;
@@ -1745,6 +1745,7 @@ public class PageFlowUtil
     //
 
     @Deprecated
+    @SuppressWarnings("deprecation")
     static public ActionURL urlFor(Enum action, Container container)
     {
         String pageFlowName = ModuleLoader.getInstance().getPageFlowForPackage(action.getClass().getPackage());
@@ -1778,7 +1779,7 @@ public class PageFlowUtil
         return strSelect(selectName, map.keySet(), map.values(), current);
     }
 
-    static public String strSelect(String selectName, Collection<? extends Object> values, Collection<String> labels, Object current)
+    static public String strSelect(String selectName, Collection<?> values, Collection<String> labels, Object current)
     {
         if (values.size() != labels.size())
             throw new IllegalArgumentException();
