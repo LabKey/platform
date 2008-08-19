@@ -98,7 +98,7 @@ public class PipelineStatusManager
         return asf[0];
     }
 
-    public static void setStatusFile(ViewBackgroundInfo info, PipelineStatusFile sf)
+    public static void setStatusFile(ViewBackgroundInfo info, PipelineStatusFileImpl sf, boolean notifyOnError)
             throws SQLException, Container.ContainerException
     {
         PipelineStatusFileImpl sfSet = (PipelineStatusFileImpl) sf;
@@ -131,6 +131,12 @@ public class PipelineStatusManager
             Table.update(user, pipeline.getTableInfoStatusFiles(), sfSet,
                     new Integer(sfExist.getRowId()), null);
         }
+
+        if (notifyOnError && PipelineJob.ERROR_STATUS.equals(sfSet.getStatus()) &&
+                (sfExist == null || !PipelineJob.ERROR_STATUS.equals(sfExist.getStatus())))
+        {
+            PipelineManager.sendNotificationEmail(sf, info.getContainer());
+        }
     }
 
     public static void setStatusFile(PipelineJob job, PipelineStatusFileImpl sf)
@@ -155,14 +161,12 @@ public class PipelineStatusManager
                     eio.getMessage());
         }
 
-        setStatusFile(job.getInfo(), sf);
+        setStatusFile(job.getInfo(), sf, isNotifyOnError(job));
 
         if (PipelineJob.ERROR_STATUS.equals(status))
         {
             // Count this error on the job.
             job.setErrors(job.getErrors() + 1);
-
-            PipelineManager.sendNotificationEmail(sf, job.getContainer());
         }
         else if (PipelineJob.COMPLETE_STATUS.equals(status))
         {
@@ -173,6 +177,19 @@ public class PipelineStatusManager
             // Notify if this is not a split job
             if (job.getParentGUID() == null)
                 PipelineManager.sendNotificationEmail(sf, job.getContainer());
+        }
+    }
+
+    private static boolean isNotifyOnError(PipelineJob job)
+    {
+        try
+        {
+            return !job.isAutoRetry();
+        }
+        catch (Exception e)
+        {
+            // If we don't know, then err on the side of overnotifying.
+            return true;
         }
     }
 
@@ -200,15 +217,18 @@ public class PipelineStatusManager
         }
     }
 
-    public static void ensureError(ViewBackgroundInfo info, String jobId) throws Exception
+    public static void ensureError(PipelineJob job) throws Exception
     {
-        PipelineStatusFileImpl sfExist = getJobStatusFile(jobId);
+        PipelineStatusFileImpl sfExist = getJobStatusFile(job.getJobGUID());
         if (sfExist == null)
-            throw new SQLException("Status for the job " + jobId + " was not found.");
+            throw new SQLException("Status for the job " + job.getJobGUID() + " was not found.");
 
-        sfExist.setStatus(PipelineJob.ERROR_STATUS);
-        sfExist.setInfo(null);
-        setStatusFile(info, sfExist);
+        if (!PipelineJob.ERROR_STATUS.equals(sfExist.getStatus()))
+        {
+            sfExist.setStatus(PipelineJob.ERROR_STATUS);
+            sfExist.setInfo(null);
+            setStatusFile(job.getInfo(), sfExist, isNotifyOnError(job));
+        }
     }
 
     public static void storeJob(String jobId, String xml) throws SQLException
@@ -346,7 +366,7 @@ public class PipelineStatusManager
                             info.getUser(),
                             info.getUrlHelper());
 
-            setStatusFile(infoSet, sf);
+            setStatusFile(infoSet, sf, false);
         }
     }
 

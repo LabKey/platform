@@ -1221,7 +1221,7 @@ public class StatusController extends SpringActionController
             }
 
             status.setStatus(form.getStatus());
-            setStatusFile(getViewBackgroundInfo(), status);
+            setStatusFile(getViewBackgroundInfo(), status, false);
         }
     }
 
@@ -1248,7 +1248,7 @@ public class StatusController extends SpringActionController
                     status = "ERROR->Access denied";
                 else
                 {
-                    setStatusFile(getViewBackgroundInfo(), form.getBean());
+                    setStatusFile(getViewBackgroundInfo(), form.getBean(), false);
                     status = "SUCCESS";
                 }
             }

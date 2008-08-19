@@ -69,8 +69,12 @@ public class JobDisplayColumn extends SimpleDisplayColumn
                 }
             });
             int rowIndex = 0;
-            out.write("<table class=\"labkey-data-region labkey-show-borders\">\n");
-            out.write("<colgroup><col width=\"100\"/><col width=\"400\"/></colgroup>\n");
+            out.write("<table class=\"labkey-data-region labkey-show-borders\">\n" +
+                    "<colgroup><col width=\"100\"/><col width=\"400\"/></colgroup>\n" +
+                    "<thead><tr>\n" +
+                    "    <th class=\"labkey-col-header-filter\" align=\"left\"><div>Status</div></th>\n" +
+                    "    <th class=\"labkey-col-header-filter\" align=\"left\"><div>Description</div></th>\n" +
+                    "</tr></thead>");
             for (PipelineStatusFile sf : _jobStatus)
             {
                 if (rowIndex++ % 2 == 0)

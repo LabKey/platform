@@ -16,8 +16,8 @@
 package org.labkey.pipeline.mule;
 
 import org.labkey.pipeline.api.PipelineStatusManager;
+import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.api.data.Container;
-import org.apache.log4j.Logger;
 
 import java.sql.SQLException;
 
@@ -30,6 +30,7 @@ public class PipelineStatusSetter
 {
     public void set(EPipelineStatus status) throws Container.ContainerException, SQLException
     {
-        PipelineStatusManager.setStatusFile(status.getInfo(), status.getStatusFile());
+        // todo: fix this if it ever gets used
+        PipelineStatusManager.setStatusFile(status.getInfo(), (PipelineStatusFileImpl) status.getStatusFile(), false);
     }
 }

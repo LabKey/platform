@@ -389,7 +389,7 @@ public class PipelineServiceImpl extends PipelineService
 
     public void setStatusFile(ViewBackgroundInfo info, PipelineStatusFile sf) throws Exception
     {
-        PipelineStatusManager.setStatusFile(info, sf);
+        PipelineStatusManager.setStatusFile(info, (PipelineStatusFileImpl) sf, false);
     }
 
     public void setStatusFile(PipelineJob job, String status, String statusInfo) throws Exception
@@ -399,7 +399,7 @@ public class PipelineServiceImpl extends PipelineService
 
     public void ensureError(PipelineJob job) throws Exception
     {
-        PipelineStatusManager.ensureError(job.getInfo(), job.getJobGUID());
+        PipelineStatusManager.ensureError(job);
     }
 
     private List<String> parseArray(String dbPaths)
