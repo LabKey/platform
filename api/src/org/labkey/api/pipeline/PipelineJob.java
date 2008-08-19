@@ -510,7 +510,29 @@ abstract public class PipelineJob extends Job implements Serializable
         // Initialize the task pipeline
         if (getTaskPipeline() != null)
         {
+            // Save the current job state marshalled to XML, in case of error.
+            String xml = PipelineJobService.get().getJobStore().toXML(this);
+
+            // Note runStateMachine returns false, if the job cannot be run locally.
+            // The job may still need to be put on a JMS queue for remote processing.
+            // Therefore, the return value cannot be used to determine whether the
+            // job should be queued.
             runStateMachine();
+
+            // If an error occurred trying to find the first runnable state, then
+            // store the original job state to allow retry.
+            if (getActiveTaskStatus() == TaskStatus.error)
+            {
+                try
+                {
+                    PipelineJobService.get().getJobStore().fromXML(xml).store();
+                }
+                catch (Exception e)
+                {
+                    warn("Failed to checkpoint '" + getDescription() + "' job.", e);
+                }
+                return false;
+            }
 
             // If initialization put this job into a state where it is
             // waiting, then it should not be put on the queue.
@@ -757,12 +779,17 @@ abstract public class PipelineJob extends Job implements Serializable
         }
     }
 
-    public boolean autoRetry()
+    public boolean isAutoRetry() throws IOException, SQLException
     {
         TaskFactory factory = getActiveTaskFactory();
+        return (_activeTaskRetries < factory.getAutoRetry() && factory.isAutoRetryEnabled(this));
+    }
+
+    public boolean autoRetry()
+    {
         try
         {
-            if (_activeTaskRetries < factory.getAutoRetry() && factory.isAutoRetryEnabled(this))
+            if (isAutoRetry())
             {
                 PipelineJobService.get().getJobStore().retry(getJobGUID());
                 // Retry has been queued

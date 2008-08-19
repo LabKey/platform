@@ -62,7 +62,11 @@ public class SafeFileAppender extends AppenderSkeleton
         }
         catch (IOException e)
         {
-            _log.error("Failed appending to file.", e);
+            File parentFile = _file.getParentFile();
+            if (!NetworkDrive.exists(parentFile) && parentFile.mkdirs())
+                append(loggingEvent);
+            else
+                _log.error("Failed appending to file.", e);
         }
         finally
         {
