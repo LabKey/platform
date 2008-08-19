@@ -452,7 +452,7 @@ public class UserManager
         for (UserName userName : m.values())
             list.add(userName.getEmail());
 
-        Collections.sort(list); // TODO: Use a sorted List?
+        Collections.sort(list);
         return list;
     }
 

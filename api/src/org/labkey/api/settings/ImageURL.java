@@ -28,6 +28,8 @@ import java.util.regex.Matcher;
  * Date: Aug 6, 2008
  * Time: 10:44:58 AM
  */
+
+// Used for linking to resources that have a container but aren't pageflow actions.  Examples include logos, favicons, and stylesheets.
 public class ImageURL extends ActionURL
 {
     private static Pattern urlPattern = Pattern.compile("(/.*)?/(\\w*)\\.(.*)");

@@ -18,6 +18,7 @@ package org.labkey.api.security;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.data.Container;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -37,6 +38,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     protected int[] _groups = null;
     private Date _lastLogin = null;
     private User _impersonatingUser = null;
+    private Container _impersonationProject = null;
     private boolean _active = false;
 
     static final User guest = new GuestUser();
@@ -239,6 +241,16 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     public boolean isImpersonated()
     {
         return null != _impersonatingUser;
+    }
+
+    public Container getImpersonationProject()
+    {
+        return _impersonationProject;
+    }
+
+    public void setImpersonationProject(Container impersonationProject)
+    {
+        _impersonationProject = impersonationProject;
     }
 
     public boolean isActive()

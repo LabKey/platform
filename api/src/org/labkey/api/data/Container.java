@@ -200,6 +200,12 @@ public class Container implements Serializable
 
     public boolean hasPermission(User user, int perm)
     {
+        if (user.isImpersonated() && !isRoot())  // TODO: Allow root for now -- need to disable
+        {
+            if (null != user.getImpersonationProject() && !getProject().equals(user.getImpersonationProject()))
+                return false;
+        }
+
         ACL acl = getAcl();
         return acl.hasPermission(user, perm);
     }

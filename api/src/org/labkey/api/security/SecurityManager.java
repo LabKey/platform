@@ -364,15 +364,22 @@ public class SecurityManager
         if (null == u)
         {
             User sessionUser = null;
-            Integer userId = (Integer) request.getSession(true).getAttribute(User.class.getName() + "$userId");
+            HttpSession session = request.getSession(true);
+
+            Integer userId = (Integer) session.getAttribute(User.class.getName() + "$userId");
             if (null != userId)
                 sessionUser = UserManager.getUser(userId.intValue());
             if (null != sessionUser)
             {
-                Integer impersonatingUserId = (Integer) request.getSession(true).getAttribute(User.class.getName() + "$impersonatingUserId");
+                Integer impersonatingUserId = (Integer) session.getAttribute(User.class.getName() + "$impersonatingUserId");
 
                 if (null != impersonatingUserId)
                     sessionUser.setImpersonatingUser(UserManager.getUser(impersonatingUserId.intValue()));
+
+                String projectId = (String) session.getAttribute(User.class.getName() + "$impersonationProject");
+
+                if (null != projectId)
+                    sessionUser.setImpersonationProject(ContainerManager.getForId(projectId));
 
                 // We want groups membership to be calculated on every request (but just once)
                 // the cloned User will calculate groups exactly once
@@ -393,7 +400,7 @@ public class SecurityManager
                 if (null != u)
                 {
                     request.setAttribute(AUTHENTICATION_METHOD, "Basic");
-                    SecurityManager.setAuthenticatedUser(request, u, null);
+                    SecurityManager.setAuthenticatedUser(request, u, null, null);
                 }
             }
         }
@@ -401,7 +408,7 @@ public class SecurityManager
     }
 
 
-    public static void setAuthenticatedUser(HttpServletRequest request, User user, User impersonatingUser)
+    public static void setAuthenticatedUser(HttpServletRequest request, User user, User impersonatingUser, Container project)
     {
         invalidateSession(request);      // Clear out terms-of-use and other session info that guest / previous user may have
 
@@ -411,6 +418,9 @@ public class SecurityManager
 
         if (null != impersonatingUser)
             newSession.setAttribute(User.class.getName() + "$impersonatingUserId", impersonatingUser.getUserId());
+
+        if (null != project)
+            newSession.setAttribute(User.class.getName() + "$impersonationProject", project.getId());
     }
 
 
@@ -423,7 +433,7 @@ public class SecurityManager
 
     private static final String IMPERSONATORS_SESSION_MAP_KEY = "ImpersonatorsSessionMapKey";
 
-    public static void impersonate(ViewContext viewContext, User impersonatedUser)
+    public static void impersonate(ViewContext viewContext, User impersonatedUser, Container project)
     {
         HttpServletRequest request = viewContext.getRequest();
         User adminUser = viewContext.getUser();
@@ -440,7 +450,7 @@ public class SecurityManager
             impersonatorSessionAttributes.put(name, impersonatorSession.getAttribute(name));
         }
 
-        SecurityManager.setAuthenticatedUser(request, impersonatedUser, adminUser);
+        SecurityManager.setAuthenticatedUser(request, impersonatedUser, adminUser, project);
         HttpSession userSession = request.getSession(true);
         userSession.setAttribute(IMPERSONATORS_SESSION_MAP_KEY, impersonatorSessionAttributes);
 
@@ -476,7 +486,7 @@ public class SecurityManager
             else
             {
                 // Just in case
-                setAuthenticatedUser(request, adminUser, null);
+                setAuthenticatedUser(request, adminUser, null, null);
             }
 
             AuditLogService.get().addEvent(viewContext, UserManager.USER_AUDIT_EVENT, impersonatedUser.getUserId(),
@@ -1184,6 +1194,38 @@ public class SecurityManager
         return users;
     }
 
+
+    // TODO: Redundant with getProjectMembers -- this approach should be more efficient for simple cases
+    // TODO: Cache this set
+    public static Set<Integer> getProjectMembersIds(Container c)
+    {
+        SQLFragment sql = SecurityManager.getProjectMembersSQL(c.getProject());
+        sql.insert(0, "SELECT DISTINCT members.UserId ");
+
+        Integer[] projectMembers = null;
+
+        try
+        {
+            projectMembers = Table.executeArray(core.getSchema(), sql, Integer.class);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+
+        return PageFlowUtil.set(projectMembers);
+    }
+
+
+    // True fragment -- need to prepend SELECT DISTINCT() or IN () for this to be valid SQL
+    public static SQLFragment getProjectMembersSQL(Container c)
+    {
+        return new SQLFragment("FROM " + core.getTableInfoMembers() + " members INNER JOIN " + core.getTableInfoUsers() + " users ON members.UserId = users.UserId\n" +
+                                    "INNER JOIN " + core.getTableInfoPrincipals() + " groups ON members.GroupId = groups.UserId\n" +
+                                    "WHERE (groups.Container = ?)", c);
+    }
+
+    // TODO: Should return a set
     public static List<User> getProjectMembers(Container c, boolean includeGlobal)
     {
         if (c != null && !c.isProject())
@@ -1302,7 +1344,7 @@ public class SecurityManager
         }
     }
 
-    public static List<Pair<Integer,String>> getGroupMemberNamesAndIds(Integer groupId) throws SQLException
+    public static List<Pair<Integer, String>> getGroupMemberNamesAndIds(Integer groupId) throws SQLException
     {
         ResultSet rs = null;
         try
@@ -2323,5 +2365,4 @@ public class SecurityManager
                 return group.getName();
         }
     }
-
 }

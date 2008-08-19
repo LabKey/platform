@@ -23,7 +23,6 @@ import org.springframework.web.servlet.ModelAndView;
 import org.apache.commons.lang.StringUtils;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: May 16, 2007
  * Time: 1:48:01 PM
