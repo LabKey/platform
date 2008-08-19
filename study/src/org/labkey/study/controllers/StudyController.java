@@ -166,7 +166,16 @@ public class StudyController extends BaseStudyController
                     String typeURI = AssayPublishManager.getInstance().getDomainURIString(StudyManager.getInstance().getStudy(getContainer()), form.getTypeName());
                     DomainDescriptor dd = OntologyManager.getDomainDescriptor(typeURI, getContainer());
                     if (null != dd)
-                        errors.reject("defineDatasetType", "There is already a dataset named " + form.getTypeName() + " in this folder.");
+                        errors.reject("defineDatasetType", "There is a dataset named " + form.getTypeName() + " already defined in this folder.");
+
+                    // Check if a query or table exists with the same name
+                    Study study = StudyManager.getInstance().getStudy(getContainer());
+                    StudyQuerySchema studySchema = new StudyQuerySchema(study, getUser(), true);
+                    if (studySchema.getTableNames().contains(form.getTypeName()) ||
+                        QueryService.get().getQueryDef(getContainer(), "study", form.getTypeName()) != null)
+                    {
+                        errors.reject("defineDatasetType", "There is a query named " + form.getTypeName() + " already defined in this folder.");
+                    }
                 }
             }
             else if (null != form.getDataSetId())
@@ -3299,7 +3308,6 @@ public class StudyController extends BaseStudyController
     public class UpdateQCStateAction extends FormViewAction<UpdateQCStateForm>
     {
         private int _datasetId;
-        private Study _study;
 
         public void validateCommand(UpdateQCStateForm updateQCForm, Errors errors)
         {
@@ -3314,15 +3322,15 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(UpdateQCStateForm updateQCForm, boolean reshow, BindException errors) throws Exception
         {
-            _study = getStudy();
+            Study study = getStudy();
             _datasetId = updateQCForm.getDatasetId();
-            DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(_study, _datasetId);
+            DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, _datasetId);
             Set<String> lsids = null;
             if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
                 lsids = DataRegionSelection.getSelected(getViewContext(), updateQCForm.getDataRegionSelectionKey(), true, false);
             if (lsids == null || lsids.isEmpty())
                 return new HtmlView("No samples selected.  [<a href=\"javascript:back()\">back</a>]");
-            StudyQuerySchema querySchema = new StudyQuerySchema(_study, getUser(), true);
+            StudyQuerySchema querySchema = new StudyQuerySchema(study, getUser(), true);
             QuerySettings qs = new QuerySettings(getViewContext(), DataSetQueryView.DATAREGION);
             qs.setSchemaName(querySchema.getSchemaName());
             qs.setQueryName(def.getLabel());
@@ -3386,7 +3394,7 @@ public class StudyController extends BaseStudyController
             ActionURL url = new ActionURL(DatasetAction.class, getContainer());
             url.addParameter(DataSetDefinition.DATASETKEY, updateQCForm.getDatasetId());
             if (updateQCForm.getNewState() != null)
-                url.addParameter(SharedFormParameters.QCState, updateQCForm.getNewState());
+                url.addParameter(SharedFormParameters.QCState, updateQCForm.getNewState().intValue());
             return url;
         }
 
@@ -4357,7 +4365,7 @@ public class StudyController extends BaseStudyController
                 if (dsDef == null)
                     return HttpView.throwNotFoundMV("Unable to edit the created DataSet Definition");
 
-                Map props = PageFlowUtil.map(
+                Map<String,String> props = PageFlowUtil.map(
                         "studyId", String.valueOf(study.getRowId()),
                         "datasetId", String.valueOf(dsDef.getDataSetId()),
                         "typeURI", dsDef.getTypeURI(),
@@ -4440,7 +4448,7 @@ public class StudyController extends BaseStudyController
                     if (dsDef == null)
                         return HttpView.throwNotFoundMV("Unable to edit the created DataSet Definition");
 
-                    Map props = PageFlowUtil.map(
+                    Map<String,String> props = PageFlowUtil.map(
                             "studyId", String.valueOf(study.getRowId()),
                             "datasetId", String.valueOf(dsDef.getDataSetId()),
                             "typeURI", dsDef.getTypeURI(),

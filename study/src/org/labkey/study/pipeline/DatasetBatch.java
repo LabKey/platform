@@ -698,6 +698,11 @@ public class DatasetBatch extends StudyBatch implements Serializable
             }
             catch (Exception x)
             {
+                // If we have an active transaction, we need to roll it back
+                // before we log the error or the logging will take place inside the transaction
+                if (scope.isTransactionActive())
+                    scope.rollbackTransaction();
+                
                 _logError("Exception while importing file: " + tsv, x);
             }
             finally

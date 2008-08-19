@@ -194,10 +194,17 @@ public class QueryControllerSpring extends SpringActionController
                 }
 
                 UserSchema schema = form.getSchema();
-                QueryDef existing = QueryManager.get().getQueryDef(getContainer(), form.getSchemaName(), form.ff_newQueryName);
+                String newQueryName = form.ff_newQueryName;
+                QueryDef existing = QueryManager.get().getQueryDef(getContainer(), form.getSchemaName(), newQueryName);
                 if (existing != null)
                 {
-                    errors.reject(ERROR_MSG, "The query '" + form.ff_newQueryName + "' already exists.");
+                    errors.reject(ERROR_MSG, "The query '" + newQueryName + "' already exists.");
+                    return false;
+                }
+                // bug 6095 -- conflicting query and dataset names
+                if (form.getSchema().getTableNames().contains(newQueryName))
+                {
+                    errors.reject(ERROR_MSG, "The query '" + newQueryName + "' already exists as a table");
                     return false;
                 }
                 QueryDefinition newDef = QueryService.get().createQueryDef(getContainer(), form.getSchemaName(), form.ff_newQueryName);
