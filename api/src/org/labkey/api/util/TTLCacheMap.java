@@ -23,7 +23,6 @@ import java.lang.ref.ReferenceQueue;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Dec 11, 2006
  * Time: 3:49:11 PM
@@ -43,7 +42,7 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
      * the value, not the key.  This allows GC to reclaim large cached objects.
      *
      * NOTE: the usual way to do this is to have Entry extend SoftReference
-     * However, I just want to reuse base class as conviently as possible.
+     * However, I just want to reuse base class as conveniently as possible.
      */
     ReferenceQueue<V> _q = new ReferenceQueue<V>();
 

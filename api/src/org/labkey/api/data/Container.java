@@ -200,7 +200,7 @@ public class Container implements Serializable
 
     public boolean hasPermission(User user, int perm)
     {
-        if (user.isImpersonated() && !isRoot())  // TODO: Allow root for now -- need to disable
+        if (user.isImpersonated() && !isRoot())  // TODO: Allow root for now -- need to dissallow once a few root-level URLs are container-qualified
         {
             if (null != user.getImpersonationProject() && !getProject().equals(user.getImpersonationProject()))
                 return false;
