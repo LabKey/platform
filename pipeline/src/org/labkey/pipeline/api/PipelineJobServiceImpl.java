@@ -386,6 +386,9 @@ public class PipelineJobServiceImpl extends PipelineJobService
 
     public String getExecutablePath(String exeRel, String packageName, String ver) throws FileNotFoundException
     {
+        // Make string replacements
+        exeRel = getVersionedPath(exeRel, packageName, ver);
+        
         String toolsDir = getAppProperties().getToolsDirectory();
         if (toolsDir == null || toolsDir.trim().equals(""))
         {
@@ -402,7 +405,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
 
         // Don't check for file existence with executable paths, since they may be
         // lacking an extension (exe, bat, cmd) on Windows platforms.
-        return getToolsDirPath(toolsDir, getVersionedPath(exeRel, packageName, ver), false);
+        return getToolsDirPath(toolsDir, exeRel, false);
     }
 
     public String getJarPath(String jarRel, String packageName, String ver) throws FileNotFoundException
