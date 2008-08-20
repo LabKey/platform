@@ -276,7 +276,7 @@ public abstract class DefaultModule implements Module
         }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Error running scripts in module " + getName(), e);
         }
     }
 

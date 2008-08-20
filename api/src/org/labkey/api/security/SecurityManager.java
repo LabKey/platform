@@ -374,12 +374,14 @@ public class SecurityManager
                 Integer impersonatingUserId = (Integer) session.getAttribute(User.class.getName() + "$impersonatingUserId");
 
                 if (null != impersonatingUserId)
+                {
                     sessionUser.setImpersonatingUser(UserManager.getUser(impersonatingUserId.intValue()));
 
-                String projectId = (String) session.getAttribute(User.class.getName() + "$impersonationProject");
+                    String projectId = (String) session.getAttribute(User.class.getName() + "$impersonationProject");
 
-                if (null != projectId)
-                    sessionUser.setImpersonationProject(ContainerManager.getForId(projectId));
+                    if (null != projectId)
+                        sessionUser.setImpersonationProject(ContainerManager.getForId(projectId));
+                }
 
                 // We want groups membership to be calculated on every request (but just once)
                 // the cloned User will calculate groups exactly once
