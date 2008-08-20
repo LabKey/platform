@@ -323,7 +323,7 @@ public class SecurityManager
         }
         catch (ValidEmail.InvalidEmailException e)
         {
-            throw new RuntimeException(e);
+            return null;  // Invalid email means failed auth
         }
     }
 

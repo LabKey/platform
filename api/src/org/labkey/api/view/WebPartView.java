@@ -194,7 +194,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
                 }
                 else
                 {
-                    ExceptionUtil.logExceptionToMothership(request, exceptionToRender);
+                    Logger.getLogger(WebPartView.class).error("renderView() exception in " + getClass().getName() + " while responding to " + getViewContext().getActionURL().getLocalURIString(), exceptionToRender);
                 }
             }
         }

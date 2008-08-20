@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p/>
  * ScheduledThreadPoolExecutor could, of course, be used directly.  One annoyance is
  * that is is hard to track when tasks start (except by wrapping the run method).
- * Another annoyance is that the object you use the track the task (Future
+ * Another annoyance is that the object you use to track the task (Future
  * returned by submit()) is different than the object you submit.
  * <p/>
  * In short this is a ScheduledTheadPoolExecutor that lets you submit a Job,
