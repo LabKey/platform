@@ -342,6 +342,7 @@ public class UserController extends SpringActionController
     {
         User user = getUser();
 
+        // Site admin can do anything
         if (user.isAdministrator())
             return;
 
@@ -349,7 +350,7 @@ public class UserController extends SpringActionController
 
         if (c.isRoot())
         {
-            // Must be site admin to view at the root (all users)
+            // Only site admin can view at the root (all users)
             HttpView.throwUnauthorized();
         }
         else
@@ -767,17 +768,7 @@ public class UserController extends SpringActionController
 
             // Anyone can view their own record; otherwise, make sure current user can view the details of this user
             if (!isOwnRecord)
-            {
-                try
-                {
-                    authorizeUserAction(_detailsUserId, "view details of");
-                }
-                catch (UnauthorizedException e)
-                {
-                    _log.error("User = " + user.toString() + " userId = " + userId + " form.getUserId() = " + form.getUserId() + " _detailsUserId = " + _detailsUserId + " ");
-                    throw e;
-                }
-            }
+                authorizeUserAction(_detailsUserId, "view details of");
 
             Container c = getContainer();
             boolean isSiteAdmin = user.isAdministrator();
