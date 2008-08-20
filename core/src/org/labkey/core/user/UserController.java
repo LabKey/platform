@@ -24,14 +24,14 @@ import org.labkey.api.action.*;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.data.*;
+import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PrintTemplate;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.portal.ProjectUrls;
 import org.labkey.core.query.GroupAuditViewFactory;
 import org.labkey.core.query.UserAuditViewFactory;
 import org.labkey.core.security.SecurityController;
@@ -338,7 +338,7 @@ public class UserController extends SpringActionController
 
     // Site admins can act on any user
     // Project admins can only act on users who are project members
-    private void authorizeUserAction(Integer userId) throws UnauthorizedException
+    private void authorizeUserAction(Integer userId, String action) throws UnauthorizedException
     {
         Container c = getContainer();
         User user = getUser();
@@ -359,7 +359,7 @@ public class UserController extends SpringActionController
 
             // ...and user must be a project member
             if (!SecurityManager.getProjectMembersIds(c).contains(userId))
-                HttpView.throwUnauthorized("Can only impersonate project members");
+                HttpView.throwUnauthorized("Project administrators can only " + action + " project members");
         }
     }
 
@@ -762,11 +762,21 @@ public class UserController extends SpringActionController
             User user = getUser();
             int userId = user.getUserId();
             _detailsUserId = Integer.valueOf(form.getUserId());
-            boolean isOwnRecord = (_detailsUserId == userId);
+            boolean isOwnRecord = (_detailsUserId.intValue() == userId);
 
             // Anyone can view their own record; otherwise, make sure current user can view the details of this user
             if (!isOwnRecord)
-                authorizeUserAction(_detailsUserId);
+            {
+                try
+                {
+                    authorizeUserAction(_detailsUserId, "view details of");
+                }
+                catch (UnauthorizedException e)
+                {
+                    _log.error("User = " + user.toString() + " userId = " + userId + " form.getUserId() = " + form.getUserId() + " _detailsUserId = " + _detailsUserId + " ");
+                    throw e;
+                }
+            }
 
             Container c = getContainer();
             boolean isSiteAdmin = user.isAdministrator();
@@ -1375,7 +1385,7 @@ public class UserController extends SpringActionController
 
             final User impersonatedUser = UserManager.getUser(email);
 
-            authorizeUserAction(impersonatedUser.getUserId());
+            authorizeUserAction(impersonatedUser.getUserId(), "impersonate");
             Container c = getContainer();
 
             if (c.isRoot())
