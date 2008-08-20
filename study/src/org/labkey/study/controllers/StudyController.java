@@ -4430,8 +4430,8 @@ public class StudyController extends BaseStudyController
                 boolean showHistory = BooleanUtils.toBoolean(getViewContext().getActionURL().getParameter("showHistory"));
                 boolean showDataset = BooleanUtils.toBoolean(getViewContext().getActionURL().getParameter("showDataset"));
 
-                box.addView(new JspView<QueryForm>("/org/labkey/study/view/editSnapshot.jsp", form, errors));
-                box.addView(new JspView<QueryForm>("/org/labkey/study/view/createDatasetSnapshot.jsp", form));
+                box.addView(new JspView<QueryForm>("/org/labkey/study/view/editSnapshot.jsp", form));
+                box.addView(new JspView<QueryForm>("/org/labkey/study/view/createDatasetSnapshot.jsp", form, errors));
 
                 if (showHistory)
                 {
@@ -4472,17 +4472,41 @@ public class StudyController extends BaseStudyController
 
         public boolean handlePost(QuerySnapshotForm form, BindException errors) throws Exception
         {
-            QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName(), form.getSnapshotName());
-            if (def != null)
+            List<String> errorList = new ArrayList<String>();
+
+            if (form.isUpdateSnapshot())
             {
-                def.setColumns(form.getFieldKeyColumns());
-                def.setUpdateDelay(form.getUpdateDelay());
-                _successURL = QuerySnapshotService.get(form.getSchemaName()).updateSnapshotDefinition(getViewContext(), def);
+                _successURL = QuerySnapshotService.get(form.getSchemaName()).updateSnapshot(form, errorList);
+
+                if (!errorList.isEmpty())
+                {
+                    for (String error : errorList)
+                        errors.reject(SpringActionController.ERROR_MSG, error);
+                    return false;
+                }
             }
             else
-                errors.reject("snapshotQuery.error", "Unable to create QuerySnapshotDefinition");
-
-            return false;
+            {
+                QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName(), form.getSnapshotName());
+                if (def != null)
+                {
+                    def.setColumns(form.getFieldKeyColumns());
+                    def.setUpdateDelay(form.getUpdateDelay());
+                    _successURL = QuerySnapshotService.get(form.getSchemaName()).updateSnapshotDefinition(getViewContext(), def, errorList);
+                    if (!errorList.isEmpty())
+                    {
+                        for (String error : errorList)
+                            errors.reject(SpringActionController.ERROR_MSG, error);
+                        return false;
+                    }
+                }
+                else
+                {
+                    errors.reject("snapshotQuery.error", "Unable to create QuerySnapshotDefinition");
+                    return false;
+                }
+            }
+            return true;
         }
 
         public ActionURL getSuccessURL(QuerySnapshotForm form)

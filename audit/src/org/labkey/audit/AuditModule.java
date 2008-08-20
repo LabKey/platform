@@ -41,7 +41,7 @@ public class AuditModule extends DefaultModule
 
     public AuditModule()
     {
-        super(NAME, 8.23, null, true);
+        super(NAME, 8.24, null, true);
         AuditLogService.registerProvider(AuditLogImpl.get());
         addController("audit", AuditController.class);
     }
@@ -81,7 +81,7 @@ public class AuditModule extends DefaultModule
 
     public void afterSchemaUpdate(ModuleContext moduleContext, ViewContext context)
     {
-        if (moduleContext.getInstalledVersion() < 8.23)
+        if (moduleContext.getInstalledVersion() < 8.24)
         {
             _startupTask = new Runnable() {
                 public void run()

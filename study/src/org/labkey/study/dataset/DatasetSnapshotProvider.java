@@ -155,7 +155,8 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         {
             QueryView view = QueryView.create(form);
             StringBuilder sb = new StringBuilder();
-            view.getTsvWriter().write(sb);
+            TSVGridWriter tsvWriter = new TSVGridWriter(view.getResultset());
+            tsvWriter.write(sb);
 
             if (!schema.getScope().isTransactionActive())
             {
@@ -214,7 +215,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         return form;
     }
 
-    public ActionURL updateSnapshot(QuerySnapshotForm form) throws Exception
+    public ActionURL updateSnapshot(QuerySnapshotForm form, List<String> errors) throws Exception
     {
         QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(form.getViewContext().getContainer(), form.getSchemaName(), form.getSnapshotName());
         if (def != null)
@@ -239,7 +240,8 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                     view.setShowExportButtons(false);
                     
                     StringBuilder sb = new StringBuilder();
-                    view.getTsvWriter().write(sb);
+                    TSVGridWriter tsvWriter = new TSVGridWriter(view.getResultset());
+                    tsvWriter.write(sb);
 
                     if (!schema.getScope().isTransactionActive())
                     {
@@ -249,9 +251,11 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                     int numRowsDeleted = StudyManager.getInstance().purgeDataset(study, dsDef);
 
                     // import the new data
-                    List<String> errors = new ArrayList<String>();
                     String[] newRows = StudyManager.getInstance().importDatasetTSV(study, form.getViewContext().getUser(), dsDef, sb.toString(), System.currentTimeMillis(),
                             Collections.<String,String>emptyMap(), errors, true, null);
+
+                    if (!errors.isEmpty())
+                        return null;
 
                     if (startedTransaction)
                         schema.getScope().commitTransaction();
@@ -267,18 +271,20 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 {
                     if (startedTransaction && schema.getScope().isTransactionActive())
                         schema.getScope().rollbackTransaction();
-
-                    def.setLastUpdated(new Date());
-                    def.save(form.getViewContext().getUser(), form.getViewContext().getContainer());
+                    else
+                    {
+                        def.setLastUpdated(new Date());
+                        def.save(form.getViewContext().getUser(), form.getViewContext().getContainer());
+                    }
                 }
             }
         }
         return null;
     }
 
-    public ActionURL updateSnapshotDefinition(ViewContext context, QuerySnapshotDefinition def) throws Exception
+    public ActionURL updateSnapshotDefinition(ViewContext context, QuerySnapshotDefinition def, List<String> errors) throws Exception
     {
-        ActionURL ret = super.updateSnapshotDefinition(context, def);
+        ActionURL ret = super.updateSnapshotDefinition(context, def, errors);
 
         // update the study dataset columns
         Study study = StudyManager.getInstance().getStudy(context.getContainer());
@@ -483,7 +489,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 form.setViewContext(context);
                 form.init(_def);
 
-                QuerySnapshotService.get(StudyManager.getSchemaName()).updateSnapshot(form);
+                QuerySnapshotService.get(StudyManager.getSchemaName()).updateSnapshot(form, new ArrayList<String>());
             }
             catch(Exception e)
             {

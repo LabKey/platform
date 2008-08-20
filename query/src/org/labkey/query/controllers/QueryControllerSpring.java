@@ -624,8 +624,17 @@ public class QueryControllerSpring extends SpringActionController
             QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName(), form.getSnapshotName());
             if (def != null)
             {
+                List<String> errorList = new ArrayList<String>();
+
                 def.setColumns(form.getFieldKeyColumns());
-                _successURL = QuerySnapshotService.get(form.getSchemaName()).updateSnapshotDefinition(getViewContext(), def);
+
+                _successURL = QuerySnapshotService.get(form.getSchemaName()).updateSnapshotDefinition(getViewContext(), def, errorList);
+                if (!errorList.isEmpty())
+                {
+                    for (String error : errorList)
+                        errors.reject(SpringActionController.ERROR_MSG, error);
+                    return false;
+                }
             }
             else
                 errors.reject("snapshotQuery.error", "Unable to create QuerySnapshotDefinition");
@@ -649,7 +658,8 @@ public class QueryControllerSpring extends SpringActionController
     {
         public ModelAndView getView(QuerySnapshotForm form, BindException errors) throws Exception
         {
-            ActionURL url = QuerySnapshotService.get(form.getSchemaName()).updateSnapshot(form);
+            List<String> errorList = new ArrayList<String>();
+            ActionURL url = QuerySnapshotService.get(form.getSchemaName()).updateSnapshot(form, errorList);
             if (url != null)
                 return HttpView.redirect(url);
             return null;

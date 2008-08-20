@@ -66,7 +66,7 @@ public class AuditQueryViewImpl extends AuditLogQueryView
             {
                 for (DisplayColumn dc : view.getDataRegion().getDisplayColumns())
                 {
-                    if (!_columns.contains(dc.getName().toLowerCase()))
+                    if (!_columns.contains(dc.getColumnInfo().getName().toLowerCase()))
                         dc.setVisible(false);
                 }
             }
