@@ -340,21 +340,22 @@ public class UserController extends SpringActionController
     // Project admins can only act on users who are project members
     private void authorizeUserAction(Integer userId, String action) throws UnauthorizedException
     {
-        Container c = getContainer();
         User user = getUser();
-        boolean isSiteAdmin = user.isAdministrator();
-        boolean hasAdminPerm = c.hasPermission(user, ACL.PERM_ADMIN);
+
+        if (user.isAdministrator())
+            return;
+
+        Container c = getContainer();
 
         if (c.isRoot())
         {
             // Must be site admin to view at the root (all users)
-            if (!isSiteAdmin)
-                HttpView.throwUnauthorized();
+            HttpView.throwUnauthorized();
         }
         else
         {
             // Must be project admin to view outside the root...
-            if (!hasAdminPerm)
+            if (!c.hasPermission(user, ACL.PERM_ADMIN))
                 HttpView.throwUnauthorized();
 
             // ...and user must be a project member
