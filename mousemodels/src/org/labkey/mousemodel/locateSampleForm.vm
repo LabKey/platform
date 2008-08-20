@@ -1,5 +1,0 @@
-$!message
-<form action="$request.contextPath/MouseModel-Sample$container.path/locateSample.view">
-<input type=hidden name="modelId" value="$!modelId">
-Sample Id: <input type=text name="sampleId" > <input type=image src='$tools.buttonSrc("Find Sample")'>
-</form>
