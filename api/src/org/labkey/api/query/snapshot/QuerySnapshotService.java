@@ -68,9 +68,9 @@ public class QuerySnapshotService
          * Regenerates the snapshot data, may be invoked either as the result of a manual or
          * automatic update. The implementation is responsible for logging its own audit event.
          */
-        public ActionURL updateSnapshot(QuerySnapshotForm form) throws Exception;
+        public ActionURL updateSnapshot(QuerySnapshotForm form, List<String> errors) throws Exception;
 
-        public ActionURL updateSnapshotDefinition(ViewContext context, QuerySnapshotDefinition def) throws Exception;
+        public ActionURL updateSnapshotDefinition(ViewContext context, QuerySnapshotDefinition def, List<String> errors) throws Exception;
 
         /**
          * Returns the audit history view for a snapshot.

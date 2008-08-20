@@ -102,7 +102,8 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
     public static Map<String, String> _safeDecodeFromDataMap(String properties)
     {
         try {
-            if (properties != null)
+            // try to filter out non-encoded values ('&' is not in the base64 character set)
+            if (properties != null && !properties.contains("&"))
             {
                 Object o = _82decodeObject(properties);
                 if (Map.class.isAssignableFrom(o.getClass()))

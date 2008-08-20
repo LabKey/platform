@@ -22,11 +22,17 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.query.*;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -48,12 +54,12 @@ public abstract class AbstractSnapshotProvider implements QuerySnapshotService.I
         throw new UnsupportedOperationException();
     }
 
-    public ActionURL updateSnapshot(QuerySnapshotForm form) throws Exception
+    public ActionURL updateSnapshot(QuerySnapshotForm form, List<String> errors) throws Exception
     {
         throw new UnsupportedOperationException();
     }
 
-    public ActionURL updateSnapshotDefinition(ViewContext context, QuerySnapshotDefinition def) throws Exception
+    public ActionURL updateSnapshotDefinition(ViewContext context, QuerySnapshotDefinition def, List<String> errors) throws Exception
     {
         def.save(context.getUser(), context.getContainer());
         return null;
@@ -98,21 +104,33 @@ public abstract class AbstractSnapshotProvider implements QuerySnapshotService.I
 
     protected DomainProperty addAsDomainProperty(Domain domain, ColumnInfo column)
     {
+        PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(column.getPropertyURI(), domain.getContainer());
+
         DomainProperty prop = domain.addProperty();
         prop.setLabel(column.getCaption());
         prop.setName(column.getName());
 
-        PropertyType type;
-        // need to determine if the column is a lookup
-        if (column.getDisplayField() != null)
-            type = PropertyType.getFromClass(column.getDisplayField().getJavaClass());
-        else
-            type = PropertyType.getFromClass(column.getJavaClass());
+        PropertyType type = PropertyType.getFromClass(column.getJavaClass());
         prop.setType(PropertyService.get().getType(domain.getContainer(), type.getXmlName()));
         prop.setDescription(column.getDescription());
         prop.setFormat(column.getFormatString());
         prop.setPropertyURI(domain.getTypeURI() + "." + column.getName());
 
+        if (pd != null && pd.getLookupQuery() != null)
+        {
+            String container = pd.getLookupContainer();
+            Container c = null;
+            if (container != null)
+            {
+                if (GUID.isGUID(container))
+                    c = ContainerManager.getForId(container);
+                if (c == null)
+                    c = ContainerManager.getForPath(container);
+            }
+            Lookup lu = new Lookup(c, pd.getLookupSchema(), pd.getLookupQuery());
+            prop.setLookup(lu);
+            prop.setRequired(pd.isRequired());
+        }
         return prop;
     }
 }

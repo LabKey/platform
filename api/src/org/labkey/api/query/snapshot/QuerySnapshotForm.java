@@ -34,6 +34,7 @@ public class QuerySnapshotForm extends QueryForm
     private String _snapshotName;
     private String[] _snapshotColumns = new String[0];
     private int _updateDelay;
+    private boolean _updateSnapshot;
 
     public void init(QuerySnapshotDefinition def)
     {
@@ -101,5 +102,15 @@ public class QuerySnapshotForm extends QueryForm
             columns.add(FieldKey.fromString(name));
 
         return columns;
+    }
+
+    public boolean isUpdateSnapshot()
+    {
+        return _updateSnapshot;
+    }
+
+    public void setUpdateSnapshot(boolean updateSnapshot)
+    {
+        _updateSnapshot = updateSnapshot;
     }
 }
