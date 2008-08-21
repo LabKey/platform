@@ -24,10 +24,7 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.NavTree;
-import org.labkey.api.view.UpdateView;
+import org.labkey.api.view.*;
 import org.labkey.study.model.Cohort;
 import org.labkey.study.model.Participant;
 import org.labkey.study.model.Study;
@@ -248,7 +245,11 @@ public class CohortController extends BaseStudyController
 
             QueryUpdateForm updateForm = new QueryUpdateForm(table, getViewContext().getRequest());
 
-            UpdateView view = new UpdateView(updateForm, errors);
+            DataView view;
+            if (isInsert())
+                view = new InsertView(updateForm, errors);
+            else
+                view = new UpdateView(updateForm, errors);
             DataRegion dataRegion = view.getDataRegion();
 
             String referer = HttpView.currentRequest().getHeader("Referer");

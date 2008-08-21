@@ -107,7 +107,12 @@ public class DatasetController extends BaseStudyController
             TableInfo datasetTable = ds.getTableInfo(getUser());
             QueryUpdateForm updateForm = new QueryUpdateForm(datasetTable, getViewContext().getRequest());
 
-            UpdateView view = new UpdateView(updateForm, errors);
+            DataView view;
+            if (isInsert())
+                view = new InsertView(updateForm, errors);
+            else
+                view = new UpdateView(updateForm, errors);
+            
             DataRegion dataRegion = view.getDataRegion();
             dataRegion.addHiddenFormField(DataSetDefinition.DATASETKEY, Integer.toString(form.getDatasetId()));
 
