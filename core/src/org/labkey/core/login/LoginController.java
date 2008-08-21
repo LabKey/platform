@@ -75,51 +75,100 @@ public class LoginController extends SpringActionController
     }
 
 
-    public static class LoginURLFactoryImpl implements AuthenticationManager.LoginURLFactory
+    public static class LoginUrlsImpl implements LoginUrls
     {
-        public ActionURL getURL(ActionURL returnURL)
+        public NavTree appendAuthenticationNavTrail(NavTree root)
         {
-            return addReturnURL(getLoginURL(), returnURL);
+            root.addChild("Admin Console", AdminController.getShowAdminURL()).addChild("Authentication", getConfigureURL());
+            return root;
         }
 
-        public ActionURL getURL(String returnURL)
+        public ActionURL getConfigureURL()
         {
-            ActionURL loginURL = getLoginURL();
-            loginURL.addParameter("URI", returnURL);
-            return loginURL;
+            return new ActionURL(ConfigureAction.class, ContainerManager.getRoot());
+        }
+
+        public ActionURL getVerificationURL(Container c, String email, String verification, Pair<String, String>[] extraParameters)
+        {
+            ActionURL url = new ActionURL(SetPasswordAction.class, c);
+            url.addParameter("verification", verification);
+            url.addParameter("email", email);
+
+            if (null != extraParameters)
+                url.addParameters(extraParameters);
+
+            return url;
+        }
+
+        public ActionURL getLoginURL(ActionURL returnURL)
+        {
+            ActionURL url = new ActionURL(LoginAction.class, ContainerManager.getRoot());
+
+            if (null == returnURL)
+                returnURL = AppProps.getInstance().getHomePageActionURL();
+
+            url.setExtraPath(returnURL.getExtraPath());
+            addReturnURL(url, returnURL.getLocalURIString());
+            return url;
+        }
+
+        public ActionURL getLoginURL(Container c, String returnURLString)
+        {
+            ActionURL url = new ActionURL(LoginAction.class, c);
+            addReturnURL(url, returnURLString);
+            return url;
+        }
+
+        private ActionURL getLoginURL(Container c, String email, boolean skipProfile, String returnURLString)
+        {
+            ActionURL url = getLoginURL(c, returnURLString);
+
+            url.addParameter("email", email);
+
+            if (skipProfile)
+                url.addParameter("skipProfile", "1");
+
+            return url;
+        }
+
+        public ActionURL getLogoutURL()
+        {
+            return new ActionURL(LogoutAction.class, ContainerManager.getRoot());
+        }
+
+        public ActionURL getAgreeToTermsURL(Container c, ActionURL returnURL)
+        {
+            ActionURL url = new ActionURL(AgreeToTermsAction.class, c);
+            addReturnURL(url, returnURL);
+            return url;
+        }
+
+        public ActionURL getAgreeToTermsURL(Container c, String returnURLString)
+        {
+            ActionURL url = new ActionURL(AgreeToTermsAction.class, c);
+            addReturnURL(url, returnURLString);
+            return url;
+        }
+
+        private void addReturnURL(ActionURL url, String returnURLString)
+        {
+            if (null != returnURLString)
+                url.addParameter("URI", returnURLString);
+        }
+
+        private void addReturnURL(ActionURL url, ActionURL returnURL)
+        {
+            if (null != returnURL)
+                url.addParameter("URI", returnURL.getLocalURIString());
         }
     }
 
 
-    private static ActionURL addReturnURL(ActionURL loginURL, ActionURL returnURL)
+    private static LoginUrlsImpl getUrls()
     {
-        if (null != returnURL)
-            loginURL.addParameter("URI", returnURL.getLocalURIString());
-
-        return loginURL;
+        return new LoginUrlsImpl();
     }
 
-
-    private static ActionURL getLoginURL(String email, boolean skipProfile, String returnURL)
-    {
-        ActionURL url = getLoginURL();
-
-        url.addParameter("email", email);
-
-        if (skipProfile)
-            url.addParameter("skipProfile", "1");
-
-        if (null != returnURL)
-            url.addParameter("URI", returnURL);
-
-        return url;
-    }
-
-
-    public static ActionURL getLoginURL()
-    {
-        return new ActionURL(LoginAction.class, ContainerManager.getRoot());
-    }
 
     @RequiresPermission(ACL.PERM_NONE) @ActionNames("login, showLogin")
     public class LoginAction extends FormViewAction<LoginForm>
@@ -559,12 +608,6 @@ public class LoginController extends SpringActionController
     }
 
 
-    public static ActionURL getLogoutURL()
-    {
-        return new ActionURL(LogoutAction.class, ContainerManager.getRoot());
-    }
-
-
     @RequiresPermission(ACL.PERM_NONE)
     public class LogoutAction extends RedirectAction
     {
@@ -718,7 +761,7 @@ public class LoginController extends SpringActionController
 
         public ActionURL getSuccessURL(VerifyForm form)
         {
-            return getLoginURL(_email.getEmailAddress(), form.getSkipProfile(), form.getReturnUrl());
+            return getUrls().getLoginURL(getContainer(), _email.getEmailAddress(), form.getSkipProfile(), form.getReturnUrl());
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1198,33 +1241,6 @@ public class LoginController extends SpringActionController
 
 
 
-    public static class LoginUrlsImpl implements LoginUrls
-    {
-        public NavTree appendAuthenticationNavTrail(NavTree root)
-        {
-            root.addChild("Admin Console", AdminController.getShowAdminURL()).addChild("Authentication", getConfigureURL());
-            return root;
-        }
-
-        public ActionURL getConfigureURL()
-        {
-            return new ActionURL(ConfigureAction.class, ContainerManager.getRoot());
-        }
-
-        public ActionURL getVerificationURL(Container c, String email, String verification, Pair<String, String>[] extraParameters)
-        {
-            ActionURL url = new ActionURL(SetPasswordAction.class, c);
-            url.addParameter("verification", verification);
-            url.addParameter("email", email);
-
-            if (null != extraParameters)
-                url.addParameters(extraParameters);
-
-            return url;
-        }
-    }
-
-
     @RequiresSiteAdmin
     public class ConfigureAction extends SimpleViewAction<ReturnUrlForm>
     {
@@ -1237,12 +1253,6 @@ public class LoginController extends SpringActionController
         {
             return getUrls().appendAuthenticationNavTrail(root);
         }
-    }
-
-
-    private static LoginUrls getUrls()
-    {
-        return PageFlowUtil.urlProvider(LoginUrls.class);
     }
 
 

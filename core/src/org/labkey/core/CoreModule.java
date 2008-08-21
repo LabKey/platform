@@ -432,7 +432,7 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
         }
         else
         {
-            return PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(user.getUserId());
+            return PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(c, user.getUserId());
         }
     }
 
@@ -612,8 +612,6 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
     {
         ViewServlet.initialize();
         ModuleLoader.getInstance().initPageFlowToModule();        
-        AuthenticationManager.setLoginURLFactory(new LoginController.LoginURLFactoryImpl());
-        AuthenticationManager.setLogoutURL(LoginController.getLogoutURL());
         AuthenticationManager.initialize();
     }
 

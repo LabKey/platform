@@ -78,9 +78,9 @@ public class UserController extends SpringActionController
             return new ActionURL(UserAccessAction.class, container);
         }
 
-        public ActionURL getUserDetailsURL(int userId)
+        public ActionURL getUserDetailsURL(Container container, int userId)
         {
-            ActionURL url = getUserDetailsURL(ContainerManager.getRoot());
+            ActionURL url = getUserDetailsURL(container);
             url.addParameter("userId", userId);
             return url;
         }
@@ -784,7 +784,7 @@ public class UserController extends SpringActionController
                 if (!SecurityManager.isLdapEmail(new ValidEmail(displayEmail)))
                 {
                     ActionButton reset = new ActionButton("reset", "Reset Password");
-                    ActionURL resetURL = new ActionURL(SecurityController.ResetPasswordAction.class, ContainerManager.getRoot());
+                    ActionURL resetURL = new ActionURL(SecurityController.ResetPasswordAction.class, c);
                     resetURL.addParameter("email", displayEmail);
                     reset.setURL(resetURL.getLocalURIString());
                     reset.setActionType(ActionButton.Action.LINK);
@@ -958,7 +958,7 @@ public class UserController extends SpringActionController
 
         public ActionURL getSuccessURL(UpdateForm form)
         {
-            ActionURL details = new UserUrlsImpl().getUserDetailsURL((Integer)form.getPkVal());
+            ActionURL details = new UserUrlsImpl().getUserDetailsURL(getContainer(), ((Integer)form.getPkVal()).intValue());
             String returnUrl = form.getStrings().get(ReturnUrlForm.Params.returnUrl.toString());
             if (null != returnUrl)
                 details.addParameter(ReturnUrlForm.Params.returnUrl, returnUrl);
@@ -1036,7 +1036,7 @@ public class UserController extends SpringActionController
 
                 String message = UserManager.changeEmail(user.getUserId(), new ValidEmail(user.getEmail()), new ValidEmail(form.getNewEmail()), getUser());
 
-                if (message.length() > 0)
+                if (null != message && message.length() > 0)
                     errors.reject(ERROR_MSG, message);
             }
             catch (ValidEmail.InvalidEmailException e)
@@ -1048,13 +1048,12 @@ public class UserController extends SpringActionController
 
         public ActionURL getSuccessURL(UserForm form)
         {
-            return new UserUrlsImpl().getUserDetailsURL(Integer.parseInt(form.getUserId()));
+            return new UserUrlsImpl().getUserDetailsURL(getContainer(), Integer.parseInt(form.getUserId()));
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild("Site Users", new UserUrlsImpl().getSiteUsersURL());
-            root.addChild("User Details", new UserUrlsImpl().getUserDetailsURL(_userId));
+            addUserDetailsNavTrail(root, _userId);
             return root.addChild("Change Email Address: " + UserManager.getEmailForId(_userId));
         }
     }

@@ -81,7 +81,7 @@ BODY, TD, TH { font-family: arial sans-serif; color: black; }
 %></b></td><td align="right">&nbsp;<%
     if (context.getUser().isGuest())
     {
-        %><a href="<%=h(listpage.loginUrl)%>">Sign in</a><%        
+        %><a href="<%=h(listpage.loginURL)%>">Sign in</a><%
     }
     else
     {

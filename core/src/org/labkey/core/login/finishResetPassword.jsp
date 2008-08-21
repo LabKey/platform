@@ -20,9 +20,10 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.security.LoginUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     String message = ((HttpView<String>) HttpView.currentView()).getModelBean();
 %>
 <%=message%>
-<%=PageFlowUtil.buttonLink("Sign In", AuthenticationManager.getLoginURL((ActionURL)null))%>&nbsp;<%=PageFlowUtil.buttonLink("Home", AppProps.getInstance().getHomePageActionURL())%>
+<%=PageFlowUtil.buttonLink("Sign In", urlProvider(LoginUrls.class).getLoginURL((ActionURL)null))%>&nbsp;<%=PageFlowUtil.buttonLink("Home", AppProps.getInstance().getHomePageActionURL())%>

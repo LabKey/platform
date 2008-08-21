@@ -26,11 +26,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.AuthenticationManager;
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.UserManager;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.security.*;
 import org.labkey.api.settings.LookAndFeelAppProps;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
@@ -127,10 +123,9 @@ public class DavController extends SpringActionController
     }
 
 
-    String getLoginURL()
+    ActionURL getLoginURL()
     {
-        ActionURL redirect = AuthenticationManager.getLoginURL(getURL());
-        return redirect.getLocalURIString();
+        return PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(getContainer(), getURL());
     }
 
 
@@ -413,7 +408,7 @@ public class DavController extends SpringActionController
                 else if (resource.isCollection() && isBrowser() && "GET".equals(method))
                 {
                     getResponse().setStatus(WebdavStatus.SC_MOVED_PERMANENTLY);
-                    response.setHeader("Location", getLoginURL());
+                    response.setHeader("Location", getLoginURL().getEncodedLocalURIString());
                 }
                 else
                 {
@@ -2847,7 +2842,7 @@ public class DavController extends SpringActionController
     public class ListPage
     {
         public WebdavResolver.Resource resource;
-        public String loginUrl;
+        public ActionURL loginURL;
     }
 
     WebdavStatus listHtml(WebdavResolver.Resource resource)
@@ -2856,7 +2851,7 @@ public class DavController extends SpringActionController
         {
             ListPage page = new ListPage();
             page.resource = resource;
-            page.loginUrl = getLoginURL();
+            page.loginURL = getLoginURL();
             
             JspView<ListPage> v = new JspView<ListPage>(DavController.class,  "list.jsp", page);
             v.setFrame(WebPartView.FrameType.NONE);

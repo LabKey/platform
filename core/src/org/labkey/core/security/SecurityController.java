@@ -1164,7 +1164,7 @@ public class SecurityController extends SpringActionController
                 if (result == null)
                 {
                     User user = UserManager.getUser(email);
-                    ActionURL url = PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(user.getUserId());
+                    ActionURL url = PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(getContainer(), user.getUserId());
                     result = email + " was already a registered system user.  Click <a href=\"" + url.getEncodedLocalURIString() + "\">here</a> to see this user's profile and history.";
                 }
                 else if (userToClone != null)
