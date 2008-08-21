@@ -20,6 +20,7 @@ import org.labkey.api.gwt.client.util.StringUtils;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
 
 /*
 * User: Karl Lum
@@ -149,6 +150,14 @@ public class GWTPropertyValidator implements Serializable
     public void setNew(boolean aNew)
     {
         _isNew = aNew;
+    }
+
+    public void validate(List errors)
+    {
+        if (StringUtils.trimToNull(getName()) == null)
+            errors.add("Validator Name cannot be blank");
+        if (StringUtils.trimToNull(getExpression()) == null)
+            errors.add("Validator Expression cannot be blank");
     }
 
     public boolean equals(Object o)

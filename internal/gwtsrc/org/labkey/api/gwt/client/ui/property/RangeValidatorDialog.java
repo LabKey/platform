@@ -16,8 +16,11 @@
 package org.labkey.api.gwt.client.ui.property;
 
 import com.google.gwt.user.client.ui.*;
+import com.google.gwt.user.client.Window;
 import org.labkey.api.gwt.client.model.GWTPropertyValidator;
 import org.labkey.api.gwt.client.ui.ImageButton;
+import org.labkey.api.gwt.client.ui.HelpPopup;
+import org.labkey.api.gwt.client.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -148,7 +151,11 @@ public class RangeValidatorDialog extends ValidatorDialog
             }
         });
 
-        panel.setWidget(row, 0, new HTML("First Criteria"));
+        HorizontalPanel firstLabel = new HorizontalPanel();
+        firstLabel.add(new HTML("First Condition"));
+        firstLabel.add(new HelpPopup("First Condition", "Add a condition to this validation rule that will be tested against the value for this field."));
+
+        panel.setWidget(row, 0, firstLabel);
         panel.setWidget(row, 1, firstRange);
         panel.setWidget(row++, 2, firstRangeValue);
 
@@ -186,7 +193,13 @@ public class RangeValidatorDialog extends ValidatorDialog
             }
         });
         _secondRangeValue.setEnabled(_secondType.getValue() != null && _secondType.getValue().length() > 0);
-        panel.setWidget(row, 0, new HTML("Second Criteria"));
+
+        HorizontalPanel secondLabel = new HorizontalPanel();
+        secondLabel.add(new HTML("Second Condition"));
+        secondLabel.add(new HelpPopup("Second Condition", "Add a condition to this validation rule that will be tested against the value for this field." +
+                " Both the first and second conditions will be tested for this field."));
+
+        panel.setWidget(row, 0, secondLabel);
         panel.setWidget(row, 1, lastRange);
         panel.setWidget(row++, 2, _secondRangeValue);
 
@@ -197,10 +210,15 @@ public class RangeValidatorDialog extends ValidatorDialog
                 prop.setErrorMessage(((TextArea)widget).getText());
             }
         });
-        errorMessage.setCharacterWidth(25);
-        errorMessage.setHeight("50px");
+        errorMessage.setCharacterWidth(35);
+        errorMessage.setHeight("60px");
 
-        panel.setWidget(row, 0, new HTML("Failure Message"));
+        HorizontalPanel failureMessageLabel = new HorizontalPanel();
+        failureMessageLabel.add(new HTML("Error Message"));
+        failureMessageLabel.add(new HelpPopup("Error Message", "The message that will be displayed to the user in the event that validation" +
+                " fails for this field."));
+
+        panel.setWidget(row, 0, failureMessageLabel);
         panel.getFlexCellFormatter().setColSpan(row, 1, 2);
         panel.setWidget(row++, 1, errorMessage);
 
@@ -209,10 +227,12 @@ public class RangeValidatorDialog extends ValidatorDialog
         {
             public void onClick(Widget sender)
             {
-                prop.setExpression(getExpression());
-                _oldProp.copy(prop);
-                getListener().propertyChanged(prop);
-                RangeValidatorDialog.this.hide();
+                if (validate(prop))
+                {
+                    _oldProp.copy(prop);
+                    getListener().propertyChanged(prop);
+                    RangeValidatorDialog.this.hide();
+                }
             }
         });
 
@@ -233,5 +253,25 @@ public class RangeValidatorDialog extends ValidatorDialog
 
         setText("Range Validator");
         setWidget(panel);
+    }
+
+    protected boolean validate(GWTPropertyValidator prop)
+    {
+        List errors = new ArrayList();
+        prop.setExpression(getExpression());
+
+        if (StringUtils.trimToNull(_firstType.getValue()) == null)
+            errors.add("First Condition value cannot be blank");
+        prop.validate(errors);
+
+        if (!errors.isEmpty())
+        {
+            String s = "";
+            for (int i=0 ; i<errors.size() ; i++)
+                s += errors.get(i) + "\n";
+            Window.alert(s);
+            return false;
+        }
+        return true;
     }
 }

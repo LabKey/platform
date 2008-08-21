@@ -285,6 +285,7 @@ function showHelpDiv(elem, titleText, bodyText, width)
 
     div.style.top = posTop;
     div.style.display = "block";
+    div.style.zIndex = "25";
 
     if (width)
         div.style.width =  width;

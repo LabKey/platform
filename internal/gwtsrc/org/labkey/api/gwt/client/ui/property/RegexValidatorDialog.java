@@ -16,9 +16,15 @@
 package org.labkey.api.gwt.client.ui.property;
 
 import com.google.gwt.user.client.ui.*;
+import com.google.gwt.user.client.Window;
 import org.labkey.api.gwt.client.model.GWTPropertyValidator;
 import org.labkey.api.gwt.client.ui.ImageButton;
+import org.labkey.api.gwt.client.ui.HelpPopup;
 import org.labkey.api.gwt.client.ui.reports.AbstractChartPanel;
+import org.labkey.api.gwt.client.util.StringUtils;
+
+import java.util.List;
+import java.util.ArrayList;
 
 /*
 * User: Karl Lum
@@ -78,9 +84,15 @@ public class RegexValidatorDialog extends ValidatorDialog
                 prop.setExpression(((TextArea)widget).getText());
             }
         });
-        expression.setCharacterWidth(25);
-        expression.setHeight("50px");
-        panel.setWidget(row, 0, new HTML("Regular Expression"));
+        expression.setCharacterWidth(35);
+        expression.setHeight("60px");
+
+        HorizontalPanel expressionLabel = new HorizontalPanel();
+        expressionLabel.add(new HTML("Regular Expression"));
+        expressionLabel.add(new HelpPopup("Regular Expression", "The regular expression that this field's value will be evaluated against. " +
+                "All regular expressions must be compatible with Java regular expressions as implemented in the <a href=\"http://java.sun.com/j2se/1.5.0/docs/api/java/util/regex/Pattern.html\"><code>Pattern</code></a> class."));
+
+        panel.setWidget(row, 0, expressionLabel);
         panel.setWidget(row++, 1, expression);
 
         BoundTextArea errorMessage = new BoundTextArea("errorMessage", prop.getErrorMessage(), new WidgetUpdatable()
@@ -90,10 +102,15 @@ public class RegexValidatorDialog extends ValidatorDialog
                 prop.setErrorMessage(((TextArea)widget).getText());
             }
         });
-        errorMessage.setCharacterWidth(25);
-        errorMessage.setHeight("50px");
+        errorMessage.setCharacterWidth(35);
+        errorMessage.setHeight("60px");
 
-        panel.setWidget(row, 0, new HTML("Failure Message"));
+        HorizontalPanel failureMessageLabel = new HorizontalPanel();
+        failureMessageLabel.add(new HTML("Error Message"));
+        failureMessageLabel.add(new HelpPopup("Error Message", "The message that will be displayed to the user in the event that validation" +
+                " fails for this field."));
+
+        panel.setWidget(row, 0, failureMessageLabel);
         panel.setWidget(row++, 1, errorMessage);
 
         boolean checked = false;
@@ -108,7 +125,14 @@ public class RegexValidatorDialog extends ValidatorDialog
                 prop.getProperties().put(FAIL_ON_MATCH, Boolean.toString(((CheckBox)widget).isChecked()));
             }
         });
-        panel.setWidget(row, 0, new HTML("Fail when pattern matches"));
+
+        HorizontalPanel failureOnMatchLabel = new HorizontalPanel();
+        failureOnMatchLabel.add(new HTML("Fail when pattern matches"));
+        failureOnMatchLabel.add(new HelpPopup("Fail when pattern matches", "By default, validation will fail if" +
+                " the field value does not match the specified regular expression. Check this box if you want validation" +
+                " to fail when the pattern matches the field value."));
+
+        panel.setWidget(row, 0, failureOnMatchLabel);
         panel.setWidget(row++, 1, checkBox);
 
         ImageButton save = new ImageButton("OK");
@@ -116,9 +140,12 @@ public class RegexValidatorDialog extends ValidatorDialog
         {
             public void onClick(Widget sender)
             {
-                _oldProp.copy(prop);
-                getListener().propertyChanged(prop);
-                RegexValidatorDialog.this.hide();
+                if (validate(prop))
+                {
+                    _oldProp.copy(prop);
+                    getListener().propertyChanged(prop);
+                    RegexValidatorDialog.this.hide();
+                }
             }
         });
 
@@ -139,5 +166,21 @@ public class RegexValidatorDialog extends ValidatorDialog
 
         setText("Regular Expression Validator");
         setWidget(panel);
+    }
+
+    protected boolean validate(GWTPropertyValidator prop)
+    {
+        List errors = new ArrayList();
+        prop.validate(errors);
+
+        if (!errors.isEmpty())
+        {
+            String s = "";
+            for (int i=0 ; i<errors.size() ; i++)
+                s += errors.get(i) + "\n";
+            Window.alert(s);
+            return false;
+        }
+        return true;
     }
 }

@@ -171,7 +171,7 @@ public class PropertyPane extends FlexTable implements ValidatorDialog.UpdateLis
 
         getFlexCellFormatter().setHorizontalAlignment(row, 0, HasHorizontalAlignment.ALIGN_CENTER);
         getFlexCellFormatter().setColSpan(row, 0, 2);
-        setWidget(row, 0, new HTML("<b>Property Validators</b>"));
+        setWidget(row, 0, new HTML("<b>Field Validators</b>"));
 
         row++;
 
@@ -420,7 +420,7 @@ public class PropertyPane extends FlexTable implements ValidatorDialog.UpdateLis
             RegexValidatorDialog dlg = new RegexValidatorDialog(_validator == null ? new GWTPropertyValidator() : _validator);
 
             dlg.setListener(PropertyPane.this);
-            dlg.setPopupPosition(sender.getAbsoluteLeft() - 150, sender.getAbsoluteTop() + 25);
+            dlg.setPopupPosition(sender.getAbsoluteLeft() - 200, sender.getAbsoluteTop() + 25);
             dlg.show();
         }
     }
@@ -446,7 +446,7 @@ public class PropertyPane extends FlexTable implements ValidatorDialog.UpdateLis
             RangeValidatorDialog dlg = new RangeValidatorDialog(_validator == null ? new GWTPropertyValidator() : _validator);
 
             dlg.setListener(PropertyPane.this);
-            dlg.setPopupPosition(sender.getAbsoluteLeft() - 150, sender.getAbsoluteTop() + 25);
+            dlg.setPopupPosition(sender.getAbsoluteLeft() - 200, sender.getAbsoluteTop() + 25);
             dlg.show();
         }
     }
