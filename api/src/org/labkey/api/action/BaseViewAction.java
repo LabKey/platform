@@ -554,6 +554,6 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
 
         IgnoresTermsOfUse ignoresTermsOfUse = actionClass.getAnnotation(IgnoresTermsOfUse.class);
         if (null == ignoresTermsOfUse && !context.hasAgreedToTermsOfUse())
-            throw new TermsOfUseException(context.getActionURL());
+            throw new TermsOfUseException(context.getActionURL(), context.getContainer());
     }
 }

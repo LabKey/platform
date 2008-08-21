@@ -24,11 +24,13 @@ import org.labkey.api.attachments.*;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.Container;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.RequestAuthenticationProvider;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.*;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -108,7 +110,7 @@ public class AuthenticationManager
     }
 
 
-    private static String getAuthLogoHtml(ActionURL currentUrl, String prefix)
+    private static String getAuthLogoHtml(ActionURL currentURL, String prefix)
     {
         if (_linkFactories.size() == 0)
             return null;
@@ -117,7 +119,7 @@ public class AuthenticationManager
 
         for (LinkFactory factory : _linkFactories.values())
         {
-            String link = factory.getLink(currentUrl, prefix);
+            String link = factory.getLink(currentURL, prefix);
 
             if (null != link)
             {
@@ -639,8 +641,9 @@ public class AuthenticationManager
             }
             else
             {
-                String encodedReturnURL = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(returnURL).getURIString();
-                return _urlPrefix + encodedReturnURL + _urlSuffix;
+                Container c = ContainerManager.getForPath(returnURL.getExtraPath());
+                ActionURL loginURL = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(c, returnURL);
+                return _urlPrefix + loginURL.getURIString() + _urlSuffix;
             }
         }
 
@@ -661,7 +664,7 @@ public class AuthenticationManager
                 }
                 catch(SQLException e)
                 {
-                    // TODO: log to mothership
+                    ExceptionUtil.logExceptionToMothership(null, e);
                 }
 
                 _imgMap.put(prefix, img);

@@ -569,16 +569,16 @@ public class ExceptionUtil
                 }
                 else
                 {
-                    String currentUrl = ((UnauthorizedException) ex).getURL();
+                    UnauthorizedException uae = (UnauthorizedException)ex;
 
                     ActionURL redirect;
-                    if (ex instanceof TermsOfUseException)
+                    if (uae instanceof TermsOfUseException)
                     {
-                        redirect = PageFlowUtil.urlProvider(LoginUrls.class).getAgreeToTermsURL(ContainerManager.getRoot(), currentUrl);
+                        redirect = PageFlowUtil.urlProvider(LoginUrls.class).getAgreeToTermsURL(uae.getContainer(), uae.getURL());
                     }
                     else
                     {
-                        redirect = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(ContainerManager.getRoot(), currentUrl);
+                        redirect = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(uae.getContainer(), uae.getURL());
                     }
 
                     return new ViewForward(redirect);

@@ -16,6 +16,8 @@
 
 package org.labkey.api.view;
 
+import org.labkey.api.data.Container;
+
 /**
  * User: Mark Igra
  * Date: Jun 30, 2006
@@ -23,8 +25,8 @@ package org.labkey.api.view;
  */
 public class TermsOfUseException extends UnauthorizedException
 {
-    public TermsOfUseException(ActionURL url)
+    public TermsOfUseException(ActionURL url, Container c)
     {
-        super(null, url.getLocalURIString());
+        super(null, url.getLocalURIString(), c);
     }
 }

@@ -704,9 +704,10 @@ public class ModuleLoader implements Filter
             if (user.isGuest() && !isAdminURL(request))
             {
                 String current = request.getRequestURL().toString();
-                ActionURL currentUrl = (null == current ? null : new ActionURL(current));
-                ActionURL redirect = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(currentUrl);
-                response.sendRedirect(redirect.toString());
+                ActionURL currentURL = (null == current ? null : new ActionURL(current));
+                Container c = (null == currentURL ? ContainerManager.getRoot() : ContainerManager.getForPath(currentURL.getExtraPath()));
+                ActionURL redirectURL = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(c, currentURL);
+                response.sendRedirect(redirectURL.toString());
                 return;
             }
             else if (!user.isAdministrator() && !isAdminURL(request))

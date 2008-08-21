@@ -21,6 +21,7 @@ import org.apache.commons.lang.ObjectUtils;
 import org.labkey.api.util.Debug;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.action.HasViewContext;
+import org.labkey.api.data.Container;
 import org.springframework.web.servlet.*;
 import org.springframework.web.servlet.view.RedirectView;
 import org.springframework.beans.PropertyValues;
@@ -665,19 +666,19 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     public static Forward throwUnauthorized()
             throws UnauthorizedException
     {
-        throw new UnauthorizedException(null, getContextURL());
+        throw new UnauthorizedException(null, getContextURL(), getContextContainer());
     }
 
     public static ModelAndView throwUnauthorizedMV()
             throws UnauthorizedException
     {
-        throw new UnauthorizedException(null, getContextURL());
+        throw new UnauthorizedException(null, getContextURL(), getContextContainer());
     }
 
     public static void throwUnauthorized(String message)
             throws UnauthorizedException
     {
-        throw new UnauthorizedException(message, getContextURL());
+        throw new UnauthorizedException(message, getContextURL(), getContextContainer());
     }
 
     /**
@@ -697,7 +698,12 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         }
         
         return url;
-        
+    }
+
+
+    private static Container getContextContainer()
+    {
+        return getRootContext().getContainer();
     }
 
 
@@ -710,7 +716,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     {
         // CONSIDER: if we ever have something besides HttpView on stack
         // we may need to iterate til we find the top most HttpView
-        return ((HttpView)HttpView.currentView()).getViewContext();
+        return (HttpView.currentView()).getViewContext();
     }
 
 

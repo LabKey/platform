@@ -16,6 +16,7 @@
 package org.labkey.api.view;
 
 import org.apache.commons.lang.StringUtils;
+import org.labkey.api.data.Container;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
@@ -23,6 +24,7 @@ import javax.servlet.http.HttpServletResponse;
 public class UnauthorizedException extends ServletException
 {
     String _url = null;
+    private Container _c = null;
     private boolean _requestBasicAuth;
 
     public UnauthorizedException(boolean requestBasicAuth)
@@ -33,18 +35,19 @@ public class UnauthorizedException extends ServletException
 
     public UnauthorizedException()
     {
-        this(null, null);
+        this(null, null, null);
     }
 
-    public UnauthorizedException(String message, String url)
+    public UnauthorizedException(String message, String url, Container c)
     {
         super(StringUtils.defaultIfEmpty(message, "" + HttpServletResponse.SC_UNAUTHORIZED + ": User does not have permission to perform this operation"));
         _url = url;
+        _c = c;
     }
     
     public UnauthorizedException(String message)
     {
-        this(message, null);
+        this(message, null, null);
     }
 
     public void setRequestBasicAuth(boolean requestBasicAuth)
@@ -60,5 +63,10 @@ public class UnauthorizedException extends ServletException
     public String getURL()
     {
         return _url;
+    }
+
+    public Container getContainer()
+    {
+        return _c;
     }
 }

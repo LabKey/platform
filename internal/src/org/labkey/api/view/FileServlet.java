@@ -67,10 +67,10 @@ public class FileServlet extends HttpServlet
         String servletPath = request.getServletPath();
         request.setAttribute(PAGE_FLOW_ATTR, servletPath.substring(1));
         String dispatchUrl = "/FileContent" + extraPath + "/sendFile.view?" + (null == fileNameParam ? "fileName=" + PageFlowUtil.encode(fileName) : "");
-        // NOTE other parameters seem to get magially propagated...
+        // NOTE other parameters seem to get magically propagated...
         RequestDispatcher r = request.getRequestDispatcher(dispatchUrl);
         r.forward(request, response);
-        }
+    }
 
 
 
