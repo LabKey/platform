@@ -16,6 +16,8 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.beanutils.ConvertUtils;
+
 import java.util.List;
 
 /**
@@ -50,7 +52,18 @@ public class PkFilter extends SimpleFilter
             {
                 name = columnPK.get(i).getValueSql().toString();
             }
-            addCondition(name, pkVals[i]);
+            Object value = pkVals[i];
+            if (value instanceof String)
+            {
+                // If our column is not a string, and we have a string value,
+                // we need to convert or Postgres 8.3 gets angry. See bug 6337
+                Class<?> targetClass = columnPK.get(i).getJavaClass();
+                if (targetClass != String.class)
+                {
+                    value = ConvertUtils.convert((String)value, targetClass);
+                }
+            }
+            addCondition(name, value);
         }
     }
 }
