@@ -56,8 +56,6 @@ public class AuthenticationManager
     private static List<AuthenticationProvider> _activeProviders = null;
     // Map of user id to login provider.  This is needed to handle clean up on logout.
     private static Map<Integer, AuthenticationProvider> _userProviders = new HashMap<Integer, AuthenticationProvider>();
-    private static LoginURLFactory _loginURLFactory = null;
-    private static ActionURL _logoutURL = null;
 
     private static final Logger _log = Logger.getLogger(AuthenticationManager.class);
     private static Map<String, LinkFactory> _linkFactories = new HashMap<String, LinkFactory>();
@@ -89,59 +87,6 @@ public class AuthenticationManager
     {
         // Load active providers and authentication logos.  Each active provider is initialized at load time. 
         loadProperties();
-    }
-
-
-    private static LoginURLFactory getLoginURLFactory()
-    {
-        if (null == _loginURLFactory)
-            throw new IllegalArgumentException("Login URL factory has not been set");
-
-        return _loginURLFactory;
-    }
-
-
-    public static ActionURL getLoginURL(ActionURL returnURL)
-    {
-        if (null == returnURL)
-            returnURL = AppProps.getInstance().getHomePageActionURL();
-
-        return getLoginURLFactory().getURL(returnURL);
-    }
-
-    /**
-     * Additional login url method to handle non-action url strings
-     */
-    public static ActionURL getLoginURL(String returnURL)
-    {
-        return getLoginURLFactory().getURL(returnURL);
-    }
-
-
-    public static void setLoginURLFactory(LoginURLFactory loginURLFactory)
-    {
-        if (null != _loginURLFactory)
-            throw new IllegalArgumentException("Login URL factory has already been set");
-
-        _loginURLFactory = loginURLFactory;
-    }
-
-
-    public static ActionURL getLogoutURL()
-    {
-        if (null == _logoutURL)
-            throw new IllegalArgumentException("Logout URL has not been set");
-
-        return _logoutURL;
-    }
-
-
-    public static void setLogoutURL(ActionURL logoutURL)
-    {
-        if (null != _logoutURL)
-            throw new IllegalArgumentException("Logout URL has already been set");
-
-        _logoutURL = logoutURL;
     }
 
 
@@ -694,7 +639,7 @@ public class AuthenticationManager
             }
             else
             {
-                String encodedReturnURL = PageFlowUtil.encode(getLoginURL(returnURL).getURIString());
+                String encodedReturnURL = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(returnURL).getURIString();
                 return _urlPrefix + encodedReturnURL + _urlSuffix;
             }
         }

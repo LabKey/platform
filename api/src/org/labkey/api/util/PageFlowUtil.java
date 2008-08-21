@@ -37,7 +37,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.ImageURL;
+import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.settings.TemplateResourceHandler;
 import org.labkey.api.view.*;
 import org.labkey.api.admin.CoreUrls;
@@ -1382,7 +1382,7 @@ public class PageFlowUtil
     {
         StringBuilder sb = new StringBuilder();
 
-        ImageURL faviconURL = TemplateResourceHandler.FAVICON.getURL(c);
+        ResourceURL faviconURL = TemplateResourceHandler.FAVICON.getURL(c);
 
         sb.append("    <link rel=\"shortcut icon\" href=\"");
         sb.append(PageFlowUtil.filter(faviconURL));
@@ -1399,7 +1399,7 @@ public class PageFlowUtil
     {
         StringBuilder sb = new StringBuilder();
 
-        ImageURL stylesheetURL = new ImageURL("stylesheet.css", ContainerManager.getRoot());
+        ResourceURL stylesheetURL = new ResourceURL("stylesheet.css", ContainerManager.getRoot());
 
         sb.append("    <link href=\"");
         sb.append(PageFlowUtil.filter(stylesheetURL));
@@ -1407,7 +1407,7 @@ public class PageFlowUtil
 
         if (!email)
         {
-            ImageURL printStyleURL = new ImageURL("printStyle.css", ContainerManager.getRoot());
+            ResourceURL printStyleURL = new ResourceURL("printStyle.css", ContainerManager.getRoot());
             sb.append("    <link href=\"");
             sb.append(PageFlowUtil.filter(printStyleURL));
             sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\"/>\n");

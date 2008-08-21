@@ -128,7 +128,7 @@ public enum TemplateResourceHandler
         return cal;
     }
 
-    public ImageURL getURL(Container c)
+    public ResourceURL getURL(Container c)
     {
         try
         {
@@ -138,7 +138,7 @@ public enum TemplateResourceHandler
             if (noDocument == writer)
                 settingsContainer = ContainerManager.getRoot();
 
-            return new ImageURL(getResourceName(), settingsContainer);
+            return new ResourceURL(getResourceName(), settingsContainer);
         }
         catch (SQLException e)
         {
@@ -156,7 +156,7 @@ public enum TemplateResourceHandler
 
     public void sendResource(HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException, ServletException
     {
-        ImageURL url = new ImageURL(request);
+        ResourceURL url = new ResourceURL(request);
         Container c = LookAndFeelAppProps.getSettingsContainer(ContainerManager.getForPath(url.getExtraPath()));  // Shouldn't be requesting anything but root & project, but just in case
 
         CacheableWriter writer = getWriter(c);

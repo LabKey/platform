@@ -20,7 +20,7 @@ import org.apache.beehive.netui.pageflow.ActionNotFoundException;
 import org.apache.beehive.netui.pageflow.Forward;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
-import org.labkey.api.security.AuthenticationManager;
+import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelAppProps;
@@ -574,13 +574,12 @@ public class ExceptionUtil
                     ActionURL redirect;
                     if (ex instanceof TermsOfUseException)
                     {
-                        redirect = new ActionURL("login", "agreeToTerms", "/");
-
-                        if (null != currentUrl)
-                            redirect.addParameter("URI", currentUrl);
+                        redirect = PageFlowUtil.urlProvider(LoginUrls.class).getAgreeToTermsURL(ContainerManager.getRoot(), currentUrl);
                     }
                     else
-                        redirect = AuthenticationManager.getLoginURL(currentUrl);
+                    {
+                        redirect = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(ContainerManager.getRoot(), currentUrl);
+                    }
 
                     return new ViewForward(redirect);
                 }
@@ -592,9 +591,10 @@ public class ExceptionUtil
             if (ex instanceof NotFoundException || ex instanceof ActionNotFoundException)
             {
                 responseStatus = HttpServletResponse.SC_NOT_FOUND;
-                message = responseStatus + ": Page Not Found";
                 if (ex instanceof NotFoundException && ex.getMessage() != null)
                     message = ex.getMessage();
+                else
+                    message = responseStatus + ": Page Not Found";                
             }
             else
             {
@@ -625,7 +625,7 @@ public class ExceptionUtil
 
         if (responseStatus == HttpServletResponse.SC_NOT_FOUND)
         {
-            _log.warn("Page not found: " + (null == message ? "" : message), ex);
+            _log.warn(null == message ? "" : message, ex);
         }
         else
         {

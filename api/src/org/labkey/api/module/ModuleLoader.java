@@ -18,8 +18,9 @@ package org.labkey.api.module;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.action.UrlProvider;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.*;
-import org.labkey.api.security.AuthenticationManager;
+import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
@@ -29,7 +30,6 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.admin.AdminUrls;
 
 import javax.naming.*;
 import javax.servlet.Filter;
@@ -705,7 +705,7 @@ public class ModuleLoader implements Filter
             {
                 String current = request.getRequestURL().toString();
                 ActionURL currentUrl = (null == current ? null : new ActionURL(current));
-                ActionURL redirect = AuthenticationManager.getLoginURL(currentUrl);
+                ActionURL redirect = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(currentUrl);
                 response.sendRedirect(redirect.toString());
                 return;
             }

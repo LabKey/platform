@@ -30,17 +30,17 @@ import java.util.regex.Matcher;
  */
 
 // Used for linking to resources that have a container but aren't pageflow actions.  Examples include logos, favicons, and stylesheets.
-public class ImageURL extends ActionURL
+public class ResourceURL extends ActionURL
 {
     private static Pattern urlPattern = Pattern.compile("(/.*)?/(\\w*)\\.(.*)");
 
-    public ImageURL(String resource, Container c)
+    public ResourceURL(String resource, Container c)
     {
         super("", resource, c);
         addParameter("revision", AppProps.getInstance().getLookAndFeelRevision());
     }
 
-    public ImageURL(HttpServletRequest request) throws ServletException
+    public ResourceURL(HttpServletRequest request) throws ServletException
     {
         Matcher m = urlPattern.matcher(request.getServletPath());
         if (!m.matches())

@@ -17,12 +17,13 @@
 package org.labkey.api.view.menu;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.ACL;
-import org.labkey.api.security.AuthenticationManager;
+import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelAppProps;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
@@ -58,10 +59,9 @@ public class FooterMenu extends NavTreeMenu
         // LOGIN
         //
         if (user.isGuest())
-            menu.add(new NavTree("Sign in", AuthenticationManager.getLoginURL(context.getActionURL())));
+            menu.add(new NavTree("Sign in", PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(context.getActionURL())));
 
-        ActionURL homeLink = new ActionURL("Project", "start", ContainerManager.getHomeContainer());
-        menu.add(new NavTree("Home", homeLink));
+        menu.add(new NavTree("Home", AppProps.getInstance().getHomePageActionURL()));
 
         if (null != context.getContainer())
         {

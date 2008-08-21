@@ -20,6 +20,7 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewServlet;
+import org.labkey.api.portal.ProjectUrls;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import javax.servlet.http.HttpServletRequest;
@@ -42,8 +43,6 @@ public class AppProps extends AbstractWriteableSettingsGroup
     private static String _scheme;
     private static String _serverName;
     private static String _projectRoot = null;
-    private static String _homePageURLString = null;
-    private static ActionURL _homePageURL = null;
 
     protected static final String LOOK_AND_FEEL_REVISION = "logoRevision";
     protected static final String DEFAULT_DOMAIN_PROP = "defaultDomain";
@@ -250,18 +249,12 @@ public class AppProps extends AbstractWriteableSettingsGroup
 
     public String getHomePageUrl()
     {
-        if (null == _homePageURLString)
-            _homePageURLString = getHomePageActionURL().getLocalURIString();
-
-        return _homePageURLString;
+        return getHomePageActionURL().getLocalURIString();
     }
 
     public ActionURL getHomePageActionURL()
     {
-        if (null == _homePageURL)
-            _homePageURL = new ActionURL("project", "begin.view", "/home");
-
-        return _homePageURL;
+        return PageFlowUtil.urlProvider(ProjectUrls.class).urlStart(ContainerManager.getForPath("/home"));
     }
 
     // ===== Look and feel settings have been migrated to LookAndFeelAppProps.  Need to delete these.

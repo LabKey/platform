@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.api.settings.LookAndFeelAppProps" %>
 <%@ page import="org.labkey.api.settings.TemplateResourceHandler" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.security.LoginUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     TemplateHeaderView.TemplateHeaderBean bean = ((TemplateHeaderView) HttpView.currentView()).getModelBean();
@@ -53,7 +54,7 @@ if (bean.containerLinks != null)
     if (null != user && !user.isGuest())
     {
         out.print(user.getFriendlyName() + "<br>");%>
-        <a href="<%=h(urlProvider(UserUrls.class).getUserDetailsURL(user.getUserId()))%>">My&nbsp;Account&nbsp;&nbsp;</a><a href="<%=h(AuthenticationManager.getLogoutURL())%>"><%=user.isImpersonated() ? "Stop&nbsp;Impersonating" : "Sign&nbsp;out"%></a><%
+        <a href="<%=h(urlProvider(UserUrls.class).getUserDetailsURL(c, user.getUserId()))%>">My&nbsp;Account&nbsp;&nbsp;</a><a href="<%=h(urlProvider(LoginUrls.class).getLogoutURL())%>"><%=user.isImpersonated() ? "Stop&nbsp;Impersonating" : "Sign&nbsp;out"%></a><%
     }
     else if (bean.pageConfig.shouldIncludeLoginLink())
     {
@@ -63,7 +64,7 @@ if (bean.containerLinks != null)
             out.print(authLogoHtml + "&nbsp;");
 
         %>
-        <a href="<%=AuthenticationManager.getLoginURL(currentURL)%>">Sign&nbsp;in</a><%
+        <a href="<%=h(urlProvider(LoginUrls.class).getLoginURL(currentURL))%>">Sign&nbsp;in</a><%
     }
 
 %></td></tr>

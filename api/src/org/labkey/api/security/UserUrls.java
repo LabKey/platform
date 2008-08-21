@@ -29,6 +29,6 @@ public interface UserUrls extends UrlProvider
     ActionURL getSiteUsersURL();
     ActionURL getProjectMembersURL(Container container);
     ActionURL getUserAccessURL(Container container, int userId);
-    ActionURL getUserDetailsURL(int userId);
+    ActionURL getUserDetailsURL(Container container, int userId);
     ActionURL getUserUpdateURL(ActionURL returnURL);          // TODO: Add userId?
 }
