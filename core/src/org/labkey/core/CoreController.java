@@ -31,6 +31,7 @@ import org.labkey.api.data.CacheableWriter;
 import org.labkey.api.data.ContainerManager.ContainerParent;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelAppProps;
 import org.labkey.api.util.PageFlowUtil;
@@ -148,6 +149,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermission(ACL.PERM_NONE)
+    @IgnoresTermsOfUse
     public class ThemeStylesheetAction extends BaseStylesheetAction
     {
         Content getContent(HttpServletRequest request, HttpServletResponse response) throws Exception
@@ -170,6 +172,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermission(ACL.PERM_NONE)
+    @IgnoresTermsOfUse
     public class CustomStylesheetAction extends BaseStylesheetAction
     {
         Content getContent(HttpServletRequest request, HttpServletResponse response) throws Exception
@@ -219,6 +222,7 @@ public class CoreController extends SpringActionController
 
 
     @RequiresPermission(ACL.PERM_NONE)
+    @IgnoresTermsOfUse
     public class ContainerRedirectAction extends SimpleRedirectAction<RedirectForm>
     {
         public ActionURL getRedirectURL(RedirectForm form) throws Exception

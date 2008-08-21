@@ -22,7 +22,6 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.core.login.LoginController.LoginBean" %>
 <%@ page import="org.labkey.core.login.LoginController.LoginForm" %>
-<%@ page import="org.labkey.api.action.ReturnUrlForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<LoginBean> me = (HttpView<LoginBean>) HttpView.currentView();

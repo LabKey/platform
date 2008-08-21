@@ -15,15 +15,17 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.security.AuthenticationManager" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.security.LoginUrls" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.security.LoginUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     String message = ((HttpView<String>) HttpView.currentView()).getModelBean();
+    Container c = getViewContext().getContainer();
+    ActionURL homeURL = AppProps.getInstance().getHomePageActionURL();
 %>
 <%=message%>
-<%=PageFlowUtil.buttonLink("Sign In", urlProvider(LoginUrls.class).getLoginURL((ActionURL)null))%>&nbsp;<%=PageFlowUtil.buttonLink("Home", AppProps.getInstance().getHomePageActionURL())%>
+<%=PageFlowUtil.buttonLink("Sign In", urlProvider(LoginUrls.class).getLoginURL(c, homeURL))%>&nbsp;<%=PageFlowUtil.buttonLink("Home", homeURL)%>

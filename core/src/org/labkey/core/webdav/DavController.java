@@ -131,7 +131,6 @@ public class DavController extends SpringActionController
 
     public DavController()
     {
-        super();
         setActionResolver(_actionResolver);
     }
 
@@ -568,19 +567,19 @@ public class DavController extends SpringActionController
                 if (null == depthStr)
                     depthStr = getViewContext().getActionURL().getParameter("depth");
                 if (null == depthStr)
-                    return new Pair(defaultDepth, defaultListRoot);
+                    return new Pair<Integer, Boolean>(defaultDepth, defaultListRoot);
                 if ("0".equals(depthStr))
-                    return new Pair(0, false);
+                    return new Pair<Integer, Boolean>(0, false);
                 if ("1".equals(depthStr))
-                    return new Pair(1, false);
+                    return new Pair<Integer, Boolean>(1, false);
                 if ("1,noroot".equals(depthStr))
-                    return new Pair(1, true);
-                return new Pair(INFINITY, false);
+                    return new Pair<Integer, Boolean>(1, true);
+                return new Pair<Integer, Boolean>(INFINITY, false);
             }
             catch (NumberFormatException x)
             {
             }
-            return new Pair(INFINITY, false);
+            return new Pair<Integer, Boolean>(INFINITY, false);
         }
 
         public WebdavStatus doMethod() throws DavException, IOException

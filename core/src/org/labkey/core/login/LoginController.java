@@ -100,8 +100,9 @@ public class LoginController extends SpringActionController
             return url;
         }
 
-        public ActionURL getLoginURL(ActionURL returnURL)
+        public ActionURL getLoginURL(Container c, ActionURL returnURL)
         {
+            // Use root as placeholder; extra path of returnURL determines login URL path
             ActionURL url = new ActionURL(LoginAction.class, ContainerManager.getRoot());
 
             if (null == returnURL)
@@ -171,6 +172,7 @@ public class LoginController extends SpringActionController
 
 
     @RequiresPermission(ACL.PERM_NONE) @ActionNames("login, showLogin")
+    @IgnoresTermsOfUse
     public class LoginAction extends FormViewAction<LoginForm>
     {
         private User _user = null;
@@ -367,6 +369,7 @@ public class LoginController extends SpringActionController
 
 
     @RequiresPermission(ACL.PERM_NONE)
+    @IgnoresTermsOfUse
     public class AgreeToTermsAction extends FormViewAction<LoginForm>
     {
         public void validateCommand(LoginForm target, Errors errors)
