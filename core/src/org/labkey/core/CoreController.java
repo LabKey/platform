@@ -36,10 +36,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelAppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.PageFlowUtil.Content;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.JspView;
-import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.*;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -60,7 +57,6 @@ public class CoreController extends SpringActionController
     private static final long MILLIS_IN_DAY = 1000 * SECS_IN_DAY;
     private static final Content NO_CONTENT = new Content(null);  // Marker for cache
 
-    private static Content _printCssContent = null;
     private static Map<Container, Content> _themeStylesheetCache = new ConcurrentHashMap<Container, Content>();
     private static Map<Container, Content> _customStylesheetCache = new ConcurrentHashMap<Container, Content>();
     private static ActionResolver _actionResolver = new DefaultActionResolver(CoreController.class);
@@ -122,6 +118,14 @@ public class CoreController extends SpringActionController
 
     abstract class BaseStylesheetAction extends ExportAction
     {
+        @Override
+        public void checkPermissions() throws TermsOfUseException, UnauthorizedException
+        {
+            // Stylesheets can be retrieved always by anyone.  This do-nothing override is even more permissive than
+            //  using ACL.PERM_NONE and @IgnoresTermsOfUse since it also allows access in the root container even
+            //  when a project admin is impersonating.
+        }
+
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
             HttpServletRequest request = getViewContext().getRequest();

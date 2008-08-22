@@ -15,19 +15,17 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.security.LoginUrls"%>
+<%@ page import="org.labkey.api.settings.AppProps"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.ButtonServlet" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.login.LoginController" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     LoginController.LoginForm form = ((JspView<LoginController.LoginForm>)HttpView.currentView()).getModelBean();
-    Container c = getViewContext().getContainer();
     ActionURL doneURL = AppProps.getInstance().getHomePageActionURL();
 
     String errors = formatMissedErrors("form");
@@ -46,7 +44,7 @@
         <tr>
             <td></td>
             <td style="height:50"><input name="reset" type="image" value="reset" src="<%=ButtonServlet.buttonSrc("Submit")%>">
-            <%=PageFlowUtil.buttonLink("Cancel", urlProvider(LoginUrls.class).getLoginURL(c, doneURL))%>
+            <%=PageFlowUtil.buttonLink("Cancel", urlProvider(LoginUrls.class).getLoginURL(doneURL))%>
             </td>
         </tr>
     </table>

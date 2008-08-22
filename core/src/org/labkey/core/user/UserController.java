@@ -744,7 +744,8 @@ public class UserController extends SpringActionController
         }
         else
         {
-            root.addChild("Project Members", new UserUrlsImpl().getProjectMembersURL(c));
+            if (c.hasPermission(getUser(), ACL.PERM_ADMIN))
+                root.addChild("Project Members", new UserUrlsImpl().getProjectMembersURL(c));
         }
 
         if (null == userId)

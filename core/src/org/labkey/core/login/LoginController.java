@@ -100,7 +100,7 @@ public class LoginController extends SpringActionController
             return url;
         }
 
-        public ActionURL getLoginURL(Container c, ActionURL returnURL)
+        public ActionURL getLoginURL(ActionURL returnURL)
         {
             // Use root as placeholder; extra path of returnURL determines login URL path
             ActionURL url = new ActionURL(LoginAction.class, ContainerManager.getRoot());
@@ -132,9 +132,9 @@ public class LoginController extends SpringActionController
             return url;
         }
 
-        public ActionURL getLogoutURL()
+        public ActionURL getLogoutURL(Container c)
         {
-            return new ActionURL(LogoutAction.class, ContainerManager.getRoot());
+            return new ActionURL(LogoutAction.class, c);
         }
 
         public ActionURL getAgreeToTermsURL(Container c, ActionURL returnURL)
@@ -612,6 +612,7 @@ public class LoginController extends SpringActionController
 
 
     @RequiresPermission(ACL.PERM_NONE)
+    @IgnoresTermsOfUse
     public class LogoutAction extends RedirectAction
     {
         public ActionURL getSuccessURL(Object o)
