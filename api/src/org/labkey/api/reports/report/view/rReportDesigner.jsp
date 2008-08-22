@@ -159,7 +159,7 @@
 <%          if (!readOnly)
             {
                 if (renderAction == null)
-                    out.println(PageFlowUtil.generateButton("Execute Script", "javascript:void(0)", "javascript:switchTab('" + HttpView.currentContext().cloneActionURL().replaceParameter("tabId", "View") + "', saveChanges))"));
+                    out.println(PageFlowUtil.generateButton("Execute Script", "javascript:void(0)", "javascript:switchTab('" + HttpView.currentContext().cloneActionURL().replaceParameter("tabId", "View") + "', saveChanges)"));
                 else
                     out.println(PageFlowUtil.generateButton("Execute Script", "javascript:void(0)", "javascript:runScript()"));
                 if (!context.getUser().isGuest())
