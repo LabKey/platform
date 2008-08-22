@@ -1197,14 +1197,15 @@ public class SecurityManager
     }
 
 
-    // TODO: Redundant with getProjectMembers -- this approach should be more efficient for simple cases
+    // TODO: Redundant with getProjectMembers() -- this approach should be more efficient for simple cases
+    // TODO: Also redundant with getProjectUserids()
     // TODO: Cache this set
     public static Set<Integer> getProjectMembersIds(Container c)
     {
         SQLFragment sql = SecurityManager.getProjectMembersSQL(c.getProject());
         sql.insert(0, "SELECT DISTINCT members.UserId ");
 
-        Integer[] projectMembers = null;
+        Integer[] projectMembers;
 
         try
         {

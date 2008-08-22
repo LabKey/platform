@@ -126,7 +126,7 @@ public class ExcelColumn extends RenderColumn
             _simpleType = TYPE_STRING;
         else if (Date.class.isAssignableFrom(valueClass))
             _simpleType = TYPE_DATE;
-        else if(Boolean.class.isAssignableFrom(valueClass))
+        else if (Boolean.class.isAssignableFrom(valueClass) || Boolean.TYPE.isAssignableFrom(valueClass))
             _simpleType = TYPE_BOOLEAN;
         else
         {

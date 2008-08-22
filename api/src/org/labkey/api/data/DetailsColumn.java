@@ -32,6 +32,5 @@ public class DetailsColumn extends UrlColumn
         addGridHeaderClass("labkey-header");
         addDisplayClass("labkey-details");
     }
-
 }
 

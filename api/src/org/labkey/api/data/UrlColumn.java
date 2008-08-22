@@ -32,6 +32,12 @@ public class UrlColumn extends SimpleDisplayColumn
         setURL(urlExpression);
     }
 
+    public UrlColumn(String url, String text)
+    {
+        setDisplayHtml(text);
+        setURL(url);
+    }
+
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
         Object value = getValue(ctx);
