@@ -705,7 +705,7 @@ public class UserController extends SpringActionController
             }
             User requestedUser = UserManager.getUser(_userId);
             if (requestedUser == null)
-                return HttpView.throwNotFoundMV();
+                return HttpView.throwNotFoundMV("User not found");
             List<AccessDetailRow> rows = new ArrayList<AccessDetailRow>();
 
             Container c = getContainer();

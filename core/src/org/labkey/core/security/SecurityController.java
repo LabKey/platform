@@ -858,6 +858,8 @@ public class SecurityController extends SpringActionController
             {
                 buildAccessDetailList(Collections.singletonList(getContainer().getProject()), rows, _requestedGroup, 0);
             }
+            else
+                return HttpView.throwNotFoundMV("Group not found");
 
             UserController.AccessDetail bean = new UserController.AccessDetail(rows, false);
             return new JspView<UserController.AccessDetail>("/org/labkey/core/user/userAccess.jsp", bean, errors);
