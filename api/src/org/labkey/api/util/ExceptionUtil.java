@@ -624,7 +624,7 @@ public class ExceptionUtil
 
         errorView = ExceptionUtil.getErrorView(responseStatus, message, ex, request, startupFailure);
 
-        if (responseStatus == HttpServletResponse.SC_NOT_FOUND)
+        if (responseStatus == HttpServletResponse.SC_NOT_FOUND || responseStatus == HttpServletResponse.SC_UNAUTHORIZED)
         {
             _log.warn(null == message ? "" : message, ex);
         }
