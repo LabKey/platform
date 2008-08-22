@@ -2556,7 +2556,7 @@ public class WikiController extends SpringActionController
             {
                 wiki = WikiManager.getWiki(getViewContext().getContainer(), form.getName());
                 if(null == wiki)
-                    throw new NotFoundException("There is no wiki in the current folder named '" + form.getName() + '!');
+                    throw new NotFoundException("There is no wiki in the current folder named '" + form.getName() + "'!");
 
                 //get the current version
                 curVersion = wiki.latestVersion();
