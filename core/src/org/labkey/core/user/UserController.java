@@ -39,6 +39,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.jsp.HttpJspPage;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
@@ -313,6 +314,8 @@ public class UserController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             SimpleFilter filter = authorizeAndGetProjectMemberFilter();
+            if(null == getViewContext().getRequest().getParameter("inactive"))
+                filter.addCondition("Active", true); //filter out active users by default
             DataRegion rgn = getGridRegion(false);
             GridView gridView = new GridView(rgn);
             gridView.setSort(new Sort("email"));
@@ -321,7 +324,7 @@ public class UserController extends SpringActionController
 
             HttpView impersonateView = new ImpersonateView(getContainer());
 
-            return new VBox(gridView, impersonateView);
+            return new VBox(new ToggleInactiveView(), gridView, impersonateView);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -330,6 +333,14 @@ public class UserController extends SpringActionController
                 return root.addChild("Site Users");
             else
                 return root.addChild("Project Members");
+        }
+    }
+
+    public class ToggleInactiveView extends JspView
+    {
+        public ToggleInactiveView()
+        {
+            super("/org/labkey/core/user/toggleInactive.jsp");
         }
     }
 
