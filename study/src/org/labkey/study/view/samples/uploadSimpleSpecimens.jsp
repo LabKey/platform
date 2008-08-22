@@ -31,7 +31,7 @@ Use this form to <b>replace all specimens</b> in the repository with a new list 
 Paste data in the area below
 <form action="handleUploadSpecimens.post" method="post" enctype="multipart/form-data">
     <textarea name=tsv id="tsv" rows=20 cols="70"><%=h(bean.getTsv())%></textarea><br>
-    <%=buttonImg("Submit")%> <%=buttonImg("Cancel", "window.history.back();return false;")%>
+    <%=generateSubmitButton("Submit")%> <%=buttonImg("Cancel", "window.history.back();return false;")%>
 </form>
 
 <b>This will REPLACE all specimens in the repository</b>

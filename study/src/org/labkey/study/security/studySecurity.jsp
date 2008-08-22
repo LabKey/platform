@@ -52,7 +52,7 @@
         %>
     </select>
     </p>
-    <input type=image src="<%=PageFlowUtil.buttonSrc("Update")%>" value="Update">
+    <%=PageFlowUtil.generateSubmitButton("Update")%>
 
 
 </form>

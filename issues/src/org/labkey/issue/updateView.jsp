@@ -19,7 +19,6 @@
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.data.DataRegion"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.api.view.ButtonServlet"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
@@ -60,8 +59,8 @@
     %>
     </table>
     <table class="labkey-button-bar"><tr>
-        <td><input name="<%=bean.getAction()%>" type="image" value="Submit" onClick="LABKEY.setSubmit(true); return true;" src="<%=ButtonServlet.buttonSrc("Submit")%>"></td>
-        <td><%= buttonLink("View Grid", IssuesController.issueURL(context.getContainer(), "list").addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
+        <td><%=PageFlowUtil.generateSubmitButton("Submit", "LABKEY.setSubmit(true); return true;", "name=\"" + bean.getAction() + "\"")%></td>
+        <td><%= generateButton("View Grid", IssuesController.issueURL(context.getContainer(), "list").addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
     </tr></table>
 
     <table width=640>

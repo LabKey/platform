@@ -28,4 +28,4 @@
     List<Person> people = pageInfo.getList();
 %>
 This container contains <%= people.size() %> people.<br>
-<%= buttonLink("View Grid", new ActionURL("demo", "begin", context.getContainer())) %>
+<%= generateButton("View Grid", new ActionURL("demo", "begin", context.getContainer())) %>

@@ -129,7 +129,7 @@ public class JunitController extends SpringActionController
 
                     out.println("</table></div>");
 
-                    out.print("<br><a href=run.view><img src=\"" + PageFlowUtil.buttonSrc("Run All") + "\" alt=\"Run All\"></a>");
+                    out.print("<br>" + PageFlowUtil.generateButton("Run All", "run.view"));
                 }
             };
 

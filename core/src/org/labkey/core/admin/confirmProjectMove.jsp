@@ -41,6 +41,6 @@ This action cannot be undone.
     <input type="hidden" name="addAlias" value="<%=h(f.isAddAlias())%>">
     <input type="hidden" name="target" value="<%=h(f.getTarget())%>">
     <input type="hidden" name="confirmed" value="1">
-    <input type="image" src="<%= PageFlowUtil.buttonSrc("Confirm Move") %>" />
-    <a href="<%=h(cancelURL)%>"><img src="<%= PageFlowUtil.buttonSrc("Cancel") %>" /></a>
+    <%=PageFlowUtil.generateSubmitButton("Confirm Move")%>
+    <%=PageFlowUtil.generateButton("Cancel", cancelURL)%>
 </form>

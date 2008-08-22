@@ -578,8 +578,8 @@ public class AdminController extends SpringActionController
             html.append("</pre>\n");
 
             html.append("<form method=\"post\">");
-            html.append("<input type=\"image\" src=\"").append(PageFlowUtil.buttonSrc("Save to " + consolidator.getFilename())).append("\"> ");
-            html.append(PageFlowUtil.buttonLink("Back", getSuccessURL(form)));
+            html.append(PageFlowUtil.generateSubmitButton("Save to " + consolidator.getFilename()));
+            html.append(PageFlowUtil.generateButton("Back", getSuccessURL(form)));
             html.append("</form>");
 
             return new HtmlView(html.toString());
@@ -1115,7 +1115,6 @@ public class AdminController extends SpringActionController
                     {
                         props.setThemeFont(themeFont.getFriendlyName());
                     }
-                    ButtonServlet.resetColorScheme();
                 }
             }
             catch (IllegalArgumentException e)
@@ -2955,7 +2954,6 @@ public class AdminController extends SpringActionController
                     , form.getTitleBarBackgroundColor(), form.getTitleBarBorderColor()
                     );
 
-                ButtonServlet.resetColorScheme();
                 //parameter to use to set customize page drop-down to user's last choice on define themes page
                 _successURL.addParameter("themeName", themeName);
             }
@@ -3261,8 +3259,7 @@ public class AdminController extends SpringActionController
             else
             {
                 ActionURL url = new AdminUrlsImpl().getCustomizeSiteURL(true);
-                vbox.addView(new HtmlView("All modules are up-to-date.<br><br>" +
-                        "<a href='" + url + "'><img src='" + PageFlowUtil.buttonSrc("Next") + "'></a>"));
+                vbox.addView(new HtmlView("All modules are up-to-date.<br><br>" + PageFlowUtil.generateButton("Next", url)));
             }
 
             getPageConfig().setTemplate(Template.Dialog);
@@ -3398,8 +3395,8 @@ public class AdminController extends SpringActionController
             //Upgrade is not started
             if (null == upgradeUser || _force)
             {
-                out.write("<a href=\"" + getModuleUpgradeURL(true, _force).getEncodedLocalURIString() + "\"><img src='" + PageFlowUtil.buttonSrc("Express " + action) + "'></a>&nbsp;");
-                out.write("<a href=\"" + getModuleUpgradeURL(false, _force).getEncodedLocalURIString() + "\"><img src='" + PageFlowUtil.buttonSrc("Advanced " + action) + "'></a>");
+                out.write(PageFlowUtil.generateButton("Express " + action, getModuleUpgradeURL(true, _force).getLocalURIString()) + "&nbsp;");
+                out.write(PageFlowUtil.generateButton("Advanced " + action, getModuleUpgradeURL(false, _force).getLocalURIString()));
             }
             //I'm already upgrading -- upgrade next module after showing status
             else if (getViewContext().getUser().equals(upgradeUser))

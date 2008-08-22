@@ -32,7 +32,7 @@
     if (null == study)
     {      %>
     No study is active in the current container.<br>
-    <%=buttonLink("Create Study", new ActionURL("Study", "manageStudyProperties.view", c))%>
+    <%=generateButton("Create Study", new ActionURL("Study", "manageStudyProperties.view", c))%>
 <%
         return;
     }

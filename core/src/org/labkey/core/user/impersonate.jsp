@@ -50,7 +50,7 @@
                 }
             %>
             </select><br>
-            <input style="vertical-align:bottom" type=image src="<%=PageFlowUtil.buttonSrc("Impersonate")%>"><%
+            <%=PageFlowUtil.generateSubmitButton("Impersonate", "", "style=\"vertical-align:bottom\"")%><%
             }
             %>
         </td></tr>

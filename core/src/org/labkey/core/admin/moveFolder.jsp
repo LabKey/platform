@@ -57,17 +57,17 @@
     </table>
 
     <table class="labkey-button-bar"><tr>
-    <td><a href="<%=h(AdminController.getManageFoldersURL(c))%>"><img src='<%=PageFlowUtil.buttonSrc("Cancel")%>'></a></td><%
+    <td><%=PageFlowUtil.generateButton("Cancel", AdminController.getManageFoldersURL(c))%></td><%
     if (form.isShowAll())
     {
         if (!c.isProject())
         {
-            %><td><a href="<%=h(AdminController.getShowMoveFolderTreeURL(c, form.isAddAlias(), false))%>"><img src='<%=PageFlowUtil.buttonSrc("Show Current Project Only")%>'></a></td><%
+            %><td><%=PageFlowUtil.generateButton("Show Current Project Only", AdminController.getShowMoveFolderTreeURL(c, form.isAddAlias(), false))%></td><%
         }
     }
     else
     {
-        %><td><a href="<%=h(AdminController.getShowMoveFolderTreeURL(c, form.isAddAlias(), true))%>"><img src='<%=PageFlowUtil.buttonSrc("Show All Projects")%>'></a></td><%
+        %><td><%=PageFlowUtil.generateButton("Show All Projects", AdminController.getShowMoveFolderTreeURL(c, form.isAddAlias(), true))%></td><%
     }
     %></tr>
 </table>

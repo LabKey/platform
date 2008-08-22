@@ -103,7 +103,7 @@ if (selectedDataset != null)
 }
 %>
 </table>
-<input type="image" src="<%=PageFlowUtil.submitSrc()%>">
+<%=PageFlowUtil.generateSubmitButton("Submit")%>
 </form>
 <font class=labkey-error><%= error==null ? "" : filter(error)%></font>
 <script type="text/javascript">

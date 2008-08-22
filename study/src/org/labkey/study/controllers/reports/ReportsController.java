@@ -1515,17 +1515,12 @@ public class ReportsController extends BaseStudyController
             }
             out.write("</select></td>");
 
-            out.write("<td><input type=image src='");
-            out.write(PageFlowUtil.buttonSrc("Save"));
-            out.write("'></form>");
+            out.write("<td>" + PageFlowUtil.generateSubmitButton("Save"));
+            out.write("</form>");
 
             if (confirm)
             {
-                out.write("&nbsp;<a href='");
-                out.write(PageFlowUtil.filter(srcURL));
-                out.write("'><img src='");
-                out.write(PageFlowUtil.buttonSrc("Cancel"));
-                out.write("'></a>");
+                out.write("&nbsp;" + PageFlowUtil.generateButton("Cancel", srcURL));
             }
             out.write("</td></tr></table>");
         }

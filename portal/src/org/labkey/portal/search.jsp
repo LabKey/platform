@@ -45,13 +45,13 @@ Search <%=h(bean.what)%> in this <%=(c.isProject() ? "project" : "folder")%><%
     <td colspan=2>&nbsp;</td>
 </tr>
 <tr>
-    <td colspan=2><input type="image" src="<%=PageFlowUtil.buttonSrc("Search")%>"></td>
+    <td colspan=2><%=PageFlowUtil.generateSubmitButton("Search")%></td>
     <%
     }
     else
     { %>
     <td><input type="hidden" name="includeSubfolders" value="<%=bean.includeSubfolders ? "on" : "off"%>"></td>
-    <td colspan=2><input type="image" src="<%=PageFlowUtil.buttonSrc("Search")%>"></td>
+    <td colspan=2><%=PageFlowUtil.generateSubmitButton("Search")%></td>
     <%
     }
     %>

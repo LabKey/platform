@@ -42,8 +42,8 @@
     %>
         <tr><td></td></tr>
         <tr>
-            <td><%=PageFlowUtil.buttonLink("Show Grid", showGridLink)%>&nbsp;
-            <input type="image" src="<%=PageFlowUtil.buttonSrc("Update")%>"></td>
+            <td><%=PageFlowUtil.generateButton("Show Grid", showGridLink)%>&nbsp;
+                <%=PageFlowUtil.generateSubmitButton("Update")%></td>
         </tr>
     </table><br>
 </form>

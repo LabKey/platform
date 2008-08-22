@@ -24,7 +24,7 @@
         </tr>
         <tr>
             <td>&nbsp;</td>
-            <td><%= buttonImg("Update")%>&nbsp;<%= buttonLink("Cancel", "manageStudy.view")%></td>
+            <td><%= generateSubmitButton("Update")%>&nbsp;<%= generateButton("Cancel", "manageStudy.view")%></td>
         </tr>
     </table>
 </form>

@@ -34,5 +34,5 @@
             <% } %>
         </select>
     </div>
-    <div><%= buttonLink("Cancel", getViewContext().cloneActionURL().setAction("begin")) %> <%= buttonImg("Next" )%></div>
+    <div><%= generateButton("Cancel", getViewContext().cloneActionURL().setAction("begin")) %> <%= generateSubmitButton("Next" )%></div>
 </form>

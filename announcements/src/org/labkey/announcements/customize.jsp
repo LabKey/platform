@@ -104,8 +104,8 @@
         <td><table><tr><td><input type="checkbox" name="includeGroups"<%=settings.includeGroups() ? " checked" : ""%>></td></tr></table></td>
     </tr>
     <tr>
-        <td colspan=2><input type="image" src="<%=PageFlowUtil.buttonSrc("Save")%>"/>
-        <%=PageFlowUtil.buttonLink("Cancel", bean.returnURL)%></td>
+        <td colspan=2><%=PageFlowUtil.generateSubmitButton("Save")%>
+        <%=PageFlowUtil.generateButton("Cancel", bean.returnURL)%></td>
     </tr>
 </table>
 </form>

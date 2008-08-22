@@ -36,7 +36,7 @@
 <% if (bean.getObjects().isEmpty())
 { %>
     <p>There are no selected objects to delete.</p>
-<%= buttonLink("OK", "begin.view")%>
+<%= generateButton("OK", "begin.view")%>
 
 <% }
 else
@@ -110,8 +110,8 @@ else
         <input type="hidden" name="forceDelete" value="true"/>
         <% if (bean.getRunsWithoutPermission().isEmpty() )
         { %>
-            <%= buttonImg("Confirm Delete") %>
+            <%= generateSubmitButton("Confirm Delete") %>
         <% } %>
-        <%= buttonLink("Cancel", bean.getReturnURL() == null ? "begin.view" : bean.getReturnURL())%>
+        <%= generateButton("Cancel", bean.getReturnURL() == null ? "begin.view" : bean.getReturnURL())%>
     </form>
 <% } %>

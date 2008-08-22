@@ -124,9 +124,9 @@
         <tr>
             <td>&nbsp;</td>
             <td>
-                <%= buttonImg("Save")%>&nbsp;
+                <%= generateSubmitButton("Save")%>&nbsp;
                 <%= buttonImg("Done", "document.manageActors.nextPage.value=''; return true;")%>
-                <%= buttonLink("Cancel", ActionURL.toPathString("Study", "manageStudy.view", study.getContainer()))%>&nbsp;
+                <%= generateButton("Cancel", ActionURL.toPathString("Study", "manageStudy.view", study.getContainer()))%>&nbsp;
                 <%= buttonImg("Change Order", "document.manageActors.nextPage.value='manageActorOrder'; return true;")%>
                 <input type="hidden" name="nextPage" value="manageActors">
             </td>

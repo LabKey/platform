@@ -84,16 +84,16 @@
 
     <table class="labkey-button-bar">
         <tr>
-            <td><input type="image" src='<%=PageFlowUtil.buttonSrc("Next")%>'></td>
+            <td><%=PageFlowUtil.generateSubmitButton("Next")%> </td>
             <td><%
                 if (!c.isRoot())
                 {
-                    %><a href="manageFolders.view"><%
+                    %><%=PageFlowUtil.generateButton("Cancel", "manageFolders.view")%><%
                 }
                 else
                 {
-                    %><a href="createFolder.view" onclick="window.history.back(); return false;"><%
-                } %><img src='<%=PageFlowUtil.buttonSrc("Cancel")%>'></a></td>
+                    %><%=PageFlowUtil.generateButton("Cancel", "createFolder.view", "window.history.back(); return false;")%><%
+                } %></td>
         </tr>
     </table>
 </form>

@@ -78,7 +78,7 @@
         </tr>
         <tr>
             <td>&nbsp;</td>
-            <td><%= buttonImg("Create Study")%>&nbsp;<%= buttonLink("Back", "#", "window.history.back();return null;")%></td>
+            <td><%= generateSubmitButton("Create Study")%>&nbsp;<%= generateButton("Back", "#", "window.history.back();return null;")%></td>
         </tr>
     </table>
 </form>

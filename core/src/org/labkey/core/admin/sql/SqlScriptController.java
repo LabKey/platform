@@ -493,10 +493,10 @@ public class SqlScriptController extends SpringActionController
                     view.addObject("providerName", form.getProvider().getProviderName());
 
                     showListUrl.deleteParameter("finish");
-                    view.addObject("showListUrl", showListUrl.getEncodedLocalURIString());
+                    view.addObject("showListUrl", showListUrl.getLocalURIString());
 
                     ActionURL finishUrl = getViewContext().cloneActionURL().setAction("finish");
-                    view.addObject("finishUrl", finishUrl.getEncodedLocalURIString());
+                    view.addObject("finishUrl", finishUrl.getLocalURIString());
 
                     return view;
                 }

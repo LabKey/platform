@@ -111,5 +111,7 @@
     }%>
 </table>
 <input type="hidden" name="<%=ReturnUrlForm.Params.returnUrl%>" value="<%=bean.returnURL%>">
-<input type="image" src="<%=PageFlowUtil.submitSrc()%>">&nbsp;<input type=image src="<%=PageFlowUtil.buttonSrc("Cancel")%>" value="Cancel" onclick="javascript:window.history.back(); return false;">
+    <%=PageFlowUtil.generateSubmitButton("Submit")%>
+    &nbsp;
+    <%=PageFlowUtil.generateSubmitButton("Cancel", "javascript:window.history.back(); return false;")%>
 </form>

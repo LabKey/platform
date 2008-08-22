@@ -18,7 +18,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <br>
 <table>
-<tr><td><a href="list.view?.lastFilter=true"><img src="<%=PageFlowUtil.buttonSrc("Back to Issues")%>"></a></td></tr>
+<tr><td><%=PageFlowUtil.generateButton("Back to Issues", "list.view?.lastFilter=true")%></td></tr>
 <tr><td>&nbsp;</td></tr>
 </table>
 <% currentView.include(currentView.getView("keywordView")); %>
@@ -39,7 +39,7 @@
     <tr><td>String1</td><td><input name="string1" value="<%=captions.string1%>" size=20><input type="checkbox" name="<%=pickListName%>" value="string1" <%=pickLists.contains("string1") ? "checked" : ""%>>Use pick list for this field</td></tr>
     <tr><td>String2</td><td><input name="string2" value="<%=captions.string2%>" size=20><input type="checkbox" name="<%=pickListName%>" value="string2" <%=pickLists.contains("string2") ? "checked" : ""%>>Use pick list for this field</td></tr>
     <tr><td colspan=2>&nbsp;</td></tr>
-    <tr><td colspan=2><input type="image" src="<%=PageFlowUtil.buttonSrc("Update Custom Fields")%>" value="Set Captions"></td></tr>
+    <tr><td colspan=2><%=PageFlowUtil.generateSubmitButton("Update Custom Fields")%></td></tr>
     </table>
     </form>
 </td>

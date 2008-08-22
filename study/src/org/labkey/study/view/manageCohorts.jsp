@@ -52,7 +52,7 @@
            value="true" <%=study.isManualCohortAssignment() ? "checked" : ""%>>Manual
     <p>
         <%= buttonImg("Update", "document.manageCohorts.reshow.value='true'; return true;")%>
-        <%= buttonLink("Cancel", new ActionURL(StudyController.ManageStudyAction.class, me.getViewContext().getContainer()))%>
+        <%= generateButton("Cancel", new ActionURL(StudyController.ManageStudyAction.class, me.getViewContext().getContainer()))%>
 
     <%
         WebPartView.endTitleFrame(out);
@@ -113,7 +113,7 @@
         <tr>
             <td>&nbsp;</td>
             <td>
-                <%= buttonImg("Update Assignments")%>
+                <%= generateSubmitButton("Update Assignments")%>
                 <%= buttonImg("Clear Assignments", "if (confirm('Refreshing will clear cohort information for all participants.  Continue?')) { document.manageCohorts.clearParticipants.value='true'; return true; } else return false;")%>
             </td>
         </tr>

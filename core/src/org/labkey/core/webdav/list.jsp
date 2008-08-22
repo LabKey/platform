@@ -40,7 +40,6 @@ FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:s
     String userAgent = StringUtils.trimToEmpty(request.getHeader("user-agent"));
     boolean supportsDavMount = false;
     boolean supportsDavScheme = false;
-    boolean supportsFolderAttribute = false;        // <a folder=""> support removed in recent verions of windows
     boolean supportsWebdavScheme = userAgent.contains("Konqueror");
 %>
 <html>
@@ -162,10 +161,9 @@ BODY, TD, TH { font-family: arial sans-serif; color: black; }
 %>
 This is a WebDav enabled directory.<br>
 <%
-if (supportsDavMount) {%><%=PageFlowUtil.buttonLink("davmount","?davmount")%><br><%}
-if (supportsDavScheme) {%><%=PageFlowUtil.buttonLink("dav", href.replace("http:","dav:"))%><br><%}
-if (supportsWebdavScheme) {%><%=PageFlowUtil.buttonLink("webdav", href.replace("http:","webdav:"))%><br><%}
-if (supportsFolderAttribute) {%><a href="<%=h(href)%>" folder="<%=h(folder)%>"><%=PageFlowUtil.buttonImg("folder")%></a><br><%}
+if (supportsDavMount) {%><%=PageFlowUtil.generateButton("davmount","?davmount")%><br><%}
+if (supportsDavScheme) {%><%=PageFlowUtil.generateButton("dav", href.replace("http:","dav:"))%><br><%}
+if (supportsWebdavScheme) {%><%=PageFlowUtil.generateButton("webdav", href.replace("http:","webdav:"))%><br><%}
 
     ArrayList<String> can = new ArrayList<String>();
     if (resource.canRead(user)) can.add("read");

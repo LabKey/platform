@@ -67,6 +67,6 @@
 <p>
     <input type="checkbox" name="<%= AssayDetailsWebPartFactory.SHOW_BUTTONS_KEY%>" value="true" <%= showButtons ? "CHECKED" : "" %>> Show buttons in web part
 </p>
-    <%=buttonImg("Submit")%> <%=buttonLink("Cancel", "begin.view")%>
+    <%=generateSubmitButton("Submit")%> <%=generateButton("Cancel", "begin.view")%>
 
 </form>

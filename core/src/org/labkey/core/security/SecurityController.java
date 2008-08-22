@@ -319,7 +319,7 @@ public class SecurityController extends SpringActionController
             projectViews.addView(getGroupsView(c, expandedGroup, errors, messages));
 
         ActionURL startURL = c.getFolderType().getStartURL(c, getUser());
-        projectViews.addView(new HtmlView(PageFlowUtil.buttonLink("Done", startURL)));
+        projectViews.addView(new HtmlView(PageFlowUtil.generateButton("Done", startURL)));
         if(c.isRoot())
             body.addView(projectViews);
         else

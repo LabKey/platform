@@ -62,7 +62,7 @@
         <tr>
             <td></td>
             <td>
-                <%= buttonImg("Save") %>
+                <%= generateSubmitButton("Save") %>
             </td>
         </tr>
     </table>

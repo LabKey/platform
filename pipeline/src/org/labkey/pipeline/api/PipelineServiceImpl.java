@@ -216,8 +216,7 @@ public class PipelineServiceImpl extends PipelineService
 
     public String getButtonHtml(String text, ActionURL href)
     {
-        return "<a href=\"" + PageFlowUtil.filter(href.toString()) + "\">" +
-                "<img alt=\"" + PageFlowUtil.filter(text) + "\" src=\"" + PageFlowUtil.filter(PageFlowUtil.buttonSrc(text)) + "\"></a>";
+        return PageFlowUtil.generateButton(text, href.toString());
     }
 
     public boolean isEnterprisePipeline()

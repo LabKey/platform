@@ -74,8 +74,8 @@
                 <%= buttonImg("Save", "document.forms['editorForm'].customScript.disabled = false; LABKEY.setSubmit(true); document.forms['editorForm'].reshow.value = true; return true;")%>
                 <%= buttonImg("Save and Finish", "document.forms['editorForm'].customScript.disabled = false; LABKEY.setSubmit(true); return true;")%>
                 <%= bean.getReturnUrl() != null && bean.getReturnUrl().length() > 0 ? 
-                        buttonLink("Cancel", bean.getReturnUrl()) :
-                        buttonLink("Cancel", new ActionURL(ReportsController.ManageReportsAction.class, getViewContext().getContainer())) %>
+                        generateButton("Cancel", bean.getReturnUrl()) :
+                        generateButton("Cancel", new ActionURL(ReportsController.ManageReportsAction.class, getViewContext().getContainer())) %>
                 <%= buttonImg("Restore default script", "if (confirm('Restore default script?  You will lose any changes made to this page.')) document.getElementById('customScript').value = DEFAULT_SCRIPT_VALUE; return false;") %>
             </td>
         </tr>

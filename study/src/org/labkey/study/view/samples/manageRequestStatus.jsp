@@ -88,8 +88,8 @@
         <tr>
             <th>&nbsp;</th>
             <td>
-                <%= buttonImg("Save Changes and Send Notifications")%>&nbsp;
-                <%= buttonLink("Cancel", "manageRequest.view?id=" + bean.getSampleRequest().getRowId())%>
+                <%= generateSubmitButton("Save Changes and Send Notifications")%>&nbsp;
+                <%= generateButton("Cancel", "manageRequest.view?id=" + bean.getSampleRequest().getRowId())%>
             </td>
         </tr>
     </table>

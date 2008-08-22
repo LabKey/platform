@@ -75,6 +75,6 @@
 
     </table>
 
-    <input type="image" src="<%=PageFlowUtil.submitSrc()%>" >
+    <%=PageFlowUtil.generateSubmitButton("Submit")%>
 </form>
 

@@ -63,7 +63,7 @@
     <table>
         <tr>
             <td>
-                <%= this.buttonImg("Save")%>&nbsp;<%= this.buttonLink("Cancel", "datasetDetails.view?id=" + dataset.getDataSetId())%>
+                <%= this.generateSubmitButton("Save")%>&nbsp;<%= this.generateButton("Cancel", "datasetDetails.view?id=" + dataset.getDataSetId())%>
             </td>
         </tr>
         <tr>
@@ -153,7 +153,7 @@
         <tr>
             <td>&nbsp;</td>
             <td>
-                <%= this.buttonImg("Save")%>&nbsp;<%= this.buttonLink("Cancel", "datasetDetails.view?id=" + dataset.getDataSetId())%>
+                <%= this.generateSubmitButton("Save")%>&nbsp;<%= this.generateButton("Cancel", "datasetDetails.view?id=" + dataset.getDataSetId())%>
             </td>
         </tr>
     </table>

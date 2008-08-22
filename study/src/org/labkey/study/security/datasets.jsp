@@ -169,10 +169,10 @@ else
     %>
     </table>
     <table><tr>
-        <td><img src="<%=PageFlowUtil.buttonSrc("Set all to Read")%>" alt="Set all to Read" onclick="setAllSelections('READ');"></td>
-        <td><img src="<%=PageFlowUtil.buttonSrc("Set all to Write")%>" alt="Set all to Write" onclick="setAllSelections('WRITE');"></td>
-        <td><img src="<%=PageFlowUtil.buttonSrc("Clear All")%>" alt="Clear All" onclick="setAllSelections('NONE');"></td>
-        <td><input type=image src="<%=PageFlowUtil.buttonSrc("Update")%>"></td></tr></table>
+        <td><%=PageFlowUtil.generateButton("Set all to Read", "", "setAllSelections('READ');")%></td>
+        <td><%=PageFlowUtil.generateButton("Set all to Write", "", "setAllSelections('WRITE');")%></td>
+        <td><%=PageFlowUtil.generateButton("Clear All", "", "setAllSelections('NONE');")%></td>
+        <td><%=PageFlowUtil.generateSubmitButton("Update")%></td></tr></table>
 </form>
 
 <script type="text/javascript">

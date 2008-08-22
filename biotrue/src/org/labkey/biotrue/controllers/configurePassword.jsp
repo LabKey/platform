@@ -35,8 +35,8 @@
         <tr><td align=center><div class="labkey-form-label"><b>Set Server Password</b></div></td></tr>
         <tr><td>Server:&nbsp;<%=server.getName()%></td><td><input name="password" value="<%=StringUtils.trimToEmpty(server.getPassword())%>"></td></tr>
         <tr><td colspan="2">
-            <%=PageFlowUtil.buttonLink("Cancel", form.getContext().cloneActionURL().setAction("admin.view"))%>&nbsp;
-            <input type="image" src="<%=PageFlowUtil.buttonSrc("Update")%>">&nbsp;
+            <%=PageFlowUtil.generateButton("Cancel", form.getContext().cloneActionURL().setAction("admin.view"))%>&nbsp;
+            <%=PageFlowUtil.generateSubmitButton("Update")%>&nbsp;
         </td></tr>
         <tr><td>&nbsp;</td></tr>
     </table>

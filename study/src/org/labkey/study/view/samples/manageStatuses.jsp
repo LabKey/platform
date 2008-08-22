@@ -126,9 +126,9 @@ function showSystemRows(value)
                 <th>&nbsp;</th>
                 <td>&nbsp;</td>
                 <td colspan="3">
-                    <%= buttonImg("Save")%>&nbsp;
+                    <%= generateSubmitButton("Save")%>&nbsp;
                     <%= buttonImg("Done", "document.manageStatuses.nextPage.value=''; return true;")%>
-                    <%= buttonLink("Cancel", ActionURL.toPathString("Study", "manageStudy.view", study.getContainer()))%>&nbsp;
+                    <%= generateButton("Cancel", ActionURL.toPathString("Study", "manageStudy.view", study.getContainer()))%>&nbsp;
                     <%= buttonImg("Change Order", "document.manageStatuses.nextPage.value='manageStatusOrder'; return true;")%>
                     <input type="hidden" name="nextPage" value="manageStatuses">
                 </td>

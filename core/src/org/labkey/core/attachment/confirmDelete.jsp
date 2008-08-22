@@ -28,8 +28,8 @@
   </tr>
   <tr>
     <td>
-      <a href="<%=h(me.deleteURL)%>"><img src="<%=PageFlowUtil.buttonSrc("OK")%>"></a>
-      <a href="#cancel"><img onClick="window.close()" src="<%=PageFlowUtil.buttonSrc("Cancel")%>"></a>
+        <%=PageFlowUtil.generateButton("OK", me.deleteURL)%>
+        <%=PageFlowUtil.generateButton("Cancel", "#cancel", "window.close();")%>
     </td>
   </tr>
 </table>

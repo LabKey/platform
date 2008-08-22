@@ -133,8 +133,8 @@ function setElementDisplayByCheckbox(checkbox, element)
         <tr>
             <th>&nbsp;</th>
             <td>
-                <%= buttonImg("Save") %>&nbsp;
-                <%= buttonLink("Cancel", ActionURL.toPathString("Study", "manageStudy", container))%>
+                <%= generateSubmitButton("Save") %>&nbsp;
+                <%= generateButton("Cancel", ActionURL.toPathString("Study", "manageStudy", container))%>
             </td>
         </tr>
     </table>

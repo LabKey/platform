@@ -63,8 +63,8 @@
     <tr>
         <td></td>
         <td>
-            <%= buttonImg("Next") %>
-            <%= buttonLink("Cancel", "begin.view") %>
+            <%= generateSubmitButton("Next") %>
+            <%= generateButton("Cancel", "begin.view") %>
         </td>
     </tr>
 </table>

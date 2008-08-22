@@ -57,7 +57,7 @@
     %>
         <tr><td></td></tr>
         <tr>
-            <td colspan="2"><input type="image" src="<%=PageFlowUtil.buttonSrc("Update Required Fields")%>"></td>
+            <td colspan="2"><%=PageFlowUtil.generateSubmitButton("Update Required Fields")%></td>
         </tr>
     </table><br>
 </form>

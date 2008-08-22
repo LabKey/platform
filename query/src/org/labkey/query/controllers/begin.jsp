@@ -95,7 +95,7 @@
             <% } %></td>
         <td>
             <labkey:button text="Properties"
-                         alt="<%="Properties " + query.getName()%>"
+                         name="<%="Properties " + query.getName()%>"
                          href="<%=currentSchema.urlFor(QueryAction.propertiesQuery, query)%>"/>
         </td>
         <% } %>

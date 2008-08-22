@@ -94,7 +94,9 @@
         </td>
     <tr>
         <td></td>
-        <td><input type="image" src="<%=PageFlowUtil.submitSrc()%>"> <a href="javascript:clearValues()"><img src="<%= PageFlowUtil.buttonSrc("Clear") %>" alt="Clear"></a></td>
+        <td>
+            <%=PageFlowUtil.generateSubmitButton("Submit")%>
+            <%=PageFlowUtil.generateButton("Clear", "", "javascript:clearValues()")%></td>
     </tr>
 
 </table>

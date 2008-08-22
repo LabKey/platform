@@ -72,8 +72,8 @@
     </table>
     <table>
         <tr><td>
-            <%=PageFlowUtil.buttonLink("Back to BioTrue", context.cloneActionURL().setAction("begin.view"))%>&nbsp;
-            <input type="image" src="<%=PageFlowUtil.buttonSrc("Delete Selected Servers")%>">&nbsp;
+            <%=PageFlowUtil.generateButton("Back to BioTrue", context.cloneActionURL().setAction("begin.view"))%>&nbsp;
+            <%=PageFlowUtil.generateSubmitButton("Delete Selected Servers")%>&nbsp;
         </td></tr>
         <tr><td>&nbsp;</td></tr>
     </table>

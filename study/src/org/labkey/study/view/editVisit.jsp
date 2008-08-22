@@ -189,7 +189,7 @@
     </table>
     <table>
         <tr>
-            <td><%= buttonImg("Save")%>&nbsp;<%= buttonLink("Delete visit", "confirmDeleteVisit.view?id="+visit.getRowId())%>&nbsp;<%= buttonLink("Cancel", "manageVisits.view")%></td>
+            <td><%= generateSubmitButton("Save")%>&nbsp;<%= generateButton("Delete visit", "confirmDeleteVisit.view?id="+visit.getRowId())%>&nbsp;<%= generateButton("Cancel", "manageVisits.view")%></td>
         </tr>
     </table>
 </form>

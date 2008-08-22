@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.common.util.Pair"%>
 <%@ page import="java.util.List"%>
 <%@ page import="org.labkey.study.samples.notifications.ActorNotificationRecipientSet" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpringSpecimenController.ManageRequirementBean> me = (JspView<SpringSpecimenController.ManageRequirementBean>) HttpView.currentView();
@@ -157,9 +158,9 @@
                     <tr>
                         <th>&nbsp;</th>
                         <td>
-                            <%= buttonImg("Save Changes and Send Notifications") %>&nbsp;
-                            <%= buttonLink("Delete Requirement", deleteURL)%>&nbsp;
-                            <%= buttonLink("Cancel", "manageRequest.view?id=" + requirement.getRequestId())%>
+                            <%= generateSubmitButton("Save Changes and Send Notifications") %>&nbsp;
+                            <%= PageFlowUtil.generateSubmitButton("Delete Requirement", "this.form.action='" + deleteURL + "'")%>&nbsp;
+                            <%= generateButton("Cancel", "manageRequest.view?id=" + requirement.getRequestId())%>
                         </td>
                     </tr>
                 </table>

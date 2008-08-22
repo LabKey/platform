@@ -79,7 +79,7 @@
         <tr><td>&nbsp;</td></tr>
         <tr><td></td><td><select name="updateDelay" id="updateDelay" style="display:none"><labkey:options value="<%=String.valueOf(bean.getUpdateDelay())%>" map="<%=updateDelay%>"></labkey:options></select></td></tr>
 
-        <tr><td><input type="image" src="<%=PageFlowUtil.buttonSrc("Next")%>"></td></tr>
+        <tr><td><%=PageFlowUtil.generateSubmitButton("Next")%></td></tr>
 
         <tr><td></td><td><table>
     <%  for (DisplayColumn col : QuerySnapshotService.get(bean.getSchemaName()).getDisplayColumns(bean)) { %>

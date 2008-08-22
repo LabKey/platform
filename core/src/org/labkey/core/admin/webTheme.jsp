@@ -357,16 +357,16 @@ if (null == webThemeErrors)
         <%
         if (!isBuiltInTheme)
         {%>
-             <input type="image" id="saveButton" src='<%=PageFlowUtil.buttonSrc("Save")%>' name="Define" />&nbsp;
+        <%=PageFlowUtil.generateSubmitButton("Save", "", "id=\"saveButton\" name=\"Define\"")%>&nbsp;
             <%
             if (selectedTheme != null && bean.themes.size() > 1)
             {%>
-                <input type="image" src='<%=PageFlowUtil.buttonSrc("Delete")%>' name="Delete" onClick="return confirm('Are you sure you want to delete the theme named <%=request.getParameter("themeName")%>?');" />&nbsp;
+                <%=PageFlowUtil.generateSubmitButton("Delete", "return confirm('Are you sure you want to delete the theme named " + request.getParameter("themeName") + "?');", "name=\"Delete\"")%>&nbsp;
             <%}
         }
         else
             {%>
-            <%=PageFlowUtil.buttonLink("Done", PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeSiteURL(bean.form.isUpgradeInProgress()))%>
+            <%=PageFlowUtil.generateButton("Done", PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeSiteURL(bean.form.isUpgradeInProgress()))%>
            <%}%>
     </td>
 </tr>

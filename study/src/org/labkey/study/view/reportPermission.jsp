@@ -139,7 +139,7 @@
         }
         %>
     </table>
-    <input type=image src="<%=PageFlowUtil.buttonSrc("save")%>">
+    <%=PageFlowUtil.generateSubmitButton("save")%>
 <%--
     <input type=hidden name=reportId value="<%=bean.getDescriptor().getReportId()%>">
 --%>

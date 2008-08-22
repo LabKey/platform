@@ -140,8 +140,8 @@ function orderModule(listName, down, targetName)
                     </select>
                 </td>
                 <td align="center" valign="center">
-                    <input type='image' src="<%=PageFlowUtil.buttonSrc('Move Up')%>" value='Move Up' onclick="return orderModule('siblings', 0, 'siblingOrder')"><br><br>
-                    <input type='image' src="<%=PageFlowUtil.buttonSrc('Move Down')%>" value='Move Down' onclick="return orderModule('siblings', 1, 'siblingOrder')">
+                    <%=PageFlowUtil.generateSubmitButton("Move Up", "return orderModule('siblings', 0, 'siblingOrder')")%><br><br>
+                    <%=PageFlowUtil.generateSubmitButton("Move Down", "return orderModule('siblings', 1, 'siblingOrder')")%>
                 </td>
             </tr>
         </table>
@@ -169,8 +169,8 @@ function orderModule(listName, down, targetName)
                     </select>
                 </td>
                 <td align="center" valign="center">
-                    <input type='image' src="<%=PageFlowUtil.buttonSrc('Move Up')%>" value='Move Up' onclick="return orderModule('children', 0, 'childOrder')"><br><br>
-                    <input type='image' src="<%=PageFlowUtil.buttonSrc('Move Down')%>" value='Move Down' onclick="return orderModule('children', 1, 'childOrder')">
+                    <%=PageFlowUtil.generateSubmitButton("Move Up", "return orderModule('children', 0, 'childOrder')")%><br><br>
+                    <%=PageFlowUtil.generateSubmitButton("Move Down", "return orderModule('children', 1, 'childOrder')")%>
                 </td>
             </tr>
         </table>
@@ -184,11 +184,12 @@ function orderModule(listName, down, targetName)
 <input type="hidden" name="originalName" value="<%= wiki.getName() %>">
 <input type="hidden" name="rowId" value="<%= wiki.getRowId() %>">
 <input type="hidden" name="nextAction" value="">
-<input type="image" src="<%=PageFlowUtil.buttonSrc('Save')%>" value="Save" onClick="document.manage.nextAction.value = 'page'; return true;" title="Save Changes">
-<input type="image" src="<%=PageFlowUtil.buttonSrc('Edit Content')%>" value="Edit Content" onClick="document.manage.nextAction.value = 'editWiki'; return true;" title="Edit Content and Attachments">
+<%=PageFlowUtil.generateSubmitButton("Save", "document.manage.nextAction.value = 'page'; return true;", "title=\"Save Changes\"")%>
+<%=PageFlowUtil.generateSubmitButton("Edit Content", "document.manage.nextAction.value = 'editWiki'; return true;", "title=\"Edit Content and Attachments\"")%>
 <% if (deleteLink != null)
     {
-    %><a href="<%= deleteLink %>"><img src="<%=PageFlowUtil.buttonSrc('Delete Page')%>" title="Delete this Page"></a><%
+    %>
+        <%=PageFlowUtil.generateButton("Delete Page", deleteLink, "title=\"Delete this Page\"")%><%
     }
 %>
 

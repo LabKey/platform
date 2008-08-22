@@ -175,9 +175,9 @@
         <tr><td class="labkey-form-label">Message:</td><td><textarea id="emailMessage" name="emailMessage" style="width:100%" rows="20"><%=bean.getEmailMessage()%></textarea></td></tr>
         <tr>
             <td></td><td>
-            <%=PageFlowUtil.buttonLink("Cancel", urlProvider(AdminUrls.class).getAdminConsoleURL())%>&nbsp;
-            <input type="image" src="<%=PageFlowUtil.buttonSrc("Reset to Default")%>" onclick="this.form.action='deleteCustomEmail.view'">&nbsp;
-            <input type="image" src="<%=PageFlowUtil.buttonSrc("Update")%>">&nbsp;
+            <%=PageFlowUtil.generateButton("Cancel", urlProvider(AdminUrls.class).getAdminConsoleURL())%>&nbsp;
+            <%=PageFlowUtil.generateSubmitButton("Reset to Default", "this.form.action='deleteCustomEmail.view'")%>&nbsp;
+            <%=PageFlowUtil.generateSubmitButton("Update")%>&nbsp;
         </tr>
         <tr><td>&nbsp;</td></tr>
         <tr><td></td><td><i>An email subject or message can contain a mixture of static text and substitution parameters.

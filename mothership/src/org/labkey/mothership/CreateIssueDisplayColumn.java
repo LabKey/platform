@@ -103,7 +103,6 @@ public class CreateIssueDisplayColumn extends DataColumn
         out.write("\t<input type=\"hidden\" name=\"skipPost\" value=\"true\"/>\n");
 
         _saveButton.render(ctx, out);
-
-        out.write("\t<a href=\"javascript:document.forms.ExceptionStackTrace.action = '" + createIssueURL + "'; document.forms.ExceptionStackTrace.submit()\"><img src=\"" + PageFlowUtil.buttonSrc("Create Issue") + "\"/></a>");
+        out.write("\t" + PageFlowUtil.generateButton("Create Issue", "javascript:document.forms.ExceptionStackTrace.action = '" + createIssueURL + "'; document.forms.ExceptionStackTrace.submit()"));
     }
 }

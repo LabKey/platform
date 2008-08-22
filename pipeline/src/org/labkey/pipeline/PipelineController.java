@@ -1322,9 +1322,24 @@ public class PipelineController extends SpringActionController
         }
 
         @Override
-        public String getButtonSrc()
+        public String getButton(String onClick)
         {
-            return AppProps.getInstance().getContextPath() + "/_images/delete.gif";
+            StringBuilder sb = new StringBuilder();
+            if (onClick != null && onClick.compareTo("") != 0)
+            {
+                sb.append("<input type=\"image\" onclick=\"").append(onClick).append("\" ")
+                        .append("alt=\"").append(PageFlowUtil.filter(getLabel())).append("\" ")
+                        .append("src=\"").append(PageFlowUtil.filter(AppProps.getInstance().getContextPath() + "/_images/delete.gif")).append("\" ")
+                        .append("border=\"0\"/>");
+            }
+            else
+            {
+                sb.append("<a href=\"").append(PageFlowUtil.filter(getHref())).append("\">")
+                        .append("<img alt=\"").append(PageFlowUtil.filter(getLabel())).append("\" ")
+                        .append("src=\"").append(PageFlowUtil.filter(AppProps.getInstance().getContextPath() + "/_images/delete.gif")).append("\" ")
+                        .append("border=\"0\"/></a>");
+            }
+            return sb.toString();
         }
     }
 

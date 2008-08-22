@@ -96,7 +96,7 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
             if (_extraLinks != null)
             {
                 for (NavTree link : _extraLinks)
-                    content.append(PageFlowUtil.buttonLink(link.getKey(), link.getValue())).append(" ");
+                    content.append(PageFlowUtil.generateButton(link.getKey(), link.getValue())).append(" ");
             }
             if (_showOptionLinks)
             {
@@ -123,14 +123,14 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
                         String submitLink = ctx.getViewContext().getActionURL().relativeUrl("submitRequest", "id=${requestId}");
                         String cancelLink = ctx.getViewContext().getActionURL().relativeUrl("deleteRequest", "id=${requestId}");
 
-                        content.append(PageFlowUtil.buttonLink("Submit", submitLink,
+                        content.append(PageFlowUtil.generateButton("Submit", submitLink,
                                 "return confirm('" + SpringSpecimenController.ManageRequestBean.SUBMISSION_WARNING + "')")).append(" ");
-                        content.append(PageFlowUtil.buttonLink("Cancel", cancelLink,
+                        content.append(PageFlowUtil.generateButton("Cancel", cancelLink,
                                 "return confirm('" + SpringSpecimenController.ManageRequestBean.CANCELLATION_WARNING + "')")).append(" ");
                     }
                 }
                 String detailsLink = ctx.getViewContext().getActionURL().relativeUrl("manageRequest", "id=${requestId}");
-                content.append(PageFlowUtil.buttonLink("Details", detailsLink));
+                content.append(PageFlowUtil.generateButton("Details", detailsLink));
             }
             setDisplayHtml(content.toString());
             super.renderGridCellContents(ctx, out);

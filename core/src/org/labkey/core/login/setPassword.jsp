@@ -53,6 +53,6 @@
             %>
         </td>
         <td><input type=hidden name=verification value="<%=h(bean.form.getVerification())%>"></td></tr>
-    <tr><td></td><td height="50"><input type="image" src="<%=PageFlowUtil.buttonSrc("Set Password")%>" name="set"></td></tr>
+    <tr><td></td><td height="50"><%=PageFlowUtil.generateSubmitButton("Set Password", "", "name=\"set\"")%></td></tr>
 </table>
 </form>

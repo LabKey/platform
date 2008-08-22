@@ -27,7 +27,7 @@
 <%
     ViewContext ctx = HttpView.currentContext();
     boolean isPublished = caBIGManager.get().isPublished(ctx.getContainer());
-    String publishButton = PageFlowUtil.buttonLink(isPublished ? "Unpublish" : "Publish", caBIGController.getCaBigURL(isPublished ? UnpublishAction.class : PublishAction.class, ctx.getContainer(), ctx.getActionURL()));
+    String publishButton = PageFlowUtil.generateButton(isPublished ? "Unpublish" : "Publish", caBIGController.getCaBigURL(isPublished ? UnpublishAction.class : PublishAction.class, ctx.getContainer(), ctx.getActionURL()));
     ActionURL adminUrl = caBIGController.getCaBigURL(AdminAction.class, ctx.getContainer(), ctx.getActionURL());
 
     if (isPublished)
@@ -44,7 +44,7 @@ This folder is not published to the caBIG&trade; (cancer Biomedical Informatics 
 this folder to caBIG&trade;.  If you do this then all experiment data in this folder will be publicly visible via the caBIG&trade; web application.<br><br>
 <%  }  %>
 
-<%=publishButton%>&nbsp;<%=PageFlowUtil.buttonLink("Admin", adminUrl)%>
+<%=publishButton%>&nbsp;<%=PageFlowUtil.generateButton("Admin", adminUrl)%>
 <br><br>For more information about publishing to caBIG&trade;, <a href="<%=h(new HelpTopic("cabig", HelpTopic.Area.CPAS).getHelpTopicLink())%>" target="cabig">click here</a>.
 
 <%

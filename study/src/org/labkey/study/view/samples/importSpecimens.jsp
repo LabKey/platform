@@ -81,7 +81,7 @@ Specimen archive <b><%= bean.getBatch().getDefinitionFile().getName() %></b> con
         <form action="importSpecimenData.post" method=POST>
             <input type="hidden" name="deleteLogfile" value="true">
             <input type="hidden" name="path" value="<%= h(bean.getPath())%>">
-            <%= buttonImg("Delete logfile")%>&nbsp;<%= buttonLink("Cancel", ActionURL.toPathString("Pipeline", "begin", bean.getContainer()))%>
+            <%= generateSubmitButton("Delete logfile")%>&nbsp;<%= generateButton("Cancel", ActionURL.toPathString("Pipeline", "begin", bean.getContainer()))%>
         </form>
     <%
             }
@@ -90,7 +90,7 @@ Specimen archive <b><%= bean.getBatch().getDefinitionFile().getName() %></b> con
     %>
         <form action="submitSpecimenImport.post" method=POST>
             <input type="hidden" name="path" value="<%= h(bean.getPath())%>">
-            <%= buttonImg("Start Import")%>
+            <%= generateSubmitButton("Start Import")%>
         </form>
     <%
             }

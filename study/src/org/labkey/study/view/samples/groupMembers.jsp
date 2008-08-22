@@ -89,7 +89,7 @@
         <%
             }
         %>
-        <%= buttonImg("Update Members") %>
+        <%= generateSubmitButton("Update Members") %>
     </div>
 </form>
 </span>

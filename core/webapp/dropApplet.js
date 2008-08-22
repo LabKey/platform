@@ -484,6 +484,7 @@ function init()
     var mkdirDiv = _div();
     mkdirDiv.id = "mkdirDialog";
     mkdirDiv.style.display = "none";
-    mkdirDiv.innerHTML = '<div class="hd">New Folder</div><div class="bd"><input id="folderName" name="folderName" value=""/><img src="<%=PageFlowUtil.buttonSrc("create")%>">';
+    mkdirDiv.innerHTML = '<div class="hd">New Folder</div><div class="bd">' +
+                         '<input id="folderName" name="folderName" value=""/><%=PageFlowUtil.generateButton("create", "")%>>';
     document.getElementsByTagName("BODY")[0].appendChild(mkdirDiv);
 }

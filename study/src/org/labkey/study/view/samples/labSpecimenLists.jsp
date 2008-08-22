@@ -169,7 +169,7 @@
     </tr>
     <tr>
         <th>&nbsp;</th>
-        <td><%= buttonImg("Send Email")%> <%= buttonLink("Cancel", "manageRequest.view?id=" + bean.getSampleRequest().getRowId())%></td>
+        <td><%= generateSubmitButton("Send Email")%> <%= generateButton("Cancel", "manageRequest.view?id=" + bean.getSampleRequest().getRowId())%></td>
     </tr>
 </table>
 </form>

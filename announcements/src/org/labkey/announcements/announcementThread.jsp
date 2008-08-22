@@ -270,13 +270,13 @@ if (!bean.isResponse && !bean.print)
             url.replaceParameter("discussion.id",""+announcement.getRowId());
             url.replaceParameter("discussion.reply","1");
             %>
-        <a href="<%=h(url.getLocalURIString())%>"><img src='<%=PageFlowUtil.buttonSrc("Post Response")%>' alt="[post response]"></a>&nbsp;<%
+        <%=PageFlowUtil.generateButton("Post Response", url.getLocalURIString())%>&nbsp;<%
         }
         else
         {
             ActionURL respond = announcementURL(context, "respond", "parentId", announcement.getEntityId(), ReturnUrlForm.Params.returnUrl.toString(), context.getActionURL().getEncodedLocalURIString());
             %>
-        <a href="<%=h(respond.getLocalURIString())%>"><img src='<%=PageFlowUtil.buttonSrc("Post Response")%>' alt="[post response]"></a>&nbsp;<%
+        <%=PageFlowUtil.generateButton("Post Response", respond.getLocalURIString())%>&nbsp;<%
         }
     }
     if (bean.perm.allowDeleteMessage(announcement))
@@ -293,7 +293,7 @@ if (!bean.isResponse && !bean.print)
             deleteThread.addReturnURL(bean.messagesURL);
         }
         %>
-        <a href="<%=deleteThread.getEncodedLocalURIString()%>"><img src='<%=PageFlowUtil.buttonSrc("Delete " + settings.getConversationName())%>' alt="[delete <%=h(settings.getConversationName().toLowerCase())%>]"></a>&nbsp;<%
+        <%=PageFlowUtil.generateButton("Delete " + settings.getConversationName(), deleteThread.getLocalURIString())%>&nbsp;<%
     }
 }
 %>

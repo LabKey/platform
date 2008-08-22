@@ -70,7 +70,7 @@
         </tr>
         <tr>
             <td>&nbsp;</td>
-            <td><%= buttonImg("Save") %>&nbsp;<%= buttonLink("Cancel", "manageStudy.view")%></td>
+            <td><%= generateSubmitButton("Save") %>&nbsp;<%= generateButton("Cancel", "manageStudy.view")%></td>
             <td>&nbsp;</td>
         </tr>
     </table>

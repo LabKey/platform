@@ -71,7 +71,7 @@
 %>
     </table>
     <%=formatMissedErrors("form")%><br>
-    <input type=image name="submit" src="<%=h(PageFlowUtil.submitSrc())%>">
+    <%=PageFlowUtil.generateSubmitButton("Submit", "name=\"submit\"")%>
 </form>
 <%--
 

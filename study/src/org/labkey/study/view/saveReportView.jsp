@@ -135,12 +135,12 @@
 %>
             </select>
         </td>
-        <td><input type=image src="<%=PageFlowUtil.buttonSrc(confirm ? "Overwrite" : "Save")%>">
+        <td><%=PageFlowUtil.generateSubmitButton((confirm ? "Overwrite" : "Save"))%>
 <%
     if (confirm)
     {
 %>
-        &nbsp;<a href="<%=PageFlowUtil.filter(bean.getSrcURL())%>"><img src="<%=PageFlowUtil.buttonSrc("Cancel")%>"></a>
+        &nbsp;<%=PageFlowUtil.generateButton("Cancel", bean.getSrcURL())%>
 <%
     } 
 %>

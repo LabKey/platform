@@ -40,5 +40,5 @@
     }
 %>
 </table><br>
-<%=PageFlowUtil.buttonLink("Modify Settings", OpenSSOController.getConfigureURL())%>
-<%=PageFlowUtil.buttonLink("Done", PageFlowUtil.urlProvider(LoginUrls.class).getConfigureURL())%>
+<%=PageFlowUtil.generateButton("Modify Settings", OpenSSOController.getConfigureURL())%>
+<%=PageFlowUtil.generateButton("Done", PageFlowUtil.urlProvider(LoginUrls.class).getConfigureURL())%>

@@ -35,6 +35,6 @@
     <b>Daily Digest</b> - send one email each day that summarizes all posts<br>
 
     <br><input type=hidden name="srcUrl"value="<%=PageFlowUtil.filter(srcURL)%>"/>
-    <input type=image src="<%=PageFlowUtil.buttonSrc("Update")%>"/>
-    <a href="<%=srcURL%>"><img src="<%=PageFlowUtil.buttonSrc(message == null ? "Cancel" : "Done")%>"/></a>
+    <%=PageFlowUtil.generateSubmitButton("Update")%>
+    <%=PageFlowUtil.generateButton((message == null ? "Cancel" : "Done"), srcURL)%>
 </form>

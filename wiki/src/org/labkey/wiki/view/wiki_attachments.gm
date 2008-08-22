@@ -45,8 +45,8 @@
   </tr>
   <tr>
     <td colspan=2 align=left>
-    <a href="#addAttachment" onclick="window.open('${addAttachmentURL}',null,'width=550,height=200',false);" class="labkey-message"><img src="<%=PageFlowUtil.buttonSrc('Add Attachment')%>"></a>
-    <a href="<%= PageFlowUtil.filter(redirect) %>"><img src="<%=PageFlowUtil.buttonSrc('Done')%>"></a>
+    <%=PageFlowUtil.generateButton("Add Attachment", #addAttachment, "window.open('${addAttachmentURL}',null,'width=550,height=200',false);")%>
+    <%=PageFlowUtil.generateButton("Done", PageFlowUtil.filter(redirect))%>
     </td>
   </tr>
 </table>

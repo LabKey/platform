@@ -60,14 +60,14 @@
     <input type="checkbox" value="8" name="emailPreference" <%=(emailPrefs & IssueManager.NOTIFY_SELF_SPAM) != 0 ? " checked" : ""%>>
     Send me email notifications when I enter/edit an issue<br>
     <br>
-    <input type=image src="<%=PageFlowUtil.buttonSrc("Update")%>"/><%
+    <%=PageFlowUtil.generateSubmitButton("Update")%><%
     if (issueId > 0)
     {
-        %><%= buttonLink("Back to Issue", IssuesController.issueURL(context.getContainer(), "details").addParameter("issueId", bean.getIssueId())) %><%
+        %><%= generateButton("Back to Issue", IssuesController.issueURL(context.getContainer(), "details").addParameter("issueId", bean.getIssueId())) %><%
     }
     else
     {
-        %><%= buttonLink("View Grid", IssuesController.issueURL(context.getContainer(), "list").addParameter(DataRegion.LAST_FILTER_PARAM, "true")) %><%
+        %><%= generateButton("View Grid", IssuesController.issueURL(context.getContainer(), "list").addParameter(DataRegion.LAST_FILTER_PARAM, "true")) %><%
     }
 %>
 </form>

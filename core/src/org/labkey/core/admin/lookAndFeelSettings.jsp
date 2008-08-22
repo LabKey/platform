@@ -146,7 +146,7 @@
 </tr>
 
 <tr>
-    <td><input type="image" src='<%=PageFlowUtil.buttonSrc("Save Settings")%>' /></td>
+    <td><%=PageFlowUtil.generateSubmitButton("Save Settings")%></td>
 </tr>
 <tr>
     <td>&nbsp;</td>

@@ -61,7 +61,7 @@
 <td>
     <form method="POST" name="add<%=keywordPicker.name%>" action="addKeyword.post">
     <input name="keyword" value=""><br>
-    <input type="image" src="<%=PageFlowUtil.buttonSrc("Add " + keywordPicker.name)%>" value="Add <%=keywordPicker.name%>"><br>
+        <%=PageFlowUtil.generateSubmitButton("Add " + keywordPicker.name)%><br>
     <input type="hidden" name="type" value="<%=keywordPicker.type%>">
     </form>
 </td><%

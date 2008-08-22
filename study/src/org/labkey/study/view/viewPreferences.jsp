@@ -63,7 +63,7 @@
             doneUrl.addParameter("Dataset.viewName", defaultView);
     %>
         <tr><td>&nbsp;</td></tr>
-        <tr><td><%=PageFlowUtil.buttonLink("Done", doneUrl)%></td></tr>
+        <tr><td><%=PageFlowUtil.generateButton("Done", doneUrl)%></td></tr>
 </table>
 
 <%!

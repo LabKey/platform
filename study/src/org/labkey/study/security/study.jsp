@@ -66,5 +66,5 @@ Any user with READ access to this folder may view some summary data.  However, a
         %></tr><%
     }
     %></table>
-    <input id="groupUpdateButton" type=image src="<%=PageFlowUtil.buttonSrc("Update")%>" value="Update">
+    <%=PageFlowUtil.generateSubmitButton("Update", "", "id=\"groupUpdateButton\"")%>
     </form>

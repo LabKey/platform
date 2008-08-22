@@ -32,7 +32,7 @@
 <labkey:errors/><br>
 <form action="manageQCStates.post" name="manageQCStates" method="POST">
 <%= buttonImg("Done", "document.manageQCStates.reshowPage.value='false'; return true;")%>
-<%= buttonLink("Cancel", new ActionURL(StudyController.ManageStudyAction.class, me.getViewContext().getContainer()))%>
+<%= generateButton("Cancel", new ActionURL(StudyController.ManageStudyAction.class, me.getViewContext().getContainer()))%>
 <input type="hidden" name="reshowPage" value="true">
 <table width="800px">
     <tr>
@@ -96,11 +96,11 @@
             <tr>
                 <td>&nbsp;</td>
                 <td colspan="4">
-                    <%= buttonImg("Save")%>
-                    <%= buttonLink("Delete Unused QC States",
+                    <%= generateSubmitButton("Save")%>
+                    <%= generateButton("Delete Unused QC States",
                             new ActionURL(StudyController.DeleteQCStateAction.class, me.getViewContext().getContainer()).addParameter("all", "true"),
                             "return confirm('Delete all unused QC states?  No additional study data will be deleted.')")%>
-                    <%= buttonLink("Cancel", new ActionURL(StudyController.ManageStudyAction.class, me.getViewContext().getContainer()))%>
+                    <%= generateButton("Cancel", new ActionURL(StudyController.ManageStudyAction.class, me.getViewContext().getContainer()))%>
                 </td>
             </tr>
         </table>

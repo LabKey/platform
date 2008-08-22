@@ -75,8 +75,8 @@
         <tr><td>Subject:</td><td width="600"><input id="escalationSubject" name="escalationSubject" style="width:100%" value="<%=defaultSubject%>"></td></tr>
         <tr><td>Message:</td><td><textarea id="escalationMessage" name="escalationMessage" style="width:100%" rows="10"></textarea></td></tr>
         <tr>
-            <td></td><td><input type="image" src="<%=PageFlowUtil.buttonSrc("Send")%>">
-            <%=buttonLink("Cancel", cancelUrl)%></td>    
+            <td></td><td><%=PageFlowUtil.generateSubmitButton("Send")%>
+            <%=generateButton("Cancel", cancelUrl)%></td>
         </tr>
     </table>
 </form>

@@ -279,7 +279,7 @@ public class AnnouncementsController extends SpringActionController
             VBox vbox = new VBox();
             vbox.addView(new AnnouncementEmailDefaults(c, form.getReturnActionURL()));
             vbox.addView(gridView);
-            vbox.addView(new HtmlView("<br>" + PageFlowUtil.buttonLink("Done", form.getReturnActionURL())));
+            vbox.addView(new HtmlView("<br>" + PageFlowUtil.generateButton("Done", form.getReturnActionURL())));
 
             return vbox;
         }

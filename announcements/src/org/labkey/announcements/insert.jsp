@@ -126,14 +126,15 @@ if (bean.allowBroadcast)
       </table>
     </td></tr>
 </table>
-<br>&nbsp;<input type=image src="<%=PageFlowUtil.submitSrc()%>" value="Insert">&nbsp;<%
+<br>&nbsp;<%=PageFlowUtil.generateSubmitButton("Submit")%>&nbsp;<%
 if (null != cancelUrl)
 {
-    %><%=PageFlowUtil.buttonLink("Cancel", cancelUrl)%><%
+    %><%=PageFlowUtil.generateButton("Cancel", cancelUrl)%><%
 }
 else
 {
-    %><input type=image src="<%=PageFlowUtil.buttonSrc("Cancel")%>" value="Cancel" onclick="javascript:window.history.back(); return false;"><%
+    %><%=PageFlowUtil.generateSubmitButton("Cancel", "javascript:window.history.back(); return false;")%>
+    <%
 }
 %>
 <input type=hidden name="discussionSrcIdentifier" value="<%=h(form.get("discussionSrcIdentifier"))%>"><input type=hidden name="discussionSrcURL" value="<%=h(form.get("discussionSrcURL"))%>">

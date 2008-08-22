@@ -19,7 +19,6 @@
 <%@ page import="org.labkey.api.settings.AppProps"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.ButtonServlet" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.login.LoginController" %>
@@ -43,8 +42,9 @@
         <tr><td>Email:</td><td><input id="EmailInput" type="text" name="email" value="<%=h(form.getEmail())%>" style="width:200;"></td></tr>
         <tr>
             <td></td>
-            <td style="height:50"><input name="reset" type="image" value="reset" src="<%=ButtonServlet.buttonSrc("Submit")%>">
-            <%=PageFlowUtil.buttonLink("Cancel", urlProvider(LoginUrls.class).getLoginURL(doneURL))%>
+            <td style="height:50">
+            <%=PageFlowUtil.generateSubmitButton("Submit", "", "name=\"reset\"")%>
+            <%=PageFlowUtil.generateButton("Cancel", urlProvider(LoginUrls.class).getLoginURL(doneURL))%>
             </td>
         </tr>
     </table>

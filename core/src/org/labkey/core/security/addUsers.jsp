@@ -90,7 +90,7 @@
         <tr>
             <td>
                 <labkey:button text="Add Users" />
-                <%=PageFlowUtil.buttonLink("Show Grid", request.getContextPath() + "/User/showUsers.view?.lastFilter=true")%>
+                <%=PageFlowUtil.generateButton("Show Grid", request.getContextPath() + "/User/showUsers.view?.lastFilter=true")%>
             </td>
         </tr>
     </table>

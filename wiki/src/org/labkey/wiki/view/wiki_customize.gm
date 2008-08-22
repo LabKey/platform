@@ -102,7 +102,8 @@ function loadPages(wikiPageList)
 function enableSubmit()
 {
     var btn = document.getElementById("btnSubmit");
-    btn.src = "<%=PageFlowUtil.buttonSrc("Submit")%>";
+    btn.parentNode.className = "labkey-button";
+    btn.parentNode.href = "";
     btn.disabled = false;
 }
 
@@ -110,7 +111,8 @@ function disableSubmit()
 {
     var btn = document.getElementById("btnSubmit");
     btn.disabled = true;
-    btn.src = "<%=PageFlowUtil.buttonSrc("Submit", "disabled")%>";
+    btn.parentNode.className = "labkey-disabled-button";
+    btn.parentNode.href = "javascript:return false;";
 }
 
 function onSuccess(response, config)
@@ -234,8 +236,8 @@ function restoreDefaultPage()
         <table>
             <tr>
                 <td align="left">
-                    <input name="Submit" type="image" src="<%=PageFlowUtil.submitSrc()%>" value="Submit" id="btnSubmit">
-                    <a href="begin.view"><img src="<%=PageFlowUtil.cancelSrc()%>"></a>
+                    <%=PageFlowUtil.generateSubmitButton("Submit", "", "name=\"Submit\" id=\"btnSubmit\"")%>
+                    <%=PageFlowUtil.generateButton("Cancel", "begin.view")%>
                 </td>
             </tr>
         </table>

@@ -84,7 +84,7 @@
                 }
             %>
         </table>
-        <%= buttonImg("Save") %>&nbsp;<%= buttonLink("Cancel", "begin.view") %>
+        <%= generateSubmitButton("Save") %>&nbsp;<%= generateButton("Cancel", "begin.view") %>
     </form>
 <%
     }
@@ -92,7 +92,7 @@
     {
 %>
     <span>There is no data to update.</span><br>
-    <%= buttonLink("Grid View", "begin.view") %>
+    <%= generateButton("Grid View", "begin.view") %>
 <%
     }
 %>

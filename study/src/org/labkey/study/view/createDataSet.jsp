@@ -52,7 +52,7 @@
         <tr>
             <td>&nbsp;</td>
             <td>
-                <%= this.buttonImg("Save")%>&nbsp;<%= this.buttonLink("Cancel", "manageTypes.view")%>
+                <%= this.generateSubmitButton("Save")%>&nbsp;<%= this.generateButton("Cancel", "manageTypes.view")%>
             </td>
         </tr>
     </table>

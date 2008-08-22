@@ -31,8 +31,8 @@ Note that only the latest version of each wiki page is copied.
 
 <table class="labkey-button-bar">
     <tr>
-        <td><input type="image" src='<%=PageFlowUtil.buttonSrc("Copy Pages")%>' value="<%=destContainer%>"></td>
-        <td><a href="<%=cancelLink%>"><img src='<%=PageFlowUtil.buttonSrc("Cancel")%>'></a></td>
+        <td><%=PageFlowUtil.generateSubmitButton("Copy Pages")%></td>
+        <td><%=PageFlowUtil.generateButton("Cancel", cancelLink)%></td>
     </tr>
 </table>
 </form>

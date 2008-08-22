@@ -148,7 +148,7 @@ th.labkey-col-header-filter.hover, td.labkey-col-header-filter.hover, .labkey-co
 
 .labkey-title-area-line
 {
-    border-top: 1px solid #<%= navBorder %>;
+    background-color: #<%= navBorder %>;
 }
 
 .labkey-frame

@@ -32,5 +32,6 @@ for (pd in properties)
 <!-- <p>
 [ <a href="types.view">View Types</a> ]<br>
 [ <a href="importData.view?typeURI=<%=PageFlowUtil.encode(typeName)%>">Import Data</a> ]<br>&nbsp;<br>
-<a href="deleteData.view?typeURI=<%=PageFlowUtil.encode(typeName)%>&deleteType=0"><%=PageFlowUtil.buttonImg("Delete data")%></a>&nbsp;<a href="deleteData.view?typeURI=<%=PageFlowUtil.encode(typeName)%>&deleteType=1"><%=PageFlowUtil.buttonImg("Delete type")%></a>
+<%=PageFlowUtil.generateButton("Delete data", "deleteData.view?typeURI=" + PageFlowUtil.encode(typeName) + "&deleteType=0")%>
+&nbsp;<%=PageFlowUtil.generateButton("Delete type", "deleteData.view?typeURI=" + PageFlowUtil.encode(typeName) + "&deleteType=1")%>
 </p> --!>

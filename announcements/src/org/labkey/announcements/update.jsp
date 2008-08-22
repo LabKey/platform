@@ -124,7 +124,8 @@ if (settings.hasExpires())
     <td colspan=3 align=left>
       <table class="labkey-button-bar">
         <tr>
-          <td><input type='image' src='<%=PageFlowUtil.buttonSrc("Submit")%>' name='update.post' value='Submit' onClick='this.form.action="update.post";this.form.method="post";' >&nbsp;<%=PageFlowUtil.buttonLink("Cancel", bean.returnURL)%></td>
+          <td><%=PageFlowUtil.generateSubmitButton("Submit", "this.form.action='update.post';this.form.method='post';')", "name=\"update.post\"")%>
+             &nbsp;<%=PageFlowUtil.generateButton("Cancel", bean.returnURL)%></td>
         </tr>
       </table>
     </td>

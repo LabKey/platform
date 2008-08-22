@@ -103,6 +103,6 @@
         }
     %>
         </table></td></tr>
-        <tr><td><input type="image" src="<%=PageFlowUtil.submitSrc()%>"></td></tr>
+        <tr><td><%=PageFlowUtil.generateSubmitButton("Submit")%></td></tr>
     </table>
 </form>

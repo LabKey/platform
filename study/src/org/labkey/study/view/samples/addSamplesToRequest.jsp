@@ -40,7 +40,7 @@
     Note that only the creator of a request or an administrator can add specimens to an existing request.<br>
     <br>
     Alternately, you may create a new request for the selected specimens.<br><br>
-    <%= buttonImg("Create New Specimen Request") %><br><br>
+    <%= generateSubmitButton("Create New Specimen Request") %><br><br>
     <%
     for (Specimen specimen : bean.getSamples())
     {

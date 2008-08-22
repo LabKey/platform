@@ -46,8 +46,8 @@
     </table>
     <table>
         <tr>
-            <td><input type="image" src='<%=PageFlowUtil.buttonSrc("Rename")%>'></td>
-            <td><a href="manageFolders.view"><img src='<%=PageFlowUtil.buttonSrc("Cancel")%>'></a></td>
+            <td><%=PageFlowUtil.generateSubmitButton("Rename")%></td>
+            <td><%=PageFlowUtil.generateButton("Cancel", "manageFolders.view")%></td>
         </tr>
     </table>
 </form>

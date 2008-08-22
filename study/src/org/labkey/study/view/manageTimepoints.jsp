@@ -60,7 +60,7 @@
         </tr>
         <tr>
             <td>&nbsp;</td>
-            <td><%= buttonImg("Update")%>&nbsp;<%= buttonLink("Back", "#", "window.history.back();return false;")%></td>
+            <td><%= generateSubmitButton("Update")%>&nbsp;<%= generateButton("Back", "#", "window.history.back();return false;")%></td>
         </tr>
     </table>
 </form>

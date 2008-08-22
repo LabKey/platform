@@ -68,7 +68,7 @@
         </tr>
         <tr>
             <td>&nbsp;</td>
-            <td><%= buttonImg("Update Status") %> <%= buttonLink("Cancel", new ActionURL(StudyController.DatasetAction.class,
+            <td><%= generateSubmitButton("Update Status") %> <%= generateButton("Cancel", new ActionURL(StudyController.DatasetAction.class,
                     container).addParameter(DataSetDefinition.DATASETKEY, bean.getDatasetId()))%></td>
         </tr>
     </table>

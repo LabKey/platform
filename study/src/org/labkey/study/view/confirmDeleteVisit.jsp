@@ -50,6 +50,6 @@
     {
         %>This <%=visitManager.getLabel()%> has <%=count%> dataset results which will also be deleted.<p/><%
     }%>
-    <input type=image src="<%=PageFlowUtil.buttonSrc("Delete","large")%>">&nbsp;<input type=image src="<%=PageFlowUtil.buttonSrc("Cancel","large")%>" value="Cancel" onclick="javascript:window.history.back(); return false;">
+    <%=PageFlowUtil.generateSubmitButton("Delete")%>&nbsp;<%=PageFlowUtil.generateSubmitButton("Cancel", "javascript:window.history.back(); return false;")%>
     <input type=hidden name=id value="<%=visit.getRowId()%>">
 </form>

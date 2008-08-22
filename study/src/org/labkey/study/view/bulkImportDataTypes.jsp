@@ -118,7 +118,7 @@ name and type id.  Additional columns will just be ignored.
             <td><textarea name=tsv rows=25 cols=80><%=h(bean.getTsv())%></textarea></td>
         </tr>
         <tr>
-            <td><%= buttonImg("Submit")%>&nbsp;<%= buttonLink("Cancel", "manageTypes.view")%></td>
+            <td><%= generateSubmitButton("Submit")%>&nbsp;<%= generateButton("Cancel", "manageTypes.view")%></td>
         </tr>
     </table>
 </form>

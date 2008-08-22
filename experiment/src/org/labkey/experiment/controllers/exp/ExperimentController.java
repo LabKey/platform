@@ -2179,7 +2179,7 @@ public class ExperimentController extends SpringActionController
             String html = message + "<form action=\"" + getViewContext().getActionURL().relativeUrl("resolveLSID", null) + "\">" +
                     " Lsid <input type=text name=lsid value=\"" +
                     (form.getLsid() == null ? "" : PageFlowUtil.filter(form.getLsid())) + "\">" +
-                    "<input size=60 type=image src=\"" + PageFlowUtil.buttonSrc("Go") + "\"></form>";
+                    PageFlowUtil.generateSubmitButton("Go", "", "size=\"60\"") + "</form>";
 
             return new HtmlView("Enter LSID", html);
         }

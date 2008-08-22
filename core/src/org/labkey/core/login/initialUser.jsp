@@ -40,6 +40,7 @@ folders, etc.<br><br>
 <form name="initialUser" method="post" action="initialUser.post">
 <table>
     <tr><td>Email:</td><td><input id="email" type="text" name="email" value="<%=h(email)%>" style="width:200px;"></td></tr>
-    <tr><td>&nbsp;</td><td style="height:50px"><input type="image" src="<%=PageFlowUtil.buttonSrc("Register") %>" name="register"></td></tr>
+    <tr><td>&nbsp;</td><td style="height:50px">
+        <%=PageFlowUtil.generateSubmitButton("register")%></td></tr>
 </table>
 </form>

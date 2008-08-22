@@ -52,8 +52,8 @@
                     separator = "\r\n";
                     sb.append(path);
                 }%><%= sb.toString() %></textarea><br><br>
-            <%= buttonImg("Save Aliases") %>
-            <%= buttonLink("Cancel", "manageFolders.view") %>
+            <%= generateSubmitButton("Save Aliases") %>
+            <%= generateButton("Cancel", "manageFolders.view") %>
         </form>
         </td>
     </tr>

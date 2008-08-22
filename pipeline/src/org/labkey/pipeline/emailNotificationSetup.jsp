@@ -164,8 +164,8 @@
     </table>
     <table>
         <tr>
-            <td><input type="image" src="<%=PageFlowUtil.buttonSrc("Update")%>">&nbsp;
-            <input type="image" src="<%=PageFlowUtil.buttonSrc("Reset to Default")%>" onclick="this.form.action='resetEmailNotification.view'"></td>
+            <td><%=PageFlowUtil.generateSubmitButton("Update")%>&nbsp;
+            <%=PageFlowUtil.generateSubmitButton("Reset to Default", "this.form.action='resetEmailNotification.view'")%></td>
         </tr>
         <tr><td></td></tr>
     </table>

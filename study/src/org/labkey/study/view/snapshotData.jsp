@@ -101,11 +101,11 @@ NOTE: The existing schema will be completely replaced by this operation.<br><br>
             </table><br><br> <%
     }
     if (form.isComplete()) {
-        out.write(buttonLink("Manage Study", "manageStudy.view"));
+        out.write(generateButton("Manage Study", "manageStudy.view"));
     }
     else
     {%>
-        <%=buttonImg("Create Snapshot")%>
+        <%=generateSubmitButton("Create Snapshot")%>
         </form> <%
     } %>
 

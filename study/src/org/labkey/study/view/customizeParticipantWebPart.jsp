@@ -91,8 +91,8 @@
     %>
     <tr>
         <td>
-            <%=buttonImg("Submit")%>
-            <%=buttonLink("Cancel", "begin.view")%>
+            <%=generateSubmitButton("Submit")%>
+            <%=generateButton("Cancel", "begin.view")%>
         </td>
     </tr>
 </table>

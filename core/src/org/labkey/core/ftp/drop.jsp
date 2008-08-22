@@ -105,8 +105,8 @@ function _resize(windowWidth,windowHeight)
 YAHOO.util.Event.addListener(window, "load", onWindowLoad);
 YAHOO.util.Event.addListener(window, "resize", onWindowResize);
 </script></div>
-<a href="#findFiles" onclick="browseFiles();"><img src="<%=PageFlowUtil.buttonSrc("Find Files...")%>"></a>
-<!--<a href="#mkdir" onclick="showMkdirDialog();"><img src="<%=PageFlowUtil.buttonSrc("New Folder...")%>"></a>-->
+        <%=PageFlowUtil.generateButton("Find Files...", "#findFiles", "browseFiles();")%>
+<!--PageFlowUtil.generateButton("New Folder...", "#mkdir", "showMkdirDialog();")-->
 <br>
         <table>
             <tr><td><img src="<%=contextPath%>/_.gif" width="100" height="1"></td><td><img src="<%=contextPath%>/_.gif" width="100" height="1"></td></tr>

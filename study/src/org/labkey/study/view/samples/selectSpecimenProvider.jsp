@@ -43,7 +43,7 @@
 </select>
 </p>
 <p>
-    <%= buttonLink("Cancel", "javascript:back()")%>
-    <%= buttonImg("Select") %> 
+    <%= generateButton("Cancel", "javascript:back()")%>
+    <%= generateSubmitButton("Select") %>
 </p>
 </form>

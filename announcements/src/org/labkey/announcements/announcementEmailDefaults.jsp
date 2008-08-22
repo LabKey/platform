@@ -54,7 +54,7 @@
 <tr>
     <td>
         <input type="hidden" name="<%=ReturnUrlForm.Params.returnUrl%>" value="<%=h(bean.returnURL)%>">
-        <input type="image" src="<%=PageFlowUtil.buttonSrc("Set")%>">
+        <%=PageFlowUtil.generateSubmitButton("Set")%>
     </td>
 </tr>
 </table>

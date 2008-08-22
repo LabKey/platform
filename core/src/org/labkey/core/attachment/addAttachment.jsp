@@ -33,8 +33,8 @@ Browse for file and then click submit<br>
   <input type="hidden" name="entityId" value="<%= entityId %>" /><br>
   <table>
     <tr>
-      <td><input type="image" src="<%=PageFlowUtil.buttonSrc("Submit")%>"></td>
-      <td><img onClick="window.close();" alt="Cancel" src="<%=PageFlowUtil.buttonSrc("Cancel")%>"></td>
+      <td><%=PageFlowUtil.generateSubmitButton("Submit")%></td>
+      <td><%=PageFlowUtil.generateButton("Cancel", "", "window.close();")%></td>
       <td style="padding-left:5px;"><label id="filename"></label></td>
     </tr>
   </table>

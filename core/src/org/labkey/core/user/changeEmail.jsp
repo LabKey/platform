@@ -36,7 +36,7 @@
         <td><input type="text" name="newEmail" id="newEmail" value=""></td>
     </tr>
     <tr>
-        <td colspan=2><input type="image" src="<%=PageFlowUtil.submitSrc()%>" value="Submit"></td>
+        <td colspan=2><%=PageFlowUtil.generateSubmitButton("Submit")%></td>
     </tr>
 </table>
 </form>

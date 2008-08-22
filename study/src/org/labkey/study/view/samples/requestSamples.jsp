@@ -171,8 +171,8 @@ function setDefaults()
         %>
         <tr>
             <td>
-                <%= buttonImg((shoppingCart ? "Create" : "Submit") + " Request")%>&nbsp;
-                <%= buttonLink("Cancel", "viewRequests.view")%>
+                <%= generateSubmitButton((shoppingCart ? "Create" : "Submit") + " Request")%>&nbsp;
+                <%= generateButton("Cancel", "viewRequests.view")%>
             </td>
         </tr>
 

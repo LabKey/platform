@@ -123,9 +123,9 @@ else
     %>
         <tr>
             <td colspan=3>
-                <input type="image" src="<%=PageFlowUtil.buttonSrc("Select All")%>" onclick="return selectAllCheckboxes(this.form, true);">
-                <input type="image" src="<%=PageFlowUtil.buttonSrc("Clear All")%>" onclick="return selectAllCheckboxes(this.form, false);">
-                <%= PageFlowUtil.buttonLink("Export All to Excel", urlGroup)%>
+                <%=PageFlowUtil.generateSubmitButton("Select All", "return selectAllCheckboxes(this.form, true);")%>
+                <%=PageFlowUtil.generateSubmitButton("Clear All", "return selectAllCheckboxes(this.form, false);")%>
+                <%= PageFlowUtil.generateButton("Export All to Excel", urlGroup)%>
             </td>
         </tr>
 
@@ -154,7 +154,7 @@ users.<br><br>
 Include the following message with the new user mail (optional):<br>
     <textarea rows="8" cols="30" name="mailPrefix"></textarea><br>
 <input type="hidden" name="group" value="<%= bean.groupName %>">
-<input type="image" src="<%= PageFlowUtil.buttonSrc("Update Group Membership","large") %>" onclick="return confirmRemoveUsers();">
+<%=PageFlowUtil.generateSubmitButton("Update Group Membership", "return confirmRemoveUsers();")%>
 </div>
 </form>
 <%
@@ -167,7 +167,7 @@ if (!bean.isSystemGroup)
             {
     %>
     <form action="deleteGroup.post" method="POST">
-    <input onclick="return confirm('Permanently delete group <%= bean.groupName %>?')" type="image" src="<%= PageFlowUtil.buttonSrc("Delete Empty Group","large") %>">
+    <%=PageFlowUtil.generateSubmitButton("Delete Empty Group", "return confirm('Permanently delete group " + bean.groupName + "?')")%>
     <input type="hidden" name="group" value="<%= bean.groupName %>">
     </form>
     <%

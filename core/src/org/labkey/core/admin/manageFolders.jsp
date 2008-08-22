@@ -59,20 +59,20 @@
     if (!ContainerManager.getHomeContainer().equals(c) && !ContainerManager.getSharedContainer().equals(c))
     {
 %>
-        <td><%= buttonLink("Rename", rename)%></td>
-        <td><%= buttonLink("Move", move)%></td>
-        <td><%= buttonLink("Create Subfolder", create)%></td>
-        <td><%= buttonLink("Delete", delete)%></td><%
+        <td><%= generateButton("Rename", rename)%></td>
+        <td><%= generateButton("Move", move)%></td>
+        <td><%= generateButton("Create Subfolder", create)%></td>
+        <td><%= generateButton("Delete", delete)%></td><%
 
         if (hasSiblings && !context.getContainer().isRoot() && !context.getContainer().getParent().isRoot())
         {
-            %><td><%= buttonLink("Change Display Order", reorder)%></td><%
+            %><td><%= generateButton("Change Display Order", reorder)%></td><%
         }
     }
     else 
     {
-        %><td><%= buttonLink("Create Subfolder", create)%></td><%
+        %><td><%= generateButton("Create Subfolder", create)%></td><%
     }
 %>
-    <td><%= buttonLink("Aliases", aliases)%></td>
+    <td><%= generateButton("Aliases", aliases)%></td>
 </tr></table>

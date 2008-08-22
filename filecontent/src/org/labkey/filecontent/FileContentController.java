@@ -337,7 +337,7 @@ public class FileContentController extends SpringActionController
                        {
                            addError(errors, "HTML Pages cannot contain script unless uploaded by a site administrator.");
                            //                            ActionURL reshow = getViewContext().cloneActionURL().setAction("showAddAttachment.view").replaceParameter("entityId", form.getEntityId());
-                           //                            sb.append(PageFlowUtil.buttonLink("Try Again", reshow));
+                           //                            sb.append(PageFlowUtil.generateButton("Try Again", reshow));
                            //                            return includeView(new DialogTemplate(new HtmlView(sb.toString())));
                            return false;
                        }

@@ -203,7 +203,7 @@ function validate()
     %>
                 </table>
                 <input type="hidden" name="wizard" value="<%=h(form.isWizard())%>">
-                <input type=image value="Update Folder" src="<%=PageFlowUtil.buttonSrc(form.isWizard() ? "Next" : "Update Folder","large")%>">
+                <%=PageFlowUtil.generateSubmitButton((form.isWizard() ? "Next" : "Update Folder"))%>
     <%WebPartView.endTitleFrame(out);%>
     </td>
     <td width="30%" valign="top">

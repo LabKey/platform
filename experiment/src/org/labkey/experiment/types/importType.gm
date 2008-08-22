@@ -61,5 +61,5 @@ We will create a type called <code>http://www.scharp.org/CHAVI001/122</code>.  T
 <tr><td class=labkey-form-label>Type Definition (tab delimited)</td></tr>
 <tr><td><textarea name=tsv rows=25 cols=80><%=filter(form.tsv)%></textarea></td></tr>
 </table>
-<input type=image src="<%=PageFlowUtil.buttonSrc("Submit","large")%>">
+    <%=PageFlowUtil.generateSubmitButton("Submit")%>
 </form>

@@ -61,7 +61,7 @@ if (!hasError)
     ActionURL submitURL = new ActionURL(StudyController.SubmitStudyBatchAction.class, me.getViewContext().getContainer());
 %><form action="<%=submitURL.getLocalURIString()%>" method=POST>
     <input type=hidden name=path value="<%=PageFlowUtil.filter(bean.getForm().getPath())%>">
-    <input type=image name=Submit src="<%=PageFlowUtil.submitSrc()%>">
+    <%=PageFlowUtil.generateSubmitButton("Submit")%>
 </form><%
 }
 %>

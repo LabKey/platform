@@ -104,7 +104,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <%}%>
 <tr>
-    <td><input type="image" src="<%=PageFlowUtil.buttonSrc("Save")%>"/></td>
+    <td><%=PageFlowUtil.generateSubmitButton("Save")%></td>
 </tr>
 </table>
 
@@ -406,7 +406,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 
 <tr>
-    <td><input type="image" src='<%=PageFlowUtil.buttonSrc("Save")%>' /></td>
+    <td><%=PageFlowUtil.generateSubmitButton("Save")%></td>
 </tr>
 </table>
 </form>

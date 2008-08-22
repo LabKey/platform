@@ -70,5 +70,5 @@ if (bean.getExpRowId() != null)
     <input type="hidden" name="expRowId" value="<%= bean.getExpRowId() %>" />
 <% } %>
 <input type="hidden" name="protocolId" value="<%= bean.getProtocolId() == null ? "" : bean.getProtocolId() %>" />
-<%= buttonImg("Export") %>
+<%= generateSubmitButton("Export") %>
 </form>

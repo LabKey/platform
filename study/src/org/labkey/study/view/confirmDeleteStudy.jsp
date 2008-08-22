@@ -36,5 +36,5 @@ for (String s : summaries)
     <br>
     Check the box below to confirm that you want to delete this study. <br>
 <input type=checkbox name=confirm value=true> Confirm Delete<br><br>
-<%=buttonImg("Delete")%> <%=buttonLink("Cancel", "manageStudy.view")%>
+<%=generateSubmitButton("Delete")%> <%=generateButton("Cancel", "manageStudy.view")%>
 </form>

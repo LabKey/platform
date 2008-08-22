@@ -89,7 +89,7 @@ LABKEY.requiresScript('completion.js');
                                            autocomplete="off"
                                            onKeyUp="return handleChange(this, event, 'completeUser.view?prefix=');">
                                     <input type="hidden" name="sendEmail" value="true">
-                                    <%= buttonImg("Add User")%>
+                                    <%= generateSubmitButton("Add User")%>
                                 </form>
                             </td>
                         </tr>
@@ -107,7 +107,7 @@ LABKEY.requiresScript('completion.js');
         <tr>
             <td class="labkey-form-label">Create new group</td>
             <td><input type="text" size="30" name="name"></td>
-            <td><%= this.buttonImg("Create")%></td>
+            <td><%= this.generateSubmitButton("Create")%></td>
         </tr>
     </table>
 </form>

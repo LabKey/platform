@@ -46,5 +46,5 @@ VisitMap data can be imported to quickly define a study.  VisitMap data generall
 <form action="uploadVisitMap.post" method="post">
     Paste VisitMap content here:<br>
     <textarea name="content" cols="80" rows="30"></textarea><br>
-    <%= buttonImg("Import")%>&nbsp;<%= buttonLink("Cancel", "manageVisits.view")%>
+    <%= generateSubmitButton("Import")%>&nbsp;<%= generateButton("Cancel", "manageVisits.view")%>
 </form>

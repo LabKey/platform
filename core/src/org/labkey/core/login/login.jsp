@@ -89,7 +89,7 @@
             <input type=hidden name=skipProfile value="1"><%
             }
             %>
-            <input type="image" src="<%=PageFlowUtil.buttonSrc(bean.agreeOnly ? "Agree" : "Sign In")%>" value="Sign in" name="SUBMIT">
+            <%=PageFlowUtil.generateSubmitButton((bean.agreeOnly ? "Agree" : "Sign In"), "", "name=\"SUBMIT\"")%>
         </td></tr>
     </table>
 </form>

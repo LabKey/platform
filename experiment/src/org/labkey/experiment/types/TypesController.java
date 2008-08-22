@@ -117,8 +117,8 @@ public class TypesController extends SpringActionController
                     TypesController.importConcepts(name, concepts);
 
                     successView = new HtmlView("Import Complete",
-                        "Successfully imported " + concepts.length + " concepts.<br>"+
-                        "<a href=\"./findConcepts.view\">"+ PageFlowUtil.buttonImg("Search") + "</a>");
+                        "Successfully imported " + concepts.length + " concepts.<br>" +
+                                PageFlowUtil.generateButton("Search", "./findConcepts.view"));
                     return true;
                 }
             }

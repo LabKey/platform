@@ -150,7 +150,7 @@ legend
 /* Used for the single pixel horizontal dividing lines across the site */
 .labkey-title-area-line
 {
-    border-top: 1px solid #89A1B4;
+    background-color: #89A1B4;
     height: 1px;
     padding: 0px;
 }
@@ -241,41 +241,35 @@ a.labkey-link:hover, a.labkey-link:visited:hover
 div.labkey-button-bar, table.labkey-button-bar
 {
     white-space: nowrap;
-    margin-top: 4px;
-    margin-bottom: 2px;
+    margin-top: 0.4em;
+    margin-bottom: 0.2em;
 }
 
-.labkey-button-bar td
-{
-    padding-right: 5px;
-}
-
-/* Used for the new css buttons, which consist of a link (<a>) wrapped around
- an input (and an image in the case where there is an down arrow ) */
-a.labkey-button, a.labkey-button:visited
+/* Used for the new css buttons, which consist of a link (<a>) wrapped around a span (and an image
+   in the case where there is an down arrow ) or a span wrapped around an input for submit buttons */
+a.labkey-button, a.labkey-button:visited, span.labkey-button, span.labkey-button:visited
 {
     background-color: #E9E9E9;
     border: 1px solid black;
-    margin-right: 0.3em;
-    padding: 0.1em;
-    height: 1.2em;
-    width: 4em;
+    margin-left: 0.3em;
+    padding: 0.1em 0.3em;
+    *padding: 0 0.3em;
     white-space: nowrap;
 }
 
-a.labkey-button:hover
+a.labkey-button:hover, span.labkey-button:hover
 {
     background-color: #F2F2F2;
 }
 
-a.labkey-button:active
+a.labkey-button:active, span.labkey-button:active
 {
     position: relative;
     top: 0.1em;
     background-color: #DEDEDE;
 }
 
-a.labkey-button input, a.labkey-button:visited input
+.labkey-button input, .labkey-button:visited input, .labkey-button span, .labkey-button:visited span
 {
     background-color: transparent;
     font-size: 1em;
@@ -287,24 +281,22 @@ a.labkey-button input, a.labkey-button:visited input
     cursor: hand;
 }
 
-a.labkey-button:hover input
+.labkey-button:hover input, .labkey-button:hover span
 {
     color: #0F0F0F;
 }
 
-a.labkey-button:active input
+.labkey-button:active input, .labkey-button:active span
 {
     color: #000000;
 }
 
 /* This is the class for the down arrow that can be included in a button.
  The images src should be ./_images/button_arrow.gif */
-a.labkey-button .labkey-button-arrow
+img.labkey-button-arrow
 {
     background-color: transparent;
-    margin-top: 0.1em;
     margin-bottom: 0.1em;
-    margin-right: 0.3em;
     width: 0.728em;
     height: 0.364em;
     position: relative;
@@ -313,11 +305,42 @@ a.labkey-button .labkey-button-arrow
     border: 0;
 }
 
-/* Used for the old buttons to give them spacing */
-span.labkey-button-bar-item
+a.labkey-disabled-button, span.labkey-disabled-button
 {
-    margin-right: 5px;
+    border: 1px solid #808080;
+    background-color: #F0F0F0;
+    margin-left: 0.3em;
+    padding: 0.1em 0.3em;
+    *padding: 0 0.3em;
+    white-space: nowrap;
 }
+
+.labkey-disabled-button input, .labkey-disabled-button span
+{
+    background-color: transparent;
+    font-size: 1em;
+    font-family: verdana, arial, helvetica, sans-serif;
+    margin:0;
+    border:0;
+    cursor: pointer;
+    cursor: hand;
+    color: #808080;
+}
+
+/* The next to classes are for IE to get the spans to line up and be
+the same size as the inputs */
+a.labkey-button, a.labkey-button:visited
+{
+    *padding-top:1px;
+    *padding-bottom:1px;
+    *position: relative;
+    *top: 1px;
+}
+
+a.labkey-button:active
+{
+    *top: 2px;
+} 
 
 /* Used across the site for simple indenting */
 .labkey-indented
@@ -968,7 +991,7 @@ table.labkey-nav-tree-child
     background-image: url('./_.gif');
 }
 
-/* The tab has no bottom border so it looks like it is forward */
+/* This tab has no bottom border so it looks like it is forward */
 td.labkey-tab-selected, .labkey-tab-selected
 {
     padding-top:0.1em;
@@ -985,7 +1008,7 @@ td.labkey-tab-selected, .labkey-tab-selected
     cursor: pointer;
 }
 
-/* The tab has a bottom border so it looks like it is back */
+/* This tab has a bottom border so it looks like it is back */
 td.labkey-tab, .labkey-tab
 {
     padding-top:0.1em;

@@ -63,7 +63,7 @@ for (found in foundSemanticTypes)
 		}
 	%></select></td></tr>
 	<tr><td class="labkey-form-label">Concept</td><td><input name="concept" style="width:320;" value="<%=filter(form.concept)%>"></td></tr>
-	<tr><td><input type=image src="<%=PageFlowUtil.buttonSrc("Search", "large")%>"></td><td></td></tr>
+	<tr><td><%=PageFlowUtil.generateSubmitButton("Search")%></td><td></td></tr>
 </table>
 </form>
 <p/>
@@ -112,7 +112,7 @@ else
 		</table><%
 		if (selectScript)
 			{
-			%><img alt="<%=filter(uri)%>" src="<%=filter(PageFlowUtil.buttonSrc("select"))%>" onclick="javascript:select(<%=PageFlowUtil.jsString(uri)%>)"><%
+			%><%=PageFlowUtil.generateButton("select", "", "javascript:select(" + PageFlowUtil.jsString(uri) + ")")%><%
 			}
 		}
 

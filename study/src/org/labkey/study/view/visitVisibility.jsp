@@ -92,5 +92,5 @@
         }
     %>
     </table>
-    <%= buttonImg("Save") %>&nbsp;<%= buttonLink("Cancel", "manageVisits.view")%>
+    <%= generateSubmitButton("Save") %>&nbsp;<%= generateButton("Cancel", "manageVisits.view")%>
 </form>

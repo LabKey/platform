@@ -32,8 +32,8 @@
 <%}%>
 <tr>
     <td colspan=2 align="right">
-        <input type="image" src="<%=PageFlowUtil.submitSrc()%>">
-        <a href="begin.view"><img src="<%=PageFlowUtil.cancelSrc()%>"></a>
+        <%=PageFlowUtil.generateSubmitButton("Submit")%>
+        <%=PageFlowUtil.generateButton("Cancel", "begin.view")%>
     </td>
 </tr>
 </table>

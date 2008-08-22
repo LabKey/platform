@@ -90,8 +90,8 @@
     </table>
 
 <br>
-<input type="image" src='<%=PageFlowUtil.buttonSrc("Submit")%>'>
-<img onClick="window.history.back()" alt="Cancel" src='<%=PageFlowUtil.buttonSrc("Cancel")%>'>
+    <%=PageFlowUtil.generateSubmitButton("Submit")%>
+    <%=PageFlowUtil.generateButton("Cancel", "", "window.history.back()")%>
     </form>
 <script type="text/javascript">
     function showUpload()

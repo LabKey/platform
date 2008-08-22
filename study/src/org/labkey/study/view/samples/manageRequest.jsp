@@ -173,7 +173,7 @@
                     {
                 %>
                 <br>You may remove these specimens from this request if they are not expected to be re-added to the database.<br>
-                <%= buttonLink("Delete missing specimens", "deleteMissingRequestSpecimens.view?id=" +
+                <%= generateButton("Delete missing specimens", "deleteMissingRequestSpecimens.view?id=" +
                         bean.getSampleRequest().getRowId(), "return confirm('Delete missing specimens?  This action cannot be undone.')")%>
                 <%
                     }
@@ -252,7 +252,7 @@
             {
 %>
                 Request processing will begin after the request has been submitted.<br><br>
-                <%= buttonLink("Submit Request", "submitRequest.view?id=" + bean.getSampleRequest().getRowId(),
+                <%= generateButton("Submit Request", "submitRequest.view?id=" + bean.getSampleRequest().getRowId(),
                         "return confirm('" + SpringSpecimenController.ManageRequestBean.SUBMISSION_WARNING + "')")%>
 <%
             }
@@ -261,11 +261,11 @@
 %>
                 You must add specimens before submitting your request.<br><br>
                 <%= SampleManager.getInstance().hasEditRequestPermissions(context.getUser(), bean.getSampleRequest()) ?
-                        buttonLink("Specimen Search", "showSearch.view?showVials=true") : "" %>
+                        generateButton("Specimen Search", "showSearch.view?showVials=true") : "" %>
 <%
             }
 %>
-                <%= buttonLink("Cancel Request", "deleteRequest.view?id=" + bean.getSampleRequest().getRowId(),
+                <%= generateButton("Cancel Request", "deleteRequest.view?id=" + bean.getSampleRequest().getRowId(),
                         "return confirm('" + SpringSpecimenController.ManageRequestBean.CANCELLATION_WARNING + "')")%>
             </td>
         </tr>
@@ -430,7 +430,7 @@
                 %>
                 No specimens are associated with this request.<br>
                 <%= SampleManager.getInstance().hasEditRequestPermissions(context.getUser(), bean.getSampleRequest()) ? 
-                        buttonLink("Specimen Search", "showSearch.view?showVials=true") : "" %>
+                        generateButton("Specimen Search", "showSearch.view?showVials=true") : "" %>
                 <%
                     }
                 %>

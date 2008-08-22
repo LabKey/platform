@@ -189,7 +189,7 @@
                 {
             %>
             <td valign="top" align="left" class="<%= rowClass %>">
-                <%= buttonImg("View") %>
+                <%= generateSubmitButton("View") %>
             </td>
             <%
                 }

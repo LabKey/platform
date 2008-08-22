@@ -924,7 +924,7 @@ public class ListController extends SpringActionController
                 out.write("<table>\n");
                 out.write("<tr><td>");
                 if (_returnUrl != null)
-                    out.write(PageFlowUtil.buttonLink("Done", _returnUrl));
+                    out.write(PageFlowUtil.generateButton("Done", _returnUrl));
                 out.write("</tr></td>");
                 out.write("<tr><td></td></tr>");
 
@@ -997,7 +997,7 @@ public class ListController extends SpringActionController
             out.write("<tr><td>&nbsp;</td></tr>");
             out.write("<tr><td>");
             if (_returnUrl != null)
-                out.write(PageFlowUtil.buttonLink("Done", _returnUrl));
+                out.write(PageFlowUtil.generateButton("Done", _returnUrl));
             out.write("</tr></td>");
 
             out.write("</table>\n");

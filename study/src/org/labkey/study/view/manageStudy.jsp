@@ -155,4 +155,4 @@
         }
     %>
 </table>
-<%=buttonLink("Snapshot Study Data", "snapshot.view")%> <%=buttonLink("Delete Study", "deleteStudy.view")%>
+<%=generateButton("Snapshot Study Data", "snapshot.view")%> <%=generateButton("Delete Study", "deleteStudy.view")%>

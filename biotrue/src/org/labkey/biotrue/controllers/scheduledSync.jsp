@@ -47,8 +47,8 @@
             </select>
         <tr><td></td></tr>
         <tr><td>
-            <%=PageFlowUtil.buttonLink("Cancel", HttpView.currentContext().cloneActionURL().setAction(BtController.AdminAction.class))%>&nbsp;
-            <input type="image" src="<%=PageFlowUtil.buttonSrc("Update")%>">&nbsp;
+            <%=PageFlowUtil.generateButton("Cancel", HttpView.currentContext().cloneActionURL().setAction(BtController.AdminAction.class))%>&nbsp;
+            <%=PageFlowUtil.generateSubmitButton("Update")%>&nbsp;
         </td></tr>
         <tr><td>&nbsp;</td></tr>
     </table>

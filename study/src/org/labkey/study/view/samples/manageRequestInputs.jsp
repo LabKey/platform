@@ -188,6 +188,6 @@
     %>
     </table>
     <%= buttonImg("Add New Input", "return addRow()")%>
-    <%= buttonImg("Save")%>
-    <%= buttonLink("Cancel", ActionURL.toPathString("Study", "manageStudy", bean.getContainer()))%>
+    <%= generateSubmitButton("Save")%>
+    <%= generateButton("Cancel", ActionURL.toPathString("Study", "manageStudy", bean.getContainer()))%>
 </form>

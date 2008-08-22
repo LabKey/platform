@@ -30,7 +30,7 @@ if (null == getStudy())
     if (getViewContext().hasPermission(ACL.PERM_ADMIN))
     {
         ActionURL createURL = new ActionURL(StudyController.ManageStudyPropertiesAction.class, getViewContext().getContainer());
-        out.println(buttonLink("Create Study", createURL));
+        out.println(generateButton("Create Study", createURL));
     }
     else
     {

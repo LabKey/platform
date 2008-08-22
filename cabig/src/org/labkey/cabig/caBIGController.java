@@ -255,7 +255,7 @@ public class caBIGController extends SpringActionController
     private static class caBIGHierarchyTree extends ContainerTree
     {
         private static caBIGManager _caBIG = caBIGManager.get();
-        private static String _unauthorizedButton = PageFlowUtil.buttonImg("Not Authorized", "disabled");
+        private static String _unauthorizedButton = PageFlowUtil.generateDisabledButton("Not Authorized");
         private ActionURL _currentUrl;
 
         private caBIGHierarchyTree(String rootPath, User user, int perm, ActionURL currentUrl)
@@ -287,7 +287,7 @@ public class caBIGController extends SpringActionController
             {
                 boolean isPublished = isPublished(c);
                 ActionURL publishURL = getCaBigURL(isPublished ? UnpublishAction.class : PublishAction.class, c, returnURL);
-                html.append(PageFlowUtil.buttonLink(isPublished ? "Unpublish" : "Publish", publishURL));
+                html.append(PageFlowUtil.generateButton(isPublished ? "Unpublish" : "Publish", publishURL));
             }
         }
 

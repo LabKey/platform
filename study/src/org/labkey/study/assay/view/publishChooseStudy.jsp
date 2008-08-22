@@ -125,8 +125,8 @@
     </tr>
     <tr>
         <td colspan="2">
-            <%= buttonLink("Cancel", bean.getReturnURL())%>
-            <%= buttonImg("Next") %>
+            <%= generateButton("Cancel", bean.getReturnURL())%>
+            <%= generateSubmitButton("Next") %>
         </td>
     </tr>
 </table>

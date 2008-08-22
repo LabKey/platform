@@ -82,7 +82,7 @@
     <input type="hidden" name="<%=QueryParam.schemaName%>" value="<%=bean.getSchemaName()%>">
     <input type="hidden" name="<%=QueryParam.dataRegionName%>" value="<%=DataSetQueryView.DATAREGION%>">
 
-    <input type="image" src="<%=PageFlowUtil.submitSrc()%>" >
+    <%=PageFlowUtil.generateSubmitButton("Submit")%>
 </form>
 
 <%!

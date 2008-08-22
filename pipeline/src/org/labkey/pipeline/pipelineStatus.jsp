@@ -52,11 +52,8 @@ private Object outputJob(String status, PipelineJob job,
 
     if (status.equals("pending") && canCancel)
     {
-        ret.append("<td><a href=\"cancelJob.view?jobId=").append(job.getJobGUID())
-                .append(isAllContainers ? "&allcontainers=1" : "")
-                .append("\"><img src=\"")
-                .append(PageFlowUtil.buttonSrc("cancel"))
-                .append("\"></a>");
+        ret.append("<td>" + PageFlowUtil.generateButton("cancel", "cancelJob.view?jobId=" + job.getJobGUID() +
+                (isAllContainers ? "&allcontainers=1" : "")));
     }
     return ret;
 }
@@ -103,5 +100,4 @@ private Object outputJob(String status, PipelineJob job,
         } %>
         </table><%
     } %>
-    <a href="<%=ActionURL.toPathString("Pipeline-Status", "showList", "/")%>">
-        <img src="<%=PageFlowUtil.buttonSrc("Grid")%>"></a>
+    <%=PageFlowUtil.generateButton("Grid", ActionURL.toPathString("Pipeline-Status", "showList", "/"))%>

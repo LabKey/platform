@@ -55,7 +55,7 @@ When a web root is set,
 each folder in the project has a corresponding subdirectory in the file system.<br><br>
 <form action="saveRoot.post" method="POST">
     Web Root <input name=rootPath size=50 value="<%=h(form.getRootPath())%>"><br>
-    <%=buttonImg("Submit")%>
+    <%=generateSubmitButton("Submit")%>
 </form>
 <br><br>
 <%      }
@@ -112,7 +112,7 @@ Each file set is an additional directory that stores files accessible to users o
             <td><%=h(attDir.getFileSystemDirectory().getPath())%> <%=attDir.getFileSystemDirectory().exists() ? "" : "Directory does not exist. An administrator must create it."%></td>
         </tr>
         <tr>
-            <td colspan=2><%=buttonLink("Show Files", "begin.view?fileSetName=" + h(attDir.getLabel()))%> <%=buttonImg("Remove")%> (Files will not be deleted)</td>
+            <td colspan=2><%=generateButton("Show Files", "begin.view?fileSetName=" + h(attDir.getLabel()))%> <%=generateSubmitButton("Remove")%> (Files will not be deleted)</td>
         </tr>
     </table>
         </form>
@@ -129,7 +129,7 @@ Each file set is an additional directory that stores files accessible to users o
         <td><input name="path" size="60" value="<%=h(form.getPath())%>"></td>
     </tr>
     <tr>
-        <td><%=buttonImg("Add File Set")%> </td>
+        <td><%=generateSubmitButton("Add File Set")%> </td>
     </tr>
 </table>
 </form>

@@ -184,5 +184,5 @@ This page may be used to search by <%= bean.isDetailsView() ? " vial" : "specime
             }
         }
     %>
-<%= buttonImg("Search") %> <%= buttonLink("Cancel", "samples.view?_lastFilter=1&showVials=" + bean.isDetailsView())%>
+<%= generateSubmitButton("Search") %> <%= generateButton("Cancel", "samples.view?_lastFilter=1&showVials=" + bean.isDetailsView())%>
 </form>

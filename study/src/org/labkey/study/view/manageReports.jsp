@@ -112,7 +112,7 @@
             <table>
                 <tr><td>View name:</td></tr>
                 <tr><td width="275"><input id="renameReportName" name="reportName" style="width:100%" value=""></td></tr>
-                <tr><td><input type="image" src="<%=PageFlowUtil.buttonSrc("Rename")%>"></td></tr>
+                <tr><td><%=PageFlowUtil.generateSubmitButton("Rename")%></td></tr>
             </table>
         </form>
     </div>
@@ -126,7 +126,7 @@
             <table>
                 <tr><td>View Description:</td></tr>
                 <tr><td width="370"><textarea id="descReportDescription" name="reportDescription" style="width: 100%;" rows="6"></textarea></td></tr>
-                <tr><td><input type="image" src="<%=PageFlowUtil.buttonSrc("Update")%>"></td></tr>
+                <tr><td><%=PageFlowUtil.generateSubmitButton("Update")%></td></tr>
             </table>
         </form>
     </div>

@@ -47,8 +47,8 @@
     <tr><td colspan="2">&nbsp;</td></tr>
     <tr>
         <td colspan=2>
-            <input type="image" src="<%=PageFlowUtil.buttonSrc("Save")%>" />
-            <%=PageFlowUtil.buttonLink(bean.reshow ? "Done" : "Cancel", PageFlowUtil.urlProvider(LoginUrls.class).getConfigureURL())%>
+            <%=PageFlowUtil.generateSubmitButton("Save")%>
+            <%=PageFlowUtil.generateButton(bean.reshow ? "Done" : "Cancel", PageFlowUtil.urlProvider(LoginUrls.class).getConfigureURL())%>
         </td>
     </tr>
     <tr><td colspan="2">&nbsp;</td></tr>

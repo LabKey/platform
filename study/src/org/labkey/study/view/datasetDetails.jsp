@@ -67,9 +67,9 @@
     ActionURL deleteDatasetURL = new ActionURL(StudyController.DeleteDatasetAction.class, context.getContainer());
     deleteDatasetURL.addParameter("id", dataset.getDataSetId());
 
-    %><br><a href="<%=updateDatasetURL.getLocalURIString()%>"><%=PageFlowUtil.buttonImg("Edit Dataset " + visitManager.getPluralLabel())%></a><%
-    %>&nbsp;<a href="<%=manageTypesURL.getLocalURIString()%>"><%=PageFlowUtil.buttonImg("Done")%></a><%
-    %>&nbsp;<%=buttonLink("Delete Dataset", deleteDatasetURL,
+    %><br><%=PageFlowUtil.generateButton("Edit Dataset " + visitManager.getPluralLabel(), updateDatasetURL.getLocalURIString())%><%
+    %>&nbsp;<%=PageFlowUtil.generateButton("Done", manageTypesURL.getLocalURIString())%><%
+    %>&nbsp;<%=generateButton("Delete Dataset", deleteDatasetURL,
         "return confirm('Are you sure you want to delete this dataset?  All related data and visitmap entries will also be deleted.')")%><%
 }
 if (0 != (permissions & ACL.PERM_UPDATE))
@@ -78,7 +78,7 @@ if (0 != (permissions & ACL.PERM_UPDATE))
     {
         ActionURL showImportDatasetURL = new ActionURL(StudyController.ShowImportDatasetAction.class, context.getContainer());
         showImportDatasetURL.addParameter("datasetId", dataset.getDataSetId());
-        %>&nbsp;<a href="<%=showImportDatasetURL.getLocalURIString()%>"><%=PageFlowUtil.buttonImg("Import Data")%></a><%
+        %>&nbsp;<%=PageFlowUtil.generateButton("Import Data", showImportDatasetURL.getLocalURIString())%><%
     }
     ActionURL showHistoryURL = new ActionURL(StudyController.ShowUploadHistoryAction.class, context.getContainer());
     showHistoryURL.addParameter("id", dataset.getDataSetId());
@@ -86,8 +86,8 @@ if (0 != (permissions & ACL.PERM_UPDATE))
     ActionURL editTypeURL = new ActionURL(StudyController.EditTypeAction.class, context.getContainer());
     editTypeURL.addParameter("datasetId", dataset.getDataSetId());
 
-    %>&nbsp;<a href="<%=showHistoryURL.getLocalURIString()%>"><%=PageFlowUtil.buttonImg("Show Import History")%></a><%
-    %>&nbsp;<a href="<%=editTypeURL.getLocalURIString()%>"><%=PageFlowUtil.buttonImg("Edit Dataset Definition")%></a><%
+    %>&nbsp;<%=PageFlowUtil.generateButton("Show Import History", showHistoryURL.getLocalURIString())%><%
+    %>&nbsp;<%=PageFlowUtil.generateButton("Edit Dataset Definition", editTypeURL.getLocalURIString())%><%
 }
 if (!pipelineSet)
 {

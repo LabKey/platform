@@ -118,8 +118,8 @@
         <tr><td></td><td><input name="tempFolderRadio" value="system" id="tempFolderSystem" type="radio" onclick="onTempFolder();" <%=StringUtils.isEmpty(bean.getTempFolder()) ? "checked" : ""%>>Use the system temporary folder</td><td></td></tr>
         <tr><td>&nbsp;</td></tr>
         <tr><td>&nbsp;</td>
-            <td><input type="image" src="<%=PageFlowUtil.submitSrc()%>">
-            &nbsp;<%=PageFlowUtil.buttonLink("Done", urlProvider(AdminUrls.class).getAdminConsoleURL())%></td></tr>
+            <td><%=PageFlowUtil.generateSubmitButton("Submit")%>
+            &nbsp;<%=PageFlowUtil.generateButton("Done", urlProvider(AdminUrls.class).getAdminConsoleURL())%></td></tr>
 
         <tr><td>&nbsp;</td></tr>
         <tr><td></td><td><i>The configuration of this page is necessary to be able to create an R view. The location

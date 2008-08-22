@@ -45,14 +45,14 @@
         if (action.isRootAction() &&action.getDescription() != null)
         {
             %><%=action.getDescription()%><%
-            %><p><a href="<%=h(action.getHref())%>"><img src="<%=PageFlowUtil.buttonSrc(action.getLabel())%>"/></a></p><%
+            %><p><%=PageFlowUtil.generateButton(action.getLabel(), action.getHref())%></p><%
         }
     }
     for (PipelineProvider.FileAction action : parent.getActions())
     {
         if (action.isRootAction() && action.getDescription() == null)
         {
-            %><a href="<%=h(action.getHref())%>"><img src="<%=PageFlowUtil.buttonSrc(action.getLabel())%>"/></a>&nbsp;<%
+            %><%=PageFlowUtil.generateButton(action.getLabel(), action.getHref())%>&nbsp;<%
         }
     }%>
 
@@ -207,19 +207,20 @@
 
     if (files)
     {
-        %><a href="<%=actionToggle.getLocalURIString()%>"><%=PageFlowUtil.buttonImg("Process and Import Files")%></a>&nbsp;<%
+        %><%=PageFlowUtil.generateButton("Process and Import Files", actionToggle.getLocalURIString())%>&nbsp;<%
     }
     else if (pipeRoot.getACL().hasPermission(context.getUser(), ACL.PERM_READ))
     {
-        %><a href="<%=actionToggle.getLocalURIString()%>"><%=PageFlowUtil.buttonImg("Browse All Files")%></a>&nbsp;<%
+        %><%=PageFlowUtil.generateButton("Browse All Files", actionToggle.getLocalURIString())%>&nbsp;<%
     }
 
     if (pipeRoot.getACL().hasPermission(context.getUser(), ACL.PERM_INSERT))
     {
         ActionURL dropUrl = (new ActionURL("ftp","drop",context.getContainer())).addParameter("pipeline",StringUtils.defaultString(form.getPath(),"/"));
-        %><a href="<%=h(dropUrl.getLocalURIString())%>" target=_blank><%=PageFlowUtil.buttonImg("Upload files")%></a>&nbsp;<%
+        %><%=PageFlowUtil.generateButton("Upload files", dropUrl.getLocalURIString(), "", "target=\"_blank\"")%>
+        &nbsp;<%
     }
-%><a href="returnToReferer.view"><%=PageFlowUtil.buttonImg("Cancel")%></a>
+%><%=PageFlowUtil.generateButton("Cancel", "returnToReferer.view")%>
 
 <script type="text/javascript">
 function setFormAction(n, url)

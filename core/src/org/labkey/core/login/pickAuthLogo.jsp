@@ -44,7 +44,8 @@
     <td colspan="3">&nbsp;</td>
 </tr>
 <tr>
-    <td colspan="3"><input type="image" src="<%=PageFlowUtil.buttonSrc("Save")%>">&nbsp;<%=PageFlowUtil.buttonLink(bean.reshow ? "Done" : "Cancel", bean.returnURL)%></td>
+    <td colspan="3"><%=PageFlowUtil.generateSubmitButton("Save")%>&nbsp;
+        <%=PageFlowUtil.generateButton(bean.reshow ? "Done" : "Cancel", bean.returnURL)%></td>
 </tr>
 </table>
 </form>

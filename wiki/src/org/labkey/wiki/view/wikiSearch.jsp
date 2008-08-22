@@ -39,7 +39,7 @@
             <input type="text" name="search" style="width:100%">
         </td>
         <td width="1%">
-            <%=PageFlowUtil.buttonLink("Search", "javascript:{}", "submitSearch();")%>
+            <%=PageFlowUtil.generateButton("Search", "javascript:{}", "submitSearch();")%>
         </td>
     </tr>
 </table>

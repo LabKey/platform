@@ -136,7 +136,7 @@ if (settings.hasFormatPicker())
       </table>
     </td></tr>
 </table>
-<br>&nbsp;<input type=image src="<%=PageFlowUtil.submitSrc()%>" value="Insert">&nbsp;<a href="<%=h(bean.cancelURL)%>"><img src="<%=PageFlowUtil.buttonSrc("Cancel")%>"></a>
+<br>&nbsp;<%=PageFlowUtil.generateSubmitButton("Submit")%>&nbsp;<%=PageFlowUtil.generateButton("Cancel", bean.cancelURL) %>
 </form>
 <br>
 <% me.include(bean.currentRendererType.getSyntaxHelpView(), out); %>

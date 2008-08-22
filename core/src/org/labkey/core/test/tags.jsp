@@ -41,7 +41,7 @@
         <tr><td>z</td><td><form:input path="z"></form:input></td></tr>
         <tr><td>file</td><td><input type="file" name="file"></td></tr>
     </table>
-    <input type=image name="submit" src="<%=h(PageFlowUtil.submitSrc())%>">
+    <%=PageFlowUtil.generateSubmitButton("Submit", "name=\"submit\"")%>
 </form:form>
    
 <br>

@@ -72,12 +72,12 @@ for (Site site : sites)
         <tr><th class="labkey-form-label">Report name</th><td><input style="width:250;" type=text id=label name=label value=""></td></tr>
 <%}%>
 </table>
-<input type=image src="<%=PageFlowUtil.buttonSrc("Export")%>">
+<%=PageFlowUtil.generateSubmitButton("Export")%>        
         <% if (isAdmin)
         {   %>
             <input type=hidden name=reportType value="<%=ExportExcelReport.TYPE%>">
             <input type=hidden id=params name=params value="siteId=-1">
-            <input type=image src="<%=PageFlowUtil.buttonSrc("Save")%>" onclick="this.form.action='saveReport.view'">
+            <%=PageFlowUtil.generateSubmitButton("Save", "this.form.action='saveReport.view'")%>
 
         <script type="text/javascript">
         var sites = {};

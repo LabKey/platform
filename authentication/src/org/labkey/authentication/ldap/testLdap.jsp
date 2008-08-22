@@ -50,8 +50,8 @@ client browser.
     <tr><td>Use SASL Authentication:</td><td><input id="SASL" type="checkbox" name="SASL" <%=form.getSASL() ? "checked" : ""%>></td></tr>
     <tr><td colspan=2 align=center style="height:50">
         <input type="hidden" name="<%=ReturnUrlForm.Params.returnUrl%>" value="<%=form.getReturnUrl()%>">
-        <input type="image" src="<%=PageFlowUtil.buttonSrc("Test")%>" />
-        <%=PageFlowUtil.buttonLink("Done", form.getReturnUrl())%>
+        <%=PageFlowUtil.generateSubmitButton("Test")%>
+        <%=PageFlowUtil.generateButton("Done", form.getReturnUrl())%>
     </td></tr>
 </table>
 </form>

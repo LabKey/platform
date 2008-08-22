@@ -57,5 +57,5 @@
     <%
 }
 %><br>
-    <%=buttonImg("Submit")%>
+    <%=generateSubmitButton("Submit")%>
 </form>

@@ -26,4 +26,4 @@
     ActionURL homeURL = AppProps.getInstance().getHomePageActionURL();
 %>
 <%=message%>
-<%=PageFlowUtil.buttonLink("Sign In", urlProvider(LoginUrls.class).getLoginURL(homeURL))%>&nbsp;<%=PageFlowUtil.buttonLink("Home", homeURL)%>
+<%=PageFlowUtil.generateButton("Sign In", urlProvider(LoginUrls.class).getLoginURL(homeURL))%>&nbsp;<%=PageFlowUtil.generateButton("Home", homeURL)%>

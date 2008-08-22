@@ -83,7 +83,7 @@ Labkey FTP server if it is configured.
     }
     %></table><br><%
 %>
-<input type="image" src="<%=PageFlowUtil.submitSrc()%>">
+<%=PageFlowUtil.generateSubmitButton("Submit")%>
 </form>
 <script type="text/javascript">
 toggleEnableFTP(document.getElementById("enabledCheckbox"));

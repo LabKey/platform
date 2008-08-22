@@ -44,7 +44,7 @@
             %>
              <tr>
                  <td align="right"><b><%= entry.getKey() %></b>&nbsp; &nbsp; </td>
-                 <td align="left"> <%= buttonLink("select", entry.getValue()) %> </td>
+                 <td align="left"> <%= generateButton("select", entry.getValue()) %> </td>
               </tr>
         <% } %>
     <tr>
@@ -52,9 +52,9 @@
         </tr><tr>
 
          <td colspan="2" align="left">
-         <%=buttonLink("New Assay",new ActionURL("assay", "chooseAssayType", me.getModelBean().getContainer()) )%>
+         <%=generateButton("New Assay",new ActionURL("assay", "chooseAssayType", me.getModelBean().getContainer()) )%>
             &nbsp;
-             <%=buttonLink("Cancel",new ActionURL("Pipeline", "returnToReferer", me.getModelBean().getContainer()) )%>
+             <%=generateButton("Cancel",new ActionURL("Pipeline", "returnToReferer", me.getModelBean().getContainer()) )%>
         </td>
 
 

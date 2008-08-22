@@ -882,9 +882,15 @@
             return;
 
         if(enabled)
-            button.src = "<%=PageFlowUtil.buttonSrc(saveButtonCaption)%>";
+        {
+            button.parentNode.className = "labkey-button";
+            button.disabled = false;
+        }
         else
-            button.src = "<%=PageFlowUtil.buttonSrc(saveButtonCaption, "disabled")%>";
+        {
+            button.parentNode.className = "labkey-disabled-button";
+            button.disabled = true;
+        }
     }
 
     function isDirty()
@@ -1012,10 +1018,20 @@
 
     function enableDeleteButton(enable)
     {
-        var src = enable ? <%=PageFlowUtil.jsString(PageFlowUtil.buttonSrc("Delete Page"))%> : <%=PageFlowUtil.jsString(PageFlowUtil.buttonSrc("Delete Page", "disabled"))%>;
         var elem = document.getElementById(_idPrefix+"button-delete");
-        if(elem)
-            elem.src = src;
+        if (elem == null)
+            return;
+
+        if (enable)
+        {
+            elem.parentNode.className = "labkey-button";
+            elem.disabled = false;
+        }
+        else
+        {
+            elem.parentNode.className = "labkey-disabled-button";
+            elem.disabled = true;
+        }
     }
 
     function showEditingHelp(format)
@@ -1049,7 +1065,7 @@
         elem.setDisplayed(displayed);
         var button = Ext.get("<%=ID_PREFIX%>button-toc");
         if(button)
-            button.dom.src = displayed ? "<%=PageFlowUtil.buttonSrc("Hide Page Tree")%>" : "<%=PageFlowUtil.buttonSrc("Show Page Tree")%>";
+            button.dom.value = displayed ? "Hide Page Tree" : "Show Page Tree";
 
         //save preference
         if(savePref == undefined || savePref)
@@ -1095,19 +1111,16 @@
 <table class="labkey-button-bar" width=99%;>
     <tr>
         <td width="50%" align="left"  nowrap="true">
-            <input type="image" src="<%=PageFlowUtil.buttonSrc("Save & Close")%>" onclick="onFinish()"/>
-            <input id='wiki-button-save' type="image" src="<%=PageFlowUtil.buttonSrc(saveButtonCaption, "disabled")%>" onclick="onSave()"/>
-            <input type="image" src="<%=PageFlowUtil.buttonSrc("Cancel")%>" onclick="onCancel()"/>
+            <%=PageFlowUtil.generateSubmitButton("Save & Close", "onFinish()")%>
+            <%=PageFlowUtil.generateDisabledSubmitButton(saveButtonCaption, "onSave()", "id='wiki-button-save'")%>
+            <%=PageFlowUtil.generateSubmitButton("Cancel", "onCancel()")%>
         </td>
         <td width="50%" align="right" nowrap="true">
             <% if(model.canUserDelete()) { %>
-            <input type="image" id="<%=ID_PREFIX%>button-delete"
-                   src="<%=PageFlowUtil.buttonSrc("DeletePage", "disabled")%>" onclick="onDeletePage()"/>
+                <%=PageFlowUtil.generateDisabledSubmitButton("Delete Page", "onDeletePage()", "id=\"" + ID_PREFIX + "button-delete\"")%>
             <% } %>
-            <input type="image" id="<%=ID_PREFIX%>button-change-format"
-                   src="<%=PageFlowUtil.buttonSrc("Convert To...")%>" onclick="showConvertWindow()"/>
-            <input type="image" id="<%=ID_PREFIX%>button-toc" 
-                   src="<%=PageFlowUtil.buttonSrc("Show Page Tree")%>" onclick="showHideToc()"/>
+            <%=PageFlowUtil.generateSubmitButton("Convert To...", "showConvertWindow()", "id=\"" + ID_PREFIX + "button-change-format\"")%>
+            <%=PageFlowUtil.generateSubmitButton("Show Page Tree", "showHideToc()", "id=\"" + ID_PREFIX + "button-toc\"")%>
         </td>
     </tr>
 </table>
@@ -1302,8 +1315,8 @@
         </tr>
         <tr>
             <td style="text-align: right">
-                <input type="image" src="<%=PageFlowUtil.buttonSrc("Convert")%>" onclick="convertFormat()"/>
-                <input type="image" src="<%=PageFlowUtil.buttonSrc("Cancel")%>" onclick="cancelConvertFormat()"/>
+                <%=PageFlowUtil.generateSubmitButton("Convert", "convertFormat()")%>
+                <%=PageFlowUtil.generateSubmitButton("Cancel", "cancelConvertFormat()")%>
             </td>
         </tr>
     </table>
