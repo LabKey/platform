@@ -179,12 +179,18 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     // Don't stash in User... need to check dynamically in case user's groups have changed
     public boolean isAdministrator()
     {
-        return isInGroup(Group.groupAdministrators);
+        return isAllowedRoles() && isInGroup(Group.groupAdministrators);
     }
 
     public boolean isDeveloper()
     {
-        return isInGroup(Group.groupDevelopers);
+        return isAllowedRoles() && isInGroup(Group.groupDevelopers);
+    }
+
+    // Never allow global roles (site admin, developer, etc.) if user is being impersonated within a project  
+    public boolean isAllowedRoles()
+    {
+        return !isImpersonated() || null == getImpersonationProject();
     }
 
     public boolean isInGroup(int group)

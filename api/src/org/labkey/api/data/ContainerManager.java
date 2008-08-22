@@ -619,13 +619,24 @@ public class ContainerManager
             //track containers to ensure that each is added to nav tree only once
             Set<Container> containerSet = new HashSet<Container>();
 
-            String[] ids = Table.executeArray(
+            String[] ids;
+
+            // If user is being impersonated within a project then only that project should appear in the list
+            if (user.isImpersonated() && null != user.getImpersonationProject())
+            {
+                ids = new String[]{user.getImpersonationProject().getId()};
+            }
+            else
+            {
+                ids = Table.executeArray(
                     core.getSchema(),
                     "SELECT DISTINCT Container\n" +
                             "FROM " + core.getTableInfoPrincipals() + " P INNER JOIN " + core.getTableInfoMembers() + " M ON P.UserId = M.GroupId\n" +
                             "WHERE M.UserId = ?",
                     new Object[]{user.getUserId()},
                     String.class);
+            }
+
             for (String id : ids)
             {
                 if (id == null)

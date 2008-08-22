@@ -29,8 +29,6 @@ import org.labkey.api.data.Container;
  */
 public class ProjectsMenu extends NavTreeMenu
 {
-
-
     public ProjectsMenu(ViewContext context)
     {
         super(context, "projectsMenu", "Projects", !isHomePage(context), getNavTree(context));

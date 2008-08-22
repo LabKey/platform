@@ -705,8 +705,7 @@ public class ModuleLoader implements Filter
             {
                 String current = request.getRequestURL().toString();
                 ActionURL currentURL = (null == current ? null : new ActionURL(current));
-                Container c = (null == currentURL ? ContainerManager.getRoot() : ContainerManager.getForPath(currentURL.getExtraPath()));
-                ActionURL redirectURL = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(c, currentURL);
+                ActionURL redirectURL = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(currentURL);
                 response.sendRedirect(redirectURL.toString());
                 return;
             }

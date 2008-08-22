@@ -59,14 +59,14 @@ public class FooterMenu extends NavTreeMenu
         // LOGIN
         //
         if (user.isGuest())
-            menu.add(new NavTree("Sign in", PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(c, context.getActionURL())));
+            menu.add(new NavTree("Sign in", PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(context.getActionURL())));
 
         menu.add(new NavTree("Home", AppProps.getInstance().getHomePageActionURL()));
 
-        if (null != context.getContainer())
+        if (null != c)
         {
             ActionURL permaLink = context.cloneActionURL();
-            permaLink.setExtraPath("__r" + Integer.toString(context.getContainer().getRowId()));
+            permaLink.setExtraPath("__r" + Integer.toString(c.getRowId()));
             NavTree ntPermalink = new NavTree("Permanent Link", permaLink);
             ntPermalink.setId("permalink");
             menu.add(ntPermalink);

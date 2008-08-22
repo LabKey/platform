@@ -818,7 +818,7 @@ public class PageFlowUtil
             response.setContentLength((int) countOfBytes);
         if (asAttachment)
         {
-            response.setHeader("Content-Disposition", "attachment; filename=" + filename);
+            response.setHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
         }
         for (Map.Entry<String, String> entry : responseHeaders.entrySet())
             response.setHeader(entry.getKey(), entry.getValue());

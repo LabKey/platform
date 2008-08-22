@@ -641,8 +641,7 @@ public class AuthenticationManager
             }
             else
             {
-                Container c = ContainerManager.getForPath(returnURL.getExtraPath());
-                ActionURL loginURL = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(c, returnURL);
+                ActionURL loginURL = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(returnURL);
                 return _urlPrefix + loginURL.getURIString() + _urlSuffix;
             }
         }

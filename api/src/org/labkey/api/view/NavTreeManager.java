@@ -154,9 +154,22 @@ public class NavTreeManager
         assert null != navTreeId;
         String key;
         if (null != user)
+        {
             key = navTreeId + "/user=" + user.getUserId();
+
+            // NavTree for user being impersonated will be different per impersonating user per project
+            if (user.isImpersonated())
+            {
+                key = key + "/impersonatingUser=" + user.getImpersonatingUser().getUserId();
+
+                if (null != user.getImpersonationProject())
+                    key = key + "/impersonationProject=" + user.getImpersonationProject().getId();
+            }
+        }
         else
+        {
             key = navTreeId + "/";
+        }
         return CACHE_PREFIX + key;
     }
 
