@@ -979,35 +979,6 @@ public class QueryView extends WebPartView<Object>
             ret.getRenderContext().setBaseFilter(filter);
             ret.getRenderContext().setBaseSort(sort);
         }
-
-//        SimpleFilter filter;
-//        if (ret.getRenderContext().getBaseFilter() instanceof SimpleFilter)
-//        {
-//            filter = (SimpleFilter) ret.getRenderContext().getBaseFilter();
-//        }
-//        else
-//        {
-//            filter = new SimpleFilter(ret.getRenderContext().getBaseFilter());
-//        }
-//        Sort sort = ret.getRenderContext().getBaseSort();
-//        if (sort == null)
-//        {
-//            sort = new Sort();
-//        }
-//
-//        filter.addUrlFilters(getSettings().getSortFilterURL(), getDataRegionName());
-//        sort.applyURLSort(getSettings().getSortFilterURL(), getDataRegionName());
-//
-//        if (_customView != null && _customView.hasFilterOrSort() && !ignoreUserFilter())
-//        {
-//            ActionURL url = new ActionURL();
-//            _customView.applyFilterAndSortToURL(url, getDataRegionName());
-//            filter.addUrlFilters(url, getDataRegionName());
-//            sort.applyURLSort(url, getDataRegionName());
-//        }
-//
-//        ret.getRenderContext().setBaseFilter(filter);
-//        ret.getRenderContext().setBaseSort(sort);
     }
 
     protected void renderDataRegion(PrintWriter out) throws Exception

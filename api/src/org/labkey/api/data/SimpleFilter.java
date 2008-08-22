@@ -18,10 +18,10 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.data.CompareType.CompareClause;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URLHelper;
 
 import java.util.*;
 
@@ -195,6 +195,35 @@ public class SimpleFilter implements Filter
         public AndClause(FilterClause... clauses)
         {
             super(" AND ", clauses);
+        }
+    }
+
+    public static class NotClause extends FilterClause
+    {
+        private FilterClause _clause;
+
+        public NotClause(FilterClause clause)
+        {
+            _clause = clause;
+        }
+
+        public List<String> getColumnNames()
+        {
+            return _clause.getColumnNames();
+        }
+
+        public Object[] getParamVals()
+        {
+            return _clause.getParamVals();
+        }
+
+        public SQLFragment toSQLFragment(Map<String, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+        {
+            SQLFragment sqlFragment = new SQLFragment();
+            sqlFragment.append(" NOT (");
+            sqlFragment.append(_clause.toSQLFragment(columnMap, dialect));
+            sqlFragment.append(")");
+            return sqlFragment;
         }
     }
 
