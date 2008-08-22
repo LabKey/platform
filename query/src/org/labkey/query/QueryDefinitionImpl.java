@@ -45,12 +45,19 @@ public class QueryDefinitionImpl implements QueryDefinition
 {
     final static private QueryManager mgr = QueryManager.get();
     final static private Logger log = Logger.getLogger(QueryDefinitionImpl.class);
+    private UserSchema _schema = null;
     private QueryDef _queryDef;
     private boolean _dirty;
 
     public QueryDefinitionImpl(QueryDef queryDef)
     {
         _queryDef = queryDef;
+    }
+
+    public QueryDefinitionImpl(UserSchema schema, String name)
+    {
+        this(schema.getContainer(), schema.getSchemaName(), name);
+        _schema = schema;
     }
 
     public QueryDefinitionImpl(Container container, String schema, String name)
@@ -217,9 +224,6 @@ public class QueryDefinitionImpl implements QueryDefinition
         return query;
     }
 
-
-    UserSchema _schema = null;
-    
     public UserSchema getSchema()
     {
         if (null == _schema)

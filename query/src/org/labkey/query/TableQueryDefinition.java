@@ -16,8 +16,11 @@
 
 package org.labkey.query;
 
-import org.labkey.api.query.*;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.query.data.Query;
 
@@ -25,15 +28,11 @@ import java.util.List;
 
 public class TableQueryDefinition extends QueryDefinitionImpl
 {
-    UserSchema _schema;
-    String _tableName;
     TableInfo _table;
 
     public TableQueryDefinition(UserSchema schema, String tableName, TableInfo table)
     {
-        super(schema.getContainer(), schema.getSchemaName(), tableName);
-        _schema = schema;
-        _tableName = tableName;
+        super(schema, tableName);
         _table = table;
         Query query = new Query(schema);
         query.setRootTable(FieldKey.fromParts(tableName));
@@ -42,7 +41,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
 
     public TableInfo getTable(String name, QuerySchema schema, List<QueryException> errors)
     {
-        if (_table != null && schema == _schema && name == null)
+        if (_table != null && schema == getSchema() && name == null)
         {
             return _table;
         }
