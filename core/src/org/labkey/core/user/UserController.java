@@ -156,15 +156,13 @@ public class UserController extends SpringActionController
         }
         rgn.setDisplayColumns(displayColumns);
 
-        SimpleDisplayColumn accountDetails = new SimpleDisplayColumn("[Details]");
-        accountDetails.setURL(new UserUrlsImpl().getUserDetailsURL(c) + "userId=${UserId}");
+        SimpleDisplayColumn accountDetails = new UrlColumn(new UserUrlsImpl().getUserDetailsURL(c) + "userId=${UserId}", "details");
         accountDetails.setDisplayModes(DataRegion.MODE_GRID);
         rgn.addDisplayColumn(0, accountDetails);
 
         if (isAnyAdmin)
         {
-            SimpleDisplayColumn securityDetails = new SimpleDisplayColumn("[Permissions]");
-            securityDetails.setURL(new UserUrlsImpl().getUserAccessURL(c) + "userId=${UserId}");
+            SimpleDisplayColumn securityDetails = new UrlColumn(new UserUrlsImpl().getUserAccessURL(c) + "userId=${UserId}", "permissions");
             securityDetails.setDisplayModes(DataRegion.MODE_GRID);
             rgn.addDisplayColumn(1, securityDetails);
         }
@@ -419,6 +417,7 @@ public class UserController extends SpringActionController
         }
     }
 
+
     @RequiresPermission(ACL.PERM_ADMIN)
     public class ExportAction extends SimpleViewAction
     {
@@ -429,6 +428,7 @@ public class UserController extends SpringActionController
                 Filter filter = authorizeAndGetProjectMemberFilter();
                 RenderContext ctx = new RenderContext(getViewContext());
                 ctx.setBaseFilter(filter);
+                ctx.setBaseSort(new Sort("email"));
                 DataRegion rgn = getGridRegion(false);
                 ExcelWriter ew = new ExcelWriter(rgn.getResultSet(ctx), rgn.getDisplayColumns());
                 ew.setAutoSize(true);
@@ -458,6 +458,7 @@ public class UserController extends SpringActionController
         return (!"Email".equals(name) && !"UserId".equals(name) &&
                 !"LastLogin".equals(name) && !"DisplayName".equals(name));
     }
+
 
     @RequiresSiteAdmin
     public class ShowUserPreferencesAction extends FormViewAction<UserPreferenceForm>
@@ -1329,9 +1330,20 @@ public class UserController extends SpringActionController
         public ImpersonateBean(Container c)
         {
             if (c.isRoot())
+            {
                 emails = UserManager.getUserEmailList();
+            }
             else
-                emails = UserManager.getUserEmailList();  // TODO: Change this to filter to project users
+            {
+                // Filter to project users
+                List<User> projectMembers = SecurityManager.getProjectMembers(c);
+                emails = new ArrayList<String>(projectMembers.size());
+
+                for (User member : projectMembers)
+                    emails.add(member.getEmail());
+
+                Collections.sort(emails);
+            }
         }
     }
 
