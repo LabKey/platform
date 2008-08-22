@@ -130,4 +130,9 @@ public class PropertyServiceImpl implements PropertyService.Interface
         }
         return validators.toArray(new IPropertyValidator[0]);
     }
+
+    public void deleteValidatorsForPropertyDescriptor(int descriptorId) throws SQLException
+    {
+        DomainPropertyManager.get().removeValidatorsForPropertyDescriptor(descriptorId);
+    }
 }

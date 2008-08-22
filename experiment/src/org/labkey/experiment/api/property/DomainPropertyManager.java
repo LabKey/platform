@@ -96,9 +96,34 @@ public class DomainPropertyManager
         {
             if (property.getPropertyId() != 0)
             {
-                removeValidatorReference(property, validator);
-                // TODO : don't delete the validator unless it is unreferenced
-                validator.delete(user);
+                _removeValidatorReference(property.getPropertyId(), validator.getRowId());
+
+                String sql = "DELETE FROM " + getTinfoValidator() +
+                            " WHERE RowId = ?" +
+                            " AND NOT EXISTS (SELECT * FROM " + getTinfoValidatorReference() + " VR " +
+                                " WHERE  VR.ValidatorId = ?)";
+                Table.execute(getExpSchema(), sql, new Object[]{validator.getRowId(), validator.getRowId()});
+            }
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
+
+    private void _removePropertyValidator(int propertyId, int validatorId)
+    {
+        try
+        {
+            if (propertyId != 0)
+            {
+                _removeValidatorReference(propertyId, validatorId);
+
+                String sql = "DELETE FROM " + getTinfoValidator() +
+                            " WHERE RowId = ?" +
+                            " AND NOT EXISTS (SELECT * FROM " + getTinfoValidatorReference() + " VR " +
+                                " WHERE  VR.ValidatorId = ?)";
+                Table.execute(getExpSchema(), sql, new Object[]{validatorId, validatorId});
             }
         }
         catch (SQLException x)
@@ -144,14 +169,14 @@ public class DomainPropertyManager
         }
     }
 
-    public void removeValidatorReference(DomainProperty property, IPropertyValidator validator)
+    private void _removeValidatorReference(int propertyId, int validatorId)
     {
         try
         {
-            if (property.getPropertyId() != 0 && validator.getRowId() != 0)
+            if (propertyId != 0 && validatorId != 0)
             {
                 String sql = "DELETE FROM " + getTinfoValidatorReference() + " WHERE ValidatorId=? AND PropertyId=?";
-                Table.execute(getExpSchema(), sql, new Object[]{validator.getRowId(), property.getPropertyId()});
+                Table.execute(getExpSchema(), sql, new Object[]{validatorId, propertyId});
             }
             else
                 throw new IllegalArgumentException("DomainProperty or IPropertyValidator row ID's cannot be null");
@@ -159,6 +184,14 @@ public class DomainPropertyManager
         catch (SQLException x)
         {
             throw new RuntimeSQLException(x);
+        }
+    }
+
+    public void removeValidatorsForPropertyDescriptor(int descriptorId)
+    {
+        for (PropertyValidator pv : _getValidators(descriptorId))
+        {
+            _removePropertyValidator(descriptorId, pv.getRowId());
         }
     }
 }
