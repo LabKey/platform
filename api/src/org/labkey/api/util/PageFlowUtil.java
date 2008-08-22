@@ -1015,79 +1015,137 @@ public class PageFlowUtil
         return sb.toString();
     }
 
-
-    // pass through for convenience
-    public static String submitSrc()
-    {
-        return ButtonServlet.submitSrc();
-    }
-
-    public static String cancelSrc()
-    {
-        return ButtonServlet.cancelSrc();
-    }
-
-    public static String buttonSrc(String name)
-    {
-        return ButtonServlet.buttonSrc(name);
-    }
-
-    // styles should not need encoding
-    public static String buttonSrc(String name, String style)
-    {
-        return ButtonServlet.buttonSrc(name, style);
-    }
-
-    public static String buttonImg(String name)
-    {
-        return "<img border=0 alt=\"" + filter(name) + "\" src=\"" + ButtonServlet.buttonSrc(name) + "\">";
-    }
-
-    public static String buttonImg(String name, String style)
-    {
-        return "<img border=0 id=\"nav"+filter(name)+"\" alt=\"" + filter(name) + "\" src=\"" + ButtonServlet.buttonSrc(name, style) + "\">";
-    }
-
     /*
-     * Renders a button wrapped in an &lt;a> tag.
+     * Renders a span wrapped in a link (<a>)
      * Consider: is there any way to name this method in such a way as to
      * make the order of parameters unambiguous?
      */
-    public static String buttonLink(String text, String href)
+    public static String generateButton(String text, String href)
     {
-        return buttonLink(text, href, null);
+        return generateButton(text, href, null);
     }
 
-    /*
-     * Renders a button wrapped in an &lt;a> tag.
-     * Consider: is there any way to name this method in such a way as to
-     * make the order of parameters unambiguous?
-     */
-    public static String buttonLink(String text, String href, String onClickScript)
+    public static String generateButton(String text, String href, String onClick)
     {
-        return "<a href=\"" + filter(href) + "\"" +
-                (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
-                ">" + buttonImg(text) + "</a>";
+        return generateButton(text, href, onClick, "");
     }
 
-    public static String buttonLink(String text, ActionURL href)
+    public static String generateButton(String text, String href, String onClick, String attributes)
     {
-        return buttonLink(text, href, null);
+        return "<a class=\"labkey-button\" href=\"" + filter(href) + "\"" + (onClick != null ? " onClick=" + wrapOnClick(onClick) : "") +
+                ">" + buttonInput(text, attributes) + "</a>";
     }
 
-    public static String buttonLink(String text, ActionURL href, String onClickScript)
+    public static String generateButton(String text, ActionURL href)
     {
-        return "<a href=\"" + filter(href) + "\"" +
-                (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
-                ">" + buttonImg(text) + "</a>";
+        return generateButton(text, href, null);
     }
-    
-    public static String buttonLink(String text, String style, ActionURL href, String onClickScript)
+
+    public static String generateButton(String text, ActionURL href, String onClick)
     {
-        style = StringUtils.defaultString(style, "default");
-        return "<a href=\"" + filter(href) + "\"" +
-                (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
-                ">" + buttonImg(text,style) + "</a>";
+        return generateButton(text, href.toString(), onClick);
+    }
+
+    /* Renders an input of type submit wrapped in a span */
+    public static String generateSubmitButton(String text)
+    {
+        return "<span class=\"labkey-button\">" + submitInput(text) + "</span>";
+    }
+
+    public static String generateSubmitButton(String text, String onClickScript)
+    {
+        return generateSubmitButton(text, onClickScript, "");
+    }
+
+    public static String generateSubmitButton(String text, String onClick, String attributes)
+    {
+        return "<span class=\"labkey-button\"" + ">" + submitInput(text, onClick, attributes) + "</span>";
+    }
+
+    /* Renders a span and a drop down arrow image wrapped in a link */
+    public static String generateDropDownButton(String text, String href, String onClick)
+    {
+        return "<a class=\"labkey-button\" href=\"" + filter(href) + "\"" + (onClick != null ? " onClick=" + wrapOnClick(onClick) : "") +
+                ">" + dropDown(text) + "</a>";
+    }
+
+    /* Renders text and a drop down arrow image wrapped in a link not of type labkey-button */
+    public static String generateDropDownTextLink(String text, String href, String onClick)
+    {
+        return "<a class=\"labkey-header\" style=\"font-weight: bold\" href=\"" + filter(href) + "\"" +
+                (onClick != null ? " onClick=" + wrapOnClick(onClick) : "") +
+                ">" + text + "&nbsp;<img src=\"" + HttpView.currentView().getViewContext().getContextPath() + "/_images/text_link_arrow.gif\" class=\"labkey-button-arrow\"></a>";
+    }
+
+    /* Renders a lightly colored inactive button, or in other words, a disabled span wrapped in a link of type labkey-disabled-button */
+    public static String generateDisabledButton(String text)
+    {
+        return "<a class=\"labkey-disabled-button\">" + disabledButtonInput(text, "", "") + "</a>";
+    }
+
+    /* Renders a lightly colored inactive button, or in other words, a disabled input wrapped in a span of type labkey-disabled-button */
+    public static String generateDisabledSubmitButton(String text, String onClick, String attributes)
+    {
+        return "<span class=\"labkey-disabled-button\">" + disabledSubmitInput(text, onClick, attributes) + "</span>";
+    }
+
+    /* Renders the span inside buttons */
+    public static String buttonInput(String text)
+    {
+        return "<span>" + filter(text) + "</span>";
+    }
+
+    public static String buttonInput(String text, String attributes)
+    {
+        return "<span " + attributes + ">" + filter(text) + "</span>";
+    }
+
+    /* Renders the input inside submit buttons */
+    public static String submitInput(String text)
+    {
+        return "<input name=\""+filter(text)+"\" value=\"" + filter(text) + "\" type=\"submit\">";
+    }
+
+    public static String submitInput(String text, String onClick, String attributes)
+    {
+        return "<input " + (onClick != null ? " onClick=" + wrapOnClick(onClick) : "") +
+            " value=\"" + filter(text) + "\" type=\"submit\" " + attributes + ">";
+    }
+
+    /* Renders the span and arrow image inside buttons */
+    public static String dropDown(String text)
+    {
+        return buttonInput(text) + "&nbsp;<img src=\"" + HttpView.currentView().getViewContext().getContextPath() + "/_images/button_arrow.gif\" class=\"labkey-button-arrow\">";
+    }
+
+    /* Renders the disabled span inside disabled buttons */
+    public static String disabledButtonInput(String text, String onClick, String attributes)
+    {
+        return "<span" + (onClick != null ? " onClick=" + wrapOnClick(onClick) : "") +
+                " " + attributes + " disabled>" + filter(text) + "</span>";
+    }
+
+    /* Renders the disabled span inside disabled submit buttons */
+    public static String disabledSubmitInput(String text, String onClick, String attributes)
+    {
+        return "<input " + (onClick != null ? " onClick=" + wrapOnClick(onClick) : "") +
+            " value=\"" + filter(text) + "\" type=\"submit\" " + attributes + " disabled>";
+    }
+
+    /* This function is used so that the onClick script can use either " or ' quote scheme inside of itself */
+    public static String wrapOnClick(String onClick)
+    {
+        int singleQuote = onClick.indexOf('\'');
+        int doubleQuote = onClick.indexOf('"');
+        if (doubleQuote == -1 || (singleQuote != -1 && singleQuote <= doubleQuote))
+        {
+            onClick = "\"" + onClick + "\"";
+        }
+        else
+        {
+            onClick = "'" + onClick + "'";
+        }
+        return onClick;
     }
 
     public static String textLink(String text, String href, String id)

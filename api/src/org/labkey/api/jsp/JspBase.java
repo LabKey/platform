@@ -205,41 +205,36 @@ abstract public class JspBase extends HttpServlet implements HttpJspPage, HasVie
     }
 
     /**
-     * Renders a button wrapped in an &lt;a> tag.
      * Consider: is there any way to name this method in such a way as to
      * make the order of parameters unambiguous?
      */
-    public String buttonLink(String text, String href)
+    public String generateButton(String text, String href)
     {
-        return PageFlowUtil.buttonLink(text, href);
+        return PageFlowUtil.generateButton(text, href);
     }
 
     /**
-     * Renders a button wrapped in an &lt;a> tag.
      * Consider: is there any way to name this method in such a way as to
      * make the order of parameters unambiguous?
      */
-    public String buttonLink(String text, String href, String onClickScript)
+    public String generateButton(String text, String href, String onClickScript)
     {
-        return PageFlowUtil.buttonLink(text, href, onClickScript);
+        return PageFlowUtil.generateButton(text, href, onClickScript);
     }
 
-    public String buttonLink(String text, ActionURL href)
+    public String generateButton(String text, ActionURL href)
     {
-        return PageFlowUtil.buttonLink(text, href);
+        return PageFlowUtil.generateButton(text, href);
     }
 
-    public String buttonLink(String text, ActionURL href, String onClickScript)
+    public String generateButton(String text, ActionURL href, String onClickScript)
     {
-        return PageFlowUtil.buttonLink(text, href, onClickScript);
+        return PageFlowUtil.generateButton(text, href, onClickScript);
     }
 
-    /**
-     * Renders a &lt;input type="image" tag.
-     */
-    public String buttonImg(String text)
+    public String generateSubmitButton(String text)
     {
-        return "<input value=\"" + text + "\" type=\"image\" src=\"" + PageFlowUtil.buttonSrc(text) + "\">";
+        return PageFlowUtil.generateSubmitButton(text);
     }
 
     public void include(ModelAndView view, Writer writer) throws Exception
@@ -249,8 +244,7 @@ abstract public class JspBase extends HttpServlet implements HttpJspPage, HasVie
 
     public String buttonImg(String text, String onClickScript)
     {
-        return "<input value=\"" + text + "\" type=\"image\" src=\"" + PageFlowUtil.buttonSrc(text)
-                + "\" onclick=\"" + onClickScript + "\">";
+        return PageFlowUtil.generateSubmitButton(text, onClickScript);
     }
     
     public String helpPopup(String helpText)

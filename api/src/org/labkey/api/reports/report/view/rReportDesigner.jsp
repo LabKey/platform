@@ -159,11 +159,11 @@
 <%          if (!readOnly)
             {
                 if (renderAction == null)
-                    out.println("<a href=\"javascript:void(0)\" onclick=\"javascript:switchTab('" + HttpView.currentContext().cloneActionURL().replaceParameter("tabId", "View") + "', saveChanges)\">" + PageFlowUtil.buttonImg("Execute Script") + "</a>");
+                    out.println(PageFlowUtil.generateButton("Execute Script", "javascript:void(0)", "javascript:switchTab('" + HttpView.currentContext().cloneActionURL().replaceParameter("tabId", "View") + "', saveChanges))"));
                 else
-                    out.println("<a href=\"javascript:void(0)\" onclick=\"javascript:runScript()\">" + PageFlowUtil.buttonImg("Execute Script") + "</a>");
+                    out.println(PageFlowUtil.generateButton("Execute Script", "javascript:void(0)", "javascript:runScript()"));
                 if (!context.getUser().isGuest())
-                    out.println("<a href=\"javascript:void(0)\" onclick=\"javascript:saveReport()\">" + PageFlowUtil.buttonImg("Save View") + "</a>");
+                    out.println(PageFlowUtil.generateButton("Save View", "javascript:void(0)", "javascript:saveReport()"));
             }
 %>
         </td></tr>
@@ -219,8 +219,8 @@
                 <tr><td width="275"><input id="reportName" name="reportName" style="width: 100%;" value="<%=StringUtils.trimToEmpty(bean.getReportName())%>"></td></tr>
                 <tr><td>&nbsp;</td></tr>
                 <tr><td>
-                    <a href="javascript:void(0)" onclick="javascript:doSaveReport(true)"><%=PageFlowUtil.buttonImg("Save")%></a>&nbsp;
-                    <a href="javascript:void(0)" onclick="javascript:doSaveReport(false)"><%=PageFlowUtil.buttonImg("Cancel")%></a></td></tr>
+                    <%=PageFlowUtil.generateButton("Save", "javascript:void(0)", "javascript:doSaveReport(true)")%> 
+                    <%=PageFlowUtil.generateButton("Cancel", "javascript:void(0)", "javascript:doSaveReport(false)")%>
             </table>
         </div>
     </div>

@@ -428,7 +428,7 @@ public class AuthenticationManager
 
         sb.append("<tr><td colspan=\"4\">&nbsp;</td></tr>");
         sb.append("<tr><td colspan=\"4\">");
-        sb.append(PageFlowUtil.buttonLink("Done", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL()));
+        sb.append(PageFlowUtil.generateButton("Done", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL()));
         sb.append("</td></tr></table>\n");
 
         return new HtmlView(sb.toString());

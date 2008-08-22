@@ -123,6 +123,6 @@
     if (!autoRefresh) {
 %>
     <tr><td colspan="2">&nbsp;</td></tr>
-    <tr><td><a href="javascript:void(0)" onclick="javascript:startJob()"><%=PageFlowUtil.buttonImg("Start Job")%></a></td></tr>
+    <tr><td><%=PageFlowUtil.generateButton("Start Job", "javascript:void(0)", "javascript:startJob()")%></td></tr>
 <%  } %>
 </table>

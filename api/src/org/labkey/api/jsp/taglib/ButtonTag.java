@@ -17,7 +17,6 @@
 package org.labkey.api.jsp.taglib;
 
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ButtonServlet;
 import org.labkey.api.jsp.taglib.SimpleTagBase;
 import org.labkey.api.util.PageFlowUtil;
 
@@ -41,57 +40,50 @@ public class ButtonTag extends SimpleTagBase
         JspWriter out = getOut();
         if (_href != null)
         {
-            out.write("<a href=\"");
-            out.write(h(_href));
-            out.write("\"");
             if (_onclick != null)
             {
-                out.write(" onclick=\"");
-                out.write(h(_onclick));
-                out.write("\"");
+                out.write(PageFlowUtil.generateButton(_text, _href, _onclick));
             }
-            out.write(">");
-            out.write("<img alt=\"" + PageFlowUtil.filter(_alt != null ? _alt : _text) + "\" src=\"" + ButtonServlet.buttonSrc(_text) + "\">");
-            out.write("</a>");
+            else
+            {
+                out.write(PageFlowUtil.generateButton(_text, _href));
+            }
         }
         else
         {
-            out.write("<input type=\"image\" src=\"");
-            out.write(PageFlowUtil.buttonSrc(_text));
-            out.write("\"");
+            if (_onclick != null && _action != null)
+            {
+                throw new IllegalArgumentException("onclick and action cannot both be set");
+            }
+            String onClickScript = "";
+            StringBuilder attributes = new StringBuilder();
             if (_onclick != null)
             {
-                if (_action != null)
-                    throw new IllegalArgumentException("onclick and action cannot both be set");
-                out.write(" onclick=\"");
-                out.write(h(_onclick));
-                out.write("\"");
+                onClickScript = (h(_onclick));
             }
             if (_action != null)
             {
-                out.write(" onclick=\"this.form.action='");
-                out.write(_action);
-                out.write("';this.form.method='POST';\"");
+                onClickScript = ("this.form.action='" + _action + "';this.form.method='POST';\"");
             }
             if (_name != null)
             {
-                out.write(" name=\"");
-                out.write(h(_name));
-                out.write("\"");
+                attributes.append(" name=\"");
+                attributes.append(h(_name));
+                attributes.append("\"");
             }
             if (_value != null)
             {
-                out.write(" value=\"");
-                out.write(h(_value));
-                out.write("\"");
+                attributes.append(" value=\"");
+                attributes.append(h(_value));
+                attributes.append("\"");
             }
             if (_id != null)
             {
-                out.write(" id=\"");
-                out.write(h(_id));
-                out.write("\"");
+                attributes.append(" id=\"");
+                attributes.append(h(_id));
+                attributes.append("\"");
             }
-            out.write(">");
+            out.write(PageFlowUtil.generateSubmitButton(_text, onClickScript, attributes.toString()));
         }
     }
 

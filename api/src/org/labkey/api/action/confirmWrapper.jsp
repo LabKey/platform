@@ -39,18 +39,18 @@
     writePropertyValues(out, propertyValues);
 
     %>
-<br><input type=image src="<%=PageFlowUtil.buttonSrc(confirmAction.getConfirmText(),"large")%>" name="_confirm" value="<%=confirmAction.getConfirmText()%>">&nbsp;<%
+<br><%=PageFlowUtil.generateSubmitButton(confirmAction.getConfirmText(), "", "name=\"_confirm\"")%>&nbsp;<%
     if (null != cancelUrl)
     {
-        %><a href="<%=h(cancelUrl.getLocalURIString())%>"><%=PageFlowUtil.buttonImg(confirmAction.getCancelText(),"large")%></a><%
+        %><%=PageFlowUtil.generateButton(confirmAction.getCancelText(), cancelUrl.getLocalURIString())%><%
     }
     else if (confirmAction.isPopupConfirmation())
     {
-        %><input type=image src="<%=PageFlowUtil.buttonSrc(confirmAction.getCancelText(),"large")%>" value="Cancel" onclick="window.close(); return false;"><%
+        %><%=PageFlowUtil.generateSubmitButton(confirmAction.getCancelText(), "window.close(); return false;")%><%
     }
     else
     {
-        %><input type=image src="<%=PageFlowUtil.buttonSrc(confirmAction.getCancelText(),"large")%>" value="Cancel" onclick="window.history.back(); return false;"><%
+        %><%=PageFlowUtil.generateSubmitButton(confirmAction.getCancelText(), "window.history.back(); return false;")%><%
     }
 %></form>
 <%!

@@ -164,7 +164,7 @@ public class NavTrailView extends HttpView
 
         _out.print("<table id=\"navBar\" class=\"labkey-tab-strip");
         if (tabs.size() == 1)
-            _out.print(" labkey-title-area-line");
+            _out.print(" labkey-nav-bordered\" style=\"border-right:0;border-bottom:0;border-left:0;");
         _out.print("\"><tr>\n");
 
         if (tabs.size() > 1)

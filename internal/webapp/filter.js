@@ -101,7 +101,7 @@ function showFilterPanel(elem, tableName, colName, caption, dataType)
     {
         _filterWin = new Ext.Window({
             contentEl: div,
-            width: 300,
+            width: 350,
             autoHeight: true,
             modal: true,
             resizable: false,
@@ -677,10 +677,10 @@ LABKEY.addMarkup('<div id="filterDiv" style="display:none;">' +
 '        </select><br>' +
 '        <input disabled style="visibility:hidden" id="value_2" type="text" name="value_2"><br><br>' +
 '        </span>' +
-'        <input type="image" src="' + LABKEY.contextPath + '/OK.button?11" onclick="doFilter();return false;">' +
-'        <input type="image" src="' + LABKEY.contextPath + '/Cancel%20.button" onclick="hideFilterDiv();return false;">' +
-'        <input type="image" src="' + LABKEY.contextPath + '/Clear%20Filter.button" onclick="clearFilter();return false;">' +
-'        <input type="image" src="' + LABKEY.contextPath + '/Clear%20All%20Filters.button" onclick="clearAllFilters();return false;">' +
+'        <span class="labkey-button"><input type="submit" value="OK" onclick="doFilter();return false;"></span>' +
+'        <span class="labkey-button"><input type="submit" value="Cancel" onclick="hideFilterDiv();return false;"></span>' +
+'        <span class="labkey-button"><input type="submit" value="Clear Filter" onclick="clearFilter();return false;"></span>' +
+'        <span class="labkey-button"><input type="submit" value="Clear All Filters" onclick="clearAllFilters();return false;"></span>' +
 '      </td>' +
 '    </tr>' +
 '  </table>' +

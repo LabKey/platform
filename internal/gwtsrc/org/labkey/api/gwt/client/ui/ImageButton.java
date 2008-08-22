@@ -31,11 +31,6 @@ public class ImageButton extends PushButton implements ClickListener
     private boolean _enabled = true;
     private String _text;
 
-    private static Image getUpFaceImage(String text)
-    {
-        return new Image(PropertyUtil.getContextPath() + "/" + URL.encodeComponent(text) + ".button");
-    }
-
     public ImageButton(String text, ClickListener listener)
     {
         this(text);
@@ -44,13 +39,14 @@ public class ImageButton extends PushButton implements ClickListener
 
     public ImageButton(String text)
     {
-        super(getUpFaceImage(text));
+        super(text);
 
         addClickListener(this);
 
         _text = text;
         DOM.setAttribute(getElement(), "id", "button_" + text);
 
+        setHTML("<a class='labkey-button'><span>" + text + "</span></a>");
         super.addClickListener(new ClickListener()
         {
             public void onClick(Widget sender)
@@ -76,22 +72,6 @@ public class ImageButton extends PushButton implements ClickListener
     {
         _clickListeners.remove(listener);
     }
-
-//    public void setEnabled(boolean enabled)
-//    {
-//        if (_enabled != enabled)
-//        {
-//            _enabled = enabled;
-//            if (_enabled)
-//            {
-//                setUrl(PropertyUtil.getContextPath() + "/" + URL.encodeComponent(_text) + ".button");
-//            }
-//            else
-//            {
-//                setUrl(PropertyUtil.getContextPath() + "/" + URL.encodeComponent(_text) + ".button?style=disabled");
-//            }
-//        }
-//    }
     
     public String getText()
     {
@@ -103,8 +83,8 @@ public class ImageButton extends PushButton implements ClickListener
         if (_text.equals(text))
             return;
 
-        _text = text;        
-        getUpFace().setImage(getUpFaceImage(text));
+        _text = text;
+        getUpFace().setHTML("<a class='labkey-button'><span>" + text + "</span></a>");
     }
 
     /** to make life simple, just override onClick instead of registering a listener */

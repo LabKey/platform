@@ -110,7 +110,7 @@ public class ButtonBar extends DisplayElement
             // This is rendundant with shouldRender check in ActionButton.render, but we don't want to output <td></td> if button is not visible
             if (el.shouldRender(ctx))
             {
-                out.write("<span class=\"labkey-button-bar-item\">");
+                out.write("<span>");
                 el.render(ctx, out);
                 out.write("</span>");
             }

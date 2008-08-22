@@ -37,7 +37,7 @@
             } %>
         </select>
         </td><td>
-		<input type="image" src='<%=PageFlowUtil.buttonSrc("Add Web Part")%>'>
+        <%=PageFlowUtil.generateSubmitButton("Add Web Part")%>    
         </td></tr></table>
        </form>
     </td>
@@ -56,7 +56,7 @@
             } %>
         </select>
         </td><td>
-            <input type="image" src='<%=PageFlowUtil.buttonSrc("Add Web Part")%>'>
+            <%=PageFlowUtil.generateSubmitButton("Add Web Part")%>    
         </td></tr></table>
         </form>
     </td>

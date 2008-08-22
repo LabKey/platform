@@ -440,6 +440,7 @@ public class ExceptionUtil
         public void doStartTag(Map context, PrintWriter out)
         {
             out.println("<html><head>");
+            out.println("<link href=\"" + getViewContext().getContextPath() + "/stylesheet.css\" type=\"text/css\" rel=\"stylesheet\"/>");
             //NOTE: BaseSeleniumWebTest requires errors to start with error number and include word "Error" in title
             String title = "" + _renderer.status + ": Error Page";
             if (null != _renderer.message)
@@ -457,18 +458,18 @@ public class ExceptionUtil
             {
                 if (_popup)
                 {
-                    out.print(PageFlowUtil.buttonLink("Close", "#", "window.close(); return false;"));
+                    out.print(PageFlowUtil.generateButton("Close", "#", "window.close(); return false;"));
                 }
                 else
                 {
-                    out.print(PageFlowUtil.buttonLink("Home", AppProps.getInstance().getHomePageActionURL()));
+                    out.print(PageFlowUtil.generateButton("Home", AppProps.getInstance().getHomePageActionURL()));
                     out.print("&nbsp;");
-                    out.print(PageFlowUtil.buttonLink("Back", "javascript:window.history.back();"));
+                    out.print(PageFlowUtil.generateButton("Back", "javascript:window.history.back();"));
                     out.print("&nbsp;");
                     if (getViewContext().getContainer() != null)
                     {
                         ActionURL folderURL = new ActionURL("Project", "start.view", getViewContext().getContainer());
-                        out.print(PageFlowUtil.buttonLink("Folder", folderURL.getLocalURIString()));
+                        out.print(PageFlowUtil.generateButton("Folder", folderURL.getLocalURIString()));
                     }
                 }
                 out.println("<br>");

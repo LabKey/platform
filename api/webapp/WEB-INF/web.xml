@@ -195,10 +195,6 @@
         </init-param>
     </servlet>
     -->
-    <servlet>
-        <servlet-name>ButtonServlet</servlet-name>
-        <servlet-class>org.labkey.api.view.ButtonServlet</servlet-class>
-    </servlet>
 
     <servlet>
         <servlet-name>ImageServlet</servlet-name>
@@ -272,10 +268,6 @@
     <servlet-mapping>
         <servlet-name>ViewServlet</servlet-name>
         <url-pattern>*.post</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>ButtonServlet</servlet-name>
-        <url-pattern>*.button</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>ImageServlet</servlet-name>

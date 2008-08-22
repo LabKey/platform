@@ -87,16 +87,24 @@ public class PopupMenu
             return;
 
         if (_buttonStyle == ButtonStyle.TEXTBUTTON)
+        {
             out.append("[");
-        out.append("<a href='javascript:void(0)'");
-        out.append("onclick=\"showMenu(this, '").append(getId()).append("','").append(_align.getExtPosition()).append("');\">");
-        if (_buttonStyle == ButtonStyle.TEXTBUTTON)
+            out.append("<a href='javascript:void(0)'");
+            out.append("onclick=\"showMenu(this, '").append(getId()).append("','").append(_align.getExtPosition()).append("');\">");
             out.append(PageFlowUtil.filter(_navTree.getKey())).append(" &gt;&gt;");
-        else
-            out.append("<img src='").append(PageFlowUtil.buttonSrc(_navTree.getKey(), _buttonStyle.getStyleText())).append("'>");
-        out.append("</a>");
-        if (_buttonStyle == ButtonStyle.TEXTBUTTON)
+            out.append("</a>");
             out.append("]");
+        }
+        else if (_buttonStyle == ButtonStyle.MENUBUTTON)
+        {
+            out.append(PageFlowUtil.generateDropDownButton(_navTree.getKey(), "javascript:void(0)",
+                    "showMenu(this, '" + getId() + "','" + _align.getExtPosition() + "');"));
+        }
+        else if (_buttonStyle == ButtonStyle.BOLDTEXT)
+        {
+            out.append(PageFlowUtil.generateDropDownTextLink(_navTree.getKey(), "javascript:void(0)",
+                    "showMenu(this, '" + getId() + "','" + _align.getExtPosition() + "');"));
+        }
     }
 
     public void renderMenuScript(Writer out)

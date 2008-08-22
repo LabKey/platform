@@ -59,10 +59,10 @@
         </tr>
     <tr>
         <td>
-            <%=buttonImg("Save & Close")%>
-            <img src="<%=PageFlowUtil.buttonSrc("Preview")%>" onclick="preview()" alt="Preview">
-            <img src="<%=PageFlowUtil.buttonSrc("Reset")%>" onclick="reset()" alt="Reset">
-            <%=buttonLink("Cancel", "begin.view")%>
+            <%=generateSubmitButton("Save & Close")%>
+            <%=PageFlowUtil.generateButton("Preview", "", "preview()")%>
+            <%=PageFlowUtil.generateButton("Reset", "", "reset()")%>
+            <%=generateButton("Cancel", "begin.view")%>
         </td>
     </tr>
 </table>

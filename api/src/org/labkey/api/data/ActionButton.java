@@ -283,13 +283,12 @@ public class ActionButton extends DisplayElement implements Cloneable
         return _target;
     }
 
-    private void renderDefaultScript(RenderContext ctx, Writer out) throws IOException
+    private String renderDefaultScript(RenderContext ctx) throws IOException
     {
-        out.write("this.form.action=\"");
-        out.write(getActionName(ctx));
-        out.write("\";this.form.method=\"");
-        out.write(_actionType.toString());
-        out.write("\";");
+        return "this.form.action=\"" +
+                getActionName(ctx) +
+                "\";this.form.method=\"" +
+                _actionType.toString() + "\";";
     }
 
     public void render(RenderContext ctx, Writer out) throws IOException
@@ -299,56 +298,47 @@ public class ActionButton extends DisplayElement implements Cloneable
 
         if (_actionType.equals(Action.POST) || _actionType.equals(Action.GET))
         {
-            out.write("<input");
             if (_displayType == DISPLAY_TYPE_IMG)
             {
+                out.write("<input");
                 out.write(" type='image' src='");
                 out.write(getImgPath(ctx));
                 out.write("'");
+                out.write(" name='");
+                out.write(getActionName(ctx));
+                out.write("'");
+                out.write(" value='");
+                out.write(getCaption(ctx));
+                out.write("' onClick='");
+
+                // Added ability to use a script in the GET and POST case (e.g., to check the form before submiting)
+                if (null == _script || _appendScript)
+                    out.write(renderDefaultScript(ctx));
+                if (_script != null)
+                    out.write(getScript(ctx));
+
+                out.write("'>");
             }
             else
             {
-                out.write(" type='image' src='" + PageFlowUtil.buttonSrc(getCaption(ctx)) + "'");
+                StringBuilder onClickScript = new StringBuilder();
+                if (null == _script || _appendScript)
+                    onClickScript.append(renderDefaultScript(ctx));
+                if (_script != null)
+                    onClickScript.append(getScript(ctx));
+                out.write(PageFlowUtil.generateSubmitButton(getCaption(ctx), onClickScript.toString(), "name='" + getActionName(ctx) + "'"));
             }
-            out.write(" name='");
-            out.write(getActionName(ctx));
-            out.write("'");
-            out.write(" value='");
-            out.write(getCaption(ctx));
-            out.write("' onClick='");
 
-            // Added ability to use a script in the GET and POST case (e.g., to check the form before submiting)
-            if (null == _script || _appendScript)
-                renderDefaultScript(ctx, out);
-            if (_script != null)
-                out.write(getScript(ctx));
-
-            out.write("'>");
         }
         else if (_actionType.equals(Action.LINK))
         {
-            out.write("<a href='");
-            out.write(_url != null ? getURL(ctx) : getActionName(ctx));
-            out.write("'");
-            if (_target != null)
-            {
-                out.write(" target=\"");
-                out.write(PageFlowUtil.filter(_target));
-                out.write("\"");
-            }
-            out.write(">");
-            out.write("<img src='" + PageFlowUtil.buttonSrc(getCaption(ctx)) + "'>");
-            out.write("</a>");
+            out.write(PageFlowUtil.generateButton(getCaption(ctx), (_url != null ? getURL(ctx) : getActionName(ctx)), "", 
+                    (_target != null ? "target=\"" + PageFlowUtil.filter(_target) + "\"" : "")));
         }
         else
         {
-            out.write("<a href='/' onClick='");
-            if (_appendScript)
-                renderDefaultScript(ctx, out);
-            out.write(getScript(ctx));
-            out.write("'>");
-            out.write("<img src='" + PageFlowUtil.buttonSrc(getCaption(ctx)) + "'>");
-            out.write("</a>");
+            out.write(PageFlowUtil.generateButton(getCaption(ctx), "/",
+                    (_appendScript ? renderDefaultScript(ctx) : "") + getScript(ctx)));
         }
     }
 

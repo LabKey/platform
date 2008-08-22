@@ -362,27 +362,24 @@ abstract public class PipelineProvider
 
         public String getDisplay(int i)
         {
-            StringBuilder sb = new StringBuilder();
-            sb.append("<input type=\"image\" onclick=\"setFormAction(").append(i).append(", '").append(PageFlowUtil.filter(getHref())).append("')\" ")
-                    .append("alt=\"").append(PageFlowUtil.filter(getLabel())).append("\" ")
-                    .append("src=\"").append(PageFlowUtil.filter(getButtonSrc())).append("\" ")
-                    .append("border=\"0\"/>");
-            return sb.toString();
+            return getButton("setFormAction(" + i + ", '" + PageFlowUtil.filter(getHref()) + "')");
         }
 
         public String getDisplay()
         {
-            StringBuilder sb = new StringBuilder();
-            sb.append("<a href=\"").append(PageFlowUtil.filter(getHref())).append("\">")
-                    .append("<img alt=\"").append(PageFlowUtil.filter(getLabel())).append("\" ")
-                    .append("src=\"").append(PageFlowUtil.filter(getButtonSrc())).append("\" ")
-                    .append("border=\"0\"/></a>");
-            return sb.toString();
+            return getButton("");
         }
 
-        protected String getButtonSrc()
+        protected String getButton(String onClick)
         {
-            return PageFlowUtil.buttonSrc(getLabel());
+            if (onClick != null && onClick.compareTo("") != 0)
+            {
+                return PageFlowUtil.generateSubmitButton(getLabel(), onClick);
+            }
+            else
+            {
+                return PageFlowUtil.generateButton(getLabel(), getHref());
+            }
         }
     }
 
