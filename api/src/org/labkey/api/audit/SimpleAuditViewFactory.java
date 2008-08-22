@@ -112,7 +112,7 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
         }
         catch (IOException e)
         {
-            _log.info("unable to decode object : " + properties);
+            _log.debug("unable to decode object : " + properties);
         }
         return Collections.emptyMap();
     }

@@ -259,6 +259,7 @@ public class DomainUtil
             try
             {
                 _copyProperties(p, pd, errors);
+                updatePropertyValidators(p, null, pd);
             }
             catch (IllegalAccessException e)
             {

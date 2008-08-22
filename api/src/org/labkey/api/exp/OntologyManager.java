@@ -679,6 +679,8 @@ public class OntologyManager
                 StringBuilder sqlIN = new StringBuilder();
                 for (Integer id : pdIdsToDelete)
                 {
+                    PropertyService.get().deleteValidatorsForPropertyDescriptor(id);
+
                     sqlIN.append(sep);
                     sqlIN.append(id);
                     sep = ", ";

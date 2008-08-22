@@ -18,6 +18,9 @@ package org.labkey.api.exp.property;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.security.User;
+
+import java.sql.SQLException;
 
 public class PropertyService
 {
@@ -48,5 +51,6 @@ public class PropertyService
         ValidatorKind getValidatorKind(String typeURI);
         IPropertyValidator createValidator(String typeURI);
         IPropertyValidator[] getPropertyValidators(PropertyDescriptor desc);
+        void deleteValidatorsForPropertyDescriptor(int descriptorId) throws SQLException;
     }
 }
