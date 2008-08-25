@@ -170,7 +170,9 @@ public class CoreController extends SpringActionController
                 content.encoded = compressCSS(content.content);
                 _themeStylesheetCache.put(c, content);
             }
-
+            response.setDateHeader("Expires", System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 5);
+            response.setHeader("Cache-Control", "private");
+            response.setHeader("Pragma", null);
             return content;
         }
     }
