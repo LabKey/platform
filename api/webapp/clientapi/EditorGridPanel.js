@@ -173,6 +173,15 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         //subscribe to events
         this.on("beforeedit", this.onBeforeEdit, this);
 
+        //add the extContainer class to the view's hmenu
+        //NOTE: there is no public API to get to hmenu and colMenu
+        //so this might break in future versions of Ext. If you get
+        //a JavaScript error on these lines, look at the API docs for
+        //a method or property that returns the sort and column hide/show
+        //menus shown from the column headers
+        this.getView().hmenu.getEl().addClass("extContainer");
+        this.getView().colMenu.getEl().addClass("extContainer");
+        
         //set up filtering
         if (this.enableFilters)
             this.initFilterMenu();

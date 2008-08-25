@@ -56,7 +56,7 @@ LABKEY.Query = new function()
         });
     }
 
-    function getCallbackWrapper(callbackFn)
+    function getCallbackWrapper(callbackFn, stripHiddenCols)
     {
         return function(response, options)
         {
@@ -70,7 +70,45 @@ LABKEY.Query = new function()
             if(contentType && contentType.indexOf('application/json') >= 0)
                 data = Ext.util.JSON.decode(response.responseText)
 
+            if(data && data.rows && stripHiddenCols)
+                stripHiddenColData(data);
+
             callbackFn(data, options, response);
+        }
+    }
+
+    function stripHiddenColData(data)
+    {
+        //gather the set of hidden columns
+        var hiddenCols = [];
+        var newColModel = [];
+        var newMetaFields = [];
+        var colModel = data.columnModel;
+        for(var idx = 0; idx < colModel.length; ++idx)
+        {
+            if(colModel[idx].hidden)
+                hiddenCols.push(colModel[idx].dataIndex);
+            else
+            {
+                newColModel.push(colModel[idx]);
+                newMetaFields.push(data.metaData.fields[idx]);
+            }
+        }
+
+        //reset the columnModel and metaData.fields to include only the non-hidden items
+        data.columnModel = newColModel;
+        data.metaData.fields = newMetaFields;
+
+        //delete column values for any columns in the hiddenCols array
+        var row;
+        for(idx = 0; idx < data.rows.length; ++idx)
+        {
+            row = data.rows[idx];
+            for(idxHidden = 0; idxHidden < hiddenCols.length; ++idxHidden)
+            {
+                delete row[hiddenCols[idxHidden]];
+                delete row[LABKEY.Query.URL_COLUMN_PREFIX + hiddenCols[idxHidden]];
+            }
         }
     }
 
@@ -128,7 +166,7 @@ LABKEY.Query = new function()
             Ext.Ajax.request({
                 url : LABKEY.ActionURL.buildURL("query", "executeSql", config.containerPath),
                 method : 'POST',
-                success: getCallbackWrapper(config.successCallback),
+                success: getCallbackWrapper(config.successCallback, config.stripHiddenColumns),
                 failure: getCallbackWrapper(config.errorCallback),
                 jsonData : dataObject,
                 headers : {
@@ -251,7 +289,7 @@ LABKEY.Query = new function()
             Ext.Ajax.request({
                 url : LABKEY.ActionURL.buildURL('query', 'getQuery', config.containerPath),
                 method : 'GET',
-                success: getCallbackWrapper(config.successCallback),
+                success: getCallbackWrapper(config.successCallback, config.stripHiddenColumns),
                 failure: getCallbackWrapper(config.errorCallback),
                 params : dataObject
             });
@@ -386,7 +424,9 @@ LABKEY.Query = new function()
             }
 
             return params;
-        }
+        },
+
+        URL_COLUMN_PREFIX: "_labkeyurl_"
     }
 };
 
