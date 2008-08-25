@@ -63,7 +63,7 @@ public class NavTreeManager
         }
     }
 
-    private static Set<String> getExpandedPaths(ViewContext viewContext, String navTreeId)
+    public static Set<String> getExpandedPaths(ViewContext viewContext, String navTreeId)
     {
         //Each navtreeid has a set of expanded paths...
         HttpSession session = viewContext.getRequest().getSession(true);
