@@ -1898,7 +1898,7 @@ public class WikiController extends SpringActionController
             return true;
         }
 
-        static private String getNavTreeId(ViewContext context)
+        static public String getNavTreeId(ViewContext context)
         {
             Container cToc = getTocContainer(context);
             return "Wiki-TOC-" + cToc.getId();
@@ -3066,16 +3066,34 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
-    public class GetWikiTocAction extends ApiAction
+    public static class GetWikiTocForm
     {
-        public ApiResponse execute(Object form, BindException errors) throws Exception
+        private String _currentPage = null;
+
+        public String getCurrentPage()
+        {
+            return _currentPage;
+        }
+
+        public void setCurrentPage(String currentPage)
+        {
+            _currentPage = currentPage;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class GetWikiTocAction extends ApiAction<GetWikiTocForm>
+    {
+        public ApiResponse execute(GetWikiTocForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
 
             Container container = getViewContext().getContainer();
             List<Wiki> pages = WikiManager.getWikisByParentId(container.getId(), -1);
             response.put("pages", getChildrenProps(pages));
+
+            Set<String> expandedPaths = NavTreeManager.getExpandedPaths(getViewContext(), WikiTOC.getNavTreeId(getViewContext()));
+            applyExpandedState(((List<Map<String,Object>>)response.get("pages")), expandedPaths, form.getCurrentPage());
 
             //include info about the current container
             Map<String,Object> containerProps = new HashMap<String,Object>();
@@ -3092,6 +3110,57 @@ public class WikiController extends SpringActionController
             response.put("displayToc", "true".equals(properties.get(SetTocPreferenceAction.PROP_TOC_DISPLAYED)));
 
             return response;
+        }
+
+        public void applyExpandedState(List<Map<String,Object>> pages, Set<String> expandedPaths, String currentPage)
+        {
+            if(null != expandedPaths)
+            {
+                for(String path : expandedPaths)
+                {
+                    Map<String,Object> props = findPageProps(path.split("/"), 1, pages); //start at index 1 since these paths all start with /
+                    if(null != props)
+                        props.put("expanded", true);
+                }
+            }
+
+            if(null != currentPage)
+            {
+                Wiki wiki = WikiManager.getWiki(getViewContext().getContainer(), currentPage);
+                if(null != wiki && null != wiki.latestVersion())
+                {
+                    LinkedList<String> path = new LinkedList<String>();
+                    Wiki parent = wiki.getParentWiki();
+                    while(null != parent && null != parent.latestVersion())
+                    {
+                        path.push(parent.latestVersion().getTitle());
+                        parent = parent.getParentWiki();
+                    }
+
+                    //now set the parents of this page to be expanded
+                    while(path.size() > 0)
+                    {
+                        Map<String,Object> props = findPageProps(path.toArray(new String[path.size()]), 0, pages);
+                        if(null != props)
+                            props.put("expanded", true);
+                        path.removeLast();
+                    }
+                }
+            }
+        }
+
+        protected Map<String,Object> findPageProps(String[] path, int idx, List<Map<String,Object>> pages)
+        {
+            if(null == pages || null == path || path.length == 0)
+                return null;
+
+            for(Map<String,Object> pageProps : pages)
+            {
+                if(path[idx].equals(pageProps.get("title")))
+                    return (idx == (path.length-1)) ? pageProps 
+                            : findPageProps(path, idx + 1, (List<Map<String,Object>>)pageProps.get("children"));
+            }
+            return null;
         }
 
         public List<Object> getChildrenProps(List<Wiki> pages)

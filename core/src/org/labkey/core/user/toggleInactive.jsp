@@ -23,7 +23,7 @@
     if(null == url.getParameter("inactive"))
     {
         url.addParameter("inactive", true);
-        caption = "incldue inactive users";
+        caption = "include inactive users";
     }
     else
     {

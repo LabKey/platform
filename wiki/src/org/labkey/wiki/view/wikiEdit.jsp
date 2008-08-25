@@ -223,7 +223,8 @@
         Ext.Ajax.request({
             url: LABKEY.ActionURL.buildURL('wiki', 'getWikiToc'),
             success: onTocSuccess,
-            failure: onTocError
+            failure: onTocError,
+            params: {currentPage: _wikiProps.name}
         });
     }
 
@@ -242,7 +243,7 @@
         if(!json.exception)
             json.exception = response.statusText;
         
-        setError()("Unable to load the wiki table of contents for this folder: " + json.exception);
+        setError("Unable to load the wiki table of contents for this folder: " + json.exception);
     }
 
     function createTocTree(pages)
@@ -295,7 +296,7 @@
                 singleClickExpand: true,
                 icon: LABKEY.contextPath + "/_images/page.png",
                 href: page.pageLink,
-                expanded: true
+                expanded: page.expanded
             });
 
             if(page.children)
@@ -369,7 +370,10 @@
         if(buttonId == "no")
             updateControl("name", _wikiProps.name);
         else
+        {
             setWikiDirty();
+            _redirUrl = ""; //clear the redir URL since it will be referring to the old name
+        }
     }
 
 
