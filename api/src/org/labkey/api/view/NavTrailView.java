@@ -211,7 +211,7 @@ public class NavTrailView extends HttpView
         out.print(" class=\"labkey-crumb-trail\">");
         if (hasCrumbTrail)
         {
-            _out.print("<span id=\"navTrailAncestors\">");
+            _out.print("<span id=\"navTrailAncestors\" style=\"visibility:hidden\">");
             String and = "";
             for (int i=0 ; i<_crumbTrail.size()-1; i++)
             {
@@ -233,7 +233,7 @@ public class NavTrailView extends HttpView
             lastCaption = _crumbTrail.get(_crumbTrail.size()-1).getKey();
         if (lastCaption != null)
         {
-            _out.print("<span id=\"labkey-nav-trail-current-page\">");_out.print(filter(_title));_out.print("</span>");
+            _out.print("<span id=\"labkey-nav-trail-current-page\" style=\"visibility:hidden\">");_out.print(filter(_title));_out.print("</span>");
         }
         _out.print("</td>");
         if (!hasCrumbTrail)

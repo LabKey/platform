@@ -46,7 +46,10 @@ LABKEY.NavTrail.setTrail("People View",
         {
             var elem = document.getElementById("labkey-nav-trail-current-page");
             if(elem)
+            {
                 elem.innerHTML = currentPageTitle;
+                elem.style.visibility = "visible";
+            }
 
             elem = document.getElementById("navTrailAncestors");
             if(elem && ancestorArray)
@@ -63,6 +66,7 @@ LABKEY.NavTrail.setTrail("People View",
                     sep = ' &gt; ';
                 }
                 elem.innerHTML = html;
+                elem.visibility = "visible";
             }
 
             //set document title:

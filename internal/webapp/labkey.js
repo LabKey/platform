@@ -267,3 +267,13 @@ LABKEY.toHTML = function(elem)
     y.appendChild(elem);
     return y.innerHTML;
 }
+
+LABKEY.showNavTrail = function()
+{
+    var elem = document.getElementById("navTrailAncestors");
+    if(elem)
+        elem.style.visibility = "visible";
+    elem = document.getElementById("labkey-nav-trail-current-page");
+    if(elem)
+        elem.style.visibility = "visible";
+}

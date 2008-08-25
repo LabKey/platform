@@ -164,7 +164,7 @@ if (null != me.getView("moduleNav"))
     <script type="text/javascript" for="window" event="onload">window.location.href = "#<%=h(anchor)%>"</script><%
     }
 %>
-    <script type="text/javascript">LABKEY.loadScripts();</script>
+    <script type="text/javascript">LABKEY.loadScripts(); LABKEY.showNavTrail();</script>
     <%=AnalyticsService.getTrackingScript()%>
     <!--<%= request.getHeader("User-Agent") %>--><%
 
