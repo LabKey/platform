@@ -136,7 +136,10 @@ public class CoreController extends SpringActionController
                 return;
 
             response.setContentType("text/css");
-            response.setDateHeader("Expires", System.currentTimeMillis() + MILLIS_IN_DAY * 10);
+
+            response.setDateHeader("Expires", System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 5);
+            response.setHeader("Cache-Control", "private");
+            response.setHeader("Pragma", null);
             response.setDateHeader("Last-Modified", content.modified);
             if (StringUtils.trimToEmpty(request.getHeader("Accept-Encoding")).contains("gzip"))
             {
@@ -170,9 +173,6 @@ public class CoreController extends SpringActionController
                 content.encoded = compressCSS(content.content);
                 _themeStylesheetCache.put(c, content);
             }
-            response.setDateHeader("Expires", System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 5);
-            response.setHeader("Cache-Control", "private");
-            response.setHeader("Pragma", null);
             return content;
         }
     }
