@@ -3133,7 +3133,7 @@ public class WikiController extends SpringActionController
                     Wiki parent = wiki.getParentWiki();
                     while(null != parent && null != parent.latestVersion())
                     {
-                        path.push(parent.latestVersion().getTitle());
+                        path.addFirst(parent.latestVersion().getTitle());
                         parent = parent.getParentWiki();
                     }
 
