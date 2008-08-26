@@ -21,7 +21,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.settings.LookAndFeelAppProps;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.*;
@@ -198,7 +198,7 @@ public class HomeTemplate extends PrintTemplate
             String startPageLabel;
             if (singleTabFolder)
             {
-                startPageLabel = container.equals(ContainerManager.getHomeContainer()) ? LookAndFeelAppProps.getInstance(container).getSystemShortName() : container.getName();
+                startPageLabel = container.equals(ContainerManager.getHomeContainer()) ? LookAndFeelProperties.getInstance(container).getShortName() : container.getName();
                 ownerStartUrl = container.getDefaultModule().getTabURL(container, context.getUser());
             }
             else

@@ -25,9 +25,9 @@ import java.sql.SQLException;
  * Date: Aug 1, 2008
  * Time: 9:35:40 PM
  */
-public class WriteableLookAndFeelAppProps extends LookAndFeelAppProps
+public class WriteableLookAndFeelProperties extends LookAndFeelProperties
 {
-    WriteableLookAndFeelAppProps(Container c) throws SQLException
+    WriteableLookAndFeelProperties(Container c) throws SQLException
     {
         super(c);
         makeWriteable(c);
@@ -37,6 +37,11 @@ public class WriteableLookAndFeelAppProps extends LookAndFeelAppProps
     public void save() throws SQLException
     {
         super.save();
+    }
+
+    public void clear()
+    {
+        getProperties().clear();
     }
 
     public void setFolderDisplayMode(FolderDisplayMode folderDisplayMode)

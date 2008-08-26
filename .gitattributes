@@ -488,13 +488,13 @@ api/src/org/labkey/api/settings/AbstractSettingsGroup.java -text
 api/src/org/labkey/api/settings/AbstractWriteableSettingsGroup.java -text
 api/src/org/labkey/api/settings/AdminConsole.java -text
 api/src/org/labkey/api/settings/AppProps.java -text
-api/src/org/labkey/api/settings/LookAndFeelAppProps.java -text
+api/src/org/labkey/api/settings/LookAndFeelProperties.java -text
 api/src/org/labkey/api/settings/PreferenceService.java -text
 api/src/org/labkey/api/settings/ResourceURL.java -text
 api/src/org/labkey/api/settings/Setting.java -text
 api/src/org/labkey/api/settings/TemplateResourceHandler.java -text
 api/src/org/labkey/api/settings/WriteableAppProps.java -text
-api/src/org/labkey/api/settings/WriteableLookAndFeelAppProps.java -text
+api/src/org/labkey/api/settings/WriteableLookAndFeelProperties.java -text
 api/src/org/labkey/api/study/DilutionCurve.java -text
 api/src/org/labkey/api/study/ParticipantVisit.java -text
 api/src/org/labkey/api/study/Plate.java -text

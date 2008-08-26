@@ -18,7 +18,7 @@ package org.labkey.api.view;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.LookAndFeelAppProps;
+import org.labkey.api.settings.LookAndFeelProperties;
 
 import java.awt.*;
 import java.sql.SQLException;
@@ -146,7 +146,7 @@ public class WebTheme
 
     public static WebTheme getTheme(Container c)
     {
-        Container settingsContainer = LookAndFeelAppProps.getSettingsContainer(c);
+        Container settingsContainer = LookAndFeelProperties.getSettingsContainer(c);
         return lookupTheme(settingsContainer);
     }
 
@@ -156,7 +156,7 @@ public class WebTheme
 
         try
         {
-            LookAndFeelAppProps laf = LookAndFeelAppProps.getInstance(c);
+            LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
 
             if (laf.hasProperties())
                 theme = WebTheme.getTheme(laf.getThemeName());

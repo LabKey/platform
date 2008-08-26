@@ -28,7 +28,7 @@ import java.sql.SQLException;
  * Date: Aug 1, 2008
  * Time: 9:35:40 PM
  */
-public class LookAndFeelAppProps extends AbstractWriteableSettingsGroup
+public class LookAndFeelProperties extends AbstractWriteableSettingsGroup
 {
     private static final String LOOK_AND_FEEL_SET_NAME = "LookAndFeel";
 
@@ -51,18 +51,18 @@ public class LookAndFeelAppProps extends AbstractWriteableSettingsGroup
         return LOOK_AND_FEEL_SET_NAME;
     }
 
-    public static LookAndFeelAppProps getInstance(Container c)
+    public static LookAndFeelProperties getInstance(Container c)
     {
-        return new LookAndFeelAppProps(c);
+        return new LookAndFeelProperties(c);
     }
 
-    public static WriteableLookAndFeelAppProps getWriteableInstance(Container c) throws SQLException
+    public static WriteableLookAndFeelProperties getWriteableInstance(Container c) throws SQLException
     {
         assert c.isProject() || c.isRoot();
-        return new WriteableLookAndFeelAppProps(c);
+        return new WriteableLookAndFeelProperties(c);
     }
 
-    protected LookAndFeelAppProps(Container c)
+    protected LookAndFeelProperties(Container c)
     {
         _c = getSettingsContainer(c);
     }
@@ -97,12 +97,12 @@ public class LookAndFeelAppProps extends AbstractWriteableSettingsGroup
         return value;
     }
 
-    public String getSystemDescription()
+    public String getDescription()
     {
         return lookupStringValue(SYSTEM_DESCRIPTION_PROP, "");
     }
 
-    public String getSystemShortName()
+    public String getShortName()
     {
         return lookupStringValue(SYSTEM_SHORT_NAME_PROP, "LabKey Server");
     }
@@ -163,7 +163,7 @@ public class LookAndFeelAppProps extends AbstractWriteableSettingsGroup
             try
             {
                 path = "${contextPath}/issues/dev/issues/insert.view";
-                WriteableLookAndFeelAppProps writeable = getWriteableInstance(_c);
+                WriteableLookAndFeelProperties writeable = getWriteableInstance(_c);
                 writeable.setReportAProblemPath(path);
                 writeable.save();
             }

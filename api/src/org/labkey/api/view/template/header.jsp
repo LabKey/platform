@@ -22,7 +22,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.TemplateHeaderView" %>
-<%@ page import="org.labkey.api.settings.LookAndFeelAppProps" %>
+<%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.settings.TemplateResourceHandler" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.LoginUrls" %>
@@ -34,11 +34,11 @@
     String contextPath = currentContext.getContextPath();
     ActionURL currentURL = currentContext.getActionURL();
     AppProps app = AppProps.getInstance();
-    LookAndFeelAppProps laf = LookAndFeelAppProps.getInstance(currentContext.getContainer());
+    LookAndFeelProperties laf = LookAndFeelProperties.getInstance(currentContext.getContainer());
 %>
 <table id="header"><tr>
-<td class="labkey-main-icon"><a href="<%=h(laf.getLogoHref())%>"><img src="<%=h(TemplateResourceHandler.LOGO.getURL(c))%>" alt="<%=h(laf.getSystemShortName())%>"><br><img alt="<%=h(laf.getLogoHref())%>" src="<%=contextPath%>/_.gif" width="146" height="1" border="0"></a></td>
-<td class="labkey-main-title-area"><span><a id="labkey-main-title" class="labkey-main-title" href="<%= app.getHomePageUrl() %>"><%=h(laf.getSystemShortName())%></a></span><br><span class="normal"><a href="<%= app.getHomePageUrl() %>"><%= h(laf.getSystemDescription())%></a><%
+<td class="labkey-main-icon"><a href="<%=h(laf.getLogoHref())%>"><img src="<%=h(TemplateResourceHandler.LOGO.getURL(c))%>" alt="<%=h(laf.getShortName())%>"><br><img alt="<%=h(laf.getLogoHref())%>" src="<%=contextPath%>/_.gif" width="146" height="1" border="0"></a></td>
+<td class="labkey-main-title-area"><span><a id="labkey-main-title" class="labkey-main-title" href="<%= app.getHomePageUrl() %>"><%=h(laf.getShortName())%></a></span><br><span class="normal"><a href="<%= app.getHomePageUrl() %>"><%= h(laf.getDescription())%></a><%
 if (bean.containerLinks != null)
     {
     for (String containerLink : bean.containerLinks)

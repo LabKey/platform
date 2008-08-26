@@ -23,7 +23,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.LookAndFeelAppProps;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.view.*;
 
 import javax.servlet.ServletException;
@@ -562,7 +562,7 @@ public class ExceptionUtil
             {
                 if (((UnauthorizedException)ex).isRequestBasicAuth())
                 {
-                    response.setHeader("WWW-Authenticate", "Basic realm=\"" + LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getSystemDescription() + "\"");
+                    response.setHeader("WWW-Authenticate", "Basic realm=\"" + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getDescription() + "\"");
                     responseStatus = HttpServletResponse.SC_UNAUTHORIZED;
                     message = "You must log in to view this content.";
                     resetResponse = false;

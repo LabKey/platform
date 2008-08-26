@@ -16,7 +16,7 @@
 
 package org.labkey.api.view.menu;
 
-import org.labkey.api.settings.LookAndFeelAppProps;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.FolderDisplayMode;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -48,7 +48,7 @@ public class MenuView extends VBox
     public void renderView(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
         boolean showFolders = getViewContext().isShowFolders();
-        FolderDisplayMode displayMode = LookAndFeelAppProps.getInstance(getViewContext().getContainer()).getFolderDisplayMode();
+        FolderDisplayMode displayMode = LookAndFeelProperties.getInstance(getViewContext().getContainer()).getFolderDisplayMode();
         boolean renderFolderExpander = !HttpView.currentContext().isAdminMode() && (displayMode == FolderDisplayMode.OPTIONAL_OFF || displayMode == FolderDisplayMode.OPTIONAL_ON);
 
         PrintWriter out = response.getWriter();

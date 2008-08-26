@@ -18,7 +18,7 @@ package org.labkey.api.query;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.LookAndFeelAppProps;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.apache.commons.lang.StringUtils;
 
 import java.text.SimpleDateFormat;
@@ -41,8 +41,8 @@ public class ExportRScriptModel
 
     public String getInstallationName()
     {
-        LookAndFeelAppProps props = LookAndFeelAppProps.getInstance(_view.getViewContext().getContainer());
-        return null == props ? "LabKey Server" : props.getSystemShortName();
+        LookAndFeelProperties props = LookAndFeelProperties.getInstance(_view.getViewContext().getContainer());
+        return null == props ? "LabKey Server" : props.getShortName();
     }
 
     public String getCreatedOn()

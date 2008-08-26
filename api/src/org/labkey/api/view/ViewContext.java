@@ -24,7 +24,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.settings.PreferenceService;
-import org.labkey.api.settings.LookAndFeelAppProps;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.common.util.BoundMap;
 import org.springframework.context.MessageSource;
 import org.springframework.context.MessageSourceResolvable;
@@ -403,7 +403,7 @@ public class ViewContext extends BoundMap implements MessageSource
         if (isAdminMode())
             return true;
 
-        switch (LookAndFeelAppProps.getInstance(getContainer()).getFolderDisplayMode())
+        switch (LookAndFeelProperties.getInstance(getContainer()).getFolderDisplayMode())
         {
             case ALWAYS:
                 return true;

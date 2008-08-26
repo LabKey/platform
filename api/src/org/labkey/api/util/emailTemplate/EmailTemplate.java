@@ -17,7 +17,7 @@
 package org.labkey.api.util.emailTemplate;
 
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.LookAndFeelAppProps;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.Container;
 
@@ -44,22 +44,22 @@ public abstract class EmailTemplate
     static
     {
         _replacements.add(new ReplacementParam("organizationName", "Organization name (look and feel settings)"){
-            public String getValue(Container c) {return LookAndFeelAppProps.getInstance(c).getCompanyName();}
+            public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getCompanyName();}
         });
         _replacements.add(new ReplacementParam("siteShortName", "Header short name"){
-            public String getValue(Container c) {return LookAndFeelAppProps.getInstance(c).getSystemShortName();}
+            public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getShortName();}
         });
         _replacements.add(new ReplacementParam("contextPath", "Web application context path"){
             public String getValue(Container c) {return AppProps.getInstance().getContextPath();}
         });
         _replacements.add(new ReplacementParam("supportLink", "Page where users can request support"){
-            public String getValue(Container c) {return LookAndFeelAppProps.getInstance(c).getReportAProblemPath();}
+            public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getReportAProblemPath();}
         });
         _replacements.add(new ReplacementParam("systemDescription", "Header description"){
-            public String getValue(Container c) {return LookAndFeelAppProps.getInstance(c).getSystemDescription();}
+            public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getDescription();}
         });
         _replacements.add(new ReplacementParam("systemEmail", "From address for system notification emails"){
-            public String getValue(Container c) {return LookAndFeelAppProps.getInstance(c).getSystemEmailAddress();}
+            public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getSystemEmailAddress();}
         });
         _replacements.add(new ReplacementParam("homePageURL", "The home page of this installation"){
             public String getValue(Container c) {

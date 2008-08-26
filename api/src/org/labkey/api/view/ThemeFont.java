@@ -19,7 +19,7 @@ package org.labkey.api.view;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.settings.LookAndFeelAppProps;
+import org.labkey.api.settings.LookAndFeelProperties;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -129,7 +129,7 @@ public class ThemeFont
 
     public static ThemeFont getThemeFont(Container c)
     {
-        LookAndFeelAppProps laf = LookAndFeelAppProps.getInstance(c);
+        LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
         return ThemeFont.getThemeFont(laf.getThemeFont());
     }
 

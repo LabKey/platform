@@ -21,7 +21,7 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.LookAndFeelAppProps;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -72,7 +72,7 @@ public class FooterMenu extends NavTreeMenu
             menu.add(ntPermalink);
         }
         
-        LookAndFeelAppProps laf = LookAndFeelAppProps.getInstance(c);
+        LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
         String reportAProblemPath = laf.getReportAProblemPath();
         if (reportAProblemPath != null && reportAProblemPath.trim().length() > 0 && !user.isGuest())
             menu.add(new NavTree("Support", reportAProblemPath));

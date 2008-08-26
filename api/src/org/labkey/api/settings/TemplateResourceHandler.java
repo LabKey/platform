@@ -132,7 +132,7 @@ public enum TemplateResourceHandler
     {
         try
         {
-            Container settingsContainer = LookAndFeelAppProps.getSettingsContainer(c);
+            Container settingsContainer = LookAndFeelProperties.getSettingsContainer(c);
             CacheableWriter writer = getWriterForContainer(settingsContainer);
 
             if (noDocument == writer)
@@ -157,7 +157,7 @@ public enum TemplateResourceHandler
     public void sendResource(HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException, ServletException
     {
         ResourceURL url = new ResourceURL(request);
-        Container c = LookAndFeelAppProps.getSettingsContainer(ContainerManager.getForPath(url.getExtraPath()));  // Shouldn't be requesting anything but root & project, but just in case
+        Container c = LookAndFeelProperties.getSettingsContainer(ContainerManager.getForPath(url.getExtraPath()));  // Shouldn't be requesting anything but root & project, but just in case
 
         CacheableWriter writer = getWriter(c);
 
