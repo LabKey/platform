@@ -26,18 +26,16 @@ import org.labkey.api.pipeline.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
+import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.util.HelpTopic;
-import org.labkey.api.util.MailHelper;
-import org.labkey.api.util.NetworkDrive;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.pipeline.PipelineController;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
-import org.labkey.pipeline.api.PipelineJobServiceImpl;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
+import org.labkey.pipeline.api.PipelineServiceImpl;
 import static org.labkey.pipeline.api.PipelineStatusManager.*;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -66,7 +64,7 @@ public class StatusController extends SpringActionController
     {
         return new HelpTopic(topic, HelpTopic.Area.SERVER);
     }
-    
+
     private void reject(Errors errors, String message)
     {
         errors.reject(message);
@@ -150,12 +148,50 @@ public class StatusController extends SpringActionController
 
             GridView gridView = getGridView(c, getUser(), ShowListRegionAction.class);
             gridView.setTitle("Data Pipeline");
-            return gridView;
+
+            if (!c.isRoot())
+            {
+                return gridView;
+            }
+
+            if (!PipelineService.get().isEnterprisePipeline())
+            {
+                HtmlView view = new HtmlView("You are not running the Enterprise Pipeline.");
+                view.setTitle("Pipeline Overview");
+                return new VBox(view, gridView);
+            }
+
+            Set<String> locations = new TreeSet<String>();
+            TaskPipelineRegistry registry = PipelineJobService.get();
+            for (TaskFactory taskFactory : registry.getTaskFactories())
+            {
+                locations.add(taskFactory.getExecutionLocation());
+            }
+            EnterprisePipelineBean bean = new EnterprisePipelineBean(locations);
+            JspView<EnterprisePipelineBean> overview = new JspView<EnterprisePipelineBean>("/org/labkey/pipeline/status/enterprisePipelineAdmin.jsp", bean);
+            overview.setTitle("Pipeline Overview");
+
+            return new VBox(overview, gridView);
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Data Pipeline");
+        }
+    }
+
+    public static class EnterprisePipelineBean
+    {
+        private Set<String> _locations;
+
+        public EnterprisePipelineBean(Set<String> locations)
+        {
+            _locations = locations;
+        }
+
+        public Set<String> getLocations()
+        {
+            return _locations;
         }
     }
 
@@ -216,7 +252,7 @@ public class StatusController extends SpringActionController
         url.addParameter(RowIdForm.Params.rowId, Integer.toString(sf.getRowId()));
         return url;
     }
-    
+
     abstract public class DetailsBaseAction<FORM extends RowIdForm> extends FormViewAction<FORM>
     {
         public ActionURL getSuccessURL(FORM form)
@@ -348,7 +384,7 @@ public class StatusController extends SpringActionController
             try
             {
                 _urlSuccess = provider.handleStatusAction(getViewContext(), form.getName(), sf);
-                
+
                 return HttpView.redirect(getSuccessURL(form));
             }
             catch (PipelineProvider.HandlerException e)
@@ -363,7 +399,7 @@ public class StatusController extends SpringActionController
         {
             // Just to be safe, return to the details page, if there is no success URL from
             // the provider.
-            
+
             return (_urlSuccess != null ? _urlSuccess : urlDetails(getContainer(), form.getRowId()));
         }
     }
@@ -1091,6 +1127,7 @@ public class StatusController extends SpringActionController
     {
         private String _job;
         private String _status;
+        private String _statusInfo;
 
         public String getJob()
         {
@@ -1110,6 +1147,16 @@ public class StatusController extends SpringActionController
         public void setStatus(String status)
         {
             _status = status;
+        }
+
+        public String getStatusInfo()
+        {
+            return _statusInfo;
+        }
+
+        public void setStatusInfo(String statusInfo)
+        {
+            _statusInfo = statusInfo;
         }
     }
 
@@ -1137,43 +1184,28 @@ public class StatusController extends SpringActionController
             super(RequeueRunningJobsForm.class);
         }
 
-        public void handleCallback(RequeueRunningJobsForm form) throws Exception
+        public String handleCallback(RequeueRunningJobsForm form) throws Exception
         {
-            if (PipelineService.get().getPipelineQueue().isLocal())
-            {
-                // todo: This currently just causes the return code 404 to be displayed during remote
-                //       server start-up.  Would be better to give the server administrator this message.
-                HttpView.throwNotFound("Remote servers not supported.  Change configuration to use a remote queue.");
-            }
-
             if (null == form.getLocation())
             {
                 HttpView.throwNotFound("No location specified");
             }
 
-            List<PipelineJob> pendingJobs = PipelineService.get().getPipelineQueue().findJobs(form.getLocation());
-            Set<String> jobIds = new HashSet<String>();
-            for (PipelineJob job : pendingJobs)
+            if (PipelineService.get().getPipelineQueue().isLocal())
             {
-                jobIds.add(job.getJobGUID().toLowerCase());
+                _log.error("Attempted to requeue lost jobs for location " + form.getLocation() + " but this server " +
+                    "is not using an external JMS queue. Change your configuration to point to a different JMS queue.");
+
+                HttpView.throwNotFound("Remote servers not supported.  Change configuration to use a remote queue.");
             }
 
-            TaskPipelineRegistry registry = PipelineJobService.get();
-            for (TaskFactory taskFactory : registry.getTaskFactories())
+            for (PipelineStatusFileImpl sf : PipelineStatusManager.getStatusFilesForLocation(form.getLocation(), false))
             {
-                if (taskFactory.getExecutionLocation().equals(form.getLocation()))
-                {
-                    TaskId id = taskFactory.getId();
-                    PipelineStatusFileImpl[] statusFiles =
-                            PipelineStatusManager.getQueuedStatusFilesForActiveTaskId(id.toString());
-                    for (PipelineStatusFileImpl sf : statusFiles)
-                    {
-                        // NOTE: JobIds end up all uppercase in the database, but they are lowercase in jobs
-                        if (sf.getJobStore() != null && !jobIds.contains(sf.getJobId().toLowerCase()))
-                            PipelineJobServiceImpl.get().getJobStore().retry(sf);
-                    }
-                }
+                if (sf.getJobStore() != null)
+                    PipelineJobService.get().getJobStore().retry(sf);
             }
+
+            return PipelineJob.COMPLETE_STATUS;
         }
     }
 
@@ -1186,21 +1218,28 @@ public class StatusController extends SpringActionController
 
         public void render(Form form, BindException errors, PrintWriter out) throws Exception
         {
+            String status;
+
             if (!PipelineService.get().isEnterprisePipeline())
             {
-                HttpView.throwUnauthorized("HTTP access disabled since Enterprise pipeline is not configured");
-            }
+                _log.error("Attempt to use Enterprise pipeline failed as it is not enabled.");
 
-            if (PipelineJobService.get().getAppProperties().getCallbackPassword() != null &&
+                status = "HTTP access disabled since Enterprise pipeline is not configured";
+            }
+            else if (PipelineJobService.get().getAppProperties().getCallbackPassword() != null &&
                 !PipelineJobService.get().getAppProperties().getCallbackPassword().equals(form.getCallbackPassword()))
             {
-                HttpView.throwUnauthorized("Invalid callback password");
+                status = "Invalid callback password";
+            }
+            else
+            {
+                status = handleCallback(form);
             }
 
-            handleCallback(form);
+            getViewContext().getResponse().getWriter().write(status);
         }
 
-        protected abstract void handleCallback(Form form) throws Exception;
+        protected abstract String handleCallback(Form form) throws Exception;
     }
 
     /** Used to set job status for Enterprise pipeline */
@@ -1212,7 +1251,7 @@ public class StatusController extends SpringActionController
             super(JobStatusForm.class);
         }
 
-        public void handleCallback(JobStatusForm form) throws Exception
+        public String handleCallback(JobStatusForm form) throws Exception
         {
             PipelineStatusFileImpl status = PipelineStatusManager.getJobStatusFile(form.getJob());
             if (!status.getContainerId().equals(getContainer().getId()))
@@ -1221,7 +1260,9 @@ public class StatusController extends SpringActionController
             }
 
             status.setStatus(form.getStatus());
+            status.setInfo(form.getStatusInfo());
             setStatusFile(getViewBackgroundInfo(), status, false);
+            return PipelineJob.COMPLETE_STATUS;
         }
     }
 
@@ -1345,6 +1386,25 @@ public class StatusController extends SpringActionController
                 url.addParameter("StatusFiles.Status~neqornull", "COMPLETE");
 
             return url;
+        }
+    }
+
+    @RequiresSiteAdmin
+    public class ForceRefreshAction extends FormHandlerAction
+    {
+        public void validateCommand(Object target, Errors errors)
+        {
+        }
+
+        public boolean handlePost(Object o, BindException errors) throws Exception
+        {
+            PipelineServiceImpl.get().refreshLocalJobs();
+            return true;
+        }
+
+        public ActionURL getSuccessURL(Object o)
+        {
+            return new ActionURL(ShowListAction.class, ContainerManager.getRoot());
         }
     }
 }

@@ -150,6 +150,10 @@
 
             <threading-profile maxThreadsActive="1" maxThreadsIdle="0" threadTTL="100"/>
             <pooling-profile maxActive="1" maxIdle="0" initialisationPolicy="INITIALISE_NONE"/>
+
+            <properties>
+                <property name="location" value="cluster" />
+            </properties>
         </mule-descriptor>
 
         <mule-descriptor name="PipelineProgressionRunnerUMO"

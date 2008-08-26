@@ -51,7 +51,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         addColumn(Column.Name);
         addColumn(Column.Run).setFk(schema.getRunIdForeignKey());
         addColumn(Column.LSID).setIsHidden(true);
-        addColumn(Column.DataFileUrl).setIsHidden(true);
+        addColumn(Column.DataFileUrl);
         addColumn(Column.Protocol).setIsHidden(true);
         setTitleColumn("Name");
         ActionURL detailsURL = new ActionURL("Experiment", "showData", schema.getContainer().getPath());

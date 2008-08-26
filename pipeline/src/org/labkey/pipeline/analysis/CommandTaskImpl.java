@@ -50,6 +50,7 @@ public class CommandTaskImpl extends PipelineJob.Task<CommandTaskImpl.Factory> i
         private boolean _pipeToOutput;
         private int _pipeOutputLineInterval;
         private boolean _preview;
+        private String _actionableInput;
 
         public Factory()
         {
@@ -94,6 +95,9 @@ public class CommandTaskImpl extends PipelineJob.Task<CommandTaskImpl.Factory> i
 
             if (settings.isPreviewSet())
                 _preview = settings.isPreview();
+
+            if (settings.getActionableInput() != null)
+                _actionableInput = settings.getActionableInput();
         }
 
         public PipelineJob.Task createTask(PipelineJob job)
@@ -163,7 +167,18 @@ public class CommandTaskImpl extends PipelineJob.Task<CommandTaskImpl.Factory> i
 
         public FileType[] getInputTypes()
         {
-            TaskPath tp = _inputPaths.get(WorkDirectory.Function.input.toString());
+            if (_actionableInput == null)
+            {
+                // If the config doesn't specify that only one of the inputs should have a button next to it,
+                // use them all
+                List<FileType> result = new ArrayList<FileType>(_inputPaths.size());
+                for (TaskPath taskPath : _inputPaths.values())
+                {
+                    result.add(taskPath.getType());
+                }
+                return result.toArray(new FileType[result.size()]);
+            }
+            TaskPath tp = _inputPaths.get(_actionableInput);
             return (tp == null ? null : new FileType[] { tp.getType() });
         }
 
@@ -278,7 +293,7 @@ public class CommandTaskImpl extends PipelineJob.Task<CommandTaskImpl.Factory> i
         return _wd.newFile(f, tp.getName());
     }
 
-    public void inputFile(TaskPath tp, RecordedAction action) throws IOException
+    public void inputFile(TaskPath tp, String role, RecordedAction action) throws IOException
     {
         File fileInput = null;
         if (tp.getType() != null)
@@ -293,11 +308,11 @@ public class CommandTaskImpl extends PipelineJob.Task<CommandTaskImpl.Factory> i
                 return;
 
             _wd.inputFile(fileInput, tp.isCopyInput() || _factory.isCopyInput());
-            action.addInput(fileInput, tp.getRole());
+            action.addInput(fileInput, role);
         }
     }
     
-    public void outputFile(TaskPath tp, RecordedAction action) throws IOException
+    public void outputFile(TaskPath tp, String role, RecordedAction action) throws IOException
     {
         File fileWork = null;
         if (tp.getType() != null)
@@ -329,7 +344,7 @@ public class CommandTaskImpl extends PipelineJob.Task<CommandTaskImpl.Factory> i
             }
 
             File f = _wd.outputFile(fileWork);
-            action.addOutput(f, tp.getRole(), false);
+            action.addOutput(f, role, false);
         }
     }
 
@@ -348,9 +363,15 @@ public class CommandTaskImpl extends PipelineJob.Task<CommandTaskImpl.Factory> i
                 try
                 {
                     lock = _wd.ensureCopyingLock();
-                    for (TaskPath input : _factory.getInputPaths().values())
+                    for (Map.Entry<String, TaskPath> entry : _factory.getInputPaths().entrySet())
                     {
-                        inputFile(input, action);
+                        TaskPath taskPath = entry.getValue();
+                        String role = entry.getKey();
+                        if (WorkDirectory.Function.input.toString().equals(role))
+                        {
+                            role = taskPath.getDefaultRole();
+                        }
+                        inputFile(taskPath, role, action);
                     }
                 }
                 finally
@@ -397,8 +418,16 @@ public class CommandTaskImpl extends PipelineJob.Task<CommandTaskImpl.Factory> i
                 try
                 {
                     lock = _wd.ensureCopyingLock();
-                    for (TaskPath output : _factory.getOutputPaths().values())
-                        outputFile(output, action);
+                    for (Map.Entry<String, TaskPath> entry : _factory.getOutputPaths().entrySet())
+                    {
+                        TaskPath taskPath = entry.getValue();
+                        String role = entry.getKey();
+                        if (WorkDirectory.Function.output.toString().equals(role))
+                        {
+                            role = taskPath.getDefaultRole();
+                        }
+                        outputFile(taskPath, role, action);
+                    }
                 }
                 finally
                 {

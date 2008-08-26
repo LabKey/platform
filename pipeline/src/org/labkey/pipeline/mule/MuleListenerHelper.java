@@ -22,6 +22,7 @@ import org.apache.commons.collections.map.CaseInsensitiveMap;
 import org.apache.log4j.Logger;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.util.URIUtil;
+import org.labkey.pipeline.api.PipelineServiceImpl;
 import org.mule.config.ThreadingProfile;
 import org.mule.config.builders.MuleXmlBuilderContextListener;
 import org.mule.providers.service.TransportFactory;
@@ -33,10 +34,7 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * MuleInitializer class
@@ -52,7 +50,7 @@ public class MuleListenerHelper implements ServletContext
     private ServletContext _parentContext = null;
     private HashMap<String,Object> _attributes = new HashMap<String,Object>();
     private HashMap<String,String> _initParameters = new HashMap<String,String>();
-    private Logger _log = Logger.getLogger(this.getClass());
+    private static final Logger _log = Logger.getLogger(MuleListenerHelper.class);
 
     public MuleListenerHelper(ServletContext parentContext, String muleConfigPaths)
     {
@@ -111,13 +109,14 @@ public class MuleListenerHelper implements ServletContext
         try
         {
             _muleContextListener.initialize(this);
+            PipelineServiceImpl.get().refreshLocalJobs();
         }
         finally
         {
             ConvertUtils.register(conv, Integer.TYPE);
         }
     }
-
+    
     public void contextDestroyed(ServletContextEvent servletContextEvent)
     {
         boolean hasJms;

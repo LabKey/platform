@@ -33,8 +33,6 @@
 
 <labkey:errors />
 
-<span class="labkey-header-large">A file analysis protocol is defined by the set of parameters used to run the commands in the pipeline.</span>
-<br><br>
 <%
     if(getProtocolNames().length > 0)
         out.print("Choose an existing protocol or define a new one.<br>");

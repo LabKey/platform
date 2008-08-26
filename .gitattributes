@@ -1020,6 +1020,7 @@ pipeline/src/org/labkey/pipeline/mule/PipelineProgressionRunner.java -text
 pipeline/src/org/labkey/pipeline/mule/PipelineStatusSetter.java -text
 pipeline/src/org/labkey/pipeline/mule/PipelineTaskRunner.java -text
 pipeline/src/org/labkey/pipeline/mule/RemoteServerStartup.java -text
+pipeline/src/org/labkey/pipeline/mule/ResumableDescriptor.java -text
 pipeline/src/org/labkey/pipeline/mule/config/cluster.log4j.properties -text
 pipeline/src/org/labkey/pipeline/mule/config/remote.log4j.properties -text
 pipeline/src/org/labkey/pipeline/mule/config/remoteMuleConfig.xml -text
@@ -1044,6 +1045,7 @@ pipeline/src/org/labkey/pipeline/status/JobDisplayColumn.java -text
 pipeline/src/org/labkey/pipeline/status/ProviderButtonBar.java -text
 pipeline/src/org/labkey/pipeline/status/StatusController.java -text
 pipeline/src/org/labkey/pipeline/status/StatusDataRegion.java -text
+pipeline/src/org/labkey/pipeline/status/enterprisePipelineAdmin.jsp -text
 pipeline/src/org/labkey/pipeline/status/escalateJobFailure.jsp -text
 pipeline/src/org/labkey/pipeline/xstream/FileXStreamConverter.java -text
 pipeline/src/org/labkey/pipeline/xstream/PathMapperImpl.java -text

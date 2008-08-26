@@ -22,13 +22,13 @@ import org.labkey.pipeline.api.PipelineJobServiceImpl;
 import org.labkey.pipeline.AbstractPipelineStartup;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineJob;
 import org.apache.log4j.Logger;
 
 import java.net.URLEncoder;
 import java.net.URL;
 import java.net.HttpURLConnection;
-import java.io.IOException;
-import java.io.File;
+import java.io.*;
 import java.util.List;
 import java.util.Map;
 
@@ -61,35 +61,62 @@ public class RemoteServerStartup extends AbstractPipelineStartup
         builder.configure(muleConfig);
     }
 
-    public void requeueLostJobs()
+    public void requeueLostJobs() throws IOException
     {
         PipelineJobService.RemoteServerProperties remoteProps = PipelineJobService.get().getRemoteServerProperties();
-        PipelineJobService.ApplicationProperties appProps = PipelineJobService.get().getAppProperties();
-
-        if (remoteProps != null && appProps != null && remoteProps.getBaseServerUrl() != null)
+        if (remoteProps == null)
         {
-            String location = remoteProps.getLocation();
-            String baseServerURL = remoteProps.getBaseServerUrl();
+            throw new IllegalStateException("No remoteServerProperties registered with the PipelineJobService.");
+        }
+        if (remoteProps.getBaseServerUrl() == null)
+        {
+            throw new IllegalStateException("No baseServerUrl is set for the remoteServerProperties on PipelineJobServer. This is required so that the remote server can communicate with the web server.");
+        }
 
+        PipelineJobService.ApplicationProperties appProps = PipelineJobService.get().getAppProperties();
+        if (appProps == null)
+        {
+            throw new IllegalStateException("No appProps is registered with the PipelineJobService.");
+        }
+
+        String location = remoteProps.getLocation();
+        String baseServerURL = remoteProps.getBaseServerUrl();
+
+        String urlString = baseServerURL + "Pipeline-Status/requeueLostJobs.view?location=" + URLEncoder.encode(location, "UTF-8");
+        if (appProps.getCallbackPassword() != null)
+        {
+            urlString += "&callbackPassword=" + URLEncoder.encode(appProps.getCallbackPassword(), "UTF-8");
+        }
+        URL url = new URL(urlString);
+        HttpURLConnection connection = null;
+        BufferedReader reader = null;
+        try
+        {
             try
             {
-                String urlString = baseServerURL + "Pipeline-Status/requeueLostJobs.view?location=" + URLEncoder.encode(location, "UTF-8");
-                if (PipelineJobService.get().getAppProperties().getCallbackPassword() != null)
-                {
-                    urlString += "&callbackPassword=" + URLEncoder.encode(PipelineJobService.get().getAppProperties().getCallbackPassword(), "UTF-8");
-                }
-                URL url = new URL(urlString);
-                HttpURLConnection connection = (HttpURLConnection)url.openConnection();
+                connection = (HttpURLConnection)url.openConnection();
                 if (connection.getResponseCode() != HttpURLConnection.HTTP_OK)
                 {
                     // The exception adds the stack trace to the log, which causes it to stand out more.
-                    throw new IOException("Got response code " + connection.getResponseCode() + " from server trying requeue lost jobs");
+                    throw new IllegalStateException("Got response code " + connection.getResponseCode() + " from server trying requeue lost jobs");
                 }
             }
             catch (IOException e)
             {
-                _log.error("Failed to requeue lost jobs", e);
+                throw new IllegalStateException("Failed to contact web server at " + url, e);
             }
+
+            reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            String status = reader.readLine();
+            if (!PipelineJob.COMPLETE_STATUS.equals(status))
+            {
+                throw new IOException("When trying to requeue lost jobs, did not get expected " + PipelineJob.COMPLETE_STATUS + " status from server. Instead, got: " + status);
+            }
+        }
+        finally
+        {
+            if (reader != null) { try { reader.close(); } catch (IOException e) {} }
+            if (connection != null) { connection.disconnect(); }
         }
     }
 

@@ -46,8 +46,13 @@ import org.labkey.api.pipeline.*;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.pipeline.xstream.PathMapperImpl;
+import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
+import org.labkey.pipeline.api.PipelineStatusFileImpl;
+import org.labkey.pipeline.api.PipelineStatusManager;
 import org.mule.umo.UMOEventContext;
 import org.mule.umo.UMOException;
+import org.mule.umo.UMODescriptor;
+import org.mule.umo.endpoint.UMOEndpoint;
 import org.mule.umo.lifecycle.Callable;
 import org.mule.impl.RequestContext;
 
@@ -63,7 +68,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class PipelineJobRunnerGlobus implements Callable
+public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
 {
     private static Logger _log = Logger.getLogger(PipelineJobRunnerGlobus.class);
 
@@ -101,8 +106,6 @@ public class PipelineJobRunnerGlobus implements Callable
                 _globusEndpoint = "https://" + _globusEndpoint;
             if (_globusEndpoint.lastIndexOf('/') < 8)
             {
-                if (_globusEndpoint.lastIndexOf(':') < 6)
-                    _globusEndpoint += ":8443";
                 _globusEndpoint += "/wsrf/services/ManagedJobFactoryService";
             }
 
@@ -110,6 +113,64 @@ public class PipelineJobRunnerGlobus implements Callable
             if (pathMap != null)
                 _pathMapper.setPathMap(pathMap);
         }
+    }
+
+    public void resume(UMODescriptor descriptor)
+    {
+        for (UMOEndpoint endpoint : (List< UMOEndpoint>)descriptor.getInboundRouter().getEndpoints())
+        {
+            if (endpoint.getFilter() instanceof TaskJmsSelectorFilter)
+            {
+                TaskJmsSelectorFilter filter = (TaskJmsSelectorFilter) endpoint.getFilter();
+                String location = filter.getLocation();
+                checkStatus(location);
+            }
+        }
+    }
+
+    private void checkStatus(String location)
+    {
+        for (PipelineStatusFileImpl sf : PipelineStatusManager.getStatusFilesForLocation(location, false))
+        {
+            if (sf.getJobStore() != null)
+            {
+                PipelineJob job = null;
+                try
+                {
+                    job = PipelineJobService.get().getJobStore().fromXML(sf.getJobStore());
+
+                    final File serializedJobFile = PipelineJob.getSerializedFile(job.getStatusFile());
+                    if (!NetworkDrive.exists(serializedJobFile))
+                    {
+                        // If the file doesn't exist, the web server must have died after it pulled the job from the queue
+                        // but before it could write the file to disk
+                        job.writeToFile(serializedJobFile);
+                    }
+
+                    // Create the job object and try to submit it. If it was already submitted Globus will remember
+                    // the previous submission because they'll have the same URI and it won't resubmit
+                    GramJob gramJob = createGramJob(job, serializedJobFile);
+                    gramJob.submit(gramJob.getEndpoint(), false, false, getJobURI(job));
+
+                    // Refresh to see what state Globus thinks the job is in. If the job is running or is finished,
+                    // the GlobusListener will be notified just like normal, so it can handle the updates or release
+                    // the associated resources
+                    gramJob.refreshStatus();
+                }
+                catch (Exception e)
+                {
+                    if (job != null)
+                    {
+                        job.error("Failed to update status", e);
+                    }
+                }
+            }
+        }
+    }
+
+    public static String getJobURI(PipelineJob job)
+    {
+        return "uuid:" + job.getJobGUID() + "/" + job.getActiveTaskId();
     }
 
     public Object onCall(UMOEventContext eventContext) throws Exception
@@ -121,103 +182,28 @@ public class PipelineJobRunnerGlobus implements Callable
         String xmlJob = eventContext.getMessageAsString();
         final PipelineJob job = PipelineJobService.get().getJobStore().fromXML(xmlJob);
 
-        GlobusSettings settings = PipelineJobService.get().getGlobusClientProperties();
-        settings = settings.mergeOverrides(job.getActiveTaskFactory().getGlobusSettings());
-        settings = settings.mergeOverrides(new JobGlobusSettings(job.getActiveTaskFactory().getGroupParameterName(), job.getParameters()));
-
         try
         {
-            String jobId = job.getJobGUID();
-
             // Write the file to disk
             final File serializedJobFile = PipelineJob.getSerializedFile(job.getStatusFile());
 
             job.writeToFile(serializedJobFile);
             
-            JobDescriptionType jobDescription = createJobDescription(job, serializedJobFile, settings);
+            GramJob gramJob = createGramJob(job, serializedJobFile);
 
-            // Figure out where to send the job
-            URL factoryUrl = ManagedJobFactoryClientHelper.getServiceURL(_globusEndpoint).getURL();
-            EndpointReferenceType factoryEndpoint = ManagedJobFactoryClientHelper.getFactoryEndpoint(factoryUrl, PipelineJobService.get().getGlobusClientProperties().getJobFactoryType());
+            gramJob.submit(gramJob.getEndpoint(), false, false, getJobURI(job));
 
-            String jobURI = "uuid:" + jobId + "/" + job.getActiveTaskId();
-
-            // TODO: This is a hack to get GRAM to retry errors.
-            //       Really, we need to figure out how to tell GRAM that
-            //       a job has completed (success or failure), so that it
-            //       releases the jobURI for repeated submission.
-            if (job.getErrors() > 0)
-                jobURI += "/" + job.getErrors();
-
-            NotificationConsumerManager notifConsumerManager = new ServerNotificationConsumerManager()
-            {
-                public URL getURL()
-                {
-                    try
-                    {
-                        String url = AppProps.getInstance().getBaseServerUrl();
-                        return new URL(url + AppProps.getInstance().getContextPath() + "/services/");
-                    }
-                    catch (MalformedURLException e)
-                    {
-                        throw new RuntimeException(e);
-                    }
-                }
-            };
-
-            notifConsumerManager.startListening();
-            List<QName> topicPath = new ArrayList<QName>();
-            topicPath.add(ManagedJobConstants.RP_STATE);
-
-            ResourceSecurityDescriptor resourceSecDesc = new ResourceSecurityDescriptor();
-            resourceSecDesc.setAuthz(Authorization.AUTHZ_NONE);
-
-            List<GSITransportAuthMethod> authMethods = new ArrayList<GSITransportAuthMethod>();
-            resourceSecDesc.setAuthMethods(authMethods);
-
-            GramJob gramJob = new GramJob(jobDescription);
-            
-            EndpointReferenceType notificationConsumerEndpoint = notifConsumerManager.createNotificationConsumer(topicPath, gramJob, resourceSecDesc);
-
-            int proxyType = GSIConstants.GSI_4_IMPERSONATION_PROXY;
-
-            BouncyCastleCertProcessingFactory factory = BouncyCastleCertProcessingFactory.getDefault();
-
-            ProxyPolicy policy = new ProxyPolicy(ProxyPolicy.IMPERSONATION);
-            ProxyCertInfo proxyCertInfo = new ProxyCertInfo(policy);
-            X509ExtensionSet extSet = new X509ExtensionSet();
-            // RFC compliant OID
-            extSet.add(new ProxyCertInfoExtension(proxyCertInfo));
-
-            PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(job.getContainer());
-            GlobusKeyPair keyPair = pipeRoot.getGlobusKeyPair();
-            if (keyPair == null)
-            {
-                throw new InvalidKeyException("No Globus SSL Key Pair configured, ask an administrator to set this up for your folder's pipeline root");
-            }
-            keyPair.validateMatch();
-
-            GlobusCredential cred = factory.createCredential(keyPair.getCertificates(), keyPair.getPrivateKey(), 512, 3600 * 12, proxyType, extSet);
-
-            GlobusGSSCredentialImpl credentials = new GlobusGSSCredentialImpl(cred, GSSCredential.INITIATE_AND_ACCEPT);
-
-            gramJob.setCredentials(credentials);
-
-            gramJob.setNotificationConsumerEPR(notificationConsumerEndpoint);
-            gramJob.addListener(new GlobusListener(job, notifConsumerManager));
-
-            gramJob.submit(factoryEndpoint, false, false, jobURI);
             StringBuilder sb = new StringBuilder();
             sb.append("Submitted job to Globus ");
             sb.append(PipelineJobService.get().getGlobusClientProperties().getJobFactoryType());
-            if (settings.getQueue() != null)
+            if (gramJob.getDescription().getQueue() != null)
             {
                 sb.append(" with queue ");
-                sb.append(settings.getQueue());
+                sb.append(gramJob.getDescription().getQueue());
             }
             sb.append(": ");
-            sb.append(jobDescription.getExecutable());
-            for (String arg : jobDescription.getArgument())
+            sb.append(gramJob.getDescription().getExecutable());
+            for (String arg : gramJob.getDescription().getArgument())
             {
                 sb.append(" ");
                 sb.append(arg);
@@ -244,6 +230,81 @@ public class PipelineJobRunnerGlobus implements Callable
             }
         }
         return null;
+    }
+
+    private GramJob createGramJob(PipelineJob job, File serializedJobFile) throws Exception
+    {
+        JobDescriptionType jobDescription = createJobDescription(job, serializedJobFile);
+
+        NotificationConsumerManager notifConsumerManager = new ServerNotificationConsumerManager()
+        {
+            public URL getURL()
+            {
+                try
+                {
+                    String url = AppProps.getInstance().getBaseServerUrl();
+                    return new URL(url + AppProps.getInstance().getContextPath() + "/services/");
+                }
+                catch (MalformedURLException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
+        };
+
+        notifConsumerManager.startListening();
+        List<QName> topicPath = new ArrayList<QName>();
+        topicPath.add(ManagedJobConstants.RP_STATE);
+
+        ResourceSecurityDescriptor resourceSecDesc = new ResourceSecurityDescriptor();
+        resourceSecDesc.setAuthz(Authorization.AUTHZ_NONE);
+
+        List<GSITransportAuthMethod> authMethods = new ArrayList<GSITransportAuthMethod>();
+        resourceSecDesc.setAuthMethods(authMethods);
+
+        GramJob gramJob;
+        if (jobDescription == null)
+        {
+            gramJob = new GramJob();
+        }
+        else
+        {
+            gramJob = new GramJob(jobDescription);
+        }
+        // Tell it where to talk to the Globus server
+        URL factoryUrl = ManagedJobFactoryClientHelper.getServiceURL(_globusEndpoint).getURL();
+        EndpointReferenceType factoryEndpoint = ManagedJobFactoryClientHelper.getFactoryEndpoint(factoryUrl, PipelineJobService.get().getGlobusClientProperties().getJobFactoryType());
+        gramJob.setEndpoint(factoryEndpoint);
+
+        EndpointReferenceType notificationConsumerEndpoint = notifConsumerManager.createNotificationConsumer(topicPath, gramJob, resourceSecDesc);
+
+        int proxyType = GSIConstants.GSI_4_IMPERSONATION_PROXY;
+
+        BouncyCastleCertProcessingFactory factory = BouncyCastleCertProcessingFactory.getDefault();
+
+        ProxyPolicy policy = new ProxyPolicy(ProxyPolicy.IMPERSONATION);
+        ProxyCertInfo proxyCertInfo = new ProxyCertInfo(policy);
+        X509ExtensionSet extSet = new X509ExtensionSet();
+        // RFC compliant OID
+        extSet.add(new ProxyCertInfoExtension(proxyCertInfo));
+
+        PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(job.getContainer());
+        GlobusKeyPair keyPair = pipeRoot.getGlobusKeyPair();
+        if (keyPair == null)
+        {
+            throw new InvalidKeyException("No Globus SSL Key Pair configured, ask an administrator to set this up for your folder's pipeline root");
+        }
+        keyPair.validateMatch();
+
+        GlobusCredential cred = factory.createCredential(keyPair.getCertificates(), keyPair.getPrivateKey(), 512, 3600 * 12, proxyType, extSet);
+
+        GlobusGSSCredentialImpl credentials = new GlobusGSSCredentialImpl(cred, GSSCredential.INITIATE_AND_ACCEPT);
+
+        gramJob.setCredentials(credentials);
+
+        gramJob.setNotificationConsumerEPR(notificationConsumerEndpoint);
+        gramJob.addListener(new GlobusListener(job, notifConsumerManager));
+        return gramJob;
     }
 
     private static PipelineJobService.GlobusClientProperties getProps()
@@ -371,9 +432,13 @@ public class PipelineJobRunnerGlobus implements Callable
         return new File(statusFile.getParentFile(), name + ".cluster." + outputType);
     }
 
-    private JobDescriptionType createJobDescription(PipelineJob job, File serializedJobFile, GlobusSettings settings)
-        throws URISyntaxException, IOException
+    private JobDescriptionType createJobDescription(PipelineJob job, File serializedJobFile)
+        throws Exception
     {
+        GlobusSettings settings = PipelineJobService.get().getGlobusClientProperties();
+        settings = settings.mergeOverrides(job.getActiveTaskFactory().getGlobusSettings());
+        settings = settings.mergeOverrides(new JobGlobusSettings(job.getActiveTaskFactory().getGroupParameterName(), job.getParameters()));
+
         // Set up the job description
         JobDescriptionType jobDescription = new JobDescriptionType();
         jobDescription.setJobType(JobTypeEnumeration.single);

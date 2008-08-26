@@ -293,12 +293,24 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
     {
         SQLFragment sql = new SQLFragment("(SELECT MIN(exp.ProtocolApplication.RowId) FROM exp.ProtocolApplication " +
                 "\nWHERE exp.ProtocolApplication.RunId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId" +
-                "\nAND exp.ProtocolApplication.CpasType = 'ExperimentRun')");
+                "\nAND exp.ProtocolApplication.CpasType = '" + ExpProtocol.ApplicationType.ExperimentRun + "')");
         ColumnInfo ret = new ExprColumn(this, alias, sql, Types.INTEGER);
         ret.setFk(new InputForeignKey(schema, dataInputs, materialInputs));
         ret.setIsUnselectable(true);
         return ret;
     }
+
+    public ColumnInfo createOutputLookupColumn(String alias, ExpSchema schema, Collection<Map.Entry<String, PropertyDescriptor>> dataOutputs, Collection<Map.Entry<String, PropertyDescriptor>> materialOutputs)
+    {
+        SQLFragment sql = new SQLFragment("(SELECT MIN(exp.ProtocolApplication.RowId) FROM exp.ProtocolApplication " +
+                "\nWHERE exp.ProtocolApplication.RunId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId" +
+                "\nAND exp.ProtocolApplication.CpasType = '" + ExpProtocol.ApplicationType.ExperimentRunOutput + "')");
+        ColumnInfo ret = new ExprColumn(this, alias, sql, Types.INTEGER);
+        ret.setFk(new InputForeignKey(schema, dataOutputs, materialOutputs));
+        ret.setIsUnselectable(true);
+        return ret;
+    }
+
 
     public String urlFlag(boolean flagged)
     {
@@ -329,6 +341,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         materialInputRoles.addAll(ExperimentService.get().getMaterialInputRoles(schema.getContainer()).entrySet());
 
         addColumn(createInputLookupColumn("Input", schema, dataInputRoles, materialInputRoles));
+        addColumn(createOutputLookupColumn("Output", schema, dataInputRoles, materialInputRoles));
         ActionURL urlDetails = new ActionURL(ExperimentController.ShowRunTextAction.class, schema.getContainer());
         setDetailsURL(new DetailsURL(urlDetails, Collections.singletonMap("rowId", "RowId")));
         addDetailsURL(new DetailsURL(urlDetails, Collections.singletonMap("LSID", "LSID")));

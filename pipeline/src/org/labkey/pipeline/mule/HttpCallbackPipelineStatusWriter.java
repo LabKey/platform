@@ -19,9 +19,6 @@ import org.apache.log4j.Logger;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
-import org.labkey.api.view.ViewBackgroundInfo;
-import org.mule.extras.client.MuleClient;
-import org.mule.umo.UMOException;
 
 import java.net.URLEncoder;
 import java.net.URL;
@@ -48,7 +45,15 @@ public class HttpCallbackPipelineStatusWriter implements PipelineStatusFile.Stat
             try
             {
                 String baseServerURL = remoteProps.getBaseServerUrl();
-                String urlString = baseServerURL + "Pipeline-Status/" + job.getContainerId() + "/setJobStatus.view?job=" + job.getJobGUID() + "&status=" + URLEncoder.encode(status, "UTF-8");
+                String urlString = baseServerURL + "Pipeline-Status/" + job.getContainerId() + "/setJobStatus.view?job=" + job.getJobGUID();
+                if (status != null)
+                {
+                    urlString += "&status=" + URLEncoder.encode(status, "UTF-8");
+                }
+                if (statusInfo != null)
+                {
+                    urlString += "&statusInfo=" + URLEncoder.encode(statusInfo, "UTF-8");
+                }
                 if (appProps.getCallbackPassword() != null)
                 {
                     urlString += "&callbackPassword=" + URLEncoder.encode(appProps.getCallbackPassword(), "UTF-8");

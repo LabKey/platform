@@ -89,7 +89,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
 
         // Misconfiguration: the user will never be able to start this pipeline
         if (_initialFileTypes == null || _initialFileTypes.length == 0)
-                throw new IllegalArgumentException("File analysis pipelines require at least on initial file type.");
+                throw new IllegalArgumentException("File analysis pipelines require at least one initial file type.");
 
         // Convert any input extension heirarchy into file types.
         Map<String, List<String>> extHeirarchy = settings.getFileExtHierarchy();

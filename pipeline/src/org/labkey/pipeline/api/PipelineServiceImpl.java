@@ -30,7 +30,12 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.pipeline.mule.EPipelineQueueImpl;
+import org.labkey.pipeline.mule.ResumableDescriptor;
 import org.labkey.pipeline.browse.BrowseViewImpl;
+import org.mule.umo.model.UMOModel;
+import org.mule.umo.UMODescriptor;
+import org.mule.umo.UMOException;
+import org.mule.MuleManager;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -58,6 +63,11 @@ public class PipelineServiceImpl extends PipelineService
 
     private Map<String, PipelineProvider> _mapPipelineProviders = new TreeMap<String, PipelineProvider>();
     private PipelineQueue _queue = null;
+
+    public static PipelineServiceImpl get()
+    {
+        return (PipelineServiceImpl) PipelineService.get();
+    }
 
     public void registerPipelineProvider(PipelineProvider provider, String... aliases)
     {
@@ -409,6 +419,7 @@ public class PipelineServiceImpl extends PipelineService
         ArrayList<String> dbPathsList = new ArrayList<String>(Arrays.asList(tokens));
         return dbPathsList;
     }
+
     private String list2String(List<String> sequenceDbPathsList)
     {
         if(sequenceDbPathsList == null) return null;
@@ -421,4 +432,44 @@ public class PipelineServiceImpl extends PipelineService
         }
         return temp.toString();
     }
+
+    /**
+     * Recheck the status of the jobs that may or may not have been started already
+     */
+    public void refreshLocalJobs()
+    {
+        // Spin through the Mule config to be sure that we get all the different descriptors that
+        // have been registered
+        for (UMOModel model : (Collection<UMOModel>) MuleManager.getInstance().getModels().values())
+        {
+            for (Iterator<String> i = model.getComponentNames(); i.hasNext(); )
+            {
+                String name = i.next();
+                UMODescriptor descriptor = model.getDescriptor(name);
+
+                try
+                {
+                    Class c = descriptor.getImplementationClass();
+                    if (ResumableDescriptor.class.isAssignableFrom(c))
+                    {
+                        ResumableDescriptor resumable = ((Class<ResumableDescriptor>)c).newInstance();
+                        resumable.resume(descriptor);
+                    }
+                }
+                catch (UMOException e)
+                {
+                    _log.error("Failed to get implementation class from descriptor " + descriptor, e);
+                }
+                catch (IllegalAccessException e)
+                {
+                    _log.error("Failed to resume jobs for descriptor " + descriptor, e);
+                }
+                catch (InstantiationException e)
+                {
+                    _log.error("Failed to resume jobs for descriptor " + descriptor, e);
+                }
+            }
+        }
+    }
+
 }

@@ -90,7 +90,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
 
         public boolean isJobComplete(PipelineJob job) throws IOException, SQLException
         {
-            return NetworkDrive.exists(getXarFile(job));
+            return job.getActionSet().getActions().isEmpty() || NetworkDrive.exists(getXarFile(job));
         }
 
         public void configure(XarGeneratorFactorySettings settings)
@@ -275,7 +275,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
 
                 Map<String, ExpProtocol> protocolCache = new HashMap<String, ExpProtocol>();
                 List<String> protocolSequence = new ArrayList<String>();
-                Set<URI> runOutputs = new HashSet<URI>();
+                Map<URI, String> runOutputsWithRoles = new LinkedHashMap<URI, String>();
                 Map<URI, String> runInputsWithRoles = new HashMap<URI, String>();
 
                 // Build up the sequence of steps for this pipeline definition, which gets turned into a protocol
@@ -308,7 +308,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
                     {
                         if (runInputsWithRoles.get(dataFile.getURI()) == null)
                         {
-                            // Don't stomp over the role specified the first time a file was used as an input
+                            // For inputs, don't stomp over the role specified the first time a file was used as an input
                             runInputsWithRoles.put(dataFile.getURI(), dataFile.getRole());
                         }
                     }
@@ -316,7 +316,8 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
                     {
                         if (!dataFile.isTransient())
                         {
-                            runOutputs.add(dataFile.getURI());
+                            // For outputs, want to use the last role that was specified, so always overwrite
+                            runOutputsWithRoles.put(dataFile.getURI(), dataFile.getRole());
                         }
                     }
                 }
@@ -332,7 +333,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
                 }
 
                 XarSource source = new XarGeneratorSource(getJob(), _factory.getXarFile(getJob()));
-                run = insertRun(actionSet.getActions(), source, runOutputs, runInputsWithRoles, parentProtocol);
+                run = insertRun(actionSet.getActions(), source, runOutputsWithRoles, runInputsWithRoles, parentProtocol);
 
                 writeXarToDisk(run);
 
@@ -350,7 +351,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
         getJob().clearActionSet(run);
     }
 
-    private ExpRunImpl insertRun(List<RecordedAction> actions, XarSource source, Set<URI> runOutputs, Map<URI, String> runInputsWithRoles, ExpProtocol parentProtocol)
+    private ExpRunImpl insertRun(List<RecordedAction> actions, XarSource source, Map<URI, String> runOutputsWithRoles, Map<URI, String> runInputsWithRoles, ExpProtocol parentProtocol)
         throws SQLException, PipelineJobException
     {
         ExpRunImpl run = ExperimentServiceImpl.get().createExperimentRun(getJob().getContainer(), getJob().getDescription());
@@ -417,10 +418,11 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
                 ExpData outputData = addData(datas, dd.getURI(), source);
                 if (outputData.getSourceApplication() != null)
                 {
+                    datas.remove(dd.getURI());
+                    datas.remove(outputData.getDataFileURI());
                     outputData.setDataFileUrl(null);
                     outputData.save(getJob().getUser());
 
-                    datas.remove(dd.getURI());
                     outputData = addData(datas, dd.getURI(), source);
                     outputData.setSourceApplication(app);
                     outputData.save(getJob().getUser());
@@ -433,11 +435,16 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
             }
         }
 
-        // Set up the outputs for the run
-        ExpProtocolApplication outputApp = run.addProtocolApplication(getJob().getUser(), expActions.get(expActions.size() - 1), ExpProtocol.ApplicationType.ExperimentRunOutput, "Run outputs");
-        for (URI runInput : runOutputs)
+        if (!runOutputsWithRoles.isEmpty())
         {
-            outputApp.addDataInput(getJob().getUser(), datas.get(runInput), null, null);
+            // Set up the outputs for the run
+            ExpProtocolApplication outputApp = run.addProtocolApplication(getJob().getUser(), expActions.get(expActions.size() - 1), ExpProtocol.ApplicationType.ExperimentRunOutput, "Run outputs");
+            for (Map.Entry<URI, String> entry : runOutputsWithRoles.entrySet())
+            {
+                URI uri = entry.getKey();
+                String role = entry.getValue();
+                outputApp.addDataInput(getJob().getUser(), datas.get(uri), role, null);
+            }
         }
         return run;
     }

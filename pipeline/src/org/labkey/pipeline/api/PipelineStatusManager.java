@@ -20,9 +20,10 @@ import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.pipeline.*;
+import org.labkey.api.util.CaseInsensitiveHashSet;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
+import java.util.*;
 import java.io.IOException;
 
 /**
@@ -288,12 +289,52 @@ public class PipelineStatusManager
         return Table.select(pipeline.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
     }
 
-    public static PipelineStatusFileImpl[] getQueuedStatusFilesForActiveTaskId(String activeTaskId) throws SQLException
+    public static List<PipelineStatusFileImpl> getStatusFilesForLocation(String location, boolean includeJobsOnQueue)
     {
-        SimpleFilter filter = createQueueFilter();
-        filter.addCondition("ActiveTaskId", activeTaskId, CompareType.EQUAL);
+        // NOTE: JobIds end up all uppercase in the database, but they are lowercase in jobs
+        Set<String> ignoreableIds = new CaseInsensitiveHashSet();
+        if (!includeJobsOnQueue)
+        {
+            List<PipelineJob> queuedJobs = PipelineService.get().getPipelineQueue().findJobs(location);
+            for (PipelineJob job : queuedJobs)
+            {
+                ignoreableIds.add(job.getJobGUID());
+            }
+        }
 
-        return Table.select(pipeline.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
+        List<PipelineStatusFileImpl> result = new ArrayList<PipelineStatusFileImpl>();
+        TaskPipelineRegistry registry = PipelineJobService.get();
+        for (TaskFactory taskFactory : registry.getTaskFactories())
+        {
+            if (taskFactory.getExecutionLocation().equals(location))
+            {
+                TaskId id = taskFactory.getId();
+                PipelineStatusFileImpl[] statusFiles = getQueuedStatusFilesForActiveTaskId(id.toString());
+                for (PipelineStatusFileImpl statusFile : statusFiles)
+                {
+                    if (!ignoreableIds.contains(statusFile.getJobId()))
+                    {
+                        result.add(statusFile);
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    public static PipelineStatusFileImpl[] getQueuedStatusFilesForActiveTaskId(String activeTaskId)
+    {
+        try
+        {
+            SimpleFilter filter = createQueueFilter();
+            filter.addCondition("ActiveTaskId", activeTaskId, CompareType.EQUAL);
+
+            return Table.select(pipeline.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     public static PipelineStatusFile[] getQueuedStatusFilesForContainer(Container c) throws SQLException

@@ -250,10 +250,6 @@ public class QueryServiceImpl extends QueryService
             {
                 ret.put(field, column);
             }
-            else
-            {
-                _log.warn("Unable to resolve column '" + field.getDisplayString() + "'");
-            }
         }
         return ret;
     }

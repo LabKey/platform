@@ -84,7 +84,7 @@ public class GlobusListener implements GramJobListener
 
             if (!newStatus.isActive())
             {
-                // Attempt to clean-up Globus. (not yet working)               
+                // Attempt to clean-up Globus               
                 try
                 {
                     try
