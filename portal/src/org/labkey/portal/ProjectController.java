@@ -28,7 +28,7 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.LookAndFeelAppProps;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.*;
 import org.labkey.api.util.Search.SearchResultsView;
 import org.labkey.api.view.*;
@@ -129,7 +129,7 @@ public class ProjectController extends SpringActionController
             }
             else if (c.equals(ContainerManager.getHomeContainer()))
             {
-                title = LookAndFeelAppProps.getInstance(c).getSystemShortName();
+                title = LookAndFeelProperties.getInstance(c).getShortName();
                 appendPath = false;
             }
             else

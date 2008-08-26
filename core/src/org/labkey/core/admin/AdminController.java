@@ -226,7 +226,19 @@ public class AdminController extends SpringActionController
 
         public ActionURL getLookAndFeelSettingsURL(Container c)
         {
-            return new ActionURL(LookAndFeelSettingsAction.class, LookAndFeelAppProps.getSettingsContainer(c));
+            return new ActionURL(LookAndFeelSettingsAction.class, LookAndFeelProperties.getSettingsContainer(c));
+        }
+
+        public ActionURL getLookAndFeelResourcesURL(Container c)
+        {
+            ActionURL url = getLookAndFeelSettingsURL(c);
+            url.addParameter("tabId", "resources");
+            return url;
+        }
+
+        public ActionURL getResetLookAndFeelPropertiesURL(Container c)
+        {
+            return new ActionURL(ResetPropertiesAction.class, c);
         }
 
         public ActionURL getMaintenanceURL()
@@ -1038,66 +1050,22 @@ public class AdminController extends SpringActionController
 
         public ModelAndView getView(LookAndFeelSettingsForm form, boolean reshow, BindException errors) throws Exception
         {
-            Container c = getContainer();
-
-            if (c.isRoot() || c.isProject())
-            {
-                LookAndFeelBean bean = new LookAndFeelBean(c, form.getThemeName());
-                return new JspView<LookAndFeelBean>("/org/labkey/core/admin/lookAndFeelSettings.jsp", bean, errors);
-            }
-            else
-            {
-                throw new NotFoundException("Can only be called for root or project.");
-            }
+            return new LookAndFeelSettingsTabStrip(form, errors);
         }
 
         public boolean handlePost(LookAndFeelSettingsForm form, BindException errors) throws Exception
         {
-            Container c = getViewContext().getContainer();
-            WriteableLookAndFeelAppProps props = LookAndFeelAppProps.getWriteableInstance(c);
-            Map<String, MultipartFile> fileMap = getFileMap();
+            Container c = getContainer();
 
-            MultipartFile logoFile = fileMap.get("logoImage");
-            if (logoFile != null && !logoFile.isEmpty())
-            {
-                try
-                {
-                    handleLogoFile(logoFile, c);
-                }
-                catch (Exception e)
-                {
-                    errors.reject(ERROR_MSG, e.getMessage());
-                    return false;
-                }
-            }
+            if (form.isResourcesTab())
+                return handleResourcesPost(c, errors);
+            else
+                return handlePropertiesPost(c, form, errors);
+        }
 
-            MultipartFile iconFile = fileMap.get("iconImage");
-            if (logoFile != null && !iconFile.isEmpty())
-            {
-                try
-                {
-                    handleIconFile(iconFile, c);
-                }
-                catch (Exception e)
-                {
-                    errors.reject(ERROR_MSG, e.getMessage());
-                    return false;
-                }
-            }
-
-            MultipartFile customStylesheetFile = fileMap.get("customStylesheet");
-            if (customStylesheetFile != null && !customStylesheetFile.isEmpty())
-            {
-                try
-                {
-                    handleCustomStylesheetFile(customStylesheetFile, c);
-                }
-                catch (Exception e)
-                {
-                    errors.reject(ERROR_MSG, e.getMessage());
-                    return false;
-                }
-            }
+        public boolean handlePropertiesPost(Container c, LookAndFeelSettingsForm form, BindException errors) throws Exception
+        {
+            WriteableLookAndFeelProperties props = LookAndFeelProperties.getWriteableInstance(c);
 
             try
             {
@@ -1161,7 +1129,62 @@ public class AdminController extends SpringActionController
             //write an audit log event
             props.writeAuditLogEvent(getViewContext().getUser(), props.getOldProperties());
 
-            // Bump the look & feel revision so browsers retrieve the new logos, stylesheets, etc.
+            // Bump the look & feel revision so browsers retrieve the new theme stylesheet
+            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
+
+            return true;
+        }
+
+        public boolean handleResourcesPost(Container c, BindException errors) throws Exception
+        {
+            Map<String, MultipartFile> fileMap = getFileMap();
+
+            MultipartFile logoFile = fileMap.get("logoImage");
+            if (logoFile != null && !logoFile.isEmpty())
+            {
+                try
+                {
+                    handleLogoFile(logoFile, c);
+                }
+                catch (Exception e)
+                {
+                    errors.reject(ERROR_MSG, e.getMessage());
+                    return false;
+                }
+            }
+
+            MultipartFile iconFile = fileMap.get("iconImage");
+            if (logoFile != null && !iconFile.isEmpty())
+            {
+                try
+                {
+                    handleIconFile(iconFile, c);
+                }
+                catch (Exception e)
+                {
+                    errors.reject(ERROR_MSG, e.getMessage());
+                    return false;
+                }
+            }
+
+            MultipartFile customStylesheetFile = fileMap.get("customStylesheet");
+            if (customStylesheetFile != null && !customStylesheetFile.isEmpty())
+            {
+                try
+                {
+                    handleCustomStylesheetFile(customStylesheetFile, c);
+                }
+                catch (Exception e)
+                {
+                    errors.reject(ERROR_MSG, e.getMessage());
+                    return false;
+                }
+            }
+
+            // TODO: write an audit log event
+            //props.writeAuditLogEvent(getViewContext().getUser(), props.getOldProperties());
+
+            // Bump the look & feel revision so browsers retrieve the new logo, custom stylesheet, etc.
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();
 
             return true;
@@ -1169,7 +1192,10 @@ public class AdminController extends SpringActionController
 
         public ActionURL getSuccessURL(LookAndFeelSettingsForm form)
         {
-            return new ActionURL(this.getClass(), getContainer());
+            if (form.isResourcesTab())
+                return new AdminUrlsImpl().getLookAndFeelResourcesURL(getContainer());
+            else
+                return new AdminUrlsImpl().getLookAndFeelSettingsURL(getContainer());
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1183,6 +1209,97 @@ public class AdminController extends SpringActionController
             return root;
         }
     }
+
+
+    private static class LookAndFeelSettingsTabStrip extends TabStripView
+    {
+        private LookAndFeelSettingsForm _form;
+        private BindException _errors;
+
+        private LookAndFeelSettingsTabStrip(LookAndFeelSettingsForm form, BindException errors)
+        {
+            _form = form;
+            _errors = errors;
+        }
+
+        protected List<TabInfo> getTabList()
+        {
+            ActionURL url = new AdminUrlsImpl().getLookAndFeelSettingsURL(getViewContext().getContainer());
+            List<TabInfo> tabs = new ArrayList<TabInfo>(2);
+
+            tabs.add(new TabInfo("Properties", "properties", url));
+            tabs.add(new TabInfo("Resources", "resources", url));
+
+            return tabs;
+        }
+
+        protected HttpView getTabView(String tabId) throws Exception
+        {
+            Container c = getViewContext().getContainer();
+
+            if (c.isRoot() || c.isProject())
+            {
+                if ("resources".equals(tabId))
+                {
+                    LookAndFeelResourcesBean bean = new LookAndFeelResourcesBean(c);
+                    return new JspView<LookAndFeelResourcesBean>("/org/labkey/core/admin/lookAndFeelImages.jsp", bean, _errors);
+                }
+                else
+                {
+                    LookAndFeelPropertiesBean bean = new LookAndFeelPropertiesBean(c, _form.getThemeName());
+                    return new JspView<LookAndFeelPropertiesBean>("/org/labkey/core/admin/lookAndFeelSettings.jsp", bean, _errors);
+                }
+            }
+            else
+            {
+                throw new NotFoundException("Can only be called for root or project.");
+            }
+        }
+    }
+
+
+    public static class LookAndFeelPropertiesBean
+    {
+        public String helpLink = "<a href=\"" + (new HelpTopic("configAdmin", HelpTopic.Area.SERVER)).getHelpTopicLink() + "\" target=\"labkey\">more info...</a>";
+        public List<WebTheme> themes = WebTheme.getWebThemes();
+        public List<ThemeFont> themeFonts = ThemeFont.getThemeFonts();
+        public ThemeFont currentThemeFont;
+        public WebTheme currentTheme;
+        public Attachment customLogo;
+        public Attachment customFavIcon;
+        public Attachment customStylesheet;
+        public WebTheme newTheme = null;
+
+        private LookAndFeelPropertiesBean(Container c, String newThemeName) throws SQLException
+        {
+            customLogo = AttachmentCache.lookupLogoAttachment(c);
+            customFavIcon = AttachmentCache.lookupFavIconAttachment(new ContainerParent(c));
+            currentTheme = WebTheme.getTheme(c);
+            currentThemeFont = ThemeFont.getThemeFont(c);
+            customStylesheet = AttachmentCache.lookupCustomStylesheetAttachment(new ContainerParent(c));
+
+            //if new color scheme defined, get new theme name from url
+            if (newThemeName != null)
+                newTheme = WebTheme.getTheme(newThemeName);
+        }
+    }
+
+
+    public static class LookAndFeelResourcesBean
+    {
+        public String helpLink = "<a href=\"" + (new HelpTopic("configAdmin", HelpTopic.Area.SERVER)).getHelpTopicLink() + "\" target=\"labkey\">more info...</a>";
+        public Attachment customLogo;
+        public Attachment customFavIcon;
+        public Attachment customStylesheet;
+
+        private LookAndFeelResourcesBean(Container c) throws SQLException
+        {
+            customLogo = AttachmentCache.lookupLogoAttachment(c);
+            customFavIcon = AttachmentCache.lookupFavIconAttachment(new ContainerParent(c));
+            customStylesheet = AttachmentCache.lookupCustomStylesheetAttachment(new ContainerParent(c));
+        }
+    }
+
 
     @RequiresPermission(ACL.PERM_ADMIN)
     public class ResetLogoAction extends SimpleRedirectAction
@@ -1198,6 +1315,30 @@ public class AdminController extends SpringActionController
         public ActionURL getRedirectURL(Object o) throws Exception
         {
             deleteExistingLogo(getContainer());
+            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
+            return new AdminUrlsImpl().getLookAndFeelResourcesURL(getContainer());
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class ResetPropertiesAction extends SimpleRedirectAction
+    {
+        public void checkPermissions() throws TermsOfUseException, UnauthorizedException
+        {
+            super.checkPermissions();
+
+            if (getContainer().isRoot() && !getUser().isAdministrator())
+                throw new UnauthorizedException();
+        }
+
+        public ActionURL getRedirectURL(Object o) throws Exception
+        {
+            WriteableLookAndFeelProperties props = LookAndFeelProperties.getWriteableInstance(getContainer());
+            props.clear();
+            props.save();
+            // TODO: Audit log?
+
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();
             return new AdminUrlsImpl().getLookAndFeelSettingsURL(getContainer());
         }
@@ -1235,7 +1376,7 @@ public class AdminController extends SpringActionController
             deleteExistingFavicon(getContainer());
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();
 
-            return new AdminUrlsImpl().getLookAndFeelSettingsURL(getContainer());
+            return new AdminUrlsImpl().getLookAndFeelResourcesURL(getContainer());
         }
     }
 
@@ -1263,7 +1404,7 @@ public class AdminController extends SpringActionController
         {
             deleteExistingCustomStylesheet(getContainer());
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();
-            return new AdminUrlsImpl().getLookAndFeelSettingsURL(getContainer());
+            return new AdminUrlsImpl().getLookAndFeelResourcesURL(getContainer());
         }
     }
 
@@ -1476,36 +1617,8 @@ public class AdminController extends SpringActionController
     }
 
 
-    public static class LookAndFeelBean
-    {
-        public String helpLink = "<a href=\"" + (new HelpTopic("configAdmin", HelpTopic.Area.SERVER)).getHelpTopicLink() + "\" target=\"labkey\">more info...</a>";
-        public List<WebTheme> themes = WebTheme.getWebThemes();
-        public List<ThemeFont> themeFonts = ThemeFont.getThemeFonts();
-        public ThemeFont currentThemeFont;
-        public WebTheme currentTheme;
-        public Attachment customLogo;
-        public Attachment customFavIcon;
-        public Attachment customStylesheet;
-        public WebTheme newTheme = null;
-
-        private LookAndFeelBean(Container c, String newThemeName) throws SQLException
-        {
-            customLogo = AttachmentCache.lookupLogoAttachment(c);
-            customFavIcon = AttachmentCache.lookupFavIconAttachment(new ContainerParent(c));
-            currentTheme = WebTheme.getTheme(c);
-            currentThemeFont = ThemeFont.getThemeFont(c);
-            customStylesheet = AttachmentCache.lookupCustomStylesheetAttachment(new ContainerParent(c));
-
-            //if new color scheme defined, get new theme name from url
-            if (newThemeName != null)
-                newTheme = WebTheme.getTheme(newThemeName);
-        }
-    }
-
-
     public static class SiteSettingsBean
     {
-        // TODO: Different help link?
         public String helpLink = "<a href=\"" + (new HelpTopic("configAdmin", HelpTopic.Area.SERVER)).getHelpTopicLink() + "\" target=\"labkey\">more info...</a>";
         public String ftpHelpLink = "<a href=\"" + (new HelpTopic("configureFtp", HelpTopic.Area.SERVER)).getHelpTopicLink() + "\" target=\"labkey\">help configuring ftp...</a>";
         public boolean upgradeInProgress;
@@ -1531,6 +1644,7 @@ public class AdminController extends SpringActionController
         private String _companyName;
         private String _systemEmailAddress;
         private String _reportAProblemPath;
+        private String _tabId;
 
         public String getSystemDescription()
         {
@@ -1630,6 +1744,21 @@ public class AdminController extends SpringActionController
         public void setSystemEmailAddress(String systemEmailAddress)
         {
             _systemEmailAddress = systemEmailAddress;
+        }
+
+        public String getTabId()
+        {
+            return _tabId;
+        }
+
+        public void setTabId(String tabId)
+        {
+            _tabId = tabId;
+        }
+
+        public boolean isResourcesTab()
+        {
+            return "resources".equals(getTabId());
         }
     }
 
@@ -2933,7 +3062,7 @@ public class AdminController extends SpringActionController
 
             _successURL = new AdminUrlsImpl().getLookAndFeelSettingsURL(getContainer());
 
-            if (null != getViewContext().getRequest().getParameter("Delete.x"))
+            if (null != getViewContext().getRequest().getParameter("Delete"))
             {
                 // delete the web theme
                 WebTheme.deleteWebTheme(themeName);

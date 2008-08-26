@@ -27,7 +27,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.*;
-import org.labkey.api.settings.LookAndFeelAppProps;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
@@ -411,7 +411,7 @@ public class DavController extends SpringActionController
                 }
                 else
                 {
-                    getResponse().setRealm(LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getSystemDescription());
+                    getResponse().setRealm(LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getDescription());
                     getResponse().sendError(WebdavStatus.SC_UNAUTHORIZED, resource.getPath());
                 }
             }

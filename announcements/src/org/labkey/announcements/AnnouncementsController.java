@@ -35,7 +35,7 @@ import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityManager.PermissionSet;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.LookAndFeelAppProps;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.*;
 import org.labkey.api.util.MailHelper.ViewMessage;
 import org.labkey.api.view.*;
@@ -1771,7 +1771,7 @@ public class AnnouncementsController extends SpringActionController
 
     private ViewMessage getMessage(Container c, Settings settings, Permissions perm, Announcement parent, Announcement a, boolean isResponse, String removeUrl, WikiRendererType currentRendererType, Reason reason) throws Exception
     {
-        ViewMessage m = MailHelper.createMultipartViewMessage(LookAndFeelAppProps.getInstance(c).getSystemEmailAddress(), null);
+        ViewMessage m = MailHelper.createMultipartViewMessage(LookAndFeelProperties.getInstance(c).getSystemEmailAddress(), null);
         m.setSubject(StringUtils.trimToEmpty(isResponse ? "RE: " + parent.getTitle() : a.getTitle()));
         HttpServletRequest request = AppProps.getInstance().createMockRequest();
 

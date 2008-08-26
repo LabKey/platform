@@ -31,7 +31,7 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.LookAndFeelAppProps;
+import org.labkey.api.settings.LookAndFeelProperties;
 
 import javax.mail.MessagingException;
 import javax.servlet.ServletException;
@@ -157,7 +157,7 @@ public class DailyDigest
 
     private static MailHelper.ViewMessage getDailyDigestMessage(Container c, Settings settings, Permissions perm, List<Announcement> announcements, User user) throws Exception
     {
-        MailHelper.ViewMessage m = MailHelper.createMultipartViewMessage(LookAndFeelAppProps.getInstance(c).getSystemEmailAddress(), user.getEmail());
+        MailHelper.ViewMessage m = MailHelper.createMultipartViewMessage(LookAndFeelProperties.getInstance(c).getSystemEmailAddress(), user.getEmail());
         m.setSubject("New posts to " + c.getPath());
         HttpServletRequest request = AppProps.getInstance().createMockRequest();
 

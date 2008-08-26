@@ -26,10 +26,9 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.WriteableAppProps;
-import org.labkey.api.settings.WriteableLookAndFeelAppProps;
-import org.labkey.api.settings.LookAndFeelAppProps;
+import org.labkey.api.settings.WriteableLookAndFeelProperties;
+import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.settings.*;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
@@ -745,7 +744,7 @@ public class LoginController extends SpringActionController
             }
             catch (SecurityManager.UserManagementException e)
             {
-                errors.reject("password", "Resetting password failed.  Contact the " + LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getSystemShortName() + " team.");
+                errors.reject("password", "Resetting password failed.  Contact the " + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getShortName() + " team.");
                 return false;
             }
 
@@ -756,7 +755,7 @@ public class LoginController extends SpringActionController
             }
             catch (SecurityManager.UserManagementException e)
             {
-                errors.reject("password", "Resetting verification failed.  Contact the " + LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getSystemShortName() + " team.");
+                errors.reject("password", "Resetting verification failed.  Contact the " + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getShortName() + " team.");
                 return false;
             }
 
@@ -897,7 +896,7 @@ public class LoginController extends SpringActionController
                 try
                 {
                     Container c = getContainer();
-                    LookAndFeelAppProps laf = LookAndFeelAppProps.getInstance(c);
+                    LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
                     final SecurityMessage message = SecurityManager.getResetMessage(false);
                     message.setHideContact(true);
                     ActionURL verificationURL = SecurityManager.createVerificationURL(c, _email.getEmailAddress(), verification, null);
@@ -1000,7 +999,7 @@ public class LoginController extends SpringActionController
 
                 //set default "from" address for system emails to first registered user
                 String userEmail = newUserBean.getEmail();
-                WriteableLookAndFeelAppProps laf = WriteableLookAndFeelAppProps.getWriteableInstance(ContainerManager.getRoot());
+                WriteableLookAndFeelProperties laf = WriteableLookAndFeelProperties.getWriteableInstance(ContainerManager.getRoot());
                 laf.setSystemEmailAddresses(userEmail);
                 laf.save();
 

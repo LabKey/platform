@@ -30,8 +30,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.*;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.LookAndFeelAppProps;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.common.util.Pair;
 import org.labkey.study.model.*;
 import org.labkey.study.requirements.RequirementProvider;
@@ -728,7 +727,7 @@ public class SampleManager
         public static RequestNotificationSettings getDefaultSettings(Container c)
         {
             RequestNotificationSettings defaults = new RequestNotificationSettings();
-            defaults.setReplyTo(LookAndFeelAppProps.getInstance(c).getSystemEmailAddress());
+            defaults.setReplyTo(LookAndFeelProperties.getInstance(c).getSystemEmailAddress());
             defaults.setCc("");
             defaults.setNewRequestNotify("");
             defaults.setSubjectSuffix("Specimen Request Notification");

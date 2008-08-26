@@ -42,6 +42,17 @@ public class IssueSearch implements Searchable
     private static final String SEARCH_RESULT_TYPE = "labkey/issue";
     private static final String SEARCH_RESULT_TYPE_DESCR = "Issues";
 
+    private static final Searchable _instance = new IssueSearch();
+
+    private IssueSearch()
+    {
+    }
+
+    public static Searchable getInstance()
+    {
+        return _instance;
+    }
+
     public void search(SearchTermParser parser, Set<Container> containers, List<SearchHit> hits, User user)
     {
         SearchTermProvider issueTermProvider = new IssueSearchTermProvider(parser);

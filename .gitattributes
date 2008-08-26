@@ -351,6 +351,7 @@ core/src/org/labkey/core/admin/customizeFolder.jsp -text
 core/src/org/labkey/core/admin/customizeSite.jsp -text
 core/src/org/labkey/core/admin/deleteFolder.jsp -text
 core/src/org/labkey/core/admin/folderAliases.jsp -text
+core/src/org/labkey/core/admin/lookAndFeelImages.jsp -text
 core/src/org/labkey/core/admin/lookAndFeelSettings.jsp -text
 core/src/org/labkey/core/admin/manageFolders.jsp -text
 core/src/org/labkey/core/admin/memTracker.jsp -text

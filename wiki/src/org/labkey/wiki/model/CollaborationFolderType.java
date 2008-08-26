@@ -17,8 +17,7 @@
 package org.labkey.wiki.model;
 
 import org.labkey.api.module.DefaultFolderType;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.LookAndFeelAppProps;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.data.ContainerManager;
@@ -52,7 +51,7 @@ public class CollaborationFolderType extends DefaultFolderType
     {
        Container c = ctx.getContainer();
         if (c.equals(ContainerManager.getHomeContainer()))
-            return LookAndFeelAppProps.getInstance(c).getSystemShortName();
+            return LookAndFeelProperties.getInstance(c).getShortName();
         else
             return c.getName();
     }

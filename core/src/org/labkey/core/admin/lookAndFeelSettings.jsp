@@ -16,7 +16,7 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container"%>
-<%@ page import="org.labkey.api.settings.LookAndFeelAppProps" %>
+<%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.util.FolderDisplayMode" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -28,9 +28,9 @@
 
 <%=formatMissedErrors("form")%>
 <%
-    AdminController.LookAndFeelBean bean = ((JspView<AdminController.LookAndFeelBean>)HttpView.currentView()).getModelBean();
+    AdminController.LookAndFeelPropertiesBean bean = ((JspView<AdminController.LookAndFeelPropertiesBean>)HttpView.currentView()).getModelBean();
     Container c = getViewContext().getContainer();
-    LookAndFeelAppProps laf = LookAndFeelAppProps.getInstance(c);
+    LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
 %>
 
 <form name="preferences" enctype="multipart/form-data" method="post">
@@ -46,11 +46,11 @@
 <tr><td colspan=3 class=labkey-title-area-line><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
 <tr>
     <td class="labkey-form-label">Header description (appears in every page header)</td>
-    <td><input type="text" name="systemDescription" size="50" value="<%= h(laf.getSystemDescription()) %>"></td>
+    <td><input type="text" name="systemDescription" size="50" value="<%= h(laf.getDescription()) %>"></td>
 </tr>
 <tr>
     <td class="labkey-form-label">Header short name (appears in every page header and in emails)</td>
-    <td><input type="text" name="systemShortName" size="50" value="<%= h(laf.getSystemShortName()) %>"></td>
+    <td><input type="text" name="systemShortName" size="50" value="<%= h(laf.getShortName()) %>"></td>
 </tr>
 <tr>
     <td class="labkey-form-label">Web theme (color scheme)</td>
@@ -74,7 +74,7 @@
         if (c.isRoot())
         { %>
 
-        [<a href="<%=AdminController.getDefineWebThemesURL(false)%>">Define Web Themes</a>]<%
+        [<a href="<%=AdminController.getDefineWebThemesURL(false)%>">define web themes</a>]<%
 
         }
         %>
@@ -118,7 +118,7 @@
 </tr>
 
 <tr>
-    <td class="labkey-form-label">Logo link (specifies page that logo links to)</td>
+    <td class="labkey-form-label">Logo link (specifies page that header logo links to)</td>
     <td><input type="text" name="logoHref" size="50" value="<%= h(laf.getLogoHref()) %>"></td>
 </tr>
 <tr>
@@ -146,58 +146,10 @@
 </tr>
 
 <tr>
-    <td><%=PageFlowUtil.generateSubmitButton("Save Settings")%></td>
+    <td><%=PageFlowUtil.generateSubmitButton("Save Properties")%>&nbsp;<%=PageFlowUtil.generateButton("Reset All Properties", new AdminController.AdminUrlsImpl().getResetLookAndFeelPropertiesURL(c), "return confirm('Are you sure you want to clear all look & feel properties?');")%></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
-</tr>
-
-<tr>
-    <td class="labkey-form-label">Header logo (appears in every page header; 147 x 56 pixels)</td>
-    <td><input type="file" name="logoImage" size="50"></td>
-</tr>
-<tr>
-    <td></td>
-    <td>
-        <% if (null != bean.customLogo)
-        { %>
-            Currently using a custom logo. [<a href="resetLogo.view">Reset logo to default</a>]
-        <% } else { %>
-            Currently using the default logo.
-        <% } %>
-    </td>
-</tr>
-
-<tr>
-    <td class="labkey-form-label">Favorite icon (displayed in user's favorites or bookmarks, .ico file only)</td>
-    <td><input type="file" name="iconImage" size="50"></td>
-</tr>
-<tr>
-    <td></td>
-    <td>
-        <% if (null != bean.customFavIcon)
-        { %>
-            Currently using a custom favorite icon. [<a href="resetFavicon.view">Reset favorite logo to default</a>]
-        <% } else { %>
-            Currently using the default favorite icon.
-        <% } %>
-    </td>
-</tr>
-
-<tr>
-    <td class="labkey-form-label">Custom stylesheet</td>
-    <td><input type="file" name="customStylesheet" size="50"></td>
-</tr>
-<tr>
-    <td></td>
-    <td>
-        <% if (null != bean.customStylesheet)
-        { %>
-            Currently using a custom stylesheet. [<a href="deleteCustomStylesheet.view">Delete custom stylesheet</a>]
-        <% } else { %>
-            No custom stylesheet.
-        <% } %>
-    </td>
 </tr>
 
 </table>

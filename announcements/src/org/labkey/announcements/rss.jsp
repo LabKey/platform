@@ -16,20 +16,20 @@
  */
 %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.RssView.RssBean" %>
-<%@ page import="org.labkey.api.settings.LookAndFeelAppProps" %>
+<%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<RssBean> me = (HttpView<RssBean>) HttpView.currentView();
     RssBean bean = me.getModelBean();
-    LookAndFeelAppProps laf = LookAndFeelAppProps.getInstance(getViewContext().getContainer());
+    LookAndFeelProperties laf = LookAndFeelProperties.getInstance(getViewContext().getContainer());
 %>
 <rss version="2.0">
 <channel>
-    <title><%=h(laf.getSystemShortName())%>: <%=h(laf.getSystemDescription())%></title>
+    <title><%=h(laf.getShortName())%>: <%=h(laf.getDescription())%></title>
     <link><%=h(ActionURL.getBaseServerURL())%></link>
-    <description><%=h(laf.getSystemShortName())%>: <%=h(laf.getSystemDescription())%></description>
+    <description><%=h(laf.getShortName())%>: <%=h(laf.getDescription())%></description>
 <%
     for (org.labkey.announcements.model.Announcement ann : bean.announcements)
     {%>

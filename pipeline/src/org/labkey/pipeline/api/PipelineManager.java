@@ -22,7 +22,7 @@ import org.labkey.api.pipeline.GlobusKeyPair;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.LookAndFeelAppProps;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
@@ -399,7 +399,7 @@ public class PipelineManager
 
                 m.setSubject(_template.renderSubject(_c));
 
-                m.addFrom(new Address[]{new InternetAddress(LookAndFeelAppProps.getInstance(_c).getSystemEmailAddress())});
+                m.addFrom(new Address[]{new InternetAddress(LookAndFeelProperties.getInstance(_c).getSystemEmailAddress())});
                 m.addRecipients(Message.RecipientType.TO, MailHelper.createAddressArray(_recipients));
 
                 return m;
@@ -447,7 +447,7 @@ public class PipelineManager
                 m.setBodyContent(body, "text/html");
                 m.setSubject(_template.renderSubject(_c));
 
-                m.addFrom(new Address[]{new InternetAddress(LookAndFeelAppProps.getInstance(_c).getSystemEmailAddress())});
+                m.addFrom(new Address[]{new InternetAddress(LookAndFeelProperties.getInstance(_c).getSystemEmailAddress())});
                 m.addRecipients(Message.RecipientType.TO, MailHelper.createAddressArray(_recipients));
 
                 return m;

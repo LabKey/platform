@@ -89,8 +89,6 @@ public class IssuesModule extends DefaultModule implements ContainerManager.Cont
         }
     }
 
-
-
     @Override
     public void startup(ModuleContext moduleContext)
     {
@@ -99,7 +97,7 @@ public class IssuesModule extends DefaultModule implements ContainerManager.Cont
         SecurityManager.addGroupListener(this);
         UserManager.addUserListener(this);
 
-        Search.register(new IssueSearch());
+        Search.register(IssueSearch.getInstance());
     }
 
     public void containerCreated(Container c)

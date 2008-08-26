@@ -33,7 +33,7 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.LookAndFeelAppProps;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.PageFlowUtil.Content;
 import org.labkey.api.util.PageFlowUtil.NoContent;
@@ -83,7 +83,7 @@ public class CoreController extends SpringActionController
         public ActionURL getThemeStylesheetURL(Container c)
         {
             Container project = c.getProject();
-            LookAndFeelAppProps laf = LookAndFeelAppProps.getInstance(project);
+            LookAndFeelProperties laf = LookAndFeelProperties.getInstance(project);
 
             if (laf.hasProperties())
                 return getRevisionURL(ThemeStylesheetAction.class, project);
@@ -98,7 +98,7 @@ public class CoreController extends SpringActionController
 
         public ActionURL getCustomStylesheetURL(Container c)
         {
-            Container settingsContainer = LookAndFeelAppProps.getSettingsContainer(c);
+            Container settingsContainer = LookAndFeelProperties.getSettingsContainer(c);
             Content css;
             try
             {
@@ -139,7 +139,7 @@ public class CoreController extends SpringActionController
 
             response.setDateHeader("Expires", System.currentTimeMillis() + MILLIS_IN_DAY * 5);
             response.setHeader("Cache-Control", "private");
-            response.setHeader("Pragma", null);
+            response.setHeader("Pragma", "cache");
             response.setDateHeader("Last-Modified", content.modified);
             if (StringUtils.trimToEmpty(request.getHeader("Accept-Encoding")).contains("gzip"))
             {

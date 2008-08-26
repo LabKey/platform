@@ -31,7 +31,7 @@ import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.*;
 import org.labkey.api.security.*;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.LookAndFeelAppProps;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
@@ -1008,7 +1008,7 @@ public class IssuesController extends SpringActionController
                 Issue.Comment lastComment = issue.getLastComment();
                 String messageId = "<" + issue.getEntityId() + "." + lastComment.getCommentId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
                 String references = messageId + " <" + issue.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
-                MailHelper.ViewMessage m = MailHelper.createMessage(LookAndFeelAppProps.getInstance(getContainer()).getSystemEmailAddress(), to);
+                MailHelper.ViewMessage m = MailHelper.createMessage(LookAndFeelProperties.getInstance(getContainer()).getSystemEmailAddress(), to);
                 HttpServletRequest request = AppProps.getInstance().createMockRequest();  // Use base server url for root of links in email
                 if (m.getAllRecipients().length > 0)
                 {
@@ -1351,7 +1351,7 @@ public class IssuesController extends SpringActionController
 
             getPageConfig().setHelpTopic(new HelpTopic("search", HelpTopic.Area.DEFAULT));
 
-            HttpView results = new Search.SearchResultsView(c, Collections.singletonList((Search.Searchable)new IssueSearch()), searchTerm, new ActionURL("issues", "search", c), getUser(), false, false);
+            HttpView results = new Search.SearchResultsView(c, Collections.singletonList(IssueSearch.getInstance()), searchTerm, new ActionURL("issues", "search", c), getUser(), false, false);
             return results;
         }
 
