@@ -29,7 +29,6 @@ import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Search;
-import org.labkey.api.util.SearchHit;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
@@ -50,14 +49,11 @@ import java.util.*;
  * <p/>
  * TODO: merge announcement & wiki into one module?
  */
-public class AnnouncementModule extends DefaultModule implements Search.Searchable, ContainerManager.ContainerListener, UserManager.UserListener, SecurityManager.GroupListener
+public class AnnouncementModule extends DefaultModule implements ContainerManager.ContainerListener, UserManager.UserListener, SecurityManager.GroupListener
 {
     public static final String NAME = "Announcements";
 
     public static final String WEB_PART_NAME = "Messages";
-    public static final String SEARCH_DOMAIN = "messages";
-    public static final String SEARCH_RESULT_TYPE = "labkey/message";
-    public static final String SEARCH_RESULT_TYPE_DESCR = "Messages";
 
     private static Logger _log = Logger.getLogger(AnnouncementModule.class);
 
@@ -118,7 +114,7 @@ public class AnnouncementModule extends DefaultModule implements Search.Searchab
     public void startup(ModuleContext moduleContext)
     {
         super.startup(moduleContext);
-        Search.register(this);
+        Search.register(new MessageSearch());
         DiscussionService.register(new DiscussionServiceImpl());
 
         ContainerManager.addContainerListener(this);
@@ -239,22 +235,6 @@ public class AnnouncementModule extends DefaultModule implements Search.Searchab
             }
         }
     }
-
-    public void search(Search.SearchTermParser parser, Set<Container> containers, List<SearchHit> hits)
-    {
-        AnnouncementManager.search(parser, containers, hits);
-    }
-
-    public String getSearchResultNamePlural()
-    {
-        return SEARCH_RESULT_TYPE_DESCR;
-    }
-
-    public String getDomainName()
-    {
-        return SEARCH_DOMAIN;
-    }
-
 
     @Override
     public Set<Class<? extends TestCase>> getJUnitTests()

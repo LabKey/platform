@@ -28,6 +28,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.issue.model.IssueManager;
+import org.labkey.issue.model.IssueSearch;
 import org.labkey.issue.query.IssuesQuerySchema;
 
 import javax.servlet.http.HttpServletResponse;
@@ -41,14 +42,11 @@ import java.util.*;
  * Date: Jul 18, 2005
  * Time: 3:48:21 PM
  */
-public class IssuesModule extends DefaultModule implements ContainerManager.ContainerListener, SecurityManager.GroupListener, Search.Searchable, UserManager.UserListener
+public class IssuesModule extends DefaultModule implements ContainerManager.ContainerListener, SecurityManager.GroupListener, UserManager.UserListener
 {
     private static final Logger _log = Logger.getLogger(IssuesModule.class);
 
     public static final String NAME = "Issues";
-    public static final String SEARCH_DOMAIN = "issues";
-    public static final String SEARCH_RESULT_TYPE = "labkey/issue";
-    public static final String SEARCH_RESULT_TYPE_DESCR = "Issues";
 
     public IssuesModule()
     {
@@ -101,7 +99,7 @@ public class IssuesModule extends DefaultModule implements ContainerManager.Cont
         SecurityManager.addGroupListener(this);
         UserManager.addUserListener(this);
 
-        Search.register(this);
+        Search.register(new IssueSearch());
     }
 
     public void containerCreated(Container c)
@@ -156,23 +154,6 @@ public class IssuesModule extends DefaultModule implements ContainerManager.Cont
         url.addParameter(".lastFilter", "true");
         return url;
     }
-
-    public void search(Search.SearchTermParser parser, Set<Container> containers, List<SearchHit> hits)
-    {
-        IssueManager.search(parser, containers, hits);
-    }
-
-
-    public String getSearchResultNamePlural()
-    {
-        return SEARCH_RESULT_TYPE_DESCR;
-    }
-
-    public String getDomainName()
-    {
-        return SEARCH_DOMAIN;
-    }
-
 
     public Set<Class<? extends TestCase>> getJUnitTests()
     {

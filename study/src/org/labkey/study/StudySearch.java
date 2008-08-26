@@ -47,7 +47,7 @@ public class StudySearch implements Search.Searchable
     private static final String SEARCH_DOMAIN = "study";
     private static final String SEARCH_HIT_TYPE = "labkey/study";
 
-    public void search(SearchTermParser parser, Set<Container> containers, List<SearchHit> hits)
+    public void search(SearchTermParser parser, Set<Container> containers, List<SearchHit> hits, User user)
     {
         List<Study> studies = new ArrayList<Study>();
         for (Container c : containers)
@@ -73,7 +73,7 @@ public class StudySearch implements Search.Searchable
                     break;
                 for (Study study : studies)
                 {
-                    SearchTermParser newParser = new SearchTermParser(query);
+                    Search.SearchTermParser newParser = new Search.SearchTermParser(query);
                     searchAll(study, newParser, hits, true);
                 }
             }
@@ -198,7 +198,7 @@ def:    for (DataSetDefinition def : defs)
         }
     }
 
-    private void searchDatasetData(DataSetDefinition def, SearchTermParser parser, List<SearchHit> hits) throws ServletException
+    private void searchDatasetData(DataSetDefinition def, Search.SearchTermProvider termProvider, List<SearchHit> hits) throws ServletException
     {
         TableInfo tInfo = def.getTableInfo(HttpView.currentContext().getUser());
         SqlDialect dialect = tInfo.getSchema().getSqlDialect();
@@ -237,7 +237,7 @@ def:    for (DataSetDefinition def : defs)
             "container",
             null,
             containers,
-            parser,
+            termProvider,
             dialect,
             searchColumnNames);
 

@@ -28,19 +28,19 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.*;
 import org.labkey.api.issues.IssuesSchema;
-import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.*;
 import org.labkey.api.security.*;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.LookAndFeelAppProps;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
-import org.labkey.api.settings.AppProps;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
+import org.labkey.issue.model.IssueSearch;
 import org.labkey.issue.query.IssuesQuerySchema;
 import org.labkey.issue.query.IssuesQueryView;
 import org.labkey.issue.query.IssuesTable;
@@ -76,7 +76,6 @@ public class IssuesController extends SpringActionController
 
     public IssuesController() throws Exception
     {
-        super();
         setActionResolver(_actionResolver);
     }
 
@@ -999,7 +998,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    private void sendUpdateEmail(Issue issue, ActionURL detailsUrl, String change, String action)
+    private void sendUpdateEmail(Issue issue, ActionURL detailsURL, String change, String action)
     {
         try
         {
@@ -1009,7 +1008,7 @@ public class IssuesController extends SpringActionController
                 Issue.Comment lastComment = issue.getLastComment();
                 String messageId = "<" + issue.getEntityId() + "." + lastComment.getCommentId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
                 String references = messageId + " <" + issue.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
-                MailHelper.ViewMessage m = MailHelper.createMessage(AppProps.getInstance().getSystemEmailAddress(), to);
+                MailHelper.ViewMessage m = MailHelper.createMessage(LookAndFeelAppProps.getInstance(getContainer()).getSystemEmailAddress(), to);
                 HttpServletRequest request = AppProps.getInstance().createMockRequest();  // Use base server url for root of links in email
                 if (m.getAllRecipients().length > 0)
                 {
@@ -1017,10 +1016,10 @@ public class IssuesController extends SpringActionController
                     m.setSubject("Issue #" + issue.getIssueId() + ", \"" + issue.getTitle() + ",\" has been " + change);
                     m.setHeader("References", references);
 
-                    JspView viewPlain = new JspView<UpdateEmailPage>(IssuesController.class,"updateEmail.jsp",new UpdateEmailPage(detailsUrl.getURIString(),issue,true));
+                    JspView viewPlain = new JspView<UpdateEmailPage>(IssuesController.class, "updateEmail.jsp", new UpdateEmailPage(detailsURL.getURIString(), issue, true));
                     m.setTemplateContent(request, viewPlain, "text/plain");
 
-                    JspView viewHtml = new JspView<UpdateEmailPage>(IssuesController.class,"updateEmail.jsp",new UpdateEmailPage(detailsUrl.getURIString(),issue,false));
+                    JspView viewHtml = new JspView<UpdateEmailPage>(IssuesController.class, "updateEmail.jsp", new UpdateEmailPage(detailsURL.getURIString(), issue, false));
                     m.setTemplateContent(request, viewHtml, "text/html");
 
                     MailHelper.send(m);
@@ -1350,13 +1349,9 @@ public class IssuesController extends SpringActionController
             Container c = getContainer();
             String searchTerm = (String)getProperty("search", "");
 
-            Module module = ModuleLoader.getInstance().getCurrentModule();
-            List<Search.Searchable> l = new ArrayList<Search.Searchable>();
-            l.add((Search.Searchable)module);
-
             getPageConfig().setHelpTopic(new HelpTopic("search", HelpTopic.Area.DEFAULT));
 
-            HttpView results = new Search.SearchResultsView(c, l, searchTerm, new ActionURL("issues", "search", c), getUser(), false, false);
+            HttpView results = new Search.SearchResultsView(c, Collections.singletonList((Search.Searchable)new IssueSearch()), searchTerm, new ActionURL("issues", "search", c), getUser(), false, false);
             return results;
         }
 

@@ -25,6 +25,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.*;
+import org.labkey.api.util.Search.SearchTermProvider;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Portal;
@@ -400,12 +401,12 @@ public class WikiManager
     }
 
 
-    public static void search(Search.SearchTermParser parser, Set<Container> containers, List<SearchHit> hits)
+    public static void search(SearchTermProvider provider, Set<Container> containers, List<SearchHit> hits)
     {
         String fromClause = comm.getTableInfoPages() + " p INNER JOIN " + comm.getTableInfoPageVersions() + " v ON p.EntityId = v.PageEntityId";
         String maxVersionWhere = "v.RowId IN (SELECT MAX(RowId) FROM " + comm.getTableInfoPageVersions() + " GROUP BY PageEntityId)";
         SimpleFilter versionFilter = new SimpleFilter().addWhereClause(maxVersionWhere, null);
-        SQLFragment fragment = Search.getSQLFragment("Container, Title, Name", "Container, Title, Name", fromClause, "Container", versionFilter, containers, parser, comm.getSchema().getSqlDialect(), "Title", "Body");
+        SQLFragment fragment = Search.getSQLFragment("Container, Title, Name", "Container, Title, Name", fromClause, "Container", versionFilter, containers, provider, comm.getSchema().getSqlDialect(), "Title", "Body");
 
         ResultSet rs = null;
 

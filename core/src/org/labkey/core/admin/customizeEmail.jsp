@@ -16,18 +16,19 @@
  */
 %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.emailTemplate.EmailTemplate" %>
 <%@ page import="org.labkey.api.util.emailTemplate.EmailTemplateService" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AdminController.CustomEmailForm> me = (JspView<AdminController.CustomEmailForm>) HttpView.currentView();
     AdminController.CustomEmailForm bean = me.getModelBean();
+    Container c = getViewContext().getContainer();
 
     EmailTemplate[] emailTemplates = EmailTemplateService.get().getEmailTemplates();
     String errorHTML = formatMissedErrors("form");
@@ -58,7 +59,7 @@
             out.write(innerSep);
             out.write("\"paramName\":" + PageFlowUtil.jsString(param.getName()) + ",");
             out.write("\"paramDesc\":" + PageFlowUtil.jsString(param.getDescription()) + ",");
-            out.write("\"paramValue\":" + PageFlowUtil.jsString("&nbsp;" + StringUtils.trimToEmpty(param.getValue())));
+            out.write("\"paramValue\":" + PageFlowUtil.jsString("&nbsp;" + StringUtils.trimToEmpty(param.getValue(c))));
             out.write("}");
 
             innerSep = ",{";

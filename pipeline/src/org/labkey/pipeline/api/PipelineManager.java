@@ -18,11 +18,11 @@ package org.labkey.pipeline.api;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
-import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.GlobusKeyPair;
-import org.labkey.pipeline.api.PipelineStatusFileImpl;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.LookAndFeelAppProps;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
@@ -240,7 +240,7 @@ public class PipelineManager
             String interval = PipelineEmailPreferences.get().getSuccessNotificationInterval(c);
             if (!"0".equals(interval) && interval != null) return;
 
-            message = createPipelineMessage(statusFile,
+            message = createPipelineMessage(c, statusFile,
                     (PipelineEmailTemplate)EmailTemplateService.get().getEmailTemplate(PipelineJobSuccess.class.getName()),
                     PipelineEmailPreferences.get().getNotifyOwnerOnSuccess(c),
                     PipelineEmailPreferences.get().getNotifyUsersOnSuccess(c));
@@ -250,13 +250,14 @@ public class PipelineManager
             String interval = PipelineEmailPreferences.get().getFailureNotificationInterval(c);
             if (!"0".equals(interval) && interval != null) return;
 
-            message = createPipelineMessage(statusFile,
+            message = createPipelineMessage(c, statusFile,
                     (PipelineEmailTemplate)EmailTemplateService.get().getEmailTemplate(PipelineJobFailed.class.getName()),
                     PipelineEmailPreferences.get().getNotifyOwnerOnError(c),
                     PipelineEmailPreferences.get().getNotifyUsersOnError(c));
         }
 
-        try {
+        try
+        {
             if (message != null)
                 MailHelper.send(message.createMessage());
         }
@@ -272,7 +273,7 @@ public class PipelineManager
                 (PipelineDigestTemplate)EmailTemplateService.get().getEmailTemplate(PipelineDigestJobSuccess.class.getName()) :
                 (PipelineDigestTemplate)EmailTemplateService.get().getEmailTemplate(PipelineDigestJobFailed.class.getName());
 
-        PipelineDigestMessage[] messages = createPipelineDigestMessage(statusFiles, template,
+        PipelineDigestMessage[] messages = createPipelineDigestMessage(c, statusFiles, template,
                 PipelineEmailPreferences.get().getNotifyOwnerOnSuccess(c),
                 PipelineEmailPreferences.get().getNotifyUsersOnSuccess(c),
                 min, max);
@@ -290,7 +291,7 @@ public class PipelineManager
         }
     }
 
-    private static PipelineMessage createPipelineMessage(PipelineStatusFileImpl statusFile,
+    private static PipelineMessage createPipelineMessage(Container c, PipelineStatusFileImpl statusFile,
                                                         PipelineEmailTemplate template,
                                                         boolean notifyOwner, String notifyUsers)
     {
@@ -309,7 +310,7 @@ public class PipelineManager
 
             if (sb.length() > 0)
             {
-                PipelineMessage message = new PipelineMessage(template, statusFile);
+                PipelineMessage message = new PipelineMessage(c, template, statusFile);
                 message.setRecipients(sb.toString());
                 return message;
             }
@@ -317,7 +318,7 @@ public class PipelineManager
         return null;
     }
 
-    private static PipelineDigestMessage[] createPipelineDigestMessage(PipelineStatusFileImpl[] statusFiles,
+    private static PipelineDigestMessage[] createPipelineDigestMessage(Container c, PipelineStatusFileImpl[] statusFiles,
                                                         PipelineDigestTemplate template,
                                                         boolean notifyOwner, String notifyUsers,
                                                         Date min, Date max)
@@ -354,7 +355,7 @@ public class PipelineManager
             List<PipelineDigestMessage> messages = new ArrayList<PipelineDigestMessage>();
             for (StringBuilder sb : recipients.values())
             {
-                PipelineDigestMessage message = new PipelineDigestMessage(template, statusFiles, min, max, sb.toString());
+                PipelineDigestMessage message = new PipelineDigestMessage(c, template, statusFiles, min, max, sb.toString());
                 messages.add(message);
             }
             return messages.toArray(new PipelineDigestMessage[0]);
@@ -364,12 +365,14 @@ public class PipelineManager
 
     private static class PipelineMessage
     {
+        private Container _c;
         private PipelineEmailTemplate _template;
         private PipelineStatusFileImpl _statusFile;
         private String _recipients;
 
-        public PipelineMessage(PipelineEmailTemplate template, PipelineStatusFileImpl statusFile)
+        public PipelineMessage(Container c, PipelineEmailTemplate template, PipelineStatusFileImpl statusFile)
         {
+            _c = c;
             _template = template;
             _statusFile = statusFile;
         }
@@ -379,7 +382,8 @@ public class PipelineManager
 
         public MimeMessage createMessage()
         {
-            try {
+            try
+            {
                 MailHelper.MultipartMessage m = MailHelper.createMultipartMessage();
 
                 ActionURL url = StatusController.urlDetails(_statusFile); 
@@ -389,13 +393,13 @@ public class PipelineManager
                 _template.setStatus(_statusFile.getStatus());
                 _template.setTimeCreated(_statusFile.getCreated().toString());
 
-                final String body = _template.renderBody();
+                final String body = _template.renderBody(_c);
                 m.setBodyContent(body, "text/plain");
                 m.setBodyContent(PageFlowUtil.filter(body, true, true), "text/html");
 
-                m.setSubject(_template.renderSubject());
+                m.setSubject(_template.renderSubject(_c));
 
-                m.addFrom(new Address[]{new InternetAddress(AppProps.getInstance().getSystemEmailAddress())});
+                m.addFrom(new Address[]{new InternetAddress(LookAndFeelAppProps.getInstance(_c).getSystemEmailAddress())});
                 m.addRecipients(Message.RecipientType.TO, MailHelper.createAddressArray(_recipients));
 
                 return m;
@@ -410,36 +414,40 @@ public class PipelineManager
 
     private static class PipelineDigestMessage
     {
+        private Container _c;
         private PipelineDigestTemplate _template;
         private PipelineStatusFileImpl[] _statusFiles;
         private String _recipients;
         private Date _min;
         private Date _max;
 
-        public PipelineDigestMessage(PipelineDigestTemplate template, PipelineStatusFileImpl[] statusFiles,
+        public PipelineDigestMessage(Container c, PipelineDigestTemplate template, PipelineStatusFileImpl[] statusFiles,
                                      Date min, Date max, String recipients)
         {
+            _c = c;
             _template = template;
             _statusFiles = statusFiles;
             _min = min;
             _max = max;
             _recipients = recipients;
         }
+
         public MimeMessage createMessage()
         {
-            try {
+            try
+            {
                 MailHelper.MultipartMessage m = MailHelper.createMultipartMessage();
 
                 _template.setStatusFiles(_statusFiles);
                 _template.setStartTime(_min.toString());
                 _template.setEndTime(_max.toString());
 
-                final String body = _template.renderBody();
+                final String body = _template.renderBody(_c);
                 m.setBodyContent(body, "text/plain");
                 m.setBodyContent(body, "text/html");
-                m.setSubject(_template.renderSubject());
+                m.setSubject(_template.renderSubject(_c));
 
-                m.addFrom(new Address[]{new InternetAddress(AppProps.getInstance().getSystemEmailAddress())});
+                m.addFrom(new Address[]{new InternetAddress(LookAndFeelAppProps.getInstance(_c).getSystemEmailAddress())});
                 m.addRecipients(Message.RecipientType.TO, MailHelper.createAddressArray(_recipients));
 
                 return m;
@@ -470,16 +478,16 @@ public class PipelineManager
             super(name);
 
             _replacements.add(new ReplacementParam("dataURL", "Link to the job details for this pipeline job"){
-                public String getValue() {return _dataUrl;}
+                public String getValue(Container c) {return _dataUrl;}
             });
             _replacements.add(new ReplacementParam("jobDescription", "The job description"){
-                public String getValue() {return _jobDescription;}
+                public String getValue(Container c) {return _jobDescription;}
             });
             _replacements.add(new ReplacementParam("timeCreated", "The date and time this job was created"){
-                public String getValue() {return _timeCreated;}
+                public String getValue(Container c) {return _timeCreated;}
             });
             _replacements.add(new ReplacementParam("status", "The job status"){
-                public String getValue() {return _status;}
+                public String getValue(Container c) {return _status;}
             });
             _replacements.addAll(super.getValidReplacements());
         }
@@ -529,13 +537,13 @@ public class PipelineManager
             super(name);
 
             _replacements.add(new ReplacementParam("pipelineJobs", "The list of all pipeline jobs that have completed for this notification period"){
-                public String getValue() {return getJobStatus();}
+                public String getValue(Container c) {return getJobStatus();}
             });
             _replacements.add(new ReplacementParam("startTime", "The start of the time period for job completion"){
-                public String getValue() {return _startTime;}
+                public String getValue(Container c) {return _startTime;}
             });
             _replacements.add(new ReplacementParam("endTime", "The end of the time period for job completion"){
-                public String getValue() {return _endTime;}
+                public String getValue(Container c) {return _endTime;}
             });
             _replacements.addAll(super.getValidReplacements());
         }

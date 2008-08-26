@@ -39,7 +39,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.jsp.HttpJspPage;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
@@ -179,16 +178,19 @@ public class UserController extends SpringActionController
             delete.setActionType(ActionButton.Action.GET);
             gridButtonBar.add(delete);
 
-            // Could allow project admins to do this... but they already can add users when adding to a group
+            // Could allow project admins to do this... but they can already add users when adding to a group
             ActionButton insert = new ActionButton("showAddUsers", "Add Users");
             ActionURL actionURL = new ActionURL(SecurityController.AddUsersAction.class, ContainerManager.getRoot());
             insert.setURL(actionURL.getLocalURIString());
             insert.setActionType(ActionButton.Action.LINK);
             gridButtonBar.add(insert);
 
-            ActionButton preferences = new ActionButton("showUserPreferences.view", "Preferences");
-            preferences.setActionType(ActionButton.Action.LINK);
-            gridButtonBar.add(preferences);
+            if (c.isRoot())
+            {
+                ActionButton preferences = new ActionButton("showUserPreferences.view", "Preferences");
+                preferences.setActionType(ActionButton.Action.LINK);
+                gridButtonBar.add(preferences);
+            }
         }
 
         if (isAnyAdmin)
@@ -1337,12 +1339,14 @@ public class UserController extends SpringActionController
     public static class ImpersonateBean
     {
         public List<String> emails;
+        public String message;
 
         public ImpersonateBean(Container c)
         {
             if (c.isRoot())
             {
                 emails = UserManager.getUserEmailList();
+                message = "Impersonate User";
             }
             else
             {
@@ -1354,6 +1358,7 @@ public class UserController extends SpringActionController
                     emails.add(member.getEmail());
 
                 Collections.sort(emails);
+                message = "Impersonate User Within the " + c.getName() + " Project";
             }
         }
     }

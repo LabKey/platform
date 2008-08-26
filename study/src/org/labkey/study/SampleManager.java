@@ -31,6 +31,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.*;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.LookAndFeelAppProps;
 import org.labkey.common.util.Pair;
 import org.labkey.study.model.*;
 import org.labkey.study.requirements.RequirementProvider;
@@ -621,7 +622,6 @@ public class SampleManager
     }
 
 
-
     public static class RequestNotificationSettings
     {
         public static final String REPLY_TO_CURRENT_USER_VALUE = "[current user]";
@@ -725,10 +725,10 @@ public class SampleManager
             map.put(KEY_NEWREQUESTNOTIFY, _newRequestNotify);
         }
 
-        public static RequestNotificationSettings getDefaultSettings()
+        public static RequestNotificationSettings getDefaultSettings(Container c)
         {
             RequestNotificationSettings defaults = new RequestNotificationSettings();
-            defaults.setReplyTo(AppProps.getInstance().getSystemEmailAddress());
+            defaults.setReplyTo(LookAndFeelAppProps.getInstance(c).getSystemEmailAddress());
             defaults.setCc("");
             defaults.setNewRequestNotify("");
             defaults.setSubjectSuffix("Specimen Request Notification");
@@ -777,7 +777,7 @@ public class SampleManager
                 container.getId(), "SpecimenRequestNotifications", false);
         if (settingsMap == null || settingsMap.get("ReplyTo") == null)
         {
-            RequestNotificationSettings defaults = RequestNotificationSettings.getDefaultSettings();
+            RequestNotificationSettings defaults = RequestNotificationSettings.getDefaultSettings(container);
             saveRequestNotificationSettings(container, defaults);
             return defaults;
         }

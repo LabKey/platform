@@ -48,9 +48,6 @@ public class IssueManager
 
     private static IssuesSchema _issuesSchema = IssuesSchema.getInstance();
     
-    private static TableInfo _tinfoIssues = _issuesSchema.getTableInfoIssues();
-    private static TableInfo _tinfoIssueKeywords = _issuesSchema.getTableInfoIssueKeywords();
-    private static TableInfo _tinfoComments = _issuesSchema.getTableInfoComments();
     private static Logger _log = Logger.getLogger(IssueManager.class);
 
     public static final int NOTIFY_ASSIGNEDTO_OPEN = 1;     // if a bug is assigned to me
@@ -62,29 +59,14 @@ public class IssueManager
     private static final String ISSUES_PREF_MAP = "IssuesPreferencesMap";
     private static final String ISSUES_REQUIRED_FIELDS = "IssuesRequiredFields";
 
-//    private static SessionFactory sessionFactory = DataSourceSessionFactory.create(getSchema(),
-//            new Class[]
-//                {
-//                Issues.model.Issue.class,
-//                Issues.model.Issue.Comment.class
-//                },
-//            CacheMode.NORMAL);
-
-
     private IssueManager()
     {
     }
 
-    public static Object openSession()
-    {
-        return null; // sessionFactory.openSession();
-    }
-
-
     public static Issue getIssue(Object s, Container c, int issueId) throws SQLException
     {
         Issue[] issues = Table.selectForDisplay(
-                _tinfoIssues,
+                _issuesSchema.getTableInfoIssues(),
                 Table.ALL_COLUMNS,
                 new SimpleFilter("issueId", new Integer(issueId))
                         .addCondition("container", c.getId()),
@@ -94,48 +76,13 @@ public class IssueManager
         Issue issue = issues[0];
 
         Issue.Comment[] comments = Table.select(
-                _tinfoComments,
+                _issuesSchema.getTableInfoComments(),
                 Table.ALL_COLUMNS,
                 new SimpleFilter("issueId", new Integer(issue.getIssueId())),
                 new Sort("CommentId"), Issue.Comment.class);
         issue.setComments(new ArrayList<Issue.Comment>(Arrays.asList(comments)));
         return issue;
-
-/*        Session session = null == s ? openSession() : s;
-        try
-            {
-            if (true)
-                {
-                Criteria query = session.createCriteria(Issue.class);
-                //query.add(Expression.eq("containerId", c.getId()));
-                query.add(Expression.eq("issueId", new Integer(issueId)));
-                Issue issue = (Issue) query.uniqueResult();
-                if (issue == null)
-                    return null;
-                if (!c.getId().equals(issue.getContainer()))
-                    return null;
-                return issue;
-                }
-            else
-                {
-                Issue issue = (Issue)session.load(Issue.class, issueId);
-                if (issue == null)
-                    return null;
-                if (!c.getId().equals(issue.getContainer()))
-                    return null;
-                return issue;
-                }
-            }
-        catch (ObjectNotFoundException x)
-            {
-            return null;
-            }
-        finally
-            {
-            if (session != s)
-                session.close();
-            }
-*/        }
+    }
 
 
     public static void saveIssue(Object s, User user, Container c, Issue issue) throws SQLException
@@ -150,12 +97,12 @@ public class IssueManager
             if (issue.issueId == 0)
             {
                 issue.beforeInsert(user, c.getId());
-                Table.insert(user, _tinfoIssues, issue);
+                Table.insert(user, _issuesSchema.getTableInfoIssues(), issue);
             }
             else
             {
                 issue.beforeUpdate(user);
-                Table.update(user, _tinfoIssues, issue, new Integer(issue.getIssueId()), null);
+                Table.update(user, _issuesSchema.getTableInfoIssues(), issue, new Integer(issue.getIssueId()), null);
             }
             saveComments(user, issue);
         }
@@ -176,33 +123,10 @@ public class IssueManager
             m.put("issueId", new Integer(issue.getIssueId()));
             m.put("comment", comment.getComment());
             m.put("entityId", comment.getEntityId());
-            Table.insert(user, _tinfoComments, m);
+            Table.insert(user, _issuesSchema.getTableInfoComments(), m);
         }
         issue._added = null;
     }
-
-    /*
-    public static void saveIssue(Session s, User user, Container c, Issue issue)
-        {
-        Session session = null == s ? openSession() : s;
-        Transaction t = session.beginTransaction();
-
-        try
-            {
-            issue.beforeSave(user, c);
-            session.saveOrUpdate(issue);
-            t.commit();
-            t = null;
-            }
-        finally
-            {
-            if (null != t)
-                t.rollback();
-            if (session != s)
-                session.close();
-            }
-        }
-    */
 
 
     public static void addKeyword(Container c, int type, String keyword)
@@ -210,9 +134,9 @@ public class IssueManager
         try
         {
             Table.execute(_issuesSchema.getSchema(),
-                    "INSERT INTO " + _tinfoIssueKeywords + " (Container, Type, Keyword) VALUES (?, ?, ?)",
+                    "INSERT INTO " + _issuesSchema.getTableInfoIssueKeywords() + " (Container, Type, Keyword) VALUES (?, ?, ?)",
                     new Object[]{c.getId(), new Integer(type), keyword});
-            DbCache.clear(_tinfoIssueKeywords);
+            DbCache.clear(_issuesSchema.getTableInfoIssueKeywords());
         }
         catch (SQLException x)
         {
@@ -257,7 +181,7 @@ public class IssueManager
 
         try
         {
-            keywords = Table.select(_tinfoIssueKeywords, PageFlowUtil.set("Keyword", "Default"), filter, sort, Keyword.class);
+            keywords = Table.select(_issuesSchema.getTableInfoIssueKeywords(), PageFlowUtil.set("Keyword", "Default"), filter, sort, Keyword.class);
         }
         catch (SQLException e)
         {
@@ -275,7 +199,7 @@ public class IssueManager
         try
         {
             SimpleFilter filter = new SimpleFilter("container", container.getId()).addCondition("Default", true);
-            rs = Table.select(_tinfoIssueKeywords, PageFlowUtil.set("Type", "Keyword"), filter, null);
+            rs = Table.select(_issuesSchema.getTableInfoIssueKeywords(), PageFlowUtil.set("Type", "Keyword"), filter, null);
 
             Map<Integer, String> defaults = new HashMap<Integer, String>(5);
 
@@ -296,10 +220,10 @@ public class IssueManager
     {
         clearKeywordDefault(c, type);
 
-        String selectName = _tinfoIssueKeywords.getColumn("Default").getSelectName();
+        String selectName = _issuesSchema.getTableInfoIssueKeywords().getColumn("Default").getSelectName();
 
         Table.execute(_issuesSchema.getSchema(),
-                "UPDATE " + _tinfoIssueKeywords + " SET " + selectName + "=? WHERE Container=? AND Type=? AND Keyword=?",
+                "UPDATE " + _issuesSchema.getTableInfoIssueKeywords() + " SET " + selectName + "=? WHERE Container=? AND Type=? AND Keyword=?",
                 new Object[]{Boolean.TRUE, c.getId(), type, keyword});
     }
 
@@ -307,10 +231,10 @@ public class IssueManager
     // Clear existing default value
     public static void clearKeywordDefault(Container c, int type) throws SQLException
     {
-        String selectName = _tinfoIssueKeywords.getColumn("Default").getSelectName();
+        String selectName = _issuesSchema.getTableInfoIssueKeywords().getColumn("Default").getSelectName();
 
         Table.execute(_issuesSchema.getSchema(),
-                "UPDATE " + _tinfoIssueKeywords + " SET " + selectName + "=? WHERE Container=? AND Type=?",
+                "UPDATE " + _issuesSchema.getTableInfoIssueKeywords() + " SET " + selectName + "=? WHERE Container=? AND Type=?",
                 new Object[]{Boolean.FALSE, c.getId(), type});
     }
 
@@ -320,9 +244,9 @@ public class IssueManager
         try
         {
             Table.execute(_issuesSchema.getSchema(),
-                    "DELETE FROM " + _tinfoIssueKeywords + " WHERE Container=? AND Type=? AND Keyword=?",
+                    "DELETE FROM " + _issuesSchema.getTableInfoIssueKeywords() + " WHERE Container=? AND Type=? AND Keyword=?",
                     new Object[]{c.getId(), new Integer(type), keyword});
-            DbCache.clear(_tinfoIssueKeywords);
+            DbCache.clear(_issuesSchema.getTableInfoIssueKeywords());
         }
         catch (SQLException x)
         {
@@ -415,7 +339,7 @@ public class IssueManager
     {
         return Table.executeQuery(_issuesSchema.getSchema(),
                 "SELECT DisplayName, SUM(CASE WHEN Status='open' THEN 1 ELSE 0 END) AS " + _issuesSchema.getSqlDialect().getTableSelectName("Open") + ", SUM(CASE WHEN Status='resolved' THEN 1 ELSE 0 END) AS " + _issuesSchema.getSqlDialect().getTableSelectName("Resolved") + "\n" +
-                        "FROM " + _tinfoIssues + " LEFT OUTER JOIN " + CoreSchema.getInstance().getTableInfoUsers() + " ON AssignedTo = UserId\n" +
+                        "FROM " + _issuesSchema.getTableInfoIssues() + " LEFT OUTER JOIN " + CoreSchema.getInstance().getTableInfoUsers() + " ON AssignedTo = UserId\n" +
                         "WHERE Status in ('open', 'resolved') AND Container = ?\n" +
                         "GROUP BY DisplayName",
                 new Object[]{c.getId()},
@@ -521,7 +445,7 @@ public class IssueManager
     public static long getIssueCount(Container c)
             throws SQLException
     {
-        return Table.executeSingleton(_issuesSchema.getSchema(), "SELECT COUNT(*) FROM " + _tinfoIssues + " WHERE Container = ?", new Object[]{c.getId()}, Long.class);
+        return Table.executeSingleton(_issuesSchema.getSchema(), "SELECT COUNT(*) FROM " + _issuesSchema.getTableInfoIssues() + " WHERE Container = ?", new Object[]{c.getId()}, Long.class);
     }
 
     public static void uncache(Container c)
@@ -537,10 +461,10 @@ public class IssueManager
         try
         {
             _issuesSchema.getSchema().getScope().beginTransaction();
-            String deleteComments = "DELETE FROM " + _tinfoComments + " WHERE IssueId IN (SELECT IssueId FROM " + _tinfoIssues + " WHERE Container = ?)";
+            String deleteComments = "DELETE FROM " + _issuesSchema.getTableInfoComments() + " WHERE IssueId IN (SELECT IssueId FROM " + _issuesSchema.getTableInfoIssues() + " WHERE Container = ?)";
             Table.execute(_issuesSchema.getSchema(), deleteComments, new Object[]{c.getId()});
-            ContainerUtil.purgeTable(_tinfoIssues, c, null);
-            ContainerUtil.purgeTable(_tinfoIssueKeywords, c, null);
+            ContainerUtil.purgeTable(_issuesSchema.getTableInfoIssues(), c, null);
+            ContainerUtil.purgeTable(_issuesSchema.getTableInfoIssueKeywords(), c, null);
             ContainerUtil.purgeTable(_issuesSchema.getTableInfoEmailPrefs(), c, null);
             _issuesSchema.getSchema().getScope().commitTransaction();
         }
@@ -562,13 +486,13 @@ public class IssueManager
         {
             _issuesSchema.getSchema().getScope().beginTransaction();
             String deleteComments =
-                    "DELETE FROM " + _tinfoComments + " WHERE IssueId IN (SELECT IssueId FROM " + _tinfoIssues + " WHERE Container NOT IN (SELECT EntityId FROM core.Containers))";
+                    "DELETE FROM " + _issuesSchema.getTableInfoComments() + " WHERE IssueId IN (SELECT IssueId FROM " + _issuesSchema.getTableInfoIssues() + " WHERE Container NOT IN (SELECT EntityId FROM core.Containers))";
             int commentsDeleted = Table.execute(_issuesSchema.getSchema(), deleteComments, null);
             String deleteOrphanedComments =
-                    "DELETE FROM " + _tinfoComments + " WHERE IssueId NOT IN (SELECT IssueId FROM " + _tinfoIssues + ")";
+                    "DELETE FROM " + _issuesSchema.getTableInfoComments() + " WHERE IssueId NOT IN (SELECT IssueId FROM " + _issuesSchema.getTableInfoIssues() + ")";
             commentsDeleted += Table.execute(_issuesSchema.getSchema(), deleteOrphanedComments, null);
-            int issuesDeleted = ContainerUtil.purgeTable(_tinfoIssues, null);
-            ContainerUtil.purgeTable(_tinfoIssueKeywords, null);
+            int issuesDeleted = ContainerUtil.purgeTable(_issuesSchema.getTableInfoIssues(), null);
+            ContainerUtil.purgeTable(_issuesSchema.getTableInfoIssueKeywords(), null);
             _issuesSchema.getSchema().getScope().commitTransaction();
 
             message = "deleted " + issuesDeleted + " issues<br>\ndeleted " + commentsDeleted + " comments<br>\n";
@@ -580,42 +504,6 @@ public class IssueManager
         }
 
         return message;
-    }
-
-    public static void search(Search.SearchTermParser parser, Set<Container> containers, List<SearchHit> hits)
-    {
-        SqlDialect dialect = _issuesSchema.getSchema().getSqlDialect();
-        String from = _tinfoIssues + " i LEFT OUTER JOIN " + _tinfoComments + " c ON i.IssueId = c.IssueId";
-        SQLFragment searchSql = Search.getSQLFragment("Container, Title, IssueId", "Container, Title, i.IssueId", from, "Container", null, containers, parser, dialect, "Comment"); // No need to search title since it ends up in the comment
-        ResultSet rs = null;
-
-        try
-        {
-            rs = Table.executeQuery(_issuesSchema.getSchema(), searchSql);
-
-            while(rs.next())
-            {
-                String containerId = rs.getString(1);
-                Container c = ContainerManager.getForId(containerId);
-
-                ActionURL url = IssuesController.issueURL(c, "details");
-                url.addParameter("issueId",rs.getString(3));
-
-                SimpleSearchHit hit = new SimpleSearchHit(IssuesModule.SEARCH_DOMAIN, c.getPath(), rs.getString(2),
-                        url.getLocalURIString(), IssuesModule.SEARCH_RESULT_TYPE,
-                        IssuesModule.SEARCH_RESULT_TYPE_DESCR);
-
-                hits.add(hit);
-            }
-        }
-        catch(SQLException e)
-        {
-            ExceptionUtil.logExceptionToMothership(HttpView.currentRequest(), e);
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
     }
 
     public static String getRequiredIssueFields(Container container)
@@ -758,9 +646,9 @@ public class IssueManager
         {
             Container c = JunitUtil.getTestContainer();
 
-            String deleteComments = "DELETE FROM " + _tinfoComments + " WHERE IssueId IN (SELECT IssueId FROM " + _tinfoIssues + " WHERE Container = ?)";
+            String deleteComments = "DELETE FROM " + _issuesSchema.getTableInfoComments() + " WHERE IssueId IN (SELECT IssueId FROM " + _issuesSchema.getTableInfoIssues() + " WHERE Container = ?)";
             Table.execute(_issuesSchema.getSchema(), deleteComments, new Object[]{c.getId()});
-            String deleteIssues = "DELETE FROM " + _tinfoIssues + " WHERE Container = ?";
+            String deleteIssues = "DELETE FROM " + _issuesSchema.getTableInfoIssues() + " WHERE Container = ?";
             Table.execute(_issuesSchema.getSchema(), deleteIssues, new Object[]{c.getId()});
         }
 

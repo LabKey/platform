@@ -30,10 +30,13 @@
     ViewContext context = HttpView.currentContext();
     User user = context.getUser();
     Container c = context.getContainer();
+
+    if (bean.emails.isEmpty())
+        return;
 %>
     <form method="get" action="<%=new UserController.UserUrlsImpl().getImpersonateURL(c)%>">
         <table>
-        <tr><td><b>Impersonate User</b></td></tr>
+        <tr><td><b><%=h(bean.message)%></b></td></tr>
         <tr><td><%
             if (user.isImpersonated())
             {

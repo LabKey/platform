@@ -1106,10 +1106,8 @@ public class AdminController extends SpringActionController
                     WebTheme theme = WebTheme.getTheme(form.getThemeName());
                     if (theme != null)
                     {
-                        WebTheme.setTheme(c, theme);
                         props.setThemeName(theme.getFriendlyName());
                     }
-                    // TODO: Eliminate the caching
                     ThemeFont themeFont = ThemeFont.getThemeFont(form.getThemeFont());
                     if (themeFont != null)
                     {

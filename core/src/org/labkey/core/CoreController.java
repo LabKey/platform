@@ -36,6 +36,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelAppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.PageFlowUtil.Content;
+import org.labkey.api.util.PageFlowUtil.NoContent;
 import org.labkey.api.view.*;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.mvc.Controller;
@@ -55,7 +56,6 @@ public class CoreController extends SpringActionController
 {
     private static final long SECS_IN_DAY = 60 * 60 * 24;
     private static final long MILLIS_IN_DAY = 1000 * SECS_IN_DAY;
-    private static final Content NO_CONTENT = new Content(null);  // Marker for cache
 
     private static Map<Container, Content> _themeStylesheetCache = new ConcurrentHashMap<Container, Content>();
     private static Map<Container, Content> _customStylesheetCache = new ConcurrentHashMap<Container, Content>();
@@ -109,7 +109,7 @@ public class CoreController extends SpringActionController
                 throw new RuntimeException(e);
             }
 
-            if (NO_CONTENT == css)
+            if (css instanceof NoContent)
                 return null;
             else
                 return getRevisionURL(CustomStylesheetAction.class, settingsContainer);
@@ -123,7 +123,7 @@ public class CoreController extends SpringActionController
         {
             // Stylesheets can be retrieved always by anyone.  This do-nothing override is even more permissive than
             //  using ACL.PERM_NONE and @IgnoresTermsOfUse since it also allows access in the root container even
-            //  when a project admin is impersonating.
+            //  when impersonation is limited to a specific project.
         }
 
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
@@ -132,12 +132,12 @@ public class CoreController extends SpringActionController
             Content content = getContent(request, response);
 
             // No custom stylesheet for this container
-            if (NO_CONTENT == content)
+            if (content instanceof NoContent)
                 return;
 
             response.setContentType("text/css");
 
-            response.setDateHeader("Expires", System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 5);
+            response.setDateHeader("Expires", System.currentTimeMillis() + MILLIS_IN_DAY * 5);
             response.setHeader("Cache-Control", "private");
             response.setHeader("Pragma", null);
             response.setDateHeader("Last-Modified", content.modified);
@@ -161,10 +161,11 @@ public class CoreController extends SpringActionController
     {
         Content getContent(HttpServletRequest request, HttpServletResponse response) throws Exception
         {
-            Container c = getViewContext().getContainer();
+            Container c = getContainer();
             Content content = _themeStylesheetCache.get(c);
             Integer dependsOn = AppProps.getInstance().getLookAndFeelRevision();
-            if (null == content || !dependsOn.equals(content.dependencies) || AppProps.getInstance().isDevMode())
+
+            if (null == content || !dependsOn.equals(content.dependencies))
             {
                 JspView view = new JspView("/org/labkey/core/themeStylesheet.jsp");
                 view.setFrame(WebPartView.FrameType.NONE);
@@ -192,14 +193,15 @@ public class CoreController extends SpringActionController
     {
         Content content = _customStylesheetCache.get(c);
         Integer dependsOn = AppProps.getInstance().getLookAndFeelRevision();
-        if (null == content || !dependsOn.equals(content.dependencies) || AppProps.getInstance().isDevMode())
+
+        if (null == content || !dependsOn.equals(content.dependencies))
         {
             AttachmentParent parent = new ContainerParent(c);
             Attachment cssAttachment = AttachmentCache.lookupCustomStylesheetAttachment(parent);
 
             if (null == cssAttachment)
             {
-                content = NO_CONTENT;
+                content = new NoContent(dependsOn);
             }
             else
             {

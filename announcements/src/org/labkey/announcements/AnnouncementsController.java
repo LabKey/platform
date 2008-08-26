@@ -34,6 +34,8 @@ import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityManager.PermissionSet;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.LookAndFeelAppProps;
 import org.labkey.api.util.*;
 import org.labkey.api.util.MailHelper.ViewMessage;
 import org.labkey.api.view.*;
@@ -41,8 +43,6 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.LookAndFeelAppProps;
 import org.labkey.common.util.Pair;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -74,7 +74,6 @@ public class AnnouncementsController extends SpringActionController
 
     public AnnouncementsController() throws Exception
     {
-        super();
         setActionResolver(_actionResolver);
     }
 
@@ -131,7 +130,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    private static ActionURL getBeginURL(Container c)
+    public static ActionURL getBeginURL(Container c)
     {
         return new ActionURL(BeginAction.class, c);
     }
@@ -860,7 +859,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    private ActionURL getReturnUrl()
+    private ActionURL getReturnURL()
     {
         String url = StringUtils.trimToNull((String)getViewContext().get("returnUrl"));
         if (null != url)
@@ -882,7 +881,7 @@ public class AnnouncementsController extends SpringActionController
     {
         public ActionURL getSuccessURL(Settings form)
         {
-            return getReturnUrl();
+            return getReturnURL();
         }
 
         public ModelAndView getView(Settings form, boolean reshow, BindException errors) throws Exception
@@ -890,7 +889,7 @@ public class AnnouncementsController extends SpringActionController
             CustomizeBean bean = new CustomizeBean();
 
             bean.settings = getSettings();
-            bean.returnURL = getReturnUrl();
+            bean.returnURL = getReturnURL();
             bean.assignedToSelect = getAssignedToSelect(getContainer(), bean.settings.getDefaultAssignedTo(), "defaultAssignedTo", getViewContext());
 
             if (hasEditorPerm(Group.groupGuests))
@@ -1772,7 +1771,7 @@ public class AnnouncementsController extends SpringActionController
 
     private ViewMessage getMessage(Container c, Settings settings, Permissions perm, Announcement parent, Announcement a, boolean isResponse, String removeUrl, WikiRendererType currentRendererType, Reason reason) throws Exception
     {
-        ViewMessage m = MailHelper.createMultipartViewMessage(AppProps.getInstance().getSystemEmailAddress(), null);
+        ViewMessage m = MailHelper.createMultipartViewMessage(LookAndFeelAppProps.getInstance(c).getSystemEmailAddress(), null);
         m.setSubject(StringUtils.trimToEmpty(isResponse ? "RE: " + parent.getTitle() : a.getTitle()));
         HttpServletRequest request = AppProps.getInstance().createMockRequest();
 
@@ -1802,16 +1801,6 @@ public class AnnouncementsController extends SpringActionController
         page.boardPath = c.getPath();
         ActionURL boardURL = getBeginURL(c);
         page.boardURL = boardURL.getURIString();
-
-        URLHelper staticStylesheetURL = new URLHelper(request);
-        staticStylesheetURL.setPath(request.getContextPath() + "/stylesheet.css");
-        staticStylesheetURL.setRawQuery(null);
-        page.staticStylesheetURL = staticStylesheetURL.getURIString();
-        URLHelper themeStylesheetURL = new URLHelper(request);
-        themeStylesheetURL.setPath(request.getContextPath() + "/core/themestylesheet.view");
-        themeStylesheetURL.setRawQuery(null);
-        page.themeStylesheetURL = themeStylesheetURL.getURIString();
-
         page.removeUrl = removeUrl;
         page.siteURL = ActionURL.getBaseServerURL();
         page.announcement = a;

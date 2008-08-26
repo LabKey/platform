@@ -896,20 +896,22 @@ public class LoginController extends SpringActionController
 
                 try
                 {
+                    Container c = getContainer();
+                    LookAndFeelAppProps laf = LookAndFeelAppProps.getInstance(c);
                     final SecurityMessage message = SecurityManager.getResetMessage(false);
                     message.setHideContact(true);
-                    ActionURL verificationURL = SecurityManager.createVerificationURL(getContainer(), _email.getEmailAddress(), verification, null);
+                    ActionURL verificationURL = SecurityManager.createVerificationURL(c, _email.getEmailAddress(), verification, null);
 
-                    final User system = new User(AppProps.getInstance().getSystemEmailAddress(), 0);
-                    system.setFirstName(AppProps.getInstance().getCompanyName());
-                    SecurityManager.sendEmail(system, message, _email.getEmailAddress(), verificationURL);
+                    final User system = new User(laf.getSystemEmailAddress(), 0);
+                    system.setFirstName(laf.getCompanyName());
+                    SecurityManager.sendEmail(c, system, message, _email.getEmailAddress(), verificationURL);
 
                     if (!user.getEmail().equals(_email.getEmailAddress()))
                     {
                         final SecurityMessage adminMessage = SecurityManager.getResetMessage(true);
                         message.setHideContact(true);
                         message.setTo(_email.getEmailAddress());
-                        SecurityManager.sendEmail(user, adminMessage, user.getEmail(), verificationURL);
+                        SecurityManager.sendEmail(c, user, adminMessage, user.getEmail(), verificationURL);
                     }
                     sbReset.append("An email has been sent to you with instructions on how to reset your password. ");
                     UserManager.addToUserHistory(UserManager.getUser(_email), _email + " reset the password.");

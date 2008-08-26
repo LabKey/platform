@@ -804,7 +804,7 @@ public class ProjectController extends SpringActionController
                 //perform the searches
                 for(Search.Searchable src : searchables)
                 {
-                    src.search(parser, containers, hits);
+                    src.search(parser, containers, hits, getUser());
                 }
             }
 

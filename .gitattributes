@@ -78,6 +78,7 @@ announcements/src/org/labkey/announcements/model/DailyDigestEmailPrefsSelector.j
 announcements/src/org/labkey/announcements/model/DiscussionServiceImpl.java -text
 announcements/src/org/labkey/announcements/model/EmailPrefsSelector.java -text
 announcements/src/org/labkey/announcements/model/IndividualEmailPrefsSelector.java -text
+announcements/src/org/labkey/announcements/model/MessageSearch.java -text
 announcements/src/org/labkey/announcements/model/NormalMessageBoardPermissions.java -text
 announcements/src/org/labkey/announcements/model/Permissions.java -text
 announcements/src/org/labkey/announcements/model/SecureMessageBoardPermissions.java -text
@@ -814,6 +815,7 @@ issues/src/org/labkey/issue/keywordAdmin.gm -text
 issues/src/org/labkey/issue/list.jsp -text
 issues/src/org/labkey/issue/model/Issue.java -text
 issues/src/org/labkey/issue/model/IssueManager.java -text
+issues/src/org/labkey/issue/model/IssueSearch.java -text
 issues/src/org/labkey/issue/query/IssuesQuerySchema.java -text
 issues/src/org/labkey/issue/query/IssuesQueryView.java -text
 issues/src/org/labkey/issue/query/IssuesTable.java -text

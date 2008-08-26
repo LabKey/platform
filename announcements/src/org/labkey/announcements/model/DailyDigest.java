@@ -31,6 +31,7 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.LookAndFeelAppProps;
 
 import javax.mail.MessagingException;
 import javax.servlet.ServletException;
@@ -156,7 +157,7 @@ public class DailyDigest
 
     private static MailHelper.ViewMessage getDailyDigestMessage(Container c, Settings settings, Permissions perm, List<Announcement> announcements, User user) throws Exception
     {
-        MailHelper.ViewMessage m = MailHelper.createMultipartViewMessage(AppProps.getInstance().getSystemEmailAddress(), user.getEmail());
+        MailHelper.ViewMessage m = MailHelper.createMultipartViewMessage(LookAndFeelAppProps.getInstance(c).getSystemEmailAddress(), user.getEmail());
         m.setSubject("New posts to " + c.getPath());
         HttpServletRequest request = AppProps.getInstance().createMockRequest();
 
@@ -183,19 +184,10 @@ public class DailyDigest
         page.c = c;
         page.announcements = announcements;
         page.boardPath = c.getPath();
-        ActionURL boardUrl = new ActionURL("announcements", "begin", c.getPath());
+        ActionURL boardUrl = AnnouncementsController.getBeginURL(c);
         page.boardUrl = boardUrl.getURIString();
         page.siteUrl = ActionURL.getBaseServerURL();
         page.removeUrl = new ActionURL("announcements", "showEmailPreferences", c.getPath()).getURIString();
-
-        URLHelper staticStylesheetURL = new URLHelper(request);
-        staticStylesheetURL.setPath(request.getContextPath() + "/stylesheet.css");
-        staticStylesheetURL.setRawQuery(null);
-        page.staticStylesheetURL = staticStylesheetURL.getURIString();
-        URLHelper themeStylesheetURL = new URLHelper(request);
-        themeStylesheetURL.setPath(request.getContextPath() + "/core/themestylesheet.view");
-        themeStylesheetURL.setRawQuery(null);
-        page.themeStylesheetURL = themeStylesheetURL.getURIString();
         page.includeGroups = perm.includeGroups();
 
         return page;

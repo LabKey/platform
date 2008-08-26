@@ -20,10 +20,14 @@
 %><%@ page import="org.labkey.issue.IssuesController"
 %><%@ page import="org.labkey.api.view.HttpView"
 %><%@ page import="org.labkey.api.view.JspView" 
+%><%@ page import="org.labkey.api.util.PageFlowUtil"
+%><%@ page import="org.labkey.api.data.Container"
 %><%@ page extends="org.labkey.api.jsp.JspBase"
 %><%
     JspView<IssuesController.UpdateEmailPage> me = (JspView<IssuesController.UpdateEmailPage>)HttpView.currentView();
     IssuesController.UpdateEmailPage bean = me.getModelBean();
+    Container c = getViewContext().getContainer();
+
     String changeComment = "(No change comment)";
     String modifiedBy = "(unknown)";
     Iterator<Issue.Comment> it = bean.issue.getComments().iterator();
@@ -43,8 +47,17 @@
     }
     else
     {
+
+%><html>
+<head>
+<%=PageFlowUtil.getStylesheetIncludes(c, true)%>
+</head>
+<body><%
         %>You can review this issue here: <a href="<%=h(bean.url)%>"><%=h(bean.url)%></a><br/><%
         %>Modified by: <%=h(modifiedBy)%><br/><%
-        %><%=changeComment%><%
+        %><%=changeComment%>
+</body>
+</html>
+<%
     }
 %>

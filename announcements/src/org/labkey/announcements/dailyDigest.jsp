@@ -18,14 +18,13 @@
 <%@ page import="org.labkey.announcements.AnnouncementsController" %>
 <%@ page import="org.labkey.announcements.model.Announcement" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
-<%@ page import="org.labkey.api.wiki.WikiRenderer" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.wiki.WikiRenderer" %>
 <%@ page extends="org.labkey.announcements.DailyDigestPage" %>
 <html>
 <head>
-<link href="<%=staticStylesheetURL%>" rel="stylesheet" type="text/css">
-<link href="<%=themeStylesheetURL%>" rel="stylesheet" type="text/css">
+<%=PageFlowUtil.getStylesheetIncludes(c, true)%>
 </head>
 
 <body>

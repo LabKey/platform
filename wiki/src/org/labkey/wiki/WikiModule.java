@@ -26,6 +26,8 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Search;
+import org.labkey.api.util.Search.SearchTermParser;
+import org.labkey.api.util.Search.Searchable;
 import org.labkey.api.util.SearchHit;
 import org.labkey.api.view.*;
 import org.labkey.api.wiki.WikiRendererType;
@@ -47,7 +49,7 @@ import java.util.*;
  * Date: Jul 18, 2005
  * Time: 3:07:21 PM
  */
-public class WikiModule extends DefaultModule implements ContainerManager.ContainerListener, Search.Searchable
+public class WikiModule extends DefaultModule implements ContainerManager.ContainerListener, Searchable
 {
     public static final String NAME = "Wiki";
     public static final String WEB_PART_NAME = "Wiki";
@@ -264,7 +266,7 @@ public class WikiModule extends DefaultModule implements ContainerManager.Contai
     }
 
 
-    public void search(Search.SearchTermParser parser, Set<Container> containers, List<SearchHit> hits)
+    public void search(SearchTermParser parser, Set<Container> containers, List<SearchHit> hits, User user)
     {
         WikiManager.search(parser, containers, hits);
     }

@@ -860,41 +860,6 @@ public class AnnouncementManager
         }
     }
 
-    public static void search(Search.SearchTermParser parser, Set<Container> containers, List<SearchHit> hits)
-    {
-        SqlDialect dialect = _comm.getSchema().getSqlDialect();
-        String from = _comm.getTableInfoThreads() + " t LEFT OUTER JOIN " + _comm.getTableInfoAnnouncements() + " a ON ((a.parent IS NULL AND t.RowId = a.RowId) OR (t.EntityId = a.Parent))";
-        SQLFragment searchSql = Search.getSQLFragment("Container, Title, RowId", "t.Container, t.Title, t.RowId", from, "t.Container", null, containers, parser, dialect, "a.Title", "a.Body");
-        ResultSet rs = null;
-
-        try
-        {
-            rs = Table.executeQuery(_comm.getSchema(), searchSql);
-
-            while(rs.next())
-            {
-                String containerId = rs.getString(1);
-                Container c = ContainerManager.getForId(containerId);
-
-                ActionURL url = new ActionURL(AnnouncementsController.ThreadAction.class, c);
-                url.addParameter("rowId", rs.getString(3));
-
-                SimpleSearchHit hit = new SimpleSearchHit(AnnouncementModule.SEARCH_DOMAIN, c.getPath(),
-                        rs.getString(2), url.getLocalURIString(), AnnouncementModule.SEARCH_RESULT_TYPE,
-                        AnnouncementModule.SEARCH_RESULT_TYPE_DESCR);
-                hits.add(hit);
-            }
-        }
-        catch(SQLException e)
-        {
-            ExceptionUtil.logExceptionToMothership(HttpView.currentRequest(), e);
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
-    }
-
     public static class EmailPref
     {
         String _container;

@@ -1247,7 +1247,7 @@ public class SecurityController extends SpringActionController
             {
                 String verification = SecurityManager.getVerification(email);
                 ActionURL verificationURL = SecurityManager.createVerificationURL(getContainer(), email.getEmailAddress(), verification, null);
-                SecurityManager.renderEmail(getUser(), message, email.getEmailAddress(), verificationURL, out);
+                SecurityManager.renderEmail(getContainer(), getUser(), message, email.getEmailAddress(), verificationURL, out);
             }
             return null;
         }
@@ -1317,14 +1317,15 @@ public class SecurityController extends SpringActionController
 
                     try
                     {
-                        ActionURL verificationURL = SecurityManager.createVerificationURL(getContainer(), email.getEmailAddress(), verification, null);
+                        Container c = getContainer();
+                        ActionURL verificationURL = SecurityManager.createVerificationURL(c, email.getEmailAddress(), verification, null);
 
-                        SecurityManager.sendEmail(user, SecurityManager.getResetMessage(false), email.getEmailAddress(), verificationURL);
+                        SecurityManager.sendEmail(c, user, SecurityManager.getResetMessage(false), email.getEmailAddress(), verificationURL);
                         if (!user.getEmail().equals(email.getEmailAddress()))
                         {
                             SecurityMessage msg = SecurityManager.getResetMessage(true);
                             msg.setTo(email.getEmailAddress());
-                            SecurityManager.sendEmail(user, msg, user.getEmail(), verificationURL);
+                            SecurityManager.sendEmail(c, user, msg, user.getEmail(), verificationURL);
                         }
                         sbReset.append("Email sent. ");
                         sbReset.append("Click ").append(href).append(" to see the email.");
