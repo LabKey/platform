@@ -3117,11 +3117,7 @@ public class WikiController extends SpringActionController
             if(null != expandedPaths)
             {
                 for(String path : expandedPaths)
-                {
-                    Map<String,Object> props = findPageProps(path.split("/"), 1, pages); //start at index 1 since these paths all start with /
-                    if(null != props)
-                        props.put("expanded", true);
-                }
+                    expandPath(path.split("/"), 1, pages, false); //start at index 1 since these paths all start with /
             }
 
             if(null != currentPage)
@@ -3136,31 +3132,30 @@ public class WikiController extends SpringActionController
                         path.addFirst(parent.latestVersion().getTitle());
                         parent = parent.getParentWiki();
                     }
-
-                    //now set the parents of this page to be expanded
-                    while(path.size() > 0)
-                    {
-                        Map<String,Object> props = findPageProps(path.toArray(new String[path.size()]), 0, pages);
-                        if(null != props)
-                            props.put("expanded", true);
-                        path.removeLast();
-                    }
+                    
+                    expandPath(path.toArray(new String[path.size()]), 0, pages, true);
                 }
             }
         }
 
-        protected Map<String,Object> findPageProps(String[] path, int idx, List<Map<String,Object>> pages)
+        protected void expandPath(String[] path, int idx, List<Map<String,Object>> pages, boolean expandAncestors)
         {
-            if(null == pages || null == path || path.length == 0)
-                return null;
+            if(null == pages || null == path || path.length == 0 || idx >= path.length)
+                return;
 
+            //find the propset in pages that matches the current path part
             for(Map<String,Object> pageProps : pages)
             {
                 if(path[idx].equals(pageProps.get("title")))
-                    return (idx == (path.length-1)) ? pageProps 
-                            : findPageProps(path, idx + 1, (List<Map<String,Object>>)pageProps.get("children"));
+                {
+                    //add the expanded property
+                    if(expandAncestors || idx == (path.length - 1))
+                        pageProps.put("expanded", true);
+
+                    //recurse children
+                    expandPath(path, idx + 1, (List<Map<String,Object>>)pageProps.get("children"), expandAncestors);
+                }
             }
-            return null;
         }
 
         public List<Object> getChildrenProps(List<Wiki> pages)
