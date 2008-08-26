@@ -257,46 +257,6 @@ public class AppProps extends AbstractWriteableSettingsGroup
         return PageFlowUtil.urlProvider(ProjectUrls.class).urlStart(ContainerManager.getForPath("/home"));
     }
 
-    // ===== Look and feel settings have been migrated to LookAndFeelAppProps.  Need to delete these.
-
-    @Deprecated
-    public String getSystemDescription()
-    {
-        return LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getSystemDescription();
-    }
-
-    @Deprecated
-    public String getSystemShortName()
-    {
-        return LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getSystemShortName();
-    }
-
-    @Deprecated
-    public String getNavigationBarWidth()
-    {
-        return LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getNavigationBarWidth();
-    }
-
-    @Deprecated
-    public String getCompanyName()
-    {
-        return LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getCompanyName();
-    }
-
-    @Deprecated
-    public String getSystemEmailAddress()
-    {
-        return LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getSystemEmailAddress();
-    }
-
-    @Deprecated
-    public String getReportAProblemPath()
-    {
-        return LookAndFeelAppProps.getInstance(ContainerManager.getRoot()).getReportAProblemPath();
-    }
-
-    // ===== End deprecated look & feel properties
-
     public int getLookAndFeelRevision()
     {
         return lookupIntValue(LOOK_AND_FEEL_REVISION, 0);

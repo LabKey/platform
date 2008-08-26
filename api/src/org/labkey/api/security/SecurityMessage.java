@@ -19,6 +19,7 @@ package org.labkey.api.security;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
+import org.labkey.api.data.Container;
 
 import javax.mail.internet.MimeMessage;
 
@@ -39,7 +40,7 @@ public class SecurityMessage
         _template = template;
     }
 
-    public MimeMessage createMailMessage() throws Exception
+    public MimeMessage createMailMessage(Container c) throws Exception
     {
         if (_template != null)
         {
@@ -51,11 +52,11 @@ public class SecurityMessage
             _template.setHideContact(getHideContact());
             _template.setOptionPrefix(getMessagePrefix());
 
-            String body = _template.renderBody();
+            String body = _template.renderBody(c);
             m.setBodyContent(body, "text/plain");
             m.setBodyContent(PageFlowUtil.filter(body, true, true), "text/html");
 
-            m.setSubject(_template.renderSubject());
+            m.setSubject(_template.renderSubject(c));
 
             return m;
         }

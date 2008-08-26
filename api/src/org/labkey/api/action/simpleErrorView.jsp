@@ -17,8 +17,12 @@
 %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<link href="<%= request.getContextPath() %>/stylesheet.css" type="text/css" rel="stylesheet"/>
+<%
+    Container c = getViewContext().getContainer();
+%>
+<%=PageFlowUtil.getStandardIncludes(c)%>
 <%=formatMissedErrors("form")%><br><br>
 <%=PageFlowUtil.generateSubmitButton("Back", "window.history.back(); return false;")%>
 <%=PageFlowUtil.generateButton("Home", AppProps.getInstance().getHomePageActionURL())%>

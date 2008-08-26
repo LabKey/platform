@@ -99,27 +99,27 @@ public class Search
     /**
      * containers may be empty if there is no container column
      */
-    public static SQLFragment getSQLFragment(String selectColumnNames, String innerSelectColumnNames, String fromClause, String containerColumnName, SimpleFilter whereFilter, Set<Container> containers, SearchTermParser parser, SqlDialect dialect, String... searchColumnNames)
+    public static SQLFragment getSQLFragment(String selectColumnNames, String innerSelectColumnNames, String fromClause, String containerColumnName, SimpleFilter whereFilter, Set<Container> containers, SearchTermProvider termProvider, SqlDialect dialect, String... searchColumnNames)
     {
         List<String> containerIds = new ArrayList<String>(containers.size());
         for(Container c : containers)
             containerIds.add(c.getId());
 
-        return getSQLFragment(selectColumnNames, innerSelectColumnNames, fromClause, containerColumnName, whereFilter, containerIds, parser, dialect, searchColumnNames);
+        return getSQLFragment(selectColumnNames, innerSelectColumnNames, fromClause, containerColumnName, whereFilter, containerIds, termProvider, dialect, searchColumnNames);
     }
 
     /**
      * containers may be empty if there is no container column
      */
-    public static SQLFragment getSQLFragment(String selectColumnNames, String innerSelectColumnNames, String fromClause, String containerColumnName, SimpleFilter whereFilter, Collection<String> containerIds, SearchTermParser parser, SqlDialect dialect, String... searchColumnNames)
+    public static SQLFragment getSQLFragment(String selectColumnNames, String innerSelectColumnNames, String fromClause, String containerColumnName, SimpleFilter whereFilter, Collection<String> containerIds, SearchTermProvider termProvider, SqlDialect dialect, String... searchColumnNames)
     {
         SQLFragment searchSql = new SQLFragment("SELECT " + selectColumnNames + ", TermCount FROM\n(\n\tSELECT " + selectColumnNames);
         SQLFragment caseSql = new SQLFragment();
         SimpleFilter termFilter = new SimpleFilter();
         StringBuilder termCount = new StringBuilder();
 
-        List<SearchTerm> andTerms = parser.getAndTerms();
-        List<SearchTerm> orTerms = parser.getOrTerms();
+        List<SearchTerm> andTerms = termProvider.getAndTerms();
+        List<SearchTerm> orTerms = termProvider.getOrTerms();
 
         String termPrefix = "and";
         addTerms(andTerms, searchColumnNames, dialect, searchSql, caseSql, termCount, termPrefix);
@@ -218,11 +218,12 @@ public class Search
          * the list provided as the hits parameter. This list may already contain
          * hits from previous search providers, so do not clear it. Simply append
          * your hits to the end.
-         * @param parser The term parser
+         * @param parser
          * @param containers The set of containers to search in
          * @param hits List of hits to append to
+         * @param user
          */
-        void search(SearchTermParser parser, Set<Container> containers, List<SearchHit> hits);
+        void search(SearchTermParser parser, Set<Container> containers, List<SearchHit> hits, User user);
 
         /**
          * Returns a static string used to classify the search results to the user
@@ -245,7 +246,7 @@ public class Search
         private String _term;
         private boolean _not;
 
-        private SearchTerm(String term, boolean not)
+        protected SearchTerm(String term, boolean not)
         {
             _term = term;
             _not = not;
@@ -306,12 +307,12 @@ public class Search
                 //parse the search terms
                 Search.SearchTermParser parser = new Search.SearchTermParser(_searchTerm);
                 List<SearchHit> hits = new ArrayList<SearchHit>();
-                if(parser.hasTerms())
+                if (parser.hasTerms())
                 {
                     //perform the searches
                     for(Search.Searchable src : _searchables)
                     {
-                        src.search(parser, containers, hits);
+                        src.search(parser, containers, hits, getViewContext().getUser());
                     }
                 }
 
@@ -319,8 +320,7 @@ public class Search
                 Collections.sort(hits, new SearchHitComparator());
 
                 //start the output
-                out.print("Searched ");
-                out.print("in ");
+                out.print("Searched in ");
                 out.print(containers.size());
                 out.print(" folder");
                 if (containers.size() > 1)
@@ -398,7 +398,13 @@ public class Search
     }
 
 
-    public static class SearchTermParser
+    public static interface SearchTermProvider
+    {
+        public List<SearchTerm> getAndTerms();
+        public List<SearchTerm> getOrTerms();
+    }
+
+    public static class SearchTermParser implements SearchTermProvider
     {
         private final String _query;
         private final List<SearchTerm> _andTerms = new ArrayList<SearchTerm>();
@@ -475,7 +481,7 @@ public class Search
 
         public boolean hasTerms()
         {
-            return !_andTerms.isEmpty() || !_orTerms.isEmpty();
+            return !getAndTerms().isEmpty() || !getOrTerms().isEmpty();
         }
 
         public String getQuery()

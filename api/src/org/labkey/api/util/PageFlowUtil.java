@@ -919,6 +919,17 @@ public class PageFlowUtil
     }
 
 
+    // Marker class for caching absense of content -- can't use a single marker object because of dependency handling.
+    public static class NoContent extends Content
+    {
+        public NoContent(Object dependsOn)
+        {
+            super(null);
+            dependencies = dependsOn;
+        }
+    }
+
+
     public static Content getViewContent(ModelAndView mv, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
         final StringWriter writer = new StringWriter();
@@ -1453,6 +1464,7 @@ public class PageFlowUtil
         return sb;
     }
 
+    // TODO: Use email param or eliminate it
     public static StringBuilder getStylesheetIncludes(Container c, boolean email)
     {
         StringBuilder sb = new StringBuilder();
@@ -1463,13 +1475,10 @@ public class PageFlowUtil
         sb.append(PageFlowUtil.filter(stylesheetURL));
         sb.append("\" type=\"text/css\" rel=\"stylesheet\"/>\n");
 
-        if (!email)
-        {
-            ResourceURL printStyleURL = new ResourceURL("printStyle.css", ContainerManager.getRoot());
-            sb.append("    <link href=\"");
-            sb.append(PageFlowUtil.filter(printStyleURL));
-            sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\"/>\n");
-        }
+        ResourceURL printStyleURL = new ResourceURL("printStyle.css", ContainerManager.getRoot());
+        sb.append("    <link href=\"");
+        sb.append(PageFlowUtil.filter(printStyleURL));
+        sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\"/>\n");
 
         CoreUrls coreUrls = urlProvider(CoreUrls.class);
 

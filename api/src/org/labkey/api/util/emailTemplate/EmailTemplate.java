@@ -17,7 +17,9 @@
 package org.labkey.api.util.emailTemplate;
 
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.LookAndFeelAppProps;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.data.Container;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +27,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Jan 15, 2007
  */
@@ -40,28 +41,28 @@ public abstract class EmailTemplate
     private String _description;
     private int _priority = 50;
 
-    static {
-
-        _replacements.add(new ReplacementParam("organizationName", "Organization name (set in admin console)"){
-            public String getValue() {return AppProps.getInstance().getCompanyName();}
+    static
+    {
+        _replacements.add(new ReplacementParam("organizationName", "Organization name (look and feel settings)"){
+            public String getValue(Container c) {return LookAndFeelAppProps.getInstance(c).getCompanyName();}
         });
-        _replacements.add(new ReplacementParam("siteShortName", "Web site short name"){
-            public String getValue() {return AppProps.getInstance().getSystemShortName();}
+        _replacements.add(new ReplacementParam("siteShortName", "Header short name"){
+            public String getValue(Container c) {return LookAndFeelAppProps.getInstance(c).getSystemShortName();}
         });
         _replacements.add(new ReplacementParam("contextPath", "Web application context path"){
-            public String getValue() {return AppProps.getInstance().getContextPath();}
+            public String getValue(Container c) {return AppProps.getInstance().getContextPath();}
         });
         _replacements.add(new ReplacementParam("supportLink", "Page where users can request support"){
-            public String getValue() {return AppProps.getInstance().getReportAProblemPath();}
+            public String getValue(Container c) {return LookAndFeelAppProps.getInstance(c).getReportAProblemPath();}
         });
-        _replacements.add(new ReplacementParam("systemDescription", "Web site description"){
-            public String getValue() {return AppProps.getInstance().getSystemDescription();}
+        _replacements.add(new ReplacementParam("systemDescription", "Header description"){
+            public String getValue(Container c) {return LookAndFeelAppProps.getInstance(c).getSystemDescription();}
         });
         _replacements.add(new ReplacementParam("systemEmail", "From address for system notification emails"){
-            public String getValue() {return AppProps.getInstance().getSystemEmailAddress();}
+            public String getValue(Container c) {return LookAndFeelAppProps.getInstance(c).getSystemEmailAddress();}
         });
         _replacements.add(new ReplacementParam("homePageURL", "The home page of this installation"){
-            public String getValue() {
+            public String getValue(Container c) {
                 return ActionURL.getBaseServerURL();   // TODO: Use AppProps.getHomePageUrl() instead?
             }
         });
@@ -131,20 +132,27 @@ public abstract class EmailTemplate
         return false;
     }
 
-    public String getReplacement(String value)
+    public String getReplacement(Container c, String value)
     {
         for (ReplacementParam param : getValidReplacements())
         {
             if (param.getName().equals(value))
-                return param.getValue();
+                return param.getValue(c);
         }
         return null;
     }
 
-    public String renderSubject() {return render(getSubject());}
-    public String renderBody() {return render(getBody());}
+    public String renderSubject(Container c)
+    {
+        return render(c, getSubject());
+    }
 
-    protected String render(String text)
+    public String renderBody(Container c)
+    {
+        return render(c, getBody());
+    }
+
+    protected String render(Container c, String text)
     {
         StringBuffer sb = new StringBuffer();
         Matcher m = scriptPattern.matcher(text);
@@ -155,7 +163,7 @@ public abstract class EmailTemplate
             start = m.start();
             String value = m.group(1);
             sb.append(text.substring(end, start));
-            sb.append(getReplacement(value));
+            sb.append(getReplacement(c, value));
             end = m.end();
         }
         sb.append(text.substring(end));
@@ -179,6 +187,6 @@ public abstract class EmailTemplate
         }
         public String getName(){return _name;}
         public String getDescription(){return _description;}
-        public abstract String getValue();
+        public abstract String getValue(Container c);
     }
 }

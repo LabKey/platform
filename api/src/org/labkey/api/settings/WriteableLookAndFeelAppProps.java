@@ -51,7 +51,6 @@ public class WriteableLookAndFeelAppProps extends LookAndFeelAppProps
 
     public void setThemeName(String themeName)
     {
-        // TODO: Clear CSS cache
         storeStringValue(THEME_NAME_PROP, themeName);
     }
 
@@ -72,7 +71,6 @@ public class WriteableLookAndFeelAppProps extends LookAndFeelAppProps
 
     public void setThemeFont(String themeFont)
     {
-        // TODO: Clear CSS cache
         storeStringValue(THEME_FONT_PROP, themeFont);
     }
 

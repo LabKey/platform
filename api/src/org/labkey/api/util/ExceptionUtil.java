@@ -440,7 +440,7 @@ public class ExceptionUtil
         public void doStartTag(Map context, PrintWriter out)
         {
             out.println("<html><head>");
-            out.println("<link href=\"" + getViewContext().getContextPath() + "/stylesheet.css\" type=\"text/css\" rel=\"stylesheet\"/>");
+            out.println(PageFlowUtil.getStandardIncludes(getViewContext().getContainer()));
             //NOTE: BaseSeleniumWebTest requires errors to start with error number and include word "Error" in title
             String title = "" + _renderer.status + ": Error Page";
             if (null != _renderer.message)

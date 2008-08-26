@@ -62,7 +62,8 @@ public class SecurityManager
     private static List<ViewFactory> _viewFactories = new ArrayList<ViewFactory>();
     private static final String GROUP_CACHE_PREFIX = "Groups/MetaData=";
 
-    static {
+    static
+    {
         EmailTemplateService.get().registerTemplate(RegistrationEmailTemplate.class);
         EmailTemplateService.get().registerTemplate(RegistrationAdminEmailTemplate.class);
         EmailTemplateService.get().registerTemplate(PasswordResetEmailTemplate.class);
@@ -720,19 +721,19 @@ public class SecurityManager
     }
 
 
-    public static void sendEmail(User user, SecurityMessage message, String to, ActionURL verificationURL) throws MessagingException
+    public static void sendEmail(Container c, User user, SecurityMessage message, String to, ActionURL verificationURL) throws MessagingException
     {
-        MimeMessage m = createMessage(user, message, to, verificationURL);
+        MimeMessage m = createMessage(c, user, message, to, verificationURL);
         MailHelper.send(m);
     }
 
-    public static void renderEmail(User user, SecurityMessage message, String to, ActionURL verificationURL, Writer out) throws MessagingException
+    public static void renderEmail(Container c, User user, SecurityMessage message, String to, ActionURL verificationURL, Writer out) throws MessagingException
     {
-        MimeMessage m = createMessage(user, message, to, verificationURL);
+        MimeMessage m = createMessage(c, user, message, to, verificationURL);
         MailHelper.renderHtml(m, message.getType(), out);
     }
 
-    private static MimeMessage createMessage(User user, SecurityMessage message, String to, ActionURL verificationURL) throws MessagingException
+    private static MimeMessage createMessage(Container c, User user, SecurityMessage message, String to, ActionURL verificationURL) throws MessagingException
     {
         try
         {
@@ -741,7 +742,7 @@ public class SecurityManager
             if (message.getTo() == null)
                 message.setTo(to);
 
-            MimeMessage m = message.createMailMessage();
+            MimeMessage m = message.createMailMessage(c);
 
             m.addFrom(new Address[]{new InternetAddress(user.getEmail(), user.getFullName())});
             m.addRecipients(Message.RecipientType.TO, to);
@@ -2001,17 +2002,18 @@ public class SecurityManager
 
             if (!newUserBean.isLdap() && sendMail)
             {
-                messageContentsURL = PageFlowUtil.urlProvider(SecurityUrls.class).getShowRegistrationEmailURL(context.getContainer(), email.getEmailAddress(), mailPrefix);
+                Container c = context.getContainer();
+                messageContentsURL = PageFlowUtil.urlProvider(SecurityUrls.class).getShowRegistrationEmailURL(c, email.getEmailAddress(), mailPrefix);
 
                 ActionURL verificationURL = createVerificationURL(context.getContainer(), email.getEmailAddress(),
                         newUserBean.getVerification(), extraParameters);
 
-                SecurityManager.sendEmail(currentUser, getRegistrationMessage(mailPrefix, false), email.getEmailAddress(), verificationURL);
+                SecurityManager.sendEmail(c, currentUser, getRegistrationMessage(mailPrefix, false), email.getEmailAddress(), verificationURL);
                 if (!currentUser.getEmail().equals(email.getEmailAddress()))
                 {
                     SecurityMessage msg = getRegistrationMessage(mailPrefix, true);
                     msg.setTo(email.getEmailAddress());
-                    SecurityManager.sendEmail(currentUser, msg, currentUser.getEmail(), verificationURL);
+                    SecurityManager.sendEmail(c, currentUser, msg, currentUser.getEmail(), verificationURL);
                 }
                 appendClickToSeeMail = true;
             }
@@ -2216,13 +2218,13 @@ public class SecurityManager
             super(name);
 
             _replacements.add(new ReplacementParam("verificationURL", "Link for a user to set a password"){
-                public String getValue() {return _verificationUrl;}
+                public String getValue(Container c) {return _verificationUrl;}
             });
             _replacements.add(new ReplacementParam("emailAddress", "The email address of the user performing the operation"){
-                public String getValue() {return _emailAddress;}
+                public String getValue(Container c) {return _emailAddress;}
             });
             _replacements.add(new ReplacementParam("recipient", "The email address on the 'to:' line"){
-                public String getValue() {return _recipient;}
+                public String getValue(Container c) {return _recipient;}
             });
             _replacements.addAll(super.getValidReplacements());
         }
@@ -2276,7 +2278,7 @@ public class SecurityManager
             setPriority(1);
         }
 
-        public String renderBody()
+        public String renderBody(Container c)
         {
             StringBuffer sb = new StringBuffer();
 
@@ -2285,7 +2287,7 @@ public class SecurityManager
                 sb.append(_optionalPrefix);
                 sb.append("\n\n");
             }
-            return sb.append(super.renderBody()).toString();
+            return sb.append(super.renderBody(c)).toString();
         }
     }
 
@@ -2326,11 +2328,11 @@ public class SecurityManager
             setPriority(3);
         }
 
-        public String renderBody()
+        public String renderBody(Container c)
         {
-            StringBuffer sb = new StringBuffer(super.renderBody());
+            StringBuffer sb = new StringBuffer(super.renderBody(c));
             if (!_hideContact)
-                sb.append(render(CONTACT_STRING));
+                sb.append(render(c, CONTACT_STRING));
 
             return sb.toString();
         }

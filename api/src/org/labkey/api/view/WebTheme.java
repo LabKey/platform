@@ -16,19 +16,14 @@
 package org.labkey.api.view;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelAppProps;
-import org.labkey.api.settings.WriteableLookAndFeelAppProps;
 
 import java.awt.*;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * User: jeckels
@@ -147,20 +142,7 @@ public class WebTheme
         return toRGB(_titleBarBorderColor);
     }
 
-    private static Map<Container, WebTheme> _themeCache = new ConcurrentHashMap<Container, WebTheme>();
-    private static WebTheme _theme = null;
     public final static WebTheme DEFAULT_THEME = BLUE;
-
-    public static void setTheme(Container c, WebTheme theme) throws SQLException
-    {
-        _themeCache.put(c, theme);
-    }
-
-    @Deprecated
-    public static WebTheme getTheme()
-    {
-        return getTheme(ContainerManager.getRoot());
-    }
 
     public static WebTheme getTheme(Container c)
     {
@@ -170,10 +152,7 @@ public class WebTheme
 
     private static WebTheme lookupTheme(Container c)
     {
-        WebTheme theme = _themeCache.get(c);
-
-        if (null != theme)
-            return theme;
+        WebTheme theme = null;
 
         try
         {
@@ -194,7 +173,6 @@ public class WebTheme
                theme = lookupTheme(c.getParent());   // Recurse up the chain
         }
 
-        _themeCache.put(c, theme);
         return theme;
     }
 
@@ -306,8 +284,11 @@ public class WebTheme
 
     private static void updateWebTheme(WebTheme webTheme)
     {
-        if (null == webTheme) return;
+        if (null == webTheme)
+            return;
+
         String webThemeName = webTheme.getFriendlyName();
+
         if (null != webThemeName && 0 < webThemeName.length())
         {
             List<WebTheme> webThemeList = WebTheme.getWebThemes();
@@ -320,10 +301,6 @@ public class WebTheme
                 {
                     themeFound = true;
                     webThemeList.set(i, webTheme);
-                    if (_theme == theme)
-                    {
-                        _theme = webTheme;
-                    }
                     break;
                 }
             }
@@ -347,34 +324,19 @@ public class WebTheme
 
     public static void deleteWebTheme(String friendlyName) throws SQLException
     {
-        if (null == friendlyName || 0 == friendlyName.length()) return;
+        if (null == friendlyName || 0 == friendlyName.length())
+            return;
 
-        boolean themeFound = false;
         List<WebTheme> webThemeList = WebTheme.getWebThemes();
         for (int i = 0; i < webThemeList.size(); i++)
         {
             WebTheme theme = webThemeList.get(i);
             if (theme.getFriendlyName().equals(friendlyName))
             {
-                themeFound = true;
-
-                //if this is the current theme, set the current theme to the default and save proactively.
-                if (_theme.equals(theme))
-                {
-                    _theme = DEFAULT_THEME;
-                    WriteableLookAndFeelAppProps props = WriteableLookAndFeelAppProps.getWriteableInstance(ContainerManager.getRoot());
-                    props.setThemeName(_theme.getFriendlyName());
-                    props.save();
-                }
-
                 _webThemeList.remove(i);
-
+                WebTheme.saveWebThemes();
                 break;
             }
-        }
-        if (themeFound)
-        {
-            WebTheme.saveWebThemes();
         }
     }
 
