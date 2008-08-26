@@ -84,6 +84,14 @@ public interface SchemaUpdateService
      */
     public boolean isTransactionActive();
 
+    /**
+     * Returns a schema suitable for use with ontology manager for the given query.
+     * May return null if no such schema exists, or if ontology manager is not supported.
+     * @param queryName The name of the query
+     * @param container The container in which the query should exists
+     * @param user The current user
+     * @return A domain URI for ontology manager or null
+     */
     @Nullable
     public String getDomainURI(String queryName, Container container, User user);
 
