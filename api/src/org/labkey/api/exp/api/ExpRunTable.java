@@ -77,13 +77,12 @@ public interface ExpRunTable extends ExpTable<ExpRunTable.Column>
 
     /**
      * Returns a column which links to a data input of the specified type.
-     * @param
      */
     ColumnInfo addDataInputColumn(String alias, PropertyDescriptor pd);
 
     /**
      * Returns a column which displays the number of data inputs of the specified role.
-     * Returns 0 if pd in null. 
+     * Returns 0 if pd is null. 
      */
     ColumnInfo addDataCountColumn(String alias, PropertyDescriptor pd);
 
@@ -91,4 +90,9 @@ public interface ExpRunTable extends ExpTable<ExpRunTable.Column>
      * Returns a column which is a lookup to a table which has columns for input datas and materials from the run protocol app.
      */
     ColumnInfo createInputLookupColumn(String alias, ExpSchema schema, Collection<Map.Entry<String, PropertyDescriptor>> dataInputs, Collection<Map.Entry<String, PropertyDescriptor>> materialInputs);
+
+    /**
+     * Returns a column which is a lookup to a table which has columns for output datas and materials from the run output protocol app.
+     */
+    ColumnInfo createOutputLookupColumn(String alias, ExpSchema schema, Collection<Map.Entry<String, PropertyDescriptor>> dataInputs, Collection<Map.Entry<String, PropertyDescriptor>> materialInputs);
 }

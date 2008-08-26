@@ -41,6 +41,7 @@ public class CommandTaskFactorySettings extends AbstractTaskFactorySettings
     private Boolean _pipeToOutput;
     private Integer _pipeOutputLineInterval;
     private Boolean _preview;
+    private String _actionableInput;
 
     public CommandTaskFactorySettings(String name)
     {
@@ -236,5 +237,15 @@ public class CommandTaskFactorySettings extends AbstractTaskFactorySettings
     public void setPreview(boolean preview)
     {
         _preview = preview;
+    }
+
+    public void setActionableInput(String actionableInput)
+    {
+        _actionableInput = actionableInput;
+    }
+
+    public String getActionableInput()
+    {
+        return _actionableInput;
     }
 }

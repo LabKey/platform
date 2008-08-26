@@ -25,7 +25,6 @@ public class TaskPath
 {
     private FileType _type;
     private String _name;
-    private String _role;   // todo: remove this, and use the key in the TaskPath map instead
     private boolean _copyInput;
     private boolean _optional;
 
@@ -113,14 +112,19 @@ public class TaskPath
         _name = name;
     }
 
-    public void setRole(String role)
+    public String getDefaultRole()
     {
-        _role = role;
-    }
+        if (getType() != null)
+        {
+            String suffix = getType().getSuffix();
+            if (suffix.indexOf(".") != -1)
+            {
+                return suffix.substring(suffix.indexOf(".") + 1);
+            }
+            return suffix;
+        }
 
-    public String getRole()
-    {
-        return _role;
+        return getName();
     }
 
     /**
