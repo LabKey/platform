@@ -52,6 +52,7 @@ public class DataSetQueryView extends QueryView
     public static final String DATAREGION = "Dataset";
     private QCStateSet _qcStateSet;
     private boolean _showEditLinks = true;
+    private boolean _showRecordSelectors = true;
 
     public DataSetQueryView(int datasetId, UserSchema schema, QuerySettings settings, Visit visit, Cohort cohort, QCStateSet qcStateSet)
     {
@@ -74,7 +75,7 @@ public class DataSetQueryView extends QueryView
             {
                 bbar.add(button);
             }
-            view.getDataRegion().setShowRecordSelectors(true);
+            view.getDataRegion().setShowRecordSelectors(_showRecordSelectors);
             view.getDataRegion().setButtonBar(bbar);
             view.getDataRegion().setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
         }
@@ -249,6 +250,11 @@ public class DataSetQueryView extends QueryView
     public void setShowEditLinks(boolean showEditLinks)
     {
         _showEditLinks = showEditLinks;
+    }
+
+    public void setShowRecordSelectors(boolean showRecordSelectors)
+    {
+        _showRecordSelectors = showRecordSelectors;
     }
 
     public void setForExport(boolean forExport)

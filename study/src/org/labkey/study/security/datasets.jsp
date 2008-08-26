@@ -15,14 +15,15 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.study.model.Study"%>
 <%@ page import="org.labkey.api.security.ACL"%>
-<%@ page import="org.labkey.api.security.SecurityManager"%>
-<%@ page import="org.labkey.study.model.DataSetDefinition"%>
 <%@ page import="org.labkey.api.security.Group"%>
-<%@ page import="java.util.ArrayList"%>
+<%@ page import="org.labkey.api.security.SecurityManager"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.study.model.DataSetDefinition"%>
+<%@ page import="org.labkey.study.model.SecurityType"%>
+<%@ page import="org.labkey.study.model.Study"%>
+<%@ page import="java.util.ArrayList" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
     String groupName(Group g)
@@ -36,25 +37,22 @@
 <%
     HttpView<Study> me = (HttpView<Study>) HttpView.currentView();
     Study study = me.getModelBean();
-//    String contextPath = request.getContextPath();
-//    User user = (User)request.getUserPrincipal();
-//    Container root = ContainerManager.getRoot();
     ACL studyAcl = study.getACL();
 
     Group[] groups = SecurityManager.getGroups(study.getContainer().getProject(), true);
 
     ArrayList<Group> readGroups = new ArrayList<Group>();
-    ArrayList<Group> restictedGroups = new ArrayList<Group>();
-    ArrayList<Group> noreadGroups = new ArrayList<Group>();
+    ArrayList<Group> restrictedGroups = new ArrayList<Group>();
+    ArrayList<Group> noReadGroups = new ArrayList<Group>();
     for (Group g : groups)
     {
         if (g.getUserId() == Group.groupAdministrators)
             continue;
         int perm = studyAcl.getPermissions(g) & (ACL.PERM_READ | ACL.PERM_READOWN);
         if (perm == 0)
-            noreadGroups.add(g);
+            noReadGroups.add(g);
         else if (perm == ACL.PERM_READOWN)
-            restictedGroups.add(g);
+            restrictedGroups.add(g);
         else
             readGroups.add(g);
     }
@@ -81,10 +79,10 @@ These groups can read ALL datasets.
 <%
 if (guestsCanRead || usersCanRead)
 {
-    restictedGroups.clear();
+    restrictedGroups.clear();
 %>
     Since <i>All site users</i> and/or <i>Guests</i> have read permissions, this is effectively an <b>open</b> study.<p/>
-    To restrict access to individual datasets, these groups should not have read permission.
+    To restrict access to individual datasets, these groups should not have permissions.
 <%
 }
 else
@@ -93,13 +91,13 @@ else
     These groups do not have read permissions.  (Note: a user may belong to more that one group, see documentation.)
     <ul class="minus">
     <%
-        if (noreadGroups.size() == 0)
+        if (noReadGroups.size() == 0)
         {
     %>
         <li><i>none</i></li>
     <%
         }
-        for (Group g : noreadGroups)
+        for (Group g : noReadGroups)
         {
     %>
         <li><%=h(groupName(g))%></li>
@@ -108,7 +106,7 @@ else
     %>
     </ul>
     <%
-        if (restictedGroups.size() == 0)
+        if (restrictedGroups.size() == 0)
         {
     %>
         There are no other groups with access to some datasets. To grant access to individual datasets select the
@@ -133,13 +131,13 @@ else
     int row = 0;
     %><br/><table class="labkey-data-region labkey-show-borders"><colgroup>
     <%
-    for (int i = 0; i < restictedGroups.size() + 1; i++)
+    for (int i = 0; i < restrictedGroups.size() + 1; i++)
     {
         %><col><%
     }
     %></colgroup>
     <tr class="<%=row++%2==0?"labkey-alternate-row":"labkey-row"%>"><th>&nbsp;</th><%
-    for (Group g : restictedGroups)
+    for (Group g : restrictedGroups)
     {
         %><th style="padding: 0 5px 0 5px;"><%=h(groupName(g))%></th><%
     }
@@ -150,17 +148,27 @@ else
         ACL acl = ds.getACL();
         String inputName = "dataset." + ds.getDataSetId();
         %><tr class="<%=row++%2==0?"labkey-alternate-row":"labkey-row"%>"><td><%=h(ds.getLabel())%></td><%
-        for (Group g : restictedGroups)
+        for (Group g : restrictedGroups)
         {
             boolean writePerm = acl.hasPermission(g, ACL.PERM_UPDATE);
             boolean readPerm = !writePerm && acl.hasPermission(g, ACL.PERM_READ);
+
+            if (study.getSecurityType() == SecurityType.ADVANCED_READ && writePerm)
+                readPerm = true;
+
             boolean noPerm = !writePerm && !readPerm;
             int id = g.getUserId();
             %><td align=center>
                 <select name="<%=inputName%>">
-                    <option value="NONE_<%=id%>" <%=noPerm ? "selected" : ""%>>NONE</option>
-                    <option value="READ_<%=id%>" <%=readPerm ? "selected" : ""%>>READ</option>
-                    <option value="WRITE_<%=id%>" <%=writePerm ? "selected" : ""%>>WRITE</option>
+                    <option value="NONE_<%=id%>" <%=noPerm ? "selected" : ""%>>None</option>
+                    <option value="READ_<%=id%>" <%=readPerm ? "selected" : ""%>>Read</option><%
+                    if (study.getSecurityType() == SecurityType.ADVANCED_WRITE)
+                    {
+                    %>
+                    <option value="WRITE_<%=id%>" <%=writePerm ? "selected" : ""%>>Edit</option>
+                    <%
+                    }
+                    %>
                 </select>
               </td><%
         }
@@ -168,11 +176,13 @@ else
     }
     %>
     </table>
-    <table><tr>
-        <td><%=PageFlowUtil.generateButton("Set all to Read", "", "setAllSelections('READ');")%></td>
-        <td><%=PageFlowUtil.generateButton("Set all to Write", "", "setAllSelections('WRITE');")%></td>
-        <td><%=PageFlowUtil.generateButton("Clear All", "", "setAllSelections('NONE');")%></td>
-        <td><%=PageFlowUtil.generateSubmitButton("Update")%></td></tr></table>
+    <table>
+        <tr>
+            <td><%=PageFlowUtil.generateSubmitButton("Update")%></td>
+            <td><%=PageFlowUtil.generateButton("Set all to Read", "", "setAllSelections('Read');")%></td>
+            <td><%=PageFlowUtil.generateButton("Set all to Edit", "", "setAllSelections('Edit');")%></td>
+            <td><%=PageFlowUtil.generateButton("Clear All", "", "setAllSelections('None');")%></td>
+        </tr></table>
 </form>
 
 <script type="text/javascript">

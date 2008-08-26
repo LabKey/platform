@@ -25,22 +25,30 @@ public enum SecurityType
     /**
      * Basic security: only admins can add dataset data.
      */
-    BASIC("Basic Security",
-            "Uses the security settings of the containing folder for dataset security. "+
+    BASIC_READ("Basic security with read-only datasets",
+            "Uses the security settings of the containing folder for dataset security. " +
             "Only administrators can import or delete dataset data."),
 
     /**
      * Anyone with update permissions can add and update dataset data
      */
-    EDITABLE_DATASETS("Editable Datasets",
-            "Identical to Basic Security, except that individuals with UPDATE permission " +
+    BASIC_WRITE("Basic security with editable datasets",
+            "Identical to Basic Read-Only Security, except that individuals with UPDATE permission " +
             "can edit, update, and delete data from datasets."),
 
     /**
-     * Per-dataset security for read and update
+     * Per-dataset security, read-only
      */
-    ADVANCED("Advanced Study Security",
-            "Allows the configuration of security on individual datasets.");
+    ADVANCED_READ("Custom security with read-only datasets",
+            "Allows the configuration of security on individual datasets. " +
+            "Only administrators can import or delete dataset data."),
+
+    /**
+     * Per-dataset security, read and write
+     */
+    ADVANCED_WRITE("Custom security with editable datasets",
+            "Identical to Advanced Read-Only Security, except that datasets can be individually " +
+            "set to allow updates as well.");
 
     private final String label;
 
@@ -64,7 +72,7 @@ public enum SecurityType
 
     public static String getHTMLDescription()
     {
-        StringBuilder sb = new StringBuilder("<table>");
+        StringBuilder sb = new StringBuilder("<table class=\"labkey-pad-cells\">");
         for (SecurityType securityType : values())
         {
             sb.append("<tr><td valign=\"top\"><b>");

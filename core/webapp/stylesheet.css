@@ -578,6 +578,15 @@ table.labkey-data-region
     padding-right:4px;
 }
 
+table.labkey-pad-cells
+{
+}
+
+.labkey-pad-cells td
+{
+    padding:5px;
+}
+
 /* Use this in the table class tag if you want your data region to have borders */
 table.labkey-show-borders
 {

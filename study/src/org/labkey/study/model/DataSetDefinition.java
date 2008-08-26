@@ -311,11 +311,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     private synchronized TableInfo getMaterializedTempTableInfo()
     {
-        //noinspection UnusedAssignment
-        boolean debug=false;
-        //noinspection ConstantConditions
-        assert debug=true;
-
         String tempName = getCacheString();
 
         MaterializedLockObject mlo;
@@ -355,8 +350,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     if (!tinfoProp.getColumnNameSet().equals(tinfoFrom.getColumnNameSet()))
                     {
                         StringBuilder msg = new StringBuilder("unexpected difference in columns sets\n");
-                        msg.append("  tinfoProp: " + StringUtils.join(tinfoProp.getColumnNameSet(),",") + "\n");
-                        msg.append("  tinfoFrom: " + StringUtils.join(tinfoFrom.getColumnNameSet(),",") + "\n");
+                        msg.append("  tinfoProp: ").append(StringUtils.join(tinfoProp.getColumnNameSet(),",")).append("\n");
+                        msg.append("  tinfoFrom: ").append(StringUtils.join(tinfoFrom.getColumnNameSet(), ",")).append("\n");
                         _log.error(msg);
                         tinfoMat = null;
                     }
@@ -489,16 +484,16 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
         SecurityType securityType = getStudy().getSecurityType();
 
-        if (securityType == SecurityType.BASIC)
+        if (securityType == SecurityType.BASIC_READ || securityType == SecurityType.ADVANCED_READ)
             return false; // Dataset rows are not editable
 
-        if (securityType == SecurityType.EDITABLE_DATASETS)
+        if (securityType == SecurityType.BASIC_WRITE)
         {
             // Does the user have update permission to the container?
             return getStudy().getACL().hasPermission(user, ACL.PERM_UPDATE);
             
         }
-        // Advanced study security
+        // Advanced editable study security
         int[] groups = getStudy().getACL().getGroups(ACL.PERM_READOWN, user);
         int dsPerm = getACL().getPermissions(groups);
         return 0 != (dsPerm & ACL.PERM_UPDATE);

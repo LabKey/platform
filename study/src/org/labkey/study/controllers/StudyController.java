@@ -54,6 +54,7 @@ import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.util.*;
@@ -522,6 +523,13 @@ public class StudyController extends BaseStudyController
             qs.setQueryName(def.getLabel());
             DataSetQueryView queryView = new DataSetQueryView(_datasetId, querySchema, qs, visit, cohort, qcStateSet);
             queryView.setForExport(export != null);
+
+            // Only show the checkboxes next to items if it's an administrator or they have write access
+            if (getUser().isAdministrator() || def.canWrite(getUser()))
+                queryView.setShowRecordSelectors(true);
+            else
+                queryView.setShowRecordSelectors(false);
+
             final ActionURL url = context.getActionURL();
             setColumnURL(url, queryView, querySchema, def);
 
@@ -548,7 +556,7 @@ public class StudyController extends BaseStudyController
             }
 
             List<ActionButton> buttonBar = new ArrayList<ActionButton>();
-            populateButtonBar(buttonBar, queryView, cohort, visit, qcStateSet);
+            populateButtonBar(buttonBar, def, queryView, cohort, visit, qcStateSet);
             queryView.setButtons(buttonBar);
 
             StringBuffer sb = new StringBuffer();
@@ -598,7 +606,7 @@ public class StudyController extends BaseStudyController
             }
         }
 
-        private void populateButtonBar(List<ActionButton> buttonBar, DataSetQueryView queryView, Cohort cohort, Visit visit, QCStateSet currentStates)
+        private void populateButtonBar(List<ActionButton> buttonBar, DataSetDefinition def, DataSetQueryView queryView, Cohort cohort, Visit visit, QCStateSet currentStates)
         {
             createViewButton(buttonBar, queryView);
             createCohortButton(buttonBar, cohort);
@@ -613,25 +621,35 @@ public class StudyController extends BaseStudyController
             exportMenuButton.addMenuItem("Export to R Script", queryView.urlFor(QueryAction.exportRScript).getLocalURIString());
             buttonBar.add(exportMenuButton);
 
-            ActionURL insertURL = new ActionURL(DatasetController.InsertAction.class, getContainer());
-            insertURL.addParameter(DataSetDefinition.DATASETKEY, _datasetId);
-            ActionButton insertButton = new ActionButton(insertURL.getLocalURIString(), "Insert New", DataRegion.MODE_GRID, ActionButton.Action.LINK);
-            insertButton.setDisplayPermission(ACL.PERM_INSERT);
-            buttonBar.add(insertButton);
 
-            ActionButton uploadButton = new ActionButton("showImportDataset.view?datasetId=" + _datasetId, "Import Data", DataRegion.MODE_GRID, ActionButton.Action.LINK);
-            uploadButton.setDisplayPermission(ACL.PERM_INSERT);
-            buttonBar.add(uploadButton);
+            User user = getUser();
+            if (def.canWrite(user))
+            {
+                // Insert single entry
+                ActionURL insertURL = new ActionURL(DatasetController.InsertAction.class, getContainer());
+                insertURL.addParameter(DataSetDefinition.DATASETKEY, _datasetId);
+                ActionButton insertButton = new ActionButton(insertURL.getLocalURIString(), "Insert New", DataRegion.MODE_GRID, ActionButton.Action.LINK);
+                insertButton.setDisplayPermission(ACL.PERM_INSERT);
+                buttonBar.add(insertButton);
+            }
 
-            ActionButton deleteRows = new ActionButton("button", "Delete Selected");
-            ActionURL deleteRowsURL = new ActionURL(DeleteDatasetRowsAction.class, getContainer());
+            if (user.isAdministrator() || def.canWrite(user))
+            {
+                // bulk import
+                ActionButton uploadButton = new ActionButton("showImportDataset.view?datasetId=" + _datasetId, "Import Data", DataRegion.MODE_GRID, ActionButton.Action.LINK);
+                uploadButton.setDisplayPermission(ACL.PERM_INSERT);
+                buttonBar.add(uploadButton);
 
-            deleteRows.setScript("return confirm(\"Delete selected rows of this dataset?\") && verifySelected(this.form, \"" + deleteRowsURL.getLocalURIString() + "\", \"post\", \"rows\")");
-            deleteRows.setActionType(ActionButton.Action.GET);
-            deleteRows.setDisplayPermission(ACL.PERM_DELETE);
-            buttonBar.add(deleteRows);
+                ActionButton deleteRows = new ActionButton("button", "Delete Selected");
+                ActionURL deleteRowsURL = new ActionURL(DeleteDatasetRowsAction.class, getContainer());
 
-            if (null == visit)
+                deleteRows.setScript("return confirm(\"Delete selected rows of this dataset?\") && verifySelected(this.form, \"" + deleteRowsURL.getLocalURIString() + "\", \"post\", \"rows\")");
+                deleteRows.setActionType(ActionButton.Action.GET);
+                deleteRows.setDisplayPermission(ACL.PERM_DELETE);
+                buttonBar.add(deleteRows);
+            }
+
+            if (null == visit && (user.isAdministrator() || def.canWrite(user)))
             {
                 ActionButton purgeButton = new ActionButton("purgeDataset.view", "Delete All Rows", DataRegion.MODE_GRID, ActionButton.Action.LINK);
                 purgeButton.setDisplayPermission(ACL.PERM_ADMIN);

@@ -41,10 +41,6 @@ import java.util.*;
  */
 public class Designer implements EntryPoint
 {
-    // data
-    private int _studyId;
-    private int _datasetId;
-    private String _typeURI;
     private String _returnURL;
     private boolean _isDateBased;
 
@@ -65,9 +61,8 @@ public class Designer implements EntryPoint
 
     public void onModuleLoad()
     {
-        _studyId = Integer.parseInt(PropertyUtil.getServerProperty("studyId"));
-        _datasetId = Integer.parseInt(PropertyUtil.getServerProperty("datasetId"));
-        _typeURI = PropertyUtil.getServerProperty("typeURI");
+        int datasetId = Integer.parseInt(PropertyUtil.getServerProperty("datasetId"));
+        String typeURI = PropertyUtil.getServerProperty("typeURI");
         _returnURL = PropertyUtil.getServerProperty("returnURL");
         String create = PropertyUtil.getServerProperty("create");
         if (create != null)
@@ -84,15 +79,15 @@ public class Designer implements EntryPoint
         _propTable.setMode(PropertiesEditor.modeEdit);
 
         _buttons = new FlexTable();
-        _buttons.setWidget(0, 0, new CancelButton());
-        _buttons.setWidget(0, 1, new SubmitButton());
+        _buttons.setWidget(0, 0, new SubmitButton());
+        _buttons.setWidget(0, 1, new CancelButton());
 
         _root.add(_loading);
 
 
         // NOTE for now we're displaying dataset info w/ static HTML
-        asyncGetDataset(_datasetId);
-        asyncGetDefinition(_typeURI);
+        asyncGetDataset(datasetId);
+        asyncGetDefinition(typeURI);
 //        asyncGetDefinition("testURI#TYPE");
 
         Window.addWindowCloseListener(new WindowCloseListener()
@@ -1006,8 +1001,6 @@ public class Designer implements EntryPoint
                     Window.alert("Unable to parse the tab-delimited text");
                     return;
                 }
-
-                System.out.println(data);
 
                 // Insert the new properties
                 List properties = new ArrayList();

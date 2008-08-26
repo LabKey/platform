@@ -172,9 +172,9 @@ public class DatasetController extends BaseStudyController
                 redirectTypeNotFound(form.getDatasetId());
                 return false;
             }
-            if (!ds.canRead(getUser()))
+            if (!ds.canWrite(getUser()))
             {
-                throw new UnauthorizedException("User does not have permission to view this dataset");
+                throw new UnauthorizedException("User does not have permission to edit this dataset");
             }
 
             TableInfo datasetTable = ds.getTableInfo(getUser());

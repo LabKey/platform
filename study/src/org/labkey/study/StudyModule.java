@@ -91,7 +91,7 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
 
     public StudyModule()
     {
-        super(NAME, 8.26, "/org/labkey/study", true, reportsPartFactory, reportsWidePartFactory, samplesPartFactory,
+        super(NAME, 8.27, "/org/labkey/study", true, reportsPartFactory, reportsWidePartFactory, samplesPartFactory,
                 samplesWidePartFactory, datasetsPartFactory, manageStudyPartFactory,
                 enrollmentChartPartFactory, studyDesignsWebPartFactory, studyDesignSummaryWebPartFactory,
                 assayListWebPartFactory, assayDetailsWebPartFactory, participantWebPartFactory);

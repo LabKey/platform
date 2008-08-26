@@ -35,8 +35,8 @@
 <labkey:errors/>
 
 <form action="showImportDataset.post" method=POST>
-    <%=PageFlowUtil.generateButton("Cancel", "javascript:{}", "window.history.back();")%>
     <%=PageFlowUtil.generateSubmitButton("Import Data")%>
+    <%=PageFlowUtil.generateButton("Cancel", "javascript:{}", "window.history.back();")%>
     <table>
     <tr><td class=labkey-form-label width=150>Type URI</td><td><%=h(form.getTypeURI())%><input type=hidden name="typeURI" value="<%=h(form.getTypeURI())%>"></td></tr>
     <tr><td class=labkey-form-label width=150>Key Fields</td><td><%=h(form.getKeys())%><input type=hidden name="keys" value="<%=h(form.getKeys())%>"></td></tr>

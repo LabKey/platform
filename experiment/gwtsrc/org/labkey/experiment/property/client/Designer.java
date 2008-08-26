@@ -41,8 +41,6 @@ import java.util.ArrayList;
  */
 public class Designer implements EntryPoint
 {
-    // data
-    private String _typeURI;
     private String _returnURL;
     private boolean _allowFileLinkProperties;
     private boolean _allowAttachmentProperties;
@@ -58,7 +56,7 @@ public class Designer implements EntryPoint
 
     public void onModuleLoad()
     {
-        _typeURI = PropertyUtil.getServerProperty("typeURI");
+        String typeURI = PropertyUtil.getServerProperty("typeURI");
         _returnURL = PropertyUtil.getServerProperty("returnURL");
         _allowFileLinkProperties = "true".equals(PropertyUtil.getServerProperty("allowFileLinkProperties"));
         _allowAttachmentProperties = "true".equals(PropertyUtil.getServerProperty("allowAttachmentProperties"));
@@ -71,9 +69,9 @@ public class Designer implements EntryPoint
         _propTable.setMode(PropertiesEditor.modeEdit);
 
         _buttons = new HorizontalPanel();
-        _buttons.add(new CancelButton());
-        _buttons.add(new HTML("&nbsp;"));
         _buttons.add(new SubmitButton());
+        _buttons.add(new HTML("&nbsp;"));
+        _buttons.add(new CancelButton());
 
 /*
         FlexTable form = new FlexTable();
@@ -100,7 +98,7 @@ public class Designer implements EntryPoint
         });
         _root.add(b); */
 
-        asyncGetDomainDescriptor(_typeURI);
+        asyncGetDomainDescriptor(typeURI);
 
         Window.addWindowCloseListener(new WindowCloseListener()
         {

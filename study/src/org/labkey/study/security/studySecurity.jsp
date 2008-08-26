@@ -36,11 +36,11 @@
 <p>All users must have READ permissions on this folder to access anything in this study. You can configure
     groups and folder security here [&nbsp;<a href="<%=h(urlProvider(SecurityUrls.class).getBeginURL(getViewContext().getContainer()))%>">Folder&nbsp;Security</a>&nbsp;].</p>
 
-<p>If you want to set permissions on individual datasets within the study, you must select advanced study security below.</p>
+<p>If you want to set permissions on individual datasets within the study, you must select one of the custom study security options below.</p>
 
-<form action="studySecurity.post" method="post">
-    <p>Study Security Type<%=PageFlowUtil.helpPopup("Study Security", SecurityType.getHTMLDescription(), true)%>:
-    <select name="securityString">
+<form action="studySecurity.post" method="post" name="studySecurityForm">
+    <p>Study Security Type<%=PageFlowUtil.helpPopup("Study Security", SecurityType.getHTMLDescription(), true, 400)%>:
+    <select name="securityString" onchange="document.studySecurityForm.submit();">
         <%
             for (SecurityType securityType : SecurityType.values())
             {

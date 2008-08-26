@@ -30,6 +30,8 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
+import org.labkey.study.controllers.StudyController;
+import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.Study;
@@ -67,7 +69,7 @@ public class SecurityController extends SpringActionController
             setHelpTopic(new HelpTopic("studySecurity", HelpTopic.Area.STUDY));
             Study study = StudyManager.getInstance().getStudy(getContainer());
             if (null == study)
-                return HttpView.redirect(new ActionURL("Study", "begin", getContainer()));
+                return HttpView.redirect(new ActionURL(StudyController.BeginAction.class, getContainer()));
 
             return new Overview(study);
         }
@@ -109,7 +111,7 @@ public class SecurityController extends SpringActionController
             if (redirect != null)
                 return new ActionURL(redirect);
 
-            return new ActionURL("Study-Security", "begin", getContainer());
+            return new ActionURL(SecurityController.BeginAction.class, getContainer());
         }
 
         private ACL aclFromPost(HttpServletRequest request, HashSet<Integer> set)
@@ -240,7 +242,7 @@ public class SecurityController extends SpringActionController
             if (redirect != null)
                 return new ActionURL(redirect);
 
-            return new ActionURL("Study-Security", "begin", getContainer());
+            return new ActionURL(SecurityController.BeginAction.class, getContainer());
         }
     }
 
@@ -257,7 +259,7 @@ public class SecurityController extends SpringActionController
             {
                 Study study = StudyManager.getInstance().getStudy(getContainer());
                 if (null == study)
-                    return HttpView.redirect(new ActionURL("Study", "begin", getContainer()));
+                    return HttpView.redirect(new ActionURL(StudyController.BeginAction.class, getContainer()));
 
                 v.addView(new Overview(study, getViewContext().getActionURL()));
             }
@@ -344,11 +346,11 @@ public class SecurityController extends SpringActionController
         {
             try {
                 Study study = StudyManager.getInstance().getStudy(getContainer());
-                ActionURL url = getViewContext().getActionURL();
-                root.addChild(study.getLabel(), url.relativeUrl("overview", null, "Study"));
+                root.addChild(study.getLabel(), new ActionURL(StudyController.OverviewAction.class, getContainer()));
 
                 if (getUser().isAdministrator())
-                    root.addChild("Manage Reports and Views", ActionURL.toPathString("Study-Reports", "manageReports.view", getContainer()));
+                    root.addChild("Manage Reports and Views",
+                        new ActionURL(ReportsController.ManageReportsAction.class, getContainer()).getLocalURIString());
             }
             catch (Exception e)
             {
@@ -400,7 +402,7 @@ public class SecurityController extends SpringActionController
             if (redirect != null)
                 return new ActionURL(redirect);
 
-            return new ActionURL("Study-Security", "begin", getContainer());
+            return new ActionURL(SecurityController.BeginAction.class, getContainer());
         }
     }
 
@@ -466,7 +468,7 @@ public class SecurityController extends SpringActionController
 
         public int getRemove()
         {
-            return remove == null ? 0 : remove;
+            return remove == null ? 0 : remove.intValue();
         }
 
         public void setRemove(Integer remove)
@@ -476,7 +478,7 @@ public class SecurityController extends SpringActionController
 
         public int getAdd()
         {
-            return add == null ? 0 : remove;
+            return add == null ? 0 : remove.intValue();
         }
 
         public void setAdd(Integer add)
@@ -515,7 +517,7 @@ public class SecurityController extends SpringActionController
 
             VBox v = new VBox();
             v.addView(studySecurityView);
-            if (study.getSecurityType() == SecurityType.ADVANCED)
+            if (study.getSecurityType() == SecurityType.ADVANCED_READ || study.getSecurityType() == SecurityType.ADVANCED_WRITE)
             {
                 v.addView(studyView);
                 v.addView(dsView);
@@ -553,7 +555,7 @@ public class SecurityController extends SpringActionController
         @Override
         protected void renderView(Object model, PrintWriter out) throws Exception
         {
-            ActionURL urlStudy = new ActionURL("Study-Security", "begin", getViewContext().getContainer());
+            ActionURL urlStudy = new ActionURL(BeginAction.class, getViewContext().getContainer());
             out.print("<br>Click here to manage permissions for the Study module.<br>");
             out.print(PageFlowUtil.generateButton("Study Security", urlStudy));
         }

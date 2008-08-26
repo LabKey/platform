@@ -119,10 +119,16 @@ public abstract class AbstractStudyEntity<T>
     public ACL getACL()
     {
         final Study study = StudyManager.getInstance().getStudy(getContainer());
-        if (study != null && study.getSecurityType() == SecurityType.ADVANCED)
+        if (study != null &&
+            (study.getSecurityType() == SecurityType.ADVANCED_READ ||
+             study.getSecurityType() == SecurityType.ADVANCED_WRITE))
+        {
             return org.labkey.api.security.SecurityManager.getACL(getContainer(), _entityId);
+        }
         else
+        {
             return getContainer().getAcl();
+        }
     }
 
     public void updateACL(ACL acl)

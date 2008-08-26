@@ -15,17 +15,19 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.study.model.Study"%>
 <%@ page import="org.labkey.api.security.ACL"%>
-<%@ page import="org.labkey.api.security.SecurityManager"%>
 <%@ page import="org.labkey.api.security.Group"%>
+<%@ page import="org.labkey.api.security.SecurityManager"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.study.model.SecurityType"%>
+<%@ page import="org.labkey.study.model.Study" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     HttpView<Study> me = (HttpView<Study>) HttpView.currentView();
     String contextPath = me.getViewContext().getContextPath();
     Study study = me.getModelBean();
+    boolean includeEditOption = study.getSecurityType() == SecurityType.ADVANCED_WRITE;
 %>
 Any user with READ access to this folder may view some summary data.  However, access to detail data must be explicitly granted.
     <form id="groupUpdateForm" action="saveStudyPermissions.post" method="post">
@@ -38,7 +40,11 @@ Any user with READ access to this folder may view some summary data.  However, a
         
         <tr>
             <th>&nbsp;</th>
-            <th width=100>WRITE&nbsp;ALL<%=PageFlowUtil.helpPopup("WRITE ALL","user/group may view and edit all rows in all datasets")%></th>
+            <% if (includeEditOption)
+            {
+            %><th width=100>EDIT&nbsp;ALL<%=PageFlowUtil.helpPopup("EDIT ALL","user/group may view and edit all rows in all datasets")%></th><%
+            }
+            %>
             <th width=100>READ&nbsp;ALL<%=PageFlowUtil.helpPopup("READ ALL","user/group may view all rows in all datasets")%></th>
             <th width=100>PER&nbsp;DATASET<%=PageFlowUtil.helpPopup("PER DATASET","user/group may view and/or edit rows in some datasets, configured per dataset")%></th>
             <th width=100>NONE<%=PageFlowUtil.helpPopup("NONE","user/group may not view or edit any detail data")%></th></tr>
@@ -57,11 +63,21 @@ Any user with READ access to this folder may view some summary data.  However, a
         boolean hasFolderRead = folderACL.hasPermission(group, ACL.PERM_READ);
         boolean hasUpdatePerm = 0 != (perm & ACL.PERM_UPDATE);
         boolean hasReadAllPerm = (!hasUpdatePerm) && 0 != (perm & ACL.PERM_READ);
+        if (!includeEditOption && hasUpdatePerm)
+            hasReadAllPerm = true;
         String inputName = "group." + group.getUserId();
-        %><tr><td><%=h(name)%></td><th><input type=radio name="<%=inputName%>" value="UPDATE" <%=hasUpdatePerm?"checked":""%>></th><th><input type=radio name="<%=inputName%>" value="READ" <%=hasReadAllPerm?"checked":""%>></th><th><input type=radio name="<%=inputName%>" value="READOWN" <%=perm==ACL.PERM_READOWN?"checked":""%>></th><th><input type=radio name="<%=inputName%>" value="NONE" <%=perm==0?"checked":""%>></th><%
+        %><tr><td><%=h(name)%></td><%
+        if (includeEditOption)
+        {
+        %><th><input type=radio name="<%=inputName%>" value="UPDATE" <%=hasUpdatePerm?"checked":""%>></th><%
+        }
+        %>
+        <th><input type=radio name="<%=inputName%>" value="READ" <%=hasReadAllPerm?"checked":""%>></th>
+        <th><input type=radio name="<%=inputName%>" value="READOWN" <%=perm==ACL.PERM_READOWN?"checked":""%>></th>
+        <th><input type=radio name="<%=inputName%>" value="NONE" <%=perm==0?"checked":""%>></th><%
         if (!hasFolderRead)
         {
-            %><td><img src="<%=contextPath%>/_images/exclaim.gif" title="group does not have folder read permissions"></td><%
+            %><td><img src="<%=contextPath%>/_images/exclaim.gif" alt="group does not have folder read permissions" title="group does not have folder read permissions"></td><%
         }
         %></tr><%
     }

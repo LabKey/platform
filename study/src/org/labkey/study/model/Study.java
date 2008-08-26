@@ -38,7 +38,7 @@ public class Study extends ExtensibleStudyEntity<Study>
     private String _label;
     private boolean _dateBased;
     private Date _startDate;
-    private SecurityType _securityType = SecurityType.BASIC; // Default value. Not allowed to be null
+    private SecurityType _securityType = SecurityType.BASIC_READ; // Default value. Not allowed to be null
     private String _participantCohortProperty;
     private Integer _participantCohortDataSetId;
     private boolean _manualCohortAssignment;
