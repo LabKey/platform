@@ -118,11 +118,11 @@ public class TsvAssayProvider extends AbstractAssayProvider
                     new Sort(getDataRowIdFieldKey().toString()), OntologyObject.class);
 
             Map<String, Object>[] dataMaps = new Map[dataRows.length];
-            List<PropertyDescriptor> typeList = new ArrayList<PropertyDescriptor>();
 
             Map<Integer, ExpRun> runCache = new HashMap<Integer, ExpRun>();
             Map<Integer, Map<String, Object>> runPropertyCache = new HashMap<Integer, Map<String, Object>>();
 
+            Set<PropertyDescriptor> typeList = new LinkedHashSet<PropertyDescriptor>();
             typeList.add(createPublishPropertyDescriptor(study, getDataRowIdFieldKey().toString(), getDataRowIdType()));
             typeList.add(createPublishPropertyDescriptor(study, "SourceLSID", getDataRowIdType()));
 
@@ -134,6 +134,12 @@ public class TsvAssayProvider extends AbstractAssayProvider
             pds.addAll(Arrays.asList(uploadSetPDs));
 
             Container sourceContainer = null;
+
+            // little hack here: since the property descriptors created by the 'addProperty' calls below are not in the database,
+            // they have no RowId, and such are never equal to each other.  Since the loop below is run once for each row of data,
+            // this will produce a types set that contains rowCount*columnCount property descriptors unless we prevent additions
+            // to the map after the first row.  This is done by nulling out the 'tempTypes' object after the first iteration:
+            Set<PropertyDescriptor> tempTypes = typeList;
             for (OntologyObject row : dataRows)
             {
                 Map<String, Object> dataMap = new HashMap<String, Object>();
@@ -151,7 +157,7 @@ public class TsvAssayProvider extends AbstractAssayProvider
                         skipProperty = skipProperty || VISITID_PROPERTY_NAME.equals(pd.getName());
 
                     if (!skipProperty)
-                        addProperty(pd, rowProperties.get(pd.getPropertyURI()), dataMap, typeList);
+                        addProperty(pd, rowProperties.get(pd.getPropertyURI()), dataMap, tempTypes);
                 }
 
                 ExpRun run = runCache.get(row.getOwnerObjectId());
@@ -178,7 +184,7 @@ public class TsvAssayProvider extends AbstractAssayProvider
                     {
                         PropertyDescriptor publishPd = pd.clone();
                         publishPd.setName("Run " + pd.getName());
-                        addProperty(publishPd, runProperties.get(pd.getPropertyURI()), dataMap, typeList);
+                        addProperty(publishPd, runProperties.get(pd.getPropertyURI()), dataMap, tempTypes);
                     }
                 }
 
@@ -192,12 +198,13 @@ public class TsvAssayProvider extends AbstractAssayProvider
                 dataMap.put("SourceLSID", run.getLSID());
                 dataMap.put(getDataRowIdFieldKey().toString(), publishKey.getDataId());
 
-                addStandardRunPublishProperties(study, typeList, dataMap, run);
+                addStandardRunPublishProperties(study, tempTypes, dataMap, run);
 
                 dataMaps[rowIndex++] = dataMap;
+                tempTypes = null;
             }
             return AssayPublishService.get().publishAssayData(user, sourceContainer, study, protocol.getName(), protocol,
-                    dataMaps, typeList, getDataRowIdFieldKey().toString(), errors);
+                    dataMaps, new ArrayList<PropertyDescriptor>(typeList), getDataRowIdFieldKey().toString(), errors);
         }
         catch (SQLException e)
         {
