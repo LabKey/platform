@@ -104,8 +104,15 @@ if (bean.containerLinks != null)
 <script type="text/javascript">
     if(window.console && window.console.firebug)
     {
-        var elem = document.getElementById("firebug-warning");
-        if(elem)
-            elem.style.display = "";
+        //check version--anything past '1.2.0' is OK
+        var version = window.console.firebug.split(".");
+        for(var idx = 0; idx < version.length; ++idx)
+            version[idx] = parseInt(version[idx]);
+        if(version[0] < 1 && version[1] < 2)
+        {
+            var elem = document.getElementById("firebug-warning");
+            if(elem)
+                elem.style.display = "";
+        }
     }
 </script>
