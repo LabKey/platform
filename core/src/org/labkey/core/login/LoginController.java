@@ -218,25 +218,27 @@ public class LoginController extends SpringActionController
                 // to access the page and will get a TermsOfUseException if terms of use approval is required.
                 SecurityManager.setTermsOfUseApproved(getViewContext(), getTermsOfUseProject(form), true);
 
+                // Login page is container qualified; we need to store the cookie at /labkey/login/ or /cpas/login/ or /login/
+                String search = "/login/";
+                String url = getViewContext().getActionURL().getLocalURIString();
+                int index = url.indexOf(search);
+                assert index > -1;
+                String path = url.substring(0, index + search.length());
+
                 if (form.isRemember())
                 {
                     // Write cookies to save email
                     Cookie emailCookie = new Cookie("email", form.getEmail());
-                    // EmailCookie.setSecure(true);
                     emailCookie.setMaxAge(secondsPerYear);
+                    emailCookie.setPath(path);
                     response.addCookie(emailCookie);
-
-                    // TODO: If SSL is required and admin allows, we could save password as well (uncomment lines below)
-                    // Cookie PasswordCookie = new Cookie("password", password);
-                    // PasswordCookie.setSecure(true);
-                    // response.addCookie(PasswordCookie);
                 }
                 else
                 {
                     // Clear the cookie
                     Cookie emailCookie = new Cookie("email", "");
-                    // emailCookie.setSecurity(true);
                     emailCookie.setMaxAge(0);
+                    emailCookie.setPath(path);
                     response.addCookie(emailCookie);
                 }
             }

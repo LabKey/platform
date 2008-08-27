@@ -49,6 +49,7 @@ import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.common.util.Pair;
+import org.labkey.common.tools.FastaValidator;
 import org.labkey.core.login.LoginController;
 import org.labkey.data.xml.TablesDocument;
 import org.springframework.validation.BindException;
@@ -1242,12 +1243,12 @@ public class AdminController extends SpringActionController
                 if ("resources".equals(tabId))
                 {
                     LookAndFeelResourcesBean bean = new LookAndFeelResourcesBean(c);
-                    return new JspView<LookAndFeelResourcesBean>("/org/labkey/core/admin/lookAndFeelImages.jsp", bean, _errors);
+                    return new JspView<LookAndFeelResourcesBean>("/org/labkey/core/admin/lookAndFeelResources.jsp", bean, _errors);
                 }
                 else
                 {
                     LookAndFeelPropertiesBean bean = new LookAndFeelPropertiesBean(c, _form.getThemeName());
-                    return new JspView<LookAndFeelPropertiesBean>("/org/labkey/core/admin/lookAndFeelSettings.jsp", bean, _errors);
+                    return new JspView<LookAndFeelPropertiesBean>("/org/labkey/core/admin/lookAndFeelProperties.jsp", bean, _errors);
                 }
             }
             else
@@ -1258,9 +1259,13 @@ public class AdminController extends SpringActionController
     }
 
 
-    public static class LookAndFeelPropertiesBean
+    private static abstract class LookAndFeelBean
     {
-        public String helpLink = "<a href=\"" + (new HelpTopic("configAdmin", HelpTopic.Area.SERVER)).getHelpTopicLink() + "\" target=\"labkey\">more info...</a>";
+        public String helpLink = "<a href=\"" + (new HelpTopic("customizeLook", HelpTopic.Area.SERVER)).getHelpTopicLink() + "\" target=\"labkey\">more info...</a>";
+    }
+
+    public static class LookAndFeelPropertiesBean extends LookAndFeelBean
+    {
         public List<WebTheme> themes = WebTheme.getWebThemes();
         public List<ThemeFont> themeFonts = ThemeFont.getThemeFonts();
         public ThemeFont currentThemeFont;
@@ -1285,9 +1290,8 @@ public class AdminController extends SpringActionController
     }
 
 
-    public static class LookAndFeelResourcesBean
+    public static class LookAndFeelResourcesBean extends LookAndFeelBean
     {
-        public String helpLink = "<a href=\"" + (new HelpTopic("configAdmin", HelpTopic.Area.SERVER)).getHelpTopicLink() + "\" target=\"labkey\">more info...</a>";
         public Attachment customLogo;
         public Attachment customFavIcon;
         public Attachment customStylesheet;
