@@ -16,14 +16,15 @@
 
 package org.labkey.api.query;
 
-import org.labkey.api.data.TableViewForm;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableViewForm;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Collections;
 import java.util.Enumeration;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Extension of the class TableViewForm which deals with the fact that we don't have much control over the names
@@ -39,6 +40,11 @@ public class QueryUpdateForm extends TableViewForm
 
     public QueryUpdateForm(TableInfo table, HttpServletRequest request)
     {
+        this(table, request, Collections.<String,String>emptyMap());
+    }
+
+    public QueryUpdateForm(TableInfo table, HttpServletRequest request, Map<String,String> extraParameters)
+    {
         _tinfo = table;
         _dynaClass = new QueryWrapperDynaClass(this);
         reset(null, request);
@@ -50,6 +56,10 @@ public class QueryUpdateForm extends TableViewForm
             {
                 set(key, value);
             }
+        }
+        for (Map.Entry<String,String> entry : extraParameters.entrySet())
+        {
+            set(entry.getKey(), entry.getValue());
         }
     }
 

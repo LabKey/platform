@@ -18,8 +18,8 @@ package org.labkey.api.action;
 
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.SpringAttachmentFile;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -72,6 +72,13 @@ public abstract class FormViewAction<FORM> extends BaseViewAction<FORM> implemen
         {
             errors = bindParameters(getPropertyValues());
             form = (FORM)errors.getTarget();
+        }
+        else
+        {
+            // If the action has not specified a generic form, we should not hand them
+            // a null BindException -- just new one up
+            form = (FORM)new Object();
+            errors = new BindException(form, "___no_object_specified");
         }
 
         return handleRequest(form, errors);
