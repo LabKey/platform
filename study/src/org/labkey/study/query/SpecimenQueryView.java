@@ -20,6 +20,7 @@ import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.*;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.ActionURL;
@@ -226,7 +227,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
         }
     }
 
-    private boolean _detailsView;
+    private ViewType _viewType;
     private boolean _showHistoryLinks;
     private boolean _disableLowVialIndicators;
     private boolean _showRecordSelectors;
@@ -236,32 +237,87 @@ public class SpecimenQueryView extends BaseStudyQueryView
     private boolean _participantVisitFiltered = false;
 
 
+    public enum ViewType
+    {
+        SUMMARY()
+        {
+            public String getQueryName()
+            {
+                return "SpecimenSummary";
+            }
+
+            public String getViewName()
+            {
+                return null;
+            }
+            public boolean isVialView()
+            {
+                return false;
+            }},
+        VIALS()
+        {
+            public String getQueryName()
+            {
+                return "SpecimenDetail";
+            }
+
+            public String getViewName()
+            {
+                return null;
+            }
+
+            public boolean isVialView()
+            {
+                return true;
+            }},
+        VIALS_EMAIL()
+        {
+            public String getQueryName()
+            {
+                return "SpecimenDetail";
+            }
+
+            public String getViewName()
+            {
+                return "SpecimenEmail";
+            }
+
+            public boolean isVialView()
+            {
+                return true;
+            }};
+
+        public abstract String getQueryName();
+        public abstract String getViewName();
+        public abstract boolean isVialView();
+    }
+
     protected SpecimenQueryView(ViewContext context, UserSchema schema, QuerySettings settings,
-                            SimpleFilter filter, Sort sort, boolean detailsView, boolean participantVisitFiltered)
+                            SimpleFilter filter, Sort sort, ViewType viewType, boolean participantVisitFiltered)
     {
         super(context, schema, settings, filter, sort);
-        _detailsView = detailsView;
+        _viewType = viewType;
         _participantVisitFiltered = participantVisitFiltered;
     }
 
-    public static SpecimenQueryView createView(ViewContext context, boolean detailsView)
+    public static SpecimenQueryView createView(ViewContext context, ViewType viewType)
     {
         SimpleFilter filter = new SimpleFilter();
-        return createView(context, filter, createDefaultSort(detailsView), detailsView, false);
+        return createView(context, filter, createDefaultSort(viewType), viewType, false);
     }
 
-    public static SpecimenQueryView createView(ViewContext context, Specimen[] samples, boolean detailsView)
+    public static SpecimenQueryView createView(ViewContext context, Specimen[] samples, ViewType viewType)
     {
         SimpleFilter filter = new SimpleFilter();
-        addFilterClause(filter, samples, detailsView);
-        return createView(context, filter, createDefaultSort(detailsView), detailsView, false);
+        addFilterClause(filter, samples, viewType);
+        return createView(context, filter, createDefaultSort(viewType), viewType, false);
     }
 
-    public static SpecimenQueryView createView(ViewContext context, ParticipantDataset[] participantDatasets, boolean detailsView)
+    public static SpecimenQueryView createView(ViewContext context, ParticipantDataset[] participantDatasets, ViewType viewType)
     {
         SimpleFilter filter = new SimpleFilter();
         addFilterClause(filter, participantDatasets);
-        return createView(context, filter, createDefaultSort(detailsView), detailsView, true);
+        return createView(context, filter, createDefaultSort(viewType), viewType, true);
     }
 
     public enum PARAMS
@@ -272,14 +328,17 @@ public class SpecimenQueryView extends BaseStudyQueryView
         showRequestedOnly
     }
 
-    private static SpecimenQueryView createView(ViewContext context, SimpleFilter filter, Sort sort, boolean detailsView, boolean participantVisitFiltered)
+    private static SpecimenQueryView createView(ViewContext context, SimpleFilter filter, Sort sort, ViewType viewType, boolean participantVisitFiltered)
     {
         Study study = StudyManager.getInstance().getStudy(context.getContainer());
         StudyQuerySchema schema = new StudyQuerySchema(study, context.getUser(), true);
-        String queryName = detailsView ? "SpecimenDetail" : "SpecimenSummary";
+        String queryName = viewType.getQueryName();
         QuerySettings qs = new QuerySettings(context, queryName);
         qs.setSchemaName(schema.getSchemaName());
         qs.setQueryName(queryName);
+        String viewName = viewType.getViewName();
+        if (qs.getViewName() == null && viewName != null)
+            qs.setViewName(viewName);
         qs.setAllowCustomizeView(false);
 
         String excludeRequested = StringUtils.trimToNull((String) context.get(PARAMS.excludeRequestedBySite.name()));
@@ -294,7 +353,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
         String showRequestedOnly = StringUtils.trimToNull((String) context.get(PARAMS.showRequestedOnly.name()));
         if (null != showRequestedOnly && showRequestedOnly.equalsIgnoreCase("true"))
             addOnlyPreviouslyRequestedClause(filter, context.getContainer());
-        return new SpecimenQueryView(context, schema, qs, filter, sort, detailsView, participantVisitFiltered);
+        return new SpecimenQueryView(context, schema, qs, filter, sort, viewType, participantVisitFiltered);
     }
 
     private Map<SpecimenSummary,Integer> getSampleCounts(RenderContext ctx)
@@ -343,26 +402,26 @@ public class SpecimenQueryView extends BaseStudyQueryView
         return _availableSpecimenCounts;
     }
 
-    private static Sort createDefaultSort(boolean details)
+    private static Sort createDefaultSort(ViewType viewType)
     {
-        if (details)
+        if (viewType.isVialView())
             return new Sort("SpecimenNumber,GlobalUniqueId");
         else
             return new Sort("SpecimenNumber");
     }
 
-    protected static SimpleFilter addFilterClause(SimpleFilter filter, Specimen[] specimens, boolean detailsView)
+    protected static SimpleFilter addFilterClause(SimpleFilter filter, Specimen[] specimens, ViewType viewType)
     {
         if (specimens != null && specimens.length > 0)
         {
             StringBuilder whereClause = new StringBuilder();
-            if (detailsView)
+            if (viewType.isVialView())
                 whereClause.append("RowId IN (");
             else
                 whereClause.append("SpecimenNumber IN (");
             for (int i = 0; i < specimens.length; i++)
             {
-                if (detailsView)
+                if (viewType.isVialView())
                     whereClause.append(specimens[i].getRowId());
                 else
                     whereClause.append(specimens[i].getSpecimenNumber());
@@ -471,7 +530,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
     protected DataRegion createDataRegion()
     {
         DataRegion rgn;
-        if (_detailsView)
+        if (_viewType.isVialView())
         {
             if (_showRecordSelectors && _restrictRecordSelectors)
                 rgn = new VialRestrictedDataRegion();
@@ -552,13 +611,15 @@ public class SpecimenQueryView extends BaseStudyQueryView
             for (Map.Entry<String,String> param : _hiddenFormFields.entrySet())
                 rgn.addHiddenFormField(param.getKey(), param.getValue());
         }
+        
+        rgn.addHiddenFormField("referrer", getViewContext().getActionURL().getLocalURIString());
 
         return rgn;
     }
 
     public boolean isShowingVials()
     {
-        return _detailsView;
+        return _viewType.isVialView();
     }
 
     public boolean isShowHistoryLinks()
@@ -627,23 +688,25 @@ public class SpecimenQueryView extends BaseStudyQueryView
                     columns.add(col);
             }
             StringBuilder builder = new StringBuilder();
-            builder.append("<table>\n  <tr>\n");
+            builder.append("<table style=\"border-collapse:collapse\" cellspacing=\"0\" cellpadding=\"2\">\n  <tr><td>&nbsp;</td>\n");
             for (DisplayColumn col : columns)
             {
                 String header = PageFlowUtil.filter(col.getCaption());
                 header = header.replaceAll(" ", "&nbsp;");
-                builder.append("    <td><u>").append(header).append("</u></td>\n");
+                builder.append("    <td style=\"font-weight:bold;border: 1px solid #BBBBBB\">").append(header).append("</td>\n");
             }
             builder.append("  </tr>\n");
             Map<String, Object> rowMap = null;
+            int row = 0;
             while (rs.next())
             {
                 renderContext.setRow(ResultSetUtil.mapRow(rs, rowMap));
-                builder.append("  <tr>\n");
+                builder.append("  <tr style=\"background-color:").append(row++ % 2 == 0 ? "#FFFFFF" : "#DDDDDD").append("\">\n");
+                builder.append("    <td style=\"border: 1px solid #BBBBBB\">").append(row).append("</td>\n");
                 for (DisplayColumn col : columns)
                 {
                     Object value = col.getDisplayValue(renderContext);
-                    builder.append("    <td valign=\"top\">").append(PageFlowUtil.filter(value)).append("</td>\n");
+                    builder.append("    <td style=\"border: 1px solid #BBBBBB\">").append(PageFlowUtil.filter(value)).append("</td>\n");
                 }
                 builder.append("  </tr>\n");
             }

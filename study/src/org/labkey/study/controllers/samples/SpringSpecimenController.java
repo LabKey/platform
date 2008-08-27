@@ -20,10 +20,7 @@ import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.BaseController;
 import org.labkey.study.controllers.StudyController;
 
-import org.labkey.study.query.SpecimenQueryView;
-import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.query.SpecimenRequestQueryView;
-import org.labkey.study.query.SpecimenEventQueryView;
+import org.labkey.study.query.*;
 import org.labkey.study.model.*;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
@@ -205,10 +202,10 @@ public class SpringSpecimenController extends BaseStudyController
             SpecimenQueryView view;
             if (lsids != null)
             {
-                view = getUtils().getSpecimenQueryView(form.isShowVials(), forExport, getFilterPds());
+                view = getUtils().getSpecimenQueryView(form.isShowVials(), forExport, getFilterPds(), form.isCommentsMode());
             }
             else
-                view = getUtils().getSpecimenQueryView(form.isShowVials(), forExport);
+                view = getUtils().getSpecimenQueryView(form.isShowVials(), forExport, form.isCommentsMode());
             view.setAllowExcelWebQuery(false);
             return view;
         }
@@ -234,7 +231,10 @@ public class SpringSpecimenController extends BaseStudyController
         protected SpecimenQueryView createQueryView(SampleViewTypeForm form, BindException errors, boolean forExport, String dataRegion) throws Exception
         {
             _vialView = form.isShowVials();
-            return getUtils().getSpecimenQueryView(_vialView, forExport);
+            SpecimenQueryView view = getUtils().getSpecimenQueryView(_vialView, forExport, form.isCommentsMode());
+            if (form.isCommentsMode())
+                view.setRestrictRecordSelectors(false);
+            return view;
         }
 
         protected ModelAndView getHtmlView(SampleViewTypeForm form, BindException errors) throws Exception
@@ -361,25 +361,18 @@ public class SpringSpecimenController extends BaseStudyController
             }
             return true;
         }
-
-        private boolean safeStrEquals(String a, String b)
-        {
-            if (a == null && b == null)
-                return true;
-            if (a == null || b == null)
-                return false;
-            return a.equals(b);
-        }
     }
 
     public static class SampleViewTypeForm extends QueryViewAction.QueryExportForm
     {
         public enum PARAMS
         {
-            showVials
+            showVials,
+            commentsMode
         }
 
         private boolean _showVials;
+        private boolean _commentsMode;
 
         public boolean isShowVials()
         {
@@ -390,8 +383,26 @@ public class SpringSpecimenController extends BaseStudyController
         {
             _showVials = showVials;
         }
+
+        public boolean isCommentsMode()
+        {
+            return _commentsMode;
+        }
+
+        public void setCommentsMode(boolean commentsMode)
+        {
+            _commentsMode = commentsMode;
+        }
     }
 
+    private static boolean safeStrEquals(String a, String b)
+    {
+        if (a == null && b == null)
+            return true;
+        if (a == null || b == null)
+            return false;
+        return a.equals(b);
+    }
 
     public static class ViewEventForm extends IdForm
     {
@@ -633,7 +644,7 @@ public class SpringSpecimenController extends BaseStudyController
             _samples = samples;
             if (samples != null && samples.length > 0)
             {
-                _specimenQueryView = SpecimenQueryView.createView(context, samples, true);
+                _specimenQueryView = SpecimenQueryView.createView(context, samples, SpecimenQueryView.ViewType.VIALS);
                 _specimenQueryView.setShowHistoryLinks(showHistoryLinks);
                 _specimenQueryView.setShowRecordSelectors(showRecordSelectors);
                 _specimenQueryView.setDisableLowVialIndicators(disableLowVialIndicators);
@@ -2767,4 +2778,176 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
+    public static class UpdateSpecimenCommentsForm extends ViewForm
+    {
+        private String _comments;
+        private int[] _rowId;
+        private boolean _fromGroupedView;
+        private String _referrer;
+        private boolean _saveCommentsPost;
+
+        public String getComments()
+        {
+            return _comments;
+        }
+
+        public void setComments(String comments)
+        {
+            _comments = comments;
+        }
+
+        public int[] getRowId()
+        {
+            return _rowId;
+        }
+
+        public void setRowId(int[] rowId)
+        {
+            _rowId = rowId;
+        }
+
+        public boolean isFromGroupedView()
+        {
+            return _fromGroupedView;
+        }
+
+        public void setFromGroupedView(boolean fromGroupedView)
+        {
+            _fromGroupedView = fromGroupedView;
+        }
+
+        public String getReferrer()
+        {
+            return _referrer;
+        }
+
+        public void setReferrer(String referrer)
+        {
+            _referrer = referrer;
+        }
+
+        public boolean isSaveCommentsPost()
+        {
+            return _saveCommentsPost;
+        }
+
+        public void setSaveCommentsPost(boolean saveCommentsPost)
+        {
+            _saveCommentsPost = saveCommentsPost;
+        }
+    }
+    
+    public static class UpdateSpecimenCommentsBean extends SamplesViewBean
+    {
+        private String _referrer;
+        private String _currentComment;
+
+        public UpdateSpecimenCommentsBean(ViewContext context, Specimen[] samples, String referrer)
+        {
+            super(context, samples, false, false, true, true);
+            _referrer = referrer;
+            try
+            {
+                Map<Specimen, String> currentComments = SampleManager.getInstance().getSpecimenComments(samples);
+                boolean sameComment = true;
+                Iterator<String> it = currentComments.values().iterator();
+                String prevComment = it.next();
+                while (it.hasNext() && sameComment)
+                {
+                    String currentComment = it.next();
+                    sameComment = safeStrEquals(prevComment, currentComment);
+                    prevComment = currentComment;
+                }
+                if (sameComment)
+                    _currentComment = prevComment;
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
+        }
+
+        public String getReferrer()
+        {
+            return _referrer;
+        }
+
+        public String getCurrentComment()
+        {
+            return _currentComment;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class ClearCommentsAction extends RedirectAction<UpdateSpecimenCommentsForm>
+    {
+        public ActionURL getSuccessURL(UpdateSpecimenCommentsForm updateSpecimenCommentsForm)
+        {
+            return new ActionURL(updateSpecimenCommentsForm.getReferrer());
+        }
+
+        public boolean doAction(UpdateSpecimenCommentsForm updateSpecimenCommentsForm, BindException errors) throws Exception
+        {
+            Specimen[] selectedVials = getUtils().getSpecimensFromPost(updateSpecimenCommentsForm.isFromGroupedView(), false);
+            if (selectedVials != null)
+            {
+                for (Specimen specimen : selectedVials)
+                    SampleManager.getInstance().setSpecimenComment(getUser(), specimen, null);
+            }
+            return true;
+        }
+
+        public void validateCommand(UpdateSpecimenCommentsForm target, Errors errors)
+        {
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class UpdateCommentsAction extends FormViewAction<UpdateSpecimenCommentsForm>
+    {
+        public void validateCommand(UpdateSpecimenCommentsForm specimenCommentsForm, Errors errors)
+        {
+            if (specimenCommentsForm.isSaveCommentsPost() &&
+                    (specimenCommentsForm.getRowId() == null ||
+                     specimenCommentsForm.getRowId().length == 0))
+            {
+                errors.reject(null, "No vials were selected.");
+            }
+        }
+
+        public ModelAndView getView(UpdateSpecimenCommentsForm specimenCommentsForm, boolean reshow, BindException errors) throws Exception
+        {
+            Specimen[] selectedVials = getUtils().getSpecimensFromPost(specimenCommentsForm.isFromGroupedView(), false);
+
+            if (selectedVials == null || selectedVials.length == 0)
+                return new HtmlView("No vials selected.  [<a href=\"javascript:back()\">back</a>]");
+
+            return new JspView<UpdateSpecimenCommentsBean>("/org/labkey/study/view/samples/updateComments.jsp",
+                    new UpdateSpecimenCommentsBean(getViewContext(), selectedVials, specimenCommentsForm.getReferrer()), errors);
+        }
+
+        public boolean handlePost(UpdateSpecimenCommentsForm commentsForm, BindException errors) throws Exception
+        {
+            if (commentsForm.getRowId() == null)
+                return false;
+            for (int rowId : commentsForm.getRowId())
+            {
+                Specimen vial = SampleManager.getInstance().getSpecimen(getContainer(), rowId);
+                SampleManager.getInstance().setSpecimenComment(getUser(), vial, commentsForm.getComments());
+            }
+            return true;
+        }
+
+        public ActionURL getSuccessURL(UpdateSpecimenCommentsForm commentsForm)
+        {
+            return new ActionURL(commentsForm.getReferrer());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root = appendBaseSpecimenNavTrail(root, true);
+            return root.addChild("Set vial comments");
+        }
+    }
+    
 }

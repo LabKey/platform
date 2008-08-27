@@ -65,6 +65,10 @@ public class StudyQuerySchema extends UserSchema
             ret.add("Cohort");
 
         ret.add("QCState");
+        ret.add("SpecimenAdditive");
+        ret.add("SpecimenDerivative");
+        ret.add("SpecimenPrimaryType");
+        ret.add("SpecimenComment");
 
         ret.addAll(getDataSetDefinitions().keySet());
         return ret;
@@ -188,7 +192,31 @@ public class StudyQuerySchema extends UserSchema
         }
         if ("QCState".equals(name))
         {
-            QCStateTable ret = new QCStateTable(this);
+            FilteredTable ret = new QCStateTable(this);
+            ret.setAlias(alias);
+            return ret;
+        }
+        if ("SpecimenAdditive".equals(name))
+        {
+            FilteredTable ret = new AdditiveTypeTable(this);
+            ret.setAlias(alias);
+            return ret;
+        }
+        if ("SpecimenDerivative".equals(name))
+        {
+            FilteredTable ret = new DerivativeTypeTable(this);
+            ret.setAlias(alias);
+            return ret;
+        }
+        if ("SpecimenPrimaryType".equals(name))
+        {
+            FilteredTable ret = new PrimaryTypeTable(this);
+            ret.setAlias(alias);
+            return ret;
+        }
+        if ("SpecimenComment".equals(name))
+        {
+            FilteredTable ret = new SpecimenCommentTable(this);
             ret.setAlias(alias);
             return ret;
         }

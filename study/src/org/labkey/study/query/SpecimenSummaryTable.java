@@ -17,11 +17,19 @@
 package org.labkey.study.query;
 
 import org.labkey.study.StudySchema;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.TableInfo;
+import org.labkey.study.SampleManager;
+import org.labkey.study.model.SpecimenComment;
+import org.labkey.api.data.*;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.ExprColumn;
+
+import java.sql.Types;
+import java.sql.SQLException;
+import java.io.Writer;
+import java.io.IOException;
+import java.util.*;
 
 public class SpecimenSummaryTable extends BaseStudyTable
 {
@@ -117,5 +125,116 @@ public class SpecimenSummaryTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("SalReceiptDate"));
         addWrapColumn(_rootTable.getColumn("ClassId"));
         addWrapColumn(_rootTable.getColumn("ProtocolNumber"));
+
+        // Create an ExprColumn to get the max *possible* comments for each specimen.  It's only the possible number
+        // (rather than the actual number), because a specimennumber isn't sufficient to identify a row in the specimen
+        // summary table; derivative and additive types are required as well.  We use this number so we know if additional
+        // (more expensive) queries are required to check for actual comments in the DB for each row.
+        SQLFragment sqlFrag = new SQLFragment("(SELECT COUNT(*) FROM " +
+                StudySchema.getInstance().getTableInfoSpecimenComment() +
+                " WHERE SpecimenNumber = " + ExprColumn.STR_TABLE_ALIAS + ".SpecimenNumber" +
+                " AND Container = ?)");
+        sqlFrag.add(getContainer().getId());
+        //  Set this column type to string so that exports to excel correctly set the column type as string.
+        // (We're using a custom display column to output the text of the comment in this col, even though
+        // the SQL expression returns an integer.)
+        ColumnInfo commentsCol = addColumn(new ExprColumn(this, "Comments", sqlFrag, Types.VARCHAR));
+
+        commentsCol.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            {
+                return new CommentDisplayColumn(colInfo);
+            }
+        });
     }
+
+    public static class CommentDisplayColumn extends DataColumn
+    {
+        public CommentDisplayColumn(ColumnInfo commentColumn)
+        {
+            super(commentColumn);
+            setWidth("200px");
+        }
+
+        public boolean isFilterable()
+        {
+            return false;
+        }
+
+        public boolean isSortable()
+        {
+            return false;
+        }
+
+        public void addQueryColumns(Set<ColumnInfo> columns)
+        {
+            columns.add(getColumnInfo().getParentTable().getColumn("SpecimenNumber"));
+            columns.add(getColumnInfo().getParentTable().getColumn("AdditiveType"));
+            columns.add(getColumnInfo().getParentTable().getColumn("DerivativeType"));
+        }
+
+        private SampleManager.SpecimenSummaryKey getKey(RenderContext ctx)
+        {
+            String specimenNumber = (String) ctx.get("SpecimenNumber");
+            Integer additiveType = (Integer) ctx.get("AdditiveType");
+            Integer derivativeType = (Integer) ctx.get("DerivativeType");
+            return new SampleManager.SpecimenSummaryKey(specimenNumber, derivativeType.intValue(), additiveType.intValue());
+        }
+
+        private String getDisplayText(RenderContext ctx, String lineSeparator)
+        {
+            StringBuilder builder = new StringBuilder();
+            String maxPossibleCount = (String) getValue(ctx);
+            // the string compare below is a big of a hack, but it's cheaper than converting the string to a number and
+            // equally effective.  The column type is string so that exports to excel correctly set the column type as string.
+            if (maxPossibleCount != null && !"0".equals(maxPossibleCount))
+            {
+                try
+                {
+                    SpecimenComment[] comments = SampleManager.getInstance().getSpecimenCommentForSpecimen(ctx.getContainer(), getKey(ctx));
+                    if (comments != null && comments.length > 0)
+                    {
+                        Map<String, List<String>> commentToIds = new TreeMap<String, List<String>>();
+                        for (SpecimenComment comment : comments)
+                        {
+                            List<String> ids = commentToIds.get(comment.getComment());
+                            if (ids == null)
+                            {
+                                ids = new ArrayList<String>();
+                                commentToIds.put(comment.getComment(), ids);
+                            }
+                            ids.add(comment.getGlobalUniqueId());
+                        }
+                        String tempSep = "";
+                        for (Map.Entry<String, List<String>> entry : commentToIds.entrySet())
+                        {
+                            builder.append(tempSep);
+                            builder.append(entry.getValue().size()).append(" vial");
+                            if (entry.getValue().size() > 1)
+                                builder.append("s");
+                            builder.append(": ").append(entry.getKey());
+                            tempSep = lineSeparator;
+                        }
+                    }
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeSQLException(e);
+                }
+            }
+            return builder.toString();
+        }
+
+        public Object getDisplayValue(RenderContext ctx)
+        {
+            return getDisplayText(ctx, ", ");
+        }
+
+        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        {
+            out.write(getDisplayText(ctx, "<br>"));
+        }
+    }
+
 }

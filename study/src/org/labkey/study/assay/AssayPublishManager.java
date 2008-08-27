@@ -124,12 +124,27 @@ public class AssayPublishManager implements AssayPublishService.Service
         return publishAssayData(user, sourceContainer, targetContainer, assayName, protocol, dataMaps, types, null, errors);
     }
 
-    private List<PropertyDescriptor> createTargetPropertyDescriptors(DataSetDefinition dataset, List<PropertyDescriptor> sourcePds)
+    private List<PropertyDescriptor> createTargetPropertyDescriptors(DataSetDefinition dataset, List<PropertyDescriptor> sourcePds, List<String> errors)
     {
         List<PropertyDescriptor> targetPds = new ArrayList<PropertyDescriptor>(sourcePds.size());
+        Set<String> legalNames = new HashSet<String>();
         for (PropertyDescriptor sourcePd : sourcePds)
         {
             PropertyDescriptor targetPd = sourcePd.clone();
+
+            // Deal with duplicate legal names.  It's too bad that we have to do so this late in the game
+            // (rather than at assay design time), but for a long time there was no mechanism to
+            // prevent assay designers from creating properties with names that are the same as hard columns.
+            // There are also a few cases where an assay provider may add columns to the published set as
+            // publish time; rather than reserve all these names at design time, we catch them here.
+            String legalName = ColumnInfo.legalNameFromName(targetPd.getName()).toLowerCase();
+            if (legalNames.contains(legalName))
+            {
+                errors.add("Unable to copy to study: duplicate column \"" + targetPd.getName() + "\" detected in the assay design.  Please contact an administrator.");
+                return Collections.emptyList();
+            }
+            legalNames.add(legalName);
+
             targetPd.setPropertyURI(dataset.getTypeURI() + "#" + sourcePd.getName());
             targetPd.setContainer(dataset.getContainer());
             targetPd.setProject(dataset.getContainer().getProject());
@@ -166,7 +181,9 @@ public class AssayPublishManager implements AssayPublishService.Service
             if (dataset == null)
                 dataset = createAssayDataset(user, targetStudy, assayName, keyPropertyName, null, false);
 
-            types = createTargetPropertyDescriptors(dataset, types);
+            types = createTargetPropertyDescriptors(dataset, types, errors);
+            if (!errors.isEmpty())
+                return null;
             Map<String, String> propertyNamesToUris = ensurePropertyDescriptors(targetContainer, user, dataset, dataMaps, types);
             Map<String, Object>[] convertedDataMaps = convertPropertyNamesToURIs(dataMaps, propertyNamesToUris);
             // re-retrieve the datasetdefinition: this is required to pick up any new columns that may have been created

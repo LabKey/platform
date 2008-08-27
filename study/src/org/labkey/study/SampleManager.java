@@ -1460,11 +1460,12 @@ public class SampleManager
         return Table.select(StudySchema.getInstance().getTableInfoSpecimenSummary(), Table.ALL_COLUMNS, filter, null, Specimen.class);
     }
 
-    public Map<SpecimenSummaryKey,List<Specimen>> getVialsForSampleKeys(Container container, List<SampleManager.SpecimenSummaryKey> keys) throws SQLException
+    public Map<SpecimenSummaryKey,List<Specimen>> getVialsForSampleKeys(Container container, List<SampleManager.SpecimenSummaryKey> keys, boolean onlyAvailable) throws SQLException
     {
         SimpleFilter filter = new SimpleFilter("Container", container.getId());
         filter.addClause(getSpecimenFilter(keys));
-        filter.addCondition("Available", true);
+        if (onlyAvailable)
+            filter.addCondition("Available", true);
         SQLFragment sql = new SQLFragment("SELECT * FROM " + StudySchema.getInstance().getTableInfoSpecimenDetail().getAliasName() + " ");
         sql.append(filter.getSQLFragment(StudySchema.getInstance().getSqlDialect()));
 
@@ -2257,6 +2258,76 @@ public class SampleManager
         if (includeParticipantLists)
             setSummaryParticpantLists(sql, params, level, summaries, "ParticipantId", "SequenceNum");
         return summaries;
+    }
+
+    public Map<Specimen, String> getSpecimenComments(Specimen[] vials) throws SQLException
+    {
+        Map<Specimen, String> comments = new HashMap<Specimen, String>();
+        for (Specimen vial : vials)
+        {
+            SpecimenComment comment = getSpecimenCommentForVial(vial);
+            comments.put(vial, comment != null ? comment.getComment() : null);
+        }
+        return comments;
+    }
+
+    public SpecimenComment getSpecimenCommentForVial(Specimen vial) throws SQLException
+    {
+        SimpleFilter filter = new SimpleFilter("Container", vial.getContainer().getId());
+        filter.addCondition("GlobalUniqueId", vial.getGlobalUniqueId());
+        return Table.selectObject(StudySchema.getInstance().getTableInfoSpecimenComment(), filter, null, SpecimenComment.class);
+    }
+
+    public SpecimenComment[] getSpecimenCommentForSpecimen(Container container, SpecimenSummaryKey key) throws SQLException
+    {
+        SimpleFilter vialFilter = new SimpleFilter("Container", container.getId());
+        vialFilter.addClause(getSpecimenFilter(Collections.singletonList(key)));
+        List<String> globalUniqueIds = new ArrayList<String>();
+        ResultSet rs = null;
+        try
+        {
+            rs = Table.select(StudySchema.getInstance().getTableInfoSpecimen(), Collections.singleton("GlobalUniqueId"), vialFilter, new Sort("GlobalUniqueId"));
+            while (rs.next())
+                globalUniqueIds.add(rs.getString(1));
+        }
+        finally
+        {
+            if (rs != null)
+                try { rs.close(); } catch (SQLException e) { /* fall through */ }
+        }
+        SimpleFilter commentFilter = new SimpleFilter("Container", container.getId());
+        commentFilter.addInClause("GlobalUniqueId", globalUniqueIds);
+        return Table.select(StudySchema.getInstance().getTableInfoSpecimenComment(), Table.ALL_COLUMNS,
+                commentFilter, new Sort("GlobalUniqueId"), SpecimenComment.class);
+    }
+
+    public SpecimenComment setSpecimenComment(User user, Specimen vial, String commentText) throws SQLException
+    {
+        SpecimenComment comment = getSpecimenCommentForVial(vial);
+        if (commentText == null)
+        {
+            if (comment != null)
+                Table.delete(StudySchema.getInstance().getTableInfoSpecimenComment(), comment.getRowId(), null);
+            return null;
+        }
+        else
+        {
+            if (comment != null)
+            {
+                comment.setComment(commentText);
+                comment.beforeUpdate(user);
+                return Table.update(user, StudySchema.getInstance().getTableInfoSpecimenComment(), comment, comment.getRowId(), null);
+            }
+            else
+            {
+                comment = new SpecimenComment();
+                comment.setGlobalUniqueId(vial.getGlobalUniqueId());
+                comment.setSpecimenNumber(vial.getSpecimenNumber());
+                comment.setComment(commentText);
+                comment.beforeInsert(user, vial.getContainer().getId());
+                return Table.insert(user, StudySchema.getInstance().getTableInfoSpecimenComment(), comment);
+            }
+        }
     }
 
     private void setSummaryParticpantLists(String sql, Object[] paramArray, SpecimenTypeLevel level,

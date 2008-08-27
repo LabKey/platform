@@ -398,12 +398,6 @@ public class DatasetBatch extends StudyBatch implements Serializable
 
             _logInfo("Finish batch " + (null == _definitionFile ? "" : _definitionFile.getName()));
 
-            for (DatasetImportJob job : jobs)
-            {
-                if (!(job instanceof ParticipantImportJob))
-                    job.getDatasetDefinition().materializeInBackground();
-            }
-
             getStudyManager().getVisitManager(getStudy()).updateParticipantVisits(getUser());
             try
             {
@@ -418,6 +412,15 @@ public class DatasetBatch extends StudyBatch implements Serializable
             {
                 // rethrow and catch below for central logging
                 throw new RuntimeException(e);
+            }
+
+            // materialize datasets only AFTER all other work has been completed; otherwise the background thread
+            // materializing datasets will fight with other operations that may try to clear the materialized cache.
+            // (updateParticipantVisits does this, for example)
+            for (DatasetImportJob job : jobs)
+            {
+                if (!(job instanceof ParticipantImportJob))
+                    job.getDatasetDefinition().materializeInBackground();
             }
         }
         catch (RuntimeException x)

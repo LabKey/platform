@@ -1184,7 +1184,11 @@ public class StudyManager
             // QC States
             Table.delete(StudySchema.getInstance().getTableInfoQCState(), containerFilter);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoQCState());
-            
+
+            // Specimen comments
+            Table.delete(StudySchema.getInstance().getTableInfoSpecimenComment(), containerFilter);
+            assert deletedTables.add(StudySchema.getInstance().getTableInfoSpecimenComment());
+
             if (localTransaction)
             {
                 scope.commitTransaction();

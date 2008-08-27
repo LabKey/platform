@@ -23,6 +23,9 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.api.security.SecurityUrls" %>
+<%@ page import="org.labkey.api.query.QueryService" %>
+<%@ page import="org.labkey.api.query.QueryAction" %>
+<%@ page import="org.labkey.api.query.QueryParam" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <script type="text/javascript">LABKEY.requiresScript('completion.js');</script>
 <script type="text/javascript">

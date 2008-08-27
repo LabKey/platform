@@ -87,15 +87,17 @@ if (null == datasets || datasets.length == 0)
             if (!equal(category, firstDataset.getCategory()))
             {
                 category = firstDataset.getCategory();
-                sb.append("<tr><th>");
+                sb.append("<tr><td class=\"labkey-announcement-title\"><span>");
                 sb.append(h(category == null ? "Uncategorized" : category));
-                sb.append("</th></tr>\n");
+                sb.append("</span></td></tr>\n");
+                sb.append("<tr><td class=\"labkey-title-area-line\"><img height=\"1\" width=\"1\" src=\"/labkey/_.gif\"/></td></tr>\n");
             }
             else if (null != category)
             {
-                sb.append("<tr><th>");
+                sb.append("<tr><td class=\"labkey-announcement-title\"><span>");
                 sb.append(h(category)).append(" (Continued)");
-                sb.append("</th></tr>\n");
+                sb.append("</span></td></tr>\n");
+                sb.append("<tr><td class=\"labkey-title-area-line\"><img height=\"1\" width=\"1\" src=\"/labkey/_.gif\"/></td></tr>\n");
             }
 
             for (DataSetDefinition dataSet : datasets.subList(startIndex, endIndex))
@@ -103,7 +105,8 @@ if (null == datasets || datasets.length == 0)
                 if (!equal(category, dataSet.getCategory()))
                 {
                     category = dataSet.getCategory();
-                    sb.append("<tr><th>").append(h(category == null ? "Uncategorized" : category)).append("</th></tr>\n");
+                    sb.append("<tr><td class=\"labkey-announcement-title\"><span>").append(h(category == null ? "Uncategorized" : category)).append("</span></td></tr>\n");
+                    sb.append("<tr><td class=\"labkey-title-area-line\"><img height=\"1\" width=\"1\" src=\"/labkey/_.gif\"/></td></tr>\n");
                 }
 
                 String dataSetLabel = (dataSet.getLabel() != null ? dataSet.getLabel() : "" + dataSet.getDataSetId());

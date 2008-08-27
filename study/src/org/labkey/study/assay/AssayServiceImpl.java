@@ -89,6 +89,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
 
     public GWTProtocol getAssayTemplate(AssayProvider provider, Pair<ExpProtocol, List<Domain>> template, boolean copy) throws SerializableException
     {
+        ExpProtocol protocol = template.getKey();
         List<GWTDomain> gwtDomains = new ArrayList<GWTDomain>();
         for (Domain domain : template.getValue())
         {
@@ -114,9 +115,9 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             }
             gwtDomain.setPropertyDescriptors(gwtProps);
             gwtDomain.setRequiredPropertyDescriptors(requiredPropertyDescriptors);
+            gwtDomain.setReservedPropertyNames(provider.getReservedPropertyNames(protocol, domain));
         }
 
-        ExpProtocol protocol = template.getKey();
         GWTProtocol result = new GWTProtocol();
         result.setSampleCount(protocol.getMaxInputMaterialPerInstance() != null ? protocol.getMaxInputMaterialPerInstance() : 0);
         result.setProtocolId(protocol.getRowId() > 0 ? protocol.getRowId() : null);

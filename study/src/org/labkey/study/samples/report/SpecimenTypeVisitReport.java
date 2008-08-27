@@ -92,13 +92,15 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SampleManager.S
     {
         if (summary == null || summary.getVialCount() == null)
             return new String[] {};
-
+        String summaryText = getCellSummaryText(summary);
+        boolean hasSummaryText = summaryText != null && summaryText.length() > 0;
         int ptidCount = _parameters.isViewPtidList() ? summary.getParticipantIds().size() : 0;
-        String[] strArray = new String[1 + ptidCount];
-        strArray[0] = getCellSummaryText(summary);
+        String[] strArray = new String[ptidCount + (hasSummaryText ? 1 : 0)];
+        if (hasSummaryText)
+            strArray[0] = summaryText;
         if (ptidCount > 0)
         {
-            int currentIndex = 1;
+            int currentIndex = (hasSummaryText ? 1 : 0);
             for (String s : summary.getParticipantIds())
                 strArray[currentIndex++] = s;
         }

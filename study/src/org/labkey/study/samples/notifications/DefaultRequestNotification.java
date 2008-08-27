@@ -18,7 +18,6 @@ package org.labkey.study.samples.notifications;
 
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.data.SimpleFilter;
 import org.labkey.study.model.SampleRequest;
 import org.labkey.study.model.SampleRequestRequirement;
 import org.labkey.study.model.Specimen;
@@ -51,7 +50,7 @@ public class DefaultRequestNotification implements RequestNotification
         Specimen[] specimens = getSpecimenList();
         if (specimens != null && specimens.length > 0)
         {
-            SpecimenQueryView view = SpecimenQueryView.createView(context, specimens, true);
+            SpecimenQueryView view = SpecimenQueryView.createView(context, specimens, SpecimenQueryView.ViewType.VIALS_EMAIL);
             view.setDisableLowVialIndicators(true);
             return view.getSimpleHtmlTable();
         }

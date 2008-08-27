@@ -55,6 +55,10 @@ public class StudyPipeline extends PipelineProvider
         if (!context.hasPermission(ACL.PERM_INSERT))
             return;
 
+        Study study = StudyManager.getInstance().getStudy(context.getContainer());
+        if (study == null)
+            return;
+
         try
         {
             PipeRoot root = PipelineService.get().findPipelineRoot(context.getContainer());
@@ -68,7 +72,7 @@ public class StudyPipeline extends PipelineProvider
                     }
                 });
                 if (files != null)
-                    handleDatasetFiles(context, entry, rootDir, files);
+                    handleDatasetFiles(context, study, entry, rootDir, files);
                 files = entry.listFiles(new FileEntryFilter()
                 {
                     public boolean accept(File f)
@@ -126,10 +130,8 @@ public class StudyPipeline extends PipelineProvider
     }
 
 
-    private void handleDatasetFiles(ViewContext context, FileEntry entry, File rootDir, File[] files) throws IOException
+    private void handleDatasetFiles(ViewContext context, Study study, FileEntry entry, File rootDir, File[] files) throws IOException
     {
-        Study study = StudyManager.getInstance().getStudy(context.getContainer());
-
         for (File f : files)
         {
             File lock = lockForDataset(study, f);

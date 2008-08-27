@@ -83,9 +83,9 @@ public class SpecimenUtils
         return _controller.getStudy();
     }
 
-    public SpecimenQueryView getSpecimenQueryView(boolean showVials, boolean forExport) throws ServletException, SQLException
+    public SpecimenQueryView getSpecimenQueryView(boolean showVials, boolean forExport, boolean commentsMode) throws ServletException, SQLException
     {
-        return getSpecimenQueryView(showVials, forExport, null);
+        return getSpecimenQueryView(showVials, forExport, null, commentsMode);
     }
 
     private String urlFor(Class<? extends Controller> action)
@@ -93,15 +93,19 @@ public class SpecimenUtils
         return new ActionURL(action, getContainer()).getLocalURIString();
     }
 
-    public SpecimenQueryView getSpecimenQueryView(boolean showVials, boolean forExport, ParticipantDataset[] cachedFilterData) throws ServletException, SQLException
+    public SpecimenQueryView getSpecimenQueryView(boolean showVials, boolean forExport, ParticipantDataset[] cachedFilterData, boolean commentsMode) throws ServletException, SQLException
     {
         SpecimenQueryView gridView;
         SampleManager.RepositorySettings settings = SampleManager.getInstance().getRepositorySettings(getContainer());
 
         if (cachedFilterData != null)
-            gridView = SpecimenQueryView.createView(getViewContext(), cachedFilterData, showVials);
+            gridView = SpecimenQueryView.createView(getViewContext(), cachedFilterData,
+                    showVials ? SpecimenQueryView.ViewType.VIALS :
+                                SpecimenQueryView.ViewType.SUMMARY);
         else
-            gridView = SpecimenQueryView.createView(getViewContext(), showVials);
+            gridView = SpecimenQueryView.createView(getViewContext(),
+                            showVials ? SpecimenQueryView.ViewType.VIALS :
+                                        SpecimenQueryView.ViewType.SUMMARY);
         gridView.setShowHistoryLinks(showVials && !forExport && !settings.isSimple());
         gridView.setDisableLowVialIndicators(forExport || settings.isSimple());
         gridView.setShowRecordSelectors(settings.isEnableRequests());
@@ -115,25 +119,70 @@ public class SpecimenUtils
         {
             MenuButton requestMenuButton = new MenuButton("Request Options");
             requestMenuButton.addMenuItem("View Existing Requests", urlFor(SpringSpecimenController.ViewRequestsAction.class));
-            if (getViewContext().hasPermission(ACL.PERM_INSERT))
+            if (!commentsMode)
             {
-                String dataRegionName = gridView.getSettings().getDataRegionName();
-                String createRequestURL = urlFor(SpringSpecimenController.ShowCreateSampleRequestAction.class);
-                requestMenuButton.addMenuItem("Create New Request", createRequestURL,
-                        "if (verifySelected(document.forms[\"" + dataRegionName + "\"], \"" + createRequestURL +
-                        "\", \"post\", \"rows\")) document.forms[\"" + dataRegionName + "\"].submit(); return false;");
-
-                if (getUser().isAdministrator() || getViewContext().hasPermission(ACL.PERM_ADMIN) ||
-                        SampleManager.getInstance().isSpecimenShoppingCartEnabled(getViewContext(). getContainer()))
+                if (getViewContext().hasPermission(ACL.PERM_INSERT))
                 {
-                    String addToRequestURL = urlFor(SpringSpecimenController.ShowAddToSampleRequestAction.class);
-                    requestMenuButton.addMenuItem("Add To Existing Request", addToRequestURL,
-                            "if (verifySelected(document.forms[\"" + dataRegionName + "\"], \"" + addToRequestURL +
-                            "\", \"get\", \"rows\")) document.forms[\"" + dataRegionName + "\"].submit(); return false;");
+                    String dataRegionName = gridView.getSettings().getDataRegionName();
+                    String createRequestURL = urlFor(SpringSpecimenController.ShowCreateSampleRequestAction.class);
+                    requestMenuButton.addMenuItem("Create New Request", "#",
+                            "if (verifySelected(document.forms['" + dataRegionName + "'], '" + createRequestURL +
+                            "', 'post', 'rows')) document.forms['" + dataRegionName + "'].submit(); return false;");
+
+                    if (getUser().isAdministrator() || getViewContext().hasPermission(ACL.PERM_ADMIN) ||
+                            SampleManager.getInstance().isSpecimenShoppingCartEnabled(getViewContext(). getContainer()))
+                    {
+                        String addToRequestURL = urlFor(SpringSpecimenController.ShowAddToSampleRequestAction.class);
+                        requestMenuButton.addMenuItem("Add To Existing Request", "#",
+                                "if (verifySelected(document.forms['" + dataRegionName + "'], '" + addToRequestURL +
+                                "', 'get', 'rows')) document.forms['" + dataRegionName + "'].submit(); return false;");
+                    }
                 }
             }
+            else
+            {
+                ActionURL endCommentsURL = getViewContext().getActionURL().clone();
+                endCommentsURL.deleteParameter(SpringSpecimenController.SampleViewTypeForm.PARAMS.commentsMode);
+                requestMenuButton.addMenuItem("Enable Request Mode", endCommentsURL);
+            }
+
             buttons.add(requestMenuButton);
         }
+
+        if (getViewContext().hasPermission(ACL.PERM_ADMIN))
+        {
+            if (commentsMode)
+            {
+                MenuButton commentsMenuButton = new MenuButton("Comments");
+                String dataRegionName = gridView.getSettings().getDataRegionName();
+                String setCommentsURL = urlFor(SpringSpecimenController.UpdateCommentsAction.class);
+                NavTree setItem = commentsMenuButton.addMenuItem("Set Comment for Selected", "#",
+                        "if (verifySelected(document.forms['" + dataRegionName + "'], '" + setCommentsURL +
+                        "', 'post', 'rows')) document.forms['" + dataRegionName + "'].submit(); return false;");
+                setItem.setId("Comments:Set");
+
+                String clearCommentsURL = urlFor(SpringSpecimenController.ClearCommentsAction.class);
+                NavTree clearItem = commentsMenuButton.addMenuItem("Clear Comments for Selected", "#",
+                        "if (verifySelected(document.forms['" + dataRegionName + "'], '" + clearCommentsURL +
+                        "', 'post', 'rows') && confirm('This will permanently clear comments for all selected vials.  Continue?')) " +
+                                "document.forms['" + dataRegionName + "'].submit();\nreturn false;");
+                clearItem.setId("Comments:Clear");
+
+                ActionURL endCommentsURL = getViewContext().getActionURL().clone();
+                endCommentsURL.deleteParameter(SpringSpecimenController.SampleViewTypeForm.PARAMS.commentsMode);
+                NavTree exitItem = commentsMenuButton.addMenuItem("Exit Comments Mode", endCommentsURL);
+                exitItem.setId("Comments:Exit");
+                buttons.add(commentsMenuButton);
+            }
+            else
+            {
+                ActionURL enableCommentsURL = getViewContext().getActionURL().clone();
+                enableCommentsURL.replaceParameter(SpringSpecimenController.SampleViewTypeForm.PARAMS.commentsMode, Boolean.TRUE.toString());
+                ActionButton commentsButton = new ActionButton("Enable Comments", enableCommentsURL);
+                buttons.add(commentsButton);
+            }
+        }
+
 
         if (getViewContext().hasPermission(ACL.PERM_ADMIN))
         {
@@ -463,6 +512,30 @@ public class SpecimenUtils
         return getSpecimensFromIds(BaseStudyController.toIntArray(ids));
     }
 
+    public Specimen[] getSpecimensFromPost(boolean fromGroupedView, boolean onlyAvailable) throws SQLException
+    {
+        Set<String> formValues = null;
+        if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
+            formValues = DataRegionSelection.getSelected(getViewContext(), true);
+
+        if (formValues == null || formValues.isEmpty())
+            return null;
+
+        Specimen[] selectedVials;
+        if (fromGroupedView)
+        {
+            List<SampleManager.SpecimenSummaryKey> keys = getKeysForSpecimenFormIds(formValues);
+            Map<SampleManager.SpecimenSummaryKey,List<Specimen>> keyToVialMap = SampleManager.getInstance().getVialsForSampleKeys(getContainer(), keys, onlyAvailable);
+            List<Specimen> vials = new ArrayList<Specimen>();
+            for (List<Specimen> vialList : keyToVialMap.values())
+                vials.addAll(vialList);
+            selectedVials = vials.toArray(new Specimen[vials.size()]);
+        }
+        else
+            selectedVials = getSpecimensFromIds(formValues);
+        return selectedVials;
+    }
+
     public List<SampleManager.SpecimenSummaryKey> getKeysForSpecimenFormIds(Collection<String> ids)
     {
         List<SampleManager.SpecimenSummaryKey> keys = new ArrayList<SampleManager.SpecimenSummaryKey>();
@@ -571,7 +644,7 @@ public class SpecimenUtils
     public RequestedSpecimens getRequestableBySampleFormValue(Set<String> formValues, Integer preferredLocation) throws SQLException, AmbiguousLocationException
     {
         List<SampleManager.SpecimenSummaryKey> keys = getKeysForSpecimenFormIds(formValues);
-        Map<SampleManager.SpecimenSummaryKey,List<Specimen>> samplesForKeys = SampleManager.getInstance().getVialsForSampleKeys(getContainer(), keys);
+        Map<SampleManager.SpecimenSummaryKey,List<Specimen>> samplesForKeys = SampleManager.getInstance().getVialsForSampleKeys(getContainer(), keys, true);
         if (preferredLocation == null)
         {
             Collection<Integer> preferredLocations = getPreferredProvidingLocations(samplesForKeys.values());

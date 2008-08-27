@@ -102,13 +102,13 @@ public class SpecimenDetailTable extends BaseStudyTable
         });
         addColumn(derivativeTypeColumn);
 
-        final ColumnInfo inRequestColumn = addWrapColumn(_rootTable.getColumn("LockedInRequest"));
+        addWrapColumn(_rootTable.getColumn("LockedInRequest"));
         ColumnInfo siteNameColumn = addWrapColumn(_rootTable.getColumn("SiteName"));
         siteNameColumn.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
-                return new SiteNameDisplayColumn(colInfo, inRequestColumn);
+                return new SiteNameDisplayColumn(colInfo);
             }
         });
         ColumnInfo originatingSiteCol = new AliasedColumn(this, "Clinic", _rootTable.getColumn("OriginatingLocationId"));
@@ -120,6 +120,23 @@ public class SpecimenDetailTable extends BaseStudyTable
             }
         });
         addColumn(originatingSiteCol);
+
+        ColumnInfo commentsColumn = new AliasedColumn(this, "Comments", _rootTable.getColumn("GlobalUniqueId"));
+        commentsColumn.setFk(new LookupForeignKey("GlobalUniqueId")
+        {
+            public TableInfo getLookupTableInfo()
+            {
+                return new SpecimenCommentTable(_schema);
+            }
+        });
+        commentsColumn.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            {
+                return new CommentDisplayColumn(colInfo);
+            }
+        });
+        addColumn(commentsColumn);
 
         addWrapColumn(_rootTable.getColumn("SiteLdmsCode"));
         addWrapColumn(_rootTable.getColumn("DrawTimestamp"));
@@ -138,25 +155,52 @@ public class SpecimenDetailTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("freezer"));*/
     }
 
+    public static class CommentDisplayColumn extends DataColumn
+    {
+        public CommentDisplayColumn(ColumnInfo commentColumn)
+        {
+            super(commentColumn);
+        }
+
+        public Object getDisplayValue(RenderContext ctx)
+        {
+            Object value = getDisplayColumn().getValue(ctx);
+            if (value == null)
+                return "";
+            else
+                return value;
+        }
+
+        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        {
+            Object value = getDisplayColumn().getValue(ctx);
+            if (value != null  && value instanceof String)
+                out.write((String) value);
+        }
+    }
+    
     public static class SiteNameDisplayColumn extends DataColumn
     {
         private static final String NO_SITE_DISPLAY_VALUE = "In Transit";
-        private ColumnInfo _inRequestColumn;
-        public SiteNameDisplayColumn(ColumnInfo siteColumn, ColumnInfo inRequestColumn)
+        public SiteNameDisplayColumn(ColumnInfo siteColumn)
         {
             super(siteColumn);
-            _inRequestColumn = inRequestColumn;
+        }
+
+        private ColumnInfo getInRequestColumn()
+        {
+            return getColumnInfo().getParentTable().getColumn("LockedInRequest");
         }
 
         public void addQueryColumns(Set<ColumnInfo> columns)
         {
             super.addQueryColumns(columns);
-            columns.add(_inRequestColumn);
+            columns.add(getInRequestColumn());
         }
 
         private String getNoSiteText(RenderContext ctx)
         {
-            Object inRequest = _inRequestColumn.getValue(ctx);
+            Object inRequest = getInRequestColumn().getValue(ctx);
             boolean requested = (inRequest instanceof Boolean && ((Boolean) inRequest).booleanValue()) ||
                 (inRequest instanceof Integer && ((Integer) inRequest).intValue() == 1);
             return NO_SITE_DISPLAY_VALUE + (requested ? ": Requested" : "");

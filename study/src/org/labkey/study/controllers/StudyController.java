@@ -3347,7 +3347,7 @@ public class StudyController extends BaseStudyController
             if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
                 lsids = DataRegionSelection.getSelected(getViewContext(), updateQCForm.getDataRegionSelectionKey(), true, false);
             if (lsids == null || lsids.isEmpty())
-                return new HtmlView("No samples selected.  [<a href=\"javascript:back()\">back</a>]");
+                return new HtmlView("No data rows selected.  [<a href=\"javascript:back()\">back</a>]");
             StudyQuerySchema querySchema = new StudyQuerySchema(study, getUser(), true);
             QuerySettings qs = new QuerySettings(getViewContext(), DataSetQueryView.DATAREGION);
             qs.setSchemaName(querySchema.getSchemaName());

@@ -1575,7 +1575,8 @@ public class SamplesController extends BaseController
         {
             _container = context.getContainer();
             _detailsView = detailsView;
-            SpecimenQueryView view = SpecimenQueryView.createView(context, detailsView);
+            SpecimenQueryView view = SpecimenQueryView.createView(context, detailsView ? SpecimenQueryView.ViewType.VIALS :
+                    SpecimenQueryView.ViewType.SUMMARY);
             _displayColumns = view.getDisplayColumns();
             _dataRegionName = view.getDataRegionName();
             _baseViewURL = view.getBaseViewURL();

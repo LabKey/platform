@@ -199,4 +199,9 @@ public class StudySchema
     {
         return getSchema().getTable("ParticipantView");
     }
+
+    public TableInfo getTableInfoSpecimenComment()
+    {
+        return getSchema().getTable("SpecimenComment");
+    }
 }

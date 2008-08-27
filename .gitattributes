@@ -1636,6 +1636,7 @@ study/src/META-INF/study/scripts/postgresql/study-8.23-8.24.sql -text
 study/src/META-INF/study/scripts/postgresql/study-8.24-8.25.sql -text
 study/src/META-INF/study/scripts/postgresql/study-8.25-8.26.sql -text
 study/src/META-INF/study/scripts/postgresql/study-8.26-8.27.sql -text
+study/src/META-INF/study/scripts/postgresql/study-8.27-8.28.sql -text
 study/src/META-INF/study/scripts/postgresql/study-create.sql -text
 study/src/META-INF/study/scripts/postgresql/study-drop.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/obsolete/study-0.00-1.11.sql -text
@@ -1724,6 +1725,7 @@ study/src/META-INF/study/scripts/sql[!!-~]server/study-8.23-8.24.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-8.24-8.25.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-8.25-8.26.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-8.26-8.27.sql -text
+study/src/META-INF/study/scripts/sql[!!-~]server/study-8.27-8.28.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-create.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-drop.sql -text
 study/src/org/labkey/study/QueryHelper.java -text
@@ -1815,6 +1817,7 @@ study/src/org/labkey/study/model/SampleRequestStatus.java -text
 study/src/org/labkey/study/model/SecurityType.java -text
 study/src/org/labkey/study/model/Site.java -text
 study/src/org/labkey/study/model/Specimen.java -text
+study/src/org/labkey/study/model/SpecimenComment.java -text
 study/src/org/labkey/study/model/SpecimenEvent.java -text
 study/src/org/labkey/study/model/SpecimenSummary.java -text
 study/src/org/labkey/study/model/SpecimenTypeSummary.java -text
@@ -1874,6 +1877,7 @@ study/src/org/labkey/study/query/PublishedRecordQueryView.java -text
 study/src/org/labkey/study/query/QCStateTable.java -text
 study/src/org/labkey/study/query/RequestStatusTable.java -text
 study/src/org/labkey/study/query/SiteTable.java -text
+study/src/org/labkey/study/query/SpecimenCommentTable.java -text
 study/src/org/labkey/study/query/SpecimenDetailTable.java -text
 study/src/org/labkey/study/query/SpecimenEventQueryView.java -text
 study/src/org/labkey/study/query/SpecimenEventTable.java -text
@@ -2032,6 +2036,7 @@ study/src/org/labkey/study/view/samples/samplesHeader.jsp -text
 study/src/org/labkey/study/view/samples/search.jsp -text
 study/src/org/labkey/study/view/samples/selectSpecimenProvider.jsp -text
 study/src/org/labkey/study/view/samples/specimenVisitReport.jsp -text
+study/src/org/labkey/study/view/samples/updateComments.jsp -text
 study/src/org/labkey/study/view/samples/uploadSimpleSpecimens.jsp -text
 study/src/org/labkey/study/view/samples/viewRequestsHeader.jsp -text
 study/src/org/labkey/study/view/samples/webPart.jsp -text

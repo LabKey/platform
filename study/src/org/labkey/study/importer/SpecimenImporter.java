@@ -172,6 +172,7 @@ public class SpecimenImporter
         private String _fkTable;
         private String _joinType;
         private String _fkColumn;
+        private String _aggregateEventFunction;
 
         public SpecimenColumn(String tsvColumnName, String dbColumnName, String databaseType, TargetTable eventColumn, boolean unique)
         {
@@ -182,6 +183,12 @@ public class SpecimenImporter
         public SpecimenColumn(String tsvColumnName, String dbColumnName, String databaseType, TargetTable eventColumn)
         {
             this(tsvColumnName, dbColumnName, databaseType, eventColumn, false);
+        }
+
+        public SpecimenColumn(String tsvColumnName, String dbColumnName, String databaseType, TargetTable eventColumn, String aggregateEventFunction)
+        {
+            this(tsvColumnName, dbColumnName, databaseType, eventColumn, false);
+            _aggregateEventFunction = aggregateEventFunction;
         }
 
         public SpecimenColumn(String tsvColumnName, String dbColumnName, String databaseType,
@@ -222,6 +229,11 @@ public class SpecimenImporter
         public String getDbType()
         {
             return _dbType;
+        }
+
+        public String getAggregateEventFunction()
+        {
+            return _aggregateEventFunction;
         }
     }
 
@@ -271,7 +283,7 @@ public class SpecimenImporter
             new SpecimenColumn("protocol_number", "ProtocolNumber", "VARCHAR(10)", TargetTable.SPECIMENS),
             new SpecimenColumn("visit_description", "VisitDescription", "VARCHAR(3)", TargetTable.SPECIMENS),
             new SpecimenColumn("other_specimen_id", "OtherSpecimenId", "VARCHAR(20)", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("volume", "Volume", "FLOAT", TargetTable.SPECIMENS),
+            new SpecimenColumn("volume", "Volume", "FLOAT", TargetTable.SPECIMENS, "MAX"),
             new SpecimenColumn("volume_units", "VolumeUnits", "VARCHAR(3)", TargetTable.SPECIMENS),
             new SpecimenColumn("stored", "Stored", "INT", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("storage_flag", "storageFlag", "INT", TargetTable.SPECIMEN_EVENTS),
@@ -771,7 +783,7 @@ public class SpecimenImporter
         boolean first = true;
         for (SpecimenColumn col : SPECIMEN_COLUMNS)
         {
-            if (col.getTargetTable() == TargetTable.SPECIMENS)
+            if (col.getTargetTable() == TargetTable.SPECIMENS && col.getAggregateEventFunction() == null)
             {
                 if (!first)
                     columnList.append(",\n    ");
@@ -810,29 +822,52 @@ public class SpecimenImporter
         }
     }
 
-
-    private void populateSpecimens(DbSchema schema, Container container, SpecimenLoadInfo info) throws SQLException
+    private enum AggregateMode
     {
-        if (!validateImportData(schema, info.getTempTableName()))
-            throw new RuntimeException("Data validation failed: upload aborted");
+        INCLUDE_NAME_ONLY,
+        INCLUDE_NAME_AND_FUNCTION,
+        EXCLUDE
+    }
 
+    private String getTempTableSpecimenColumns(SpecimenLoadInfo info, AggregateMode mode)
+    {
         StringBuilder columnList = new StringBuilder();
         columnList.append("exp.Material.RowId,\n    ").append(info.getTempTableName()).append(".Container");
         for (SpecimenColumn col : info.getAvailableColumns())
         {
             if (col.getTargetTable() == TargetTable.SPECIMENS)
             {
-                if (col.getFkTable() == null)
-                    columnList.append(",\n    ").append(info.getTempTableName()).append(".").append(col.getDbColumnName());
-                else
+                if (col.getFkTable() != null)
+                {
                     columnList.append(",\n    ").append("study.").append(col.getFkTable()).append(".RowId");
+                }
+                else if (col.getAggregateEventFunction() != null && mode != AggregateMode.INCLUDE_NAME_ONLY)
+                {
+                    if (mode == AggregateMode.INCLUDE_NAME_AND_FUNCTION)
+                    {
+                        columnList.append(",\n    ").append(col.getAggregateEventFunction()).append("(");
+                        columnList.append(info.getTempTableName()).append(".");
+                        columnList.append(col.getDbColumnName()).append(") AS ").append(col.getDbColumnName());
+                    }
+                }
+                else
+                {
+                    columnList.append(",\n    ").append(info.getTempTableName()).append(".").append(col.getDbColumnName());
+                }
             }
         }
+        return columnList.toString();
+    }
+
+    private void populateSpecimens(DbSchema schema, Container container, SpecimenLoadInfo info) throws SQLException
+    {
+        if (!validateImportData(schema, info.getTempTableName()))
+            throw new RuntimeException("Data validation failed: upload aborted");
 
         SQLFragment insertSql = new SQLFragment();
         insertSql.append("INSERT INTO study.Specimen \n(RowId, Container, ");
         insertSql.append(getSpecimenCols(info.getAvailableColumns())).append(")\n");
-        insertSql.append("SELECT DISTINCT ").append(columnList.toString());
+        insertSql.append("SELECT ").append(getTempTableSpecimenColumns(info, AggregateMode.INCLUDE_NAME_AND_FUNCTION));
         insertSql.append("\nFROM ").append(info.getTempTableName()).append("\n    JOIN exp.Material ON (");
         insertSql.append(info.getTempTableName()).append(".LSID = exp.Material.LSID");
         insertSql.append(" AND exp.Material.Container = ?)");
@@ -853,6 +888,8 @@ public class SpecimenImporter
                 insertSql.add(container.getId());
             }
         }
+
+        insertSql.append("\nGROUP BY ").append(getTempTableSpecimenColumns(info, AggregateMode.EXCLUDE));
 
         if (DEBUG)
             logSQLFragment(insertSql);
@@ -1184,7 +1221,7 @@ public class SpecimenImporter
         return value;
     }
 
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
 
     private String createTempTable(DbSchema schema) throws SQLException
     {
