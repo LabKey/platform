@@ -688,8 +688,18 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public Set<String> getReservedPropertyNames(ExpProtocol protocol, Domain domain)
     {
         Set<String> reservedNames = new HashSet<String>();
-        String runDomainURI = getDomainURIForPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_RUN);
-        String uploadSetDomainURI = getDomainURIForPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_UPLOAD_SET);
+        String runDomainURI = "";
+        String uploadSetDomainURI = "";
+        if (protocol.getRowId() > 0)
+        {
+            runDomainURI = getDomainURIForPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_RUN);
+            uploadSetDomainURI = getDomainURIForPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_UPLOAD_SET);
+        }
+        else
+        {
+            runDomainURI = getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_RUN);
+            uploadSetDomainURI = getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_UPLOAD_SET);
+        }
 
         if (runDomainURI.equals(domain.getTypeURI()) ||
             uploadSetDomainURI.equals(domain.getTypeURI()))
