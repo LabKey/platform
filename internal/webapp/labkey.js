@@ -10,7 +10,7 @@ if (typeof LABKEY == "undefined")
     LABKEY.imagePath = "must call init()";
     LABKEY.devMode = false;
     LABKEY.yahooRoot = "_yui/build";
-    LABKEY.extJsRoot = "ext-2.0.2";
+    LABKEY.extJsRoot = "ext-2.2";
     LABKEY.verbose = false;
     LABKEY.widget = {};
     LABKEY.hash = 0;

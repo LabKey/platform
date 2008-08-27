@@ -243,8 +243,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
                 containerPath: this.containerPath,
                 successCallback: this.getSuccessHandler(insertRowsData, insertRecords),
                 errorCallback: this.getErrorHandler(insertRowsData, insertRecords),
-                rowDataArray: insertRowsData,
-                action: "insertRows" //HACK: needed for a bug in Query.js
+                rowDataArray: insertRowsData
             });
 
         if(updateRowsData.length > 0)
@@ -254,8 +253,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
                 containerPath: this.containerPath,
                 successCallback: this.getSuccessHandler(updateRowsData, updateRecords),
                 errorCallback: this.getErrorHandler(updateRowsData, updateRecords),
-                rowDataArray: updateRowsData,
-                action: "updateRows"//HACK: needed for a bug in Query.js
+                rowDataArray: updateRowsData
             });
     },
 
@@ -391,22 +389,35 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
             var idCol = store.reader.jsonData.metaData.id;
             if(results.rows)
             {
-                //because the row key might change as a result of an insert (auto-generated key)
-                //or update (study dataset case), we need to create a new record based on the
-                //response record, insert it where the old record was, and remove the old record
-                //CONSIDER: can we dive into the private data of the store to fixup the key map?
                 var resultRow;
                 var sentRecord;
-                var recordCreator = Ext.data.Record.create(store.reader.meta.fields);
                 for(idx = 0; idx < results.rows.length; ++idx)
                 {
                     resultRow = results.rows[idx];
                     sentRecord = records[idx]; //result rows come back in the same order as sent
-                    sentRecord.commit();
 
-                    var newRecord = new recordCreator(resultRow, resultRow[idCol]);
-                    store.insert(store.indexOf(sentRecord), newRecord);
-                    store.remove(sentRecord);
+                    //apply values from the result row to the sent record
+                    for(var col in sentRecord.data)
+                        sentRecord.set(col, resultRow[col]);
+
+                    //if the id changed, fixup the keys and map of the store's base collection
+                    //HACK: this is using private data members of the base Store class. Unfortunately
+                    //Ext Store does not have a public API for updating the key value of a record
+                    //after it has been added to the store. This might break in future versions of Ext.
+                    if(sentRecord.id != resultRow[idCol])
+                    {
+                        sentRecord.id = resultRow[idCol];
+                        store.data.keys[store.data.indexOf(sentRecord)] = resultRow[idCol];
+                        
+                        delete store.data.map[sentRecord.id]
+                        store.data.map[resultRow[idCol]] = sentRecord;
+                    }
+
+                    //remote transitory flags and commit the record to let
+                    //bound controls know that it's now clean
+                    delete sentRecord.saveOperationInProgress;
+                    delete sentRecord.isNew;
+                    sentRecord.commit();
                 }
             }
         }
@@ -417,7 +428,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
             for(var idx=0; idx < records.length; ++idx)
                 delete records[idx].saveOperationInProgress;
 
-            var msg = "Unable to save the data due to the following error:<br/>";
+            var msg = "Unable to save the data due to the following error:\n";
             msg += response.exception || "Unknown Error";
             alert(msg);
         }

@@ -155,7 +155,6 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
      * @memberOf LABKEY.ext.EditorGridPanel
      */
     saveChanges : function() {
-        this.stopEditing();
         this.getStore().commitChanges();
     },
 
@@ -391,6 +390,12 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
                                 'j-M-y|j-M-Y|' +
                                 'Y-n-d H:i:s|Y-n-d'
                 });
+                //HACK: the DateMenu is created by the DateField
+                //and there's no config on DateField that lets you specify
+                //a CSS class to add to the DateMenu. If we create it now,
+                //their code will just use the one we create.
+                //See DateField.js in the Ext source
+                editor.menu = new Ext.menu.DateMenu({cls: 'extContainer'});
                 break;
             case "boolean":
                 editor = new Ext.form.Checkbox();
@@ -523,6 +528,11 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
                     key: Ext.EventObject.TAB,
                     handler: this.onTab,
                     scope: this
+                },
+                {
+                    key: Ext.EventObject.F2,
+                    handler: this.onF2,
+                    scope: this
                 }
             ]
         }
@@ -607,6 +617,17 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
     onTab : function() {
         if(this.autoSave)
             this.saveChanges();
+    },
+
+    onF2 : function() {
+        var record = this.getSelectionModel().getSelected();
+        if(record)
+        {
+            var index = this.getStore().findBy(function(recordComp, id){return id == record.id});
+            if(index > 0)
+                this.startEditing(index, this.firstEditableColumn);
+        }
+
     },
 
     initFilterMenu : function()
