@@ -37,6 +37,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
+import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -59,9 +60,11 @@ public class StudyPropertiesController extends BaseStudyController
     {
         public ModelAndView getView(Object studyPropertiesForm, boolean reshow, BindException errors) throws Exception
         {
-            StudyPropertiesTable table = getTableInfo();
 
-            QueryUpdateForm updateForm = new QueryUpdateForm(table, getViewContext().getRequest());
+            StudyPropertiesTable table = getTableInfo();
+            Map<String,String> containerInfo = Collections.singletonMap("container", getContainer().getId());
+
+            QueryUpdateForm updateForm = new QueryUpdateForm(table, getViewContext().getRequest(), containerInfo);
 
             UpdateView view = new UpdateView(updateForm, errors);
             DataRegion dataRegion = view.getDataRegion();
@@ -101,8 +104,13 @@ public class StudyPropertiesController extends BaseStudyController
 
         public boolean handlePost(Object studyPropertiesForm, BindException errors) throws Exception
         {
+
             QueryUpdateForm updateForm = new QueryUpdateForm(getTableInfo(), getViewContext().getRequest());
             updateForm.populateValues(errors);
+
+            if (errors.getErrorCount() > 0)
+                return false;
+
             Map<String,Object> dataMap = updateForm.getDataMap();
 
             Study study = getStudy();

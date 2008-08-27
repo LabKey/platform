@@ -21,12 +21,13 @@ import org.labkey.api.query.*;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.QueryReport;
-import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.RReportBean;
+import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.security.ACL;
+import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
-import org.labkey.study.model.QCStateSet;
 import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.*;
@@ -34,7 +35,10 @@ import org.labkey.study.reports.StudyRReport;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: brittp
@@ -134,13 +138,17 @@ public class DataSetQueryView extends QueryView
                         sourceLsidCol));
             }
         }
+        Container c = getContainer();
+        User user = getUser();
         // Only show link to edit if permission allows it
-        if (_showEditLinks && !_forExport && StudyManager.getInstance().getDataSetDefinition(
-                StudyManager.getInstance().getStudy(getContainer()), _datasetId).canWrite(getViewContext().getUser()))
+        if (_showEditLinks && !_forExport &&
+                StudyManager.getInstance().getDataSetDefinition(StudyManager.getInstance().getStudy(c), _datasetId).canWrite(user) &&
+                c.getAcl().hasPermission(user, ACL.PERM_UPDATE)
+            )
         {
             TableInfo tableInfo = view.getDataRegion().getTable();
             ColumnInfo lsidColumn = tableInfo.getColumn("lsid");
-            view.getDataRegion().addDisplayColumn(0, new DatasetEditColumn(view.getRenderContext().getContainer(), lsidColumn));
+            view.getDataRegion().addDisplayColumn(0, new DatasetEditColumn(c, lsidColumn));
         }
 
         // allow posts from dataset data regions to determine which dataset was being displayed:

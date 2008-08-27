@@ -19,7 +19,6 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.data.*;
 import org.labkey.api.query.QueryUpdateForm;
-import org.labkey.api.query.QueryView;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.StudyService;
@@ -96,9 +95,24 @@ public class CohortController extends BaseStudyController
     {
         public ModelAndView getView(ManageCohortsForm form, boolean reshow, BindException errors) throws Exception
         {
+            StudyManager.getInstance().assertCohortsViewable(getContainer(), HttpView.currentContext().getUser());
+
+            VBox vbox = new VBox();
+
+            StudyJspView<Object> top = new StudyJspView<Object>(getStudy(), "manageCohortsTop.jsp", null, errors);
+            top.setTitle("Assignment Type");
+            vbox.addView(top);
+
             CohortQueryView queryView = new CohortQueryView(getUser(), getStudy(), HttpView.currentContext(), true);
+            queryView.setTitle("All Cohorts");
+            queryView.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTTOM);
+            vbox.addView(queryView);
             
-            return new StudyJspView<QueryView>(getStudy(), "manageCohorts.jsp", queryView, errors);
+            StudyJspView<Object> bottom = new StudyJspView<Object>(getStudy(), "manageCohortsBottom.jsp", null, errors);
+            bottom.setTitle("Participant-Cohort Assignments");
+            vbox.addView(bottom);
+
+            return vbox;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -284,6 +298,7 @@ public class CohortController extends BaseStudyController
         public NavTree appendNavTrail(NavTree root)
         {
             _appendManageStudy(root);
+            root.addChild("Manage Cohorts", new ActionURL(ManageCohortsAction.class, getContainer()));
             appendExtraNavTrail(root);
             return root;
         }
@@ -294,6 +309,10 @@ public class CohortController extends BaseStudyController
         {
             QueryUpdateForm updateForm = new QueryUpdateForm(getTableInfo(), getViewContext().getRequest());
             updateForm.populateValues(errors);
+
+            if (errors.getErrorCount() > 0)
+                return false;
+
             Map<String,Object> dataMap = updateForm.getDataMap();
             Object pkVal = updateForm.getPkVal();
 
@@ -306,8 +325,6 @@ public class CohortController extends BaseStudyController
                 if (pkVal == null) // insert
                 {
                     assert isInsert() : "No primary key found when updating cohort";
-
-                    assert newLabel != null;
 
                     cohort = new Cohort();
                     cohort.setLabel(newLabel);

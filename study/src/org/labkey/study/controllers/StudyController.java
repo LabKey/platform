@@ -623,7 +623,8 @@ public class StudyController extends BaseStudyController
 
 
             User user = getUser();
-            if (def.canWrite(user))
+            boolean canWrite = def.canWrite(user) && def.getContainer().getAcl().hasPermission(user, ACL.PERM_UPDATE);
+            if (canWrite)
             {
                 // Insert single entry
                 ActionURL insertURL = new ActionURL(DatasetController.InsertAction.class, getContainer());
@@ -633,7 +634,7 @@ public class StudyController extends BaseStudyController
                 buttonBar.add(insertButton);
             }
 
-            if (user.isAdministrator() || def.canWrite(user))
+            if (user.isAdministrator() || canWrite) // admins always get the import and delete buttons
             {
                 // bulk import
                 ActionButton uploadButton = new ActionButton("showImportDataset.view?datasetId=" + _datasetId, "Import Data", DataRegion.MODE_GRID, ActionButton.Action.LINK);
@@ -649,7 +650,7 @@ public class StudyController extends BaseStudyController
                 buttonBar.add(deleteRows);
             }
 
-            if (null == visit && (user.isAdministrator() || def.canWrite(user)))
+            if (null == visit && (user.isAdministrator() || canWrite))
             {
                 ActionButton purgeButton = new ActionButton("purgeDataset.view", "Delete All Rows", DataRegion.MODE_GRID, ActionButton.Action.LINK);
                 purgeButton.setDisplayPermission(ACL.PERM_ADMIN);

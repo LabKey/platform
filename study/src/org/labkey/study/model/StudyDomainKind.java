@@ -15,6 +15,7 @@
  */
 package org.labkey.study.model;
 
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.view.ActionURL;
@@ -43,5 +44,10 @@ public class StudyDomainKind extends BaseStudyDomainKind
     public ActionURL urlEditDefinition(Domain domain)
     {
         return new ActionURL(StudyController.ManageStudyAction.class, domain.getContainer());
+    }
+
+    public SQLFragment sqlObjectIdsInDomain(Domain domain)
+    {
+        return new SQLFragment("NULL");
     }
 }

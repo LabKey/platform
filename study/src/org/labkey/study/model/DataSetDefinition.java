@@ -472,6 +472,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         if (0 == (perm & ACL.PERM_READOWN))
             return false;
 
+        // Only look at groups that have per dataset security set,
+        // so we don't see defunct permissions on groups that
+        // have NONE set at the study level.
         int[] groups = getStudy().getACL().getGroups(ACL.PERM_READOWN, user);
         int dsPerm = getACL().getPermissions(groups);
         return 0 != (dsPerm & ACL.PERM_READ);
@@ -482,6 +485,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         if (!canRead(user))
             return false;
 
+        if (!getStudy().getContainer().getAcl().hasPermission(user, ACL.PERM_UPDATE))
+            return false;
+
         SecurityType securityType = getStudy().getSecurityType();
 
         if (securityType == SecurityType.BASIC_READ || securityType == SecurityType.ADVANCED_READ)
@@ -489,9 +495,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
         if (securityType == SecurityType.BASIC_WRITE)
         {
-            // Does the user have update permission to the container?
-            return getStudy().getACL().hasPermission(user, ACL.PERM_UPDATE);
-            
+            return true;
         }
         // Advanced editable study security
         int[] groups = getStudy().getACL().getGroups(ACL.PERM_READOWN, user);

@@ -178,10 +178,10 @@ else
     </table>
     <table>
         <tr>
-            <td><%=PageFlowUtil.generateSubmitButton("Update")%></td>
-            <td><%=PageFlowUtil.generateButton("Set all to Read", "", "setAllSelections('Read');")%></td>
-            <td><%=PageFlowUtil.generateButton("Set all to Edit", "", "setAllSelections('Edit');")%></td>
-            <td><%=PageFlowUtil.generateButton("Clear All", "", "setAllSelections('None');")%></td>
+            <td><%=PageFlowUtil.generateSubmitButton("Save")%></td>
+            <td><%=PageFlowUtil.generateButton("Set all to Read", "#", "return setAllSelections('Read');")%></td>
+            <td><%=PageFlowUtil.generateButton("Set all to Edit", "#", "return setAllSelections('Edit');")%></td>
+            <td><%=PageFlowUtil.generateButton("Clear All", "#", "return setAllSelections('None');")%></td>
         </tr></table>
 </form>
 
@@ -206,5 +206,6 @@ function setAllSelections(value)
             }
         }
     }
+    return false;
 }
 </script>
