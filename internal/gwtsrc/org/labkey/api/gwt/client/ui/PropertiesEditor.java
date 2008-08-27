@@ -547,6 +547,10 @@ public class PropertiesEditor implements LookupListener
         Set names = new HashSet();
         List l = d.getPropertyDescriptors();
         Set errors = new HashSet();
+        Set lowerCaseReservedNames = new HashSet();
+        for (Iterator it = d.getReservedPropertyNames().iterator(); it.hasNext(); )
+            lowerCaseReservedNames.add(((String) it.next()).toLowerCase());
+
         for (int i=0 ; i<l.size() ; i++)
         {
             GWTPropertyDescriptor p = (GWTPropertyDescriptor)l.get(i);
@@ -556,8 +560,14 @@ public class PropertiesEditor implements LookupListener
                 errors.add("Name field must not be blank");
                 continue;
             }
-            name = name.toLowerCase();
-            if (names.contains(name))
+
+            if (lowerCaseReservedNames.contains(name))
+            {
+                errors.add("\"" + name + "\" is not a valid field name in \"" + d.getName() + "\".");
+                continue;
+            }
+
+            if (names.contains(name.toLowerCase()))
             {
                 errors.add("All property names must be unique: " + name);
                 continue;

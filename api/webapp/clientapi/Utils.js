@@ -97,7 +97,7 @@ LABKEY.Utils = new function()
         * Shows an error dialog box to the user in response to an error from an AJAX request, including
         * any error messages from the server.
         * @param {XMLHttpRequest} responseObj The XMLHttpRequest object containing the response data.
-        * @param {Error} exceptionObj Optional: A JavaScript Error object caught by the calling code.
+        * @param {Error} [exceptionObj] A JavaScript Error object caught by the calling code.
         * The error dialog will display the Error's name and message, if available. Ext.data.DataReader implementations
         * may throw this type of error object.
         */

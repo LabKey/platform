@@ -58,9 +58,9 @@ public class MenuButton extends ActionButton
         popupMenu.getNavTree().addChild(NavTree.MENU_SEPARATOR);
     }
 
-    public void addMenuItem(String caption, ActionURL url)
+    public NavTree addMenuItem(String caption, ActionURL url)
     {
-        addMenuItem(caption, url.toString());
+        return addMenuItem(caption, url.toString());
     }
 
     public NavTree addMenuItem(String caption, String url)

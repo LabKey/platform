@@ -255,7 +255,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
     protected void addProperty(PropertyDescriptor pd, Object value, Map<String, Object> dataMap, Collection<PropertyDescriptor> types)
     {
         dataMap.put(pd.getName(), value);
-        types.add(pd);
+        if (types != null)
+            types.add(pd);
     }
 
     protected void addProperty(Container sourceContainer, String name, Object value, PropertyType type, Map<String, Object> dataMap, Collection<PropertyDescriptor> types)
@@ -682,6 +683,28 @@ public abstract class AbstractAssayProvider implements AssayProvider
             domains.add(domain);
         }
         return domains;
+    }
+
+    public Set<String> getReservedPropertyNames(ExpProtocol protocol, Domain domain)
+    {
+        Set<String> reservedNames = new HashSet<String>();
+        String runDomainURI = getDomainURIForPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_RUN);
+        String uploadSetDomainURI = getDomainURIForPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_UPLOAD_SET);
+
+        if (runDomainURI.equals(domain.getTypeURI()) ||
+            uploadSetDomainURI.equals(domain.getTypeURI()))
+        {
+            TableInfo runTable = ExperimentService.get().getTinfoExperimentRun();
+            for (ColumnInfo column : runTable.getColumns())
+                reservedNames.add(column.getName());
+            reservedNames.add("AssayId");
+            reservedNames.add("Assay Id");
+        }
+        reservedNames.add("RowId");
+        reservedNames.add("Row Id");
+        reservedNames.add("Container");
+        reservedNames.add("LSID");
+        return reservedNames;
     }
 
     public Pair<ExpProtocol, List<Domain>> getAssayTemplate(User user, Container targetContainer)

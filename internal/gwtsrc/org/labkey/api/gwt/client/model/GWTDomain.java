@@ -37,12 +37,17 @@ public class GWTDomain implements IsSerializable
     /**
      * @gwt.typeArgs <org.labkey.api.gwt.client.model.GWTPropertyDescriptor>
      */
-    private List propertyDescriptors;
+    private List propertyDescriptors = new ArrayList();
 
     /**
      * @gwt.typeArgs <java.lang.String>
      */
-    private Set requiredPropertyDescriptors;
+    private Set requiredPropertyDescriptors = new HashSet();
+
+    /**
+     * @gwt.typeArgs <java.lang.String>
+     */
+    private Set reservedPropertyNames = new HashSet();
 
     public GWTDomain()
     {
@@ -55,8 +60,6 @@ public class GWTDomain implements IsSerializable
         this.name = src.name;
         this.domainURI = src.domainURI;
         this.description = src.description;
-        this.propertyDescriptors = new ArrayList();
-        this.requiredPropertyDescriptors = new HashSet();
         this.allowFileLinkProperties = src.allowFileLinkProperties;
         this.allowAttachmentProperties = src.allowAttachmentProperties;
         if (src.getPropertyDescriptors() == null)
@@ -68,6 +71,12 @@ public class GWTDomain implements IsSerializable
         {
             for (Iterator it = src.getRequiredPropertyDescriptors().iterator() ; it.hasNext() ; )
                 this.requiredPropertyDescriptors.add(it.next());
+        }
+
+        if (src.getReservedPropertyNames() != null)
+        {
+            for (Iterator it = src.getReservedPropertyNames().iterator() ; it.hasNext() ; )
+                this.getReservedPropertyNames().add(it.next());
         }
     }
 
@@ -150,5 +159,15 @@ public class GWTDomain implements IsSerializable
     public void setRequiredPropertyDescriptors(Set requiredPropertyDescriptors)
     {
         this.requiredPropertyDescriptors = requiredPropertyDescriptors;
+    }
+
+    public Set getReservedPropertyNames()
+    {
+        return reservedPropertyNames;
+    }
+
+    public void setReservedPropertyNames(Set reservedPropertyNames)
+    {
+        this.reservedPropertyNames = reservedPropertyNames;
     }
 }

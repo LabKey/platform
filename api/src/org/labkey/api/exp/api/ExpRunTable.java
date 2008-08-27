@@ -51,7 +51,12 @@ public interface ExpRunTable extends ExpTable<ExpRunTable.Column>
         FilePathRoot,
         Flag,
         Links,
-        RunGroups
+        RunGroups;
+
+        public String getColumnName()
+        {
+            return name();
+        }
     }
 
     void populate(ExpSchema schema);

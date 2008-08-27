@@ -78,5 +78,6 @@ public class AssayDataLinkDisplayColumn extends DataColumn
             assert _runIdColumnInfo != null : "Could not find run rowId column";
         }
         columns.add(_protocolColumnInfo);
+        columns.add(_runIdColumnInfo);
     }
 }
