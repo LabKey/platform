@@ -16,21 +16,25 @@
 
 package org.labkey.study.assay;
 
-import org.labkey.api.exp.property.DomainKind;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.data.*;
-import org.labkey.api.security.User;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.security.ACL;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.view.ActionURL;
 
-import java.util.Map;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -113,14 +117,13 @@ public class AssayDomainKind extends DomainKind
         return null;
     }
 
-    // return the "system" properties for this domain
-    public DomainProperty[] getDomainProperties(String domainURI)
-    {
-        return new DomainProperty[0];
-    }
-
     public boolean canEditDefinition(User user, Domain domain)
     {
         return domain.getContainer().hasPermission(user, ACL.PERM_INSERT);
+    }
+
+    public Set<String> getReservedPropertyNames(Domain domain)
+    {
+        return Collections.emptySet();
     }
 }

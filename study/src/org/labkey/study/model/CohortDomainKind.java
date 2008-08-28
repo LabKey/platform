@@ -44,5 +44,4 @@ public class CohortDomainKind extends BaseStudyDomainKind
         // This isn't really the edit url, but instead the destination after editing
         return new ActionURL(CohortController.ManageCohortsAction.class, domain.getContainer());
     }
-
 }

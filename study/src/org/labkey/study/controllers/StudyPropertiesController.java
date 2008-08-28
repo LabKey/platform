@@ -25,7 +25,6 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UpdateView;
 import org.labkey.study.model.Study;
@@ -62,6 +61,9 @@ public class StudyPropertiesController extends BaseStudyController
         {
 
             StudyPropertiesTable table = getTableInfo();
+
+            // In order to pull the data out for an edit, we need to explicitly add the container id to the parameters
+            // that the query update form will use
             Map<String,String> containerInfo = Collections.singletonMap("container", getContainer().getId());
 
             QueryUpdateForm updateForm = new QueryUpdateForm(table, getViewContext().getRequest(), containerInfo);
@@ -69,19 +71,8 @@ public class StudyPropertiesController extends BaseStudyController
             UpdateView view = new UpdateView(updateForm, errors);
             DataRegion dataRegion = view.getDataRegion();
 
-            String referer = HttpView.currentRequest().getHeader("Referer");
-
-            ActionURL cancelURL;
-
-            if (referer == null)
-            {
-                cancelURL = new ActionURL(CohortController.ManageCohortsAction.class, getContainer());
-            }
-            else
-            {
-                cancelURL = new ActionURL(referer);
-                dataRegion.addHiddenFormField("returnURL", referer);
-            }
+            ActionURL cancelURL = new ActionURL(StudyController.ManageStudyAction.class, getContainer());
+            
             ButtonBar buttonBar = dataRegion.getButtonBar(DataRegion.MODE_UPDATE);
             buttonBar = new ButtonBar(buttonBar); // need to copy since the original is read-only
             ActionButton cancelButton = new ActionButton(cancelURL.getLocalURIString(), "Cancel", DataRegion.MODE_UPDATE, ActionButton.Action.GET);
@@ -104,7 +95,6 @@ public class StudyPropertiesController extends BaseStudyController
 
         public boolean handlePost(Object studyPropertiesForm, BindException errors) throws Exception
         {
-
             QueryUpdateForm updateForm = new QueryUpdateForm(getTableInfo(), getViewContext().getRequest());
             updateForm.populateValues(errors);
 

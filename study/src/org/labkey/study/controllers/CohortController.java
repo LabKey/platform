@@ -266,22 +266,14 @@ public class CohortController extends BaseStudyController
                 view = new UpdateView(updateForm, errors);
             DataRegion dataRegion = view.getDataRegion();
 
-            String referer = HttpView.currentRequest().getHeader("Referer");
+            // In case we reshow due to errors, we need to stuff the row id into the data region
+            dataRegion.addHiddenFormField("rowId", Integer.toString(form.getRowId()));
 
-            ActionURL cancelURL;
-
-            if (referer == null)
-            {
-                cancelURL = new ActionURL(CohortController.ManageCohortsAction.class, getContainer());
-            }
-            else
-            {
-                cancelURL = new ActionURL(referer);
-                dataRegion.addHiddenFormField("returnURL", referer);
-            }
+            String cancelURL = new ActionURL(CohortController.ManageCohortsAction.class, getContainer()).getLocalURIString();
+            
             ButtonBar buttonBar = dataRegion.getButtonBar(DataRegion.MODE_UPDATE);
             buttonBar = new ButtonBar(buttonBar); // need to copy since the original is read-only
-            ActionButton cancelButton = new ActionButton(cancelURL.getLocalURIString(), "Cancel", DataRegion.MODE_UPDATE, ActionButton.Action.GET);
+            ActionButton cancelButton = new ActionButton(cancelURL, "Cancel", DataRegion.MODE_UPDATE, ActionButton.Action.GET);
             cancelButton.setURL(cancelURL);
             buttonBar.add(1, cancelButton);
             if (isInsert())

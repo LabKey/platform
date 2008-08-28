@@ -22,11 +22,11 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: jgarms
@@ -66,13 +66,14 @@ public abstract class BaseStudyDomainKind extends DomainKind
     {
         throw new UnsupportedOperationException("Not implemented");
     }
-    
-    public DomainProperty[] getDomainProperties(String domainURI)
-    {
-        return new DomainProperty[0];
-    }
 
     protected abstract Class<? extends ExtensibleStudyEntity> getSupportedClass();
 
     protected abstract TableInfo getTableInfo();
+
+    public Set<String> getReservedPropertyNames(Domain domain)
+    {
+        TableInfo table = getTableInfo();
+        return table.getColumnNameSet();
+    }
 }

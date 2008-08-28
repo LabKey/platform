@@ -14,22 +14,26 @@
  * limitations under the License.
  */
 
-package org.labkey.api.exp.api;
+package org.labkey.experiment.api;
 
-import org.labkey.api.exp.property.DomainKind;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.Lsid;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.security.User;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SamplesSchema;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.common.util.Pair;
 
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 public class SampleSetDomainType extends DomainKind
 {
@@ -68,12 +72,6 @@ public class SampleSetDomainType extends DomainKind
         return urlShowData(domain);
     }
 
-    // return the "system" properties for this domain
-    public DomainProperty[] getDomainProperties(String domainURI)
-    {
-        return new DomainProperty[0];
-    }
-
     public String getTypeLabel(Domain domain)
     {
         return "Sample Set '" + domain.getName() + "'";
@@ -92,11 +90,16 @@ public class SampleSetDomainType extends DomainKind
         TableInfo table = schema.getSampleTable("lookup", ExperimentService.get().getSampleSet(domain.getTypeURI()));
         if (table == null)
             return null;
-        return new Pair(table, table.getColumn("LSID"));
+        return new Pair<TableInfo,ColumnInfo>(table, table.getColumn("LSID"));
     }
 
     public boolean canEditDefinition(User user, Domain domain)
     {
         return domain.getContainer().hasPermission(user, ACL.PERM_UPDATE);
+    }
+
+    public Set<String> getReservedPropertyNames(Domain domain)
+    {
+        return Collections.emptySet();
     }
 }

@@ -34,6 +34,7 @@ import org.labkey.experiment.controllers.list.ListItemAttachmentParent;
 
 import java.sql.SQLException;
 import java.util.Map;
+import java.util.Set;
 
 public class ListDomainType extends DomainKind
 {
@@ -88,12 +89,6 @@ public class ListDomainType extends DomainKind
         return listDef.urlShowDefinition();
     }
 
-    // return the "system" properties for this domain
-    public DomainProperty[] getDomainProperties(String domainURI)
-    {
-        return new DomainProperty[0];
-    }
-
     @Override
     public void deletePropertyDescriptor(Domain domain, User user, PropertyDescriptor pd)
     {
@@ -126,5 +121,11 @@ public class ListDomainType extends DomainKind
         {
             throw new RuntimeSQLException(e);
         }
+    }
+
+    public Set<String> getReservedPropertyNames(Domain domain)
+    {
+        TableInfo table = ListManager.get().getTinfoList();
+        return table.getColumnNameSet();
     }
 }

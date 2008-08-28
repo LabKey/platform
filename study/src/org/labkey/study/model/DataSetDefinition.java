@@ -74,9 +74,29 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         "lsid"
     };
 
-    private static final CaseInsensitiveHashSet BASE_DEFAULT_FIELD_NAMES =
-        new CaseInsensitiveHashSet(BASE_DEFAULT_FIELD_NAMES_ARRAY);
+    private static final String[] DEFAULT_DATE_FIELD_NAMES_ARRAY = new String[]
+    {
+        "Date",
+        "VisitDate",
+        "Day"
+    };
 
+    private static final String[] DEFAULT_VISIT_FIELD_NAMES_ARRAY = new String[]
+    {
+        "VisitSequenceNum"
+    };
+
+    private static final CaseInsensitiveHashSet DEFAULT_DATE_FIELDS;
+    private static final CaseInsensitiveHashSet DEFAULT_VISIT_FIELDS;
+
+    static
+    {
+        DEFAULT_DATE_FIELDS = new CaseInsensitiveHashSet(BASE_DEFAULT_FIELD_NAMES_ARRAY);
+        DEFAULT_DATE_FIELDS.addAll(DEFAULT_DATE_FIELD_NAMES_ARRAY);
+
+        DEFAULT_VISIT_FIELDS = new CaseInsensitiveHashSet(BASE_DEFAULT_FIELD_NAMES_ARRAY);
+        DEFAULT_VISIT_FIELDS.addAll(DEFAULT_VISIT_FIELD_NAMES_ARRAY);
+    }
 
     public DataSetDefinition()
     {
@@ -105,17 +125,23 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     {
         if (study.isDateBased())
         {
-            if ("Date".equalsIgnoreCase(fieldName) ||
-                "VisitDate".equalsIgnoreCase(fieldName) ||
-                "Day".equalsIgnoreCase(fieldName))
-                return true;
+            return DEFAULT_DATE_FIELDS.contains(fieldName);
         }
         else
         {
-            if ("VisitSequenceNum".equalsIgnoreCase(fieldName))
-                return true;
+            return DEFAULT_VISIT_FIELDS.contains(fieldName);
         }
-        return BASE_DEFAULT_FIELD_NAMES.contains(fieldName);
+    }
+
+    public Set<String> getDefaultFieldNames()
+    {
+        Set<String> fieldNames;
+        if (getStudy().isDateBased())
+            fieldNames = DEFAULT_DATE_FIELDS;
+        else
+            fieldNames = DEFAULT_VISIT_FIELDS;
+
+        return Collections.unmodifiableSet(fieldNames);
     }
 
 

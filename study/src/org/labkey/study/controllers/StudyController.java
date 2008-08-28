@@ -2324,7 +2324,7 @@ public class StudyController extends BaseStudyController
 
     private String getDomainURI(Container c, String name, int datasetId)
     {
-        return (new DatasetDomainKind()).generateDomainURI(c, name, datasetId);
+        return new DatasetDomainKind().generateDomainURI(c, name);
     }
 
     public static class ImportTypeForm

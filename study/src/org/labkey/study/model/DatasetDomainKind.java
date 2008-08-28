@@ -16,19 +16,20 @@
 
 package org.labkey.study.model;
 
-import org.labkey.api.exp.property.DomainKind;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.Lsid;
 import org.labkey.api.data.*;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.security.User;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.study.StudySchema;
+import org.labkey.study.controllers.StudyController;
 
-import java.util.Map;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -76,7 +77,7 @@ public class DatasetDomainKind extends DomainKind
     }
 
 
-    public String generateDomainURI(Container container, String name, int id)
+    public String generateDomainURI(Container container, String name)
     {
         // UNDONE can't use id, because it won't match OntologyManager.importTypes()!
         //String objectid = name == null ? "" : name + "-" + id;
@@ -94,7 +95,7 @@ public class DatasetDomainKind extends DomainKind
     public ActionURL urlShowData(Domain domain)
     {
         DataSetDefinition def = getDatasetDefinition(domain.getContainer(), domain.getTypeURI());
-        ActionURL url = new ActionURL("Study", "datasetReport", domain.getContainer());
+        ActionURL url = new ActionURL(StudyController.DatasetReportAction.class, domain.getContainer());
         url.addParameter("datasetId", "" + def.getDataSetId());
         return url;
     }
@@ -103,7 +104,7 @@ public class DatasetDomainKind extends DomainKind
     public ActionURL urlEditDefinition(Domain domain)
     {
         DataSetDefinition def = getDatasetDefinition(domain.getContainer(), domain.getTypeURI());
-        ActionURL url = new ActionURL("Study", "editType", domain.getContainer());
+        ActionURL url = new ActionURL(StudyController.EditTypeAction.class, domain.getContainer());
         url.addParameter("datasetId", "" + def.getDataSetId());
         return url;
     }
@@ -151,28 +152,9 @@ public class DatasetDomainKind extends DomainKind
         }
     }
 
-
-    // return the "system" properties for this domain
-    // return the "system" properties for this domain
-    public DomainProperty[] getDomainProperties(String domainURI)
+    public Set<String> getReservedPropertyNames(Domain domain)
     {
-//            TableInfo t = StudySchema.getInstance().getTableInfoStudyData();
-//            for (ColumnInfo c : t.getColumns())
-//            {
-//                if (c.getName().equalsIgnoreCase("container") || c.getName().equalsIgnoreCase("datasetid"))
-//                    continue;
-//                if (c.getName().startsWith("_"))
-//                    continue;
-//                DomainProperty p = new DomainProperty();
-//                p.setName(c.getName());
-//                p.setLabel(c.getCaption());
-//                PropertyType pt = PropertyType.getFromClass(c.getJavaObjectClass());
-//                p.setRangeURI(pt.getTypeUri());
-//                p.setRequired(!c.isNullable());
-//                p.setDescription(c.getDescription());
-//                p.setEditable(false);
-//                list.add(p);
-//            }
-        return new DomainProperty[0];
+        DataSetDefinition def = getDatasetDefinition(domain.getContainer(), domain.getTypeURI());
+        return def.getDefaultFieldNames();
     }
 }

@@ -19,7 +19,10 @@ import junit.framework.TestCase;
 import org.apache.log4j.Logger;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
-import org.labkey.api.exp.*;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.ExperimentRunFilter;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.ExperimentProperty;
@@ -40,18 +43,19 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.Material;
+import org.labkey.experiment.api.SampleSetDomainType;
 import org.labkey.experiment.api.property.PropertyServiceImpl;
-import org.labkey.experiment.api.property.RegExValidator;
 import org.labkey.experiment.api.property.RangeValidator;
+import org.labkey.experiment.api.property.RegExValidator;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.controllers.list.ListController;
 import org.labkey.experiment.controllers.list.ListWebPart;
 import org.labkey.experiment.controllers.list.SingleListWebPartFactory;
 import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.list.*;
+import org.labkey.experiment.pipeline.ExperimentPipelineProvider;
 import org.labkey.experiment.types.TypesController;
 import org.labkey.experiment.xar.DefaultRunExpansionHandler;
-import org.labkey.experiment.pipeline.ExperimentPipelineProvider;
 
 import javax.naming.NamingException;
 import javax.servlet.ServletException;
@@ -277,6 +281,7 @@ public class ExperimentModule extends SpringModule
     }
 
 
+    @SuppressWarnings("ThrowableInstanceNeverThrown")
     @Override
     public void afterSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)
     {
