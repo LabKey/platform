@@ -558,7 +558,7 @@ public class ExceptionUtil
             User user = (User) request.getUserPrincipal();
 
             //If user has not logged in or agreed to terms, not really unauthorized yet...
-            if ((user.isGuest() || ex instanceof TermsOfUseException) && request.getMethod().equalsIgnoreCase("GET"))
+            if (user.isGuest() || ex instanceof TermsOfUseException)
             {
                 if (((UnauthorizedException)ex).isRequestBasicAuth())
                 {
@@ -568,7 +568,7 @@ public class ExceptionUtil
                     resetResponse = false;
                     ex = null;
                 }
-                else
+                else if (request.getMethod().equalsIgnoreCase("GET"))
                 {
                     UnauthorizedException uae = (UnauthorizedException)ex;
 
