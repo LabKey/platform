@@ -84,7 +84,7 @@ public class ImageButton extends PushButton implements ClickListener
             return;
 
         _text = text;
-        getUpFace().setHTML("<a class='labkey-button'><span>" + text + "</span></a>");
+        getUpFace().setHTML("<a class='labkey-button'>" + text + "</a>");
     }
 
     /** to make life simple, just override onClick instead of registering a listener */

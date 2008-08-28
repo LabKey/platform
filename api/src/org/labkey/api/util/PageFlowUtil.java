@@ -1043,8 +1043,10 @@ public class PageFlowUtil
 
     public static String generateButton(String text, String href, String onClick, String attributes)
     {
-        return "<a class=\"labkey-button\" href=\"" + filter(href) + "\"" + (onClick != null ? " onClick=" + wrapOnClick(onClick) : "") +
-                ">" + buttonInput(text, attributes) + "</a>";
+        return "<a class=\"labkey-button\" href=\"" + filter(href) + "\"" +
+                (onClick != null ? " onClick=" + wrapOnClick(onClick) : "") +
+                (attributes != null ? " " + attributes : "") +
+                "><span>" + filter(text) + "</span></a>";
     }
 
     public static String generateButton(String text, ActionURL href)
@@ -1060,7 +1062,9 @@ public class PageFlowUtil
     /* Renders an input of type submit wrapped in a span */
     public static String generateSubmitButton(String text)
     {
-        return "<span class=\"labkey-button\">" + submitInput(text) + "</span>";
+        return "<span class=\"labkey-button\">" +
+                "<input name=\""+filter(text)+"\" value=\"" + filter(text) + "\" type=\"submit\">" +
+                "</span>";
     }
 
     public static String generateSubmitButton(String text, String onClickScript)
@@ -1070,14 +1074,17 @@ public class PageFlowUtil
 
     public static String generateSubmitButton(String text, String onClick, String attributes)
     {
-        return "<span class=\"labkey-button\"" + ">" + submitInput(text, onClick, attributes) + "</span>";
+        return "<span class=\"labkey-button\"" + ">" +
+                "<input " + (onClick != null ? " onClick=" + wrapOnClick(onClick) : "") +
+                " value=\"" + filter(text) + "\" type=\"submit\" " + attributes + "></span>";
     }
 
     /* Renders a span and a drop down arrow image wrapped in a link */
     public static String generateDropDownButton(String text, String href, String onClick)
     {
-        return "<a class=\"labkey-button\" href=\"" + filter(href) + "\"" + (onClick != null ? " onClick=" + wrapOnClick(onClick) : "") +
-                ">" + dropDown(text) + "</a>";
+        return "<a class=\"labkey-menu-button\" href=\"" + filter(href) + "\"" + (onClick != null ? " onClick=" + wrapOnClick(onClick) : "") +
+                "><span>" + filter(text) + "</span>&nbsp;<img src=\"" + HttpView.currentView().getViewContext().getContextPath() +
+                "/_images/button_arrow.gif\" class=\"labkey-button-arrow\"></a>";
     }
 
     /* Renders text and a drop down arrow image wrapped in a link not of type labkey-button */
@@ -1085,62 +1092,22 @@ public class PageFlowUtil
     {
         return "<a class=\"labkey-header\" style=\"font-weight: bold\" href=\"" + filter(href) + "\"" +
                 (onClick != null ? " onClick=" + wrapOnClick(onClick) : "") +
-                ">" + text + "&nbsp;<img src=\"" + HttpView.currentView().getViewContext().getContextPath() + "/_images/text_link_arrow.gif\" class=\"labkey-button-arrow\"></a>";
+                "><span>" + text + "</span>&nbsp;<img src=\"" + HttpView.currentView().getViewContext().getContextPath() + "/_images/text_link_arrow.gif\" class=\"labkey-button-arrow\"></a>";
     }
 
     /* Renders a lightly colored inactive button, or in other words, a disabled span wrapped in a link of type labkey-disabled-button */
     public static String generateDisabledButton(String text)
     {
-        return "<a class=\"labkey-disabled-button\">" + disabledButtonInput(text, "", "") + "</a>";
+        return "<a class=\"labkey-disabled-button\" disabled><span>" + filter(text) + "</span></a>";
     }
 
     /* Renders a lightly colored inactive button, or in other words, a disabled input wrapped in a span of type labkey-disabled-button */
     public static String generateDisabledSubmitButton(String text, String onClick, String attributes)
     {
-        return "<span class=\"labkey-disabled-button\">" + disabledSubmitInput(text, onClick, attributes) + "</span>";
-    }
-
-    /* Renders the span inside buttons */
-    public static String buttonInput(String text)
-    {
-        return "<span>" + filter(text) + "</span>";
-    }
-
-    public static String buttonInput(String text, String attributes)
-    {
-        return "<span " + attributes + ">" + filter(text) + "</span>";
-    }
-
-    /* Renders the input inside submit buttons */
-    public static String submitInput(String text)
-    {
-        return "<input name=\""+filter(text)+"\" value=\"" + filter(text) + "\" type=\"submit\">";
-    }
-
-    public static String submitInput(String text, String onClick, String attributes)
-    {
-        return "<input " + (onClick != null ? " onClick=" + wrapOnClick(onClick) : "") +
-            " value=\"" + filter(text) + "\" type=\"submit\" " + attributes + ">";
-    }
-
-    /* Renders the span and arrow image inside buttons */
-    public static String dropDown(String text)
-    {
-        return buttonInput(text) + "&nbsp;<img src=\"" + HttpView.currentView().getViewContext().getContextPath() + "/_images/button_arrow.gif\" class=\"labkey-button-arrow\">";
-    }
-
-    /* Renders the disabled span inside disabled buttons */
-    public static String disabledButtonInput(String text, String onClick, String attributes)
-    {
-        return "<span" + (onClick != null ? " onClick=" + wrapOnClick(onClick) : "") +
-                " " + attributes + " disabled>" + filter(text) + "</span>";
-    }
-
-    /* Renders the disabled span inside disabled submit buttons */
-    public static String disabledSubmitInput(String text, String onClick, String attributes)
-    {
-        return "<input " + (onClick != null ? " onClick=" + wrapOnClick(onClick) : "") +
-            " value=\"" + filter(text) + "\" type=\"submit\" " + attributes + " disabled>";
+        return "<span class=\"labkey-disabled-button\">" +
+                "<input " + (onClick != null ? " onClick=" + wrapOnClick(onClick) : "") +
+                " value=\"" + filter(text) + "\" type=\"submit\" " + attributes + " disabled>" +
+                "</span>";
     }
 
     /* This function is used so that the onClick script can use either " or ' quote scheme inside of itself */
