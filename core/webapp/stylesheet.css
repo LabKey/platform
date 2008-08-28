@@ -245,51 +245,99 @@ div.labkey-button-bar, table.labkey-button-bar
     margin-bottom: 0.2em;
 }
 
-/* Used for the new css buttons, which consist of a link (<a>) wrapped around a span (and an image
-   in the case where there is an down arrow ) or a span wrapped around an input for submit buttons */
-a.labkey-button, a.labkey-button:visited, span.labkey-button, span.labkey-button:visited
+/* Used for the new css buttons, which consist of a link (<a>)
+    or a span wrapped around an input for submit buttons */
+.labkey-button, .labkey-button:visited, .labkey-menu-button, .labkey-menu-button:visited
 {
+    color: #000000;
     background-color: #E9E9E9;
     border: 1px solid black;
-    margin-left: 0.3em;
-    padding: 0.1em 0.3em;
-    *padding: 0 0.3em;
-    white-space: nowrap;
+    margin: 0.1em 0.4em 0.5em 0.0em;
+    line-height: 2.3em;
+    *line-height: 1.2em;
+    padding: 0.2em 0.2em;
+    vertical-align: middle;
+    position: relative;
+    *height: 1%; /* hack for IE 7, so it sets its 'hasLayout' DOM property.  This
+                    is required for IE to recognize its position attribute, which in
+                    turn enables relative positioning of our menu button arrow gif. */
 }
 
-a.labkey-button:hover, span.labkey-button:hover
+/* special span modifiers for IE: */
+span.labkey-button, span.labkey-disabled-button
 {
-    background-color: #F2F2F2;
+    *height: 1em;
+    *margin-top: 0.0em;
+    *margin-bottom: 0.4em;
+    *padding-bottom: 0.0em;
 }
 
-a.labkey-button:active, span.labkey-button:active
+a.labkey-button span, a.labkey-disabled-button span
+{
+    padding-bottom: 0.3em;
+}
+
+a.labkey-menu-button span, a.labkey-disabled-menu-button span
+{
+    padding-right: 1.0em;
+}
+
+/* The input within the button span is intentionally undecorated/transparent
+   with zero margins, padding, etc.*/
+span.labkey-button input, span.labkey-disabled-button input
+{
+    background-color: transparent;
+    color: #000000;
+    border: 0;
+    margin: 0;
+    padding: 0;
+    height: 2em;
+    *height: 1.4em;
+    font-family: verdana, arial, helvetica, sans-serif;
+    font-size: 1em;
+    cursor: pointer; /* hand-shaped cursor */
+    cursor: hand; /* for IE 5.x and older browsers */
+}
+
+span.labkey-disabled-button input
+{
+    color: #808080;
+    cursor: default; /* cursor to indicate non-linked item */
+}
+
+/* special input modifiers for IE: */
+span.labkey-button input, span.labkey-disabled-button input
+{
+    *overflow: visible;
+    *padding-bottom: 0.0em;
+}
+
+span.labkey-button:active
 {
     position: relative;
     top: 0.1em;
     background-color: #DEDEDE;
 }
 
-.labkey-button input, .labkey-button:visited input, .labkey-button span, .labkey-button:visited span
+span.labkey-button:hover
 {
-    background-color: transparent;
-    font-size: 1em;
-    font-family: verdana, arial, helvetica, sans-serif;
-    margin:0;
-    border:0;
-    padding:0;
-    color: #080808;
-    cursor: pointer;
-    cursor: hand;
+    background-color: #F2F2F2;
+    cursor: pointer; /* hand-shaped cursor */
+    cursor: hand; /* for IE 5.x and older browsers */
 }
 
-.labkey-button:hover input, .labkey-button:hover span
+a.labkey-button:hover, a.labkey-menu-button:hover
 {
-    color: #0F0F0F;
+    background-color: #F2F2F2;
+    cursor: pointer; /* hand-shaped cursor */
+    cursor: hand; /* for IE 5.x and older browsers */
 }
 
-.labkey-button:active input, .labkey-button:active span
+a.labkey-button:active, a.labkey-menu-button:active
 {
-    color: #000000;
+    position: relative;
+    top: 0.1em;
+    background-color: #DEDEDE;
 }
 
 /* This is the class for the down arrow that can be included in a button.
@@ -297,52 +345,28 @@ a.labkey-button:active, span.labkey-button:active
 img.labkey-button-arrow
 {
     background-color: transparent;
-    margin-bottom: 0.1em;
     width: 0.728em;
-    height: 0.364em;
-    position: relative;
-    bottom: 0.1em;
-    padding: 0;
-    border: 0;
+    height: auto;
+    position: absolute;
+    top: 0.7em;
+    right: 0.5em;
 }
 
-a.labkey-disabled-button, span.labkey-disabled-button
+.labkey-disabled-button, .labkey-disabled-button:visited, .labkey-disabled-menu-button, .labkey-disabled-menu-button:visited
 {
-    border: 1px solid #808080;
-    background-color: #F0F0F0;
-    margin-left: 0.3em;
-    padding: 0.1em 0.3em;
-    *padding: 0 0.3em;
-    white-space: nowrap;
-}
-
-.labkey-disabled-button input, .labkey-disabled-button span
-{
-    background-color: transparent;
-    font-size: 1em;
-    font-family: verdana, arial, helvetica, sans-serif;
-    margin:0;
-    border:0;
-    cursor: pointer;
-    cursor: hand;
     color: #808080;
+    background-color: #F0F0F0;
+    border: 1px solid #808080;
+    margin: 0.1em 0.4em 0.5em 0.0em;
+    cursor: default; /* cursor to indicate non-linked item */
+    vertical-align: middle;
+    line-height: 2.3em;
+    *line-height: 1.2em;
+    padding: 0.2em 0.2em;
+    position: relative;
+    *height: 1%;
+
 }
-
-/* The next to classes are for IE to get the spans to line up and be
-the same size as the inputs */
-a.labkey-button, a.labkey-button:visited
-{
-    *padding-top:1px;
-    *padding-bottom:1px;
-    *position: relative;
-    *top: 1px;
-}
-
-a.labkey-button:active
-{
-    *top: 2px;
-} 
-
 /* Used across the site for simple indenting */
 .labkey-indented
 {

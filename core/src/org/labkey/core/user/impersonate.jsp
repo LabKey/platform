@@ -53,7 +53,7 @@
                 }
             %>
             </select><br>
-            <%=PageFlowUtil.generateSubmitButton("Impersonate", "", "style=\"vertical-align:bottom\"")%><%
+            <%=PageFlowUtil.generateSubmitButton("Impersonate")%><%
             }
             %>
         </td></tr>
