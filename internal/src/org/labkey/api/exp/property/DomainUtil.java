@@ -59,21 +59,6 @@ public class DomainUtil
 
             ArrayList<GWTPropertyDescriptor> list = new ArrayList<GWTPropertyDescriptor>();
 
-            // add system properties
-            DomainKind domainKind = domain.getDomainKind();
-            DomainProperty[] domainProperties = null == domainKind ? new DomainProperty[0] : domainKind.getDomainProperties(typeURI);
-            for (DomainProperty domainProperty : domainProperties)
-            {
-                GWTPropertyDescriptor p = new GWTPropertyDescriptor();
-                p.setName(domainProperty.getName());
-                p.setLabel(domainProperty.getLabel());
-                p.setRangeURI(domainProperty.getType().getTypeURI());
-                p.setRequired(!domainProperty.isRequired());
-                p.setDescription(domainProperty.getDescription());
-                p.setEditable(false);
-                list.add(p);
-            }
-
             for (DomainProperty prop : domain.getProperties())
             {
                 GWTPropertyDescriptor p = getPropertyDescriptor(prop);
@@ -81,6 +66,12 @@ public class DomainUtil
             }
 
             d.setPropertyDescriptors(list);
+
+            // Handle reserved property names
+            DomainKind domainKind = domain.getDomainKind();
+            Set<String> reservedProperties = domainKind.getReservedPropertyNames(domain);
+            d.setReservedPropertyNames(new HashSet<String>(reservedProperties));
+
             return d;
         }
         catch (IllegalAccessException e)
@@ -125,7 +116,7 @@ public class DomainUtil
             gpv.setRowId(pv.getRowId());
             gpv.setType(lsid.getObjectId());
             gpv.setErrorMessage(pv.getErrorMessage());
-            gpv.setProperties(new HashMap(pv.getProperties()));
+            gpv.setProperties(new HashMap<String,String>(pv.getProperties()));
 
             validators.add(gpv);
         }

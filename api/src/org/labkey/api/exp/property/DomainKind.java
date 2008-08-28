@@ -16,16 +16,17 @@
 
 package org.labkey.api.exp.property;
 
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.security.User;
-import org.labkey.api.security.ACL;
-import org.labkey.api.view.ActionURL;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.security.ACL;
+import org.labkey.api.security.User;
+import org.labkey.api.view.ActionURL;
 
 import java.util.Map;
+import java.util.Set;
 
 abstract public class DomainKind
 {
@@ -38,11 +39,6 @@ abstract public class DomainKind
     abstract public Map.Entry<TableInfo, ColumnInfo> getTableInfo(User user, Domain domain, Container[] containers);
     abstract public ActionURL urlShowData(Domain domain);
     abstract public ActionURL urlEditDefinition(Domain domain);
-
-    /**
-     * return the "system" properties for this domain
-     */
-    abstract public DomainProperty[] getDomainProperties(String domainURI);
     
     public boolean canEditDefinition(User user, Domain domain)
     {
@@ -53,6 +49,13 @@ abstract public class DomainKind
     public void deletePropertyDescriptor(Domain domain, User user, PropertyDescriptor pd)
     {
     }
+
+    /**
+     * Return the set of names that should not be allowed for properties. E.g.
+     * the names of columns from the hard table underlying this type
+     * @return set of strings containing the names. This will be compared ignoring case
+     */
+    abstract public Set<String> getReservedPropertyNames(Domain domain);
 
     // CONSIDER: have DomainKind supply and IDomainInstance or similiar
     // so that it can hold instance data (e.g. a DatasetDefinition)

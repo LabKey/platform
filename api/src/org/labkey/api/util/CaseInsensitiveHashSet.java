@@ -19,15 +19,14 @@ import java.util.Collection;
 import java.util.HashSet;
 
 /**
- * Created by IntelliJ IDEA.
+ * Simple case-insensitive verion of HashSet --
+ * simpy forces all Strings to lowercase before adding, removing,
+ * or searching.  Could easily extend this to preserve the case...
+ * just add a lowercase version to uppercase version map.
+ *
  * User: arauch
  * Date: Dec 25, 2004
- * Time: 4:07:57 PM
- * To change this template use File | Settings | File Templates.
  */
-
-// Simple case-insensitive verion of HashSet -- simpy forces all Strings to lowercase before adding, removing,
-// or searching.  Could easily extend this to preserve the case... just add a lowercase version to uppercase version map.
 public class CaseInsensitiveHashSet extends HashSet<String>
 {
     public CaseInsensitiveHashSet()
@@ -43,10 +42,7 @@ public class CaseInsensitiveHashSet extends HashSet<String>
     public CaseInsensitiveHashSet(String... values)
     {
         super(values.length);
-        for (String value : values)
-        {
-            add(value);
-        }
+        addAll(values);
     }
 
     public CaseInsensitiveHashSet(Collection<String> col)
@@ -63,6 +59,12 @@ public class CaseInsensitiveHashSet extends HashSet<String>
     public boolean add(String s)
     {
         return super.add(s.toLowerCase());
+    }
+
+    public void addAll(String... values)
+    {
+        for (String value : values)
+            add(value);
     }
 
     public boolean contains(Object o)
