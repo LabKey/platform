@@ -33,6 +33,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.list.ListItemAttachmentParent;
 
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -125,7 +126,6 @@ public class ListDomainType extends DomainKind
 
     public Set<String> getReservedPropertyNames(Domain domain)
     {
-        TableInfo table = ListManager.get().getTinfoList();
-        return table.getColumnNameSet();
+        return Collections.emptySet();
     }
 }
