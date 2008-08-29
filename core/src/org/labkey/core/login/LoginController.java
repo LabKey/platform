@@ -90,7 +90,7 @@ public class LoginController extends SpringActionController
         public ActionURL getVerificationURL(Container c, String email, String verification, Pair<String, String>[] extraParameters)
         {
             //FIX: 6021, use root container for this URL so that it remains as short as possible
-            ActionURL url = new ActionURL(SetPasswordAction.class, ContainerManager.getRoot());
+            ActionURL url = new ActionURL(SetPasswordAction.class, LookAndFeelProperties.getSettingsContainer(c));
             url.addParameter("verification", verification);
             url.addParameter("email", email);
 
