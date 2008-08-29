@@ -118,7 +118,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         //for some reason, the paging toolbar seems to wait
         //for the load event from the store before adjusting
         //it's UI
-        this.setupDefaultPanelConfig(this);
+        this.setupDefaultPanelConfig();
 
         //delay construction of the superclass until the load callback so
         //we can get the column model from the reader's jsonData
@@ -163,8 +163,8 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
     onStoreLoad : function(store, records, options) {
         this.store.un("load", this.onStoreLoad, this);
 
-        this.populateMetaMap(this);
-        this.setupColumnModel(this);
+        this.populateMetaMap();
+        this.setupColumnModel();
 
         //construct the superclass
         LABKEY.ext.EditorGridPanel.superclass.constructor.call(this, this);
@@ -200,7 +200,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         Ext.Msg.alert("Error", msg);
     },
 
-    populateMetaMap : function(config) {
+    populateMetaMap : function() {
         //the metaMap is a map from field name to meta data about the field
         //the meta data contains the following properties:
         // id, totalProperty, root, fields[]
@@ -209,7 +209,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         // lookup is a nested object with the following properties
         // schema, table, keyColumn, displayColumn
         this.metaMap = {};
-        var fields = config.store.reader.jsonData.metaData.fields;
+        var fields = this.store.reader.jsonData.metaData.fields;
         for(var idx = 0; idx < fields.length; ++idx)
         {
             var field = fields[idx];
@@ -217,29 +217,39 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         }
     },
 
-    setupColumnModel : function(config) {
+    setupColumnModel : function() {
 
         //set the columns property to the columnModel returned in the jsonData
-        config.columns = config.store.reader.jsonData.columnModel;
+        this.columns = this.store.reader.jsonData.columnModel;
 
         //set the renderers and editors for the various columns
         //build a column model index as we run the columns for the
         //customize event
         var colModelIndex = {};
         var col;
-        for(var idx = 0; idx < config.columns.length; ++idx)
+        var meta;
+        for(var idx = 0; idx < this.columns.length; ++idx)
         {
-            col = config.columns[idx];
+            col = this.columns[idx];
             colModelIndex[col.dataIndex] = col;
+            meta = this.metaMap[col.dataIndex];
 
-            //set col.editable false unless the config.editable is true
-            if(!config.editable)
-                col.editable = false;
+            //this.editable can override col.editable
+            col.editable = this.editable && col.editable;
+
+            //if column type is boolean, substitute an Ext.grid.CheckColumn
+            if(meta.type == "boolean")
+            {
+                col = this.columns[idx] = new Ext.grid.CheckColumn(col);
+                if(col.editable)
+                    this.plugins = this.plugins ? [col].concat(this.plugins) : [col];
+                col.editable = false //check columns apply edits immediately, so we don't want to go into edit mode
+            }
 
             if(col.editable && !col.editor)
-                col.editor = this.getDefaultEditor(col, config.lookups);
+                col.editor = this.getDefaultEditor(col, meta);
             if(!col.renderer)
-                col.renderer = this.getDefaultRenderer(col, config.lookups, config.id);
+                col.renderer = this.getDefaultRenderer(col, meta);
 
             //remember the first editable column (used during add record)
             if(!this.firstEditableColumn && col.editable)
@@ -251,26 +261,24 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         //CheckBoxSelectionModel needs to be added to the selection model for
         //the check boxes to show up.
         //(not sure why its constructor doesn't do this autmatically).
-        if(config.selModel && config.selModel.renderer)
-            config.columns = [config.selModel].concat(config.columns);
+        if(this.selModel && this.selModel.renderer)
+            this.columns = [this.selModel].concat(this.columns);
 
         //register for the rowdeselect event if the selmodel supports events
         //and if autoSave is on
-        if(config.selModel.on && config.autoSave)
-            config.selModel.on("rowselect", this.onRowSelect, this);
+        if(this.selModel.on && this.autoSave)
+            this.selModel.on("rowselect", this.onRowSelect, this);
 
         //fire the "columnmodelcustomize" event to allow clients
         //to modify our default configuration of the column model
-        this.fireEvent("columnmodelcustomize", config.columns, colModelIndex);
+        this.fireEvent("columnmodelcustomize", this.columns, colModelIndex);
 
         //add custom renderers for multiline/long-text columns
-        this.setLongTextRenderers(config);
+        this.setLongTextRenderers();
     },
 
-    getDefaultRenderer : function(col, lookups, gridId) {
-        var meta = this.metaMap[col.dataIndex];
-
-        if(meta.lookup && lookups)
+    getDefaultRenderer : function(col, meta) {
+        if(meta.lookup && this.lookups)
             return this.getLookupRenderer(col, meta);
 
         return function(data, cellMetaData, record, rowIndex, colIndex, store)
@@ -353,15 +361,11 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
             this.view.refresh();
     },
 
-    getDefaultEditor : function(col, lookups) {
+    getDefaultEditor : function(col, meta) {
         var editor;
 
-        var meta = this.metaMap[col.dataIndex];
-        if(!meta)
-            return;
-
         //if this column is a lookup, return the lookup editor
-        if(meta.lookup && lookups)
+        if(meta.lookup && this.lookups)
             return this.getLookupEditor(col, meta);
 
         switch(meta.type)
@@ -428,11 +432,11 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         });
     },
 
-    setLongTextRenderers : function(config) {
+    setLongTextRenderers : function() {
         var col;
-        for(var idx = 0; idx < config.columns.length; ++idx)
+        for(var idx = 0; idx < this.columns.length; ++idx)
         {
-            col = config.columns[idx];
+            col = this.columns[idx];
             if(col.multiline || (undefined === col.multiline && col.scale > 255))
             {
                 col.renderer = function(data, metadata, record, rowIndex, colIndex, store)
@@ -450,10 +454,10 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         }
     },
 
-    setupDefaultPanelConfig : function(config) {
-        if(!config.tbar)
+    setupDefaultPanelConfig : function() {
+        if(!this.tbar)
         {
-            config.tbar = [{
+            this.tbar = [{
                 text: 'Refresh',
                 tooltip: 'Click to refresh the table',
                 id: 'refresh-button',
@@ -461,54 +465,54 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
                 scope: this
             }];
 
-            if(config.editable && LABKEY.user && LABKEY.user.canUpdate && !config.autoSave)
+            if(this.editable && LABKEY.user && LABKEY.user.canUpdate && !this.autoSave)
             {
-                config.tbar[config.tbar.length] = "-";
-                config.tbar[config.tbar.length] = {
+                this.tbar.push("-");
+                this.tbar.push({
                     text: 'Save Changes',
                     tooltip: 'Click to save all changes to the database',
                     id: 'save-button',
                     handler: this.saveChanges,
                     scope: this
-                }
+                });
             }
 
-            if(config.editable &&LABKEY.user && LABKEY.user.canInsert)
+            if(this.editable &&LABKEY.user && LABKEY.user.canInsert)
             {
-                config.tbar[config.tbar.length] = "-";
-                config.tbar[config.tbar.length] = {
+                this.tbar.push("-");
+                this.tbar.push({
                     text: 'Add Record',
                     tooltip: 'Click to add a row',
                     id: 'add-record-button',
                     handler: this.onAddRecord,
                     scope: this
-                };
+                });
             }
-            if(config.editable &&LABKEY.user && LABKEY.user.canDelete)
+            if(this.editable &&LABKEY.user && LABKEY.user.canDelete)
             {
-                config.tbar[config.tbar.length] = "-";
-                config.tbar[config.tbar.length] = {
+                this.tbar.push("-");
+                this.tbar.push({
                     text: 'Delete Selected',
                     tooltip: 'Click to delete selected row(s)',
                     id: 'delete-records-button',
                     handler: this.onDeleteRecords,
                     scope: this
-                };
+                });
             }
         }
 
-        if(!config.bbar)
+        if(!this.bbar)
         {
-            config.bbar = new Ext.PagingToolbar({
-                    pageSize: config.pageSize, //default is 20
-                    store: config.store,
+            this.bbar = new Ext.PagingToolbar({
+                    pageSize: this.pageSize, //default is 20
+                    store: this.store,
                     emptyMsg: "No data to display" //display message when no records found
                 });
         }
 
-        if(!config.keys)
+        if(!this.keys)
         {
-            config.keys = [
+            this.keys = [
                 {
                     key: Ext.EventObject.ENTER,
                     handler: this.onEnter,
@@ -536,7 +540,6 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
                 }
             ]
         }
-
     },
 
     onRefresh : function() {
@@ -921,3 +924,37 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         this.getStore().load({params:{start:0, limit:this.pageSize}});
     }
 });
+
+// Check column plugin
+Ext.grid.CheckColumn = function(config){
+    Ext.apply(this, config);
+    if(!this.id){
+        this.id = Ext.id();
+    }
+    this.renderer = this.renderer.createDelegate(this);
+};
+
+Ext.grid.CheckColumn.prototype ={
+    init : function(grid){
+        this.grid = grid;
+        this.grid.on('render', function(){
+            var view = this.grid.getView();
+            view.mainBody.on('mousedown', this.onMouseDown, this);
+        }, this);
+    },
+
+    onMouseDown : function(e, t){
+        if(t.className && t.className.indexOf('x-grid3-cc-'+this.id) != -1){
+            e.stopEvent();
+            var index = this.grid.getView().findRowIndex(t);
+            var record = this.grid.store.getAt(index);
+            this.grid.getSelectionModel().selectRow(index);
+            record.set(this.dataIndex, !record.data[this.dataIndex]);
+        }
+    },
+
+    renderer : function(v, p, record){
+        p.css += ' x-grid3-check-col-td';
+        return '<div class="x-grid3-check-col'+(v?'-on':'')+' x-grid3-cc-'+this.id+'">&#160;</div>';
+    }
+};
