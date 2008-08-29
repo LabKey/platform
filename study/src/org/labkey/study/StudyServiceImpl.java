@@ -43,10 +43,10 @@ import java.util.*;
  */
 public class StudyServiceImpl implements StudyService.Service
 {
-    public int getDatasetId(Container c, String datasetName)
+    public int getDatasetId(Container c, String datasetLabel)
     {
         Study study = StudyManager.getInstance().getStudy(c);
-        DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetName);
+        DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetLabel);
         if (def == null)
             return -1;
         return def.getDataSetId();

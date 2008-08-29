@@ -198,6 +198,17 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
             }
             updated.setKeyPropertyName(keyPropertyName);
 
+            if (!def.getName().equals(updated.getName()))
+            {
+                DataSetDefinition existing = studyManager.getDataSetDefinition(study, updated.getName());
+                if (existing != null)
+                {
+                    errors.add("A Dataset already exists with the name \"" + updated.getName() +"\"" +
+                        " and the label \"" + updated.getLabel() + "\"");
+                    return errors;
+                }
+            }
+
             studyManager.updateDataSetDefinition(getUser(), updated);
             studyManager.uncache(def);
 

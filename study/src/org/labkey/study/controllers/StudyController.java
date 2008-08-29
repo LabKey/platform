@@ -4102,11 +4102,13 @@ public class StudyController extends BaseStudyController
 
             String[] category = form.getCategory();
             String[] source = form.getSourceName();
-            boolean[] snapshot = form.getSnapshot();
+            Set<String> categoryAndSourceToSnapshot = new HashSet<String>(Arrays.asList(form.getCategoryAndSourceToSnapshot()));
+
             String[] destName = form.getDestName();
             for (int i = 0; i < category.length; i++)
             {
-                snapshotBean.setSnapshot(category[i], source[i], snapshot[i]);
+                boolean shouldSnapshot = categoryAndSourceToSnapshot.contains(category[i] + ";" + source[i]);
+                snapshotBean.setSnapshot(category[i], source[i], shouldSnapshot);
                 snapshotBean.setDestTableName(category[i], source[i], destName[i]);
             }
 
@@ -4561,7 +4563,7 @@ public class StudyController extends BaseStudyController
         private String[] sourceName;
         private String[] destName;
         private String[] category;
-        private boolean[] snapshot;
+        private String[] categoryAndSourceToSnapshot; // format: "CATEGORY;SOURCE"
         
         public String getSchemaName()
         {
@@ -4613,14 +4615,14 @@ public class StudyController extends BaseStudyController
             this.complete = complete;
         }
 
-        public void setSnapshot(boolean[] snapshot)
+        public String[] getCategoryAndSourceToSnapshot()
         {
-            this.snapshot = snapshot;
+            return categoryAndSourceToSnapshot;
         }
 
-        public boolean[] getSnapshot()
+        public void setCategoryAndSourceToSnapshot(String[] categoryAndSourceToSnapshot)
         {
-            return snapshot;
+            this.categoryAndSourceToSnapshot = categoryAndSourceToSnapshot;
         }
     }
 

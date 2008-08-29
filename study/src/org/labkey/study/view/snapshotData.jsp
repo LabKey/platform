@@ -90,8 +90,10 @@ NOTE: The existing schema will be completely replaced by this operation.<br><br>
                 <td><%=snapshot ? "yes" : "no"%></td>
                 <td><%=h(sourceName)%></td>
                 <td><%=snapshot ? h(tableName) : "&nbsp;"%><%
-             } else { %>
-                <td><input type="hidden" name="category" value="<%=h(category)%>" ><input type=checkbox name="snapshot" value="true" <%=snapshot ? "CHECKED" : ""%> ></td>
+             } else {
+                String checkboxValue = category + ";" + sourceName;
+             %>
+                <td><input type="hidden" name="category" value="<%=h(category)%>" ><input type=checkbox name="categoryAndSourceToSnapshot" value="<%=h(checkboxValue)%>" <%=snapshot ? "CHECKED" : ""%> ></td>
                 <td><%=h(sourceName)%><input type=hidden name="sourceName" value="<%=h(sourceName)%>" ></td>
                 <td><input type=text name="destName" value="<%=h(tableName)%>" ><%
              }

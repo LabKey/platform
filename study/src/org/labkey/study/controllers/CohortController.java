@@ -314,17 +314,15 @@ public class CohortController extends BaseStudyController
             StudyService.get().beginTransaction();
             try
             {
-                if (pkVal == null) // insert
+                if (isInsert())
                 {
-                    assert isInsert() : "No primary key found when updating cohort";
-
                     cohort = new Cohort();
                     cohort.setLabel(newLabel);
                     StudyManager.getInstance().createCohort(getStudy(), getUser(), cohort);
                 }
-                else // update
+                else
                 {
-                    assert !isInsert() : "Primary key found when inserting";
+                    assert pkVal != null : "Update attempted with no primary key set";
 
                     int rowId;
                     try
