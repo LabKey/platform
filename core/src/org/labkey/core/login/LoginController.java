@@ -136,6 +136,13 @@ public class LoginController extends SpringActionController
             return new ActionURL(LogoutAction.class, c);
         }
 
+        public ActionURL getLogoutURL(Container c, String returnURLString)
+        {
+            ActionURL url = getLogoutURL(c);
+            url.addParameter(ReturnUrlForm.Params.returnUrl, returnURLString);
+            return url;
+        }
+
         public ActionURL getAgreeToTermsURL(Container c, ActionURL returnURL)
         {
             ActionURL url = new ActionURL(AgreeToTermsAction.class, c);
@@ -616,6 +623,12 @@ public class LoginController extends SpringActionController
     @IgnoresTermsOfUse
     public class LogoutAction extends RedirectAction
     {
+        @Override
+        public void checkPermissions() throws TermsOfUseException, UnauthorizedException
+        {
+            // Override allows logout from any folder, even when impersonating within a project
+        }
+
         public ActionURL getSuccessURL(Object o)
         {
             return AppProps.getInstance().getHomePageActionURL();

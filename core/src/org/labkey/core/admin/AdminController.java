@@ -49,7 +49,6 @@ import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.common.util.Pair;
-import org.labkey.common.tools.FastaValidator;
 import org.labkey.core.login.LoginController;
 import org.labkey.data.xml.TablesDocument;
 import org.springframework.validation.BindException;

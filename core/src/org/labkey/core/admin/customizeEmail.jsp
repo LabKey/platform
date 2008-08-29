@@ -191,7 +191,7 @@
         <tr><td></td><td><table id="validSubstitutions"></table></td></tr>
         <tr><td>&nbsp;</td></tr>
         <tr><td></td><td><i>The values of many of these parameters can be configured on
-            the <a href="<%=urlProvider(AdminUrls.class).getLookAndFeelSettingsURL(c)%>">Site Settings Page</a> and on the Project Settings page for each project.</i>
+            the <a href="<%=urlProvider(AdminUrls.class).getLookAndFeelSettingsURL(c)%>">Look and Feel Settings page</a> and on the Project Settings page for each project.</i>
         </tr>
     </table>
 </form><br/><br/>
