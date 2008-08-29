@@ -73,7 +73,6 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
     private static Logger _log = Logger.getLogger(PipelineJobRunnerGlobus.class);
 
     private String _globusEndpoint;
-    private PathMapperImpl _pathMapper = new PathMapperImpl();
 
     private static final String GLOBUS_LOCATION = "GLOBUS_LOCATION";
 
@@ -108,10 +107,6 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
             {
                 _globusEndpoint += "/wsrf/services/ManagedJobFactoryService";
             }
-
-            Map<String, String> pathMap = props.getPathMapping();
-            if (pathMap != null)
-                _pathMapper.setPathMap(pathMap);
         }
     }
 
@@ -315,7 +310,7 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
     private String getClusterPath(String localPath)
     {
         // This PathMapper considers "local" from a cluster node's point of view.
-        return _pathMapper.remoteToLocal(localPath);
+        return getProps().getPathMapper().remoteToLocal(localPath);
     }
 
     public static void updateStatus(PipelineJob job, PipelineJob.TaskStatus status) throws UMOException, IOException

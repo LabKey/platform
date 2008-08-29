@@ -18,6 +18,7 @@ package org.labkey.pipeline.mule;
 import org.mule.impl.DefaultComponentExceptionStrategy;
 import org.mule.impl.RequestContext;
 import org.mule.umo.UMOEvent;
+import org.mule.umo.ComponentException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
 
@@ -57,7 +58,15 @@ public class PipelineJobExceptionStrategy extends DefaultComponentExceptionStrat
 
     private void handleJobError(Throwable t, PipelineJob job)
     {
-        String msg = t.getMessage();
+        String msg;
+        if (t instanceof ComponentException && t.getCause() != null)
+        {
+            msg = t.getCause().getMessage();
+        }
+        else
+        {
+            msg = t.getMessage();
+        }
         if (msg == null)
             msg = t.getClass().toString();
         job.error(msg, t);

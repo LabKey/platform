@@ -13,8 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.labkey.pipeline.mule;
 
--- Change StringValue from NVARCHAR(4000) to NTEXT
-ALTER TABLE exp.ProtocolApplicationParameter
-    ALTER COLUMN StringValue NTEXT NULL
-GO
+import java.sql.SQLException;
+
+/**
+ * <code>StatusRequestHandler</code>
+ *
+ * @author jeckels
+ */
+public class StatusRequestHandler
+{
+    public void handleRequest(StatusRequest status) throws SQLException
+    {
+        status.performRequest();
+    }
+}

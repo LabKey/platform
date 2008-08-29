@@ -62,9 +62,4 @@ public class ApplicationPropertiesSiteSettings implements PipelineJobService.App
     {
         return AppProps.getInstance().getBaseServerUrl();
     }
-
-    public String getCallbackPassword()
-    {
-        return AppProps.getInstance().getCallbackPassword();
-    }
 }

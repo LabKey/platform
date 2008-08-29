@@ -31,6 +31,9 @@ import java.util.List;
  */
 public class ClusterStartup extends AbstractPipelineStartup
 {
+    /**
+     * This method is invoked by reflection - don't change its signature without changing org.labkey.bootstrap.ClusterBootstrap 
+     */
     public void run(List<File> moduleFiles, List<File> moduleConfigFiles, List<File> customConfigFiles, String[] args) throws IOException, URISyntaxException
     {
         initContext("org/labkey/pipeline/mule/config/cluster.log4j.properties", moduleFiles, moduleConfigFiles, customConfigFiles);

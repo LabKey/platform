@@ -30,6 +30,19 @@
         <exception-strategy className="org.labkey.pipeline.mule.PipelineJobExceptionStrategy" />
     </connector>
 
+    <connector name="jmsConnectorStatus" className="org.mule.providers.jms.activemq.ActiveMqJmsConnector">
+        <properties>
+            <container-property name="connectionFactory" reference="activeMqConnectionFactory" />
+            <property name="persistentDelivery" value="true"/>
+
+            <property name="specification" value="1.1"/>
+        </properties>
+        <threading-profile id="receiver" maxBufferSize="0" maxThreadsActive="1"
+                maxThreadsIdle="0" threadTTL="100" poolExhaustedAction="WAIT"/>
+
+        <exception-strategy className="org.labkey.pipeline.mule.PipelineJobExceptionStrategy" />
+    </connector>
+
     <endpoint-identifiers>
         <endpoint-identifier name="JobMQ" value="jms://job.queue"/>
         <endpoint-identifier name="StatusMQ" value="jms://status.queue"/>
@@ -56,8 +69,10 @@
 -->
 
     <global-endpoints>
-        <endpoint name="StatusSetter" type="sender" address="StatusMQ"
-                  transformers="StatusToXML XMLToJMSMessage" connector="jmsConnectorTask"/>
+        <endpoint name="StatusQueue" type="sender" address="StatusMQ"
+                  transformers="StatusToXML XMLToJMSMessage" connector="jmsConnectorStatus" />
+
+        <endpoint name="JobQueue" address="JobMQ" connector="jmsConnectorTask"/>
     </global-endpoints>
 
     <model name="pipeline">
@@ -75,7 +90,7 @@
             <outbound-router>
                 <router className="org.mule.routing.outbound.OutboundPassThroughRouter">
                     <endpoint type="sender" address="JobMQ" transformers="JobToJMSMessage"
-                            connector="jmsConnectorTask"/>
+                            connector="jmsConnectorTask" />
                 </router>
             </outbound-router>
 

@@ -15,22 +15,16 @@
  */
 package org.labkey.pipeline.mule;
 
-import org.labkey.pipeline.api.PipelineStatusManager;
-import org.labkey.pipeline.api.PipelineStatusFileImpl;
-import org.labkey.api.data.Container;
-
 import java.sql.SQLException;
+import java.io.Serializable;
 
 /**
- * <code>PipelineStatusSetter</code>
- *
- * @author brendanx
+ * Interface for the various requests that remote servers may want to make of the web server
+ * User: jeckels
+ * Date: Aug 29, 2008
  */
-public class PipelineStatusSetter
+public interface StatusRequest extends Serializable
 {
-    public void set(EPipelineStatus status) throws Container.ContainerException, SQLException
-    {
-        // todo: fix this if it ever gets used
-        PipelineStatusManager.setStatusFile(status.getInfo(), (PipelineStatusFileImpl) status.getStatusFile(), false);
-    }
+    /** Do the real work */
+    public void performRequest() throws SQLException;
 }

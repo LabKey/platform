@@ -1007,9 +1007,8 @@ pipeline/src/org/labkey/pipeline/directory.jsp -text
 pipeline/src/org/labkey/pipeline/emailNotificationSetup.jsp -text
 pipeline/src/org/labkey/pipeline/mule/EPipelineContextListener.java -text
 pipeline/src/org/labkey/pipeline/mule/EPipelineQueueImpl.java -text
-pipeline/src/org/labkey/pipeline/mule/EPipelineStatus.java -text
 pipeline/src/org/labkey/pipeline/mule/GlobusListener.java -text
-pipeline/src/org/labkey/pipeline/mule/HttpCallbackPipelineStatusWriter.java -text
+pipeline/src/org/labkey/pipeline/mule/JMSStatusWriter.java -text
 pipeline/src/org/labkey/pipeline/mule/JobGlobusSettings.java -text
 pipeline/src/org/labkey/pipeline/mule/LabKeySpringContainerContext.java -text
 pipeline/src/org/labkey/pipeline/mule/LoggerUtil.java -text
@@ -1018,10 +1017,13 @@ pipeline/src/org/labkey/pipeline/mule/PipelineJobExceptionStrategy.java -text
 pipeline/src/org/labkey/pipeline/mule/PipelineJobRunner.java -text
 pipeline/src/org/labkey/pipeline/mule/PipelineJobRunnerGlobus.java -text
 pipeline/src/org/labkey/pipeline/mule/PipelineProgressionRunner.java -text
-pipeline/src/org/labkey/pipeline/mule/PipelineStatusSetter.java -text
 pipeline/src/org/labkey/pipeline/mule/PipelineTaskRunner.java -text
 pipeline/src/org/labkey/pipeline/mule/RemoteServerStartup.java -text
+pipeline/src/org/labkey/pipeline/mule/RequeueLostJobsRequest.java -text
 pipeline/src/org/labkey/pipeline/mule/ResumableDescriptor.java -text
+pipeline/src/org/labkey/pipeline/mule/StatusChangeRequest.java -text
+pipeline/src/org/labkey/pipeline/mule/StatusRequest.java -text
+pipeline/src/org/labkey/pipeline/mule/StatusRequestHandler.java -text
 pipeline/src/org/labkey/pipeline/mule/config/cluster.log4j.properties -text
 pipeline/src/org/labkey/pipeline/mule/config/remote.log4j.properties -text
 pipeline/src/org/labkey/pipeline/mule/config/remoteMuleConfig.xml -text

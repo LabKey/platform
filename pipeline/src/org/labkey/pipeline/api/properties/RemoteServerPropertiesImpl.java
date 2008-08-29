@@ -25,7 +25,6 @@ public class RemoteServerPropertiesImpl implements PipelineJobService.RemoteServ
 {
     private String _location;
     private String _muleConfig;
-    private String _baseServerUrl;
 
     public String getLocation()
     {
@@ -45,19 +44,5 @@ public class RemoteServerPropertiesImpl implements PipelineJobService.RemoteServ
     public void setMuleConfig(String muleConfig)
     {
         _muleConfig = muleConfig;
-    }
-
-    public String getBaseServerUrl()
-    {
-        return _baseServerUrl;
-    }
-
-    public void setBaseServerUrl(String baseServerUrl)
-    {
-        if (!baseServerUrl.endsWith("/"))
-        {
-            baseServerUrl = baseServerUrl + "/";
-        }
-        _baseServerUrl = baseServerUrl;
     }
 }

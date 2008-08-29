@@ -15,7 +15,4 @@
  */
 
 -- Change StringValue from VARCHAR(4000) to TEXT
-ALTER TABLE exp.ProtocolApplicationParameter ADD COLUMN TextStringValue TEXT;
-UPDATE exp.ProtocolApplicationParameter SET TextStringValue = StringValue;
-ALTER TABLE exp.ProtocolApplicationParameter DROP COLUMN StringValue;
-ALTER TABLE exp.ProtocolApplicationParameter RENAME TextStringValue TO StringValue;
+ALTER TABLE exp.ProtocolApplicationParameter ALTER COLUMN StringValue TYPE TEXT;

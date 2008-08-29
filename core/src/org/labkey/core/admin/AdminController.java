@@ -1519,7 +1519,6 @@ public class AdminController extends SpringActionController
             props.setDefaultLsidAuthority(form.getDefaultLsidAuthority());
             props.setPerlPipelineEnabled(form.isPerlPipelineEnabled());
             props.setPipelineToolsDir(form.getPipelineToolsDirectory());
-            props.setCallbackPassword(form.getCallbackPassword());
             props.setSequestServer(form.getSequestServer());
             props.setSSLRequired(form.isSslRequired());
             props.setSSLPort(form.getSslPort());

@@ -23,6 +23,7 @@ import org.labkey.api.exp.api.ExpSchema;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
+import org.labkey.api.security.ACL;
 import org.labkey.api.util.PageFlowUtil;
 
 /**
@@ -45,6 +46,8 @@ public class ExperimentRunGroupsView extends VBox
             protected void populateButtonBar(DataView view, ButtonBar bar)
             {
                 ActionButton createButton = new ActionButton(ExperimentController.ExperimentUrlsImpl.get().getCreateRunGroupURL(c, currentURL, false), "Create new group");
+                createButton.setDisplayPermission(ACL.PERM_UPDATE);
+                createButton.setActionType(ActionButton.Action.GET);
                 bar.add(createButton);
 
                 bar.add(new SimpleTextDisplayElement("<span id=\"experimentRunGroupMembershipStatus\" />", true));

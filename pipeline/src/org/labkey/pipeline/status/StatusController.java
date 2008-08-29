@@ -1108,164 +1108,6 @@ public class StatusController extends SpringActionController
         return name.endsWith(".out") || name.endsWith(".err");
     }
 
-    public abstract static class CallbackForm
-    {
-        private String _callbackPassword;
-
-        public String getCallbackPassword()
-        {
-            return _callbackPassword;
-        }
-
-        public void setCallbackPassword(String callbackPassword)
-        {
-            _callbackPassword = callbackPassword;
-        }
-    }
-
-    public static class JobStatusForm extends CallbackForm
-    {
-        private String _job;
-        private String _status;
-        private String _statusInfo;
-
-        public String getJob()
-        {
-            return _job;
-        }
-
-        public void setJob(String job)
-        {
-            _job = job;
-        }
-
-        public String getStatus()
-        {
-            return _status;
-        }
-
-        public void setStatus(String status)
-        {
-            _status = status;
-        }
-
-        public String getStatusInfo()
-        {
-            return _statusInfo;
-        }
-
-        public void setStatusInfo(String statusInfo)
-        {
-            _statusInfo = statusInfo;
-        }
-    }
-
-    public static class RequeueRunningJobsForm extends CallbackForm
-    {
-        private String _location;
-
-        public String getLocation()
-        {
-            return _location;
-        }
-
-        public void setLocation(String location)
-        {
-            _location = location;
-        }
-    }
-
-    /** Used to set job status for Enterprise pipeline */
-    @RequiresPermission(ACL.PERM_NONE)
-    public class RequeueLostJobsAction extends AbstractCallbackAction<RequeueRunningJobsForm>
-    {
-        public RequeueLostJobsAction()
-        {
-            super(RequeueRunningJobsForm.class);
-        }
-
-        public String handleCallback(RequeueRunningJobsForm form) throws Exception
-        {
-            if (null == form.getLocation())
-            {
-                HttpView.throwNotFound("No location specified");
-            }
-
-            if (PipelineService.get().getPipelineQueue().isLocal())
-            {
-                _log.error("Attempted to requeue lost jobs for location " + form.getLocation() + " but this server " +
-                    "is not using an external JMS queue. Change your configuration to point to a different JMS queue.");
-
-                HttpView.throwNotFound("Remote servers not supported.  Change configuration to use a remote queue.");
-            }
-
-            for (PipelineStatusFileImpl sf : PipelineStatusManager.getStatusFilesForLocation(form.getLocation(), false))
-            {
-                if (sf.getJobStore() != null)
-                    PipelineJobService.get().getJobStore().retry(sf);
-            }
-
-            return PipelineJob.COMPLETE_STATUS;
-        }
-    }
-
-    public abstract class AbstractCallbackAction<Form extends CallbackForm> extends SimpleStreamAction<Form>
-    {
-        public AbstractCallbackAction(Class<? extends Form> c)
-        {
-            super(c);
-        }
-
-        public void render(Form form, BindException errors, PrintWriter out) throws Exception
-        {
-            String status;
-
-            if (!PipelineService.get().isEnterprisePipeline())
-            {
-                _log.error("Attempt to use Enterprise pipeline failed as it is not enabled.");
-
-                status = "HTTP access disabled since Enterprise pipeline is not configured";
-            }
-            else if (PipelineJobService.get().getAppProperties().getCallbackPassword() != null &&
-                !PipelineJobService.get().getAppProperties().getCallbackPassword().equals(form.getCallbackPassword()))
-            {
-                status = "Invalid callback password";
-            }
-            else
-            {
-                status = handleCallback(form);
-            }
-
-            getViewContext().getResponse().getWriter().write(status);
-        }
-
-        protected abstract String handleCallback(Form form) throws Exception;
-    }
-
-    /** Used to set job status for Enterprise pipeline */
-    @RequiresPermission(ACL.PERM_NONE)
-    public class SetJobStatusAction extends AbstractCallbackAction<JobStatusForm>
-    {
-        public SetJobStatusAction()
-        {
-            super(JobStatusForm.class);
-        }
-
-        public String handleCallback(JobStatusForm form) throws Exception
-        {
-            PipelineStatusFileImpl status = PipelineStatusManager.getJobStatusFile(form.getJob());
-            if (!status.getContainerId().equals(getContainer().getId()))
-            {
-                HttpView.throwNotFound("Attempting to set status in wrong container");
-            }
-
-            status.setStatus(form.getStatus());
-            status.setInfo(form.getStatusInfo());
-            setStatusFile(getViewBackgroundInfo(), status, false);
-            return PipelineJob.COMPLETE_STATUS;
-        }
-    }
-
     /////////////////////////////////////////////////////////////////////////
     // Perl Pipeline actions
 
@@ -1390,21 +1232,18 @@ public class StatusController extends SpringActionController
     }
 
     @RequiresSiteAdmin
-    public class ForceRefreshAction extends FormHandlerAction
+    public class ForceRefreshAction extends SimpleViewAction
     {
-        public void validateCommand(Object target, Errors errors)
-        {
-        }
-
-        public boolean handlePost(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             PipelineServiceImpl.get().refreshLocalJobs();
-            return true;
+            HttpView.throwRedirect(new ActionURL(ShowListAction.class, ContainerManager.getRoot()));
+            return null;
         }
 
-        public ActionURL getSuccessURL(Object o)
+        public NavTree appendNavTrail(NavTree root)
         {
-            return new ActionURL(ShowListAction.class, ContainerManager.getRoot());
+            throw new UnsupportedOperationException();
         }
     }
 }

@@ -18,8 +18,7 @@ package org.labkey.pipeline.api.properties;
 
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.GlobusSettingsImpl;
-
-import java.util.Map;
+import org.labkey.api.pipeline.file.PathMapper;
 
 /**
  * <code>GlobusClientPropertiesImpl</code> used for Spring configuration.
@@ -30,7 +29,7 @@ public class GlobusClientPropertiesImpl extends GlobusSettingsImpl implements Pi
     private String _labKeyDir;
     private String _globusServer;
     private String _jobFactoryType;
-    private Map<String, String> _pathMapping;
+    private PathMapper _pathMapper;
 
     public String getJavaHome()
     {
@@ -72,13 +71,13 @@ public class GlobusClientPropertiesImpl extends GlobusSettingsImpl implements Pi
         _jobFactoryType = globusJobFactoryType;
     }
 
-    public Map<String, String> getPathMapping()
+    public PathMapper getPathMapper()
     {
-        return _pathMapping;
+        return _pathMapper;
     }
 
-    public void setPathMapping(Map<String, String> globusPathMapping)
+    public void setPathMapper(PathMapper pathMapper)
     {
-        _pathMapping = globusPathMapping;
+        _pathMapper = pathMapper;
     }
 }

@@ -84,7 +84,11 @@
         <transformer name="JMSMessageToXML" className="org.mule.providers.jms.transformers.JMSMessageToObject"
             returnClass="java.lang.String"/>
         <transformer name="XMLToStatus" className="org.mule.transformers.xml.XmlToObject"
-            returnClass="org.labkey.pipeline.mule.EPipelineStatus"/>
+            returnClass="org.labkey.pipeline.mule.StatusRequest"/>
+        <transformer name="StatusToXML" className="org.mule.transformers.xml.ObjectToXml"
+            returnClass="java.lang.String"/>
+        <transformer name="XMLToJMSMessage" className="org.mule.providers.jms.transformers.ObjectToJMSMessage"
+            returnClass="javax.jms.TextMessage" />
         <transformer name="NoOpTransformer" className="org.labkey.pipeline.mule.transformers.NoOpTransformer"
             returnClass="java.lang.Object"/>
     </transformers>
@@ -178,21 +182,19 @@
             <threading-profile maxThreadsActive="1" maxThreadsIdle="0" threadTTL="100"/>
             <pooling-profile maxActive="1" maxIdle="0" initialisationPolicy="INITIALISE_NONE"/>
         </mule-descriptor>
-        <!--
+
         <mule-descriptor name="PipelineStatusSetterUMO"
-            implementation="org.labkey.pipeline.mule.PipelineStatusSetter">
+            implementation="org.labkey.pipeline.mule.StatusRequestHandler">
             <inbound-router>
                 <endpoint type="receiver" address="StatusMQ" transformers="JMSMessageToXML XMLToStatus"
                         responseTransformers="NoOpTransformer" connector="jmsConnectorState">
-                    <!-<transaction action="ALWAYS_BEGIN" factory="org.mule.providers.jms.JmsTransactionFactory" />->
                 </endpoint>
             </inbound-router>
-
+            
             <threading-profile maxThreadsActive="1" maxThreadsIdle="0" threadTTL="100"/>
             <pooling-profile maxActive="1" maxIdle="0" initialisationPolicy="INITIALISE_NONE"/>
             
             <exception-strategy className="org.labkey.pipeline.mule.PipelineJobExceptionStrategy" />
         </mule-descriptor>
--->
     </model>
 </mule-configuration>

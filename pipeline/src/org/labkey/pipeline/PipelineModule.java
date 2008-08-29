@@ -31,6 +31,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
@@ -59,7 +60,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
     public PipelineModule()
     {
-        super(PipelineService.MODULE_NAME, 8.25, "/org/labkey/pipeline", true, new WebPartFactory(PipelineWebPart.getPartName()){
+        super(PipelineService.MODULE_NAME, 8.26, "/org/labkey/pipeline", true, new WebPartFactory(PipelineWebPart.getPartName()){
             public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
             {
                 return new PipelineWebPart(portalCtx);
@@ -125,18 +126,22 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     {
         super.afterSchemaUpdate(moduleContext, viewContext);
 
-        if (StringUtils.trimToNull(AppProps.getInstance().getPipelineToolsDirectory()) == null)
+        if (moduleContext.getInstalledVersion() < 8.26)
         {
-            try
+            String toolsDir = StringUtils.trimToNull(AppProps.getInstance().getPipelineToolsDirectory());
+            if (toolsDir == null || !NetworkDrive.exists(new File(toolsDir)))
             {
-                WriteableAppProps props = AppProps.getWriteableInstance();
-                File webappRoot = new File(ModuleLoader.getServletContext().getRealPath("/"));
-                props.setPipelineToolsDir(new File(webappRoot.getParentFile(), "bin").toString());
-                props.save();
-            }
-            catch (SQLException e)
-            {
-                _log.error("Failed to set pipeline tools directory.", e);
+                try
+                {
+                    WriteableAppProps props = AppProps.getWriteableInstance();
+                    File webappRoot = new File(ModuleLoader.getServletContext().getRealPath("/"));
+                    props.setPipelineToolsDir(new File(webappRoot.getParentFile(), "bin").toString());
+                    props.save();
+                }
+                catch (SQLException e)
+                {
+                    _log.error("Failed to set pipeline tools directory.", e);
+                }
             }
         }
 

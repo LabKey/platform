@@ -78,7 +78,7 @@ public class ProviderButtonBar extends ButtonBar
                         for (PipelineProvider.StatusAction action : actions)
                         {
                             ActionButton button = new ActionButton("providerAction.view?" +
-                                    "name=" + PageFlowUtil.encode(action.getLabel()) + "&amp;" +
+                                    "name=" + PageFlowUtil.encode(action.getLabel()) + "&" +
                                     "rowId=${rowId}", action.getLabel());
                             button.setActionType(ActionButton.Action.LINK);
                             if (!ctx.getViewContext().getUser().isAdministrator())

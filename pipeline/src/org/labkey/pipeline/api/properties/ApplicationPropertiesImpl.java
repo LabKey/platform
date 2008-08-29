@@ -28,8 +28,6 @@ public class ApplicationPropertiesImpl implements PipelineJobService.Application
 {
     private String _toolsDirectory;
 
-    private String _callbackPassword;
-
     private Character _networkDriveLetter;
     private String _networkDrivePath;
     private String _networkDriveUser;
@@ -38,16 +36,6 @@ public class ApplicationPropertiesImpl implements PipelineJobService.Application
     public String getToolsDirectory()
     {
         return _toolsDirectory;
-    }
-
-    public void setCallbackPassword(String callbackPassword)
-    {
-        _callbackPassword = callbackPassword;
-    }
-
-    public String getCallbackPassword()
-    {
-        return _callbackPassword;
     }
 
     public void setToolsDirectory(String toolsDirectory)
