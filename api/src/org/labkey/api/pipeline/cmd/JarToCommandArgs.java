@@ -93,7 +93,6 @@ public class JarToCommandArgs extends ListToCommandArgs
         for (TaskToCommandArgs converter : getConverters())
             args.addAll(Arrays.asList(converter.toArgs(task, visited)));
 
-        args.add("-client");
         args.add("-jar");
 
         converterInline.setValue(PipelineJobService.get().getJarPath(_jarPath,
