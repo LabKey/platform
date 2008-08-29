@@ -39,10 +39,10 @@ public class StudyService
     public interface Service extends SchemaUpdateService
     {
         /**
-         * Returns the dataset id of the requested dataset definition name,
+         * Returns the dataset id of the requested dataset definition label,
          * or -1 if no such dataset by that name exists
          */
-        public int getDatasetId(Container c, String datasetName);
+        public int getDatasetId(Container c, String datasetLabel);
 
         /**
          * Delete a single dataset row
