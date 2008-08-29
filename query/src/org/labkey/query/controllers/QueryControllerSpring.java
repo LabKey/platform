@@ -1218,6 +1218,7 @@ public class QueryControllerSpring extends SpringActionController
     }
 
     @RequiresPermission(ACL.PERM_READ)
+    @ApiVersion(8.3)
     public class ExecuteSqlAction extends ApiAction<ExecuteSqlForm>
     {
         protected class TempQuerySettings extends QuerySettings
