@@ -195,11 +195,6 @@ public class WriteableAppProps extends AppProps
         storeStringValue(MICROARRAY_FEATURE_EXTRACTION_SERVER_PROP, name);
     }
 
-    public void setCallbackPassword(String password)
-    {
-        storeStringValue(CALLBACK_PASSWORD_PROP, password);
-    }
-
     private void incrementLookAndFeelRevision()
     {
         storeIntValue(LOOK_AND_FEEL_REVISION, getLookAndFeelRevision() + 1);

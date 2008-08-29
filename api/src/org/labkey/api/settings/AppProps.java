@@ -21,6 +21,7 @@ import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.module.ModuleLoader;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import javax.servlet.http.HttpServletRequest;
@@ -28,6 +29,7 @@ import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.Random;
+import java.io.File;
 
 /**
  * User: arauch
@@ -74,7 +76,6 @@ public class AppProps extends AbstractWriteableSettingsGroup
     protected static final String NETWORK_DRIVE_USER = "networkDriveUser";
     protected static final String NETWORK_DRIVE_PASSWORD = "networkDrivePassword";
     protected static final String CABIG_ENABLED = "caBIGEnabled";
-    protected static final String CALLBACK_PASSWORD_PROP = "callbackPassword";
     protected static final String MAIL_RECORDER_ENABLED = "mailRecorderEnabled";
 
     protected static final String SITE_CONFIG_NAME = "SiteConfig";
@@ -274,7 +275,10 @@ public class AppProps extends AbstractWriteableSettingsGroup
 
     public String getPipelineToolsDirectory()
     {
-        return lookupStringValue(PIPELINE_TOOLS_DIR_PROP, "");
+        File webappDir = new File(ModuleLoader.getServletContext().getRealPath(""));
+        File binDir = new File(webappDir.getParentFile(), "bin");
+
+        return lookupStringValue(PIPELINE_TOOLS_DIR_PROP, binDir.getAbsolutePath());
     }
 
     public boolean hasSequest()
@@ -469,31 +473,6 @@ public class AppProps extends AbstractWriteableSettingsGroup
         String path = getContextPath();
 
         return "".equals(path) ? "root.xml" : path.substring(1) + ".xml";
-    }
-
-    public String getCallbackPassword()
-    {
-        StringBuilder defaultPassword = new StringBuilder();
-        Random random = new Random();
-        for (int i = 0; i < 8; i++)
-        {
-            int x = random.nextInt(26 + 26 + 10);
-            int letter;
-            if (x < 26)
-            {
-                letter = 'a' + x;
-            }
-            else if (x < 52)
-            {
-                letter = 'A' + x - 26;
-            }
-            else
-            {
-                letter = '0' + x - 52;
-            }
-            defaultPassword.append((char)letter);
-        }
-        return lookupStringValue(CALLBACK_PASSWORD_PROP, defaultPassword.toString());
     }
 
     //WCH: 20060629 - for Customisable web colour theme

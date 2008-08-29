@@ -32,6 +32,11 @@ public abstract class FormHandlerAction<FORM> extends FormViewAction<FORM>
 {
     public final ModelAndView getView(FORM form, boolean reshow, BindException errors) throws Exception
     {
+        if (errors == null)
+        {
+            errors = new BindException(new Object(), "FakeObject");
+        }
+        errors.addError(new LabkeyError("This action does not support HTTP GET"));
         return new SimpleErrorView(errors);
     }
 

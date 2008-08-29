@@ -186,7 +186,6 @@ public class ModuleLoader implements Filter
         _servletContext = servletCtx;
 
         _log.debug("ModuleLoader init");
-        _log.info("JAVA_HOME = " + System.getenv("JAVA_HOME"));
 
         // Start up a thread that lets us hit a breakpoint in the debugger, even if
         // all the real working threads are hung. This lets us invoke methods in the debugger,

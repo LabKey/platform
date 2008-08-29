@@ -50,8 +50,6 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
     {
         String getToolsDirectory();
 
-        String getCallbackPassword();
-
         Character getNetworkDriveLetter();
         String getNetworkDrivePath();
         String getNetworkDriveUser();
@@ -74,7 +72,6 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
     {
         String getLocation();
         String getMuleConfig();
-        String getBaseServerUrl();
     }
 
     /**
@@ -87,7 +84,7 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
         String getLabKeyDir();
         String getGlobusServer();
         String getJobFactoryType();
-        Map<String, String> getPathMapping();
+        PathMapper getPathMapper();
     }
 
     abstract public ApplicationProperties getAppProperties();
