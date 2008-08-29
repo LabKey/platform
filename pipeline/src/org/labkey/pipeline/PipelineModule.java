@@ -60,7 +60,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
     public PipelineModule()
     {
-        super(PipelineService.MODULE_NAME, 8.26, "/org/labkey/pipeline", true, new WebPartFactory(PipelineWebPart.getPartName()){
+        super(PipelineService.MODULE_NAME, 8.261, "/org/labkey/pipeline", true, new WebPartFactory(PipelineWebPart.getPartName()){
             public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
             {
                 return new PipelineWebPart(portalCtx);
@@ -126,7 +126,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     {
         super.afterSchemaUpdate(moduleContext, viewContext);
 
-        if (moduleContext.getInstalledVersion() < 8.26)
+        if (moduleContext.getInstalledVersion() < 8.261)
         {
             String toolsDir = StringUtils.trimToNull(AppProps.getInstance().getPipelineToolsDirectory());
             if (toolsDir == null || !NetworkDrive.exists(new File(toolsDir)))

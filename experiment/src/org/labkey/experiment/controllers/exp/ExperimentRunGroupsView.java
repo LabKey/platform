@@ -47,7 +47,7 @@ public class ExperimentRunGroupsView extends VBox
             {
                 ActionButton createButton = new ActionButton(ExperimentController.ExperimentUrlsImpl.get().getCreateRunGroupURL(c, currentURL, false), "Create new group");
                 createButton.setDisplayPermission(ACL.PERM_UPDATE);
-                createButton.setActionType(ActionButton.Action.GET);
+                createButton.setActionType(ActionButton.Action.LINK);
                 bar.add(createButton);
 
                 bar.add(new SimpleTextDisplayElement("<span id=\"experimentRunGroupMembershipStatus\" />", true));

@@ -384,8 +384,8 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
                 // the file, which ends up recreating it. Worse, it comes back with different file permissions, set
                 // so that we can't read or write to it anymore, meaning that we can't delete it again or copy its
                 // contents to the main job log. So, we wait a bit for it to be flushed and then try deleting it.
-                // We'll have to wait and see if it's reliably done after five seconds or not.
-                Thread.sleep(5000);
+                // We'll have to wait and see if it's reliably done after ten seconds or not.
+                Thread.sleep(10000);
             }
             catch (InterruptedException e) {}
 
