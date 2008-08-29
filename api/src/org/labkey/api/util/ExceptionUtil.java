@@ -110,14 +110,14 @@ public class ExceptionUtil
     }
 
 
-    public static HttpView getErrorView(int responseStatus, String message, Throwable ex,
+    public static ErrorView getErrorView(int responseStatus, String message, Throwable ex,
                                         HttpServletRequest request, boolean startupFailure)
     {
         ErrorRenderer renderer = getErrorRenderer(responseStatus, message, ex, request, false, startupFailure);
         return new ErrorView(renderer, startupFailure);
     }
 
-    public static HttpView getErrorView(int responseStatus, String message, Throwable ex,
+    public static ErrorView getErrorView(int responseStatus, String message, Throwable ex,
                                         HttpServletRequest request, boolean startupFailure, boolean popup)
     {
         ErrorRenderer renderer = getErrorRenderer(responseStatus, message, ex, request, false, startupFailure);
@@ -411,6 +411,10 @@ public class ExceptionUtil
         private final ErrorRenderer _renderer;
         private boolean _startupFailure;
         private boolean _popup;
+        private boolean _includeHomeButton = true;
+        private boolean _includeBackButton = true;
+        private boolean _includeFolderButton = true;
+        private boolean _includeStopImpersonatingButton = false;
 
         ErrorView(ErrorRenderer renderer, boolean startupFailure)
         {
@@ -462,14 +466,26 @@ public class ExceptionUtil
                 }
                 else
                 {
-                    out.print(PageFlowUtil.generateButton("Home", AppProps.getInstance().getHomePageActionURL()));
-                    out.print("&nbsp;");
-                    out.print(PageFlowUtil.generateButton("Back", "javascript:window.history.back();"));
-                    out.print("&nbsp;");
-                    if (getViewContext().getContainer() != null)
+                    if (_includeHomeButton)
+                    {
+                        out.print(PageFlowUtil.generateButton("Home", AppProps.getInstance().getHomePageActionURL()));
+                        out.print("&nbsp;");
+                    }
+                    if (_includeBackButton)
+                    {
+                        out.print(PageFlowUtil.generateButton("Back", "javascript:window.history.back();"));
+                        out.print("&nbsp;");
+                    }
+                    if (_includeFolderButton && getViewContext().getContainer() != null)
                     {
                         ActionURL folderURL = new ActionURL("Project", "start.view", getViewContext().getContainer());
-                        out.print(PageFlowUtil.generateButton("Folder", folderURL.getLocalURIString()));
+                        out.print(PageFlowUtil.generateButton("Folder", folderURL));
+                        out.print("&nbsp;");
+                    }
+                    if (_includeStopImpersonatingButton)
+                    {
+                        ActionURL logoutURL = PageFlowUtil.urlProvider(LoginUrls.class).getLogoutURL(getViewContext().getContainer(), getViewContext().getActionURL().getLocalURIString());
+                        out.print(PageFlowUtil.generateButton("Stop Impersonating", logoutURL));
                     }
                 }
                 out.println("<br>");
@@ -480,6 +496,26 @@ public class ExceptionUtil
         {
             _renderer.renderEnd(out);
             out.println("</body></html>");
+        }
+
+        public void setIncludeHomeButton(boolean includeHomeButton)
+        {
+            _includeHomeButton = includeHomeButton;
+        }
+
+        public void setIncludeBackButton(boolean includeBackButton)
+        {
+            _includeBackButton = includeBackButton;
+        }
+
+        public void setIncludeFolderButton(boolean includeFolderButton)
+        {
+            _includeFolderButton = includeFolderButton;
+        }
+
+        public void setIncludeStopImpersonatingButton(boolean includeStopImpersonatingButton)
+        {
+            _includeStopImpersonatingButton = includeStopImpersonatingButton;
         }
     }
 
@@ -549,8 +585,9 @@ public class ExceptionUtil
         }
 
         boolean resetResponse = true;
+        boolean isForbiddenProject = false;  // Hack
 
-        HttpView errorView;
+        ErrorView errorView;
 
         // check for unauthorized guest, go to login
         if (ex instanceof UnauthorizedException)
@@ -584,6 +621,12 @@ public class ExceptionUtil
 
                     return new ViewForward(redirect);
                 }
+            }
+
+            // Hack so we can set the right buttons in ErrorView -- ex gets nulled out before we have the view 
+            if (ex instanceof ForbiddenProjectException)
+            {
+                isForbiddenProject = true;
             }
         }
 
@@ -631,6 +674,14 @@ public class ExceptionUtil
         else
         {
             _log.error("Unhandled exception: " + (null == message ? "" : message), ex);
+        }
+
+        if (isForbiddenProject)
+        {
+            // Not allowed in the project... don't offer Home or Folder buttons, provide "Stop Impersonating" button 
+            errorView.setIncludeHomeButton(false);
+            errorView.setIncludeFolderButton(false);
+            errorView.setIncludeStopImpersonatingButton(true);
         }
 
         if (response.isCommitted())

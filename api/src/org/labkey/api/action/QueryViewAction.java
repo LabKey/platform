@@ -52,8 +52,9 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
             {
                 // Force Basic authentication for excel web query
                 if (!getViewContext().getUser().isGuest())
-                    HttpView.throwUnauthorized();
-                throw new UnauthorizedException(true);
+                    throw e;
+                else
+                    throw new UnauthorizedException(true);
             }
         }
         else

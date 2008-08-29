@@ -34,6 +34,7 @@ public interface LoginUrls extends UrlProvider
     public ActionURL getLoginURL(ActionURL returnURL);
     public ActionURL getLoginURL(Container c, String returnURLString);
     public ActionURL getLogoutURL(Container c);
+    public ActionURL getLogoutURL(Container c, String returnURLString);
     public ActionURL getAgreeToTermsURL(Container c, ActionURL returnURL);
     public ActionURL getAgreeToTermsURL(Container c, String returnURLString);
 }

@@ -530,7 +530,11 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
             }
             if (!c.hasPermission(user, requiresPermission.value()))
             {
-                HttpView.throwUnauthorized();
+                if (c.isForbiddenProject(user))
+                    HttpView.throwForbiddenProject();
+                else
+                    HttpView.throwUnauthorized();
+
                 return;
             }
         }

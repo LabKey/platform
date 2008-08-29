@@ -59,7 +59,7 @@ public class FooterMenu extends NavTreeMenu
         // LOGIN
         //
         if (user.isGuest())
-            menu.add(new NavTree("Sign in", PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(context.getActionURL())));
+            menu.add(new NavTree("Sign In", PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(context.getActionURL())));
 
         menu.add(new NavTree("Home", AppProps.getInstance().getHomePageActionURL()));
 

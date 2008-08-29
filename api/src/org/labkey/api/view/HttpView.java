@@ -669,6 +669,12 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         throw new UnauthorizedException(null, getContextURL(), getContextContainer());
     }
 
+    public static Forward throwForbiddenProject()
+            throws ForbiddenProjectException
+    {
+        throw new ForbiddenProjectException(getContextURL(), getContextContainer());
+    }
+
     public static ModelAndView throwUnauthorizedMV()
             throws UnauthorizedException
     {

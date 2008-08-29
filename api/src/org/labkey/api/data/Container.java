@@ -200,18 +200,25 @@ public class Container implements Serializable
 
     public boolean hasPermission(User user, int perm)
     {
-        // If impersonation is confined to a project
-        if (user.isImpersonated() && null != user.getImpersonationProject())
-        {
-            assert !isRoot();   // Shouldn't be asking for permissions in the root
-
-            // Can't visit the root and current project must match impersonation project
-            if (isRoot() || !getProject().equals(user.getImpersonationProject()))
-                return false;
-        }
+        if (isForbiddenProject(user))
+            return false;
 
         ACL acl = getAcl();
         return acl.hasPermission(user, perm);
+    }
+
+
+    public boolean isForbiddenProject(User user)
+    {
+        // If user is being impersonated within a project
+        if (user.isImpersonated() && null != user.getImpersonationProject())
+        {
+            // Can't visit the root and current project must match impersonation project
+            if (isRoot() || !getProject().equals(user.getImpersonationProject()))
+                return true;
+        }
+
+        return false;
     }
 
 
