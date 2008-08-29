@@ -43,6 +43,11 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
     private ApiResponseWriter.Format _respFormat = ApiResponseWriter.Format.JSON;
     private String _contentTypeOverride = null;
 
+    protected enum CommonParameters
+    {
+        apiVersion
+    }
+
     public ApiAction()
     {
     }
@@ -101,9 +106,9 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
                 JSONObject jsonObj = getJsonObject();
 
                 //check for apiversion property in the JSON (might be a number or a string)
-                if(null != jsonObj && jsonObj.has("apiversion"))
+                if(null != jsonObj && jsonObj.has(CommonParameters.apiVersion.name()))
                 {
-                    Object reqVersion = jsonObj.get("apiversion");
+                    Object reqVersion = jsonObj.get(CommonParameters.apiVersion.name());
                     if(reqVersion instanceof Number)
                         checkApiVersion(((Number)reqVersion).doubleValue());
                     else
@@ -117,7 +122,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
             else
             {
                 //check for apiversion request prop
-                Object apiversion = getProperty("apiversion");
+                Object apiversion = getProperty(CommonParameters.apiVersion.name());
                 if(null != apiversion)
                     checkApiVersion(apiversion.toString());
 
@@ -165,9 +170,17 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
 
     protected void checkApiVersion(double reqVersion) throws ApiVersionException
     {
-        double curVersion = ModuleLoader.getInstance().getCurrentModule().getVersion();
+        double curVersion = getApiVersion();
         if(reqVersion > curVersion)
             throw new ApiVersionException(reqVersion, curVersion);
+    }
+
+    protected double getApiVersion()
+    {
+        ApiVersion version = this.getClass().getAnnotation(ApiVersion.class);
+        //default version is 8.3, since we made several changes in core code
+        //to properly support API clients
+        return null != version ? version.value() : 8.3;
     }
 
     protected JSONObject getJsonObject() throws Exception
