@@ -21,6 +21,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.view.TermsOfUseException;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.module.ModuleLoader;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -98,12 +99,28 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
             {
                 _reqFormat = ApiResponseWriter.Format.JSON;
                 JSONObject jsonObj = getJsonObject();
+
+                //check for apiversion property in the JSON (might be a number or a string)
+                if(null != jsonObj && jsonObj.has("apiversion"))
+                {
+                    Object reqVersion = jsonObj.get("apiversion");
+                    if(reqVersion instanceof Number)
+                        checkApiVersion(((Number)reqVersion).doubleValue());
+                    else
+                        checkApiVersion(reqVersion.toString());
+                }
+
                 form = getCommand();
                 populateForm(jsonObj, form);
                 errors = new BindException(form, "form");
             }
             else
             {
+                //check for apiversion request prop
+                Object apiversion = getProperty("apiversion");
+                if(null != apiversion)
+                    checkApiVersion(apiversion.toString());
+
                 if (null != getCommandClass())
                 {
                     errors = defaultBindParameters(getCommand(), getPropertyValues());
@@ -133,6 +150,25 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
 
         return null;
     } //handleRequest()
+
+    protected final void checkApiVersion(String reqVersion) throws ApiVersionException
+    {
+        try
+        {
+            checkApiVersion(Double.parseDouble(reqVersion));
+        }
+        catch(NumberFormatException e)
+        {
+            throw new ApiVersionException("Required version value '" + reqVersion + "' could not be parsed as a valid version number (e.g., '8.3').");
+        }
+    }
+
+    protected void checkApiVersion(double reqVersion) throws ApiVersionException
+    {
+        double curVersion = ModuleLoader.getInstance().getCurrentModule().getVersion();
+        if(reqVersion > curVersion)
+            throw new ApiVersionException(reqVersion, curVersion);
+    }
 
     protected JSONObject getJsonObject() throws Exception
     {

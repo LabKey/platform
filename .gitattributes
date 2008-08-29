@@ -33,6 +33,7 @@ api/src/org/labkey/api/action/ApiQueryResponse.java -text
 api/src/org/labkey/api/action/ApiResponse.java -text
 api/src/org/labkey/api/action/ApiResponseWriter.java -text
 api/src/org/labkey/api/action/ApiSimpleResponse.java -text
+api/src/org/labkey/api/action/ApiVersionException.java -text
 api/src/org/labkey/api/action/BaseViewAction.java -text
 api/src/org/labkey/api/action/BeehivePortingActionResolver.java -text
 api/src/org/labkey/api/action/ConfirmAction.java -text
