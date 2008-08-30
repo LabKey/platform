@@ -527,20 +527,26 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     }
 
-    protected void savePropertyObject(String parentLSID, Map<PropertyDescriptor, String> properties, Container container)
+    protected void savePropertyObject(String parentLSID, Map<PropertyDescriptor, String> properties, Container container) throws ExperimentException
     {
-        ObjectProperty[] objProperties = new ObjectProperty[properties.size()];
-        int i = 0;
-        for (Map.Entry<PropertyDescriptor, String> entry : properties.entrySet())
-        {
-            PropertyDescriptor pd = entry.getKey();
-            ObjectProperty property = new ObjectProperty(parentLSID,
-                    container.getId(), pd.getPropertyURI(),
-                    entry.getValue(), pd.getPropertyType());
-            property.setName(pd.getName());
-            objProperties[i++] = property;
+        try {
+            ObjectProperty[] objProperties = new ObjectProperty[properties.size()];
+            int i = 0;
+            for (Map.Entry<PropertyDescriptor, String> entry : properties.entrySet())
+            {
+                PropertyDescriptor pd = entry.getKey();
+                ObjectProperty property = new ObjectProperty(parentLSID,
+                        container.getId(), pd.getPropertyURI(),
+                        entry.getValue(), pd.getPropertyType());
+                property.setName(pd.getName());
+                objProperties[i++] = property;
+            }
+            OntologyManager.insertProperties(container.getId(), objProperties, parentLSID);
         }
-        OntologyManager.insertProperties(container.getId(), objProperties, parentLSID);
+        catch (ValidationException ve)
+        {
+            throw new ExperimentException(ve.getMessage(), ve);
+        }
     }
 
     public ExpProtocol createAssayDefinition(User user, Container container, String name, String description, int maxMaterials)
