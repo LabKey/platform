@@ -20,6 +20,7 @@ import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.query.ValidationException;
 
 import java.util.Map;
 import java.sql.SQLException;
@@ -50,7 +51,7 @@ public abstract class ExtensibleStudyEntity<E> extends AbstractStudyEntity<E>
 
     public abstract String getLsid();
 
-    public void savePropertyBag(Map<String, Object> props) throws SQLException
+    public void savePropertyBag(Map<String, Object> props) throws SQLException, ValidationException
     {
         Container container = getContainer();
         String ownerLsid = getLsid();

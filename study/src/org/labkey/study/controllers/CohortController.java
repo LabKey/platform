@@ -17,8 +17,11 @@ package org.labkey.study.controllers;
 
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleRedirectAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.*;
 import org.labkey.api.query.QueryUpdateForm;
+import org.labkey.api.query.ValidationException;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.StudyService;
@@ -350,6 +353,12 @@ public class CohortController extends BaseStudyController
                 if (StudyService.get().isTransactionActive())
                     StudyService.get().commitTransaction();
                 return true;
+            }
+            catch (ValidationException e)
+            {
+                for (ValidationError error : e.getErrors())
+                    errors.reject(SpringActionController.ERROR_MSG, error.getMessage());
+                return false;
             }
             finally
             {

@@ -26,6 +26,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.ContextListener;
@@ -424,7 +425,13 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         for (ObjectProperty prop : properties)
             prop.setObjectURI(parentLsid);
 
-        OntologyManager.insertProperties(c.getId(), properties, parentLsid);
+        try {
+            OntologyManager.insertProperties(c.getId(), properties, parentLsid);
+        }
+        catch (ValidationException e)
+        {
+            throw new RuntimeException(e.getMessage(), e);
+        }
     }
 
     public String getDomainURI(String eventType)

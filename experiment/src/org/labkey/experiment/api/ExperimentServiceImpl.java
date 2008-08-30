@@ -32,6 +32,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProvider;
@@ -2546,14 +2547,20 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 prop.setObjectId(0);
             }
         }
-        OntologyManager.insertProperties(container, props, ownerLSID);
-        for (ObjectProperty prop : props)
-        {
-            Map<String, ObjectProperty> childProps = prop.retrieveChildProperties();
-            if (childProps != null)
+        try {
+            OntologyManager.insertProperties(container, props, ownerLSID);
+            for (ObjectProperty prop : props)
             {
-                savePropertyCollection(childProps, ownerLSID, container, false);
+                Map<String, ObjectProperty> childProps = prop.retrieveChildProperties();
+                if (childProps != null)
+                {
+                    savePropertyCollection(childProps, ownerLSID, container, false);
+                }
             }
+        }
+        catch (ValidationException ve)
+        {
+            throw new SQLException(ve.getMessage());
         }
     }
 

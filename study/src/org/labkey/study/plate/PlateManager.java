@@ -30,6 +30,7 @@ import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.DownloadURL;
 import org.labkey.api.attachments.StrutsAttachmentFile;
+import org.labkey.api.query.ValidationException;
 import org.apache.struts.upload.FormFile;
 
 import java.util.*;
@@ -409,8 +410,14 @@ public class PlateManager implements PlateService.Service
             else
                 objectProperties[idx++] = new ObjectProperty(ownerLsid, container.getId(), propertyURI, entry.getValue(), PropertyType.STRING);
         }
-        if (objectProperties.length > 0)
-            OntologyManager.insertProperties(container.getId(), objectProperties, ownerLsid);
+        try {
+            if (objectProperties.length > 0)
+                OntologyManager.insertProperties(container.getId(), objectProperties, ownerLsid);
+        }
+        catch (ValidationException ve)
+        {
+            throw new SQLException(ve.getMessage());
+        }
     }
 
     public PlateQueryView getPlateGridView(ViewContext context)

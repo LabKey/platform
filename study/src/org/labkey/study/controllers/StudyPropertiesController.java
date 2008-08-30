@@ -16,10 +16,13 @@
 package org.labkey.study.controllers;
 
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.query.QueryUpdateForm;
+import org.labkey.api.query.ValidationException;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.StudyService;
@@ -54,10 +57,15 @@ public class StudyPropertiesController extends BaseStudyController
         setActionResolver(ACTION_RESOLVER);
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
-    public class UpdateAction extends FormViewAction<Object>
+    // need this to be able to get the error object on a reshow
+    static class StudyProperties
     {
-        public ModelAndView getView(Object studyPropertiesForm, boolean reshow, BindException errors) throws Exception
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class UpdateAction extends FormViewAction<StudyProperties>
+    {
+        public ModelAndView getView(StudyProperties studyPropertiesForm, boolean reshow, BindException errors) throws Exception
         {
 
             StudyPropertiesTable table = getTableInfo();
@@ -91,12 +99,12 @@ public class StudyPropertiesController extends BaseStudyController
             return root;
         }
 
-        public void validateCommand(Object target, Errors errors) {}
+        public void validateCommand(StudyProperties target, Errors errors) {}
 
-        public boolean handlePost(Object studyPropertiesForm, BindException errors) throws Exception
+        public boolean handlePost(StudyProperties studyPropertiesForm, BindException errors) throws Exception
         {
             QueryUpdateForm updateForm = new QueryUpdateForm(getTableInfo(), getViewContext().getRequest());
-            updateForm.populateValues(errors);
+            errors = updateForm.populateValues(errors);
 
             if (errors.getErrorCount() > 0)
                 return false;
@@ -123,6 +131,12 @@ public class StudyPropertiesController extends BaseStudyController
                     StudyService.get().commitTransaction();
                 return true;
             }
+            catch (ValidationException e)
+            {
+                for (ValidationError error : e.getErrors())
+                    errors.reject(SpringActionController.ERROR_MSG, error.getMessage());
+                return false;
+            }
             finally
             {
                 if (StudyService.get().isTransactionActive())
@@ -130,7 +144,7 @@ public class StudyPropertiesController extends BaseStudyController
             }
         }
 
-        public ActionURL getSuccessURL(Object studyPropertiesForm)
+        public ActionURL getSuccessURL(StudyProperties studyPropertiesForm)
         {
             return new ActionURL(StudyController.ManageStudyAction.class, getContainer());
         }

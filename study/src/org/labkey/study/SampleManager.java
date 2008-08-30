@@ -31,6 +31,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.*;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.query.ValidationException;
 import org.labkey.common.util.Pair;
 import org.labkey.study.model.*;
 import org.labkey.study.requirements.RequirementProvider;
@@ -153,7 +154,7 @@ public class SampleManager
         filter.addCondition("Container", container.getId());
         return _specimenHelper.get(container, filter);
     }
-    
+
     public SpecimenEvent[] getSpecimenEvents(Specimen sample) throws SQLException
     {
         SimpleFilter filter = new SimpleFilter("SpecimenId", sample.getRowId());
@@ -621,6 +622,7 @@ public class SampleManager
     }
 
 
+
     public static class RequestNotificationSettings
     {
         public static final String REPLY_TO_CURRENT_USER_VALUE = "[current user]";
@@ -695,7 +697,7 @@ public class SampleManager
         {
             _newRequestNotify = newRequestNotify;
         }
-        
+
         public boolean isCcCheckbox()
         {
             return _ccCheckbox;
@@ -949,7 +951,7 @@ public class SampleManager
     {
         return getStatusSettings(container).isUseShoppingCart();
     }
-    
+
     public static class SpecimenRequestInput
     {
         private String _title;
@@ -1047,17 +1049,23 @@ public class SampleManager
 
         public void setDefaultSiteValue(Container container, int siteId, String value) throws SQLException
         {
-            assert siteId > 0 : "Invalid site id: " + siteId;
-            if (!isRememberSiteValue())
-                throw new UnsupportedOperationException("Only those inputs configured to remember site values can set a site default.");
-            _siteToDefaultValue = null;
-            String parentObjectLsid = getRequestInputDefaultObjectLsid(container);
+            try {
+                assert siteId > 0 : "Invalid site id: " + siteId;
+                if (!isRememberSiteValue())
+                    throw new UnsupportedOperationException("Only those inputs configured to remember site values can set a site default.");
+                _siteToDefaultValue = null;
+                String parentObjectLsid = getRequestInputDefaultObjectLsid(container);
 
-            String setItemLsid = ensureOntologyManagerSetItem(container, parentObjectLsid, getTitle());
-            String propertyId = parentObjectLsid + "." + siteId;
-            ObjectProperty defaultValueProperty = new ObjectProperty(setItemLsid, container.getId(), propertyId, value);
-            OntologyManager.deleteProperty(container.getId(), setItemLsid, propertyId);
-            OntologyManager.insertProperty(container.getId(), defaultValueProperty, setItemLsid);
+                String setItemLsid = ensureOntologyManagerSetItem(container, parentObjectLsid, getTitle());
+                String propertyId = parentObjectLsid + "." + siteId;
+                ObjectProperty defaultValueProperty = new ObjectProperty(setItemLsid, container.getId(), propertyId, value);
+                OntologyManager.deleteProperty(container.getId(), setItemLsid, propertyId);
+                OntologyManager.insertProperty(container.getId(), defaultValueProperty, setItemLsid);
+            }
+            catch (ValidationException e)
+            {
+                throw new SQLException(e.getMessage());
+            }
         }
     }
 
@@ -1118,24 +1126,30 @@ public class SampleManager
 
     private static String ensureOntologyManagerSetItem(Container container, String lsidBase, String uniqueItemId) throws SQLException
     {
-        Integer listParentObjectId = OntologyManager.ensureObject(container.getId(), lsidBase);
-        String listItemReferenceLsidPrefix = lsidBase + "#objectResource.";
-        String listItemObjectLsid = lsidBase + "#" + uniqueItemId;
-        String listItemPropertyReferenceLsid = listItemReferenceLsidPrefix + uniqueItemId;
+        try {
+            Integer listParentObjectId = OntologyManager.ensureObject(container.getId(), lsidBase);
+            String listItemReferenceLsidPrefix = lsidBase + "#objectResource.";
+            String listItemObjectLsid = lsidBase + "#" + uniqueItemId;
+            String listItemPropertyReferenceLsid = listItemReferenceLsidPrefix + uniqueItemId;
 
-        // ensure the object that corresponds to a single list item:
-        OntologyManager.ensureObject(container.getId(), listItemObjectLsid, listParentObjectId);
+            // ensure the object that corresponds to a single list item:
+            OntologyManager.ensureObject(container.getId(), listItemObjectLsid, listParentObjectId);
 
-        // check to make sure that the list item is wired up to the top-level list object via a property:
-        Map<String, ObjectProperty> properties = OntologyManager.getPropertyObjects(container.getId(), lsidBase);
-        if (!properties.containsKey(listItemPropertyReferenceLsid))
-        {
-            // create the resource property that links the parent object to the list item object:
-            ObjectProperty resourceProperty = new ObjectProperty(lsidBase, container.getId(),
-                    listItemPropertyReferenceLsid, listItemObjectLsid, PropertyType.RESOURCE);
-            OntologyManager.insertProperty(container.getId(), resourceProperty, lsidBase);
+            // check to make sure that the list item is wired up to the top-level list object via a property:
+            Map<String, ObjectProperty> properties = OntologyManager.getPropertyObjects(container.getId(), lsidBase);
+            if (!properties.containsKey(listItemPropertyReferenceLsid))
+            {
+                // create the resource property that links the parent object to the list item object:
+                ObjectProperty resourceProperty = new ObjectProperty(lsidBase, container.getId(),
+                        listItemPropertyReferenceLsid, listItemObjectLsid, PropertyType.RESOURCE);
+                OntologyManager.insertProperty(container.getId(), resourceProperty, lsidBase);
+            }
+            return listItemObjectLsid;
         }
-        return listItemObjectLsid;
+        catch (ValidationException ve)
+        {
+            throw new SQLException(ve.getMessage());
+        }
     }
 
     public void saveNewSpecimenRequestInputs(Container container, SpecimenRequestInput[] inputs) throws SQLException
@@ -1143,21 +1157,27 @@ public class SampleManager
         if (!requestInputsChanged(container, inputs))
             return;
 
-        String parentObjectLsid = getRequestInputObjectLsid(container);
-        String defaultValuesObjectLsid = getRequestInputDefaultObjectLsid(container);
-        OntologyManager.deleteOntologyObject(parentObjectLsid, container, true);
-        OntologyManager.deleteOntologyObject(defaultValuesObjectLsid, container, true);
-        for (int i = 0; i < inputs.length; i++)
+        try {
+            String parentObjectLsid = getRequestInputObjectLsid(container);
+            String defaultValuesObjectLsid = getRequestInputDefaultObjectLsid(container);
+            OntologyManager.deleteOntologyObject(parentObjectLsid, container, true);
+            OntologyManager.deleteOntologyObject(defaultValuesObjectLsid, container, true);
+            for (int i = 0; i < inputs.length; i++)
+            {
+                SpecimenRequestInput input = inputs[i];
+                String setItemLsid = ensureOntologyManagerSetItem(container, parentObjectLsid, "" + i);
+                ObjectProperty[] props = new ObjectProperty[5];
+                props[0] = new ObjectProperty(setItemLsid, container.getId(), parentObjectLsid + ".HelpText", input.getHelpText());
+                props[1] = new ObjectProperty(setItemLsid, container.getId(), parentObjectLsid + ".Required", input.isRequired() ? 1 : 0);
+                props[2] = new ObjectProperty(setItemLsid, container.getId(), parentObjectLsid + ".RememberSiteValue", input.isRememberSiteValue() ? 1 : 0);
+                props[3] = new ObjectProperty(setItemLsid, container.getId(), parentObjectLsid + ".Title", input.getTitle());
+                props[4] = new ObjectProperty(setItemLsid, container.getId(), parentObjectLsid + ".MultiLine", input.isMultiLine() ? 1 : 0);
+                OntologyManager.insertProperties(container.getId(), props, setItemLsid);
+            }
+        }
+        catch (ValidationException ve)
         {
-            SpecimenRequestInput input = inputs[i];
-            String setItemLsid = ensureOntologyManagerSetItem(container, parentObjectLsid, "" + i);
-            ObjectProperty[] props = new ObjectProperty[5];
-            props[0] = new ObjectProperty(setItemLsid, container.getId(), parentObjectLsid + ".HelpText", input.getHelpText());
-            props[1] = new ObjectProperty(setItemLsid, container.getId(), parentObjectLsid + ".Required", input.isRequired() ? 1 : 0);
-            props[2] = new ObjectProperty(setItemLsid, container.getId(), parentObjectLsid + ".RememberSiteValue", input.isRememberSiteValue() ? 1 : 0);
-            props[3] = new ObjectProperty(setItemLsid, container.getId(), parentObjectLsid + ".Title", input.getTitle());
-            props[4] = new ObjectProperty(setItemLsid, container.getId(), parentObjectLsid + ".MultiLine", input.isMultiLine() ? 1 : 0);
-            OntologyManager.insertProperties(container.getId(), props, setItemLsid);
+            throw new SQLException(ve.getMessage());
         }
     }
 
@@ -1379,7 +1399,7 @@ public class SampleManager
     public List<String> getDistinctColumnValues(Container container, ColumnInfo col, boolean forceDistinctQuery) throws SQLException
     {
         String cacheKey = "DistinctColumnValues." + col.getColumnName();
-        boolean isLookup = col.getFk() != null && !forceDistinctQuery; 
+        boolean isLookup = col.getFk() != null && !forceDistinctQuery;
         TableInfo tinfo = isLookup ? col.getFk().getLookupTableInfo() : col.getParentTable();
         DistinctValueList distinctValues = (DistinctValueList) StudyCache.getCached(tinfo, container.getId(), cacheKey);
         if (distinctValues == null)
