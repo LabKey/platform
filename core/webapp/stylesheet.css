@@ -403,7 +403,7 @@ regions on mouseover */
 /* This lightens the text to make it look inactive. (limited use) */
 .labkey-disabled, .labkey-disabled a:link, .labkey-disabled a:visited
 {
-    color: #EEEEEE;
+    color: #C0C0C0;
 }
 
 /* This is used for bold text in a couple places. */
