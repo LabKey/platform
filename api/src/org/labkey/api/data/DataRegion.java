@@ -531,7 +531,13 @@ public class DataRegion extends DisplayElement
 
     protected ResultSet getResultSet(RenderContext ctx, boolean async) throws SQLException, IOException
     {
-        ResultSet rs = ctx.getResultSet(_displayColumns, getTable(), _maxRows, _offset, getName(), async);
+        return ctx.getResultSet(_displayColumns, getTable(), _maxRows, _offset, getName(), async);
+    }
+
+    private void getAggregates(RenderContext ctx) throws SQLException, IOException
+    {
+        ResultSet rs = ctx.getResultSet();
+        assert rs != null;
         if (rs instanceof Table.TableResultSet)
         {
             Table.TableResultSet tableRS = (Table.TableResultSet) rs;
@@ -560,7 +566,6 @@ public class DataRegion extends DisplayElement
         // TODO: Move this into RenderContext?
         ActionURL url = ctx.getSortFilterURLHelper();
         PageFlowUtil.saveLastFilter(ctx.getViewContext(), url, "");
-        return rs;
     }
 
     //TODO: total number of rows should be pushed down to a property of the TableResultSet
@@ -843,30 +848,35 @@ public class DataRegion extends DisplayElement
         return "No data to show.";
     }
 
-    private void checkResultSet(RenderContext ctx, Writer out) throws SQLException, IOException
+    /**
+     * Subclasses or custom views should call before rendering the table.
+     * Gets the ResultSet from the RenderContext and sets aggregate and pagination state.
+     */
+    public void checkResultSet(RenderContext ctx, Writer out) throws SQLException, IOException
     {
         ResultSet rs = ctx.getResultSet();
 
-        //Already have a resultset
-        if (null != rs)
-            return;
-
-        TableInfo tinfoMain = getTable();
-        if (null == tinfoMain)
+        if (null == rs)
         {
-            _log.info("DataRegion.renderTable: Could not find table to query from");
-            throw new SQLException("No query table in DataRegion.renderTable");
-        }
-        else
-        {
-            if (!ctx.getViewContext().hasPermission(ACL.PERM_READ))
+            TableInfo tinfoMain = getTable();
+            if (null == tinfoMain)
             {
-                out.write("You do not have permission to read this data");
-                return;
+                _log.info("DataRegion.renderTable: Could not find table to query from");
+                throw new SQLException("No query table in DataRegion.renderTable");
             }
-            rs = getResultSet(ctx, isAllowAsync());
-            ctx.setResultSet(rs);
+            else
+            {
+                if (!ctx.getViewContext().hasPermission(ACL.PERM_READ))
+                {
+                    out.write("You do not have permission to read this data");
+                    return;
+                }
+                rs = getResultSet(ctx, isAllowAsync());
+                ctx.setResultSet(rs);
+            }
         }
+
+        getAggregates(ctx);
     }
 
     /**
@@ -1726,7 +1736,7 @@ public class DataRegion extends DisplayElement
 
         out.write("<script type=\"text/javascript\">\n");
         out.write("LABKEY.requiresScript('filter.js');\n");
-        out.write("</script>");
+        out.write("</script>\n");
         request.setAttribute(FILTER_WRITTEN_KEY, "true");
     }
 

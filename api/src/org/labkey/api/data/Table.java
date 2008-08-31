@@ -22,11 +22,11 @@ import org.apache.commons.beanutils.PropertyUtils;
 import static org.apache.commons.lang.StringUtils.stripEnd;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
+import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.data.collections.Join;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.*;
-import org.labkey.api.attachments.AttachmentFile;
-import org.labkey.api.query.QueryService;
 import org.labkey.common.util.BoundMap;
 import org.labkey.common.util.Pair;
 
@@ -1270,7 +1270,7 @@ public class Table
         return dialect.limitRows(selectFrag, fromFrag, filterFrag, orderBy, rowCount, offset);
     }
 
-    private static Sort createDefaultSort(List<ColumnInfo> columns)
+    public static Sort createDefaultSort(List<ColumnInfo> columns)
     {
         Sort sort = new Sort();
         addSortableColumns(sort, columns, true);
