@@ -41,6 +41,7 @@ import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Search;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.*;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.study.assay.*;
@@ -68,6 +69,7 @@ import org.labkey.study.view.*;
 
 import java.beans.PropertyChangeEvent;
 import java.lang.reflect.InvocationTargetException;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -91,7 +93,7 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
 
     public StudyModule()
     {
-        super(NAME, 8.28, "/org/labkey/study", true, reportsPartFactory, reportsWidePartFactory, samplesPartFactory,
+        super(NAME, 8.29, "/org/labkey/study", true, reportsPartFactory, reportsWidePartFactory, samplesPartFactory,
                 samplesWidePartFactory, datasetsPartFactory, manageStudyPartFactory,
                 enrollmentChartPartFactory, studyDesignsWebPartFactory, studyDesignSummaryWebPartFactory,
                 assayListWebPartFactory, assayDetailsWebPartFactory, participantWebPartFactory);
@@ -217,6 +219,70 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
         ModuleLoader.getInstance().registerFolderType(new StudyFolderType(this));
     }
 
+    public void beforeSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)
+    {
+        if (moduleContext.getInstalledVersion() >= 2.1 && moduleContext.getInstalledVersion() < 8.29)
+        {
+            // We're going to add a unique constraint to dataset labels,
+            // so we need to go through and unique-ify any that are not unique.
+            ResultSet labelRS = null;
+            ResultSet nameRS = null;
+            try
+            {
+                DbSchema schema = StudySchema.getInstance().getSchema();
+                
+                String sql = "select num, container, label from (select count(*) as num, container, label\n" +
+                    "from study.dataset \n" +
+                    "group by container, label) as subselect\n" +
+                    "where num > 1";
+
+                labelRS = Table.executeQuery(schema, sql, new Object[0]);
+                while(labelRS.next())
+                {
+                    String container = labelRS.getString("container");
+                    String label = labelRS.getString("label");
+
+                    // Now we need to get all the names for those labels
+                    sql = "select name \n" +
+                        "from study.dataset \n" +
+                        "where container = ? AND\n" +
+                        "label = ?";
+
+                    nameRS = Table.executeQuery(schema, sql, new Object[]{container, label});
+
+                    while (nameRS.next())
+                    {
+                        // Make the new label "name: oldLabel"
+
+                        String name = nameRS.getString(1);
+
+                        // We're guaranteed to get two or more of these, so ignore if there's one whose
+                        // label matches its name
+                        if (name.equals(label))
+                            continue;
+
+                        String newLabel = name + ": " + label;
+
+                        sql = "update study.dataset\n" +
+                            "set label = ?\n" +
+                            "where name = ?\n" +
+                            "and container = ?";
+                        
+                        Table.execute(schema, sql, new Object[]{newLabel, name, container});
+                    }
+                }
+            }
+            catch (SQLException se)
+            {
+                throw UnexpectedException.wrap(se);
+            }
+            finally
+            {
+                try {if (labelRS != null) labelRS.close();} catch (SQLException se) {}
+                try {if (nameRS != null) nameRS.close();} catch (SQLException se) {}
+            }
+        }
+    }
 
     public void afterSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)
     {

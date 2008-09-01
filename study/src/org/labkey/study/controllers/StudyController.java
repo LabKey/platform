@@ -167,15 +167,19 @@ public class StudyController extends BaseStudyController
                     String typeURI = AssayPublishManager.getInstance().getDomainURIString(StudyManager.getInstance().getStudy(getContainer()), form.getTypeName());
                     DomainDescriptor dd = OntologyManager.getDomainDescriptor(typeURI, getContainer());
                     if (null != dd)
-                        errors.reject("defineDatasetType", "There is a dataset named " + form.getTypeName() + " already defined in this folder.");
-
-                    // Check if a query or table exists with the same name
-                    Study study = StudyManager.getInstance().getStudy(getContainer());
-                    StudyQuerySchema studySchema = new StudyQuerySchema(study, getUser(), true);
-                    if (studySchema.getTableNames().contains(form.getTypeName()) ||
-                        QueryService.get().getQueryDef(getContainer(), "study", form.getTypeName()) != null)
                     {
-                        errors.reject("defineDatasetType", "There is a query named " + form.getTypeName() + " already defined in this folder.");
+                        errors.reject("defineDatasetType", "There is a dataset named " + form.getTypeName() + " already defined in this folder.");
+                    }
+                    else
+                    {
+                        // Check if a query or table exists with the same name
+                        Study study = StudyManager.getInstance().getStudy(getContainer());
+                        StudyQuerySchema studySchema = new StudyQuerySchema(study, getUser(), true);
+                        if (studySchema.getTableNames().contains(form.getTypeName()) ||
+                            QueryService.get().getQueryDef(getContainer(), "study", form.getTypeName()) != null)
+                        {
+                            errors.reject("defineDatasetType", "There is a query named " + form.getTypeName() + " already defined in this folder.");
+                        }
                     }
                 }
             }
@@ -1808,6 +1812,7 @@ public class StudyController extends BaseStudyController
                 Map<Integer, DataSetImportInfo> datasetInfoMap = new HashMap<Integer, DataSetImportInfo>();
                 int missingTypeNames = 0;
                 int missingTypeIds = 0;
+                int missingTypeLabels = 0;
 
                 for (Map<String, Object> props : mapsLoad)
                 {
@@ -1857,6 +1862,11 @@ public class StudyController extends BaseStudyController
                     {
                         info = new DataSetImportInfo(typeName);
                         info.label = (String) props.get(form.getLabelColumn());
+                        if (info.label == null || info.label.length() == 0)
+                        {
+                            missingTypeLabels++;
+                            continue;
+                        }
 
                         info.isHidden = isHidden;
                         datasetInfoMap.put((Integer) typeIdObj, info);
@@ -1934,6 +1944,11 @@ public class StudyController extends BaseStudyController
                     errors.reject("bulkImportDataTypes", "Couldn't find type id in column " + form.getTypeIdColumn() + " in " + missingTypeIds + " rows.");
                     return false;
                 }
+                if (missingTypeLabels > 0)
+                {
+                    errors.reject("bulkImportDataTypes", "Couldn't find type label in column " + form.getTypeIdColumn() + " in " + missingTypeLabels + " rows.");
+                    return false;
+                }
 
                 String domainURI = getDomainURI(getContainer(), null);
                 Map[] m = mapsImport.toArray(new Map[mapsImport.size()]);
@@ -1956,12 +1971,27 @@ public class StudyController extends BaseStudyController
                         int id = entry.getKey().intValue();
                         DataSetImportInfo info = entry.getValue();
                         String name = info.name;
+                        String label = info.label;
+
+                        // Check for name conflicts
+                        DataSetDefinition existingDef = manager.getDataSetDefinition(getStudy(), label);
+                        if (existingDef != null && existingDef.getDataSetId() != id)
+                        {
+                            errors.reject("bulkImportDataTypes", "A different dataset already exists with the label " + label);
+                            return false;
+                        }
+                        existingDef = manager.getDataSetDefinitionByName(getStudy(), name);
+                        if (existingDef != null && existingDef.getDataSetId() != id)
+                        {
+                            errors.reject("bulkImportDataTypes", "A different dataset already exists with the name " + name);
+                            return false;
+                        }
 
                         DataSetDefinition def = manager.getDataSetDefinition(getStudy(), id);
                         Container c = getContainer();
                         if (def == null)
                         {
-                            def = new DataSetDefinition(getStudy(), id, name, info.label, null, getDomainURI(c, name, id));
+                            def = new DataSetDefinition(getStudy(), id, name, label, null, getDomainURI(c, name, id));
                             def.setVisitDatePropertyName(info.visitDatePropertyName);
                             def.setShowByDefault(!info.isHidden);
                             def.setKeyPropertyName(info.keyPropertyName);
@@ -1970,8 +2000,7 @@ public class StudyController extends BaseStudyController
                         else
                         {
                             def = def.createMutable();
-                            if (null != info.label)
-                                def.setLabel(info.label);
+                            def.setLabel(label);
                             def.setName(name);
                             def.setTypeURI(getDomainURI(c, def));
                             def.setVisitDatePropertyName(info.visitDatePropertyName);

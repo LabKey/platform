@@ -806,6 +806,26 @@ public class StudyManager
         }
     }
 
+    @Nullable
+    public DataSetDefinition getDataSetDefinitionByName(Study s, String name)
+    {
+        try
+        {
+            SimpleFilter filter = new SimpleFilter("Container", s.getContainer().getId());
+            filter.addCondition("Name", name);
+
+            DataSetDefinition[] defs = _dataSetHelper.get(s.getContainer(), filter);
+            if (defs != null && defs.length == 1)
+                return defs[0];
+
+            return null;
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
+
     public void uncache(DataSetDefinition def)
     {
         _dataSetHelper.clearCache(def);

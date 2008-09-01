@@ -886,6 +886,9 @@ public class Designer implements EntryPoint
             if (_dataset.getName() == null || _dataset.getName().length() == 0)
                 errors.add("Dataset name cannot be empty.");
 
+            if (_dataset.getLabel() == null || _dataset.getLabel().length() == 0)
+                errors.add("Dataset label cannot be empty.");
+
             if ("".equals(_dataset.getKeyPropertyName()))
                 errors.add("Please select a field name for the additional key.");
 
