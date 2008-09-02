@@ -43,6 +43,7 @@ import org.labkey.pipeline.api.*;
 import org.labkey.pipeline.api.properties.ApplicationPropertiesSiteSettings;
 import org.labkey.pipeline.mule.EPipelineContextListener;
 import org.labkey.pipeline.status.StatusController;
+import org.labkey.pipeline.xstream.PathMapperImpl;
 import org.mule.MuleManager;
 
 import java.beans.PropertyChangeEvent;
@@ -173,7 +174,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     public Set<Class<? extends TestCase>> getJUnitTests()
     {
         return new HashSet<Class<? extends TestCase>>(Arrays.asList(
-            PipelineQueueImpl.TestCase.class));
+            PipelineQueueImpl.TestCase.class, PathMapperImpl.TestCase.class));
     }
 
     public Set<String> getSchemaNames()

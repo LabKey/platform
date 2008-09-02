@@ -19,6 +19,11 @@ import org.apache.log4j.Logger;
 import org.labkey.api.pipeline.file.PathMapper;
 
 import java.util.Map;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+
+import junit.framework.Test;
+import junit.framework.TestSuite;
 
 /**
  * PathMapper class
@@ -47,8 +52,16 @@ public class PathMapperImpl implements PathMapper
     {
     }
 
+    public PathMapperImpl(Map<String, String> pathMap, boolean remoteIgnoreCase, boolean localIgnoreCase)
+    {
+        _pathMap = pathMap;
+        _remoteIgnoreCase = remoteIgnoreCase;
+        _localIgnoreCase = localIgnoreCase;
+    }
+
     public Map<String, String> getPathMap()
     {
+        LinkedHashMap m = new LinkedHashMap();
         return _pathMap;
     }
 
@@ -86,16 +99,22 @@ public class PathMapperImpl implements PathMapper
      */
     public String remoteToLocal(String path)
     {
+        Map.Entry<String, String> bestEntry = null;
         if (_pathMap != null && path != null)
         {
             for (Map.Entry<String, String> e : _pathMap.entrySet())
             {
                 String prefix = e.getKey();
-                if (match(prefix, path, _remoteIgnoreCase))
-                    return e.getValue() + path.substring(prefix.length());
+                if (match(prefix, path, _remoteIgnoreCase) && (bestEntry == null || prefix.length() > bestEntry.getKey().length()))
+                {
+                    bestEntry = e;
+                }
             }
         }
-
+        if (bestEntry != null)
+        {
+            return bestEntry.getValue() + path.substring(bestEntry.getKey().length());
+        }
         return path;
     }
 
@@ -108,16 +127,23 @@ public class PathMapperImpl implements PathMapper
      */
     public String localToRemote(String path)
     {
+        Map.Entry<String, String> bestEntry = null;
         if (_pathMap != null && path != null)
         {
             for (Map.Entry<String, String> e : _pathMap.entrySet())
             {
                 String prefix = e.getValue();
-                if (match(prefix, path, _localIgnoreCase))
-                    return e.getKey() + path.substring(prefix.length());
+                if (match(prefix, path, _localIgnoreCase) && (bestEntry == null || prefix.length() > bestEntry.getKey().length()))
+                {
+                    bestEntry = e;
+                }
             }
         }
 
+        if (bestEntry != null)
+        {
+            return bestEntry.getKey() + path.substring(bestEntry.getValue().length());
+        }
         return path;
     }
 
@@ -151,5 +177,67 @@ public class PathMapperImpl implements PathMapper
             (lenPath == lenPrefix ||
              prefix.charAt(lenPrefix - 1) == '/' ||
              path.charAt(lenPrefix) == '/');
+    }
+
+    public static class TestCase extends junit.framework.TestCase
+    {
+        public TestCase()
+        {
+            super("PathMapper");
+        }
+
+        public void testCaseSensitiveMapping()
+        {
+            Map<String, String> m = new HashMap<String, String>();
+            m.put("file:/T:/edi", "file:/home/edi");
+            m.put("file:/T:/data", "file:/data");
+            PathMapper mapper = new PathMapperImpl(m, false, false);
+
+            assertEquals(mapper.localToRemote("file:/home/edi/testFile.txt"), "file:/T:/edi/testFile.txt");
+            assertEquals(mapper.localToRemote("file:/data/testFile.txt"), "file:/T:/data/testFile.txt");
+            assertEquals(mapper.localToRemote("file:/Data/testFile.txt"), "file:/Data/testFile.txt");
+
+            assertEquals(mapper.remoteToLocal("file:/T:/edi/testFile.txt"), "file:/home/edi/testFile.txt");
+            assertEquals(mapper.remoteToLocal("file:/T:/data/testFile.txt"), "file:/data/testFile.txt");
+            assertEquals(mapper.remoteToLocal("file:/t:/data/testFile.txt"), "file:/t:/data/testFile.txt");
+        }
+
+        public void testCaseInsensitiveMapping()
+        {
+            Map<String, String> m = new HashMap<String, String>();
+            m.put("file:/T:/edi", "file:/home/edi");
+            m.put("file:/T:/data", "file:/data");
+            PathMapper mapper = new PathMapperImpl(m, true, true);
+
+            assertEquals("file:/T:/edi/testFile.txt", mapper.localToRemote("file:/home/edi/testFile.txt"));
+            assertEquals("file:/T:/data/testFile.txt", mapper.localToRemote("file:/data/testFile.txt"));
+            assertEquals("file:/T:/data/testFile.txt", mapper.localToRemote("file:/Data/testFile.txt"));
+
+            assertEquals("file:/home/edi/testFile.txt", mapper.remoteToLocal("file:/T:/edi/testFile.txt"));
+            assertEquals("file:/data/testFile.txt", mapper.remoteToLocal("file:/T:/data/testFile.txt"));
+            assertEquals("file:/data/testFile.txt", mapper.remoteToLocal("file:/t:/data/testFile.txt"));
+        }
+
+        public void testLongestPrefixMapping()
+        {
+            Map<String, String> m = new LinkedHashMap<String, String>();
+            m.put("file:/T:", "file:/home/stedi");
+            m.put("file:/T:/data", "file:/data");
+            m.put("file:/T:/edi", "file:/home/edi");
+            PathMapper mapper = new PathMapperImpl(m, false, false);
+
+            assertEquals("file:/T:/edi/testFile.txt", mapper.localToRemote("file:/home/edi/testFile.txt"));
+            assertEquals("file:/T:/data/testFile.txt", mapper.localToRemote("file:/data/testFile.txt"));
+            assertEquals("file:/T:/testFile.txt", mapper.localToRemote("file:/home/stedi/testFile.txt"));
+
+            assertEquals("file:/home/stedi/testFile.txt", mapper.remoteToLocal("file:/T:/testFile.txt"));
+            assertEquals("file:/data/testFile.txt", mapper.remoteToLocal("file:/T:/data/testFile.txt"));
+            assertEquals("file:/home/edi/testFile.txt", mapper.remoteToLocal("file:/T:/edi/testFile.txt"));
+        }
+
+        public static Test suite()
+        {
+            return new TestSuite(TestCase.class);
+        }
     }
 }

@@ -101,6 +101,10 @@ public class GlobusListener implements GramJobListener
                         _notifConsumerManager.removeNotificationConsumer(gramJob.getNotificationConsumerEPR());
                         _notifConsumerManager.stopListening();
                     }
+                    catch (Throwable e)
+                    {
+                        _job.warn("Exception trying to clean up GRAM", e);
+                    }
                     gramJob.removeListener(this);
                     gramJob.destroy();
                 }
