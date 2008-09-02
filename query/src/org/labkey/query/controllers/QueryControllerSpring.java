@@ -1122,6 +1122,7 @@ public class QueryControllerSpring extends SpringActionController
 
     @ActionNames("selectRows, getQuery")
     @RequiresPermission(ACL.PERM_READ)
+    @ApiVersion(8.3)
     public class GetQueryAction extends ApiAction<APIQueryForm>
     {
         public ApiResponse execute(APIQueryForm form, BindException errors) throws Exception
@@ -1438,6 +1439,7 @@ public class QueryControllerSpring extends SpringActionController
     }
 
     @RequiresPermission(ACL.PERM_UPDATE)
+    @ApiVersion(8.3)
     public class UpdateRowsAction extends SaveRowsAction
     {
         protected String getSaveCommandName()
@@ -1459,6 +1461,7 @@ public class QueryControllerSpring extends SpringActionController
     }
 
     @RequiresPermission(ACL.PERM_INSERT)
+    @ApiVersion(8.3)
     public class InsertRowsAction extends SaveRowsAction
     {
         protected String getSaveCommandName()
@@ -1481,6 +1484,7 @@ public class QueryControllerSpring extends SpringActionController
 
     @ActionNames("deleteRows, delRows")
     @RequiresPermission(ACL.PERM_DELETE)
+    @ApiVersion(8.3)
     public class DeleteRowsAction extends SaveRowsAction
     {
         protected String getSaveCommandName()

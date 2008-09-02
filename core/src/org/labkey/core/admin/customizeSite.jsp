@@ -327,11 +327,11 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <tr>
     <td class="labkey-form-label">User</td>
-    <td><input type="text" name="mascotUserAccount" size="50" value="<%=appProps.getMascotUserAccount()%>"></td>
+    <td><input type="text" name="mascotUserAccount" size="50" value="<%=appProps.getMascotUserAccount()%>" autocomplete="off"></td>
 </tr>
 <tr>
     <td class="labkey-form-label">Password</td>
-    <td><input type="password" name="mascotUserPassword" size="50" value="<%=appProps.getMascotUserPassword()%>"></td>
+    <td><input type="password" name="mascotUserPassword" size="50" value="<%=appProps.getMascotUserPassword()%>" autocomplete="off"></td>
 </tr>
 <tr>
     <td class="labkey-form-label">HTTP Proxy URL</td>
