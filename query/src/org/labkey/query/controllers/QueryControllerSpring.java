@@ -1151,6 +1151,16 @@ public class QueryControllerSpring extends SpringActionController
             }
 
             QueryView view = QueryView.create(form);
+
+            //if viewName was specified, ensure that it was actually found and used
+            //QueryView.create() will happily ignore an invalid view name and just return the default view
+            if(null != StringUtils.trimToNull(form.getViewName()) &&
+                    null == view.getQueryDef().getCustomView(getUser(), getViewContext().getRequest(), form.getViewName()))
+            {
+                throw new NotFoundException("The view named '" + form.getViewName() + "' does not exist for this user!");
+            }
+
+
             return new ApiQueryResponse(view, getViewContext(), isSchemaEditable(form.getSchema()), true,
                     form.getSchemaName(), form.getQueryName(), form.getQuerySettings().getOffset(), fieldKeys);
         }
