@@ -117,21 +117,33 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
         //one of the map's keys and compare values, noting what has changed
         boolean propsChanged = false;
         StringBuilder html = new StringBuilder("<table>");
+        String oldValue;
+        String newValue;
 
         for(String key : _properties.keySet())
         {
-            if(key.equals("logoRevision"))
+            if(key.equals(AppProps.LOOK_AND_FEEL_REVISION))
                 continue;
 
             if(!(_properties.get(key).equalsIgnoreCase(oldProps.get(key))))
             {
                 propsChanged = true;
+                oldValue = oldProps.get(key);
+                newValue = _properties.get(key);
+
+                //obscure password properties
+                if(AppProps.MASCOT_USERPASSWORD_PROP.equals(key) || AppProps.NETWORK_DRIVE_PASSWORD.equals(key))
+                {
+                    oldValue = obscureValue(oldValue);
+                    newValue = obscureValue(newValue);
+                }
+
                 html.append("<tr><td class='labkey-form-label'>");
                 html.append(PageFlowUtil.filter(ColumnInfo.captionFromName(key)));
                 html.append("</td><td>");
-                html.append(PageFlowUtil.filter(oldProps.get(key)));
+                html.append(PageFlowUtil.filter(oldValue));
                 html.append("&nbsp;&raquo;&nbsp;");
-                html.append(PageFlowUtil.filter(_properties.get(key)));
+                html.append(PageFlowUtil.filter(newValue));
                 html.append("</td></tr>");
             }
         }
@@ -139,6 +151,14 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
         html.append("</html>");
 
         return propsChanged ? html.toString() : null;
+    }
+
+    protected static String obscureValue(String value)
+    {
+        if(null == value || value.length() == 0)
+            return "";
+        else
+            return "*******"; //used fixed number to obscure num characters
     }
 
     protected String ensureAuditLogDomainAndProps(User user)
