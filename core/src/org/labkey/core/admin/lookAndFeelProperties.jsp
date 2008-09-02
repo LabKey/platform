@@ -146,7 +146,7 @@
 </tr>
 
 <tr>
-    <td><%=PageFlowUtil.generateSubmitButton("Save Properties")%>&nbsp;<%=PageFlowUtil.generateButton("Reset All Properties", new AdminController.AdminUrlsImpl().getResetLookAndFeelPropertiesURL(c), "return confirm('Are you sure you want to clear all look & feel properties?');")%></td>
+    <td><%=PageFlowUtil.generateSubmitButton("Save Properties")%>&nbsp;<%=PageFlowUtil.generateButton("Reset All Properties", new AdminController.AdminUrlsImpl().getResetLookAndFeelPropertiesURL(c), "return confirm('Are you sure you want to clear all look &amp; feel properties?');")%></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
