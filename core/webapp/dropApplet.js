@@ -106,7 +106,7 @@ function _updateDropUI()
         {
             ftpTransfers.innerHTML =
                 "<table class='labkey-data-region'>" +
-                "<tr><th>&nbsp;</th><th width=150>file<br><img src=\"" + LABKEY.contextPath + "/_.gif\" width=150 height=1></th><th>modified<br><img src=\"" + LABKEY.contextPath + "/_.gif\" width=150 height=1></th><th width=100>size<br><img src=\"" + LABKEY.contextPath + "/_.gif\" width=100 height=1></th><th style=\"width:200px;\">status<br><img src=\"" + LABKEY.contextPath + "/_.gif\" width=210 height=1></th></tr>" +
+                "<tr><th>&nbsp;<br><img src=\"" + LABKEY.contextPath + "/_.gif\" width=50 height=1></th><th width=150>file<br><img src=\"" + LABKEY.contextPath + "/_.gif\" width=150 height=1></th><th>modified<br><img src=\"" + LABKEY.contextPath + "/_.gif\" width=150 height=1></th><th width=100>size<br><img src=\"" + LABKEY.contextPath + "/_.gif\" width=100 height=1></th><th style=\"width:200px;\">status<br><img src=\"" + LABKEY.contextPath + "/_.gif\" width=210 height=1></th></tr>" +
                 "</table>";
             transfersTableInit = true;
         };
@@ -126,7 +126,8 @@ function _updateDropUI()
                     t.length = dropApplet.transfer_getLength(i);
                     var m = dropApplet.transfer_getLastModified(i);
                     t.modified = m == -1 ? "-" : (new Date(m)).toLocaleString();
-                    t.state = dropApplet.transfer_getState(i);
+                    state = dropApplet.transfer_getState(i);
+                    t.state = -100; // let next loop update state/status info to duplicate less code
                     t.status = dropApplet.transfer_getStatus(i);
                     t.percent = -1;
                     t.transfered = 0;
@@ -145,7 +146,7 @@ function _updateDropUI()
                     tdLength.align="right";
                     trNew.appendChild(tdLength);
                     t.tdStatus = _td(_text(t.status));
-                    t.tdStatus.style.color = t.state<=FAIL ? "red" : t.state>=SUCCESS ? "green" : "#000000";
+                    t.tdStatus.style.color = state<=FAIL ? "red" : state>=SUCCESS ? "green" : "#000000";
                     trNew.appendChild(t.tdStatus);
                     frag.appendChild(trNew);
                 }
