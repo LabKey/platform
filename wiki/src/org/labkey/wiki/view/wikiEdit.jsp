@@ -881,19 +881,25 @@
 
     function setSaveEnabled(enabled)
     {
-        var button = Ext.get('wiki-button-save').dom;
-        if(!button)
+        var buttonSave = Ext.get('wiki-button-save').dom;
+        var buttonFinish = Ext.get('wiki-button-finish').dom;
+
+        if(!buttonSave || !buttonFinish)
             return;
 
         if(enabled)
         {
-            button.parentNode.className = "labkey-button";
-            button.disabled = false;
+            buttonSave.parentNode.className = "labkey-button";
+            buttonSave.disabled = false;
+            buttonFinish.parentNode.className = "labkey-button";
+            buttonFinish.disabled = false;
         }
         else
         {
-            button.parentNode.className = "labkey-disabled-button";
-            button.disabled = true;
+            buttonSave.parentNode.className = "labkey-disabled-button";
+            buttonSave.disabled = true;
+            buttonFinish.parentNode.className = "labkey-disabled-button";
+            buttonFinish.disabled = true;
         }
     }
 
@@ -1115,7 +1121,7 @@
 <table class="labkey-button-bar" width=99%;>
     <tr>
         <td width="50%" align="left"  nowrap="true">
-            <%=PageFlowUtil.generateSubmitButton("Save & Close", "onFinish()")%>
+            <%=PageFlowUtil.generateDisabledSubmitButton("Save & Close", "onFinish()", "id='wiki-button-finish'")%>
             <%=PageFlowUtil.generateDisabledSubmitButton(saveButtonCaption, "onSave()", "id='wiki-button-save'")%>
             <%=PageFlowUtil.generateSubmitButton("Cancel", "onCancel()")%>
         </td>

@@ -2728,7 +2728,7 @@ public class WikiController extends SpringActionController
     }
 
     @RequiresPermission(ACL.PERM_READ) //will check below
-    public class SaveWikiAction extends ApiAction<SaveWikiForm>
+    public class SaveWikiAction extends ExtFormAction<SaveWikiForm>
     {
         public final static String PROP_DEFAULT_FORMAT = "defaultFormat";
 
