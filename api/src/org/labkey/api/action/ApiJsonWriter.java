@@ -83,26 +83,11 @@ public class ApiJsonWriter extends ApiResponseWriter
 
     public void write(Errors errors) throws Exception
     {
-        /*
-            Ext has a particular format they use for consuming validation errors expressed in JSON:
-            {
-                success: false,
-                errors: {
-                    clientCode: "Client not found",
-                    portOfLoading: "This field must not be null"
-                    }
-            }
+        //set the status to 400 to indicate that it was a bad request
+        getResponse().setStatus(400);
 
-            This is a bit strange, since you can't provide more than one error
-            for a given field, and there's really no place to put object-level
-            errors.
-
-            See http://extjs.com/deploy/dev/docs/?class=Ext.form.Action.Submit
-        */
-
-        //getResponse().setStatus(400); //ext seems to require that the response code is 200 even for validation errors
-
-        JSONObject jsonErrors = new JSONObject();
+        String exception = null;
+        JSONArray jsonErrors = new JSONArray();
         for(ObjectError error : (List<ObjectError>)errors.getAllErrors())
         {
             String msg = error.getDefaultMessage();
@@ -113,16 +98,20 @@ public class ApiJsonWriter extends ApiResponseWriter
                 FieldError ferror = (FieldError)error;
                 key = ferror.getField();
                 msg = ferror.getDefaultMessage();
-
-                if(jsonErrors.has(ferror.getField()))
-                    msg = jsonErrors.get(ferror.getField()) + " " + ferror.getDefaultMessage();
             }
 
-            jsonErrors.put(key, msg);
+            JSONObject jsonError = new JSONObject();
+            jsonError.put("field", key);
+            jsonError.put("message", msg);
+
+            if(null == exception)
+                exception = msg;
+
+            jsonErrors.put(jsonError);
         }
 
         JSONObject root = new JSONObject();
-        root.put("success", false); //used by Ext forms
+        root.put("exception", exception);
         root.put("errors", jsonErrors);
         writeJsonObj(root);
     }
