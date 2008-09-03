@@ -316,7 +316,10 @@ public class SecurityController extends SpringActionController
 
         // Display groups only if user has permissions in this project (or the root)
         if (project.hasPermission(getUser(), ACL.PERM_ADMIN))
+        {
             projectViews.addView(getGroupsView(c, expandedGroup, errors, messages));
+            projectViews.addView(new UserController.ImpersonateView(project, false));
+        }
 
         ActionURL startURL = c.getFolderType().getStartURL(c, getUser());
         projectViews.addView(new HtmlView(PageFlowUtil.generateButton("Done", startURL)));

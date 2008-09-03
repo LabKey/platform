@@ -18,7 +18,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%
-    String caption = null;
+    String caption;
     ActionURL url = HttpView.currentContext().getActionURL().clone();
     if(null == url.getParameter("inactive"))
     {

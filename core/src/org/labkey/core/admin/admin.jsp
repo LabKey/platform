@@ -50,7 +50,7 @@
     }
 %>
     <tr><td colspan="2"><%
-        this.include(new UserController.ImpersonateView(c), out);
+        include(new UserController.ImpersonateView(c, true), out);
     %>
     </td></tr>
 

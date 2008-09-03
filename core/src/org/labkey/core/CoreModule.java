@@ -199,6 +199,16 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
 
         afterSchemaUpdate(moduleContext, viewContext);
 
+        try
+        {
+            // Increment on every core module upgrade to defeat browser caching of static resources. 
+            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+
         return null;
     }
 

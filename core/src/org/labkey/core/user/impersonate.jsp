@@ -22,6 +22,8 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.core.user.UserController" %>
+<%@ page import="org.labkey.api.action.ReturnUrlForm" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<UserController.ImpersonateBean> me = (HttpView<UserController.ImpersonateBean>) HttpView.currentView();
@@ -30,18 +32,19 @@
     ViewContext context = HttpView.currentContext();
     User user = context.getUser();
     Container c = context.getContainer();
+    ActionURL returnURL = context.getActionURL();
 
     if (bean.emails.isEmpty())
         return;
 %>
     <form method="get" action="<%=new UserController.UserUrlsImpl().getImpersonateURL(c)%>">
         <table>
-        <tr><td><b><%=h(bean.message)%></b></td></tr>
+        <tr><td><%=bean.message%></td></tr>
         <tr><td><%
             if (user.isImpersonated())
             {
         %>
-        Already impersonating; click <a href="<%=h(urlProvider(LoginUrls.class).getLogoutURL(c))%>">here</a> to change back to <%=h(user.getImpersonatingUser().getDisplayName(context))%>.<%
+        Already impersonating; click <a href="<%=h(urlProvider(LoginUrls.class).getStopImpersonatingURL(c, request))%>">here</a> to change back to <%=h(user.getImpersonatingUser().getDisplayName(context))%>.<%
             }
             else
             {
@@ -53,6 +56,7 @@
                 }
             %>
             </select><br>
+            <input type="hidden" name="<%=ReturnUrlForm.Params.returnUrl%>" value="<%=h(returnURL)%>">
             <%=PageFlowUtil.generateSubmitButton("Impersonate")%><%
             }
             %>

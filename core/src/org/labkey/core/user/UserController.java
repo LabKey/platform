@@ -39,7 +39,9 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.ServletException;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -316,17 +318,31 @@ public class UserController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             SimpleFilter filter = authorizeAndGetProjectMemberFilter();
-            if(null == getViewContext().getRequest().getParameter("inactive"))
+            if (null == getViewContext().getRequest().getParameter("inactive"))
                 filter.addCondition("Active", true); //filter out active users by default
             DataRegion rgn = getGridRegion(false);
-            GridView gridView = new GridView(rgn);
+            GridView gridView = new GridView(rgn) {
+                @Override
+                public void renderView(RenderContext model, PrintWriter out) throws IOException, ServletException
+                {
+                    ToggleInactiveView toggle = new ToggleInactiveView();
+
+                    try
+                    {
+                        include(toggle, out);
+                    }
+                    catch (Exception e)
+                    {
+                    }
+                    super.renderView(model, out);
+                }
+            };
             gridView.setSort(new Sort("email"));
             gridView.getViewContext().setPermissions(ACL.PERM_READ);
             gridView.setFilter(filter);
+            gridView.setTitle("Users");
 
-            HttpView impersonateView = new ImpersonateView(getContainer());
-
-            return new VBox(new ToggleInactiveView(), gridView, impersonateView);
+            return new VBox(new ImpersonateView(getContainer(), false), gridView);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1341,12 +1357,12 @@ public class UserController extends SpringActionController
         public List<String> emails;
         public String message;
 
-        public ImpersonateBean(Container c)
+        public ImpersonateBean(Container c, boolean isAdminConsole)
         {
             if (c.isRoot())
             {
                 emails = UserManager.getUserEmailList();
-                message = "Impersonate User";
+                message = isAdminConsole ? "<b>Impersonate User</b>" : "";
             }
             else
             {
@@ -1358,7 +1374,7 @@ public class UserController extends SpringActionController
                     emails.add(member.getEmail());
 
                 Collections.sort(emails);
-                message = "Impersonate User Within the " + c.getName() + " Project";
+                message = PageFlowUtil.filter("Impersonate user within the " + c.getName() + " project");
             }
         }
     }
@@ -1366,14 +1382,17 @@ public class UserController extends SpringActionController
 
     public static class ImpersonateView extends JspView<ImpersonateBean>
     {
-        public ImpersonateView(Container c)
+        public ImpersonateView(Container c, boolean isAdminConsole)
         {
-            super("/org/labkey/core/user/impersonate.jsp", new ImpersonateBean(c));
+            super("/org/labkey/core/user/impersonate.jsp", new ImpersonateBean(c, isAdminConsole));
+
+            if (!isAdminConsole)
+                setTitle("Impersonation");
         }
     }
 
 
-    public static class ImpersonateForm
+    public static class ImpersonateForm extends ReturnUrlForm
     {
         private String _email;
 
@@ -1410,12 +1429,12 @@ public class UserController extends SpringActionController
 
             if (c.isRoot())
             {
-                SecurityManager.impersonate(getViewContext(), impersonatedUser, null);
+                SecurityManager.impersonate(getViewContext(), impersonatedUser, null, form.getReturnActionURL());
                 return AppProps.getInstance().getHomePageActionURL();
             }
             else
             {
-                SecurityManager.impersonate(getViewContext(), impersonatedUser, c);
+                SecurityManager.impersonate(getViewContext(), impersonatedUser, c.getParent(), form.getReturnActionURL());
                 return PageFlowUtil.urlProvider(ProjectUrls.class).urlStart(c);
             }
         }

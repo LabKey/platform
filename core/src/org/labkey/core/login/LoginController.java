@@ -49,6 +49,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -142,6 +143,19 @@ public class LoginController extends SpringActionController
             ActionURL url = getLogoutURL(c);
             url.addParameter(ReturnUrlForm.Params.returnUrl, returnURLString);
             return url;
+        }
+
+        public ActionURL getStopImpersonatingURL(Container c, HttpServletRequest request)
+        {
+            HttpSession session = request.getSession(true);
+
+            // Return to the admin's original URL, if it's there
+            ActionURL returnUrl = (ActionURL)session.getAttribute(SecurityManager.IMPERSONATION_RETURN_URL_KEY);
+
+            if (null != returnUrl)
+                return getLogoutURL(c, returnUrl.getLocalURIString());
+            else
+                return getLogoutURL(c);
         }
 
         public ActionURL getAgreeToTermsURL(Container c, ActionURL returnURL)
@@ -277,7 +291,7 @@ public class LoginController extends SpringActionController
 
                 if (null != _user)
                 {
-                    SecurityManager.setAuthenticatedUser(request, _user, null, null);
+                    SecurityManager.setAuthenticatedUser(request, _user, null, null, null);
 
                     return true;
                 }
