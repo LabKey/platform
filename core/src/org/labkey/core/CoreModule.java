@@ -533,7 +533,8 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
             BooleanFormat.TestCase.class,
             XMLWriterTest.TestCase.class,
             WebdavResolverImpl.TestCase.class,
-            org.labkey.api.exp.Lsid.TestCase.class
+            org.labkey.api.exp.Lsid.TestCase.class,
+            MimeMap.TestCase.class
         )
         );
     }
