@@ -347,7 +347,7 @@ public class ListDefinitionImpl implements ListDefinition
         ListTable ret = new ListTable(user, this);
         if (alias != null)
         {
-            ret.setName(alias);
+            ret.setAlias(alias);
         }
         return ret;
     }
