@@ -54,7 +54,7 @@ if (bean.containerLinks != null)
     if (null != user && !user.isGuest())
     {
         out.print(user.getFriendlyName() + "<br>");%>
-        <a href="<%=h(urlProvider(UserUrls.class).getUserDetailsURL(c, user.getUserId()))%>">My&nbsp;Account</a>&nbsp;|&nbsp;<a href="<%=h(urlProvider(LoginUrls.class).getLogoutURL(c))%>"><%=user.isImpersonated() ? "Stop&nbsp;Impersonating" : "Sign&nbsp;Out"%></a><%
+        <a href="<%=h(urlProvider(UserUrls.class).getUserDetailsURL(c, user.getUserId()))%>">My&nbsp;Account</a>&nbsp;|&nbsp;<a href="<%=h(user.isImpersonated() ? urlProvider(LoginUrls.class).getStopImpersonatingURL(c, request) : urlProvider(LoginUrls.class).getLogoutURL(c))%>"><%=user.isImpersonated() ? "Stop&nbsp;Impersonating" : "Sign&nbsp;Out"%></a><%
     }
     else if (bean.pageConfig.shouldIncludeLoginLink())
     {

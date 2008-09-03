@@ -98,6 +98,11 @@ public class AppProps extends AbstractWriteableSettingsGroup
         return _instance;
     }
 
+    protected String getType()
+    {
+        return "site settings";
+    }
+
     protected String getGroupName()
     {
         return SITE_CONFIG_NAME;

@@ -78,12 +78,6 @@ public class AuthenticationManager
         _ldapDomain = StringUtils.trimToNull(ldapDomain);
     }
 
-    public interface LoginURLFactory
-    {
-        ActionURL getURL(ActionURL returnURL);
-        ActionURL getURL(String returnURL);
-    }
-
 
     public static void initialize()
     {

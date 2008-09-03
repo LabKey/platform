@@ -47,6 +47,8 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
     protected PropertyManager.PropertyMap _properties = null;
     protected PropertyManager.PropertyMap _oldProps = null;
 
+    protected abstract String getType();
+
     protected void makeWriteable(Container c) throws SQLException
     {
         _properties = getWriteableProperties(c);
@@ -96,12 +98,13 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
     public void writeAuditLogEvent(User user, Map<String,String> oldProps)
     {
         String diff = genDiffHtml(oldProps);
-        if(null != diff)
+
+        if (null != diff)
         {
             String domainUri = ensureAuditLogDomainAndProps(user);
             AuditLogEvent event = new AuditLogEvent();
             event.setCreatedBy(user);
-            event.setComment("The site settings were changed (see details).");
+            event.setComment("The " + getType() + " were changed (see details).");
             event.setEventType(AUDIT_EVENT_TYPE);
 
             Map<String,Object> map = new HashMap<String,Object>();

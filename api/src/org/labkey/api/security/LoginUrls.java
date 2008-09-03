@@ -21,6 +21,8 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.Container;
 import org.labkey.common.util.Pair;
 
+import javax.servlet.http.HttpServletRequest;
+
 /**
  * User: adam
  * Date: May 15, 2008
@@ -34,6 +36,7 @@ public interface LoginUrls extends UrlProvider
     public ActionURL getLoginURL(ActionURL returnURL);
     public ActionURL getLoginURL(Container c, String returnURLString);
     public ActionURL getLogoutURL(Container c);
+    public ActionURL getStopImpersonatingURL(Container c, HttpServletRequest request);
     public ActionURL getLogoutURL(Container c, String returnURLString);
     public ActionURL getAgreeToTermsURL(Container c, ActionURL returnURL);
     public ActionURL getAgreeToTermsURL(Container c, String returnURLString);

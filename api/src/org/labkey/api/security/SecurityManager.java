@@ -367,18 +367,18 @@ public class SecurityManager
             User sessionUser = null;
             HttpSession session = request.getSession(true);
 
-            Integer userId = (Integer) session.getAttribute(User.class.getName() + "$userId");
+            Integer userId = (Integer) session.getAttribute(USER_ID_KEY);
             if (null != userId)
                 sessionUser = UserManager.getUser(userId.intValue());
             if (null != sessionUser)
             {
-                Integer impersonatingUserId = (Integer) session.getAttribute(User.class.getName() + "$impersonatingUserId");
+                Integer impersonatingUserId = (Integer) session.getAttribute(IMPERSONATING_USER_ID_KEY);
 
                 if (null != impersonatingUserId)
                 {
                     sessionUser.setImpersonatingUser(UserManager.getUser(impersonatingUserId.intValue()));
 
-                    String projectId = (String) session.getAttribute(User.class.getName() + "$impersonationProject");
+                    String projectId = (String) session.getAttribute(IMPERSONATION_PROJECT_KEY);
 
                     if (null != projectId)
                         sessionUser.setImpersonationProject(ContainerManager.getForId(projectId));
@@ -403,7 +403,7 @@ public class SecurityManager
                 if (null != u)
                 {
                     request.setAttribute(AUTHENTICATION_METHOD, "Basic");
-                    SecurityManager.setAuthenticatedUser(request, u, null, null);
+                    SecurityManager.setAuthenticatedUser(request, u, null, null, null);
                 }
             }
         }
@@ -411,19 +411,28 @@ public class SecurityManager
     }
 
 
-    public static void setAuthenticatedUser(HttpServletRequest request, User user, User impersonatingUser, Container project)
+    public static final String IMPERSONATION_RETURN_URL_KEY = User.class.getName() + "$impersonationReturnURL";
+    private static final String IMPERSONATION_PROJECT_KEY = User.class.getName() + "$impersonationProject";
+    private static final String IMPERSONATING_USER_ID_KEY = User.class.getName() + "$impersonatingUserId";
+    private static final String USER_ID_KEY = User.class.getName() + "$userId";
+    private static final String IMPERSONATORS_SESSION_MAP_KEY = "ImpersonatorsSessionMapKey";
+
+    public static void setAuthenticatedUser(HttpServletRequest request, User user, User impersonatingUser, Container project, ActionURL returnURL)
     {
         invalidateSession(request);      // Clear out terms-of-use and other session info that guest / previous user may have
 
         HttpSession newSession = request.getSession(true);
-        newSession.setAttribute(User.class.getName() + "$userId", user.getUserId());
+        newSession.setAttribute(USER_ID_KEY, user.getUserId());
         newSession.setAttribute("LABKEY.username", user.getName());
 
         if (null != impersonatingUser)
-            newSession.setAttribute(User.class.getName() + "$impersonatingUserId", impersonatingUser.getUserId());
+            newSession.setAttribute(IMPERSONATING_USER_ID_KEY, impersonatingUser.getUserId());
 
         if (null != project)
-            newSession.setAttribute(User.class.getName() + "$impersonationProject", project.getId());
+            newSession.setAttribute(IMPERSONATION_PROJECT_KEY, project.getId());
+
+        if (null != returnURL)
+            newSession.setAttribute(IMPERSONATION_RETURN_URL_KEY, returnURL);
     }
 
 
@@ -434,9 +443,7 @@ public class SecurityManager
     }
 
 
-    private static final String IMPERSONATORS_SESSION_MAP_KEY = "ImpersonatorsSessionMapKey";
-
-    public static void impersonate(ViewContext viewContext, User impersonatedUser, Container project)
+    public static void impersonate(ViewContext viewContext, User impersonatedUser, Container project, ActionURL returnURL)
     {
         HttpServletRequest request = viewContext.getRequest();
         User adminUser = viewContext.getUser();
@@ -453,7 +460,7 @@ public class SecurityManager
             impersonatorSessionAttributes.put(name, impersonatorSession.getAttribute(name));
         }
 
-        SecurityManager.setAuthenticatedUser(request, impersonatedUser, adminUser, project);
+        SecurityManager.setAuthenticatedUser(request, impersonatedUser, adminUser, project, returnURL);
         HttpSession userSession = request.getSession(true);
         userSession.setAttribute(IMPERSONATORS_SESSION_MAP_KEY, impersonatorSessionAttributes);
 
@@ -489,7 +496,7 @@ public class SecurityManager
             else
             {
                 // Just in case
-                setAuthenticatedUser(request, adminUser, null, null);
+                setAuthenticatedUser(request, adminUser, null, null, null);
             }
 
             AuditLogService.get().addEvent(viewContext, UserManager.USER_AUDIT_EVENT, impersonatedUser.getUserId(),

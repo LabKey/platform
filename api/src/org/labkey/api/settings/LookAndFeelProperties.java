@@ -46,6 +46,11 @@ public class LookAndFeelProperties extends AbstractWriteableSettingsGroup
 
     private Container _c;
 
+    protected String getType()
+    {
+        return "look and feel settings";
+    }
+
     protected String getGroupName()
     {
         return LOOK_AND_FEEL_SET_NAME;
