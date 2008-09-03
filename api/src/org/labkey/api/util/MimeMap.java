@@ -23,6 +23,9 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
+import junit.framework.Test;
+import junit.framework.TestSuite;
+
 /**
  * A mime type map that implements the java.net.FileNameMap interface.
  * <p/>
@@ -31,8 +34,9 @@ import java.util.*;
 public class MimeMap implements FileNameMap
 {
 
-    public static Hashtable<String, MimeType> defaultMap = new Hashtable<String, MimeType>(101);
-
+    static Hashtable<String, MimeType> mimeTypeMap = new Hashtable<String, MimeType>(101);
+    static Map<String,MimeType> extensionMap = new HashMap<String, MimeType>();
+    
     private static class MimeType
     {
         private String _contentType;
@@ -68,10 +72,9 @@ public class MimeMap implements FileNameMap
 
     static
     {
-        Map<String,MimeType> mimetypes = new HashMap<String, MimeType>();
-        defaultMap.put("image/gif", new MimeType("image/gif", true));
-        defaultMap.put("image/jpeg", new MimeType("image/jpeg", true));
-        defaultMap.put("image/png", new MimeType("image/png", true));
+        mimeTypeMap.put("image/gif", new MimeType("image/gif", true));
+        mimeTypeMap.put("image/jpeg", new MimeType("image/jpeg", true));
+        mimeTypeMap.put("image/png", new MimeType("image/png", true));
         
         try
         {
@@ -82,14 +85,14 @@ public class MimeMap implements FileNameMap
             {
                 int tab = StringUtils.indexOfAny(line, "\t ");
                 if (tab < 0) continue;
-                String key = StringUtils.trimToNull(line.substring(0,tab));
-                String value = StringUtils.trimToNull(line.substring(tab+1));
-                if (null != key && null != value)
+                String extn = StringUtils.trimToNull(line.substring(0,tab));
+                String mimetype = StringUtils.trimToNull(line.substring(tab+1));
+                if (null != extn && null != mimetype)
                 {
-                    MimeType mt = mimetypes.get(value);
+                    MimeType mt = mimeTypeMap.get(mimetype);
                     if (null == mt)
-                        mimetypes.put(value, (mt = new MimeType(value)));
-                    defaultMap.put(key, mt);
+                        mimeTypeMap.put(mimetype, (mt = new MimeType(mimetype)));
+                    extensionMap.put(extn, mt);
                 }
             }
             is.close();
@@ -122,7 +125,7 @@ public class MimeMap implements FileNameMap
     {
         extn = extn.toLowerCase();
         MimeType type = map.get(extn.toLowerCase());
-        if (type == null) type = defaultMap.get(extn.toLowerCase());
+        if (type == null) type = extensionMap.get(extn.toLowerCase());
         return type;
     }
 
@@ -195,6 +198,40 @@ public class MimeMap implements FileNameMap
         {
             // no extension, no content type
             return null;
+        }
+    }
+
+
+
+     public static class TestCase extends junit.framework.TestCase
+    {
+        public TestCase()
+        {
+            super();
+        }
+
+
+        public TestCase(String name)
+        {
+            super(name);
+        }
+
+
+        public void testMimeMap()
+        {
+            MimeMap m = new MimeMap();
+            assertEquals(m.getContentTypeFor("photo.jpg"),"image/jpeg");
+            assertEquals(m.getContentTypeFor("photo.jpeg"),"image/jpeg");
+            assertEquals(m.getContentTypeFor("file.htm"), "text/html");
+            assertEquals(m.getContentTypeFor("file.html"), "text/html");
+            assertTrue(m.isInlineImageFor("photo.jpg"));
+            assertFalse(m.isInlineImageFor("file.html"));
+        }
+
+
+        public static Test suite()
+        {
+            return new TestSuite(TestCase.class);
         }
     }
 }
