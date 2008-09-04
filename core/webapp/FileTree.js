@@ -258,13 +258,14 @@ Ext.extend(LABKEY.ext.FileTree, Ext.tree.ColumnTree, {
            return v ? v.format('n/d/Y g:i:sa') : "&nbsp;";
         }
     },{
-        header:'Modified',
-        width:200,
-        dataIndex:'lastmodified',
-        renderer: function (v,n,a) {
-           return v ? v.format('n/d/Y g:i:sa') : "&nbsp;";
-        }
-    },{
+// XXX: Java doesn't provide file creation time API so the creationdate is always lastModified
+//        header:'Modified',
+//        width:200,
+//        dataIndex:'lastmodified',
+//        renderer: function (v,n,a) {
+//           return v ? v.format('n/d/Y g:i:sa') : "&nbsp;";
+//        }
+//    },{
         header:'Size',
         width:100,
         dataIndex:'size',
