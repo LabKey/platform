@@ -154,7 +154,7 @@ public class AuditController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root = PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, "Audit Log");
+            root.addChild("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL());
 
             ActionURL urlLog = new ActionURL(ShowAuditLogAction.class, ContainerManager.getRoot());
             urlLog.addParameter("view", WriteableAppProps.AUDIT_EVENT_TYPE);
