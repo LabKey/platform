@@ -182,7 +182,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     }
 
     /**
-     * Look at the specified type heirarchy to see if the requested file is an
+     * Look at the specified type hierarchy to see if the requested file is an
      * ancestor to this processing job, residing outside the analysis directory.
      *
      * @param dirRoot The pipeline root directoy, outside which no files can be processed.

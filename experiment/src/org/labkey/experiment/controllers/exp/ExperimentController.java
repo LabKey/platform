@@ -1517,7 +1517,6 @@ public class ExperimentController extends SpringActionController
                 boolean hasErrors = false;
                 if (StringUtils.isEmpty(form.getName()) || form.getName() == null)
                 {
-                    hasErrors = true;
                     errors.reject(ERROR_MSG, "You must supply a name for the sample set");
                 }
                 else
@@ -1527,18 +1526,16 @@ public class ExperimentController extends SpringActionController
 
                     if (!form.isImportMoreSamples() && null != sourceExisting)
                     {
-                        hasErrors = true;
                         errors.reject(ERROR_MSG, "A sample set with that name already exists.  If you would like to import samples that set, go here:  " +
                                 "<a href=" + getViewContext().getActionURL() + "name=" + form.getName() + "&importMoreSamples=true>Import More Samples</a>");
                     }
                     if (form.isImportMoreSamples() && form.getOverwriteChoice() == null)
                     {
-                        hasErrors = true;
                         errors.reject(ERROR_MSG, "Please select how to deal with duplicates.");
                     }
                 }
 
-                if (!hasErrors)
+                if (errors.getErrorCount() == 0)
                 {
                     try
                     {

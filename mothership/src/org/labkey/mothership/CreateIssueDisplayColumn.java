@@ -16,10 +16,7 @@
 
 package org.labkey.mothership;
 
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.*;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.PageFlowUtil;
@@ -63,7 +60,7 @@ public class CreateIssueDisplayColumn extends DataColumn
         String firstLocation = reader.readLine();
         String location = firstLocation;
         String separator = " in ";
-        while (location != null && !location.contains("org.labkey") && !location.contains("org.fhcrc"))
+        while (location != null && !location.contains("org.labkey") && !location.contains("org.fhcrc") && location.contains(ConnectionWrapper.class.getName()))
         {
             location = reader.readLine();
             separator = " from ";

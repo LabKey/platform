@@ -309,6 +309,11 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
 
     private String getClusterPath(String localPath)
     {
+        if (getProps() == null || getProps().getPathMapper() == null)
+        {
+            // Assume that the web server and cluster nodes use the same paths to access the files.
+            return localPath;
+        }
         // This PathMapper considers "local" from a cluster node's point of view.
         return getProps().getPathMapper().remoteToLocal(localPath);
     }
@@ -352,6 +357,7 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
         {
             if (f.length() > 0)
             {
+                job.getLogger().info("Reading log file " + f + ", which is now of size " + f.length());
                 FileInputStream fIn = null;
                 try
                 {
@@ -389,6 +395,7 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
             }
             catch (InterruptedException e) {}
 
+            job.getLogger().info("Deleting log file " + f + ", which is now of size " + f.length());
             f.delete();
         }
     }

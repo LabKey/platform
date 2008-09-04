@@ -20,6 +20,7 @@ import org.labkey.api.view.GridView;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.data.*;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
 import java.util.List;
@@ -37,7 +38,7 @@ public class ProtocolListView extends GridView
         List<ColumnInfo> cols = ti.getColumns("RowId,Name,LSID,ActionSequence,ProtocolDescription");
         getDataRegion().setColumns(cols);
         getDataRegion().getDisplayColumn(0).setVisible(false);
-        getDataRegion().getDisplayColumn(1).setURL(ActionURL.toPathString("Experiment", "protocolPredecessors", c.getPath()) + "?ParentLSID=" + protocol.getLSID() + "&Sequence=${ActionSequence}");
+        getDataRegion().getDisplayColumn(1).setURL(ActionURL.toPathString("Experiment", "protocolPredecessors", c.getPath()) + "?ParentLSID=" + PageFlowUtil.encode(protocol.getLSID()) + "&Sequence=${ActionSequence}");
         getDataRegion().getDisplayColumn(2).setTextAlign("left");
 
         SimpleFilter filter = new SimpleFilter();
