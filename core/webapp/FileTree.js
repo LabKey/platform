@@ -83,9 +83,7 @@ Ext.extend(LABKEY.ext.WebDavTreeLoader, Ext.tree.TreeLoader, {
     createNode : function (data) {
         if (data.leaf && this.fileFilter)
         {
-            if (this.fileFilter.test(data.text))
-                return LABKEY.ext.WebDavTreeLoader.superclass.createNode.call(this, data);
-            return undefined;
+            data.disabled = !this.fileFilter.test(data.text);
         }
         return LABKEY.ext.WebDavTreeLoader.superclass.createNode.call(this, data);
     },
@@ -132,6 +130,21 @@ Ext.extend(LABKEY.ext.FileTreeMultiSelectionModel, Ext.tree.MultiSelectionModel,
     }
 });
 
+LABKEY.ext.FileTreeNodeUI = Ext.extend(Ext.tree.ColumnNodeUI, {
+    initEvents : function () {
+        LABKEY.ext.FileTreeNodeUI.superclass.initEvents.call(this);
+         // XXX: Ext-2.2 doesn't initialize disabled state
+        this.onDisableChange(this.node, this.node.disabled);
+    },
+
+    onOver : function (e) {
+        if (this.node.disabled) {
+            return;
+        }
+        LABKEY.ext.FileTreeNodeUI.superclass.onOver.call(this, e);
+    }
+});
+
 LABKEY.ext.FileTree = function (config)
 {
     Ext.apply(this, config);
@@ -145,7 +158,21 @@ LABKEY.ext.FileTree = function (config)
     {
         this.root = new Ext.tree.AsyncTreeNode({
             id: LABKEY.ActionURL.getContainer() + (this.browsePipeline ? "/%40pipeline" : ""),
-            text:'<root>'
+            text:'<root>',
+            listeners: {
+                'load': function (node) {
+                    if (!node.hasChildNodes())
+                    {
+                        node.appendChild({
+                            text: "&lt;no files found in root>",
+                            size: 0,
+                            disabled: true,
+                            leaf: true,
+                            iconCls: 'labkey-tree-error-icon'
+                        });
+                    }
+                }
+            }
         });
     }
 
@@ -154,7 +181,7 @@ LABKEY.ext.FileTree = function (config)
         this.loader = new LABKEY.ext.WebDavTreeLoader({
             url : LABKEY.ActionURL.getContextPath() + "/webdav",
             baseAttrs:{uiProvider:'col'},
-            uiProviders:{'col': Ext.tree.ColumnNodeUI},
+            uiProviders:{'col': LABKEY.ext.FileTreeNodeUI},
             fileFilter : this.fileFilter
         });
     }
@@ -243,7 +270,7 @@ Ext.extend(LABKEY.ext.FileTree, Ext.tree.ColumnTree, {
     useArrows:true,
     autoScroll:true,
     animate:true,
-    enableDD:true,
+    enableDD:false,
     containerScroll:true,
 
     columns:[{
