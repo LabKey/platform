@@ -213,7 +213,7 @@ public class UserController extends SpringActionController
 
         rgn.setButtonBar(gridButtonBar, DataRegion.MODE_GRID);
 
-        ActionButton showGrid = new ActionButton("showUsers.view?.lastFilter=true", "Show Grid");
+        ActionButton showGrid = new ActionButton("showUsers.view?.lastFilter=true", c.isRoot() ? "Show All Users" : "Show Project Members");
         showGrid.setActionType(ActionButton.Action.LINK);
 
         ButtonBar detailsButtonBar = new ButtonBar();

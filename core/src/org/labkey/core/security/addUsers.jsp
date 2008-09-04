@@ -23,8 +23,8 @@
 
 <script type="text/javascript">LABKEY.requiresScript('completion.js');</script>
 <script type="text/javascript">
-    var permissionLink_hide = "<a href=\"#blank\" style=\"display:none\" onclick=\"showUserAccess();\">permissions</a>";
-    var permissionLink_show = "[<a href=\"#blank\" onclick=\"showUserAccess();\">permissions</a>]";
+    var permissionLink_hide = '<a href="#blank" style="display:none" onclick="showUserAccess();">permissions<\/a>';
+    var permissionLink_show = '[<a href="#blank" onclick="showUserAccess();">permissions<\/a>]';
 
     function enableText()
     {
@@ -76,7 +76,7 @@
                         autocomplete="off"
                         onKeyUp="return handleChange(this, event, 'completeUser.view?prefix=');">
             </td>
-            <td><div id=permissions>[<a href="#blank" style="display:none" onclick="showUserAccess();">permissions</a>]</div></td>
+            <td><div id=permissions><a href="#blank" style="display:none" onclick="showUserAccess();">permissions</a></div></td>
         </tr>
         <tr><td colspan="3">
             <input type=checkbox name="sendMail" id="sendMail" checked><label for="sendmail">Send notification emails to all new<%
