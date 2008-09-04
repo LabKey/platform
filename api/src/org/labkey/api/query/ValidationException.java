@@ -84,4 +84,9 @@ public class ValidationException extends Exception
     {
         return toString("; ");
     }
+
+    public String getMessage()
+    {
+        return toString();
+    }
 }

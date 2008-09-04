@@ -199,17 +199,9 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         if(!records || records.length == 0)
             return;
 
-        //copy the modified row data into two arrays
-        //one for rows to insert and one for rows to update
-        //consider: maybe we should support a general saveRows
-        //API that uses an metaData.isNew property to distinguish
-        //between insert and update. That way we could do just one HTTP request.
-        //In practice, the grid will commit row-by-row, so it won't matter
-        var insertRecords = [];
-        var updateRecords = [];
-        var insertRowsData = [];
-        var updateRowsData = [];
+        //build the json to send to the server
         var record;
+        var rows = [];
         for(var idx = 0; idx < records.length; ++idx)
         {
             record = records[idx];
@@ -221,40 +213,30 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
             if(!this.readyForSave(record))
                 continue;
 
-            if(record.isNew)
-            {
-                insertRecords[insertRecords.length] = record;
-                insertRowsData[insertRowsData.length] = this.getRowData(record);
-            }
-            else
-            {
-                updateRecords[updateRecords.length] = record;
-                updateRowsData[updateRowsData.length] = this.getRowData(record);
-            }
-
             record.saveOperationInProgress = true;
+            rows.push({
+                command: (record.isNew ? "insert" : "update"),
+                values: this.getRowData(record),
+                oldKeys : this.getOldKeys(record)
+            });
         }
 
-        //kick off the insert and update queries
-        if(insertRowsData.length > 0)
-            LABKEY.Query.insertRows({
-                schemaName: this.schemaName,
-                queryName: this.queryName, 
-                containerPath: this.containerPath,
-                successCallback: this.getSuccessHandler(insertRowsData, insertRecords),
-                errorCallback: this.getErrorHandler(insertRowsData, insertRecords),
-                rowDataArray: insertRowsData
-            });
-
-        if(updateRowsData.length > 0)
-            LABKEY.Query.updateRows({
+        Ext.Ajax.request({
+            url : LABKEY.ActionURL.buildURL("query", "saveRows", this.containerPath),
+            method : 'POST',
+            success: this.onCommitSuccess,
+            failure: this.getOnCommitFailure(records),
+            scope: this,
+            jsonData : {
                 schemaName: this.schemaName,
                 queryName: this.queryName,
                 containerPath: this.containerPath,
-                successCallback: this.getSuccessHandler(updateRowsData, updateRecords),
-                errorCallback: this.getErrorHandler(updateRowsData, updateRecords),
-                rowDataArray: updateRowsData
-            });
+                rows: rows
+            },
+            headers : {
+                'Content-Type' : 'application/json'
+            }
+        });
     },
 
     /**
@@ -312,6 +294,71 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
     },
 
     /*-- Private Methods --*/
+
+    onCommitSuccess : function(response, options) {
+        var json = this.getJson(response);
+        if(!json || !json.rows)
+            return;
+
+        var idCol = this.reader.jsonData.metaData.id;
+        var row;
+        var record;
+        for(var idx = 0; idx < json.rows.length; ++idx)
+        {
+            row = json.rows[idx];
+            if(!row || !row.values)
+                continue;
+
+            //find the record using the id sent to the server
+            record = this.getById(row.oldKeys[this.reader.meta.id]);
+            if(!record)
+                continue;
+
+            //apply values from the result row to the sent record
+            for(var col in record.data)
+                record.set(col, row.values[col]);
+
+            //if the id changed, fixup the keys and map of the store's base collection
+            //HACK: this is using private data members of the base Store class. Unfortunately
+            //Ext Store does not have a public API for updating the key value of a record
+            //after it has been added to the store. This might break in future versions of Ext.
+            if(record.id != row.values[idCol])
+            {
+                record.id = row.values[idCol];
+                this.data.keys[this.data.indexOf(record)] = row.values[idCol];
+
+                delete this.data.map[record.id]
+                this.data.map[row.values[idCol]] = record;
+            }
+
+            //remote transitory flags and commit the record to let
+            //bound controls know that it's now clean
+            delete record.saveOperationInProgress;
+            delete record.isNew;
+            record.commit();
+        }
+    },
+
+    getOnCommitFailure : function(records) {
+        return function(response, options) {
+            
+            for(var idx = 0; idx < records.length; ++idx)
+                delete records[idx].saveOperationInProgress;
+
+            var json = this.getJson(response);
+            var message = (json && json.exception) ? json.exception : response.statusText;
+
+            alert("Could not save changes due to the following error:\n" + message);
+
+        };
+    },
+
+    getJson : function(response) {
+        return (response && undefined != response.getResponseHeader && undefined != response.getResponseHeader['Content-Type']
+                && response.getResponseHeader['Content-Type'].indexOf('application/json') >= 0) 
+                ? Ext.util.JSON.decode(response.responseText)
+                : null;
+    },
 
     findFieldMeta : function(columnName)
     {
@@ -379,61 +426,6 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         this.loadError = loadError;
     },
 
-    getSuccessHandler : function(rowsData, records) {
-        //save this in a closure for use by the returned function
-        //CONSIDER: add scope property to insertRows and updateRows APIs, like Ext does
-        var store = this;
-
-        return function(results) {
-            var idx = 0;
-            var idCol = store.reader.jsonData.metaData.id;
-            if(results.rows)
-            {
-                var resultRow;
-                var sentRecord;
-                for(idx = 0; idx < results.rows.length; ++idx)
-                {
-                    resultRow = results.rows[idx];
-                    sentRecord = records[idx]; //result rows come back in the same order as sent
-
-                    //apply values from the result row to the sent record
-                    for(var col in sentRecord.data)
-                        sentRecord.set(col, resultRow[col]);
-
-                    //if the id changed, fixup the keys and map of the store's base collection
-                    //HACK: this is using private data members of the base Store class. Unfortunately
-                    //Ext Store does not have a public API for updating the key value of a record
-                    //after it has been added to the store. This might break in future versions of Ext.
-                    if(sentRecord.id != resultRow[idCol])
-                    {
-                        sentRecord.id = resultRow[idCol];
-                        store.data.keys[store.data.indexOf(sentRecord)] = resultRow[idCol];
-                        
-                        delete store.data.map[sentRecord.id]
-                        store.data.map[resultRow[idCol]] = sentRecord;
-                    }
-
-                    //remote transitory flags and commit the record to let
-                    //bound controls know that it's now clean
-                    delete sentRecord.saveOperationInProgress;
-                    delete sentRecord.isNew;
-                    sentRecord.commit();
-                }
-            }
-        }
-    },
-
-    getErrorHandler : function(rowsData, records) {
-        return function(response) {
-            for(var idx=0; idx < records.length; ++idx)
-                delete records[idx].saveOperationInProgress;
-
-            var msg = "Unable to save the data due to the following error:\n";
-            msg += response.exception || "Unknown Error";
-            alert(msg);
-        }
-    },
-
     getDeleteSuccessHandler : function() {
         var store = this;
         return function(results) {
@@ -453,6 +445,12 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
                 data[field] = null;
         }
         return data;
+    },
+
+    getOldKeys : function(record) {
+        var oldKeys = {};
+        oldKeys[this.reader.meta.id] = record.id;
+        return oldKeys;
     },
 
     readyForSave : function(record) {
