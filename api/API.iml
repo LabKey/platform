@@ -9,6 +9,11 @@
         <webroots>
           <root url="file://$MODULE_DIR$/webapp" relative="/" />
         </webroots>
+        <sourceRoots>
+          <root url="file://$MODULE_DIR$/../../build/gensrc/server/xb" />
+          <root url="file://$MODULE_DIR$/remotesrc" />
+          <root url="file://$MODULE_DIR$/src" />
+        </sourceRoots>
         <building>
           <setting name="EXPLODED_URL" value="file://" />
           <setting name="EXPLODED_ENABLED" value="false" />
@@ -359,12 +364,16 @@
   <component name="NewModuleRootManager" inherit-compiler-output="false">
     <output url="file://$MODULE_DIR$/../../intellijBuild/webapps/CPAS/WEB-INF/classes" />
     <content url="file://$MODULE_DIR$/../../build/gensrc">
-      <sourceFolder url="file://$MODULE_DIR$/../../build/gensrc/xmlbeanSrc" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../build/gensrc/server/xb" isTestSource="false" />
+    </content>
+    <content url="file://$MODULE_DIR$/../../build/staging/labkeyWebapp/ext-2.2/source">
+      <sourceFolder url="file://$MODULE_DIR$/../../build/staging/labkeyWebapp/ext-2.2/source" isTestSource="false" />
     </content>
     <content url="file://$MODULE_DIR$/../../schemas" />
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/remotesrc" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/webapp/ext-2.2" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
