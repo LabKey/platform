@@ -24,6 +24,11 @@ import org.springframework.validation.ObjectError;
  */
 public class LabkeyError extends ObjectError
 {
+    public LabkeyError(Throwable t)
+    {
+        this(t.getMessage() == null ? t.getClass().getName() : t.getMessage());
+    }
+
     public LabkeyError(String message)
     {
         super("main", new String[] { "Error" }, new Object[] { message }, message);

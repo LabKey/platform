@@ -58,7 +58,7 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
 
     /**
      * Maps the extension for a specific input/output file type to the list of
-     * extensions for types from which it was derrived.
+     * extensions for types from which it was derived.
      * <p>
      * e.g. <pre>
      * .mzXML => (.pep.xml, .features.tsv)
