@@ -1,5 +1,5 @@
 /*
- * Ext JS Library 2.0.2
+ * Ext JS Library 2.2
  * Copyright(c) 2006-2008, Ext JS, LLC.
  * licensing@extjs.com
  *
@@ -24,8 +24,8 @@
 
 }
 .x-column-tree  .x-tree-node .x-tree-selected a span{
-    background:transparent;
-    color:#000;
+	background:transparent;
+	color:#000;
 }
 .x-tree-col {
     float:left;
@@ -37,15 +37,15 @@
 .x-tree-col-text, .x-tree-hd-text {
     overflow:hidden;
     -o-text-overflow: ellipsis;
-    text-overflow: ellipsis;
+	text-overflow: ellipsis;
     padding:3px 3px 3px 5px;
     white-space: nowrap;
     font:normal 11px arial, tahoma, helvetica, sans-serif;
 }
 
 .x-tree-headers {
-    background: #f9f9f9 url(ext-2.0.2/resources/images/default/grid/grid3-hrow.gif) repeat-x 0 bottom;
-    cursor:default;
+    background: #f9f9f9 url(../../resources/images/default/grid/grid3-hrow.gif) repeat-x 0 bottom;
+	cursor:default;
     zoom:1;
 }
 
