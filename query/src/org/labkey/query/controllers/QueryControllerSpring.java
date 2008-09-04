@@ -1323,7 +1323,7 @@ public class QueryControllerSpring extends SpringActionController
     /**
      * Base action class for insert/update/delete actions
      */
-    public abstract class SaveRowsAction extends ApiAction<ApiSaveRowsForm>
+    public abstract class BaseSaveRowsAction extends ApiAction<ApiSaveRowsForm>
     {
         private static final String PROP_SCHEMA_NAME = "schemaName";
         private static final String PROP_QUERY_NAME = "queryName";
@@ -1417,9 +1417,10 @@ public class QueryControllerSpring extends SpringActionController
          * @throws ValidationException Thrown if the data is not valid
          * @throws QueryUpdateServiceException Thrown if there is a implementation-specific error
          * @throws SQLException Thrown if there was a problem communicating with the database
+         * @throws UnauthorizedException Thrown if the user does not have permissions to save the row
          */
         protected abstract void saveRow(QueryUpdateService qus, Map<String,Object> row, ArrayList<Object> responseRows)
-                throws InvalidKeyException, DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException;
+                throws InvalidKeyException, DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException, UnauthorizedException;
 
         /**
          * Returns the name of the dervied class's command. This will be returned to
@@ -1450,7 +1451,7 @@ public class QueryControllerSpring extends SpringActionController
 
     @RequiresPermission(ACL.PERM_UPDATE)
     @ApiVersion(8.3)
-    public class UpdateRowsAction extends SaveRowsAction
+    public class UpdateRowsAction extends BaseSaveRowsAction
     {
         protected String getSaveCommandName()
         {
@@ -1458,7 +1459,7 @@ public class QueryControllerSpring extends SpringActionController
         }
 
         protected void saveRow(QueryUpdateService qus, Map<String, Object> row, ArrayList<Object> responseRows)
-                throws InvalidKeyException, DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+                throws InvalidKeyException, DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException, UnauthorizedException
         {
             Map<String,Object> updatedRow = qus.updateRow(getViewContext().getUser(), getViewContext().getContainer(),
                                                             row, null);
@@ -1472,7 +1473,7 @@ public class QueryControllerSpring extends SpringActionController
 
     @RequiresPermission(ACL.PERM_INSERT)
     @ApiVersion(8.3)
-    public class InsertRowsAction extends SaveRowsAction
+    public class InsertRowsAction extends BaseSaveRowsAction
     {
         protected String getSaveCommandName()
         {
@@ -1480,7 +1481,7 @@ public class QueryControllerSpring extends SpringActionController
         }
 
         protected void saveRow(QueryUpdateService qus, Map<String, Object> row, ArrayList<Object> responseRows)
-                throws InvalidKeyException, DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+                throws InvalidKeyException, DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException, UnauthorizedException
         {
             Map<String,Object> insertedRow = qus.insertRow(getViewContext().getUser(), getViewContext().getContainer(),
                                                             row);
@@ -1495,20 +1496,85 @@ public class QueryControllerSpring extends SpringActionController
     @ActionNames("deleteRows, delRows")
     @RequiresPermission(ACL.PERM_DELETE)
     @ApiVersion(8.3)
-    public class DeleteRowsAction extends SaveRowsAction
+    public class DeleteRowsAction extends BaseSaveRowsAction
     {
         protected String getSaveCommandName()
         {
             return "delete";
         }
 
-        protected void saveRow(QueryUpdateService qus, Map<String, Object> row, ArrayList<Object> responseRows) throws InvalidKeyException, DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        protected void saveRow(QueryUpdateService qus, Map<String, Object> row, ArrayList<Object> responseRows) throws InvalidKeyException, DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException, UnauthorizedException
         {
             Map<String,Object> deletedRow = qus.deleteRow(getViewContext().getUser(), getViewContext().getContainer(),
                                                             row);
             if(null != deletedRow)
                 responseRows.add(deletedRow);
 
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_NONE) //will check below
+    public class SaveRowsAction extends BaseSaveRowsAction
+    {
+        private static final String PROP_VALUES = "values";
+        private static final String PROP_OLD_KEYS = "oldKeys";
+        private static final String PROP_COMMAND = "command";
+
+        protected void saveRow(QueryUpdateService qus, Map<String, Object> row, ArrayList<Object> responseRows) throws InvalidKeyException, DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException, UnauthorizedException
+        {
+            User user = getViewContext().getUser();
+            Container container = getViewContext().getContainer();
+
+            //for this action, the shape of the row map is a little different so as to
+            //accommodate the action and old keys and such
+            String command = (String)row.get(PROP_COMMAND);
+            Map<String,Object> values = ((JSONObject)row.get(PROP_VALUES)).getMap(true);
+            Map<String,Object> oldKeys = row.containsKey(PROP_OLD_KEYS) ? ((JSONObject)row.get(PROP_OLD_KEYS)).getMap(true) : null;
+            Map<String, Object> responseRow = new HashMap<String,Object>();
+
+            responseRow.put(PROP_COMMAND, command);
+            if(null != oldKeys)
+                responseRow.put(PROP_OLD_KEYS, oldKeys);
+
+            if("insert".equalsIgnoreCase(command))
+            {
+                if(!container.hasPermission(user, ACL.PERM_INSERT))
+                    throw new UnauthorizedException("You do not have permissions to insert data into this folder.");
+
+                Map<String,Object> insertedRow = qus.insertRow(user, container, values);
+                if(null != insertedRow)
+                    insertedRow = qus.getRow(user, container, insertedRow);
+                if(null != insertedRow)
+                    responseRow.put(PROP_VALUES, insertedRow);
+            }
+            else if("update".equalsIgnoreCase(command))
+            {
+                if(!container.hasPermission(user, ACL.PERM_UPDATE))
+                    throw new UnauthorizedException("You do not have permissions to update data into this folder.");
+
+                Map<String,Object> updatedRow = qus.updateRow(user, container, values, oldKeys);
+                if(null != updatedRow)
+                    updatedRow = qus.getRow(user, container, updatedRow);
+                if(null != updatedRow)
+                    responseRow.put(PROP_VALUES, updatedRow);
+            }
+            else if("delete".equalsIgnoreCase(command))
+            {
+                if(!container.hasPermission(user, ACL.PERM_DELETE))
+                    throw new UnauthorizedException("You do not have permissions to delete data into this folder.");
+
+                qus.deleteRow(user, container, values);
+            }
+            else
+                throw new IllegalArgumentException("'" + command + "' is not a valid command name! Use 'insert', 'update', 'delete'.");
+
+
+            responseRows.add(responseRow);
+        }
+
+        protected String getSaveCommandName()
+        {
+            return "save";
         }
     }
 
