@@ -105,6 +105,8 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
             }
         });
 
+        this.addEvents("beforecommit", "commitcomplete", "commitexception");
+
         //subscribe to the proxy's beforeload event so that we can map parameter names
         this.proxy.on("beforeload", this.onBeforeLoad, this);
     },
@@ -220,6 +222,9 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
                 oldKeys : this.getOldKeys(record)
             });
         }
+
+        if(false === this.fireEvent("beforecommit", records, rows))
+            return;
 
         Ext.Ajax.request({
             url : LABKEY.ActionURL.buildURL("query", "saveRows", this.containerPath),
@@ -337,6 +342,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
             delete record.isNew;
             record.commit();
         }
+        this.fireEvent("commitcomplete");
     },
 
     getOnCommitFailure : function(records) {
@@ -348,8 +354,8 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
             var json = this.getJson(response);
             var message = (json && json.exception) ? json.exception : response.statusText;
 
-            alert("Could not save changes due to the following error:\n" + message);
-
+            if(false !== this.fireEvent("commitexception", message))
+                alert("Could not save changes due to the following error:\n" + message);
         };
     },
 

@@ -110,7 +110,8 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
                 moveEditorOnEnter: false
             }),
             viewConfig: {forceFit: true},
-            id: Ext.id(undefined, 'labkey-ext-grid')
+            id: Ext.id(undefined, 'labkey-ext-grid'),
+            loadMask: true
         });
 
         //need to setup the default panel config *before*
@@ -124,6 +125,9 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         //we can get the column model from the reader's jsonData
         this.store.on("loadexception", this.onStoreLoadException, this);
         this.store.on("load", this.onStoreLoad, this);
+        this.store.on("beforecommit", this.onStoreBeforeCommit, this);
+        this.store.on("commitcomplete", this.onStoreCommitComplete, this);
+        this.store.on("commitexception", this.onStoreCommitException, this);
         this.store.load({ params : {
                 start: 0,
                 limit: this.pageSize
@@ -198,6 +202,33 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
             msg = "Unable to load data from the server!";
 
         Ext.Msg.alert("Error", msg);
+    },
+
+    onStoreBeforeCommit : function(records, rows) {
+        //disable the refresh button so that it will animate
+        var pagingBar = this.getBottomToolbar();
+        if(pagingBar && pagingBar.loading)
+            pagingBar.loading.disable();
+        if(!this.savingMessage)
+            this.savingMessage = pagingBar.addText("Saving Changes...");
+        else
+            this.savingMessage.setVisible(true);
+    },
+
+    onStoreCommitComplete : function() {
+        var pagingBar = this.getBottomToolbar();
+        if(pagingBar && pagingBar.loading)
+            pagingBar.loading.enable();
+        if(this.savingMessage)
+            this.savingMessage.setVisible(false);
+    },
+
+    onStoreCommitException : function(message) {
+        var pagingBar = this.getBottomToolbar();
+        if(pagingBar && pagingBar.loading)
+            pagingBar.loading.enable();
+        if(this.savingMessage)
+            this.savingMessage.setVisible(false);
     },
 
     populateMetaMap : function() {
@@ -506,6 +537,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
             this.bbar = new Ext.PagingToolbar({
                     pageSize: this.pageSize, //default is 20
                     store: this.store,
+                    displayInfo: true,
                     emptyMsg: "No data to display" //display message when no records found
                 });
         }
