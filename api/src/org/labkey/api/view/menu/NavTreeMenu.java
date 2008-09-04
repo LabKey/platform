@@ -18,6 +18,7 @@ package org.labkey.api.view.menu;
 
 import org.labkey.api.data.Container;
 import static org.labkey.api.util.PageFlowUtil.filter;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 
 import java.io.PrintWriter;
@@ -134,6 +135,8 @@ public class NavTreeMenu extends WebPartView implements Collapsible
         ActionURL currentUrl = context.getActionURL();
 
         String link = nav.getValue() == null ? null : nav.getValue();
+        String onClickScript = (null != nav.getScript()) ? PageFlowUtil.filter(nav.getScript())
+                : PageFlowUtil.filter("window.location='" + link + "'");
         boolean selected = _highlightSelection && null != link && matchPath(link, currentUrl, pattern);
         if (level == 0 && null != nav.getKey())
             level = 1;
@@ -174,7 +177,7 @@ public class NavTreeMenu extends WebPartView implements Collapsible
             else if (indentForExpansionGifs)
                 out.printf("<div class=\"labkey-nav-tree-indenter\" />");
 
-            out.printf("</td><td class=\"labkey-nav-tree-text\">\n");
+            out.print("</td><td class=\"labkey-nav-tree-text\" onclick=\"" + onClickScript + "\">\n");
 
             if (null == link)
                 out.print(filter(nav.getKey()));
