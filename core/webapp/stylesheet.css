@@ -749,7 +749,7 @@ img.labkey-grid-filter-icon
 }
 
 .labkey-filtered .labkey-grid-filter-icon {
-    background-image: url(../_images/filter_on.gif);
+    background-image: url(./_images/filter_on.gif);
     display: inline;
 }
 
