@@ -26,7 +26,6 @@ public class GlobusSettingsImpl extends AbstractGlobusSettings
     private Long _maxTime;
     private Long _maxCPUTime;
     private Long _maxWallTime;
-    private Integer _hostCount;
 
     public String getQueue()
     {
