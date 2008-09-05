@@ -24,7 +24,6 @@ import javax.servlet.http.HttpSession;
 import java.util.*;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Jun 16, 2006
  * Time: 9:22:37 AM

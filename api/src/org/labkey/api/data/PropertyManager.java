@@ -269,6 +269,7 @@ public class PropertyManager
         String sql = prop.getSqlDialect().execute(prop.getSchema(), "property_setValue", "?, ?, ?");
         try
         {
+            _log.info("Calling property_setValue with params: " + parameters[0] + " " + parameters[1] + " " + parameters[2]);
             Table.execute(prop.getSchema(), sql, parameters);
         }
         catch (SQLException x)

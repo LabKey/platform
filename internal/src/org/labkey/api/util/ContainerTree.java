@@ -21,7 +21,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 
 import java.util.Collection;
 
@@ -112,8 +111,7 @@ public class ContainerTree
     protected boolean renderChildren(StringBuilder html, MultiMap<Container, Container> mm, Container parent, int level)
     {
         // Hide hidden folders, unless you're an administrator
-        String parentName = parent.getName();
-        if ( (parentName.startsWith("_") || parentName.startsWith(".")) && !HttpView.currentContext().isAdminMode())
+        if (!parent.shouldDisplay())
             return false;
 
         // Retrieve children first so we can prune the tree if we don't have permission to any of the children

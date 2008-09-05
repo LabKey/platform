@@ -587,7 +587,7 @@ public class ContainerManager
                 Container project = getForId(rs.getString(2));
                 if (project == null)
                     continue;
-                String url = ActionURL.toPathString("Project", "start", "/" + name);
+                String url = ActionURL.toPathString("project", "start", "/" + name);
                 if (project.equals(getHomeContainer()))
                     name = "Home";
                 list.addChild(name, url);
@@ -642,8 +642,9 @@ public class ContainerManager
                 if (id == null)
                     continue;
                 Container c = ContainerManager.getForId(id);
-                if (null == c || !c.isProject()) continue;
-                list.addChild(c.getName(), ActionURL.toPathString("Project", "start", c.getPath()));
+                if (null == c || !c.isProject() || !c.shouldDisplay())
+                    continue;
+                list.addChild(c.getName(), ActionURL.toPathString("project", "start", c.getPath()));
                 containerSet.add(c);
             }
 
@@ -657,19 +658,19 @@ public class ContainerManager
                     new Object[]{root.getId()},
                     String.class);
 
-            for (String id : ids)
+                for (String id : ids)
             {
                 Container c = ContainerManager.getForId(id);
                 if (null == c)
                     continue;
-                String name = c.getName();
-                if (name.startsWith("_") || name.startsWith("."))
+                if (!c.shouldDisplay())
                     continue;
+                String name = c.getName();
                 if (c.equals(getHomeContainer()))
                     name="Home";
                 //ensure that user has permissions on container, and that container is not already in nav tree set
                 if (c.hasPermission(user, ACL.PERM_READ) && !containerSet.contains(c))
-                    list.addChild(name, ActionURL.toPathString("Project", "start", c.getPath()));
+                    list.addChild(name, ActionURL.toPathString("project", "start", c.getPath()));
             }
 
             list.setId(PROJECT_LIST_ID);
@@ -766,7 +767,7 @@ public class ContainerManager
         for (Container f : folders)
         {
             int permissions = f.getAcl().getPermissions(user);
-            boolean skip = (permissions == 0 || (!shouldDisplayContainer(f.getName())));
+            boolean skip = (permissions == 0 || (!f.shouldDisplay()));
             //Always put the project and current container in...
             if (skip && !f.equals(project) && !f.equals(c))
                 continue;
@@ -829,7 +830,7 @@ public class ContainerManager
      * We hide folders that start with _ or .
      * unless the user is in admin mode.
      */
-    private static boolean shouldDisplayContainer(String name)
+    static boolean shouldDisplayContainer(String name)
     {
         if(name.length() == 0)
             return true; // Um, I guess we should display it?

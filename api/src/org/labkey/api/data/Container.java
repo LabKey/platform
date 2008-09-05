@@ -24,10 +24,7 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.Portal;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.view.*;
 
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
@@ -231,6 +228,12 @@ public class Container implements Serializable
     public boolean isRoot()
     {
         return "/".equals(_path);
+    }
+
+
+    public boolean shouldDisplay()
+    {
+        return ContainerManager.shouldDisplayContainer(_name);
     }
 
 
