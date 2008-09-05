@@ -261,16 +261,16 @@ public class PropertyManager
     }
 
 
-    private static void _saveValue(Object[] parameters)
+    private static void _saveValue(int set, String name, String value)
     {
-        if (parameters[0] == null || parameters[1] == null)
+        if (null == name)
             return;
 
         String sql = prop.getSqlDialect().execute(prop.getSchema(), "property_setValue", "?, ?, ?");
         try
         {
-            _log.info("Calling property_setValue with params: " + parameters[0] + " " + parameters[1] + " " + parameters[2]);
-            Table.execute(prop.getSchema(), sql, parameters);
+            _log.info("Calling property_setValue with params: " + set + " " + name + " " + value);
+            Table.execute(prop.getSchema(), sql, new Object[]{set, name, value});
         }
         catch (SQLException x)
         {
@@ -285,29 +285,35 @@ public class PropertyManager
             throw new IllegalArgumentException("map must be created by getProperties()");
         PropertyMap props = (PropertyMap)map;
 
-        Object[] parameters = new Object[]{props._set, null, null};
+        // Stored procedure property_saveValue is not thread-safe, so we synchronize the saving of each property set to
+        // avoid attempting to modify the same property from two threads.  Use unique key + set id to avoid locking on a
+        // shared interned string object.
+        String lockString = "PropertyManager.Set=" + props.getSet();
 
-        // delete removed properties
-        if (null != props.removedKeys)
+        synchronized(lockString.intern())
         {
-            for (Object removedKey : props.removedKeys)
+            // delete removed properties
+            if (null != props.removedKeys)
             {
-                parameters[1] = _toNullString(removedKey);
-                _saveValue(parameters);
+                for (Object removedKey : props.removedKeys)
+                {
+                    String name = _toNullString(removedKey);
+                    _saveValue(props.getSet(), name, null);
+                }
             }
-        }
 
-        // set properties
-        // we're not tracking modified or not, so set them all
-        for (Object entry : props.entrySet())
-        {
-            Map.Entry e = (Map.Entry) entry;
-            parameters[1] = _toNullString(e.getKey());
-            parameters[2] = _toNullString(e.getValue());
-            _saveValue(parameters);
-        }
+            // set properties
+            // we're not tracking modified or not, so set them all
+            for (Object entry : props.entrySet())
+            {
+                Map.Entry e = (Map.Entry) entry;
+                String name = _toNullString(e.getKey());
+                String value = _toNullString(e.getValue());
+                _saveValue(props.getSet(), name, value);
+            }
 
-        DbCache.remove(prop.getTableInfoProperties(), _cacheKey(props.getCacheParams()));
+            DbCache.remove(prop.getTableInfoProperties(), _cacheKey(props.getCacheParams()));
+        }
     }
 
     /**
@@ -353,6 +359,11 @@ public class PropertyManager
 
         Set<Object> removedKeys = null;
 
+
+        private int getSet()
+        {
+            return _set;
+        }
 
         private PropertyMap(int set, int userId, String objectId, String category)
         {
