@@ -153,7 +153,7 @@ public class GroovyView<ModelClass> extends WebPartView<ModelClass>
             if (null != readScript)
             {
                 String script = readScript.second;
-                if (file.endsWith(".gm"))
+                if (file.endsWith(".gm") || file.endsWith(".jsp"))
                     script = _translateScript(file, script);
 
                 GroovyClassLoader loader = new GroovyClassLoader(GroovyView.class.getClassLoader());
@@ -342,7 +342,7 @@ public class GroovyView<ModelClass> extends WebPartView<ModelClass>
             String lines[] = translated.split("\n");
             for (int i = 0; i < lines.length; i++)
                 sbScript.append("").append(i + 1).append(": ").append(lines[i]).append("\n");
-            _log.debug(sbScript.toString());
+            System.out.println(sbScript.toString());
         }
 
         return translated;

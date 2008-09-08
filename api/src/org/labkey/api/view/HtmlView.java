@@ -30,7 +30,6 @@ public class HtmlView extends WebPartView
         addObject("html", html);
     }
 
-
     public HtmlView(String title, String html)
     {
         setTitle(title);
@@ -41,6 +40,11 @@ public class HtmlView extends WebPartView
     {
         this(title, html);
         this.printfParams = params;
+    }
+
+    public void setHtml(String html)
+    {
+        addObject("html", html);
     }
 
     public void setPrintfParameters(Object... params)
