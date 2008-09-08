@@ -80,6 +80,20 @@ public class IssuesController extends SpringActionController
     }
 
 
+    public static ActionURL getDetailsURL(Container c, Integer issueId, boolean print)
+    {
+        ActionURL url = new ActionURL(DetailsAction.class, c);
+
+        if (print)
+            url.addParameter("_print", "1");
+
+        if (null != issueId)
+            url.addParameter("issueId", issueId.toString());
+
+        return url;
+    }
+
+
     public PageConfig defaultPageConfig()
     {
         PageConfig config = super.defaultPageConfig();
@@ -338,11 +352,6 @@ public class IssuesController extends SpringActionController
         }
 
         public ActionURL getURL()
-        {
-            return issueURL("details").addParameter("issueId", _issue.getIssueId());
-        }
-
-        public ActionURL getURL(HttpServletRequest request)
         {
             return issueURL("details").addParameter("issueId", _issue.getIssueId());
         }
@@ -1238,24 +1247,20 @@ public class IssuesController extends SpringActionController
             {
                 DataRegion r = new DataRegion();
                 TableInfo tinfo = IssuesSchema.getInstance().getTableInfoIssues();
-                List<ColumnInfo> cols = tinfo.getColumns("IssueId,Created,Area,Title,AssignedTo,Priority,Status,Milestone");
+                List<ColumnInfo> cols = tinfo.getColumns("IssueId,Created,CreatedBy,Area,Type,Title,AssignedTo,Priority,Status,Milestone");
                 r.addColumns(cols);
 
                 rs = r.getResultSet(new RenderContext(getViewContext()));
                 ObjectFactory f = ObjectFactory.Registry.getFactory(Issue.class);
                 Issue[] issues = (Issue[]) f.handleArray(rs);
 
-                WebPartView v = new GroovyView("/org/labkey/issue/rss.gm");
-                v.setFrame(WebPartView.FrameType.NONE);
-                v.addObject("issues", issues);
+                ActionURL url = getDetailsURL(getContainer(), 1, isPrint());
+                String filteredURLString = PageFlowUtil.filter(url);
+                String detailsURLString = filteredURLString.substring(0, filteredURLString.length() - 1);
 
-                ActionURL url = new ActionURL("issues", "details.view", getContainer());
-                if (isPrint())
-                    url.addParameter("_print","1");
-                String s = url.getURIString();
-                if (!s.endsWith("?")) s += "&";
-                v.addObject("url", s + "issueId=");
-                v.addObject("homePageUrl", ActionURL.getBaseServerURL());
+                WebPartView v = new JspView<RssBean>("/org/labkey/issue/rss.jsp", new RssBean(issues, detailsURLString));
+                v.setFrame(WebPartView.FrameType.NONE);
+
                 return v;
             }
             catch (SQLException x)
@@ -1277,6 +1282,19 @@ public class IssuesController extends SpringActionController
         private ActionURL getUrl()
         {
             return issueURL("rss");
+        }
+    }
+
+
+    public static class RssBean
+    {
+        public Issue[] issues;
+        public String filteredURLString;
+
+        private RssBean(Issue[] issues, String filteredURLString)
+        {
+            this.issues = issues;
+            this.filteredURLString = filteredURLString;
         }
     }
 

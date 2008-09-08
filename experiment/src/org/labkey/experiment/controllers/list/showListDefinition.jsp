@@ -23,11 +23,11 @@
 <%@ page import="org.labkey.experiment.controllers.list.ListDefinitionForm" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib"%>
-<% ListDefinitionForm form = (ListDefinitionForm) __form;
+<%
+    ListDefinitionForm form = (ListDefinitionForm) __form;
     ListDefinition list = form.getList();
     Domain domain = list.getDomain();
 %>
-
 <table>
     <tr><td colspan="2"><b>List Properties</b></td></tr>
     <tr><td>Name:</td><td><%=h(list.getName())%></td></tr>
@@ -41,12 +41,12 @@
     <tr><td>Allow Export &amp; Print:</td><td><%=list.getAllowExport() ? "Yes" : "No"%></td></tr>
 </table>
 <% if (hasPermission(ACL.PERM_ADMIN)) { %>
-<labkey:link href="<%=list.urlEditDefinition()%>" text="edit design" />
-<labkey:link href="<%=list.urlFor(ListController.Action.deleteListDefinition)%>" text="delete list" />
+    <labkey:link href="<%=list.urlEditDefinition()%>" text="edit design" />
+    <labkey:link href="<%=list.urlFor(ListController.Action.deleteListDefinition)%>" text="delete list" />
 <% } %>
-<labkey:link href="<%=list.urlShowData()%>" text="view data" />
+    <labkey:link href="<%=list.urlShowData()%>" text="view data" />
 <% if (hasPermission(ACL.PERM_UPDATE) && list.getAllowUpload()) { %>
-<labkey:link href="<%=list.urlFor(ListController.Action.uploadListItems)%>" text="import data" />
+    <labkey:link href="<%=list.urlFor(ListController.Action.uploadListItems)%>" text="import data" />
 <% } %>
 <br><br>
 <% if (domain.getProperties().length == 0) { %>
@@ -62,5 +62,5 @@
 <% } %>
 
 <% if (hasPermission(ACL.PERM_ADMIN)) { %>
-<labkey:link href="<%=list.getDomain().urlEditDefinition(false, true)%>" text="edit fields"/>
+    <labkey:link href="<%=list.getDomain().urlEditDefinition(false, true)%>" text="edit fields"/>
 <% } %>

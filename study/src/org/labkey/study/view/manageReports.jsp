@@ -265,7 +265,7 @@
     if (isAdmin) {
 %>
         <table>
-            <tr><td>&nbsp</td></tr>
+            <tr><td>&nbsp;</td></tr>
             <tr><td colspan="4">
             [<a href="<%= h(url.relativeUrl("createQueryReport.view", null, "Study-Reports")) %>">new grid view</a>]
             &nbsp;[<a href="<%= h(url.relativeUrl("createCrosstabReport.view", null, "Study-Reports")) %>">new crosstab view</a>]
@@ -279,7 +279,7 @@
     else if (user.isAdministrator() || context.getContainer().hasPermission(user, ACL.PERM_ADMIN)) {
 %>
         <table>
-            <tr><td>&nbsp</td></tr>
+            <tr><td>&nbsp;</td></tr>
             <tr><td colspan="4">
             [<a href="<%= h(url.relativeUrl("manageReports.view", null, "Study-Reports")) %>">Manage Reports and Views</a>]
             </td></tr>

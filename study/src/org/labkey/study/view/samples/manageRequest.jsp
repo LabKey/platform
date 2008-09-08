@@ -342,7 +342,7 @@
                             <th align=left>Location</th>
                             <th align=left>Description</th>
                             <th align=left><%= requirements.length > 0 ? "Status" : "" %></th>
-                            <th align=left>&nbsp</th>
+                            <th align=left>&nbsp;</th>
                         </tr>
                     <%
                         for (SampleRequestRequirement requirement : requirements)

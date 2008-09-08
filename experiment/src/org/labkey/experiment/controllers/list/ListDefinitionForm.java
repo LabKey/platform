@@ -22,6 +22,7 @@ import org.labkey.api.exp.list.ListService;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ActionURLException;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -71,7 +72,14 @@ public class ListDefinitionForm extends ViewForm
 
     public ActionURL getReturnActionURL()
     {
-        return new ActionURL(_returnUrl);
+        try
+        {
+            return new ActionURL(_returnUrl);
+        }
+        catch(IllegalArgumentException e)
+        {
+            throw new ActionURLException(_returnUrl, "the returnUrl parameter", e);
+        }
     }
 
     public boolean isShowHistory()
