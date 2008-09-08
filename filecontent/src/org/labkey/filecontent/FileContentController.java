@@ -56,15 +56,16 @@ import java.util.Map;
 
 public class FileContentController extends SpringActionController
 {
-   private enum RenderStyle
+   public enum RenderStyle
    {
-       FRAME,
-       INLINE, // html
-       PAGE,
-       TEXT,    // text
-       IMAGE
+       FRAME,       // <iframe>                       (*)
+       INLINE,      // use INCLUDE (INLINE is confusing, does NOT mean content-disposition:inline)
+       INCLUDE,     // include html                   (text/html)
+       PAGE,        // content-disposition:inline     (*)
+       ATTACHMENT,  // content-disposition:attachment (*)
+       TEXT,        // filtered                       (text/*)
+       IMAGE        // <img>                          (image/*)
    }
-
 
    static DefaultActionResolver _actionResolver = new DefaultActionResolver(FileContentController.class);
 
@@ -133,27 +134,31 @@ public class FileContentController extends SpringActionController
            if (!NetworkDrive.exists(file) || !file.getParentFile().equals(dir) || file.isDirectory())
                throw new NotFoundException();
 
-           MimeMap mimeMap = new MimeMap();
-           String mimeType = mimeMap.getContentTypeFor(file.getName());
-           boolean canInline = null != mimeType && ("text/html".equals(mimeType) || mimeMap.isInlineImageFor(file.getName()));
-           if (!canInline)
-           {
-               PageFlowUtil.streamFile(getViewContext().getResponse(), file, true);
-               return null;
-           }
-
            RenderStyle style = form.getRenderStyle();
 
+           MimeMap mimeMap = new MimeMap();
+           String mimeType = StringUtils.defaultString(mimeMap.getContentTypeFor(file.getName()), "");
+           boolean canInline = mimeType.startsWith("text/") || mimeMap.isInlineImageFor(file.getName());
+           if (!canInline && !(RenderStyle.ATTACHMENT == style || RenderStyle.PAGE == style))
+               style = RenderStyle.PAGE;
+           if (RenderStyle.IMAGE == style && !mimeType.startsWith("image/"))
+               style = RenderStyle.PAGE;
+           if (RenderStyle.TEXT == style && !mimeType.startsWith("text/"))
+               style = RenderStyle.PAGE;
+
            //FIX: 5523 - if renderAs is null and mimetype is HTML, default style to inline
-           if(null == form.getRenderAs() && "text/html".equalsIgnoreCase(mimeType))
-                style = RenderStyle.INLINE;
+           if (null == form.getRenderAs())
+           {    
+               if ("text/html".equalsIgnoreCase(mimeType))
+                    style = RenderStyle.INCLUDE;
+           }
 
            switch (style)
            {
-               case PAGE:
-               {
+               case ATTACHMENT:
+               case PAGE:                                             {
                    getPageConfig().setTemplate(PageConfig.Template.None);
-                   PageFlowUtil.streamFile(getViewContext().getResponse(), file, false);
+                   PageFlowUtil.streamFile(getViewContext().getResponse(), file, RenderStyle.ATTACHMENT==style);
                    return null;
                }
                case FRAME:
@@ -169,6 +174,7 @@ public class FileContentController extends SpringActionController
                    HttpView iframeView = new IFrameView(urlHelp.getLocalURIString());
                    return iframeView;
                }
+               case INCLUDE:
                case INLINE:
                {
                    String fileContents = PageFlowUtil.getFileContentsAsString(file);
@@ -786,5 +792,21 @@ public class FileContentController extends SpringActionController
              throw new NotFoundException("Directory for saving file does not exist. Please contact an administrator.");
 
         return attachmentParent;
+    }
+
+    static MimeMap mimeMap = new MimeMap();
+    
+    public static RenderStyle defaultRenderStyle(String name)
+    {
+        if (mimeMap.isInlineImageFor(name))
+            return RenderStyle.IMAGE;
+        if (name.endsWith(".body"))
+            return RenderStyle.INCLUDE;
+        String mimeType = StringUtils.defaultString(mimeMap.getContentTypeFor(name),"");
+        if (mimeType.equals("text/html"))
+            return RenderStyle.INCLUDE;
+        if (mimeType.startsWith("text/"))
+            return RenderStyle.TEXT;
+        return RenderStyle.PAGE;
     }
 }

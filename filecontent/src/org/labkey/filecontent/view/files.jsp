@@ -30,6 +30,7 @@
 <%@ page import="org.labkey.filecontent.FileContentController" %>
 <%@ page import="org.labkey.filecontent.FilesWebPart" %>
 <%@ page import="java.io.File" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     ViewContext context = HttpView.currentContext();
@@ -40,27 +41,25 @@
     {
         out.println("The file set for this directory is not configured properly.");
         if (me.isShowAdmin() && context.getUser().isAdministrator())
-        {%>
-            [<a href="<%=h(new ActionURL(FileContentController.ShowAdminAction.class, c))%>" >Configure Directories</a>]
-        <%}
+        {
+            %>[<a href="<%=h(new ActionURL(FileContentController.ShowAdminAction.class, c))%>" >Configure Directories</a>]<%
+        }
     return;
     }
-    File dir = null;
     try
     {
         //Ensure that we can actually upload files
-        dir = parent.getFileSystemDirectory();
-
+        File dir = parent.getFileSystemDirectory();
     }
     catch (AttachmentService.UnsetRootDirectoryException e)
-    {%>
-            In order to use this module, a root directory must be set for the project.<br><%=adminError(context)%>
-  <%}
+    {
+            %>In order to use this module, a root directory must be set for the project.<br><%=adminError(context)%><%
+    }
     catch (AttachmentService.MissingRootDirectoryException e)
-    {%>
-        The root directory expected for this project does not exist.<br><%=adminError(context)%>
-<% return;
-}
+    {
+        %>The root directory expected for this project does not exist.<br><%=adminError(context)%><%
+         return;
+    }
 
     String fileSetName = parent.getLabel();
     Attachment[] attachments = AttachmentService.get().getAttachments(parent);
@@ -73,39 +72,53 @@
 
     if (me.isWide())
     {
+        boolean canDelete = me.isShowAdmin() && context.hasPermission(ACL.PERM_DELETE);
 %>
     <table>
         <tr>
             <th class="labkey-header">File</th>
+            <th class="labkey-header">Size</th>
             <th class="labkey-header">Date</th>
             <th class="labkey-header">Person</th>
-            <%if (me.isShowAdmin() && context.hasPermission(ACL.PERM_DELETE)) {%>
-                    <th>&nbsp;</th>
-            <%      } %>
-        </tr>
-    <% for (Attachment a : attachments)
+            <th>&nbsp;</th>
+            <%if (canDelete)
+            {
+                %><th>&nbsp;</th><%
+            }
+         %></tr><%
+
+    for (Attachment a : attachments)
     {
         DownloadURL deleteUrl = new DownloadURL("FileContent", c.getPath(), parent.getEntityId(), a.getName());
         deleteUrl.setAction("deleteAttachment.view");
-        showFileUrl(fileUrl, a);
+        URLHelper viewUrl = showFileUrl(fileUrl, a);
+        URLHelper downloadUrl = downloadFileUrl(fileUrl, a);
+        File file = a.getFile();
+        boolean exists = null != file && file.exists();
+        String contentType = PageFlowUtil.getContentTypeFor(a.getName());
     %>
             <tr>
-
-                <td>
-                    <% if (null != a.getFile() && a.getFile().exists()) { %>
-                    <a href="<%=h(fileUrl)%>"><img src="<%=request.getContextPath()%><%=a.getFileIcon()%>" alt=""> <%=a.getName()%></a>
-                    <% } else { %>
-                      <span title="File was uploaded but is no longer available on disk"><img src="<%=request.getContextPath()%><%=a.getFileIcon()%>" alt=""><%=a.getName()%></span>
-                    <%} %>
+            <td><%
+            if (exists)
+            {
+                %><a href="<%=h(viewUrl)%>"><img src="<%=request.getContextPath()%><%=a.getFileIcon()%>" alt=""> <%=a.getName()%></a><%
+            } else
+            {
+                %><span title="File was uploaded but is no longer available on disk"><img src="<%=request.getContextPath()%>/_images/exclaim.gif">%>" alt=""><%=a.getName()%></span><%
+            } %>
             </td>
-            <td><%=a.getCreated()%></td>
+            <td align="right"><%if (exists){%><%=file.length()%><%}%></td>
+            <td align="right"><%=a.getCreated()%></td>
             <td><%=a.getCreatedBy() != 0 ? a.getCreatedByName(context) : ""%></td>
-                <%if (me.isShowAdmin() && context.hasPermission(ACL.PERM_DELETE)) {%>
-                        <td>[<a href="#deleteFile" onclick="window.open(<%=hq(deleteUrl.getLocalURIString())%>, null, 'height=200,width=450', false)" class="labkey-message">Delete<%=(null != a.getFile() && a.getFile().exists()) ? " File" : " Row"%></a>]</td>
-                <%      } %>
-            </tr>
-      <%}%>
-    </table><%
+            <td><%if (exists){%>[<a href="<%=h(downloadUrl)%>" class="labkey-message">Download</a>]<%}%></td>
+            <td><%
+            if (canDelete)
+            {
+                %>[<a href="#deleteFile" onclick="window.open(<%=hq(deleteUrl.getLocalURIString())%>, null, 'height=200,width=450', false)" class="labkey-message">Delete&nbsp;<%=exists ? "File" : "Row"%></a>]<%
+            } %></td>
+            </tr><%
+    }
+    %></table><%
     }
     else  //Narrow
     {
@@ -115,7 +128,7 @@
             if (null != a.getFile() && a.getFile().exists()) { %>
                 <a href="<%=h(fileUrl)%>"><img src="<%=request.getContextPath()%><%=a.getFileIcon()%>" alt=""> <%=a.getName()%></a><%
             } else { %>
-              <span title="File was uploaded but is no longer available on disk"><img src="<%=request.getContextPath()%><%=a.getFileIcon()%>" alt=""><%=a.getName()%></span><%
+              <span title="File was uploaded but is no longer available on disk"><img src="<%=request.getContextPath()%>/_images/exclaim.gif" alt=""><%=a.getName()%></span><%
             } %>
             <br>
 <%      }
@@ -136,19 +149,24 @@ if (context.hasPermission(ACL.PERM_UPDATE))
 }
 if (me.isShowAdmin() && context.getUser().isAdministrator())
 {
-%>[<a href="<%=h(new ActionURL(FileContentController.ShowAdminAction.class, c))%>" >Configure</a>]&nbsp;<%
+    %>[<a href="<%=h(new ActionURL(FileContentController.ShowAdminAction.class, c))%>" >Configure</a>]&nbsp;<%
 }%>
 <%!
-    MimeMap mimeMap = new MimeMap();
-
-    void showFileUrl(URLHelper url, Attachment a)
+    URLHelper showFileUrl(URLHelper u, Attachment a)
     {
-        String mimeType = StringUtils.trimToEmpty(mimeMap.getContentTypeFor(a.getName()));
+        URLHelper url = u.clone();
         url.setFile(a.getName());
-        if (mimeMap.isInlineImageFor(a.getName()))
-            url.replaceParameter("renderAs", "IMAGE");
-        else
-            url.deleteParameter("renderAs");
+        FileContentController.RenderStyle render = FileContentController.defaultRenderStyle(a.getName());
+        url.replaceParameter("renderAs", render.name());
+        return url;
+    }
+
+    URLHelper downloadFileUrl(URLHelper u, Attachment a)
+    {
+        URLHelper url = u.clone();
+        url.setFile(a.getName());
+        url.replaceParameter("renderAs", FileContentController.RenderStyle.ATTACHMENT.name());
+        return url;
     }
 
     String adminError(ViewContext context)
@@ -158,7 +176,7 @@ if (me.isShowAdmin() && context.getUser().isAdministrator())
         {
             ActionURL url = new ActionURL("FileContent", "begin.view", context.getContainer().getProject());
             sb.append("<a href=\"").append(url).append("\">Configure root</a>");
-          }
+        }
         else
         {
             sb.append("Contact an adminsistrator");

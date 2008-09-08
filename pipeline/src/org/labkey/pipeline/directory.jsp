@@ -209,7 +209,7 @@
     {
         %><%=PageFlowUtil.generateButton("Process and Import Files", actionToggle.getLocalURIString())%>&nbsp;<%
     }
-    else if (pipeRoot.getACL().hasPermission(context.getUser(), ACL.PERM_READ))
+    else //if (pipeRoot.getACL().hasPermission(context.getUser(), ACL.PERM_READ))
     {
         %><%=PageFlowUtil.generateButton("Browse All Files", actionToggle.getLocalURIString())%>&nbsp;<%
     }
