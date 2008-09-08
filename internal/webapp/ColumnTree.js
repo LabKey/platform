@@ -29,7 +29,8 @@ Ext.tree.ColumnTree = Ext.extend(Ext.tree.TreePanel, {
                      cls:'x-tree-hd-text',
                      html: c.header
                  },
-                 style:'width:'+(c.width-this.borderWidth)+'px;'
+                 style:'width:'+(c.width-this.borderWidth)+'px;',
+                 title: c.title || c.header
              });
         }
         this.headers.createChild({cls:'x-clear'});

@@ -270,32 +270,48 @@ public class PageFlowUtil
         return ret;
     }
 
-    static private String jsString(String s, boolean forceOuterSingleQuotes)
-    {
-        if (s == null)
-            return "''";
-        if (-1 != s.indexOf('\\'))
-            s = s.replaceAll("\\\\", "\\\\\\\\");
-        if (-1 != s.indexOf('\n'))
-            s = s.replaceAll("\\n", "\\\\n");
-        if (-1 != s.indexOf('\r'))
-            s = s.replaceAll("\\r", "\\\\r");
-        s = s.replace("<", "\\x3C");
-        s = s.replace(">", "\\x3E");
-        if (-1 == s.indexOf('\''))
-            return "'" + s + "'";
-        if (!forceOuterSingleQuotes && -1 == s.indexOf('"'))
-            return "\"" + s + "\"";
-        s = s.replaceAll("'", "\\\\'");
-        return "'" + s + "'";
-    }
-
 
     static public String jsString(String s)
     {
-        return jsString(s, false);
+        if (s == null)
+            return "''";
+        StringBuilder js = new StringBuilder(s.length() + 10);
+        js.append("'");
+        int len = s.length();
+        for (int i = 0 ; i<len ; i++)
+        {
+            char c = s.charAt(i);
+            switch (c)
+            {
+                case '\\':
+                    js.append("\\\\");
+                    break;
+                case '\n':
+                    js.append("\\n");
+                    break;
+                case '\r':
+                    js.append("\\r");
+                    break;
+                case '<':
+                    js.append("\\x3C");
+                    break;
+                case '>':
+                    js.append("\\x3E");
+                    break;
+                case '\'':
+                    js.append("\\'");
+                    break;
+                case '\"':
+                    js.append("\\\"");
+                    break;
+                default:
+                    js.append(c);
+                    break;
+            }
+        }
+        js.append("'");
+        return js.toString();
     }
-
 
     //used to output strings from Java in Groovy script.
     static public String groovyString(String s)
