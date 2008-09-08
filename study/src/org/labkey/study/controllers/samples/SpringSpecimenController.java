@@ -1188,13 +1188,11 @@ public class SpringSpecimenController extends BaseStudyController
         private String[] _inputValues;
         private int _selectedSite;
         private BindException _errors;
-        private Site[] _providingLocations;
 
         public NewRequestBean(ViewContext context, SpecimenUtils.RequestedSpecimens requestedSpecimens, int selectedSite, String[] inputValues, BindException errors) throws SQLException
         {
-            super(context, requestedSpecimens.getSpecimens(), false, false, false, false);
+            super(context, requestedSpecimens != null ? requestedSpecimens.getSpecimens() : null, false, false, false, false);
             _errors = errors;
-            _providingLocations = requestedSpecimens.getProvidingLocations();
             _inputs = SampleManager.getInstance().getNewSpecimenRequestInputs(context.getContainer());
             _selectedSite = selectedSite;
             _inputValues = inputValues;
@@ -1223,11 +1221,6 @@ public class SpringSpecimenController extends BaseStudyController
         public BindException getErrors()
         {
             return _errors;
-        }
-
-        public Site[] getProvidingLocations()
-        {
-            return _providingLocations;
         }
     }
 
@@ -1962,36 +1955,16 @@ public class SpringSpecimenController extends BaseStudyController
         {
             getUtils().ensureSpecimenRequestsConfigured();
             _nextPage = form.getNextPage();
+            createDefaultRequirement(form.getOriginatorActor(), form.getOriginatorDescription(), SpecimenRequestRequirementType.ORIGINATING_SITE);
+            createDefaultRequirement(form.getProviderActor(), form.getProviderDescription(), SpecimenRequestRequirementType.PROVIDING_SITE);
+            createDefaultRequirement(form.getReceiverActor(), form.getReceiverDescription(), SpecimenRequestRequirementType.RECEIVING_SITE);
+            createDefaultRequirement(form.getGeneralActor(), form.getGeneralDescription(), SpecimenRequestRequirementType.NON_SITE_BASED);
+            return true;
+        }
 
-            Integer actorId = null;
-            String description = null;
-            SpecimenRequestRequirementType type = null;
-            if (form.getOriginatorActor() > 0)
-            {
-                actorId = form.getOriginatorActor();
-                description = form.getOriginatorDescription();
-                type = SpecimenRequestRequirementType.ORIGINATING_SITE;
-            }
-            if (form.getProviderActor() > 0)
-            {
-                actorId = form.getProviderActor();
-                description = form.getProviderDescription();
-                type = SpecimenRequestRequirementType.PROVIDING_SITE;
-            }
-            if (form.getReceiverActor() > 0)
-            {
-                actorId = form.getReceiverActor();
-                description = form.getReceiverDescription();
-                type = SpecimenRequestRequirementType.RECEIVING_SITE;
-            }
-            if (form.getGeneralActor() > 0)
-            {
-                actorId = form.getGeneralActor();
-                description = form.getGeneralDescription();
-                type = SpecimenRequestRequirementType.NON_SITE_BASED;
-            }
-
-            if (actorId != null && description != null)
+        private void createDefaultRequirement(Integer actorId, String description, SpecimenRequestRequirementType type)
+        {
+            if (actorId != null && actorId.intValue() > 0 && description != null && description.length() > 0)
             {
                 SampleRequestRequirement requirement = new SampleRequestRequirement();
                 requirement.setContainer(getContainer());
@@ -2000,7 +1973,6 @@ public class SpringSpecimenController extends BaseStudyController
                 requirement.setRequestId(-1);
                 SampleManager.getInstance().getRequirementsProvider().createDefaultRequirement(getUser(), requirement, type);
             }
-            return true;
         }
 
         public ActionURL getSuccessURL(DefaultRequirementsForm defaultRequirementsForm)
@@ -2682,21 +2654,6 @@ public class SpringSpecimenController extends BaseStudyController
         public String getSummaryReportURL(TypeSummaryReportFactory.Status status)
         {
             return getURL(TypeSummaryReportAction.class, status);
-        }
-    }
-
-    @RequiresPermission(ACL.PERM_READ)
-    public class ReportListAction extends SimpleViewAction<ReportListForm>
-    {
-        public ModelAndView getView(ReportListForm form, BindException errors) throws Exception
-        {
-            return new JspView<ReportListForm>("/org/labkey/study/view/samples/reportList.jsp", form);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            root = appendBaseSpecimenNavTrail(root, false);
-            return root.addChild("Specimen Reports");
         }
     }
 

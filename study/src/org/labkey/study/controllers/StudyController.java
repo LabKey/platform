@@ -743,7 +743,8 @@ public class StudyController extends BaseStudyController
                         view.getDataRegionName() + "\"].submit()");
                 updateItem.setId("QCState:updateSelected");
                 
-                button.addMenuItem("Manage states", new ActionURL(ManageQCStatesAction.class, getContainer()));
+                button.addMenuItem("Manage states", new ActionURL(ManageQCStatesAction.class,
+                        getContainer()).addParameter("returnUrl", getViewContext().getActionURL().getLocalURIString()));
             }
             buttonBar.add(button);
         }
@@ -2967,24 +2968,14 @@ public class StudyController extends BaseStudyController
     
     public static class ManageQCStatesBean
     {
-        private BindException _errors;
         private Study _study;
         private QCState[] _states;
+        private String _returnUrl;
 
-        public ManageQCStatesBean(Study study, BindException errors)
+        public ManageQCStatesBean(Study study, String returnUrl)
         {
             _study = study;
-            _errors = errors;
-        }
-
-        public BindException getErrors()
-        {
-            return _errors;
-        }
-
-        public void setErrors(BindException errors)
-        {
-            _errors = errors;
+            _returnUrl = returnUrl;
         }
 
         public QCState[] getQCStates()
@@ -2997,6 +2988,11 @@ public class StudyController extends BaseStudyController
         public Study getStudy()
         {
             return _study;
+        }
+
+        public String getReturnUrl()
+        {
+            return _returnUrl;
         }
     }
 
@@ -3014,6 +3010,7 @@ public class StudyController extends BaseStudyController
         private Integer _defaultAssayQCState;
         private Integer _defaultDirectEntryQCState;
         private boolean _showPrivateDataByDefault;
+        private String _returnUrl;
 
         public int[] getIds()
         {
@@ -3134,6 +3131,16 @@ public class StudyController extends BaseStudyController
         {
             _showPrivateDataByDefault = showPrivateDataByDefault;
         }
+
+        public String getReturnUrl()
+        {
+            return _returnUrl;
+        }
+
+        public void setReturnUrl(String returnUrl)
+        {
+            _returnUrl = returnUrl;
+        }
     }
 
     @RequiresPermission(ACL.PERM_ADMIN)
@@ -3142,7 +3149,7 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(ManageQCStatesForm manageQCStatesForm, boolean reshow, BindException errors) throws Exception
         {
             return new JspView<ManageQCStatesBean>("/org/labkey/study/view/manageQCStates.jsp", 
-                    new ManageQCStatesBean(getStudy(), errors));
+                    new ManageQCStatesBean(getStudy(), manageQCStatesForm.getReturnUrl()), errors);
         }
 
         public void validateCommand(ManageQCStatesForm form, Errors errors)
@@ -3222,7 +3229,14 @@ public class StudyController extends BaseStudyController
         public ActionURL getSuccessURL(ManageQCStatesForm manageQCStatesForm)
         {
             if (manageQCStatesForm.isReshowPage())
-                return new ActionURL(ManageQCStatesAction.class, getContainer());
+            {
+                ActionURL url = new ActionURL(ManageQCStatesAction.class, getContainer());
+                if (manageQCStatesForm.getReturnUrl() != null)
+                    url.addParameter("returnUrl", manageQCStatesForm.getReturnUrl());
+                return url;
+            }
+            else if (manageQCStatesForm.getReturnUrl() != null)
+                return new ActionURL(manageQCStatesForm.getReturnUrl());
             else
                 return new ActionURL(ManageStudyAction.class, getContainer());
         }
@@ -3237,6 +3251,7 @@ public class StudyController extends BaseStudyController
     public static class DeleteQCStateForm extends IdForm
     {
         private boolean _all = false;
+        private String _manageReturnUrl;
 
         public boolean isAll()
         {
@@ -3246,6 +3261,16 @@ public class StudyController extends BaseStudyController
         public void setAll(boolean all)
         {
             _all = all;
+        }
+
+        public String getManageReturnUrl()
+        {
+            return _manageReturnUrl;
+        }
+
+        public void setManageReturnUrl(String manageReturnUrl)
+        {
+            _manageReturnUrl = manageReturnUrl;
         }
     }
 
@@ -3278,7 +3303,10 @@ public class StudyController extends BaseStudyController
 
         public ActionURL getSuccessURL(DeleteQCStateForm form)
         {
-            return new ActionURL(ManageQCStatesAction.class, getContainer());
+            ActionURL returnUrl = new ActionURL(ManageQCStatesAction.class, getContainer());
+            if (form.getManageReturnUrl() != null)
+                returnUrl.addParameter("returnUrl", form.getManageReturnUrl());
+            return returnUrl;
         }
     }
 
@@ -3361,8 +3389,6 @@ public class StudyController extends BaseStudyController
         {
             if (updateQCForm.isUpdate())
             {
-                if (updateQCForm.getNewState() == null)
-                    errors.reject(null, "New state is required.");
                 if (updateQCForm.getComments() == null || updateQCForm.getComments().length() == 0)
                     errors.reject(null, "Comments are required.");
             }
@@ -3417,14 +3443,18 @@ public class StudyController extends BaseStudyController
                 return false;
             Set<String> lsids = DataRegionSelection.getSelected(getViewContext(), updateQCForm.getDataRegionSelectionKey(), true, false);
 
-            QCState state = StudyManager.getInstance().getQCStateForRowId(getContainer(), updateQCForm.getNewState().intValue());
-            if (state == null)
+            QCState newState = null;
+            if (updateQCForm.getNewState() != null)
             {
-                errors.reject(null, "The selected state could not be found.  It may have been deleted from the database.");
-                return false;
+                newState = StudyManager.getInstance().getQCStateForRowId(getContainer(), updateQCForm.getNewState().intValue());
+                if (newState == null)
+                {
+                    errors.reject(null, "The selected state could not be found.  It may have been deleted from the database.");
+                    return false;
+                }
             }
             List<String> updateErrors = StudyManager.getInstance().updateDataQCState(getContainer(), getUser(),
-                    updateQCForm.getDatasetId(), lsids, state, updateQCForm.getComments());
+                    updateQCForm.getDatasetId(), lsids, newState, updateQCForm.getComments());
             if (updateErrors != null && !updateErrors.isEmpty())
             {
                 for (String error : updateErrors)

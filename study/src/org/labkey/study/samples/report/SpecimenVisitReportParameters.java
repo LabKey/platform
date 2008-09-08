@@ -10,7 +10,6 @@ import org.labkey.study.SampleManager;
 
 import java.util.List;
 import java.util.Collections;
-import java.util.ArrayList;
 import java.util.Set;
 import java.sql.SQLException;
 
@@ -260,14 +259,19 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
             StringBuilder builder = new StringBuilder();
             builder.append("<select name=\"").append(inputName).append("\">\n");
             builder.append("<option value=\"\">All Participants (Large Report)</option>\n");
+            boolean first = true;
             for (Participant participant : StudyManager.getInstance().getParticipants(study))
             {
                 builder.append("<option value=\"").append(PageFlowUtil.filter(participant.getParticipantId())).append("\"");
-                if (selectedParticipantId != null && selectedParticipantId.equals(participant.getParticipantId()))
+                // select the previously selected option or the first non-all option.  We don't want to select 'all participants'
+                // by default, since these reports are extremely expensive to generate.
+                if ((selectedParticipantId != null && selectedParticipantId.equals(participant.getParticipantId())) ||
+                        (selectedParticipantId == null && first))
                     builder.append(" SELECTED");
                 builder.append(">");
                 builder.append(PageFlowUtil.filter(participant.getParticipantId()));
                 builder.append("</option>\n");
+                first = false;
             }
             builder.append("</select>");
             return builder.toString();

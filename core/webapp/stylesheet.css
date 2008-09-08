@@ -251,6 +251,7 @@ div.labkey-button-bar, table.labkey-button-bar
 {
     color: #000000;
     background-color: #E9E9E9;
+    white-space: nowrap;
     border: 1px solid black;
     margin: 0.1em 0.4em 0.5em 0.0em;
     line-height: 2.3em;
@@ -274,11 +275,13 @@ span.labkey-button, span.labkey-disabled-button
 
 a.labkey-button span, a.labkey-disabled-button span
 {
+    color: #000000;
     padding-bottom: 0.3em;
 }
 
 a.labkey-menu-button span, a.labkey-disabled-menu-button span
 {
+    color: #000000;
     padding-right: 1.0em;
 }
 

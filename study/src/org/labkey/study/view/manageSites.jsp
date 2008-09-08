@@ -37,15 +37,6 @@
         <%
             for (Site site : study.getSites())
             {
-                String type = "Not specified";
-                if (site.isClinic())
-                    type = "Clinic";
-                else if (site.isEndpoint())
-                    type = "Endpoint Lab";
-                else if (site.isRepository())
-                    type = "Repository";
-                else if (site.isSal())
-                    type = "Site Affiliated Lab";
         %>
             <tr>
                 <td>&nbsp;</td>
@@ -57,7 +48,7 @@
                     <input type="text" name="labels" size="40" value="<%= site.getLabel() != null ? h(site.getLabel()) : "" %>">
                 </td>
                 <td>
-                    <%= h(type) %>
+                    <%= h(site.getTypeString()) %>
                 </td>
             </tr>
         <%

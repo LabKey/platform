@@ -1,7 +1,5 @@
 package org.labkey.study.samples.report;
 
-import org.labkey.study.samples.report.SpecimenReportCellData;
-
 /**
  * Copyright (c) 2008 LabKey Corporation
  * <p/>

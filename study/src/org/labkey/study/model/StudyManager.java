@@ -489,6 +489,13 @@ public class StudyManager
     {
         try
         {
+            Study study = getStudy(state.getContainer());
+            if (safeIntegersEqual(study.getDefaultAssayQCState(), state.getRowId()) ||
+                safeIntegersEqual(study.getDefaultDirectEntryQCState(), state.getRowId() )||
+                safeIntegersEqual(study.getDefaultPipelineQCState(), state.getRowId()))
+            {
+                return true;
+            }
             Integer count = Table.executeSingleton(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM " +
                     StudySchema.getInstance().getTableInfoStudyData() + " WHERE Container = ? AND QCState = ?",
                     new Object[] { state.getContainer().getId(), state.getRowId() }, Integer.class);
@@ -579,7 +586,7 @@ public class StudyManager
                     auditComment.append(".  User comment: ").append(comments);
 
                     row.put(DataSetTable.QCSTATE_ID_COLNAME, newState != null ? newState.getRowId() : null);
-                    StudyService.get().updateDatasetRow(user, container, datasetId, lsid, row, errors, auditComment.toString());
+                    StudyService.get().updateDatasetRow(user, container, datasetId, lsid, row, errors, auditComment.toString(), false);
                 }
             }
             if (transactionOwner && errors.size() == 0)

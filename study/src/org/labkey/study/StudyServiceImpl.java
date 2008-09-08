@@ -55,19 +55,22 @@ public class StudyServiceImpl implements StudyService.Service
     public String updateDatasetRow(User u, Container c, int datasetId, String lsid, Map<String, Object> data, List<String> errors)
             throws SQLException
     {
-        return updateDatasetRow(u, c, datasetId, lsid, data, errors, null);
+        return updateDatasetRow(u, c, datasetId, lsid, data, errors, null, true);
     }
 
-    public String updateDatasetRow(User u, Container c, int datasetId, String lsid, Map<String, Object> data, List<String> errors, String auditComment)
+    public String updateDatasetRow(User u, Container c, int datasetId, String lsid, Map<String, Object> data, List<String> errors, String auditComment, boolean assignDefaultQCState)
             throws SQLException
     {
         Study study = StudyManager.getInstance().getStudy(c);
         DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
 
-        Integer defaultQcStateId = study.getDefaultDirectEntryQCState();
         QCState defaultQCState = null;
-        if (defaultQcStateId != null)
-            defaultQCState = StudyManager.getInstance().getQCStateForRowId(c, defaultQcStateId.intValue());
+        if (assignDefaultQCState)
+        {
+            Integer defaultQcStateId = study.getDefaultDirectEntryQCState();
+            if (defaultQcStateId != null)
+                 defaultQCState = StudyManager.getInstance().getQCStateForRowId(c, defaultQcStateId.intValue());
+        }
 
         // Start a transaction, so that we can rollback if our insert fails
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
@@ -92,7 +95,15 @@ public class StudyServiceImpl implements StudyService.Service
                 if (oldField.getKey().equals("lsid"))
                     continue;
                 if (!newData.containsKey(oldField.getKey()))
+                {
+                    // if the new incoming data doesn't explicitly set a QC state, and 'assignDefaultQCState' is true,
+                    // then we don't want to use the old QC state- we want to use the default instead.  This will be
+                    // handled at a lower level by leaving QC state null here:
+                    if (assignDefaultQCState && oldField.getKey().equals("QCState"))
+                        continue;
+
                     newData.put(oldField.getKey(), oldField.getValue());
+                }
             }
 
             StudyManager.getInstance().deleteDatasetRows(study, def, Collections.singletonList(lsid));
@@ -191,6 +202,7 @@ public class StudyServiceImpl implements StudyService.Service
                 // but we want to display them
                 if (col.getName().equals("lsid") ||
                         col.getName().equals("sourcelsid") ||
+                        col.getName().equals("QCState") ||
                         col.isKeyField())
                 {
                     continue;
@@ -461,7 +473,8 @@ public class StudyServiceImpl implements StudyService.Service
                 FieldKey qcStateKey = FieldKey.fromParts(DataSetTable.QCSTATE_ID_COLNAME, "rowid");
                 Map<FieldKey, ColumnInfo> qcStateColumnMap = QueryService.get().getColumns(view.getDataRegion().getTable(), Collections.singleton(qcStateKey));
                 ColumnInfo qcStateColumn = qcStateColumnMap.get(qcStateKey);
-                filter.addClause(new SimpleFilter.SQLClause(stateSet.getStateInClause(qcStateColumn.getAlias()), null, qcStateColumn.getName()));
+                if (qcStateColumn != null)
+                    filter.addClause(new SimpleFilter.SQLClause(stateSet.getStateInClause(qcStateColumn.getAlias()), null, qcStateColumn.getName()));
             }
         }
     }

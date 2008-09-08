@@ -198,16 +198,40 @@ public class Site extends AbstractStudyEntity<Site>
             else
                 return "(Unlabeled)";
         }
-        else if (isEndpoint())
-            return label + " (Endpoint Lab)";
-        else if (isRepository())
-            return label + " (Repository)";
-        else if (isSal())
-            return label + " (SAL)";
-        else if (isClinic())
-            return label + " (Clinic)";
         else
-            return label;
+        {
+            String type = getTypeString();
+            if (type.length() == 0)
+                return label;
+            else
+                return label + " (" + type + ")";
+        }
+    }
+
+    public String getTypeString()
+    {
+        StringBuilder typeString = new StringBuilder();
+        if (isEndpoint())
+            typeString.append("Endpoint Lab");
+        if (isRepository())
+        {
+            if (typeString.length() > 0)
+                typeString.append(", ");
+            typeString.append("Repository");
+        }
+        if (isSal())
+        {
+            if (typeString.length() > 0)
+                typeString.append(", ");
+            typeString.append("Site Affiliated Lab");
+        }
+        if (isClinic())
+        {
+            if (typeString.length() > 0)
+                typeString.append(", ");
+            typeString.append("Clinic");
+        }
+        return typeString.toString();
     }
 
     @Override

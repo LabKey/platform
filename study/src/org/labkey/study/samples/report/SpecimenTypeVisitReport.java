@@ -35,16 +35,16 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SampleManager.S
 {
     public SpecimenTypeVisitReport(String titlePrefix, Visit[] visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
     {
-        super(titlePrefix + getTitleSuffix(parameters), visits, filter, parameters);
+        super(titlePrefix, visits, filter, parameters);
     }
 
     public Collection<Row> createRows()
     {
         try
         {
-            SampleManager.SpecimenTypeLevel level = _parameters.getTypeLevelEnum();
+            SampleManager.SpecimenTypeLevel level = getTypeLevelEnum();
             SampleManager.SummaryByVisitType[] countSummary =
-                    SampleManager.getInstance().getSpecimenSummaryByVisitType(_container, _filter, _parameters.isViewPtidList(), level);
+                    SampleManager.getInstance().getSpecimenSummaryByVisitType(_container, _filter, isViewPtidList(), level);
             Map<String, Row> rows = new TreeMap<String, Row>();
             for (SampleManager.SummaryByVisitType count : countSummary)
             {
@@ -71,15 +71,15 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SampleManager.S
     private String getCellSummaryText(SampleManager.SummaryByVisitType summary)
     {
         StringBuilder summaryString = new StringBuilder();
-        if (_parameters.isViewVialCount())
+        if (isViewVialCount())
             summaryString.append(summary.getVialCount());
-        if (_parameters.isViewParticipantCount())
+        if (isViewParticipantCount())
         {
             if (summaryString.length() > 0)
                 summaryString.append("/");
             summaryString.append(summary.getParticipantCount());
         }
-        if (_parameters.isViewVolume())
+        if (isViewVolume())
         {
             if (summaryString.length() > 0)
                 summaryString.append("/");
@@ -94,7 +94,7 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SampleManager.S
             return new String[] {};
         String summaryText = getCellSummaryText(summary);
         boolean hasSummaryText = summaryText != null && summaryText.length() > 0;
-        int ptidCount = _parameters.isViewPtidList() ? summary.getParticipantIds().size() : 0;
+        int ptidCount = isViewPtidList() ? summary.getParticipantIds().size() : 0;
         String[] strArray = new String[ptidCount + (hasSummaryText ? 1 : 0)];
         if (hasSummaryText)
             strArray[0] = summaryText;
@@ -116,7 +116,7 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SampleManager.S
         link = updateURLFilterParameter(link, "SpecimenDetail.Visit/SequenceNumMin", visit.getSequenceNumMin());
 
         link = updateURLFilterParameter(link, "SpecimenDetail.PrimaryType/Description", summary.getPrimaryType());
-        SampleManager.SpecimenTypeLevel level = _parameters.getTypeLevelEnum();
+        SampleManager.SpecimenTypeLevel level = getTypeLevelEnum();
         if (level == SampleManager.SpecimenTypeLevel.Derivative || level == SampleManager.SpecimenTypeLevel.Additive)
             link = updateURLFilterParameter(link, "SpecimenDetail.DerivativeType/Description", summary.getDerivative());
         if (level == SampleManager.SpecimenTypeLevel.Additive)
@@ -133,7 +133,7 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SampleManager.S
             cellHtml.append(summaryString).append("</a>");
         }
 
-        if (_parameters.isViewPtidList())
+        if (isViewPtidList())
         {
             if (cellHtml.length() > 0)
                 cellHtml.append("<br>");
@@ -142,11 +142,13 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SampleManager.S
                 for (Iterator<String> it = summary.getParticipantIds().iterator(); it.hasNext();)
                 {
                     String participantId = it.next();
-                    ActionURL url = new ActionURL(SpringSpecimenController.TypeParticipantReportAction.class, _parameters.getContainer());
+                    ActionURL url = new ActionURL(SpringSpecimenController.TypeParticipantReportAction.class, _container);
                     url.addParameter("participantId", participantId);
-                    url.addParameter(SpecimenVisitReportParameters.PARAMS.typeLevel, _parameters.getTypeLevel());
-                    url.addParameter(SpecimenVisitReportParameters.PARAMS.statusFilterName, _parameters.getStatusFilterName());
-                    url.addParameter(SpecimenVisitReportParameters.PARAMS.viewVialCount, Boolean.TRUE.toString());
+                    url.addParameter(SpecimenVisitReportParameters.PARAMS.typeLevel, getTypeLevelEnum().name());
+                    url.addParameter(SpecimenVisitReportParameters.PARAMS.statusFilterName, getStatusFilterName());
+                    url.addParameter(SpecimenVisitReportParameters.PARAMS.viewVialCount, isViewVialCount());
+                    url.addParameter(SpecimenVisitReportParameters.PARAMS.viewParticipantCount, isViewParticipantCount());
+                    url.addParameter(SpecimenVisitReportParameters.PARAMS.viewVolume, isViewVolume());
                     cellHtml.append("<a href=\"").append(url.getLocalURIString()).append("\">");
                     cellHtml.append(PageFlowUtil.filter(participantId));
                     cellHtml.append("</a>");

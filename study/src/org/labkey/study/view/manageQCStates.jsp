@@ -28,12 +28,15 @@
 <%
     JspView<StudyController.ManageQCStatesBean> me = (JspView<StudyController.ManageQCStatesBean>) HttpView.currentView();
     StudyController.ManageQCStatesBean bean = me.getModelBean();
+    ActionURL cancelUrl = bean.getReturnUrl() != null ? new ActionURL(bean.getReturnUrl()) :
+        new ActionURL(StudyController.ManageStudyAction.class, me.getViewContext().getContainer());
 %>
 <labkey:errors/><br>
 <form action="manageQCStates.post" name="manageQCStates" method="POST">
 <%= buttonImg("Done", "document.manageQCStates.reshowPage.value='false'; return true;")%>
-<%= generateButton("Cancel", new ActionURL(StudyController.ManageStudyAction.class, me.getViewContext().getContainer()))%>
+<%= generateButton("Cancel", cancelUrl.getLocalURIString()) %>
 <input type="hidden" name="reshowPage" value="true">
+<input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl()) %>">
 <table width="800px">
     <tr>
         <td>
@@ -61,7 +64,8 @@
                 <th>&nbsp;</th>
             </tr>
             <%
-
+                ActionURL baseDeleteStateURL = new ActionURL(StudyController.DeleteQCStateAction.class, me.getViewContext().getContainer());
+                baseDeleteStateURL.addParameter("manageReturnUrl", bean.getReturnUrl());
                 for (QCState state : bean.getQCStates())
                 {
             %>
@@ -78,8 +82,8 @@
                 </td>
                 <td align="center"><input name="publicData" value="<%= state.getRowId() %>" type="checkbox" <%= state.isPublicData() ? "CHECKED" : "" %>/></td>
                 <td>
-                    <%=  StudyManager.getInstance().isQCStateInUse(state) ? "[in use]" + helpPopup("QC state in use", "This QC state cannot be deleted because it is currently referenced by at least one dataset row.") :
-                            textLink("Delete", new ActionURL(StudyController.DeleteQCStateAction.class, me.getViewContext().getContainer()).addParameter("id", state.getRowId()).getLocalURIString(),
+                    <%=  StudyManager.getInstance().isQCStateInUse(state) ? "[in use]" + helpPopup("QC state in use", "This QC state cannot be deleted because it is currently a default state (see below) or is referenced by at least one dataset row.") :
+                            textLink("Delete", baseDeleteStateURL.clone().addParameter("id", state.getRowId()).getLocalURIString(),
                                     "return confirm('Delete this QC state?  No additional study data will be deleted.')", null) %>
                 </td>
             </tr>
@@ -97,10 +101,9 @@
                 <td>&nbsp;</td>
                 <td colspan="4">
                     <%= generateSubmitButton("Save")%>
-                    <%= generateButton("Delete Unused QC States",
-                            new ActionURL(StudyController.DeleteQCStateAction.class, me.getViewContext().getContainer()).addParameter("all", "true"),
+                    <%= generateButton("Delete Unused QC States", baseDeleteStateURL.clone().addParameter("all", "true"),
                             "return confirm('Delete all unused QC states?  No additional study data will be deleted.')")%>
-                    <%= generateButton("Cancel", new ActionURL(StudyController.ManageStudyAction.class, me.getViewContext().getContainer()))%>
+                    <%= generateButton("Cancel", cancelUrl) %>
                 </td>
             </tr>
         </table>

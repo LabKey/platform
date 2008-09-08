@@ -546,41 +546,53 @@ public class SamplesController extends BaseController
         requiresAdmin();
         if ("POST".equalsIgnoreCase(getRequest().getMethod()))
         {
+            ActionErrors errors = PageFlowUtil.getActionErrors(getRequest(), true);
             int[] rowIds = form.getIds();
             String[] labels = form.getLabels();
-            if (rowIds != null && rowIds.length > 0)
+            if (labels != null)
             {
-                // get a map of id to actor objects before starting our updates; this prevents us from
-                // blowing then repopulating the cache with each update:
-                Map<Integer, SampleRequestActor> idToActor = getIdToRequestActorMap(getContainer());
-                for (int i = 0; i < rowIds.length; i++)
+                for (String label : labels)
                 {
-                    int rowId = rowIds[i];
-                    String label = labels[i];
-                    SampleRequestActor actor = idToActor.get(rowId);
-                    if (actor != null && !nullSafeEqual(label, actor.getLabel()))
-                    {
-                        actor = actor.createMutable();
-                        actor.setLabel(label);
-                        actor.update(getUser());
-                    }
+                    if (label == null || label.length() == 0)
+                        errors.add("main", new ActionMessage("Error", "Actor name cannot be empty."));
                 }
             }
-
-            if (form.getNewLabel() != null && form.getNewLabel().length() > 0)
+            if (errors.isEmpty())
             {
-                SampleRequestActor actor = new SampleRequestActor();
-                actor.setLabel(form.getNewLabel());
-                SampleRequestActor[] actors = SampleManager.getInstance().getRequirementsProvider().getActors(getContainer());
-                actor.setSortOrder(actors.length);
-                actor.setContainer(getContainer());
-                actor.setPerSite(form.isNewPerSite());
-                actor.create(getUser());
+                if (rowIds != null && rowIds.length > 0)
+                {
+                    // get a map of id to actor objects before starting our updates; this prevents us from
+                    // blowing then repopulating the cache with each update:
+                    Map<Integer, SampleRequestActor> idToActor = getIdToRequestActorMap(getContainer());
+                    for (int i = 0; i < rowIds.length; i++)
+                    {
+                        int rowId = rowIds[i];
+                        String label = labels[i];
+                        SampleRequestActor actor = idToActor.get(rowId);
+                        if (actor != null && !nullSafeEqual(label, actor.getLabel()))
+                        {
+                            actor = actor.createMutable();
+                            actor.setLabel(label);
+                            actor.update(getUser());
+                        }
+                    }
+                }
+
+                if (form.getNewLabel() != null && form.getNewLabel().length() > 0)
+                {
+                    SampleRequestActor actor = new SampleRequestActor();
+                    actor.setLabel(form.getNewLabel());
+                    SampleRequestActor[] actors = SampleManager.getInstance().getRequirementsProvider().getActors(getContainer());
+                    actor.setSortOrder(actors.length);
+                    actor.setContainer(getContainer());
+                    actor.setPerSite(form.isNewPerSite());
+                    actor.create(getUser());
+                }
+                if (form.getNextPage() != null && form.getNextPage().length() > 0)
+                    return new ViewForward(getActionURL().relativeUrl(form.getNextPage(), null));
+                else
+                    return new ViewForward(ActionURL.toPathString("Study", "manageStudy", getContainer()));
             }
-            if (form.getNextPage() != null && form.getNextPage().length() > 0)
-                return new ViewForward(getActionURL().relativeUrl(form.getNextPage(), null));
-            else
-                return new ViewForward(ActionURL.toPathString("Study", "manageStudy", getContainer()));
         }
         return displayManagementSubpage("manageActors", "Manage Actors", "specimenRequest");
     }

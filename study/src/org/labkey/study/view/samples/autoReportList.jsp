@@ -21,7 +21,6 @@
 <%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.study.samples.report.SpecimenVisitReportParameters" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.study.samples.report.specimentype.TypeSummaryReportFactory" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.study.model.*" %>
 <%@ page import="java.util.List" %>
@@ -63,7 +62,7 @@
 %>
 <% if (bean.isListView())
     WebPartView.startTitleFrame(out, category, null, "100%", null); %>
-<table>
+<table cellspacing="0" cellpadding="3">
 <%
         int formRowIndex = 0;
         String rowClass;
@@ -74,12 +73,12 @@
             String formName = "form" + showHideSuffix;
 %>
     <form action="<%=  new ActionURL(factory.getAction(), container).getLocalURIString() %>" name="<%= formName %>" method="GET">
-        <tr>
+        <tr class="<%= rowClass %>">
             <%
                 if (bean.isListView())
                 {
             %>
-            <th align="right" valign="top" class="<%= rowClass %>"><%= h(factory.getLabel())%></th>
+            <th style="text-align:right;vertical-align:top"><%= h(factory.getLabel())%></th>
             <%
                 }
             %>

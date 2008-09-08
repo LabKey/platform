@@ -53,7 +53,6 @@
         </tr>
         <tr>
             <td>
-                <%= generateButton("Clear Comment", "#", "document.forms['updateCommentForm'].comments.value = ''; return false;") %>
                 <%= generateSubmitButton("Save Changes") %>
                 <%= generateButton("Cancel", new ActionURL(bean.getReferrer()))%>
             </td>

@@ -130,7 +130,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
         // (rather than the actual number), because a specimennumber isn't sufficient to identify a row in the specimen
         // summary table; derivative and additive types are required as well.  We use this number so we know if additional
         // (more expensive) queries are required to check for actual comments in the DB for each row.
-        SQLFragment sqlFrag = new SQLFragment("(SELECT COUNT(*) FROM " +
+        SQLFragment sqlFrag = new SQLFragment("(SELECT CAST(COUNT(*) AS VARCHAR(5)) FROM " +
                 StudySchema.getInstance().getTableInfoSpecimenComment() +
                 " WHERE SpecimenNumber = " + ExprColumn.STR_TABLE_ALIAS + ".SpecimenNumber" +
                 " AND Container = ?)");
@@ -139,7 +139,6 @@ public class SpecimenSummaryTable extends BaseStudyTable
         // (We're using a custom display column to output the text of the comment in this col, even though
         // the SQL expression returns an integer.)
         ColumnInfo commentsCol = addColumn(new ExprColumn(this, "Comments", sqlFrag, Types.VARCHAR));
-
         commentsCol.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             public DisplayColumn createRenderer(ColumnInfo colInfo)
@@ -169,6 +168,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
 
         public void addQueryColumns(Set<ColumnInfo> columns)
         {
+            columns.add(getColumnInfo().getParentTable().getColumn("Comments"));
             columns.add(getColumnInfo().getParentTable().getColumn("SpecimenNumber"));
             columns.add(getColumnInfo().getParentTable().getColumn("AdditiveType"));
             columns.add(getColumnInfo().getParentTable().getColumn("DerivativeType"));

@@ -35,10 +35,10 @@ import java.sql.SQLException;
 public class ParticipantVisitReport extends SpecimenVisitReport<SampleManager.SummaryByVisitParticipant>
 {
     boolean _showCohorts;
-    public ParticipantVisitReport(String title, Visit[] visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
+    public ParticipantVisitReport(String titlePrefix, Visit[] visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
     {
-        super(title + getTitleSuffix(parameters), visits, filter, parameters);
-        _showCohorts = StudyManager.getInstance().showCohorts(_container, _parameters.getUser());
+        super(titlePrefix, visits, filter, parameters);
+        _showCohorts = StudyManager.getInstance().showCohorts(_container, getUser());
     }
 
     public Collection<Row> createRows()
@@ -46,7 +46,7 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SampleManager.Su
         try
         {
             SampleManager.SummaryByVisitParticipant[] countSummary =
-                    SampleManager.getInstance().getParticipantSummaryByVisitType(_parameters.getContainer(), _filter);
+                    SampleManager.getInstance().getParticipantSummaryByVisitType(_container, _filter);
             Map<String, Row> rows = new TreeMap<String, Row>();
             for (SampleManager.SummaryByVisitParticipant count : countSummary)
             {
@@ -86,9 +86,9 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SampleManager.Su
             return new String[] {};
 
         StringBuilder summaryString = new StringBuilder();
-        if (_parameters.isViewVialCount())
+        if (isViewVialCount())
             summaryString.append(summary.getVialCount());
-        if (_parameters.isViewVolume())
+        if (isViewVolume())
         {
             if (summaryString.length() > 0)
                 summaryString.append("/");

@@ -93,18 +93,22 @@ public class RequestParticipantReportFactory extends TypeReportFactory
             addBaseFilters(filter);
             try
             {
-                Visit[] visits;
+                Visit[] visits = null;
                 if (showCohorts)
                 {
                     Cohort cohort = StudyManager.getInstance().getCohortForParticipant(getContainer(), getUser(), participantId);
-                    visits = visitListCache.get(cohort.getRowId());
-                    if (visits == null)
+                    if (cohort != null)
                     {
-                        visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), cohort);
-                        visitListCache.put(cohort.getRowId(), visits);
+                        visits = visitListCache.get(cohort.getRowId());
+                        if (visits == null)
+                        {
+                            visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), cohort);
+                            visitListCache.put(cohort.getRowId(), visits);
+                        }
                     }
                 }
-                else
+
+                if (visits == null)
                 {
                     if (allVisits == null)
                         allVisits = StudyManager.getInstance().getVisits(study);

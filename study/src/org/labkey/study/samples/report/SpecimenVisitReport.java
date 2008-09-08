@@ -1,10 +1,12 @@
 package org.labkey.study.samples.report;
 
 import org.labkey.study.model.Visit;
+import org.labkey.study.SampleManager;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.User;
 
 import java.util.Collection;
 import java.util.Map;
@@ -35,15 +37,24 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
     private Visit[] _visits;
     protected Container _container;
     protected SimpleFilter _filter;
-    protected SpecimenVisitReportParameters _parameters;
+    private SpecimenVisitReportParameters _parameters;
+    private boolean _viewVialCount = false;
+    private boolean _viewParticipantCount = false;
+    private boolean _viewVolume = false;
+    private boolean _viewPtidList = false;
 
-    public SpecimenVisitReport(String title, Visit[] visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
+    public SpecimenVisitReport(String titlePrefix, Visit[] visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
     {
-        _title = title;
         _visits = visits;
         _filter = filter;
         _parameters = parameters;
         _container = parameters.getContainer();
+        _viewParticipantCount = parameters.isViewParticipantCount();
+        _viewVolume = parameters.isViewVolume();
+        _viewPtidList = parameters.isViewPtidList();
+        // We'll show the vial count if it's explicitly requested or if nothing else has been selected:
+        _viewVialCount = parameters.isViewVialCount() || (!_viewParticipantCount && !_viewVolume && !_viewPtidList);
+        _title = titlePrefix + getTitleSuffix();
     }
 
     public Collection<Row> getRows()
@@ -88,22 +99,22 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
         return (valuesDisplayed == 1 && !_parameters.isViewPtidList());
     }
 
-    protected static String getTitleSuffix(SpecimenVisitReportParameters parameters)
+    private String getTitleSuffix()
     {
         StringBuilder suffixBuilder = new StringBuilder();
-        if (parameters.isViewVialCount())
+        if (isViewVialCount())
             suffixBuilder.append(" (Vial Count");
-        if (parameters.isViewParticipantCount())
+        if (isViewParticipantCount())
         {
             suffixBuilder.append(suffixBuilder.length() > 0 ? "/" : " (");
             suffixBuilder.append("Participant Count");
         }
-        if (parameters.isViewVolume())
+        if (isViewVolume())
         {
             suffixBuilder.append(suffixBuilder.length() > 0 ? "/" : " (");
             suffixBuilder.append("Total Volume");
         }
-        if (parameters.isViewPtidList())
+        if (isViewPtidList())
         {
             suffixBuilder.append(suffixBuilder.length() > 0 ? ", " : " (");
             suffixBuilder.append("Ptid List");
@@ -239,8 +250,43 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
                 }
             }
             if (linkHtml != null)
-                cellHtml.append(summaryString).append("</a>");
+                cellHtml.append("</a>");
         }
         return cellHtml.toString();
+    }
+
+    protected User getUser()
+    {
+        return _parameters.getUser();
+    }
+
+    protected boolean isViewVialCount()
+    {
+        return _viewVialCount;
+    }
+
+    protected boolean isViewParticipantCount()
+    {
+        return _viewParticipantCount;
+    }
+
+    protected boolean isViewVolume()
+    {
+        return _viewVolume;
+    }
+
+    protected boolean isViewPtidList()
+    {
+        return _viewPtidList;
+    }
+
+    protected SampleManager.SpecimenTypeLevel getTypeLevelEnum()
+    {
+        return _parameters.getTypeLevelEnum();
+    }
+
+    protected String getStatusFilterName()
+    {
+        return _parameters.getStatusFilterName();
     }
 }

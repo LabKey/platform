@@ -245,7 +245,15 @@ public class SpecimenUtils
                 String secondSite = second.getSite() != null ? second.getSite().getLabel() : "";
                 int comp = firstSite.compareToIgnoreCase(secondSite);
                 if (comp == 0)
-                    comp = first.getActor().getLabel().compareToIgnoreCase(second.getActor().getLabel());
+                {
+                    String firstActorLabel = first.getActor().getLabel();
+                    if (firstActorLabel == null)
+                        firstActorLabel = "";
+                    String secondActorLabel = second.getActor().getLabel();
+                    if (secondActorLabel == null)
+                        secondActorLabel = "";
+                    comp = firstActorLabel.compareToIgnoreCase(secondActorLabel);
+                }
                 return comp;
             }
         });

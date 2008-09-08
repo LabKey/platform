@@ -58,9 +58,9 @@ public class StudyCache
 
     public static void cache(TableInfo tinfo, String containerId, Object cacheKey, StudyCachable cachable)
     {
-        if (cachable == null)
-            return;
-        cachable.lock();
+        // We allow caching of null values: 
+        if (cachable != null)
+            cachable.lock();
         if (!ENABLE_CACHING)
             return;
         DbCache.put(tinfo, getCacheName(containerId, cacheKey), cachable, Cache.HOUR);

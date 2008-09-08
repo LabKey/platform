@@ -43,9 +43,9 @@ public class RequestParticipantReport extends SpecimenVisitReport<SampleManager.
     {
         try
         {
-            SampleManager.SpecimenTypeLevel level = _parameters.getTypeLevelEnum();
+            SampleManager.SpecimenTypeLevel level = getTypeLevelEnum();
             SampleManager.RequestSummaryByVisitType[] countSummary =
-                    SampleManager.getInstance().getRequestSummaryBySite(_container, _filter, _parameters.isViewPtidList(), level);
+                    SampleManager.getInstance().getRequestSummaryBySite(_container, _filter, isViewPtidList(), level);
             Map<String, Row> rows = new TreeMap<String, Row>();
             for (SampleManager.RequestSummaryByVisitType count : countSummary)
             {
@@ -77,9 +77,9 @@ public class RequestParticipantReport extends SpecimenVisitReport<SampleManager.
         if (summary == null || summary.getVialCount() == null)
             return new String[] {};
         StringBuilder summaryString = new StringBuilder();
-        if (_parameters.isViewVialCount())
+        if (isViewVialCount())
             summaryString.append(summary.getVialCount());
-        if (_parameters.isViewVolume())
+        if (isViewVolume())
         {
             if (summaryString.length() > 0)
                 summaryString.append("/");
@@ -97,7 +97,7 @@ public class RequestParticipantReport extends SpecimenVisitReport<SampleManager.
         link = updateURLFilterParameter(link, "SpecimenDetail.Visit/SequenceNumMin", visit.getSequenceNumMin());
 
         link = updateURLFilterParameter(link, "SpecimenDetail.PrimaryType/Description", summary.getPrimaryType());
-        SampleManager.SpecimenTypeLevel level = _parameters.getTypeLevelEnum();
+        SampleManager.SpecimenTypeLevel level = getTypeLevelEnum();
         if (level == SampleManager.SpecimenTypeLevel.Derivative || level == SampleManager.SpecimenTypeLevel.Additive)
             link = updateURLFilterParameter(link, "SpecimenDetail.DerivativeType/Description", summary.getDerivative());
         if (level == SampleManager.SpecimenTypeLevel.Additive)

@@ -2160,11 +2160,12 @@ public class SampleManager
             rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql);
             while (rs.next())
             {
-                Integer siteId = rs.getInt(idColumnName);
-                if (siteId == null)
+                // try getObject first to see if we have a value for our row; getInt will coerce the null to
+                // zero, which could (theoretically) be a valid site ID.
+                if (rs.getObject(idColumnName) == null)
                     sites.add(null);
                 else
-                    sites.add(StudyManager.getInstance().getSite(container, siteId));
+                    sites.add(StudyManager.getInstance().getSite(container, rs.getInt(idColumnName)));
             }
             return sites;
         }

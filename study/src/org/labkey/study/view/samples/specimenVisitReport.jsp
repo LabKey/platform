@@ -45,8 +45,7 @@
         }
     %></colgroup>
     <tr>
-        <th class="labkey-data-region-title" colspan="2">&nbsp;</th>
-        <th align="left" class="labkey-data-region-title" colspan="<%= colCount - 1 %>"><%= h(report.getTitle())%></th>
+        <th style="text-align:left" class="labkey-data-region-title" colspan="<%= colCount %>"><%= h(report.getTitle())%></th>
     </tr>
 
     <tr class="labkey-alternate-row">
@@ -96,9 +95,9 @@
                                 previousRow = "";
                             outputElement = !currentRow.equals(previousRow);
                         }
+                        String style = "border-bottom:0;border-right:1px solid #E0E0E0;border-top:solid " + (outputElement ? "1px" : "0px") + " #808080";
                     %>
-                        <td class="<%= i < currentTitleHierarchy.length - 1 ? "labkey-row" : ""%>
-                            <%= outputElement ? " labkey-row-header" : " labkey-blank-cell"%>">
+                        <td <%= i < currentTitleHierarchy.length - 1 ? "class=\"labkey-blank-cell\"" : ""%> style="<%= style %>">
                             <%= outputElement ? h(titleElement != null ? titleElement : "[unspecified]") : "&nbsp;" %>
                         </td>
                     <%

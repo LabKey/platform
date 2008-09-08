@@ -46,7 +46,7 @@
             <th>New QC State</th>
             <td>
                 <select name="newState">
-                    <option value=""></option>
+                    <option value="">[Unspecified]</option>
                 <%
                     for (QCState state : states)
                     {

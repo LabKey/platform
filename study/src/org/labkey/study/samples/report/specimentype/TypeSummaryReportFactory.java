@@ -2,7 +2,6 @@ package org.labkey.study.samples.report.specimentype;
 
 import org.labkey.study.samples.report.SpecimenVisitReport;
 import org.labkey.study.samples.report.SpecimenTypeVisitReport;
-import org.labkey.study.samples.report.SpecimenVisitReportParameters;
 import org.labkey.study.model.Visit;
 import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
