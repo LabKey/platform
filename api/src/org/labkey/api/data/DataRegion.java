@@ -1181,13 +1181,14 @@ public class DataRegion extends DisplayElement
         }
         out.write(checkboxName.toString());
         out.write("\"");
+        boolean enabled = isRecordSelectorEnabled(ctx);
         Set<String> selectedValues = ctx.getAllSelected();
-        if (selectedValues.contains(checkboxName.toString()))
+        if (selectedValues.contains(checkboxName.toString()) && enabled)
         {
             out.write(" checked");
         }
 
-        if (!isRecordSelectorEnabled(ctx))
+        if (!enabled)
             out.write(" DISABLED");
         out.write(" onclick=\"LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].selectRow(this);\"");
         out.write(">");

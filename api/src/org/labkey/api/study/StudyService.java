@@ -71,8 +71,11 @@ public class StudyService
          * @param data the data to be updated
          * @param errors any errors during update will be added to this list
          * @param auditComment a comment that will appear in the audit entry for this update
+         * @param assignDefaultQCState Whether the default direct data entry QC state should be assigned to rows that
+         * do not otherwise specify a QC state.
          */
-        public String updateDatasetRow(User u, Container c, int datasetId, String lsid, Map<String,Object> data, List<String> errors, String auditComment)
+        public String updateDatasetRow(User u, Container c, int datasetId, String lsid, Map<String,Object> data,
+                                       List<String> errors, String auditComment, boolean assignDefaultQCState)
                 throws SQLException;
 
         /**

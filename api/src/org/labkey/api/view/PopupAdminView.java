@@ -96,8 +96,7 @@ public class PopupAdminView extends PopupMenuView
             projectAdmin.addChildren(ProjectAdminMenu.getNavTree(context));
             navTree.addChild(projectAdmin);
 
-            if (AssayService.get().hasAssayProtocols(c))
-                navTree.addChild(new NavTree("Manage Assays", AssayService.get().getAssayListURL(c)));
+            navTree.addChild(new NavTree("Manage Assays", AssayService.get().getAssayListURL(c)));
 
             navTree.addChild(new NavTree("Manage Lists", ListService.get().getManageListsURL(c)));
 
