@@ -180,6 +180,16 @@ public class UserController extends SpringActionController
             delete.setActionType(ActionButton.Action.GET);
             gridButtonBar.add(delete);
 
+            ActionButton deactivate = new ActionButton("button", "Deactivate");
+            deactivate.setScript("return verifySelected(this.form, \"deactivateUsers.post\", \"post\", \"users\", \"Are you sure you want to deactivate these users?\")");
+            deactivate.setActionType(ActionButton.Action.GET);
+            gridButtonBar.add(deactivate);
+
+            ActionButton activate = new ActionButton("button", "Re-Activate");
+            activate.setScript("return verifySelected(this.form, \"activateUsers.post\", \"post\", \"users\", \"Are you sure you want to re-activate these users?\")");
+            activate.setActionType(ActionButton.Action.GET);
+            gridButtonBar.add(activate);
+
             // Could allow project admins to do this... but they can already add users when adding to a group
             ActionButton insert = new ActionButton("showAddUsers", "Add Users");
             ActionURL actionURL = new ActionURL(SecurityController.AddUsersAction.class, ContainerManager.getRoot());
@@ -277,6 +287,58 @@ public class UserController extends SpringActionController
         public ActionURL getSuccessURL(Object o)
         {
             return new UserUrlsImpl().getSiteUsersURL();
+        }
+    }
+
+    public abstract class BaseActivateUsersAction extends FormHandlerAction
+    {
+        private boolean _active = true;
+
+        protected BaseActivateUsersAction(boolean active)
+        {
+            _active = active;
+        }
+
+        public void validateCommand(Object target, Errors errors)
+        {
+        }
+
+        public boolean handlePost(Object o, BindException errors) throws Exception
+        {
+            Set<String> userIds = DataRegionSelection.getSelected(getViewContext(), true);
+            if (userIds != null)
+            {
+                for (String userId : userIds)
+                {
+                    Integer id = Integer.valueOf(userId);
+                    if(null != id)
+                        UserManager.setUserActive(getViewContext().getUser(), id.intValue(), _active);
+                }
+            }
+            return true;
+        }
+
+        public ActionURL getSuccessURL(Object o)
+        {
+            return new UserUrlsImpl().getSiteUsersURL();
+        }
+    }
+
+    @RequiresSiteAdmin
+    public class DeactivateUsersAction extends BaseActivateUsersAction
+    {
+        public DeactivateUsersAction()
+        {
+            super(false);
+        }
+    }
+
+    @RequiresSiteAdmin
+    public class ActivateUsersAction extends BaseActivateUsersAction
+    {
+        public ActivateUsersAction()
+        {
+            super(true);
         }
     }
 
