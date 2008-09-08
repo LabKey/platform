@@ -35,6 +35,7 @@ public class QuerySnapshotForm extends QueryForm
     private String[] _snapshotColumns = new String[0];
     private int _updateDelay;
     private boolean _updateSnapshot;
+    private boolean _isEdit;
 
     public void init(QuerySnapshotDefinition def)
     {
@@ -112,5 +113,15 @@ public class QuerySnapshotForm extends QueryForm
     public void setUpdateSnapshot(boolean updateSnapshot)
     {
         _updateSnapshot = updateSnapshot;
+    }
+
+    public boolean isEdit()
+    {
+        return _isEdit;
+    }
+
+    public void setEdit(boolean edit)
+    {
+        _isEdit = edit;
     }
 }

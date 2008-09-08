@@ -97,6 +97,22 @@ public abstract class AbstractSnapshotProvider implements QuerySnapshotService.I
 
             snapshot.setColumns(form.getFieldKeyColumns());
             snapshot.setUpdateDelay(form.getUpdateDelay());
+
+            if (form.getViewName() != null)
+            {
+                ViewContext context = form.getViewContext();
+
+                CustomView customSrc = queryDef.getCustomView(context.getUser(), context.getRequest(), form.getViewName());
+                if (customSrc != null)
+                {
+                    CustomView customView = snapshot.getQueryDefinition().createCustomView(context.getUser(), form.getViewName());
+                    customView.setColumns(customSrc.getColumns());
+                    customView.setIsHidden(true);
+                    customView.save(form.getViewContext().getUser(), form.getViewContext().getRequest());
+
+                    snapshot.setViewName(form.getViewName());
+                }
+            }
             return snapshot;
         }
         return null;
@@ -114,7 +130,7 @@ public abstract class AbstractSnapshotProvider implements QuerySnapshotService.I
         prop.setType(PropertyService.get().getType(domain.getContainer(), type.getXmlName()));
         prop.setDescription(column.getDescription());
         prop.setFormat(column.getFormatString());
-        prop.setPropertyURI(domain.getTypeURI() + "." + column.getName());
+        prop.setPropertyURI(getPropertyURI(domain, column));
 
         if (pd != null && pd.getLookupQuery() != null)
         {
@@ -132,5 +148,10 @@ public abstract class AbstractSnapshotProvider implements QuerySnapshotService.I
             prop.setRequired(pd.isRequired());
         }
         return prop;
+    }
+
+    protected String getPropertyURI(Domain domain, ColumnInfo column)
+    {
+        return domain.getTypeURI() + "." + column.getName();
     }
 }

@@ -32,6 +32,9 @@ public interface QuerySnapshotDefinition
     String getName();
     int getId();
     QueryDefinition getQueryDefinition();
+    String getViewName();
+    void setViewName(String viewName);
+
 
     boolean canEdit(User user);
     void save(User user, Container container) throws Exception;
