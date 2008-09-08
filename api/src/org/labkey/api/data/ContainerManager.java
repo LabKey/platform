@@ -757,7 +757,7 @@ public class ContainerManager
         });
 
         ActionURL url = new ActionURL();
-        url.setPageFlow("Project");
+        url.setPageFlow("project");
         url.setAction("start");
 
 
@@ -1158,7 +1158,9 @@ public class ContainerManager
             for (String id : list)
             {
                 Container c = getForId(id);
-                containerList.add(c);
+
+                if (null != c)
+                    containerList.add(c);
             }
             return containerList.toArray(new Container[containerList.size()]);
         }
@@ -1200,7 +1202,9 @@ public class ContainerManager
                 String parentId = rs.getString(1);
                 Container parent = (parentId != null ? getForId(parentId) : null);
                 Container child = getForId(rs.getString(2));
-                mm.put(parent, child);
+
+                if (null != child)
+                    mm.put(parent, child);
             }
 
             for (Object key : mm.keySet())

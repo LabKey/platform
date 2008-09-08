@@ -150,7 +150,7 @@ public class ExceptionUtil
     public static void logExceptionToMothership(HttpServletRequest request, Throwable ex)
     {
         ex = unwrapException(ex);
-        if (isClientAbortException(ex) || ex instanceof RedirectException || ex instanceof NotFoundException || ex instanceof UnauthorizedException || ex instanceof ActionNotFoundException)
+        if (isClientAbortException(ex) || ex instanceof RedirectException || ex instanceof NotFoundException || ex instanceof UnauthorizedException || ex instanceof ActionNotFoundException || ex instanceof ActionURLException)
         {
             // We don't need to log any of these
             return;
@@ -443,8 +443,13 @@ public class ExceptionUtil
 
         public void doStartTag(Map context, PrintWriter out)
         {
+            Container c = getViewContext().getContainer();
+
+            if (null == c)
+                c = ContainerManager.getRoot();
+
             out.println("<html><head>");
-            out.println(PageFlowUtil.getStandardIncludes(getViewContext().getContainer()));
+            out.println(PageFlowUtil.getStandardIncludes(c));
             //NOTE: BaseSeleniumWebTest requires errors to start with error number and include word "Error" in title
             String title = "" + _renderer.status + ": Error Page";
             if (null != _renderer.message)
@@ -476,15 +481,15 @@ public class ExceptionUtil
                         out.print(PageFlowUtil.generateButton("Back", "javascript:window.history.back();"));
                         out.print("&nbsp;");
                     }
-                    if (_includeFolderButton && getViewContext().getContainer() != null)
+                    if (_includeFolderButton && !c.isRoot())
                     {
-                        ActionURL folderURL = new ActionURL("Project", "start.view", getViewContext().getContainer());
+                        ActionURL folderURL = new ActionURL("project", "start.view", c);
                         out.print(PageFlowUtil.generateButton("Folder", folderURL));
                         out.print("&nbsp;");
                     }
                     if (_includeStopImpersonatingButton)
                     {
-                        ActionURL logoutURL = PageFlowUtil.urlProvider(LoginUrls.class).getLogoutURL(getViewContext().getContainer(), getViewContext().getActionURL().getLocalURIString());
+                        ActionURL logoutURL = PageFlowUtil.urlProvider(LoginUrls.class).getLogoutURL(c, getViewContext().getActionURL().getLocalURIString());
                         out.print(PageFlowUtil.generateButton("Stop Impersonating", logoutURL));
                     }
                 }

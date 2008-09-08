@@ -614,6 +614,7 @@ api/src/org/labkey/api/util/emailTemplate/EmailTemplateService.java -text
 api/src/org/labkey/api/util/mime.txt -text
 api/src/org/labkey/api/view/AbstractView.java -text
 api/src/org/labkey/api/view/ActionErrorsView.java -text
+api/src/org/labkey/api/view/ActionURLException.java -text
 api/src/org/labkey/api/view/ActionWebPart.java -text
 api/src/org/labkey/api/view/AjaxCompletion.java -text
 api/src/org/labkey/api/view/AjaxCompletionView.java -text

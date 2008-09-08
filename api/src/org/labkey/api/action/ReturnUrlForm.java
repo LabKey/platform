@@ -17,6 +17,7 @@
 package org.labkey.api.action;
 
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ActionURLException;
 
 /**
 * User: adam
@@ -44,6 +45,13 @@ public class ReturnUrlForm
 
     public ActionURL getReturnActionURL()
     {
-        return new ActionURL(_returnUrl);
+        try
+        {
+            return new ActionURL(_returnUrl);
+        }
+        catch(IllegalArgumentException e)
+        {
+            throw new ActionURLException(_returnUrl, "the returnUrl parameter", e);
+        }
     }
 }
