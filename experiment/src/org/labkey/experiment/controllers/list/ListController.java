@@ -36,7 +36,6 @@ import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.jsp.FormPage;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.ValidationError;
@@ -380,7 +379,7 @@ public class ListController extends SpringActionController
         protected ButtonBar getButtonBar(ActionURL submitURL, ActionURL returnURL)
         {
             ButtonBar bb = new ButtonBar();
-            ActionButton btnSubmit = new ActionButton(submitURL.getEncodedLocalURIString(), "Submit");
+            ActionButton btnSubmit = new ActionButton(submitURL, "Submit");
             ActionButton btnCancel = new ActionButton("Cancel", returnURL);
             bb.add(btnSubmit);
             bb.add(btnCancel);

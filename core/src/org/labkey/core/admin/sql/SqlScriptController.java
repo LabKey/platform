@@ -208,11 +208,11 @@ public class SqlScriptController extends SpringActionController
                 out.print("</table><br>");
 
                 ActionURL runScriptsURL = cloneUrl.clone().replaceParameter("allowMultipleSubmits", "1");
-                ActionButton runAll = new ActionButton(runScriptsURL.setAction("runRecommended").getEncodedLocalURIString(), "Run Recommended Scripts");
+                ActionButton runAll = new ActionButton(runScriptsURL.setAction("runRecommended"), "Run Recommended Scripts");
                 runAll.setActionType(ActionButton.Action.LINK);
 
-                runScriptsURL.addParameter("finish", "1");
-                ActionButton runAllAndFinish = new ActionButton(runScriptsURL.getEncodedLocalURIString(), "Run Recommended Scripts and Finish");
+                ActionURL runAllAndFinishURL = runScriptsURL.clone().addParameter("finish", "1");
+                ActionButton runAllAndFinish = new ActionButton(runAllAndFinishURL, "Run Recommended Scripts and Finish");
                 runAllAndFinish.setActionType(ActionButton.Action.LINK);
 
                 bb.add(runAllAndFinish);
@@ -220,7 +220,7 @@ public class SqlScriptController extends SpringActionController
             }
 
             ActionButton finish = new ActionButton("finish", "Finish");
-            finish.setURL(cloneUrl.setAction("finish").getEncodedLocalURIString());
+            finish.setURL(cloneUrl.setAction("finish"));
             finish.setActionType(ActionButton.Action.LINK);
             bb.add(finish);
 
@@ -267,15 +267,17 @@ public class SqlScriptController extends SpringActionController
                 out.print("</table><br>");
                 cloneUrl.deleteParameter("fileName");
 
-                ActionURL runScripts = cloneUrl.clone().replaceParameter("allowMultipleSubmits", "1");
-                ActionButton runAll = new ActionButton(runScripts.setAction("runAll").getEncodedLocalURIString(), "Run All");
+                ActionURL runAllURL = cloneUrl.clone().replaceParameter("allowMultipleSubmits", "1");
+                ActionButton runAll = new ActionButton(runAllURL.setAction("runAll"), "Run All");
                 runAll.setActionType(ActionButton.Action.LINK);
 
+                ActionURL runSelectedURL = runAllURL.clone().setAction("runSelected");
                 ActionButton runSelected = new ActionButton("runSelected", "Run Selected");
-                runSelected.setScript("return verifySelected(this.form, \"" + runScripts.setAction("runSelected").getEncodedLocalURIString() + "\", \"post\", \"scripts\")");
+                runSelected.setScript("return verifySelected(this.form, \"" + runSelectedURL.getEncodedLocalURIString() + "\", \"post\", \"scripts\")");
                 runSelected.setActionType(ActionButton.Action.GET);
 
-                ActionButton insertAll = new ActionButton(cloneUrl.setAction("insertAll").getEncodedLocalURIString(), "Mark All As \"Run\"");
+                ActionURL insertAllURL = cloneUrl.clone().setAction("insertAll");
+                ActionButton insertAll = new ActionButton(insertAllURL, "Mark All As \"Run\"");
                 insertAll.setActionType(ActionButton.Action.LINK);
 
                 ActionButton insertSelected = new ActionButton("markSelected", "Mark Selected As \"Run\"");
@@ -328,7 +330,7 @@ public class SqlScriptController extends SpringActionController
             rgn.getDisplayColumn(0).setURL(cloneUrl.setAction("showScript").getLocalURIString() + "&fileName=${FileName}");
 
             ActionButton deleteAll = new ActionButton("deleteAll", "Mark All As \"New\"");
-            deleteAll.setURL(cloneUrl.setAction("deleteAll").getEncodedLocalURIString());
+            deleteAll.setURL(cloneUrl.setAction("deleteAll").getLocalURIString());
             deleteAll.setActionType(ActionButton.Action.LINK);
 
             ActionButton deleteSelected = new ActionButton("markSelected", "Mark Selected As \"New\"");
@@ -653,18 +655,18 @@ public class SqlScriptController extends SpringActionController
             String fileName = cloneUrl.getParameter("fileName");
             cloneUrl.deleteParameter("fileName");
 
-            ActionButton showList = new ActionButton(cloneUrl.setAction("showList").getEncodedLocalURIString(), "Show List");
+            ActionButton showList = new ActionButton(cloneUrl.setAction("showList"), "Show List");
             showList.setActionType(ActionButton.Action.LINK);
             bb.add(showList);
 
             cloneUrl.addParameter("fileNames", fileName);
-            ActionButton runScript = new ActionButton(cloneUrl.clone().setAction("runSelected").replaceParameter("allowMultipleSubmits", "1").getEncodedLocalURIString(), "Run Script" + (exists ? " Again" : ""));
+            ActionButton runScript = new ActionButton(cloneUrl.clone().setAction("runSelected").replaceParameter("allowMultipleSubmits", "1"), "Run Script" + (exists ? " Again" : ""));
             runScript.setActionType(ActionButton.Action.LINK);
             bb.add(runScript);
 
             if (!exists)
             {
-                ActionButton markScript = new ActionButton(cloneUrl.setAction("insertSelected").getEncodedLocalURIString(), "Mark Script As \"Run\"");
+                ActionButton markScript = new ActionButton(cloneUrl.setAction("insertSelected"), "Mark Script As \"Run\"");
                 markScript.setActionType(ActionButton.Action.LINK);
                 bb.add(markScript);
             }
