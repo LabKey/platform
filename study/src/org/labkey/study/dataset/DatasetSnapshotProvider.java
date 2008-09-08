@@ -15,9 +15,13 @@
  */
 package org.labkey.study.dataset;
 
-import org.labkey.api.data.*;
+import org.apache.commons.lang.math.NumberUtils;
+import org.apache.log4j.Logger;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -26,26 +30,25 @@ import org.labkey.api.query.snapshot.AbstractSnapshotProvider;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotForm;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
-import org.labkey.api.view.*;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.ShutdownListener;
-import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.ContextListener;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
+import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
-import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.StudyCachable;
-import org.labkey.study.StudyServiceImpl;
-import org.labkey.study.query.DataSetTable;
-import org.apache.log4j.Logger;
-import org.apache.commons.lang.math.NumberUtils;
+import org.labkey.study.model.StudyManager;
 
-import javax.servlet.ServletException;
 import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletException;
 import java.util.*;
 /*
  * User: Karl Lum
@@ -60,7 +63,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
     // map of property uri to dataset id
     private static final Map<String, Map<String, Integer>> _datasetPropertyMap = new HashMap<String, Map<String, Integer>>();
-    private static Timer _timer = new Timer("SnapshotUpdateTimer", true);;
+    private static Timer _timer = new Timer("SnapshotUpdateTimer", true);
 
     private DatasetSnapshotProvider()
     {
@@ -143,7 +146,8 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         return new ActionURL(StudyController.CreateSnapshotAction.class, context.getContainer()).
                 addParameter(qs.param(QueryParam.schemaName), settings.getSchemaName()).
                 addParameter(qs.param(QueryParam.queryName), settings.getQueryName()).
-                addParameter(qs.param(QueryParam.viewName), settings.getViewName());
+                addParameter(qs.param(QueryParam.viewName), settings.getViewName()).
+                addParameter(DataSetDefinition.DATASETKEY, context.getActionURL().getParameter(DataSetDefinition.DATASETKEY));
     }
 
     public ActionURL createSnapshot(QuerySnapshotForm form, List<String> errors) throws Exception
@@ -156,6 +160,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             QueryView view = QueryView.create(form);
             StringBuilder sb = new StringBuilder();
             TSVGridWriter tsvWriter = new TSVGridWriter(view.getResultset());
+            tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
             tsvWriter.write(sb);
 
             if (!schema.getScope().isTransactionActive())
@@ -166,6 +171,15 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             // create the dataset definition
             Study study = StudyManager.getInstance().getStudy(form.getViewContext().getContainer());
             boolean isDemographicData = false;
+            int datasetId = NumberUtils.toInt(form.getViewContext().getActionURL().getParameter(DataSetDefinition.DATASETKEY), -1);
+            if (datasetId != -1)
+            {
+                DataSetDefinition currentDef = study.getDataSet(datasetId);
+                if (currentDef != null)
+                {
+                    isDemographicData = currentDef.isDemographicData();
+                }
+            }
 
             DataSetDefinition def = AssayPublishManager.getInstance().createAssayDataset(form.getViewContext().getUser(),
                     study, form.getSnapshotName(), null, null, isDemographicData);
@@ -179,22 +193,27 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 String domainURI = def.getTypeURI();
                 OntologyManager.ensureDomainDescriptor(domainURI, form.getSnapshotName(), form.getViewContext().getContainer());
                 Domain d = PropertyService.get().getDomain(form.getViewContext().getContainer(), domainURI);
-
+                Map<String, String> columnMap = new CaseInsensitiveHashMap<String>();
+                
                 for (ColumnInfo col : QueryService.get().getColumns(view.getTable(), snapshot.getColumns()).values())
                 {
                     addAsDomainProperty(d, col);
+                    columnMap.put(col.getAlias(), getPropertyURI(d, col));
                 }
                 d.save(form.getViewContext().getUser());
 
                 // import the data
                 StudyManager.getInstance().importDatasetTSV(study, form.getViewContext().getUser(), def, sb.toString(),
-                        System.currentTimeMillis(), Collections.<String,String>emptyMap(), errors, true, null);
+                        System.currentTimeMillis(), columnMap, errors, true, null);
 
-                if (startedTransaction)
-                    schema.getScope().commitTransaction();
+                if (errors.isEmpty())
+                {
+                    if (startedTransaction)
+                        schema.getScope().commitTransaction();
 
-                return new ActionURL(StudyController.DatasetAction.class, form.getViewContext().getContainer()).
-                        addParameter(DataSetDefinition.DATASETKEY, def.getDataSetId());
+                    return new ActionURL(StudyController.DatasetAction.class, form.getViewContext().getContainer()).
+                            addParameter(DataSetDefinition.DATASETKEY, def.getDataSetId());
+                }
             }
             return null;
         }
@@ -205,12 +224,26 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         }
     }
 
-    private QueryForm getQueryForm(QueryDefinition def, ViewContext context)
+    private Map<String, String> getColumnMap(Domain d, QueryView view, List<FieldKey> columns)
     {
+        Map<String, String> columnMap = new CaseInsensitiveHashMap<String>();
+
+        for (ColumnInfo col : QueryService.get().getColumns(view.getTable(), columns).values())
+        {
+            columnMap.put(col.getAlias(), getPropertyURI(d, col));
+        }
+        return columnMap;
+    }
+
+    private QueryForm getQueryForm(QuerySnapshotDefinition snapshotDef, ViewContext context)
+    {
+        QueryDefinition def = snapshotDef.getQueryDefinition();
+
         QueryForm form = new QueryForm();
         form.setSchemaName(def.getSchemaName());
         form.setQueryName(def.getName());
         form.setViewContext(context);
+        form.setViewName(snapshotDef.getViewName());
 
         return form;
     }
@@ -220,9 +253,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(form.getViewContext().getContainer(), form.getSchemaName(), form.getSnapshotName());
         if (def != null)
         {
-            QueryDefinition queryDef = def.getQueryDefinition();
-            QueryForm sourceForm = getQueryForm(queryDef, form.getViewContext());
-
+            QueryForm sourceForm = getQueryForm(def, form.getViewContext());
             Study study = StudyManager.getInstance().getStudy(form.getViewContext().getContainer());
 
             // purge the dataset rows then recreate the new one...
@@ -241,6 +272,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                     
                     StringBuilder sb = new StringBuilder();
                     TSVGridWriter tsvWriter = new TSVGridWriter(view.getResultset());
+                    tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
                     tsvWriter.write(sb);
 
                     if (!schema.getScope().isTransactionActive())
@@ -249,10 +281,12 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                         startedTransaction = true;
                     }
                     int numRowsDeleted = StudyManager.getInstance().purgeDataset(study, dsDef);
+                    Domain d = PropertyService.get().getDomain(form.getViewContext().getContainer(), dsDef.getTypeURI());
+                    Map<String, String> columnMap = getColumnMap(d, view, def.getColumns());
 
                     // import the new data
                     String[] newRows = StudyManager.getInstance().importDatasetTSV(study, form.getViewContext().getUser(), dsDef, sb.toString(), System.currentTimeMillis(),
-                            Collections.<String,String>emptyMap(), errors, true, null);
+                            columnMap, errors, true, null);
 
                     if (!errors.isEmpty())
                         return null;
@@ -381,7 +415,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 propertyMap = new HashMap<String, String>();
                 _snapshotPropertyMap.put(def.getId(), propertyMap);
 
-                QueryView view = QueryView.create(getQueryForm(def.getQueryDefinition(), HttpView.currentContext()));
+                QueryView view = QueryView.create(getQueryForm(def, HttpView.currentContext()));
                 for (DisplayColumn dc : view.getDisplayColumns())
                 {
                     ColumnInfo info = dc.getColumnInfo();

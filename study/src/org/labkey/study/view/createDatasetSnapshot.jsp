@@ -28,6 +28,8 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.study.model.DataSetDefinition" %>
+<%@ page import="org.labkey.api.data.ColumnInfo" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -41,7 +43,6 @@
         columnMap.put(name, name);
 
     boolean isAutoUpdateable = QuerySnapshotService.get(bean.getSchemaName()) instanceof QuerySnapshotService.AutoUpdateable;
-    boolean isEdit = QueryService.get().getSnapshotDef(context.getContainer(), bean.getSchemaName(), bean.getSnapshotName()) != null;
 
     Map<String, String> updateDelay = new LinkedHashMap<String, String>();
     updateDelay.put("30", "30 seconds");
@@ -65,7 +66,7 @@
         <tr><td colspan="10" class="labkey-title-area-line"><img height="1" width="1" src="<%=AppProps.getInstance().getContextPath() + "/_.gif"%>"></td></tr>
 
         <tr><td>&nbsp;</td></tr>
-        <tr><td>Snapshot&nbsp;Name:</td><td><input type="text" name="<%=isEdit ? "" : "snapshotName"%>" <%=isEdit ? "readonly" : ""%> value="<%=StringUtils.trimToEmpty(bean.getSnapshotName())%>"></td></tr>
+        <tr><td>Snapshot&nbsp;Name:</td><td><input type="text" name="<%=bean.isEdit() ? "" : "snapshotName"%>" <%=bean.isEdit() ? "readonly" : ""%> value="<%=StringUtils.trimToEmpty(bean.getSnapshotName())%>"></td></tr>
         <tr><td>&nbsp;</td></tr>
 
         <tr><th colspan="10" class="labkey-header">Snapshot Refresh</th></tr>
@@ -79,11 +80,14 @@
         <tr><td>&nbsp;</td></tr>
         <tr><td></td><td><select name="updateDelay" id="updateDelay" style="display:none"><labkey:options value="<%=String.valueOf(bean.getUpdateDelay())%>" map="<%=updateDelay%>"></labkey:options></select></td></tr>
 
-        <tr><td><%=PageFlowUtil.generateSubmitButton("Next")%></td></tr>
+        <tr><td><%=PageFlowUtil.generateSubmitButton(bean.isEdit() ? "Update" : "Next")%></td></tr>
 
         <tr><td></td><td><table>
     <%  for (DisplayColumn col : QuerySnapshotService.get(bean.getSchemaName()).getDisplayColumns(bean)) { %>
-            <tr><td><input type="hidden" name="snapshotColumns" value="<%=col.getName()%>"></td></tr>
+            <tr><td><input type="hidden" name="snapshotColumns" value="<%=getColumnName(col)%>"></td></tr>
+    <%  }
+        if (context.getActionURL().getParameter(DataSetDefinition.DATASETKEY) != null) { %>
+            <tr><td><input type="hidden" name="<%=DataSetDefinition.DATASETKEY%>" value="<%=context.getActionURL().getParameter(DataSetDefinition.DATASETKEY)%>"></td></tr>
     <%  } %>
         </table></td></tr>
 
@@ -116,3 +120,13 @@
 
 </script>
 
+<%!
+    String getColumnName(DisplayColumn col)
+    {
+        ColumnInfo info = col.getColumnInfo();
+        if (info != null)
+            return info.getName();
+
+        return col.getName();
+    }
+%>

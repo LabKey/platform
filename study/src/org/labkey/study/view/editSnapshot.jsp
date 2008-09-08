@@ -57,15 +57,16 @@
 </table>
 
 <form action="" method="post" onsubmit="return confirm('Updating will replace all existing data with a new set of data. Continue?');">
+    <input type="hidden" name="updateSnapshot" value="true">
     <table>
-    <tr><td>&nbsp;</td></tr>
-    <tr>
-        <td><%=PageFlowUtil.generateSubmitButton("Update Snapshot")%></td>
-<%  if (def != null) { %>
-        <td><%=PageFlowUtil.generateButton("Source Query", bean.getSchema().urlFor(QueryAction.sourceQuery, def.getQueryDefinition()))%></td>
-        <td><%=PageFlowUtil.generateButton(historyLabel, context.cloneActionURL().replaceParameter("showHistory", String.valueOf(!showHistory)))%></td>
-        <td><%=PageFlowUtil.generateButton(datasetLabel, context.cloneActionURL().replaceParameter("showDataset", String.valueOf(!showDataset)))%></td>
-<%  } %>
-    </tr>
-</table>
+        <tr><td>&nbsp;</td></tr>
+        <tr>
+            <td><%=PageFlowUtil.generateSubmitButton("Update Snapshot")%></td>
+<%      if (def != null) { %>
+            <td><%=PageFlowUtil.generateButton("Source Query", bean.getSchema().urlFor(QueryAction.sourceQuery, def.getQueryDefinition()))%></td>
+            <td><%=PageFlowUtil.generateButton(historyLabel, context.cloneActionURL().replaceParameter("showHistory", String.valueOf(!showHistory)))%></td>
+            <td><%=PageFlowUtil.generateButton(datasetLabel, context.cloneActionURL().replaceParameter("showDataset", String.valueOf(!showDataset)))%></td>
+<%      } %>
+        </tr>
+    </table>
 </form>

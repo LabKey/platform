@@ -4499,6 +4499,7 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(QuerySnapshotForm form, boolean reshow, BindException errors) throws Exception
         {
+            form.setEdit(true);
             if (!reshow)
                 form.init(QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName(), form.getSnapshotName()));
 
@@ -4570,7 +4571,6 @@ public class StudyController extends BaseStudyController
                 QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName(), form.getSnapshotName());
                 if (def != null)
                 {
-                    def.setColumns(form.getFieldKeyColumns());
                     def.setUpdateDelay(form.getUpdateDelay());
                     _successURL = QuerySnapshotService.get(form.getSchemaName()).updateSnapshotDefinition(getViewContext(), def, errorList);
                     if (!errorList.isEmpty())

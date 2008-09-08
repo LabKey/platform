@@ -66,6 +66,7 @@ public class QuerySnapshotDef extends Entity implements Cloneable
     private Date _lastUpdated;
     private Date _nextUpdate;
     private int _updateDelay;
+    private String _viewName;
 
     public int getRowId()
     {
@@ -155,6 +156,16 @@ public class QuerySnapshotDef extends Entity implements Cloneable
     public void setUpdateDelay(int updateDelay)
     {
         _updateDelay = updateDelay;
+    }
+
+    public String getViewName()
+    {
+        return _viewName;
+    }
+
+    public void setViewName(String viewName)
+    {
+        _viewName = viewName;
     }
 
     public QuerySnapshotDef clone()

@@ -15,25 +15,28 @@
  */
 package org.labkey.query;
 
-import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
-import org.labkey.api.query.QueryDefinition;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.CustomView;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.User;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.query.persist.QueryManager;
+import org.labkey.api.view.HttpView;
 import org.labkey.query.persist.QueryDef;
+import org.labkey.query.persist.QueryManager;
 import org.labkey.query.persist.QuerySnapshotDef;
-import org.labkey.common.util.Pair;
-import org.apache.log4j.Logger;
-import org.apache.commons.lang.StringUtils;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
 /*
  * User: Karl Lum
  * Date: Jul 14, 2008
@@ -120,6 +123,13 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
         {
             throw new IllegalAccessException("Access denied");
         }
+        if (_snapshotDef.getViewName() != null)
+        {
+            QueryDefinition def = getQueryDefinition();
+            CustomView customView = def.getCustomView(user, HttpView.currentRequest(), _snapshotDef.getViewName());
+            if (customView != null)
+                customView.delete(user, HttpView.currentRequest());
+        }
         QueryManager.get().delete(user, _snapshotDef);
         _snapshotDef = null;
         _queryDef = null;
@@ -174,6 +184,16 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
     public void setUpdateDelay(int delayInSeconds)
     {
         edit().setUpdateDelay(delayInSeconds);
+    }
+
+    public String getViewName()
+    {
+        return _snapshotDef.getViewName();
+    }
+
+    public void setViewName(String viewName)
+    {
+        edit().setViewName(viewName);
     }
 
     public void save(User user, Container container) throws Exception
