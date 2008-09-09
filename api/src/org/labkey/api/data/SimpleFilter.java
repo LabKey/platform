@@ -424,7 +424,7 @@ public class SimpleFilter implements Filter
         return this;
     }
 
-    public SimpleFilter addInClause(String colName, List paramVals)
+    public SimpleFilter addInClause(String colName, Collection paramVals)
     {
         _clauses.add(new InClause(colName, paramVals));
         return this;

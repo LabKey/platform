@@ -252,6 +252,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
         addProperty(sourceContainer, name, value, PropertyType.STRING, dataMap, types);
     }
 
+    protected void addProperty(PropertyDescriptor pd, ObjectProperty value, Map<String, Object> dataMap, Collection<PropertyDescriptor> types)
+    {
+        addProperty(pd, value == null ? null : value.value(), dataMap, types);
+    }
+
     protected void addProperty(PropertyDescriptor pd, Object value, Map<String, Object> dataMap, Collection<PropertyDescriptor> types)
     {
         dataMap.put(pd.getName(), value);
@@ -290,6 +295,20 @@ public abstract class AbstractAssayProvider implements AssayProvider
         prop.setType(PropertyService.get().getType(domain.getContainer(), type.getXmlName()));
         prop.setDescription(description);
         return prop;
+    }
+
+    public static boolean isDomainType(Domain domain, ExpProtocol protocol, String domainPrefix)
+    {
+        String domainURI;
+        if (protocol.getRowId() > 0)
+        {
+            domainURI = getDomainURIForPrefix(protocol, domainPrefix);
+        }
+        else
+        {
+            domainURI = getPresubstitutionLsid(domainPrefix);
+        }
+        return domainURI.equals(domain.getTypeURI());
     }
 
     public static String getPresubstitutionLsid(String prefix)
@@ -694,21 +713,10 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public Set<String> getReservedPropertyNames(ExpProtocol protocol, Domain domain)
     {
         Set<String> reservedNames = new HashSet<String>();
-        String runDomainURI = "";
-        String uploadSetDomainURI = "";
-        if (protocol.getRowId() > 0)
-        {
-            runDomainURI = getDomainURIForPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_RUN);
-            uploadSetDomainURI = getDomainURIForPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_UPLOAD_SET);
-        }
-        else
-        {
-            runDomainURI = getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_RUN);
-            uploadSetDomainURI = getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_UPLOAD_SET);
-        }
+        boolean runDomain = isDomainType(domain, protocol, ExpProtocol.ASSAY_DOMAIN_RUN);
+        boolean uploadSetDomain = isDomainType(domain, protocol, ExpProtocol.ASSAY_DOMAIN_UPLOAD_SET);
 
-        if (runDomainURI.equals(domain.getTypeURI()) ||
-            uploadSetDomainURI.equals(domain.getTypeURI()))
+        if (runDomain || uploadSetDomain)
         {
             TableInfo runTable = ExperimentService.get().getTinfoExperimentRun();
             for (ColumnInfo column : runTable.getColumns())

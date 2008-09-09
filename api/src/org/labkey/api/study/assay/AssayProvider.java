@@ -85,7 +85,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     FieldKey getSpecimenIDFieldKey();
 
-    ActionURL publish(User user, ExpProtocol protocol, Container study, Set<AssayPublishKey> dataKeys, List<String> errors);
+    ActionURL publish(User user, ExpProtocol protocol, Container study, Map<Integer, AssayPublishKey> dataKeys, List<String> errors);
 
     boolean canPublish();
 

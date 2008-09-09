@@ -173,6 +173,11 @@ public class RenderContext extends BoundMap // extends ViewContext
             for (DisplayColumn displayColumn : displayColumns)
             {
                 displayColumn.addQueryColumns(ret);
+                if (ret.contains(null))
+                {
+                    // Catch this problem before it's too late to figure out who the culprit was
+                    throw new IllegalStateException("The display column " + displayColumn + (displayColumn.getColumnInfo() != null ? " with column name " + displayColumn.getColumnInfo().getName() : "") + " added one or more null columns to the set of query columns");
+                }
             }
 
             List<ColumnInfo> pkColumns = tinfo.getPkColumns();

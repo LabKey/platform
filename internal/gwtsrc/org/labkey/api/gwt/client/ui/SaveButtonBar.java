@@ -69,7 +69,7 @@ public class SaveButtonBar extends FlexTable
         setWidget(0, 2, cancelButton);
     }
 
-    public void ownerDirty(boolean dirty)
+    public void setAllowSave(boolean dirty)
     {
         saveButton.setEnabled(dirty);
     }    

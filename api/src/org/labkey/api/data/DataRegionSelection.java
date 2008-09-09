@@ -21,7 +21,6 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpSession;
@@ -87,6 +86,17 @@ public class DataRegionSelection
     public static Set<String> getSelected(ViewContext context, boolean clearSelection)
     {
         return getSelected(context, null, false, clearSelection);
+    }
+
+    public static int[] toInts(Collection<String> ids)
+    {
+        int[] result = new int[ids.size()];
+        int index = 0;
+        for (String id : ids)
+        {
+            result[index++] = Integer.parseInt(id);
+        }
+        return result;
     }
 
     public static String getSelectionKeyFromRequest(ViewContext context)

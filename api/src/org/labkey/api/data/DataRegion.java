@@ -257,6 +257,18 @@ public class DataRegion extends DisplayElement
             _hiddenFormFields.add(new Pair<String, String>(name, value));
     }
 
+    public String getHiddenFormFieldValue(String name)
+    {
+        for (Pair<String, String> hiddenFormField : _hiddenFormFields)
+        {
+            if (name.equals(hiddenFormField.getKey()))
+            {
+                return hiddenFormField.getValue();
+            }
+        }
+        return null;
+    }
+
     public String getDetailsLink()
     {
         List<String> pkColNames = getPkColumnNames();
@@ -477,6 +489,11 @@ public class DataRegion extends DisplayElement
         for (DisplayColumn dc : _displayColumns)
         {
             dc.addQueryColumns(queryColumns);
+            if (queryColumns.contains(null))
+            {
+                // Catch this problem before it's too late to figure out who the culprit was
+                throw new IllegalStateException("The display column " + dc + " added one or more null columns to the set of query columns");
+            }
 
             if (!queryColumns.isEmpty())
             {

@@ -390,13 +390,18 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable
         if (dirty && _statusLabel.getText().equalsIgnoreCase(_statusSuccessful))
             _statusLabel.setHTML("<br/>");
 
-        if (saveBarTop != null)
-            saveBarTop.ownerDirty(dirty);
-
-        if (saveBarBottom != null)
-            saveBarBottom.ownerDirty(dirty);
+        setAllowSave(dirty);
 
         _dirty = dirty;
+    }
+
+    private void setAllowSave(boolean dirty)
+    {
+        if (saveBarTop != null)
+            saveBarTop.setAllowSave(dirty);
+
+        if (saveBarBottom != null)
+            saveBarBottom.setAllowSave(dirty);
     }
 
     private boolean validate()
@@ -444,6 +449,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable
             public void onFailure(Throwable caught)
             {
                 Window.alert(caught.getMessage());
+                setDirty(true);
             }
 
             public void onSuccess(Object result)
@@ -455,6 +461,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable
                 show(_assay);
             }
         });
+        setAllowSave(false);
     }
 
     public void save(AsyncCallback callback)

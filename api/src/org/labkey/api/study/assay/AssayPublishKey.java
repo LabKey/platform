@@ -28,16 +28,16 @@ public class AssayPublishKey
     private String _participantId;
     private float _visitId;
     private Date _date;
-    private Object _dataId;
+    private int _dataId;
 
-    public AssayPublishKey(String participantId, float visitId, Object dataId)
+    public AssayPublishKey(String participantId, float visitId, int dataId)
     {
         _participantId = participantId;
         _visitId = visitId;
         _dataId = dataId;
     }
 
-    public AssayPublishKey(String participantId, Date date, Object dataId)
+    public AssayPublishKey(String participantId, Date date, int dataId)
     {
         _participantId = participantId;
         _date = date;
@@ -54,7 +54,7 @@ public class AssayPublishKey
         return _visitId;
     }
 
-    public Object getDataId()
+    public int getDataId()
     {
         return _dataId;
     }

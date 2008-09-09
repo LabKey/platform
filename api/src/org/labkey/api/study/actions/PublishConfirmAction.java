@@ -162,7 +162,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
             ActionErrors actionErrors = PageFlowUtil.getActionErrors(getViewContext().getRequest(), true);
             postedVisits = new HashMap<Object, String>();
             postedPtids = new HashMap<Object, String>();
-            Set<AssayPublishKey> publishData = new HashSet<AssayPublishKey>();
+            Map<Integer, AssayPublishKey> publishData = new LinkedHashMap<Integer, AssayPublishKey>();
             String[] participantIds = publishConfirmForm.getParticipantId();
             String[] visitIds = publishConfirmForm.getVisitId();
             String[] dates = publishConfirmForm.getDate();
@@ -201,7 +201,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
                     postedPtids.put(objectId, participantId);
                     postedVisits.put(objectId, visitIdStr);
                     if (visitId != null)
-                        publishData.add(new AssayPublishKey(participantId,  visitId.floatValue(),  objectId));
+                        publishData.put(objectId, new AssayPublishKey(participantId,  visitId.floatValue(),  objectId.intValue()));
                 }
                 else // TimepointType.DATE
                 {
@@ -224,7 +224,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
                     postedPtids.put(objectId, participantId);
                     postedVisits.put(objectId, dateStr);
                     if (date != null)
-                        publishData.add(new AssayPublishKey(participantId,  date,  objectId));
+                        publishData.put(objectId, new AssayPublishKey(participantId,  date,  objectId.intValue()));
                 }
             }
             if (missingPtid)

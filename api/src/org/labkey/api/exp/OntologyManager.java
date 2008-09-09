@@ -156,7 +156,7 @@ public class OntologyManager
 					if (null == value)
                     {
                         if (pd.isRequired())
-                            throw new IllegalArgumentException("Missing value for required property " + pd.getName());
+                            throw new ValidationException("Missing value for required property " + pd.getName());
                         else
                             continue;
                     }
