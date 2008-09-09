@@ -159,6 +159,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
      * @memberOf LABKEY.ext.EditorGridPanel
      */
     saveChanges : function() {
+        this.stopEditing();
         this.getStore().commitChanges();
     },
 
@@ -314,7 +315,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
 
         return function(data, cellMetaData, record, rowIndex, colIndex, store)
         {
-            if(null == data)
+            if(null == data || undefined == data || data.toString().length == 0)
                 return data;
 
             //format data into a string
