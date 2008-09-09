@@ -32,8 +32,8 @@ LABKEY.Security = new function()
         {
             //ensure response is JSON before trying to decode
             var json = null;
-            var contentType = response.getResponseHeader['Content-Type'];
-            if(contentType && contentType.indexOf('application/json') >= 0)
+            if(response && response.getResponseHeader && response.getResponseHeader['Content-Type']
+                    && response.getResponseHeader['Content-Type'].indexOf('application/json') >= 0)
                 json = Ext.util.JSON.decode(response.responseText);
 
             if(fn)
