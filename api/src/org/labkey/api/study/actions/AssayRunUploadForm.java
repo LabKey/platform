@@ -121,7 +121,17 @@ public class AssayRunUploadForm extends ProtocolIdForm implements AssayRunUpload
         if (_runSamplesByCaption == null)
         {
             _runSamplesByCaption = new HashMap<String, String>();
-            for (int i = 0; i < getProtocol().getMaxInputMaterialPerInstance(); i++)
+            // We've been creating bad assay definitions into the database - they all have MaxInputMaterialPerInstance
+            // set to 0 when they should be set to 1, but it was masked by a bug where getMaxInputMaterialPerInstance()
+            // used to return the value for getMaxInputDataPerInstance(). For now, assume that there should be at
+            // least one material input.
+            Integer protocolInputCount = getProtocol().getMaxInputMaterialPerInstance();
+            int inputCount = 1;
+            if (protocolInputCount != null && protocolInputCount.intValue() > 1)
+            {
+                inputCount = protocolInputCount.intValue();
+            }
+            for (int i = 0; i < inputCount; i++)
             {
                 String value = getRequest().getParameter("_sampleId" + i);
                 if (value == null)
