@@ -45,6 +45,7 @@
         var comment = images[0].getAttribute("title");
         if (!comment)
             comment = defaultComment;
+        var imgSrc = images[0].src;
         for (var i = 0; i < images.length; i ++)
         {
             var img = images[i];
@@ -76,18 +77,22 @@
         for (var i = 0; i < images.length; i ++)
         {
             var img = images[i];
-            img.src = urlSet;
             if (newComment == null)
             {
-                // no change
-            }
-            else if (newComment)
-            {
-                img.setAttribute("title", newComment);
+                // user canceled; restore original img src
+                img.src = imgSrc;
             }
             else
             {
-                img.removeAttribute("title");
+                img.src = urlSet;
+                if (newComment)
+                {
+                    img.setAttribute("title", newComment);
+                }
+                else
+                {
+                    img.removeAttribute("title");
+                }
             }
         }
         return false;
