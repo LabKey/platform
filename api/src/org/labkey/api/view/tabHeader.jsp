@@ -45,6 +45,6 @@
         </td>
     </tr>
     <tr>
-        <td colspan="<%=tabs.size() + 2%>" class="labkey-tab" style="border-top:none;text-align:left;" width=100%>
+        <td colspan="<%=tabs.size() + 2%>" class="labkey-tab-content" style="border-top:none;text-align:left;" width=100%>
             <img src="<%=request.getContextPath()%>/_.gif" height=1 width=5>
 
