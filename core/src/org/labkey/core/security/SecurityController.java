@@ -1397,12 +1397,16 @@ public class SecurityController extends SpringActionController
 
             ApiSimpleResponse response = new ApiSimpleResponse();
 
-            response.put("container", getContainerPerms(container, form.isIncludeSubfolders()));
+            //if the container is not the root container, get the set of groups
+            //from the container's project and pass that down the recursion stack
+            response.put("container", getContainerPerms(container,
+                    SecurityManager.getGroups(container.getProject(), true),
+                    form.isIncludeSubfolders()));
 
             return response;
         }
 
-        protected Map<String,Object> getContainerPerms(Container container, boolean recurse)
+        protected Map<String,Object> getContainerPerms(Container container, Group[] groups, boolean recurse)
         {
             ACL acl = container.getAcl();
             Map<String,Object> containerPerms = new HashMap<String,Object>();
@@ -1410,13 +1414,15 @@ public class SecurityController extends SpringActionController
             containerPerms.put("id", container.getId());
             containerPerms.put("name", container.getName());
             containerPerms.put("isInheritingPerms", container.isInheritedAcl());
-            containerPerms.put("groups", getGroupPerms(container, acl));
+            containerPerms.put("groups", getGroupPerms(container, acl, groups));
 
             if(recurse && container.hasChildren())
             {
                 List<Map<String,Object>> childPerms = new ArrayList<Map<String,Object>>();
                 for(Container child : container.getChildren())
-                    childPerms.add(getContainerPerms(child, recurse));
+                    childPerms.add(getContainerPerms(child,
+                            child.isProject() ? SecurityManager.getGroups(child, true) : groups,
+                            recurse));
                 
                 containerPerms.put("children", childPerms);
             }
@@ -1424,12 +1430,11 @@ public class SecurityController extends SpringActionController
             return containerPerms;
         }
 
-        protected List<Map<String,Object>> getGroupPerms(Container container, ACL acl)
+        protected List<Map<String,Object>> getGroupPerms(Container container, ACL acl, Group[] groups)
         {
             if(null == acl)
                 acl = container.getAcl();
 
-            Group[] groups = SecurityManager.getGroups(container.getProject(), true);
             if(null == groups)
                 return null;
 
