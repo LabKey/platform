@@ -1071,6 +1071,19 @@ td.labkey-tab-inactive
     color: #444444;
 }
 
+td.labkey-tab-content, .labkey-tab-content
+{
+    padding-top:0.1em;
+    padding-bottom:0.1em;
+    padding-left:0.5em;
+    padding-right:0.5em;
+    border-left: solid 1px #89A1B4;
+    border-right: solid 1px #89A1B4;
+    border-bottom: solid 1px #89A1B4;
+    color: #003399;
+    vertical-align:bottom;
+}
+
 /* This tab is shaded so its looks like it is back */
 td.labkey-tab-shaded, .labkey-tab-shaded
 {
