@@ -91,7 +91,7 @@ public class ExpProtocolImpl extends ExpIdentifiableBaseImpl<Protocol> implement
 
     public Integer getMaxInputMaterialPerInstance()
     {
-        return _object.getMaxInputDataPerInstance();
+        return _object.getMaxInputMaterialPerInstance();
     }
 
     public String getProtocolDescription()

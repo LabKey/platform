@@ -18,15 +18,12 @@ package org.labkey.study.assay.query;
 
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.QueryPicker;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.*;
 import org.labkey.api.security.ACL;
-
-import java.util.List;
-import java.util.Collections;
+import org.labkey.study.controllers.assay.AssayController;
 
 /**
  * User: brittp
@@ -50,7 +47,7 @@ public class AssayListQueryView extends QueryView
     {
         super.populateButtonBar(view, bar);
 
-        ActionURL insertURL = new ActionURL("assay", "chooseAssayType.view", view.getViewContext().getContainer());
+        ActionURL insertURL = new ActionURL(AssayController.ChooseAssayTypeAction.class, view.getViewContext().getContainer());
         ActionButton insert = new ActionButton("New Assay Design", insertURL);
         insert.setActionType(ActionButton.Action.LINK);
         insert.setDisplayPermission(ACL.PERM_INSERT);
@@ -59,10 +56,17 @@ public class AssayListQueryView extends QueryView
         Container project = getContainer().getProject();
         if (!project.equals(getContainer()) && project.hasPermission(getUser(), ACL.PERM_INSERT))
         {
-            ActionURL manageProjectAssays = new ActionURL("assay", "begin.view", project);
+            ActionURL manageProjectAssays = new ActionURL(AssayController.BeginAction.class, project);
             ActionButton sharedButton = new ActionButton("Manage Project Assays", manageProjectAssays);
             sharedButton.setActionType(ActionButton.Action.LINK);
             bar.add(sharedButton);
         }
+    }
+
+    protected DataView createDataView()
+    {
+        DataView result = super.createDataView();
+        result.getRenderContext().setBaseSort(new Sort("Name"));
+        return result;
     }
 }

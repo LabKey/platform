@@ -44,6 +44,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.settings.AppProps;
 import org.labkey.experiment.ExperimentRunGraph;
 import org.labkey.experiment.XarReader;
+import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 
@@ -576,7 +577,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         getExpSchema().getScope().rollbackTransaction();
     }
 
-    public QueryView createExperimentRunWebPart(ViewContext context, ExperimentRunFilter filter, boolean moveButton, boolean exportXARButton)
+    public ExperimentRunListView createExperimentRunWebPart(ViewContext context, ExperimentRunFilter filter, boolean moveButton, boolean exportXARButton)
     {
         ExperimentRunListView view = ExperimentRunListView.createView(context, filter, true);
         view.setShowDeleteButton(true);
@@ -584,10 +585,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         view.setShowMoveRunsButton(moveButton);
         view.setShowExportXARButton(exportXARButton);
         view.setTitle("Experiment Runs");
-        ActionURL url = context.getActionURL().clone();
-        url.setPageFlow("Experiment");
-        url.setAction("showRuns.view");
-        url.deleteParameters();
+        ActionURL url = new ActionURL(ExperimentController.ShowRunsAction.class, context.getContainer());
         url.addParameter("experimentRunFilter", filter.getDescription());
         view.setTitleHref(url.toString());
         return view;
@@ -2537,7 +2535,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     {
         if (propMap.size() == 0)
             return;
-        ObjectProperty[] props = propMap.values().toArray(new ObjectProperty[0]);
+        ObjectProperty[] props = propMap.values().toArray(new ObjectProperty[propMap.values().size()]);
         // Todo - make this more efficient - don't delete all the old ones if they're the same
         if (clearExisting)
         {

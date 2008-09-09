@@ -16,9 +16,7 @@
 
 package org.labkey.experiment.pipeline;
 
-import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.data.Container;
@@ -103,206 +101,18 @@ public class MoveRunsPipelineJob extends PipelineJob
         return null;
     }
 
-    public void run()
+    public int[] getRunIds()
     {
-        setStatus("MOVING RUNS");
-        try
-        {
-
-            for (int runId : _runIds)
-            {
-                XarExporter exporter = new XarExporter(LSIDRelativizer.PARTIAL_FOLDER_RELATIVE, DataURLRelativizer.ORIGINAL_FILE_LOCATION);
-                ExpRunImpl experimentRun = ExperimentServiceImpl.get().getExpRun(runId);
-                if (experimentRun != null)
-                {
-                    exporter.addExperimentRun(experimentRun);
-
-                    ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-                    exporter.dumpXML(bOut);
-
-                    Map<String,Integer> dataFiles = new HashMap<String,Integer>();
-
-                    synchronized (ExperimentService.get().getImportLock())
-                    {
-                        ExperimentServiceImpl.get().getSchema().getScope().beginTransaction();
-                        try
-                        {
-                            for (ExpData oldData : ExperimentServiceImpl.get().getAllDataUsedByRun(runId))
-                            {
-                                ExperimentDataHandler handler = oldData.findDataHandler();
-                                handler.beforeMove(oldData, _sourceContainer, getUser());
-                            }
-
-                            ExpData[] datas = ExperimentService.get().deleteExperimentRunForMove(runId, _sourceContainer, getUser());
-                            for (ExpData data : datas)
-                            {
-                                if (data.getDataFileUrl() != null)
-                                {
-                                    dataFiles.put(data.getDataFileUrl(),data.getRowId());
-                                }
-                            }
-
-                            MoveRunsXarSource xarSource = new MoveRunsXarSource(bOut.toString(), new File(experimentRun.getFilePathRoot()), this);
-                            XarReader reader = new XarReader(xarSource, this);
-                            reader.parseAndLoad(false);
-
-                            List<String> runLSIDs = reader.getProcessedRunsLSIDs();
-                            assert runLSIDs.size() == 1 : "Expected a single run to be loaded";
-
-                            for (String dataURL : dataFiles.keySet())
-                            {
-                                ExpData newData = ExperimentService.get().getExpDataByURL(xarSource.getCanonicalDataFileURL(dataURL), getContainer());
-                                if (newData != null)
-                                {
-                                    ExperimentDataHandler handler = newData.findDataHandler();
-                                    handler.runMoved(newData, _sourceContainer, getContainer(), experimentRun.getLSID(), runLSIDs.get(0), getUser(), dataFiles.get(dataURL));
-                                }
-                            }
-                            ExperimentServiceImpl.get().getSchema().getScope().commitTransaction();
-                        }
-                        finally
-                        {
-                            ExperimentServiceImpl.get().getSchema().getScope().closeConnection();
-                        }
-                    }
-                }
-                else
-                {
-                    getLogger().info("Run with id " + runId + " is no longer available in the system");
-                }
-            }
-
-            setStatus(PipelineJob.COMPLETE_STATUS);
-        }
-        catch (Throwable t)
-        {
-            getLogger().fatal("Exception during move", t);
-            getLogger().fatal("Move FAILED");
-            if (t instanceof BatchUpdateException)
-            {
-                getLogger().fatal("Underlying exception", ((BatchUpdateException)t).getNextException());
-            }
-            setStatus(PipelineJob.ERROR_STATUS, "Move FAILED");
-        }
+        return _runIds;
     }
 
-    public static class MoveRunsXarSource extends XarSource
+    public Container getSourceContainer()
     {
-        private static final Logger _log = Logger.getLogger(MoveRunsXarSource.class);
+        return _sourceContainer;
+    }
 
-        private final String _xml;
-        private File _logFile;
-        private File _logFileDir;
-
-        private final String _uploadTime;
-
-        private String _experimentName;
-        private File _root;
-
-        public MoveRunsXarSource(String xml, File root, PipelineJob job) throws ExperimentException
-        {
-            super(job);
-            _xml = xml;
-            _root = root;
-
-            int retry = 0;
-            while (_logFileDir == null)
-            {
-                try
-                {
-                    _logFileDir = File.createTempFile("xarupload", "");
-                }
-                catch (IOException e)
-                {
-                    if (++retry > 10)
-                    {
-                        throw new ExperimentException("Unable to create a log file", e);
-                    }
-                    _log.warn("Failed to create log file, retrying...", e);
-                }
-            }
-
-            _logFileDir.delete();
-            _logFileDir.mkdir();
-            _logFileDir.deleteOnExit();
-            _logFile = new File(_logFileDir, "upload.xar.log");
-            _logFile.deleteOnExit();
-            _uploadTime = DateUtil.formatDateTime();
-        }
-
-        public ExperimentArchiveDocument getDocument() throws XmlException, IOException
-        {
-            ExperimentArchiveDocument doc = ExperimentArchiveDocument.Factory.parse(_xml);
-            ExperimentArchiveType ea = doc.getExperimentArchive();
-            if (ea != null)
-            {
-                if (ea.getExperimentArray() != null && ea.getExperimentArray().length > 0)
-                {
-                    _experimentName = ea.getExperimentArray()[0].getName();
-                }
-            }
-            return doc;
-        }
-
-        public File getRoot()
-        {
-            return _root;
-        }
-
-        public boolean shouldIgnoreDataFiles()
-        {
-            return true;
-        }
-
-        public String canonicalizeDataFileURL(String dataFileURL) throws XarFormatException
-        {
-            File f = new File(dataFileURL);
-            File dataFile;
-            if (!f.isAbsolute())
-            {
-                dataFile = new File(getRoot(), dataFileURL);
-            }
-            else
-            {
-                dataFile = f;
-            }
-            try
-            {
-                return dataFile.getCanonicalFile().toURI().toString();
-            }
-            catch (IOException e)
-            {
-                throw new XarFormatException(e);
-            }
-        }
-
-        public File getLogFile() throws IOException
-        {
-            return _logFile;
-        }
-
-        public String toString()
-        {
-            String result = "Uploaded file: " + _uploadTime;
-            if (_experimentName != null)
-            {
-                result += _experimentName;
-            }
-            return result;
-        }
-
-        public void cleanup()
-        {
-            if (_logFile != null)
-            {
-                _logFile.delete();
-                _logFile = null;
-            }
-            if (_logFileDir != null)
-            {
-                _logFileDir.delete();
-                _logFileDir = null;
-            }
-        }
+    public TaskPipeline getTaskPipeline()
+    {
+        return PipelineJobService.get().getTaskPipeline(new TaskId(MoveRunsPipelineJob.class));
     }
 }

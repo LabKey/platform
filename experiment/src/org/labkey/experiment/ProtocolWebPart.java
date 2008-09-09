@@ -19,6 +19,7 @@ import org.labkey.api.view.*;
 import org.labkey.api.data.*;
 import org.labkey.api.security.ACL;
 import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.PrintWriter;
 import java.util.List;
@@ -36,11 +37,7 @@ public class ProtocolWebPart extends WebPartView
     {
         _narrow = narrow;
         setTitle("Protocols");
-        ActionURL url = viewContext.cloneActionURL();
-        url.setAction("showProtocolGrid.view");
-        url.deleteParameters();
-        url.setPageFlow("Experiment");
-        setTitleHref(url.getLocalURIString());
+        setTitleHref(new ActionURL(ExperimentController.ShowProtocolGridAction.class, viewContext.getContainer()));
     }
 
     @Override
@@ -89,6 +86,7 @@ public class ProtocolWebPart extends WebPartView
         }
 
         GridView gridView = new GridView(dr);
+        gridView.getRenderContext().setBaseSort(new Sort("Name"));
 
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition("ApplicationType", EXPERIMENT_RUN_TYPE, CompareType.EQUAL);

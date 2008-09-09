@@ -99,11 +99,10 @@ public class PipelineStatusManager
         return asf[0];
     }
 
-    public static void setStatusFile(ViewBackgroundInfo info, PipelineStatusFileImpl sf, boolean notifyOnError)
+    public static void setStatusFile(ViewBackgroundInfo info, PipelineStatusFileImpl sfSet, boolean notifyOnError)
             throws SQLException, Container.ContainerException
     {
-        PipelineStatusFileImpl sfSet = (PipelineStatusFileImpl) sf;
-        PipelineStatusFileImpl sfExist = getStatusFile(sf.getFilePath());
+        PipelineStatusFileImpl sfExist = getStatusFile(sfSet.getFilePath());
         Container c = info.getContainer();
 
         if (sfExist == null && c.isRoot())
@@ -136,7 +135,7 @@ public class PipelineStatusManager
         if (notifyOnError && PipelineJob.ERROR_STATUS.equals(sfSet.getStatus()) &&
                 (sfExist == null || !PipelineJob.ERROR_STATUS.equals(sfExist.getStatus())))
         {
-            PipelineManager.sendNotificationEmail(sf, info.getContainer());
+            PipelineManager.sendNotificationEmail(sfSet, info.getContainer());
         }
     }
 
@@ -425,33 +424,35 @@ public class PipelineStatusManager
         for (int rowId : rowIds)
         {
             PipelineStatusFile sf = getStatusFile(rowId);
-            if (sf == null)
-                continue;   // Already gone.
 
-            PipelineProvider provider = PipelineService.get().getPipelineProvider(sf.getProvider());
-            if (provider != null)
-                provider.preDeleteStatusFile(sf);
-            rowIdsDeleted.add(new Integer(rowId));
+            // First check that it still exists in the database and that it isn't running anymore
+            if (sf != null && (PipelineJob.COMPLETE_STATUS.equals(sf.getStatus()) || PipelineJob.ERROR_STATUS.equals(sf.getStatus())))
+            {
+                PipelineProvider provider = PipelineService.get().getPipelineProvider(sf.getProvider());
+                if (provider != null)
+                    provider.preDeleteStatusFile(sf);
+                rowIdsDeleted.add(new Integer(rowId));
+            }
         }
 
         if (rowIdsDeleted.size() > 0)
         {
             Container c = info.getContainer();
             StringBuffer sql = new StringBuffer();
-                    sql.append("DELETE FROM ").append(pipeline.getTableInfoStatusFiles())
-                            .append(" ").append("WHERE RowId IN (SELECT RowId FROM ")
-                            .append(pipeline.getTableInfoStatusFiles())
-                            .append(" WHERE ");
+            sql.append("DELETE FROM ").append(pipeline.getTableInfoStatusFiles())
+                    .append(" ").append("WHERE RowId IN (SELECT RowId FROM ")
+                    .append(pipeline.getTableInfoStatusFiles())
+                    .append(" WHERE ");
 
-                    if (!c.isRoot())
-                    {
-                        sql.append("Container = ? AND ");
-                    }
+            if (!c.isRoot())
+            {
+                sql.append("Container = ? AND ");
+            }
 
-                    sql.append("RowId IN (");
-                    for (int i = 0; i < rowIdsDeleted.size() - 1; i++)
-                        sql.append("?,");
-                    sql.append("?))");
+            sql.append("RowId IN (");
+            for (int i = 0; i < rowIdsDeleted.size() - 1; i++)
+                sql.append("?,");
+            sql.append("?))");
 
             if (c.isRoot())
             {

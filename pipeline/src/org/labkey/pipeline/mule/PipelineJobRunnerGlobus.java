@@ -38,6 +38,7 @@ import org.globus.gsi.proxy.ext.ProxyPolicy;
 import org.globus.wsrf.NotificationConsumerManager;
 import org.globus.wsrf.impl.notification.ServerNotificationConsumerManager;
 import org.globus.wsrf.impl.security.authorization.Authorization;
+import org.globus.wsrf.impl.security.authorization.exceptions.AuthorizationException;
 import org.globus.wsrf.impl.security.descriptor.GSITransportAuthMethod;
 import org.globus.wsrf.impl.security.descriptor.ResourceSecurityDescriptor;
 import org.ietf.jgss.GSSCredential;
@@ -291,7 +292,8 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
         }
         keyPair.validateMatch();
 
-        GlobusCredential cred = factory.createCredential(keyPair.getCertificates(), keyPair.getPrivateKey(), 512, 3600 * 12, proxyType, extSet);
+        // Create a proxy cert that lasts as long as the original cert
+        GlobusCredential cred = factory.createCredential(keyPair.getCertificates(), keyPair.getPrivateKey(), 512, 0, proxyType, extSet);
 
         GlobusGSSCredentialImpl credentials = new GlobusGSSCredentialImpl(cred, GSSCredential.INITIATE_AND_ACCEPT);
 

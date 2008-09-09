@@ -43,6 +43,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.security.GeneralSecurityException;
@@ -151,6 +152,19 @@ public class PipelineController extends SpringActionController
             if (path != null && path.length() > 0)
             {
                 File fileRoot = new File(path);
+                try
+                {
+                    // Try to make sure the path is the right case. getCanonicalPath() resolves symbolic
+                    // links on Unix so don't replace the path if it's pointing at a different location.
+                    if (fileRoot.getCanonicalPath().equalsIgnoreCase(fileRoot.getAbsolutePath()))
+                    {
+                        fileRoot = fileRoot.getCanonicalFile();
+                    }
+                }
+                catch (IOException e)
+                {
+                    // OK, just use the path the user entered
+                }
                 if (!NetworkDrive.exists(fileRoot))
                 {
                     error(errors, "The directory '" + fileRoot + "' does not exist.");

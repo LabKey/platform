@@ -64,7 +64,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             return null;
         else
         {
-            Pair<ExpProtocol, List<Domain>> assayInfo = null;
+            Pair<ExpProtocol, List<Domain>> assayInfo;
             AssayProvider provider = org.labkey.api.study.assay.AssayService.get().getProvider(protocol);
             if (copy)
                 assayInfo = provider.getAssayTemplate(getUser(), getContainer(), protocol);
@@ -119,7 +119,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         }
 
         GWTProtocol result = new GWTProtocol();
-        result.setSampleCount(protocol.getMaxInputMaterialPerInstance() != null ? protocol.getMaxInputMaterialPerInstance() : 0);
+        result.setSampleCount(protocol.getMaxInputMaterialPerInstance() != null ? protocol.getMaxInputMaterialPerInstance().intValue() : 0);
         result.setProtocolId(protocol.getRowId() > 0 ? protocol.getRowId() : null);
         result.setDomains(orderDomainList(gwtDomains, false));
         result.setName(protocol.getName());
@@ -235,7 +235,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                 }
                 else
                 {
-                    protocol = ExperimentService.get().getExpProtocol(assay.getProtocolId());
+                    protocol = ExperimentService.get().getExpProtocol(assay.getProtocolId().intValue());
 
                     //ensure that the user has edit perms in this container
                     if(!canUpdateProtocol(protocol))
@@ -295,7 +295,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             throw new AssayException("Only replaceIfExisting == true is supported.");
     }
 
-    private List updateDomainDescriptor(GWTDomain domain, String protocolName, Container protocolContainer)
+    private List<String> updateDomainDescriptor(GWTDomain domain, String protocolName, Container protocolContainer)
     {
         GWTDomain previous = getDomainDescriptor(domain.getDomainURI(), protocolContainer);
         for (GWTPropertyDescriptor prop : (List<GWTPropertyDescriptor>)domain.getPropertyDescriptors())
@@ -308,7 +308,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         return updateDomainDescriptor(previous, domain);
     }
 
-    public List updateDomainDescriptor(GWTDomain orig, GWTDomain update)
+    public List<String> updateDomainDescriptor(GWTDomain orig, GWTDomain update)
     {
         try
         {

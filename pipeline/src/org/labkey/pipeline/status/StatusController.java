@@ -608,8 +608,7 @@ public class StatusController extends SpringActionController
     {
         public void handleSelect(SelectStatusForm form) throws Exception
         {
-            deleteStatus(getViewBackgroundInfo(), form.getRowIds());
-            DataRegionSelection.clearAll(getViewContext());
+            deleteStatus(getViewBackgroundInfo(), DataRegionSelection.toInts(DataRegionSelection.getSelected(getViewContext(), true)));
         }
     }
 
@@ -618,7 +617,7 @@ public class StatusController extends SpringActionController
     {
         public void handleSelect(SelectStatusForm form) throws Exception
         {
-            completeStatus(getViewBackgroundInfo(), form.getRowIds());
+            completeStatus(getViewBackgroundInfo(), DataRegionSelection.toInts(DataRegionSelection.getSelected(getViewContext(), true)));
         }
     }
 

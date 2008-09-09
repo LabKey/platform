@@ -557,38 +557,22 @@ public class XarExporter
             xProtocol.setProperties(properties);
         }
 
-        if (protocol.getMaxInputDataPerInstance() == null)
-        {
-            xProtocol.setNilMaxInputDataPerInstance();
-        }
-        else
+        if (protocol.getMaxInputDataPerInstance() != null)
         {
             xProtocol.setMaxInputDataPerInstance(protocol.getMaxInputDataPerInstance().intValue());
         }
 
-        if (protocol.getMaxInputMaterialPerInstance() == null)
-        {
-            xProtocol.setNilMaxInputMaterialPerInstance();
-        }
-        else
+        if (protocol.getMaxInputMaterialPerInstance() != null)
         {
             xProtocol.setMaxInputMaterialPerInstance(protocol.getMaxInputMaterialPerInstance().intValue());
         }
 
-        if (protocol.getOutputDataPerInstance() == null)
-        {
-            xProtocol.setNilOutputDataPerInstance();
-        }
-        else
+        if (protocol.getOutputDataPerInstance() != null)
         {
             xProtocol.setOutputDataPerInstance(protocol.getOutputDataPerInstance().intValue());
         }
 
-        if (protocol.getOutputMaterialPerInstance() == null)
-        {
-            xProtocol.setNilOutputMaterialPerInstance();
-        }
-        else
+        if (protocol.getOutputMaterialPerInstance() != null)
         {
             xProtocol.setOutputMaterialPerInstance(protocol.getOutputMaterialPerInstance().intValue());
         }

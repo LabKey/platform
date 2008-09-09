@@ -74,7 +74,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
 
         public String getStatusName()
         {
-            return "SAVE EXPERIMENT";
+            return "IMPORT RESULTS";
         }
 
         public List<String> getProtocolActionNames()

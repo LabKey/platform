@@ -18,6 +18,7 @@ package org.labkey.study.view;
 import org.labkey.api.view.*;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.study.controllers.assay.AssayController;
 
 /**
  * User: jeckels
@@ -33,10 +34,7 @@ public class AssayListWebPartFactory extends WebPartFactory
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
     {
         QueryView listView = AssayService.get().createAssayListView(portalCtx, true);
-        ActionURL url = portalCtx.cloneActionURL();
-        url.deleteParameters();
-        url.setPageFlow("assay");
-        url.setAction("begin.view");
+        ActionURL url = new ActionURL(AssayController.BeginAction.class, portalCtx.getContainer());
         listView.setTitle("Assay List");
         listView.setTitleHref(url.getLocalURIString());
         return listView;

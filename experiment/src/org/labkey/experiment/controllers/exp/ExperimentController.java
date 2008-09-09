@@ -28,6 +28,8 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresPermission;
@@ -950,7 +952,21 @@ public class ExperimentController extends SpringActionController
 
             ProtocolListView listView = new ProtocolListView(_protocol, getContainer());
 
-            return new VBox(new StandardAndCustomPropertiesView(detailsView, cpv), parametersView, listView);
+
+            ExpSchema schema = new ExpSchema(getUser(), getContainer());
+            ExperimentRunListView runView = new ExperimentRunListView(schema, ExperimentRunListView.getRunListQuerySettings(schema, getViewContext(), ExpSchema.TableType.Runs.name(), false), ExperimentRunFilter.ALL_RUNS_FILTER)
+            {
+                protected DataView createDataView()
+                {
+                    DataView result = super.createDataView();
+                    result.getRenderContext().setBaseFilter(new SimpleFilter("Protocol/LSID", _protocol.getLSID()));
+                    return result;
+                }
+            };
+
+            runView.setTitle("Runs Using This Protocol");
+
+            return new VBox(new StandardAndCustomPropertiesView(detailsView, cpv), parametersView, listView, runView);
         }
 
         public NavTree appendNavTrail(NavTree root)

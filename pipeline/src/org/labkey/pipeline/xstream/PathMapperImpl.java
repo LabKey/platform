@@ -115,6 +115,23 @@ public class PathMapperImpl implements PathMapper
         {
             return bestEntry.getValue() + path.substring(bestEntry.getKey().length());
         }
+        return capitalizeDriveLetter(path);
+    }
+
+    private static final int DRIVE_LETTER_INDEX = "file:/T".length() - 1;
+    private static final int COLON_LETTER_INDEX = DRIVE_LETTER_INDEX + 1;
+
+    private String capitalizeDriveLetter(String path)
+    {
+        if (path == null)
+        {
+            return null;
+        }
+        
+        if (path.startsWith("file:/") && path.length() > COLON_LETTER_INDEX && path.charAt(COLON_LETTER_INDEX) == ':' && Character.isLowerCase(path.charAt(DRIVE_LETTER_INDEX)))
+        {
+            path = path.substring(0, "file:/".length()) + Character.toUpperCase(path.charAt(DRIVE_LETTER_INDEX)) + path.substring(COLON_LETTER_INDEX);
+        }
         return path;
     }
 
@@ -199,7 +216,8 @@ public class PathMapperImpl implements PathMapper
 
             assertEquals(mapper.remoteToLocal("file:/T:/edi/testFile.txt"), "file:/home/edi/testFile.txt");
             assertEquals(mapper.remoteToLocal("file:/T:/data/testFile.txt"), "file:/data/testFile.txt");
-            assertEquals(mapper.remoteToLocal("file:/t:/data/testFile.txt"), "file:/t:/data/testFile.txt");
+            assertEquals(mapper.remoteToLocal("file:/t:/data/testFile.txt"), "file:/T:/data/testFile.txt");
+            assertEquals(mapper.remoteToLocal("file:/e:/data/testFile.txt"), "file:/E:/data/testFile.txt");
         }
 
         public void testCaseInsensitiveMapping()
@@ -233,6 +251,17 @@ public class PathMapperImpl implements PathMapper
             assertEquals("file:/home/stedi/testFile.txt", mapper.remoteToLocal("file:/T:/testFile.txt"));
             assertEquals("file:/data/testFile.txt", mapper.remoteToLocal("file:/T:/data/testFile.txt"));
             assertEquals("file:/home/edi/testFile.txt", mapper.remoteToLocal("file:/T:/edi/testFile.txt"));
+        }
+
+        public void testCapitalizeDriveLetter()
+        {
+            PathMapperImpl impl = new PathMapperImpl();
+            assertEquals("file:/T:/test", impl.capitalizeDriveLetter("file:/t:/test"));
+            assertEquals("file:/T:/test", impl.capitalizeDriveLetter("file:/T:/test"));
+            assertEquals("file:/test", impl.capitalizeDriveLetter("file:/test"));
+            assertEquals("", impl.capitalizeDriveLetter(""));
+            assertEquals("file:/", impl.capitalizeDriveLetter("file:/"));
+            assertEquals("f", impl.capitalizeDriveLetter("f"));
         }
 
         public static Test suite()

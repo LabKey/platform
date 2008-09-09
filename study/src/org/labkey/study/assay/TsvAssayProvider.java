@@ -33,7 +33,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.TimepointType;
-import org.labkey.study.model.StudyManager;
 
 import javax.servlet.ServletException;
 import java.util.*;
@@ -98,21 +97,14 @@ public class TsvAssayProvider extends AbstractAssayProvider
         return ExperimentService.get().getExpData(dataRowParent.getObjectURI());
     }
 
-    public ActionURL publish(User user, ExpProtocol protocol, Container study, Set<AssayPublishKey> dataKeys, List<String> errors)
+    public ActionURL publish(User user, ExpProtocol protocol, Container study, Map<Integer, AssayPublishKey> dataKeys, List<String> errors)
     {
         try
         {
             TimepointType studyType = AssayPublishService.get().getTimepointType(study);
 
             SimpleFilter filter = new SimpleFilter();
-            List<Object> ids = new ArrayList<Object>();
-            Map<Object, AssayPublishKey> dataIdToPublishKey = new HashMap<Object, AssayPublishKey>();
-            for (AssayPublishKey dataKey : dataKeys)
-            {
-                ids.add(dataKey.getDataId());
-                dataIdToPublishKey.put(dataKey.getDataId(), dataKey);
-            }
-            filter.addInClause(getDataRowIdFieldKey().toString(), ids);
+            filter.addInClause(getDataRowIdFieldKey().toString(), dataKeys.keySet());
             int rowIndex = 0;
             OntologyObject[] dataRows = Table.select(OntologyManager.getTinfoObject(), Table.ALL_COLUMNS, filter,
                     new Sort(getDataRowIdFieldKey().toString()), OntologyObject.class);
@@ -188,7 +180,7 @@ public class TsvAssayProvider extends AbstractAssayProvider
                     }
                 }
 
-                AssayPublishKey publishKey = dataIdToPublishKey.get(row.getObjectId());
+                AssayPublishKey publishKey = dataKeys.get(row.getObjectId());
                 dataMap.put("ParticipantID", publishKey.getParticipantId());
                 dataMap.put("SequenceNum", publishKey.getVisitId());
                 if (TimepointType.DATE == studyType)

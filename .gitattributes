@@ -737,6 +737,8 @@ experiment/src/org/labkey/experiment/moveRunsLocation.jsp -text
 experiment/src/org/labkey/experiment/pipeline/ExperimentPipelineJob.java -text
 experiment/src/org/labkey/experiment/pipeline/ExperimentPipelineProvider.java -text
 experiment/src/org/labkey/experiment/pipeline/MoveRunsPipelineJob.java -text
+experiment/src/org/labkey/experiment/pipeline/MoveRunsTask.java -text
+experiment/src/org/labkey/experiment/pipeline/MoveRunsTaskFactory.java -text
 experiment/src/org/labkey/experiment/pipeline/XarGeneratorSource.java -text
 experiment/src/org/labkey/experiment/pipeline/XarGeneratorTask.java -text
 experiment/src/org/labkey/experiment/pipeline/XarImportTask.java -text
