@@ -122,9 +122,17 @@ public class ListController extends SpringActionController
     {
         private ListDefinition _list;
 
-        public void validateCommand(NewListForm target, Errors errors)
+        public void validateCommand(NewListForm form, Errors errors)
         {
-            // TODO: Validation
+            if (null == form.ff_name)
+            {
+                errors.reject(ERROR_MSG, "List name must not be blank.");
+            }
+            if (null == form.ff_keyName)
+            {
+                errors.reject(ERROR_MSG, "Key name must not be blank.");
+            }
+            // TODO: More validation -- combine with UpdateListDefinition validation?
         }
 
         public ModelAndView getView(NewListForm form, boolean reshow, BindException errors) throws Exception
@@ -186,16 +194,22 @@ public class ListController extends SpringActionController
     {
         private ListDefinition _list;
 
-        public void validateCommand(EditListDefinitionForm target, Errors errors)
+        public void validateCommand(EditListDefinitionForm form, Errors errors)
         {
+            if (null == form.ff_keyName)
+            {
+                errors.reject(ERROR_MSG, "Key name must not be blank.");
+            }
         }
 
         public ModelAndView getView(EditListDefinitionForm form, boolean reshow, BindException errors) throws Exception
         {
-            form.setDefaults();
+            if (!reshow)
+                form.setDefaults();
+
             _list = form.getList();
 
-            return FormPage.getView(ListController.class, form, "editListDefinition.jsp");
+            return FormPage.getView(ListController.class, form, errors, "editListDefinition.jsp");
         }
 
         public boolean handlePost(EditListDefinitionForm form, BindException errors) throws Exception
@@ -691,10 +705,9 @@ public class ListController extends SpringActionController
                 return false;
             Map[] rows = (Map[]) tl.load();
 
-            if (_list.getKeyType() == ListDefinition.KeyType.Integer && !Integer.class.equals(cdKey.clazz))
+            if (_list.getKeyType() != ListDefinition.KeyType.Varchar && !Integer.class.equals(cdKey.clazz))
             {
-                errors.reject(ERROR_MSG, "Expected keys to be of type Integer but they are of type " + cdKey.clazz.getSimpleName());
-                return false;
+                errors.reject(ERROR_MSG, "Expected key field \"" + cdKey.name + "\" to all be of type Integer but they are of type " + cdKey.clazz.getSimpleName());
             }
 
             Set<Object> keyValues = new HashSet<Object>();
@@ -733,6 +746,11 @@ public class ListController extends SpringActionController
                     if (null == key)
                     {
                         errors.reject(ERROR_MSG, "Blank values are not allowed in field " + cdKey.name);
+                        return false;
+                    }
+                    else if (!_list.getKeyType().isValidKey(key))
+                    {
+                        errors.reject(ERROR_MSG, "Could not convert value \"" + key + "\" in key field \"" + cdKey.name + "\" to type " + _list.getKeyType().getLabel());
                         return false;
                     }
                     else if (!keyValues.add(key))

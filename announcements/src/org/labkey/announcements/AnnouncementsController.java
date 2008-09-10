@@ -1706,6 +1706,10 @@ public class AnnouncementsController extends SpringActionController
         if (isResponse)
             parent = AnnouncementManager.getAnnouncement(c, a.getParent());
 
+        //  See bug #6585 -- thread might have been deleted already
+        if (null == parent)
+            return;
+
         String messageId = "<" + a.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
         String references = messageId + " <" + parent.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
 

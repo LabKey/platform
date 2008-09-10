@@ -45,7 +45,7 @@
     <tr><td>Description:</td><td>
         <textarea rows="5" cols="40" name="ff_description"><%=h(form.ff_description)%></textarea></tr> 
     <tr><td>Key Type:</td><td><%=h(list.getKeyType().getLabel())%></td></tr>
-    <tr><td>Key Name:</td><td><input type="text" name="ff_keyName" value="<%=form.ff_keyName%>"></td></tr>
+    <tr><td>Key Name:</td><td><input type="text" name="ff_keyName" value="<%=h(form.ff_keyName)%>"></td></tr>
     <tr><td>Title Field:</td><td><select name="ff_titleColumn"><labkey:options value="<%=list.getTitleColumn()%>" map="<%=titleColumnOptions%>" /></select></td></tr>
     <tr><td>Discussion Links:</td><td>
         <input type="radio" name="ff_discussionSetting" value="<%=DiscussionSetting.None.getValue()%>"<%=(DiscussionSetting.None == form.ff_discussionSetting ? " checked" : "")%>><%=DiscussionSetting.None.getText()%>

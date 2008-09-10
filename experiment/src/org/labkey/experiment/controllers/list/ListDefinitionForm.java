@@ -78,7 +78,11 @@ public class ListDefinitionForm extends ViewForm
         }
         catch(IllegalArgumentException e)
         {
-            throw new ActionURLException(_returnUrl, "the returnUrl parameter", e);
+            throw new ActionURLException(_returnUrl, "returnUrl parameter", e);
+        }
+        catch(NullPointerException e)
+        {
+            throw new ActionURLException(_returnUrl, "returnUrl parameter", e);
         }
     }
 
