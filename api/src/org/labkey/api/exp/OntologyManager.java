@@ -210,7 +210,7 @@ public class OntologyManager
         return ret;
     }
 
-	public interface ImportHelper
+    public interface ImportHelper
 	{
 		/** return LSID for new or existing Object */
 		String beforeImportObject(Map map) throws SQLException;
@@ -746,6 +746,9 @@ public class OntologyManager
 			Table.execute(getExpSchema(), deleteObjPropSql, new Object[]{containerid});
 			String deleteObjSql = "DELETE FROM " + getTinfoObject() + " WHERE Container = ?";
 			Table.execute(getExpSchema(), deleteObjSql, new Object[]{containerid});
+
+            // delete property validator references on property descriptors
+            PropertyService.get().deleteValidatorsForContainer(c);
 
             String deletePropDomSqlPD = "DELETE FROM " + getTinfoPropertyDomain() + " WHERE PropertyId IN (SELECT PropertyId FROM " + getTinfoPropertyDescriptor() + " WHERE Container = ?)";
             Table.execute(getExpSchema(), deletePropDomSqlPD, new Object[]{containerid});

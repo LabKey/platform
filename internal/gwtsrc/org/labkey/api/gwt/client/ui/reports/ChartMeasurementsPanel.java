@@ -21,6 +21,7 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.*;
 import org.labkey.api.gwt.client.model.GWTChart;
 import org.labkey.api.gwt.client.model.GWTChartRenderer;
+import org.labkey.api.gwt.client.model.GWTChartColumn;
 import org.labkey.api.gwt.client.ui.ChartServiceAsync;
 import org.labkey.api.gwt.client.ui.HelpPopup;
 import org.labkey.api.gwt.client.ui.WebPartPanel;
@@ -143,10 +144,21 @@ public class ChartMeasurementsPanel extends AbstractChartPanel
         GWTChartRenderer renderer = (GWTChartRenderer)_renderers.get(getChart().getChartType());
         if (renderer != null)
         {
-            _columnsX.setColumns(renderer.getColumnX());
-            _columnsY.setColumns(renderer.getColumnY());
+            setColumns(_columnsX, renderer.getColumnX());
+            setColumns(_columnsY, renderer.getColumnY());
             _chart.setColumnXName(null);
             _chart.setColumnYName(new String[0]);
+        }
+    }
+
+    private void setColumns(BoundListBox list, List columns)
+    {
+        list.clear();
+
+        for (Iterator it = columns.iterator(); it.hasNext();)
+        {
+            GWTChartColumn col = (GWTChartColumn)it.next();
+            list.addItem(col.getCaption(), col.getAlias());
         }
     }
 

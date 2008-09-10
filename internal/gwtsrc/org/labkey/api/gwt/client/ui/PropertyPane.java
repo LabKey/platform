@@ -25,6 +25,7 @@ import org.labkey.api.gwt.client.ui.property.RegexValidatorDialog;
 import org.labkey.api.gwt.client.ui.property.ValidatorDialog;
 import org.labkey.api.gwt.client.ui.property.RangeValidatorDialog;
 import org.labkey.api.gwt.client.util.PropertyUtil;
+import org.labkey.api.gwt.client.util.StringUtils;
 
 import java.util.*;
 
@@ -212,6 +213,8 @@ public class PropertyPane extends FlexTable implements ValidatorDialog.UpdateLis
                 public void onClick(Widget sender)
                 {
                     _validators.remove(pv);
+                    _validatorChanged = true;
+                    copyValuesToPropertyDescriptor();
                     refreshValidators();
                 }
             });
@@ -224,8 +227,8 @@ public class PropertyPane extends FlexTable implements ValidatorDialog.UpdateLis
                 panel.add(new RegexButton("...", pv));
 
             _validatorTable.setWidget(row, 0, panel);
-            _validatorTable.setWidget(row, 1, new HTML(pv.getName()));
-            _validatorTable.setWidget(row, 2, new HTML(pv.getDescription()));
+            _validatorTable.setWidget(row, 1, new HTML(StringUtils.filter(pv.getName(), true)));
+            _validatorTable.setWidget(row, 2, new HTML(StringUtils.filter(pv.getDescription(), true)));
             _validatorTable.setWidget(row++, 3, new HTML(pv.getType()));
         }
     }
@@ -420,7 +423,7 @@ public class PropertyPane extends FlexTable implements ValidatorDialog.UpdateLis
             RegexValidatorDialog dlg = new RegexValidatorDialog(_validator == null ? new GWTPropertyValidator() : _validator);
 
             dlg.setListener(PropertyPane.this);
-            dlg.setPopupPosition(sender.getAbsoluteLeft() - 200, sender.getAbsoluteTop() + 25);
+            dlg.center();
             dlg.show();
         }
     }
@@ -446,7 +449,7 @@ public class PropertyPane extends FlexTable implements ValidatorDialog.UpdateLis
             RangeValidatorDialog dlg = new RangeValidatorDialog(_validator == null ? new GWTPropertyValidator() : _validator);
 
             dlg.setListener(PropertyPane.this);
-            dlg.setPopupPosition(sender.getAbsoluteLeft() - 200, sender.getAbsoluteTop() + 25);
+            dlg.center();
             dlg.show();
         }
     }

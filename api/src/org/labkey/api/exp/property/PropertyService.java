@@ -52,5 +52,6 @@ public class PropertyService
         IPropertyValidator createValidator(String typeURI);
         IPropertyValidator[] getPropertyValidators(PropertyDescriptor desc);
         void deleteValidatorsForPropertyDescriptor(int descriptorId) throws SQLException;
+        void deleteValidatorsForContainer(Container c) throws SQLException;
     }
 }

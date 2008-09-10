@@ -64,7 +64,11 @@ public class RegexValidatorDialog extends ValidatorDialog
                 prop.setName(((TextBox)widget).getText());
             }
         });
-        panel.setWidget(row, 0, new HTML("Name"));
+        HorizontalPanel namePanel = new HorizontalPanel();
+        namePanel.add(new HTML("Name"));
+        namePanel.add(new HTML("<span style=\"color:red;\">*</span>"));
+
+        panel.setWidget(row, 0, namePanel);
         panel.setWidget(row++, 1, name);
 
         BoundTextBox description = new BoundTextBox("description", prop.getDescription(), new WidgetUpdatable()
@@ -89,6 +93,7 @@ public class RegexValidatorDialog extends ValidatorDialog
 
         HorizontalPanel expressionLabel = new HorizontalPanel();
         expressionLabel.add(new HTML("Regular Expression"));
+        expressionLabel.add(new HTML("<span style=\"color:red;\">*</span>"));
         expressionLabel.add(new HelpPopup("Regular Expression", "The regular expression that this field's value will be evaluated against. " +
                 "All regular expressions must be compatible with Java regular expressions as implemented in the <a href=\"http://java.sun.com/j2se/1.5.0/docs/api/java/util/regex/Pattern.html\"><code>Pattern</code></a> class."));
 

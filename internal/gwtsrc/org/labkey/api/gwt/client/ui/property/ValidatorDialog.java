@@ -34,7 +34,7 @@ abstract public class ValidatorDialog extends DialogBox
 
     public ValidatorDialog()
     {
-        super(false, true);
+        super(true, false);
     }
 
     public UpdateListener getListener()

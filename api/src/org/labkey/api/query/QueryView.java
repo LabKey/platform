@@ -121,7 +121,7 @@ public class QueryView extends WebPartView<Object>
         _settings = settings;
         _queryDef = settings.getQueryDef(_schema);
         _customView = settings.getCustomView(getViewContext(), _queryDef);
-        _report = settings.getReportView(getViewContext());
+        //_report = settings.getReportView(getViewContext());
     }
 
 
@@ -645,6 +645,7 @@ public class QueryView extends WebPartView<Object>
                     {
                         item = new NavTree(report.getTypeDescription(), entry.getValue());
                         item.setId("Views:Create:" + report.getTypeDescription());
+                        item.setImageSrc(ReportService.get().getReportIcon(getViewContext(), report.getType()));
                     }
                     else
                     {
@@ -983,6 +984,7 @@ public class QueryView extends WebPartView<Object>
 
     protected void renderDataRegion(PrintWriter out) throws Exception
     {
+        _report = getSettings().getReportView(getViewContext());
         String viewName = getSettings().getViewName();
         if (_report != null && viewName == null)
         {

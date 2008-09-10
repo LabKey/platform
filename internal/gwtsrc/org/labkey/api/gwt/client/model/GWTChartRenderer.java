@@ -18,7 +18,8 @@ package org.labkey.api.gwt.client.model;
 
 import com.google.gwt.user.client.rpc.IsSerializable;
 
-import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Created by IntelliJ IDEA.
@@ -31,17 +32,14 @@ public class GWTChartRenderer implements IsSerializable
     private String _name;
 
     /**
-     * Map of column captions to aliases
-     *
-     * @gwt.typeArgs <java.lang.String, java.lang.String>
+     * @gwt.typeArgs <org.labkey.api.gwt.client.model.GWTChartColumn>
      */
-    private Map _columnX;
+    private List _columnX = new ArrayList();
+
     /**
-     * Map of column captions to aliases
-     *
-     * @gwt.typeArgs <java.lang.String, java.lang.String>
+     * @gwt.typeArgs <org.labkey.api.gwt.client.model.GWTChartColumn>
      */
-    private Map _columnY;
+    private List _columnY = new ArrayList();
 
     public String getType()
     {
@@ -63,22 +61,22 @@ public class GWTChartRenderer implements IsSerializable
         _name = name;
     }
 
-    public Map getColumnX()
+    public List getColumnX()
     {
         return _columnX;
     }
 
-    public void setColumnX(Map columnX)
+    public void setColumnX(List columnX)
     {
         _columnX = columnX;
     }
 
-    public Map getColumnY()
+    public List getColumnY()
     {
         return _columnY;
     }
 
-    public void setColumnY(Map columnY)
+    public void setColumnY(List columnY)
     {
         _columnY = columnY;
     }

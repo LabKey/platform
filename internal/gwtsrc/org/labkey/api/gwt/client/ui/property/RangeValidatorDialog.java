@@ -108,7 +108,11 @@ public class RangeValidatorDialog extends ValidatorDialog
                 prop.setName(((TextBox)widget).getText());
             }
         });
-        panel.setWidget(row, 0, new HTML("Name"));
+        HorizontalPanel namePanel = new HorizontalPanel();
+        namePanel.add(new HTML("Name"));
+        namePanel.add(new HTML("<span style=\"color:red;\">*</span>"));
+
+        panel.setWidget(row, 0, namePanel);
         panel.getFlexCellFormatter().setColSpan(row, 1, 2);
         panel.setWidget(row++, 1, name);
 
@@ -153,6 +157,7 @@ public class RangeValidatorDialog extends ValidatorDialog
 
         HorizontalPanel firstLabel = new HorizontalPanel();
         firstLabel.add(new HTML("First Condition"));
+        firstLabel.add(new HTML("<span style=\"color:red;\">*</span>"));
         firstLabel.add(new HelpPopup("First Condition", "Add a condition to this validation rule that will be tested against the value for this field."));
 
         panel.setWidget(row, 0, firstLabel);

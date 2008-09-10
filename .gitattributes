@@ -1443,6 +1443,7 @@ internal/gwtsrc/org/labkey/api/gwt/client/assay/model/GWTBatch.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/assay/model/GWTProtocol.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/assay/model/GWTRun.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/model/GWTChart.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/model/GWTChartColumn.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/model/GWTChartRenderer.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/model/GWTComparisonGroup.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/model/GWTComparisonMember.java -text
