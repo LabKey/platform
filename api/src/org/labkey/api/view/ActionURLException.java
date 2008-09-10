@@ -28,11 +28,19 @@ public class ActionURLException extends RuntimeException
 {
     public ActionURLException(String urlString, Exception e)
     {
-        this(urlString, "the URL", e);
+        this(urlString, "URL", e);
     }
 
     public ActionURLException(String urlString, String urlName, Exception e)
     {
-        super("Could not convert \"" + urlString + "\" to a valid ActionURL.  Please ensure that " + urlName + " is well-formed and properly encoded.", e);
+        super(createMessage(urlString, urlName), e);
+    }
+
+    private static String createMessage(String urlString, String urlName)
+    {
+        if (null == urlString)
+            return "Missing " + urlName;
+        else
+            return "Could not convert \"" + urlString + "\" to a valid ActionURL.  Please ensure that the " + urlName + " is well-formed and properly encoded.";
     }
 }

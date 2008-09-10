@@ -21,6 +21,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NotFoundException;
 
 import java.util.Collection;
 
@@ -30,7 +31,7 @@ public interface ListDefinition
     {
         Integer("Integer")
             {
-                public Object convertKey(Object key)
+                protected Object convertKeyInternal(Object key)
                 {
                     if (key instanceof Integer)
                         return key;
@@ -40,7 +41,7 @@ public interface ListDefinition
             },
         AutoIncrementInteger("Auto-Increment Integer")
             {
-                public Object convertKey(Object key)
+                protected Object convertKeyInternal(Object key)
                 {
                     if (key instanceof Integer)
                         return key;
@@ -50,7 +51,7 @@ public interface ListDefinition
             },
         Varchar("Text (String)")
             {
-                public Object convertKey(Object key)
+                protected Object convertKeyInternal(Object key)
                 {
                     return key.toString();
                 }
@@ -64,7 +65,40 @@ public interface ListDefinition
         {
             return label;
         }
-        public abstract Object convertKey(Object key);
+        public Object convertKey(Object key)
+        {
+            try
+            {
+                return convertKeyInternal(key);
+            }
+            catch (Exception e)
+            {
+                throw new KeyConversionException(key, this, e);
+            }
+        }
+
+        public boolean isValidKey(Object key)
+        {
+            try
+            {
+                convertKey(key);
+                return true;
+            }
+            catch (KeyConversionException e)
+            {
+                return false;
+            }
+        }
+
+        protected abstract Object convertKeyInternal(Object key) throws KeyConversionException;
+    }
+
+    public static class KeyConversionException extends NotFoundException
+    {
+        protected KeyConversionException(Object key, KeyType type, Throwable cause)
+        {
+            super(null == key ? "Primary key is missing" : "Could not convert key value \"" + key + "\" to type " + type.getLabel(), cause);
+        }
     }
 
     enum DiscussionSetting

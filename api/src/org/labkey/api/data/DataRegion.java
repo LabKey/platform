@@ -211,7 +211,7 @@ public class DataRegion extends DisplayElement
             addColumn(column);
     }
 
-    // Return DisplayColumn by name (or null if no DisplayColumn has this name
+    // Return DisplayColumn by name (or null if no DisplayColumn has this name)
     // UNDONE: Create HashMap on first use?
     public DisplayColumn getDisplayColumn(String name)
     {

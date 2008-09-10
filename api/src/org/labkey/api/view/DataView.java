@@ -73,7 +73,7 @@ public abstract class DataView extends WebPartView<RenderContext>
 
     public void setDataRegion(DataRegion dataRegion)
     {
-        this._dataRegion = dataRegion;
+        _dataRegion = dataRegion;
     }
 
     public RenderContext getRenderContext()

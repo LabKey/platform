@@ -51,7 +51,24 @@ public class ReturnUrlForm
         }
         catch(IllegalArgumentException e)
         {
-            throw new ActionURLException(_returnUrl, "the returnUrl parameter", e);
+            throw new ActionURLException(_returnUrl, "returnUrl parameter", e);
+        }
+        catch(NullPointerException e)
+        {
+            throw new ActionURLException(_returnUrl, "returnUrl parameter", e);
+        }
+    }
+
+    // Return the passed-in default URL if returnURL param is missing or unparseable
+    public ActionURL getReturnActionURL(ActionURL defaultURL)
+    {
+        try
+        {
+            return getReturnActionURL();
+        }
+        catch (ActionURLException e)
+        {
+            return defaultURL;
         }
     }
 }
