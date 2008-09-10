@@ -588,7 +588,7 @@ public class XarExporter
             xProtocol.setSoftware(protocol.getSoftware());
         }
 
-        Map<String, ProtocolParameter> params = ExperimentService.get().getProtocolParameters(protocol.getRowId());
+        Map<String, ProtocolParameter> params = protocol.getProtocolParameters();
         SimpleValueCollectionType valueCollection = null;
         for (ProtocolParameter param : params.values())
         {

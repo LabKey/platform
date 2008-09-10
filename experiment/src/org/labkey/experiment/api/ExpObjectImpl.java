@@ -24,6 +24,7 @@ import org.labkey.api.exp.api.ExpChildObject;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.property.ExperimentProperty;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
@@ -33,7 +34,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.ObjectUtils;
 
 import java.util.Map;
-import java.util.Collections;
 import java.sql.SQLException;
 import java.io.Serializable;
 
@@ -155,6 +155,11 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
     public String urlFlag(boolean flagged)
     {
         return flagged ? s_urlFlagged : s_urlUnflagged;
+    }
+
+    public Object getProperty(DomainProperty prop)
+    {
+        return getProperty(prop.getPropertyDescriptor());
     }
 
     public Object getProperty(PropertyDescriptor pd)

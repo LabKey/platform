@@ -41,6 +41,7 @@ import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.common.util.Pair;
+import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -119,12 +120,21 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         }
 
         GWTProtocol result = new GWTProtocol();
-        result.setSampleCount(protocol.getMaxInputMaterialPerInstance() != null ? protocol.getMaxInputMaterialPerInstance().intValue() : 0);
         result.setProtocolId(protocol.getRowId() > 0 ? protocol.getRowId() : null);
         result.setDomains(orderDomainList(gwtDomains, false));
         result.setName(protocol.getName());
         result.setProviderName(provider.getName());
         result.setDescription(protocol.getDescription());
+        Map<String, String> gwtProtocolParams = new HashMap<String, String>();
+        for (ProtocolParameter property : protocol.getProtocolParameters().values())
+        {
+            if (property.getXmlBeanValueType() != SimpleTypeNames.STRING)
+            {
+                throw new IllegalStateException("Did not expect non-string protocol parameter " + property.getOntologyEntryURI() + " (" + property.getValueType() + ")");
+            }
+            gwtProtocolParams.put(property.getOntologyEntryURI(), property.getStringValue());
+        }
+        result.setProtocolParameters(gwtProtocolParams);
         if (provider.isPlateBased())
         {
             PlateTemplate plateTemplate = provider.getPlateTemplate(getContainer(), protocol);
@@ -185,7 +195,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         {
             throw new IllegalStateException("Must set LSID before setting domain URIs");
         }
-        Map<String, ObjectProperty> props = new HashMap<String, ObjectProperty>(protocol.retrieveObjectProperties());
+        Map<String, ObjectProperty> props = new HashMap<String, ObjectProperty>(protocol.getObjectProperties());
         // First prune out any domains of the same type that aren't in the new set
         for (String uri : new HashSet<String>(props.keySet()))
         {
@@ -204,7 +214,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                 props.put(prop.getPropertyURI(), prop);
             }
         }
-        protocol.storeObjectProperties(props);
+        protocol.setObjectProperties(props);
     }
 
     public GWTProtocol saveChanges(GWTProtocol assay, boolean replaceIfExisting) throws AssayException
@@ -246,8 +256,19 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                                 "This assay was created in folder " + protocol.getContainer().getPath());
                     protocol.setName(assay.getName());
                     protocol.setProtocolDescription(assay.getDescription());
-                    protocol.setMaxInputMaterialPerInstance(assay.getSampleCount());
                 }
+
+                Map<String, ProtocolParameter> newParams = new HashMap<String, ProtocolParameter>(protocol.getProtocolParameters());
+                for (Map.Entry<String, String> entry : ((Map<String, String>)assay.getProtocolParameters()).entrySet())
+                {
+                    ProtocolParameter param = new ProtocolParameter();
+                    String uri = entry.getKey();
+                    param.setOntologyEntryURI(uri);
+                    param.setValue(SimpleTypeNames.STRING, entry.getValue());
+                    param.setName(uri.indexOf("#") != -1 ? uri.substring(uri.indexOf("#") + 1) : uri);
+                    newParams.put(uri, param);
+                }
+                protocol.setProtocolParameters(newParams.values());
 
                 AssayProvider provider = org.labkey.api.study.assay.AssayService.get().getProvider(protocol);
                 if (provider.isPlateBased() && assay.getSelectedPlateTemplate() != null)

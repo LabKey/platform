@@ -16,7 +16,6 @@
 
 package org.labkey.experiment.api;
 
-import org.apache.log4j.Logger;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.ObjectProperty;
@@ -31,16 +30,10 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.util.URLHelper;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Arrays;
-
-import com.sun.jmx.snmp.SnmpInt;
+import java.util.*;
 
 public class ExpProtocolImpl extends ExpIdentifiableBaseImpl<Protocol> implements ExpProtocol
 {
-    static private final Logger _log = Logger.getLogger(ExpProtocolImpl.class);
     public ExpProtocolImpl(Protocol protocol)
     {
         super(protocol);
@@ -79,12 +72,12 @@ public class ExpProtocolImpl extends ExpIdentifiableBaseImpl<Protocol> implement
         return _object.getRowId();
     }
 
-    public Map<String, ObjectProperty> retrieveObjectProperties()
+    public Map<String, ObjectProperty> getObjectProperties()
     {
         return _object.retrieveObjectProperties();
     }
 
-    public void storeObjectProperties(Map<String, ObjectProperty> props)
+    public void setObjectProperties(Map<String, ObjectProperty> props)
     {
         _object.storeObjectProperties(props);
     }
@@ -171,9 +164,14 @@ public class ExpProtocolImpl extends ExpIdentifiableBaseImpl<Protocol> implement
         _object.setContainer(containerId);
     }
 
-    public Map<String, ProtocolParameter> retrieveProtocolParameters()
+    public Map<String, ProtocolParameter> getProtocolParameters()
     {
         return _object.retrieveProtocolParameters();
+    }
+
+    public void setProtocolParameters(Collection<ProtocolParameter> params)
+    {
+        _object.storeProtocolParameters(params);
     }
 
     public String getInstrument()

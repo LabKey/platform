@@ -25,6 +25,7 @@ import org.labkey.api.gwt.client.model.GWTChart;
 import org.labkey.api.gwt.client.ui.ChartService;
 import org.labkey.api.gwt.client.ui.ChartServiceAsync;
 import org.labkey.api.gwt.client.ui.ImageButton;
+import org.labkey.api.gwt.client.ui.WidgetUpdatable;
 import org.labkey.api.gwt.client.ui.reports.AbstractChartPanel;
 import org.labkey.api.gwt.client.ui.reports.ChartAxisOptionsPanel;
 import org.labkey.api.gwt.client.ui.reports.ChartMeasurementsPanel;

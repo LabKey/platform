@@ -31,7 +31,6 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QuerySchema;
-import org.labkey.api.query.QueryView;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
@@ -96,7 +95,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public Object getImportLock()
     {
-        return ExperimentServiceImpl.class;
+        return XAR_IMPORT_LOCK;
     }
 
     public ExpRunImpl getExpRun(String lsid)
@@ -1193,6 +1192,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return Table.insert(user, getTinfoData(), d);
     }
 
+    /**
+     * @return map from OntologyEntryURI to parameter
+     */
     public Map<String, ProtocolParameter> getProtocolParameters(int protocolRowId)
     {
         try
@@ -2699,11 +2701,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 protApp1.setCpasType(parentProtocol.getApplicationType().toString());
                 protApp1.setRunId(run.getRowId());
                 protApp1.setProtocolLSID(parentProtocol.getLSID());
-                Map<String, ProtocolParameter> parentParams = parentProtocol.retrieveProtocolParameters();
+                Map<String, ProtocolParameter> parentParams = parentProtocol.getProtocolParameters();
                 ProtocolParameter parentLSIDTemplateParam = parentParams.get(XarConstants.APPLICATION_LSID_TEMPLATE_URI);
                 ProtocolParameter parentNameTemplateParam = parentParams.get(XarConstants.APPLICATION_NAME_TEMPLATE_URI);
-                assert parentLSIDTemplateParam != null;
-                assert parentNameTemplateParam != null;
+                assert parentLSIDTemplateParam != null : "Parent LSID Template was null";
+                assert parentNameTemplateParam != null : "Parent Name Template was null";
                 protApp1.setLSID(LsidUtils.resolveLsidFromTemplate(parentLSIDTemplateParam.getStringValue(), context, "ProtocolApplication"));
                 protApp1.setName(parentNameTemplateParam.getStringValue());
 
@@ -2723,7 +2725,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 protApp2.setRunId(run.getRowId());
                 protApp2.setProtocolLSID(protocol2.getLSID());
 
-                Map<String, ProtocolParameter> coreParams = protocol2.retrieveProtocolParameters();
+                Map<String, ProtocolParameter> coreParams = protocol2.getProtocolParameters();
                 ProtocolParameter coreLSIDTemplateParam = coreParams.get(XarConstants.APPLICATION_LSID_TEMPLATE_URI);
                 ProtocolParameter coreNameTemplateParam = coreParams.get(XarConstants.APPLICATION_NAME_TEMPLATE_URI);
                 assert coreLSIDTemplateParam != null;
@@ -2789,7 +2791,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 protApp3.setRunId(run.getRowId());
                 protApp3.setProtocolLSID(outputProtocol.getLSID());
 
-                Map<String, ProtocolParameter> outputParams = outputProtocol.retrieveProtocolParameters();
+                Map<String, ProtocolParameter> outputParams = outputProtocol.getProtocolParameters();
                 ProtocolParameter outputLSIDTemplateParam = outputParams.get(XarConstants.APPLICATION_LSID_TEMPLATE_URI);
                 ProtocolParameter outputNameTemplateParam = outputParams.get(XarConstants.APPLICATION_NAME_TEMPLATE_URI);
                 assert outputLSIDTemplateParam != null;
@@ -3014,23 +3016,23 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             Protocol baseProtocol = ((ExpProtocolImpl)wrappedProtocol).getDataObject();
             try
             {
-                baseProtocol.setApplicationType("ExperimentRun");
+                wrappedProtocol.setApplicationType(ExpProtocol.ApplicationType.ExperimentRun);
                 baseProtocol.setOutputDataType("Data");
                 baseProtocol.setOutputMaterialType("Material");
                 baseProtocol.setContainer(baseProtocol.getContainer());
 
-                List<ProtocolParameter> baseParams = new ArrayList<ProtocolParameter>();
+                Map<String, ProtocolParameter> baseParams = new HashMap<String, ProtocolParameter>(wrappedProtocol.getProtocolParameters());
                 ProtocolParameter baseLSIDTemplate = new ProtocolParameter();
                 baseLSIDTemplate.setName(XarConstants.APPLICATION_LSID_TEMPLATE_NAME);
                 baseLSIDTemplate.setOntologyEntryURI(XarConstants.APPLICATION_LSID_TEMPLATE_URI);
                 baseLSIDTemplate.setValue(SimpleTypeNames.STRING, "${RunLSIDBase}:SimpleProtocol.InputStep");
-                baseParams.add(baseLSIDTemplate);
+                baseParams.put(XarConstants.APPLICATION_LSID_TEMPLATE_URI, baseLSIDTemplate);
                 ProtocolParameter baseNameTemplate = new ProtocolParameter();
                 baseNameTemplate.setName(XarConstants.APPLICATION_NAME_TEMPLATE_NAME);
                 baseNameTemplate.setOntologyEntryURI(XarConstants.APPLICATION_NAME_TEMPLATE_URI);
                 baseNameTemplate.setValue(SimpleTypeNames.STRING, baseProtocol.getName() + " Protocol");
-                baseParams.add(baseNameTemplate);
-                baseProtocol.storeProtocolParameters(baseParams);
+                baseParams.put(XarConstants.APPLICATION_NAME_TEMPLATE_URI, baseNameTemplate);
+                baseProtocol.storeProtocolParameters(baseParams.values());
 
                 baseProtocol = saveProtocol(user, baseProtocol);
 

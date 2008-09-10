@@ -1539,7 +1539,7 @@ public class XarReader extends AbstractXarImporter
                                 "sequence " + predecessorActionSequence);
                     }
 
-                    ExperimentService.get().insertProtocolPredecessor(getUser(), actionRowId, predecessorRowId);
+                    ExperimentServiceImpl.get().insertProtocolPredecessor(getUser(), actionRowId, predecessorRowId);
                 }
             }
         }

@@ -22,7 +22,6 @@ import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.ProtocolParameter;
-import org.labkey.api.exp.api.ExperimentService;
 
 import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
@@ -377,7 +376,7 @@ public class Protocol extends IdentifiableEntity
         _objectProperties = Collections.unmodifiableMap(newParams);
     }
 
-    public void storeProtocolParameters(List<ProtocolParameter> protocolParameters)
+    public void storeProtocolParameters(Collection<ProtocolParameter> protocolParameters)
     {
         Map<String, ProtocolParameter> newParams = new HashMap<String, ProtocolParameter>();
         for (ProtocolParameter param : protocolParameters)
@@ -391,7 +390,7 @@ public class Protocol extends IdentifiableEntity
     {
         if (_protocolParameters == null)
         {
-            _protocolParameters = Collections.unmodifiableMap(ExperimentService.get().getProtocolParameters(getRowId()));
+            _protocolParameters = Collections.unmodifiableMap(ExperimentServiceImpl.get().getProtocolParameters(getRowId()));
         }
         return _protocolParameters;
     }

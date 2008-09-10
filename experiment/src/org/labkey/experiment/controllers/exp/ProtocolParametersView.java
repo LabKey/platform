@@ -30,7 +30,7 @@ public class ProtocolParametersView extends JspView
 {
     public ProtocolParametersView(ExpProtocol protocol) throws SQLException
     {
-        super("/org/labkey/experiment/Parameters.jsp", ExperimentService.get().getProtocolParameters(protocol.getRowId()));
+        super("/org/labkey/experiment/Parameters.jsp", protocol.getProtocolParameters());
         setTitle("Protocol Parameters");
     }
 }

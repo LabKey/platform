@@ -289,7 +289,7 @@ public class PipelineController extends SpringActionController
         {
             setHelpTopic(getHelpTopic("pipelineSetup"));
 
-            if (getViewContext().getRequest().getParameter(Params.overrideRoot.toString()) == null)
+            if (getViewContext().getRequest().getParameter(Params.overrideRoot.toString()) == null && !reshow)
             {
                 PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
                 if (root != null && !getContainer().equals(root.getContainer()))

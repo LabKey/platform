@@ -61,7 +61,7 @@ public class AssayManager implements AssayService.Interface
             throws SQLException, ExperimentException
     {
         return getProvider(newProtocol.getProviderName()).createAssayDefinition(user, container, newProtocol.getName(),
-                newProtocol.getDescription(), newProtocol.getSampleCount());
+                newProtocol.getDescription());
     }
 
     public void registerAssayProvider(AssayProvider provider)
@@ -185,18 +185,17 @@ public class AssayManager implements AssayService.Interface
         AssayProvider provider = AssayService.get().getProvider(protocol);
         if (provider == null)
             return null;
-        ActionURL designerURL = getProtocolURL(container, protocol, "designer");
-        if (copy)
-            designerURL.addParameter("copy", "true");
-        designerURL.addParameter("providerName", provider.getName());
-        return designerURL;
+        return provider.getDesignerURL(container, protocol, copy);
     }
 
     public ActionURL getDesignerURL(Container container, String providerName)
     {
-        ActionURL designerURL = getProtocolURL(container, null, "designer");
-        designerURL.addParameter("providerName", providerName);
-        return designerURL;
+        AssayProvider provider = getProvider(providerName);
+        if (provider == null)
+        {
+            return null;
+        }
+        return provider.getDesignerURL(container, null, false);
     }
 
     public ActionURL getPublishConfirmURL(Container container, ExpProtocol protocol)

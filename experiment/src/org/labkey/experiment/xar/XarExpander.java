@@ -330,7 +330,7 @@ public class XarExpander extends AbstractXarImporter
         // First get the map with declarations and defaults specified in protocol
         xbProtApp.addNewProtocolApplicationParameters();
         ExpProtocol protocol = _xarSource.getProtocol(pbStep.stepProtocolLSID, "Protocol application step");
-        Map<String, ProtocolParameter> mEffectiveParameters = new HashMap<String, ProtocolParameter>(protocol.retrieveProtocolParameters());
+        Map<String, ProtocolParameter> mEffectiveParameters = new HashMap<String, ProtocolParameter>(protocol.getProtocolParameters());
 
         //add the parameter values specified for all instances of this step.
         SimpleValueCollectionType xbCommonParams = step.getCommonParametersApplied();
