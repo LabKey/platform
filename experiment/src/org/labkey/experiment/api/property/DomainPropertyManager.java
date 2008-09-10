@@ -194,4 +194,14 @@ public class DomainPropertyManager
             _removePropertyValidator(descriptorId, pv.getRowId());
         }
     }
+
+    public void deleteAllValidators(Container c) throws SQLException
+    {
+        String deletePropValidatorRefSql = "DELETE FROM " + getTinfoValidatorReference() +
+                " WHERE ValidatorId IN (SELECT RowId FROM " + getTinfoValidator() + " WHERE Container = ?)";
+        Table.execute(getExpSchema(), deletePropValidatorRefSql, new Object[]{c.getId()});
+
+        String deletePropValidatorSql = "DELETE FROM " + getTinfoValidator() + " WHERE Container = ?";
+        Table.execute(getExpSchema(), deletePropValidatorSql, new Object[]{c.getId()});
+    }
 }

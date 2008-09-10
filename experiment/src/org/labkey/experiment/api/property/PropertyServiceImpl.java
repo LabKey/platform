@@ -135,4 +135,9 @@ public class PropertyServiceImpl implements PropertyService.Interface
     {
         DomainPropertyManager.get().removeValidatorsForPropertyDescriptor(descriptorId);
     }
+
+    public void deleteValidatorsForContainer(Container c) throws SQLException
+    {
+        DomainPropertyManager.get().deleteAllValidators(c);
+    }
 }

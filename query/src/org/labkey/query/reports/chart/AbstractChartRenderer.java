@@ -39,9 +39,7 @@ import org.labkey.api.view.DataView;
 import org.apache.commons.lang.BooleanUtils;
 
 import java.sql.ResultSet;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Date;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -127,7 +125,7 @@ public abstract class AbstractChartRenderer implements ChartRenderer
 
     protected Map<String, String> getDisplayColumns(QueryView view, boolean isNumber, boolean isDate)
     {
-        Map<String, String> columns = new HashMap<String, String>();
+        List<ColumnInfo> columns = new ArrayList<ColumnInfo>();
         for (DisplayColumn col : view.getDisplayColumns())
         {
             ColumnInfo prop = col.getColumnInfo();
@@ -138,18 +136,30 @@ public abstract class AbstractChartRenderer implements ChartRenderer
             {
                 if (Date.class.isAssignableFrom(prop.getJavaClass()))
                 {
-                    columns.put(prop.getCaption(), prop.getAlias());
+                    columns.add(prop);
                     continue;
                 }
             }
 
             if (isNumber && (prop.getJavaClass().isPrimitive() || Number.class.isAssignableFrom(prop.getJavaClass())))
             {
-                columns.put(prop.getCaption(), prop.getAlias());
+                columns.add(prop);
                 continue;
             }
         }
-        return columns;
+
+        Collections.sort(columns, new Comparator<ColumnInfo>(){
+            public int compare(ColumnInfo o1, ColumnInfo o2)
+            {
+                return o1.getCaption().compareTo(o2.getCaption());
+            }
+        });
+
+        Map<String, String> displayColumns = new LinkedHashMap<String, String>();
+        for (ColumnInfo col : columns)
+            displayColumns.put(col.getCaption(), col.getAlias());
+
+        return displayColumns;
     }
 
     public void setRenderInfo(ChartRenderInfo info)

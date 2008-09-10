@@ -63,7 +63,7 @@
         <tr>
             <td><%=PageFlowUtil.generateSubmitButton("Update Snapshot")%></td>
 <%      if (def != null) { %>
-            <td><%=PageFlowUtil.generateButton("Source Query", bean.getSchema().urlFor(QueryAction.sourceQuery, def.getQueryDefinition()))%></td>
+            <td><%=PageFlowUtil.generateButton("Edit Query Source", bean.getSchema().urlFor(QueryAction.sourceQuery, def.getQueryDefinition()))%></td>
             <td><%=PageFlowUtil.generateButton(historyLabel, context.cloneActionURL().replaceParameter("showHistory", String.valueOf(!showHistory)))%></td>
             <td><%=PageFlowUtil.generateButton(datasetLabel, context.cloneActionURL().replaceParameter("showDataset", String.valueOf(!showDataset)))%></td>
 <%      } %>

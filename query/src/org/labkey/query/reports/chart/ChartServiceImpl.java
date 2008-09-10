@@ -21,6 +21,7 @@ import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.gwt.client.model.GWTChart;
 import org.labkey.api.gwt.client.model.GWTChartRenderer;
+import org.labkey.api.gwt.client.model.GWTChartColumn;
 import org.labkey.api.gwt.client.ui.ChartService;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.QueryService;
@@ -40,6 +41,7 @@ import org.labkey.common.util.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -128,12 +130,21 @@ public class ChartServiceImpl extends BaseRemoteService implements ChartService
 
             cr.setName(renderer.getName());
             cr.setType(renderer.getType());
-            cr.setColumnX(renderer.getDisplayColumns(view, true));
-            cr.setColumnY(renderer.getDisplayColumns(view, false));
+            cr.setColumnX(createColumnList(renderer.getDisplayColumns(view, true)));
+            cr.setColumnY(createColumnList(renderer.getDisplayColumns(view, false)));
 
             gwtRenderers.add(cr);
         }
         return gwtRenderers.toArray(new GWTChartRenderer[0]);
+    }
+
+    private List<GWTChartColumn> createColumnList(Map<String, String> columnMap)
+    {
+        List<GWTChartColumn> columns = new ArrayList<GWTChartColumn>();
+
+        for (Map.Entry<String, String> entry : columnMap.entrySet())
+            columns.add(new GWTChartColumn(entry.getKey(), entry.getValue()));
+        return columns;
     }
 
     public String getDisplayURL(GWTChart chart)

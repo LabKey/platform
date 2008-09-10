@@ -87,6 +87,8 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
             return context.getContextPath() + "/reports/chart.gif";
         if (StudyQueryReport.TYPE.equals(reportType))
             return context.getContextPath() + "/reports/grid.gif";
+        if (StudyChartQueryReport.TYPE.equals(reportType))
+            return context.getContextPath() + "/reports/chart.gif";
         return super.getReportIcon(context, reportType);
     }
 }
