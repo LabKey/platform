@@ -38,7 +38,7 @@ LABKEY.ext.LongTextField = Ext.extend(Ext.form.TriggerField, {
                 ],
                 closable: true,
                 modal: true,
-                animateTarget: this,
+                animateTarget: this.getEl(),
                 title: "Edit " + this.columnName || "Edit"
             });
         }
