@@ -44,18 +44,22 @@ public abstract class SimpleViewAction<FORM> extends BaseViewAction<FORM> implem
     {
         FORM form = null;
         BindException errors = null;
-        if (null != getCommandClass())
-        {
+        if (null == getCommandClass())
+            errors = new BindException(new Object(), "command");
+        else
             errors = bindParameters(getPropertyValues());
-            form = (FORM)errors.getTarget();
-            validate(form, errors);
-        }
 
+        form = (FORM)errors.getTarget();
+        validate(form, errors);
+
+        ModelAndView v;
+        
         if (null != StringUtils.trimToNull((String) getProperty("_print")) ||
             null != StringUtils.trimToNull((String) getProperty("_print.x")))
-            return getPrintView(form, errors);
+            v = getPrintView(form, errors);
         else
-            return getView(form, errors);
+            v = getView(form, errors);
+        return v;
     }
 
     protected String getCommandClassMethodName()

@@ -109,7 +109,7 @@ abstract public class UserSchema extends AbstractSchema
 
     public ActionURL urlSchemaDesigner()
     {
-        ActionURL ret = new ActionURL("query", "begin", getContainer());
+        ActionURL ret = new ActionURL("query", "schema", getContainer());
         ret.addParameter(QueryParam.schemaName.toString(), getSchemaName());
         return ret;
     }
