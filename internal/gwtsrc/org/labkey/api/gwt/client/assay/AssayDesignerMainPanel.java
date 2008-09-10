@@ -20,7 +20,6 @@ import com.google.gwt.user.client.ui.*;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.WindowCloseListener;
-import com.google.gwt.user.client.DOM;
 import com.google.gwt.core.client.GWT;
 import org.labkey.api.gwt.client.util.ServiceUtil;
 import org.labkey.api.gwt.client.util.PropertyUtil;
@@ -35,13 +34,13 @@ import java.util.*;
  * Date: Jun 20, 2007
  * Time: 2:24:04 PM
  */
-public class AssayDesignerMainPanel extends VerticalPanel implements Saveable
+public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, DirtyCallback
 {
     private RootPanel _rootPanel;
     private AssayServiceAsync _testService;
     private final String _providerName;
     private Integer _protocolId;
-    private GWTProtocol _assay;
+    protected GWTProtocol _assay;
     private boolean _dirty;
     private List _domainEditors = new ArrayList();
     private HTML _statusLabel = new HTML("<br/>");
@@ -50,7 +49,6 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable
     private boolean _copy;
     private SaveButtonBar saveBarTop;
     private SaveButtonBar saveBarBottom;
-
 
     public AssayDesignerMainPanel(RootPanel rootPanel, String providerName, Integer protocolId, boolean copy)
     {
@@ -70,9 +68,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable
             {
                 public void onFailure(Throwable throwable)
                 {
-                    VerticalPanel mainPanel = new VerticalPanel();
-                    mainPanel.add(new Label("Unable to load assay definition: " + throwable.getMessage()));
-                    _rootPanel.add(mainPanel);
+                    addErrorMessage("Unable to load assay definition: " + throwable.getMessage());
                 }
 
                 public void onSuccess(Object object)
@@ -87,9 +83,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable
             {
                 public void onFailure(Throwable throwable)
                 {
-                    VerticalPanel mainPanel = new VerticalPanel();
-                    mainPanel.add(new Label("Unable to load assay template: " + throwable.getMessage()));
-                    _rootPanel.add(mainPanel);
+                    addErrorMessage("Unable to load assay template: " + throwable.getMessage());
                 }
 
                 public void onSuccess(Object object)
@@ -110,131 +104,6 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable
         return _testService;
     }
 
-    private interface WidgetUpdatable
-    {
-        void update(Widget widget);
-    }
-
-    private String safeStr(String str)
-    {
-        return str != null ? str : "";
-    }
-
-    private class BoundTextBox extends HorizontalPanel
-    {
-        protected TextBox _box;
-        protected String _caption;
-
-        public BoundTextBox(String caption, String id, String initialValue, final WidgetUpdatable updatable)
-        {
-            _caption = caption;
-            _box = new TextBox();
-            DOM.setElementAttribute(_box.getElement(), "id", id);
-            _box.setText(safeStr(initialValue));
-            _box.addFocusListener(new FocusListenerAdapter()
-            {
-                public void onLostFocus(Widget sender)
-                {
-                    updatable.update(sender);
-                }
-            });
-            _box.addChangeListener(new ChangeListener()
-            {
-                public void onChange(Widget sender)
-                {
-                    updatable.update(sender);
-                }
-            });
-            _box.addKeyboardListener(new KeyboardListenerAdapter()
-            {
-                public void onKeyPress(Widget sender, char keyCode, int modifiers)
-                {
-                    setDirty(true);
-                }
-            });
-            add(_box);
-        }
-
-        public String validate()
-        {
-            if (_box.getText() == null || _box.getText().length() == 0)
-                return "\"" + _caption + "\" is required.";
-            return null;
-        }
-    }
-    // Max Samples is not being used in the 2.2 release
-//    private class BoundIntegerTextBox extends BoundTextBox
-//    {
-//        public BoundIntegerTextBox(String caption, int initialValue, WidgetUpdatable updatable)
-//        {
-//            super(caption, "" + initialValue, updatable);
-//        }
-//
-//        public String validate()
-//        {
-//            String errors = super.validate();
-//            if (errors == null)
-//            {
-//                String countStr = _box.getText();
-//                try
-//                {
-//                    int count = Integer.parseInt(countStr);
-//                    if (count < 1)
-//                        errors = "The value for \"" + _caption + "\" must be greater than zero";
-//                }
-//                catch (NumberFormatException e)
-//                {
-//                    errors = "The value \"" + countStr + "\" is not a valid integer value for \"" + _caption + "\".";
-//                }
-//            }
-//            return errors;
-//        }
-//    }
-
-    private class BoundTextAreaBox extends HorizontalPanel
-    {
-        protected TextArea _box;
-        protected String _caption;
-
-        public BoundTextAreaBox(String caption, String id, String initialValue, final WidgetUpdatable updatable)
-        {
-            _caption = caption;
-            _box = new TextArea();
-            DOM.setElementAttribute(_box.getElement(), "id", id);
-            _box.setText(safeStr(initialValue));
-            _box.setWidth("350px");
-            _box.addFocusListener(new FocusListenerAdapter()
-            {
-                public void onLostFocus(Widget sender)
-                {
-                    updatable.update(sender);
-                }
-            });
-            _box.addChangeListener(new ChangeListener()
-            {
-                public void onChange(Widget sender)
-                {
-                    updatable.update(sender);
-                }
-            });
-            _box.addKeyboardListener(new KeyboardListenerAdapter()
-            {
-                public void onKeyPress(Widget sender, char keyCode, int modifiers)
-                {
-                    setDirty(true);
-                }
-            });
-            add(_box);
-        }
-
-        public String validate()
-        {
-            if (_box.getText() == null || _box.getText().length() == 0)
-                return "\"" + _caption + "\" is required.";
-            return null;
-        }
-    }
-
     private void show(GWTProtocol assay)
     {
         _assay = assay;
@@ -245,7 +114,9 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable
         _rootPanel.add(saveBarTop);
         _rootPanel.add(_statusLabel);
 
-        Widget infoPanel = createAssayInfo(_assay);
+        FlexTable table = createAssayInfoTable(_assay);
+        WebPartPanel infoPanel = new WebPartPanel("Assay Properties", table);
+        infoPanel.setWidth("100%");
         _rootPanel.add(infoPanel);
 
         for (int i = 0; i < _assay.getDomains().size(); i++)
@@ -305,12 +176,19 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable
         });
     }
 
+    protected void addErrorMessage(String message)
+    {
+        VerticalPanel mainPanel = new VerticalPanel();
+        mainPanel.add(new Label(message));
+        _rootPanel.add(mainPanel);
+    }
+
     protected PropertiesEditor createPropertiesEditor(GWTDomain domain)
     {
         return new PropertiesEditor(getLookupService());
     }
 
-    private Widget createAssayInfo(final GWTProtocol assay)
+    protected FlexTable createAssayInfoTable(final GWTProtocol assay)
     {
         final FlexTable table = new FlexTable();
         final String assayName = assay.getProtocolId() != null ? assay.getName() : null;
@@ -324,7 +202,8 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable
                     setDirty(true);
                 }
             }
-        });
+        }, this);
+        _nameBox.setRequired(true);
         if (assay.getProtocolId() == null || _copy)
         {
             table.setWidget(0, 1, _nameBox);
@@ -346,7 +225,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable
                 }
                 assay.setDescription(((TextArea) widget).getText());
             }
-        });
+        }, this);
         table.setHTML(1, 0, "Description");
         table.setWidget(1, 1, descriptionBox);
 
@@ -380,12 +259,10 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable
             picker.setVerticalAlignment(ALIGN_BOTTOM);
             table.setWidget(2, 1, picker);
         }
-        WebPartPanel panel = new WebPartPanel("Assay Properties", table);
-        panel.setWidth("100%");
-        return panel;
+        return table;
     }
 
-    private void setDirty(boolean dirty)
+    public void setDirty(boolean dirty)
     {
         if (dirty && _statusLabel.getText().equalsIgnoreCase(_statusSuccessful))
             _statusLabel.setHTML("<br/>");
@@ -493,7 +370,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable
         // If a new assay is never saved, there are no details to view, so it will take the user to the study
         final String doneLink;
         if (_assay != null && _assay.getProtocolId() != null)
-            doneLink = PropertyUtil.getContextPath() + "/" + PropertyUtil.getPageFlow() + PropertyUtil.getContainerPath() + "/assayRuns.view?rowId=" + _assay.getProtocolId();
+            doneLink = PropertyUtil.getContextPath() + "/assay" + PropertyUtil.getContainerPath() + "/assayRuns.view?rowId=" + _assay.getProtocolId();
         else
             doneLink = PropertyUtil.getContextPath() + "/Project" + PropertyUtil.getContainerPath() + "/begin.view";
 

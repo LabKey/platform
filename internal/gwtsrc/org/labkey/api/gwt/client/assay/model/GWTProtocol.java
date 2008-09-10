@@ -19,6 +19,7 @@ package org.labkey.api.gwt.client.assay.model;
 import com.google.gwt.user.client.rpc.IsSerializable;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: brittp
@@ -31,7 +32,12 @@ public class GWTProtocol implements IsSerializable
     private String _name;
     private String _description;
     private String _providerName;
-    private int _sampleCount;
+
+    /**
+     * @gwt.typeArgs <java.lang.String, java.lang.String>
+     */
+    private Map _protocolParameters;
+
     /**
      * @gwt.typeArgs <org.labkey.api.gwt.client.model.GWTDomain>
      */
@@ -89,14 +95,14 @@ public class GWTProtocol implements IsSerializable
         _description = description;
     }
 
-    public int getSampleCount()
+    public Map getProtocolParameters()
     {
-        return _sampleCount;
+        return _protocolParameters;
     }
 
-    public void setSampleCount(int sampleCount)
+    public void setProtocolParameters(Map protocolParameters)
     {
-        _sampleCount = sampleCount;
+        _protocolParameters = protocolParameters;
     }
 
     public String getProviderName()

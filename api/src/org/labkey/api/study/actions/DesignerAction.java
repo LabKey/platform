@@ -68,7 +68,12 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
 
         // hack for 4404 : Lookup picker performance is terrible when there are many containers
         ContainerManager.getAllChildren(ContainerManager.getRoot());
-       
+
+        return createGWTView(properties);
+    }
+
+    protected ModelAndView createGWTView(Map<String, String> properties)
+    {
         return new GWTView("org.labkey.assay.designer.AssayDesigner", properties);
     }
 

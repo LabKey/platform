@@ -168,8 +168,6 @@ public class ExperimentService
          */
         List<ExpRun> runsDeletedWithInput(ExpRun[] runs) throws SQLException;
 
-        Map<String, ProtocolParameter> getProtocolParameters(int rowId);
-
         void deleteProtocolByRowIds(Container container, User user, int... rowIds) throws SQLException, ExperimentException;
         void deleteMaterialByRowIds(Container c, int... materialRowIds) throws SQLException;
         void deleteDataByRowIds(Container container, int... dataRowIds) throws SQLException;
@@ -179,8 +177,6 @@ public class ExperimentService
         void deleteExperimentRunsByRowIds(Container container, User user, int... rowIds) throws SQLException, ExperimentException;
 
         ExpExperiment addRunsToExperiment(int expId, int... runIds) throws SQLException;
-        
-        void insertProtocolPredecessor(User user, int actionRowId, int predecessorRowId) throws SQLException;
         
         Lsid getSampleSetLsid(String name, Container container);
 

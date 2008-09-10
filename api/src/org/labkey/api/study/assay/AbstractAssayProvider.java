@@ -184,7 +184,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public static String getDomainURIForPrefix(ExpProtocol protocol, String domainPrefix)
     {
         String result = null;
-        for (String uri : protocol.retrieveObjectProperties().keySet())
+        for (String uri : protocol.getObjectProperties().keySet())
         {
             Lsid uriLSID = new Lsid(uri);
             if (uriLSID.getNamespacePrefix() != null && uriLSID.getNamespacePrefix().startsWith(domainPrefix))
@@ -568,7 +568,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         }
     }
 
-    public ExpProtocol createAssayDefinition(User user, Container container, String name, String description, int maxMaterials)
+    public ExpProtocol createAssayDefinition(User user, Container container, String name, String description)
             throws ExperimentException, SQLException
     {
         String protocolLsid = new Lsid(_protocolLSIDPrefix, "Folder-" + container.getRowId(), name).toString();
@@ -576,7 +576,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         ExpProtocol protocol = ExperimentService.get().createExpProtocol(container, ExpProtocol.ApplicationType.ExperimentRun, name);
         protocol.setProtocolDescription(description);
         protocol.setLSID(protocolLsid);
-        protocol.setMaxInputMaterialPerInstance(maxMaterials);
+        protocol.setMaxInputMaterialPerInstance(1);
         protocol.setMaxInputDataPerInstance(1);
 
         if (ExperimentService.get().getExpProtocol(protocol.getLSID()) != null)
@@ -688,7 +688,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     private Set<String> getPropertyDomains(ExpProtocol protocol)
     {
         Set<String> result = new HashSet<String>();
-        for (ObjectProperty prop : protocol.retrieveObjectProperties().values())
+        for (ObjectProperty prop : protocol.getObjectProperties().values())
         {
             Lsid lsid = new Lsid(prop.getPropertyURI());
             if (lsid.getNamespacePrefix() != null && lsid.getNamespacePrefix().startsWith(ExpProtocol.ASSAY_DOMAIN_PREFIX))
@@ -967,5 +967,14 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 throw new ExperimentException(e);
             }
         }
+    }
+
+    public ActionURL getDesignerURL(Container container, ExpProtocol protocol, boolean copy)
+    {
+        ActionURL designerURL = AssayService.get().getProtocolURL(container, protocol, "designer");
+        if (copy)
+            designerURL.addParameter("copy", "true");
+        designerURL.addParameter("providerName", getName());
+        return designerURL;
     }
 }

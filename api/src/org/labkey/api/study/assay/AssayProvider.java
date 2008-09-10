@@ -61,7 +61,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     String getName();
 
-    ExpProtocol createAssayDefinition(User user, Container container, String name, String description, int sampleCount) throws ExperimentException, SQLException;
+    ExpProtocol createAssayDefinition(User user, Container container, String name, String description) throws ExperimentException, SQLException;
 
     List<Domain> createDefaultDomains(Container c, User user);
 
@@ -122,4 +122,13 @@ public interface AssayProvider extends Handler<ExpProtocol>
     String getRunDataTableName(ExpProtocol protocol);
 
     void deleteProtocol(ExpProtocol protocol, User user) throws ExperimentException;
+
+    /**
+     * Get a URL to the assay designer
+     * @param container container in which the assay definition should live
+     * @param protocol if null, start a new design from scratch. If not null, either the design to edit or the design to copy
+     * @param copy if true, create a copy of the protocol that's passed in and start editing it
+     * @return
+     */
+    ActionURL getDesignerURL(Container container, ExpProtocol protocol, boolean copy);
 }

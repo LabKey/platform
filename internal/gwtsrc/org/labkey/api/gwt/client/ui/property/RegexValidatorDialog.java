@@ -20,8 +20,7 @@ import com.google.gwt.user.client.Window;
 import org.labkey.api.gwt.client.model.GWTPropertyValidator;
 import org.labkey.api.gwt.client.ui.ImageButton;
 import org.labkey.api.gwt.client.ui.HelpPopup;
-import org.labkey.api.gwt.client.ui.reports.AbstractChartPanel;
-import org.labkey.api.gwt.client.util.StringUtils;
+import org.labkey.api.gwt.client.ui.WidgetUpdatable;
 
 import java.util.List;
 import java.util.ArrayList;

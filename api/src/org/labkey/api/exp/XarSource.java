@@ -81,6 +81,7 @@ public abstract class XarSource implements Serializable
             catch (URISyntaxException e) {}
             result = canonicalizeDataFileURL(urlToLookup);
             _dataFileURLs.put(dataFileURL, result);
+            _dataFileURLs.put(urlToLookup, result);
         }
         return result;
     }

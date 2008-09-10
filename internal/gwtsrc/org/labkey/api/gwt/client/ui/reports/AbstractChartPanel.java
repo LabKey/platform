@@ -19,6 +19,7 @@ package org.labkey.api.gwt.client.ui.reports;
 import com.google.gwt.user.client.ui.*;
 import org.labkey.api.gwt.client.model.GWTChart;
 import org.labkey.api.gwt.client.ui.ChartServiceAsync;
+import org.labkey.api.gwt.client.ui.WidgetUpdatable;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -62,11 +63,6 @@ public abstract class AbstractChartPanel
     public void setService(ChartServiceAsync service)
     {
         _service = service;
-    }
-
-    public interface WidgetUpdatable
-    {
-        void update(Widget widget);
     }
 
     public static class BoundListBox extends ListBox
@@ -118,7 +114,7 @@ public abstract class AbstractChartPanel
         }
     }
 
-    public static class BoundTextBox extends TextBox
+    protected static class BoundTextBox extends TextBox
     {
         public BoundTextBox(String name, String initialValue, final WidgetUpdatable updatable)
         {

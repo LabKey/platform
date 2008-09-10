@@ -25,6 +25,7 @@ import org.labkey.api.gwt.client.model.GWTChartColumn;
 import org.labkey.api.gwt.client.ui.ChartServiceAsync;
 import org.labkey.api.gwt.client.ui.HelpPopup;
 import org.labkey.api.gwt.client.ui.WebPartPanel;
+import org.labkey.api.gwt.client.ui.WidgetUpdatable;
 
 import java.util.*;
 

@@ -60,16 +60,16 @@ public abstract class PlateBasedAssayProvider extends AbstractAssayProvider
     {
         if (!isPlateBased())
             throw new IllegalStateException("Only plate-based assays may store a plate template.");
-        Map<String, ObjectProperty> props = new HashMap<String, ObjectProperty>(protocol.retrieveObjectProperties());
+        Map<String, ObjectProperty> props = new HashMap<String, ObjectProperty>(protocol.getObjectProperties());
         ObjectProperty prop = new ObjectProperty(protocol.getLSID(), protocol.getContainer().getId(),
                 protocol.getLSID() + "#PlateTemplate", template.getName());
         props.put(prop.getPropertyURI(), prop);
-        protocol.storeObjectProperties(props);
+        protocol.setObjectProperties(props);
     }
 
     public PlateTemplate getPlateTemplate(Container container, ExpProtocol protocol)
     {
-        ObjectProperty prop = protocol.retrieveObjectProperties().get(protocol.getLSID() + "#PlateTemplate");
+        ObjectProperty prop = protocol.getObjectProperties().get(protocol.getLSID() + "#PlateTemplate");
         try
         {
             return prop != null ? PlateService.get().getPlateTemplate(protocol.getContainer(), prop.getStringValue()) : null;

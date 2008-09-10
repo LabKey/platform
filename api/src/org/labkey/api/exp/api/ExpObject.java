@@ -21,6 +21,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.Identifiable;
+import org.labkey.api.exp.property.DomainProperty;
 
 import java.util.Comparator;
 import java.sql.SQLException;
@@ -37,6 +38,7 @@ public interface ExpObject extends Identifiable
 
     void setProperty(User user, PropertyDescriptor pd, Object value) throws SQLException;
     Object getProperty(PropertyDescriptor pd);
+    Object getProperty(DomainProperty prop);
 
     String getComment();
     void setComment(User user, String comment) throws Exception;

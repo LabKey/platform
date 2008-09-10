@@ -21,6 +21,7 @@ import org.labkey.api.gwt.client.model.GWTChart;
 import org.labkey.api.gwt.client.ui.ChartServiceAsync;
 import org.labkey.api.gwt.client.ui.HelpPopup;
 import org.labkey.api.gwt.client.ui.WebPartPanel;
+import org.labkey.api.gwt.client.ui.WidgetUpdatable;
 
 /**
  * Created by IntelliJ IDEA.

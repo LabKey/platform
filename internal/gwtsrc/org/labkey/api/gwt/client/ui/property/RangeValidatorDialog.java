@@ -20,6 +20,8 @@ import com.google.gwt.user.client.Window;
 import org.labkey.api.gwt.client.model.GWTPropertyValidator;
 import org.labkey.api.gwt.client.ui.ImageButton;
 import org.labkey.api.gwt.client.ui.HelpPopup;
+import org.labkey.api.gwt.client.ui.BoundListBox;
+import org.labkey.api.gwt.client.ui.WidgetUpdatable;
 import org.labkey.api.gwt.client.util.StringUtils;
 
 import java.util.ArrayList;
@@ -32,8 +34,8 @@ import java.util.List;
 */
 public class RangeValidatorDialog extends ValidatorDialog
 {
-    private Pair _firstType = new Pair("~eq", "");
-    private Pair _secondType = new Pair("", "");
+    private BoundListBox.Pair _firstType = new BoundListBox.Pair("~eq", "");
+    private BoundListBox.Pair _secondType = new BoundListBox.Pair("", "");
     private BoundTextBox _secondRangeValue;
 
     public RangeValidatorDialog(GWTPropertyValidator prop)
@@ -57,7 +59,7 @@ public class RangeValidatorDialog extends ValidatorDialog
         }
     }
 
-    private void parsePart(String expression, Pair range)
+    private void parsePart(String expression, BoundListBox.Pair range)
     {
         String[] parts = expression.split("=");
         if (parts.length == 2)
@@ -128,12 +130,12 @@ public class RangeValidatorDialog extends ValidatorDialog
         panel.setWidget(row++, 1, description);
 
         List rangeValues = new ArrayList();
-        rangeValues.add(new Pair("Equals", "~eq"));
-        rangeValues.add(new Pair("Does not Equal", "~neq"));
-        rangeValues.add(new Pair("Greater than", "~gt"));
-        rangeValues.add(new Pair("Greater than or Equals", "~gte"));
-        rangeValues.add(new Pair("Less than", "~lt"));
-        rangeValues.add(new Pair("Less than or Equals", "~lte"));
+        rangeValues.add(new BoundListBox.Pair("Equals", "~eq"));
+        rangeValues.add(new BoundListBox.Pair("Does not Equal", "~neq"));
+        rangeValues.add(new BoundListBox.Pair("Greater than", "~gt"));
+        rangeValues.add(new BoundListBox.Pair("Greater than or Equals", "~gte"));
+        rangeValues.add(new BoundListBox.Pair("Less than", "~lt"));
+        rangeValues.add(new BoundListBox.Pair("Less than or Equals", "~lte"));
 
         BoundListBox firstRange = new BoundListBox(false, new WidgetUpdatable()
         {
@@ -144,7 +146,7 @@ public class RangeValidatorDialog extends ValidatorDialog
                     _firstType.setKey(lb.getValue(lb.getSelectedIndex()));
             }
         });
-        firstRange.setColumns((Pair[])rangeValues.toArray(new Pair[0]));
+        firstRange.setColumns((BoundListBox.Pair[])rangeValues.toArray(new BoundListBox.Pair[0]));
         firstRange.selectItem(_firstType.getKey());
 
         BoundTextBox firstRangeValue = new BoundTextBox("firstRangeValue", _firstType.getValue(), new WidgetUpdatable()
@@ -186,8 +188,8 @@ public class RangeValidatorDialog extends ValidatorDialog
             }
         });
 
-        rangeValues.add(0, new Pair("<no other filter>", ""));
-        lastRange.setColumns((Pair[])rangeValues.toArray(new Pair[0]));
+        rangeValues.add(0, new BoundListBox.Pair("<no other filter>", ""));
+        lastRange.setColumns((BoundListBox.Pair[])rangeValues.toArray(new BoundListBox.Pair[0]));
         lastRange.selectItem(_secondType.getKey());
 
         _secondRangeValue = new BoundTextBox("secondRangeValue", _secondType.getValue(), new WidgetUpdatable()

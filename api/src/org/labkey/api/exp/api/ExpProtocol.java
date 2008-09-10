@@ -22,19 +22,24 @@ import org.labkey.api.exp.ProtocolParameter;
 
 import java.util.Map;
 import java.util.List;
+import java.util.Collection;
 
 public interface ExpProtocol extends ExpObject
 {
-    Map<String, ObjectProperty> retrieveObjectProperties();
+    Map<String, ObjectProperty> getObjectProperties();
 
     public static final String ASSAY_DOMAIN_PREFIX = "AssayDomain-";
     public static final String ASSAY_DOMAIN_RUN = ASSAY_DOMAIN_PREFIX + "Run";
     public static final String ASSAY_DOMAIN_UPLOAD_SET = ASSAY_DOMAIN_PREFIX + "Batch";
     public static final String ASSAY_DOMAIN_DATA = ASSAY_DOMAIN_PREFIX + "Data";
 
-    void storeObjectProperties(Map<String, ObjectProperty> props);
+    void setObjectProperties(Map<String, ObjectProperty> props);
 
-    Map<String, ProtocolParameter> retrieveProtocolParameters();
+    /**
+    * @return map from OntologyEntryURI to parameter
+     */
+    Map<String, ProtocolParameter> getProtocolParameters();
+    void setProtocolParameters(Collection<ProtocolParameter> params);
 
     String getInstrument();
 
