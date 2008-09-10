@@ -45,7 +45,8 @@
             {
                 for (String viewName : queryDef.getCustomViews(getUser(), getViewContext().getRequest()).keySet())
                 {
-                    viewNames.add(viewName);
+                    if (viewName != null)
+                        viewNames.add(viewName);
                 }
             }
 
