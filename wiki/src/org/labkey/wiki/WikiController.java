@@ -3144,6 +3144,7 @@ public class WikiController extends SpringActionController
                 return;
 
             //find the propset in pages that matches the current path part
+            path[idx] = PageFlowUtil.decode(path[idx]); //decode path part before comparing!
             for(Map<String,Object> pageProps : pages)
             {
                 if(path[idx].equals(pageProps.get("title")))
