@@ -37,8 +37,9 @@ public class FilesWebPart extends JspView<AttachmentDirectory>
 
     public FilesWebPart(Container c)
     {
-        super("/org/labkey/filecontent/view/files.jsp", AttachmentService.get().getMappedAttachmentDirectory(c, false));
+        super("/org/labkey/filecontent/view/files.jsp", null);
         container = c;
+        setFileSet(null);
         setTitle("Files");
         setTitleHref(new ActionURL("FileContent", "begin", c));
     }
@@ -95,7 +96,16 @@ public class FilesWebPart extends JspView<AttachmentDirectory>
     {
         this.fileSet = fileSet;
         if (null == fileSet)
-            setModelBean(AttachmentService.get().getMappedAttachmentDirectory(container, false));
+        {
+            try
+            {
+                setModelBean(AttachmentService.get().getMappedAttachmentDirectory(container, false));
+            }
+            catch (AttachmentService.MissingRootDirectoryException ex)
+            {
+                setModelBean(null);
+            }
+        }
         else
             setModelBean(AttachmentService.get().getRegisteredDirectory(container, fileSet));
     }

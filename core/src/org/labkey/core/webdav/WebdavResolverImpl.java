@@ -263,10 +263,17 @@ public class WebdavResolverImpl implements WebdavResolver
             AttachmentDirectory dir = null;
             try
             {
-                if (c.isRoot())
-                    dir = AttachmentService.get().getMappedAttachmentDirectory(c, false);
-                else
-                    dir = AttachmentService.get().getMappedAttachmentDirectory(c, true);
+                try
+                {
+                    if (c.isRoot())
+                        dir = AttachmentService.get().getMappedAttachmentDirectory(c, false);
+                    else
+                        dir = AttachmentService.get().getMappedAttachmentDirectory(c, true);
+                }
+                catch (AttachmentService.MissingRootDirectoryException  ex)
+                {
+                    /* */
+                }
             }
             catch (AttachmentService.UnsetRootDirectoryException x)
             {
@@ -609,7 +616,15 @@ public class WebdavResolverImpl implements WebdavResolver
             super(c.getPath());
             _c = c;
             _acl = c.getAcl();
-            _root = root != null ? root.getFileSystemDirectory() : null;
+            _root = null;
+            try
+            {
+                _root = root != null ? root.getFileSystemDirectory() : null;
+            }
+            catch (AttachmentService.MissingRootDirectoryException e)
+            {
+                /* */
+            }
             _file = _root;
         }
 

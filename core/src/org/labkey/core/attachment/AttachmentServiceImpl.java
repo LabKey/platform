@@ -104,17 +104,31 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         return template;
     }
 
+
     public HttpView delete(User user, AttachmentParent parent, String name) throws SQLException
     {
         Table.execute(coreTables().getSchema(), sqlDelete(), new Object[]{parent.getEntityId(), name});
         if (parent instanceof AttachmentDirectory)
         {
-            File parentDir = ((AttachmentDirectory) parent).getFileSystemDirectory();
-            File file = new File(parentDir, name);
-            if (file.exists())
+            boolean exists = false;
+            File parentDir = null;
+            try
             {
-                logFileAction(parentDir, name, FileAction.DELETE, user);
-                moveToDeleted(file);
+                parentDir = ((AttachmentDirectory) parent).getFileSystemDirectory();
+                exists = parentDir.exists();
+            }
+            catch (AttachmentService.MissingRootDirectoryException e)
+            {
+                _log.warn(e.getMessage());
+            }
+            if (exists)
+            {
+                File file = new File(parentDir, name);
+                if (file.exists())
+                {
+                    logFileAction(parentDir, name, FileAction.DELETE, user);
+                    moveToDeleted(file);
+                }
             }
         }
         addAuditEvent(user, parent, name, "The attachment: " + name + " was deleted");
@@ -170,7 +184,15 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                 event.setEventType(FileSystemAuditViewFactory.EVENT_TYPE);
                 event.setCreatedBy(user);
                 event.setContainerId(parent.getContainerId());
-                event.setKey1(((AttachmentDirectory)parent).getFileSystemDirectory().getPath());
+                try
+                {
+                    event.setKey1(((AttachmentDirectory)parent).getFileSystemDirectory().getPath());
+                }
+                catch (AttachmentService.MissingRootDirectoryException ex)
+                {
+                    // UNDONE: AttachmentDirectory.getFileSystemPath()...
+                    event.setKey1("path not found");
+                }
                 event.setKey2(filename);
                 event.setComment(comment);
                 AuditLogService.get().addEvent(event);
@@ -206,7 +228,8 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         return template;
     }
 
-    public AttachmentDirectory getMappedAttachmentDirectory(Container c, boolean createDir) throws AttachmentService.UnsetRootDirectoryException, AttachmentService.MissingRootDirectoryException
+    public AttachmentDirectory getMappedAttachmentDirectory(Container c, boolean createDir)
+            throws AttachmentService.UnsetRootDirectoryException, AttachmentService.MissingRootDirectoryException
     {
         if (createDir) //force create
             getMappedDirectory(c, true);
@@ -453,7 +476,15 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     public void deleteAttachments(AttachmentParent parent) throws SQLException
     {
         Table.execute(coreTables().getSchema(), sqlCascadeDelete(), new Object[]{parent.getEntityId()});
-        File parentDir = parent instanceof AttachmentDirectory ? ((AttachmentDirectory) parent).getFileSystemDirectory() : null;
+        File parentDir = null;
+        try
+        {
+            parentDir = parent instanceof AttachmentDirectory ? ((AttachmentDirectory) parent).getFileSystemDirectory() : null;
+        }
+        catch (AttachmentService.MissingRootDirectoryException ex)
+        {
+            /* */
+        }
         if (null != parentDir && parentDir.exists())
         {
             File[] files = parentDir.listFiles();
@@ -474,7 +505,15 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     public void deleteAttachment(AttachmentParent parent, String name) throws SQLException
     {
         Table.execute(coreTables().getSchema(), sqlDelete(), new Object[]{parent.getEntityId(), name});
-        File parentDir = parent instanceof AttachmentDirectory ? ((AttachmentDirectory) parent).getFileSystemDirectory() : null;
+        File parentDir = null;
+        try
+        {
+            parentDir = parent instanceof AttachmentDirectory ? ((AttachmentDirectory) parent).getFileSystemDirectory() : null;
+        }
+        catch (AttachmentService.MissingRootDirectoryException ex)
+        {
+            /* no problem */
+        }
         if (null != parentDir && parentDir.exists())
         {
             File attachmentFile = new File(parentDir, name);
@@ -568,7 +607,15 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                 Attachment.class
         );
 
-        File parentDir = parent instanceof AttachmentDirectory ? ((AttachmentDirectory) parent).getFileSystemDirectory() : null;
+        File parentDir = null;
+        try
+        {
+            parentDir = parent instanceof AttachmentDirectory ? ((AttachmentDirectory) parent).getFileSystemDirectory() : null;
+        }
+        catch (AttachmentService.MissingRootDirectoryException ex)
+        {
+            /* no problem */
+        }
         if (null == parentDir || !parentDir.exists())
             return attachments;
 
@@ -728,11 +775,18 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
     public void containerCreated(Container c)
     {
-        File dir = getMappedDirectory(c, false);
-        //Don't try to create dir if root not configured.
-        //But if we should have a directory, create it
-        if (null != dir && !dir.exists())
-            getMappedDirectory(c, true);
+        try
+        {
+            File dir = getMappedDirectory(c, false);
+            //Don't try to create dir if root not configured.
+            //But if we should have a directory, create it
+            if (null != dir && !dir.exists())
+                getMappedDirectory(c, true);
+        }
+        catch (AttachmentService.MissingRootDirectoryException ex)
+        {
+            /* */
+        }
     }
 
 
@@ -748,7 +802,15 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             String oldValue = (String) propertyChangeEvent.getOldValue();
             String newValue = (String) propertyChangeEvent.getNewValue();
 
-            File location = getMappedDirectory(c, false);
+            File location = null;
+            try
+            {
+                location = getMappedDirectory(c, false);
+            }
+            catch (AttachmentService.MissingRootDirectoryException ex)
+            {
+                /* */
+            }
             if (location == null)
                 return;
             //Don't rely on container object. Seems not to point to the
@@ -766,16 +828,31 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         case Parent:
         {
             Container oldParent = (Container) propertyChangeEvent.getOldValue();
-            File oldParentFile = getMappedDirectory(oldParent, false);
+            File oldParentFile = null;
+            try
+            {
+                oldParentFile = getMappedDirectory(oldParent, false);
+            }
+            catch (AttachmentService.MissingRootDirectoryException ex)
+            {
+                /* */
+            }
             if (null == oldParentFile)
                 return;
             File oldDir = new File(oldParentFile, c.getName());
             if (!oldDir.exists())
                 return;
 
-            File newDir = getMappedDirectory(c, false);
+            File newDir = null;
+            try
+            {
+                newDir = getMappedDirectory(c, false);
+            }
+            catch (AttachmentService.MissingRootDirectoryException ex)
+            {
+            }
             //Move stray content out of the way
-            if (newDir.exists())
+            if (null != newDir && newDir.exists())
                moveToDeleted(newDir);
 
             oldDir.renameTo(newDir);
@@ -827,6 +904,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
 
     private File getMappedDirectory(Container c, boolean create)
+            throws AttachmentService.UnsetRootDirectoryException, AttachmentService.MissingRootDirectoryException
     {
         File root = getWebRoot(c);
         if (null == root)
@@ -1121,7 +1199,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             return c.getId();
         }
 
-        public File getFileSystemDirectory()
+        public File getFileSystemDirectory() throws AttachmentService.MissingRootDirectoryException
         {
             if (null == path)
                 return ((AttachmentServiceImpl) AttachmentService.get()).getMappedDirectory(c, false);

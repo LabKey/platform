@@ -788,8 +788,17 @@ public class FileContentController extends SpringActionController
             throw new NotFoundException("The web root for this project is set to a non-existent directory. Please contact an administrator", e);
         }
 
-        if (!attachmentParent.getFileSystemDirectory().exists())
-             throw new NotFoundException("Directory for saving file does not exist. Please contact an administrator.");
+        boolean exists = false;
+        try
+        {
+            exists = attachmentParent.getFileSystemDirectory().exists();
+        }
+        catch (AttachmentService.MissingRootDirectoryException ex)
+        {
+            /* */
+        }
+        if (!exists)
+            throw new NotFoundException("Directory for saving file does not exist. Please contact an administrator.");
 
         return attachmentParent;
     }
