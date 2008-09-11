@@ -18,6 +18,9 @@ package org.labkey.study.model;
 import org.apache.commons.collections.map.MultiValueMap;
 import org.apache.commons.collections.functors.InstantiateFactory;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.PropertyUtil;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.RuntimeSQLException;
@@ -165,7 +168,7 @@ public class AllParticipantData
                     else
                         keyMap.set(propMap);
                 }
-                propMap.put(propertyId, val);
+                propMap.put(propertyId, PropertyUtil.formatValue(OntologyManager.getPropertyDescriptor(propertyId), val));
             }
 
             return new AllParticipantData(datasetIds, visitSeqMap, allData);

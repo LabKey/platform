@@ -63,13 +63,13 @@ public class RangeValidator extends DefaultPropertyValidator implements Validato
         return true;
     }
 
-    public boolean validate(IPropertyValidator validator, Object value, List<ValidationError> errors)
+    public boolean validate(IPropertyValidator validator, String field, Object value, List<ValidationError> errors)
     {
         for (Pair<String, String> constraint : parseExpression(validator.getExpressionValue()))
         {
             if (!isValid(value, constraint))
             {
-                createErrorMessage(validator, value, errors);
+                createErrorMessage(validator, field, value, errors);
                 return false;
             }
         }

@@ -375,7 +375,7 @@ public class ListController extends SpringActionController
             catch (ValidationException ve)
             {
                 for (ValidationError error : ve.getErrors())
-                    errors.reject(ERROR_MSG, PageFlowUtil.filter(error.getMessage()));
+                    errors.reject(ERROR_MSG, error.getMessage());
             }
             catch (Exception e)   // TODO: Check for specific errors and get rid of catch(Exception)
             {
@@ -792,7 +792,7 @@ public class ListController extends SpringActionController
             catch (ValidationException ve)
             {
                 for (ValidationError error : ve.getErrors())
-                    errors.reject(ERROR_MSG, PageFlowUtil.filter(error.getMessage()));
+                    errors.reject(ERROR_MSG, error.getMessage());
                 return false;
             }
             finally

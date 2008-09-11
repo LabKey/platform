@@ -74,17 +74,17 @@ public class RegExValidator extends DefaultPropertyValidator implements Validato
         return false;
     }
 
-    public boolean validate(IPropertyValidator validator, Object value, List<ValidationError> errors)
+    public boolean validate(IPropertyValidator validator, String field, Object value, List<ValidationError> errors)
     {
         try {
             Pattern expression = Pattern.compile(validator.getExpressionValue());
             Matcher matcher = expression.matcher(String.valueOf(value));
             boolean failOnMatch = BooleanUtils.toBoolean(validator.getProperties().get(FAIL_ON_MATCH));
-            boolean matched = matcher.find();
+            boolean matched = matcher.matches();
 
             if ((matched && failOnMatch) || (!matched && !failOnMatch))
             {
-                createErrorMessage(validator, value, errors);
+                createErrorMessage(validator, field, value, errors);
                 return false;
             }
             return true;

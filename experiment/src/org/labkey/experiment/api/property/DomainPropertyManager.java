@@ -21,6 +21,7 @@ import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.security.User;
+import org.labkey.api.query.ValidationException;
 
 import java.sql.SQLException;
 
@@ -136,7 +137,13 @@ public class DomainPropertyManager
     {
         if (property.getPropertyId() != 0)
         {
-            addValidatorReference(property, validator.save(user, property.getContainer()));
+            try {
+                addValidatorReference(property, validator.save(user, property.getContainer()));
+            }
+            catch (ValidationException e)
+            {
+                throw new ChangePropertyDescriptorException(e.getMessage());
+            }
         }
     }
 

@@ -27,6 +27,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.ValidationException;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.apache.beehive.netui.pageflow.PageFlowUtils;
 import org.springframework.validation.BindException;
@@ -139,20 +140,14 @@ public class PropertyValidatorImpl implements IPropertyValidator
         return PropertyService.get().getValidatorKind(getTypeURI());
     }
 
-    public IPropertyValidator save(User user, Container container) throws SQLException
+    public IPropertyValidator save(User user, Container container) throws ValidationException, SQLException
     {
         ValidatorKind kind = getType();
         List<ValidationError> errors = new ArrayList<ValidationError>();
 
         if (!kind.isValid(this, errors))
         {
-            StringBuffer sb = new StringBuffer();
-            for (ValidationError error : errors)
-            {
-                sb.append(error);
-                sb.append("\n");
-            }
-            throw new SQLException(sb.toString());
+            throw new ValidationException(errors);
         }
 
         if (isNew())
@@ -180,12 +175,12 @@ public class PropertyValidatorImpl implements IPropertyValidator
         Table.delete(DomainPropertyManager.get().getTinfoValidator(), new Integer(getRowId()), null);
     }
 
-    public boolean validate(Object value, List<ValidationError> errors)
+    public boolean validate(String field, Object value, List<ValidationError> errors)
     {
         ValidatorKind kind = getType();
 
         if (kind != null)
-            return kind.validate(this, value, errors);
+            return kind.validate(this, field, value, errors);
         else
             errors.add(new SimpleValidationError("Validator type : " + getTypeURI() + " does not exist."));
         return false;

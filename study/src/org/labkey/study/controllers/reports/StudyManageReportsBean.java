@@ -272,16 +272,6 @@ public class StudyManageReportsBean extends ManageReportsBean
         return "[<a href='" + url + "'>permissions</a>]";
     }
 
-    private DataSetDefinition getDataSetDefinition(String queryName)
-    {
-        final Study study = StudyManager.getInstance().getStudy(_context.getContainer());
-        if (study != null)
-        {
-            return StudyManager.getInstance().getDataSetDefinition(study, queryName);
-        }
-        return null;
-    }
-
     /**
      * Gets any custom query views that may have been created outside of the reporting infrastructure.
      */
