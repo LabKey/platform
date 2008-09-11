@@ -360,8 +360,6 @@ public abstract class DisplayColumn extends RenderColumn
         NavTree navtree = getPopupNavTree(ctx, baseId, sort, filtered);
         if (navtree != null)
         {
-            out.write(" onmouseover=\"Ext.fly(this).toggleClass('hover')\"");
-            out.write(" onmouseout=\"Ext.fly(this).toggleClass('hover')\"");
             out.write(" onclick=\"showMenu(this, ");
             out.write(PageFlowUtil.jsString(navtree.getId()));
             out.write(", null);\"");
@@ -443,13 +441,14 @@ public abstract class DisplayColumn extends RenderColumn
     {
         DataRegion rgn = ctx.getCurrentRegion();
         NavTree navtree = null;
-        if ((isSortable() && rgn.isSortable()) ||
-            (isFilterable() && rgn.getShowFilters()))
+        boolean addSortItems = isSortable() &&  rgn.isSortable();
+        boolean addFilterItems = isFilterable() && rgn.getShowFilters();
+        if (addSortItems || addFilterItems)
         {
             navtree = new NavTree();
             navtree.setId(PageFlowUtil.filter(baseId + ":menu"));
 
-            if (isSortable() && rgn.isSortable())
+            if (addSortItems)
             {
                 Sort.SortField sortField = null;
                 boolean primarySort = false;
@@ -476,13 +475,22 @@ public abstract class DisplayColumn extends RenderColumn
                 navtree.addChild(desc);
             }
 
-            if (isFilterable() && rgn.getShowFilters())
+            if (addFilterItems)
             {
-                NavTree child = new NavTree("Filter...");
-                child.setId(PageFlowUtil.filter(baseId + ":filter"));
-                child.setScript(getFilterOnClick(ctx));
-                //child.setImageSrc(ctx.getRequest().getContextPath() + "/_images/filter" + (filtered ? "_on" : "") + ".png");
-                navtree.addChild(child);
+                if (navtree.hasChildren())
+                    navtree.addSeparator();
+
+                NavTree clearFilterItem = new NavTree("Clear Filter");
+                clearFilterItem.setId(PageFlowUtil.filter(baseId + ":clear-filter"));
+                clearFilterItem.setDisabled(!filtered);
+                clearFilterItem.setScript(getClearFilter(ctx));
+                navtree.addChild(clearFilterItem);
+
+                NavTree filterItem = new NavTree("Filter...");
+                filterItem.setId(PageFlowUtil.filter(baseId + ":filter"));
+                filterItem.setScript(getFilterOnClick(ctx));
+                //filterItem.setImageSrc(ctx.getRequest().getContextPath() + "/_images/filter" + (filtered ? "_on" : "") + ".png");
+                navtree.addChild(filterItem);
             }
 
         }
@@ -674,6 +682,11 @@ public abstract class DisplayColumn extends RenderColumn
             writer.write(e.getMessage());
         }
         return writer.toString();
+    }
+
+    public String getClearFilter(RenderContext ctx)
+    {
+        return "";
     }
 
     public String getInputHtml(RenderContext ctx)

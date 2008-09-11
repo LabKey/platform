@@ -134,7 +134,7 @@ public class PopupMenu
         for (NavTree tree : trees)
         {
             sb.append(sep);
-             if (tree == NavTree.MENU_SEPARATOR)
+            if (tree == NavTree.MENU_SEPARATOR)
             {
                 sb.append("'-'");
                 continue;

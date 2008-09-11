@@ -85,6 +85,11 @@ LABKEY.DataRegion = function (config)
     Ext.EventManager.on(window, "load", this._resizeContainer, this, {single: true});
     Ext.EventManager.on(window, "resize", this._resizeContainer, this);
 
+    this._removeParams = function (skipPrefixes)
+    {
+        this._setParam(null, null, skipPrefixes);
+    };
+
     this._setParam = function (param, value, skipPrefixes)
     {
         for (var i in skipPrefixes)
@@ -217,6 +222,16 @@ LABKEY.DataRegion.prototype = {
 
         setAllCheckboxes(this.form, false);
         this.hideMessage();
+    },
+
+    clearFilter : function (fieldName)
+    {
+        this._removeParams(["." + fieldName + "~", ".offset"]);
+    },
+
+    clearAllFilters : function ()
+    {
+        this._removeParams(getParamValPairs([".", ".offset"]));
     },
 
     showMessage : function (html)

@@ -25,7 +25,7 @@ import java.util.*;
 
 public class NavTree extends Pair<String, String> implements Collapsible
 {
-    public static final NavTree MENU_SEPARATOR = new NavTree("-");
+    /*package*/ static final NavTree MENU_SEPARATOR = new NavTree("-");
     
     String imageSrc = null;
     private boolean _selected = false;
@@ -89,6 +89,11 @@ public class NavTree extends Pair<String, String> implements Collapsible
     }
 
 
+    public void addSeparator()
+    {
+        addChild(MENU_SEPARATOR);
+    }
+
     public NavTree addChild(NavTree child)
     {
         if (null == children)
@@ -100,7 +105,6 @@ public class NavTree extends Pair<String, String> implements Collapsible
             addChildren(child.children);
         return child;
     }
-
 
     // return this for easy chaining
     public NavTree addChild(String display)

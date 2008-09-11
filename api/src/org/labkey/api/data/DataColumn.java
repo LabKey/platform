@@ -242,6 +242,14 @@ public class DataColumn extends DisplayColumn
         out.write("')   ");
     }
 
+    public String getClearFilter(RenderContext ctx)
+    {
+        if (_filterColumn == null)
+            return "";
+        return "LABKEY.DataRegions['" + h(ctx.getCurrentRegion().getName()) + "']" +
+                ".clearFilter('" + h(_filterColumn.getName()) + "')";
+    }
+
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
         Object o = getValue(ctx);
