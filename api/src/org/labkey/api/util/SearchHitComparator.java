@@ -70,7 +70,7 @@ public class SearchHitComparator implements Comparator<SearchHit>
         }
         
         //if we get here, check size (shorter sorts higher)
-        return path1Parts.length < path2Parts.length ? -1 : 1;
+        return path1Parts.length - path2Parts.length;
     }
 
 }
