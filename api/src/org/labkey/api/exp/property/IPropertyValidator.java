@@ -18,7 +18,7 @@ package org.labkey.api.exp.property;
 import org.labkey.api.security.User;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.ValidationError;
-import org.springframework.validation.BindException;
+import org.labkey.api.query.ValidationException;
 
 import java.util.List;
 import java.util.Map;
@@ -49,8 +49,8 @@ public interface IPropertyValidator
     void setErrorMessage(String message);
     void setProperty(String key, String value);
 
-    IPropertyValidator save(User user, Container container) throws SQLException;
+    IPropertyValidator save(User user, Container container) throws ValidationException, SQLException;
     void delete(User user) throws SQLException;
 
-    boolean validate(Object value, List<ValidationError> errors);
+    boolean validate(String field, Object value, List<ValidationError> errors);
 }

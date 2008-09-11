@@ -558,7 +558,7 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
             List<ValidationError> validationErrors = new ArrayList<ValidationError>();
             for (IPropertyValidator validator : PropertyService.get().getPropertyValidators(pd))
             {
-                validator.validate(value, validationErrors);
+                validator.validate(pd.getLabel(), value, validationErrors);
             }
 
             for (ValidationError ve : validationErrors)

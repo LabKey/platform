@@ -17,6 +17,7 @@ package org.labkey.api.exp.property;
 
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
+import org.labkey.api.util.PageFlowUtil;
 
 import java.util.List;
 
@@ -27,19 +28,21 @@ import java.util.List;
 */
 public abstract class DefaultPropertyValidator implements ValidatorKind
 {
-    protected void createErrorMessage(IPropertyValidator validator, Object value, List<ValidationError> errors)
+    protected void createErrorMessage(IPropertyValidator validator, String field, Object value, List<ValidationError> errors)
     {
         StringBuffer sb = new StringBuffer();
 
-        sb.append("Validation failure: field value (");
+        sb.append("Validation failure: value '");
         sb.append(value);
-        sb.append(") is invalid. ");
+        sb.append("' for field '");
+        sb.append(field);
+        sb.append("' is invalid. ");
 
         if (validator.getErrorMessage() != null)
         {
             sb.append("Additional information : ");
             sb.append(validator.getErrorMessage());
         }
-        errors.add(new SimpleValidationError(sb.toString()));
+        errors.add(new SimpleValidationError(PageFlowUtil.filter(sb.toString())));
     }
 }

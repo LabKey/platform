@@ -205,7 +205,7 @@ public class OntologyManager
         boolean ret = true;
         for (IPropertyValidator validator : PropertyService.get().getPropertyValidators(prop))
         {
-            if (!validator.validate(value, errors)) ret = false;
+            if (!validator.validate(prop.getLabel(), value, errors)) ret = false;
         }
         return ret;
     }

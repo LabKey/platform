@@ -49,6 +49,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
     private boolean _copy;
     private SaveButtonBar saveBarTop;
     private SaveButtonBar saveBarBottom;
+    private WindowCloseListener _closeListener = new AssayCloseListener();
 
     public AssayDesignerMainPanel(RootPanel rootPanel, String providerName, Integer protocolId, boolean copy)
     {
@@ -154,26 +155,8 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
         saveBarBottom = new SaveButtonBar(this);
         _rootPanel.add(saveBarBottom);
         setDirty(_copy);
-        
-        Window.addWindowCloseListener(new WindowCloseListener()
-        {
-            public void onWindowClosed()
-            {
-            }
 
-            public String onWindowClosing()
-            {
-                boolean dirty = _dirty;
-                for (int i = 0; i < _domainEditors.size() && !dirty; i++)
-                {
-                    dirty = ((PropertiesEditor)_domainEditors.get(i)).isDirty();
-                }
-                if (dirty)
-                    return "Changes have not been saved and will be discarded.";
-                else
-                    return null;
-            }
-        });
+        Window.addWindowCloseListener(_closeListener);
     }
 
     protected void addErrorMessage(String message)
@@ -391,8 +374,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
                 public void onSuccess(Object result)
                 {
                     // save was successful, so don't prompt when navigating away
-                    setDirty(false);
-
+                    Window.removeWindowCloseListener(_closeListener);
                     WindowUtil.setLocation(doneLink);
                 }
             });
@@ -419,5 +401,25 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
                 getService().getTablesForLookup(containerId, schemaName, async);
             }
         };
+    }
+
+    class AssayCloseListener implements WindowCloseListener
+    {
+        public void onWindowClosed()
+        {
+        }
+
+        public String onWindowClosing()
+        {
+            boolean dirty = _dirty;
+            for (int i = 0; i < _domainEditors.size() && !dirty; i++)
+            {
+                dirty = ((PropertiesEditor)_domainEditors.get(i)).isDirty();
+            }
+            if (dirty)
+                return "Changes have not been saved and will be discarded.";
+            else
+                return null;
+        }
     }
 }
