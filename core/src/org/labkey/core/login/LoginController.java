@@ -711,15 +711,19 @@ public class LoginController extends SpringActionController
 
                     // Success
                     _email = email;
-                    return;
                 }
-
-                if (!SecurityManager.loginExists(email))
-                    errors.reject("verify", "This email address doesn't exist.  Make sure you've copied the entire link into your browser's address bar.");
-                else if (SecurityManager.isVerified(email))
-                    errors.reject("verify", "This email address has already been verified.");
-                else if (verification.length() < SecurityManager.tempPasswordLength)
-                    errors.reject("verify", "Make sure you've copied the entire link into your browser's address bar.");
+                else
+                {
+                    if (!SecurityManager.loginExists(email))
+                        errors.reject("verify", "This email address doesn't exist.  Make sure you've copied the entire link into your browser's address bar.");
+                    else if (SecurityManager.isVerified(email))
+                        errors.reject("verify", "This email address has already been verified.");
+                    else if (verification.length() < SecurityManager.tempPasswordLength)
+                        errors.reject("verify", "Make sure you've copied the entire link into your browser's address bar.");
+                    else
+                        // Incorrect verification string
+                        errors.reject("verify", "Verification failed.  Make sure you've copied the entire link into your browser's address bar.");
+                }
             }
             catch (Exception e)
             {
@@ -729,11 +733,12 @@ public class LoginController extends SpringActionController
 
         public ModelAndView getView(VerifyForm form, boolean reshow, BindException errors) throws Exception
         {
-            validateCommand(form, errors);
+            if (!reshow)
+                validateCommand(form, errors);
 
             if (errors.hasErrors())
             {
-                _log.debug("Verification failed: " + form.getEmail());
+                _log.error("Verification failed: " + form.getEmail() + " " + form.getVerification());
             }
             else
             {
