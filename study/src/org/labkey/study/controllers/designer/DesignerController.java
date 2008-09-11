@@ -385,7 +385,7 @@ public class DesignerController extends SpringActionController
                         participantMaps[i].put("Date", participantMaps[i].get("StartDate")); //Date of demographic data *is* StartDate by default
                     }
                     Study study = StudyDesignManager.get().generateStudyFromDesign(getUser(), ContainerManager.getForId(form.getParentFolderId()), form.getFolderName(), form.getBeginDate(), info, participantMaps, getSpecimens());
-                    final ActionURL studyFolderUrl = PageFlowUtil.urlProvider(ProjectUrls.class).urlStart(study.getContainer());
+                    final ActionURL studyFolderUrl = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(study.getContainer());
                     HttpView.throwRedirect(studyFolderUrl);
             }
 
@@ -409,7 +409,7 @@ public class DesignerController extends SpringActionController
 
         //Now see if the study already exists.
         if (info.isActive())
-            HttpView.throwRedirect(PageFlowUtil.urlProvider(ProjectUrls.class).urlStart(info.getContainer()));
+            HttpView.throwRedirect(PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(info.getContainer()));
 
         //Make sure we haven't done some crazy back/forward thing
         int stepNumber = form.getWizardStep().getNumber();

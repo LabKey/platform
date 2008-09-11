@@ -87,7 +87,7 @@ public class ParticipantTable extends FilteredTable
 
     public ActionURL getBaseDetailsURL()
     {
-        return new ActionURL("Study", "participant", _schema.getContainer().getPath());
+        return new ActionURL("Study", "participant", _schema.getContainer());
     }
 
     public StringExpressionFactory.StringExpression getDetailsURL(Map<String, ColumnInfo> columns)

@@ -92,7 +92,7 @@ public class AnalysisController extends SpringActionController
 
         public ActionURL getSuccessURL(AnalyzeForm form)
         {
-            return PageFlowUtil.urlProvider(ProjectUrls.class).urlStart(getContainer());
+            return PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(getContainer());
         }
 
         public ModelAndView handleRequest(AnalyzeForm form, BindException errors) throws Exception
@@ -318,7 +318,7 @@ public class AnalysisController extends SpringActionController
     {
         public ActionURL getSuccessURL(AnalyzeForm analyzeForm)
         {
-            return PageFlowUtil.urlProvider(ProjectUrls.class).urlStart(getContainer());
+            return PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(getContainer());
         }
 
         public boolean throwNotFound()

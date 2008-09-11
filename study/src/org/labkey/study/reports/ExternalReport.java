@@ -523,7 +523,7 @@ public class ExternalReport extends AbstractReport
                     if (null != colVal)
                         out.write(PageFlowUtil.filter(ConvertUtils.convert(colVal)));
                     else
-                        out.write("&nbsp");
+                        out.write("&nbsp;");
                     out.write("</td>");
                 }
                 out.write("</tr>");

@@ -315,13 +315,13 @@ public class Announcement extends AttachmentParentEntity implements Serializable
     @Transient
     public String getThreadUrl(Container container)
     {
-        ActionURL url = new ActionURL("announcements", "thread", container.getPath());
+        ActionURL url = new ActionURL("announcements", "thread", container);
         return url.getLocalURIString();
     }
 
     public String getPostResponseUrl(Container container)
     {
-        ActionURL url = new ActionURL("announcements", "respond", container.getPath());
+        ActionURL url = new ActionURL("announcements", "respond", container);
         url.addParameter("rowId", Integer.toString(getRowId()));
         url.addParameter("entityId", getEntityId());
         return url.getLocalURIString();

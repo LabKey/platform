@@ -465,10 +465,10 @@ public class ListController extends SpringActionController
     private void setDisplayColumnsFromDefaultView(int listId, DataRegion rgn, boolean editableOnly)
     {
         ListQueryView lqv = new ListQueryView(new ListQueryForm(listId, getViewContext()));
-        List<DisplayColumn> allColumns = lqv.getDisplayColumns();
-        List<DisplayColumn> displayColumns = new ArrayList<DisplayColumn>(allColumns.size());
+        List<DisplayColumn> defaultGridColumns = lqv.getDisplayColumns();
+        List<DisplayColumn> displayColumns = new ArrayList<DisplayColumn>(defaultGridColumns.size());
 
-        for (DisplayColumn dc : allColumns)
+        for (DisplayColumn dc : defaultGridColumns)
         {
             if (editableOnly && !dc.isEditable())
                 continue;
@@ -476,10 +476,12 @@ public class ListController extends SpringActionController
             if (dc instanceof UrlColumn)
                 continue;
 
-            displayColumns.add(rgn.getDisplayColumn(dc.getName()));
+            DisplayColumn dcAdd = rgn.getDisplayColumn(dc.getName());
+
+            displayColumns.add(null != dcAdd ? dcAdd : dc);
         }
 
-        // Save current column list
+        // Save old grid column list
         List<DisplayColumn> currentColumns = new ArrayList<DisplayColumn>(rgn.getDisplayColumns());
 
         rgn.setDisplayColumns(displayColumns);

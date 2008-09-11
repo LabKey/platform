@@ -187,7 +187,7 @@ public class DailyDigest
         ActionURL boardUrl = AnnouncementsController.getBeginURL(c);
         page.boardUrl = boardUrl.getURIString();
         page.siteUrl = ActionURL.getBaseServerURL();
-        page.removeUrl = new ActionURL("announcements", "showEmailPreferences", c.getPath()).getURIString();
+        page.removeUrl = new ActionURL("announcements", "showEmailPreferences", c).getURIString();
         page.includeGroups = perm.includeGroups();
 
         return page;

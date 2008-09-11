@@ -50,9 +50,14 @@ public class ProjectController extends SpringActionController
 
     public static class PipelineUrlsImp implements ProjectUrls
     {
-        public ActionURL urlStart(Container container)
+        public ActionURL getStartURL(Container container)
         {
             return new ActionURL(StartAction.class, container);
+        }
+
+        public ActionURL getHomeURL()
+        {
+            return getStartURL(ContainerManager.getHomeContainer());
         }
     }
 
@@ -873,7 +878,7 @@ public class ProjectController extends SpringActionController
             List<Map<String,Object>> containersInfo = new ArrayList<Map<String,Object>>();
             for(Container child : parent.getChildren())
             {
-                if(!child.hasPermission(user, ACL.PERM_READ))
+                if (!child.hasPermission(user, ACL.PERM_READ))
                     continue;
 
                 Map<String,Object> containerInfo = new HashMap<String,Object>();
@@ -884,7 +889,7 @@ public class ProjectController extends SpringActionController
                 containerInfo.put("userPermissions", child.getAcl().getPermissions(user));
 
                 //recurse into children
-                if(recurse && child.hasChildren())
+                if (recurse && child.hasChildren())
                     containerInfo.put("children", getContainers(child, user, recurse));
                 
                 containersInfo.add(containerInfo);
@@ -893,5 +898,4 @@ public class ProjectController extends SpringActionController
             return containersInfo;
         }
     }
-
 }

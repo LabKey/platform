@@ -527,7 +527,7 @@ public class LoginController extends SpringActionController
             Container c = getContainer();
 
             if (c.isRoot())
-                return null;
+                throw new UnauthorizedException("Can't approve terms of use in root container", AppProps.getInstance().getHomePageUrl(), c);
             else
                 termsContainer = c.getProject();
         }

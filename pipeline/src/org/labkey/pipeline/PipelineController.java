@@ -106,7 +106,7 @@ public class PipelineController extends SpringActionController
             if (RefererValues.pipeline.toString().equals(getSavedReferer()))
                 return StatusController.urlShowList(getContainer(), true);
             else
-                return PageFlowUtil.urlProvider(ProjectUrls.class).urlStart(getContainer());
+                return PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(getContainer());
         }
     }
 

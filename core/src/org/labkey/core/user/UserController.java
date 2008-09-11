@@ -1497,7 +1497,7 @@ public class UserController extends SpringActionController
             else
             {
                 SecurityManager.impersonate(getViewContext(), impersonatedUser, c.getProject(), form.getReturnActionURL());
-                return PageFlowUtil.urlProvider(ProjectUrls.class).urlStart(c);
+                return PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
             }
         }
     }

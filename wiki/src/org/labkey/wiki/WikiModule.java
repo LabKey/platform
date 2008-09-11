@@ -140,7 +140,7 @@ public class WikiModule extends DefaultModule implements ContainerManager.Contai
         if (_newInstall)
         {
             Container supportContainer = ContainerManager.getDefaultSupportContainer();
-            Container homeContainer = ContainerManager.getForPath(ContainerManager.HOME_PROJECT_PATH);
+            Container homeContainer = ContainerManager.getHomeContainer();
 
             String defaultPageName = "default";
 
