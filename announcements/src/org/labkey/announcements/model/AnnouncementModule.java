@@ -100,7 +100,8 @@ public class AnnouncementModule extends DefaultModule implements ContainerManage
                 {
                     return location.equals(getDefaultLocation());
                 }
-            }
+            },
+            new DiscussionWebPartFactory()
         );
         addController("announcements", AnnouncementsController.class);
     }

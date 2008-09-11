@@ -76,6 +76,7 @@ announcements/src/org/labkey/announcements/model/AnnouncementModule.java -text
 announcements/src/org/labkey/announcements/model/DailyDigest.java -text
 announcements/src/org/labkey/announcements/model/DailyDigestEmailPrefsSelector.java -text
 announcements/src/org/labkey/announcements/model/DiscussionServiceImpl.java -text
+announcements/src/org/labkey/announcements/model/DiscussionWebPartFactory.java -text
 announcements/src/org/labkey/announcements/model/EmailPrefsSelector.java -text
 announcements/src/org/labkey/announcements/model/IndividualEmailPrefsSelector.java -text
 announcements/src/org/labkey/announcements/model/MessageSearch.java -text

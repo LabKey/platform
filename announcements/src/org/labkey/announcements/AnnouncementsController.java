@@ -2410,8 +2410,6 @@ public class AnnouncementsController extends SpringActionController
             SimpleFilter filter = getFilter(settings, perm, displayAll);
             gridView.setFilter(filter);
 
-            setTitle(settings.getBoardName() + " List");
-
             _vbox = new VBox(new ListLinkBar(c, url, user, settings, perm, displayAll), gridView);
         }
 
