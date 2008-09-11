@@ -28,7 +28,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.Date;
-import java.util.Random;
 import java.io.File;
 
 /**
@@ -260,7 +259,7 @@ public class AppProps extends AbstractWriteableSettingsGroup
 
     public ActionURL getHomePageActionURL()
     {
-        return PageFlowUtil.urlProvider(ProjectUrls.class).urlStart(ContainerManager.getForPath("/home"));
+        return PageFlowUtil.urlProvider(ProjectUrls.class).getHomeURL();
     }
 
     public int getLookAndFeelRevision()

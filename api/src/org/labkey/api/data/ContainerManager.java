@@ -29,11 +29,9 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
-import org.labkey.api.util.Cache;
-import org.labkey.api.util.CaseInsensitiveHashSet;
-import org.labkey.api.util.GUID;
-import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.*;
 import org.labkey.api.view.*;
+import org.labkey.api.portal.ProjectUrls;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -581,16 +579,15 @@ public class ContainerManager
             NavTree list = new NavTree("Projects");
             while (rs.next())
             {
-                String name = rs.getString(1);
-                if (!shouldDisplayContainer(name))
-                    continue;
                 Container project = getForId(rs.getString(2));
-                if (project == null)
+
+                if (project == null || !project.shouldDisplay())
                     continue;
-                String url = ActionURL.toPathString("project", "start", "/" + name);
-                if (project.equals(getHomeContainer()))
-                    name = "Home";
-                list.addChild(name, url);
+
+                ActionURL startURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(project);
+                String name = project.equals(getHomeContainer()) ? "Home" : rs.getString(1);
+
+                list.addChild(name, startURL);
             }
             list.setId(PROJECT_LIST_ID);
             NavTreeManager.cacheTree(list, context.getUser());
@@ -644,7 +641,7 @@ public class ContainerManager
                 Container c = ContainerManager.getForId(id);
                 if (null == c || !c.isProject() || !c.shouldDisplay())
                     continue;
-                list.addChild(c.getName(), ActionURL.toPathString("project", "start", c.getPath()));
+                list.addChild(c.getName(), PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c));
                 containerSet.add(c);
             }
 
@@ -658,19 +655,17 @@ public class ContainerManager
                     new Object[]{root.getId()},
                     String.class);
 
-                for (String id : ids)
+            for (String id : ids)
             {
                 Container c = ContainerManager.getForId(id);
-                if (null == c)
+                if (null == c || !c.shouldDisplay())
                     continue;
-                if (!c.shouldDisplay())
-                    continue;
-                String name = c.getName();
-                if (c.equals(getHomeContainer()))
-                    name="Home";
                 //ensure that user has permissions on container, and that container is not already in nav tree set
                 if (c.hasPermission(user, ACL.PERM_READ) && !containerSet.contains(c))
-                    list.addChild(name, ActionURL.toPathString("project", "start", c.getPath()));
+                {
+                    String name = c.equals(getHomeContainer()) ? "Home" : c.getName();
+                    list.addChild(name, PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c));
+                }
             }
 
             list.setId(PROJECT_LIST_ID);
@@ -760,7 +755,6 @@ public class ContainerManager
         url.setPageFlow("project");
         url.setAction("start");
 
-
         Set<Container> containersInTree = new HashSet<Container>();
 
         Map<String, NavTree> m = new HashMap<String, NavTree>();
@@ -780,7 +774,7 @@ public class ContainerManager
             NavTree t = new NavTree(name);
             if (permissions != 0)
             {
-                url = new ActionURL("Project", "start.view", f);
+                url = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(f);
                 t.second = (url.getEncodedLocalURIString());
             }
             containersInTree.add(f);

@@ -332,7 +332,7 @@ public class Container implements Serializable
                 return helper;
         }
 
-        return new ActionURL("Project", "begin", getPath());
+        return new ActionURL("Project", "begin", this);
     }
 
     public Module getDefaultModule()

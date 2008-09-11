@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import static org.labkey.api.util.PageFlowUtil.filter;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
+import org.labkey.api.portal.ProjectUrls;
 
 import java.io.PrintWriter;
 import java.net.URISyntaxException;
@@ -130,8 +131,8 @@ public class NavTreeMenu extends WebPartView implements Collapsible
                              ViewContext context, PrintWriter out, boolean indentForExpansionGifs) throws URISyntaxException
     {
         Container c = context.getContainer();
-        ActionURL helper = new ActionURL("Project", "start.view", c);
-        String pattern = helper.getLocalURIString();
+        ActionURL startURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
+        String pattern = startURL.getLocalURIString();
         ActionURL currentUrl = context.getActionURL();
 
         String link = nav.getValue() == null ? null : nav.getValue();

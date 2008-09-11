@@ -363,7 +363,7 @@ public class DataColumn extends DisplayColumn
             out.write(String.valueOf(_inputRows));
             out.write("'");
             outputName(ctx, out, formFieldName);
-            out.write("'>");
+            out.write(">");
             out.write(null == value ? "" : PageFlowUtil.filter(value.toString()));
             out.write("</textarea>\n");
         }
@@ -371,7 +371,7 @@ public class DataColumn extends DisplayColumn
         {
             out.write("<input");
             outputName(ctx, out, formFieldName);
-            out.write(" type='file' >\n");
+            out.write(" type='file'>\n");
         }
         else if (_inputType.equalsIgnoreCase("checkbox"))
         {

@@ -718,7 +718,7 @@ public class DbSchema
             m.put("BitNotNull", Boolean.TRUE);
             m.put("Text", "Added by Test Suite");
             m.put("IntNotNull", 0);
-            m.put("Container", ContainerManager.getForPath(ContainerManager.HOME_PROJECT_PATH).getId());
+            m.put("Container", ContainerManager.getHomeContainer().getId());
 
             Integer rowId;
             testSchema.getScope().beginTransaction();
@@ -766,7 +766,7 @@ public class DbSchema
             m.put("BitNotNull", Boolean.TRUE);
             m.put("Text", "Added by Test Suite");
             m.put("IntNotNull", 0);
-            m.put("Container", ContainerManager.getForPath(ContainerManager.HOME_PROJECT_PATH).getId());
+            m.put("Container", ContainerManager.getHomeContainer().getId());
             m = Table.insert(ctx.getUser(), testTable, m);
             Integer rowId = ((Integer) m.get("RowId"));
 

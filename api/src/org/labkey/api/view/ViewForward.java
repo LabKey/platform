@@ -53,14 +53,7 @@ public class ViewForward extends Forward
     @Deprecated
     public ViewForward(String pageFlow, String action, Container c)
     {
-        this(pageFlow, action, c.getPath());
-    }
-
-
-    @Deprecated
-    public ViewForward(String pageFlow, String action, String extraPath)
-    {
-        this(new ActionURL(pageFlow, action, extraPath), true);
+        this(new ActionURL(pageFlow, action, c), true);
     }
 
 

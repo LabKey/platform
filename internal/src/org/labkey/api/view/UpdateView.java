@@ -29,7 +29,7 @@ public class UpdateView extends DataView
 {
     private static Logger _log = Logger.getLogger(UpdateView.class);
 
-    public UpdateView(DataRegion dataRegion, TableViewForm form, org.springframework.validation.BindException errors)
+    public UpdateView(DataRegion dataRegion, TableViewForm form, BindException errors)
     {
         super(dataRegion, form, errors);
     }

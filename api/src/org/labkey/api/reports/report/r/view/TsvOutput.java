@@ -162,7 +162,7 @@ public class TsvOutput extends AbstractParamReplacement
                             out.write("\">");
                         }
                         if (null == colVal)
-                            out.write("&nbsp");
+                            out.write("&nbsp;");
                         else
                             out.write(PageFlowUtil.filter(ConvertUtils.convert(colVal), true, true));
                         if (null != href)

@@ -24,5 +24,6 @@ import org.labkey.api.view.ActionURL;
  */
 public interface ProjectUrls extends UrlProvider 
 {
-    ActionURL urlStart(Container container);
+    ActionURL getStartURL(Container container);
+    ActionURL getHomeURL();
 }

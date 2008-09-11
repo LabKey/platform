@@ -17,15 +17,17 @@
 package org.labkey.api.module;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
+import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
-import org.labkey.api.view.ViewContext;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.Portal;
+import org.labkey.api.view.ViewContext;
 
 import java.util.Collections;
-import java.util.Set;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -135,14 +137,14 @@ public interface FolderType
 
         public String getLabel() { return "Custom"; }
         public Module getDefaultModule() { return null; }
-        public Set<Module> getActiveModules() { return Collections.EMPTY_SET; }
+        public Set<Module> getActiveModules() { return Collections.emptySet(); }
         public String getStartPageLabel(ViewContext ctx) { return null; }
         public ActionURL getStartURL(Container c, User u)
         {
             if (null == c)
-                return new ActionURL("Project", "start", ContainerManager.getHomeContainer());
+                return AppProps.getInstance().getHomePageActionURL();
             if (null == c.getDefaultModule())
-                return new ActionURL("Project", "start", c);
+                return PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
             return c.getDefaultModule().getTabURL(c, u);
         }
     }

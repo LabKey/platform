@@ -1545,7 +1545,7 @@ public class DataRegion extends DisplayElement
             {
                 for (DisplayColumnGroup group : _groups)
                 {
-                    renderInputError(ctx, out, span, group.getColumns().toArray(new DisplayColumn[0]));
+                    renderInputError(ctx, out, span, group.getColumns().toArray(new DisplayColumn[group.getColumns().size()]));
                     out.write("<tr>");
                     group.getColumns().get(0).renderDetailsCaptionCell(ctx, out);
                     if (group.isCopyable() && hasCopyable)
@@ -1569,7 +1569,7 @@ public class DataRegion extends DisplayElement
             {
                 for (DisplayColumnGroup group : _groups)
                 {
-                    renderInputError(ctx, out, span, group.getColumns().toArray(new DisplayColumn[0]));
+                    renderInputError(ctx, out, span, group.getColumns().toArray(new DisplayColumn[group.getColumns().size()]));
                 }
 
                 for (int i = 0; i < _groupHeadings.size(); i++)
@@ -1578,9 +1578,9 @@ public class DataRegion extends DisplayElement
                     out.write("<td valign='bottom' class='labkey-form-label'>");
                     out.write(PageFlowUtil.filter(_groupHeadings.get(i)));
                     out.write("</td>");
-                    for (int j = 0; j < _groups.size(); j++)
+                    for (DisplayColumnGroup group : _groups)
                     {
-                        DisplayColumn col = _groups.get(j).getColumns().get(i);
+                        DisplayColumn col = group.getColumns().get(i);
                         if (!shouldRender(col, ctx))
                             continue;
                         col.renderInputCell(ctx, out, 1);

@@ -25,6 +25,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.view.*;
+import org.labkey.api.portal.ProjectUrls;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -483,7 +484,7 @@ public class ExceptionUtil
                     }
                     if (_includeFolderButton && !c.isRoot())
                     {
-                        ActionURL folderURL = new ActionURL("project", "start.view", c);
+                        ActionURL folderURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
                         out.print(PageFlowUtil.generateButton("Folder", folderURL));
                         out.print("&nbsp;");
                     }

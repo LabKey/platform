@@ -20,6 +20,8 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.portal.ProjectUrls;
 
 /**
  * User: brittp
@@ -35,10 +37,10 @@ public class HomeLinkMenu extends HtmlView
 
     private static String getLinkHtml()
     {
-        ActionURL homeLink = new ActionURL("Project", "start", ContainerManager.getHomeContainer());
+        ActionURL homeURL = PageFlowUtil.urlProvider(ProjectUrls.class).getHomeURL();
         return "<table><tr>" +
                 "<th class=\"labkey-header\">" +
-                "<a href=\"" + homeLink.getLocalURIString() + "\">Home</a></th></tr></table>";
+                "<a href=\"" + PageFlowUtil.filter(homeURL) + "\">Home</a></th></tr></table>";
     }
 
     @Override
