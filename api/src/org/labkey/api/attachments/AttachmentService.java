@@ -28,6 +28,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -131,7 +132,7 @@ public class AttachmentService
         return _serviceImpl;
     }
 
-    public static class MissingRootDirectoryException extends IllegalStateException
+    public static class MissingRootDirectoryException extends java.io.FileNotFoundException
     {
         private Container project;
         private File expectedPath;

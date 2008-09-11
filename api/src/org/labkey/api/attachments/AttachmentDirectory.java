@@ -27,5 +27,5 @@ import java.io.File;
 public interface AttachmentDirectory extends AttachmentParent
 {
     public String getLabel();
-    public File getFileSystemDirectory();
+    public File getFileSystemDirectory() throws AttachmentService.MissingRootDirectoryException;
 }
