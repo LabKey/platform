@@ -15,22 +15,18 @@
  */
 package org.labkey.study.model;
 
-import org.apache.commons.collections.map.MultiValueMap;
 import org.apache.commons.collections.functors.InstantiateFactory;
-import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.property.PropertyUtil;
-import org.labkey.api.data.Table;
+import org.apache.commons.collections.map.MultiValueMap;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.Table;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.util.ArrayListMap;
-import org.labkey.study.model.QCState;
-import org.labkey.study.model.QCStateSet;
 import org.labkey.study.StudySchema;
 
-import java.util.*;
-import java.sql.SQLException;/*
+import java.sql.SQLException;
+import java.util.*;/*
  * User: brittp
  * Date: Jul 28, 2008
  * Time: 2:57:36 PM
@@ -42,7 +38,7 @@ public class AllParticipantData
     private MultiValueMap _visitSequenceMap;
     private Map<ParticipantDataMapKey, RowSet> _valueMap;
 
-    static final String allParticipantDataSql = "SELECT SD.DatasetId, PV.VisitRowId, SD.SequenceNum, SD._key, " +
+    static final String allParticipantDataSql = "SELECT SD.DatasetId, PV.VisitRowId, SD.SequenceNum, SD._key, SD.SourceLsid, " +
             "exp.ObjectProperty.*, exp.PropertyDescriptor.PropertyURI, QC.RowId AS QCState\n" +
             "FROM study.studydata SD JOIN study.participantvisit PV ON SD.participantid=PV.participantid AND SD.sequencenum=PV.sequencenum\n" +
             "LEFT OUTER JOIN exp.Object ON SD.lsid = exp.Object.objecturi\n" +
@@ -103,6 +99,7 @@ public class AllParticipantData
             int colVisitRowId = rs.findColumn("VisitRowId");
             int colSequenceNum = rs.findColumn("SequenceNum");
             int colQCStateIndex = rs.findColumn("QCState");
+            int colSourceLsidIndex = rs.findColumn("SourceLsid");
             int colPropertyId = rs.findColumn("propertyId");
 
             while (rs.next())
@@ -112,6 +109,7 @@ public class AllParticipantData
                 Double visitSequenceNum = (Double)row.get(colSequenceNum);
                 Integer visitRowId = (Integer)row.get(colVisitRowId);
                 Integer qcStateId = (Integer) row.get(colQCStateIndex);
+                String sourceLsid = (String)row.get(colSourceLsidIndex);
                 Integer propertyId = (Integer)row.get(colPropertyId);
                 String key = (String)row.get(colKey);
 
@@ -147,8 +145,7 @@ public class AllParticipantData
                 datasetIds.add(datasetId);
 
                 // OK navigate the compound map and add value
-    //            ParticipantDataMapKey m = new ParticipantDataMapKey(datasetId, visitSequenceNum, propertyId);
-                ParticipantDataMapKey mapKey = new ParticipantDataMapKey(datasetId, visitSequenceNum);
+                ParticipantDataMapKey mapKey = new ParticipantDataMapKey(datasetId.intValue(), visitSequenceNum.intValue());
                 RowSet keyMap = allData.get(mapKey);
                 if (null == keyMap)
                 {
@@ -162,13 +159,14 @@ public class AllParticipantData
                 {
                     QCState qcState = qcStateId != null ?
                             StudyManager.getInstance().getQCStateForRowId(study.getContainer(), qcStateId.intValue()) : null;
-                    propMap = new Row(qcState);
+
+                    propMap = new Row(qcState, sourceLsid);
                     if (extraKeyField)
                         keyMap.set(propMap, key);
                     else
                         keyMap.set(propMap);
                 }
-                propMap.put(propertyId, PropertyUtil.formatValue(OntologyManager.getPropertyDescriptor(propertyId), val));
+                propMap.put(propertyId, val);
             }
 
             return new AllParticipantData(datasetIds, visitSeqMap, allData);
@@ -216,11 +214,17 @@ public class AllParticipantData
     public static class Row
     {
         private Map<Integer, Object> _dataMap = new HashMap<Integer, Object>();
-        private QCState _qcState;
 
-        public Row(QCState qcState)
+        @Nullable
+        private final QCState _qcState;
+
+        @Nullable
+        private final String _sourceLsid;
+
+        public Row(QCState qcState, String sourceLsid)
         {
             _qcState = qcState;
+            _sourceLsid = sourceLsid;
         }
 
         public void put(Integer propertyId, Object value)
@@ -233,9 +237,16 @@ public class AllParticipantData
             return _dataMap.get(propertyId);
         }
 
+        @Nullable
         public QCState getQCState()
         {
             return _qcState;
+        }
+
+        @Nullable
+        public String getSourceLsid()
+        {
+            return _sourceLsid;
         }
     }
 

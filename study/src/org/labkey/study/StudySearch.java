@@ -259,7 +259,7 @@ def:    for (DataSetDefinition def : defs)
                     def.getLabel() + " - " + ptid,
                     url.getLocalURIString(),
                     SEARCH_HIT_TYPE,
-                    "Dataset Data"
+                    "Study Dataset Data"
                 ));
             }
         }

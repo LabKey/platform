@@ -227,6 +227,10 @@
             }
             int row = 0;
             String className = row % 2 == 0 ? "labkey-alternate-row" : "labkey-row";
+
+            // display details link(s) only if we have a source lsid in at least one of the rows
+            boolean hasSourceLsid = false;
+
             if (StudyManager.getInstance().showQCStates(context.getContainer()))
             {
                 row++;
@@ -288,8 +292,50 @@
                         {
                             for (AllParticipantData.Row propMap : keyMap.getAll())
                             {
+                                if (propMap.getSourceLsid() != null)
+                                    hasSourceLsid = true;
                                 Object value = propMap.get(pd.getPropertyId());
                                 %><td><%= (null == value ? "&nbsp;" : h(ConvertUtils.convert(value)))%></td><%
+                                countTD++;
+                            }
+                        }
+                        // do we need to pad?
+                        int maxTD = countKeysForSequence.get(seq) == null ? 1 : countKeysForSequence.get(seq);
+                        if (countTD < maxTD)
+                        {
+                            %><td colspan="<%=maxTD-countTD%>">&nbsp;</td><%
+                        }
+                    }
+                }
+            %></tr><%
+            }
+            if (hasSourceLsid) // Need to display a details link
+            {
+                row++;
+                className = row % 2 == 0 ? "labkey-alternate-row" : "labkey-row";
+                %>
+                <tr class="<%=className%>" style="<%=expanded ? "" : "display:none"%>"><td align="left" nowrap>Details</td><%
+                for (Visit visit : visits)
+                {
+                    for (double seq : (Collection<Double>) all.getVisitSequenceMap().get(visit.getRowId()))
+                    {
+                        pdKey.sequenceNum = seq;
+                        AllParticipantData.RowSet keyMap = valueMap.get(pdKey);
+                        int countTD = 0;
+                        if (null != keyMap)
+                        {
+                            for (AllParticipantData.Row propMap : keyMap.getAll())
+                            {
+                                String link = "&nbsp;";
+                                String sourceLsid = propMap.getSourceLsid();
+
+                                if (sourceLsid != null)
+                                {
+                                    ActionURL sourceURL = new ActionURL(StudyController.DatasetItemDetailsAction.class, context.getContainer());
+                                    sourceURL.addParameter("sourceLsid", sourceLsid);
+                                    link = "[<a href=\"" + sourceURL.getLocalURIString() + "\">details</a>]";
+                                }
+                                %><td><%= link%></td><%
                                 countTD++;
                             }
                         }
