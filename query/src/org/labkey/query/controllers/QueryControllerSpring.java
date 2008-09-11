@@ -237,6 +237,43 @@ public class QueryControllerSpring extends SpringActionController
     }
 
 
+/*
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class RenameQueryAction extends FormViewAction<NewQueryForm>
+    {
+        NewQueryForm _form;
+        
+        public void validateCommand(NewQueryForm form, Errors errors)
+        {
+
+        }
+
+        public ModelAndView getView(NewQueryForm form, boolean reshow, BindException errors) throws Exception
+        {
+            _form = form;
+            return null; 
+        }
+
+        public boolean handlePost(NewQueryForm form, BindException errors) throws Exception
+        {
+            _form = form;
+            return false;
+        }
+
+        public ActionURL getSuccessURL(NewQueryForm form)
+        {
+            return actionURL(QueryAction.schema, QueryParam.schemaName, form.getSchemaName());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            (new QueryControllerSpring.SchemaAction(_form)).appendNavTrail(root)
+                    .addChild("Rename Query", actionURL(QueryAction.newQuery));
+            return root;
+        }
+    }
+*/
+
     @RequiresPermission(ACL.PERM_READ)
     public class SourceQueryAction extends FormViewAction<SourceForm>
     {
@@ -748,7 +785,9 @@ public class QueryControllerSpring extends SpringActionController
                     errors.reject(ERROR_MSG, "Query is too complicated for design view");
                     SourceQueryAction a = new SourceQueryAction();
                     a.setViewContext(getViewContext());
-                    return a.getView(new SourceForm(getViewContext()), reshow, errors);
+                    SourceForm srcForm = new SourceForm(getViewContext());
+                    srcForm.bindParameters(getPropertyValues());
+                    return a.getView(srcForm, reshow, errors);
                 }
                 QueryDocument queryDoc = _queryDef.getDesignDocument(form.getSchema());
                 if (queryDoc == null)
