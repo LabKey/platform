@@ -139,6 +139,8 @@ public class RReport extends AbstractReport implements AttachmentParent, Report.
         File rexe = new File(programPath);
         if (!rexe.exists())
             return "The R program location: '" + programPath + "' does not exist";
+        if (rexe.isDirectory())
+            return "Please specify the entire path to the R executable, not just the directory (e.g., 'c:/Program Files/R/R-2.7.1/bin/R.exe)";
 
         if (StringUtils.isEmpty(command))
             return "The R command cannot be empty";
