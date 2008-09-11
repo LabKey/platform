@@ -355,7 +355,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
             var message = (json && json.exception) ? json.exception : response.statusText;
 
             if(false !== this.fireEvent("commitexception", message))
-                alert("Could not save changes due to the following error:\n" + message);
+                Ext.Msg.alert("Error During Save", "Could not save changes due to the following error:\n" + message);
         };
     },
 
