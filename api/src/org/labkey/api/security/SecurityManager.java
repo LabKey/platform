@@ -32,6 +32,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.common.util.Pair;
+import org.jetbrains.annotations.NotNull;
 
 import javax.mail.Address;
 import javax.mail.Message;
@@ -1617,7 +1618,7 @@ public class SecurityManager
     private static Pattern passwordPattern = Pattern.compile("^\\S{6,}$");  // At least six, non-whitespace characters
 
     // Make sure password is strong enough.
-    public static boolean isValidPassword(String password, ValidEmail email)
+    public static boolean isValidPassword(@NotNull String password, @NotNull ValidEmail email)
     {
         if (null != password)
             return passwordPattern.matcher(password).matches() && !email.getEmailAddress().equalsIgnoreCase(password);  // Passes rule and doesn't match email address
