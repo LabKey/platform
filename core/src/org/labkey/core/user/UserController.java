@@ -92,11 +92,12 @@ public class UserController extends SpringActionController
             return new ActionURL(DetailsAction.class, c);
         }
 
-        public ActionURL getUserUpdateURL(ActionURL returnURL)
+        public ActionURL getUserUpdateURL(ActionURL returnURL, int userId)
         {
             ActionURL url = new ActionURL(ShowUpdateAction.class, ContainerManager.getRoot());
             url.addReturnURL(returnURL);
-            return url;            
+            url.addParameter("userId", userId);
+            return url;
         }
 
         public ActionURL getImpersonateURL(Container c)

@@ -43,6 +43,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
+import org.jetbrains.annotations.Nullable;
 
 import javax.mail.MessagingException;
 import javax.servlet.ServletException;
@@ -226,10 +227,15 @@ public class LoginController extends SpringActionController
             HttpServletRequest request = getViewContext().getRequest();
             HttpServletResponse response = getViewContext().getResponse();
 
-            if (!isTermsOfUseApproved(form))
+            Project termsProject = getTermsOfUseProject(form);
+
+            if (null != termsProject)
             {
-                form.errorHtml = "To use the " + getTermsOfUseProject(form).getName() +  " project, you must log in and approve the terms of use.";
-                return false;
+                if (!isTermsOfUseApproved(form))
+                {
+                    form.errorHtml = "To use the " + termsProject.getName() +  " project, you must log in and approve the terms of use.";
+                    return false;
+                }
             }
 
             boolean success = authenticate(form, request, response);
@@ -238,7 +244,8 @@ public class LoginController extends SpringActionController
             {
                 // Terms of use are approved only if we've posted from the login page.  In SSO case, we will attempt
                 // to access the page and will get a TermsOfUseException if terms of use approval is required.
-                SecurityManager.setTermsOfUseApproved(getViewContext(), getTermsOfUseProject(form), true);
+                if (null != termsProject)
+                    SecurityManager.setTermsOfUseApproved(getViewContext(), termsProject, true);
 
                 // Login page is container qualified; we need to store the cookie at /labkey/login/ or /cpas/login/ or /login/
                 String search = "/login/";
@@ -332,7 +339,7 @@ public class LoginController extends SpringActionController
             // If this is user's first log in or some required field isn't filled in then go to update page
             if (!form.getSkipProfile() && (_user.isFirstLogin() || UserController.requiresUpdate(_user)))
             {
-                return PageFlowUtil.urlProvider(UserUrls.class).getUserUpdateURL(form.getReturnActionURL()).getLocalURIString();
+                return PageFlowUtil.urlProvider(UserUrls.class).getUserUpdateURL(form.getReturnActionURL(), _user.getUserId()).getLocalURIString();
             }
             else
             {
@@ -414,13 +421,18 @@ public class LoginController extends SpringActionController
 
         public boolean handlePost(LoginForm form, BindException errors) throws Exception
         {
-            if (!form.isApprovedTermsOfUse())
-            {
-                form.errorHtml = "To use the " + getTermsOfUseProject(form).getName() +  " project, you must check the box to approve the terms of use.";
-                return false;
-            }
+            Project project = getTermsOfUseProject(form);
 
-            SecurityManager.setTermsOfUseApproved(getViewContext(), getTermsOfUseProject(form), true);
+            if (null != project)
+            {
+                if (!form.isApprovedTermsOfUse())
+                {
+                    form.errorHtml = "To use the " + project.getName() +  " project, you must check the box to approve the terms of use.";
+                    return false;
+                }
+
+                SecurityManager.setTermsOfUseApproved(getViewContext(), project, true);
+            }
 
             return true;
         }
@@ -492,6 +504,7 @@ public class LoginController extends SpringActionController
     }
 
 
+    @Nullable
     private Project getTermsOfUseProject(LoginForm form) throws ServletException
     {
         Container termsContainer = null;
@@ -527,7 +540,7 @@ public class LoginController extends SpringActionController
             Container c = getContainer();
 
             if (c.isRoot())
-                throw new UnauthorizedException("Can't approve terms of use in root container", AppProps.getInstance().getHomePageUrl(), c);
+                return null;
             else
                 termsContainer = c.getProject();
         }
