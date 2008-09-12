@@ -27,6 +27,7 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UpdateView;
@@ -134,7 +135,7 @@ public class StudyPropertiesController extends BaseStudyController
             catch (ValidationException e)
             {
                 for (ValidationError error : e.getErrors())
-                    errors.reject(SpringActionController.ERROR_MSG, error.getMessage());
+                    errors.reject(SpringActionController.ERROR_MSG, PageFlowUtil.filter(error.getMessage()));
                 return false;
             }
             finally

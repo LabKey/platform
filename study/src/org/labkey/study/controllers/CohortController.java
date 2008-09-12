@@ -26,6 +26,7 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.study.model.Cohort;
 import org.labkey.study.model.Participant;
@@ -357,7 +358,7 @@ public class CohortController extends BaseStudyController
             catch (ValidationException e)
             {
                 for (ValidationError error : e.getErrors())
-                    errors.reject(SpringActionController.ERROR_MSG, error.getMessage());
+                    errors.reject(SpringActionController.ERROR_MSG, PageFlowUtil.filter(error.getMessage()));
                 return false;
             }
             finally

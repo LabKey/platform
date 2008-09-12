@@ -415,12 +415,36 @@ public class ReportsController extends SpringActionController
             return tabs;
         }
 
+        static final Map<String, String> _formParams = new HashMap<String, String>();
+
+        static
+        {
+            for (ReportDescriptor.Prop prop : ReportDescriptor.Prop.values())
+                _formParams.put(prop.name(), prop.name());
+            for (RReportDescriptor.Prop prop : RReportDescriptor.Prop.values())
+                _formParams.put(prop.name(), prop.name());
+
+            _formParams.put(RunReportView.CACHE_PARAM, RunReportView.CACHE_PARAM);
+            _formParams.put(TabStripView.TAB_PARAM, TabStripView.TAB_PARAM);
+        }
+
         protected ActionURL getRenderAction() throws Exception
         {
             ActionURL runURL = getReport().getRunReportURL(getViewContext());
             ActionURL url = new ActionURL(RenderRReportAction.class, getViewContext().getContainer());
+
+            // apply parameters already on the URL excluding those in to report bean (they will be applied on the post)
+            for (Pair<String, String> param : getViewContext().getActionURL().getParameters())
+            {
+                if (!_formParams.containsKey(param.getKey()))
+                    url.replaceParameter(param.getKey(), param.getValue());
+            }
+
             if (runURL != null)
-                url.addParameters(runURL.getParameters());
+            {
+                for (Pair<String, String> param : runURL.getParameters())
+                    url.replaceParameter(param.getKey(), param.getValue());
+            }
             return url;
         }
     }

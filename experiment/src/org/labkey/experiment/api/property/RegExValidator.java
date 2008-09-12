@@ -69,7 +69,13 @@ public class RegExValidator extends DefaultPropertyValidator implements Validato
         }
         catch (PatternSyntaxException se)
         {
-            errors.add(new SimpleValidationError(se.getMessage()));
+            StringBuffer sb = new StringBuffer();
+
+            sb.append("Regular Expression Validator '");
+            sb.append(validator.getName());
+            sb.append("' has a syntax error : ");
+            sb.append(se.getMessage());
+            errors.add(new SimpleValidationError(sb.toString()));
         }
         return false;
     }
