@@ -186,7 +186,7 @@ public class ContainerManager
         }
         catch (SQLException x)
         {
-            if (!(x.getSQLState().equals("23000") || x.getSQLState().equals("23505")))    // constraint violation
+            if (!SqlDialect.isConstraintException(x))
                 throw new RuntimeSQLException(x);
             sqlx = x;
         }

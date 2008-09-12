@@ -261,6 +261,14 @@ public abstract class SqlDialect
         throw new SqlDialectNotSupportedException("Product name and version: " + dataBaseProductName + " " + majorVersion + "." + minorVersion);
     }
 
+    public static boolean isConstraintException(SQLException x)
+    {
+        String sqlState = x.getSQLState();
+        if (!sqlState.startsWith("23"))
+            return false;
+        return sqlState.equals("23000") || sqlState.equals("23505") || sqlState.equals("23503");
+    }
+
     protected abstract boolean claimsDriverClassName(String driverClassName);
 
     protected abstract boolean claimsProductNameAndVersion(String dataBaseProductName, int majorVersion, int minorVersion);
