@@ -24,7 +24,9 @@ LABKEY.DataRegion = function (config)
     this.complete = config.complete;
     this.offset = config.offset || 0;
     this.maxRows = config.maxRows || 0;
-    this.totalRows = config.totalRows;
+    this.totalRows = config.totalRows; // may be undefined
+    this.rowCount = config.rowCount; // may be null
+    this.showRows = config.showRows;
 
     this.selectionKey = config.selectionKey;
     this.selectorCols = config.selectorCols;
@@ -128,27 +130,54 @@ LABKEY.DataRegion = function (config)
         });
     };
 
+    this._showSelectMessage = function (msg)
+    {
+        this.showMessage(msg +
+            "&nbsp; Select: <span class='labkey-link' onclick='LABKEY.DataRegions[\"" + this.name + "\"].selectNone();' title='Clear all selected rows'>None</span>" +
+            "&nbsp; Show: <span class='labkey-link' onclick='LABKEY.DataRegions[\"" + this.name + "\"].showSelected();' title='Show all selected rows.'>Selected</span>, " +
+            "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + this.name + "\"].showUnselected();' title='Show all unselected rows.'>Unselected</span>"
+        );
+    }
+
+    switch (this.showRows)
+    {
+        case "all":
+            this._showSelectMessage("Showing all " + this.totalRows + " rows.");
+            break;
+        case "selected":
+            this._showSelectMessage("Showing only <em>selected</em> rows.");
+            break;
+        case "unselected":
+            this._showSelectMessage("Showing only <em>unselected</em> rows.");
+            break;
+    }
+
 }
 
 LABKEY.DataRegion.prototype = {
     setOffset : function (newoffset)
     {
-        this._setParam(".offset", newoffset, [".offset", ".showAllRows"]);
+        this._setParam(".offset", newoffset, [".offset", ".showRows"]);
     },
 
     setMaxRows : function (newmax)
     {
-        this._setParam(".maxRows", newmax, [".offset", ".maxRows", ".showAllRows", ".showSelected"]);
+        this._setParam(".maxRows", newmax, [".offset", ".maxRows", ".showRows"]);
     },
 
     showAll : function ()
     {
-        this._setParam(".showAllRows", "true", [".offset", ".maxRows", ".showAllRows", ".showSelected"]);
+        this._setParam(".showRows", "all", [".offset", ".maxRows", ".showRows"]);
     },
 
     showSelected : function ()
     {
-        this._setParam(".showSelected", "true", [".offset", ".maxRows", ".showAllRows"]);
+        this._setParam(".showRows", "selected", [".offset", ".maxRows", ".showRows"]);
+    },
+
+    showUnselected : function ()
+    {
+        this._setParam(".showRows", "unselected", [".offset", ".maxRows", ".showRows"]);
     },
 
     pageFirst : function ()
@@ -210,9 +239,7 @@ LABKEY.DataRegion.prototype = {
                         msg = "Selected all " + this.totalRows + " rows.";
                     else
                         msg = "Selected " + count + " of " + this.totalRows + " rows.";
-                    this.showMessage(msg + " &nbsp; Selection: " +
-                        "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + this.name + "\"].selectNone();' title='Clear all selected rows'>Clear</span>, " +
-                        "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + this.name + "\"].showSelected();' title='Show only selected rows.'>Show</span>");
+                    this._showSelectMessage(msg);
                 }
                 else
                 {
@@ -253,8 +280,20 @@ LABKEY.DataRegion.prototype = {
             { 'key' : this.selectionKey });
         Ext.Ajax.request({ url: url });
 
-        setAllCheckboxes(this.form, false);
-        this.hideMessage();
+        if (this.showRows == "selected")
+        {
+            this._removeParams([".showRows"]);
+        }
+        else if (this.showRows == "unselected")
+        {
+            // keep ".showRows=unselected" parameter
+            window.location.reload(true);
+        }
+        else
+        {
+            setAllCheckboxes(this.form, false);
+            this.hideMessage();
+        }
     },
 
     clearFilter : function (fieldName)
@@ -269,9 +308,6 @@ LABKEY.DataRegion.prototype = {
 
     showMessage : function (html)
     {
-//        var tr = this.msgbox.dom;
-//        var td = tr.getElementsByTagName("td")[0];
-//        td.innerHTML = html;
         var span = this.msgbox.dom.getElementsByTagName("span")[0];
         span.innerHTML = html;
         this.msgbox.setVisible(true, true);
@@ -280,9 +316,6 @@ LABKEY.DataRegion.prototype = {
     hideMessage : function ()
     {
         this.msgbox.setVisible(false, false);
-//        var tr = this.msgbox.dom;
-//        var td = tr.getElementsByTagName("td")[0];
-//        td.innerHTML = "";
         var span = this.msgbox.dom.getElementsByTagName("span")[0];
         span.innerHTML = "";
     }

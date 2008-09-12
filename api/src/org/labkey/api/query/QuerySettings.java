@@ -114,13 +114,17 @@ public class QuerySettings
     public void setSortFilter(PropertyValues pvs)
     {
         _filterSort = pvs;
-        if (_getParameter(param(QueryParam.showAllRows)) != null)
+        String showRowsParam = _getParameter(param(QueryParam.showRows));
+        if (showRowsParam != null)
         {
-            _showRows = ShowRows.ALL;
-        }
-        else if (_getParameter(param(QueryParam.showSelected)) != null)
-        {
-            _showRows = ShowRows.SELECTED;
+            try
+            {
+                _showRows = ShowRows.valueOf(showRowsParam.toUpperCase());
+            }
+            catch (IllegalArgumentException ex)
+            {
+                _showRows = ShowRows.DEFAULT;
+            }
         }
     }
 

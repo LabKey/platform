@@ -25,8 +25,7 @@ public enum QueryParam
 
     offset,
     maxRows,
-    showAllRows,
-    showSelected,
+    showRows,
     ignoreFilter,
 
     defaultTab,

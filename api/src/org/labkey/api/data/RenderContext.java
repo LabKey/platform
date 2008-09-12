@@ -301,15 +301,15 @@ public class RenderContext extends BoundMap // extends ViewContext
             filter.addClause(new SimpleFilter.SQLClause(containerCol.getName() + " = CAST('" + c.getId() + "' AS UniqueIdentifier)", new Object[0], containerCol.getName()));
         }
 
-        if (_currentRegion != null && _showRows == ShowRows.SELECTED)
-            buildSelectedFilter(filter, tinfo);
+        if (_currentRegion != null && _showRows == ShowRows.SELECTED || _showRows == ShowRows.UNSELECTED)
+            buildSelectedFilter(filter, tinfo, _showRows == ShowRows.UNSELECTED);
         else
             filter.addUrlFilters(url, name);
 
         return filter;
     }
 
-    protected void buildSelectedFilter(SimpleFilter filter, TableInfo tinfo)
+    protected void buildSelectedFilter(SimpleFilter filter, TableInfo tinfo, boolean inverted)
     {
         List<String> selectorColumns = getRecordSelectorValueColumns();
         if (selectorColumns == null)
@@ -318,27 +318,33 @@ public class RenderContext extends BoundMap // extends ViewContext
         }
 
         Set<String> selected = getAllSelected();
+        SimpleFilter.FilterClause clause;
         if (selectorColumns.size() == 1 || selected.isEmpty())
         {
-            SimpleFilter.InClause clause = new SimpleFilter.InClause(selectorColumns.get(0), selected, true);
-            filter.addClause(clause);
+            clause = new SimpleFilter.InClause(selectorColumns.get(0), selected, true);
         }
         else
         {
             SimpleFilter.OrClause or = new SimpleFilter.OrClause();
             for (String row : selected)
             {
-                SimpleFilter.AndClause clause = new SimpleFilter.AndClause();
+                SimpleFilter.AndClause and = new SimpleFilter.AndClause();
                 String[] parts = row.split(",");
                 assert parts.length == selectorColumns.size() : "Selected item and columns don't match in length: " + row;
                 for (int i = 0; i < parts.length; i++)
                 {
-                    clause.addClause(CompareType.EQUAL.createFilterClause(selectorColumns.get(i), parts[i]));
+                    and.addClause(CompareType.EQUAL.createFilterClause(selectorColumns.get(i), parts[i]));
                 }
-                or.addClause(clause);
+                or.addClause(and);
             }
-            filter.addClause(or);
+            clause = or;
         }
+
+        if (inverted)
+        {
+            clause = new SimpleFilter.NotClause(clause);
+        }
+        filter.addClause(clause);
     }
 
     protected ResultSet selectForDisplay(TableInfo table, List<ColumnInfo> columns, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async) throws SQLException, IOException

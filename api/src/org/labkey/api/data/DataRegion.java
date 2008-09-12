@@ -82,6 +82,7 @@ public class DataRegion extends DisplayElement
     private boolean _horizontalGroups = true;
 
     private Long _totalRows = null; // total rows in the query or null if unknown
+    private Integer _rowCount = null; // number of rows in the result set or null if unknown
     private boolean _complete = false; // true if all rows are in the ResultSet
 
     public static final int MODE_NONE = 0;
@@ -621,18 +622,17 @@ public class DataRegion extends DisplayElement
             writeFilterHtml(ctx, out);
             List<DisplayColumn> renderers = getDisplayColumns();
 
-            Integer resultSetSize = null;
             if (rs instanceof CachedRowSetImpl)
             {
-                resultSetSize = ((CachedRowSetImpl)rs).getSize();
+                _rowCount = ((CachedRowSetImpl)rs).getSize();
                 if (_complete && _totalRows == null)
-                    _totalRows = _offset + resultSetSize.intValue();
+                    _totalRows = _offset + _rowCount.intValue();
             }
 
             // If button bar is not visible, don't render form.  Important for nested regions (forms can't be nested)
             //TODO: Fix this so form is rendered AFTER all rows. (Does this change layoout?)
             boolean renderButtons = _gridButtonBar.shouldRender(ctx);
-            renderHeader(ctx, out, resultSetSize, renderButtons);
+            renderHeader(ctx, out, renderButtons);
 
             Set<FieldKey> ignoredColumns = ctx.getIgnoredFilterColumns();
             if (!ignoredColumns.isEmpty())
@@ -679,7 +679,7 @@ public class DataRegion extends DisplayElement
                 renderAggregatesTableRow(ctx, out, renderers, false, true);
 
             int rows = renderTableContents(ctx, out, renderers);
-            //assert resultSetSize != null && rows == resultSetSize : "Row size mismatch: NYI";
+            //assert _rowCount != null && rows == _rowCount : "Row size mismatch: NYI";
             if (rows == 0)
             {
                 renderNoRowsMessage(ctx, out, renderers);
@@ -690,7 +690,7 @@ public class DataRegion extends DisplayElement
 
             renderGridEnd(ctx, out);
 
-            renderFooter(ctx, out, resultSetSize, renderButtons);
+            renderFooter(ctx, out, renderButtons);
         }
         finally
         {
@@ -698,7 +698,7 @@ public class DataRegion extends DisplayElement
         }
     }
 
-    protected void renderHeader(RenderContext ctx, Writer out, Integer resultSetSize, boolean renderButtons) throws IOException
+    protected void renderHeader(RenderContext ctx, Writer out, boolean renderButtons) throws IOException
     {
         renderHeaderScript(ctx, out);
 
@@ -718,7 +718,7 @@ public class DataRegion extends DisplayElement
 
         out.write("<td align=\"right\" valign=\"bottom\" nowrap>\n");
         if (_showPagination)
-            renderPagination(ctx, out, resultSetSize);
+            renderPagination(ctx, out);
         out.write("</td></tr>\n");
 
         renderMessageBox(ctx, out);
@@ -742,6 +742,8 @@ public class DataRegion extends DisplayElement
         out.write("'offset' : " + _offset + ",\n");
         out.write("'maxRows' : " + _maxRows + ",\n");
         out.write("'totalRows' : " + _totalRows + ",\n");
+        out.write("'rowCount' : " + _rowCount + ",\n");
+        out.write("'showRows' : '" + _showRows.toString().toLowerCase() + "',\n");
         out.write("'selectionKey' : '" + PageFlowUtil.filter(_selectionKey) + "',\n");
         out.write("'selectorCols' : '" + PageFlowUtil.filter(_recordSelectorValueColumns) + "'\n");
         out.write("})});\n");
@@ -755,9 +757,10 @@ public class DataRegion extends DisplayElement
         out.write("<img style=\"float:right;\" onclick=\"LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].hideMessage();\" title=\"Close this message\" alt=\"close\" src=\"" + ctx.getViewContext().getContextPath() + "/_images/partdelete.gif\">");
         out.write("<span></span>");
         out.write("</div>");
+        out.write("</td></tr>\n");
     }
 
-    protected void renderFooter(RenderContext ctx, Writer out, Integer resultSetSize, boolean renderButtons) throws IOException
+    protected void renderFooter(RenderContext ctx, Writer out, boolean renderButtons) throws IOException
     {
         out.write("<table id=\"" + PageFlowUtil.filter("dataregion_footer_" + getName()) + "\">\n");
         out.write("<tr><td nowrap>\n");
@@ -769,7 +772,7 @@ public class DataRegion extends DisplayElement
 
         out.write("<td align=\"right\" valign=\"top\" nowrap>\n");
         if (_showPagination)
-            renderPagination(ctx, out, resultSetSize);
+            renderPagination(ctx, out);
         out.write("</td></tr>\n");
         out.write("</table>");
 
@@ -777,12 +780,12 @@ public class DataRegion extends DisplayElement
             renderFormEnd(ctx, out);
     }
 
-    protected void renderPagination(RenderContext ctx, Writer out, Integer resultSetSize)
+    protected void renderPagination(RenderContext ctx, Writer out)
             throws IOException
     {
         if (_totalRows != null && _totalRows < 10)
             return;
-        if (_complete && _offset == 0 && resultSetSize != null && resultSetSize.intValue() < 10)
+        if (_complete && _offset == 0 && _rowCount != null && _rowCount.intValue() < 10)
             return;
 
         out.write("<div class=\"labkey-pagination\" style=\"visibility:hidden;\">");
@@ -793,12 +796,12 @@ public class DataRegion extends DisplayElement
         if (_maxRows > 0 && _offset >= _maxRows)
             paginateLink(out, "Previous Page", "<b>&lsaquo;</b> Prev", _offset - _maxRows);
 
-        if (resultSetSize != null)
-            out.write("<em>" + (_offset + 1) + "</em> - <em>" + (_offset + resultSetSize.intValue()) + "</em> ");
+        if (_rowCount != null)
+            out.write("<em>" + (_offset + 1) + "</em> - <em>" + (_offset + _rowCount.intValue()) + "</em> ");
 
         if (_totalRows != null)
         {
-            if (resultSetSize != null)
+            if (_rowCount != null)
                 out.write("of <em>" + _totalRows + "</em> ");
 
             if (_maxRows > 0)

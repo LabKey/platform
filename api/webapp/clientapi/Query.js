@@ -263,7 +263,7 @@ LABKEY.Query = new function()
             if(config.maxRows)
             {
                 if(config.maxRows < 0)
-                    dataObject['query.showAllRows'] = true;
+                    dataObject['query.showRows'] = "all";
                 else
                     dataObject['query.maxRows'] = config.maxRows;
             }

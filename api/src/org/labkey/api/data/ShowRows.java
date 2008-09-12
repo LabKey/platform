@@ -24,5 +24,6 @@ public enum ShowRows
 {
     DEFAULT,
     ALL,
-    SELECTED
+    SELECTED,
+    UNSELECTED
 }

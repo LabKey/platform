@@ -542,14 +542,9 @@ public class QueryView extends WebPartView<Object>
         final int maxRows = getMaxRows();
         final boolean showingAll = getShowRows() == ShowRows.ALL;
         final boolean showingSelected = getShowRows() == ShowRows.SELECTED;
+        final boolean showingUnselected = getShowRows() == ShowRows.UNSELECTED;
 
-        String header = maxRows + " per page";
-        if (showingAll)
-            header = "All Rows";
-        else if (showingSelected)
-            header = "Selected";
-
-        MenuButton pageSizeMenu = new MenuButton(header) {
+        MenuButton pageSizeMenu = new MenuButton("Page Size") {
             public boolean shouldRender(RenderContext ctx)
             {
                 ResultSet rs = ctx.getResultSet();
@@ -557,7 +552,7 @@ public class QueryView extends WebPartView<Object>
                     return false;
                 if (((Table.TableResultSet)rs).isComplete() &&
                     ctx.getCurrentRegion().getOffset() == 0 &&
-                    !(showingAll || showingSelected || maxRows > 0))
+                    !(showingAll || showingSelected || showingUnselected || maxRows > 0))
                     return false;
                 return super.shouldRender(ctx);
             }
@@ -584,6 +579,8 @@ public class QueryView extends WebPartView<Object>
         pageSizeMenu.addSeparator();
         pageSizeMenu.addMenuItem("Show Selected", "#",
                 "LABKEY.DataRegions[" + PageFlowUtil.jsString(regionName) + "].showSelected()", showingSelected);
+        pageSizeMenu.addMenuItem("Show Unselected", "#",
+                "LABKEY.DataRegions[" + PageFlowUtil.jsString(regionName) + "].showUnselected()", showingUnselected);
         pageSizeMenu.addMenuItem("Show All", "#",
                 "LABKEY.DataRegions[" + PageFlowUtil.jsString(regionName) + "].showAll()", showingAll);
 
