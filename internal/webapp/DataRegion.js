@@ -50,9 +50,11 @@ LABKEY.DataRegion = function (config)
     }
 
     // set the 'select all on page' checkbox state
-    if (this.isPageSelected())
+    if (this.form && this.isPageSelected())
     {
-        this.form[".toggle"].checked = true;
+        var toggle = this.form[".toggle"];
+        if (toggle)
+            toggle.checked = true;
     }
 
     // private methods
@@ -205,7 +207,7 @@ LABKEY.DataRegion.prototype = {
                 {
                     var msg;
                     if (count == this.totalRows)
-                        msg = "Selected all " + this.totalRows + "rows.";
+                        msg = "Selected all " + this.totalRows + " rows.";
                     else
                         msg = "Selected " + count + " of " + this.totalRows + " rows.";
                     this.showMessage(msg + " &nbsp; Selection: " +
@@ -223,18 +225,22 @@ LABKEY.DataRegion.prototype = {
     /** Returns true if all rows are checked on this page. */
     isPageSelected : function ()
     {
+        if (!this.form)
+            return false;
         var elems = this.form.elements;
         var len = elems.length;
+        var hasCheckbox = false;
         for (var i = 0; i < len; i++)
         {
             var e = elems[i];
             if (e.type == 'checkbox' && e.name != ".toggle")
             {
+                hasCheckbox = true;
                 if (!e.checked)
                     return false;
             }
         }
-        return len > 0;
+        return hasCheckbox;
     },
 
     selectAll : function ()
