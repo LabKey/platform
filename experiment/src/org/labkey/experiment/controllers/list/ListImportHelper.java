@@ -16,7 +16,6 @@
 
 package org.labkey.experiment.controllers.list;
 
-import org.labkey.api.data.SqlDialect;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.list.ListDefinition;
@@ -45,22 +44,6 @@ public class ListImportHelper implements OntologyManager.ImportHelper
     }
     
     public String beforeImportObject(Map map) throws SQLException
-    {
-        try
-        {
-            return beforeImportObjectInternal(map);
-        }
-        catch (SQLException e)
-        {
-            // Constraint violation means somebody else inserted this same key between our check and insert, so try again
-            if (SqlDialect.isConstraintException(e))
-                return beforeImportObjectInternal(map);
-            else
-                throw e;
-        }
-    }
-
-    public String beforeImportObjectInternal(Map map) throws SQLException
     {
         try
         {

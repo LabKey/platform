@@ -31,7 +31,10 @@
     { %>
     <tr><td colspan=2><%=errors%></td></tr>
     <tr><td colspan=2>&nbsp;</td></tr><%
-    } %>
+    }
+
+    if (!bean.unrecoverableError)
+    { %>
     <tr><td colspan=2><%=h(bean.email)%>:</td></tr>
     <tr><td colspan=2>Type in a new password twice.  After setting your password you'll be asked to sign in.</td></tr>
     <tr><td colspan=2>&nbsp;</td></tr>
@@ -53,6 +56,7 @@
             %>
         </td>
         <td><input type=hidden name=verification value="<%=h(bean.form.getVerification())%>"></td></tr>
-    <tr><td></td><td height="50"><%=PageFlowUtil.generateSubmitButton("Set Password", "", "name=\"set\"")%></td></tr>
+    <tr><td></td><td height="50"><%=PageFlowUtil.generateSubmitButton("Set Password", "", "name=\"set\"")%></td></tr><%
+    } %>
 </table>
 </form>

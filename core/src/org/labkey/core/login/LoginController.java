@@ -91,7 +91,7 @@ public class LoginController extends SpringActionController
 
         public ActionURL getVerificationURL(Container c, String email, String verification, Pair<String, String>[] extraParameters)
         {
-            //FIX: 6021, use root container for this URL so that it remains as short as possible
+            //FIX: 6021, use project container for this URL so it remains short but maintains the project look & feel settings 
             ActionURL url = new ActionURL(SetPasswordAction.class, LookAndFeelProperties.getSettingsContainer(c));
             url.addParameter("verification", verification);
             url.addParameter("email", email);
@@ -688,6 +688,7 @@ public class LoginController extends SpringActionController
     {
         String _error = null;
         ValidEmail _email = null;
+        boolean _unrecoverableError = false;
 
         public void validateCommand(VerifyForm form, Errors errors)
         {
@@ -708,6 +709,7 @@ public class LoginController extends SpringActionController
             catch (ValidEmail.InvalidEmailException e)
             {
                 errors.reject("verify", "Invalid email address");
+                _unrecoverableError = true;
                 return;
             }
 
@@ -736,6 +738,8 @@ public class LoginController extends SpringActionController
                     else
                         // Incorrect verification string
                         errors.reject("verify", "Verification failed.  Make sure you've copied the entire link into your browser's address bar.");
+
+                    _unrecoverableError = true;
                 }
             }
             catch (Exception e)
@@ -751,14 +755,17 @@ public class LoginController extends SpringActionController
 
             if (errors.hasErrors())
             {
-                _log.error("Verification failed: " + form.getEmail() + " " + form.getVerification());
+                if (_unrecoverableError)
+                    _log.error("Verification failed: " + form.getEmail() + " " + form.getVerification());
+                else
+                    _log.warn("Password entry error: " + form.getEmail());
             }
             else
             {
                 _log.debug("Verified: " + _email);
             }
 
-            HttpView view = new JspView<VerifyBean>("/org/labkey/core/login/setPassword.jsp", new VerifyBean(_email, form), errors);
+            HttpView view = new JspView<VerifyBean>("/org/labkey/core/login/setPassword.jsp", new VerifyBean(_email, form, _unrecoverableError), errors);
 
             PageConfig page = getPageConfig();
             page.setTemplate(PageConfig.Template.Dialog);
@@ -773,6 +780,7 @@ public class LoginController extends SpringActionController
         {
             HttpServletRequest request = getViewContext().getRequest();
 
+            // Pull straight from the request to minimize logging of passwords (in Spring, bean utils, etc.)
             String password = request.getParameter("password");
             String password2 = request.getParameter("password2");
 
@@ -826,11 +834,13 @@ public class LoginController extends SpringActionController
     {
         public String email;
         public VerifyForm form;
+        public boolean unrecoverableError;
 
-        private VerifyBean(ValidEmail email, VerifyForm form)
+        private VerifyBean(ValidEmail email, VerifyForm form, boolean unrecoverableError)
         {
             this.email = (null != email ? email.getEmailAddress() : form.getEmail());
             this.form = form;
+            this.unrecoverableError = unrecoverableError;
         }
     }
 

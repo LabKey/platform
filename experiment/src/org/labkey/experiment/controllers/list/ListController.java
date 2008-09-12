@@ -59,6 +59,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.util.*;
+import java.sql.SQLException;
 
 /**
  * User: adam
@@ -707,9 +708,24 @@ public class ListController extends SpringActionController
                 return false;
             Map[] rows = (Map[]) tl.load();
 
-            if (_list.getKeyType() != ListDefinition.KeyType.Varchar && !Integer.class.equals(cdKey.clazz))
+            switch (_list.getKeyType())
             {
-                errors.reject(ERROR_MSG, "Expected key field \"" + cdKey.name + "\" to all be of type Integer but they are of type " + cdKey.clazz.getSimpleName());
+                // All cdKey.clazz values are okay
+                case Varchar:
+                    break;
+
+                // Fine if it's misisng, otherwise fall through
+                case AutoIncrementInteger:
+                    if (null == cdKey)
+                        break;
+
+                // cdKey must be class Integer if autoincrement key exists or normal Integer key column
+                case Integer:
+                    if (Integer.class.equals(cdKey.clazz))
+                        break;
+
+                default:
+                    errors.reject(ERROR_MSG, "Expected key field \"" + cdKey.name + "\" to all be of type Integer but they are of type " + cdKey.clazz.getSimpleName());
             }
 
             Set<Object> keyValues = new HashSet<Object>();
@@ -766,6 +782,11 @@ public class ListController extends SpringActionController
             if (errors.hasErrors())
                 return false;
 
+            return doBulkInsert(cdKey, properties, rows, errors);
+        }
+
+        private boolean doBulkInsert(TabLoader.ColumnDescriptor cdKey, Map<String, DomainProperty> properties, Map[] rows, BindException errors) throws SQLException
+        {
             boolean transaction = false;
             try
             {
