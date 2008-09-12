@@ -49,6 +49,12 @@ LABKEY.DataRegion = function (config)
         if (el) this.form = el;
     }
 
+    // set the 'select all on page' checkbox state
+    if (this.isPageSelected())
+    {
+        this.form[".toggle"].checked = true;
+    }
+
     // private methods
 
     this._showPagination = function (el)
@@ -118,7 +124,7 @@ LABKEY.DataRegion = function (config)
             success: success,
             failure: function (response, options) { this.showMessage("Error sending selection."); }
         });
-    }
+    };
 
 }
 
@@ -195,12 +201,16 @@ LABKEY.DataRegion.prototype = {
                 catch (e) {
                     // ignore
                 }
-                if (checked && count > 0)
+                if (count > 0)
                 {
+                    var msg;
                     if (count == this.totalRows)
-                        this.showMessage("All rows selected.");
+                        msg = "Selected all " + this.totalRows + "rows.";
                     else
-                        this.showMessage(count + " of " + this.totalRows + " rows selected.");
+                        msg = "Selected " + count + " of " + this.totalRows + " rows.";
+                    this.showMessage(msg + " &nbsp; Selection: " +
+                        "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + this.name + "\"].selectNone();' title='Clear all selected rows'>Clear</span>, " +
+                        "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + this.name + "\"].showSelected();' title='Show only selected rows.'>Show</span>");
                 }
                 else
                 {
@@ -208,6 +218,23 @@ LABKEY.DataRegion.prototype = {
                 }
             });
         }
+    },
+
+    /** Returns true if all rows are checked on this page. */
+    isPageSelected : function ()
+    {
+        var elems = this.form.elements;
+        var len = elems.length;
+        for (var i = 0; i < len; i++)
+        {
+            var e = elems[i];
+            if (e.type == 'checkbox' && e.name != ".toggle")
+            {
+                if (!e.checked)
+                    return false;
+            }
+        }
+        return len > 0;
     },
 
     selectAll : function ()
@@ -236,62 +263,21 @@ LABKEY.DataRegion.prototype = {
 
     showMessage : function (html)
     {
-        var tr = this.msgbox.dom;
-        var td = tr.getElementsByTagName("td")[0];
-        td.innerHTML = html;
+//        var tr = this.msgbox.dom;
+//        var td = tr.getElementsByTagName("td")[0];
+//        td.innerHTML = html;
+        var span = this.msgbox.dom.getElementsByTagName("span")[0];
+        span.innerHTML = html;
         this.msgbox.setVisible(true, true);
     },
 
     hideMessage : function ()
     {
         this.msgbox.setVisible(false, false);
-        var tr = this.msgbox.dom;
-        var td = tr.getElementsByTagName("td")[0];
-        td.innerHTML = "";
+//        var tr = this.msgbox.dom;
+//        var td = tr.getElementsByTagName("td")[0];
+//        td.innerHTML = "";
+        var span = this.msgbox.dom.getElementsByTagName("span")[0];
+        span.innerHTML = "";
     }
 };
-
-//function sendCheckboxes(el, value)
-//{
-//    var form = el;
-//    do
-//    {
-//        form = form.parentNode;
-//    } while (form.tagName != "FORM");
-//
-//    var ids = setAllCheckboxes(form, value, '.select');
-//    if (ids.length > 0)
-//    {
-//        sendCheckbox(el, key, ids, value);
-//        // XXX: get size of entire query. don't show the message if all are showing.
-//        showDataRegionMessage(dataregion, "Selected " + ids.length + " rows on this page.  Select all 1000 rows?");
-//    }
-//    return false;
-//}
-//
-//function sendCheckbox(el, key, ids, checked)
-//{
-//    if (!key || ids.length == 0)
-//        return;
-//    var url = LABKEY.ActionURL.buildURL("query", "setCheck.api", LABKEY.ActionURL.getContainer(), { 'key' : key, 'checked' : checked });
-//    for (var i = 0; i < ids.length; i++)
-//        url += "&id=" + ids[i];
-//
-//    var xmlhttp = new XMLRequest(url);
-//    xmlhttp.get();
-//}
-//
-//function selectNone(el, key)
-//{
-//    var url = LABKEY.ActionURL.buildURL("query", "selectNone.api", LABKEY.ActionURL.getContainer(), { 'key' : key });
-//    var xmlhttp = new XMLRequest(url);
-//    xmlhttp.get();
-//
-//    var form = el;
-//    do
-//    {
-//        form = form.parentNode;
-//    } while (form.tagName != "FORM");
-//    setAllCheckboxes(form, false);
-//}
-

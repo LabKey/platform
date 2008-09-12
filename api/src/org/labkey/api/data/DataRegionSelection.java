@@ -78,7 +78,7 @@ public class DataRegionSelection
 
 
     /**
-     * Get selected items from the request parameters (the current page of a data region).
+     * Get selected items from the request parameters (includes only the current page of a data region and no selected items from session state).
      * @param context Used to get the selection key
      * @param clearSelection Remove the request parameter selected items from session selection state
      * @return an unmodifiable copy of the selected item ids

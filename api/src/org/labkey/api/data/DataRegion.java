@@ -751,16 +751,10 @@ public class DataRegion extends DisplayElement
     protected void renderMessageBox(RenderContext ctx, Writer out) throws IOException
     {
         out.write("<tr><td colspan=\"2\">");
-        out.write("<table class=\"labkey-status-info\" style=\"display:none;margin-bottom:4px;width:100%;\" id=\"" + PageFlowUtil.filter("dataregion_msgbox_" + getName()) + "\">");
-        out.write("<tr>");
-        out.write("<td></td>");
-        out.write("<td align=\"right\">");
-        out.write("<img onclick=\"LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].hideMessage();\" title=\"Close this message\" alt=\"close\" src=\"" + ctx.getViewContext().getContextPath() + "/_images/partdelete.gif\">");
-        out.write("</td>");
-        out.write("</tr>");
-        out.write("</table>");
-        out.write("</td></tr>");
-        out.write("</table>");
+        out.write("<div class=\"labkey-status-info\" style=\"display:none;margin-bottom:8px;font-weight:normal;width:100%;\" id=\"" + PageFlowUtil.filter("dataregion_msgbox_" + getName()) + "\">");
+        out.write("<img style=\"float:right;\" onclick=\"LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].hideMessage();\" title=\"Close this message\" alt=\"close\" src=\"" + ctx.getViewContext().getContextPath() + "/_images/partdelete.gif\">");
+        out.write("<span></span>");
+        out.write("</div>");
     }
 
     protected void renderFooter(RenderContext ctx, Writer out, Integer resultSetSize, boolean renderButtons) throws IOException
@@ -960,7 +954,7 @@ public class DataRegion extends DisplayElement
             out.write("<th valign=\"top\" class=\"labkey-selectors");
             out.write("\">");
 
-            out.write("<input type=checkbox title='Check/uncheck all' name='");
+            out.write("<input type=checkbox title='Select/unselect all on current page' name='");
             out.write(TOGGLE_CHECKBOX_NAME);
             out.write("' onClick='LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].selectPage(this.checked);'");
             out.write("></th>");
@@ -1165,7 +1159,7 @@ public class DataRegion extends DisplayElement
     {
         Map rowMap = ctx.getRow();
         out.write("<td class='labkey-selectors' nowrap>");
-        out.write("<input type=checkbox name='");
+        out.write("<input type=checkbox title='Select/unselect row' name='");
         out.write(SELECT_CHECKBOX_NAME);
         out.write("' value=\"");
         String and = "";
