@@ -57,7 +57,7 @@ public interface TaskFactory<SettingsType extends TaskFactorySettings>
 
     boolean isJoin();
 
-    boolean isJobComplete(PipelineJob job) throws IOException, SQLException;
+    boolean isJobComplete(PipelineJob job);
 
     boolean isParticipant(PipelineJob job) throws IOException, SQLException;
 

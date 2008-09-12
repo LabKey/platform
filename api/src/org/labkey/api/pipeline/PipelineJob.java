@@ -598,64 +598,49 @@ abstract public class PipelineJob extends Job implements Serializable
                 TaskFactory.WEBSERVER.equals(factory.getExecutionLocation()));
     }
 
-    public void runActiveTask()
+    public void runActiveTask() throws IOException, PipelineJobException
     {
-        try
-        {
-            TaskFactory factory = getActiveTaskFactory();
-            if (factory == null)
-                return;
+        TaskFactory factory = getActiveTaskFactory();
+        if (factory == null)
+            return;
 
-            if (!factory.isJobComplete(this))
+        if (!factory.isJobComplete(this))
+        {
+            Task<?> task = factory.createTask(this);
+            if (task == null)
+                return; // Bad task key.
+
+            setActiveTaskStatus(TaskStatus.running);
+            WorkDirectory workDirectory = null;
+            List<RecordedAction> actions;
+
+            try
             {
-                Task<?> task = factory.createTask(this);
-                if (task == null)
-                    return; // Bad task key.
-
-                setActiveTaskStatus(TaskStatus.running);
-                WorkDirectory workDirectory = null;
-                List<RecordedAction> actions;
-
-                try
+                if (task instanceof WorkDirectoryTask)
                 {
-                    if (task instanceof WorkDirectoryTask)
-                    {
-                        workDirectory = factory.createWorkDirectory(getJobGUID(), getJobSupport(FileAnalysisJobSupport.class), getLogger());
-                        ((WorkDirectoryTask)task).setWorkDirectory(workDirectory);
-                    }
-                    actions = task.run();
+                    workDirectory = factory.createWorkDirectory(getJobGUID(), getJobSupport(FileAnalysisJobSupport.class), getLogger());
+                    ((WorkDirectoryTask)task).setWorkDirectory(workDirectory);
                 }
-                finally
-                {
-                    if (workDirectory != null)
-                    {
-                        workDirectory.remove();
-                        ((WorkDirectoryTask)task).setWorkDirectory(null);
-                    }
-                }
-                _actionSet.add(actions);
-
-                _started = true;
-
-                // An error occurred running the task. Do not complete.
-                if (TaskStatus.error.equals(getActiveTaskStatus()))
-                    return;
+                actions = task.run();
             }
+            finally
+            {
+                if (workDirectory != null)
+                {
+                    workDirectory.remove();
+                    ((WorkDirectoryTask)task).setWorkDirectory(null);
+                }
+            }
+            _actionSet.add(actions);
 
-            setActiveTaskStatus(TaskStatus.complete);
+            _started = true;
+
+            // An error occurred running the task. Do not complete.
+            if (TaskStatus.error.equals(getActiveTaskStatus()))
+                return;
         }
-        catch (SQLException e)
-        {
-            error(e.getMessage(), e);
-        }
-        catch (IOException e)
-        {
-            error(e.getMessage(), e);
-        }
-        catch (PipelineJobException e)
-        {
-            error(e.getMessage(), e);
-        }
+
+        setActiveTaskStatus(TaskStatus.complete);
     }
 
     public boolean runStateMachine()
@@ -832,7 +817,18 @@ abstract public class PipelineJob extends Job implements Serializable
         // The act of queueing the job runs the state machine for the first time.
         do
         {
-            runActiveTask();
+            try
+            {
+                runActiveTask();
+            }
+            catch (IOException e)
+            {
+                error(e.getMessage(), e);
+            }
+            catch (PipelineJobException e)
+            {
+                error(e.getMessage(), e);
+            }
         }
         while (runStateMachine());
     }
