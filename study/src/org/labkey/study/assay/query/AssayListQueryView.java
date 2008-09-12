@@ -63,7 +63,7 @@ public class AssayListQueryView extends QueryView
         }
     }
 
-    protected DataView createDataView()
+    public DataView createDataView()
     {
         DataView result = super.createDataView();
         result.getRenderContext().setBaseSort(new Sort("Name"));

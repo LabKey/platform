@@ -18,7 +18,9 @@ package org.labkey.pipeline.api;
 import org.labkey.api.pipeline.WorkDirFactory;
 import org.labkey.api.pipeline.WorkDirectory;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
+import org.labkey.api.util.FileUtil;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.InitializingBean;
 
 import java.io.*;
 import java.nio.channels.FileLock;
@@ -48,11 +50,24 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
         return copyInputFile(fileInput);
     }
 
-    public static class Factory extends AbstractFactory
+    public static class Factory extends AbstractFactory implements InitializingBean
     {
         private String _lockDirectory;
         private String _tempDirectory;
         private boolean _sharedTempDirectory;
+        private boolean _cleanupOnStartup;
+
+        public void afterPropertiesSet() throws Exception
+        {
+            if (_tempDirectory == null)
+            {
+                throw new IllegalStateException("tempDirectory not set - set it directly using the tempDirectory property or use the setTempDirectoryEnv property to point to an environment variable");
+            }
+            if (_cleanupOnStartup)
+            {
+                FileUtil.deleteDirectoryContents(new File(_tempDirectory));
+            }
+        }
 
         public WorkDirectory createWorkDirectory(String jobId, FileAnalysisJobSupport support, Logger log) throws IOException
         {
@@ -109,6 +124,11 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
             if (!new File(tempDirectory).isDirectory())
                 throw new IllegalArgumentException("The temporary directory " + tempDirectory + " does not exist.");
             _tempDirectory = tempDirectory;
+        }
+
+        public void setCleanupOnStartup(boolean cleanupOnStartup)
+        {
+            _cleanupOnStartup = cleanupOnStartup;
         }
 
         /**

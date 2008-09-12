@@ -43,7 +43,7 @@ public class ListQueryView extends QueryView
         settings.setAllowChooseQuery(false);
     }
 
-    protected DataView createDataView()
+    public DataView createDataView()
     {
         DataView view = super.createDataView();
         DataRegion rgn = view.getDataRegion();

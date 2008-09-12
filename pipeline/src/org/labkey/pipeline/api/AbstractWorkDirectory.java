@@ -183,7 +183,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
 
     public String getRelativePath(File fileWork) throws IOException
     {
-        return FileUtil.relativize(_dir, fileWork);
+        return FileUtil.relativize(_dir, fileWork, true);
     }
 
     public File outputFile(File fileWork) throws IOException
@@ -288,23 +288,26 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
     public void remove() throws IOException
     {
         // Delete the copied input files, and clear the map pointing to them.
-        for (File input : _copiedInputs.values())
-            discardFile(input);
-        _copiedInputs.clear();
-
-        if (!_dir.delete())
+        if (NetworkDrive.exists(_dir))
         {
-            StringBuffer message = new StringBuffer();
-            message.append("Failed to remove work directory ").append(_dir);
-            File[] files = _dir.listFiles();
-            if (files.length > 0)
-            {
-                message.append(" unexpected files found:");
-                for (File f : files)
-                    message.append("\n").append(f.getName());
-            }
+            for (File input : _copiedInputs.values())
+                discardFile(input);
+            _copiedInputs.clear();
 
-            throw new IOException(message.toString());
+            if (!_dir.delete())
+            {
+                StringBuffer message = new StringBuffer();
+                message.append("Failed to remove work directory ").append(_dir);
+                File[] files = _dir.listFiles();
+                if (files.length > 0)
+                {
+                    message.append(" unexpected files found:");
+                    for (File f : files)
+                        message.append("\n").append(f.getName());
+                }
+
+                throw new IOException(message.toString());
+            }
         }
     }
 

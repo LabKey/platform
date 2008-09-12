@@ -69,7 +69,7 @@ public class CohortQueryView extends ExtensibleObjectQueryView
         }
     }
 
-    protected DataView createDataView()
+    public DataView createDataView()
     {
         DataView view = super.createDataView();
         if (allowEditing() &&

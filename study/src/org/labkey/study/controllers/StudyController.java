@@ -3411,7 +3411,7 @@ public class StudyController extends BaseStudyController
             final Set<String> finalLsids = lsids;
             DataSetQueryView queryView = new DataSetQueryView(_datasetId, querySchema, qs, null, null, null)
             {
-                protected DataView createDataView()
+                public DataView createDataView()
                 {
                     DataView view = super.createDataView();
                     view.getDataRegion().setSortable(false);

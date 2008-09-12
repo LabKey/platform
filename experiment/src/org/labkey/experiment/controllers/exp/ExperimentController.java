@@ -28,8 +28,6 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresPermission;
@@ -782,7 +780,7 @@ public class ExperimentController extends SpringActionController
                             {
                                 if (dataParent.equals(rootFile))
                                 {
-                                    relativePath = FileUtil.relativizeUnix(rootFile, dataFile.getParentFile());
+                                    relativePath = FileUtil.relativizeUnix(rootFile, dataFile.getParentFile(), true);
                                     break;
                                 }
                                 dataParent = dataParent.getParentFile();
@@ -956,7 +954,7 @@ public class ExperimentController extends SpringActionController
             ExpSchema schema = new ExpSchema(getUser(), getContainer());
             ExperimentRunListView runView = new ExperimentRunListView(schema, ExperimentRunListView.getRunListQuerySettings(schema, getViewContext(), ExpSchema.TableType.Runs.name(), false), ExperimentRunFilter.ALL_RUNS_FILTER)
             {
-                protected DataView createDataView()
+                public DataView createDataView()
                 {
                     DataView result = super.createDataView();
                     result.getRenderContext().setBaseFilter(new SimpleFilter("Protocol/LSID", _protocol.getLSID()));

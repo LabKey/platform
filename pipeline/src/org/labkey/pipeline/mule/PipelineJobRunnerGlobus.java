@@ -187,10 +187,8 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
             
             GramJob gramJob = createGramJob(job, serializedJobFile);
 
-            gramJob.submit(gramJob.getEndpoint(), false, false, getJobURI(job));
-
             StringBuilder sb = new StringBuilder();
-            sb.append("Submitted job to Globus ");
+            sb.append("Submitting job to Globus ");
             sb.append(PipelineJobService.get().getGlobusClientProperties().getJobFactoryType());
             if (gramJob.getDescription().getQueue() != null)
             {
@@ -205,6 +203,9 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
                 sb.append(arg);
             }
             job.getLogger().info(sb.toString());
+
+            gramJob.submit(gramJob.getEndpoint(), false, false, getJobURI(job));
+            sb.append("Job submitted to Globus.");
             submitted = true;
         }
         finally

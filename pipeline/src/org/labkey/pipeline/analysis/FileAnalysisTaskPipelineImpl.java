@@ -19,7 +19,6 @@ import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipelineSettings;
-import org.labkey.api.pipeline.file.FileAnalysisXarGeneratorSupport;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.URIUtil;
 import org.labkey.pipeline.api.TaskPipelineImpl;
@@ -44,7 +43,6 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     private boolean _initialFileTypesFromTask;
     private FileType[] _initialFileTypes;
     private Map<FileType, FileType[]> _typeHeirarchy;
-    private FileAnalysisXarGeneratorSupport _xarGeneratorSupport;
 
     public FileAnalysisTaskPipelineImpl()
     {
@@ -66,9 +64,6 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
 
         if (settings.getProtocolFactoryName() != null)
             _protocolFactoryName = settings.getProtocolFactoryName();
-
-        if (settings.getXarGeneratorSupport() != null)
-            _xarGeneratorSupport = settings.getXarGeneratorSupport();
 
         // Convert any input filter extensions to array of file types.
         List<String> inputFilterExts = settings.getInitialInputExts();
@@ -135,11 +130,6 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     public FileFilter getInitialFileTypeFilter()
     {
         return new PipelineProvider.FileTypesEntryFilter(_initialFileTypes);
-    }
-
-    public FileAnalysisXarGeneratorSupport getXarGeneratorSupport()
-    {
-        return _xarGeneratorSupport;
     }
 
     public File findInputFile(FileAnalysisJobSupport support, String name)

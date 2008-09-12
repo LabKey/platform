@@ -118,7 +118,7 @@ public class FileResolver implements Replacer
         _fileNamesToAdvance.add(filter);
         try
         {
-            return FileUtil.relativize(_rootDir, f);
+            return FileUtil.relativize(_rootDir, f, true);
         }
         catch (IOException e)
         {
@@ -256,7 +256,7 @@ public class FileResolver implements Replacer
         String relativePath = _relativePathsCache.get(f);
         if (relativePath == null)
         {
-            relativePath = FileUtil.relativizeUnix(_rootDir, f);
+            relativePath = FileUtil.relativizeUnix(_rootDir, f, true);
             _relativePathsCache.put(f, relativePath);
         }
         return relativePath;

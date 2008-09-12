@@ -141,7 +141,7 @@ public class StudyPipeline extends PipelineProvider
                 urlReset.setPageFlow("Study");
                 urlReset.setAction("resetPipeline");
                 urlReset.replaceParameter("redirect", context.getActionURL().getLocalURIString());
-                String path = FileUtil.relativize(rootDir, lock);
+                String path = FileUtil.relativize(rootDir, lock, true);
                 urlReset.replaceParameter("path", path);
                 if (lock.canRead() && lock.canWrite())
                     entry.addAction(new FileAction("Delete lock", urlReset, new File[]{lock}));
@@ -151,7 +151,7 @@ public class StudyPipeline extends PipelineProvider
                 ActionURL urlImport = entry.cloneHref();
                 urlImport.setPageFlow("Study");
                 urlImport.setAction("importStudyBatch");
-                String path = FileUtil.relativize(rootDir, f);
+                String path = FileUtil.relativize(rootDir, f, true);
                 urlImport.replaceParameter("path", path);
                 entry.addAction(new FileAction("Import datasets", urlImport, new File[]{f}));
             }
@@ -166,7 +166,7 @@ public class StudyPipeline extends PipelineProvider
             ActionURL urlImport = entry.cloneHref();
             urlImport.setPageFlow("Study-Samples");
             urlImport.setAction("importSpecimenData");
-            String path = FileUtil.relativize(rootDir, f);
+            String path = FileUtil.relativize(rootDir, f, true);
             urlImport.replaceParameter("path", path);
             entry.addAction(new FileAction("Import specimen data", urlImport, new File[]{f}));
         }

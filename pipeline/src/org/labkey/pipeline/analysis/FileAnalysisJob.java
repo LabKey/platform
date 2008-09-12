@@ -19,14 +19,11 @@ import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisJob;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
-import org.labkey.api.pipeline.file.FileAnalysisXarGeneratorSupport;
 import org.labkey.api.view.ViewBackgroundInfo;
 
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * <code>FileAnalysisJob</code>
@@ -84,21 +81,5 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
     public File findOutputFile(String name)
     {
         return getTaskPipeline().findOutputFile(this, name); 
-    }
-
-    public String getXarTemplateResource()
-    {
-        FileAnalysisXarGeneratorSupport support = getTaskPipeline().getXarGeneratorSupport();
-        if (support == null)
-            return null;
-        return support.getXarTemplateResource(this);
-    }
-
-    public Map<String, String> getXarTemplateReplacements() throws IOException
-    {
-        FileAnalysisXarGeneratorSupport support = getTaskPipeline().getXarGeneratorSupport();
-        if (support == null)
-            return new HashMap<String, String>();
-        return support.getXarTemplateReplacements(this);
     }
 }

@@ -69,7 +69,7 @@ public class DataSetQueryView extends QueryView
         _cohort = cohort;
     }
 
-    protected DataView createDataView()
+    public DataView createDataView()
     {
         DataView view = super.createDataView();
         if (_buttons != null)

@@ -48,7 +48,7 @@ public abstract class BaseStudyQueryView extends QueryView
         _sort = sort;
     }
 
-    protected DataView createDataView()
+    public DataView createDataView()
     {
         DataView view = super.createDataView();
         SimpleFilter filter = (SimpleFilter) view.getRenderContext().getBaseFilter();

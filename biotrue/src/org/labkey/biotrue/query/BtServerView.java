@@ -41,7 +41,7 @@ public class BtServerView extends QueryView
         _context = context;
     }
 
-    protected DataView createDataView()
+    public DataView createDataView()
     {
         DataView view = super.createDataView();
 

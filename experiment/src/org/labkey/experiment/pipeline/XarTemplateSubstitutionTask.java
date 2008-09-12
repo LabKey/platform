@@ -22,7 +22,6 @@ import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.NetworkDrive;
-import org.apache.log4j.Logger;
 
 import java.io.*;
 import java.sql.SQLException;
@@ -33,7 +32,7 @@ import java.util.Collections;
 /**
  * <code>XarGeneratorTask</code>
  */
-public class XarTemplateSubstitutionTask extends PipelineJob.Task<XarTemplateSubstitutionTask.Factory> implements XarTemplateSubstitutionId
+public class XarTemplateSubstitutionTask extends WorkDirectoryTask<XarTemplateSubstitutionTask.Factory> implements XarTemplateSubstitutionId
 {
     public static class Factory extends AbstractTaskFactory<XarTemplateSubstitutionFactorySettings, Factory> implements XarTemplateSubstitutionId.Factory
     {
@@ -96,20 +95,23 @@ public class XarTemplateSubstitutionTask extends PipelineJob.Task<XarTemplateSub
         super(factory, job);
     }
 
-    public FileAnalysisJobSupport getJobSupport()
+    private FileAnalysisJobSupport getFileAnalysisJobSupport()
     {
         return getJob().getJobSupport(FileAnalysisJobSupport.class);
+    }
+
+    private XarTemplateSubstitutionId.JobSupport getXarJobSupport()
+    {
+        return getJob().getJobSupport(XarTemplateSubstitutionId.JobSupport.class);
     }
 
     public List<RecordedAction> run() throws PipelineJobException
     {
         try
         {
-            WorkDirectory wd = _factory.createWorkDirectory(getJob().getJobGUID(), getJobSupport(), getJob().getLogger());
+            File fileExperimentXML = _wd.newFile(_factory.getOutputType());
 
-            File fileExperimentXML = wd.newFile(_factory.getOutputType());
-
-            InputStream in = getClass().getClassLoader().getResourceAsStream(getJobSupport().getXarTemplateResource());
+            InputStream in = getClass().getClassLoader().getResourceAsStream(getXarJobSupport().getXarTemplateResource());
             BufferedReader reader = new BufferedReader(new InputStreamReader(in));
             StringBuilder sb = new StringBuilder();
             String line;
@@ -126,7 +128,7 @@ public class XarTemplateSubstitutionTask extends PipelineJob.Task<XarTemplateSub
                 reader.close();
             }
 
-            Map<String, String> replaceMap = getJobSupport().getXarTemplateReplacements();
+            Map<String, String> replaceMap = getXarJobSupport().getXarTemplateReplacements();
             for (Map.Entry<String, String> entry : replaceMap.entrySet())
                 replaceString(sb, entry.getKey(), entry.getValue());
 
@@ -141,8 +143,7 @@ public class XarTemplateSubstitutionTask extends PipelineJob.Task<XarTemplateSub
                 writer.close();
             }
 
-            wd.outputFile(fileExperimentXML);
-            wd.remove();
+            _wd.outputFile(fileExperimentXML);
         }
         catch (IOException e)
         {

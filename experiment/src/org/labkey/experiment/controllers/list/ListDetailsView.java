@@ -20,14 +20,9 @@ import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.exp.list.ListDefinition;
-import org.labkey.api.query.QueryPicker;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.DetailsView;
-
-import java.io.PrintWriter;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -52,7 +47,7 @@ public class ListDetailsView extends QueryView
         _listItemKey = listItemKey;
     }
 
-    protected DataView createDataView()
+    public DataView createDataView()
     {
         DataRegion rgn = createDataRegion();
         rgn.setButtonBar(ButtonBar.BUTTON_BAR_EMPTY, DataRegion.MODE_DETAILS);

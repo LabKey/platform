@@ -179,7 +179,12 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
                     {
                         try
                         {
-                            path = FileUtil.relativizeUnix(source.getRoot(), f);
+                            f = new File(new URI(source.getCanonicalDataFileURL(f.getAbsolutePath())));
+                            path = FileUtil.relativizeUnix(source.getRoot(), f, false);
+                        }
+                        catch (URISyntaxException e)
+                        {
+                            path = f.toString();
                         }
                         catch (IOException e)
                         {
@@ -278,6 +283,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
 
             runInputsWithRoles.putAll(actionSet.getOtherInputs());
 
+            getJob().info("Investigating files involved in experiment run");
             for (RecordedAction action : actions)
             {
                 for (RecordedAction.DataFile dataFile : action.getInputs())
@@ -298,8 +304,13 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
                         // For outputs, want to use the last role that was specified, so always overwrite
                         runOutputsWithRoles.put(dataFile.getURI(), dataFile.getRole());
                     }
+
+                    // This can be slow over network file systems so do it outside of the database
+                    // transaction. The XarSource caches the results so it'll be fast once we start inserting.
+                    source.getCanonicalDataFileURL(dataFile.getURI().toString());
                 }
             }
+            getJob().info("File investigation complete");
 
             // Files count as inputs to the run if they're used by one of the actions and weren't produced by one of
             // the actions.

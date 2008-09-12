@@ -34,7 +34,7 @@ import java.sql.SQLException;
  *
  * @author brendanx
  */
-public class CommandTaskImpl extends PipelineJob.Task<CommandTaskImpl.Factory> implements CommandTask
+public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> implements CommandTask
 {
     private static final Logger _log = Logger.getLogger(CommandTaskImpl.class);
 
@@ -239,8 +239,6 @@ public class CommandTaskImpl extends PipelineJob.Task<CommandTaskImpl.Factory> i
         }
     }
 
-    private WorkDirectory _wd;
-
     public CommandTaskImpl(PipelineJob job, Factory factory)
     {
         super(factory, job);
@@ -352,8 +350,6 @@ public class CommandTaskImpl extends PipelineJob.Task<CommandTaskImpl.Factory> i
     {
         try
         {
-            _wd = _factory.createWorkDirectory(getJob().getJobGUID(), getJobSupport(), getJob().getLogger());
-
             RecordedAction action = new RecordedAction(_factory.getProtocolActionName());
             
             // Input file location must be determined before creating the process command.
@@ -395,7 +391,6 @@ public class CommandTaskImpl extends PipelineJob.Task<CommandTaskImpl.Factory> i
                 getJob().header(args.get(0) + " output");
                 getJob().info(commandLine);
 
-                _wd.remove();
                 return Collections.emptyList();
             }
 

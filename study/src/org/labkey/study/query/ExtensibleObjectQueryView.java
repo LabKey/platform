@@ -57,7 +57,7 @@ public class ExtensibleObjectQueryView extends QueryView
         return extensibleClass.getSimpleName();
     }
 
-    protected DataView createDataView()
+    public DataView createDataView()
     {
         DataView view = super.createDataView();
         return view;

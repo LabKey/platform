@@ -75,7 +75,7 @@ public class ArchiveURLRewriter extends URLRewriter
 
             if (inSubTree)
             {
-                name = FileUtil.relativizeUnix(rootDir, f);
+                name = FileUtil.relativizeUnix(rootDir, f, true);
             }
             else
             {

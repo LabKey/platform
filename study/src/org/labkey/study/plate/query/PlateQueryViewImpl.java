@@ -25,7 +25,6 @@ import org.labkey.api.study.PlateQueryView;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
-import java.io.PrintWriter;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -50,7 +49,7 @@ public class PlateQueryViewImpl extends PlateQueryView
     }
 
     @Override
-    protected DataView createDataView()
+    public DataView createDataView()
     {
         DataView view = super.createDataView();
         if (_filter != null)

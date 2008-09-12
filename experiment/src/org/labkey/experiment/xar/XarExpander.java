@@ -625,7 +625,7 @@ public class XarExpander extends AbstractXarImporter
 
                 File xarDir = _xarSource.getRoot();
 
-                inputDir = FileUtil.relativizeUnix(xarDir, f);
+                inputDir = FileUtil.relativizeUnix(xarDir, f, true);
 
                 context.addSubstitution("InputDir", inputDir);
             }

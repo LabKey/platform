@@ -24,10 +24,8 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.NavTree;
 import org.labkey.common.util.Pair;
-import org.labkey.issue.IssuesController;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -56,7 +54,7 @@ public class IssuesQueryView extends QueryView
         return rs;
     }
     
-    protected DataView createDataView()
+    public DataView createDataView()
     {
         DataView view = super.createDataView();
 

@@ -51,7 +51,7 @@ public class StudyPropertiesQueryView extends ExtensibleObjectQueryView
         // no buttons
     }
 
-    protected DataView createDataView()
+    public DataView createDataView()
     {
         DataView view = super.createDataView();
         if (allowEditing() &&

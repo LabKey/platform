@@ -51,7 +51,7 @@ public class AuditQueryViewImpl extends AuditLogQueryView
         _indexedColumns.put(index, dc);
     }
 
-    protected DataView createDataView()
+    public DataView createDataView()
     {
         setShowDetailsColumn(false);
 
