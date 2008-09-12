@@ -1106,7 +1106,7 @@ public class PageFlowUtil
     /* Renders text and a drop down arrow image wrapped in a link not of type labkey-button */
     public static String generateDropDownTextLink(String text, String href, String onClick)
     {
-        return "<a class=\"labkey-header\" style=\"font-weight: bold\" href=\"" + filter(href) + "\"" +
+        return "<a class=\"labkey-header\" style=\"font-weight: bold;position: relative;padding-right:1em\" href=\"" + filter(href) + "\"" +
                 (onClick != null ? " onClick=" + wrapOnClick(onClick) : "") +
                 "><span>" + text + "</span>&nbsp;<img src=\"" + HttpView.currentView().getViewContext().getContextPath() + "/_images/text_link_arrow.gif\" class=\"labkey-button-arrow\"></a>";
     }

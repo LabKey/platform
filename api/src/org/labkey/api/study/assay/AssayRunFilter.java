@@ -55,7 +55,7 @@ public class AssayRunFilter extends ExperimentRunFilter
         if (provider.allowUpload(context.getUser(), context.getContainer(), _protocol) &&
                 context.hasPermission(ACL.PERM_INSERT))
         {
-            ActionButton uploadButton = new ActionButton("Upload Runs", AssayService.get().getUploadWizardURL(_container, _protocol));
+            ActionButton uploadButton = new ActionButton("Import Runs", AssayService.get().getUploadWizardURL(_container, _protocol));
             bar.add(uploadButton);
         }
     }

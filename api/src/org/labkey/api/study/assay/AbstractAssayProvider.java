@@ -319,13 +319,13 @@ public abstract class AbstractAssayProvider implements AssayProvider
     protected Domain createRunDomain(Container c, User user)
     {
         Domain domain = PropertyService.get().createDomain(c, getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_RUN), "Run Fields");
-        domain.setDescription("The user is prompted to enter run level properties for each file they upload.  This is the second step of the upload process.");
+        domain.setDescription("The user is prompted to enter run level properties for each file they import.  This is the second step of the import process.");
         return domain;
     }
 
     protected Domain createUploadSetDomain(Container c, User user)
     {
-        Domain domain = PropertyService.get().createDomain(c, getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_UPLOAD_SET), "Upload Set Fields");
+        Domain domain = PropertyService.get().createDomain(c, getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_UPLOAD_SET), "Run Set Fields");
         List<ParticipantVisitResolverType> resolverTypes = getParticipantVisitResolverTypes();
         if (resolverTypes != null && resolverTypes.size() > 0)
             addProperty(domain, PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME, PARTICIPANT_VISIT_RESOLVER_PROPERTY_CAPTION, PropertyType.STRING).setRequired(true);
@@ -333,7 +333,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
         DomainProperty studyProp = addProperty(domain, TARGET_STUDY_PROPERTY_NAME, TARGET_STUDY_PROPERTY_CAPTION, PropertyType.STRING);
         studyProp.setLookup(new Lookup(null, "study", "Study"));
 
-        domain.setDescription("The user is prompted for upload set properties once for each set of runs they upload. The upload set is a convenience to let users set properties that seldom change in one place and upload many runs using them. This is the first step of the upload process.");
+        domain.setDescription("The user is prompted for run set properties once for each set of runs they import. The run " +
+                "set is a convenience to let users set properties that seldom change in one place and import many runs " +
+                "using them. This is the first step of the import process.");
         return domain;
     }
 

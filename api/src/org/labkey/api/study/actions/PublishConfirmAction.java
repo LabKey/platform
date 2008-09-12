@@ -18,8 +18,6 @@ package org.labkey.api.study.actions;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionMessage;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -159,7 +157,6 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         // todo: this isn't a great way to determine if this is our final post, but it'll do for now:
         if (publishConfirmForm.isAttemptPublish())
         {
-            ActionErrors actionErrors = PageFlowUtil.getActionErrors(getViewContext().getRequest(), true);
             postedVisits = new HashMap<Object, String>();
             postedPtids = new HashMap<Object, String>();
             Map<Integer, AssayPublishKey> publishData = new LinkedHashMap<Integer, AssayPublishKey>();
@@ -228,15 +225,15 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
                 }
             }
             if (missingPtid)
-                actionErrors.add("main", new ActionMessage("Error", "You must specify a Participant ID for all rows."));
+                errors.reject(null, "You must specify a Participant ID for all rows.");
             if (missingVisitId)
-                actionErrors.add("main", new ActionMessage("Error", "You must specify a Visit ID for all rows."));
+                errors.reject(null, "You must specify a Visit ID for all rows.");
             if (badVisitIds)
-                actionErrors.add("main", new ActionMessage("Error", "Visit IDs must be numbers."));
+                errors.reject(null, "Visit IDs must be numbers.");
             if (missingDate || badDates)
-                actionErrors.add("main", new ActionMessage("Error", "You must specify a Date for all rows."));
+                errors.reject(null, "You must specify a Date for all rows.");
 
-            if (actionErrors.isEmpty() && !publishConfirmForm.isValidate())
+            if (errors.getErrorCount() == 0 && !publishConfirmForm.isValidate())
             {
                 List<String> publishErrors = new ArrayList<String>();
                 ActionURL successURL  = provider.publish(context.getUser(), _protocol, targetStudy, publishData, publishErrors);
@@ -247,7 +244,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
                 }
                 for (String publishError : publishErrors)
                 {
-                    actionErrors.add("main", new ActionMessage("Error", publishError));
+                    errors.reject(null, publishError);
                 }
             }
         }
@@ -257,7 +254,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         settings.setSchemaName(schema.getSchemaName());
         settings.setQueryName(name);
         settings.setAllowChooseView(false);
-        PublishRunDataQueryView view = new PublishRunDataQueryView(_protocol, context, settings,
+        PublishRunDataQueryView queryView = new PublishRunDataQueryView(_protocol, context, settings,
                 objectIds, targetStudy, postedVisits, postedPtids);
         List<ActionButton> buttons = new ArrayList<ActionButton>();
         String returnURL;
@@ -279,12 +276,25 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         publishURL.replaceParameter("validate", "false");
         ActionButton publishButton = new ActionButton(publishURL.getLocalURIString(), "Copy to Study");
         buttons.add(publishButton);
-        view.setButtons(buttons);
-        return new VBox(new ActionErrorsView(),
-                        new HtmlView("Note: Participant and " + (dateBased ? "Dates" : "Visit IDs") + " are required for all rows."), //FIX: 3998
-                        view);
+        queryView.setButtons(buttons);
+        return new VBox(new JspView<PublishConfirmBean>("/org/labkey/api/study/actions/publishHeader.jsp",
+                new PublishConfirmBean(dateBased), errors), queryView);
     }
 
+    public static class PublishConfirmBean
+    {
+        private boolean _dateBased;
+
+        public PublishConfirmBean(boolean dateBased)
+        {
+            _dateBased = dateBased;
+        }
+
+        public boolean isDateBased()
+        {
+            return _dateBased;
+        }
+    }
 
     protected ActionURL getPublishHandlerURL(ExpProtocol protocol, AssayProvider provider)
     {

@@ -55,7 +55,7 @@
     { %>
         <tr><td>&nbsp;</td></tr>
         <tr class="labkey-wp-header">
-            <td colspan="2">Upload Set Properties</td>
+            <td colspan="2">Run Set Properties</td>
         </tr>
         <%
             for (Map.Entry<PropertyDescriptor, String> entry : bean.getUploadSetProperties().entrySet())

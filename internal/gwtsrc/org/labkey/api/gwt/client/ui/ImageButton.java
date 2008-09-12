@@ -18,17 +18,10 @@ package org.labkey.api.gwt.client.ui;
 
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.ui.*;
-import com.google.gwt.http.client.URL;
-import org.labkey.api.gwt.client.util.PropertyUtil;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Iterator;
-
-public class ImageButton extends PushButton implements ClickListener
+public class ImageButton extends ButtonBase implements ClickListener
 {
-    private List _clickListeners = new ArrayList();
-    private boolean _enabled = true;
+    private ClickListenerCollection _clickListeners = new ClickListenerCollection();
     private String _text;
 
     public ImageButton(String text, ClickListener listener)
@@ -39,26 +32,19 @@ public class ImageButton extends PushButton implements ClickListener
 
     public ImageButton(String text)
     {
-        super(text);
-
+        super(DOM.createSpan());
         addClickListener(this);
 
         _text = text;
         DOM.setAttribute(getElement(), "id", "button_" + text);
 
-        setHTML("<a class='labkey-button'><span>" + text + "</span></a>");
+        refreshState();
         super.addClickListener(new ClickListener()
         {
             public void onClick(Widget sender)
             {
-                if (_enabled)
-                {
-                    Iterator i = new ArrayList(_clickListeners).iterator();
-                    while (i.hasNext())
-                    {
-                        ((ClickListener)i.next()).onClick(sender);
-                    }
-                }
+                if (isEnabled())
+                    _clickListeners.fireClick(sender);
             }
         });
     }
@@ -78,13 +64,25 @@ public class ImageButton extends PushButton implements ClickListener
         return _text;
     }
 
+    public void refreshState()
+    {
+        setHTML("<a class='" + (isEnabled() ? "labkey-button" : "labkey-disabled-button")
+                + "'><span>" + _text + "</span></a>");
+    }
+
     public void setText(String text)
     {
         if (_text.equals(text))
             return;
 
         _text = text;
-        getUpFace().setHTML("<a class='labkey-button'>" + text + "</a>");
+        refreshState();
+    }
+
+    public void setEnabled(boolean enabled)
+    {
+        super.setEnabled(enabled);
+        refreshState();
     }
 
     /** to make life simple, just override onClick instead of registering a listener */

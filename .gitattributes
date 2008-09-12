@@ -532,6 +532,7 @@ api/src/org/labkey/api/study/actions/TemplateAction.java -text
 api/src/org/labkey/api/study/actions/UploadWizardAction.java -text
 api/src/org/labkey/api/study/actions/assayHeader.jsp -text
 api/src/org/labkey/api/study/actions/newRunProperties.jsp -text
+api/src/org/labkey/api/study/actions/publishHeader.jsp -text
 api/src/org/labkey/api/study/assay/AbstractAssayDataCollector.java -text
 api/src/org/labkey/api/study/assay/AbstractAssayProvider.java -text
 api/src/org/labkey/api/study/assay/AbstractAssayTsvDataHandler.java -text

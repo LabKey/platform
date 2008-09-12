@@ -263,9 +263,9 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
         addCancelButton(bbar);
         insertView.getDataRegion().setButtonBar(bbar, DataRegion.MODE_INSERT);
 
-        insertView.setTitle("Upload Set Properties");
+        insertView.setTitle("Run Set Properties");
 
-        _stepDescription = "Upload Set Properties";
+        _stepDescription = "Run Set Properties";
 
         JspView<AssayRunUploadForm> headerView = new JspView<AssayRunUploadForm>("/org/labkey/study/assay/view/newUploadSet.jsp", runForm);
         return new VBox(headerView, insertView);
@@ -341,7 +341,7 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
         insertView.getDataRegion().setButtonBar(bbar, DataRegion.MODE_INSERT);
         insertView.setTitle("Run Properties");
 
-        _stepDescription = "Run Properties and Upload";
+        _stepDescription = "Run Properties and Data File";
 
         JspView<AssayRunUploadForm> headerView = new JspView<AssayRunUploadForm>("/org/labkey/api/study/actions/newRunProperties.jsp", newRunForm);
         return new VBox(headerView, insertView);
@@ -385,7 +385,7 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
         {
             if (collector.allowAdditionalUpload(newRunForm))
             {
-                ActionButton saveUploadAnotherButton = new ActionButton(getViewContext().getActionURL().getAction() + ".view", "Save and Upload Another Run");
+                ActionButton saveUploadAnotherButton = new ActionButton(getViewContext().getActionURL().getAction() + ".view", "Save and Import Another Run");
                 saveUploadAnotherButton.setScript(insertView.getDataRegion().getJavascriptFormReference(true) + ".multiRunUpload.value = \"true\";");
                 saveUploadAnotherButton.setActionType(ActionButton.Action.POST);
                 bbar.add(saveUploadAnotherButton);
@@ -404,7 +404,7 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
         ActionURL helper = getSummaryLink(_protocol);
         NavTree result = super.appendNavTrail(root);
         result.addChild(_protocol.getName(), AssayService.get().getAssayRunsURL(getContainer(), _protocol));
-        String finalChild = "Data Upload";
+        String finalChild = "Data Import";
         if (_stepDescription != null)
         {
             finalChild = finalChild + ": " + _stepDescription;
