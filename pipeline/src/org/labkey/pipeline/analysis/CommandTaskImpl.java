@@ -127,7 +127,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             return _statusName;
         }
 
-        public boolean isJobComplete(PipelineJob job) throws IOException, SQLException
+        public boolean isJobComplete(PipelineJob job)
         {
             // TODO: Safer way to do this.
             FileAnalysisJobSupport support = (FileAnalysisJobSupport) job;

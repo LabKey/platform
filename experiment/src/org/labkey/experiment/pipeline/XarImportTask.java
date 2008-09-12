@@ -74,7 +74,7 @@ public class XarImportTask extends PipelineJob.Task<XarImportTask.Factory>
             return Collections.emptyList();
         }
 
-        public boolean isJobComplete(PipelineJob job) throws IOException, SQLException
+        public boolean isJobComplete(PipelineJob job)
         {
             // Check parameters to see if loading is required.
             return ("no".equalsIgnoreCase(job.getParameters().get("pipeline, load")));

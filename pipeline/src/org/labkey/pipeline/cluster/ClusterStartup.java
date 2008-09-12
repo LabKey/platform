@@ -18,6 +18,7 @@ package org.labkey.pipeline.cluster;
 
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.pipeline.AbstractPipelineStartup;
 
 import java.io.*;
@@ -34,7 +35,7 @@ public class ClusterStartup extends AbstractPipelineStartup
     /**
      * This method is invoked by reflection - don't change its signature without changing org.labkey.bootstrap.ClusterBootstrap 
      */
-    public void run(List<File> moduleFiles, List<File> moduleConfigFiles, List<File> customConfigFiles, String[] args) throws IOException, URISyntaxException
+    public void run(List<File> moduleFiles, List<File> moduleConfigFiles, List<File> customConfigFiles, String[] args) throws IOException, URISyntaxException, PipelineJobException 
     {
         initContext("org/labkey/pipeline/mule/config/cluster.log4j.properties", moduleFiles, moduleConfigFiles, customConfigFiles);
 

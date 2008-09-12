@@ -449,8 +449,8 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
         jobDescription.setJobType(JobTypeEnumeration.single);
         
         // Create the output files with the right permissions
-        FileUtils.touch(getOutputFile(job.getStatusFile(), OutputType.out));
-        FileUtils.touch(getOutputFile(job.getStatusFile(), OutputType.err));
+//        FileUtils.touch(getOutputFile(job.getStatusFile(), OutputType.out));
+//        FileUtils.touch(getOutputFile(job.getStatusFile(), OutputType.err));
 
         jobDescription.setStdout(getClusterOutputPath(job.getStatusFile(), OutputType.out));
         jobDescription.setStderr(getClusterOutputPath(job.getStatusFile(), OutputType.err));

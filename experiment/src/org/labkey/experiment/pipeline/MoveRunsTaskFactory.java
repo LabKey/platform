@@ -22,8 +22,6 @@ import org.labkey.api.exp.api.ExpRun;
 
 import java.util.List;
 import java.util.Collections;
-import java.io.IOException;
-import java.sql.SQLException;
 
 /**
  * User: jeckels
@@ -60,7 +58,7 @@ public class MoveRunsTaskFactory extends AbstractTaskFactory<AbstractTaskFactory
         return "MOVE RUNS";
     }
 
-    public boolean isJobComplete(PipelineJob j) throws IOException, SQLException
+    public boolean isJobComplete(PipelineJob j)
     {
         MoveRunsPipelineJob job = (MoveRunsPipelineJob)j;
         for (int runId : job.getRunIds())

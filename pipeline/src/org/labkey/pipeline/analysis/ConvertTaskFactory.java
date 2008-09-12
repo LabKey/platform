@@ -168,7 +168,7 @@ public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySe
         return true;
     }
 
-    public boolean isJobComplete(PipelineJob job) throws IOException, SQLException
+    public boolean isJobComplete(PipelineJob job)
     {
         TaskFactory factory = findCommandFactory(job);
         assert factory != null : "Unexpected missing converter for job: \n" +

@@ -24,7 +24,6 @@ import org.labkey.api.util.FileType;
 import org.labkey.api.util.NetworkDrive;
 
 import java.io.*;
-import java.sql.SQLException;
 import java.util.Map;
 import java.util.List;
 import java.util.Collections;
@@ -80,7 +79,7 @@ public class XarTemplateSubstitutionTask extends WorkDirectoryTask<XarTemplateSu
             return Collections.emptyList();
         }
 
-        public boolean isJobComplete(PipelineJob job) throws IOException, SQLException
+        public boolean isJobComplete(PipelineJob job)
         {
             FileAnalysisJobSupport support = job.getJobSupport(FileAnalysisJobSupport.class);
             String baseName = support.getBaseName();
@@ -93,11 +92,6 @@ public class XarTemplateSubstitutionTask extends WorkDirectoryTask<XarTemplateSu
     protected XarTemplateSubstitutionTask(Factory factory, PipelineJob job)
     {
         super(factory, job);
-    }
-
-    private FileAnalysisJobSupport getFileAnalysisJobSupport()
-    {
-        return getJob().getJobSupport(FileAnalysisJobSupport.class);
     }
 
     private XarTemplateSubstitutionId.JobSupport getXarJobSupport()

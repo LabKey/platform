@@ -88,7 +88,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
             return getOutputType().newFile(jobSupport.getAnalysisDirectory(), jobSupport.getBaseName());
         }
 
-        public boolean isJobComplete(PipelineJob job) throws IOException, SQLException
+        public boolean isJobComplete(PipelineJob job)
         {
             return job.getActionSet().getActions().isEmpty() || NetworkDrive.exists(getXarFile(job));
         }

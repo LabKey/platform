@@ -16,6 +16,9 @@
 package org.labkey.pipeline.mule;
 
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobException;
+
+import java.io.IOException;
 
 /**
  * <code>PipelineTaskRunner</code> is a Mule object for running the active
@@ -27,6 +30,17 @@ public class PipelineTaskRunner
 {
     public void run(PipelineJob job)
     {
-        job.runActiveTask();
+        try
+        {
+            job.runActiveTask();
+        }
+        catch (IOException e)
+        {
+            job.error(e.getMessage(), e);
+        }
+        catch (PipelineJobException e)
+        {
+            job.error(e.getMessage(), e);
+        }
     }
 }
