@@ -47,12 +47,15 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.audit.AuditLogEvent;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.common.tools.TabLoader;
 import org.labkey.common.util.CPUTimer;
 import org.labkey.study.QueryHelper;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudyCache;
 import org.labkey.study.StudySchema;
+import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.designer.StudyDesignManager;
 import org.labkey.study.query.DataSetTable;
@@ -1821,8 +1824,25 @@ public class StudyManager
         String[] imported = new String[0];
 
         Map<String, QCState> qcStateLabels =  new CaseInsensitiveHashMap<QCState>();
-        for (QCState state : StudyManager.getInstance().getQCStates(study.getContainer()))
-            qcStateLabels.put(state.getLabel(), state);
+        boolean checkQCStateLabels = tinfo.getColumn(DataSetTable.QCSTATE_ID_COLNAME) != null &&
+                dataMaps != null && dataMaps.length > 0 && dataMaps[0].keySet().contains(DataSetTable.QCSTATE_LABEL_COLNAME);
+        if (checkQCStateLabels)
+        {
+            for (QCState state : StudyManager.getInstance().getQCStates(study.getContainer()))
+                qcStateLabels.put(state.getLabel(), state);
+            if (tinfo.getColumn(DataSetTable.QCSTATE_ID_COLNAME) != null)
+            {
+                for (Map<String,Object> dataMap : dataMaps)
+                {
+                    String qcStateLabel = (String) dataMap.get(DataSetTable.QCSTATE_LABEL_COLNAME);
+                    // We have a non-null QC state column value.  We need to check to see if this is a known state,
+                    // and mark it for addition if not.
+                    if (qcStateLabel != null && qcStateLabel.length() > 0 && !qcStateLabels.containsKey(qcStateLabel))
+                        qcStateLabels.put(qcStateLabel, null);
+                }
+            }
+        }
+
         //
         // Try to collect errors early.
         // Try not to be too repetitive, stop each loop after one error
@@ -1878,13 +1898,6 @@ public class StudyManager
                 {
                     errors.add("Row " + (i+1) + " data type error for field " + col.getName() + "."); // + " '" + String.valueOf(val) + "'.");
                     break;
-                }
-                else if (val != null && col.getName().equalsIgnoreCase(DataSetTable.QCSTATE_LABEL_COLNAME))
-                {
-                    // We have a non-null QC state column value.  We need to check to see if this is a known state,
-                    // and mark it for addition if not.
-                    if (!qcStateLabels.containsKey(val.toString()))
-                        qcStateLabels.put(val.toString(), null);
                 }
             }
         }
@@ -1966,44 +1979,49 @@ public class StudyManager
                     scope.beginTransaction();
                 }
 
-                // We first insert new QC states for any previously unknown QC labels found in the data:
-                Map<String, QCState> iterableStates = new HashMap<String, QCState>(qcStateLabels);
-                for (Map.Entry<String, QCState> state : iterableStates.entrySet())
+                if (checkQCStateLabels)
                 {
-                    if (state.getValue() == null)
+                    // We first insert new QC states for any previously unknown QC labels found in the data:
+                    Map<String, QCState> iterableStates = new HashMap<String, QCState>(qcStateLabels);
+                    for (Map.Entry<String, QCState> state : iterableStates.entrySet())
                     {
-                        QCState newState = new QCState();
-                        // default to public data:
-                        newState.setPublicData(true);
-                        newState.setLabel(state.getKey());
-                        newState.setContainer(study.getContainer());
-                        newState = insertQCState(user, newState);
-                        qcStateLabels.put(state.getKey(), newState);
-                    }
-                }
-
-                // All QC states should now be stored in the database.  Next we iterate the row maps,
-                // swapping in the appropriate row id for each QC label, and applying the default QC state
-                // to null QC rows if appropriate:
-                String qcStatePropertyURI = DataSetDefinition.getQCStateURI();
-                for (Map<String, Object> dataMap : dataMaps)
-                {
-                    // only update the QC state ID if it isn't already explicitly specified:
-                    if (dataMap.get(qcStatePropertyURI) == null)
-                    {
-                        Object currentStateObj = dataMap.get(DataSetTable.QCSTATE_LABEL_COLNAME);
-                        String currentStateLabel = currentStateObj != null ? currentStateObj.toString() : null;
-                        if (currentStateLabel != null)
+                        if (state.getValue() == null)
                         {
-                            QCState state = qcStateLabels.get(currentStateLabel);
-                            assert state != null : "QC State " + currentStateLabel + " was expected but not found.";
-                            dataMap.put(qcStatePropertyURI, state.getRowId());
+                            QCState newState = new QCState();
+                            // default to public data:
+                            newState.setPublicData(true);
+                            newState.setLabel(state.getKey());
+                            newState.setContainer(study.getContainer());
+                            newState = insertQCState(user, newState);
+                            qcStateLabels.put(state.getKey(), newState);
                         }
-                        else if (defaultQCState != null)
-                            dataMap.put(qcStatePropertyURI, defaultQCState.getRowId());
                     }
                 }
 
+                if (checkQCStateLabels)
+                {
+                    // All QC states should now be stored in the database.  Next we iterate the row maps,
+                    // swapping in the appropriate row id for each QC label, and applying the default QC state
+                    // to null QC rows if appropriate:
+                    String qcStatePropertyURI = DataSetDefinition.getQCStateURI();
+                    for (Map<String, Object> dataMap : dataMaps)
+                    {
+                        // only update the QC state ID if it isn't already explicitly specified:
+                        if (dataMap.get(qcStatePropertyURI) == null)
+                        {
+                            Object currentStateObj = dataMap.get(DataSetTable.QCSTATE_LABEL_COLNAME);
+                            String currentStateLabel = currentStateObj != null ? currentStateObj.toString() : null;
+                            if (currentStateLabel != null)
+                            {
+                                QCState state = qcStateLabels.get(currentStateLabel);
+                                assert state != null : "QC State " + currentStateLabel + " was expected but not found.";
+                                dataMap.put(qcStatePropertyURI, state.getRowId());
+                            }
+                            else if (defaultQCState != null)
+                                dataMap.put(qcStatePropertyURI, defaultQCState.getRowId());
+                        }
+                    }
+                }
                 //
                 // Use OntologyManager for bulk insert
                 //

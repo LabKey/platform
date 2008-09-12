@@ -80,7 +80,7 @@
                     <input type="text" name="descriptions" size="50"
                            value="<%= state.getDescription() != null ? h(state.getDescription()) : "" %>">
                 </td>
-                <td align="center"><input name="publicData" value="<%= state.getRowId() %>" type="checkbox" <%= state.isPublicData() ? "CHECKED" : "" %>/></td>
+                <td align="center"><input name="publicData" value="<%= state.getRowId() %>" id="<%= h(state.getLabel()) %>_public" type="checkbox" <%= state.isPublicData() ? "CHECKED" : "" %>/></td>
                 <td>
                     <%=  StudyManager.getInstance().isQCStateInUse(state) ? "[in use]" + helpPopup("QC state in use", "This QC state cannot be deleted because it is currently a default state (see below) or is referenced by at least one dataset row.") :
                             textLink("Delete", baseDeleteStateURL.clone().addParameter("id", state.getRowId()).getLocalURIString(),

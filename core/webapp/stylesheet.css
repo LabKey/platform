@@ -273,15 +273,22 @@ span.labkey-button, span.labkey-disabled-button
     *padding-bottom: 0.0em;
 }
 
-a.labkey-button span, a.labkey-disabled-button span
+a.labkey-button span
 {
-    color: #000000;
+    color: #000000; /* need to override color at the link level because links within other containers (dataregions,
+                        for example) may have colors that override the default labkey-button colors. */
+    padding-bottom: 0.3em;
+}
+
+a.labkey-disabled-button span
+{
+    color: #808080; /* need to override color at the link level because links within other containers (dataregions,
+                        for example) may have colors that override the default labkey-button colors. */
     padding-bottom: 0.3em;
 }
 
 a.labkey-menu-button span, a.labkey-disabled-menu-button span
 {
-    color: #000000;
     padding-right: 1.0em;
 }
 
@@ -296,7 +303,7 @@ span.labkey-button input, span.labkey-disabled-button input
     padding: 0;
     height: 2em;
     *height: 1.4em;
-    font-family: verdana, arial, helvetica, sans-serif;
+    font-family: inherit;
     font-size: 1em;
     cursor: pointer; /* hand-shaped cursor */
     cursor: hand; /* for IE 5.x and older browsers */

@@ -1636,6 +1636,16 @@ public class SpringSpecimenController extends BaseStudyController
             _historyView = getUtils().getRequestEventGridView(context.getRequest(), filter);
             _finalState = SampleManager.getInstance().isInFinalState(request);
         }
+        
+        public boolean isDefaultNotification(ActorNotificationRecipientSet notification)
+        {
+            Integer requirementActorId = _requirement.getActorId();
+            Integer notificationActorId = notification.getActor() != null ? notification.getActor().getRowId() : null;
+            Integer requirementSiteId = _requirement.getSiteId();
+            Integer notificationSiteId = notification.getSite() != null ? notification.getSite().getRowId() : null;
+            return nullSafeEqual(requirementActorId, notificationActorId) &&
+                    nullSafeEqual(requirementSiteId, notificationSiteId);
+        }
 
         public GridView getHistoryView()
         {

@@ -104,15 +104,15 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
         StringBuilder suffixBuilder = new StringBuilder();
         if (isViewVialCount())
             suffixBuilder.append(" (Vial Count");
-        if (isViewParticipantCount())
-        {
-            suffixBuilder.append(suffixBuilder.length() > 0 ? "/" : " (");
-            suffixBuilder.append("Participant Count");
-        }
         if (isViewVolume())
         {
             suffixBuilder.append(suffixBuilder.length() > 0 ? "/" : " (");
             suffixBuilder.append("Total Volume");
+        }
+        if (isViewParticipantCount())
+        {
+            suffixBuilder.append(suffixBuilder.length() > 0 ? "/" : " (");
+            suffixBuilder.append("Participant Count");
         }
         if (isViewPtidList())
         {

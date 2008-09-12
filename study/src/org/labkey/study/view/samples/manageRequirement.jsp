@@ -20,10 +20,6 @@
 <%@ page import="org.labkey.study.model.SampleRequestRequirement"%>
 <%@ page import="org.labkey.study.model.Site"%>
 <%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController"%>
-<%@ page import="java.util.Set"%>
-<%@ page import="java.util.HashSet"%>
-<%@ page import="org.labkey.study.model.SampleRequestActor"%>
-<%@ page import="org.labkey.common.util.Pair"%>
 <%@ page import="java.util.List"%>
 <%@ page import="org.labkey.study.samples.notifications.ActorNotificationRecipientSet" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
@@ -145,7 +141,8 @@
                             %>
                             <input type="checkbox"
                                    name="notificationIdPairs"
-                                   value="<%= possibleNotification.getFormValue() %>" <%= hasEmailAddresses ? "" : "DISABLED" %>>
+                                   value="<%= possibleNotification.getFormValue() %>" <%= hasEmailAddresses ? "" : "DISABLED" %>
+                                   <%= hasEmailAddresses && bean.isDefaultNotification(possibleNotification) ? "CHECKED" : "" %>>
                             <%= h(possibleNotification.getShortRecipientDescription())%><%= hasEmailAddresses ?
                                 helpPopup("Group Members", possibleNotification.getEmailAddresses("<br>") + "<br>" +
                                         possibleNotification.getConfigureEmailsLinkHTML(), true) :
