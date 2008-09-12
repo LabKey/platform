@@ -76,7 +76,7 @@ public class PublishRunDataQueryView extends RunDataQueryView
         setViewItemFilter(ReportService.EMPTY_ITEM_LIST);
     }
 
-    protected DataView createDataView()
+    public DataView createDataView()
     {
         DataView view = super.createDataView();
         view.getDataRegion().addHiddenFormField("targetStudy", _targetStudyContainer.getId());

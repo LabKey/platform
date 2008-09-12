@@ -17,6 +17,7 @@ package org.labkey.api.reports.report.view;
 
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.query.QuerySettings;
 
 import java.util.Map;/*
@@ -34,5 +35,28 @@ public class DefaultReportUIProvider implements ReportService.UIProvider
     public String getReportIcon(ViewContext context, String reportType)
     {
         return null;
+    }
+
+    protected ActionURL addForwardParams(ActionURL url, ViewContext context, String[] params)
+    {
+        for(String name : params)
+        {
+            String value = context.getActionURL().getParameter(name);
+            if(null != value)
+                url.replaceParameter(name, value);
+        }
+        return url;
+    }
+
+    protected void addDesignerURL(ViewContext context, QuerySettings settings, Map<String, String> designers, String type, String[] params)
+    {
+        RReportBean bean = new RReportBean(settings);
+        bean.setReportType(type);
+        bean.setRedirectUrl(context.getActionURL().toString());
+
+        ActionURL designerURL = ReportUtil.getRReportDesignerURL(context, bean);
+        designerURL = addForwardParams(designerURL, context, params);
+
+        designers.put(type, designerURL.getLocalURIString());
     }
 }

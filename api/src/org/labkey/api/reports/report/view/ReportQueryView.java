@@ -28,7 +28,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.study.StudyService;
 
-import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.util.Map;
 import java.util.Collections;

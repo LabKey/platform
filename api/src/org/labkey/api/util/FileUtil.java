@@ -130,10 +130,16 @@ public class FileUtil
      *
      * @param home base path, should be a directory, not a file, or it doesn't make sense
      * @param file    file to generate path for
+     * @param canonicalize whether or not the paths need to be canonicalized
      * @return path from home to file as a string
      */
-    public static String relativize(File home, File file) throws IOException
+    public static String relativize(File home, File file, boolean canonicalize) throws IOException
     {
+        if (canonicalize)
+        {
+            home = home.getCanonicalFile();
+            file = file.getCanonicalFile();
+        }
         return matchPathLists(getPathList(home), getPathList(file));
     }
 
@@ -147,9 +153,9 @@ public class FileUtil
      * It is equivalent to:<br>
      * <pre>home.toURI().relativize(f.toURI).toString()</pre>
      */
-    public static String relativizeUnix(File home, File f) throws IOException
+    public static String relativizeUnix(File home, File f, boolean canonicalize) throws IOException
     {
-        return relativize(home, f).replace('\\', '/');
+        return relativize(home, f, canonicalize).replace('\\', '/');
     }
 
 
@@ -161,14 +167,13 @@ public class FileUtil
      * @param file input file
      * @return a List collection with the individual elements of the path in reverse order
      */
-    public static List<String> getPathList(File file) throws IOException
+    private static List<String> getPathList(File file) throws IOException
     {
         List<String> parts = new ArrayList<String>();
-        File fileAll = file.getCanonicalFile();
-        while (fileAll != null)
+        while (file != null)
         {
-            parts.add(fileAll.getName());
-            fileAll = fileAll.getParentFile();
+            parts.add(file.getName());
+            file = file.getParentFile();
         }
 
         return parts;

@@ -13,22 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.pipeline.cmd;
-
-import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.WorkDirectory;
-import org.labkey.api.pipeline.WorkDirectoryTask;
-
-import java.io.IOException;
+package org.labkey.api.pipeline;
 
 /**
- * <code>CommandTask</code>
+ * User: jeckels
+ * Date: Sep 11, 2008
  */
-public interface CommandTask
+public abstract class WorkDirectoryTask<FactoryType extends TaskFactory> extends PipelineJob.Task<FactoryType>
 {
-    PipelineJob getJob();
+    protected WorkDirectory _wd;
 
-    String getProcessPath(WorkDirectory.Function f, String key) throws IOException;
+    public WorkDirectoryTask(FactoryType factory, PipelineJob job)
+    {
+        super(factory, job);
+    }
 
-    String getProcessExt(WorkDirectory.Function f, String key);
+    public void setWorkDirectory(WorkDirectory wd)
+    {
+        _wd = wd;
+    }
 }

@@ -46,7 +46,7 @@ public class RunListDetailsQueryView extends RunListQueryView
         _dataIdColumn = dataIdColumn;
     }
 
-    protected DataView createDataView()
+    public DataView createDataView()
     {
         DataView view = super.createDataView();
         DataRegion rgn = view.getDataRegion();

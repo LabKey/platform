@@ -73,6 +73,7 @@ public class GroupedResultSet extends Table.ResultSetImpl
             }
             rs.beforeFirst();
         }
+        setComplete(_lastRow == 0);
     }
 
     public GroupedResultSet(ResultSet rs, String columnName, boolean scrollableRS)

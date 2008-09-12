@@ -301,6 +301,7 @@ api/src/org/labkey/api/pipeline/TaskPipelineRegistry.java -text
 api/src/org/labkey/api/pipeline/TaskPipelineSettings.java -text
 api/src/org/labkey/api/pipeline/WorkDirFactory.java -text
 api/src/org/labkey/api/pipeline/WorkDirectory.java -text
+api/src/org/labkey/api/pipeline/WorkDirectoryTask.java -text
 api/src/org/labkey/api/pipeline/browse/BrowseFile.java -text
 api/src/org/labkey/api/pipeline/browse/BrowseForm.java -text
 api/src/org/labkey/api/pipeline/browse/BrowseView.java -text
@@ -353,7 +354,6 @@ api/src/org/labkey/api/pipeline/file/AbstractFileAnalysisProvider.java -text
 api/src/org/labkey/api/pipeline/file/FileAnalysisJobSupport.java -text
 api/src/org/labkey/api/pipeline/file/FileAnalysisTaskPipeline.java -text
 api/src/org/labkey/api/pipeline/file/FileAnalysisTaskPipelineSettings.java -text
-api/src/org/labkey/api/pipeline/file/FileAnalysisXarGeneratorSupport.java -text
 api/src/org/labkey/api/pipeline/file/PathMapper.java -text
 api/src/org/labkey/api/portal/ProjectUrls.java -text
 api/src/org/labkey/api/query/AbstractMethodInfo.java -text
@@ -429,6 +429,7 @@ api/src/org/labkey/api/reports/report/AbstractScriptRunner.java -text
 api/src/org/labkey/api/reports/report/ChartQueryReport.java -text
 api/src/org/labkey/api/reports/report/ChartReport.java -text
 api/src/org/labkey/api/reports/report/ChartReportDescriptor.java -text
+api/src/org/labkey/api/reports/report/CustomRReport.java -text
 api/src/org/labkey/api/reports/report/DefaultScriptRunner.java -text
 api/src/org/labkey/api/reports/report/QueryReport.java -text
 api/src/org/labkey/api/reports/report/QueryReportDescriptor.java -text

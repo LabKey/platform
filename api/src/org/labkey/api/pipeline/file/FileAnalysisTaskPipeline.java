@@ -89,12 +89,4 @@ public interface FileAnalysisTaskPipeline extends TaskPipeline<FileAnalysisTaskP
      * @return an instance of an output file that may be used in a task
      */
     File findOutputFile(FileAnalysisJobSupport support, String name);
-
-    /**
-     * Returns support for generating a XAR file to describe this task
-     * pipeline.
-     *
-     * @return a support interface for generating XAR files
-     */
-    FileAnalysisXarGeneratorSupport getXarGeneratorSupport();
 }

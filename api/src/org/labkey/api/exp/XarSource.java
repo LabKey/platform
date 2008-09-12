@@ -44,7 +44,7 @@ public abstract class XarSource implements Serializable
     private final Map<String, Map<String, ExpMaterial>> _materials = new HashMap<String, Map<String, ExpMaterial>>();
     private final Map<String, Map<String, ExpData>> _data = new HashMap<String, Map<String, ExpData>>();
 
-    private final Map<String, String> _dataFileURLs = new HashMap<String, String>();
+    protected final Map<String, String> _dataFileURLs = new HashMap<String, String>();
 
     private final XarContext _xarContext;
 
@@ -63,6 +63,12 @@ public abstract class XarSource implements Serializable
      */
     public abstract boolean shouldIgnoreDataFiles();
 
+    /**
+     * Transforms the dataFileURL, which may be relative, to a canonical, absolute URI
+     * @param dataFileURL
+     * @return
+     * @throws XarFormatException
+     */
     public final String getCanonicalDataFileURL(String dataFileURL) throws XarFormatException
     {
         String result = _dataFileURLs.get(dataFileURL);

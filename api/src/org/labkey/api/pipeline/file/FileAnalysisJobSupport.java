@@ -15,8 +15,6 @@
  */
 package org.labkey.api.pipeline.file;
 
-import org.labkey.api.exp.pipeline.XarTemplateSubstitutionId;
-import org.labkey.api.exp.pipeline.XarImportTaskId;
 import org.labkey.api.pipeline.ParamParser;
 
 import java.io.File;
@@ -28,7 +26,6 @@ import java.util.Map;
  * @author brendanx
  */
 public interface FileAnalysisJobSupport
-        extends XarTemplateSubstitutionId.JobSupport
 {
     /**
      * @return the directory of the pipeline-root running this job.

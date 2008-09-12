@@ -26,10 +26,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.*;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.QueryParam;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.*;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
@@ -352,7 +349,7 @@ public class RReport extends AbstractReport implements AttachmentParent, Report.
         return new RunRReportView(this);
     }
 
-    protected ReportQueryView createQueryView(ViewContext context, ReportDescriptor descriptor) throws Exception
+    protected QueryView createQueryView(ViewContext context, ReportDescriptor descriptor) throws Exception
     {
         final String schemaName = descriptor.getProperty(QueryParam.schemaName.toString());
         final String queryName = descriptor.getProperty(QueryParam.queryName.toString());
@@ -529,7 +526,7 @@ public class RReport extends AbstractReport implements AttachmentParent, Report.
     public ResultSet generateResultSet(ViewContext context) throws Exception
     {
         ReportDescriptor descriptor = getDescriptor();
-        ReportQueryView view = createQueryView(context, descriptor);
+        QueryView view = createQueryView(context, descriptor);
         if (view != null)
         {
             DataView dataView = view.createDataView();

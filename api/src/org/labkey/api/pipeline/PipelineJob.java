@@ -42,6 +42,7 @@ import org.labkey.api.util.*;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 
 import java.io.*;
 import java.net.URI;
@@ -612,7 +613,26 @@ abstract public class PipelineJob extends Job implements Serializable
                     return; // Bad task key.
 
                 setActiveTaskStatus(TaskStatus.running);
-                List<RecordedAction> actions = task.run();
+                WorkDirectory workDirectory = null;
+                List<RecordedAction> actions;
+
+                try
+                {
+                    if (task instanceof WorkDirectoryTask)
+                    {
+                        workDirectory = factory.createWorkDirectory(getJobGUID(), getJobSupport(FileAnalysisJobSupport.class), getLogger());
+                        ((WorkDirectoryTask)task).setWorkDirectory(workDirectory);
+                    }
+                    actions = task.run();
+                }
+                finally
+                {
+                    if (workDirectory != null)
+                    {
+                        workDirectory.remove();
+                        ((WorkDirectoryTask)task).setWorkDirectory(null);
+                    }
+                }
                 _actionSet.add(actions);
 
                 _started = true;

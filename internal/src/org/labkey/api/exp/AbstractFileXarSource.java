@@ -80,6 +80,11 @@ public abstract class AbstractFileXarSource extends XarSource
         if (!dataFile.isAbsolute())
         {
             dataFile = new File(xarDirectory, dataFileURL);
+            String result = _dataFileURLs.get(dataFile.getAbsolutePath());
+            if (result != null)
+            {
+                return result;
+            }
         }
         try
         {

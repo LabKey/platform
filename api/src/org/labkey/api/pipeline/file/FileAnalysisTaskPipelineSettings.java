@@ -74,11 +74,6 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
      */
     private Map<String, List<String>> _fileExtHierarchy;
 
-    /**
-     * Support for generating XAR files for the <code>FileAnalysisTaskPipeline</code>
-     */
-    private FileAnalysisXarGeneratorSupport _xarGeneratorSupport;
-
     public FileAnalysisTaskPipelineSettings(String name)
     {
         super(FileAnalysisTaskPipeline.class, name);
@@ -143,15 +138,5 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
     public void setFileExtHierarchy(Map<String, List<String>> fileExtHierarchy)
     {
         _fileExtHierarchy = fileExtHierarchy;
-    }
-
-    public FileAnalysisXarGeneratorSupport getXarGeneratorSupport()
-    {
-        return _xarGeneratorSupport;
-    }
-
-    public void setXarGeneratorSupport(FileAnalysisXarGeneratorSupport support)
-    {
-        _xarGeneratorSupport = support;
     }
 }

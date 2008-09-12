@@ -912,7 +912,7 @@ public class QueryView extends WebPartView<Object>
         _buttonBarPosition = buttonBarPosition;
     }
 
-    protected DataView createDataView()
+    public DataView createDataView()
     {
         DataRegion rgn = createDataRegion();
         GridView ret = new GridView(rgn)

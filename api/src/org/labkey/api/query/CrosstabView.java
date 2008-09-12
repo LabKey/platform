@@ -138,7 +138,7 @@ public class CrosstabView extends QueryView
         return displayColumns;
     }
 
-    protected DataView createDataView()
+    public DataView createDataView()
     {
         DataView view = super.createDataView();
 

@@ -321,7 +321,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
 
     public String getXarPath(File f) throws IOException
     {
-        return FileUtil.relativizeUnix(getAnalysisDirectory(), f);
+        return FileUtil.relativizeUnix(getAnalysisDirectory(), f, true);
     }
 
     public String getExperimentRunUniquifier() throws IOException
@@ -329,7 +329,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         File fileUniquifier = getAnalysisDirectory();
         if (getInputFiles().length == 1)
             fileUniquifier = new File(fileUniquifier, getBaseName());
-        String uniquifier = FileUtil.relativizeUnix(getRootDir(), fileUniquifier);
+        String uniquifier = FileUtil.relativizeUnix(getRootDir(), fileUniquifier, true);
         return PageFlowUtil.encode(uniquifier).replaceAll("/", "%2F");
     }
 
