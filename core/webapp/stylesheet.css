@@ -44,14 +44,14 @@ body, div, td, table, img, form
     font-weight: normal;
 }
 
-a, a:visited
+a, a:visited, .labkey-link, .labkey-link:visited
 {
     color: #003399;
     cursor: pointer;
     text-decoration: none;
 }
 
-a:hover, a:visited:hover
+a:hover, a:visited:hover, .labkey-link, .labkey-link:hover
 {
 }
 
@@ -180,17 +180,6 @@ table.labkey-no-spacing
     border-spacing: 0px;
     *border-collapse: collapse;
     *border-spacing: expression(cellSpacing=0);    
-}
-
-/* Used for links where you want an underline when hovering */
-a.labkey-link, a.labkey-link:visited
-{
-}
-
-a.labkey-link:hover, a.labkey-link:visited:hover
-{
-    color: #ff3300;
-    text-decoration: underline;
 }
 
 /* Used for the error messages across the site */

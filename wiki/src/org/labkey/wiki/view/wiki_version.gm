@@ -65,8 +65,8 @@ else
                <i>date:</i> <%=created%><br>
            </td>
            <td align=right>
-               [<a class="labkey-link" href="<%=filter(pageLink)%>">page</a>]&nbsp;
-               [<a class="labkey-link" href="<%=filter(versionsLink)%>">history</a>]&nbsp;<%
+               [<a href="<%=filter(pageLink)%>">page</a>]&nbsp;
+               [<a href="<%=filter(versionsLink)%>">history</a>]&nbsp;<%
 
         out.print("&nbsp;[versions:");
 
@@ -80,7 +80,7 @@ else
             }
             else
             {%>
-                <a class="labkey-link" href="<%=versionLink + "&version=" + n%>"><%=n%></a><%
+                <a href="<%=versionLink + "&version=" + n%>"><%=n%></a><%
             }
         }
         out.print("]");

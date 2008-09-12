@@ -438,7 +438,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                 sb.append("<tr><td>");
                 if (!canEdit)
                 {
-                    sb.append("<a class=\"labkey-link\" href=\"");
+                    sb.append("<a href=\"");
                     sb.append(PageFlowUtil.filter(a.getDownloadUrl("issues")));
                     sb.append("\"><img src=\"");
                     sb.append(context.getRequest().getContextPath());

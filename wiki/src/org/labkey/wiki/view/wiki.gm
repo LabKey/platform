@@ -61,24 +61,24 @@ if (hasContent && includeLinks)
 
     if (updateContentLink)
     {
-        %>[<a class="labkey-link" href="<%=filter(updateContentLink)%>">edit</a>]<%
+        %>[<a href="<%=filter(updateContentLink)%>">edit</a>]<%
     }
 
     //user must have update perms
     if (manageLink)
     {
-        %>&nbsp;[<a class="labkey-link" href="<%=filter(manageLink)%>">manage</a>]<%
+        %>&nbsp;[<a href="<%=filter(manageLink)%>">manage</a>]<%
     }
 
     //user must have update perms
     if (versionsLink)
     {
-        %>&nbsp;[<a class="labkey-link" href="<%=filter(versionsLink)%>">history</a>]<%
+        %>&nbsp;[<a href="<%=filter(versionsLink)%>">history</a>]<%
     }
 
     if (printLink)
     {
-        %>&nbsp;[<a class="labkey-link" target="_blank" href="<%= filter(printLink) %>">print</a>]<%
+        %>&nbsp;[<a target="_blank" href="<%= filter(printLink) %>">print</a>]<%
     }
     %>
     </td></tr></table><%
@@ -98,7 +98,7 @@ if (!hasContent)
             The Wiki web part displays a single wiki page.
             This folder does not currently contain any wiki pages to display. You can:<br>
             <ul>
-                <li><a class="labkey-link" href="<%=filter(insertLink)%>">Create a new wiki page</a> to display in this web part.</li>
+                <li><a href="<%=filter(insertLink)%>">Create a new wiki page</a> to display in this web part.</li>
             </ul>
         <%}
         else if (wikiPageCount > 0 && hasAdminPermission && !isEmbedded)
@@ -106,8 +106,8 @@ if (!hasContent)
             The Wiki web part displays a single wiki page.
             Currently there is no page selected to display. You can:<br>
             <ul>
-                <li><a class="labkey-link" href="<%=filter(customizeLink)%>">Choose an existing page to display</a> from this project or a different project.</li>
-                <li><a class="labkey-link" href="<%=filter(insertLink)%>">Create a new wiki page</a> to display in this web part.</li>
+                <li><a href="<%=filter(customizeLink)%>">Choose an existing page to display</a> from this project or a different project.</li>
+                <li><a href="<%=filter(insertLink)%>">Create a new wiki page</a> to display in this web part.</li>
             </ul><%
         }
         else
@@ -133,7 +133,7 @@ if (!hasContent)
 
             if (insertLink)
             {%>
-                [<a class="labkey-link" href="<%=filter(insertLink)%>">add content</a>]
+                [<a href="<%=filter(insertLink)%>">add content</a>]
             <%}
         }
     }
@@ -149,7 +149,7 @@ else
 
     for (a in wiki.attachments)
     {
-        %><a class="labkey-link" href="<%=filter(a.getDownloadUrl("Wiki"))%>"><img src="<%=request.getContextPath()%><%=filter(a.getFileIcon())%>">&nbsp;<%=filter(a.name)%></a><br><%
+        %><a href="<%=filter(a.getDownloadUrl("Wiki"))%>"><img src="<%=request.getContextPath()%><%=filter(a.getFileIcon())%>">&nbsp;<%=filter(a.name)%></a><br><%
     }
 }
 %></td></tr></table>
