@@ -23,6 +23,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.common.util.Pair;
 
 /**
  * User: migra
@@ -89,12 +90,16 @@ public abstract class AbstractReport implements Report
     public ActionURL getDownloadDataURL(ViewContext context)
     {
         ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlDownloadData(context.getContainer());
-        
-        url.addParameter(ReportDescriptor.Prop.reportType.toString(), getDescriptor().getReportType());
-        url.addParameter(ReportDescriptor.Prop.schemaName, getDescriptor().getProperty(ReportDescriptor.Prop.schemaName));
-        url.addParameter(ReportDescriptor.Prop.queryName, getDescriptor().getProperty(ReportDescriptor.Prop.queryName));
-        url.addParameter(ReportDescriptor.Prop.viewName, getDescriptor().getProperty(ReportDescriptor.Prop.viewName));
-        url.addParameter(ReportDescriptor.Prop.dataRegionName, getDescriptor().getProperty(ReportDescriptor.Prop.dataRegionName));
+
+        for (Pair<String, String> param : context.getActionURL().getParameters())
+        {
+            url.replaceParameter(param.getKey(), param.getValue());
+        }
+        url.replaceParameter(ReportDescriptor.Prop.reportType.toString(), getDescriptor().getReportType());
+        url.replaceParameter(ReportDescriptor.Prop.schemaName, getDescriptor().getProperty(ReportDescriptor.Prop.schemaName));
+        url.replaceParameter(ReportDescriptor.Prop.queryName, getDescriptor().getProperty(ReportDescriptor.Prop.queryName));
+        url.replaceParameter(ReportDescriptor.Prop.viewName, getDescriptor().getProperty(ReportDescriptor.Prop.viewName));
+        url.replaceParameter(ReportDescriptor.Prop.dataRegionName, getDescriptor().getProperty(ReportDescriptor.Prop.dataRegionName));
 
         return url;
     }

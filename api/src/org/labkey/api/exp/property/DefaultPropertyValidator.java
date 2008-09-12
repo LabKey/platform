@@ -43,6 +43,6 @@ public abstract class DefaultPropertyValidator implements ValidatorKind
             sb.append("Additional information : ");
             sb.append(validator.getErrorMessage());
         }
-        errors.add(new SimpleValidationError(PageFlowUtil.filter(sb.toString())));
+        errors.add(new SimpleValidationError(sb.toString()));
     }
 }

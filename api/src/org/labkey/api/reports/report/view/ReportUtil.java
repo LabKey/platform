@@ -64,26 +64,28 @@ public class ReportUtil
     public static ActionURL getRReportDesignerURL(ViewContext context, RReportBean bean)
     {
         ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlCreateRReport(context.getContainer());
+        url.addParameters(context.getActionURL().getParameters());
+
         return _getChartDesignerURL(url, bean);
     }
 
     protected static ActionURL _getChartDesignerURL(ActionURL url, ReportDesignBean bean)
     {
-        url.addParameter("reportType", bean.getReportType());
+        url.replaceParameter("reportType", bean.getReportType());
         if (bean.getSchemaName() != null)
-            url.addParameter("schemaName", bean.getSchemaName());
+            url.replaceParameter("schemaName", bean.getSchemaName());
         if (bean.getQueryName() != null)
-            url.addParameter("queryName", bean.getQueryName());
+            url.replaceParameter("queryName", bean.getQueryName());
         if (bean.getViewName() != null)
-            url.addParameter("viewName", bean.getViewName());
+            url.replaceParameter("viewName", bean.getViewName());
         if (bean.getFilterParam() != null)
-            url.addParameter(ReportDescriptor.Prop.filterParam.toString(), bean.getFilterParam());
+            url.replaceParameter(ReportDescriptor.Prop.filterParam.toString(), bean.getFilterParam());
         if (bean.getRedirectUrl() != null)
-            url.addParameter("redirectUrl", bean.getRedirectUrl());
+            url.replaceParameter("redirectUrl", bean.getRedirectUrl());
         if (bean.getDataRegionName() != null)
-            url.addParameter(QueryParam.dataRegionName.toString(), bean.getDataRegionName());
+            url.replaceParameter(QueryParam.dataRegionName.toString(), bean.getDataRegionName());
         if (bean.getReportId() != -1)
-            url.addParameter(ReportDescriptor.Prop.reportId, String.valueOf(bean.getReportId()));
+            url.replaceParameter(ReportDescriptor.Prop.reportId, String.valueOf(bean.getReportId()));
 
         return url;
     }
@@ -238,9 +240,10 @@ public class ReportUtil
                 }
 
                 // look for any reports in the shared project
-                for (Report report : ReportService.get().getReports(context.getUser(), ContainerManager.getSharedContainer(), reportKey))
+                if (!ContainerManager.getSharedContainer().equals(context.getContainer()))
                 {
-                    reports.add(report);
+                    for (Report report : ReportService.get().getReports(context.getUser(), ContainerManager.getSharedContainer(), reportKey))
+                        reports.add(report);
                 }
             }
             return reports;
