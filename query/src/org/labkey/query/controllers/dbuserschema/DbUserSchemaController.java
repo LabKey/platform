@@ -207,7 +207,7 @@ public class DbUserSchemaController extends SpringActionController
         }
         catch (SQLException x)
         {
-            if (!QueryControllerSpring.isConstraintException(x))
+            if (!SqlDialect.isConstraintException(x))
                 throw x;
             errors.reject(ERROR_MSG, QueryControllerSpring.getMessage(table.getSchema().getSqlDialect() , x));
         }        

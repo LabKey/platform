@@ -1079,7 +1079,7 @@ public class QueryControllerSpring extends SpringActionController
             }
             catch (SQLException x)
             {
-                if (!isConstraintException(x))
+                if (!SqlDialect.isConstraintException(x))
                     throw x;
                 errors.reject(ERROR_MSG, getMessage(quf.getTable().getSchema().getSqlDialect(), x));
                 return false;
@@ -2220,14 +2220,6 @@ public class QueryControllerSpring extends SpringActionController
         {
             super("count", count);
         }
-    }
-
-    public static boolean isConstraintException(SQLException x)
-    {
-        String sqlState = x.getSQLState();
-        if (!sqlState.startsWith("23"))
-            return false;
-        return sqlState.equals("23000") || sqlState.equals("23505") || sqlState.equals("23503");
     }
 
     public static String getMessage(SqlDialect d, SQLException x)

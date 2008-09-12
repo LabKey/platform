@@ -16,18 +16,19 @@
 
 package org.labkey.experiment.controllers.list;
 
-import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.data.SqlDialect;
 import org.labkey.api.exp.ObjectProperty;
-import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
-import org.labkey.experiment.list.ListItemImpl;
 import org.labkey.common.tools.TabLoader;
+import org.labkey.experiment.list.ListItemImpl;
 
-import java.util.Map;
 import java.sql.SQLException;
+import java.util.Map;
 
 public class ListImportHelper implements OntologyManager.ImportHelper
 {
@@ -44,6 +45,22 @@ public class ListImportHelper implements OntologyManager.ImportHelper
     }
     
     public String beforeImportObject(Map map) throws SQLException
+    {
+        try
+        {
+            return beforeImportObjectInternal(map);
+        }
+        catch (SQLException e)
+        {
+            // Constraint violation means somebody else inserted this same key between our check and insert, so try again
+            if (SqlDialect.isConstraintException(e))
+                return beforeImportObjectInternal(map);
+            else
+                throw e;
+        }
+    }
+
+    public String beforeImportObjectInternal(Map map) throws SQLException
     {
         try
         {
