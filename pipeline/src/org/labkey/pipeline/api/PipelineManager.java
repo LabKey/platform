@@ -248,12 +248,21 @@ public class PipelineManager
         else
         {
             String interval = PipelineEmailPreferences.get().getFailureNotificationInterval(c);
-            if (!"0".equals(interval) && interval != null) return;
+            if (!"0".equals(interval) && interval != null)
+            {
+                _log.info("Deciding not to send error notification email based on interval " + interval);
+                return;
+            }
 
+            _log.info("Creating error notification email");
             message = createPipelineMessage(c, statusFile,
                     (PipelineEmailTemplate)EmailTemplateService.get().getEmailTemplate(PipelineJobFailed.class.getName()),
                     PipelineEmailPreferences.get().getNotifyOwnerOnError(c),
                     PipelineEmailPreferences.get().getNotifyUsersOnError(c));
+            if (message == null)
+            {
+                _log.info("Did not create a message for error notification email");
+            }
         }
 
         try

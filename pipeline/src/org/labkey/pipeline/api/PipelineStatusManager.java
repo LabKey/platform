@@ -21,6 +21,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.util.CaseInsensitiveHashSet;
+import org.apache.log4j.Logger;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -36,6 +37,7 @@ import java.io.IOException;
 public class PipelineStatusManager
 {
     private static PipelineSchema pipeline = PipelineSchema.getInstance();
+    private static Logger _log = Logger.getLogger(PipelineStatusManager.class);
 
     public static TableInfo getTableInfo()
     {
@@ -135,6 +137,7 @@ public class PipelineStatusManager
         if (notifyOnError && PipelineJob.ERROR_STATUS.equals(sfSet.getStatus()) &&
                 (sfExist == null || !PipelineJob.ERROR_STATUS.equals(sfExist.getStatus())))
         {
+            _log.info("Error status has changed - considering an email notification");
             PipelineManager.sendNotificationEmail(sfSet, info.getContainer());
         }
     }
