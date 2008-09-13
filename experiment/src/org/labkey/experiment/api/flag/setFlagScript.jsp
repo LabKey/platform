@@ -28,7 +28,7 @@
     var defaultComment = "Flagged for review";
     function setFlag(flagId)
     {
-        var urlSet = <%=q(urlSet.toString())%> + '&lsid=' + flagId;
+        var urlSet = <%=q(urlSet.toString())%> + '&lsid=' + escape(flagId);
         var images = [];
         var allImages = document.images;
         var allImageCount = allImages.length;
