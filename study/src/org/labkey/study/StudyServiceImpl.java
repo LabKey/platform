@@ -321,6 +321,10 @@ public class StudyServiceImpl implements StudyService.Service
                 // Since we're creating a TSV, we can't use tabs.
                 // Replace them with 4 spaces.
                 valueObj = valueObj.toString().replaceAll("\t", "    ");
+
+                // We also can't use newlines
+                valueObj = valueObj.toString().replaceAll("\n", "  ");
+                valueObj = valueObj.toString().replaceAll("\r", " ");
             }
             else
             {

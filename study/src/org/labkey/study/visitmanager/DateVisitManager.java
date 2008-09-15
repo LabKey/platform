@@ -265,4 +265,21 @@ public class DateVisitManager extends VisitManager
             }
         }
     }
+
+    // Return sql for fetching all datasets and their visit sequence numbers, given a container
+    protected String getDatasetSequenceNumsSQL()
+    {
+        String sql = "SELECT sd.datasetid, v.sequencenummin FROM study.StudyData sd \n" +
+            "JOIN study.ParticipantVisit pv ON  \n" +
+            "     sd.SequenceNum = pv.SequenceNum AND \n" +
+            "     sd.ParticipantId = pv.ParticipantId AND \n" +
+            "     sd.Container = pv.Container \n" +
+            "JOIN study.Visit v ON \n" +
+            "     pv.VisitRowId = v.RowId AND \n" +
+            "     pv.Container = v.Container \n" +
+            "WHERE sd.Container = ?\n" +
+            "group by sd.datasetid, v.sequencenummin";
+
+        return sql;
+    }
 }

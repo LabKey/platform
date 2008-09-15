@@ -65,9 +65,12 @@ public abstract class VisitManager
     protected abstract void updateVisitTable(User user);
     public abstract Map<VisitMapKey, Integer> getVisitSummary(Cohort cohort, QCStateSet qcStates) throws SQLException;
 
+    // Return sql for fetching all datasets and their visit sequence numbers, given a container
+    protected abstract String getDatasetSequenceNumsSQL();
+
     public Map<Integer, List<Double>> getDatasetSequenceNums()
     {
-        String sql = "SELECT x.datasetid as datasetid, CAST(x.SequenceNum AS FLOAT) AS sequencenum FROM (SELECT DISTINCT SequenceNum,DatasetId FROM " + StudySchema.getInstance().getTableInfoStudyData() + " where container=? ) x ORDER BY datasetid,sequencenum";
+        String sql = getDatasetSequenceNumsSQL();
         ResultSet rs = null;
         Map<Integer, List<Double>> ret = new HashMap<Integer, List<Double>>();
         try

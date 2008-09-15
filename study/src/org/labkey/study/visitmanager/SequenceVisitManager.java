@@ -300,5 +300,13 @@ public class SequenceVisitManager extends VisitManager
         }
     }
 
+    // Return sql for fetching all datasets and their visit sequence numbers, given a container
+    protected String getDatasetSequenceNumsSQL()
+    {
+        String sql = "SELECT x.datasetid as datasetid, CAST(x.SequenceNum AS FLOAT) AS sequencenum FROM (SELECT DISTINCT SequenceNum,DatasetId FROM " +
+            StudySchema.getInstance().getTableInfoStudyData() +
+            " where container=? ) x ORDER BY datasetid,sequencenum";
 
+        return sql;
+    }
 }

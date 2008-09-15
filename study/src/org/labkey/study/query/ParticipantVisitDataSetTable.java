@@ -18,6 +18,7 @@ package org.labkey.study.query;
 
 import org.apache.commons.collections.map.MultiValueMap;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.util.StringExpressionFactory;
@@ -83,7 +84,7 @@ public class ParticipantVisitDataSetTable extends VirtualTable
             for (Double d : currentSequenceNumbers)
             {
                 sequenceSet.add(d);
-                Visit visit = visitManager.findVisitBySequence(d);
+                Visit visit = visitManager.findVisitBySequence(d.doubleValue());
                 if (null != visit && visitIds.add(visit.getRowId()))
                     visitList.add(visit);
             }
@@ -123,7 +124,7 @@ public class ParticipantVisitDataSetTable extends VirtualTable
                 String label = visit.getLabel();
                 if (!uniqueLabel || hasSequenceRange)
                     label += " (" + Visit.formatSequenceNum(seq) + ")";
-                ColumnInfo colSeq = createVisitDataSetColumn(name, seq);
+                ColumnInfo colSeq = createVisitDataSetColumn(name, seq, visit);
                 colSeq.setCaption(label);
 //                colSeq.setIsHidden(!hasSequenceRange);
                 addColumn(colSeq);
@@ -154,7 +155,7 @@ public class ParticipantVisitDataSetTable extends VirtualTable
     }
 
     
-    protected ColumnInfo createVisitDataSetColumn(String name, final double sequenceNum)
+    protected ColumnInfo createVisitDataSetColumn(String name, final double sequenceNum, @NotNull final Visit visit)
     {
         ColumnInfo ret;
         if (_colParticipantId == null)
@@ -185,10 +186,31 @@ public class ParticipantVisitDataSetTable extends VirtualTable
             {
                 try
                 {
-                    DataSetTable ret = new DataSetTable(_schema, _dataset);
-                    ret.hideParticipantLookups();
-                    ret.addCondition(new SQLFragment("SequenceNum=" + sequenceNum));
-                    return ret;
+                    DataSetTable dsTable = new DataSetTable(_schema, _dataset);
+                    dsTable.hideParticipantLookups();
+                    if (_study.isDateBased())
+                    {
+                        SQLFragment sequenceSelector = new SQLFragment("SequenceNum = (select pv.sequencenum\n" +
+                            "from \n" +
+                            "study.participantvisit pv\n" +
+                            "where\n" +
+                            "pv.participantid = (");
+
+                        sequenceSelector.append(dsTable.getFromTable().getAliasName() + ".participantId");
+
+                        sequenceSelector.append(")\n" +
+                            "and\n" +
+                            "pv.visitrowid = ?)");
+
+                        sequenceSelector.add(visit.getRowId());
+
+                        dsTable.addCondition(sequenceSelector);
+                    }
+                    else
+                    {
+                        dsTable.addCondition(new SQLFragment("SequenceNum=" + sequenceNum));
+                    }
+                    return dsTable;
                 }
                 catch (ServletException e)
                 {
@@ -250,6 +272,6 @@ public class ParticipantVisitDataSetTable extends VirtualTable
         ColumnInfo col = _seqColumnMap.get(seq);
         if (col != null)
             return col;
-        return createVisitDataSetColumn(name, seq);
+        return createVisitDataSetColumn(name, seq, visitMatch);
     }
 }
