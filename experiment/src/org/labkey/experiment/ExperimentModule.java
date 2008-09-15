@@ -80,7 +80,7 @@ public class ExperimentModule extends SpringModule
 
     public ExperimentModule()
     {
-        super(ExperimentService.MODULE_NAME, 8.22, "/org/labkey/experiment", true, createWebPartList());
+        super(ExperimentService.MODULE_NAME, 8.23, "/org/labkey/experiment", true, createWebPartList());
         addController("experiment", ExperimentController.class);
         addController("experiment-types", TypesController.class);
         addController("property", PropertyController.class);
@@ -286,11 +286,14 @@ public class ExperimentModule extends SpringModule
     public void afterSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)
     {
         double version = moduleContext.getInstalledVersion();
-        if (version > 0 && version < 1.32)
+        if (version > 0 && version < 8.23)
         {
-            try {
+            try
+            {
                 doVersion_132Update();
-            } catch (Exception e) {
+            } 
+            catch (Exception e)
+            {
                 String msg = "Error running afterSchemaUpdate doVersion_132Update on ExperimentModule, upgrade from version " + String.valueOf(version);
                 _log.error(msg + " \n Caused by " + e);
                 ExperimentException ex = new ExperimentException(msg, e);
@@ -344,10 +347,11 @@ public class ExperimentModule extends SpringModule
         String[] cids = Table.executeArray(tmpSchema, sql, new Object[]{}, String.class);
         String projectId;
         String newContainerId;
+        String rootId = ContainerManager.getRoot().getId();
         for (String cid : cids)
         {
             newContainerId = cid;
-            if (cid.equals(ContainerManager.getRoot().getId()) || cid.equals("00000000-0000-0000-0000-000000000000"))
+            if (cid.equals(rootId) || cid.equals("00000000-0000-0000-0000-000000000000"))
                 newContainerId = ContainerManager.getSharedContainer().getId();
             projectId = ContainerManager.getForId(newContainerId).getProject().getId();
             setDescriptorProject(tmpSchema, cid, projectId, newContainerId, descriptorTable);
@@ -396,14 +400,29 @@ public class ExperimentModule extends SpringModule
         String sql = " ALTER TABLE exp.PropertyDescriptor ALTER COLUMN Project " + keywordNotNull + " NOT NULL ;";
         Table.execute(tmpSchema, sql, new Object[]{});
 
-        sql = " ALTER TABLE exp.PropertyDescriptor ADD CONSTRAINT UQ_PropertyDescriptor UNIQUE " + indexOption + " (Project, PropertyURI);" ;
-        Table.execute(tmpSchema, sql, new Object[]{});
-
+        try
+        {
+            sql = " ALTER TABLE exp.PropertyDescriptor ADD CONSTRAINT UQ_PropertyDescriptor UNIQUE " + indexOption + " (Project, PropertyURI);" ;
+            Table.execute(tmpSchema, sql, new Object[]{});
+        }
+        catch (SQLException ex)
+        {
+            if (!"42P07".equals(ex.getSQLState()) && !"S0001".equals(ex.getSQLState()))
+                throw ex;
+        }
         sql = " ALTER TABLE exp.DomainDescriptor ALTER COLUMN Project " + keywordNotNull + " NOT NULL ;";
         Table.execute(tmpSchema, sql, new Object[]{});
 
-        sql = " ALTER TABLE exp.DomainDescriptor ADD CONSTRAINT UQ_DomainDescriptor UNIQUE " + indexOption + " (Project, DomainURI);"  ;
-        Table.execute(tmpSchema, sql, new Object[]{});
+        try
+        {
+            sql = " ALTER TABLE exp.DomainDescriptor ADD CONSTRAINT UQ_DomainDescriptor UNIQUE " + indexOption + " (Project, DomainURI);"  ;
+            Table.execute(tmpSchema, sql, new Object[]{});
+        }
+        catch (SQLException ex)
+        {
+            if (!"42P07".equals(ex.getSQLState()) && !"S0001".equals(ex.getSQLState()))
+                throw ex;
+        }
     }
 
     protected static void doInputRoleUpdate(ViewContext viewContext) throws Exception

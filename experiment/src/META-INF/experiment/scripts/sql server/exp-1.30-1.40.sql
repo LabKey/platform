@@ -68,17 +68,21 @@ GO
 ALTER TABLE exp.DomainDescriptor DROP CONSTRAINT PK_DomainDescriptor
 GO
 
-ALTER TABLE exp.PropertyDescriptor ADD Project ENTITYID NULL
+ALTER TABLE exp.PropertyDescriptor ADD Project ENTITYID NOT NULL
 GO
 ALTER TABLE exp.PropertyDescriptor
 	ADD CONSTRAINT PK_PropertyDescriptor PRIMARY KEY NONCLUSTERED (PropertyId)
 GO
+ALTER TABLE exp.PropertyDescriptor ADD CONSTRAINT UQ_PropertyDescriptor UNIQUE CLUSTERED (Project, PropertyURI)
+GO
 
 ALTER TABLE exp.DomainDescriptor
-	ADD Project ENTITYID NULL
+	ADD Project ENTITYID NOT NULL
 GO
 ALTER TABLE exp.DomainDescriptor
 	ADD CONSTRAINT PK_DomainDescriptor PRIMARY KEY NONCLUSTERED (DomainId)
+GO
+ALTER TABLE exp.DomainDescriptor ADD CONSTRAINT UQ_DomainDescriptor UNIQUE CLUSTERED (Project, DomainURI)
 GO
 
 ALTER TABLE exp.ObjectProperty ADD

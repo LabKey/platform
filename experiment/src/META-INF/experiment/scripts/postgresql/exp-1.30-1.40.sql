@@ -67,19 +67,23 @@ ALTER TABLE exp.DomainDescriptor DROP CONSTRAINT UQ_DomainDescriptor
 ALTER TABLE exp.DomainDescriptor DROP CONSTRAINT PK_DomainDescriptor
 ;
 
-ALTER TABLE exp.PropertyDescriptor ADD COLUMN Project ENTITYID NULL
+ALTER TABLE exp.PropertyDescriptor ADD COLUMN Project ENTITYID NOT NULL
 ;
 ALTER TABLE exp.PropertyDescriptor
 	ADD CONSTRAINT PK_PropertyDescriptor PRIMARY KEY (PropertyId)
 ;
+ALTER TABLE exp.PropertyDescriptor ADD CONSTRAINT UQ_PropertyDescriptor UNIQUE (Project, PropertyURI)
+;
 
 ALTER TABLE exp.DomainDescriptor
-	ADD COLUMN Project ENTITYID NULL
+	ADD COLUMN Project ENTITYID NOT NULL
 ;
 ALTER TABLE exp.DomainDescriptor
 	ADD CONSTRAINT PK_DomainDescriptor PRIMARY KEY (DomainId)
 ;
-
+ALTER TABLE exp.DomainDescriptor ADD CONSTRAINT UQ_DomainDescriptor UNIQUE (Project, DomainURI)
+;
+ 
 ALTER TABLE exp.ObjectProperty ADD
 	CONSTRAINT FK_ObjectProperty_PropertyDescriptor FOREIGN KEY (PropertyId) REFERENCES exp.PropertyDescriptor (PropertyId)
 ;
