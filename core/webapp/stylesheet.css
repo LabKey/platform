@@ -691,7 +691,7 @@ in the table tag.  They are necessary so that the borders take precedence correc
 }
 
 /* Used for the shaded alternate rows */
-.labkey-alternate-row td, .labkey-alternate-row th, tr.labkey-alternate-row
+.labkey-alternate-row td, .labkey-alternate-row th, tr.labkey-alternate-row, td.labkey-alternate-row, th.labkey-alternate-row
 {
     background: #EEEEEE;
 }
