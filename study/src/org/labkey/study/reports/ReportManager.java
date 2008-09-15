@@ -330,25 +330,32 @@ public class ReportManager implements StudyManager.UnmaterializeListener
         ACL acl = report.getDescriptor().getACL();
         if (acl == null || acl.isEmpty())
         {
-            // dataset permissions
-            String datasetId = report.getDescriptor().getProperty(DataSetDefinition.DATASETKEY);
-            String queryName = report.getDescriptor().getProperty(QueryParam.queryName.toString());
             Study study = StudyManager.getInstance().getStudy(c);
 
-            if (NumberUtils.isNumber(datasetId))
+            if (study != null && (study.getSecurityType() == SecurityType.ADVANCED_READ ||
+                    study.getSecurityType() == SecurityType.ADVANCED_WRITE))
             {
-                DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinition(study, NumberUtils.toInt(datasetId));
-                if (dsDef != null)
-                    return dsDef.canRead(user);
+                // dataset permissions
+                String datasetId = report.getDescriptor().getProperty(DataSetDefinition.DATASETKEY);
+                String queryName = report.getDescriptor().getProperty(QueryParam.queryName.toString());
+
+                if (NumberUtils.isNumber(datasetId))
+                {
+                    DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinition(study, NumberUtils.toInt(datasetId));
+                    if (dsDef != null)
+                        return dsDef.canRead(user);
+                }
+                else if (queryName != null)
+                {
+                    // try query name, which is synonymous to dataset in study-land
+                    DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinition(study, queryName);
+                    if (dsDef != null)
+                        return dsDef.canRead(user);
+                }
+                return true;
             }
-            else if (queryName != null)
-            {
-                // try query name, which is synonymous to dataset in study-land
-                DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinition(study, queryName);
-                if (dsDef != null)
-                    return dsDef.canRead(user);
-            }
-            return true;
+            else
+                return c.getAcl().hasPermission(user, ACL.PERM_READ);
         }
         else
             // explicit permissions

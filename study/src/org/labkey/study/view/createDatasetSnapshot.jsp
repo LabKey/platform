@@ -81,17 +81,13 @@
         <tr><td></td><td><select name="updateDelay" id="updateDelay" style="display:none"><labkey:options value="<%=String.valueOf(bean.getUpdateDelay())%>" map="<%=updateDelay%>"></labkey:options></select></td></tr>
 
         <tr><td><%=PageFlowUtil.generateSubmitButton(bean.isEdit() ? "Update" : "Next")%></td></tr>
-
-        <tr><td></td><td><table>
+    </table>
     <%  for (DisplayColumn col : QuerySnapshotService.get(bean.getSchemaName()).getDisplayColumns(bean)) { %>
-            <tr><td><input type="hidden" name="snapshotColumns" value="<%=getColumnName(col)%>"></td></tr>
+            <input type="hidden" name="snapshotColumns" value="<%=getColumnName(col)%>">
     <%  }
         if (context.getActionURL().getParameter(DataSetDefinition.DATASETKEY) != null) { %>
-            <tr><td><input type="hidden" name="<%=DataSetDefinition.DATASETKEY%>" value="<%=context.getActionURL().getParameter(DataSetDefinition.DATASETKEY)%>"></td></tr>
+            <input type="hidden" name="<%=DataSetDefinition.DATASETKEY%>" value="<%=context.getActionURL().getParameter(DataSetDefinition.DATASETKEY)%>">
     <%  } %>
-        </table></td></tr>
-
-    </table>
 </form>
 
 <script type="text/javascript">
