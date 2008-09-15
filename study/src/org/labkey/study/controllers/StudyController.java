@@ -1150,10 +1150,6 @@ public class StudyController extends BaseStudyController
         {
             if (target.isDateBased() && null == target.getStartDate())
                 errors.reject(ERROR_MSG, "Start date must be supplied for a date-based study.");
-
-            target.setLabel(StringUtils.trimToNull(target.getLabel()));
-            if (null == target.getLabel())
-                errors.reject(ERROR_MSG, "Please supply a label");
         }
 
         public ModelAndView getView(StudyPropertiesForm form, boolean reshow, BindException errors) throws Exception

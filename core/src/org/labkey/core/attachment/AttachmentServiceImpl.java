@@ -799,6 +799,11 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         {
         case Name:
         {
+            //We don't rename webroots for a project. They are set manually per-project
+            //If we move to a site-wide webroot option, projects below that root should be renamed
+            if (c.isProject())
+                return;
+
             String oldValue = (String) propertyChangeEvent.getOldValue();
             String newValue = (String) propertyChangeEvent.getNewValue();
 

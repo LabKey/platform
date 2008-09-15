@@ -134,5 +134,191 @@ LABKEY.Timeline = {
 
 }
 
-LABKEY.requiresClientAPI();
-LABKEY.requiresScript("similetimeline/timeline-api.js", true);
+/**
+ * The following code is adapted from the simile timeline timeline-api.js file.
+ * NOTE: The code is modified to NOT load javascript files. Turns out when done outside the
+ * head of a document this fails on IE7 and Safari. Instead of including timeline-api, the following tags should be used
+  *
+  * <script src='<%=contextPath%>/timeline.js'></script>
+  * <script src='<%=contextPath%>/similetimeline/bundle.js'></script>
+  * <script src='<%=contextPath%>/similetimeline/scripts/l10n/en/timeline.js'></script>
+  * <script src='<%=contextPath%>/similetimeline/scripts/l10n/en/labellers.js'></script>
+ * where <%=contextPath%> is replaced by the actual web-app context path on the server. 
+ */
+/*==================================================
+ *  Timeline API
+ *
+ *  This file will load all the Javascript files
+ *  necessary to make the standard timeline work.
+ *  It also detects the default locale.
+ *
+ *  DO NOT!!! Include this file in your HTML file as follows:
+ *
+ *
+ *==================================================
+ */
+
+var Timeline = new Object();
+Timeline.Platform = new Object();
+    /*
+        HACK: We need these 2 things here because we cannot simply append
+        a <script> element containing code that accesses Timeline.Platform
+        to initialize it because IE executes that <script> code first
+        before it loads timeline.js and util/platform.js.
+    */
+
+(function() {
+    var bundle = true;
+
+    // ISO-639 language codes, ISO-3166 country codes (2 characters)
+    var supportedLocales = [
+        "cs",       // Czech
+        "de",       // German
+        "en",       // English
+        "es",       // Spanish
+        "fr",       // French
+        "it",       // Italian
+        "ru",       // Russian
+        "se",       // Swedish
+        "vi",       // Vietnamese
+        "zh"        // Chinese
+    ];
+
+    try {
+        var desiredLocales = [ "en" ];
+        var defaultServerLocale = "en";
+
+        var parseURLParameters = function(parameters) {
+            var params = parameters.split("&");
+            for (var p = 0; p < params.length; p++) {
+                var pair = params[p].split("=");
+                if (pair[0] == "locales") {
+                    desiredLocales = desiredLocales.concat(pair[1].split(","));
+                } else if (pair[0] == "defaultLocale") {
+                    defaultServerLocale = pair[1];
+                } else if (pair[0] == "bundle") {
+                    bundle = pair[1] != "false";
+                }
+            }
+        };
+
+        (function() {
+            if (typeof Timeline_urlPrefix == "string") {
+                Timeline.urlPrefix = Timeline_urlPrefix;
+                if (typeof Timeline_parameters == "string") {
+                    parseURLParameters(Timeline_parameters);
+                }
+            } else {
+                var heads = document.documentElement.getElementsByTagName("head");
+                for (var h = 0; h < heads.length; h++) {
+                    var scripts = heads[h].getElementsByTagName("script");
+                    for (var s = 0; s < scripts.length; s++) {
+                        var url = scripts[s].src;
+                        var i = url.indexOf("timeline-api.js");
+                        if (i >= 0) {
+                            Timeline.urlPrefix = url.substr(0, i);
+                            var q = url.indexOf("?");
+                            if (q > 0) {
+                                parseURLParameters(url.substr(q + 1));
+                            }
+                            return;
+                        }
+                    }
+                }
+                throw new Error("Failed to derive URL prefix for Timeline API code files");
+            }
+        })();
+
+        var includeCssFiles;
+        if ("SimileAjax" in window) {
+            includeJavascriptFiles = function(urlPrefix, filenames) {
+                SimileAjax.includeJavascriptFiles(document, urlPrefix, filenames);
+            }
+            includeCssFiles = function(urlPrefix, filenames) {
+                SimileAjax.includeCssFiles(document, urlPrefix, filenames);
+            }
+        } else {
+            var getHead = function() {
+                return document.getElementsByTagName("head")[0];
+            };
+            var includeCssFile = function(url) {
+                if (document.body == null) {
+                    try {
+                        document.write("<link rel='stylesheet' href='" + url + "' type='text/css'/>");
+                        return;
+                    } catch (e) {
+                        // fall through
+                    }
+                }
+
+                var link = document.createElement("link");
+                link.setAttribute("rel", "stylesheet");
+                link.setAttribute("type", "text/css");
+                link.setAttribute("href", url);
+                getHead().appendChild(link);
+            }
+
+            includeCssFiles = function(urlPrefix, filenames) {
+                for (var i = 0; i < filenames.length; i++) {
+                    includeCssFile(urlPrefix + filenames[i]);
+                }
+            };
+        }
+
+        /*
+         *  Include non-localized files
+         */
+        if (bundle) {
+            includeCssFiles(Timeline.urlPrefix, [ "bundle.css" ]);
+        } else {
+            includeCssFiles(Timeline.urlPrefix + "styles/", cssFiles);
+        }
+
+        /*
+         *  Include localized files
+         */
+        var loadLocale = [];
+        loadLocale[defaultServerLocale] = true;
+
+        var tryExactLocale = function(locale) {
+            for (var l = 0; l < supportedLocales.length; l++) {
+                if (locale == supportedLocales[l]) {
+                    loadLocale[locale] = true;
+                    return true;
+                }
+            }
+            return false;
+        }
+        var tryLocale = function(locale) {
+            if (tryExactLocale(locale)) {
+                return locale;
+            }
+
+            var dash = locale.indexOf("-");
+            if (dash > 0 && tryExactLocale(locale.substr(0, dash))) {
+                return locale.substr(0, dash);
+            }
+
+            return null;
+        }
+
+        for (var l = 0; l < desiredLocales.length; l++) {
+            tryLocale(desiredLocales[l]);
+        }
+
+        var defaultClientLocale = defaultServerLocale;
+        var defaultClientLocales = ("language" in navigator ? navigator.language : navigator.browserLanguage).split(";");
+        for (var l = 0; l < defaultClientLocales.length; l++) {
+            var locale = tryLocale(defaultClientLocales[l]);
+            if (locale != null) {
+                defaultClientLocale = locale;
+                break;
+            }
+        }
+
+        Timeline.Platform.serverLocale = defaultServerLocale;
+        Timeline.Platform.clientLocale = defaultClientLocale;
+    } catch (e) {
+        alert(e);
+    }
+})();
