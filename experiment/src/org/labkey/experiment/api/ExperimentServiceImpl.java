@@ -371,7 +371,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ExpProtocolImpl createExpProtocol(Container container, ExpProtocol.ApplicationType type, String name)
     {
-        return createExpProtocol(container, type, name, generateLSID(container, ExpProtocol.class, name)); 
+        return createExpProtocol(container, type, name, generateLSID(container, ExpProtocol.class, name));
     }
 
     public ExpProtocolImpl createExpProtocol(Container container, ExpProtocol.ApplicationType type, String name, String lsid)
@@ -1379,7 +1379,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         {
             if (!containingTrans)
                 getExpSchema().getScope().beginTransaction();
-            
+
             for (int runId : selectedRunIds)
             {
                 // Grab these to delete after we've deleted the Data rows
@@ -2151,7 +2151,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     + " WHERE PA.RunId = ? AND PA.CpasType= '" + ExpProtocol.ApplicationType.ExperimentRun + "')"
                     + "  ORDER BY DataId;";
             datas = ExpDataImpl.fromDatas(Table.executeQuery(getExpSchema(), dataSQL, params, Data.class));
-            DataInput[] dataInputs = Table.executeQuery(getExpSchema(), dataInputSQL, params, DataInput.class); 
+            DataInput[] dataInputs = Table.executeQuery(getExpSchema(), dataInputSQL, params, DataInput.class);
             Map<Integer, ExpDataImpl> startingDataMap = new HashMap<Integer, ExpDataImpl>(datas.length);
             index = 0;
             for (ExpDataImpl dat : datas)
@@ -2424,7 +2424,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
         catch (SQLException e)
         {
-            throw new RuntimeSQLException(e); 
+            throw new RuntimeSQLException(e);
         }
     }
 

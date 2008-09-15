@@ -29,6 +29,7 @@ import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.util.DateUtil;
 import org.labkey.experiment.api.*;
 import org.labkey.experiment.xar.XarExportSelection;
@@ -420,46 +421,83 @@ public class XarExporter
         {
             PropertyDescriptor prop = domainProp.getPropertyDescriptor();
 
-            PropertyDescriptorType xProp = xDomain.addNewPropertyDescriptor();
-            if (domainProp.getDescription() != null)
-            {
-                xProp.setDescription(domainProp.getDescription());
-            }
-            xProp.setName(domainProp.getName());
-            xProp.setPropertyURI(_relativizedLSIDs.relativize(domainProp.getPropertyURI()));
-            if (prop.getConceptURI() != null)
-            {
-                xProp.setConceptURI(prop.getConceptURI());
-            }
-            if (xProp.getDescription() != null)
-            {
-                xProp.setDescription(domainProp.getDescription());
-            }
-            if (domainProp.getFormatString() != null)
-            {
-                xProp.setFormat(domainProp.getFormatString());
-            }
-            if (domainProp.getLabel() != null)
-            {
-                xProp.setLabel(domainProp.getLabel());
-            }
-            if (prop.getOntologyURI() != null)
-            {
-                xProp.setOntologyURI(prop.getOntologyURI());
-            }
-            if (prop.getRangeURI() != null)
-            {
-                xProp.setRangeURI(prop.getRangeURI());
-            }
-            if (prop.getSearchTerms() != null)
-            {
-                xProp.setSearchTerms(prop.getSearchTerms());
-            }
-            if( prop.getSemanticType() != null)
-            {
-                xProp.setSemanticType(prop.getSemanticType());
-            }
+            addPropertyDescriptor(xDomain, domainProp, prop);
         }
+    }
+
+    private void addPropertyDescriptor(DomainDescriptorType xDomain, DomainProperty domainProp, PropertyDescriptor prop)
+    {
+        PropertyDescriptorType xProp = xDomain.addNewPropertyDescriptor();
+        if (domainProp.getDescription() != null)
+        {
+            xProp.setDescription(domainProp.getDescription());
+        }
+        xProp.setName(domainProp.getName());
+        xProp.setPropertyURI(_relativizedLSIDs.relativize(domainProp.getPropertyURI()));
+        if (prop.getConceptURI() != null)
+        {
+            xProp.setConceptURI(prop.getConceptURI());
+        }
+        xProp.setRequired(domainProp.isRequired());
+        if (domainProp.getDescription() != null)
+        {
+            xProp.setDescription(domainProp.getDescription());
+        }
+        if (domainProp.getFormatString() != null)
+        {
+            xProp.setFormat(domainProp.getFormatString());
+        }
+        if (domainProp.getLabel() != null)
+        {
+            xProp.setLabel(domainProp.getLabel());
+        }
+        if (prop.getOntologyURI() != null)
+        {
+            xProp.setOntologyURI(prop.getOntologyURI());
+        }
+        if (prop.getRangeURI() != null)
+        {
+            xProp.setRangeURI(prop.getRangeURI());
+        }
+        if (prop.getSearchTerms() != null)
+        {
+            xProp.setSearchTerms(prop.getSearchTerms());
+        }
+        if( prop.getSemanticType() != null)
+        {
+            xProp.setSemanticType(prop.getSemanticType());
+        }
+
+        for (IPropertyValidator validator : domainProp.getValidators())
+        {
+            addPropertyValidator(xProp, validator);
+        }
+    }
+
+    private PropertyValidatorType addPropertyValidator(PropertyDescriptorType xProp, IPropertyValidator validator)
+    {
+        PropertyValidatorType xValidator = xProp.addNewPropertyValidator();
+        xValidator.setName(validator.getName());
+        xValidator.setTypeURI(validator.getTypeURI());
+        if (validator.getDescription() != null)
+        {
+            xValidator.setDescription(validator.getDescription());
+        }
+        if (validator.getErrorMessage() != null)
+        {
+            xValidator.setErrorMessage(validator.getErrorMessage());
+        }
+        if (validator.getExpressionValue() != null)
+        {
+            xValidator.setExpression(validator.getExpressionValue());
+        }
+        for (Map.Entry<String, String> property : validator.getProperties().entrySet())
+        {
+            PropertyValidatorPropertyType xProperty = xValidator.addNewProperty();
+            xProperty.setName(property.getKey());
+            xProperty.setValue(property.getValue());
+        }
+        return xValidator;
     }
 
     private PropertyCollectionType addOriginalURLProperty(PropertyCollectionType properties, String originalURL)
