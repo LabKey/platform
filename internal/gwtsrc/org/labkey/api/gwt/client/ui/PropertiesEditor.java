@@ -908,11 +908,13 @@ public class PropertiesEditor implements LookupListener
 
     public static boolean isLegalName(String str)
     {
+/* BUG 5518
         for (int i = 0; i < str.length(); i ++)
         {
             if (!isLegalNameChar(str.charAt(i), i == 0))
                 return false;
         }
+*/
         return true;
     }
 
