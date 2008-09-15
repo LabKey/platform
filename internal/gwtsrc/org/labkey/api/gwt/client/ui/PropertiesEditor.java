@@ -18,12 +18,14 @@ package org.labkey.api.gwt.client.ui;
 
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Element;
+import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.*;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.gwt.client.util.IPropertyWrapper;
+import org.labkey.api.gwt.client.util.StringProperty;
 
 import java.util.*;
 
@@ -375,8 +377,15 @@ public class PropertiesEditor implements LookupListener
         _table.setWidget(tableRow, col, selectionRadioButton);
         col++;
 
-
-        BoundTextBox nameTextBox = new BoundTextBox(pd, "name", "120", 200, "ff_name" + index);
+        BoundTextBox nameTextBox = new BoundTextBox(pd, "name", "120", 200, "ff_name" + index)
+        {
+            String validateValue(String text)
+            {
+                if (text == null || isLegalName(text))
+                    return null;
+                return "Name may only contain letters, numbers, and underscore (_).";
+            }
+        };
         nameTextBox.addFocusListener(focusListener);
         nameTextBox.setEnabled(!locked && !readOnly);
         _table.setWidget(tableRow, col, nameTextBox);
@@ -571,6 +580,13 @@ public class PropertiesEditor implements LookupListener
                 errors.add("All property names must be unique: " + name);
                 continue;
             }
+
+            if (!isLegalName(name))
+            {
+                errors.add("Name must only contain letters numbers and underscore (_)");
+                continue;
+            }
+            
             names.add(name);
         }
         return errors.size() > 0 ? new ArrayList(errors) : null;
@@ -740,6 +756,11 @@ public class PropertiesEditor implements LookupListener
                 {
                     fireChangeEvent();
                 }
+                public void onKeyUp(Widget sender, char keyCode, int modifiers)
+                {
+                    if (_prop instanceof StringProperty)
+                        updateErrorFormat(false);
+                }
             });
         }
 
@@ -759,25 +780,48 @@ public class PropertiesEditor implements LookupListener
             refresh();
         }
 
-
         /** retrieve/reshow data from bound object */
         void refresh()
         {
             setText(StringUtils.trimToEmpty((String)_prop.get()));
+            updateErrorFormat(false);
+        }
+
+        void updateErrorFormat(boolean alert)
+        {
+            String text = StringUtils.trimToNull(getText());
+            String message = validateValue(text);
+            if (null != message)
+            {
+                this.setStyleName("labkey-textbox-error");
+                this.setTitle(message);
+                if (alert)
+                    Window.alert(message);
+                return;
+            }
+            this.setStyleName("");
+            this.setTitle("");
+        }
+
+        String validateValue(String text)
+        {
+            return null;
         }
 
         /** push data to bound object */
         void update()
         {
+            updateErrorFormat(false);
+            String text = StringUtils.trimToNull(getText());
+
             if (_pd != null)
             {
                 String status = getStatus(_pd);
-                String text = StringUtils.trimToNull(getText());
                 Object propObj = _prop.get();
                 String propText = propObj == null ? null : propObj.toString();
                 if (!nullEquals(text, propText))
                 {
-                    _prop.set(StringUtils.trimToNull(getText()));
+                    _prop.set(text);
                     if (!status.equals(getStatus(_pd)))
                         refreshRow(_pd);
                     fireChangeEvent();
@@ -785,7 +829,7 @@ public class PropertiesEditor implements LookupListener
             }
             else
             {
-                _prop.set(StringUtils.trimToNull(getText()));
+                _prop.set(text);
                 fireChangeEvent();
             }
         }
@@ -849,4 +893,27 @@ public class PropertiesEditor implements LookupListener
             refreshRow(pd);
         }
     }
+
+
+    private static boolean isLegalNameChar(char ch, boolean first)
+    {
+        if (ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z' || ch == '_')
+            return true;
+        if (first)
+            return false;
+        if (ch >= '0' && ch <= '9')
+            return true;
+        return false;
+    }
+
+    public static boolean isLegalName(String str)
+    {
+        for (int i = 0; i < str.length(); i ++)
+        {
+            if (!isLegalNameChar(str.charAt(i), i == 0))
+                return false;
+        }
+        return true;
+    }
+
 }
