@@ -163,7 +163,6 @@ public class QueryHelper<K extends StudyCachable>
             StudyCache.uncache(_tableInfo, obj.getContainer().getId(), filter);
         _cachedFilters.clear();
         StudyCache.uncache(_tableInfo, obj.getContainer().getId(), obj.getPrimaryKey().toString());
-        StudyManager.fireCacheCleared(obj);
     }
 
     private String getCacheId(Filter filter)

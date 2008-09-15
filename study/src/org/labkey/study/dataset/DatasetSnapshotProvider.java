@@ -32,10 +32,7 @@ import org.labkey.api.query.snapshot.QuerySnapshotForm;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.CaseInsensitiveHashMap;
-import org.labkey.api.util.ContextListener;
-import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -56,7 +53,7 @@ import java.util.*;
  * Time: 4:57:40 PM
  */
 
-public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements QuerySnapshotService.AutoUpdateable, StudyManager.StudyCachableListener
+public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements QuerySnapshotService.AutoUpdateable, StudyManager.UnmaterializeListener
 {
     private static final DatasetSnapshotProvider _instance = new DatasetSnapshotProvider();
     private static Logger _log = Logger.getLogger(DatasetSnapshotProvider.class);
@@ -67,7 +64,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
     private DatasetSnapshotProvider()
     {
-        StudyManager.addCachableListener(this);
+        StudyManager.addUnmaterializeListener(this);
     }
 
     private void generateDependencies(int snapshotId, QueryView view)
@@ -415,7 +412,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 propertyMap = new HashMap<String, String>();
                 _snapshotPropertyMap.put(def.getId(), propertyMap);
 
-                QueryView view = QueryView.create(getQueryForm(def, HttpView.currentContext()));
+                QueryView view = QueryView.create(getQueryForm(def, getViewContext(def)));
                 for (DisplayColumn dc : view.getDisplayColumns())
                 {
                     ColumnInfo info = dc.getColumnInfo();
@@ -431,34 +428,42 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         return propertyMap.containsKey(propertyURI);
     }
 
-    public void cacheCleared(final StudyCachable c)
+    private static ViewContext getViewContext(QuerySnapshotDefinition def)
+    {
+        if (HttpView.hasCurrentView())
+            return HttpView.currentContext();
+        else
+        {
+            ViewContext context = new ViewContext();
+            context.setUser(def.getModifiedBy());
+            context.setContainer(def.getContainer());
+            context.setActionURL(new ActionURL(StudyController.CreateSnapshotAction.class, def.getContainer()));
+
+            HttpView.initForRequest(context, AppProps.getInstance().createMockRequest(), null);
+            return context;
+        }
+    }
+
+    public void dataSetUnmaterialized(final DataSetDefinition def)
     {
         Runnable task = new Runnable()
         {
             public void run()
             {
-                int id = NumberUtils.toInt(String.valueOf(c.getPrimaryKey()), -1);
-                if (id != -1)
+                //DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, id);
+                if (def != null)
                 {
-                    Study study = StudyManager.getInstance().getStudy(c.getContainer());
-                    if (study != null)
+                    _log.debug("Cache cleared notification on dataset : " + def.getDataSetId());
+                    for (QuerySnapshotDefinition snapshotDef : getDependencies(def))
                     {
-                        DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, id);
-                        if (def != null)
+                        try {
+                            _log.debug("Updating snapshot definition : " + snapshotDef.getName());
+                            autoUpdateSnapshot(snapshotDef, null);//HttpView.currentContext().getActionURL());
+                        }
+                        catch (Exception e)
                         {
-                            _log.debug("Cache cleared notification on dataset : " + id);
-                            for (QuerySnapshotDefinition snapshotDef : getDependencies(def))
-                            {
-                                try {
-                                    _log.debug("Updating snapshot definition : " + snapshotDef.getName());
-                                    autoUpdateSnapshot(snapshotDef, HttpView.currentContext().getActionURL());
-                                }
-                                catch (Exception e)
-                                {
-                                    _log.error(e);
-                                    throw new RuntimeException(e);
-                                }
-                            }
+                            _log.error(e);
+                            throw new RuntimeException(e);
                         }
                     }
                 }
@@ -514,12 +519,8 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 _def.save(_def.getModifiedBy(), _def.getContainer());
 
                 QuerySnapshotForm form = new QuerySnapshotForm();
-                ViewContext context = new ViewContext();
-                context.setUser(_def.getModifiedBy());
-                context.setContainer(_def.getContainer());
-                context.setActionURL(_url);
+                ViewContext context = getViewContext(_def);
 
-                HttpView.initForRequest(context, AppProps.getInstance().createMockRequest(), null);
                 form.setViewContext(context);
                 form.init(_def);
 

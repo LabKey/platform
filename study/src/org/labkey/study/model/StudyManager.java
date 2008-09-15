@@ -2701,14 +2701,14 @@ public class StudyManager
         return new BaseStudyController.StudyJspView<ParticipantViewConfig>(getStudy(container), "participantCharacteristics.jsp", config, errors);
     }
 
-    public interface StudyCachableListener
+    public interface UnmaterializeListener
     {
-        void cacheCleared(StudyCachable c);
+        void dataSetUnmaterialized(DataSetDefinition def);
     }
 
-    static final ArrayList<StudyCachableListener> _listeners = new ArrayList<StudyCachableListener>();
+    static final ArrayList<UnmaterializeListener> _listeners = new ArrayList<UnmaterializeListener>();
 
-    public static void addCachableListener(StudyCachableListener listener)
+    public static void addUnmaterializeListener(UnmaterializeListener listener)
     {
         synchronized (_listeners)
         {
@@ -2716,25 +2716,25 @@ public class StudyManager
         }
     }
 
-    protected static StudyCachableListener[] getListeners()
+    protected static UnmaterializeListener[] getListeners()
     {
         synchronized (_listeners)
         {
-            return _listeners.toArray(new StudyCachableListener[_listeners.size()]);
+            return _listeners.toArray(new UnmaterializeListener[_listeners.size()]);
         }
     }
     
-    public static void fireCacheCleared(StudyCachable c)
+    public static void fireUnmaterialized(DataSetDefinition def)
     {
-        StudyCachableListener[] list = getListeners();
-        for (StudyCachableListener l : list)
+        UnmaterializeListener[] list = getListeners();
+        for (UnmaterializeListener l : list)
             try
             {
-                l.cacheCleared(c);
+                l.dataSetUnmaterialized(def);
             }
             catch (Throwable t)
             {
-                _log.error("fireCacheCleared", t);
+                _log.error("fireUnmaterialized", t);
             }
     }
 

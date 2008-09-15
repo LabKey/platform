@@ -450,6 +450,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                         TempTableTracker.getLogger().debug("DataSetDefinition unmaterialize(" + mlo.tinfoMat.getTempTableName() + ")");
                     mlo.tinfoFrom = null;
                     mlo.tinfoMat = null;
+                    StudyManager.fireUnmaterialized(DataSetDefinition.this);
                 }
             }
         };

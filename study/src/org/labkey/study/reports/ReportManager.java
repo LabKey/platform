@@ -49,7 +49,7 @@ import java.util.*;
  * Date: Mar 6, 2006
  * Time: 8:18:58 PM
  */
-public class ReportManager implements StudyManager.StudyCachableListener
+public class ReportManager implements StudyManager.UnmaterializeListener
 {
     private static final String SCHEMA_NAME = "study";
     private static final String TABLE_NAME = "Report";
@@ -69,7 +69,7 @@ public class ReportManager implements StudyManager.StudyCachableListener
 
     private ReportManager()
     {
-        StudyManager.addCachableListener(this);
+        StudyManager.addUnmaterializeListener(this);
     }
 
     private DbSchema getSchema()
@@ -541,27 +541,18 @@ public class ReportManager implements StudyManager.StudyCachableListener
         public String getContainerId(){return _containerId;}
     }
 
-    public void cacheCleared(final StudyCachable c)
+    public void dataSetUnmaterialized(final DataSetDefinition def)
     {
-        int id = NumberUtils.toInt(String.valueOf(c.getPrimaryKey()), -1);
-        if (id != -1)
+//            DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, id);
+        if (def != null)
         {
-            Study study = StudyManager.getInstance().getStudy(c.getContainer());
             ViewContext context = new ViewContext();
-            context.setContainer(c.getContainer());
-
-            if (study != null)
+            context.setContainer(def.getContainer());
+            _log.debug("Cache cleared notification on dataset : " + def.getDataSetId());
+            String reportKey = ReportUtil.getReportKey(StudyManager.getSchemaName(), def.getLabel());
+            for (Report report : ReportUtil.getReports(context, reportKey, true))
             {
-                DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, id);
-                if (def != null)
-                {
-                    _log.debug("Cache cleared notification on dataset : " + id);
-                    String reportKey = ReportUtil.getReportKey(StudyManager.getSchemaName(), def.getLabel());
-                    for (Report report : ReportUtil.getReports(context, reportKey, true))
-                    {
-                        report.clearCache();
-                    }
-                }
+                report.clearCache();
             }
         }
     }
