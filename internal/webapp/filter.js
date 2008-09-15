@@ -101,7 +101,7 @@ function showFilterPanel(elem, tableName, colName, caption, dataType)
     {
         _filterWin = new Ext.Window({
             contentEl: div,
-            width: 350,
+            width: 'auto',
             autoHeight: true,
             modal: true,
             resizable: false,
