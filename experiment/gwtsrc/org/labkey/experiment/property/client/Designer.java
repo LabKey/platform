@@ -177,7 +177,7 @@ public class Designer implements EntryPoint
     private void submitForm()
     {
         List errors = _propTable.validate();
-        if (null != errors)
+        if (null != errors && !errors.isEmpty())
         {
             String s = "";
             for (int i=0 ; i<errors.size() ; i++)

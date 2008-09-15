@@ -226,6 +226,12 @@ table.labkey-no-spacing
     font-weight: bold;
 }
 
+.labkey-textbox-error
+{
+    background-color: #FFC5AA;
+    border: 1px solid #FF0000;
+}
+
 /* Used for button bars across the site */
 div.labkey-button-bar, table.labkey-button-bar
 {
