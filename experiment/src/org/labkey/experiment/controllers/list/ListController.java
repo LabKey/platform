@@ -333,8 +333,14 @@ public class ListController extends SpringActionController
             if (errors.hasErrors())
                 return false;
 
+            boolean transaction = false;
             try
             {
+                if (!ExperimentService.get().isTransactionActive())
+                {
+                    ExperimentService.get().beginTransaction();
+                    transaction = true;
+                }
                 ListItem item;
                 if (isInsert())
                 {
@@ -364,6 +370,11 @@ public class ListController extends SpringActionController
                 if (errors.hasErrors())
                     return false;
                 item.save(getUser());
+                if (transaction)
+                {
+                    ExperimentService.get().commitTransaction();
+                    transaction = false;
+                }
 
                 _returnURL = form.getReturnActionURL();
 
@@ -381,6 +392,13 @@ public class ListController extends SpringActionController
             catch (Exception e)   // TODO: Check for specific errors and get rid of catch(Exception)
             {
                 errors.reject(ERROR_MSG, "An exception occurred: " + e);
+            }
+            finally
+            {
+                if (transaction)
+                {
+                    ExperimentService.get().rollbackTransaction();
+                }
             }
 
             return false;
