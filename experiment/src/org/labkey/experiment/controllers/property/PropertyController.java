@@ -62,7 +62,7 @@ public class PropertyController extends SpringActionController
             {
                 HttpView.throwNotFound();
             }
-            if (!_domain.getDomainKind().canEditDefinition(getUser(), _domain))
+            if (null == _domain.getDomainKind() || !_domain.getDomainKind().canEditDefinition(getUser(), _domain))
             {
                 HttpView.throwUnauthorized();
             }
