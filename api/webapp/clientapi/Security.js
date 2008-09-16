@@ -88,9 +88,10 @@ LABKEY.Security = new function()
 
         /**
          * Get the effective permissions for all groups within the container, optionally
-         * recursing down the container hierarchy.
+         * recursing down the container hierarchy. This may be called only by
+         * users who have administrator permissions in the given container.
          * @param config A configuration object with the following properties:
-         * @param {function} config.successsCallback A reference to a function to call with the API results. This
+         * @param {function} config.successCallback A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>groupPermsInfo:</b> an object containing properties about the group permissions</li>
@@ -109,6 +110,9 @@ LABKEY.Security = new function()
          */
         getGroupPermissions : function(config)
         {
+            if(!config.successCallback)
+                Ext.Msg.alert("Programming Error", "You must specify a value for the config.successCallback when calling LABKEY.Security.getGroupPermissions()!");
+
             var params = {};
             if(config.includeSubfolders != undefined)
                 params.includeSubfolders = config.includeSubfolders;
@@ -124,7 +128,7 @@ LABKEY.Security = new function()
 
         /**
          * Returns true if the permission passed in 'perm' is on in the permissions
-         * set passed as 'perms'.
+         * set passed as 'perms'. This is a local function and does not make a call to the server.
          * @param {integer} perms The permission set, typically retrieved for a given user or group.
          * @param {integer} perm A specific permission bit to check for.
          */
@@ -136,6 +140,7 @@ LABKEY.Security = new function()
         /**
          * Returns the name of the security role represented by the permissions passed as 'perms'.
          * The return value will be the name of a property in the LABKEY.Security.roles map.
+         * This is a local function, and does not make a call to the server.
          * @param perms The permissions set
          */
         getRole : function(perms)
@@ -148,11 +153,13 @@ LABKEY.Security = new function()
         },
 
         /**
-         * Returns information about a specific user's permissions within a container
+         * Returns information about a specific user's permissions within a container. This may be called only by
+         * users who have administrator permissions in the given container. To get the current user's permissions
+         * in a given container, use the getContainers() method instead.
          * @param config A configuration object containing the following properties
          * @param {integer} config.userId The id of the user.
          * @param {string} config.userEmail The email address (user name) of the user (specify only userId or userEmail, not both) 
-         * @param {function} config.successsCallback A reference to a function to call with the API results. This
+         * @param {function} config.successCallback A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>userPermsInfo:</b> an object containing properties about the user's permissions</li>
@@ -171,6 +178,9 @@ LABKEY.Security = new function()
          */
         getUserPermissions : function(config)
         {
+            if(!config.successCallback)
+                Ext.Msg.alert("Programming Error", "You must specify a value for the config.successCallback when calling LABKEY.Security.getUserPermissions()!");
+
             var params = {};
 
             if(config.userId != undefined)
@@ -191,13 +201,13 @@ LABKEY.Security = new function()
         },
 
         /**
-         * Returns a list of users given selection criteria.
+         * Returns a list of users given selection criteria. This may be called by any logged-in user.
          * @param config A configuration object containing the following properties
          * @param {integer} [config.groupId] The id of a project group for which you want the members.
          * @param {string} [config.group] The name of a project group for which you want the members (specify groupId or group, not both).
          * @param {string} [config.name] The first part of the user name, useful for user name completion. If specified,
          * only users whose email address or display name starts with the value supplied will be returned.
-         * @param {function} config.successsCallback A reference to a function to call with the API results. This
+         * @param {function} config.successCallback A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>usersInfo:</b> an object a property called 'users', which is an array of user information.</li>
@@ -215,6 +225,9 @@ LABKEY.Security = new function()
          */
         getUsers : function(config)
         {
+            if(!config.successCallback)
+                Ext.Msg.alert("Programming Error", "You must specify a value for the config.successCallback when calling LABKEY.Security.getUsers()!");
+
             var params = {};
             if(undefined != config.groupId)
                 params.groupId = config.groupId;
@@ -235,14 +248,15 @@ LABKEY.Security = new function()
 
         /**
          * Returns the container tree under the current container (or the container specified in
-         * config.containerPath).
+         * config.containerPath) that the current user is allowed to see. This may be called by any user.
          * @param config A configuration object with the following properties
          * @param {boolean} [config.includeSubfolders] If set to true, the entire branch of containers will be returned.
          * If false, only the immediate children of the starting container will be returned (defaults to false).
-         * @param {function} config.successsCallback A reference to a function to call with the API results. This
+         * @param {function} config.successCallback A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
-         * <li><b>containersInfo:</b> an object with a property called 'containers', which is a tree of container information.</li>
+         * <li><b>containersInfo:</b> an object with a property called 'containers', which is a tree of container information
+         * including the user's current permissions in that container.</li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
          * @param {function} [config.errorCallback] A reference to a function to call when an error occurs. This
@@ -257,6 +271,9 @@ LABKEY.Security = new function()
          */
         getContainers : function(config)
         {
+            if(!config.successCallback)
+                Ext.Msg.alert("Programming Error", "You must specify a value for the config.successCallback when calling LABKEY.Security.getContainers()!");
+
             var params = {};
             if(undefined != config.includeSubfolders)
                 params.includeSubfolders = config.includeSubfolders
