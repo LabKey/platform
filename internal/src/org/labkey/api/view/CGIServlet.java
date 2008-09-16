@@ -15,7 +15,7 @@
  */
 
 /*
- * Copyright (c) 2006 Labkey Corporation
+ * Copyright (c) 2006-2008 LabKey Corporation
  * 
  * Small changes to take the apache cgi runner and make it appropriate for
  * running within the labkey platform.
