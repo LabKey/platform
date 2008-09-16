@@ -25,6 +25,14 @@ import org.labkey.common.util.Pair;
  */
 public interface DilutionCurve
 {
+    public class FitFailedException extends Exception
+    {
+        public FitFailedException(String message)
+        {
+            super(message);
+        }
+    }
+
     public enum FitType
     {
         FOUR_PARAMETER("Four Parameter"),
@@ -52,17 +60,17 @@ public interface DilutionCurve
         }
     }
 
-    DoublePoint[] getCurve();
+    DoublePoint[] getCurve() throws FitFailedException;
 
-    double getFitError();
+    double getFitError() throws FitFailedException;
 
-    double getCutoffDilution(double percent);
+    double getCutoffDilution(double percent) throws FitFailedException;
 
     double getInterpolatedCutoffDilution(double percent);
 
-    double getMinDilution();
+    double getMinDilution() throws FitFailedException;
 
-    double getMaxDilution();
+    double getMaxDilution() throws FitFailedException;
 
     public static class DoublePoint extends Pair<Double, Double>
     {

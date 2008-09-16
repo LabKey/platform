@@ -25,6 +25,7 @@ import org.labkey.api.view.DataView;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.Collection;
 
 /**
  * Created by IntelliJ IDEA.
@@ -101,6 +102,17 @@ public class StudyService
          * @throws SQLException Thrown if there's a database error
          */
         public Map<String, Object> getDatasetRow(User u, Container c, int datasetId, String lsid) throws SQLException;
+
+        /**
+         * Fetches a set of rows from a dataset given a collection of LSIDs
+         * @param u The user
+         * @param c The container
+         * @param datasetId The dataset Id
+         * @param lsids The row LSIDs
+         * @return An array of maps of the dataset row columns, null if no records found
+         * @throws SQLException Thrown if there's a database error
+         */
+        public Map<String, Object>[] getDatasetRows(User u, Container c, int datasetId, Collection<String> lsids) throws SQLException;
 
         public void beginTransaction() throws SQLException;
         public void commitTransaction() throws SQLException;
