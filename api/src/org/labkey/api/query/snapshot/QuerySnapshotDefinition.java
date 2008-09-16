@@ -46,6 +46,7 @@ public interface QuerySnapshotDefinition
     List<FieldKey> getColumns();
     void setColumns(List<FieldKey> columns);
 
+    Date getCreated();
     Date getLastUpdated();
     void setLastUpdated(Date date);
     Date getNextUpdate();
