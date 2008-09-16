@@ -156,6 +156,11 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
         edit().setColumns(StringUtils.join(columns.iterator(), "&"));
     }
 
+    public Date getCreated()
+    {
+        return _snapshotDef.getCreated();
+    }
+
     public Date getLastUpdated()
     {
         return _snapshotDef.getLastUpdated();

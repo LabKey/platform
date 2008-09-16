@@ -27,6 +27,11 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.common.util.Pair" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.model.Study" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.study.model.DataSetDefinition" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -36,23 +41,25 @@
     ViewContext context = HttpView.currentContext();
 
     QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(context.getContainer(), bean.getSchemaName(), bean.getSnapshotName());
-    Pair<String, String>[] params = context.getActionURL().getParameters();
 
     boolean showHistory = BooleanUtils.toBoolean(context.getActionURL().getParameter("showHistory"));
     String historyLabel = showHistory ? "Hide History" : "Show History";
 
     boolean showDataset = BooleanUtils.toBoolean(context.getActionURL().getParameter("showDataset"));
     String datasetLabel = showDataset ? "Hide Dataset Definition" : "Edit Dataset Definition";
+
+    final Study study = StudyManager.getInstance().getStudy(context.getContainer());
+    final DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinition(study, bean.getSnapshotName());
+    ActionURL deleteSnapshotURL = new ActionURL(StudyController.DeleteDatasetAction.class, context.getContainer());
 %>
 
 <table>
 <%  if (def != null) { %>
     <tr><td class="labkey-form-label">Name</td><td><%=h(def.getName())%></td>
 <%  } %>
-    <tr><td class="labkey-form-label">Description</td><td></td>
     <tr><td class="labkey-form-label">Created By</td><td><%=h(def.getCreatedBy())%></td>
     <tr><td class="labkey-form-label">Modified By</td><td><%=h(def.getModifiedBy())%></td>
-    <tr><td class="labkey-form-label">Created</td><td></td>
+    <tr><td class="labkey-form-label">Created</td><td><%=h(def.getCreated())%></td>
     <tr><td class="labkey-form-label">Last Updated</td><td><%=StringUtils.trimToEmpty(DateUtil.formatDateTime(def.getLastUpdated()))%></td>
 </table>
 
@@ -62,10 +69,14 @@
         <tr><td>&nbsp;</td></tr>
         <tr>
             <td><%=PageFlowUtil.generateSubmitButton("Update Snapshot")%></td>
-<%      if (def != null) { %>
+<%      if (def != null && dsDef != null) { %>
+<%--
             <td><%=PageFlowUtil.generateButton("Edit Query Source", bean.getSchema().urlFor(QueryAction.sourceQuery, def.getQueryDefinition()))%></td>
+--%>
             <td><%=PageFlowUtil.generateButton(historyLabel, context.cloneActionURL().replaceParameter("showHistory", String.valueOf(!showHistory)))%></td>
             <td><%=PageFlowUtil.generateButton(datasetLabel, context.cloneActionURL().replaceParameter("showDataset", String.valueOf(!showDataset)))%></td>
+            <td><%=PageFlowUtil.generateButton("Delete Snapshot", deleteSnapshotURL.addParameter("id", dsDef.getDataSetId()),
+                    "return confirm('Are you sure you want to delete this snapshot?  All related data will also be deleted.')")%></td>
 <%      } %>
         </tr>
     </table>
