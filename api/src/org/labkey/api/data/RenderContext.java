@@ -49,7 +49,7 @@ public class RenderContext extends BoundMap // extends ViewContext
     private boolean _cache = true;
     private Set<String> _ignoredColumnFilters = new LinkedHashSet<String>();
     private Set<String> _selected = null;
-    private ShowRows _showRows = ShowRows.DEFAULT;
+    private ShowRows _showRows = ShowRows.PAGINATED;
     private List<String> _recordSelectorValueColumns;
 
     public RenderContext(ViewContext context)
@@ -127,7 +127,7 @@ public class RenderContext extends BoundMap // extends ViewContext
         }
         else
         {
-            _showRows = ShowRows.DEFAULT;
+            _showRows = ShowRows.PAGINATED;
             _recordSelectorValueColumns = null;
             _selected = null;
         }

@@ -22,7 +22,7 @@ package org.labkey.api.data;
  */
 public enum ShowRows
 {
-    DEFAULT,
+    PAGINATED,
     ALL,
     SELECTED,
     UNSELECTED

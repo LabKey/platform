@@ -46,7 +46,7 @@ public class QuerySettings
     private int _maxRows = 100;
     private long _offset = 0;
 
-    private ShowRows _showRows = ShowRows.DEFAULT;
+    private ShowRows _showRows = ShowRows.PAGINATED;
     private boolean _showHiddenFieldsWhenCustomizing = false;
 
     PropertyValues _filterSort = null;
@@ -123,7 +123,7 @@ public class QuerySettings
             }
             catch (IllegalArgumentException ex)
             {
-                _showRows = ShowRows.DEFAULT;
+                _showRows = ShowRows.PAGINATED;
             }
         }
     }
@@ -184,7 +184,7 @@ public class QuerySettings
             setReportId(NumberUtils.toInt(_getParameter(param(QueryParam.reportId)), -1));
         }
 
-        if (_showRows == ShowRows.DEFAULT)
+        if (_showRows == ShowRows.PAGINATED)
         {
             String offsetParam = _getParameter(param(QueryParam.offset));
             if (offsetParam != null)
@@ -359,7 +359,7 @@ public class QuerySettings
 
     public void setMaxRows(int maxRows)
     {
-        assert _showRows == ShowRows.DEFAULT : "Can't set maxRows when not paginated";
+        assert _showRows == ShowRows.PAGINATED : "Can't set maxRows when not paginated";
         _maxRows = maxRows;
     }
 
@@ -370,7 +370,7 @@ public class QuerySettings
 
     public void setOffset(long offset)
     {
-        assert _showRows == ShowRows.DEFAULT : "Can't set maxRows when not paginated";
+        assert _showRows == ShowRows.PAGINATED : "Can't set maxRows when not paginated";
         _offset = offset;
     }
 

@@ -127,7 +127,7 @@ public class QueryView extends WebPartView<Object>
 
     protected int getMaxRows()
     {
-        if (getShowRows() != ShowRows.DEFAULT)
+        if (getShowRows() != ShowRows.PAGINATED)
             return 0;
         return getSettings().getMaxRows();
     }
@@ -135,7 +135,7 @@ public class QueryView extends WebPartView<Object>
 
     protected long getOffset()
     {
-        if (getShowRows() != ShowRows.DEFAULT)
+        if (getShowRows() != ShowRows.PAGINATED)
             return 0;
         return getSettings().getOffset();
     }

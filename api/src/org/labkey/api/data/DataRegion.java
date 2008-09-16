@@ -67,7 +67,7 @@ public class DataRegion extends DisplayElement
     private boolean _fixedWidthColumns;
     private int _maxRows = 0;   // Display all rows by default
     private long _offset = 0;
-    private ShowRows _showRows = ShowRows.DEFAULT;
+    private ShowRows _showRows = ShowRows.PAGINATED;
     private List<Pair<String, String>> _hiddenFormFields = new ArrayList<Pair<String, String>>();   // Hidden params to be posted (e.g., to pass a query string along with selected grid rows)
     private int _defaultMode = MODE_GRID;
     private ButtonBarPosition _buttonBarPosition = ButtonBarPosition.BOTTOM;
