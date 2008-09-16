@@ -487,6 +487,11 @@ public class ListController extends SpringActionController
         List<DisplayColumn> defaultGridColumns = lqv.getDisplayColumns();
         List<DisplayColumn> displayColumns = new ArrayList<DisplayColumn>(defaultGridColumns.size());
 
+        // Save old grid column list
+        List<String> currentColumns = rgn.getDisplayColumnNames();
+
+        rgn.setTable(lqv.getTable());
+
         for (DisplayColumn dc : defaultGridColumns)
         {
             if (editableOnly && !dc.isEditable())
@@ -495,20 +500,15 @@ public class ListController extends SpringActionController
             if (dc instanceof UrlColumn)
                 continue;
 
-            DisplayColumn dcAdd = rgn.getDisplayColumn(dc.getName());
-
-            displayColumns.add(null != dcAdd ? dcAdd : dc);
+            displayColumns.add(dc);
         }
-
-        // Save old grid column list
-        List<DisplayColumn> currentColumns = new ArrayList<DisplayColumn>(rgn.getDisplayColumns());
 
         rgn.setDisplayColumns(displayColumns);
 
         // Add all columns that aren't in the default grid view
-        for (DisplayColumn dc : currentColumns)
-            if (null == rgn.getDisplayColumn(dc.getName()))
-                rgn.addDisplayColumn(dc);
+        for (String columnName : currentColumns)
+            if (null == rgn.getDisplayColumn(columnName))
+                rgn.addColumn(rgn.getTable().getColumn(columnName));
     }
 
 
