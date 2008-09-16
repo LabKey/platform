@@ -49,6 +49,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.SimpleAuditViewFactory;
 import org.labkey.common.tools.TabLoader;
 import org.labkey.common.util.CPUTimer;
 import org.labkey.study.QueryHelper;
@@ -263,12 +264,38 @@ public class StudyManager
             throw new IllegalStateException("Visit container does not match study");
         visit.setContainer(study.getContainer());
 
+        if (visit.getSequenceNumMin() > visit.getSequenceNumMax())
+            throw new IllegalStateException("SequenceNumMin must be less than or equal to SequenceNumMax");
+        Visit[] visits = getVisits(study);
+        for (Visit existingVisit : visits)
+        {
+            if (existingVisit.getSequenceNumMin() > existingVisit.getSequenceNumMax())
+                throw new IllegalStateException("Corrupt existing visit " + existingVisit.getLabel() +
+                        ": SequenceNumMin must be less than or equal to SequenceNumMax");
+            boolean disjoint = visit.getSequenceNumMax() < existingVisit.getSequenceNumMin() ||
+                               visit.getSequenceNumMin() > existingVisit.getSequenceNumMax();
+            if (!disjoint)
+                throw new IllegalStateException("New visit " + visit.getLabel() + " overlaps existing visit " + existingVisit.getLabel());
+        }
+
         visit = _visitHelper.create(user, visit);
 
         if (visit.getRowId() == 0)
             throw new IllegalStateException("Visit rowId has not been set properly");
 
         return visit.getRowId();
+    }
+
+    public void ensureVisit(Study study, User user, double visitId, Visit.Type type, String label) throws SQLException
+    {
+        Visit[] visits = getVisits(study);
+        for (Visit visit : visits)
+        {
+            // check to see if our new visitId is within the range of an existing visit:
+            if (visit.getSequenceNumMin() <= visitId && visit.getSequenceNumMax() >= visitId)
+                return;
+        }
+        createVisit(study, user, visitId,  type, label);
     }
 
 
@@ -552,46 +579,168 @@ public class StudyManager
         return null;
     }
 
-    public List<String> updateDataQCState(Container container, User user, int datasetId, Collection<String> lsids, QCState newState, String comments) throws SQLException
+    private Map<String, Visit> getVisitsForDataRows(Container container, int datasetId, Collection<String> dataLsids)
+    {
+        Map<String, Visit> visits = new HashMap<String, Visit>();
+        if (dataLsids == null || dataLsids.isEmpty())
+            return visits;
+
+        SQLFragment sql = new SQLFragment("SELECT sd.LSID AS LSID, v.RowId AS RowId FROM study.StudyData sd\n" +
+                "JOIN study.ParticipantVisit pv ON \n" +
+                "\tsd.SequenceNum = pv.SequenceNum AND\n" +
+                "\tsd.Container = pv.Container AND\n" +
+                "\tsd.ParticipantId = pv.ParticipantId\n" +
+                "JOIN study.Visit v ON\n" +
+                "\tpv.VisitRowId = v.RowId AND\n" +
+                "\tpv.Container = v.Container\n" +
+                "WHERE sd.DatasetId = ? AND\n" +
+                "\tsd.Container = ? AND\n" +
+                "\tsd.lsid IN (");
+        sql.add(datasetId);
+        sql.add(container.getId());
+        boolean first = true;
+        for (String dataLsid : dataLsids)
+        {
+            if (!first)
+                sql.append(", ");
+            sql.append("?");
+            sql.add(dataLsid);
+            first = false;
+        }
+        sql.append(")");
+
+        Study study = getStudy(container);
+        ResultSet rs = null;
+        try
+        {
+            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql);
+            while (rs.next())
+            {
+                String lsid = rs.getString("LSID");
+                int visitId = rs.getInt("RowId");
+                visits.put(lsid, getVisitForRowId(study, visitId));
+            }
+            return visits;
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+        finally
+        {
+            if (rs != null)
+                try { rs.close(); } catch (SQLException e) { /* fall through */ }
+        }
+    }
+
+
+    public void updateDataQCState(Container container, User user, int datasetId, Collection<String> lsids, QCState newState, String comments) throws SQLException
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
         boolean transactionOwner = !scope.isTransactionActive();
         List<String> errors = new ArrayList<String>();
+        Study study = getStudy(container);
+        DataSetDefinition def = getDataSetDefinition(study, datasetId);
+
+        Map<String, Visit> lsidVisits = null;
+        if (!def.isDemographicData())
+            lsidVisits = getVisitsForDataRows(container, datasetId, lsids);
+        Map<String, Object>[] rows = StudyService.get().getDatasetRows(user, container, datasetId, lsids);
+        if (rows == null)
+            return;
+
+        Map<String, String> oldQCStates = new HashMap<String, String>();
+        Map<String, String> newQCStates = new HashMap<String, String>();
+
+        Set<String> updateLsids = new HashSet<String>();
+        for (Map<String, Object> row : rows)
+        {
+            String lsid = (String) row.get("lsid");
+
+            Integer oldStateId = (Integer) row.get(DataSetTable.QCSTATE_ID_COLNAME);
+            QCState oldState = null;
+            if (oldStateId != null)
+                oldState = getQCStateForRowId(container, oldStateId.intValue());
+
+            // check to see if we're actually changing state.  If not, no-op:
+            if (safeIntegersEqual(newState != null ? newState.getRowId() : null, oldStateId))
+                continue;
+
+            updateLsids.add(lsid);
+
+            StringBuilder auditKey = new StringBuilder("Participant ");
+            auditKey.append(row.get("ParticipantId"));
+            if (!def.isDemographicData())
+            {
+                Visit visit = lsidVisits.get(lsid);
+                auditKey.append(", Visit ").append(visit.getLabel());
+            }
+            String keyProp = def.getKeyPropertyName();
+            if (keyProp != null)
+            {
+                auditKey.append(", ").append(keyProp).append(" ").append(row.get(keyProp));
+            }
+
+            oldQCStates.put(auditKey.toString(), oldState != null ? oldState.getLabel() : "unspecified");
+            newQCStates.put(auditKey.toString(), newState != null ? newState.getLabel() : "unspecified");
+        }
+
+        if (updateLsids.isEmpty())
+            return;
+
         try
         {
             if (transactionOwner)
                 scope.beginTransaction();
 
-            for (String lsid : lsids)
+            SQLFragment sql = new SQLFragment("UPDATE " + StudySchema.getInstance().getTableInfoStudyData() + "\n" +
+                    "SET QCState = ?");
+            sql.add(newState != null ? newState.getRowId() : null);
+            sql.append(", modified = ?");
+            sql.add(new Date());
+            sql.append("\nWHERE DatasetId = ? AND\n" +
+                    "\tContainer = ? AND\n" +
+                    "\tlsid IN (");
+            sql.add(datasetId);
+            sql.add(container.getId());
+            boolean first = true;
+            for (String dataLsid : updateLsids)
             {
-                Map<String, Object> row = StudyService.get().getDatasetRow(user, container, datasetId, lsid);
-                if (row != null)
-                {
-                    Integer oldStateId = (Integer) row.get(DataSetTable.QCSTATE_ID_COLNAME);
-                    QCState oldState = null;
-                    if (oldStateId != null)
-                        oldState = getQCStateForRowId(container, oldStateId.intValue());
-                    
-                    // check to see if we're actually changing state.  If not, no-op:
-                    if (safeIntegersEqual(newState != null ? newState.getRowId() : null, oldStateId))
-                        continue;
-
-                    StringBuilder auditComment = new StringBuilder("Record QC state was changed from ");
-                    if (oldState == null)
-                        auditComment.append("unspecified");
-                    else
-                        auditComment.append("\"").append(oldState.getLabel()).append("\"");
-                    auditComment.append(" to ");
-                    if (newState == null)
-                        auditComment.append("unspecified");
-                    else
-                        auditComment.append("\"").append(newState.getLabel()).append("\"");
-                    auditComment.append(".  User comment: ").append(comments);
-
-                    row.put(DataSetTable.QCSTATE_ID_COLNAME, newState != null ? newState.getRowId() : null);
-                    StudyService.get().updateDatasetRow(user, container, datasetId, lsid, row, errors, auditComment.toString(), false);
-                }
+                if (!first)
+                    sql.append(", ");
+                sql.append("?");
+                sql.add(dataLsid);
+                first = false;
             }
+            sql.append(")");
+
+            Table.execute(StudySchema.getInstance().getSchema(), sql);
+
+            String auditComment = "QC state was changed for " + updateLsids.size() + " record" +
+                    (updateLsids.size() == 1 ? "" : "s") + ".  User comment: " + comments;
+
+            AuditLogEvent event = new AuditLogEvent();
+            event.setCreatedBy(user);
+
+            event.setContainerId(container.getId());
+            if (container.getProject() != null)
+                event.setProjectId(container.getProject().getId());
+
+            event.setIntKey1(datasetId);
+
+            // IntKey2 is non-zero because we have details (a previous or new datamap)
+            event.setIntKey2(1);
+
+            event.setEventType(DatasetAuditViewFactory.DATASET_AUDIT_EVENT);
+            event.setComment(auditComment);
+
+            Map<String,Object> dataMap = new HashMap<String,Object>();
+            dataMap.put("oldRecordMap", SimpleAuditViewFactory.encodeForDataMap(oldQCStates, false));
+            dataMap.put("newRecordMap", SimpleAuditViewFactory.encodeForDataMap(newQCStates, false));
+            AuditLogService.get().addEvent(event, dataMap, AuditLogService.get().getDomainURI(DatasetAuditViewFactory.DATASET_AUDIT_EVENT));
+
+            clearCaches(container, true);
+
             if (transactionOwner && errors.size() == 0)
                 scope.commitTransaction();
         }
@@ -603,9 +752,8 @@ public class StudyManager
                     scope.rollbackTransaction();
             }
         }
-        return errors;
     }
-
+    
     private boolean safeIntegersEqual(Integer first, Integer second)
     {
         if (first == null && second == null)

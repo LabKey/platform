@@ -3452,14 +3452,8 @@ public class StudyController extends BaseStudyController
                     return false;
                 }
             }
-            List<String> updateErrors = StudyManager.getInstance().updateDataQCState(getContainer(), getUser(),
+            StudyManager.getInstance().updateDataQCState(getContainer(), getUser(),
                     updateQCForm.getDatasetId(), lsids, newState, updateQCForm.getComments());
-            if (updateErrors != null && !updateErrors.isEmpty())
-            {
-                for (String error : updateErrors)
-                    errors.reject(null, error);
-                return false;
-            }
 
             // if everything has succeeded, we can clear our saved checkbox state now:
             DataRegionSelection.clearAll(getViewContext(), updateQCForm.getDataRegionSelectionKey());

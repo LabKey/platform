@@ -225,7 +225,7 @@ public class DateVisitManager extends VisitManager
 
             for (int day : days)
             {
-                StudyManager.getInstance().createVisit(_study, user, day, null, "Day " + day);
+                StudyManager.getInstance().ensureVisit(_study, user, day, null, "Day " + day);
             }
 
             if (days.size() > 0)

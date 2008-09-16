@@ -2745,6 +2745,12 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
+    private static enum CommentsConflictResolution
+    {
+        SKIP,
+        APPEND,
+        REPLACE
+    }
     public static class UpdateSpecimenCommentsForm extends ViewForm
     {
         private String _comments;
@@ -2752,6 +2758,7 @@ public class SpringSpecimenController extends BaseStudyController
         private boolean _fromGroupedView;
         private String _referrer;
         private boolean _saveCommentsPost;
+        private String _conflictResolve;
 
         public String getComments()
         {
@@ -2802,12 +2809,28 @@ public class SpringSpecimenController extends BaseStudyController
         {
             _saveCommentsPost = saveCommentsPost;
         }
+
+        public String getConflictResolve()
+        {
+            return _conflictResolve;
+        }
+
+        public void setConflictResolve(String conflictResolve)
+        {
+            _conflictResolve = conflictResolve;
+        }
+
+        public CommentsConflictResolution getConflictResolveEnum()
+        {
+            return _conflictResolve == null ? CommentsConflictResolution.REPLACE : CommentsConflictResolution.valueOf(_conflictResolve);
+        }
     }
     
     public static class UpdateSpecimenCommentsBean extends SamplesViewBean
     {
         private String _referrer;
         private String _currentComment;
+        private boolean _mixedComments;
 
         public UpdateSpecimenCommentsBean(ViewContext context, Specimen[] samples, String referrer)
         {
@@ -2816,16 +2839,16 @@ public class SpringSpecimenController extends BaseStudyController
             try
             {
                 Map<Specimen, String> currentComments = SampleManager.getInstance().getSpecimenComments(samples);
-                boolean sameComment = true;
+                _mixedComments = false;
                 Iterator<String> it = currentComments.values().iterator();
                 String prevComment = it.next();
-                while (it.hasNext() && sameComment)
+                while (it.hasNext() && !_mixedComments)
                 {
                     String currentComment = it.next();
-                    sameComment = safeStrEquals(prevComment, currentComment);
+                    _mixedComments = !safeStrEquals(prevComment, currentComment);
                     prevComment = currentComment;
                 }
-                if (sameComment)
+                if (!_mixedComments)
                     _currentComment = prevComment;
             }
             catch (SQLException e)
@@ -2842,6 +2865,11 @@ public class SpringSpecimenController extends BaseStudyController
         public String getCurrentComment()
         {
             return _currentComment;
+        }
+
+        public boolean isMixedComments()
+        {
+            return _mixedComments;
         }
     }
 
@@ -2897,10 +2925,21 @@ public class SpringSpecimenController extends BaseStudyController
         {
             if (commentsForm.getRowId() == null)
                 return false;
+            List<Specimen> vials = new ArrayList<Specimen>();
             for (int rowId : commentsForm.getRowId())
+                vials.add(SampleManager.getInstance().getSpecimen(getContainer(), rowId));
+
+            Map<Specimen, String> currentComments = SampleManager.getInstance().getSpecimenComments(vials.toArray(new Specimen[vials.size()]));
+
+            for (Specimen vial : vials)
             {
-                Specimen vial = SampleManager.getInstance().getSpecimen(getContainer(), rowId);
-                SampleManager.getInstance().setSpecimenComment(getUser(), vial, commentsForm.getComments());
+                String previousComment = currentComments.get(vial);
+                if (previousComment == null || commentsForm.getConflictResolveEnum() == CommentsConflictResolution.REPLACE)
+                    SampleManager.getInstance().setSpecimenComment(getUser(), vial, commentsForm.getComments());
+                else if (commentsForm.getConflictResolveEnum() == CommentsConflictResolution.APPEND)
+                    SampleManager.getInstance().setSpecimenComment(getUser(), vial, previousComment + "\n" + commentsForm.getComments());
+                // If we haven't updated by now, our user has selected CommentsConflictResolution.SKIP and previousComments is non-null
+                // so we no-op for this vial.
             }
             return true;
         }

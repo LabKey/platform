@@ -25,7 +25,6 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.attachments.Attachment;
 
 import java.util.*;
-import java.io.File;
 
 /**
  * User: brittp
@@ -105,6 +104,15 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
             _groups.put(template.getType(), templatesByType);
         }
         templatesByType.put(template.getName(), template);
+        if (!wellGroupsInOrder(templatesByType))
+        {
+            List<WellGroupTemplateImpl> sortedWellGroups = new ArrayList<WellGroupTemplateImpl>();
+            sortedWellGroups.addAll(templatesByType.values());
+            Collections.sort(sortedWellGroups, new PlateManager.WellGroupTemplateComparator());
+            templatesByType.clear();
+            for (WellGroupTemplateImpl wellGroup : sortedWellGroups)
+                templatesByType.put(wellGroup.getName(), wellGroup);
+        }
         assert (wellGroupsInOrder(templatesByType)) : "WellGroupTemplates are out of order.";
         return template;
     }

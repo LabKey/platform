@@ -34,6 +34,25 @@
 %>
 <labkey:errors/>
 <form action="updateComments.post" id="updateCommentForm" method="POST">
+    <%
+        if (bean.isMixedComments())
+        {
+    %>
+    <b>Note:</b> Some or all of the selected vials have existing comments.  See vial list below for details.<p>
+    What action should be performed on vials with existing comments?<br>
+    <input type="radio" name="conflictResolve" value="REPLACE" CHECKED> Replace existing comments with new comments<br>
+    <input type="radio" name="conflictResolve" value="APPEND"> Append new comments to existing comments<br>
+    <input type="radio" name="conflictResolve" value="SKIP"> Do not change comments for vials with existing comments<p>
+    New comment:<br>
+    <%
+        }
+        else
+        {
+    %>
+    <input type="hidden" name="conflictResolve" value="REPLACE">
+    <%
+        }
+    %>
     <input type="hidden" name="referrer" value="<%= bean.getReferrer() %>" />
     <input type="hidden" name="saveCommentsPost" value="<%= Boolean.TRUE.toString() %>" />
     <%

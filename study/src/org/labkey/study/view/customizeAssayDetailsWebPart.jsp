@@ -29,7 +29,6 @@
     ViewContext ctx = me.getViewContext();
     ActionURL postUrl = new ActionURL("Project", "customizeWebPart.post", ctx.getContainer());
     String viewProtocolIdStr = bean.getPropertyMap().get(AssayDetailsWebPartFactory.PREFERENCE_KEY);
-    boolean showButtons = Boolean.parseBoolean(bean.getPropertyMap().get(AssayDetailsWebPartFactory.SHOW_BUTTONS_KEY));
     int viewProtocolId = -1;
     try
     {
@@ -40,6 +39,12 @@
     {
         // fall through
     }
+
+    // show buttons should be checked by default for a new assay details webpart.  Otherwise, we preserve the persisted setting:
+    boolean showButtons = true;
+    if (viewProtocolId >= 0)
+        showButtons = Boolean.parseBoolean(bean.getPropertyMap().get(AssayDetailsWebPartFactory.SHOW_BUTTONS_KEY));
+
     Map<String, Integer> nameToId = new TreeMap<String, Integer>();
     for (ExpProtocol protocol : AssayService.get().getAssayProtocols(ctx.getContainer()))
     {

@@ -41,7 +41,7 @@ public class WellGroupCurveImpl implements DilutionCurve
     private Double _slope;
     private WellSummary[] _wellSummaries = null;
 
-    private class FitParameters implements Cloneable
+    private static class FitParameters implements Cloneable
     {
         public Double fitError;
         public double asymmetry;
@@ -78,7 +78,7 @@ public class WellGroupCurveImpl implements DilutionCurve
         }
     }
 
-    public double getMaxPercentage()
+    public double getMaxPercentage() throws FitFailedException
     {
         DoublePoint[] curve = getCurve();
         double max = curve[0].getY();
@@ -91,7 +91,7 @@ public class WellGroupCurveImpl implements DilutionCurve
         return max;
     }
 
-    public double getMinPercentage()
+    public double getMinPercentage() throws FitFailedException
     {
         DoublePoint[] curve = getCurve();
         double min = curve[0].getY();
@@ -199,7 +199,7 @@ public class WellGroupCurveImpl implements DilutionCurve
         return getOutOfRangeValue(dataAbove);
     }
 
-    public double getCutoffDilution(double cutoff)
+    public double getCutoffDilution(double cutoff) throws FitFailedException
     {
         DoublePoint[] curve = getCurve();
 
@@ -253,19 +253,19 @@ public class WellGroupCurveImpl implements DilutionCurve
         }
     }
 
-    private void ensureCurve()
+    private void ensureCurve() throws FitFailedException
     {
         getCurve();
     }
 
-    public DoublePoint[] getCurve()
+    public DoublePoint[] getCurve() throws FitFailedException
     {
         if (_curve == null)
             _curve = renderCurve();
         return _curve;
     }
 
-    private DoublePoint[] renderCurve()
+    private DoublePoint[] renderCurve() throws FitFailedException
     {
         List<WellData> wellDatas = getWellData();
         List<Double> percentages = new ArrayList<Double>(wellDatas.size());
@@ -303,7 +303,7 @@ public class WellGroupCurveImpl implements DilutionCurve
                 Math.pow(1 + Math.pow(10, (Math.log10(parameters.EC50) - Math.log10(x)) * parameters.slope), parameters.asymmetry));
     }
 
-    private FitParameters calculateFitParameters(double minPercentage, double maxPercentage)
+    private FitParameters calculateFitParameters(double minPercentage, double maxPercentage) throws FitFailedException
     {
         FitParameters bestFit = null;
         FitParameters parameters = new FitParameters();
@@ -311,38 +311,48 @@ public class WellGroupCurveImpl implements DilutionCurve
         if (_fitType == FitType.FOUR_PARAMETER)
             parameters.asymmetry = 1;
         
-        for (double min = minPercentage; bestFit == null || min > 0 - step; min -= step )
+        for (double min = minPercentage; min > 0 - step; min -= step )
         {
             parameters.min = min;
-            for (double max = maxPercentage; bestFit == null || max <= 100 + step; max += step )
+            for (double max = maxPercentage; max <= 100 + step; max += step )
             {
                 double absoluteCutoff = min + (0.5 * (max - min));
                 double relativeEC50 = getInterpolatedCutoffDilution(absoluteCutoff/100);
-                parameters.max = max;
-                parameters.EC50 = relativeEC50;
-                for (double slopeRadians = 0; slopeRadians < Math.PI; slopeRadians += Math.PI / 30)
+                if (relativeEC50 != Double.POSITIVE_INFINITY && relativeEC50 != Double.NEGATIVE_INFINITY)
                 {
-                    parameters.slope = Math.tan(slopeRadians);
-                    switch (_fitType)
+                    parameters.max = max;
+                    parameters.EC50 = relativeEC50;
+                    for (double slopeRadians = 0; slopeRadians < Math.PI; slopeRadians += Math.PI / 30)
                     {
-                        case FIVE_PARAMETER:
-                            for (double asymmetryFactor = 0; asymmetryFactor < Math.PI; asymmetryFactor += Math.PI / 30)
-                            {
-                                parameters.asymmetry = asymmetryFactor;
+                        parameters.slope = Math.tan(slopeRadians);
+                        switch (_fitType)
+                        {
+                            case FIVE_PARAMETER:
+                                for (double asymmetryFactor = 0; asymmetryFactor < Math.PI; asymmetryFactor += Math.PI / 30)
+                                {
+                                    parameters.asymmetry = asymmetryFactor;
+                                    parameters.fitError = calculateFitError(parameters);
+                                    if (bestFit == null || parameters.fitError < bestFit.fitError)
+                                        bestFit = parameters.copy();
+                                }
+                                break;
+                            case FOUR_PARAMETER:
+                                parameters.asymmetry = 1;
                                 parameters.fitError = calculateFitError(parameters);
                                 if (bestFit == null || parameters.fitError < bestFit.fitError)
                                     bestFit = parameters.copy();
-                            }
-                            break;
-                        case FOUR_PARAMETER:
-                            parameters.asymmetry = 1;
-                            parameters.fitError = calculateFitError(parameters);
-                            if (bestFit == null || parameters.fitError < bestFit.fitError)
-                                bestFit = parameters.copy();
-                            break;
+                                break;
+                        }
                     }
                 }
             }
+        }
+        if (bestFit == null)
+        {
+            throw new FitFailedException("Unable to find any parameters to fit a curve to wellgroup " + _wellGroup.getName() +
+                    ".  Your plate template may be invalid.  Please contact an administrator to report this problem.  " +
+                    "Debug info: minPercentage = " + minPercentage + ", maxPercentage = " + maxPercentage + ", fitType = " +
+                    _fitType.getLabel() + ", num data points = " + _wellSummaries.length);
         }
         return bestFit;
     }
@@ -360,13 +370,13 @@ public class WellGroupCurveImpl implements DilutionCurve
         return Math.sqrt(deviationValue / _wellSummaries.length);
     }
 
-    public double getFitError()
+    public double getFitError() throws FitFailedException
     {
         ensureCurve();
         return _fitError;
     }
 
-    public double getSlope()
+    public double getSlope() throws FitFailedException
     {
         ensureCurve();
         return _slope;

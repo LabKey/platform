@@ -223,6 +223,25 @@ public class PlateManager implements PlateService.Service
         return savePlateImpl(container, user, plate);
     }
 
+    public static class WellGroupTemplateComparator implements Comparator<WellGroupTemplateImpl>
+    {
+        public int compare(WellGroupTemplateImpl first, WellGroupTemplateImpl second)
+        {
+            Position firstPos = first.getTopLeft();
+            Position secondPos = second.getTopLeft();
+            if (firstPos == null && secondPos == null)
+                return 0;
+            if (firstPos == null)
+                return -1;
+            if (secondPos == null)
+                return 1;
+            int comp = firstPos.getColumn() - secondPos.getColumn();
+            if (comp == 0)
+                comp = firstPos.getRow() - secondPos.getRow();
+            return comp;
+        }
+    }
+
     private void populatePlate(PlateTemplateImpl plate) throws SQLException
     {
         // set plate properties:
@@ -269,24 +288,7 @@ public class PlateManager implements PlateService.Service
             sortedGroups.add(wellgroup);
         }
 
-        Collections.sort(sortedGroups, new Comparator<WellGroupTemplateImpl>()
-        {
-            public int compare(WellGroupTemplateImpl first, WellGroupTemplateImpl second)
-            {
-                Position firstPos = first.getTopLeft();
-                Position secondPos = second.getTopLeft();
-                if (firstPos == null && secondPos == null)
-                    return 0;
-                if (firstPos == null)
-                    return -1;
-                if (secondPos == null)
-                    return 1;
-                int comp = firstPos.getColumn() - secondPos.getColumn();
-                if (comp == 0)
-                    comp = firstPos.getRow() - secondPos.getRow();
-                return comp;
-            }
-        });
+        Collections.sort(sortedGroups, new WellGroupTemplateComparator());
 
         for (WellGroupTemplateImpl group : sortedGroups)
             plate.addWellGroup(group);

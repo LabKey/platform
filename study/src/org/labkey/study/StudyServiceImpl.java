@@ -168,49 +168,57 @@ public class StudyServiceImpl implements StudyService.Service
         return result;
     }
 
-    @SuppressWarnings("unchecked")
     public Map<String,Object> getDatasetRow(User u, Container c, int datasetId, String lsid) throws SQLException
+    {
+        Map<String, Object>[] rows = getDatasetRows(u, c, datasetId, Collections.singleton(lsid));
+        return rows != null && rows.length > 0 ? rows[0] : null;
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String,Object>[] getDatasetRows(User u, Container c, int datasetId, Collection<String> lsids) throws SQLException
     {
         Study study = StudyManager.getInstance().getStudy(c);
         DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
-
-
-        // Unfortunately we need to select twice: once to get the right column names,
-        // and once to get the canonical data.
-        // We should eventually be able to convert to using Query completely.
+        
+        // Unfortunately we need to use two tableinfos: one to get the column names with correct casing,
+        // and one to get the data.  We should eventually be able to convert to using Query completely.
         StudyQuerySchema querySchema = new StudyQuerySchema(study, u, true);
         TableInfo queryTableInfo = querySchema.getDataSetTable(def, null);
-        Map<String,Object> result = Table.selectObject(queryTableInfo, lsid, Map.class);
-
-        if (result == null)
-            return null;
+        SimpleFilter filter = new SimpleFilter();
+        filter.addInClause("lsid", lsids);
 
         try
         {
-            TableInfo tInfo = def.getTableInfo(u);
-            Map<String,Object> data = Table.selectObject(tInfo, lsid, Map.class);
+            TableInfo tInfo = def.getTableInfo(u, true, false);
+            Map<String,Object>[] datas = Table.select(tInfo, Table.ALL_COLUMNS, filter, null, Map.class);
 
-            if (data == null)
+            if (datas == null || datas.length == 0)
                 return null;
 
-            // Need to remove extraneous columns
-            data.remove("_row");
+            Map<String,Object>[] canonicalDatas = new HashMap[datas.length];
             List<ColumnInfo> columns = tInfo.getColumns();
-            for (ColumnInfo col : columns)
+            for (int i = 0; i < datas.length; i++)
             {
-                // special handling for lsids and keys -- they're not user-editable,
-                // but we want to display them
-                if (col.getName().equals("lsid") ||
-                        col.getName().equals("sourcelsid") ||
-                        col.getName().equals("QCState") ||
-                        col.isKeyField())
+                Map<String, Object> data = datas[i];
+                // Need to remove extraneous columns
+                data.remove("_row");
+                for (ColumnInfo col : columns)
                 {
-                    continue;
+                    // special handling for lsids and keys -- they're not user-editable,
+                    // but we want to display them
+                    if (col.getName().equals("lsid") ||
+                            col.getName().equals("sourcelsid") ||
+                            col.getName().equals("QCState") ||
+                            col.isKeyField())
+                    {
+                        continue;
+                    }
+                    if (!col.isUserEditable())
+                        data.remove(col.getName());
                 }
-                if (!col.isUserEditable())
-                    data.remove(col.getName());
+                canonicalDatas[i] = canonicalizeDatasetRow(data, queryTableInfo.getColumns());
             }
-            return canonicalizeDatasetRow(data, queryTableInfo.getColumns());
+            return canonicalDatas;
         }
         catch (ServletException se)
         {
