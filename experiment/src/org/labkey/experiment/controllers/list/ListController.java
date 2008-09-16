@@ -661,17 +661,11 @@ public class ListController extends SpringActionController
             boolean hasError = false;
             TabLoader tl = new TabLoader(form.ff_data, true);
             _list = form.getList();
-            Map<String, DomainProperty> propertiesByName = new CaseInsensitiveHashMap<DomainProperty>();
-            Map<String, DomainProperty> propertiesByCaption = new CaseInsensitiveHashMap<DomainProperty>();
+            ArrayList<PropertyDescriptor> pds = new ArrayList<PropertyDescriptor>();
             for (DomainProperty property : _list.getDomain().getProperties())
-            {
-                propertiesByName.put(property.getName(), property);
-                if (property.getLabel() != null)
-                {
-                    propertiesByCaption.put(property.getLabel(), property);
-                }
-            }
-            Map<String, DomainProperty> properties = new CaseInsensitiveHashMap<DomainProperty>();
+                pds.add(property.getPropertyDescriptor());
+            Map<String, PropertyDescriptor> propertiesByName = OntologyManager.createImportPropertyMap(pds.toArray(new PropertyDescriptor[pds.size()]));
+            Map<String, PropertyDescriptor> properties = new CaseInsensitiveHashMap<PropertyDescriptor>();
             TabLoader.ColumnDescriptor cdKey = null;
             if (form.ff_data == null)
                 hasError = hasError || addError(errors, "Form contains no data");
@@ -679,16 +673,12 @@ public class ListController extends SpringActionController
             {
                 for (TabLoader.ColumnDescriptor cd : tl.getColumns())
                 {
-                    DomainProperty property = propertiesByName.get(cd.name);
+                    PropertyDescriptor property = propertiesByName.get(cd.name);
                     cd.errorValues = ERROR_VALUE;
 
-                    if (property == null)
-                    {
-                        property = propertiesByCaption.get(cd.name);
-                    }
                     if (property != null)
                     {
-                        cd.clazz = property.getPropertyDescriptor().getPropertyType().getJavaType();
+                        cd.clazz = property.getPropertyType().getJavaType();
 
                         if (properties.containsKey(cd.name))
                         {
@@ -800,12 +790,13 @@ public class ListController extends SpringActionController
             if (errors.hasErrors())
                 return false;
 
-            return doBulkInsert(cdKey, properties, rows, errors);
+            return doBulkInsert(cdKey, _list.getDomain(), properties, rows, errors);
         }
 
-        private boolean doBulkInsert(TabLoader.ColumnDescriptor cdKey, Map<String, DomainProperty> properties, Map[] rows, BindException errors) throws SQLException
+        private boolean doBulkInsert(TabLoader.ColumnDescriptor cdKey, Domain domain, Map<String, PropertyDescriptor> properties, Map[] rows, BindException errors) throws SQLException
         {
             boolean transaction = false;
+            
             try
             {
                 if (!ExperimentService.get().isTransactionActive())
@@ -813,14 +804,15 @@ public class ListController extends SpringActionController
                     ExperimentService.get().beginTransaction();
                     transaction = true;
                 }
-                DomainProperty[] dps = properties.values().toArray(new DomainProperty[properties.values().size()]);
-                PropertyDescriptor[] pds = new PropertyDescriptor[dps.length];
-                for (int i = 0; i < dps.length; i ++)
-                {
-                    pds[i] = dps[i].getPropertyDescriptor();
-                }
-                ListImportHelper helper = new ListImportHelper(getUser(), _list, dps, cdKey);
 
+                // There's a disconnect here between the PropertyService api and OntologyManager...
+                ArrayList<DomainProperty> used = new ArrayList<DomainProperty>(properties.size());
+                for (DomainProperty dp : domain.getProperties())
+                    if (properties.containsKey(dp.getPropertyURI()))
+                        used.add(dp);
+                ListImportHelper helper = new ListImportHelper(getUser(), _list, used.toArray(new DomainProperty[used.size()]), cdKey);
+
+                PropertyDescriptor[] pds = properties.values().toArray(new PropertyDescriptor[properties.size()]);
                 OntologyManager.insertTabDelimited(getContainer(), null, helper, pds, rows, true);
                 if (transaction)
                 {

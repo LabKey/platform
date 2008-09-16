@@ -89,25 +89,11 @@ public class UploadSamplesHelper
             ExperimentService.get().getSchema().getScope().beginTransaction();
 
             TabLoader.ColumnDescriptor[] columns = tl.getColumns();
-            Map<String, PropertyDescriptor> descriptorsByName = new LinkedHashMap<String, PropertyDescriptor>();
-            Map<String, PropertyDescriptor> descriptorsByCaption = new HashMap<String, PropertyDescriptor>();
-            Map<String, PropertyDescriptor> descriptorsByURI = new HashMap<String, PropertyDescriptor>();
 
             PropertyDescriptor[] pds = OntologyManager.getPropertiesForType(materialSourceLsid, getContainer());
-            for (PropertyDescriptor pd : pds)
-            {
-                descriptorsByName.put(pd.getName(), pd);
-                descriptorsByURI.put(pd.getPropertyURI(), pd);
-                if (pd.getLabel() == null)
-                {
-                    descriptorsByCaption.put(ColumnInfo.captionFromName(pd.getName()), pd);
-                }
-                else
-                {
-                    descriptorsByCaption.put(pd.getLabel(), pd);
-                }
-            }
-
+            Map<String, PropertyDescriptor> descriptorsByName = OntologyManager.createImportPropertyMap(pds);
+            ArrayList<PropertyDescriptor> descriptors = new ArrayList<PropertyDescriptor>(Arrays.asList(pds));
+            
             DomainDescriptor dd = new DomainDescriptor();
             dd.setDomainURI(materialSourceLsid);
             dd.setContainer(getContainer());
@@ -122,10 +108,6 @@ public class UploadSamplesHelper
             {
                 TabLoader.ColumnDescriptor cd = columns[i];
                 PropertyDescriptor pd = descriptorsByName.get(cd.name);
-                if (pd == null)
-                {
-                    pd = descriptorsByCaption.get(cd.name);
-                }
                 if (pd == null || source == null)
                 {
                     pd = new PropertyDescriptor();
@@ -138,7 +120,7 @@ public class UploadSamplesHelper
                     pd.setContainer(_form.getContainer());
                     //Change name to be fully qualified string for property
                     pd = OntologyManager.insertOrUpdatePropertyDescriptor(pd, dd);
-                    descriptorsByURI.put(pd.getPropertyURI(), pd);
+                    descriptors.add(pd);
                     descriptorsByName.put(pd.getName(), pd);
                 }
                 cd.name = pd.getPropertyURI();
@@ -280,7 +262,7 @@ public class UploadSamplesHelper
                     }
                 }
             }
-            insertTabDelimitedMaterial(maps, descriptorsByURI.values().toArray(new PropertyDescriptor[descriptorsByURI.size()]), idColPropertyURIs, source.getMaterialLSIDPrefix(), source.getLSID(), reusedMaterialLSIDs);
+            insertTabDelimitedMaterial(maps, descriptors.toArray(new PropertyDescriptor[descriptors.size()]), idColPropertyURIs, source.getMaterialLSIDPrefix(), source.getLSID(), reusedMaterialLSIDs);
             _form.getSampleSet().onSamplesChanged(_form.getUser(), null);
             ExperimentService.get().getSchema().getScope().commitTransaction();
         }

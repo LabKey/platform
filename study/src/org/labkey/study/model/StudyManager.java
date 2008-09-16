@@ -1820,11 +1820,17 @@ public class StudyManager
             String uri = col.getPropertyURI();
             if (null != uri)
             {
-                propName2Col.put(col.getPropertyURI(), col);
+                propName2Col.put(uri, col);
                 String propName = uri.substring(uri.lastIndexOf('#')+1);
                 if (!propName2Col.containsKey(propName))
                     propName2Col.put(propName,col);
             }
+        }
+        for (ColumnInfo col : tinfo.getColumns())
+        {
+            String label = col.getCaption();
+            if (null != label && !propName2Col.containsKey(label))
+                propName2Col.put(label, col);
         }
 
         TabLoader loader = new TabLoader(tsv, true);
