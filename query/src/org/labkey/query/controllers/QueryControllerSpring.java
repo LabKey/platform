@@ -1319,7 +1319,7 @@ public class QueryControllerSpring extends SpringActionController
             //apply optional settings (maxRows, offset)
             if(null != form.getMaxRows())
             {
-                settings.setShowRows(ShowRows.DEFAULT);
+                settings.setShowRows(ShowRows.PAGINATED);
                 settings.setMaxRows(form.getMaxRows().intValue());
             }
 
