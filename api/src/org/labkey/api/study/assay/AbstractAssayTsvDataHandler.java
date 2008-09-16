@@ -118,10 +118,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             }
 
             checkData(columns, rawData, resolver);
-            Map<String, String> propertyNameToURIMap = new HashMap<String, String>();
-            for (PropertyDescriptor pd : columns)
-                propertyNameToURIMap.put(pd.getName().toLowerCase(), pd.getPropertyURI());
-            Map<String, Object>[] fileData = convertPropertyNamesToURIs(rawData, propertyNameToURIMap);
+            Map<String, PropertyDescriptor> propertyNameToDescriptor = OntologyManager.createImportPropertyMap(columns);
+            Map<String, Object>[] fileData = convertPropertyNamesToURIs(rawData, propertyNameToDescriptor);
 
             if (!ExperimentService.get().isTransactionActive())
             {
@@ -342,7 +340,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
     }
 
-    private Map<String, Object>[] convertPropertyNamesToURIs(Map<String, Object>[] dataMaps, Map<String, String> propertyNamesToUris)
+    private Map<String, Object>[] convertPropertyNamesToURIs(Map<String, Object>[] dataMaps, Map<String, PropertyDescriptor> propertyNamesToUris)
     {
         Map<String, Object>[] ret = new Map[dataMaps.length];
         for (int i = 0; i < dataMaps.length; i++)
@@ -350,10 +348,10 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             ret[i] = new CaseInsensitiveHashMap<Object>(dataMaps[i].size());
             for (Map.Entry<String,Object> entry : dataMaps[i].entrySet())
             {
-                String uri = propertyNamesToUris.get(entry.getKey().toLowerCase());
-                if (uri == null)
+                PropertyDescriptor pd = propertyNamesToUris.get(entry.getKey().toLowerCase());
+                if (pd == null)
                     throw new RuntimeException("Expected uri for datamap property '" + entry.getKey() + "'.");
-                ret[i].put(uri, entry.getValue());
+                ret[i].put(pd.getPropertyURI(), entry.getValue());
             }
         }
         return ret;

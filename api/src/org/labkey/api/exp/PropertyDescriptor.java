@@ -98,10 +98,16 @@ public class PropertyDescriptor implements Serializable, Cloneable
 
     public PropertyDescriptor(String propertyURI, String rangeURI, String name, Container container)
     {
+        this(propertyURI, rangeURI, name, null, container);
+    }
+
+    public PropertyDescriptor(String propertyURI, String rangeURI, String name, String label, Container container)
+    {
         this();
         this.propertyURI = propertyURI;
         this.rangeURI = rangeURI;
         this.name = name;
+        this.label = label;
         setContainer(container);
     }
 

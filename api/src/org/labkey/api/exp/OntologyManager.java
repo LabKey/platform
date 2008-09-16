@@ -30,6 +30,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.common.util.CPUTimer;
 
 import java.io.File;
@@ -100,6 +101,28 @@ public class OntologyManager
 
 		return m;
 	}
+
+
+    /** This helper returns a map of names -> PropertyDescriptor that is useful for import */
+    public static Map<String,PropertyDescriptor> createImportPropertyMap(PropertyDescriptor[] descriptors)
+    {
+        HashMap<String,PropertyDescriptor> m = new CaseInsensitiveHashMap<PropertyDescriptor>(descriptors.length * 3);
+        for (PropertyDescriptor pd : descriptors)
+        {
+            if (null != pd.getLabel())
+                m.put(pd.getLabel(), pd);
+        }
+        for (PropertyDescriptor pd : descriptors)
+        {
+            m.put(pd.getName(), pd);
+        }
+        for (PropertyDescriptor pd : descriptors)
+        {
+            m.put(pd.getPropertyURI(), pd);
+        }
+        return m;
+    }
+    
 
     public static final int MAX_PROPS_IN_BATCH = 10000;
 

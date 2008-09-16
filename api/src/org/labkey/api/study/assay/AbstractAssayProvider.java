@@ -271,7 +271,10 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     protected PropertyDescriptor createPublishPropertyDescriptor(Container sourceContainer, String name, PropertyType type)
     {
-        PropertyDescriptor pd = new PropertyDescriptor(null, type.getTypeUri(), name, sourceContainer);
+        String label = name;
+        if (name.contains(" "))
+            name = name.replace(" ", "");
+        PropertyDescriptor pd = new PropertyDescriptor(null, type.getTypeUri(), name, label, sourceContainer);
         if (type.getJavaType() == Double.class)
             pd.setFormat("0.###");
         return pd;
