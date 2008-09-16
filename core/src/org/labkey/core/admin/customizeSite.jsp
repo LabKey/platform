@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.settings.AppProps"%>
-<%@ page import="org.labkey.api.util.FolderDisplayMode" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.SystemMaintenance" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -114,7 +113,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 
 <tr>
-    <td colspan=2>Set system email, log in, and support properties (<%=bean.helpLink%>)</td>
+    <td colspan=2>Set default domain for user sign in and base server url (<%=bean.helpLink%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
 <tr>
@@ -131,7 +130,7 @@ Click the Save button at any time to accept the current settings and continue.</
 
 
 <tr>
-    <td colspan=2>Automatically check for updates to LabKey Server, and
+    <td colspan=2>Automatically check for updates to LabKey Server and
         report anonymous usage statistics to the LabKey team (<%=bean.helpLink%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
