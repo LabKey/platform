@@ -154,7 +154,13 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
         _rootPanel.add(new HTML("<br/><br/>"));
         saveBarBottom = new SaveButtonBar(this);
         _rootPanel.add(saveBarBottom);
-        setDirty(_copy);
+
+        // When first creating an assay, the name will be empty. If that's the case, we need to
+        // set the dirty bit
+        if ("".equals(_nameBox.getBox().getText()))
+            setDirty(true);
+        else
+            setDirty(_copy);
 
         Window.addWindowCloseListener(_closeListener);
     }
@@ -345,7 +351,8 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
     {
         // We're already listening for navigation if the dirty bit is set,
         // so no extra handling is needed.
-        WindowUtil.back();
+        String loc = PropertyUtil.getContextPath() + "/Project" + PropertyUtil.getContainerPath() + "/begin.view";
+        WindowUtil.setLocation(loc);
     }
 
     public void finish()

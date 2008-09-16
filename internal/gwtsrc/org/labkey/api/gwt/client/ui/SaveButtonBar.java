@@ -38,7 +38,7 @@ public class SaveButtonBar extends FlexTable
         super();
         owner = s;
 
-        finishButton = new ImageButton("Finish", new ClickListener()
+        finishButton = new ImageButton("Save & Close", new ClickListener()
         {
             public void onClick(Widget sender)
             {
@@ -48,7 +48,7 @@ public class SaveButtonBar extends FlexTable
 
         setWidget(0, 0, finishButton);
 
-        saveButton = new ImageButton("    Save    ", new ClickListener()
+        saveButton = new ImageButton("Save", new ClickListener()
         {
             public void onClick(Widget sender)
             {
