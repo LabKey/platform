@@ -220,10 +220,11 @@ table.labkey-no-spacing
 .labkey-status-error
 {
     text-align: center;
-    background-color: #FFC5AA;
-    border: 1px solid #FF0000;
-    color: #FF0000;
+    background-color: #CC0000;
+    border: 1px solid #990000;
+    color: #FFFFFF;
     font-weight: bold;
+    padding: 2px;
 }
 
 .labkey-textbox-error

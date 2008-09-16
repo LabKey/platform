@@ -61,6 +61,7 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.mail.MessagingException;
 import java.beans.Introspector;
 import java.io.*;
 import java.lang.management.*;
@@ -106,6 +107,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "view all site errors since reset", new ActionURL(ShowErrorsSinceMarkAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "reset site errors", new ActionURL(ResetErrorMarkAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "check database", new ActionURL(DbCheckerAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "test email configuration", new ActionURL(EmailTestAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "credits", new ActionURL(CreditsAction.class, root));
     }
 
@@ -4555,5 +4557,87 @@ public class AdminController extends SpringActionController
         {
             url.replaceParameter("target", c.getPath());
         }
+    }
+
+    public static class EmailTestForm
+    {
+        private String _to;
+        private String _body;
+        private MessagingException _exception;
+
+        public String getTo()
+        {
+            return _to;
+        }
+
+        public void setTo(String to)
+        {
+            _to = to;
+        }
+
+        public String getBody()
+        {
+            return _body;
+        }
+
+        public void setBody(String body)
+        {
+            _body = body;
+        }
+
+        public MessagingException getException()
+        {
+            return _exception;
+        }
+
+        public void setException(MessagingException exception)
+        {
+            _exception = exception;
+        }
+
+        public String getFrom(Container c)
+        {
+            LookAndFeelProperties props = LookAndFeelProperties.getInstance(c);
+            return props.getSystemEmailAddress();
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class EmailTestAction extends SimpleViewAction<EmailTestForm>
+    {
+        public ModelAndView getView(EmailTestForm form, BindException errors) throws Exception
+        {
+            if(null != form.getTo())
+            {
+                LookAndFeelProperties props = LookAndFeelProperties.getInstance(getViewContext().getContainer());
+                MailHelper.ViewMessage msg = MailHelper.createMessage(props.getSystemEmailAddress(), form.getTo());
+                msg.setSubject("Test email message sent from " + props.getShortName());
+                msg.setText(PageFlowUtil.filter(form.getBody()));
+
+                try
+                {
+                    MailHelper.send(msg);
+                }
+                catch(MessagingException e)
+                {
+                    form.setException(e);
+                }
+            }
+
+            JspView emailPropsView = new JspView("/org/labkey/core/admin/emailProps.jsp");
+            emailPropsView.setTitle("Current Email Settings");
+            
+            JspView<EmailTestForm> testView = new JspView<EmailTestForm>("/org/labkey/core/admin/emailTest.jsp", form);
+            testView.setTitle("Send a Test Email");
+
+            return new VBox(emailPropsView, testView);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild("Admin Console", new ActionURL(ShowAdminAction.class, getViewContext().getContainer()).getLocalURIString());
+            return root.addChild("Test Email Configuration");
+        }
+
     }
 }

@@ -351,6 +351,8 @@ core/src/org/labkey/core/admin/customizeEmail.jsp -text
 core/src/org/labkey/core/admin/customizeFolder.jsp -text
 core/src/org/labkey/core/admin/customizeSite.jsp -text
 core/src/org/labkey/core/admin/deleteFolder.jsp -text
+core/src/org/labkey/core/admin/emailProps.jsp -text
+core/src/org/labkey/core/admin/emailTest.jsp -text
 core/src/org/labkey/core/admin/folderAliases.jsp -text
 core/src/org/labkey/core/admin/lookAndFeelProperties.jsp -text
 core/src/org/labkey/core/admin/lookAndFeelResources.jsp -text
