@@ -479,7 +479,7 @@ public class ListController extends SpringActionController
     }
 
 
-    // Unfortunate query hackery that orders display columns based on default view
+    // Unfortunate query hackery that orders details, insert, and update display columns based on default view
     // TODO: Fix this... build into InsertView (or QueryInsertView or something)
     private void setDisplayColumnsFromDefaultView(int listId, DataRegion rgn, boolean editableOnly)
     {
