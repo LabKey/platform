@@ -744,6 +744,7 @@ public class DataRegion extends DisplayElement
         out.write("'totalRows' : " + _totalRows + ",\n");
         out.write("'rowCount' : " + _rowCount + ",\n");
         out.write("'showRows' : '" + _showRows.toString().toLowerCase() + "',\n");
+        out.write("'showRecordSelectors' : " + _showRecordSelectors + ",\n");
         out.write("'selectionKey' : '" + PageFlowUtil.filter(_selectionKey) + "',\n");
         out.write("'selectorCols' : '" + PageFlowUtil.filter(_recordSelectorValueColumns) + "'\n");
         out.write("})});\n");

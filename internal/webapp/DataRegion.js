@@ -28,6 +28,7 @@ LABKEY.DataRegion = function (config)
     this.rowCount = config.rowCount; // may be null
     this.showRows = config.showRows;
 
+    this.showRecordSelectors = config.showRecordSelectors;
     this.selectionKey = config.selectionKey;
     this.selectorCols = config.selectorCols;
 
@@ -52,7 +53,7 @@ LABKEY.DataRegion = function (config)
     }
 
     // set the 'select all on page' checkbox state
-    if (this.form && this.isPageSelected())
+    if (this.form && this.showRecordSelectors && this.isPageSelected())
     {
         var toggle = this.form[".toggle"];
         if (toggle)
@@ -132,11 +133,13 @@ LABKEY.DataRegion = function (config)
 
     this._showSelectMessage = function (msg)
     {
-        this.showMessage(msg +
-            "&nbsp; Select: <span class='labkey-link' onclick='LABKEY.DataRegions[\"" + this.name + "\"].selectNone();' title='Clear all selected rows'>None</span>" +
-            "&nbsp; Show: <span class='labkey-link' onclick='LABKEY.DataRegions[\"" + this.name + "\"].showSelected();' title='Show all selected rows.'>Selected</span>, " +
-            "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + this.name + "\"].showUnselected();' title='Show all unselected rows.'>Unselected</span>"
-        );
+        if (this.showRecordSelectors)
+        {
+            msg += "&nbsp; Select: <span class='labkey-link' onclick='LABKEY.DataRegions[\"" + this.name + "\"].selectNone();' title='Clear selection from all rows'>None</span>" +
+                   "&nbsp; Show: <span class='labkey-link' onclick='LABKEY.DataRegions[\"" + this.name + "\"].showSelected();' title='Show all selected rows'>Selected</span>, " +
+                   "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + this.name + "\"].showUnselected();' title='Show all unselected rows'>Unselected</span>"
+        }
+        this.showMessage(msg);
     }
 
     switch (this.showRows)

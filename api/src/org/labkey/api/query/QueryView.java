@@ -577,10 +577,13 @@ public class QueryView extends WebPartView<Object>
                     "LABKEY.DataRegions[" + PageFlowUtil.jsString(regionName) + "].setMaxRows(" + String.valueOf(pageSize) + ")", checked);
         }
         pageSizeMenu.addSeparator();
-        pageSizeMenu.addMenuItem("Show Selected", "#",
-                "LABKEY.DataRegions[" + PageFlowUtil.jsString(regionName) + "].showSelected()", showingSelected);
-        pageSizeMenu.addMenuItem("Show Unselected", "#",
-                "LABKEY.DataRegions[" + PageFlowUtil.jsString(regionName) + "].showUnselected()", showingUnselected);
+        if (showRecordSelectors() || showingSelected || showingUnselected)
+        {
+            pageSizeMenu.addMenuItem("Show Selected", "#",
+                    "LABKEY.DataRegions[" + PageFlowUtil.jsString(regionName) + "].showSelected()", showingSelected);
+            pageSizeMenu.addMenuItem("Show Unselected", "#",
+                    "LABKEY.DataRegions[" + PageFlowUtil.jsString(regionName) + "].showUnselected()", showingUnselected);
+        }
         pageSizeMenu.addMenuItem("Show All", "#",
                 "LABKEY.DataRegions[" + PageFlowUtil.jsString(regionName) + "].showAll()", showingAll);
 
