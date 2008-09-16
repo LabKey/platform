@@ -61,7 +61,6 @@ public class TemplateView extends HorizontalPanel
     private PlatePropertyPanel _platePropertyPanel;
     private String _assayTypeName;
     private String _templateTypeName;
-    private SimplePanel _remainderPanel;
 
     public TemplateView(RootPanel rootPanel, String plateName, String plateTypeName, String templateName)
     {
@@ -256,7 +255,7 @@ public class TemplateView extends HorizontalPanel
         setDirty(true);
     }
 
-    public void saveChanges()
+    public void saveChanges(final AsyncCallback callback)
     {
         String templateName = _nameBox.getText().trim();
         if (templateName == null || templateName.length() == 0)
@@ -285,15 +284,17 @@ public class TemplateView extends HorizontalPanel
             {
                 setStatus("Save failed: " + throwable.getMessage());
                 setDirty(true);
+                callback.onFailure(throwable);
             }
 
             public void onSuccess(Object object)
             {
                 _copyMode = false;
                 setStatus("Saved.");
+                setDirty(false);
+                callback.onSuccess(object);
             }
         });
-        setDirty(false);
     }
 
     public void setStatus(String status)

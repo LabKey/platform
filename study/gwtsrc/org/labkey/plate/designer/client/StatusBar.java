@@ -16,47 +16,41 @@
 
 package org.labkey.plate.designer.client;
 
-import com.google.gwt.user.client.ui.*;
 import com.google.gwt.user.client.Timer;
-import com.google.gwt.user.client.Window;
+import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.google.gwt.user.client.ui.HorizontalPanel;
+import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.SimplePanel;
+import org.labkey.api.gwt.client.ui.SaveButtonBar;
+import org.labkey.api.gwt.client.ui.Saveable;
+import org.labkey.api.gwt.client.ui.WindowUtil;
 import org.labkey.api.gwt.client.util.PropertyUtil;
-import org.labkey.api.gwt.client.ui.LinkButton;
-import org.labkey.api.gwt.client.ui.ImageButton;
 
 /**
  * User: brittp
  * Date: Feb 8, 2007
  * Time: 3:35:16 PM
  */
-public class StatusBar extends HorizontalPanel
+public class StatusBar extends HorizontalPanel implements Saveable
 {
+    private final String _doneLink;
+    private final SaveButtonBar _saveButtonBar;
+
     private TemplateView _view;
     private Label _statusLabel;
     private Timer _clearTimer;
-    private ImageButton _saveButton;
 
     public StatusBar(TemplateView view, final String doneLink)
     {
+        _doneLink = doneLink;
+
         _view = view;
-        _saveButton = new ImageButton("Save Changes");
-        _saveButton.addClickListener(new ClickListener()
-        {
-            public void onClick(Widget sender)
-            {
-                _view.saveChanges();
-            }
-        });
-        add(_saveButton);
-        _saveButton.setEnabled(false);
+
+        _saveButtonBar = new SaveButtonBar(this);
+        add(_saveButtonBar);
 
         _statusLabel = new Label();
         SimplePanel spacer = new SimplePanel();
-        spacer.setWidth("10px");
-        add(spacer);
-
-        Widget doneButton = new LinkButton("Done", doneLink);
-        add(doneButton);
-        spacer = new SimplePanel();
         spacer.setWidth("10px");
         add(spacer);
 
@@ -69,11 +63,57 @@ public class StatusBar extends HorizontalPanel
                 _statusLabel.setText("");
             }
         };
+        setDirty(false);
+    }
+
+    public void cancel()
+    {
+        // We're already listening for navigation if the dirty bit is set,
+        // so no extra handling is needed.
+        String loc = PropertyUtil.getContextPath() + "/Project" + PropertyUtil.getContainerPath() + "/begin.view";
+        WindowUtil.setLocation(loc);
+    }
+
+    public void finish()
+    {
+        save(new AsyncCallback()
+        {
+            public void onFailure(Throwable caught)
+            {
+                // do nothing -- error is already displayed
+            }
+
+            public void onSuccess(Object result)
+            {
+                WindowUtil.setLocation(_doneLink);
+            }
+        });
+    }
+
+    public void save()
+    {
+        save(new AsyncCallback()
+        {
+            public void onFailure(Throwable caught)
+            {
+                // do nothing
+            }
+
+            public void onSuccess(Object result)
+            {
+                // do nothing
+            }
+        });
+    }
+
+    private void save(AsyncCallback callback)
+    {
+        _view.saveChanges(callback);
     }
 
     public void setDirty(boolean dirty)
     {
-        _saveButton.setEnabled(dirty);    
+        _saveButtonBar.setAllowSave(dirty);
     }
 
     public void setStatus(String status)
