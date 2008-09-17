@@ -19,6 +19,7 @@ import org.labkey.api.pipeline.WorkDirFactory;
 import org.labkey.api.pipeline.WorkDirectory;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.NetworkDrive;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.InitializingBean;
 
@@ -61,7 +62,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
         {
             if (_tempDirectory == null)
             {
-                throw new IllegalStateException("tempDirectory not set - set it directly using the tempDirectory property or use the setTempDirectoryEnv property to point to an environment variable");
+                throw new IllegalStateException("tempDirectory not set - set it directly using the tempDirectory property or use the tempDirectoryEnv property to point to an environment variable");
             }
             if (_cleanupOnStartup)
             {
@@ -107,11 +108,12 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
             return _lockDirectory;
         }
 
-        public void setLockDirectory(String lockDirectory)
+        public void setLockDirectory(String directoryString)
         {
-            if (!new File(lockDirectory).isDirectory())
-                throw new IllegalArgumentException("The lock directory " + lockDirectory + " does not exist.");
-            _lockDirectory = lockDirectory;
+            File tempDir = new File(directoryString);
+            if (!NetworkDrive.exists(tempDir) || !tempDir.isDirectory())
+                throw new IllegalArgumentException("The lock directory " + directoryString + " does not exist.");
+            _lockDirectory = directoryString;
         }
 
         public String getTempDirectory()
@@ -119,11 +121,12 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
             return _tempDirectory;
         }
 
-        public void setTempDirectory(String tempDirectory)
+        public void setTempDirectory(String directoryString)
         {
-            if (!new File(tempDirectory).isDirectory())
-                throw new IllegalArgumentException("The temporary directory " + tempDirectory + " does not exist.");
-            _tempDirectory = tempDirectory;
+            File tempDir = new File(directoryString);
+            if (!NetworkDrive.exists(tempDir) || !tempDir.isDirectory())
+                throw new IllegalArgumentException("The temporary directory " + directoryString + " does not exist.");
+            _tempDirectory = directoryString;
         }
 
         public void setCleanupOnStartup(boolean cleanupOnStartup)
