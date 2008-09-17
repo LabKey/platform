@@ -489,6 +489,8 @@ public class FileContentController extends SpringActionController
    @RequiresSiteAdmin
    public class AddAttachmentDirectoryAction extends ShowAdminAction
    {
+       public static final int MAX_NAME_LENGTH = 80;
+       public static final int MAX_PATH_LENGTH = 255;
        public boolean handlePost(FileContentForm form, BindException errors) throws Exception
        {
            String name = StringUtils.trimToNull(form.getFileSetName());
@@ -497,6 +499,8 @@ public class FileContentController extends SpringActionController
            String message = "";
            if (null == name)
                message = "Please enter a label for the file set. ";
+           else if (name.length() > MAX_NAME_LENGTH)
+                message = "Name is too long, should be less than " + MAX_NAME_LENGTH +" characters.";
            else
            {
                AttachmentDirectory attDir = AttachmentService.get().getRegisteredDirectory(getContainer(), name);
@@ -505,6 +509,8 @@ public class FileContentController extends SpringActionController
            }
            if (null == path)
                message += "Please enter a full path to the file set.";
+           else if (path.length() > MAX_PATH_LENGTH)
+                message += " File path is too long, should be less than " + MAX_PATH_LENGTH + " characters.";
 
            if (message.length() == 0)
            {
