@@ -122,7 +122,11 @@ public class RReport extends AbstractReport implements AttachmentParent, Report.
     public static void setTempFolder(String folder) {setProp(R_TEMP_FOLDER, folder);}
     public static int getEditPermissions() {return NumberUtils.toInt(getProp(R_EDIT_PERMISSIONS, Integer.toString(org.labkey.api.security.SecurityManager.PermissionSet.ADMIN.getPermissions()))); }
     public static void setEditPermissions(int permissions) {setProp(R_EDIT_PERMISSIONS, Integer.toString(permissions));}
-    public static String getRScriptHandler(){return getProp(R_SCRIPT_HANDLER, DefaultScriptRunner.ID);}
+    public static String getRScriptHandler()
+    {
+        //return getProp(R_SCRIPT_HANDLER, DefaultScriptRunner.ID);
+        return DefaultScriptRunner.ID;
+    }
     public static void setRScriptHandler(String scriptHandler){setProp(R_SCRIPT_HANDLER, scriptHandler);}
 
     public static boolean isValidConfiguration()
