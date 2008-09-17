@@ -869,33 +869,40 @@ public class ProjectController extends SpringActionController
     {
         public ApiResponse execute(GetContainersForm form, BindException errors) throws Exception
         {
-            return new ApiSimpleResponse("containers", getContainers(getViewContext().getContainer(),
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.putAll(getContainerProps(getViewContext().getContainer(),
                     getViewContext().getUser(), form.isIncludeSubfolders()));
+            return response;
+        }
+
+        protected Map<String,Object> getContainerProps(Container container, User user, boolean recurse)
+        {
+            Map<String,Object> containerProps = new HashMap<String,Object>();
+            containerProps.put("name", container.getName());
+            containerProps.put("id", container.getId());
+            containerProps.put("path", container.getPath());
+            containerProps.put("sortOrder", container.getSortOrder());
+            containerProps.put("userPermissions", container.getAcl().getPermissions(user));
+
+            //recurse into children
+            if (recurse && container.hasChildren())
+                containerProps.put("children", getContainers(container, user, recurse));
+
+            return containerProps;
         }
 
         protected List<Map<String,Object>> getContainers(Container parent, User user, boolean recurse)
         {
-            List<Map<String,Object>> containersInfo = new ArrayList<Map<String,Object>>();
+            List<Map<String,Object>> containersProps = new ArrayList<Map<String,Object>>();
             for(Container child : parent.getChildren())
             {
                 if (!child.hasPermission(user, ACL.PERM_READ))
                     continue;
 
-                Map<String,Object> containerInfo = new HashMap<String,Object>();
-                containerInfo.put("name", child.getName());
-                containerInfo.put("id", child.getId());
-                containerInfo.put("path", child.getPath());
-                containerInfo.put("sortOrder", child.getSortOrder());
-                containerInfo.put("userPermissions", child.getAcl().getPermissions(user));
-
-                //recurse into children
-                if (recurse && child.hasChildren())
-                    containerInfo.put("children", getContainers(child, user, recurse));
-                
-                containersInfo.add(containerInfo);
+                containersProps.add(getContainerProps(child, user, recurse));
             }
 
-            return containersInfo;
+            return containersProps;
         }
     }
 }
