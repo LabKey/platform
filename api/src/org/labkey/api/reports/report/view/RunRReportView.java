@@ -20,23 +20,23 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.Container;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.RReportDescriptor;
-import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.RReportJob;
+import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.view.*;
-import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.common.util.Pair;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpSession;
-import java.io.PrintWriter;
 import java.io.File;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -271,7 +271,7 @@ public class RunRReportView extends RunReportView
             else
             {
                 Report report = form.getReport();
-                if (form.getIsDirty() || hasFilterOrSort(getViewContext().getActionURL()))
+                if (form.getIsDirty())
                     ((RReport)report).clearCache();
                 view.addView(report.renderReport(getViewContext()));
             }
@@ -305,21 +305,5 @@ public class RunRReportView extends RunReportView
             else
                 return("<a href=\"javascript:void(0)\" onclick=\"switchTab('" + getUrl().replaceParameter("tabId", getId()).getLocalURIString() + "')\">" + getName() + "&nbsp;</a>");
         }
-    }
-
-    protected boolean hasFilterOrSort(ActionURL url)
-    {
-        for (Pair<String, String> param : url.getParameters())
-        {
-            if (isFilterOrSort(param.getKey()))
-                return true;
-        }
-        return false;
-    }
-
-    protected boolean isFilterOrSort(String param)
-    {
-        return (param.indexOf("~") >= 0 ||
-                param.indexOf(".sort") >= 0);
     }
 }

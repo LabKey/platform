@@ -31,13 +31,14 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.r.view.*;
-import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ReportQueryView;
+import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.RunRReportView;
+import org.labkey.api.reports.report.view.RunReportView;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.view.*;
 
 import java.io.*;
@@ -72,6 +73,7 @@ public class RReport extends AbstractReport implements AttachmentParent, Report.
     private static final String R_TEMP_FOLDER = "RReport.TempFolder";
     private static final String R_EDIT_PERMISSIONS = "RReport.EditPermissions";
     private static final String R_SCRIPT_HANDLER = "RReport.ScriptHandler";
+    private static final Map<Integer, ActionURL> _cachedReportURLMap = new HashMap<Integer, ActionURL>();
 
     static {
         ParamReplacementSvc.get().registerHandler(new ConsoleOutput());
@@ -204,54 +206,58 @@ public class RReport extends AbstractReport implements AttachmentParent, Report.
         }
 
         List<ParamReplacement> outputSubst = new ArrayList<ParamReplacement>();
-        if (!getCachedReport(outputSubst))
+        if (!getCachedReport(viewContext, outputSubst))
         {
             RScriptRunner runner = createScriptRunner(this, viewContext);
             runner.runScript(view, outputSubst);
-            cacheResults(outputSubst);
+            cacheResults(viewContext, outputSubst);
         }
         renderViews(this, view, outputSubst, false);
 
         return view;
     }
 
-    protected void cacheResults(List<ParamReplacement> replacements)
+    protected void cacheResults(ViewContext context, List<ParamReplacement> replacements)
     {
         if (getDescriptor().getReportId() != -1 &&
             BooleanUtils.toBoolean(getDescriptor().getProperty(ReportDescriptor.Prop.cached)))
         {
-            File cacheDir = getCacheDir();
-            try {
-                File mapFile = new File(cacheDir, SUBSTITUTION_MAP);
-                for (ParamReplacement param : replacements)
-                {
-                    File src = param.getFile();
-                    File dst = new File(cacheDir, src.getName());
-
-                    if (dst.createNewFile())
-                    {
-                        FileUtil.copyFile(src, dst);
-                        if (param.getId().equals(ConsoleOutput.ID))
-                        {
-                            BufferedWriter bw = null;
-                            try {
-                                bw = new BufferedWriter(new FileWriter(dst, true));
-                                bw.write("\nLast cached update : " + DateUtil.formatDateTime() + "\n");
-                            }
-                            finally
-                            {
-                                if (bw != null)
-                                    try {bw.close();} catch (IOException ioe) {}
-                            }
-                        }
-                        param.setFile(dst);
-                    }
-                }
-                ParamReplacementSvc.get().toFile(replacements, mapFile);
-            }
-            catch (Exception e)
+            synchronized(_cachedReportURLMap)
             {
-                throw new RuntimeException(e);
+                File cacheDir = getCacheDir();
+                try {
+                    File mapFile = new File(cacheDir, SUBSTITUTION_MAP);
+                    for (ParamReplacement param : replacements)
+                    {
+                        File src = param.getFile();
+                        File dst = new File(cacheDir, src.getName());
+
+                        if (dst.createNewFile())
+                        {
+                            FileUtil.copyFile(src, dst);
+                            if (param.getId().equals(ConsoleOutput.ID))
+                            {
+                                BufferedWriter bw = null;
+                                try {
+                                    bw = new BufferedWriter(new FileWriter(dst, true));
+                                    bw.write("\nLast cached update : " + DateUtil.formatDateTime() + "\n");
+                                }
+                                finally
+                                {
+                                    if (bw != null)
+                                        try {bw.close();} catch (IOException ioe) {}
+                                }
+                            }
+                            param.setFile(dst);
+                        }
+                    }
+                    ParamReplacementSvc.get().toFile(replacements, mapFile);
+                    _cachedReportURLMap.put(getDescriptor().getReportId(), getCacheURL(context.getActionURL()));
+                }
+                catch (Exception e)
+                {
+                    throw new RuntimeException(e);
+                }
             }
         }
     }
@@ -263,25 +269,55 @@ public class RReport extends AbstractReport implements AttachmentParent, Report.
             FileUtil.deleteDir(cacheDir);
     }
 
-    protected boolean getCachedReport(List<ParamReplacement> replacements)
+    protected boolean getCachedReport(ViewContext context, List<ParamReplacement> replacements)
     {
         if (getDescriptor().getReportId() != -1 &&
             BooleanUtils.toBoolean(getDescriptor().getProperty(ReportDescriptor.Prop.cached)))
         {
-            File cacheDir = getCacheDir();
-            try {
-                for (ParamReplacement param : ParamReplacementSvc.get().fromFile(new File(cacheDir, SUBSTITUTION_MAP)))
-                {
-                    replacements.add(param);
-                }
-                return !replacements.isEmpty();
-            }
-            catch (Exception e)
+            synchronized(_cachedReportURLMap)
             {
-                throw new RuntimeException(e);
+                if (urlDirty(context.getActionURL()))
+                {
+                    clearCache();
+                    return false;
+                }
+                File cacheDir = getCacheDir();
+                try {
+                    for (ParamReplacement param : ParamReplacementSvc.get().fromFile(new File(cacheDir, SUBSTITUTION_MAP)))
+                    {
+                        replacements.add(param);
+                    }
+                    return !replacements.isEmpty();
+                }
+                catch (Exception e)
+                {
+                    throw new RuntimeException(e);
+                }
             }
         }
         return false;
+    }
+
+    private ActionURL getCacheURL(ActionURL url)
+    {
+        return url.clone().deleteParameter(RunReportView.CACHE_PARAM).
+                deleteParameter(RunReportView.TAB_PARAM);
+    }
+
+    /**
+     * Detect whether the URL params have changed since this cached report was last rendered.
+     */
+    private boolean urlDirty(ActionURL url)
+    {
+        ActionURL cachedURL = _cachedReportURLMap.get(getDescriptor().getReportId());
+        if (cachedURL != null)
+        {
+            Map cur = PageFlowUtil.mapFromQueryString(getCacheURL(url).getQueryString());
+            Map prev = PageFlowUtil.mapFromQueryString(cachedURL.getQueryString());
+
+            return !cur.equals(prev);
+        }
+        return true;
     }
 
     public void beforeSave(ViewContext context)
