@@ -5,6 +5,7 @@
  */
 var _tableName = "";
 var _fieldName = "";
+var _fieldCaption = "";
 var _fieldType = "text";
 var _filterDiv = null;
 var _filterWin = null;
@@ -58,6 +59,7 @@ if (navigator.userAgent.toLowerCase().indexOf("httpunit") < 0)
 function showFilterPanel(elem, tableName, colName, caption, dataType)
 {
     _fieldName = colName;
+    _fieldCaption = caption;
     _tableName = tableName;
     fillOptions(dataType);
 
@@ -479,6 +481,14 @@ function getValidCompares()
 
 function validateMultiple(allValues, mappedType, fieldName)
 {
+    if (!mappedType) mappedType = _mappedType;
+    if (!fieldName) fieldName = _fieldCaption || _fieldName;
+
+    if (!allValues)
+    {
+        alert("filter value for field '" + fieldName + "' cannot be empty.");
+        return undefined;
+    }
     var values = allValues.split(";");
     var result = '';
     var separator = '';
@@ -497,7 +507,13 @@ function validateMultiple(allValues, mappedType, fieldName)
 function validate(value, mappedType, fieldName)
 {
     if (!mappedType) mappedType = _mappedType;
-    if (!fieldName) fieldName = _fieldName;
+    if (!fieldName) fieldName = _fieldCaption || _fieldName;
+
+    if (!value)
+    {
+        alert("filter value for field '" + fieldName + "' cannot be empty.");
+        return undefined
+    }
 
     if (mappedType == "INT")
     {
