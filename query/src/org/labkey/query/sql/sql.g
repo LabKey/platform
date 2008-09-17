@@ -527,8 +527,8 @@ likeEscape
 	;
 
 inList
-	: x:compoundExpr
-	{ #inList = #([IN_LIST,"inList"], #inList); }
+	: OPEN CLOSE {if (1==1) throw new RecognitionException("IN expression is empty");}
+	| x:compoundExpr { #inList = #([IN_LIST,"inList"], #inList); }
 	;
 
 betweenList
