@@ -17,21 +17,19 @@
 %>
 <%@ page import="org.apache.commons.lang.BooleanUtils" %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
-<%@ page import="org.labkey.api.query.QueryAction" %>
 <%@ page import="org.labkey.api.query.QueryService" %>
 <%@ page import="org.labkey.api.query.snapshot.QuerySnapshotDefinition" %>
 <%@ page import="org.labkey.api.query.snapshot.QuerySnapshotForm" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.common.util.Pair" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.model.DataSetDefinition" %>
 <%@ page import="org.labkey.study.model.Study" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.study.model.DataSetDefinition" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -61,6 +59,7 @@
     <tr><td class="labkey-form-label">Modified By</td><td><%=h(def.getModifiedBy())%></td>
     <tr><td class="labkey-form-label">Created</td><td><%=h(def.getCreated())%></td>
     <tr><td class="labkey-form-label">Last Updated</td><td><%=StringUtils.trimToEmpty(DateUtil.formatDateTime(def.getLastUpdated()))%></td>
+    <tr><td class="labkey-form-label">Query Source</td><td><textarea rows="20" cols="65" readonly="true"><%=def.getQueryDefinition().getSql()%></textarea></td>
 </table>
 
 <form action="" method="post" onsubmit="return confirm('Updating will replace all existing data with a new set of data. Continue?');">

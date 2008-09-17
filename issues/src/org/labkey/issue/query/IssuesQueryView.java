@@ -28,10 +28,7 @@ import org.labkey.common.util.Pair;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class IssuesQueryView extends QueryView
 {
@@ -139,8 +136,20 @@ public class IssuesQueryView extends QueryView
             menu.addMenuItem(item);
         }
         menu.addSeparator();
-        Map<String, CustomView> customViews = getQueryDef().getCustomViews(getViewContext().getUser(), getViewContext().getRequest());
-        for (CustomView view : customViews.values())
+
+        // sort the grid view alphabetically, with private views over public ones
+        List<CustomView> views = new ArrayList<CustomView>(getQueryDef().getCustomViews(getViewContext().getUser(), getViewContext().getRequest()).values());
+        Collections.sort(views, new Comparator<CustomView>() {
+            public int compare(CustomView o1, CustomView o2)
+            {
+                if (o1.getOwner() != null && o2.getOwner() == null) return -1;
+                if (o1.getOwner() == null && o2.getOwner() != null) return 1;
+
+                return o1.getName().compareTo(o2.getName());
+            }
+        });
+
+        for (CustomView view : views)
         {
             if (view.isHidden())
                 continue;
@@ -153,9 +162,15 @@ public class IssuesQueryView extends QueryView
             if (label.equals(currentView))
                 item.setSelected(true);
             else
-                item.setImageSrc(getViewContext().getContextPath() + "/reports/grid.gif");
+            {
+                if (view.getOwner() == null)
+                    item.setImageSrc(getViewContext().getContextPath() + "/reports/grid.gif");
+                else
+                    item.setImageSrc(getViewContext().getContextPath() + "/reports/grid_private.gif");
+            }
             menu.addMenuItem(item);
         }
+        menu.addSeparator();
     }
 
     protected void populateReportButtonBar(ButtonBar bar)

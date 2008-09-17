@@ -1482,6 +1482,7 @@ query/webapp/query/sql.gif -text
 query/webapp/query/tableInfo.js -text
 query/webapp/reports/chart.gif -text
 query/webapp/reports/grid.gif -text
+query/webapp/reports/grid_private.gif -text
 query/webapp/reports/r.gif -text
 study/gwtsrc/org/labkey/assay/designer/AssayDesigner.gwt.xml -text
 study/gwtsrc/org/labkey/assay/designer/client/AssayDesigner.java -text
