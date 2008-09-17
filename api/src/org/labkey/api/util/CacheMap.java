@@ -99,7 +99,7 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
 
     protected Entry<K, V> findOrAddEntry(K key)
     {
-        int h = key.hashCode();
+        int h = hash(key);
         Entry<K,V> e = findEntry(h, key);
         if (null == e)
             e = addEntry(newEntry(h, key));
@@ -109,13 +109,21 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
 
     protected Entry<K,V> findEntry(Object key)
     {
-        return findEntry(key.hashCode(), key);
+        return findEntry(hash(key), key);
     }
+
+
+    protected int hash(Object key)
+    {
+        return key == null ? 0 : key.hashCode();
+    }
+
 
     protected boolean eq(Object a, Object b)
     {
-        return a.equals(b);
+        return a == null ? b == null : a.equals(b);
     }
+
 
     protected Entry<K,V> findEntry(int hash, Object key)
     {
@@ -134,7 +142,7 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
 
     protected Entry removeEntry(K key)
     {
-        return removeEntry(key.hashCode(), key);
+        return removeEntry(hash(key), key);
     }
 
 
