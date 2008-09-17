@@ -36,7 +36,7 @@
     }
     else
     {
-        vialLinkText = bean.isShowingVials() ? "Hide Vial Info" : "Show VialInfo";
+        vialLinkText = bean.isShowingVials() ? "Hide Vial Info" : "Show Vial Info";
     }
     if (bean.getViewContext().getContainer().hasPermission(bean.getViewContext().getUser(), ACL.PERM_ADMIN))
     {
