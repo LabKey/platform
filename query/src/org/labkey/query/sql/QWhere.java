@@ -196,18 +196,27 @@ public class QWhere extends QNode<QExpr>
         fillWhere(where, this);
     }
 
-    protected QExpr getExpr(DgCompare compare)
+    protected QExpr getExpr(DgCompare compare, List<? super QueryParseException> errors)
     {
         CompareType op = CompareType.getByURLKey(compare.getOp());
         if (op == null)
         {
             return null;
         }
-        QExpr field = QFieldKey.of(FieldKey.fromString(compare.getField()));
+        FieldKey fieldKey = FieldKey.fromString(compare.getField());
+        QExpr field = QFieldKey.of(fieldKey);
+
+        String literal = compare.getLiteral();
+        if (op != CompareType.ISBLANK && op != CompareType.NONBLANK &&
+            (literal == null || literal.length() == 0))
+        {
+            errors.add(new QueryParseException("filter value for field '" + fieldKey.getDisplayString() + "' cannot be be empty.", null, 0, 0));
+            return null;
+        }
 
         if (op == CompareType.IN)
         {
-            StringTokenizer st = new StringTokenizer(compare.getLiteral(), ";", false);
+            StringTokenizer st = new StringTokenizer(literal, ";", false);
             QExprList exprList = new QExprList();
             while (st.hasMoreTokens())
             {
@@ -232,11 +241,11 @@ public class QWhere extends QNode<QExpr>
         {
             try
             {
-                value = new QNumber(Double.valueOf(compare.getLiteral()));
+                value = new QNumber(Double.valueOf(literal));
             }
             catch (IllegalArgumentException iae)
             {
-                value = new QString(compare.getLiteral());
+                value = new QString(literal);
             }
         }
 
@@ -262,9 +271,9 @@ public class QWhere extends QNode<QExpr>
             case NONBLANK:
                 return Operator.is_not.expr(field, new QNull());
             case STARTS_WITH:
-                return Operator.like.expr(field, new QString(compare.getLiteral() + "%"));
+                return Operator.like.expr(field, new QString(literal + "%"));
             case CONTAINS:
-                return Operator.like.expr(field, new QString("%" + compare.getLiteral() + "%"));
+                return Operator.like.expr(field, new QString("%" + literal + "%"));
         }
         return null;
 
@@ -282,7 +291,7 @@ public class QWhere extends QNode<QExpr>
         {
             if (child instanceof DgCompare)
             {
-                QExpr expr = getExpr((DgCompare)child);
+                QExpr expr = getExpr((DgCompare)child, errors);
                 if (expr != null)
                     appendChild(expr);
             }
