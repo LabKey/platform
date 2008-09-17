@@ -149,6 +149,7 @@ public class IssuesQueryView extends QueryView
             }
         });
 
+        boolean addSep = false;
         for (CustomView view : views)
         {
             if (view.isHidden())
@@ -157,6 +158,7 @@ public class IssuesQueryView extends QueryView
             if (label == null)
                 continue;
 
+            addSep = true;
             item = new NavTree(label, target.clone().replaceParameter(param(QueryParam.viewName), label).getLocalURIString());
             item.setId("Views:" + label);
             if (label.equals(currentView))
@@ -170,7 +172,8 @@ public class IssuesQueryView extends QueryView
             }
             menu.addMenuItem(item);
         }
-        menu.addSeparator();
+        if (addSep)
+            menu.addSeparator();
     }
 
     protected void populateReportButtonBar(ButtonBar bar)

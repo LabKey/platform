@@ -93,6 +93,7 @@
         <tr><td class="labkey-form-label">R&nbsp;program:</td><td><input name="programPath" style="width:400px" value="<%=StringUtils.trimToEmpty(bean.getProgramPath())%>"></td><td></td></tr>
         <tr><td class="labkey-form-label">R&nbsp;command:</td><td><input name="command" style="width:400px" value="<%=StringUtils.trimToEmpty(h(bean.getCommand()))%>"></td><td></td></tr>
 
+<%--
         <tr><td></td><td><i>Scripts can be executed by running R in batch mode or by using an RServe server:</i><br/></td></tr>
         <tr><td class="labkey-form-label">Script&nbsp;execution:</td><td><input name="scriptHandler" value="<%=DefaultScriptRunner.ID%>" type="radio" <%=DefaultScriptRunner.ID.equals(bean.getScriptHandler()) ? "checked" : ""%>>
             Batch mode.<%=PageFlowUtil.helpPopup("Batch mode", "A new instance of R is started up in batch mode each " +
@@ -103,6 +104,7 @@
                 "It can improve execution performance because the server does not need to be started for every script " +
                 "that is run. Additionally, it can be configured on Unix systems to run under a specified group or user ID. RServe " +
                 "is a separate R library that must be installed by your R administrator.")%></td><td></td></tr>
+--%>
         <tr><td>&nbsp;</td></tr>
 
         <tr><td></td><td><i>Specify the permissions required in order to create R Views:</i><br/></td></tr>
@@ -131,5 +133,6 @@
             the <a target="_blank" href="http://www.r-project.org/">R Project website</a>.</i>
         </tr>
     </table>
+    <input name="scriptHandler" type="hidden" value="<%=DefaultScriptRunner.ID%>" >
 </form>
 

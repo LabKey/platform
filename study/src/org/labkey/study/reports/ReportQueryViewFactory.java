@@ -130,7 +130,7 @@ public class ReportQueryViewFactory
 
         public MenuButton createViewButton(ReportService.ItemFilter filter)
         {
-            MenuButton button = super.createViewButton(filter);
+            MenuButton button = super.createViewButton(StudyReportUIProvider.getItemFilter());
             button.addMenuItem("Set Default View", getViewContext().cloneActionURL().setAction(StudyController.ViewPreferencesAction.class));
 
             return button;

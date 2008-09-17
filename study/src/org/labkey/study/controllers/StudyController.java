@@ -676,17 +676,7 @@ public class StudyController extends BaseStudyController
 
         private void createViewButton(List<ActionButton> buttonBar, DataSetQueryView queryView)
         {
-            MenuButton button = queryView.createViewButton(new ReportService.ItemFilter(){
-                public boolean accept(String reportType, String label)
-                {
-                    if (StudyCrosstabReport.TYPE.equals(reportType)) return true;
-                    if (StudyChartQueryReport.TYPE.equals(reportType)) return true;
-                    if (StudyRReport.TYPE.equals(reportType)) return true;
-                    if (ExternalReport.TYPE.equals(reportType)) return true;
-                    if (QuerySnapshotService.TYPE.equals(reportType)) return true;
-                    return false;
-                }
-            });
+            MenuButton button = queryView.createViewButton(StudyReportUIProvider.getItemFilter());
             button.addMenuItem("Set Default View", getViewContext().cloneActionURL().setAction(ViewPreferencesAction.class));
 
             buttonBar.add(button);

@@ -20,9 +20,11 @@ import org.labkey.api.reports.report.view.ChartDesignerBean;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.RReport;
+import org.labkey.api.reports.ReportService;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.apache.commons.lang.math.NumberUtils;
@@ -35,6 +37,20 @@ import java.util.Map;/*
 
 public class StudyReportUIProvider extends DefaultReportUIProvider
 {
+    private static ReportService.ItemFilter _filter = new ReportService.ItemFilter(){
+                public boolean accept(String reportType, String label)
+                {
+                    if (StudyCrosstabReport.TYPE.equals(reportType)) return true;
+                    if (StudyChartQueryReport.TYPE.equals(reportType)) return true;
+                    if (ChartReportView.TYPE.equals(reportType)) return true;
+                    if (StudyRReport.TYPE.equals(reportType)) return true;
+                    if (ExternalReport.TYPE.equals(reportType)) return true;
+                    if (QuerySnapshotService.TYPE.equals(reportType)) return true;
+                    if (StudyQueryReport.TYPE.equals(reportType)) return true;
+                    return false;
+                }
+            };
+
     public void getReportDesignURL(ViewContext context, QuerySettings settings, Map<String, String> designers)
     {
         // crosstab designer
@@ -90,5 +106,10 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
         if (StudyChartQueryReport.TYPE.equals(reportType))
             return context.getContextPath() + "/reports/chart.gif";
         return super.getReportIcon(context, reportType);
+    }
+
+    public static ReportService.ItemFilter getItemFilter()
+    {
+        return _filter;
     }
 }

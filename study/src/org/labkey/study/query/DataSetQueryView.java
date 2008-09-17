@@ -277,7 +277,7 @@ public class DataSetQueryView extends QueryView
         // query reports will render their own button bar
         if (!(report instanceof QueryReport))
         {
-            MenuButton button = createViewButton(ReportService.EMPTY_ITEM_LIST);
+            MenuButton button = createViewButton(getViewItemFilter());
             button.addMenuItem("Set Default View", getViewContext().cloneActionURL().setAction(StudyController.ViewPreferencesAction.class));
 
             bar.add(button);
