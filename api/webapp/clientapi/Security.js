@@ -247,8 +247,9 @@ LABKEY.Security = new function()
         },
 
         /**
-         * Returns the container tree under the current container (or the container specified in
-         * config.containerPath) that the current user is allowed to see. This may be called by any user.
+         * Returns information about the specified container, including the user's current permissions within
+         * that container. If the includeSubfolders config option is set to true, it will also return information
+         * about all descendants the user is allowed to see.
          * @param config A configuration object with the following properties
          * @param {boolean} [config.includeSubfolders] If set to true, the entire branch of containers will be returned.
          * If false, only the immediate children of the starting container will be returned (defaults to false).
