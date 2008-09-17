@@ -368,7 +368,7 @@ public class PipelineServiceImpl extends PipelineService
         String sequenceDbPathsString = list2String(sequenceDbPathsList);
         PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(user.getUserId(), container.getId(),
                 PipelineServiceImpl.KEY_PREFERENCES, true);
-        if(sequenceDbPathsString == null || sequenceDbPathsString.length() == 0)
+        if(sequenceDbPathsString == null || sequenceDbPathsString.length() == 0 || sequenceDbPathsString.length() >= 2000)
         {
             map.remove(PipelineServiceImpl.PREF_LASTSEQUENCEDBPATHS + "-" + factory.getName());
         }

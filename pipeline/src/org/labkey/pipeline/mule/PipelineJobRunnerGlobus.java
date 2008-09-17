@@ -239,8 +239,25 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
             {
                 try
                 {
-                    String url = AppProps.getInstance().getBaseServerUrl();
-                    return new URL(url + AppProps.getInstance().getContextPath() + "/services/");
+                    URL result = new URL(AppProps.getInstance().getBaseServerUrl() + AppProps.getInstance().getContextPath() + "/services/");
+                    int port = result.getPort();
+                    if (port == -1)
+                    {
+                        if (result.getProtocol().toLowerCase().equals("http"))
+                        {
+                            port = 80;
+                        }
+                        else if (result.getProtocol().toLowerCase().equals("https"))
+                        {
+                            port = 443;
+                        }
+                        else
+                        {
+                            throw new IllegalArgumentException("Unrecognized protocol: " + result.getProtocol() + ", only http and https are supported");
+                        }
+                    }
+
+                    return new URL(result.getProtocol(), result.getHost(), port, result.getFile());
                 }
                 catch (MalformedURLException e)
                 {

@@ -80,6 +80,7 @@
     <tr><td>Mode</td><td><%=bean.mode%></td></tr>
     <tr><td>Servlet Container</td><td><%=bean.servletContainer%></td></tr>
     <tr><td>Java Runtime</td><td><%=bean.javaVersion%></td></tr>
+    <tr><td>Java Home</td><td><%=bean.javaHome%></td></tr>
     <tr><td>Username</td><td><%=bean.userName%></td></tr>
     <tr><td>OS</td><td><%=bean.osName%></td></tr>
 

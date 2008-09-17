@@ -164,6 +164,7 @@ public class AdminController extends SpringActionController
     {
         public List<Module> modules = ModuleLoader.getInstance().getModules();
         public String javaVersion = System.getProperty("java.version");
+        public String javaHome = System.getProperty("java.home");
         public String userName = System.getProperty("user.name");
         public String osName = System.getProperty("os.name");
         public String mode = AppProps.getInstance().isDevMode() ? "Development" : "Production";
