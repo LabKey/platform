@@ -22,12 +22,14 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.query.controllers.NewQueryForm" %>
 <%@ page import="org.labkey.query.controllers.QueryControllerSpring" %>
+<%@ page import="java.util.Collections" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     NewQueryForm form = (NewQueryForm) HttpView.currentModel();
-    ViewContext context = HttpView.currentContext();
-    List<String> tableAndQueryNames = form.getSchema().getTableAndQueryNames(false);
+    List<String> tableAndQueryNames = Collections.emptyList();
+    if (form.getSchema() != null)
+        tableAndQueryNames = form.getSchema().getTableAndQueryNames(false);
 %>
 <labkey:errors />
 

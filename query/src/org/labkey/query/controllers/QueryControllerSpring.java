@@ -174,6 +174,8 @@ public class QueryControllerSpring extends SpringActionController
         @SuppressWarnings({"UnusedDeclaration"})
         public ModelAndView getView(NewQueryForm form, boolean reshow, BindException errors) throws Exception
         {
+            if (form.getSchema() == null)
+                HttpView.throwNotFound("Could not find schema: " + form.getSchemaName());
             if (!form.getSchema().canCreate())
                 HttpView.throwUnauthorized();
             getPageConfig().setFocus("forms[0].ff_newQueryName");
@@ -183,6 +185,8 @@ public class QueryControllerSpring extends SpringActionController
 
         public boolean handlePost(NewQueryForm form, BindException errors) throws Exception
         {
+            if (form.getSchema() == null)
+                HttpView.throwNotFound("Could not find schema: " + form.getSchemaName());
             if (!form.getSchema().canCreate())
                 HttpView.throwUnauthorized();
             try
