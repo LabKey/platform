@@ -908,6 +908,13 @@ public class LoginController extends SpringActionController
                     errors.reject("reset", "Reset Password failed: " + _email + " is an LDAP email. Please contact your administrator to reset the password for this account.");
                 else if (!SecurityManager.loginExists(_email))
                     errors.reject("reset", "Reset Password failed: " + _email + " is not a registered user.");
+                else
+                {
+                    User user = UserManager.getUser(_email);
+                    if(null != user && !user.isActive())
+                        errors.reject("reset", "The password for this account may not be reset because this account has been deactivated. Please contact your administrator to re-activate this account.");
+                }
+
             }
             catch (ValidEmail.InvalidEmailException e)
             {
