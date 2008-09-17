@@ -51,7 +51,7 @@ this folder to caBIG&trade;.  If you do this then all experiment data in this fo
     if (isPublished)
     {
 %>
-<br><br>If you've followed the default configuration and installed the caBIG&trade; web application (named "publish") on the same server as LabKey, then you can <a href="<%=h(ctx.getActionURL().getBaseServerURI())%>/publish/Happy.jsp">click here</a> to test it.
+<br><br>If you've followed the default configuration and installed the caBIG&trade; web application (named "publish") on the same server as LabKey, then you can <a href="<%=h(ctx.getActionURL().getBaseServerURI())%>/publish/">click here</a> to test it.
 <%
     }
 %>
