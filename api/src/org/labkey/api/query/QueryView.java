@@ -701,10 +701,16 @@ public class QueryView extends WebPartView<Object>
         Map<String, List<Report>> views = new TreeMap<String, List<Report>>();
         for (Report report : ReportUtil.getReports(getViewContext(), reportKey, true))
         {
-            if (!views.containsKey(report.getType()))
-                views.put(report.getType(), new ArrayList<Report>());
+            // Filter out reports that don't match what this view is supposed to show. This can prevent
+            // reports that were created on the same schema and table/query from a different view from showing up on a
+            // view that's doing magic to add additional filters, for example.
+            if (_itemFilter.accept(report.getType(), null))
+            {
+                if (!views.containsKey(report.getType()))
+                    views.put(report.getType(), new ArrayList<Report>());
 
-            views.get(report.getType()).add(report);
+                views.get(report.getType()).add(report);
+            }
         }
 
         for (Map.Entry<String, List<Report>> entry : views.entrySet())
