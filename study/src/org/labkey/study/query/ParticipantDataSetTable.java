@@ -17,10 +17,12 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.*;
-import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
+
+import javax.servlet.ServletException;
 
 public class ParticipantDataSetTable extends VirtualTable
 {
@@ -60,28 +62,70 @@ public class ParticipantDataSetTable extends VirtualTable
             column = new AliasedColumn(name, _colParticipantId);
         }
         column.setCaption(def.getLabel());
-        column.setFk(new ForeignKey()
+
+        if (def.isDemographicData()) // If it's demographic, there are no visits, so we can add the dataset fields directly
         {
-            public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
-            {
-                if (displayField == null)
+            column.setFk(new ForeignKey() {
+                public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
+                {
+                    TableInfo table = getLookupTableInfo();
+
+                    if (table == null)
+                        return null;
+
+                    if (displayField == null)
+                        return null;
+
+                    return LookupColumn.create(parent, table.getColumn("ParticipantId"), table.getColumn(displayField), true);
+                }
+
+                public TableInfo getLookupTableInfo()
+                {
+                    try
+                    {
+                        DataSetTable dsTable = new DataSetTable(_schema, def);
+                        dsTable.hideParticipantLookups();
+                        return dsTable;
+                    }
+                    catch (ServletException e)
+                    {
+                        return null;
+                    }
+                }
+
+                public StringExpressionFactory.StringExpression getURL(ColumnInfo parent)
+                {
                     return null;
-                ColumnInfo ret = new ParticipantVisitDataSetTable(_schema, def, parent).getColumn(displayField);
-                ret.setCaption(parent.getCaption() + " " + ret.getCaption());
-                return ret;
-            }
-
-            public TableInfo getLookupTableInfo()
+                }
+            });
+            column.setIsUnselectable(true);
+            return column;
+        }
+        else
+        {
+            column.setFk(new ForeignKey()
             {
-                return new ParticipantVisitDataSetTable(_schema, def, null);
-            }
+                public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
+                {
+                    if (displayField == null)
+                        return null;
+                    ColumnInfo ret = new ParticipantVisitDataSetTable(_schema, def, parent).getColumn(displayField);
+                    ret.setCaption(parent.getCaption() + " " + ret.getCaption());
+                    return ret;
+                }
 
-            public StringExpressionFactory.StringExpression getURL(ColumnInfo parent)
-            {
-                return null;
-            }
-        });
-        column.setIsUnselectable(true);
-        return column;
+                public TableInfo getLookupTableInfo()
+                {
+                    return new ParticipantVisitDataSetTable(_schema, def, null);
+                }
+
+                public StringExpressionFactory.StringExpression getURL(ColumnInfo parent)
+                {
+                    return null;
+                }
+            });
+            column.setIsUnselectable(true);
+            return column;
+        }
     }
 }
