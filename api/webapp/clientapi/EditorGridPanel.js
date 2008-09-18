@@ -76,62 +76,46 @@ Ext.apply(Ext.QuickTips.getQuickTip(), {
 &lt;div id='grid'/&gt;
  */
 LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
+    lookups: true,
+    pageSize: 20,
+    editable: false,
+    enableFilters: false,
+    autoSave: true,
+    loadingCaption: "[loading...]",
+    lookupNullCaption : "[none]",
+    selModel: new Ext.grid.CheckboxSelectionModel({
+        moveEditorOnEnter: false
+    }),
+    viewConfig: {forceFit: true},
+    id: Ext.id(undefined, 'labkey-ext-grid'),
+    loadMask: true,
+    colModel: new Ext.grid.ColumnModel([]),
+    
+    initComponent : function() {
 
-    constructor : function(config) {
-        //NOTE: I tried implementing initComponent instead of a constructor method (like Ext 2 recommends)
-        //but it didn't work because the EditorGridPanel expects the column model to be provided before
-        //rendering. Since the column model comes from the server in the initial data query, and since that
-        //query is async, we need to delay construction of the base class until the store has finished
-        //loading. I tried delaying initComponent, but that didn't work, as the base-class constructor
-        //begins the rendering process directly after the derived initComponent method finishes.
-
-        this.lookupStores = {};
-
-        this.addEvents("beforedelete", "columnmodelcustomize");
-
-        //apply the config with defaults
-        Ext.apply(this, config, {
-            lookups: true,
-            store : new LABKEY.ext.Store({
-                schemaName: config.schemaName,
-                queryName: config.queryName,
-                viewName: config.viewName,
-                filterArray: config.filterArray,
-                sort: config.sort,
-                columns: config.columns
-            }),
-            pageSize: 20,
-            editable: false,
-            enableFilters: false,
-            autoSave: true,
-            loadingCaption: "[loading...]",
-            lookupNullCaption : "[none]",
-            selModel: new Ext.grid.CheckboxSelectionModel({
-                moveEditorOnEnter: false
-            }),
-            viewConfig: {forceFit: true},
-            id: Ext.id(undefined, 'labkey-ext-grid'),
-            loadMask: true
-        });
-
-        //need to setup the default panel config *before*
-        //calling load on the store
-        //for some reason, the paging toolbar seems to wait
-        //for the load event from the store before adjusting
-        //it's UI
         this.setupDefaultPanelConfig();
 
-        //delay construction of the superclass until the load callback so
-        //we can get the column model from the reader's jsonData
-        this.store.on("loadexception", this.onStoreLoadException, this);
-        this.store.on("load", this.onStoreLoad, this);
-        this.store.on("beforecommit", this.onStoreBeforeCommit, this);
-        this.store.on("commitcomplete", this.onStoreCommitComplete, this);
-        this.store.on("commitexception", this.onStoreCommitException, this);
-        this.store.load({ params : {
-                start: 0,
-                limit: this.pageSize
-            }});
+        LABKEY.ext.EditorGridPanel.superclass.initComponent.call(this, arguments);
+
+        this.addEvents("beforedelete, columnmodelcustomize");
+
+        //subscribe to superclass events
+        this.on("beforeedit", this.onBeforeEdit, this);
+        this.on("render", this.onGridRender, this);
+
+        //subscribe to store events and start loading it
+        if(this.store)
+        {
+            this.store.on("loadexception", this.onStoreLoadException, this);
+            this.store.on("load", this.onStoreLoad, this);
+            this.store.on("beforecommit", this.onStoreBeforeCommit, this);
+            this.store.on("commitcomplete", this.onStoreCommitComplete, this);
+            this.store.on("commitexception", this.onStoreCommitException, this);
+            this.store.load({ params : {
+                    start: 0,
+                    limit: this.pageSize
+                }});
+        }
     },
 
     /**
@@ -165,30 +149,100 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
 
     /*-- Private Methods --*/
 
+    setupDefaultPanelConfig : function() {
+        if(!this.tbar)
+        {
+            this.tbar = [{
+                text: 'Refresh',
+                tooltip: 'Click to refresh the table',
+                id: 'refresh-button',
+                handler: this.onRefresh,
+                scope: this
+            }];
+
+            if(this.editable && LABKEY.user && LABKEY.user.canUpdate && !this.autoSave)
+            {
+                this.tbar.push("-");
+                this.tbar.push({
+                    text: 'Save Changes',
+                    tooltip: 'Click to save all changes to the database',
+                    id: 'save-button',
+                    handler: this.saveChanges,
+                    scope: this
+                });
+            }
+
+            if(this.editable &&LABKEY.user && LABKEY.user.canInsert)
+            {
+                this.tbar.push("-");
+                this.tbar.push({
+                    text: 'Add Record',
+                    tooltip: 'Click to add a row',
+                    id: 'add-record-button',
+                    handler: this.onAddRecord,
+                    scope: this
+                });
+            }
+            if(this.editable &&LABKEY.user && LABKEY.user.canDelete)
+            {
+                this.tbar.push("-");
+                this.tbar.push({
+                    text: 'Delete Selected',
+                    tooltip: 'Click to delete selected row(s)',
+                    id: 'delete-records-button',
+                    handler: this.onDeleteRecords,
+                    scope: this
+                });
+            }
+        }
+
+        if(!this.bbar)
+        {
+            this.bbar = new Ext.PagingToolbar({
+                    pageSize: this.pageSize, //default is 20
+                    store: this.store,
+                    displayInfo: true,
+                    emptyMsg: "No data to display" //display message when no records found
+                });
+        }
+
+        if(!this.keys)
+        {
+            this.keys = [
+                {
+                    key: Ext.EventObject.ENTER,
+                    handler: this.onEnter,
+                    scope: this
+                },
+                {
+                    key: 45, //insert
+                    handler: this.onAddRecord,
+                    scope: this
+                },
+                {
+                    key: Ext.EventObject.ESC,
+                    handler: this.onEsc,
+                    scope: this
+                },
+                {
+                    key: Ext.EventObject.TAB,
+                    handler: this.onTab,
+                    scope: this
+                },
+                {
+                    key: Ext.EventObject.F2,
+                    handler: this.onF2,
+                    scope: this
+                }
+            ]
+        }
+    },
+
     onStoreLoad : function(store, records, options) {
         this.store.un("load", this.onStoreLoad, this);
 
         this.populateMetaMap();
         this.setupColumnModel();
-
-        //construct the superclass
-        LABKEY.ext.EditorGridPanel.superclass.constructor.call(this, this);
-
-        //subscribe to events
-        this.on("beforeedit", this.onBeforeEdit, this);
-
-        //add the extContainer class to the view's hmenu
-        //NOTE: there is no public API to get to hmenu and colMenu
-        //so this might break in future versions of Ext. If you get
-        //a JavaScript error on these lines, look at the API docs for
-        //a method or property that returns the sort and column hide/show
-        //menus shown from the column headers
-        this.getView().hmenu.getEl().addClass("extContainer");
-        this.getView().colMenu.getEl().addClass("extContainer");
-        
-        //set up filtering
-        if (this.enableFilters)
-            this.initFilterMenu();
     },
 
     onStoreLoadException : function(proxy, options, response, error) {
@@ -230,6 +284,22 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
             pagingBar.loading.enable();
         if(this.savingMessage)
             this.savingMessage.setVisible(false);
+    },
+
+    onGridRender : function() {
+        //add the extContainer class to the view's hmenu
+        //NOTE: there is no public API to get to hmenu and colMenu
+        //so this might break in future versions of Ext. If you get
+        //a JavaScript error on these lines, look at the API docs for
+        //a method or property that returns the sort and column hide/show
+        //menus shown from the column headers
+        this.getView().hmenu.getEl().addClass("extContainer");
+        this.getView().colMenu.getEl().addClass("extContainer");
+
+        //set up filtering
+        if (this.enableFilters)
+            this.initFilterMenu();
+
     },
 
     populateMetaMap : function() {
@@ -274,7 +344,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
             {
                 col = this.columns[idx] = new Ext.grid.CheckColumn(col);
                 if(col.editable)
-                    this.plugins = this.plugins ? [col].concat(this.plugins) : [col];
+                    col.init(this);
                 col.editable = false //check columns apply edits immediately, so we don't want to go into edit mode
             }
 
@@ -293,13 +363,13 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         //CheckBoxSelectionModel needs to be added to the selection model for
         //the check boxes to show up.
         //(not sure why its constructor doesn't do this autmatically).
-        if(this.selModel && this.selModel.renderer)
-            this.columns = [this.selModel].concat(this.columns);
+        if(this.getSelectionModel() && this.getSelectionModel().renderer)
+            this.columns = [this.getSelectionModel()].concat(this.columns);
 
         //register for the rowdeselect event if the selmodel supports events
         //and if autoSave is on
-        if(this.selModel.on && this.autoSave)
-            this.selModel.on("rowselect", this.onRowSelect, this);
+        if(this.getSelectionModel().on && this.autoSave)
+            this.getSelectionModel().on("rowselect", this.onRowSelect, this);
 
         //fire the "columnmodelcustomize" event to allow clients
         //to modify our default configuration of the column model
@@ -307,6 +377,9 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
 
         //add custom renderers for multiline/long-text columns
         this.setLongTextRenderers();
+
+        //reset the column model
+        this.reconfigure(this.store, new Ext.grid.ColumnModel(this.columns));
     },
 
     getDefaultRenderer : function(col, meta) {
@@ -483,95 +556,6 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
                         columnName: col.dataIndex
                     });
             }
-        }
-    },
-
-    setupDefaultPanelConfig : function() {
-        if(!this.tbar)
-        {
-            this.tbar = [{
-                text: 'Refresh',
-                tooltip: 'Click to refresh the table',
-                id: 'refresh-button',
-                handler: this.onRefresh,
-                scope: this
-            }];
-
-            if(this.editable && LABKEY.user && LABKEY.user.canUpdate && !this.autoSave)
-            {
-                this.tbar.push("-");
-                this.tbar.push({
-                    text: 'Save Changes',
-                    tooltip: 'Click to save all changes to the database',
-                    id: 'save-button',
-                    handler: this.saveChanges,
-                    scope: this
-                });
-            }
-
-            if(this.editable &&LABKEY.user && LABKEY.user.canInsert)
-            {
-                this.tbar.push("-");
-                this.tbar.push({
-                    text: 'Add Record',
-                    tooltip: 'Click to add a row',
-                    id: 'add-record-button',
-                    handler: this.onAddRecord,
-                    scope: this
-                });
-            }
-            if(this.editable &&LABKEY.user && LABKEY.user.canDelete)
-            {
-                this.tbar.push("-");
-                this.tbar.push({
-                    text: 'Delete Selected',
-                    tooltip: 'Click to delete selected row(s)',
-                    id: 'delete-records-button',
-                    handler: this.onDeleteRecords,
-                    scope: this
-                });
-            }
-        }
-
-        if(!this.bbar)
-        {
-            this.bbar = new Ext.PagingToolbar({
-                    pageSize: this.pageSize, //default is 20
-                    store: this.store,
-                    displayInfo: true,
-                    emptyMsg: "No data to display" //display message when no records found
-                });
-        }
-
-        if(!this.keys)
-        {
-            this.keys = [
-                {
-                    key: Ext.EventObject.ENTER,
-                    handler: this.onEnter,
-                    scope: this
-                },
-                {
-                    key: 45, //insert
-                    handler: this.onAddRecord,
-                    scope: this
-                },
-                {
-                    key: Ext.EventObject.ESC,
-                    handler: this.onEsc,
-                    scope: this
-                },
-                {
-                    key: Ext.EventObject.TAB,
-                    handler: this.onTab,
-                    scope: this
-                },
-                {
-                    key: Ext.EventObject.F2,
-                    handler: this.onF2,
-                    scope: this
-                }
-            ]
         }
     },
 
@@ -970,10 +954,17 @@ Ext.grid.CheckColumn = function(config){
 Ext.grid.CheckColumn.prototype ={
     init : function(grid){
         this.grid = grid;
-        this.grid.on('render', function(){
-            var view = this.grid.getView();
-            view.mainBody.on('mousedown', this.onMouseDown, this);
-        }, this);
+        if(grid.getView())
+        {
+            grid.getView().mainBody.on('mousedown', this.onMouseDown, this);
+        }
+        else
+        {
+            this.grid.on('render', function(){
+                var view = this.grid.getView();
+                view.mainBody.on('mousedown', this.onMouseDown, this);
+            }, this);
+        }
     },
 
     onMouseDown : function(e, t){
