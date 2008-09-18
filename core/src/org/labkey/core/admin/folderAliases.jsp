@@ -42,7 +42,7 @@
     </tr>
     <tr>
         <td>
-        <form action="saveAliases.post" method="post">
+        <form action="folderAliases.post" method="post">
             <textarea rows="4" cols="40" name="aliases"><%
                 StringBuilder sb = new StringBuilder();
                 String separator = "";

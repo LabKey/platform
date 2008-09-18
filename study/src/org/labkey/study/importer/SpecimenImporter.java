@@ -26,6 +26,10 @@ import org.labkey.api.study.SpecimenService;
 import org.labkey.api.util.GUID;
 import org.labkey.common.tools.TabLoader;
 import org.labkey.common.util.CPUTimer;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.study.SpecimenService;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.Specimen;
@@ -371,17 +375,17 @@ public class SpecimenImporter
             if (!DEBUG)
                 scope.beginTransaction();
 
-            SpecimenLoadInfo loadInfo = populateTempSpecimensTable(schema, container, getContents(fileMap.get("specimens")));
+            SpecimenLoadInfo loadInfo = populateTempSpecimensTable(schema, container, fileMap.get("specimens"));
 
             mergeTable(schema, container, "Site", SITE_COLUMNS,
-                    getContents(fileMap.get("labs")), true);
+                    fileMap.get("labs"), true);
 
             replaceTable(schema, container, "SpecimenAdditive", ADDITIVE_COLUMNS,
-                    getContents(fileMap.get("additives")), false);
+                    fileMap.get("additives"), false);
             replaceTable(schema, container, "SpecimenDerivative", DERIVATIVE_COLUMNS,
-                    getContents(fileMap.get("derivatives")), false);
+                    fileMap.get("derivatives"), false);
             replaceTable(schema, container, "SpecimenPrimaryType", PRIMARYTYPE_COLUMNS,
-                    getContents(fileMap.get("primary_types")), false);
+                    fileMap.get("primary_types"), false);
             populateSpecimenTables(schema, user, container, loadInfo);
 
             Study study = StudyManager.getInstance().getStudy(container);
@@ -456,11 +460,11 @@ public class SpecimenImporter
         logDebug.debug(cpuPopulateTempTable);
     }
 
-    private SpecimenLoadInfo populateTempSpecimensTable(DbSchema schema, Container container, String tsv) throws SQLException, IOException
+    private SpecimenLoadInfo populateTempSpecimensTable(DbSchema schema, Container container, File tsvFile) throws SQLException, IOException
     {
         String tempTable = createTempTable(schema);
         info("Created temporary table " + tempTable);
-        List<SpecimenColumn> availableColumns = populateTempTable(schema, container, tempTable, tsv);
+        List<SpecimenColumn> availableColumns = populateTempTable(schema, container, tempTable, tsvFile);
         return new SpecimenLoadInfo(availableColumns, tempTable);
     }
 
@@ -552,28 +556,6 @@ public class SpecimenImporter
         }
         while (specimens.length > 0);
     }
-
-    private String getContents(File file) throws IOException
-    {
-        if (file == null)
-            return null;
-        StringBuilder builder = new StringBuilder();
-        BufferedReader reader = null;
-        try
-        {
-            reader = new BufferedReader(new FileReader(file));
-            char[] chars = new char[1024];
-            int len;
-            while ((len = reader.read(chars, 0, 1024)) > 0)
-                builder.append(chars, 0, len);
-            return builder.toString();
-        }
-        finally
-        {
-            if (reader != null) try { reader.close(); } catch (IOException e) {}
-        }
-    }
-
 
     private Map<String, File> createFilemap(List<File> files) throws IOException
     {
@@ -935,15 +917,15 @@ public class SpecimenImporter
         assert cpuInsertSpecimenEvents.stop();
     }
 
-    private void mergeTable(DbSchema schema, Container container, String tableName, ImportableColumn[] potentialColumns, String tsv, boolean addEntityId) throws IOException, SQLException
+    private void mergeTable(DbSchema schema, Container container, String tableName, ImportableColumn[] potentialColumns, File tsvFile, boolean addEntityId) throws IOException, SQLException
     {
-        if (tsv == null || tsv.length() == 0)
+        if (tsvFile == null || !NetworkDrive.exists(tsvFile))
         {
             info(tableName + ": no data to merge.");
             return;
         }
 
-        Map[] maps = loadTsv(potentialColumns, tsv, tableName);
+        Map[] maps = loadTsv(potentialColumns, tsvFile, tableName);
         mergeTable(schema, container, tableName, potentialColumns, maps, addEntityId);
     }
 
@@ -1065,15 +1047,15 @@ public class SpecimenImporter
     }
 
 
-    private void replaceTable(DbSchema schema, Container container, String tableName, ImportableColumn[] potentialColumns, String tsv, boolean addEntityId) throws IOException, SQLException
+    private void replaceTable(DbSchema schema, Container container, String tableName, ImportableColumn[] potentialColumns, File tsvFile, boolean addEntityId) throws IOException, SQLException
     {
-        if (tsv == null || tsv.length() == 0)
+        if (tsvFile == null || !NetworkDrive.exists(tsvFile))
         {
             info(tableName + ": no data to merge.");
             return;
         }
 
-        Map[] maps = loadTsv(potentialColumns, tsv, tableName);
+        Map[] maps = loadTsv(potentialColumns, tsvFile, tableName);
         replaceTable(schema, container, tableName, potentialColumns, maps, addEntityId);
     }
 
@@ -1123,14 +1105,14 @@ public class SpecimenImporter
         assert cpuMergeTable.stop();
     }
 
-    private Map[] loadTsv(ImportableColumn[] columns, String tsv, String tableName) throws IOException
+    private Map[] loadTsv(ImportableColumn[] columns, File tsvFile, String tableName) throws IOException
     {
         info(tableName + ": Parsing data file for table...");
         Map<String, TabLoader.ColumnDescriptor> expectedColumns = new HashMap<String, TabLoader.ColumnDescriptor>(columns.length);
         for (ImportableColumn col : columns)
             expectedColumns.put(col.getTsvColumnName().toLowerCase(), col.getColumnDescriptor());
 
-        TabLoader loader = new TabLoader(tsv, true);
+        TabLoader loader = new TabLoader(tsvFile);
         for (TabLoader.ColumnDescriptor column : loader.getColumns())
         {
             TabLoader.ColumnDescriptor expectedColumnDescriptor = expectedColumns.get(column.name.toLowerCase());
@@ -1143,10 +1125,10 @@ public class SpecimenImporter
         return (Map[]) loader.load();
     }
 
-    private List<SpecimenColumn> populateTempTable(DbSchema schema, Container container, String tempTable, String tsv) throws SQLException, IOException
+    private List<SpecimenColumn> populateTempTable(DbSchema schema, Container container, String tempTable, File tsvFile) throws SQLException, IOException
     {
         assert cpuPopulateTempTable.start();
-        Map[] maps = loadTsv(SPECIMEN_COLUMNS, tsv, "Specimen");
+        Map[] maps = loadTsv(SPECIMEN_COLUMNS, tsvFile, "Specimen");
         return populateTempTable(schema, container, tempTable, maps);
     }
 

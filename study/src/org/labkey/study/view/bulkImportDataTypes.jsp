@@ -87,6 +87,11 @@ name and type id.  Additional columns will just be ignored.
         <td valign=top><code>true</code></td>
     </tr>
     <tr>
+        <th align=left valign=top nowrap>Category</th>
+        <td valign=top>Indicates the category for this dataset</td>
+        <td valign=top><code>CRF Data</code></td>
+    </tr>
+    <tr>
         <th align="left" colspan="3"><span class="labkey-error">*Required</span></th>
     </tr>
 </table>
@@ -106,7 +111,7 @@ name and type id.  Additional columns will just be ignored.
             <td><input name="labelColumn" style="width:100%" value="<%=h(bean.getLabelColumn())%>"></td>
         </tr>
         <tr>
-            <td class=labkey-form-label>Column containing dataset Id<span class="labkey-error">*</span></td>
+            <td class=labkey-form-label>Column containing dataset Id<span class="labkey-error">*</span> (an integer)</td>
         </tr>
         <tr>
             <td><input name="typeIdColumn" style="width:100%" value="<%=h(bean.getTypeIdColumn())%>"></td>

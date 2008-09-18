@@ -1921,6 +1921,23 @@ public class StudyController extends BaseStudyController
                         }
                     }
 
+                    // Category field
+                    String category = (String)props.get("Category");
+                    if (category != null && !"".equals(category))
+                    {
+                        if (info.category != null && !info.category.equalsIgnoreCase(category))
+                        {
+                            // It's changed from field to field within the same dataset
+                            errors.reject("bulkImportDataTypes", "Type ID " + typeName + " has multiple fields set with different categories");
+                            return false;
+                        }
+                        else
+                        {
+                            info.category = category;
+                        }
+                    }
+
+
                     mapsImport.add(props);
                 }
 
@@ -1985,6 +2002,7 @@ public class StudyController extends BaseStudyController
                             def.setVisitDatePropertyName(info.visitDatePropertyName);
                             def.setShowByDefault(!info.isHidden);
                             def.setKeyPropertyName(info.keyPropertyName);
+                            def.setCategory(info.category);
                             manager.createDataSetDefinition(getUser(), def);
                         }
                         else
@@ -1996,6 +2014,7 @@ public class StudyController extends BaseStudyController
                             def.setVisitDatePropertyName(info.visitDatePropertyName);
                             def.setShowByDefault(!info.isHidden);
                             def.setKeyPropertyName(info.keyPropertyName);
+                            def.setCategory(info.category);
                             manager.updateDataSetDefinition(getUser(), def);
                         }
                     }
@@ -2077,6 +2096,7 @@ public class StudyController extends BaseStudyController
         boolean isHidden;
         String keyPropertyName;
         boolean keyManaged;
+        String category;
     }
 
     @RequiresPermission(ACL.PERM_UPDATE)
