@@ -31,7 +31,7 @@ public class ExprColumn extends ColumnInfo
     public ExprColumn(TableInfo parent, String name, SQLFragment sql, int sqltype, ColumnInfo ... dependentColumns)
     {
         super(name, parent);
-        setAlias(name);
+        setAlias(AliasManager.makeLegalName(name, parent.getSqlDialect()));
         setSqlTypeName(getSqlDialect().sqlTypeNameFromSqlType(sqltype));
         _sql = sql;
         _dependentColumns = dependentColumns;
