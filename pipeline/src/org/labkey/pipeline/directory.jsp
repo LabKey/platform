@@ -104,9 +104,17 @@
     Collections.sort(fileActions, new Comparator<PipelineProvider.FileAction>(){
         public int compare(PipelineProvider.FileAction action1, PipelineProvider.FileAction action2)
         {
-            int i = action1.getFiles()[0].getName().compareToIgnoreCase(action2.getFiles()[0].getName());
-            if (i != 0)
-                return i;
+            if (action1.getFiles() != null && action2.getFiles() != null) {
+                int i = action1.getFiles()[0].getName().compareToIgnoreCase(action2.getFiles()[0].getName());
+                if (i != 0)
+                    return i;
+
+            } else if (action1.getFiles() != null) {
+                return -1;
+            } else if (action2.getFiles() != null) {
+                return 1;
+            }
+
             return action1.getLabel().compareToIgnoreCase(action2.getLabel());
         }
     });
