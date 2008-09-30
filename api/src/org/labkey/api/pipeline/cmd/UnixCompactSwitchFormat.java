@@ -16,7 +16,7 @@
 package org.labkey.api.pipeline.cmd;
 
 /**
- * <code>UnixCompactSwitchFormat</code>
+ * Used for -SWITCH_NAMESWITCH_VALUE (no space between the name and the value)
 */
 public class UnixCompactSwitchFormat extends UnixSwitchFormat
 {

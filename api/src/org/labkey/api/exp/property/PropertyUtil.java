@@ -29,22 +29,25 @@ import java.text.DecimalFormat;
 */
 public class PropertyUtil
 {
-    public static Object formatValue(PropertyDescriptor prop, Object value)
+    public static Object formatValue(PropertyDescriptor prop, Object value, String defaultFormat)
     {
         if (prop == null)
             return value;
-        return formatValue(prop.getPropertyType(), prop.getFormat(), value);
+        return formatValue(prop.getPropertyType(), prop.getFormat(), value, defaultFormat);
     }
 
-    public static Object formatValue(DomainProperty prop, Object value)
+    public static Object formatValue(DomainProperty prop, Object value, String defaultFormat)
     {
         if (prop == null)
             return value;
-        return formatValue(prop.getPropertyDescriptor().getPropertyType(), prop.getFormatString(), value);
+        return formatValue(prop.getPropertyDescriptor().getPropertyType(), prop.getFormatString(), value, defaultFormat);
     }
 
-    private static Object formatValue(PropertyType type, String formatString, Object value)
+    private static Object formatValue(PropertyType type, String formatString, Object value, String defaultFormat)
     {
+        if (formatString == null)
+            formatString = defaultFormat;
+
         if (formatString != null)
         {
             if (type == PropertyType.DATE_TIME)

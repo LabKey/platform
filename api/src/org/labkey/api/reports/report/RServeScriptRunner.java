@@ -17,29 +17,22 @@
 package org.labkey.api.reports.report;
 
 import org.apache.commons.lang.StringUtils;
-import org.labkey.api.view.HtmlView;
+import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.reports.report.r.ParamReplacement;
-import org.rosuda.REngine.REXP;
-import org.rosuda.REngine.REXPDouble;
-import org.rosuda.REngine.REXPMismatchException;
-import org.rosuda.REngine.Rserve.RConnection;
-import org.rosuda.REngine.Rserve.RserveException;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
 
 /**
  * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Aug 12, 2007
+ *
+ * Note: Most of this class's implementation has been commented out because in 8.3 we removed the Rserve jar but wanted
+ * to preserve the code in case we decided to resurrect the functionality.
  */
 public class RServeScriptRunner extends AbstractScriptRunner
 {
@@ -51,6 +44,8 @@ public class RServeScriptRunner extends AbstractScriptRunner
 
     public boolean runScript(VBox view, List<ParamReplacement> outputSubst)
     {
+        return false;
+/*
         File inputFile = _data;
         try {
             ensureServer();
@@ -71,8 +66,10 @@ public class RServeScriptRunner extends AbstractScriptRunner
             if (inputFile != null && inputFile.exists())
                 inputFile.delete();
         }
+*/
     }
 
+/*
     private boolean runScript(VBox view, File inputFile, List<ParamReplacement> outputSubst, List<String> errors) throws Exception
     {
         boolean ret = true;
@@ -122,11 +119,13 @@ public class RServeScriptRunner extends AbstractScriptRunner
         return ret;
     }
 
-    /**
+    */
+/**
      * Formats an R command to be executed by an Rserve server.
-     * @param token
+     * @param
      * @return
      */
+/*
     private String formatCmd(String token)
     {
         // need to remove comment portions of a command
@@ -193,6 +192,7 @@ public class RServeScriptRunner extends AbstractScriptRunner
         String processedScript = createScript(script, inputFile, outputSubst);
 
         // process any included scripts
+*/
 /*
             for (String includedReport : ((RReportDescriptor)_report.getDescriptor()).getIncludedReports())
             {
@@ -208,6 +208,7 @@ public class RServeScriptRunner extends AbstractScriptRunner
                 }
             }
 */
+/*
         return processedScript;
     }
 
@@ -224,9 +225,11 @@ public class RServeScriptRunner extends AbstractScriptRunner
         }
         return null;
     }
+*/
 
     public static void ensureServer()
     {
+/*
         if (!isServerStarted())
         {
             File rserve = findRServeExe();
@@ -250,6 +253,7 @@ public class RServeScriptRunner extends AbstractScriptRunner
                 }
             }
         }
+*/
     }
 
     public static File findRServeExe()
@@ -283,6 +287,7 @@ public class RServeScriptRunner extends AbstractScriptRunner
         return null;
     }
 
+/*
     public static boolean isServerStarted()
     {
         RConnection c = null;
@@ -300,9 +305,11 @@ public class RServeScriptRunner extends AbstractScriptRunner
                 c.close();
         }
     }
+*/
 
     public static void stopRServer()
     {
+/*
         try {
             RConnection c = new RConnection();
             c.shutdown();
@@ -311,6 +318,7 @@ public class RServeScriptRunner extends AbstractScriptRunner
         {
             return;
         }
+*/
     }
 
     protected static class ConsoleOutputView extends HttpView

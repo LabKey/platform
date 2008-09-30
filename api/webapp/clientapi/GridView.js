@@ -19,8 +19,26 @@
  */
 
  /**
-  * @description GridView class to create and render grid views over server-side tables and lists.
-  * @class GridView class to create and render grid views over server-side tables and lists.
+  * @deprecated  This class is now deprecated in favor of the LABKEY.ext.EditorGridPanel class.
+  * The LABKEY.ext.EditorGridPanel class is very similar to this class, except that it is a proper
+  * extension of the Ext.grid.EditorGridPanel class, and thus exposes all of its properties, methods,
+  * and events, and can participate in complex Ext layouts.
+  * <p>
+  * To transition from this class to the new LABKEY.ext.EditorGridPanel class, follow these steps:
+  * <ul>
+  * <li>Create a new LABKEY.ext.EditorGridPanel instead of a LABKEY.GridView</li>
+  * <li>Ensure that you create the class after the page has fully loaded. Use the Ext.onReady() function to
+  * specify a function to execute after the page has fully loaded. See the example in the
+  * LABKEY.ext.EditorGridPanel class documentation.</li>
+  * <li>In the new grid, the data store configuration has been separated from the grid configuration.
+  * Therefore, you should move the schemaName, queryName, viewName, and containerPath config properties to
+  * the config for the LABKEY.ext.Store you create for the value of the 'store' config property. See
+  * the example in LABKEY.ext.EditorGridPanel class documentation.</li>
+  * <li>If you specify a value for the renderTo config property, there is no need to call the
+  * render() method as there was when using the old LABKEY.GridView.</li>
+  * </ul>
+  * @description NOTE: This class is now deprecated in favor of the LABKEY.ext.EditorGridPanel class.
+  * @class NOTE: This class is now deprecated in favor of the {@link LABKEY.ext.EditorGridPanel} class.
   * @constructor
   * @param {Object} config Describes the GridView's properties.
   * @param {Object} config.schemaName Name of a schema defined within the current
@@ -70,42 +88,6 @@
   *					should look like this:
   * @param {String} [config.containerPath] The container path in which the schemaName and queryName are defined.
   *                 If not supplied, the current container path will be used.
-<pre><code>
-function onGridCustomize(grid)
-{
-   //customize the grid here
-   //for example:
-   grid.getTopToolbar().addButton({
-            text: "Test Button",
-            handler: function(){window.alert("Test button clicked!");}
-        });
-}
-</pre></code>
-where 'grid' is a reference to the Ext.grid.GridPanel instance.
-  * @constructor
-  * @example Example:
-<pre name="code" class="xml">
-&lt;script type="text/javascript"&gt;
-	LABKEY.requiresClientAPI();
-&lt;/script&gt;
-&lt;script type="text/javascript"&gt;
-    // create new grid over a list named 'People'
-	var gridView = new LABKEY.GridView({
-            schemaName : 'lists',
-            queryName : 'People',
-            renderTo : 'testDiv',
-            editable : true,
-            gridPanelConfig : {
-                title :'My People Grid',
-                autoHeight : true,
-                width : 500
-            }
-        });
-	// place editable grid in 'testDiv':
-	gridView.render();
-&lt;/script&gt;
-&lt;div id='testDiv'/&gt;
-</pre></code>
 */
 
 LABKEY.GridView = function(config)

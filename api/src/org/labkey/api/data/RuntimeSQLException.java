@@ -50,6 +50,11 @@ public class RuntimeSQLException extends RuntimeException
         return sqlx.getCause();
     }
 
+    public String getSQLState()
+    {
+        return sqlx.getSQLState();
+    }
+
     public synchronized Throwable initCause(Throwable cause)
     {
         return sqlx.initCause(cause);

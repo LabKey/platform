@@ -29,6 +29,4 @@ public interface CommandTask
     PipelineJob getJob();
 
     String getProcessPath(WorkDirectory.Function f, String key) throws IOException;
-
-    String getProcessExt(WorkDirectory.Function f, String key);
 }

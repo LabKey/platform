@@ -665,6 +665,22 @@ public class JSONObject {
         }
         testValidity(n);
 
+        //check for infinity and return our special constant that parses as infinity
+        //in all our various client languages
+        //only Double and and Float can be infinite
+        if(n instanceof Double)
+        {
+            Double d = (Double)n;
+            if(d.isInfinite())
+                return 0 == d.compareTo(Double.POSITIVE_INFINITY) ? "23456789012E777" : "-23456789012E777";
+        }
+        if(n instanceof Float)
+        {
+            Float f = (Float)n;
+            if(f.isInfinite())
+                return 0 == f.compareTo(Float.POSITIVE_INFINITY) ? "23456789012E777" : "-23456789012E777";
+        }
+
 // Shave off trailing zeros and decimal point, if possible.
 
         String s = n.toString();
@@ -1088,14 +1104,14 @@ public class JSONObject {
     static void testValidity(Object o) throws JSONException {
         if (o != null) {
             if (o instanceof Double) {
-                if (((Double)o).isInfinite() || ((Double)o).isNaN()) {
+                if (((Double)o).isNaN()) {
                     throw new JSONException(
-                        "JSON does not allow non-finite numbers.");
+                        "JSON does not allow NaN values.");
                 }
             } else if (o instanceof Float) {
-                if (((Float)o).isInfinite() || ((Float)o).isNaN()) {
+                if (((Float)o).isNaN()) {
                     throw new JSONException(
-                        "JSON does not allow non-finite numbers.");
+                        "JSON does not allow NaN values.");
                 }
             }
         }

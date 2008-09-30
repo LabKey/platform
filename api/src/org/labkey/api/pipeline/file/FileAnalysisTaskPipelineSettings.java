@@ -17,6 +17,7 @@ package org.labkey.api.pipeline.file;
 
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipelineSettings;
+import org.labkey.api.util.FileType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,7 +55,7 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
      * Extensions used as filters for files to show in the user interface
      * when initiating the pipeline.
      */
-    private List<String> _initialInputExts;
+    private List<FileType> _initialInputExts;
 
     /**
      * Maps the extension for a specific input/output file type to the list of
@@ -72,7 +73,7 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
      * To find the .mzXML file in question, this chain must be walked
      * in reverse.
      */
-    private Map<String, List<String>> _fileExtHierarchy;
+    private Map<FileType, List<FileType>> _fileExtHierarchy;
 
     public FileAnalysisTaskPipelineSettings(String name)
     {
@@ -114,28 +115,28 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
         _protocolFactoryName = protocolFactoryName;
     }
 
-    public List<String> getInitialInputExts()
+    public List<FileType> getInitialInputExts()
     {
         return _initialInputExts;
     }
 
-    public void setInitialInputExts(List<String> initialInputExts)
+    public void setInitialInputExts(List<FileType> initialInputExts)
     {
         _initialInputExts = initialInputExts;
     }
 
-    public void setInitialInputExt(String ext)
+    public void setInitialInputExt(FileType fileType)
     {
-        _initialInputExts = new ArrayList<String>();
-        _initialInputExts.add(ext);
+        _initialInputExts = new ArrayList<FileType>();
+        _initialInputExts.add(fileType);
     }
 
-    public Map<String, List<String>> getFileExtHierarchy()
+    public Map<FileType, List<FileType>> getFileExtHierarchy()
     {
         return _fileExtHierarchy;
     }
 
-    public void setFileExtHierarchy(Map<String, List<String>> fileExtHierarchy)
+    public void setFileExtHierarchy(Map<FileType, List<FileType>> fileExtHierarchy)
     {
         _fileExtHierarchy = fileExtHierarchy;
     }

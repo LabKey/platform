@@ -185,9 +185,21 @@ LABKEY.Query = new function()
 					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
         * @param {Function} config.successCallback
-				Function called when the "selectRows" function executes successfully. Will be called with arguments:
-				{@link LABKEY.Query.SelectRowsResults} and (optionally) {@link LABKEY.Query.SelectRowsOptions}
+				Function called when the "selectRows" function executes successfully.
+				This function will be called with the following arguments:
+				<ul>
+				    <li>data: an instance of {@link LABKEY.Query.SelectRowsResults}</li>
+				    <li>options: the options used for the AJAX request</li>
+				    <li>responseObj: the XMLHttpResponseObject instance used to make the AJAX request</li>
+				</ul>
         * @param {Function} [config.errorCallback] Function called when execution of the "selectRows" function fails.
+        *       This function will be called with the following arguments:
+				<ul>
+				    <li>data: an instance of {@link LABKEY.Query.SelectRowsResults}</li>
+				    <li>options: the options used for the AJAX request</li>
+				    <li>responseObj: the XMLHttpResponseObject instance used to make the AJAX request</li>
+				</ul>
+        *
         * @param {Array} [config.filterArray] Array of objects created by {@link LABKEY.Filter#create}.
         * @param {String} [config.sort]  String description of the sort.  It includes the column names
         *       listed in the URL of a sorted data region (with an optional minus prefix to indicate
@@ -213,14 +225,17 @@ LABKEY.Query = new function()
 	LABKEY.requiresClientAPI();
 &lt;/script&gt;
 &lt;script type="text/javascript"&gt;
-	function failureHandler(responseObj) 
-	{ 
-	    alert("Failure: " + responseObj.exception); 
+	function failureHandler(errorInfo, options, responseObj)
+	{
+	    if(errorInfo)
+	        alert("Failure: " + errorInfo.exception);
+	    else
+	        alert("Failure: " + responseObj.statusText);
 	} 
 
-	function successHandler(responseObj) 
+	function successHandler(data)
 	{ 
-	    alert("Success! " + responseObj.rowCount + " rows returned."); 
+	    alert("Success! " + data.rowCount + " rows returned.");
 	} 
 
 	LABKEY.Query.selectRows({schemaName: 'lists', queryName: 'People',

@@ -16,7 +16,7 @@
 package org.labkey.api.pipeline.cmd;
 
 /**
- * <code>UnixNewSwitchFormat</code>
+ * Used for --SWITCH_NAME=SWITCH_VALUE arguments
 */
 public class UnixNewSwitchFormat extends UnixSwitchFormat
 {

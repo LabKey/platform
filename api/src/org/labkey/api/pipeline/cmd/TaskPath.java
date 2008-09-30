@@ -116,12 +116,7 @@ public class TaskPath
     {
         if (getType() != null)
         {
-            String suffix = getType().getSuffix();
-            if (suffix.indexOf(".") != -1)
-            {
-                return suffix.substring(suffix.indexOf(".") + 1);
-            }
-            return suffix;
+            return getType().getDefaultRole();
         }
 
         return getName();

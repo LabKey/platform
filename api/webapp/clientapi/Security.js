@@ -48,7 +48,20 @@ LABKEY.Security = new function()
         /**
          * A map of the various permission bits supported in the LabKey Server.
          * You can use these values with the hasPermission() method to test if
-         * a user or group has a particular permission.
+         * a user or group has a particular permission. The values in this map
+         * are as follows:
+         * <ul>
+         * <li>read</li>
+         * <li>insert</li>
+         * <li>update</li>
+         * <li>del</li>
+         * <li>readOwn</li>
+         * <li>updateOwn</li>
+         * <li>deleteOwn</li>
+         * <li>all</li>
+         * </ul>
+         * For example, to refer to the update permission, the syntax would be:<br/>
+         * <pre><code>LABKEY.Security.permissions.update</code></pre>
          */
         permissions : {
             read: 1,
@@ -64,6 +77,17 @@ LABKEY.Security = new function()
 
         /**
          * A map of the various permission roles exposed in the user interface.
+         * The members are as follows:
+         * <ul>
+         * <li>admin</li>
+         * <li>editor</li>
+         * <li>author</li>
+         * <li>reader</li>
+         * <li>restrictedReader</li>
+         * <li>noPerms</li>
+         * </ul>
+         * For example, to refer to the author role, the syntax would be:<br/>
+         * <pre><code>LABKEY.Security.roles.author</code></pre>
          */
         roles : {
             admin: 65535,
@@ -77,7 +101,16 @@ LABKEY.Security = new function()
 
         /**
          * A map of the special system group ids. These ids are assigned by the system
-         * at initial startup and are constant accorss installations.
+         * at initial startup and are constant across installations. The values in
+         * this map are as follows:
+         * <ul>
+         * <li>administrators</li>
+         * <li>users</li>
+         * <li>guests</li>
+         * <li>developers</li>
+         * </ul>
+         * For example, to refer to the administrators group, the syntax would be:<br/>
+         * <pre><code>LABKEY.Security.systemGroups.administrators</code></pre>
          */
         systemGroups : {
             administrators: -1,
@@ -94,7 +127,33 @@ LABKEY.Security = new function()
          * @param {function} config.successCallback A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
-         * <li><b>groupPermsInfo:</b> an object containing properties about the group permissions</li>
+         * <li><b>groupPermsInfo:</b> an object containing properties about the container and group permissions.
+         * This object will have the following shape:
+         *  <ul>
+         *  <li>container
+         *      <ul>
+         *          <li>id: the container id</li>
+         *          <li>name: the container name</li>
+         *          <li>path: the container path</li>
+         *          <li>isInheritingPerms: true if the container is inheriting permissions from its parent</li>
+         *          <li>groups: an array of group objects, each of which will have the following properties:
+         *              <ul>
+         *                  <li>id: the group id</li>
+         *                  <li>name: the group's name</li>
+         *                  <li>type: the group's type ('g' for group, 'r' for role, 'm' for module-specific)</li>
+         *                  <li>roleLabel: a description of the group's permission role. This will correspond
+         *                      to the visible labels shown on the permissions page (e.g., 'Admin (all permissions)'.</li>
+         *                  <li>role: the group's role value (e.g., 'ADMIN'). Use this property for programmatic checks.</li>
+         *                  <li>permissions: The group's effective permissions as a bit mask.
+         *                          Use this with the hasPermission() method to test for specific permissions.</li>
+         *              </ul>
+         *          </li>
+         *          <li>children: if includeSubfolders was true, this will contain an array of objects, each of
+         *              which will have the same shape as the parent container object.</li>
+         *      </ul>
+         *  </li>
+         * </ul>
+         * </li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
          * @param {function} [config.errorCallback] A reference to a function to call when an error occurs. This
@@ -162,7 +221,42 @@ LABKEY.Security = new function()
          * @param {function} config.successCallback A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
-         * <li><b>userPermsInfo:</b> an object containing properties about the user's permissions</li>
+         * <li><b>userPermsInfo:</b> an object containing properties about the user's permissions.
+         * This object will have the following shape:
+         *  <ul>
+         *  <li>container: information about the container and the groups the user belongs to in that container
+         *      <ul>
+         *          <li>id: the container id</li>
+         *          <li>name: the container name</li>
+         *          <li>path: the container path</li>
+         *          <li>roleLabel: a description of the user's permission role in this container. This will correspond
+         *               to the visible labels shown on the permissions page (e.g., 'Admin (all permissions)'.</li>
+         *          <li>role: the user's role value (e.g., 'ADMIN'). Use this property for programmatic checks.</li>
+         *          <li>permissions: The user's effective permissions in this container as a bit mask.
+         *               Use this with the hasPermission() method to test for specific permissions.</li>
+         *          <li>groups: an array of group objects to which the user belongs, each of which will have the following properties:
+         *              <ul>
+         *                  <li>id: the group id</li>
+         *                  <li>name: the group's name</li>
+         *                  <li>roleLabel: a description of the group's permission role. This will correspond
+         *                      to the visible labels shown on the permissions page (e.g., 'Admin (all permissions)'.</li>
+         *                  <li>role: the group's role value (e.g., 'ADMIN'). Use this property for programmatic checks.</li>
+         *                  <li>permissions: The group's effective permissions as a bit mask.
+         *                          Use this with the hasPermission() method to test for specific permissions.</li>
+         *              </ul>
+         *          </li>
+         *          <li>children: if includeSubfolders was true, this will contain an array of objects, each of
+         *              which will have the same shape as the parent container object.</li>
+         *      </ul>
+         *  </li>
+         *  <li>user: information about the requested user
+         *      <ul>
+         *          <li>userId: the user's id</li>
+         *          <li>displayName: the user's display name</li>
+         *      </ul>
+         *  </li>
+         * </ul>
+         * </li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
          * @param {function} [config.errorCallback] A reference to a function to call when an error occurs. This
@@ -210,7 +304,17 @@ LABKEY.Security = new function()
          * @param {function} config.successCallback A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
-         * <li><b>usersInfo:</b> an object a property called 'users', which is an array of user information.</li>
+         * <li><b>usersInfo:</b> an object with the following shape:
+         *  <ul>
+         *      <li>users: an array of user objects in the following form:
+         *          <ul>
+         *              <li>userId: the user's id</li>
+         *              <li>displayName: the user's display name</li>
+         *          </ul>
+         *      </li>
+         *      <li>container: the path of the requested container</li>
+         *  </ul>
+         * </li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
          * @param {function} [config.errorCallback] A reference to a function to call when an error occurs. This
@@ -256,8 +360,18 @@ LABKEY.Security = new function()
          * @param {function} config.successCallback A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
-         * <li><b>containersInfo:</b> an object with a property called 'containers', which is a tree of container information
-         * including the user's current permissions in that container.</li>
+         * <li><b>containersInfo:</b> an object with the following properties:
+         *  <ul>
+         *      <li>id: the id of the requested container</li>
+         *      <li>name: the name of the requested container</li>
+         *      <li>path: the path of the requested container</li>
+         *      <li>sortOrder: the relative sort order of the requested container</li>
+         *      <li>userPermissions: the permissions the current user has in the requested container.
+         *          Use this value with the hasPermission() method to test for specific permissions.</li>
+         *      <li>children: if the includeSubfolers parameter was true, this will contain
+         *          an array of child container objects with the same shape as the parent object.</li>
+         *  </ul>
+         * </li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
          * @param {function} [config.errorCallback] A reference to a function to call when an error occurs. This

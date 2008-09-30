@@ -15,27 +15,24 @@
  */
 package org.labkey.api.query.snapshot;
 
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.JspView;
-import org.labkey.api.query.*;
-import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.GUID;
-import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.exp.property.Lookup;
-import org.labkey.api.exp.PropertyType;
+import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.Lookup;
+import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.query.*;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 
 import java.util.List;
-import java.util.ArrayList;
 /*
  * User: Karl Lum
  * Date: Jul 8, 2008
@@ -105,12 +102,9 @@ public abstract class AbstractSnapshotProvider implements QuerySnapshotService.I
                 CustomView customSrc = queryDef.getCustomView(context.getUser(), context.getRequest(), form.getViewName());
                 if (customSrc != null)
                 {
-                    CustomView customView = snapshot.getQueryDefinition().createCustomView(context.getUser(), form.getViewName());
-                    customView.setColumns(customSrc.getColumns());
-                    customView.setIsHidden(true);
-                    customView.save(form.getViewContext().getUser(), form.getViewContext().getRequest());
-
-                    snapshot.setViewName(form.getViewName());
+                    snapshot.setColumns(customSrc.getColumns());
+                    if (customSrc.hasFilterOrSort())
+                        snapshot.setFilter(customSrc.getFilter());
                 }
             }
             return snapshot;

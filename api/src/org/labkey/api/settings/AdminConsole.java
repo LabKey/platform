@@ -15,11 +15,12 @@
  */
 package org.labkey.api.settings;
 
-import org.apache.commons.collections15.MultiMap;
-import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.labkey.api.view.ActionURL;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
 
 /**
  * User: adam
@@ -30,13 +31,19 @@ public class AdminConsole
 {
     public static enum SettingsLinkType {Configuration, Management, Diagnostics}
 
-    private static final MultiMap<SettingsLinkType, AdminLink> _links = new MultiHashMap<SettingsLinkType, AdminLink>();
+    private static final Map<SettingsLinkType, Collection<AdminLink>> _links = new HashMap<SettingsLinkType, Collection<AdminLink>>();
+
+    static
+    {
+        for (SettingsLinkType type : SettingsLinkType.values())
+            _links.put(type, new LinkedList<AdminLink>());
+    }
 
     public static void addLink(SettingsLinkType type, AdminLink link)
     {
         synchronized (_links)
         {
-            _links.put(type, link);
+            _links.get(type).add(link);
         }
     }
 
@@ -49,14 +56,14 @@ public class AdminConsole
     {
         synchronized (_links)
         {
-            return _links.get(type);
+            return new LinkedList<AdminLink>(_links.get(type));
         }
     }
 
     public static class AdminLink
     {
-        String _text;
-        ActionURL _url;
+        private final String _text;
+        private final ActionURL _url;
 
         public AdminLink(String text, ActionURL url)
         {

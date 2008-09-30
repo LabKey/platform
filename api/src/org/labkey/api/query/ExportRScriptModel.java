@@ -16,13 +16,15 @@
 package org.labkey.api.query;
 
 import org.labkey.api.query.QueryView;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.CompareType;
 import org.apache.commons.lang.StringUtils;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.ArrayList;
 
 /*
 * User: Dave
@@ -79,40 +81,79 @@ public class ExportRScriptModel
 
     public String getSort()
     {
-        return StringUtils.trimToEmpty(_view.getSettings().getSortFilterURL().getParameter(_view.getDataRegionName() +  ".sort"));
+        String sortParam = _view.getSettings().getSortFilterURL().getParameter(_view.getDataRegionName() +  ".sort");
+        if(null == sortParam || sortParam.length() == 0)
+            return "NULL";
+        else
+            return "\"" + sortParam + "\"";
     }
 
     public String getFilters()
     {
         //R package wants filters like this:
-        //   c("colnameX~operator=value", "colnameY~operator=value", "colnameZ~operator=value")
-        //get all parameters on the sort/filter url that are prefixed with the data region name
-        ActionURL url = _view.getSettings().getSortFilterURL();
-        String[] keys = url.getKeysByPrefix(_view.getDataRegionName() + ".");
-        if(null == keys)
-            return "";
+        //   makefilter(c(name, operator, value), c(name, operator, value))
+        //where 'name' is the column name, 'operator' is the string version of the operator
+        //as defined in the Rlabkey package, and 'value' is the filter value.
 
-        StringBuilder filters = new StringBuilder("c(");
-        String sep = "";
-        for(String key : keys)
+        //load the sort/filter url into a new SimpleFilter
+        //and iterate the clauses
+        ArrayList<String> makeFilterExprs = new ArrayList<String>();
+        SimpleFilter filter = new SimpleFilter(_view.getSettings().getSortFilterURL(), _view.getDataRegionName());
+        String name;
+        CompareType operator;
+        String value;
+        for(SimpleFilter.FilterClause clause : filter.getClauses())
         {
-            //ignore non-filter parameters
-            if(key.equalsIgnoreCase(_view.getDataRegionName() + ".sort")
-                    || key.equalsIgnoreCase(_view.getDataRegionName() + ".queryName")
-                    || key.equalsIgnoreCase(_view.getDataRegionName() + ".viewName")
-                    )
-                continue;
+            //all filter clauses can report col names and values,
+            //each of which in this case should contain only one value
+            name = clause.getColumnNames().get(0);
+            value = getFilterValue(clause.getParamVals());
 
-            filters.append(sep);
-            filters.append("\"");
-            filters.append(key.substring(key.indexOf(".") + 1));
-            filters.append("=");
-            filters.append(url.getParameter(key));
-            filters.append("\"");
+            //two kinds of clauses can be used on URLs: CompareClause and InClause
+            if(clause instanceof CompareType.CompareClause)
+                operator = ((CompareType.CompareClause)clause).getComparison();
+            else if(clause instanceof SimpleFilter.InClause)
+                operator = CompareType.IN;
+            else
+                operator = CompareType.EQUAL;
+
+            makeFilterExprs.add(makeFilterExpr(name, operator, value));
+        }
+
+        if(makeFilterExprs.size() == 0)
+            return "NULL";
+
+        StringBuilder filtersExpr = new StringBuilder("makeFilter(");
+        String sep = "";
+        for(String mf : makeFilterExprs)
+        {
+            filtersExpr.append(sep);
+            filtersExpr.append(mf);
             sep = ",";
         }
-        filters.append(")");
-        
-        return filters.toString();
+        filtersExpr.append(")");
+        return filtersExpr.toString();
     }
+
+    protected String getFilterValue(Object[] values)
+    {
+        if(null == values || values.length == 0)
+            return "";
+        
+        StringBuilder sb = new StringBuilder();
+        String sep = "";
+        for(Object val : values)
+        {
+            sb.append(sep);
+            sb.append(val.toString());
+            sep = ";";
+        }
+        return sb.toString();
+    }
+
+    protected String makeFilterExpr(String name, CompareType operator, String value)
+    {
+        return "c(\"" + name + "\",\"" + operator.getRName() + "\",\"" + value + "\")";
+    }
+
 }

@@ -178,9 +178,19 @@ public class ExceptionUtil
                 }
                 report.addParam("stackTrace", stringWriter.getBuffer().toString());
                 report.addParam("browser", request == null ? null : request.getHeader("User-Agent"));
-                if (ex instanceof SQLException)
+
+                for (Throwable t = ex ; t != null ; t = t.getCause())
                 {
-                    report.addParam("sqlState", ((SQLException)ex).getSQLState());
+                    if (t instanceof RuntimeSQLException)
+                    {
+                        report.addParam("sqlState", ((RuntimeSQLException)t).getSQLState());
+                        break;
+                    }
+                    if (t instanceof SQLException)
+                    {
+                        report.addParam("sqlState", ((SQLException)t).getSQLState());
+                        break;
+                    }
                 }
 
                 report.addServerSessionParams();

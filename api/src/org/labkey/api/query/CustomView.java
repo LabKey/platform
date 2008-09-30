@@ -48,6 +48,9 @@ public interface CustomView
 
     void applyFilterAndSortToURL(ActionURL url, String dataRegionName);
     void setFilterAndSortFromURL(ActionURL url, String dataRegionName);
+    String getFilter();
+    void setFilter(String filter);
+    
     boolean hasFilterOrSort();
 
     void save(User user, HttpServletRequest request) throws QueryException;

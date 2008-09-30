@@ -56,9 +56,4 @@ abstract public class TaskPathToCommandArgs extends TaskToCommandArgs
     {
         return task.getProcessPath(getFunction(), getKey());
     }
-
-    public String getExt(CommandTask task)
-    {
-        return task.getProcessExt(getFunction(), getKey());
-    }
 }

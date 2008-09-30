@@ -31,10 +31,7 @@ public interface QuerySnapshotDefinition
 {
     String getName();
     int getId();
-    QueryDefinition getQueryDefinition();
-    String getViewName();
-    void setViewName(String viewName);
-
+    QueryDefinition getQueryDefinition(User user);
 
     boolean canEdit(User user);
     void save(User user, Container container) throws Exception;
@@ -45,6 +42,8 @@ public interface QuerySnapshotDefinition
 
     List<FieldKey> getColumns();
     void setColumns(List<FieldKey> columns);
+    void setFilter(String filter);
+    String getFilter();
 
     Date getCreated();
     Date getLastUpdated();

@@ -18,6 +18,7 @@ package org.labkey.api.query.snapshot;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryForm;
+import org.labkey.api.security.User;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.ObjectUtils;
 
@@ -37,7 +38,7 @@ public class QuerySnapshotForm extends QueryForm
     private boolean _updateSnapshot;
     private boolean _isEdit;
 
-    public void init(QuerySnapshotDefinition def)
+    public void init(QuerySnapshotDefinition def, User user)
     {
         if (def != null)
         {
@@ -51,7 +52,7 @@ public class QuerySnapshotForm extends QueryForm
 
             setSnapshotColumns(columnNames);
 
-            QueryDefinition qDef = def.getQueryDefinition();
+            QueryDefinition qDef = def.getQueryDefinition(user);
             if (qDef != null)
             {
                 setQueryName(qDef.getName());

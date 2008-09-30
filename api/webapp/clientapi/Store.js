@@ -39,23 +39,18 @@ Ext.namespace("LABKEY", "LABKEY.ext");
 	LABKEY.requiresClientAPI();
 &lt;/script&gt;
 &lt;script type="text/javascript"&gt;
-    var _grid;
+    var _grid, _store;
     Ext.onReady(function(){
 
-        //initialize the Ext QuickTips support
-        //which allows quick tips to be shown
-        Ext.QuickTips.init();
-
+        //create a Store bound to the 'People' list in the 'lists' schema
         _store = new LABKEY.ext.Store({
             schemaName: 'lists',
-            queryName: 'Kitchen Sink'
+            queryName: 'People'
         });
 
+        //create a grid using that store as the data source
         _grid = new LABKEY.ext.EditorGridPanel({
-            store: new LABKEY.ext.Store({
-                schemaName: 'lists',
-                queryName: 'People'
-            }),
+            store: _store,
             renderTo: 'grid',
             width: 800,
             autoHeight: true,
@@ -188,10 +183,23 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
      * so it will return before the changes are fully made on the server. Records that are being saved
      * will have a property called 'saveOperationInProgress' set to true, and you can test if a Record
      * is currently being saved using the isUpdateInProgress method. Once the record has been updated
-     * on the server, the existing record will be removed from the store and a new one will be added.
-     * This is necessary as the key value may have changed. Subscribe to the "add" event to be notified
-     * when the new records are added, the "remove" event to be notified when the old records are removed
-     * or the "datachanged" event to be notified in general when records have been modified.
+     * on the server, it's properties may change to reflect server-modified values such as Modified and ModifiedBy.
+     * <p>
+     * Before records are sent to the server, the "beforecommit" event will fire. Return false from your event
+     * handler to prohibit the commit. The beforecommit event handler will be passed the following parameters:
+     * <ul>
+     * <li><b>records</b>: An array of Ext.data.Record objects that will be sent to the server.</li>
+     * <li><b>rows</b>: An array of row data objects from those records.</li>
+     * </ul>
+     * <p>
+     * The "commitcomplete" or "commitexception" event will be fired when the server responds. The former
+     * is fired if all records are successfully saved, and the latter if an exception occurred. All modifications
+     * to the server are transacted together, so all records will be saved or none will be saved. The "commitcomplete"
+     * event is passed no parameters. The "commitexception" even is passed the error message as the only parameter.
+     * You may return false form the "commitexception" event to supress the default display of the error message.
+     * <p>
+     * For information on the Ext event model, see the
+     * <a href="http://extjs.com/deploy/dev/docs/?class=Ext.util.Observable">Ext API documentation</a>.
      * @name commitChanges
      * @function
      * @memberOf LABKEY.ext.Store

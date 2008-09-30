@@ -614,6 +614,7 @@ abstract public class PipelineJob extends Job implements Serializable
             WorkDirectory workDirectory = null;
             List<RecordedAction> actions;
 
+            boolean success = false;
             try
             {
                 if (task instanceof WorkDirectoryTask)
@@ -622,13 +623,29 @@ abstract public class PipelineJob extends Job implements Serializable
                     ((WorkDirectoryTask)task).setWorkDirectory(workDirectory);
                 }
                 actions = task.run();
+                success = true;
             }
             finally
             {
-                if (workDirectory != null)
+                try
                 {
-                    workDirectory.remove();
-                    ((WorkDirectoryTask)task).setWorkDirectory(null);
+                    if (workDirectory != null)
+                    {
+                        workDirectory.remove();
+                        ((WorkDirectoryTask)task).setWorkDirectory(null);
+                    }
+                }
+                catch (IOException e)
+                {
+                    if (success)
+                    {
+                        // Don't let this cleanup error mask an original error that causes the job to fail
+                        throw e;
+                    }
+                    else
+                    {
+                        error("Failed to clean up work directory after error condition, see full error information below.", e);
+                    }
                 }
             }
             _actionSet.add(actions);

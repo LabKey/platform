@@ -100,7 +100,7 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
         if (ft == null)
             return file.getName();
 
-        return ft.getBaseName(file);
+        return ft.getDefaultFileType().getBaseName(file);
     }
 
     public File getAnalysisDir(File dirData)

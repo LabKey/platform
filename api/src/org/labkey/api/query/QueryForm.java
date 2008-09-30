@@ -24,6 +24,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.HttpView;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
@@ -307,8 +308,16 @@ public class QueryForm implements HasViewContext, HasBindParameters
         if (getQuerySettings() == null)
             return null;
         String columnListName = getViewName();
-        _customView = getQueryDef().getCustomView(getUser(), getViewContext().getRequest(), columnListName);
+        QueryDefinition querydef = getQueryDef();
+        if (null == querydef)
+            HttpView.throwNotFound();
+        _customView = querydef.getCustomView(getUser(), getViewContext().getRequest(), columnListName);
         return _customView;
+    }
+
+    public void setCustomView(CustomView customView)
+    {
+        _customView = customView;
     }
 
     public boolean canEdit()

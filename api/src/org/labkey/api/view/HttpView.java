@@ -687,13 +687,17 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         throw new UnauthorizedException(message, getContextURL(), getContextContainer());
     }
 
+    public static void throwTermsOfUseException() throws TermsOfUseException
+    {
+        throw new TermsOfUseException(getContextURL(), getContextContainer());
+    }
     /**
      * Pulls out the context's URL for redirecting. This fetches
      * the original URL before any redirects, in case internally
      * we've done that.
      * @return
      */
-    private static String getContextURL()
+    public static String getContextURL()
     {
         ViewContext context = getRootContext();
         HttpServletRequest request = context.getRequest();
@@ -707,7 +711,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     }
 
 
-    private static Container getContextContainer()
+    public static Container getContextContainer()
     {
         return getRootContext().getContainer();
     }

@@ -27,7 +27,7 @@
     <tr><td>&nbsp;</td></tr>
     <tr><td><i>Valid substitutions:</i></td>
     </tr>
-    <tr><td><table class="labkey-pad-cells" id="validSubstitutions">
+    <tr><td><table class="labkey-r-syntax" id="validSubstitutions">
         <tr><td class="labkey-form-label">input_data</td>
             <td>The input dataset, a tab-delimited table. LabKey Server automatically reads your chosen dataset into
                 a data frame called: <code>labkey.data</code>. If you desire tighter control over the method of data upload, you
@@ -111,7 +111,7 @@
         are R data types and may contain information that can be used by the source script.</i></td></tr>
     <tr><td>&nbsp;</td></tr>
     <tr><td><i>Implicit Variables:</i></td></tr>
-    <tr><td><table class="labkey-pad-cells" id="implicitVariables">
+    <tr><td><table class="labkey-r-syntax" id="implicitVariables">
         <tr><td class="labkey-form-label">labkey.data</td>
             <td>The data frame which the input dataset is automatically read into. The code to generate the
                 data frame is: <br/>

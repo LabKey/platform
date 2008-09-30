@@ -140,7 +140,7 @@ public class PopupMenu
                 continue;
             }
 
-            String title = tree.getKey();
+            String title = tree.isHighlighted() ? "<b>" + tree.getKey() + "</b>" : tree.getKey();
             sb.append("{").append("text:").append(PageFlowUtil.jsString(title));
             if (StringUtils.isNotEmpty(tree.getId()))
                 sb.append(", id:").append(PageFlowUtil.jsString(tree.getId()));

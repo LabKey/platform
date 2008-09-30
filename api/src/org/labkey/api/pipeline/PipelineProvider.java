@@ -264,8 +264,13 @@ abstract public class PipelineProvider
         {
             _initialFileTypes = initialFileTypes;
         }
-        
+
         public boolean accept(File f)
+        {
+            return accept(f, true);
+        }
+
+        public boolean accept(File f, boolean checkSiblings)
         {
             if (_initialFileTypes != null)
             {
@@ -283,6 +288,23 @@ abstract public class PipelineProvider
                             if (fileExists(_initialFileTypes[i].newFile(dir, basename)))
                                 return false;
                         }
+
+                        int indexMatch = ft.getIndexMatch(f);
+                        if (checkSiblings && indexMatch > 0)
+                        {
+                            File[] siblings = dir.listFiles();
+                            if (siblings != null)
+                            {
+                                for (File sibling : siblings)
+                                {
+                                    if (!sibling.equals(f) && ft.getBaseName(sibling).equals(basename) && ft.getIndexMatch(sibling) < indexMatch)
+                                    {
+                                        return false;
+                                    }
+                                }
+                            }
+                        }
+
                         return true;
                     }
                 }

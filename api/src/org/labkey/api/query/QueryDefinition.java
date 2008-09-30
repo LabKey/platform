@@ -67,4 +67,9 @@ public interface QueryDefinition
     ActionURL urlFor(QueryAction action);
     ActionURL urlFor(QueryAction action, Container container);
     UserSchema getSchema();
+
+    /**
+     * Returns whether this is a table-based query definition (versus a custom query).
+     */
+    boolean isTableQueryDefinition();
 }

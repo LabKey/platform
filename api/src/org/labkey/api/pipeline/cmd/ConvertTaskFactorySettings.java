@@ -18,8 +18,8 @@ package org.labkey.api.pipeline.cmd;
 import org.labkey.api.pipeline.AbstractTaskFactorySettings;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskFactorySettings;
+import org.labkey.api.util.FileType;
 
-import java.util.List;
 import java.util.ArrayList;
 
 /**
@@ -30,7 +30,7 @@ public class ConvertTaskFactorySettings extends AbstractTaskFactorySettings
 {
     private String _cloneName;
     private String _statusName;
-    private String _outputExt;
+    private FileType _outputType;
     private Object[] _commands;
 
     public ConvertTaskFactorySettings(String name)
@@ -68,14 +68,19 @@ public class ConvertTaskFactorySettings extends AbstractTaskFactorySettings
         _statusName = statusName;
     }
 
-    public String getOutputExt()
+    public FileType getOutputType()
     {
-        return _outputExt;
+        return _outputType;
+    }
+
+    public void setOutputType(FileType outputType)
+    {
+        _outputType = outputType;
     }
 
     public void setOutputExt(String outputExt)
     {
-        _outputExt = outputExt;
+        setOutputType(new FileType(outputExt));
     }
 
     public Object[] getCommands()

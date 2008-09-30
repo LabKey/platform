@@ -33,5 +33,5 @@ mydata <- labkey.selectRows(baseUrl="<%=model.getBaseUrl()%>",
                             schemaName="<%=model.getSchemaName()%>",
                             queryName="<%=model.getQueryName()%>",
                             viewName="<%=model.getViewName()%>",
-                            colSort="<%=model.getSort()%>",
+                            colSort=<%=model.getSort()%>,
                             colFilter=<%=model.getFilters()%>)

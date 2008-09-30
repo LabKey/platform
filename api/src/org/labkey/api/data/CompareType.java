@@ -33,76 +33,76 @@ import java.util.*;
  */
 public enum CompareType
 {
-    EQUAL("Equals", "eq", true, " = ?"),
-    DATE_EQUAL("Equals", "dateeq", true)
+    EQUAL("Equals", "eq", true, " = ?", "EQUALS"),
+    DATE_EQUAL("Equals", "dateeq", true, null, "DATE_EQUAL")
         {
             public CompareClause createFilterClause(String colName, Object value)
             {
                 return getDateCompareClause(colName, value);
             }
         },
-    DATE_NOT_EQUAL("Does Not Equal", "dateneq", true, " <> ?")
+    DATE_NOT_EQUAL("Does Not Equal", "dateneq", true, " <> ?", "DATE_NOT_EQUAL")
         {
             public CompareClause createFilterClause(String colName, Object value)
             {
                 return getDateCompareClause(colName, value);
             }
         },
-    NEQ_OR_NULL("Does Not Equal", "neqornull", true, " <> ?")
+    NEQ_OR_NULL("Does Not Equal", "neqornull", true, " <> ?", "NOT_EQUAL_OR_NULL")
         {
             public CompareClause createFilterClause(String colName, Object value)
             {
                 return new NotEqualOrNullClause(colName, value);
             }
         },
-    NEQ("Does Not Equal", "neq", true, " <> ?"),
-    ISBLANK("Is Blank", "isblank", false, " IS NULL")
+    NEQ("Does Not Equal", "neq", true, " <> ?", "NOT_EQUALS"),
+    ISBLANK("Is Blank", "isblank", false, " IS NULL", "IS_NULL")
         {
             public FilterClause createFilterClause(String colName, Object value)
             {
                 return super.createFilterClause(colName, null);
             }
         },
-    NONBLANK("Is Not Blank", "isnonblank", false, " IS NOT NULL")
+    NONBLANK("Is Not Blank", "isnonblank", false, " IS NOT NULL", "IS_NOT_NULL")
         {
             public FilterClause createFilterClause(String colName, Object value)
             {
                 return super.createFilterClause(colName, null);
             }
         },
-    GT("Is Greater Than", "gt", true, " > ?"),
-    LT("Is Less Than", "lt", true, " < ?"),
-    GTE("Is Greater Than or Equal To", "gte", true, " >= ?"),
-    LTE("Is Less Than or Equal To", "lte", true, " <= ?"),
-    CONTAINS("Contains", "contains", true)
+    GT("Is Greater Than", "gt", true, " > ?", "GREATER_THAN"),
+    LT("Is Less Than", "lt", true, " < ?", "LESS_THAN"),
+    GTE("Is Greater Than or Equal To", "gte", true, " >= ?", "GREATER_THAN_OR_EQUAL_TO"),
+    LTE("Is Less Than or Equal To", "lte", true, " <= ?", "LESS_THAN_OR_EQUAL_TO"),
+    CONTAINS("Contains", "contains", true, null, "CONTAINS")
             {
                 public CompareClause createFilterClause(String colName, Object value)
                 {
                     return new ContainsClause(colName, value);
                 }
             },
-    DOES_NOT_CONTAIN("Does Not Contain", "doesnotcontain", true)
+    DOES_NOT_CONTAIN("Does Not Contain", "doesnotcontain", true, null, "DOES_NOT_CONTAIN")
             {
                 public CompareClause createFilterClause(String colName, Object value)
                 {
                     return new DoesNotContainClause(colName, value);
                 }
             },
-    DOES_NOT_START_WITH("Does Not Start With", "doesnotstartwith", true)
+    DOES_NOT_START_WITH("Does Not Start With", "doesnotstartwith", true, null, "DOES_NOT_START_WITH")
             {
                 public CompareClause createFilterClause(String colName, Object value)
                 {
                     return new DoesNotStartWithClause(colName, value);
                 }
             },
-    STARTS_WITH("Starts With", "startswith", true)
+    STARTS_WITH("Starts With", "startswith", true, null, "STARTS_WITH")
             {
                 public CompareClause createFilterClause(String colName, Object value)
                 {
                     return new StartsWithClause(colName, value);
                 }
             },
-    IN("Equals One Of (e.g. 'a;b;c')", "in", true)
+    IN("Equals One Of (e.g. 'a;b;c')", "in", true, null, "EQUALS_ONE_OF")
             {
                 // Each compare type uses CompareClause by default
                 FilterClause createFilterClause(String colName, Object value)
@@ -136,18 +136,15 @@ public enum CompareType
     private String _displayValue;
     private boolean _dataValueRequired;
     private String _sql;
+    private String _rName;
 
-    CompareType(String displayValue, String urlKey, boolean dataValueRequired)
-    {
-        this(displayValue, urlKey, dataValueRequired, null);
-    }
-
-    CompareType(String displayValue, String urlKey, boolean dataValueRequired, String sql)
+    CompareType(String displayValue, String urlKey, boolean dataValueRequired, String sql, String rName)
     {
         _urlKey = urlKey;
         _displayValue = displayValue;
         _dataValueRequired = dataValueRequired;
         _sql = sql;
+        _rName = rName;
     }
 
     public static List<CompareType> getValidCompareSet(ColumnInfo info)
@@ -206,6 +203,11 @@ public enum CompareType
     public String getSql()
     {
         return _sql;
+    }
+
+    public String getRName()
+    {
+        return _rName;
     }
 
     // Each compare type uses CompareClause by default

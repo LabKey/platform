@@ -39,27 +39,19 @@ Ext.apply(Ext.QuickTips.getQuickTip(), {
  * @param {integer} [config.pageSize] Defines how many rows are shown at a time in the grid (default is 20).
  * @param {boolean} [config.editable] Set to true if you want the user to be able to edit, insert, or delete rows (default is false).
  * @param {boolean} [config.autoSave] Set to false if you do not want changes automatically saved when the user leaves the row (default is true).
- * @param {boolean} [config.enableFilters] True to enable filtering of columns (default is false)
+ * @param {boolean} [config.enableFilters] True to enable user-filtering of columns (default is false)
  * @param {string} [config.loadingCaption] The string to display in a cell when loading the lookup values (default is "[loading...]").
  * @param {string} [config.lookupNullCaption] The string to display for a null value in a lookup column (default is "[none]").
- * @property {map} lookupStores  A map of lookup data stores where the key is the column name,
- * and the value is an LABKEY.ext.Store object containing records for the lookup values for the given column.
  * @example &lt;script type="text/javascript"&gt;
 	LABKEY.requiresClientAPI();
 &lt;/script&gt;
 &lt;script type="text/javascript"&gt;
     var _grid;
+
+    //use the Ext.onReady() function to define what code should
+    //be executed once the page is fully loaded.
+    //you must use this if you supply a renderTo config property
     Ext.onReady(function(){
-
-        //initialize the Ext QuickTips support
-        //which allows quick tips to be shown
-        Ext.QuickTips.init();
-
-        _store = new LABKEY.ext.Store({
-            schemaName: 'lists',
-            queryName: 'Kitchen Sink'
-        });
-
         _grid = new LABKEY.ext.EditorGridPanel({
             store: new LABKEY.ext.Store({
                 schemaName: 'lists',
@@ -97,6 +89,10 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
 
         LABKEY.ext.EditorGridPanel.superclass.initComponent.call(this, arguments);
 
+        /**
+         * @memberOf LABKEY.ext.EditorGridPanel
+         * @event columnmodelcustomize Use this event to customize the column model
+         */
         this.addEvents("beforedelete, columnmodelcustomize");
 
         //subscribe to superclass events

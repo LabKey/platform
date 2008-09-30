@@ -64,7 +64,7 @@ if (bean.containerLinks != null)
             out.print(authLogoHtml + "&nbsp;");
 
         %>
-        <a href="<%=h(urlProvider(LoginUrls.class).getLoginURL(currentURL))%>">Sign&nbsp;In</a><%
+        <a href="<%=h(urlProvider(LoginUrls.class).getLoginURL())%>">Sign&nbsp;In</a><%
     }
 
 %></td></tr>

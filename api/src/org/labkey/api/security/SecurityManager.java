@@ -1552,7 +1552,7 @@ public class SecurityManager
 
         Project project = new Project(proj);
 
-        if ("Basic".equals(ctx.getRequest().getAttribute(AUTHENTICATION_METHOD)) || getTermsOfUseApproved(ctx, project))
+        if ("Basic".equals(ctx.getRequest().getAttribute(AUTHENTICATION_METHOD)) || isTermsOfUseApproved(ctx, project))
             return false;
 
         boolean required = isTermsOfUseRequired(project);
@@ -1568,7 +1568,7 @@ public class SecurityManager
     private static final String TERMS_APPROVED_KEY = "TERMS_APPROVED_KEY";
     private static final Object TERMS_APPROVED_LOCK = new Object();
 
-    public static boolean getTermsOfUseApproved(ViewContext ctx, Project project)
+    public static boolean isTermsOfUseApproved(ViewContext ctx, Project project)
     {
         if (null == project)
             return true;
