@@ -58,7 +58,7 @@
     <tr>
         <td><%=PageFlowUtil.generateButton("Update Snapshot", PageFlowUtil.urlProvider(QueryUrls.class).urlUpdateSnapshot(context.getContainer()).addParameters(params), "return confirm('Updating will replace all current data with a fresh snapshot');")%></td>
 <%  if (def != null) { %>
-        <td><%=PageFlowUtil.generateButton("Source Query", bean.getSchema().urlFor(QueryAction.sourceQuery, def.getQueryDefinition()))%></td>
+        <td><%=PageFlowUtil.generateButton("Source Query", bean.getSchema().urlFor(QueryAction.sourceQuery, def.getQueryDefinition(context.getUser())))%></td>
         <td><%=PageFlowUtil.generateButton(historyLabel, context.cloneActionURL().replaceParameter("showHistory", String.valueOf(!showHistory)))%></td>
 <%  } %>
     </tr>

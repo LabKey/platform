@@ -1077,6 +1077,7 @@ public class SamplesController extends BaseController
         columnAliases.put("derivativeType", SimpleSpecimenImporter.DERIVIATIVE_TYPE);
         columnAliases.put("Visit", SimpleSpecimenImporter.VISIT);
         columnAliases.put("drawTimestamp", SimpleSpecimenImporter.DRAW_TIMESTAMP);
+        columnAliases.put("globalUniqueId", SimpleSpecimenImporter.VIAL_ID);
 
         //Remember whether we used a different header so we can put up error messages that make sense
         Map<String,String> labels = new HashMap();

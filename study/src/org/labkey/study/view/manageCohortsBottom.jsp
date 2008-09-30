@@ -15,8 +15,8 @@
     * limitations under the License.
     */
 %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.study.controllers.BaseStudyController" %>
 <%@ page import="org.labkey.study.model.Cohort" %>
 <%@ page import="org.labkey.study.model.Participant" %>
@@ -31,6 +31,14 @@
 %>
 <labkey:errors/>
 <%
+    if (study.isManualCohortAssignment()) // Need to create a form for submitting the assignments
+    {
+%>
+<form action="manageCohorts.post" name="manualAssignment" method="POST">
+    <input type="hidden" name="reshow" value="false">
+    <input type="hidden" name="manualCohortAssignment" value="true">
+<%
+    }
     // Need all participants and cohorts for both versions
     Map<Participant,Cohort> participant2Cohort = new LinkedHashMap<Participant,Cohort>();
     for (Participant participant : manager.getParticipants(study))
@@ -113,7 +121,7 @@
     <%
         if (study.isManualCohortAssignment())
         {
-            %><%= buttonImg("Save", "document.manageCohorts.reshow.value='false'; return true;")%><%
+            %><%= PageFlowUtil.generateSubmitButton("Save")%><%
         }
 
     %>

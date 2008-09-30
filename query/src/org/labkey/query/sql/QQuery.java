@@ -37,6 +37,12 @@ public class QQuery extends QExpr
     {
         _query = query;
     }
+
+    public Query getQuery()
+    {
+        return _query;
+    }
+    
     public QSelect getSelect()
     {
         QSelectFrom selectFrom = getChildOfType(QSelectFrom.class);

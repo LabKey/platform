@@ -97,7 +97,7 @@ public class IssuesQueryView extends QueryView
         ActionURL url = target.clone().deleteParameters();
         NavTree item = new NavTree("all", url);
         if (currentView == "")
-            item.setSelected(target.toString().equals(url.toString()));
+            item.setHighlighted(target.toString().equals(url.toString()));
         menu.addMenuItem(item);
 
         url = target.clone().deleteParameters();
@@ -108,7 +108,7 @@ public class IssuesQueryView extends QueryView
         url.addParameter(getDataRegionName() + ".sort", sort.getSortParamValue());        
         item = new NavTree("open", url);
         if (currentView == "")
-            item.setSelected(target.toString().equals(url.toString()));
+            item.setHighlighted(target.toString().equals(url.toString()));
         menu.addMenuItem(item);
 
         url = target.clone().deleteParameters();
@@ -119,7 +119,7 @@ public class IssuesQueryView extends QueryView
         url.addParameter(getDataRegionName() + ".sort", sort.getSortParamValue());
         item = new NavTree("resolved", url);
         if (currentView == "")
-            item.setSelected(target.toString().equals(url.toString()));
+            item.setHighlighted(target.toString().equals(url.toString()));
         menu.addMenuItem(item);
 
         if (!getUser().isGuest())
@@ -132,7 +132,7 @@ public class IssuesQueryView extends QueryView
             url.addParameter(getDataRegionName() + ".sort", sort.getSortParamValue());
             item = new NavTree("mine", url);
             if (currentView == "")
-                item.setSelected(target.toString().equals(url.toString()));
+                item.setHighlighted(target.toString().equals(url.toString()));
             menu.addMenuItem(item);
         }
         menu.addSeparator();
@@ -162,14 +162,13 @@ public class IssuesQueryView extends QueryView
             item = new NavTree(label, target.clone().replaceParameter(param(QueryParam.viewName), label).getLocalURIString());
             item.setId("Views:" + label);
             if (label.equals(currentView))
-                item.setSelected(true);
+                item.setHighlighted(true);
+
+            if (view.getOwner() == null)
+                item.setImageSrc(getViewContext().getContextPath() + "/reports/grid_shared.gif");
             else
-            {
-                if (view.getOwner() == null)
-                    item.setImageSrc(getViewContext().getContextPath() + "/reports/grid.gif");
-                else
-                    item.setImageSrc(getViewContext().getContextPath() + "/reports/grid_private.gif");
-            }
+                item.setImageSrc(getViewContext().getContextPath() + "/reports/grid.gif");
+
             menu.addMenuItem(item);
         }
         if (addSep)

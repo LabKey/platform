@@ -1334,6 +1334,7 @@ query/src/META-INF/query/scripts/postgresql/query-8.20-8.21.sql -text
 query/src/META-INF/query/scripts/postgresql/query-8.21-8.22.sql -text
 query/src/META-INF/query/scripts/postgresql/query-8.22-8.23.sql -text
 query/src/META-INF/query/scripts/postgresql/query-8.23-8.24.sql -text
+query/src/META-INF/query/scripts/postgresql/query-8.24-8.25.sql -text
 query/src/META-INF/query/scripts/sql[!!-~]server/obsolete/query-1.51-1.52.sql -text
 query/src/META-INF/query/scripts/sql[!!-~]server/obsolete/query-1.60-1.61.sql -text
 query/src/META-INF/query/scripts/sql[!!-~]server/obsolete/query-1.70-1.71.sql -text
@@ -1347,6 +1348,7 @@ query/src/META-INF/query/scripts/sql[!!-~]server/query-8.20-8.21.sql -text
 query/src/META-INF/query/scripts/sql[!!-~]server/query-8.21-8.22.sql -text
 query/src/META-INF/query/scripts/sql[!!-~]server/query-8.22-8.23.sql -text
 query/src/META-INF/query/scripts/sql[!!-~]server/query-8.23-8.24.sql -text
+query/src/META-INF/query/scripts/sql[!!-~]server/query-8.24-8.25.sql -text
 query/src/org/labkey/query/CustomViewImpl.java -text
 query/src/org/labkey/query/QueryDefinitionImpl.java -text
 query/src/org/labkey/query/QueryModule.java -text
@@ -1426,6 +1428,7 @@ query/src/org/labkey/query/sql/Operator.java -text
 query/src/org/labkey/query/sql/Precedence.java -text
 query/src/org/labkey/query/sql/QAggregate.java -text
 query/src/org/labkey/query/sql/QAs.java -text
+query/src/org/labkey/query/sql/QBoolean.java -text
 query/src/org/labkey/query/sql/QCase.java -text
 query/src/org/labkey/query/sql/QColumn.java -text
 query/src/org/labkey/query/sql/QDistinct.java -text
@@ -1482,7 +1485,7 @@ query/webapp/query/sql.gif -text
 query/webapp/query/tableInfo.js -text
 query/webapp/reports/chart.gif -text
 query/webapp/reports/grid.gif -text
-query/webapp/reports/grid_private.gif -text
+query/webapp/reports/grid_shared.gif -text
 query/webapp/reports/r.gif -text
 study/gwtsrc/org/labkey/assay/designer/AssayDesigner.gwt.xml -text
 study/gwtsrc/org/labkey/assay/designer/client/AssayDesigner.java -text
@@ -1978,6 +1981,7 @@ study/src/org/labkey/study/view/DatasetsWebPartView.java -text
 study/src/org/labkey/study/view/ParticipantWebPartFactory.java -text
 study/src/org/labkey/study/view/StudyNavigationView.java -text
 study/src/org/labkey/study/view/StudySummaryWebPartFactory.java -text
+study/src/org/labkey/study/view/bulkDatasetDelete.jsp -text
 study/src/org/labkey/study/view/bulkImportDataTypes.jsp -text
 study/src/org/labkey/study/view/columnPicker.gm -text
 study/src/org/labkey/study/view/confirmDeleteStudy.jsp -text

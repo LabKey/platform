@@ -706,17 +706,17 @@ public class DavController extends SpringActionController
                 else
                 {
                     // The stack always contains the object of the current level
-                    Stack<String> stack = new Stack<String>();
-                    stack.push(root.getPath());
+                    LinkedList<String> stack = new LinkedList<String>();
+                    stack.addLast(root.getPath());
 
                     // Stack of the objects one level below
                     boolean skipFirst = noroot;
                     WebdavResolver.Resource resource;
-                    Stack<String> stackBelow = new Stack<String>();
+                    LinkedList<String> stackBelow = new LinkedList<String>();
 
                     while ((!stack.isEmpty()) && (depth >= 0))
                     {
-                        String currentPath = stack.pop();
+                        String currentPath = stack.removeFirst();
                         resource = resolvePath(currentPath);
 
                         if (null == resource || !resource.canList(getUser()))
@@ -736,7 +736,7 @@ public class DavController extends SpringActionController
                                 if (!(newPath.endsWith("/")))
                                     newPath += "/";
                                 newPath += listPath;
-                                stackBelow.push(newPath);
+                                stackBelow.addLast(newPath);
                             }
 
                             // Displaying the lock-null resources present in that
@@ -759,7 +759,7 @@ public class DavController extends SpringActionController
                         {
                             depth--;
                             stack = stackBelow;
-                            stackBelow = new Stack<String>();
+                            stackBelow = new LinkedList<String>();
                         }
 
                         resourceWriter.sendData();

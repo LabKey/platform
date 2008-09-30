@@ -68,7 +68,7 @@
     {
         PipelineProvider.FileEntry entry = parents.get(i);
         boolean bold = i == parents.size()-1;
-        %><tr><td colspan=5 style="padding-left:<%=i*10%>;"><%
+        %><tr><td colspan=5 style="padding-left:<%=i%>em;"><%
         if (bold) {%><b><%}
         %><a width="100%" href="<%=h(entry.getHref())%>"><img src="<%=h(entry.getImageURL()) %>">&nbsp;<%=f(entry.getLabel())%></a><%
         if (bold) {%></b><%}
@@ -82,11 +82,6 @@
 
 
 %></td></tr>
-<tr><td><%
-  WebPartView.startTitleFrame(out, "File listing", null, "100%", null);    
-  WebPartView.endTitleFrame(out);
-%>
-</td></tr>
 <tr><td valign="top"><%
 
     // separate out the dir actions and file actions
@@ -101,17 +96,24 @@
     }
 
     // Sort the file actions to get a consistent ordering.
-    Collections.sort(fileActions, new Comparator<PipelineProvider.FileAction>(){
+    Collections.sort(fileActions, new Comparator<PipelineProvider.FileAction>()
+    {
         public int compare(PipelineProvider.FileAction action1, PipelineProvider.FileAction action2)
         {
-            if (action1.getFiles() != null && action2.getFiles() != null) {
-                int i = action1.getFiles()[0].getName().compareToIgnoreCase(action2.getFiles()[0].getName());
-                if (i != 0)
-                    return i;
-
-            } else if (action1.getFiles() != null) {
+            if (action1.getFiles() != null && action2.getFiles() != null)
+            {
+	            Set<File> files1 = new TreeSet<File>(Arrays.asList(action1.getFiles()));
+    	        Set<File> files2 = new TreeSet<File>(Arrays.asList(action2.getFiles()));
+        	    int i = files1.toString().compareToIgnoreCase(files2.toString());
+            	if (i != 0)
+                	return i;
+            }
+            else if (action1.getFiles() != null)
+            {
                 return -1;
-            } else if (action2.getFiles() != null) {
+            }
+            else if (action2.getFiles() != null)
+            {
                 return 1;
             }
 
@@ -126,18 +128,18 @@
 
     for (PipelineProvider.FileEntry entry : entries)
     {
-        %><tr class="labkey-row"><td>&nbsp;</td><%
+        %><tr class="labkey-row"><td style="padding-left: <%= parents.size() %>em;"/><%
         %><td nowrap style="vertical-align: middle;"><a width="100%" href="<%=h(entry.getHref())%>"><img src="<%=h(entry.getImageURL())%>">&nbsp;<%=f(entry.getLabel())%></a></td><%
         Collection<PipelineProvider.FileAction> c = dirActions.getCollection(entry.getURI());
         dirActions.remove(entry.getURI());
         if (c != null)
         {
-            %><td><table class="labkey-button-bar"><tr><%
+            %><td style="padding-left: 1em"><div class="labkey-button-bar"><%
             for (PipelineProvider.FileAction action : c)
             {
-                %><td nowrap><%=action.getDisplay()%></td><%
+                %><%=action.getDisplay()%> <%
             }
-            %></tr></table></td><%
+            %></div></td><%
         }
         %><td width="100%">&nbsp;</td></tr><%
         out.println();
@@ -150,7 +152,9 @@
     int i = 0;
     int iForm = 0;
     while (i < fileActions.size())
-    {
+    {%>
+        <tr height="1"><td/><td colspan="2"><hr height="1" /></td></tr>
+    <%
         PipelineProvider.FileAction action = fileActions.get(i++);
         if (action.isRootAction())
             continue;
@@ -170,7 +174,7 @@
             {
                 if (action.getFiles().length == 1)
                 {
-                    %><td><input type="checkbox" name="file" value="<%=h(file.getName())%>"></td><%
+                    %><td style="padding-left: <%= parents.size() %>em"><input type="checkbox" name="file" value="<%=h(file.getName())%>"></td><%
                 }
                 else
                 {
@@ -179,19 +183,19 @@
             }
             else
             {
-                %><td><input type="checkbox" name="fileInputNames" value="<%=h(file.getName())%>" checked="true" style="visibility: hidden;"></td><%
+                %><td style="padding-left: <%= parents.size() %>em"><input type="checkbox" name="fileInputNames" value="<%=h(file.getName())%>" checked="true" style="display: none;"></td><%
             }
             %><td nowrap style="vertical-align: middle;"><img src="<%=contextPath%><%=Attachment.getFileIcon(file.getName())%>">&nbsp;<%=f(file.getName())%></td><%
             if (file == action.getFiles()[0])
             {
-                %><td nowrap style="vertical-align: top;" rowspan="<%=action.getFiles().length%>"><%
-                %><table class="labkey-button-bar"><tr><td><%=showCheckboxes ? action.getDisplay() : action.getDisplay(iForm)%></td><%
+                %><td nowrap style="vertical-align: top; padding-left: 1em" rowspan="<%=action.getFiles().length%>"><%
+                %><div class="labkey-button-bar"><%=showCheckboxes ? action.getDisplay() : action.getDisplay(iForm)%><%
                 while (i < fileActions.size() && action.hasSameFiles(fileActions.get(i)))
                 {
                     action = fileActions.get(i++);
-                    %><td><%=showCheckboxes ? action.getDisplay() : action.getDisplay(iForm)%></td><%
+                    %><%=showCheckboxes ? action.getDisplay() : action.getDisplay(iForm)%><%
                 }
-                %></tr></table></td><%
+                %></div></td><%
             }
             %><td width="100%">&nbsp;</td></tr><%
         }
@@ -199,7 +203,11 @@
     }
     if (entries.isEmpty() && fileActions.isEmpty())
     {
-        %><tr><td><i>no files</i></td></tr><%
+        %><tr><td colspan="3" style="padding-left: <%= parents.size() %>em"><i>no files available for processing in this directory</i></td></tr><%
+    }
+    else if (!fileActions.isEmpty())
+    { %>
+        <tr height="1"><td/><td colspan="2"><hr height="1" /></td></tr><%
     }
     %></table><%
     //
@@ -217,7 +225,7 @@
     {
         %><%=PageFlowUtil.generateButton("Process and Import Files", actionToggle.getLocalURIString())%>&nbsp;<%
     }
-    else //if (pipeRoot.getACL().hasPermission(context.getUser(), ACL.PERM_READ))
+    else if (pipeRoot.getACL().hasPermission(context.getUser(), ACL.PERM_READ))
     {
         %><%=PageFlowUtil.generateButton("Browse All Files", actionToggle.getLocalURIString())%>&nbsp;<%
     }

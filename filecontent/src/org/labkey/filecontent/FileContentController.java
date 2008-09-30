@@ -30,10 +30,7 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.MimeMap;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
@@ -156,22 +153,17 @@ public class FileContentController extends SpringActionController
            switch (style)
            {
                case ATTACHMENT:
-               case PAGE:                                             {
+               case PAGE:
+               {
                    getPageConfig().setTemplate(PageConfig.Template.None);
                    PageFlowUtil.streamFile(getViewContext().getResponse(), file, RenderStyle.ATTACHMENT==style);
                    return null;
                }
                case FRAME:
                {
-                   ActionURL urlHelp = getViewContext().cloneActionURL();
-                   //If url was originally /contextPath/files/proj/folder/*.html this
-                   //we want to preserve that url so that relative links work
-                   String staticFilePageFlow = FileServlet.getOriginalPageFlow(getViewContext().getRequest());
-                   if (null != staticFilePageFlow)
-                       urlHelp.setPageFlow(staticFilePageFlow);
-
-                   urlHelp.replaceParameter("renderAs", FileContentController.RenderStyle.PAGE.toString());
-                   HttpView iframeView = new IFrameView(urlHelp.getLocalURIString());
+                   URLHelper url = new URLHelper(HttpView.getContextURL());
+                   url.replaceParameter("renderAs", FileContentController.RenderStyle.PAGE.toString());
+                   HttpView iframeView = new IFrameView(url.getLocalURIString());
                    return iframeView;
                }
                case INCLUDE:
@@ -191,9 +183,7 @@ public class FileContentController extends SpringActionController
                }
                case IMAGE:
                {
-                   ActionURL url = getViewContext().cloneActionURL();
-                   //If url was originally /contextPath/files/proj/folder/*.html this
-                   //we want to preserve that url so that relative links work
+                   URLHelper url = new URLHelper(HttpView.getContextURL()); 
                    url.replaceParameter("renderAs", FileContentController.RenderStyle.PAGE.toString());
                    HttpView imgView = new ImgView(url.getLocalURIString());
                    return imgView;

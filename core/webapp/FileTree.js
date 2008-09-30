@@ -37,7 +37,7 @@ LABKEY.ext.WebDavTreeLoader = function (config)
         {name: 'leaf', mapping: 'href', type: 'boolean',
             convert : function (v, rec) {
 //                var c = Ext.DomQuery.is(rec, 'propstat/prop/resourcetype:has(collection)');
-                return v.length > 0 && v[v.length-1] != '/';
+                return v.length > 0 && v.charAt(v.length-1) != '/';
             }
         },
         {name: 'creationdate', mapping: 'propstat/prop/creationdate', type: 'date',
@@ -137,6 +137,16 @@ LABKEY.ext.FileTreeNodeUI = Ext.extend(Ext.tree.ColumnNodeUI, {
         this.onDisableChange(this.node, this.node.disabled);
     },
 
+    onClick : function (e) {
+        LABKEY.ext.FileTreeNodeUI.superclass.onClick.call(this, e);
+        // if using single selection model, clear the selection if the node was not selected
+        var selModel = this.node.getOwnerTree().getSelectionModel();
+        if (selModel instanceof Ext.tree.DefaultSelectionModel && !this.node.isSelected())
+        {
+            selModel.clearSelections();
+        }
+    },
+
     onOver : function (e) {
         if (this.node.disabled) {
             return;
@@ -185,15 +195,24 @@ LABKEY.ext.FileTree = function (config)
             fileFilter : this.fileFilter
         });
     }
+    this.loader.on("loadexception", function (treeloader, node, response) {
+        if (node)
+        {
+            var qtip = "error loading files from server";
+            if (response && response.responseText)
+                qtip = response.responseText;
+            node.appendChild({
+                text: "&lt;error loading files from server>",
+                size: 0,
+                disabled: true,
+                leaf: true,
+                qtip: qtip,
+                iconCls: 'labkey-tree-error-icon'
+            });
+        }
+    });
 
     LABKEY.ext.FileTree.superclass.constructor.call(this);
-
-    if (this.initialSelection && this.initialSelection.length > 0)
-    {
-        if (this.initialSelection[0] != '/')
-            this.initialSelection = '/' + this.initialSelection;
-        this.selectPath('/<root>' + this.initialSelection, 'text');
-    }
 
     this.getSelectionModel().addListener("beforeselect",
         function (model, newnode, oldnode)
@@ -202,17 +221,34 @@ LABKEY.ext.FileTree = function (config)
                    (model.tree.dirsSelectable && !newnode.leaf);
         });
 
+    var inputEl = null;
     if (this.inputId)
-    {
-        var inputEl = document.getElementById(this.inputId);
+        inputEl = document.getElementById(this.inputId);
+
+    var originalTitle = this.title;
+    this.getSelectionModel().addListener("selectionchange", function (model, newnode) {
+        var selectedValues = model.tree.getSelectedValues();
         if (inputEl)
+            inputEl.value = selectedValues;
+        if (selectedValues)
+            model.tree.setTitle("Selected: " + model.tree.getSelectedValues("text"));
+        else
+            model.tree.setTitle(originalTitle);
+    });
+
+    var sel = this.initialSelection;
+    if (sel && sel.length > 0)
+    {
+        if (sel.charAt(0) != '/')
+            sel = '/' + sel;
+        if (sel.charAt(sel.length-1) == '/')
+            sel = sel.substring(0, sel.length-1);
+        var keys = sel.split('/');
+        for (var i = 0; i < keys.length; i++)
         {
-            this.getSelectionModel().addListener("selectionchange",
-                function (model, newnode)
-                {
-                    inputEl.value = model.tree.getSelectedValues();
-                });
+            keys[i] = decodeURIComponent(keys[i]);
         }
+        this.selectPath('/<root>' + keys.join('/'), 'text');
     }
 };
 
@@ -304,12 +340,13 @@ Ext.extend(LABKEY.ext.FileTree, Ext.tree.ColumnTree, {
     }
     ],
 
-    getSelectedValues: function ()
+    getSelectedValues: function (attr)
     {
+        attr = attr || "id";
         var self = this;
         function stripId(id)
         {
-            var rootId = self.getRootNode().id;
+            var rootId = self.getRootNode()[attr];
             if (self.relativeToRoot && id.indexOf(rootId) == 0)
                 return id.substring(rootId.length);
             return id;
@@ -321,7 +358,7 @@ Ext.extend(LABKEY.ext.FileTree, Ext.tree.ColumnTree, {
         if (selModel.getSelectedNode)
         {
             var node = selModel.getSelectedNode();
-            return node ? stripId(node.id) : "";
+            return node ? stripId(node[attr]) : "";
         }
         else if (selModel.getSelectedNodes)
         {
@@ -330,7 +367,7 @@ Ext.extend(LABKEY.ext.FileTree, Ext.tree.ColumnTree, {
             var sep = "";
             for (var i = 0; i < nodes.length; i++)
             {
-                value += sep + stripId(nodes[i].id);
+                value += sep + stripId(nodes[i][attr]);
                 sep = ",";
             }
             return value;

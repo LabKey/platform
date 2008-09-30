@@ -87,8 +87,8 @@ public class AttachmentDisplayColumn extends DataColumn
             renderIconAndFilename(ctx, out, filename, false);
             out.write("&nbsp;[<a href=\"javascript:{}\" onClick=\"");
 
-            out.write("document.getElementById('" + divId + "').innerHTML = " + PageFlowUtil.jsString(filePicker + "&nbsp;<input type=\"hidden\" name=\"deletedAttachments\" value=\"" + filename + "\">[<span class=\"labkey-message\">Previous file, " + filename + ", has been deleted; cancel to restore it.</span>]").replaceAll("\"", "\\\\'") + "\" class=\"labkey-message\"");
-            out.write(">Delete");
+            out.write("document.getElementById('" + divId + "').innerHTML = " + PageFlowUtil.filter(PageFlowUtil.jsString(filePicker + "&nbsp;<input type=\"hidden\" name=\"deletedAttachments\" value=\"" + filename + "\"><br><span class=\"labkey-message\">Previous file, \"" + filename + "\", has been deleted; click \"Cancel\" to restore it.</span>")) + "\" class=\"labkey-message\"");
+            out.write(">delete");
             out.write("</a>]\n");
             out.write("</div>");
         }

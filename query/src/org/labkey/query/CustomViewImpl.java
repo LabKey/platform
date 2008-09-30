@@ -252,6 +252,16 @@ public class CustomViewImpl implements CustomView
         }
     }
 
+    public String getFilter()
+    {
+        return _collist.getFilter();
+    }
+
+    public void setFilter(String filter)
+    {
+        edit().setFilter(filter);
+    }
+
     public boolean saveInSession()
     {
         return getOwner() != null && getOwner().isGuest();

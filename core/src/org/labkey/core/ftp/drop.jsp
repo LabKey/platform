@@ -67,7 +67,6 @@ LABKEY.writeApplet({
           port:<%=PageFlowUtil.jsString(dropPage.getPort())%>,
           path:<%=PageFlowUtil.jsString(dropPage.getPath())%>,
           webdavPrefix:<%=PageFlowUtil.jsString(contextPath + "/" + DavController.SERVLETPATH)%>,
-        port:<%=PageFlowUtil.jsString(dropPage.getPort())%>,
         user:<%=PageFlowUtil.jsString(context.getUser().getEmail())%>,
         password:<%=PageFlowUtil.jsString(sessionId)%>,
         updateEvent:"dropApplet_Update",
@@ -117,14 +116,14 @@ YAHOO.util.Event.addListener(window, "resize", onWindowResize);
         </table>
 </td>
 
-<td width=1><img src="<%=contextPath%>/_img.gif" width=1 height=204></td>
+<td width=1><img src="<%=contextPath%>/_.gif" width=1 height=204></td>
 
 <td valign="top" width=100% height=100%>
-    <table class="labkey-no-spacing" width="700px">
+    <table class="labkey-no-spacing" width="100%">
         <tr><td class="labkey-tab-space">&nbsp;</td><td class="labkey-tab-space">&nbsp;</td><td id="transfersTab" class="labkey-tab-selected" onclick="showTransfers()"><a href="#">transfers</a></td><td class="labkey-tab-space">&nbsp;</td><!--<td id="filesTab" class="labkey-tab labkey-tab-shaded" onclick="showFiles()"><a href="#">files</a></td><td class="labkey-tab-space">&nbsp;</td>--><td id="consoleTab" class="labkey-tab labkey-tab-shaded" onclick="showConsole()"><a href="#">console</a></td><td class="labkey-tab-space" width="100%">&nbsp;</td></tr>
         <tr><td colspan="20" style="padding:0px"></td></tr>
     </table>
-    <table class="labkey-no-spacing" width="700px">
+    <table class="labkey-no-spacing" width="100%">
         <tr>
         <td colspan="20" valign="top" width="100%" height="100%" class="labkey-nav-bordered" style="border-top:0px;">
             <div id="scrollDiv" style="overflow:scroll; width:100%;">

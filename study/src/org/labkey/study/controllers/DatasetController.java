@@ -32,16 +32,20 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.*;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.QCStateSet;
+import org.labkey.study.StudySchema;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
 import java.io.PrintWriter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: jgarms
@@ -201,7 +205,7 @@ public class DatasetController extends BaseStudyController
             {
                 for (String error : importErrors)
                 {
-                    errors.reject("update", error);
+                    errors.reject("update", PageFlowUtil.filter(error));
                 }
                 return false;
             }
@@ -319,6 +323,74 @@ public class DatasetController extends BaseStudyController
                 return root;
             }
             catch (ServletException se) {throw UnexpectedException.wrap(se);}
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class BulkDatasetDeleteAction extends FormViewAction<DatasetDeleteForm>
+    {
+        public ModelAndView getView(DatasetDeleteForm form, boolean reshow, BindException errors) throws Exception
+        {
+            return new StudyJspView<DatasetDeleteForm>(getStudy(), "bulkDatasetDelete.jsp", form, errors);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            _appendNavTrailDatasetAdmin(root);
+            return root.addChild("Delete Datasets");
+        }
+
+        public void validateCommand(DatasetDeleteForm target, Errors errors) {}
+
+        public boolean handlePost(DatasetDeleteForm form, BindException errors) throws Exception
+        {
+            int[] datasetIds = form.getDatasetIds();
+
+            if (datasetIds == null)
+                return false;
+
+            // Loop over each dataset, transacting per dataset to keep from locking out other users
+            for (int datasetId : datasetIds)
+            {
+                DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getStudy(), datasetId);
+                if (def == null)
+                    throw new IllegalStateException("Could not find dataset for id: " + datasetId);
+
+                DbScope scope = StudySchema.getInstance().getSchema().getScope();
+                try
+                {
+                    scope.beginTransaction();
+                    StudyManager.getInstance().deleteDataset(getStudy(), getUser(), def);
+                    scope.commitTransaction();
+                }
+                finally
+                {
+                    scope.closeConnection();
+                }
+            }
+
+            return true;
+        }
+
+        public ActionURL getSuccessURL(DatasetDeleteForm datasetDeleteForm)
+        {
+            return new ActionURL(StudyController.ManageTypesAction.class, getContainer());
+        }
+
+    }
+
+    public static class DatasetDeleteForm
+    {
+        private int[] datasetIds;
+
+        public int[] getDatasetIds()
+        {
+            return datasetIds;
+        }
+
+        public void setDatasetIds(int[] datasetIds)
+        {
+            this.datasetIds = datasetIds;
         }
     }
 

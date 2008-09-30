@@ -33,9 +33,9 @@
 <form action="manageCohorts.post" name="manageCohorts" method="POST">
     <input type="hidden" name="reshow" value="true">
 
-    <input type="radio" onchange="document.manageCohorts.submit();" name="manualCohortAssignment"
+    <input type="radio" onclick="document.manageCohorts.submit();" name="manualCohortAssignment"
            value="false" <%=study.isManualCohortAssignment() ? "" : "checked"%>>Automatic<br>
-    <input type="radio" onchange="document.manageCohorts.submit();" name="manualCohortAssignment"
+    <input type="radio" onclick="document.manageCohorts.submit();" name="manualCohortAssignment"
            value="true" <%=study.isManualCohortAssignment() ? "checked" : ""%>>Manual
 
     <%

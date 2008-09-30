@@ -19,6 +19,7 @@ package org.labkey.study.query;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.*;
 import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.util.StringExpressionFactory;
@@ -147,6 +148,18 @@ public class DataSetTable extends FilteredTable
                     PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(propertyURI, schema.getContainer());
                     if (null != pd && pd.getLookupQuery() != null)
                         col.setFk(new PdLookupForeignKey(schema.getUser(), pd));
+                    
+                    if (pd != null && pd.getPropertyType() == PropertyType.MULTI_LINE)
+                    {
+                        col.setDisplayColumnFactory(new DisplayColumnFactory() {
+                            public DisplayColumn createRenderer(ColumnInfo colInfo)
+                            {
+                                DataColumn dc = new DataColumn(colInfo);
+                                dc.setPreserveNewlines(true);
+                                return dc;
+                            }
+                        });
+                    }
                 }
                 if (isVisibleByDefault(col))
                     defaultVisibleCols.add(FieldKey.fromParts(col.getName()));

@@ -31,6 +31,7 @@ import org.labkey.api.security.*;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.data.xml.TableType;
@@ -305,6 +306,14 @@ public class QueryControllerSpring extends SpringActionController
             }
             catch (Exception e)
             {
+                try
+                {
+                    ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), e);
+                }
+                catch (Throwable t)
+                {
+                    //
+                }
                 errors.reject("ERROR_MSG", e.toString());
                 Logger.getLogger(QueryControllerSpring.class).error("Error", e);
             }
@@ -637,7 +646,7 @@ public class QueryControllerSpring extends SpringActionController
         public ModelAndView getView(QuerySnapshotForm form, boolean reshow, BindException errors) throws Exception
         {
             if (!reshow)
-                form.init(QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName(), form.getSnapshotName()));
+                form.init(QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName(), form.getSnapshotName()), getUser());
 
             VBox box = new VBox();
             QuerySnapshotService.I provider = QuerySnapshotService.get(form.getSchemaName());
@@ -1653,7 +1662,7 @@ public class QueryControllerSpring extends SpringActionController
     }
 
     
-    @RequiresSiteAdmin
+    @RequiresPermission(ACL.PERM_ADMIN)
     public class AdminNewDbUserSchemaAction extends FormViewAction<DbUserSchemaForm>
     {
         public void validateCommand(DbUserSchemaForm form, Errors errors)

@@ -61,8 +61,8 @@ public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySe
         if (settings.getStatusName() != null)
             _statusName = settings.getStatusName();
 
-        if (settings.getOutputExt() != null)
-            _outputType = new FileType(settings.getOutputExt());
+        if (settings.getOutputType() != null)
+            _outputType = settings.getOutputType();
         else if (_outputType == null)
             throw new IllegalArgumentException("Conversion must have output type.");
 

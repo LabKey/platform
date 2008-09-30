@@ -17,10 +17,7 @@ package org.labkey.study.dataset;
 
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.TSVGridWriter;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -32,7 +29,10 @@ import org.labkey.api.query.snapshot.QuerySnapshotForm;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.*;
+import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -41,11 +41,12 @@ import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
-import org.labkey.study.model.StudyCachable;
 import org.labkey.study.model.StudyManager;
+import org.springframework.mock.web.MockHttpServletRequest;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 /*
  * User: Karl Lum
@@ -129,7 +130,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
         for (DisplayColumn c : view.getDisplayColumns())
         {
-            if (!DataSetDefinition.isDefaultFieldName(c.getName(), study))
+            //if (!DataSetDefinition.isDefaultFieldName(c.getName(), study))
             {
                 columns.add(c);
             }
@@ -194,8 +195,11 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 
                 for (ColumnInfo col : QueryService.get().getColumns(view.getTable(), snapshot.getColumns()).values())
                 {
-                    addAsDomainProperty(d, col);
-                    columnMap.put(col.getAlias(), getPropertyURI(d, col));
+                    if (!DataSetDefinition.isDefaultFieldName(col.getName(), study))
+                    {
+                        addAsDomainProperty(d, col);
+                        columnMap.put(col.getAlias(), getPropertyURI(d, col));
+                    }
                 }
                 d.save(form.getViewContext().getUser());
 
@@ -221,26 +225,37 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         }
     }
 
+    /**
+     * Create a column map for parsing the generated tsv from the query view. We only want to map
+     * non-default columns.
+     */
     private Map<String, String> getColumnMap(Domain d, QueryView view, List<FieldKey> columns)
     {
         Map<String, String> columnMap = new CaseInsensitiveHashMap<String>();
+        Study study = StudyManager.getInstance().getStudy(view.getContainer());
 
         for (ColumnInfo col : QueryService.get().getColumns(view.getTable(), columns).values())
         {
-            columnMap.put(col.getAlias(), getPropertyURI(d, col));
+            if (!DataSetDefinition.isDefaultFieldName(col.getName(), study))
+                columnMap.put(col.getAlias(), getPropertyURI(d, col));
         }
         return columnMap;
     }
 
     private QueryForm getQueryForm(QuerySnapshotDefinition snapshotDef, ViewContext context)
     {
-        QueryDefinition def = snapshotDef.getQueryDefinition();
+        QueryDefinition def = snapshotDef.getQueryDefinition(context.getUser());
 
         QueryForm form = new QueryForm();
         form.setSchemaName(def.getSchemaName());
         form.setQueryName(def.getName());
         form.setViewContext(context);
-        form.setViewName(snapshotDef.getViewName());
+
+        // create a temporary custom view to add additional display columns to the base query definition
+        CustomView custView = def.createCustomView(form.getViewContext().getUser(), "tempCustomView");
+        custView.setColumns(snapshotDef.getColumns());
+        custView.setFilter(snapshotDef.getFilter());
+        form.setCustomView(custView);
 
         return form;
     }
@@ -263,10 +278,12 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 try
                 {
                     QueryView view = QueryView.create(sourceForm);
+
+                    view.setCustomView(sourceForm.getCustomView());
                     view.getSettings().setAllowChooseQuery(false);
                     view.getSettings().setAllowChooseView(false);
                     view.setShowExportButtons(false);
-                    
+
                     StringBuilder sb = new StringBuilder();
                     TSVGridWriter tsvWriter = new TSVGridWriter(view.getResultset());
                     tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
@@ -318,6 +335,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         ActionURL ret = super.updateSnapshotDefinition(context, def, errors);
 
         // update the study dataset columns
+/*
         Study study = StudyManager.getInstance().getStudy(context.getContainer());
         DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinition(study, def.getName());
         if (dsDef != null)
@@ -344,6 +362,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                     prop.delete();
             }
         }
+*/
         return ret;
     }
 
@@ -412,7 +431,10 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 propertyMap = new HashMap<String, String>();
                 _snapshotPropertyMap.put(def.getId(), propertyMap);
 
-                QueryView view = QueryView.create(getQueryForm(def, getViewContext(def)));
+                QueryForm sourceForm = getQueryForm(def, getViewContext(def));
+                QueryView view = QueryView.create(sourceForm);
+                view.setCustomView(sourceForm.getCustomView());
+
                 for (DisplayColumn dc : view.getDisplayColumns())
                 {
                     ColumnInfo info = dc.getColumnInfo();
@@ -435,11 +457,16 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         else
         {
             ViewContext context = new ViewContext();
-            context.setUser(def.getModifiedBy());
+            User user = def.getModifiedBy() != null ? def.getModifiedBy() : def.getCreatedBy();
+            context.setUser(user);
             context.setContainer(def.getContainer());
             context.setActionURL(new ActionURL(StudyController.CreateSnapshotAction.class, def.getContainer()));
 
-            HttpView.initForRequest(context, AppProps.getInstance().createMockRequest(), null);
+            HttpServletRequest request = AppProps.getInstance().createMockRequest();
+            if (request instanceof MockHttpServletRequest)
+                ((MockHttpServletRequest)request).setUserPrincipal(user);
+
+            HttpView.initForRequest(context, request, null);
             return context;
         }
     }
@@ -522,7 +549,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 ViewContext context = getViewContext(_def);
 
                 form.setViewContext(context);
-                form.init(_def);
+                form.init(_def, _def.getCreatedBy());
 
                 QuerySnapshotService.get(StudyManager.getSchemaName()).updateSnapshot(form, new ArrayList<String>());
             }

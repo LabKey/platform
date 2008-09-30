@@ -158,7 +158,8 @@ public class ChooseColumnsForm extends DesignForm
     public ActionURL urlFor(QueryAction action)
     {
         ActionURL ret = super.urlFor(action);
-        ret.addParameter(QueryParam.srcURL.toString(), getSourceURL().toString());
+        if (null != getSourceURL())
+            ret.addParameter(QueryParam.srcURL.toString(), getSourceURL().toString());
         ret.addParameter(QueryParam.dataRegionName.toString(), getDataRegionName());
         ret.addParameter(QueryParam.queryName.toString(), getQueryName());
         return ret;
@@ -187,7 +188,8 @@ public class ChooseColumnsForm extends DesignForm
     {
         CustomView current = getCustomView();
         ActionURL url = getSourceURL();
-
+        if (null == url)
+            return false;
         if (current != null && current.hasFilterOrSort())
         {
             if (url.getParameter(getDataRegionName() + "." + QueryParam.ignoreFilter.toString()) != null)
@@ -204,6 +206,8 @@ public class ChooseColumnsForm extends DesignForm
     public void applyFilterAndSortToURL(ActionURL url, String dataRegionName)
     {
         ActionURL src = getSourceURL();
+        if (null == src)
+            return;
         if (src.getParameter(getDataRegionName() + "." + QueryParam.ignoreFilter.toString()) == null)
         {
             CustomView current = getCustomView();

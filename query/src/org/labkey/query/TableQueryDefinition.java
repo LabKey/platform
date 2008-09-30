@@ -52,4 +52,9 @@ public class TableQueryDefinition extends QueryDefinitionImpl
     {
         return false;
     }
+
+    public boolean isTableQueryDefinition()
+    {
+        return true;
+    }
 }

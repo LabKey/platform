@@ -391,6 +391,11 @@ public class SpecimenImporter
             Study study = StudyManager.getInstance().getStudy(container);
             StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user);
 
+            // Drop the temp table within the transaction; otherwise, we may get a different connection object,
+            // where the table is no longer available.  Note that this means that the temp table will stick around
+            // if an exception is throw during loading, but this is probably okay- the DB will clean it up eventually.
+            Table.execute(schema, "DROP TABLE " + loadInfo.getTempTableName(), null);
+
             if (!DEBUG)
                 scope.commitTransaction();
         }
@@ -411,7 +416,6 @@ public class SpecimenImporter
 
         try
         {
-
             DbScope scope = schema.getScope();
             if (!DEBUG)
                 scope.beginTransaction();
@@ -431,6 +435,11 @@ public class SpecimenImporter
 
             Study study = StudyManager.getInstance().getStudy(container);
             StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user);
+
+            // Drop the temp table within the transaction; otherwise, we may get a different connection object,
+            // where the table is no longer available.  Note that this means that the temp table will stick around
+            // if an exception is throw during loading, but this is probably okay- the DB will clean it up eventually.
+            Table.execute(schema, "DROP TABLE " + loadInfo.getTempTableName(), null);
 
             if (!DEBUG)
                 scope.commitTransaction();

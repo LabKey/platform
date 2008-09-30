@@ -19,9 +19,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.query.CustomView;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.*;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
@@ -56,18 +54,23 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
 
     public QuerySnapshotDefImpl(QueryDef queryDef, String name)
     {
-        _snapshotDef = new QuerySnapshotDef();
-        _snapshotDef.setContainer(queryDef.getContainerId());
-        _snapshotDef.setSchema(queryDef.getSchema());
-        _snapshotDef.setName(name);
+        this(queryDef.getContainerId(), queryDef.getSchema(), null, name);
         _queryDef = queryDef;
+    }
+
+    public QuerySnapshotDefImpl(String containerId, String schema, String queryTableName, String name)
+    {
+        _snapshotDef = new QuerySnapshotDef();
+        _snapshotDef.setContainer(containerId);
+        _snapshotDef.setSchema(schema);
+        _snapshotDef.setName(name);
+        _snapshotDef.setQueryTableName(queryTableName);
         _dirty = true;
     }
 
     public QuerySnapshotDefImpl(QuerySnapshotDef snapshotDef)
     {
         _snapshotDef = snapshotDef;
-        getQueryDefinition();
     }
 
     public String getName()
@@ -95,21 +98,30 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
         return ContainerManager.getForId(_snapshotDef.getContainerId());
     }
 
-    public QueryDefinition getQueryDefinition()
+    public QueryDefinition getQueryDefinition(User user)
     {
-        if (_queryDef == null && _snapshotDef.getQueryDefId() != null)
+        if (_snapshotDef.getQueryDefId() != null)
         {
-            try {
-                QueryDef.Key key = new QueryDef.Key(getContainer());
-                key.setQueryDefId(_snapshotDef.getQueryDefId());
-                _queryDef = key.selectObject();
-            }
-            catch (SQLException e)
+            if (_queryDef == null)
             {
-                throw new RuntimeException(e);
+                try {
+                    QueryDef.Key key = new QueryDef.Key(getContainer());
+                    key.setQueryDefId(_snapshotDef.getQueryDefId());
+                    _queryDef = key.selectObject();
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeException(e);
+                }
             }
+            return _queryDef == null ? null : new QueryDefinitionImpl(_queryDef);
         }
-        return _queryDef == null ? null : new QueryDefinitionImpl(_queryDef);
+        else if (_snapshotDef.getQueryTableName() != null)
+        {
+            UserSchema schema = QueryService.get().getUserSchema(user, getContainer(), _snapshotDef.getSchema());
+            return schema.getQueryDefForTable(_snapshotDef.getQueryTableName());
+        }
+        return null;
     }
 
     public boolean canEdit(User user)
@@ -122,13 +134,6 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
         if (!canEdit(user))
         {
             throw new IllegalAccessException("Access denied");
-        }
-        if (_snapshotDef.getViewName() != null)
-        {
-            QueryDefinition def = getQueryDefinition();
-            CustomView customView = def.getCustomView(user, HttpView.currentRequest(), _snapshotDef.getViewName());
-            if (customView != null)
-                customView.delete(user, HttpView.currentRequest());
         }
         QueryManager.get().delete(user, _snapshotDef);
         _snapshotDef = null;
@@ -191,14 +196,14 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
         edit().setUpdateDelay(delayInSeconds);
     }
 
-    public String getViewName()
+    public void setFilter(String filter)
     {
-        return _snapshotDef.getViewName();
+        edit().setFilter(filter);
     }
 
-    public void setViewName(String viewName)
+    public String getFilter()
     {
-        edit().setViewName(viewName);
+        return _snapshotDef.getFilter();
     }
 
     public void save(User user, Container container) throws Exception

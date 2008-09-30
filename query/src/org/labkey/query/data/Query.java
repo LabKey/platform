@@ -22,6 +22,7 @@ import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.apache.log4j.Logger;
 
 import java.util.*;
+import java.io.PrintWriter;
 
 import org.labkey.query.sql.*;
 import org.labkey.query.design.*;
@@ -29,6 +30,7 @@ import org.labkey.query.design.*;
 public class Query
 {
     private static Logger _log = Logger.getLogger(Query.class);
+    private String _queryText = null;
     private List<QColumn> _columns;
     private QuerySchema _schema;
 
@@ -55,22 +57,41 @@ public class Query
         _queryAliasManager = new AliasManager(schema.getDbSchema());
     }
 
+
     public Query(Query parent, QQuery query, boolean inFromClause)
     {
         this(parent._schema);
+        _queryText = query == null ? null : query.getQuery() == null ? null : query.getQuery()._queryText;
         _parent = parent;
         _root = query;
         _inFromClause = inFromClause;
         _parseErrors = parent.getParseErrors();
-        parseTree();
+        try
+        {
+            parseTree();
+        }
+        catch (RuntimeException ex)
+        {
+            throw wrapRuntimeException(ex);
+        }
     }
+
 
     public void parse(String queryText)
     {
+        _queryText = queryText;
         _parseErrors = new ArrayList();
-        _root = QParser.parseStatement(queryText, _parseErrors);
-        if (_parseErrors.isEmpty())
-            parseTree();
+
+        try
+        {
+            _root = QParser.parseStatement(queryText, _parseErrors);
+            if (_parseErrors.isEmpty())
+                parseTree();
+        }
+        catch (RuntimeException ex)
+        {
+            throw wrapRuntimeException(ex);
+        }
     }
 
 
@@ -999,6 +1020,24 @@ loop:
             {
                 _orderBy.addOrderByClause(QParser.parseExpr(expr.getStringValue(), errors), !"DESC".equals(expr.getDir()));
             }
+        }
+    }
+
+
+    QueryInternalException wrapRuntimeException(RuntimeException ex)
+    {
+        if (ex instanceof QueryInternalException)
+            return (QueryInternalException)ex;
+        else
+            return new QueryInternalException(ex);
+    }
+
+    
+    public class QueryInternalException extends RuntimeException
+    {
+        QueryInternalException(RuntimeException cause)
+        {
+            super("Internal error while parsing \""+ _queryText + "\"", cause);
         }
     }
 }

@@ -524,7 +524,16 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         {
             return true;
         }
-        // Advanced editable study security
+        // Do they have EDIT_ALL permissions?
+        int perm = getStudy().getACL().getPermissions(user);
+        if (0 != (perm & ACL.PERM_UPDATE))
+            return true;
+
+        // Do they have per-dataset permission set?
+        if (0 == (perm & ACL.PERM_READOWN))
+            return false;
+
+        // Advanced per-dataset study security
         int[] groups = getStudy().getACL().getGroups(ACL.PERM_READOWN, user);
         int dsPerm = getACL().getPermissions(groups);
         return 0 != (dsPerm & ACL.PERM_UPDATE);

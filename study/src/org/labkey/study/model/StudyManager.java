@@ -23,6 +23,9 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.AuditLogEvent;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.SimpleAuditViewFactory;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExpObject;
@@ -40,24 +43,18 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.util.Cache;
-import org.labkey.api.util.CaseInsensitiveHashMap;
-import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.GUID;
+import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.audit.AuditLogEvent;
-import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.audit.SimpleAuditViewFactory;
 import org.labkey.common.tools.TabLoader;
 import org.labkey.common.util.CPUTimer;
 import org.labkey.study.QueryHelper;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudyCache;
 import org.labkey.study.StudySchema;
-import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.controllers.BaseStudyController;
+import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.designer.StudyDesignManager;
 import org.labkey.study.query.DataSetTable;
 import org.labkey.study.reports.ReportManager;
@@ -694,8 +691,10 @@ public class StudyManager
                 scope.beginTransaction();
 
             SQLFragment sql = new SQLFragment("UPDATE " + StudySchema.getInstance().getTableInfoStudyData() + "\n" +
-                    "SET QCState = ?");
-            sql.add(newState != null ? newState.getRowId() : null);
+                    "SET QCState = ");
+            // do string concatenation, rather that using a parameter, for the new state id because Postgres null
+            // parameters are typed which causes a cast exception trying to set the value back to null (bug 6370)
+            sql.append(newState != null ? newState.getRowId() : "NULL");
             sql.append(", modified = ?");
             sql.add(new Date());
             sql.append("\nWHERE DatasetId = ? AND\n" +
@@ -923,6 +922,7 @@ public class StudyManager
         }
     }
 
+    @Nullable
     public DataSetDefinition getDataSetDefinition(Study s, int id)
     {
         try
@@ -1118,6 +1118,26 @@ public class StudyManager
             required.put("Required", VisitDataSetType.REQUIRED == type ? Boolean.TRUE : Boolean.FALSE);
             Table.update(user, _tableInfoVisitMap, required,
                     new Object[]{container.getId(), visitId, dataSetId}, null);
+        }
+    }
+
+    public int getNumDatasetRows(DataSetDefinition dataset)
+    {
+        DbSchema schema = StudySchema.getInstance().getSchema();
+        TableInfo sdTable = StudySchema.getInstance().getTableInfoStudyData();
+
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) AS numRows FROM ");
+        sql.append(sdTable);
+        sql.append(" WHERE Container = '").append(dataset.getContainer().getId());
+        sql.append("' AND DatasetId = ").append(dataset.getDataSetId());
+
+        try
+        {
+            return Table.executeSingleton(schema, sql.toString(), null, Integer.class).intValue();
+        }
+        catch (SQLException e)
+        {
+            throw UnexpectedException.wrap(e);
         }
     }
 
@@ -2008,6 +2028,16 @@ public class StudyManager
             if (col.getName().equalsIgnoreCase("lsid"))
                 continue;
 
+            // We need to un-escape any \n instances we find if this is a multiline text field
+            boolean isMultilineText = false;
+            PropertyDescriptor propertyDescriptor = OntologyManager.getPropertyDescriptor(col.getPropertyURI(), c);
+            if (propertyDescriptor != null)
+            {
+                PropertyType type = propertyDescriptor.getPropertyType();
+                if (type == PropertyType.MULTI_LINE)
+                    isMultilineText = true;
+            }
+            
             for (int i = 0; i < dataMaps.length; i++)
             {
                 Map<String,Object> dataMap = dataMaps[i];
@@ -2052,6 +2082,21 @@ public class StudyManager
                 {
                     errors.add("Row " + (i+1) + " data type error for field " + col.getName() + "."); // + " '" + String.valueOf(val) + "'.");
                     break;
+                }
+
+                if (val != null && isMultilineText)
+                {
+                    String newVal = val.toString();
+                    if (newVal.indexOf("\\n") != -1)
+                    {
+                        // We need to convert \n strings to actual returns
+                        newVal = newVal.replaceAll("\\\\n", "\n");
+
+                        // Note that we have to actually swap out the map in order to update our entry
+                        dataMap = new CaseInsensitiveHashMap<Object>(dataMap);
+                        dataMap.put(col.getPropertyURI(), newVal);
+                        dataMaps[i] = dataMap;
+                    }
                 }
             }
         }

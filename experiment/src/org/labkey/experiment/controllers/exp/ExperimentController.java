@@ -1587,19 +1587,22 @@ public class ExperimentController extends SpringActionController
 
         public boolean handlePost(Object o, BindException errors) throws Exception
         {
-            Set<String> selectedIds = DataRegionSelection.getSelected(getViewContext(), true);
             String rowId = null;
-            if (selectedIds != null && selectedIds.size() == 1)
-            {
-                rowId = selectedIds.iterator().next();
-            }
-            else if (getViewContext().getRequest().getParameter("rowid") != null)
+            if (getViewContext().getRequest().getParameter("rowid") != null)
             {
                 rowId = getViewContext().getRequest().getParameter("rowid");
             }
             else if (getViewContext().getRequest().getParameter("rowId") != null)
             {
                 rowId = getViewContext().getRequest().getParameter("rowId");
+            }
+            else
+            {
+                Set<String> selectedIds = DataRegionSelection.getSelected(getViewContext(), true);
+                if (selectedIds != null && selectedIds.size() == 1)
+                {
+                    rowId = selectedIds.iterator().next();
+                }
             }
 
             if (rowId != null)

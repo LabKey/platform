@@ -43,6 +43,17 @@ Results batching and normalization tools
     -- RefreshParser.exe
     -- batchcoverage.exe
 
+1 ProteoWizard at Cedars-Sinai Spielberg Family Center for Applied Proteomics
+
+Developer: {link:Spielberg Family Center for Applied Proteomics|http://proteowizard.sourceforge.net/}\\
+Source: {link:ProteoWizard|http://proteowizard.sourceforge.net/download.html}\\
+
+ProteoWizard tools
+- msconvert.exe
+
+Other tools from Cedars-Sinai
+- peakaboo.exe
+
 1 Computational Proteomics Laboratory at Fred Hutchinson Cancer Research Center
 
 Developer: {link:CPL|http://proteomics.fhcrc.org/}\\

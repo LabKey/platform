@@ -330,9 +330,10 @@ public class StudyServiceImpl implements StudyService.Service
                 // Replace them with 4 spaces.
                 valueObj = valueObj.toString().replaceAll("\t", "    ");
 
-                // We also can't use newlines
-                valueObj = valueObj.toString().replaceAll("\n", "  ");
-                valueObj = valueObj.toString().replaceAll("\r", " ");
+                // Escape newlines with backslash-n. This will get unescaped when we write to the database
+                valueObj = valueObj.toString().replaceAll("\r", ""); // we don't need to preserve windows carriage returns
+                valueObj = valueObj.toString().replaceAll("\n", "\\\\n");
+
             }
             else
             {

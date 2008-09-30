@@ -66,13 +66,11 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
             _protocolFactoryName = settings.getProtocolFactoryName();
 
         // Convert any input filter extensions to array of file types.
-        List<String> inputFilterExts = settings.getInitialInputExts();
+        List<FileType> inputFilterExts = settings.getInitialInputExts();
         if (inputFilterExts != null)
         {
             _initialFileTypesFromTask = false;
-            _initialFileTypes = new FileType[inputFilterExts.size()];
-            for (int i = 0; i < _initialFileTypes.length; i++)
-                _initialFileTypes[i] = new FileType(inputFilterExts.get(i));
+            _initialFileTypes = inputFilterExts.toArray(new FileType[inputFilterExts.size()]);
         }
         else if (_initialFileTypesFromTask || getInitialFileTypes() == null)
         {
@@ -87,7 +85,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
                 throw new IllegalArgumentException("File analysis pipelines require at least one initial file type.");
 
         // Convert any input extension heirarchy into file types.
-        Map<String, List<String>> extHeirarchy = settings.getFileExtHierarchy();
+        Map<FileType, List<FileType>> extHeirarchy = settings.getFileExtHierarchy();
         if (extHeirarchy != null || _typeHeirarchy == null)
             _typeHeirarchy = new HashMap<FileType, FileType[]>();
 
@@ -97,15 +95,11 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
 
         if (extHeirarchy != null)
         {
-            if (_typeHeirarchy == null)
-                _typeHeirarchy = new HashMap<FileType, FileType[]>();
-            for (Map.Entry<String, List<String>> entry  : extHeirarchy.entrySet())
+            for (Map.Entry<FileType, List<FileType>> entry  : extHeirarchy.entrySet())
             {
-                List<String> inputExtList = entry.getValue();
-                FileType[] heirarchy = new FileType[inputExtList.size()];
-                for (int i = 0; i < inputExtList.size(); i++)
-                    heirarchy[i] = new FileType(inputExtList.get(i));
-                _typeHeirarchy.put(new FileType(entry.getKey()), heirarchy);
+                List<FileType> inputExtList = entry.getValue();
+                FileType[] heirarchy = inputExtList.toArray(new FileType[inputExtList.size()]);
+                _typeHeirarchy.put(entry.getKey(), heirarchy);
             }
         }
 

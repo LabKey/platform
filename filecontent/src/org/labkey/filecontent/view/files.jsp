@@ -124,9 +124,9 @@
     {
         for (Attachment a : attachments)
         {
-            showFileUrl(fileUrl, a);
+            URLHelper viewUrl = showFileUrl(fileUrl, a);
             if (null != a.getFile() && a.getFile().exists()) { %>
-                <a href="<%=h(fileUrl)%>"><img src="<%=request.getContextPath()%><%=a.getFileIcon()%>" alt=""> <%=a.getName()%></a><%
+                <a href="<%=h(viewUrl)%>"><img src="<%=request.getContextPath()%><%=a.getFileIcon()%>" alt=""> <%=a.getName()%></a><%
             } else { %>
               <span title="File was uploaded but is no longer available on disk"><img src="<%=request.getContextPath()%>/_images/exclaim.gif" alt=""><%=a.getName()%></span><%
             } %>

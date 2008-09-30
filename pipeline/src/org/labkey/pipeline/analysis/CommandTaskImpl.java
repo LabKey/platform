@@ -100,7 +100,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
                 _actionableInput = settings.getActionableInput();
         }
 
-        public PipelineJob.Task createTask(PipelineJob job)
+        public CommandTaskImpl createTask(PipelineJob job)
         {
             return new CommandTaskImpl(job, this);
         }
@@ -148,21 +148,31 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
 
         public boolean isParticipant(PipelineJob job) throws IOException, SQLException
         {
+            if (!super.isParticipant(job))
+            {
+                return false;
+            }
+            
             // The first converter is responsible for the command name.
             List<TaskToCommandArgs> converters = getConverters();
             assert converters != null && converters.size() > 0 :
                     "No converters found in " + getId();
             TaskToCommandArgs commandNameConverter = converters.get(0);
 
-            // If it produces nothing for the command line, then this command should not
-            // be executed.
-            if (commandNameConverter.toArgs((CommandTask) createTask(job),
-                    new HashSet<TaskToCommandArgs>()).length == 0)
+            CommandTaskImpl task = createTask(job);
+            // Need to set up the work directory so that it can figure out what the arguments will be called
+            WorkDirectory wd = createWorkDirectory(job.getJobGUID(), job.getJobSupport(FileAnalysisJobSupport.class), job.getLogger());
+            task.setWorkDirectory(wd);
+            try
             {
-                return false;
+                // If it produces nothing for the command line, then this command should not be executed.
+                return commandNameConverter.toArgs(task, new HashSet<TaskToCommandArgs>()).length != 0;
             }
-
-            return super.isParticipant(job);
+            finally
+            {
+                wd.remove();
+                task.setWorkDirectory(null);
+            }
         }
 
         public FileType[] getInputTypes()
@@ -270,13 +280,6 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
     public String getProcessPath(WorkDirectory.Function f, TaskPath tp) throws IOException
     {
         return (tp == null ? null : _wd.getRelativePath(newWorkFile(f, tp)));
-    }
-
-    public String getProcessExt(WorkDirectory.Function f, String key)
-    {
-        TaskPath tp = (WorkDirectory.Function.input.equals(f) ?
-            _factory.getInputPaths().get(key) : _factory.getOutputPaths().get(key));
-        return (tp == null ? null : tp.getType().getSuffix());
     }
 
     public File newWorkFile(WorkDirectory.Function f, TaskPath tp)

@@ -434,7 +434,7 @@ public class AnalysisController extends SpringActionController
                     {
                         for (FileType ftCheck : initialTypes)
                         {
-                            File fileCheck = tp.findInputFile(dirRoot, dirAnalysis, ftCheck.getName(baseName));
+                            File fileCheck = tp.findInputFile(dirRoot, dirAnalysis, ftCheck.getName(dirRoot, baseName));
                             if (fileCheck != null && NetworkDrive.exists(fileCheck))
                             {
                                 ftInput = ftCheck;
@@ -445,9 +445,9 @@ public class AnalysisController extends SpringActionController
                         if (ftInput == null)
                             ftInput = initialTypes[0];
                     }
-                    File fileInput = tp.findInputFile(dirRoot, dirAnalysis, ftInput.getName(baseName));
+                    File fileInput = tp.findInputFile(dirRoot, dirAnalysis, ftInput.getName(dirRoot, baseName));
                     if (fileInput == null)
-                        return throwNotFound("Failed to locate input file " + ftInput.getName(baseName) + ".");
+                        return throwNotFound("Failed to locate input file " + ftInput.getName(dirRoot, baseName) + ".");
                     filesInputList.add(fileInput);
                 }
                 File[] filesInput = filesInputList.toArray(new File[filesInputList.size()]);

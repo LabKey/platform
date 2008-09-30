@@ -8,7 +8,7 @@ function getDropApplet()
     try
     {
         var applet = _id("dropApplet");
-        if (applet && applet.isActive())
+        if (applet && 'isActive' in applet && applet.isActive())
             return applet;
     }
     catch (x)
@@ -48,31 +48,46 @@ function browseFiles()
     }
 }
 
-var countUpdateDropUI = 0;
-var count_UpdateDropUI = 0;
+var count_asyncUpdateUI = 0;      // debug info
+var count_updateDropUI = 0;     // debug info
+var appletUpdated = 1;
 
 var asyncUpdateIntervalId = null;
+
 function asyncUpdateUI()
 {
-    countUpdateDropUI++;
-    if (asyncUpdateIntervalId)
-        return;
-    asyncUpdateIntervalId = window.setTimeout(updateDropUI,100);
+    count_asyncUpdateUI++;
+    appletUpdated++;
+// this causes multi-threading problems on Firefox, just mark the applet dirty (appletUpdated++) and let
+// 'foreground' thread do the work
+//    if (asyncUpdateIntervalId)
+//        return;
+//    asyncUpdateIntervalId = window.setTimeout(asyncUpdateUI_handler,100);
 }
 
 
-function updateDropUI()
+function asyncUpdateUI_handler()
 {
     window.clearTimeout(asyncUpdateIntervalId); asyncUpdateIntervalId = null;
     try
     {
-        _updateDropUI();
+        updateDropUI();
     }
     catch (x)
     {
         alert(x);
     }
 }
+
+
+function updateDropUI()
+{
+    if (0 == appletUpdated)
+        return;
+    appletUpdated = 0;
+    _updateDropUI();
+}
+
 
 
 var INFO=0;
@@ -87,7 +102,7 @@ var transfers = [];
 
 function _updateDropUI()
 {
-    count_UpdateDropUI++;
+    count_updateDropUI++;
     var i, t;
     var dropApplet = getDropApplet();
     var transferCount = transfers.length;
@@ -105,7 +120,7 @@ function _updateDropUI()
         if (!transfersTableInit)
         {
             ftpTransfers.innerHTML =
-                "<table class='labkey-data-region'>" +
+                "<table class='labkey-data-region' width='100%'>" +
                 "<tr><th>&nbsp;<br><img src=\"" + LABKEY.contextPath + "/_.gif\" width=50 height=1></th><th width=150>file<br><img src=\"" + LABKEY.contextPath + "/_.gif\" width=150 height=1></th><th>modified<br><img src=\"" + LABKEY.contextPath + "/_.gif\" width=150 height=1></th><th width=100>size<br><img src=\"" + LABKEY.contextPath + "/_.gif\" width=100 height=1></th><th style=\"width:200px;\">status<br><img src=\"" + LABKEY.contextPath + "/_.gif\" width=210 height=1></th></tr>" +
                 "</table>";
             transfersTableInit = true;
@@ -177,8 +192,7 @@ function _updateDropUI()
                             }
                             else
                             {
-                                tdStatus.innerHTML = "<table border=1 cellpadding=0 cellspacing=0><tr><td><img src='_.gif' style='background:black; width:" + (2*percent) + "; height:5; border-width:0px;'></td><td><img src='_.gif' style='background;#202020; width:" + (2*(100-percent)) + "; height:5;; border-width:0px;'></td></tr></table>"
-                                //tdStatus.innerHTML = "<img src='_.gif' style='background:black; width:" + (2*percent) + "; height:5; border:solid 1px black;'><img src='_.gif' style='background;#202020; width:" + (2*(100-percent)) + "; height:5; border:solid 1px black;'>";
+                                tdStatus.innerHTML = "<table border=1 cellpadding=0 cellspacing=0><tr><td><img src='" + LABKEY.contextPath + "/_.gif' style='background:black; width:" + (2*percent) + "; height:5; border-width:0px;'></td><td><img src='" + LABKEY.contextPath + "/_.gif' style='background;#202020; width:" + (2*(100-percent)) + "; height:5;; border-width:0px;'></td></tr></table>"
                             }
                         }
                     }
@@ -473,6 +487,9 @@ function showMkdirDialog()
 }
 
 // call from window.onload
+
+var foregroundIntervalId = null;
+
 function init()
 {
     window.onbeforeunload = LABKEY.beforeunload(pendingTransfers);
@@ -480,7 +497,6 @@ function init()
     // style consistency
     dropApplet_DragExit();
     showTransfers();
-    updateDropUI();
 
     var mkdirDiv = _div();
     mkdirDiv.id = "mkdirDialog";
@@ -488,4 +504,7 @@ function init()
     mkdirDiv.innerHTML = '<div class="hd">New Folder</div><div class="bd">' +
                          '<input id="folderName" name="folderName" value=""/><%=PageFlowUtil.generateButton("create", "")%>>';
     document.getElementsByTagName("BODY")[0].appendChild(mkdirDiv);
+
+    //    updateDropUI();
+    foregroundIntervalId = window.setInterval(updateDropUI,100);
 }

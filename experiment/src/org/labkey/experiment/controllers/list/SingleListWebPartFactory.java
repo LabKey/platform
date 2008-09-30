@@ -19,6 +19,7 @@ package org.labkey.experiment.controllers.list;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.view.*;
+import org.labkey.api.data.Container;
 
 import java.util.Map;
 
@@ -39,6 +40,7 @@ public class SingleListWebPartFactory extends WebPartFactory
         Map<String, String> props = webPart.getPropertyMap();
 
         String listIdParam = props.get("listId");
+        String viewName = props.get("viewName");
         String title = (null == props.get("title") ? "Single List" : props.get("title"));
 
         if (null == listIdParam)
@@ -47,6 +49,7 @@ public class SingleListWebPartFactory extends WebPartFactory
         try
         {
             ListQueryForm form = new ListQueryForm(Integer.parseInt(listIdParam), portalCtx);
+            form.setViewName(viewName);
             return new SingleListWebPart(form, props);
         }
         catch (NumberFormatException e)
@@ -57,6 +60,11 @@ public class SingleListWebPartFactory extends WebPartFactory
         {
             return new HtmlView(title, "List does not exist");
         }
+    }
+
+    public boolean isAvailable(Container c, String location)
+    {
+        return location.equals(getDefaultLocation());
     }
 
     public HttpView getEditView(Portal.WebPart webPart)

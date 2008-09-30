@@ -17,9 +17,11 @@
 %>
 <%@ page import="org.apache.commons.lang.StringUtils"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.WebPartView"%>
-<%@ page import="org.labkey.study.model.DataSetDefinition"%>
+<%@ page import="org.labkey.study.controllers.DatasetController" %>
+<%@ page import="org.labkey.study.model.DataSetDefinition" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -120,6 +122,16 @@
         <td>Dataset visibility, label, and category can all be changed.</td>
         <td><%= textLink("Change Properties", "dataSetVisibility.view")%></td>
     </tr>
+
+    <%
+        ActionURL bulkDeleteAction = new ActionURL(DatasetController.BulkDatasetDeleteAction.class, study.getContainer());
+        String bulkDeleteLink = bulkDeleteAction.getLocalURIString();
+    %>
+    <tr>
+        <td>Datasets may be deleted by an administrator.</td>
+        <td><%= textLink("Delete Multiple Datasets", bulkDeleteLink)%></td>
+    </tr>
+
     <tr>
         <td>New Datasets can be added to this study at any time.</td>
         <td><%= textLink("Create New Dataset", "defineDatasetType.view?create=true&autoDatasetId=true")%></td>

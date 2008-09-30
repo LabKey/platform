@@ -676,6 +676,9 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
     public void setAttachments(Collection<AttachmentParent> parents) throws SQLException
     {
+        if (parents.size() == 0)
+            return;
+        
         List<String> parentIds = new ArrayList<String>(parents.size());
 
         for (AttachmentParent parent : parents)

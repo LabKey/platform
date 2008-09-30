@@ -253,9 +253,9 @@ public class CohortController extends BaseStudyController
                 if (cohort == null)
                     throw new IllegalArgumentException("Could not find cohort for rowId: " + form.getRowId());
                 cohortLabel = cohort.getLabel();
-                if (cohort.isInUse())
+                if (!getStudy().isManualCohortAssignment())
                 {
-                    // Can't edit the label of a cohort that's in use
+                    // Can't edit the label if the cohorts are automatically generated
                     ColumnInfo labelColumn = table.getColumn("Label");
                     labelColumn.setUserEditable(false);
                 }

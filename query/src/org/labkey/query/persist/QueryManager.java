@@ -141,7 +141,7 @@ public class QueryManager
 
     public QuerySnapshotDef insert(User user, QueryDef queryDef, QuerySnapshotDef snapshotDef) throws SQLException
     {
-        if (queryDef != null)
+        if (queryDef != null && snapshotDef.getQueryTableName() == null)
         {
             QueryDef def = insert(user, queryDef);
             snapshotDef.setQueryDefId(def.getQueryDefId());
@@ -151,7 +151,7 @@ public class QueryManager
 
     public QuerySnapshotDef update(User user, QueryDef queryDef, QuerySnapshotDef snapshotDef) throws SQLException
     {
-        if (queryDef != null)
+        if (queryDef != null && snapshotDef.getQueryTableName() == null)
             update(user, queryDef);
         return Table.update(user, getTableInfoQuerySnapshotDef(), snapshotDef, snapshotDef.getRowId(), null);
     }

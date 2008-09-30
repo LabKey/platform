@@ -108,6 +108,9 @@ public class Node extends CommonAST implements Cloneable
                 return new QDot();
             case SqlTokenTypes.QUOTED_STRING:
                 return new QString();
+            case SqlTokenTypes.TRUE:
+            case SqlTokenTypes.FALSE:
+                return new QBoolean();
             case SqlTokenTypes.NUM_DOUBLE:
             case SqlTokenTypes.NUM_FLOAT:
             case SqlTokenTypes.NUM_INT:

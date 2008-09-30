@@ -88,7 +88,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
                     dirParent.delete();
                     dirParent.mkdirs();                    
                 }
-                tempDir = File.createTempFile(support.getBaseName(), FT_WORK_DIR.getSuffix(), dirParent);
+                tempDir = File.createTempFile(support.getBaseName(), WORK_DIR_SUFFIX, dirParent);
                 tempDir.delete();
                 tempDir.mkdirs();
                 attempt++;
@@ -105,27 +105,37 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
 
         public String getLockDirectory()
         {
+            if (_lockDirectory!= null)
+            {
+                // Do the validation on get instead of set because we may not have the NetworkDrive
+                // configuration loaded in time at startup
+                File lockDir = new File(_lockDirectory);
+                if (!NetworkDrive.exists(lockDir) || !lockDir.isDirectory())
+                    throw new IllegalArgumentException("The lock directory " + _lockDirectory + " does not exist.");
+            }
             return _lockDirectory;
         }
 
         public void setLockDirectory(String directoryString)
         {
-            File tempDir = new File(directoryString);
-            if (!NetworkDrive.exists(tempDir) || !tempDir.isDirectory())
-                throw new IllegalArgumentException("The lock directory " + directoryString + " does not exist.");
             _lockDirectory = directoryString;
         }
 
         public String getTempDirectory()
         {
+            if (_tempDirectory != null)
+            {
+                // Do the validation on get instead of set because we may not have the NetworkDrive
+                // configuration loaded in time at startup
+                File tempDir = new File(_tempDirectory);
+                if (!NetworkDrive.exists(tempDir) || !tempDir.isDirectory())
+                    throw new IllegalArgumentException("The temporary directory " + _tempDirectory + " does not exist.");
+            }
             return _tempDirectory;
         }
 
         public void setTempDirectory(String directoryString)
         {
-            File tempDir = new File(directoryString);
-            if (!NetworkDrive.exists(tempDir) || !tempDir.isDirectory())
-                throw new IllegalArgumentException("The temporary directory " + directoryString + " does not exist.");
             _tempDirectory = directoryString;
         }
 

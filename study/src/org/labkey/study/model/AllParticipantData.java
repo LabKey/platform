@@ -22,6 +22,8 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.Table;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.property.PropertyUtil;
 import org.labkey.api.util.ArrayListMap;
 import org.labkey.study.StudySchema;
 
@@ -102,6 +104,9 @@ public class AllParticipantData
             int colSourceLsidIndex = rs.findColumn("SourceLsid");
             int colPropertyId = rs.findColumn("propertyId");
 
+            final String defaultDateFormat = StudyManager.getInstance().getDefaultDateFormatString(study.getContainer());
+            final String defaultNumberFormat = StudyManager.getInstance().getDefaultNumberFormatString(study.getContainer());
+
             while (rs.next())
             {
                 ArrayListMap row = (ArrayListMap)rs.getRowMap();
@@ -115,6 +120,8 @@ public class AllParticipantData
 
                 String typeTag = (String)row.get("TypeTag");
                 Object val;
+                String defaultFormat = null;
+
                 switch (typeTag.charAt(0))
                 {
                     default:
@@ -123,6 +130,7 @@ public class AllParticipantData
                         break;
                     case 'f':
                         val = row.get("FloatValue");
+                        defaultFormat = defaultNumberFormat;
                         PropertyType pt = PropertyType.getFromURI(null, (String) row.get("RangeURI"));
                         switch (pt)
                         {
@@ -138,6 +146,7 @@ public class AllParticipantData
                         break;
                     case 'd':
                         val = row.get("DateTimeValue");
+                        defaultFormat = defaultDateFormat;
                         break;
                 }
                 if (visitRowId != null && visitSequenceNum != null)
@@ -166,7 +175,7 @@ public class AllParticipantData
                     else
                         keyMap.set(propMap);
                 }
-                propMap.put(propertyId, val);
+                propMap.put(propertyId, PropertyUtil.formatValue(OntologyManager.getPropertyDescriptor(propertyId), val, defaultFormat));
             }
 
             return new AllParticipantData(datasetIds, visitSeqMap, allData);

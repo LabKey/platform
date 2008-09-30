@@ -295,10 +295,8 @@ public class ExperimentModule extends SpringModule
             catch (Exception e)
             {
                 String msg = "Error running afterSchemaUpdate doVersion_132Update on ExperimentModule, upgrade from version " + String.valueOf(version);
-                _log.error(msg + " \n Caused by " + e);
-                ExperimentException ex = new ExperimentException(msg, e);
-                //following sends an exception report to mothership if site is configured to do so, but doesn't abort schema upgrade
-                ExceptionUtil.getErrorRenderer(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg, ex, viewContext.getRequest(), false, false);
+                _log.error(msg, e);
+                ExceptionUtil.getErrorRenderer(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg, e, viewContext.getRequest(), false, false);
             }
         }
 
@@ -308,9 +306,8 @@ public class ExperimentModule extends SpringModule
                 doInputRoleUpdate(viewContext);
             } catch (Exception e) {
                 String msg = "Error running afterSchemaUpdate doInputRoleUpdate on ExperimentModule, upgrade from version " + String.valueOf(version);
-                _log.error(msg + " \n Caused by " + e);
-                ExperimentException ex = new ExperimentException(msg, e);
-                ExceptionUtil.getErrorRenderer(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg, ex, viewContext.getRequest(), false, false);
+                _log.error(msg, e);
+                ExceptionUtil.getErrorRenderer(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg, e, viewContext.getRequest(), false, false);
             }
         }
 
@@ -323,10 +320,8 @@ public class ExperimentModule extends SpringModule
             catch (Exception e)
             {
                 String msg = "Error running afterSchemaUpdate doPopulateListEntityIds on ExperimentModule, upgrade from version " + String.valueOf(version);
-                _log.error(msg + " \n Caused by " + e);
-                ExperimentException ex = new ExperimentException(msg, e);
-                //following sends an exception report to mothership if site is configured to do so, but doesn't abort schema upgrade
-                ExceptionUtil.getErrorRenderer(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg, ex, viewContext.getRequest(), false, false);
+                _log.error(msg, e);
+                ExceptionUtil.getErrorRenderer(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg, e, viewContext.getRequest(), false, false);
             }
         }
 

@@ -549,7 +549,7 @@ public class ListController extends SpringActionController
 
             if (form.isShowHistory())
             {
-                WebPartView linkView = new HtmlView("[<a href=\"" + getViewContext().cloneActionURL().deleteParameter("showHistory") + "\">hide item history</a>]");
+                WebPartView linkView = new HtmlView("[<a href=\"" + PageFlowUtil.filter(getViewContext().cloneActionURL().deleteParameter("showHistory")) + "\">hide item history</a>]");
                 linkView.setFrame(WebPartView.FrameType.NONE);
                 view.addView(linkView);
                 WebPartView history = ListAuditViewFactory.getInstance().createListItemDetailsView(getViewContext(), item.getEntityId());
@@ -558,23 +558,23 @@ public class ListController extends SpringActionController
             }
             else
             {
-                view.addView(new HtmlView("[<a href=\"" + getViewContext().cloneActionURL().addParameter("showHistory", "1") + "\">show item history</a>]"));
+                view.addView(new HtmlView("[<a href=\"" + PageFlowUtil.filter(getViewContext().cloneActionURL().addParameter("showHistory", "1")) + "\">show item history</a>]"));
             }
 
             if (_list.getDiscussionSetting().isLinked())
             {
                 String entityId = item.getEntityId();
 
-                DomainProperty titleProperty = _list.getDomain().getPropertyByName(_list.getTitleColumn());
+                DomainProperty titleProperty = _list.getDomain().getPropertyByName(_list.getTable(getUser(), null).getTitleColumn());
                 Object title = (null != titleProperty ? item.getProperty(titleProperty) : null);
                 String discussionTitle = (null != title ? title.toString() : "Item " + tableForm.getPkVal());
 
-                ActionURL linkBackUrl = _list.urlFor(Action.resolve).addParameter("entityId", entityId);
+                ActionURL linkBackURL = _list.urlFor(Action.resolve).addParameter("entityId", entityId);
                 DiscussionService.Service service = DiscussionService.get();
                 boolean multiple = _list.getDiscussionSetting() == ListDefinition.DiscussionSetting.ManyPerItem;
 
                 // Display discussion by default in single-discussion case, #4529
-                DiscussionService.DiscussionView discussion = service.getDisussionArea(getViewContext(), entityId, linkBackUrl, discussionTitle, multiple, !multiple);
+                DiscussionService.DiscussionView discussion = service.getDisussionArea(getViewContext(), entityId, linkBackURL, discussionTitle, multiple, !multiple);
                 view.addView(discussion);
 
                 getPageConfig().setFocusId(discussion.getFocusId());

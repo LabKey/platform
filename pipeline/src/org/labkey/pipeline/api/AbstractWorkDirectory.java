@@ -36,7 +36,8 @@ import java.util.HashMap;
 */
 public abstract class AbstractWorkDirectory implements WorkDirectory
 {
-    protected static final FileType FT_WORK_DIR = new FileType(".work");
+    protected static final String WORK_DIR_SUFFIX = ".work";
+    protected static final FileType FT_WORK_DIR = new FileType(WORK_DIR_SUFFIX);
     protected static final FileType FT_COPY = new FileType(".copy");
     protected static final FileType FT_MOVE = new FileType(".move");
 

@@ -62,7 +62,19 @@ public enum Operator
             builder.popPrefix();
         }
     },
-    not(" NOT ", Precedence.not, SqlTokenTypes.NOT),
+    not(" NOT ", Precedence.not, SqlTokenTypes.NOT)
+    {
+        public void appendSql(SqlBuilder builder, Iterable<QExpr> operands)
+        {
+            builder.append(getOperator());
+            builder.append("(");
+            Iterator<QExpr> i =operands.iterator();
+            assert i.hasNext();
+            i.next().appendSql(builder);
+            assert !i.hasNext();
+            builder.append(")");
+        }
+    },
     and(" AND ", Precedence.and, SqlTokenTypes.AND),
     or(" OR ", Precedence.like, SqlTokenTypes.OR),
     like(" LIKE ", Precedence.like, SqlTokenTypes.LIKE),
@@ -122,7 +134,7 @@ public enum Operator
     {
         builder.pushPrefix(getPrefix());
         boolean first = true;
-        for(QExpr operand : operands)
+        for (QExpr operand : operands)
         {
             boolean paren = needsParentheses(operand, first);
             first = false;

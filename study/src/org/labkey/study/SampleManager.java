@@ -1211,26 +1211,34 @@ public class SampleManager
             return str;
     }
 
+    private static final Object REQUEST_ADDITION_LOCK = new Object();
     public void createRequestSampleMapping(User user, SampleRequest request, List<Specimen> specimens, boolean createEvents) throws SQLException
     {
         if (specimens == null || specimens.size() == 0)
             return;
 
-        for (Specimen specimen : specimens)
+        synchronized (REQUEST_ADDITION_LOCK)
         {
-            if (!request.getContainer().getId().equals(specimen.getContainer().getId()))
-                throw new IllegalStateException("Mismatched containers.");
-        }
+            for (Specimen specimen : specimens)
+            {
+                if (!request.getContainer().getId().equals(specimen.getContainer().getId()))
+                    throw new IllegalStateException("Mismatched containers.");
 
-        for (Specimen specimen : specimens)
-        {
-            Map<String, Object> fields = new HashMap<String, Object>();
-            fields.put("Container", request.getContainer().getId());
-            fields.put("SampleRequestId", request.getRowId());
-            fields.put("SpecimenGlobalUniqueId", specimen.getGlobalUniqueId());
-            Table.insert(user, _tableInfoRequestSpecimen, fields);
-            if (createEvents)
-                createRequestEvent(user, request, RequestEventType.SPECIMEN_ADDED, specimen.getSampleDescription(), null);
+                Integer[] requestIds = getRequestIdsForSpecimen(specimen);
+                if (requestIds.length > 0)
+                    throw new IllegalStateException("Specimen " + specimen.getGlobalUniqueId() + " is already part of request " + requestIds[0]);
+            }
+
+            for (Specimen specimen : specimens)
+            {
+                Map<String, Object> fields = new HashMap<String, Object>();
+                fields.put("Container", request.getContainer().getId());
+                fields.put("SampleRequestId", request.getRowId());
+                fields.put("SpecimenGlobalUniqueId", specimen.getGlobalUniqueId());
+                Table.insert(user, _tableInfoRequestSpecimen, fields);
+                if (createEvents)
+                    createRequestEvent(user, request, RequestEventType.SPECIMEN_ADDED, specimen.getSampleDescription(), null);
+            }
         }
     }
 
@@ -1308,6 +1316,7 @@ public class SampleManager
         if (specimen == null)
             return new Integer[0];
         SimpleFilter filter = new SimpleFilter("SpecimenGlobalUniqueId", specimen.getGlobalUniqueId());
+        filter.addCondition("Container", specimen.getContainer().getId());
         List<ColumnInfo> cols = Arrays.asList(_tableInfoRequestSpecimen.getColumn("SampleRequestId"));
         Table.TableResultSet rs = Table.select(_tableInfoRequestSpecimen, cols, filter, null);
         List<Integer> rowIdList = new ArrayList<Integer>();

@@ -1396,7 +1396,7 @@ public class UserController extends SpringActionController
                 
                 for(User user : users)
                 {
-                    //according to the docs, startsWith will return true of nameFilter is empty string
+                    //according to the docs, startsWith will return true even if nameFilter is empty string
                     if(user.getEmail().toLowerCase().startsWith(nameFilter) || user.getDisplayName(null).toLowerCase().startsWith(nameFilter))
                     {
                         Map<String,Object> userInfo = new HashMap<String,Object>();

@@ -175,23 +175,17 @@
                 continue;
             }
 
-            if (updateAccess)
+            if (editAccess)
             {
                 %>
                 <tr class="labkey-alternate-row" style="<%=expanded ? "" : "display:none"%>">
-                    <td colspan="2">
-                        [<a href="<%=url.replaceParameter("queryName", dataSet.getLabel()).replaceParameter("datasetId", String.valueOf(datasetId))%>">add chart</a>]
-                        <%
-                            if (editAccess)
-                            {
-                                ActionURL editAction = new ActionURL(DatasetController.UpdateAction.class, context.getContainer());
-                                editAction.addParameter("datasetId", datasetId);
-                                editAction.addParameter("lsid", lsid);
-                                
-                                %> [<a href="<%=editAction.getLocalURIString()%>">edit data</a>]<%
-                            }
-                        %>
-                    </td>
+                    <td colspan="2"><%
+
+                            ActionURL editAction = new ActionURL(DatasetController.UpdateAction.class, context.getContainer());
+                            editAction.addParameter("datasetId", datasetId);
+                            editAction.addParameter("lsid", lsid);
+
+                        %>[<a href="<%=editAction.getLocalURIString()%>">edit data</a>]</td>
                 </tr>
                 <%
             }

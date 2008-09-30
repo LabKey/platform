@@ -1353,6 +1353,17 @@ td.labkey-wiki-tab-content
     border-bottom: 1px solid #89A1B4;
 }
 
+/* R reports */
+table.labkey-r-syntax
+{
+    border-spacing: 2px;*border-collapse: collapse;*border-spacing: expression(cellSpacing=2);
+}
+
+.labkey-r-syntax td
+{
+    padding:5px;
+}
+
 /* GWT */
 
 .gwt-ToolTip {

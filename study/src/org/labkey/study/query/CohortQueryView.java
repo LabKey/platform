@@ -16,6 +16,9 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.*;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
@@ -38,14 +41,16 @@ import java.io.Writer;
  */
 public class CohortQueryView extends ExtensibleObjectQueryView
 {
+    private final Study study;
+
     public CohortQueryView(User user, Study study, ViewContext viewContext, boolean allowEditing)
     {
         super(user, study, Cohort.class, viewContext, allowEditing);
+        this.study = study;
         QuerySettings settings = getSettings();
         // We don't have many cohorts typically. Let's cut down on the number of buttons,
         // as this isn't a complex view
         settings.setAllowChooseView(false);
-        settings.setShowRows(ShowRows.ALL);
         setShowPagination(false);
         setShowPaginationCount(false);
     }
@@ -78,8 +83,26 @@ public class CohortQueryView extends ExtensibleObjectQueryView
         {
             TableInfo tableInfo = view.getDataRegion().getTable();
             ColumnInfo rowIdColumn = tableInfo.getColumn("rowId");
-            view.getDataRegion().addDisplayColumn(0, new CohortEditColumn(view.getRenderContext().getContainer(), rowIdColumn));
-            view.getDataRegion().addDisplayColumn(1, new CohortDeleteColumn(view.getRenderContext().getContainer(), rowIdColumn));
+
+            Container container = view.getRenderContext().getContainer();
+
+            boolean hasDomain = false;
+            String domainURI = StudyManager.getInstance().getDomainURI(container, Cohort.class);
+
+            Domain domain = PropertyService.get().getDomain(container, domainURI);
+            if (domain != null)
+            {
+                DomainProperty[] extraProperties = domain.getProperties();
+                if (extraProperties.length > 0)
+                {
+                    hasDomain = true;
+                }
+            }
+
+            boolean manualAssign = study.isManualCohortAssignment();
+
+            view.getDataRegion().addDisplayColumn(0, new CohortEditColumn(container, rowIdColumn, hasDomain, manualAssign));
+            view.getDataRegion().addDisplayColumn(1, new CohortDeleteColumn(container, rowIdColumn));
         }
         return view;
     }
@@ -88,21 +111,44 @@ public class CohortQueryView extends ExtensibleObjectQueryView
     {
         private final ColumnInfo rowIdColumn;
         private final Container container;
+        private final boolean hasDomain;
+        private final boolean manualAssign;
 
-        public CohortEditColumn(Container container, ColumnInfo rowIdColumn)
+        public CohortEditColumn(Container container, ColumnInfo rowIdColumn, boolean hasDomain, boolean manualAssign)
         {
             this.container = container;
             this.rowIdColumn = rowIdColumn;
+            this.hasDomain = hasDomain;
+            this.manualAssign = manualAssign;
             setWidth(null);
         }
 
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
+            Integer rowId = (Integer)rowIdColumn.getValue(ctx);
+
+            if (manualAssign)
+            {
+                // If it's manual assignment, the user can always edit the cohort, no matter what
+                renderEditLink(out, rowId.intValue());
+                return;
+            }
+
+            if (hasDomain)
+            {
+                // There are properties to edit
+                renderEditLink(out, rowId.intValue());
+            }
+
+            // Now we know we've got no properties, and we're using automatic assignment.
+            // Don't show a link.
+        }
+
+        private void renderEditLink(Writer out, int rowId) throws IOException
+        {
             out.write("[<a href=\"");
 
             ActionURL actionURL = new ActionURL(CohortController.UpdateAction.class, container);
-
-            String rowId = rowIdColumn.getValue(ctx).toString();
             actionURL.addParameter("rowId", rowId);
 
             out.write(PageFlowUtil.filter(actionURL.getLocalURIString()));

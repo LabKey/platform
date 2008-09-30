@@ -392,6 +392,7 @@ public class WebdavResolverImpl implements WebdavResolver
                         list.add(file.getName());
                 }
             }
+            Collections.sort(list);
             return list;
         }
 
@@ -670,7 +671,9 @@ public class WebdavResolverImpl implements WebdavResolver
             Set<String> set = new TreeSet<String>();
             set.addAll(super.listNames());
             set.addAll(getWebFoldersNames(null));
-            return new ArrayList<String>(set);
+            ArrayList<String> list = new ArrayList<String>(set);
+            Collections.sort(list);
+            return list;
         }
 
         @Override

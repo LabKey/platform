@@ -37,11 +37,11 @@
         listOptions.put(String.valueOf(lists.get(name).getListId()), name);
     }
 %>
-This webpart displays data from a single list using its default view.  You can modify the default view on the grid page.<br><br>
+This webpart displays data from a single list.<br><br>
 
-If you want to let users change the list that's displayed or customize the view then use the query webpart.<br><br>
+If you want to let users change the list that's displayed or customize the view themselves then use the query webpart.<br><br>
 
-<form name="frmCustomize" method="post" action="<%=part.getCustomizePostURL(ctx.getContainer()).getEncodedLocalURIString()%>">
+<form name="frmCustomize" method="post" action="<%=h(part.getCustomizePostURL(ctx.getContainer()))%>">
     <table>
         <tr>
             <td>Title:</td>
@@ -54,6 +54,10 @@ If you want to let users change the list that's displayed or customize the view 
                     <labkey:options value="<%=props.get("listId")%>" map="<%=listOptions%>" />
                 </select>
             </td>
+        </tr>
+        <tr>
+            <td>View Name:</td>
+            <td><input type="text" name="viewName" width="60" value="<%=h(props.get("viewName"))%>"><%=null != props.get("viewName") ? " Clear this value to display the default view" : ""%></td>
         </tr>
         <tr>
             <td colspan="2"><labkey:button text="Submit"/></td>

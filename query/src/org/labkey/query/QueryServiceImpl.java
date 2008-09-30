@@ -167,15 +167,24 @@ public class QueryServiceImpl extends QueryService
 
     public QuerySnapshotDefinition createQuerySnapshotDef(QueryDefinition queryDef, String name)
     {
-        QueryDefinitionImpl qd = new QueryDefinitionImpl(queryDef.getContainer(), queryDef.getSchemaName(), queryDef.getName() + "_" + name);
+        // if this is a table based query view, we just need to save the table name, else create a copy of the query
+        // definition for the snapshot to refer back to on updates.
+        if (queryDef.isTableQueryDefinition())
+        {
+            return new QuerySnapshotDefImpl(queryDef.getContainer().getId(), queryDef.getSchemaName(), queryDef.getName(), name);
+        }
+        else
+        {
+            QueryDefinitionImpl qd = new QueryDefinitionImpl(queryDef.getContainer(), queryDef.getSchemaName(), queryDef.getName() + "_" + name);
 
-        qd.setMetadataXml(queryDef.getMetadataXml());
-        qd.setSql(queryDef.getSql());
-        qd.setDescription(queryDef.getDescription());
-        qd.setIsHidden(true);
-        qd.setIsSnapshot(true);
+            qd.setMetadataXml(queryDef.getMetadataXml());
+            qd.setSql(queryDef.getSql());
+            qd.setDescription(queryDef.getDescription());
+            qd.setIsHidden(true);
+            qd.setIsSnapshot(true);
 
-        return new QuerySnapshotDefImpl(qd.getQueryDef(), name);
+            return new QuerySnapshotDefImpl(qd.getQueryDef(), name);
+        }
     }
 
 /*public Pair<ColumnInfo[], ResultSet> select(TableInfo table, FieldKey[] fields)

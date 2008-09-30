@@ -4504,7 +4504,7 @@ public class StudyController extends BaseStudyController
         {
             form.setEdit(true);
             if (!reshow)
-                form.init(QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName(), form.getSnapshotName()));
+                form.init(QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName(), form.getSnapshotName()), getUser());
 
             VBox box = new VBox();
             QuerySnapshotService.I provider = QuerySnapshotService.get(form.getSchemaName());

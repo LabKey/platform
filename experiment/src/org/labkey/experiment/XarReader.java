@@ -471,7 +471,7 @@ public class XarReader extends AbstractXarImporter
             {
                 PropertyValidatorImpl validator = new PropertyValidatorImpl(new PropertyValidator());
                 validator.setContainer(prop.getContainer().getId());
-                validator.setName(prop.getName());
+                validator.setName(xValidator.getName());
                 validator.setTypeURI(xValidator.getTypeURI());
                 if (xValidator.isSetDescription())
                 {

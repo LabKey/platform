@@ -102,9 +102,14 @@ public class LoginController extends SpringActionController
             return url;
         }
 
+        public ActionURL getLoginURL()
+        {
+            return getLoginURL(HttpView.getContextContainer(), HttpView.getContextURL());
+        }
+
         public ActionURL getLoginURL(ActionURL returnURL)
         {
-            // Use root as placeholder; extra path of returnURL determines login URL path
+            // Use root as placeholder; extra path of returnURL determines the real login URL path
             ActionURL url = new ActionURL(LoginAction.class, ContainerManager.getRoot());
 
             if (null == returnURL)
@@ -434,12 +439,15 @@ public class LoginController extends SpringActionController
                 SecurityManager.setTermsOfUseApproved(getViewContext(), project, true);
             }
 
+            HttpView.throwRedirect(form.getReturnUrl());
+
             return true;
         }
 
         public ActionURL getSuccessURL(LoginForm form)
         {
-            return form.getReturnActionURL();
+            // No longer possible, as handlePost() should redirect.
+            throw new UnsupportedOperationException("This should never occur. Success should redirect.");
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -476,7 +484,13 @@ public class LoginController extends SpringActionController
 
             try
             {
-                termsOfUseHtml = SecurityManager.getTermsOfUseHtml(getTermsOfUseProject(form));
+                Project project = getTermsOfUseProject(form);
+
+                // Don't display the terms of use if user has already approved them (e.g., guest approves, then later logs in).  #4684
+                if (!SecurityManager.isTermsOfUseApproved(getViewContext(), project))
+                    termsOfUseHtml = SecurityManager.getTermsOfUseHtml(project);
+
+                assert !(agreeOnly && null == termsOfUseHtml);
             }
             catch (Exception e)
             {
@@ -552,7 +566,7 @@ public class LoginController extends SpringActionController
     private boolean isTermsOfUseApproved(LoginForm form) throws ServletException, URISyntaxException
     {
         Project termsProject = getTermsOfUseProject(form);
-        return termsProject == null || !SecurityManager.isTermsOfUseRequired(termsProject) || form.isApprovedTermsOfUse();
+        return termsProject == null  || form.isApprovedTermsOfUse() || !SecurityManager.isTermsOfUseRequired(termsProject) || SecurityManager.isTermsOfUseApproved(getViewContext(), termsProject);
     }
 
 

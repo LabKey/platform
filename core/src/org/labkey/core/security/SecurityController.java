@@ -584,6 +584,13 @@ public class SecurityController extends SpringActionController
                         String addMessage = SecurityManager.addUser(getViewContext(), email, form.getSendEmail(), form.getMailPrefix(), null);
                         if (addMessage != null)
                             messages.add(addMessage);
+
+                        //get the user and ensure that the user is still active
+                        User user = UserManager.getUser(email);
+                        if(!user.isActive())
+                            messages.add("You may not add the user '" + PageFlowUtil.filter(email)
+                                    + "' to this group because that user account is currently deactivated." +
+                                    " To re-activate this account, contact your system administrator.");
                     }
 
                     try

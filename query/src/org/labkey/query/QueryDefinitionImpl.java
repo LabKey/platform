@@ -555,4 +555,9 @@ public class QueryDefinitionImpl implements QueryDefinition
         _dirty = true;
         return _queryDef;
     }
+
+    public boolean isTableQueryDefinition()
+    {
+        return false;
+    }
 }

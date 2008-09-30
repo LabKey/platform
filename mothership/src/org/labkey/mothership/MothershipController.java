@@ -603,8 +603,11 @@ public class MothershipController extends SpringActionController
                 installation.setServerInstallationGUID(form.getServerGUID());
 
                 session = MothershipManager.get().updateServerSession(session, installation, getContainer());
-                report.setServerSessionId(session.getServerSessionId());
-                MothershipManager.get().insertException(stackTrace, report);
+                if (session.getSvnRevision() != null)
+                {
+                    report.setServerSessionId(session.getServerSessionId());
+                    MothershipManager.get().insertException(stackTrace, report);
+                }
                 setSuccessHeader();
             }
             catch (Exception e)
