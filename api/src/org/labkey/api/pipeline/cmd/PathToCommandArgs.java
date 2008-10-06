@@ -25,8 +25,8 @@ public abstract class PathToCommandArgs extends TaskPathToCommandArgs
 {
     public String[] toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
     {
-        return toArgs(getPath(task));
+        return toArgs(getPaths(task));
     }
 
-    abstract public String[] toArgs(String path);
+    abstract public String[] toArgs(String[] paths);
 }

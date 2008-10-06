@@ -25,6 +25,7 @@ public class TaskPath
 {
     private FileType _type;
     private String _name;
+    private boolean _splitFiles;
     private boolean _copyInput;
     private boolean _optional;
 
@@ -120,6 +121,30 @@ public class TaskPath
         }
 
         return getName();
+    }
+
+    /**
+     * Used to determine whether files generated from this path represent
+     * the set of split files (all input files), or just the current file
+     * being processed.
+     *
+     * @return True if path represents full set of split files
+     */
+    public boolean isSplitFiles()
+    {
+        return _splitFiles;
+    }
+
+    /**
+     * Set whether files generated from this path represent
+     * the set of split files (all input files), or just the current file
+     * being processed.
+     *  
+     * @param splitFiles True if path represents full set of split files
+     */
+    public void setSplitFiles(boolean splitFiles)
+    {
+        _splitFiles = splitFiles;
     }
 
     /**

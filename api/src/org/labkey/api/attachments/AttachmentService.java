@@ -107,6 +107,7 @@ public class AttachmentService
         public void unregisterDirectory(Container c, String label);
 
         public void addAttachments(User user, AttachmentParent parent, List<AttachmentFile> files) throws IOException, SQLException, DuplicateFilenameException;
+        public void insertAttachmentRecord(User user, AttachmentDirectory parent, AttachmentFile file) throws SQLException;
         public void deleteAttachments(AttachmentParent parent) throws SQLException;
         public void deleteAttachment(AttachmentParent parent, String name) throws SQLException;
         public void renameAttachment(AttachmentParent parent, String oldName, String newName) throws SQLException, DuplicateFilenameException;

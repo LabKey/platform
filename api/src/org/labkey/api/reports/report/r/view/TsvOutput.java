@@ -115,7 +115,7 @@ public class TsvOutput extends AbstractParamReplacement
                 if (isCollapse())
                     out.write("<tr style=\"display:none\"><td><table>");
                 else
-                    out.write("<tr><td><table>");
+                    out.write("<tr><td><table class=\"labkey-r-tsvout\">");
                 out.write("<tr>");
                 for (TabLoader.ColumnDescriptor col : display)
                 {

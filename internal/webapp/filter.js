@@ -103,7 +103,7 @@ function showFilterPanel(elem, tableName, colName, caption, dataType)
     {
         _filterWin = new Ext.Window({
             contentEl: div,
-            width: 'auto',
+            width: 350,
             autoHeight: true,
             modal: true,
             resizable: false,
@@ -115,6 +115,10 @@ function showFilterPanel(elem, tableName, colName, caption, dataType)
             doChange(document.getElementById("compare_1"));
             doChange(document.getElementById("compare_2"));
         };
+    }
+    else
+    {
+        _filterWin.center();
     }
 
     if (filterIndex == 2)

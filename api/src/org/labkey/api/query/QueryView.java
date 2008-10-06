@@ -532,7 +532,8 @@ public class QueryView extends WebPartView<Object>
         {
             exportMenuButton.addMenuItem("Excel Web Query (.iqy)", urlFor(QueryAction.excelWebQueryDefinition).getLocalURIString());
         }
-        exportMenuButton.addMenuItem("Export R Script", urlFor(QueryAction.exportRScript).getLocalURIString());
+        exportMenuButton.addSeparator();
+        exportMenuButton.addMenuItem("Create R Script", urlFor(QueryAction.exportRScript).getLocalURIString());
         return exportMenuButton;
     }
 
@@ -1159,7 +1160,11 @@ public class QueryView extends WebPartView<Object>
 
             try
             {
-                rs = rgn.getResultSet(view.getRenderContext());
+                //HACK: this is a total hack--getResultSet no longer gets the aggregates, which we
+                //need to get the total rows for pagination purposes.
+                //checkResultSet will do that.
+                rgn.checkResultSet(view.getRenderContext(), null);
+                rs = view.getRenderContext().getResultSet();
                 response.populate(rs, table, getExportColumns(rgn.getDisplayColumns()), rgn.getTotalRows());
             }
             finally
@@ -1185,6 +1190,7 @@ public class QueryView extends WebPartView<Object>
 
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
+        rgn.setMaxRows(0);
         view.getRenderContext().setCache(false);
 
         ResultSet rs = rgn.getResultSet(view.getRenderContext());

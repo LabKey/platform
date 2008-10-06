@@ -260,18 +260,16 @@ public class NavTrailView extends HttpView
         _out.print("<td class=\"labkey-tab-space\"><img width=\"5\" src=\"");
         _out.print(_contextPath);
         _out.print("/_.gif\"></td>");
-        _out.print("<td><table><tr>");
         if (active)
         {
             _out.print("<td style=\"margin-bottom:0px\" class=");_out.print(className);_out.print(">");
             _out.print("<a href=\"");_out.print(filter(link));_out.print("\" id=\"");_out.print(tab.getKey());_out.print("Tab\">");
-            _out.print(filter(name));_out.print("</a>");
+            _out.print(filter(name));_out.print("</a></td>");
         }
         else
         {
             _out.print("<td style=\"vertical-align:bottom;\" class=\"");_out.print(className);_out.print("\">");_out.print(filter(name));_out.print("</td>");
         }
-        _out.print("</tr></table></td>\n");
     }
 
     void endTabstrip()

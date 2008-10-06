@@ -1173,12 +1173,12 @@ public class DataRegion extends DisplayElement
             for (ColumnInfo column : getTable().getPkColumns())
             {
                 Object v = column.getValue(ctx);
+                // always append the comma, even if there's no value; we need to maintain the correct number
+                // of values (even if they're empty) between commas for deterministic parsing (bug 6755)
+                checkboxName.append(and);
                 if (null != v)
-                {
-                    checkboxName.append(and);
                     checkboxName.append(PageFlowUtil.filter(v.toString()));
-                    and = ",";
-                }
+                and = ",";
             }
         }
         else
@@ -1186,12 +1186,12 @@ public class DataRegion extends DisplayElement
             for (String valueColumnName : _recordSelectorValueColumns)
             {
                 Object v = (null == rowMap ? null : rowMap.get(valueColumnName));
+                // always append the comma, even if there's no value; we need to maintain the correct number
+                // of values (even if they're empty) between commas for deterministic parsing (bug 6755)
+                checkboxName.append(and);
                 if (null != v)
-                {
-                    checkboxName.append(and);
                     checkboxName.append(PageFlowUtil.filter(v.toString()));
-                    and = ",";
-                }
+                and = ",";
             }
         }
         out.write(checkboxName.toString());

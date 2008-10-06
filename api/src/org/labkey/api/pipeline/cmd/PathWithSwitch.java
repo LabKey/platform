@@ -15,6 +15,9 @@
  */
 package org.labkey.api.pipeline.cmd;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
 /**
  * <code>PathWithSwitch</code>
 */
@@ -32,11 +35,14 @@ public class PathWithSwitch extends PathToCommandArgs
         _switchName = switchName;
     }
 
-    public String[] toArgs(String path)
+    public String[] toArgs(String[] paths)
     {
-        if (path != null && path.length() > 0)
-            return getSwitchFormat().format(getSwitchName(), path);
-
-        return new String[0];
+        ArrayList<String> args = new ArrayList<String>();
+        for (String path : paths)
+        {
+            if (path != null && path.length() > 0)
+                args.addAll(Arrays.asList(getSwitchFormat().format(getSwitchName(), path)));
+        }
+        return args.toArray(new String[args.size()]);
     }
 }

@@ -35,6 +35,7 @@ Ext.namespace("LABKEY", "LABKEY.ext");
  *  that the names may refer to columns in related tables using the form 'column/column/column' (e.g., 'RelatedPeptide/TrimmedPeptide').
  * @param {String} [config.sort] A base sort specification in the form of '[-]column,[-]column' ('-' is used for descending sort).
  * @param {Array} [config.filterArray] An array of LABKEY.Filter.FilterDefinition objects to use as the base filters.
+ * @param {String} [config.containerPath] The container path from which to get the data. If not specified, the current container is used.
  * @example &lt;script type="text/javascript"&gt;
 	LABKEY.requiresClientAPI();
 &lt;/script&gt;

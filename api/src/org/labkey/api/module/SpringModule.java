@@ -24,6 +24,7 @@ import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.ContextLoader;
 import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.context.ConfigurableWebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.springframework.web.servlet.mvc.Controller;
 import org.springframework.beans.BeansException;
@@ -38,9 +39,7 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -126,16 +125,16 @@ public class SpringModule extends DefaultModule implements ServletContext
 
 
     // see contextCongfigLocation parameter
-    protected String getContextConfigLocation()
+    protected List<String> getContextConfigLocation()
     {
         if (ContextType.none.equals(getContextType()))
-            return null;
+            return Collections.emptyList();
 
-        StringBuffer location = new StringBuffer();
         String prefix = getName().toLowerCase();
 
+        List<String> result = new ArrayList<String>();
         // Add the location of the context XML inside the module
-        location.append("/WEB-INF/").append(prefix).append("/").append(prefix).append("Context.xml");
+        result.add("/WEB-INF/" + prefix + "/" + prefix + "Context.xml");
 
         if (ContextType.config.equals(getContextType()))
         {
@@ -147,11 +146,13 @@ public class SpringModule extends DefaultModule implements ServletContext
                 String configRelPath = prefix + "Config.xml";
                 File fileConfig = new File(URIUtil.resolve(dirConfig.toURI(), configRelPath));
                 if (fileConfig.exists())
-                    location.append(",").append(fileConfig.toString());
+                {
+                    result.add(fileConfig.toString());
+                }
             }
         }
 
-        return location.toString();
+        return result;
     }
 
     ContextLoader _contextLoader;
@@ -162,11 +163,10 @@ public class SpringModule extends DefaultModule implements ServletContext
         _parentContext = ModuleLoader.getServletContext();
         final WebApplicationContext rootWebApplicationContext = WebApplicationContextUtils.getWebApplicationContext(ModuleLoader.getServletContext());
 
-        String contextConfigFiles = getContextConfigLocation();
-        if (contextConfigFiles != null)
+        final List<String> contextConfigFiles = getContextConfigLocation();
+        if (!contextConfigFiles.isEmpty())
         {
             _log.info("Loading Spring configuration for the " + getName() + " module from " + contextConfigFiles);
-            _initParameters.put(ContextLoader.CONFIG_LOCATION_PARAM, contextConfigFiles);
 
             try
             {
@@ -176,6 +176,11 @@ public class SpringModule extends DefaultModule implements ServletContext
                     protected ApplicationContext loadParentContext(ServletContext servletContext) throws BeansException
                     {
                         return rootWebApplicationContext;
+                    }
+
+                    protected void customizeContext(ServletContext servletContext, ConfigurableWebApplicationContext applicationContext)
+                    {
+                        applicationContext.setConfigLocations(contextConfigFiles.toArray(new String[contextConfigFiles.size()]));
                     }
                 };
                 _contextLoader.initWebApplicationContext(this);

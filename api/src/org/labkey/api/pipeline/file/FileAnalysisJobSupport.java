@@ -38,6 +38,12 @@ public interface FileAnalysisJobSupport
     String getJoinedBaseName();
 
     /**
+     * @return the base names for all the split input files, or just this
+     *  job's single base name in an array, if this is a split job.
+     */
+    String[] getSplitBaseNames();
+
+    /**
      * @return base name of the original input file.
      */
     String getBaseName();

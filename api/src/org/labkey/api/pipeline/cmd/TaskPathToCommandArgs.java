@@ -52,8 +52,8 @@ abstract public class TaskPathToCommandArgs extends TaskToCommandArgs
         _key = key;
     }
 
-    public String getPath(CommandTask task) throws IOException
+    public String[] getPaths(CommandTask task) throws IOException
     {
-        return task.getProcessPath(getFunction(), getKey());
+        return task.getProcessPaths(getFunction(), getKey());
     }
 }

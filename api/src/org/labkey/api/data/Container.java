@@ -585,8 +585,15 @@ public class Container implements Serializable
 
            // ensure all modules for folder type are added (may have been added after save
             if (!getFolderType().equals(FolderType.NONE))
-                modules.addAll(getFolderType().getActiveModules());
-
+            {
+                for (Module module : getFolderType().getActiveModules())
+                {
+                    // check for null, since there's no guarantee that a third-party folder type has all its
+                    // active modules installed on this system (so nulls may end up in the list- bug 6757):
+                    if (module != null)
+                        modules.add(module);
+                }
+            }
            // add all 'always display' modules, remove all 'never display' modules:
            for (Module module : allModules)
            {

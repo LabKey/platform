@@ -167,7 +167,7 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
 
         for (Map.Entry<String, String> entry : properties.entrySet())
         {
-            if (entry.getValue().length() > max)
+            if (entry.getValue() != null && entry.getValue().length() > max)
             {
                 max = entry.getValue().length();
                 largest = entry.getKey();

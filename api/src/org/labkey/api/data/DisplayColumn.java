@@ -380,6 +380,10 @@ public abstract class DisplayColumn extends RenderColumn
             popup.renderMenuScript(out);
         }
 
+        // 6821: hover pseudo-class doesn't work in IE
+        out.write("<script type='text/javascript'>\n");
+        out.write("Ext.fly(" + PageFlowUtil.jsString(baseId + ":header") + ").addClassOnOver('hover');\n");
+        out.write("</script>\n");
         out.write("</th>");
     }
 

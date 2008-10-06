@@ -170,6 +170,23 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         return AbstractFileAnalysisProtocol.getDataSetBaseName(_dirData);
     }
 
+    public String[] getSplitBaseNames()
+    {
+        ArrayList<String> baseNames = new ArrayList<String>();
+        for (File fileInput : _filesInput)
+        {
+            for (FileType ft : _inputTypes)
+            {
+                if (ft.isType(fileInput))
+                {
+                    baseNames.add(ft.getBaseName(fileInput));
+                    break;
+                }
+            }
+        }
+        return baseNames.toArray(new String[baseNames.size()]);
+    }
+
     public File getDataDirectory()
     {
         return _dirData;
