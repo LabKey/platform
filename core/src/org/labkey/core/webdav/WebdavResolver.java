@@ -47,6 +47,8 @@ public interface WebdavResolver
 
         String getName();
 
+        String getParentPath();
+
         boolean exists();
 
         boolean isCollection();

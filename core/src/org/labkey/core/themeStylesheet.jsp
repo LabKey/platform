@@ -141,7 +141,7 @@ span.labkey-help-pop-up
     background-color: #<%= fullScreenBorder %>;
 }
 
-th.labkey-col-header-filter.hover, td.labkey-col-header-filter.hover, .labkey-col-header-filter th:hover
+th.labkey-col-header-filter.hover, td.labkey-col-header-filter.hover, .labkey-col-header-filter th.hover
 {
     background: #<%= wpHeaderPanel %>;
 }

@@ -26,11 +26,14 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.attachments.FileAttachmentFile;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.core.ftp.FtpController;
 import org.apache.log4j.Logger;
+import org.apache.log4j.Category;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.*;
@@ -329,6 +332,16 @@ public class WebdavResolverImpl implements WebdavResolver
         }
 
 
+        public String getParentPath()
+        {
+            String p = _path;
+            if (p.endsWith("/"))
+                p = _path.substring(0,p.length()-1);
+            int i = p.lastIndexOf("/");
+            return i<0 ? "" : p.substring(0,i+1);
+        }
+
+
         public boolean exists()
         {
             return _file == null || _file.exists();
@@ -610,6 +623,7 @@ public class WebdavResolverImpl implements WebdavResolver
 
     class WebFolderResource extends FolderResourceImpl
     {
+        AttachmentDirectory _attachmentDirectory = null;
         ArrayList<String> _children = null;
 
         WebFolderResource(Container c, AttachmentDirectory root)
@@ -617,6 +631,7 @@ public class WebdavResolverImpl implements WebdavResolver
             super(c.getPath());
             _c = c;
             _acl = c.getAcl();
+            _attachmentDirectory = root;
             _root = null;
             try
             {
@@ -687,6 +702,26 @@ public class WebdavResolverImpl implements WebdavResolver
             if (_root != null)
                 return new FileResource(this,child);
             return new UnboundResource(c(this,child));
+        }
+
+
+        // UNDONE quick fix for 8.3  (see 6791)
+        // move save functionality into the Resource interface (out of DavController) so the resource
+        // is responsible for things like this
+        void attachmentDirectoryUpate(User user, Resource file)
+        {
+            HashMap<String,Object> hm = new HashMap<String,Object>(10);
+            if (_attachmentDirectory == null || _root == null || !(file instanceof FileResource) || !file.exists())
+                return;
+            AttachmentFile attachment = new FileAttachmentFile(file.getFile());
+            try
+            {
+                AttachmentService.get().insertAttachmentRecord(user, _attachmentDirectory, attachment);
+            }
+            catch (SQLException ex)
+            {
+                Category.getInstance(WebdavResolverImpl.class).error("unexpected exception", ex);
+            }
         }
     }
 

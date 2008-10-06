@@ -48,9 +48,10 @@
 LABKEY.requiresScript("applet.js",true);
 LABKEY.requiresScript("dropApplet.js",true);
 </script>
-<div><h3 class="labkey-announcement-title">
-    <a id="ftpLocation" href="<%=h(dropPage.getUserURL())%>"><%=dropPage.getURL()%></a>
-</h3></div>
+<table width="100%">
+      <tr><td class="labkey-announcement-title"><span>File upload tool</span></td><td align="right"><%=PageFlowUtil.generateButton("Close", "#close", "window.close();")%></td></tr>
+      <tr><td colspan=2 align="left"><a id="ftpLocation" href="<%=h(dropPage.getUserURL())%>"><%=dropPage.getURL()%></a></td>
+</tr></table>
 <table id=ftpOuterTable width="100%"><tr>
     <td valign="top" width=200 height=100%><div id="appletDiv" class="labkey-nav-bordered" style="padding:2px; margin:1px; width:200px; height:200px;"><script type="text/javascript">
 LABKEY.writeApplet({

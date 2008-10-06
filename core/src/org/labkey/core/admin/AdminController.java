@@ -4625,13 +4625,18 @@ public class AdminController extends SpringActionController
                 }
             }
 
-            JspView emailPropsView = new JspView("/org/labkey/core/admin/emailProps.jsp");
-            emailPropsView.setTitle("Current Email Settings");
-            
             JspView<EmailTestForm> testView = new JspView<EmailTestForm>("/org/labkey/core/admin/emailTest.jsp", form);
             testView.setTitle("Send a Test Email");
 
-            return new VBox(emailPropsView, testView);
+            if(null != MailHelper.getSession() && null != MailHelper.getSession().getProperties())
+            {
+                JspView emailPropsView = new JspView("/org/labkey/core/admin/emailProps.jsp");
+                emailPropsView.setTitle("Current Email Settings");
+
+                return new VBox(emailPropsView, testView);
+            }
+            else
+                return testView;
         }
 
         public NavTree appendNavTrail(NavTree root)

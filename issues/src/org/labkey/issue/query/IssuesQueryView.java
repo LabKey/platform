@@ -21,8 +21,8 @@ import org.labkey.api.query.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.ViewContext;
 import org.labkey.common.util.Pair;
 
 import java.io.IOException;
@@ -144,6 +144,8 @@ public class IssuesQueryView extends QueryView
             {
                 if (o1.getOwner() != null && o2.getOwner() == null) return -1;
                 if (o1.getOwner() == null && o2.getOwner() != null) return 1;
+                if (o1.getName() == null) return -1;
+                if (o2.getName() == null) return 1;
 
                 return o1.getName().compareTo(o2.getName());
             }

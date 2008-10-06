@@ -119,7 +119,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
 
         public List<String> getProtocolActionNames()
         {
-            return Collections.singletonList(_protocolActionName);
+            return Collections.singletonList(getProtocolActionName());
         }
 
         public String getStatusName()
@@ -259,50 +259,50 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         return getJob().getJobSupport(FileAnalysisJobSupport.class);
     }
 
-    public String getInputProcessPath(String key) throws IOException
+    public String[] getProcessPaths(WorkDirectory.Function f, String key) throws IOException
     {
-        return getProcessPath(WorkDirectory.Function.input,
-                _factory.getInputPaths().get(key));
+        TaskPath tp = (WorkDirectory.Function.input.equals(f) ?
+                _factory.getInputPaths().get(key) : _factory.getOutputPaths().get(key));
+
+        ArrayList<String> paths = new ArrayList<String>();
+        for (File file : getWorkFiles(f, tp))
+            paths.add(_wd.getRelativePath(file));
+        return paths.toArray(new String[paths.size()]);
     }
 
-    public String getOutputProcessPath(String key) throws IOException
+    private File[] getWorkFiles(WorkDirectory.Function f, TaskPath tp)
     {
-        return getProcessPath(WorkDirectory.Function.output,
-                _factory.getOutputPaths().get(key));
+        if (tp == null)
+            return new File[0];
+        
+        String baseNames[];
+        if (tp.isSplitFiles())
+            baseNames = getJobSupport().getSplitBaseNames();
+        else
+            baseNames = new String[] { getJobSupport().getBaseName() };
+        
+        ArrayList<File> files = new ArrayList<File>();
+        for (String baseName : baseNames)
+            files.add(newWorkFile(f, tp, baseName));
+        return files.toArray(new File[files.size()]);
     }
 
-    public String getProcessPath(WorkDirectory.Function f, String key) throws IOException
-    {
-        return (WorkDirectory.Function.input.equals(f) ?
-                getInputProcessPath(key) : getOutputProcessPath(key));
-    }
-
-    public String getProcessPath(WorkDirectory.Function f, TaskPath tp) throws IOException
-    {
-        return (tp == null ? null : _wd.getRelativePath(newWorkFile(f, tp)));
-    }
-
-    public File newWorkFile(WorkDirectory.Function f, TaskPath tp)
+    private File newWorkFile(WorkDirectory.Function f, TaskPath tp, String baseName)
     {
         if (tp == null)
             return null;
 
         FileType type = tp.getType();
         if (type != null)
-            return _wd.newFile(f, type);
+            return _wd.newFile(f, type.getName(baseName));
 
         return _wd.newFile(f, tp.getName());
     }
 
-    public void inputFile(TaskPath tp, String role, RecordedAction action) throws IOException
+    private void inputFile(TaskPath tp, String role, RecordedAction action) throws IOException
     {
-        File fileInput = null;
-        if (tp.getType() != null)
-            fileInput = _wd.newFile(WorkDirectory.Function.input, tp.getType());
-        else if (tp.getName() != null)
-            fileInput = _wd.newFile(WorkDirectory.Function.input, tp.getName());
-
-        if (fileInput != null)
+        File[] filesInput = getWorkFiles(WorkDirectory.Function.input, tp);
+        for (File fileInput : filesInput)
         {
             // Nothing to do, if this file is optional and does not exist.
             if (tp.isOptional() && !NetworkDrive.exists(fileInput))
@@ -313,15 +313,10 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         }
     }
     
-    public void outputFile(TaskPath tp, String role, RecordedAction action) throws IOException
+    private void outputFile(TaskPath tp, String role, RecordedAction action) throws IOException
     {
-        File fileWork = null;
-        if (tp.getType() != null)
-            fileWork = _wd.newFile(WorkDirectory.Function.output, tp.getType());
-        else if (tp.getName() != null)
-            fileWork = _wd.newFile(WorkDirectory.Function.output, tp.getName());
-
-        if (fileWork != null)
+        File[] filesWork = getWorkFiles(WorkDirectory.Function.output, tp);
+        for (File fileWork : filesWork)
         {
             File fileOutput = getJobSupport().findOutputFile(fileWork.getName());
             if (fileOutput != null)
@@ -403,8 +398,10 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             int lineInterval = 0;
             if (_factory.isPipeToOutput())
             {
+                TaskPath tpOut = _factory.getOutputPaths().get(WorkDirectory.Function.output.toString());
+                assert !tpOut.isSplitFiles() : "Invalid attempt to pipe output to split files.";
                 fileOutput = newWorkFile(WorkDirectory.Function.output,
-                        _factory.getOutputPaths().get(WorkDirectory.Function.output.toString()));
+                        tpOut, getJobSupport().getBaseName());
                 lineInterval = _factory.getPipeOutputLineInterval();
             }
 
@@ -439,9 +436,8 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             // Should now be safe to remove the original input file, if required.
             if (_factory.isRemoveInput())
             {
-                File fileInput = newWorkFile(WorkDirectory.Function.input,
-                        _factory.getInputPaths().get(WorkDirectory.Function.input.toString()));
-                if (fileInput != null)
+                TaskPath tpInput = _factory.getInputPaths().get(WorkDirectory.Function.input.toString());
+                for (File fileInput : getWorkFiles(WorkDirectory.Function.input, tpInput))
                     fileInput.delete();
             }
             action.addParameter(RecordedAction.COMMAND_LINE_PARAM, commandLine);

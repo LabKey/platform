@@ -62,6 +62,8 @@
     String basePage = "overview.view?";
     if (selectedCohort != null)
         basePage += "cohortId=" + selectedCohort.getRowId() + "&";
+    if (selectedQCStateSet != null)
+        basePage += "QCState=" + selectedQCStateSet.getFormValue() + "&";
 
 %><%= bean.canManage ? textLink("Manage Study", "manageStudy.view") : ""%>
 &nbsp;<%= textLink("Reports and Views", ActionURL.toPathString("Study-Reports", "begin", container))%>&nbsp;
@@ -82,6 +84,7 @@
 
 %>
 <form action="overview.view" name="changeFilterForm" method="GET">
+    <input type="hidden" name="showAll" value="<%= bean.showAll ? "1" : "0" %>">
 <%
     if (showCohorts)
     {

@@ -623,7 +623,8 @@ public class StudyController extends BaseStudyController
             exportMenuButton.addMenuItem("Export all to Excel (.xls)", getViewContext().cloneActionURL().replaceParameter("export", "xls"));
             exportMenuButton.addMenuItem("Export all to text file (.tsv)", getViewContext().cloneActionURL().replaceParameter("export", "tsv"));
             exportMenuButton.addMenuItem("Excel Web Query (.iqy)", queryView.urlFor(QueryAction.excelWebQueryDefinition).getLocalURIString());
-            exportMenuButton.addMenuItem("Export to R Script", queryView.urlFor(QueryAction.exportRScript).getLocalURIString());
+            exportMenuButton.addSeparator();
+            exportMenuButton.addMenuItem("Create R Script", queryView.urlFor(QueryAction.exportRScript).getLocalURIString());
             buttonBar.add(exportMenuButton);
 
 

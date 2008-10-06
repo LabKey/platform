@@ -451,16 +451,6 @@ table.labkey-tab-strip
     border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
 }
 
-.labkey-tab-strip table
-{
-    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
-}
-
-.labkey-tab-strip td, .labkey-tab-strip th
-{
-    padding: 0px;
-}
-
 /* Used for text fields with auto completion */
 div.labkey-completion
 {
@@ -704,7 +694,7 @@ th.labkey-col-header-filter, td.labkey-col-header-filter, tr.labkey-col-header-f
     color: #003399;
 }
 
-th.labkey-col-header-filter:hover, td.labkey-col-header-filter:hover, tr.labkey-col-header-filter th:hover
+th.labkey-col-header-filter.hover, td.labkey-col-header-filter.hover, tr.labkey-col-header-filter th.hover
 {
     background-color: #EBF4FF;
     cursor: pointer;
@@ -1354,14 +1344,9 @@ td.labkey-wiki-tab-content
 }
 
 /* R reports */
-table.labkey-r-syntax
+table.labkey-r-tsvout
 {
-    border-spacing: 2px;*border-collapse: collapse;*border-spacing: expression(cellSpacing=2);
-}
-
-.labkey-r-syntax td
-{
-    padding:5px;
+    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
 }
 
 /* GWT */

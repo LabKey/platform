@@ -538,9 +538,9 @@ public class SpecimenQueryView extends BaseStudyQueryView
             rgn.setName(getDataRegionName());
             rgn.setDisplayColumns(getDisplayColumns());
             rgn.setShowRecordSelectors(_showRecordSelectors);
+            rgn.setRecordSelectorValueColumns("RowId");
             if (_showHistoryLinks)
             {
-                rgn.setRecordSelectorValueColumns("RowId");
                 String eventsBase = ActionURL.toPathString("Study-Samples", "sampleEvents", getContainer().getPath());
                 rgn.addDisplayColumn(0, new SimpleDisplayColumn("<a href=\"" + eventsBase + "?selected=" +
                         Boolean.toString(_participantVisitFiltered) + "&id=${rowid}\">[history]</a>"));

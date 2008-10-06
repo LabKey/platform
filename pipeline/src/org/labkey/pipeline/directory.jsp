@@ -233,8 +233,8 @@
     if (pipeRoot.getACL().hasPermission(context.getUser(), ACL.PERM_INSERT))
     {
         ActionURL dropUrl = (new ActionURL("ftp","drop",context.getContainer())).addParameter("pipeline",StringUtils.defaultString(form.getPath(),"/"));
-        %><%=PageFlowUtil.generateButton("Upload files", dropUrl.getLocalURIString(), "", "target=\"_blank\"")%>
-        &nbsp;<%
+        %><%=PageFlowUtil.generateButton("Upload Multiple Files", "#uploadFiles", "window.open(" + PageFlowUtil.jsString(dropUrl.getLocalURIString()) + ", '_blank', 'height=600,width=1000,resizable=yes');")
+        %>&nbsp;<%
     }
 %><%=PageFlowUtil.generateButton("Cancel", "returnToReferer.view")%>
 

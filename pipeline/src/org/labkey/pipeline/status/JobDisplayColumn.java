@@ -20,6 +20,7 @@ import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.util.PageFlowUtil;
 import static org.labkey.pipeline.api.PipelineStatusManager.*;
+import org.labkey.pipeline.api.PipelineStatusFileImpl;
 
 
 import java.io.IOException;
@@ -105,7 +106,13 @@ public class JobDisplayColumn extends SimpleDisplayColumn
                 if (_split)
                     _jobStatus = getSplitStatusFiles((String) ctx.get("Job"));
                 else if (ctx.get("JobParent") != null)
-                    _jobStatus = new PipelineStatusFile[] { getJobStatusFile((String) ctx.get("JobParent")) };
+                {
+                    PipelineStatusFileImpl parent = getJobStatusFile((String) ctx.get("JobParent"));
+                    if (parent != null)
+                    {
+                        _jobStatus = new PipelineStatusFile[] {parent};
+                    }
+                }
             }
             catch (SQLException e)
             {

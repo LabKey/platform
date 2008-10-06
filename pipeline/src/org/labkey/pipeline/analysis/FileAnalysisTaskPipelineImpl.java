@@ -21,6 +21,7 @@ import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipelineSettings;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.URIUtil;
+import org.labkey.api.util.NetworkDrive;
 import org.labkey.pipeline.api.TaskPipelineImpl;
 
 import java.io.File;
@@ -191,10 +192,54 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
                         analysisRelativePath.toString());
 
                 if (uriData != null)
-                    return new File(new File(uriData), name);
+                {
+                    File expectedFile = new File(new File(uriData), name);
+                    if (!NetworkDrive.exists(expectedFile))
+                    {
+                        // If the file isn't where we would expect it, check other directories in the same hierarchy
+                        File alternateFile = findFileInAlternateDirectory(expectedFile.getParentFile(), dirAnalysis, name);
+                        if (alternateFile != null)
+                        {
+                            // If we found a file that matches, use it
+                            return alternateFile;
+                        }
+                    }
+                    return expectedFile;
+                }
             }
         }
 
+        return null;
+    }
+
+    /**
+     * Starting from the expectedDir, look up the chain until getting to the final directory. Return the first
+     * file that matches by name.
+     * @param expectedDir where we would have expected the file to be, but it wasn't there
+     * @param dir must be a descendent of expectedDir, this is the deepest directory that will be inspected
+     * @param name name of the file to look for
+     * @return matching file, or null if nothing was found
+     */
+    private File findFileInAlternateDirectory(File expectedDir, File dir, String name)
+    {
+        // Bail out if we've gotten all the way down to the originally expected file location
+        if (dir.equals(expectedDir))
+        {
+            return null;
+        }
+        // Recurse through the parent directories to find it in the place closest to the expected directory
+        File result = findFileInAlternateDirectory(expectedDir, dir.getParentFile(), name);
+        if (result != null)
+        {
+            // If we found a match, use it
+            return result;
+        }
+        
+        result = new File(dir, name);
+        if (NetworkDrive.exists(result))
+        {
+            return result;
+        }
         return null;
     }
 }

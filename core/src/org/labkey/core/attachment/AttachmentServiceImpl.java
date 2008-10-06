@@ -421,6 +421,20 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             throw new AttachmentService.DuplicateFilenameException(filesToSkip);
     }
 
+
+    public synchronized void insertAttachmentRecord(User user, AttachmentDirectory parent, AttachmentFile file)
+            throws SQLException
+    {
+        HashMap<String, Object> hm = new HashMap<String, Object>();
+        hm.put("DocumentName", file.getFilename());
+        hm.put("DocumentSize", file.getSize());
+        hm.put("DocumentType", file.getContentType());
+        hm.put("Parent", parent.getEntityId());
+        hm.put("Container", parent.getContainerId());
+        Table.insert(user, coreTables().getTableInfoDocuments(), hm);
+    }
+    
+
     public HttpView getErrorView(List<AttachmentFile> files, BindException errors, ActionURL returnURL)
     {
         boolean hasErrors = null != errors && errors.hasErrors();

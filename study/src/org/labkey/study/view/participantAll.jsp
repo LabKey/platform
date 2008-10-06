@@ -295,7 +295,7 @@
                                 if (propMap.getSourceLsid() != null)
                                     hasSourceLsid = true;
                                 Object value = propMap.get(pd.getPropertyId());
-                                %><td><%= (null == value ? "&nbsp;" : h(ConvertUtils.convert(value)))%></td><%
+                                %><td><%= (null == value ? "&nbsp;" : h(ConvertUtils.convert(value), true))%></td><%
                                 countTD++;
                             }
                         }

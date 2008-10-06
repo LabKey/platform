@@ -35,7 +35,7 @@
 
 <form name="preferences" enctype="multipart/form-data" method="post">
 
-<table cellpadding=0>
+<table width="100%" cellpadding=0>
 <tr>
     <td colspan=2>&nbsp;</td>
 </tr>

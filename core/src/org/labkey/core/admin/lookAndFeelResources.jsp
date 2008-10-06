@@ -40,7 +40,6 @@
 <tr>
     <td colspan=2>&nbsp;</td>
 </tr>
-    <tr><td colspan=1 class=labkey-title-area-line><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
 <tr>
     <td class="labkey-form-label">Header logo (appears in every page header; 147 x 56 pixels)</td>
     <td><input type="file" name="logoImage" size="50"></td>

@@ -202,7 +202,7 @@
                 <tr class="<%=className%>" style="<%=expanded ? "" : "display:none"%>"><td align="left" nowrap><%=h(labelName)%></td><%
 
                     Object value = datasetRow.get(pd.getName());
-                    %><td><%= (null == value ? "&nbsp;" : h(ConvertUtils.convert(value)))%></td><%
+                    %><td><%= (null == value ? "&nbsp;" : h(ConvertUtils.convert(value), true))%></td><%
                    
             %></tr><%
             }

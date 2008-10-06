@@ -1522,10 +1522,12 @@ public class SampleManager
 
         public SpecimenSummaryKey(String commaSeparatedKey)
         {
-            String[] parts = StringUtils.split(commaSeparatedKey, ',');
+            String[] parts = commaSeparatedKey.split(",");
             _specimenNumber = parts[0];
-            _derivativeTypeId = Integer.parseInt(parts[1]);
-            _additiveTypeId = Integer.parseInt(parts[2]);
+            if (parts.length > 1 && parts[1] != null && parts[1].length() > 0)
+                _derivativeTypeId = Integer.parseInt(parts[1]);
+            if (parts.length > 2 && parts[2] != null && parts[2].length() > 0)
+                _additiveTypeId = Integer.parseInt(parts[2]);
         }
 
         public SpecimenSummaryKey(Specimen specimen)
@@ -1535,7 +1537,7 @@ public class SampleManager
             _additiveTypeId = specimen.getAdditiveTypeId();
 
         }
-        public SpecimenSummaryKey(String specimenNumber, int derivativeTypeId, int additiveTypeId)
+        public SpecimenSummaryKey(String specimenNumber, Integer derivativeTypeId, Integer additiveTypeId)
         {
             _specimenNumber = specimenNumber;
             _derivativeTypeId = derivativeTypeId;
@@ -1607,8 +1609,25 @@ public class SampleManager
         for (SpecimenSummaryKey ssi : specimens)
         {
             filterFragment.append(sep);
-            filterFragment.append("(SpecimenNumber = ? AND AdditiveTypeId = ? AND DerivativeTypeId = ?)");
-            allParams.addAll(Arrays.asList(ssi.getSpecimenNumber(), ssi.getAdditiveTypeId(), ssi.getDerivativeTypeId()));
+            filterFragment.append("(SpecimenNumber = ? AND AdditiveTypeId ");
+            allParams.add(ssi.getSpecimenNumber());
+            if (ssi.getAdditiveTypeId() != null)
+            {
+                filterFragment.append("= ?");
+                allParams.add(ssi.getAdditiveTypeId());
+            }
+            else
+                filterFragment.append("IS NULL");
+
+            filterFragment.append(" AND DerivativeTypeId ");
+            if (ssi.getDerivativeTypeId() != null)
+            {
+                filterFragment.append("= ?");
+                allParams.add(ssi.getDerivativeTypeId());
+            }
+            else
+                filterFragment.append("IS NULL");
+            filterFragment.append(")");
             sep = " OR ";
         }
         return new SimpleFilter.SQLClause(filterFragment.toString(), allParams.toArray(), "SpecimenNumber", "AdditiveTypeId", "DerivativeTypeId");

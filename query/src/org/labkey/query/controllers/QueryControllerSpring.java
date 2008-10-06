@@ -1180,6 +1180,12 @@ public class QueryControllerSpring extends SpringActionController
         public ApiResponse execute(APIQueryForm form, BindException errors) throws Exception
         {
             assertQueryExists(form);
+
+            //show all rows by default
+            if(null == form.getLimit() 
+                    && null == getViewContext().getRequest().getParameter(form.getDataRegionName() + "." + QueryParam.maxRows))
+                form.getQuerySettings().setShowRows(ShowRows.ALL);
+
             if (form.getLimit() != null)
                 form.getQuerySettings().setMaxRows(form.getLimit().intValue());
             if (form.getStart() != null)

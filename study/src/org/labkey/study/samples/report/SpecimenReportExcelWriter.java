@@ -69,8 +69,11 @@ public class SpecimenReportExcelWriter
 
     private void writeReport(WritableWorkbook workbook, SpecimenVisitReport report) throws WriteException
     {
-        WritableSheet sheet = workbook.createSheet(ExcelWriter.cleanSheetName(report.getTitle()),
-                workbook.getNumberOfSheets());
+        String sheetName = ExcelWriter.cleanSheetName(report.getTitle());
+        for (int i = 2; workbook.getSheet(sheetName) != null; i++)
+            sheetName = sheetName.substring(0, sheetName.length() - 1) + i;
+
+        WritableSheet sheet = workbook.createSheet(sheetName, workbook.getNumberOfSheets());
 
         Visit[] visits = report.getVisits();
 

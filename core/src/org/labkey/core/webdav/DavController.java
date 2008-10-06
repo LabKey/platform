@@ -1491,7 +1491,7 @@ public class DavController extends SpringActionController
             if (!resource.canCreate(getUser()))
                 return unauthorized(resource);
 
-            boolean result = resource.getFile() != null && resource.getFile().mkdir();
+            boolean result = resource.getFile() != null && resource.getFile().mkdirs();
 
             if (!result)
             {
@@ -1594,9 +1594,9 @@ public class DavController extends SpringActionController
                     if (temp)
                         ;
                     else if (exists)
-                        audit(resource, "created");
-                    else
                         audit(resource, "replaced");
+                    else
+                        audit(resource, "created");
                 }
 
                 // if we got here then we succeeded
@@ -1924,6 +1924,9 @@ public class DavController extends SpringActionController
             if (rmTempFile(src))
             {
                 audit(dest, "created");
+                WebdavResolver.Resource parent = resolvePath(dest.getParentPath());
+                if (null != parent && parent instanceof WebdavResolverImpl.WebFolderResource)
+                    ((WebdavResolverImpl.WebFolderResource)parent).attachmentDirectoryUpate(getUser(), dest);
             }
             else
             {

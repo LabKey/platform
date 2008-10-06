@@ -2193,10 +2193,10 @@ public class SpringSpecimenController extends BaseStudyController
                     emailRecipients.add(new ActorNotificationRecipientSet(notifyActor, notifySite));
                 }
 
-                List<AttachmentFile> formFiles = getAttachmentFileList();
 
                 for (final Site originatingOrProvidingSite : notifications.keySet())
                 {
+                    List<AttachmentFile> formFiles = getAttachmentFileList();
                     TSVGridWriter tsvWriter = getUtils().getSpecimenListTsvWriter(request, originatingOrProvidingSite, receivingSite, type);
                     tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.propertyName);
                     StringBuilder tsvBuilder = new StringBuilder();

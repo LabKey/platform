@@ -179,7 +179,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
             String specimenNumber = (String) ctx.get("SpecimenNumber");
             Integer additiveType = (Integer) ctx.get("AdditiveType");
             Integer derivativeType = (Integer) ctx.get("DerivativeType");
-            return new SampleManager.SpecimenSummaryKey(specimenNumber, derivativeType.intValue(), additiveType.intValue());
+            return new SampleManager.SpecimenSummaryKey(specimenNumber, derivativeType, additiveType);
         }
 
         private String getDisplayText(RenderContext ctx, String lineSeparator)

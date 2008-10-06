@@ -428,8 +428,10 @@ public class PipelineStatusManager
         {
             PipelineStatusFile sf = getStatusFile(rowId);
 
-            // First check that it still exists in the database and that it isn't running anymore
-            if (sf != null && (PipelineJob.COMPLETE_STATUS.equals(sf.getStatus()) || PipelineJob.ERROR_STATUS.equals(sf.getStatus())))
+            // First check that it still exists in the database and that it isn't running anymore, or it's waiting
+            // for its children and they've all been deleted
+            if (sf != null && !sf.isActive() &&
+                (!PipelineJob.SPLIT_STATUS.equals(sf.getStatus()) || PipelineStatusManager.getSplitStatusFiles(sf.getJobId()).length == 0))
             {
                 PipelineProvider provider = PipelineService.get().getPipelineProvider(sf.getProvider());
                 if (provider != null)
@@ -469,6 +471,9 @@ public class PipelineStatusManager
                 params.addAll(rowIdsDeleted);
                 Table.execute(pipeline.getSchema(), sql.toString(), params.toArray());
             }
+            // If we deleted anything, try recursing since we may have deleted all the child jobs which would
+            // allow a parent job to be deleted
+            deleteStatus(info, rowIds);
         }
     }
 }
