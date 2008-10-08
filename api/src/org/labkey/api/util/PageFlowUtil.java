@@ -1579,8 +1579,14 @@ public class PageFlowUtil
 
 
 
+    static final String extJsRoot = "ext-2.2";
     static Integer serverHash = null;
-    
+
+    public static String extJsRoot()
+    {
+        return extJsRoot;
+    }
+
     public static String jsInitObject()
     {
         String contextPath = AppProps.getInstance().getContextPath();
@@ -1589,6 +1595,8 @@ public class PageFlowUtil
         sb.append("contextPath:'").append(contextPath).append("'");
         sb.append(",");
         sb.append("imagePath:'").append(contextPath).append("/_images'");
+        sb.append(",");
+        sb.append("extJsRoot:'").append(extJsRoot).append("'");
         sb.append(",");
         sb.append("devMode:").append(AppProps.getInstance().isDevMode()?"true":"false");
         sb.append(",");
