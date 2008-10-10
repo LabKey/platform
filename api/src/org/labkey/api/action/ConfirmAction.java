@@ -16,13 +16,15 @@
 
 package org.labkey.api.action;
 
-import org.springframework.web.servlet.ModelAndView;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.template.PageConfig;
+import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
-import org.springframework.beans.PropertyValues;
-import org.springframework.beans.PropertyValue;
-import org.labkey.api.view.*;
-import org.labkey.api.view.template.PageConfig;
+import org.springframework.web.servlet.ModelAndView;
 
 /**
  * Created by IntelliJ IDEA.
@@ -66,10 +68,6 @@ public abstract class ConfirmAction<FORM> extends BaseViewAction
         FORM form = null;
         BindException errors = null;
 
-        PropertyValue confirm = getPropertyValues().getPropertyValue("_confirm");
-        PropertyValue confirmX = getPropertyValues().getPropertyValue("_confirm.x");
-        boolean confirmed = confirm != null || confirmX != null;
-
         if (null != getCommandClass())
         {
             errors = bindParameters(getPropertyValues());
@@ -84,7 +82,7 @@ public abstract class ConfirmAction<FORM> extends BaseViewAction
 
         if (success)
         {
-            if (confirmed && "POST".equals(context.getRequest().getMethod()))
+            if ("POST".equals(context.getRequest().getMethod()))
             {
                 success = handlePost(form, errors);
 

@@ -384,6 +384,34 @@ function mouseExitedHelpDiv()
     hideHelpDivDelay();
 }
 
+function getEnclosingForm(elem)
+{
+    if (elem == null)
+        return null;
+    var tagName = elem.tagName;
+    if (!tagName)
+        return null;
+    if (tagName.toLowerCase() == "form")
+        return elem;
+    var parentNode = elem.parentNode;
+    if (!parentNode)
+        return null;
+    return getEnclosingForm(parentNode);
+}
+
+function submitEnclosingForm(elem)
+{
+    var form = getEnclosingForm(elem);
+    if (form == null)
+        return;
+    form.submit();
+}
+
+function isTrueOrUndefined(obj)
+{
+    return obj === undefined || obj === true;
+}
+
 LABKEY.addMarkup(
 '<div id="helpDiv" onMouseOver="mouseEnteredHelpDiv()" onMouseOut="mouseExitedHelpDiv()"' +
 '   style="display:none;">'+

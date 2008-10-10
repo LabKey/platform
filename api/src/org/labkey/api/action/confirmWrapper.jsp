@@ -39,7 +39,7 @@
     writePropertyValues(out, propertyValues);
 
     %>
-<br><%=PageFlowUtil.generateSubmitButton(confirmAction.getConfirmText(), "", "name=\"_confirm\"")%>&nbsp;<%
+<br><%=PageFlowUtil.generateSubmitButton(confirmAction.getConfirmText())%>&nbsp;<%
     if (null != cancelUrl)
     {
         %><%=PageFlowUtil.generateButton(confirmAction.getCancelText(), cancelUrl.getLocalURIString())%><%

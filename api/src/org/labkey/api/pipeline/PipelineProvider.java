@@ -16,22 +16,19 @@
 
 package org.labkey.api.pipeline;
 
+import org.labkey.api.data.Container;
+import org.labkey.api.util.FileType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URIUtil;
-import org.labkey.api.util.FileType;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.data.Container;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.IOException;
 import java.net.URI;
 import java.util.*;
-
-import com.thoughtworks.xstream.converters.ConversionException;
 
 /**
  */
@@ -384,7 +381,7 @@ abstract public class PipelineProvider
 
         public String getDisplay(int i)
         {
-            return getButton("setFormAction(" + i + ", '" + PageFlowUtil.filter(getHref()) + "')");
+            return getButton("setFormAction(" + i + ", '" + PageFlowUtil.filter(getHref()) + "'); submitForm(" + i + "); return false;");
         }
 
         public String getDisplay()

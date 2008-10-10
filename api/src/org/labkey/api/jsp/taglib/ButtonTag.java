@@ -16,9 +16,8 @@
 
 package org.labkey.api.jsp.taglib;
 
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.jsp.taglib.SimpleTagBase;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
@@ -63,7 +62,7 @@ public class ButtonTag extends SimpleTagBase
             }
             if (_action != null)
             {
-                onClickScript = ("this.form.action='" + _action + "';this.form.method='POST';\"");
+                onClickScript = ("this.form.action='" + _action + "';this.form.method='POST';");
             }
             if (_name != null)
             {

@@ -29,18 +29,21 @@ import org.apache.struts.util.MessageResources;
 import org.apache.struts.validator.Resources;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.UrlProvider;
+import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataRegion;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.settings.TemplateResourceHandler;
-import org.labkey.api.view.*;
-import org.labkey.api.admin.CoreUrls;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.AjaxCompletion;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
 import org.labkey.common.util.Pair;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
@@ -1078,21 +1081,45 @@ public class PageFlowUtil
     /* Renders an input of type submit wrapped in a span */
     public static String generateSubmitButton(String text)
     {
-        return "<span class=\"labkey-button\">" +
-                "<input name=\""+filter(text)+"\" value=\"" + filter(text) + "\" type=\"submit\">" +
-                "</span>";
+        return generateSubmitButton(text, null);
     }
 
     public static String generateSubmitButton(String text, String onClickScript)
     {
-        return generateSubmitButton(text, onClickScript, "");
+        return generateSubmitButton(text, onClickScript, null);
     }
 
     public static String generateSubmitButton(String text, String onClick, String attributes)
     {
-        return "<span class=\"labkey-button\"" + ">" +
-                "<input " + (onClick != null ? " onClick=" + wrapOnClick(onClick) : "") +
-                " value=\"" + filter(text) + "\" type=\"submit\" " + attributes + "></span>";
+        return generateSubmitButton(text, onClick, attributes, true);
+    }
+
+    public static String generateSubmitButton(String text, String onClick, String attributes, boolean enabled)
+    {
+        String onClickMethod;
+
+        if (onClick == null || "".equals(onClick))
+            onClickMethod = "submitEnclosingForm(this); return false;";
+        else
+            onClickMethod = "this.form = getEnclosingForm(this); if (isTrueOrUndefined(function() {" + onClick + "}.call(this))) submitEnclosingForm(this); return false;";
+
+        StringBuilder sb = new StringBuilder();
+
+        if (enabled)
+            sb.append("<a class=\"labkey-button\"");
+        else
+            sb.append("<a class=\"labkey-disabled-button\"");
+
+        sb.append(" href=\"#\"");
+
+        sb.append(" onclick=").append(wrapOnClick(onClickMethod));
+
+        if (attributes != null)
+            sb.append(" ").append(" ").append(attributes);
+
+        sb.append("><span>").append(filter(text)).append("</span></a>");
+
+        return sb.toString();
     }
 
     /* Renders a span and a drop down arrow image wrapped in a link */
@@ -1117,13 +1144,10 @@ public class PageFlowUtil
         return "<a class=\"labkey-disabled-button\" disabled><span>" + filter(text) + "</span></a>";
     }
 
-    /* Renders a lightly colored inactive button, or in other words, a disabled input wrapped in a span of type labkey-disabled-button */
+    /* Renders a lightly colored inactive button */
     public static String generateDisabledSubmitButton(String text, String onClick, String attributes)
     {
-        return "<span class=\"labkey-disabled-button\">" +
-                "<input " + (onClick != null ? " onClick=" + wrapOnClick(onClick) : "") +
-                " value=\"" + filter(text) + "\" type=\"submit\" " + attributes + " disabled>" +
-                "</span>";
+        return generateSubmitButton(text, onClick, attributes, false);
     }
 
     /* This function is used so that the onClick script can use either " or ' quote scheme inside of itself */

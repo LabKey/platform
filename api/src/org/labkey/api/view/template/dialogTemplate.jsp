@@ -63,6 +63,9 @@
         </td>
     </tr>
     </table>
-<script type="text/javascript">LABKEY.loadScripts();</script>
+<script type="text/javascript">
+    LABKEY.requiresScript("util.js", false);
+    LABKEY.loadScripts();
+</script>
 </body>
 </html>
