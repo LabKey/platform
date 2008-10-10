@@ -29,7 +29,7 @@
     WikiEditModel model = me.getModelBean();
     final String ID_PREFIX = "wiki-input-";
     String sep;
-    String saveButtonCaption = "    Save    ";
+    String saveButtonCaption = "Save";
 %>
 
 <script type="text/javascript">
@@ -881,6 +881,8 @@
 
     function setSaveEnabled(enabled)
     {
+        //alert("setSaveEnabled()");
+
         var buttonSave = Ext.get('wiki-button-save').dom;
         var buttonFinish = Ext.get('wiki-button-finish').dom;
 
@@ -889,17 +891,17 @@
 
         if(enabled)
         {
-            buttonSave.parentNode.className = "labkey-button";
-            buttonSave.disabled = false;
-            buttonFinish.parentNode.className = "labkey-button";
-            buttonFinish.disabled = false;
+            buttonSave.className = "labkey-button";
+            buttonSave.onclick = onSave;
+            buttonFinish.className = "labkey-button";
+            buttonFinish.onclick = onFinish;
         }
         else
         {
-            buttonSave.parentNode.className = "labkey-disabled-button";
-            buttonSave.disabled = true;
-            buttonFinish.parentNode.className = "labkey-disabled-button";
-            buttonFinish.disabled = true;
+            buttonSave.className = "labkey-disabled-button";
+            buttonSave.onclick = undefined;
+            buttonFinish.className = "labkey-disabled-button";
+            buttonFinish.onclick = undefined;
         }
     }
 
@@ -1034,13 +1036,13 @@
 
         if (enable)
         {
-            elem.parentNode.className = "labkey-button";
-            elem.disabled = false;
+            elem.className = "labkey-button";
+            elem.onclick = onDeletePage;
         }
         else
         {
-            elem.parentNode.className = "labkey-disabled-button";
-            elem.disabled = true;
+            elem.className = "labkey-disabled-button";
+            elem.onclick = undefined;
         }
     }
 
@@ -1121,13 +1123,13 @@
 <table class="labkey-button-bar" width=99%;>
     <tr>
         <td width="50%" align="left"  nowrap="true">
-            <%=PageFlowUtil.generateDisabledSubmitButton("Save & Close", "onFinish()", "id='wiki-button-finish'")%>
-            <%=PageFlowUtil.generateDisabledSubmitButton(saveButtonCaption, "onSave()", "id='wiki-button-save'")%>
+            <%=PageFlowUtil.generateDisabledSubmitButton("Save & Close", "return false;", "id='wiki-button-finish'")%>
+            <%=PageFlowUtil.generateDisabledSubmitButton(saveButtonCaption, "return false;", "id='wiki-button-save'")%>
             <%=PageFlowUtil.generateSubmitButton("Cancel", "onCancel()")%>
         </td>
         <td width="50%" align="right" nowrap="true">
             <% if(model.canUserDelete()) { %>
-                <%=PageFlowUtil.generateDisabledSubmitButton("Delete Page", "onDeletePage()", "id=\"" + ID_PREFIX + "button-delete\"")%>
+                <%=PageFlowUtil.generateDisabledSubmitButton("Delete Page", "return false;", "id=\"" + ID_PREFIX + "button-delete\"")%>
             <% } %>
             <%=PageFlowUtil.generateSubmitButton("Convert To...", "showConvertWindow()", "id=\"" + ID_PREFIX + "button-change-format\"")%>
             <%=PageFlowUtil.generateSubmitButton("Show Page Tree", "showHideToc()", "id=\"" + ID_PREFIX + "button-toc\"")%>

@@ -84,7 +84,7 @@
 
     <table class="labkey-button-bar">
         <tr>
-            <td><%=PageFlowUtil.generateSubmitButton("Next")%> </td>
+            <td><%=PageFlowUtil.generateSubmitButton("Next")%></td>
             <td><%
                 if (!c.isRoot())
                 {

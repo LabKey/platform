@@ -288,36 +288,6 @@ a.labkey-menu-button span, a.labkey-disabled-menu-button span
     padding-right: 1.0em;
 }
 
-/* The input within the button span is intentionally undecorated/transparent
-   with zero margins, padding, etc.*/
-span.labkey-button input, span.labkey-disabled-button input
-{
-    background-color: transparent;
-    color: #000000;
-    border: 0;
-    margin: 0;
-    padding: 0;
-    height: 2em;
-    *height: 1.4em;
-    font-family: inherit;
-    font-size: 1em;
-    cursor: pointer; /* hand-shaped cursor */
-    cursor: hand; /* for IE 5.x and older browsers */
-}
-
-span.labkey-disabled-button input
-{
-    color: #808080;
-    cursor: default; /* cursor to indicate non-linked item */
-}
-
-/* special input modifiers for IE: */
-span.labkey-button input, span.labkey-disabled-button input
-{
-    *overflow: visible;
-    *padding-bottom: 0.0em;
-}
-
 span.labkey-button:active
 {
     position: relative;

@@ -257,6 +257,12 @@ function setFormAction(n, url)
     form.action = parts[0];
     return true;
 }
+
+function submitForm(n)
+{
+    var form = document.getElementById("files_form" + n);
+    form.submit();
+}
 </script>
 
 <%!
