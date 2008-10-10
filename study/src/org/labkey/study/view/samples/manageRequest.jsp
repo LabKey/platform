@@ -403,7 +403,7 @@
                                 </select>
                             </td>
                             <td colspan="2"><input type="text" name="newDescription" size="50"></td>
-                            <td><%= buttonImg("Add Requirement", "return validateNewRequirement()")%></td>
+                            <td><%= buttonImg("Add Requirement", "if(validateNewRequirement()) document.addRequirementForm.submit(); return false;")%></td>
                         </tr>
                         <%
                             }

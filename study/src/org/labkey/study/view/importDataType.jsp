@@ -61,41 +61,6 @@
 <p>
 Use this form to define the properties of a dataset.
 </p>
-<%--
-<p>
-Paste in a tab delimited file with the following fields.  Additional fields will just be ignored.
-</p>
-<table>
-    <tr>
-        <th align="left"><u>Column Header</u></th>
-        <th align="left"><u>Description</u></th>
-        <th align="left"><u>Sample Value</u></th>
-    </tr>
-    <tr>
-        <th align=left valign=top nowrap>Property<span style="color:red;">*</span></th>
-        <td valign=top>The property name as it will appear when data is later imported</td>
-        <td valign=top><code>PTID</code></td>
-    </tr>
-    <tr>
-        <th align=left valign=top nowrap>Label</th>
-        <td valign=top>Display Name</td>
-        <td valign=top><code>Participant ID</code></td>
-    </tr>
-    <tr>
-        <th align=left valign=top nowrap>ConceptURI</th>
-        <td valign=top>The concept links to a definition</td>
-        <td valign=top><code>SCHARP#Participant_ID</code></td>
-    </tr>
-    <tr>
-        <th align=left valign=top nowrap>RangeURI<span style="color:red;">*</span></th>
-        <td valign=top>The storage type of this value</td>
-        <td valign=top><code>xsd:int</code></td>
-    </tr>
-    <tr>
-        <th align="left" colspan="3"><span style="color:red;">*Required</span></th>
-    </tr>
-</table>
---%>
 <table>
 <%
     for (ObjectError e : (List<ObjectError>) form.getErrors().getAllErrors())
@@ -105,7 +70,7 @@ Paste in a tab delimited file with the following fields.  Additional fields will
 %>
 </table>
 
-<form id="typeDefForm" name=typeDefForm action="defineDatasetType.post" method="POST" onsubmit="return doSubmit()" enctype="multipart/form-data">
+<form id="typeDefForm" name=typeDefForm action="defineDatasetType.post" method="POST" enctype="multipart/form-data">
     <input type=hidden name=create value="<%=form.isCreate()%>">
     <table id=typeDefTable width="100%">
         <tr>
@@ -123,43 +88,6 @@ Paste in a tab delimited file with the following fields.  Additional fields will
             </table>
             </td>
         </tr>
-<%--        <tr>
-            <td>
-        <table id="typeEditorTable">
-        < %-- UNDONE: generate this list from TableInfo (DatasetDefinition.getStandardPropertiesSet() --% >
-        <tr>
-        <td></td>
-        <th>Field Name</th>
-        <th>Friendly Name</th>
-        <th>Data Type</th>
-            <th>Required</th>
-            <th>Description</th>
-        </tr>
-
-        <tr>
-        <td>(required)</td>
-        <td>PTID</td>
-        <td>Participant Id</td>
-        <td><%=ColumnInfo.getFriendlyTypeName(String.class)%></td>
-            <td><input type=checkbox disabled checked></td>
-        <td>Standard participant id</td>
-        </tr>
-
-        <tr>
-        <td>(required)</td>
-        <td>SequenceNum</td>
-        <td>Sequence Num</td>
-        <td><%=ColumnInfo.getFriendlyTypeName(Double.class)%></td>
-            <td><input type=checkbox disabled checked></td>
-        <td>A numeric sequence number (Visit Id) as defined in the study map.</td>
-        </tr>
-
-        <tr id="addRow">
-        <td>[<a href="#" onclick="addField(this)">add field</a>]</td>
-        </tr>
-            </table>
-            </td>
-        </tr> --%>
         <tr>
             <td colspan=5><%=PageFlowUtil.generateSubmitButton("Next")%>&nbsp;<%= generateButton("Cancel", "manageTypes.view") %></td>
         </tr>
@@ -354,47 +282,4 @@ function toggleAutoDatasetId(ck)
     datasetIdInput.disabled = ck.checked;
 }
 
-function doSubmit()
-{
-/*
-    var fieldNames = new Object();
-	var formElem = document.typeDefForm;
-    if (formElem.noscript.checked)
-        return true;
-
-    var str = "Property\tLabel\tRangeURI\tNotNull\tDescription\n";
-	var table = document.getElementById("typeEditorTable");
-	var rows = table.getElementsByTagName("TR");
-	for (var i = 0; i <= lastFieldNum; i++)
-	{
-		var name = getNameValue(i);
-		if (null == name || "" == name.replace(" ", ""))
-			continue;
-
-        if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(name))
-        {
-            alert(name + " is not a valid field name. Field names must start with a letter and contain only letters and numbers");
-            var elem = document.typeDefForm["fields[" + i +"].name"];
-            if (null != elem)
-                elem.focus();
-            return false;
-        }
-
-        if (fieldNames[name])
-		{
-			alert("Duplicate field name: " + name);
-			return false;
-		}
-		fieldNames[name] = true;
-
-		var labelValue = getLabelValue(i);
-		if (null == labelValue || "" == labelValue.replace(" ", ""))
-			labelValue = name;
-
-        str += name + "\t" + labelValue + "\t" + getTypeValue(i) + "\t" + getRequiredValue(i) + "\t" + getDescValue(i) +"\n";
-	}
-	document.getElementById("tsvTextArea").value = str;
-    return true;
-*/
-}
 </script>
