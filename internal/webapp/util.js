@@ -404,7 +404,8 @@ function submitEnclosingForm(elem)
     var form = getEnclosingForm(elem);
     if (form == null)
         return;
-    form.submit();
+    if (!form.onsubmit || (form.onsubmit() !== false))
+        form.submit();
 }
 
 function isTrueOrUndefined(obj)
