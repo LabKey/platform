@@ -38,7 +38,7 @@ public abstract class RunReportView extends TabStripView
 
     protected BindException _errors;
 
-    protected void renderInternal(Object model, PrintWriter out) throws Exception
+    protected void renderInternal(TabStripView model, PrintWriter out) throws Exception
     {
         final Report report = getReport();
 

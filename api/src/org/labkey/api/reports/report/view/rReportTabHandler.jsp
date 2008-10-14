@@ -37,6 +37,7 @@
         if (saveHandler)
         {
             saveHandler(destinationURL);
+            return false;
         }
         else
         {

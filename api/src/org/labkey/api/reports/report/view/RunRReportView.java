@@ -81,12 +81,11 @@ public class RunRReportView extends RunReportView
         return _report;
     }
 
-    protected List<TabInfo> getTabList()
+    public List<NavTree> getTabList()
     {
-        ActionURL url = getViewContext().cloneActionURL().
-                replaceParameter(CACHE_PARAM, String.valueOf(_reportId));
+        ActionURL url = getViewContext().cloneActionURL().replaceParameter(CACHE_PARAM, String.valueOf(_reportId));
 
-        List<TabInfo> tabs = new ArrayList<TabInfo>();
+        List<NavTree> tabs = new ArrayList<NavTree>();
 
         boolean saveChanges = TAB_SOURCE.equals(url.getParameter(TAB_PARAM));
 
@@ -218,7 +217,7 @@ public class RunRReportView extends RunReportView
         return null;
     }
 
-    protected HttpView getTabView(String tabId) throws Exception
+    public HttpView getTabView(String tabId) throws Exception
     {
         VBox view = new VBox();
         RReportBean form = getReportForm();
@@ -296,14 +295,11 @@ public class RunRReportView extends RunReportView
         {
             super(name, id, url);
             _saveChanges = saveChanges;
-        }
 
-        public String render(ViewContext context)
-        {
             if (_saveChanges)
-                return("<a href=\"javascript:void(0)\" onclick=\"switchTab('" + getUrl().replaceParameter("tabId", getId()).getLocalURIString() + "', saveChanges)\">" + getName() + "&nbsp;</a>");
+                setScript("switchTab('" + getValue() + "', saveChanges)");
             else
-                return("<a href=\"javascript:void(0)\" onclick=\"switchTab('" + getUrl().replaceParameter("tabId", getId()).getLocalURIString() + "')\">" + getName() + "&nbsp;</a>");
+                setScript("switchTab('" + getValue() + "')");
         }
     }
 }

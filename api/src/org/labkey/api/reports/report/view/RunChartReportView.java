@@ -20,6 +20,7 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.NavTree;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,18 +47,18 @@ public class RunChartReportView extends RunReportView
         return _report;
     }
 
-    protected List<TabInfo> getTabList()
+    public List<NavTree> getTabList()
     {
         ActionURL url = getViewContext().cloneActionURL();
 
-        List<TabInfo> tabs = new ArrayList<TabInfo>();
+        List<NavTree> tabs = new ArrayList<NavTree>();
         tabs.add(new TabInfo(TAB_VIEW, TAB_VIEW, url));
         tabs.add(new TabInfo(TAB_DATA, TAB_DATA, url));
 
         return tabs;
     }
 
-    protected HttpView getTabView(String tabId) throws Exception
+    public HttpView getTabView(String tabId) throws Exception
     {
         if (TAB_VIEW.equals(tabId))
         {

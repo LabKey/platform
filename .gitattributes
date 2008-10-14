@@ -653,7 +653,7 @@ api/src/org/labkey/api/view/menu/NavTreeMenu.java -text
 api/src/org/labkey/api/view/menu/ProjectAdminMenu.java -text
 api/src/org/labkey/api/view/menu/ProjectsMenu.java -text
 api/src/org/labkey/api/view/menu/SiteAdminMenu.java -text
-api/src/org/labkey/api/view/tabHeader.jsp -text
+api/src/org/labkey/api/view/tabstrip.jsp -text
 api/src/org/labkey/api/view/template/CommonTemplate.jsp -text
 api/src/org/labkey/api/view/template/EmptyView.java -text
 api/src/org/labkey/api/view/template/FastTemplate.jsp -text
