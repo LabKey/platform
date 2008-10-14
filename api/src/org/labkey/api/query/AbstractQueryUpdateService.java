@@ -79,9 +79,10 @@ public abstract class AbstractQueryUpdateService<T,K> implements QueryUpdateServ
      * Override this to perform your own population.
      * @param bean The newly-created bean
      * @param row The row values as a map
+     * @param user The user initiating the request
      * @throws QueryUpdateServiceException Thrown if there's a problem
      */
-    protected void populateBean(T bean, Map<String,Object> row) throws QueryUpdateServiceException
+    protected void populateBean(T bean, Map<String, Object> row, User user) throws QueryUpdateServiceException
     {
         try
         {
@@ -102,7 +103,7 @@ public abstract class AbstractQueryUpdateService<T,K> implements QueryUpdateServ
     public final Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         T bean = createNewBean();
-        populateBean(bean, row);
+        populateBean(bean, row, user);
         return mapFromBean(insert(user, container, bean));
     }
 
@@ -113,7 +114,7 @@ public abstract class AbstractQueryUpdateService<T,K> implements QueryUpdateServ
         T bean = get(user, container, oldKey);
         if(null == bean)
             throw new NotFoundException("The object you are trying to update was not found in the database."); //CONSIDER: maybe we should return null for 0 rows affected instead?
-        populateBean(bean, row);
+        populateBean(bean, row, user);
         return mapFromBean(update(user, container, bean, oldKey));
     }
 
