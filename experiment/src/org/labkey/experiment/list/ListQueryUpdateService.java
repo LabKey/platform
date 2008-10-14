@@ -17,12 +17,19 @@ package org.labkey.experiment.list;
 
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.beanutils.Converter;
+import org.apache.commons.beanutils.ConversionException;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -109,7 +116,7 @@ public class ListQueryUpdateService extends AbstractQueryUpdateService<ListItem,
         return map;
     }
 
-    protected void populateBean(ListItem bean, Map<String, Object> row) throws QueryUpdateServiceException
+    protected void populateBean(ListItem bean, Map<String, Object> row, User user) throws QueryUpdateServiceException
     {
         //since ListItems are not really 'beans' we need to handle the population
         ListDefinition listdef = getList();
@@ -126,7 +133,8 @@ public class ListQueryUpdateService extends AbstractQueryUpdateService<ListItem,
                         + listdef.getKeyName() + "' was supplied!");
         }
 
-        //set the domain properties
+        //set the domain properties, doing type coercion as necessary
+        TableInfo table = listdef.getTable(user, null);
         for(DomainProperty prop : listdef.getDomain().getProperties())
         {
             //set the prop only if it was supplied in the map
@@ -135,9 +143,20 @@ public class ListQueryUpdateService extends AbstractQueryUpdateService<ListItem,
                 Object value = row.get(prop.getName());
                 if(null != value && value instanceof String)
                     value = StringUtils.trimToNull((String)value);
-                bean.setProperty(prop, value);
+                bean.setProperty(prop, convertType(value, table.getColumn(prop.getName())));
             }
         }
+    }
+
+    protected Object convertType(Object value, ColumnInfo col) throws ConversionException
+    {
+        if(null == value || null == col || value.getClass().equals(col.getJavaClass()))
+            return value;
+        Class targetType = col.getJavaClass();
+        Converter converter = ConvertUtils.lookup(targetType);
+        if(null == converter)
+            throw new ConversionException("Cannot convert the value for column " + col.getName() + " from a " + value.getClass().toString() + " into a " + targetType.toString());
+        return converter.convert(targetType, value);
     }
 
     protected void saveItem(User user, ListItem item) throws QueryUpdateServiceException, SQLException, ValidationException
