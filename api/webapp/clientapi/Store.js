@@ -430,8 +430,8 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
     {
         var loadError = {message: error};
 
-        var ctype = response.getResponseHeader["Content-Type"];
-        if(ctype.indexOf("application/json") >= 0)
+        if(response && response.getResponseHeader
+                && response.getResponseHeader["Content-Type"].indexOf("application/json") >= 0)
         {
             var errorJson = Ext.util.JSON.decode(response.responseText);
             if(errorJson && errorJson.exception)
