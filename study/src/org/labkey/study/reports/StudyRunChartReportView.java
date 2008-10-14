@@ -51,7 +51,7 @@ public class StudyRunChartReportView extends RunChartReportView
         _reports = reports;
     }
 
-    protected HttpView getTabView(String tabId) throws Exception
+    public HttpView getTabView(String tabId) throws Exception
     {
         if (TAB_VIEW.equals(tabId))
         {

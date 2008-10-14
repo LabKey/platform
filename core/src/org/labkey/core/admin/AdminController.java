@@ -1225,10 +1225,10 @@ public class AdminController extends SpringActionController
             _errors = errors;
         }
 
-        protected List<TabInfo> getTabList()
+        public List<NavTree> getTabList()
         {
             ActionURL url = new AdminUrlsImpl().getLookAndFeelSettingsURL(getViewContext().getContainer());
-            List<TabInfo> tabs = new ArrayList<TabInfo>(2);
+            List<NavTree> tabs = new ArrayList<NavTree>(2);
 
             tabs.add(new TabInfo("Properties", "properties", url));
             tabs.add(new TabInfo("Resources", "resources", url));
@@ -1236,7 +1236,7 @@ public class AdminController extends SpringActionController
             return tabs;
         }
 
-        protected HttpView getTabView(String tabId) throws Exception
+        public HttpView getTabView(String tabId) throws Exception
         {
             Container c = getViewContext().getContainer();
 
@@ -2336,9 +2336,9 @@ public class AdminController extends SpringActionController
 
     private static class ActionsTabStrip extends TabStripView
     {
-        protected List<TabInfo> getTabList()
+        public List<NavTree> getTabList()
         {
-            List<TabInfo> tabs = new ArrayList<TabInfo>(2);
+            List<NavTree> tabs = new ArrayList<NavTree>(2);
 
             tabs.add(new TabInfo("Summary", "summary", getActionsURL()));
             tabs.add(new TabInfo("Details", "details", getActionsURL()));
@@ -2346,7 +2346,7 @@ public class AdminController extends SpringActionController
             return tabs;
         }
 
-        protected HttpView getTabView(String tabId) throws Exception
+        public HttpView getTabView(String tabId) throws Exception
         {
             ActionsView view = new ActionsView();
             view.setSummary("summary".equals(tabId));

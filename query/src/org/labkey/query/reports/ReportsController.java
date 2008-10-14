@@ -399,12 +399,12 @@ public class ReportsController extends SpringActionController
             super(report);
         }
 
-        protected List<TabInfo> getTabList()
+        public List<NavTree> getTabList()
         {
             ActionURL url = getViewContext().cloneActionURL().
                     replaceParameter(CACHE_PARAM, String.valueOf(_reportId));
 
-            List<TabInfo> tabs = new ArrayList<TabInfo>();
+            List<NavTree> tabs = new ArrayList<NavTree>();
 
             String currentTab = url.getParameter(TAB_PARAM);
             boolean saveChanges = currentTab == null || TAB_SOURCE.equals(currentTab);
@@ -478,12 +478,12 @@ public class ReportsController extends SpringActionController
             }
         }
 
-        protected List<TabInfo> getTabList()
+        public List<NavTree> getTabList()
         {
             ActionURL url = getViewContext().cloneActionURL().
                     replaceParameter(CACHE_PARAM, String.valueOf(_reportId));
 
-            List<TabInfo> tabs = new ArrayList<TabInfo>();
+            List<NavTree> tabs = new ArrayList<NavTree>();
             boolean saveChanges = TAB_SOURCE.equals(url.getParameter(TAB_PARAM));
 
             tabs.add(new RTabInfo(TAB_VIEW, TAB_VIEW, url, saveChanges));
