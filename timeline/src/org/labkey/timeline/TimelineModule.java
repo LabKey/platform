@@ -26,7 +26,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.*;
 import org.labkey.timeline.view.TimelineView;
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.lang.StringUtils;
 
 import java.beans.PropertyChangeEvent;
 import java.util.Collection;
@@ -39,7 +38,7 @@ public class TimelineModule extends DefaultModule implements ContainerManager.Co
 
     public TimelineModule()
     {
-        super(NAME, 0.01, null, false, new WebPartFactory(NAME, null, true, true){
+        super(NAME, 0.01, null, false, new BaseWebPartFactory(NAME, null, true, true){
 
             public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
             {

@@ -25,7 +25,7 @@ import org.labkey.query.reports.view.ReportsWebPartConfig;
  * User: Karl Lum
  * Date: Mar 2, 2008
  */
-public class ReportsWebPartFactory extends WebPartFactory
+public class ReportsWebPartFactory extends BaseWebPartFactory
 {
     public ReportsWebPartFactory()
     {

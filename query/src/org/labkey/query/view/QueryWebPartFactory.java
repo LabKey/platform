@@ -22,7 +22,7 @@ import org.labkey.api.data.Container;
 
 import java.lang.reflect.InvocationTargetException;
 
-public class QueryWebPartFactory extends WebPartFactory
+public class QueryWebPartFactory extends BaseWebPartFactory
 {
     public QueryWebPartFactory()
     {

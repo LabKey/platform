@@ -20,7 +20,7 @@ import org.labkey.api.view.*;
 
 public class BtOverviewWebPart extends HtmlView
 {
-    static public final WebPartFactory FACTORY = new WebPartFactory("BioTrue Connector Overview")
+    static public final BaseWebPartFactory FACTORY = new BaseWebPartFactory("BioTrue Connector Overview")
     {
         public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
         {

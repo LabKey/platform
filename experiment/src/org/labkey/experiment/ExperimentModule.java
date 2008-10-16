@@ -36,10 +36,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.Portal;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.WebPartFactory;
-import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.*;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.Material;
@@ -104,11 +101,11 @@ public class ExperimentModule extends SpringModule
         return ContextType.config;
     }
 
-    private static WebPartFactory[] createWebPartList()
+    private static BaseWebPartFactory[] createWebPartList()
     {
-        List<WebPartFactory> result = new ArrayList<WebPartFactory>();
+        List<BaseWebPartFactory> result = new ArrayList<BaseWebPartFactory>();
         
-        WebPartFactory runGroupsFactory = new WebPartFactory(RunGroupWebPart.WEB_PART_NAME)
+        BaseWebPartFactory runGroupsFactory = new BaseWebPartFactory(RunGroupWebPart.WEB_PART_NAME)
         {
             public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
             {
@@ -117,7 +114,7 @@ public class ExperimentModule extends SpringModule
         };
         runGroupsFactory.addLegacyNames("Experiments", "Experiment", "Experiment Navigator");
         result.add(runGroupsFactory);
-        WebPartFactory narrowRunGroupsFactory = new WebPartFactory(RunGroupWebPart.WEB_PART_NAME, WebPartFactory.LOCATION_RIGHT)
+        BaseWebPartFactory narrowRunGroupsFactory = new BaseWebPartFactory(RunGroupWebPart.WEB_PART_NAME, WebPartFactory.LOCATION_RIGHT)
         {
             public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
             {
@@ -127,7 +124,7 @@ public class ExperimentModule extends SpringModule
         narrowRunGroupsFactory.addLegacyNames("Experiments", "Narrow Experiments");
         result.add(narrowRunGroupsFactory);
 
-        WebPartFactory runTypesFactory = new WebPartFactory(RunTypeWebPart.WEB_PART_NAME)
+        BaseWebPartFactory runTypesFactory = new BaseWebPartFactory(RunTypeWebPart.WEB_PART_NAME)
         {
             public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
             {
@@ -136,7 +133,7 @@ public class ExperimentModule extends SpringModule
         };
         result.add(runTypesFactory);
 
-        WebPartFactory runTypesNarrowFactory = new WebPartFactory(RunTypeWebPart.WEB_PART_NAME, WebPartFactory.LOCATION_RIGHT)
+        BaseWebPartFactory runTypesNarrowFactory = new BaseWebPartFactory(RunTypeWebPart.WEB_PART_NAME, WebPartFactory.LOCATION_RIGHT)
         {
             public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
             {
@@ -145,19 +142,19 @@ public class ExperimentModule extends SpringModule
         };
         result.add(runTypesNarrowFactory);
 
-        result.add(new WebPartFactory(ExperimentModule.EXPERIMENT_RUN_WEB_PART_NAME){
+        result.add(new BaseWebPartFactory(ExperimentModule.EXPERIMENT_RUN_WEB_PART_NAME){
             public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart)
             {
                 return ExperimentService.get().createExperimentRunWebPart(new ViewContext(portalCtx), ExperimentRunFilter.ALL_RUNS_FILTER, true, true);
             }
         });
-        result.add(new WebPartFactory(SAMPLE_SET_WEB_PART_NAME){
+        result.add(new BaseWebPartFactory(SAMPLE_SET_WEB_PART_NAME){
             public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
             {
                 return new SampleSetWebPart(WebPartFactory.LOCATION_RIGHT.equalsIgnoreCase(webPart.getLocation()), portalCtx);
             }
         });
-        WebPartFactory narrowSampleSetFactory = new WebPartFactory(SAMPLE_SET_WEB_PART_NAME, WebPartFactory.LOCATION_RIGHT)
+        BaseWebPartFactory narrowSampleSetFactory = new BaseWebPartFactory(SAMPLE_SET_WEB_PART_NAME, WebPartFactory.LOCATION_RIGHT)
         {
             public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
             {
@@ -166,7 +163,7 @@ public class ExperimentModule extends SpringModule
         };
         narrowSampleSetFactory.addLegacyNames("Narrow Sample Sets");
         result.add(narrowSampleSetFactory);
-        WebPartFactory narrowProtocolFactory = new WebPartFactory(PROTOCOL_WEB_PART_NAME, WebPartFactory.LOCATION_RIGHT)
+        BaseWebPartFactory narrowProtocolFactory = new BaseWebPartFactory(PROTOCOL_WEB_PART_NAME, WebPartFactory.LOCATION_RIGHT)
         {
             public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
             {
@@ -178,7 +175,7 @@ public class ExperimentModule extends SpringModule
         result.add(ListWebPart.FACTORY);
         result.add(new SingleListWebPartFactory());
 
-        return result.toArray(new WebPartFactory[result.size()]);
+        return result.toArray(new BaseWebPartFactory[result.size()]);
     }
 
 

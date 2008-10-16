@@ -56,7 +56,7 @@ public class IssuesModule extends DefaultModule implements ContainerManager.Cont
         IssuesQuerySchema.register();
     }
 
-    static class IssuesWebPartFactory extends WebPartFactory
+    static class IssuesWebPartFactory extends BaseWebPartFactory
     {
         public IssuesWebPartFactory()
         {

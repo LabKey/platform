@@ -16,10 +16,7 @@
 
 package org.labkey.experiment.controllers.list;
 
-import org.labkey.api.view.WebPartFactory;
-import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.Portal;
+import org.labkey.api.view.*;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.util.PageFlowUtil;
@@ -31,7 +28,7 @@ import java.util.Map;
 
 public class ListWebPart extends WebPartView<ViewContext>
 {
-    static public WebPartFactory FACTORY = new WebPartFactory("Lists")
+    static public BaseWebPartFactory FACTORY = new BaseWebPartFactory("Lists")
     {
         public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
         {

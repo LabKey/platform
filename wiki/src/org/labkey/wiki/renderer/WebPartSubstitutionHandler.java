@@ -70,7 +70,7 @@ public class WebPartSubstitutionHandler implements HtmlRenderer.SubstitutionHand
             WebPartView view = null;
             try
             {
-                view = desc.getWebPartViewSafe(HttpView.currentContext(), part);
+                view = Portal.getWebPartViewSafe(desc, HttpView.currentContext(), part);
                 view.setEmbedded(true);  // Let the webpart know it's being embedded in another page
 
                 String showFrame = params.get("showFrame");

@@ -23,10 +23,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.Portal;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.WebPartFactory;
-import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.*;
 import org.labkey.api.security.User;
 import org.labkey.demo.model.Person;
 import org.labkey.demo.model.DemoManager;
@@ -49,13 +46,13 @@ public class DemoModule extends DefaultModule implements ContainerManager.Contai
     public DemoModule()
     {
         super(NAME, 1.00, null, true,
-            new WebPartFactory("Demo Summary") {
+            new BaseWebPartFactory("Demo Summary") {
                 public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
                 {
                     return new DemoWebPart();
                 }
             },
-            new WebPartFactory("Demo Summary", WebPartFactory.LOCATION_RIGHT) {
+            new BaseWebPartFactory("Demo Summary", WebPartFactory.LOCATION_RIGHT) {
                 {
                     addLegacyNames("Narrow Demo Summary");
                 }

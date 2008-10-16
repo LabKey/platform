@@ -21,13 +21,12 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayRunsView;
-import org.labkey.api.util.PageFlowUtil;
 
 /**
  * User: jeckels
  * Date: Jul 19, 2007
  */
-public class AssayDetailsWebPartFactory extends WebPartFactory
+public class AssayDetailsWebPartFactory extends BaseWebPartFactory
 {
     public static final String PREFERENCE_KEY = "viewProtocolId";
     public static final String SHOW_BUTTONS_KEY = "showButtons";

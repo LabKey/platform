@@ -110,7 +110,7 @@ public class FilesWebPart extends JspView<AttachmentDirectory>
             setModelBean(AttachmentService.get().getRegisteredDirectory(container, fileSet));
     }
 
-    public static class Factory extends WebPartFactory
+    public static class Factory extends BaseWebPartFactory
     {
         public Factory(String location)
         {

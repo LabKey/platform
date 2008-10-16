@@ -51,7 +51,7 @@ public class PortalModule extends DefaultModule
     }
 
 
-    public static class SearchWebPartFactory extends WebPartFactory
+    public static class SearchWebPartFactory extends BaseWebPartFactory
     {
         public SearchWebPartFactory(String name, String location)
         {

@@ -28,7 +28,7 @@ import java.util.Map;
  * Date: Nov 11, 2007
  * Time: 4:39:47 PM
  */
-public class SingleListWebPartFactory extends WebPartFactory
+public class SingleListWebPartFactory extends BaseWebPartFactory
 {
     public SingleListWebPartFactory()
     {

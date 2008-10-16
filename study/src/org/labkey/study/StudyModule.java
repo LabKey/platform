@@ -78,7 +78,7 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
 {
     private static final Logger _log = Logger.getLogger(DefaultModule.class);
     public static final String NAME = "Study";
-    public static final WebPartFactory reportsPartFactory = new ReportsWebPartFactory();
+    public static final BaseWebPartFactory reportsPartFactory = new ReportsWebPartFactory();
     public static final WebPartFactory reportsWidePartFactory = new ReportsWideWebPartFactory();
     public static final WebPartFactory samplesPartFactory = new SamplesWebPartFactory("right");
     public static final WebPartFactory samplesWidePartFactory = new SamplesWebPartFactory(HttpView.BODY);
@@ -339,7 +339,7 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
         }
     }
 
-    private static class ReportsWebPartFactory extends WebPartFactory
+    private static class ReportsWebPartFactory extends BaseWebPartFactory
     {
         public ReportsWebPartFactory()
         {
@@ -358,7 +358,7 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
         }
     }
 
-    private static class ReportsWideWebPartFactory extends WebPartFactory
+    private static class ReportsWideWebPartFactory extends BaseWebPartFactory
     {
         public ReportsWideWebPartFactory()
         {
@@ -418,7 +418,7 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
     }
 
 
-    private static class EnrollmentChartWebPartFactory extends WebPartFactory
+    private static class EnrollmentChartWebPartFactory extends BaseWebPartFactory
     {
         public EnrollmentChartWebPartFactory()
         {
@@ -435,7 +435,7 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
         }
     }
 
-    private static class StudyDesignsWebPartFactory extends WebPartFactory
+    private static class StudyDesignsWebPartFactory extends BaseWebPartFactory
     {
         public StudyDesignsWebPartFactory()
         {
@@ -448,7 +448,7 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
         }
     }
     
-    private static class StudyDesignSummaryWebPartFactory extends WebPartFactory
+    private static class StudyDesignSummaryWebPartFactory extends BaseWebPartFactory
     {
         public StudyDesignSummaryWebPartFactory()
         {

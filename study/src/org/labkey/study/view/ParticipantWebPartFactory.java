@@ -27,7 +27,7 @@ import java.sql.SQLException;
  * User: brittp
  * Created: May 2, 2008 2:13:02 PM
  */
-public class ParticipantWebPartFactory extends WebPartFactory
+public class ParticipantWebPartFactory extends BaseWebPartFactory
 {
     public enum DataType
     {

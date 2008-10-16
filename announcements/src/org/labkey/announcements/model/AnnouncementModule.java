@@ -29,10 +29,7 @@ import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Search;
-import org.labkey.api.view.Portal;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.WebPartFactory;
-import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.*;
 
 import javax.servlet.ServletException;
 import java.beans.PropertyChangeEvent;
@@ -63,7 +60,7 @@ public class AnnouncementModule extends DefaultModule implements ContainerManage
     public AnnouncementModule()
     {
         super(NAME, 8.20, "/org/labkey/announcements", true,
-            new WebPartFactory(WEB_PART_NAME)
+            new BaseWebPartFactory(WEB_PART_NAME)
             {
                 public WebPartView getWebPartView(ViewContext parentCtx, Portal.WebPart webPart)
                 {
@@ -82,7 +79,7 @@ public class AnnouncementModule extends DefaultModule implements ContainerManage
                     return location.equals(getDefaultLocation());
                 }
             },
-            new WebPartFactory(WEB_PART_NAME + " List")
+            new BaseWebPartFactory(WEB_PART_NAME + " List")
             {
                 public WebPartView getWebPartView(ViewContext parentCtx, Portal.WebPart webPart)
                 {

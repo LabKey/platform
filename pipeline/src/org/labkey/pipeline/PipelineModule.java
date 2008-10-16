@@ -33,10 +33,7 @@ import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
-import org.labkey.api.view.Portal;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.WebPartFactory;
-import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.*;
 import org.labkey.pipeline.analysis.AnalysisController;
 import org.labkey.pipeline.analysis.FileAnalysisPipelineProvider;
 import org.labkey.pipeline.api.*;
@@ -61,7 +58,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
     public PipelineModule()
     {
-        super(PipelineService.MODULE_NAME, 8.27, "/org/labkey/pipeline", true, new WebPartFactory(PipelineWebPart.getPartName()){
+        super(PipelineService.MODULE_NAME, 8.27, "/org/labkey/pipeline", true, new BaseWebPartFactory(PipelineWebPart.getPartName()){
             public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
             {
                 return new PipelineWebPart(portalCtx);

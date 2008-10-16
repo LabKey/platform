@@ -15,10 +15,7 @@
  */
 package org.labkey.announcements.model;
 
-import org.labkey.api.view.WebPartFactory;
-import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.Portal;
+import org.labkey.api.view.*;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.settings.AppProps;
 
@@ -27,7 +24,7 @@ import org.labkey.api.settings.AppProps;
  * Date: Sep 11, 2008
  * Time: 10:21:48 AM
  */
-public class DiscussionWebPartFactory extends WebPartFactory
+public class DiscussionWebPartFactory extends BaseWebPartFactory
 {
     public DiscussionWebPartFactory()
     {

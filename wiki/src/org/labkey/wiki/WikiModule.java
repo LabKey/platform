@@ -71,7 +71,7 @@ public class WikiModule extends DefaultModule implements ContainerManager.Contai
         WikiService.register(new ServiceImpl());
     }
 
-    public static class WikiWebPartFactory extends WebPartFactory
+    public static class WikiWebPartFactory extends BaseWebPartFactory
     {
         public WikiWebPartFactory()
         {
@@ -105,7 +105,7 @@ public class WikiModule extends DefaultModule implements ContainerManager.Contai
         }
     }
 
-    public static class WikiTOCFactory extends WebPartFactory
+    public static class WikiTOCFactory extends BaseWebPartFactory
     {
         public WikiTOCFactory()
         {

@@ -24,7 +24,7 @@ import org.labkey.study.controllers.assay.AssayController;
  * User: jeckels
  * Date: Jul 19, 2007
  */
-public class AssayListWebPartFactory extends WebPartFactory
+public class AssayListWebPartFactory extends BaseWebPartFactory
 {
     public AssayListWebPartFactory()
     {

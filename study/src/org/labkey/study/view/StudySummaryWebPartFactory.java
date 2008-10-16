@@ -31,7 +31,7 @@ import java.lang.reflect.InvocationTargetException;
  * Date: Aug 9, 2006
  * Time: 4:38:42 PM
  */
-public class StudySummaryWebPartFactory extends WebPartFactory
+public class StudySummaryWebPartFactory extends BaseWebPartFactory
 {
     public static String NAME = "Study Overview";
 

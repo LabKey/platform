@@ -725,8 +725,8 @@ public class ProjectController extends SpringActionController
 
             part.setProperties(getViewContext().getRequest().getQueryString());
 
-            WebPartView view = factory.getWebPartViewSafe(getViewContext(), part);
-            if(null == view)
+            WebPartView view = Portal.getWebPartViewSafe(factory, getViewContext(), part);
+            if (null == view)
                 throw new RuntimeException("Couldn't create web part view for part '" + webPartName + "'!");
 
             String frame = StringUtils.trimToEmpty(request.getParameter("webpart.frame"));
