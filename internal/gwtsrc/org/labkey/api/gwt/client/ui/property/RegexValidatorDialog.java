@@ -94,7 +94,7 @@ public class RegexValidatorDialog extends ValidatorDialog
         expressionLabel.add(new HTML("Regular Expression"));
         expressionLabel.add(new HTML("<span style=\"color:red;\">*</span>"));
         expressionLabel.add(new HelpPopup("Regular Expression", "The regular expression that this field's value will be evaluated against. " +
-                "All regular expressions must be compatible with Java regular expressions as implemented in the <a target=\"_blank\" href=\"http://java.sun.com/j2se/1.5.0/docs/api/java/util/regex/Pattern.html\"><code>Pattern</code></a> class."));
+                "All regular expressions must be compatible with Java regular expressions as implemented in the <a target=\"_blank\" href=\"http://java.sun.com/j2se/1.5.0/docs/api/java/util/regex/Pattern.html#sum\"><code>Pattern</code></a> class."));
 
         panel.setWidget(row, 0, expressionLabel);
         panel.setWidget(row++, 1, expression);

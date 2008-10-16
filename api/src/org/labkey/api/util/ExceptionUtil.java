@@ -454,13 +454,21 @@ public class ExceptionUtil
 
         public void doStartTag(Map context, PrintWriter out)
         {
-            Container c = getViewContext().getContainer();
-
-            if (null == c)
-                c = ContainerManager.getRoot();
+            Container c = null;
 
             out.println("<html><head>");
-            out.println(PageFlowUtil.getStandardIncludes(c));
+
+            // If it's a startup failure we likely don't have a database, so don't try to handle containers
+            if (!_startupFailure)
+            {
+                c = getViewContext().getContainer();
+
+                if (null == c)
+                    c = ContainerManager.getRoot();
+
+                out.println(PageFlowUtil.getStandardIncludes(c));
+            }
+
             //NOTE: BaseSeleniumWebTest requires errors to start with error number and include word "Error" in title
             String title = "" + _renderer.status + ": Error Page";
             if (null != _renderer.message)

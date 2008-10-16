@@ -37,6 +37,7 @@
  * @property {LABKEY.Filter.FilterDefinition} Types.DOES_NOT_CONTAIN Filter with displayText = "Does Not Contain", urlSuffix = "doesnotcontain" and isDataValueRequired = true.
  * @property {LABKEY.Filter.FilterDefinition} Types.DOES_NOT_START_WITH Filter with displayText = "Does Not Start With", urlSuffix = "doesnotstartwith" and isDataValueRequired = true.
  * @property {LABKEY.Filter.FilterDefinition} Types.STARTS_WITH Filter with displayText = "Starts With", urlSuffix = "startswith" and isDataValueRequired = true.
+ * @property {LABKEY.Filter.FilterDefinition} Types.IN Filter with displayText = "Equals One Of", urlSuffix = "in" and isDataValueRequired = true.
  *
  */
 LABKEY.Filter = new function()
@@ -94,18 +95,29 @@ LABKEY.Filter = new function()
 	LABKEY.requiresClientAPI();
 &lt;/script&gt;
 &lt;script type="text/javascript"&gt;
-	function failureHandler(responseObj)
+	function onFailure(errorInfo, options, responseObj)
 	{
-	    alert("Failure: " + responseObj.exception);
+	    if(errorInfo && errorInfo.exception)
+	        alert("Failure: " + errorInfo.exception);
+	    else
+	        alert("Failure: " + responseObj.statusText);
 	}
 
-	function successHandler(responseObj)
+	function onSuccess(data)
 	{
-	    alert("Success! " + responseObj.rowCount + " rows returned.");
+	    alert("Success! " + data.rowCount + " rows returned.");
 	}
 
-	LABKEY.Query.selectRows('lists', 'People', successHandler,
-			failureHandler, [ LABKEY.Filter.create('FirstName', 'Jonny')]);
+	LABKEY.Query.selectRows({
+		schemaName: 'lists',
+		queryName: 'People',
+		successCallback: onSuccess,
+		failureCallback: onFailure,
+		filterArray: [
+			LABKEY.Filter.create('FirstName', 'Johnny'),
+			LABKEY.Filter.create('Age', 15, LABKEY.Filter.Types.LTE)
+		]
+    });
 &lt;/script&gt; </pre>
         */
 

@@ -23,6 +23,7 @@ public interface ExpProtocolTable extends ExpTable<ExpProtocolTable.Column>
         RowId,
         Name,
         LSID,
+        Container,
     }
     void populate(ExpSchema schema);
 }

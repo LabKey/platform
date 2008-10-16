@@ -25,6 +25,7 @@ import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
+import org.labkey.api.util.URLHelper;
 
 /**
  * Created by IntelliJ IDEA.
@@ -51,7 +52,7 @@ public abstract class ConfirmAction<FORM> extends BaseViewAction
         return "Cancel";
     }
 
-    public ActionURL getCancelUrl()
+    public URLHelper getCancelUrl()
     {
         return null;
     }

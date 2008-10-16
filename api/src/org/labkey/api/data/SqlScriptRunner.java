@@ -227,6 +227,7 @@ public class SqlScriptRunner
                 _previousProviders.add(provider.getProviderName());
             }
 
+            _log.info("Added " + scripts.toString());
             _scriptsToRun.addAll(scripts);
             if (WORKER == null)
             {
@@ -297,8 +298,9 @@ public class SqlScriptRunner
                 {
                     try
                     {
-                        _log.info("Running " + currentScript.getDescription());
+                        _log.info("Started running " + currentScript.getDescription());
                         SqlScriptManager.runScript(_user, currentScript);
+                        _log.info("Finished running " + currentScript.getDescription());
                     }
                     catch(Exception e)
                     {

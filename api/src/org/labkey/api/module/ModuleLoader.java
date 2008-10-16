@@ -170,7 +170,7 @@ public class ModuleLoader implements Filter
         catch (Throwable t)
         {
             _startupFailure = t;
-            _log.error("Failure ocurred during ModuleLoader init.", t);
+            _log.error("Failure occurred during ModuleLoader init.", t);
         }
     }
 
@@ -252,8 +252,6 @@ public class ModuleLoader implements Filter
                 _moduleFailures.put(moduleMetaData.getName(), t);
             }
         }
-
-
 
         extractModules(moduleFiles, servletCtx, unclaimedFiles);
 
@@ -789,13 +787,25 @@ public class ModuleLoader implements Filter
         {
             if (!_afterUpgradeComplete)
             {
-                SqlScriptRunner.stopBackgroundThread();
-
                 for (Module module : getModules())
                     module.afterUpdate();
 
+                SqlScriptRunner.stopBackgroundThread();
+
                 _afterUpgradeComplete = true;
             }
+        }
+    }
+
+    // Runs the drop view and create view scripts in every module except for core 
+    public void recreateViews()
+    {
+        synchronized (UPGRADE_LOCK)
+        {
+            _beforeUpgradeComplete = false;
+            ensureBeforeUpdateComplete();
+            _afterUpgradeComplete = false;
+            ensureAfterUpdateComplete();
         }
     }
 

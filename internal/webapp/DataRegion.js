@@ -34,44 +34,71 @@ LABKEY.DataRegion = function (config)
 
     LABKEY.DataRegions[this.name] = this;
 
-    this.form = document.forms[this.name];
-    this.table = Ext.get("dataregion_" + this.name);
-    this.msgbox = Ext.get("dataregion_msgbox_" + this.name);
-    this.msgbox.enableDisplayMode();
-    this.header = Ext.get("dataregion_header_" + this.name);
-    this.footer = Ext.get("dataregion_footer_" + this.name);
+    this._initElements();
+    Ext.EventManager.on(window, "load", this._resizeContainer, this, {single: true});
+    Ext.EventManager.on(window, "resize", this._resizeContainer, this);
+    this._showPagination(this.header);
+    this._showPagination(this.footer);
 
-    // derived DataRegion's may not include the form id
-    if (!this.form && this.table)
+    switch (this.showRows)
     {
-        var el = this.table.dom;
-        do
+        case "all":
+            this._showSelectMessage("Showing all " + this.totalRows + " rows.");
+            break;
+        case "selected":
+            this._showSelectMessage("Showing only <em>selected</em> rows.");
+            break;
+        case "unselected":
+            this._showSelectMessage("Showing only <em>unselected</em> rows.");
+            break;
+    }
+}
+
+LABKEY.DataRegion.prototype = {
+    // private
+    _initElements : function ()
+    {
+        this.form = document.forms[this.name];
+        this.table = Ext.get("dataregion_" + this.name);
+        this.msgbox = Ext.get("dataregion_msgbox_" + this.name);
+        this.msgbox.enableDisplayMode();
+        this.header = Ext.get("dataregion_header_" + this.name);
+        this.footer = Ext.get("dataregion_footer_" + this.name);
+
+        // derived DataRegion's may not include the form id
+        if (!this.form && this.table)
         {
-            el = el.parentNode;
-        } while (el != null && el.tagName != "FORM");
-        if (el) this.form = el;
-    }
+            var el = this.table.dom;
+            do
+            {
+                el = el.parentNode;
+            } while (el != null && el.tagName != "FORM");
+            if (el) this.form = el;
+        }
 
-    // set the 'select all on page' checkbox state
-    if (this.form && this.showRecordSelectors && this.isPageSelected())
-    {
-        var toggle = this.form[".toggle"];
-        if (toggle)
-            toggle.checked = true;
-    }
+        // set the 'select all on page' checkbox state
+        if (this.form && this.showRecordSelectors && this.isPageSelected())
+        {
+            var toggle = this.form[".toggle"];
+            if (toggle)
+                toggle.checked = true;
+        }
 
-    // private methods
+        this._resizeContainer(true);
+    },
 
-    this._showPagination = function (el)
+    // private
+    _showPagination : function (el)
     {
         if (!el) return;
         //var pagination = Ext.lib.Dom.getElementsByClassName("labkey-pagination", "div", el)[0];
         var pagination = el.child("div[class='labkey-pagination']", true);
         if (pagination)
             pagination.style.visibility = "visible";
-    }
+    },
 
-    this._resizeContainer = function (onload)
+    // private
+    _resizeContainer : function ()
     {
         if (!this.table) return;
         var newWidth = Math.min(this.table.getWidth(true),
@@ -84,24 +111,16 @@ LABKEY.DataRegion = function (config)
             this.header.setWidth(newWidth);
         if (this.footer)
             this.footer.setWidth(newWidth);
+    },
 
-        // on load, make the pagination visible
-        if (onload)
-        {
-            this._showPagination(this.header);
-            this._showPagination(this.footer);
-        }
-    };
-    this._resizeContainer(true);
-    Ext.EventManager.on(window, "load", this._resizeContainer, this, {single: true});
-    Ext.EventManager.on(window, "resize", this._resizeContainer, this);
-
-    this._removeParams = function (skipPrefixes)
+    // private
+    _removeParams : function (skipPrefixes)
     {
         this._setParam(null, null, skipPrefixes);
-    };
+    },
 
-    this._setParam = function (param, value, skipPrefixes)
+    // private
+    _setParam : function (param, value, skipPrefixes)
     {
         for (var i in skipPrefixes)
             skipPrefixes[i] = this.name + skipPrefixes[i];
@@ -112,9 +131,10 @@ LABKEY.DataRegion = function (config)
             paramValPairs[paramValPairs.length] = [this.name + param, value];
         }
         setSearchString(this.name, buildQueryString(paramValPairs));
-    };
+    },
 
-    this._setCheck = function (ids, checked, success)
+    // private
+    _setCheck : function (ids, checked, success)
     {
         if (!this.selectionKey || ids.length == 0)
             return;
@@ -129,35 +149,26 @@ LABKEY.DataRegion = function (config)
             success: success,
             failure: function (response, options) { this.showMessage("Error sending selection."); }
         });
-    };
+    },
 
-    this._showSelectMessage = function (msg)
+    // private
+    _showSelectMessage : function (msg)
     {
         if (this.showRecordSelectors)
         {
-            msg += "&nbsp; Select: <span class='labkey-link' onclick='LABKEY.DataRegions[\"" + this.name + "\"].selectNone();' title='Clear selection from all rows'>None</span>" +
-                   "&nbsp; Show: <span class='labkey-link' onclick='LABKEY.DataRegions[\"" + this.name + "\"].showSelected();' title='Show all selected rows'>Selected</span>, " +
-                   "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + this.name + "\"].showUnselected();' title='Show all unselected rows'>Unselected</span>"
+            msg += "&nbsp; Select: <span class='labkey-link' onclick='LABKEY.DataRegions[\"" + this.name + "\"].selectNone();' title='Clear selection from all rows'>None</span>";
+            var showOpts = new Array();
+            if (this.showRows != "all")
+                showOpts.push("<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + this.name + "\"].showAll();' title='Show all rows'>All</span>");
+            if (this.showRows != "selected")
+               showOpts.push("<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + this.name + "\"].showSelected();' title='Show all selected rows'>Selected</span>");
+            if (this.showRows != "unselected")
+               showOpts.push("<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + this.name + "\"].showUnselected();' title='Show all unselected rows'>Unselected</span>");
+            msg += "&nbsp; Show: " + showOpts.join(", ");
         }
         this.showMessage(msg);
-    }
+    },
 
-    switch (this.showRows)
-    {
-        case "all":
-            this._showSelectMessage("Showing all " + this.totalRows + " rows.");
-            break;
-        case "selected":
-            this._showSelectMessage("Showing only <em>selected</em> rows.");
-            break;
-        case "unselected":
-            this._showSelectMessage("Showing only <em>unselected</em> rows.");
-            break;
-    }
-
-}
-
-LABKEY.DataRegion.prototype = {
     setOffset : function (newoffset)
     {
         this._setParam(".offset", newoffset, [".offset", ".showRows"]);
@@ -166,6 +177,11 @@ LABKEY.DataRegion.prototype = {
     setMaxRows : function (newmax)
     {
         this._setParam(".maxRows", newmax, [".offset", ".maxRows", ".showRows"]);
+    },
+
+    showPaged : function ()
+    {
+        this._removeParams([".showRows"]);
     },
 
     showAll : function ()

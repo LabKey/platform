@@ -17,6 +17,7 @@
 package org.labkey.api.query;
 
 import org.apache.beehive.netui.pageflow.Forward;
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.data.*;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
@@ -361,7 +362,9 @@ public class QueryView extends WebPartView<Object>
         }
         if (parameterToAdd != null)
             url.addParameter(parameterToAdd, parameterValue);
-        return new ActionButton(url.getEncodedLocalURIString(), label, DataRegion.MODE_ALL, ActionButton.Action.LINK);
+        ActionButton actionButton = new ActionButton(label, url);
+        actionButton.setDisplayModes(DataRegion.MODE_ALL);
+        return actionButton;
     }
 
     protected void addButton(ButtonBar bar, ActionButton button)
@@ -604,11 +607,12 @@ public class QueryView extends WebPartView<Object>
     public MenuButton createViewButton(ReportService.ItemFilter filter)
     {
         setViewItemFilter(filter);
-        String current = "";
-        if (_customView != null)
-            current = _customView.getName();
-        else if (_report != null)
-            current = getSettings().getViewName();
+        String current = null;
+
+        // if we are not rendering a report we use the current view name to set the menu item selection, an empty
+        // string denotes the default view, a customized default view will have a null name.
+        if (_report == null)
+            current = (_customView != null) ? StringUtils.defaultString(_customView.getName(), "") : "";
 
         ActionURL target = urlChangeView();
         NavTreeMenuButton button = new NavTreeMenuButton("Views");
@@ -708,6 +712,9 @@ public class QueryView extends WebPartView<Object>
             }
         }
 
+        if (views.size() > 0)
+            menu.addSeparator();
+
         for (Map.Entry<String, List<Report>> entry : views.entrySet())
         {
             for (Report report : entry.getValue())
@@ -797,7 +804,7 @@ public class QueryView extends WebPartView<Object>
         }
     }
 
-    public void addCustomizeViewItems(MenuButton button) 
+    public void addCustomizeViewItems(MenuButton button)
     {
         String label = "Apply View Filter";
         if (_report == null)
@@ -1163,6 +1170,7 @@ public class QueryView extends WebPartView<Object>
                 //HACK: this is a total hack--getResultSet no longer gets the aggregates, which we
                 //need to get the total rows for pagination purposes.
                 //checkResultSet will do that.
+                rgn.setAllowAsync(false);
                 rgn.checkResultSet(view.getRenderContext(), null);
                 rs = view.getRenderContext().getResultSet();
                 response.populate(rs, table, getExportColumns(rgn.getDisplayColumns()), rgn.getTotalRows());

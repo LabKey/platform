@@ -32,17 +32,14 @@ public abstract class DefaultPropertyValidator implements ValidatorKind
     {
         StringBuffer sb = new StringBuffer();
 
-        sb.append("Validation failure: value '");
+        sb.append("Value '");
         sb.append(value);
         sb.append("' for field '");
         sb.append(field);
         sb.append("' is invalid. ");
 
         if (validator.getErrorMessage() != null)
-        {
-            sb.append("Additional information : ");
             sb.append(validator.getErrorMessage());
-        }
         errors.add(new SimpleValidationError(sb.toString()));
     }
 }

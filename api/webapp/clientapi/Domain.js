@@ -31,10 +31,7 @@ LABKEY.Domain = new function()
             method : 'GET',
             success: successCallback,
             failure: failureCallback,
-            jsonData : parameters,
-            headers : {
-                'Content-Type' : 'application/json'
-            }
+            params : parameters
         });
     }
 
@@ -42,7 +39,7 @@ LABKEY.Domain = new function()
     {
         Ext.Ajax.request({
             url : LABKEY.ActionURL.buildURL("property", "saveDomain", containerPath),
-            method : 'GET',
+            method : 'POST',
             success: successCallback,
             failure: failureCallback,
             jsonData : parameters,

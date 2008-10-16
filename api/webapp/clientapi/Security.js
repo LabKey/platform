@@ -368,7 +368,7 @@ LABKEY.Security = new function()
          *      <li>sortOrder: the relative sort order of the requested container</li>
          *      <li>userPermissions: the permissions the current user has in the requested container.
          *          Use this value with the hasPermission() method to test for specific permissions.</li>
-         *      <li>children: if the includeSubfolers parameter was true, this will contain
+         *      <li>children: if the includeSubfolders parameter was true, this will contain
          *          an array of child container objects with the same shape as the parent object.</li>
          *  </ul>
          * </li>

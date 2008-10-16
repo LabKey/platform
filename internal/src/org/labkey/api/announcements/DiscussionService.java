@@ -19,6 +19,7 @@ package org.labkey.api.announcements;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.view.*;
+import org.labkey.api.util.URLHelper;
 import org.springframework.web.servlet.ModelAndView;
 
 /**
@@ -50,13 +51,15 @@ public class DiscussionService
          * @param allowMultipleDiscussions
          * @return WebPartView with a form to start a new discussion, will post directly to Announcements controller
          */
-        public WebPartView startDiscussion(Container c, User user, String identifier, ActionURL pageURL, ActionURL cancelURL, String title, String summary, boolean allowMultipleDiscussions);
+        public WebPartView startDiscussion(Container c, User user, String identifier, ActionURL pageURL, URLHelper cancelURL, String title, String summary, boolean allowMultipleDiscussions);
 
         /** show links, and forms, do it all (wrapper for other methods)
          * @param displayFirstDiscussionByDefault   if true and no discussion parameters are present, display the first
          *                                          discussion associated with this object.
          */
         public DiscussionView getDisussionArea(ViewContext context, String objectId, ActionURL pageURL, String newDiscussionTitle, boolean allowMultipleDiscussions, boolean displayFirstDiscussionByDefault);
+
+        public DiscussionView getDisussionArea(Container c, User user, URLHelper currentURL, String objectId, ActionURL pageURL, String newDiscussionTitle, boolean allowMultipleDiscussions, boolean displayFirstDiscussionByDefault);
 
         public void deleteDiscussions(Container container, String identifier, User user);
 

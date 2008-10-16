@@ -330,7 +330,12 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
 
             //apply values from the result row to the sent record
             for(var col in record.data)
-                record.set(col, row.values[col]);
+            {
+                //since the sent record might contain columns form a related table,
+                //ensure that a value was actually returned for that column before trying to set it
+                if(undefined !== row.values[col])
+                    record.set(col, row.values[col]);
+            }
 
             //if the id changed, fixup the keys and map of the store's base collection
             //HACK: this is using private data members of the base Store class. Unfortunately

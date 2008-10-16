@@ -15,10 +15,7 @@
  */
 package org.labkey.api.action;
 
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.*;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.util.ResultSetUtil;
@@ -279,7 +276,7 @@ public class ApiQueryResponse implements ApiResponse
 
     protected boolean isEditable(DisplayColumn dc)
     {
-        return _schemaEditable && dc.isEditable();
+        return _schemaEditable && dc.isEditable() && !(dc.getColumnInfo() instanceof LookupColumn);
     }
 
     protected boolean isLookup(DisplayColumn dc)

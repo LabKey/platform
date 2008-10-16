@@ -15,24 +15,24 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.action.ConfirmAction"%>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.springframework.beans.PropertyValues" %>
-<%@ page import="org.labkey.api.action.ConfirmAction" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.springframework.beans.PropertyValue" %>
+<%@ page import="org.springframework.beans.PropertyValues" %>
+<%@ page import="java.io.IOException" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Collection" %>
-<%@ page import="java.io.IOException" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%
     JspView me = (JspView) HttpView.currentView();
     ViewContext context = me.getViewContext();
     ConfirmAction confirmAction = (ConfirmAction) context.get(ConfirmAction.CONFIRMACTION);
     PropertyValues propertyValues = confirmAction.getPropertyValues();
-    ActionURL cancelUrl = confirmAction.getCancelUrl();
+    URLHelper cancelUrl = confirmAction.getCancelUrl();
 %>
 <form action="<%=context.getActionURL().getAction()%>.post" method="POST"><%
     me.include(me.getBody(), out);

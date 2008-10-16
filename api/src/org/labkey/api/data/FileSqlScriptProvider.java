@@ -326,7 +326,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
 
         public String toString()
         {
-            return _schemaName + " " + _fromVersion + " " + _toVersion;
+            return getDescription();
         }
 
         public String getContents()

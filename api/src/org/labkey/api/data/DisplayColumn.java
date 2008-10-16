@@ -342,7 +342,7 @@ public abstract class DisplayColumn extends RenderColumn
             out.write(" " + _displayClass);
         }
         out.write("'");
-    
+
         out.write(" style='");
         out.write(getDefaultHeaderStyle());
         out.write("'");
@@ -378,12 +378,13 @@ public abstract class DisplayColumn extends RenderColumn
         {
             PopupMenu popup = new PopupMenu(navtree, PopupMenu.Align.LEFT, PopupMenu.ButtonStyle.TEXTBUTTON);
             popup.renderMenuScript(out);
+
+            // 6821: hover pseudo-class doesn't work in IE7 in quirks mode
+            out.write("<script type='text/javascript'>\n");
+            out.write("Ext.fly(" + PageFlowUtil.jsString(baseId + ":header") + ").addClassOnOver('hover');\n");
+            out.write("</script>\n");
         }
 
-        // 6821: hover pseudo-class doesn't work in IE
-        out.write("<script type='text/javascript'>\n");
-        out.write("Ext.fly(" + PageFlowUtil.jsString(baseId + ":header") + ").addClassOnOver('hover');\n");
-        out.write("</script>\n");
         out.write("</th>");
     }
 

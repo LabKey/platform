@@ -543,7 +543,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
                 col.renderer = function(data, metadata, record, rowIndex, colIndex, store)
                 {
                     //set quick-tip attributes and let Ext QuickTips do the work
-                    metadata.attr = "ext:qtitle=\"Notes\" ext:qtip=\"" + Ext.util.Format.htmlEncode(data) + "\"";
+                    metadata.attr = "ext:qtip=\"" + Ext.util.Format.htmlEncode(data) + "\"";
                     return data;
                 }
 

@@ -21,6 +21,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.util.URLHelper;
 import org.springframework.validation.BindException;
 import org.apache.commons.lang.StringUtils;
 
@@ -54,7 +55,7 @@ public class AttachmentService
         public HttpView getHistoryView(ViewContext context, AttachmentParent parent);
 
         public HttpView add(User user, AttachmentParent parent, List<AttachmentFile> files);
-        public HttpView getErrorView(List<AttachmentFile> files, BindException errors, ActionURL returnUrl);
+        public HttpView getErrorView(List<AttachmentFile> files, BindException errors, URLHelper returnUrl);
 
         public File getWebRoot(Container project);
         public void setWebRoot(Container project, File webRoot);

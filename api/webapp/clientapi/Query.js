@@ -225,24 +225,25 @@ LABKEY.Query = new function()
 	LABKEY.requiresClientAPI();
 &lt;/script&gt;
 &lt;script type="text/javascript"&gt;
-	function failureHandler(errorInfo, options, responseObj)
+	function onFailure(errorInfo, options, responseObj)
 	{
-	    if(errorInfo)
+	    if(errorInfo && errorInfo.exception)
 	        alert("Failure: " + errorInfo.exception);
 	    else
 	        alert("Failure: " + responseObj.statusText);
 	} 
 
-	function successHandler(data)
+	function onSuccess(data)
 	{ 
 	    alert("Success! " + data.rowCount + " rows returned.");
 	} 
 
-	LABKEY.Query.selectRows({schemaName: 'lists', queryName: 'People',
-	         successCallback: successHandler, errorCallback: failureHandler,
-			filterArray: [
-			    LABKEY.Filter.create('FirstName', 'Johny')
-			    ] });
+	LABKEY.Query.selectRows({
+            schemaName: 'lists',
+            queryName: 'People',
+            successCallback: onSuccess,
+            errorCallback: onFailure,
+        });
 &lt;/script&gt; </pre>
 		* @see LABKEY.Query.SelectRowsOptions
 		* @see LABKEY.Query.SelectRowsResults
@@ -528,7 +529,8 @@ LABKEY.Query = new function()
             <li>contains = contains</li>
             <li>doesnotcontain = does not contain</li>
             <li>startswith = starts with</li>
-            <li>doesnotstartwith = does not start with</li></ul>
+            <li>doesnotstartwith = does not start with</li>
+            <li>in = equals one of</li></ul>
 * @property {Bool} [lookups="true"]	If 'true' (as by default), the {@link LABKEY.Query.SelectRowsResult}
             for {@link LABKEY.Query#selectRows} will contain the
             foreign key value for lookup columns and include lookup information
