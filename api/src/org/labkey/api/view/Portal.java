@@ -24,14 +24,12 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
-import org.labkey.api.util.Cache;
-import org.labkey.api.util.ContainerUtil;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.util.*;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.beans.PropertyValues;
 import org.springframework.beans.MutablePropertyValues;
 
+import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.sql.SQLException;
@@ -509,7 +507,7 @@ public class Portal
                 if (null == desc)
                     continue;
 
-                WebPartView view = desc.getWebPartViewSafe(context, part);
+                WebPartView view = getWebPartViewSafe(desc, context, part);
                 if (null == view)
                     continue;
                 view.prepare(view.getModelBean());
@@ -658,12 +656,12 @@ public class Portal
                 continue;
             for (WebPartFactory webpart : parts)
             {
-                _viewMap.put(webpart.name, webpart);
+                _viewMap.put(webpart.getName(), webpart);
                 for (String legacyName : webpart.getLegacyNames())
                 {
                     _viewMap.put(legacyName, webpart);
                 }
-                _regionMap.put(webpart.defaultLocation, webpart.name);
+                _regionMap.put(webpart.getDefaultLocation(), webpart.getName());
             }
         }
 
@@ -694,4 +692,22 @@ public class Portal
     {
         return ContainerUtil.purgeTable(getTableInfoPortalWebParts(), "PageId");
     }
+
+    public static WebPartView getWebPartViewSafe(WebPartFactory factory, ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+    {
+        WebPartView view;
+        try
+        {
+            view = factory.getWebPartView(portalCtx, webPart);
+        }
+        catch(Throwable t)
+        {
+            int status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+            String message = "An unexpected error occurred";
+            view = ExceptionUtil.getErrorWebPartView(status, message, t, portalCtx.getRequest());
+            view.setTitle(webPart.getName());
+        }
+        return view;
+    }
+
 }

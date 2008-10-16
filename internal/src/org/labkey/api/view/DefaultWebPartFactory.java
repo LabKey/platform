@@ -26,7 +26,7 @@ import java.lang.reflect.InvocationTargetException;
  * Date: Nov 8, 2006
  * Time: 10:59:13 AM
  */
-public class DefaultWebPartFactory extends WebPartFactory
+public class DefaultWebPartFactory extends BaseWebPartFactory
 {
     Class<? extends WebPartView> cls;
 

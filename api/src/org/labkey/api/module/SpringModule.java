@@ -19,7 +19,7 @@ package org.labkey.api.module;
 import org.apache.log4j.Logger;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.util.URIUtil;
-import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.view.BaseWebPartFactory;
 import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.ContextLoader;
@@ -67,7 +67,7 @@ public class SpringModule extends DefaultModule implements ServletContext
      */
     public enum ContextType { none, context, config }
     
-    public SpringModule(String name, double version, String resourcePath, boolean shouldRunScripts, WebPartFactory... webParts)
+    public SpringModule(String name, double version, String resourcePath, boolean shouldRunScripts, BaseWebPartFactory... webParts)
     {
         super(name, version, resourcePath, shouldRunScripts, webParts);
     }

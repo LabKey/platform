@@ -26,7 +26,7 @@ import java.util.Map;
  * Date: Jul 29, 2008
  * Time: 2:45:24 PM
  */
-public abstract class ClientAPIWebPartFactory extends WebPartFactory
+public abstract class ClientAPIWebPartFactory extends BaseWebPartFactory
 {
     public static final String CONTENT_KEY = "content";
     public static final String DEFAULT_CONTENT_KEY = "defaultContent";
