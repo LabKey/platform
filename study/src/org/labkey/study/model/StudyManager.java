@@ -2105,18 +2105,19 @@ public class StudyManager
             return imported;
 
         String keyPropertyURI = null;
+        String keyPropertyName = def.getKeyPropertyName();
+        if (keyPropertyName != null)
+        {
+            ColumnInfo col = tinfo.getColumn(keyPropertyName);
+            if (null != col)
+                keyPropertyURI = col.getPropertyURI();
+        }
+        
         if (checkDuplicates)
         {
             String participantIdURI = DataSetDefinition.getParticipantIdURI();
             String visitSequenceNumURI = DataSetDefinition.getSequenceNumURI();
             String visitDateURI = DataSetDefinition.getVisitDateURI();
-            String keyPropertyName = def.getKeyPropertyName();
-            if (keyPropertyName != null)
-            {
-                ColumnInfo col = tinfo.getColumn(keyPropertyName);
-                if (null != col)
-                    keyPropertyURI = col.getPropertyURI();
-            }
 
             HashMap<String,Map> failedReplaceMap = checkAndDeleteDups(study, def, dataMaps);
             if (null != failedReplaceMap && failedReplaceMap.size() > 0)
@@ -2229,7 +2230,7 @@ public class StudyManager
                 // Need to generate keys if the server manages them
                 if (def.isKeyPropertyManaged())
                 {
-                    int currentKey = getMaxKeyValue(def);
+                    int currentKey = getMaxKeyValue(def, user);
                     // Sadly, may have to create new maps, since TabLoader's aren't modifyable
                     for (int i=0;i<dataMaps.length;i++)
                     {
@@ -2279,12 +2280,12 @@ public class StudyManager
      * Gets the current highest key value for a server-managed key field.
      * If no data is returned, this method returns 0.
      */
-    private int getMaxKeyValue(DataSetDefinition dataset) throws SQLException
+    private int getMaxKeyValue(DataSetDefinition dataset, User user) throws SQLException
     {
         TableInfo tInfo;
         try
         {
-            tInfo = dataset.getTableInfo(HttpView.currentContext().getUser());
+            tInfo = dataset.getTableInfo(user);
         }
         catch (ServletException se)
         {

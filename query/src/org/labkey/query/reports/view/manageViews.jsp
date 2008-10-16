@@ -124,10 +124,12 @@
 <table>
 <%
     Map<String, List<ManageReportsBean.ReportRecord>> live = bean.getViews();
+    boolean hasViews = false;
     for (Map.Entry<String, List<ManageReportsBean.ReportRecord>> entry : live.entrySet()) {
 
         if (entry.getValue().isEmpty())
             continue;
+        hasViews = true;
         startReportSection(out, entry.getKey());
         for (ManageReportsBean.ReportRecord r : entry.getValue())
         {
@@ -160,6 +162,8 @@
 <%
         }
     }
+    if (!hasViews)
+        out.println("You have no views in this folder");
 %>
 </table>
 

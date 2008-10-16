@@ -330,6 +330,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         addColumn(Column.Comments);
         addColumn(Column.Created);
         addColumn(Column.CreatedBy);
+        addContainerColumn(Column.Container);
         addColumn(Column.FilePathRoot).setIsHidden(true);
         addColumn(Column.LSID).setIsHidden(true);
         addColumn(Column.Protocol).setFk(schema.getProtocolLSIDForeignKey());

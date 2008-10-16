@@ -1668,7 +1668,7 @@ public class QueryControllerSpring extends SpringActionController
     }
 
     
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresSiteAdmin
     public class AdminNewDbUserSchemaAction extends FormViewAction<DbUserSchemaForm>
     {
         public void validateCommand(DbUserSchemaForm form, Errors errors)
@@ -1797,7 +1797,7 @@ public class QueryControllerSpring extends SpringActionController
 
 
     // UNDONE: should use POST, change to FormHandlerAction
-    @RequiresSiteAdmin
+    @RequiresPermission(ACL.PERM_ADMIN)
     public class AdminReloadDbUserSchemaAction extends SimpleViewAction<DbUserSchemaForm>
     {
         public ModelAndView getView(DbUserSchemaForm form, BindException errors) throws Exception

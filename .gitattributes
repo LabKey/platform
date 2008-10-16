@@ -63,6 +63,7 @@ announcements/src/org/labkey/announcements/bulkEdit.jsp -text
 announcements/src/org/labkey/announcements/confirmDelete.jsp -text
 announcements/src/org/labkey/announcements/confirmRemoveUser.jsp -text
 announcements/src/org/labkey/announcements/customize.jsp -text
+announcements/src/org/labkey/announcements/customizeDiscussionWebPart.jsp -text
 announcements/src/org/labkey/announcements/dailyDigest.jsp -text
 announcements/src/org/labkey/announcements/dailyDigestPlain.jsp -text
 announcements/src/org/labkey/announcements/discussionMenu.jsp -text
@@ -446,6 +447,7 @@ experiment/module.properties -text
 experiment/src/META-INF/exp.xml -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-0.00-1.00.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-0.00-1.10.sql -text
+experiment/src/META-INF/experiment/scripts/postgresql/exp-0.00-1.40.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-1.00-1.10.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-1.10-1.20.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-1.20-1.30.sql -text
@@ -515,6 +517,7 @@ experiment/src/META-INF/experiment/scripts/postgresql/obsolete/exp_drop.sql -tex
 experiment/src/META-INF/experiment/scripts/postgresql/obsolete/findOrphans.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-0.00-1.00.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-0.00-1.10.sql -text
+experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-0.00-1.40.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-1.00-1.10.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-1.10-1.20.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-1.20-1.30.sql -text

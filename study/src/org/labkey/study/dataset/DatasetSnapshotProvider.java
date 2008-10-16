@@ -16,6 +16,8 @@
 package org.labkey.study.dataset;
 
 import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.OntologyManager;
@@ -168,21 +170,28 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             }
             // create the dataset definition
             Study study = StudyManager.getInstance().getStudy(form.getViewContext().getContainer());
-            boolean isDemographicData = false;
-            int datasetId = NumberUtils.toInt(form.getViewContext().getActionURL().getParameter(DataSetDefinition.DATASETKEY), -1);
-            if (datasetId != -1)
+            boolean isDemographicData = BooleanUtils.toBoolean((String)form.getViewContext().get("demographicData"));
+            String keyType = StringUtils.defaultString((String)form.getViewContext().get("additionalKeyType"), "none");
+            String additionalKey = null;
+            boolean keyPropertyManaged = false;
+
+            if ("data".equals(keyType) || "managed".equals(keyType))
             {
-                DataSetDefinition currentDef = study.getDataSet(datasetId);
-                if (currentDef != null)
-                {
-                    isDemographicData = currentDef.isDemographicData();
-                }
+                additionalKey = (String)form.getViewContext().get("additionalKey");
+                keyPropertyManaged = "managed".equals(keyType);
             }
 
             DataSetDefinition def = AssayPublishManager.getInstance().createAssayDataset(form.getViewContext().getUser(),
-                    study, form.getSnapshotName(), null, null, isDemographicData);
+                    study, form.getSnapshotName(), additionalKey, null, isDemographicData);
             if (def != null)
             {
+                if (keyPropertyManaged)
+                {
+                    def = def.createMutable();
+                    def.setKeyPropertyManaged(true);
+
+                    StudyManager.getInstance().updateDataSetDefinition(form.getViewContext().getUser(), def);
+                }
                 QuerySnapshotDefinition snapshot = createSnapshotDef(form);
                 if (snapshot == null)
                     throw new IllegalArgumentException("Unable to create the query snapshot definition");

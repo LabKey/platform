@@ -18,15 +18,11 @@ package org.labkey.experiment.api;
 
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.ColumnInfo;
 
-import java.util.Map;
-import java.util.List;
-import java.util.Collection;
-import java.util.LinkedHashMap;
+import java.util.*;
 
 /**
  * This class is a foreign key which has columns for data and material inputs of various types.
@@ -51,7 +47,7 @@ public class InputForeignKey extends LookupForeignKey
 
     private Map<String, PropertyDescriptor[]> inputMap(Collection<Map.Entry<String, PropertyDescriptor>> inputs)
     {
-        Map<String, PropertyDescriptor[]> ret = new LinkedHashMap();
+        Map<String, PropertyDescriptor[]> ret = new TreeMap<String, PropertyDescriptor[]>(String.CASE_INSENSITIVE_ORDER);
         for (Map.Entry<String, PropertyDescriptor> entry : inputs)
         {
             PropertyDescriptor[] existing = ret.get(entry.getKey());

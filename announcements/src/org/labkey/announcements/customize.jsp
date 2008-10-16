@@ -105,7 +105,7 @@
     </tr>
     <tr>
         <td colspan=2><%=PageFlowUtil.generateSubmitButton("Save")%>
-        <%=PageFlowUtil.generateButton("Cancel", bean.returnURL)%></td>
+        <%=PageFlowUtil.generateButton("Cancel", bean.returnURL.getLocalURIString())%></td>
     </tr>
 </table>
 </form>

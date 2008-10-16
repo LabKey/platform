@@ -86,6 +86,7 @@ LABKEY.pipeline.StatusUpdate = function(controller, action)
                 {
                     el.update(newText);
                     _lastUpdate = newText;
+                    LABKEY.DataRegions["StatusFiles"]._initElements();
                 }
                 nextUpdate(0);
             }

@@ -283,4 +283,9 @@ public class DataSetQueryView extends QueryView
             bar.add(button);
         }
     }
+
+    public MenuButton createPageSizeMenuButton()
+    {
+        return super.createPageSizeMenuButton();
+    }
 }

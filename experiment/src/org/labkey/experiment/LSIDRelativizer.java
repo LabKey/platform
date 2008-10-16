@@ -20,6 +20,8 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.XarContext;
+import org.labkey.api.exp.api.ExpObject;
+import org.labkey.api.exp.api.ExpData;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 
 import java.util.HashMap;
@@ -41,6 +43,21 @@ public enum LSIDRelativizer
     },
     FOLDER_RELATIVE("Folder relative")
     {
+        protected String relativize(ExpObject o, RelativizedLSIDs lsids)
+        {
+            if (o instanceof ExpData)
+            {
+                ExpData data = (ExpData)o;
+                if (data.getDataFileUrl() == null)
+                {
+                    // If we don't have a URL for this data object, we can't use AutoFileLSID. Instead,
+                    // try the next best option
+                    return PARTIAL_FOLDER_RELATIVE.relativize(o, lsids);
+                }
+            }
+            return super.relativize(o, lsids);
+        }
+
         protected String relativize(Lsid lsid, RelativizedLSIDs lsids)
         {
             String prefix = lsid.getNamespacePrefix();
@@ -170,6 +187,24 @@ public enum LSIDRelativizer
             _relativizer = relativizer;
         }
 
+        public String relativize(ExpObject o)
+        {
+            if (o == null)
+            {
+                return null;
+            }
+
+            String result = getExistingLSID(o.getLSID());
+            if (result != null)
+            {
+                return result;
+            }
+
+            result = _relativizer.relativize(o, this);
+            putLSID(o.getLSID(), result);
+            return result;
+        }
+
         public String relativize(String s)
         {
             if (s == null)
@@ -266,6 +301,11 @@ public enum LSIDRelativizer
         {
             return _nextMaterialId++;
         }
+    }
+
+    protected String relativize(ExpObject o, RelativizedLSIDs lsids)
+    {
+        return relativize(new Lsid(o.getLSID()), lsids);
     }
 
     public static class TestCase extends junit.framework.TestCase

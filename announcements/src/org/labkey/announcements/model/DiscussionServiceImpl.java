@@ -23,6 +23,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.*;
+import org.labkey.api.util.URLHelper;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
@@ -39,14 +40,14 @@ import java.util.Map;
  */
 public class DiscussionServiceImpl implements DiscussionService.Service
 {
-    public WebPartView startDiscussion(Container c, User user, String identifier, ActionURL pageURL, ActionURL cancelURL, String title, String summary, boolean allowMultipleDiscussions)
+    public WebPartView startDiscussion(Container c, User user, String identifier, ActionURL pageURL, URLHelper cancelURL, String title, String summary, boolean allowMultipleDiscussions)
     {
         if (!allowMultipleDiscussions)
         {
             Announcement[] discussions = getDiscussions(c, identifier);
 
             if (discussions.length > 0)
-                return getDiscussion(c, discussions[0], user);
+                return getDiscussion(c, cancelURL, discussions[0], user); // TODO: cancelURL is probably not right
         }
 
         String viewTitle = "New Discussion";
@@ -81,7 +82,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
         if (saved.startsWith("~/"))
             saved = AppProps.getInstance().getContextPath() + saved.substring(1);
         ActionURL url = new ActionURL(saved);
-        String id = StringUtils.strip(url.getExtraPath(),"/");
+        String id = StringUtils.strip(url.getExtraPath(), "/");
         Container c = ContainerManager.getForId(id);
         if (null != c)
             url.setExtraPath(c.getPath());
@@ -97,12 +98,12 @@ public class DiscussionServiceImpl implements DiscussionService.Service
     }
 
 
-    public WebPartView getDiscussion(Container c, Announcement ann, User user)
+    public WebPartView getDiscussion(Container c, URLHelper currentURL, Announcement ann, User user)
     {
         try
         {
             // NOTE: don't pass in Announcement, it came from getBareAnnouncements()
-            AnnouncementsController.ThreadView threadView = new AnnouncementsController.ThreadView(c, user, null, ann.getEntityId());
+            AnnouncementsController.ThreadView threadView = new AnnouncementsController.ThreadView(c, currentURL, user, null, ann.getEntityId());
             return threadView;
         }
         catch (ServletException x)
@@ -116,9 +117,15 @@ public class DiscussionServiceImpl implements DiscussionService.Service
     {
         Container c = context.getContainer();
         User user = context.getUser();
+        ActionURL currentURL = context.getActionURL();
 
+        return getDisussionArea(c, user, currentURL, objectId, pageURL, newDiscussionTitle, allowMultipleDiscussions, displayFirstDiscussionByDefault);
+    }
+
+    public DiscussionService.DiscussionView getDisussionArea(Container c, User user, URLHelper currentURL, String objectId, ActionURL pageURL, String newDiscussionTitle, boolean allowMultipleDiscussions, boolean displayFirstDiscussionByDefault)
+    {
         // get discussion parameters
-        Map<String, String> params = context.getActionURL().getScopeParameters("discussion");
+        Map<String, String> params = currentURL.getScopeParameters("discussion");
         Announcement[] announcements = getDiscussions(c, objectId);
 
         int discussionId = 0;
@@ -136,21 +143,21 @@ public class DiscussionServiceImpl implements DiscussionService.Service
         }
         catch (Exception x) {/* */}
         
-        pageURL = pageURL.clone();
-        // clean up discussion parameters (in case caller didn't)
-        pageURL.deleteScopeParameters("discussion");
-
         // often, but not necessarily the same as pageURL, assume we want to return to current page
-        ActionURL currentURL = context.cloneActionURL().deleteScopeParameters("discussion");
+        URLHelper adjustedCurrentURL = currentURL.clone().deleteScopeParameters("discussion");
         if (0 != discussionId)
-            currentURL.addParameter("discussion.id", "" + discussionId);
+            adjustedCurrentURL.addParameter("discussion.id", "" + discussionId);
 
         ModelAndView discussionBox = null;
         String focusId = null;
         
         if (params.get("start") != null)
         {
-            WebPartView start = startDiscussion(c, user, objectId, pageURL, currentURL, newDiscussionTitle, "", allowMultipleDiscussions);
+            pageURL = pageURL.clone();
+            // clean up discussion parameters (in case caller didn't)
+            pageURL.deleteScopeParameters("discussion");
+
+            WebPartView start = startDiscussion(c, user, objectId, pageURL, adjustedCurrentURL, newDiscussionTitle, "", allowMultipleDiscussions);
             String title;
 
             if (start instanceof AnnouncementsController.ThreadView)
@@ -164,7 +171,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
             }
 
             start.setFrame(WebPartView.FrameType.NONE);
-            discussionBox = new ThreadWrapper(context, title, start);
+            discussionBox = new ThreadWrapper(adjustedCurrentURL, title, start);
         }
         else
         {
@@ -186,22 +193,22 @@ public class DiscussionServiceImpl implements DiscussionService.Service
 
                 if (selected != null)
                 {
-                    discussionView = getDiscussion(c, selected, user);
+                    discussionView = getDiscussion(c, adjustedCurrentURL, selected, user);
                     discussionView.setFrame(WebPartView.FrameType.NONE);
                     if (params.get("reply") != null)
                     {
                         ((AnnouncementsController.ThreadView)discussionView).getModelBean().isResponse = true;
-                        respondView = new AnnouncementsController.RespondView(c, selected, currentURL, true);
+                        respondView = new AnnouncementsController.RespondView(c, selected, adjustedCurrentURL, true);
                         focusId = "body";
                     }
                 }
             }
 
             if (discussionView != null)
-                discussionBox = new ThreadWrapper(context, "Discussion", discussionView, respondView); 
+                discussionBox = new ThreadWrapper(adjustedCurrentURL, "Discussion", discussionView, respondView);
         }
 
-        ModelAndView pickerView = new PickerView(c, currentURL, announcements, null != discussionBox, allowMultipleDiscussions);
+        ModelAndView pickerView = new PickerView(c, adjustedCurrentURL, announcements, null != discussionBox, allowMultipleDiscussions);
         DiscussionService.DiscussionView view = new DiscussionService.DiscussionView(pickerView);
 
         if (null != discussionBox)
@@ -268,7 +275,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
     {
         VBox _vbox;
 
-        ThreadWrapper(ViewContext context, String caption, HttpView... views)
+        ThreadWrapper(URLHelper currentURL, String caption, HttpView... views)
         {
             _vbox = new VBox();
             for (HttpView v : views)
@@ -277,7 +284,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
             _vbox.addView(new AnchorView());
             _vbox.setTitle(caption);
             _vbox.setFrame(WebPartView.FrameType.DIALOG);
-            ActionURL closeURL = getCloseURL(context.getActionURL());
+            URLHelper closeURL = getCloseURL(currentURL);
             _vbox.addObject("closeURL", closeURL);
         }
 
@@ -305,7 +312,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
 
     public static class PickerView extends JspView
     {
-        public ActionURL pageURL;
+        public URLHelper pageURL;
         public ActionURL emailPreferencesURL;
         public ActionURL adminEmailURL;
         public ActionURL customizeURL;
@@ -313,7 +320,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
         public boolean isDiscussionVisible;
         public boolean allowMultipleDiscussions;
 
-        PickerView(Container c, ActionURL pageURL, Announcement[] announcements, boolean isDiscussionVisible, boolean allowMultipleDiscussions)
+        PickerView(Container c, URLHelper pageURL, Announcement[] announcements, boolean isDiscussionVisible, boolean allowMultipleDiscussions)
         {
             super("/org/labkey/announcements/discussionMenu.jsp");
             setFrame(FrameType.NONE);
@@ -328,9 +335,9 @@ public class DiscussionServiceImpl implements DiscussionService.Service
     }
 
 
-    private static ActionURL getCloseURL(ActionURL currentURL)
+    private static URLHelper getCloseURL(URLHelper currentURL)
     {
-        ActionURL closeURL = currentURL.clone();
+        URLHelper closeURL = currentURL.clone();
         closeURL.deleteScopeParameters("discussion");
         closeURL.addParameter("discussion.hide", "true");
         return closeURL;

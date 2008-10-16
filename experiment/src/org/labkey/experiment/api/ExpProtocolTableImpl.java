@@ -42,6 +42,8 @@ public class ExpProtocolTableImpl extends ExpTableImpl<ExpProtocolTable.Column> 
                 return wrapColumn(alias, _rootTable.getColumn("Name"));
             case LSID:
                 return wrapColumn(alias, _rootTable.getColumn("LSID"));
+            case Container:
+                return wrapColumn(alias, _rootTable.getColumn("Container"));
         }
         throw new IllegalArgumentException("Unknown column " + column);
     }
@@ -60,6 +62,7 @@ public class ExpProtocolTableImpl extends ExpTableImpl<ExpProtocolTable.Column> 
         {
             setContainer(schema.getContainer());
         }
+        addContainerColumn(Column.Container);
         ActionURL urlDetails = new ActionURL("Experiment", "protocolDetails", schema.getContainer().getPath());
         setDetailsURL(new DetailsURL(urlDetails, Collections.singletonMap("rowId", "RowId")));
         addDetailsURL(new DetailsURL(urlDetails, Collections.singletonMap("LSID", "LSID")));

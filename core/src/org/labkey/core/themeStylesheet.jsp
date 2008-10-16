@@ -127,7 +127,8 @@ fieldset
     background-color: #<%= formLabel %>;
 }
 
-.labkey-form-label-nowrap {
+.labkey-form-label-nowrap
+{
 	background-color: #<%= formLabel %>;
 }
 
@@ -283,7 +284,8 @@ td.labkey-ms1-filter
 
 div.labkey-status-info, .labkey-status-info
 {
-    background-color: #<%=formLabel%>;
+    background-color: #<%=navBackground%>;
+    border-color: #<%=navBorder%>;
 }
 
 td.labkey-tab-selected

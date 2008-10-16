@@ -23,6 +23,8 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.wiki.WikiRendererType" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.util.URLHelper" %>
+<%@ page import="org.labkey.api.action.ReturnUrlForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<InsertBean> me = (HttpView<InsertBean>) HttpView.currentView();
@@ -31,7 +33,7 @@
     Container c = HttpView.currentContext().getContainer();
     AnnouncementManager.Settings settings = bean.settings;
     AnnouncementsController.AnnouncementForm form = bean.form;
-    ActionURL cancelUrl = bean.cancelURL;
+    URLHelper cancelUrl = bean.cancelURL;
     String insertUrl = AnnouncementsController.getInsertURL(c).getEncodedLocalURIString();
 %>
 <%=formatMissedErrors("form")%>
@@ -49,6 +51,7 @@ function validateForm(form)
 </script>
 <form method=post enctype="multipart/form-data" action="<%=insertUrl%>" onSubmit="return validateForm(this)">
 <input type=hidden name=cancelUrl value="<%=h(null != cancelUrl ? cancelUrl.getLocalURIString() : null)%>">
+<input type=hidden name="<%=ReturnUrlForm.Params.returnUrl%>" value="<%=h(null != cancelUrl ? cancelUrl.getLocalURIString() : null)%>">
 <input type=hidden name=fromDiscussion value="<%=bean.fromDiscussion%>">
 <input type=hidden name=allowMultipleDiscussions value="<%=bean.allowMultipleDiscussions%>">
 <table>
@@ -129,7 +132,7 @@ if (bean.allowBroadcast)
 <br>&nbsp;<%=PageFlowUtil.generateSubmitButton("Submit")%>&nbsp;<%
 if (null != cancelUrl)
 {
-    %><%=PageFlowUtil.generateButton("Cancel", cancelUrl)%><%
+    %><%=PageFlowUtil.generateButton("Cancel", cancelUrl.getLocalURIString())%><%
 }
 else
 {

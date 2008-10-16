@@ -15,9 +15,14 @@
  */
 package org.labkey.announcements.model;
 
-import org.labkey.api.view.*;
 import org.labkey.api.announcements.DiscussionService;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.data.BooleanFormat;
+import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.*;
+
+import java.util.Map;
 
 /**
  * User: adam
@@ -31,10 +36,34 @@ public class DiscussionWebPartFactory extends BaseWebPartFactory
         super("Discussion", null, true, false);
     }
 
+    public HttpView getEditView(Portal.WebPart webPart)
+    {
+        return new JspView<Portal.WebPart>("/org/labkey/announcements/customizeDiscussionWebPart.jsp", webPart);
+    }
+
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
     {
+        Container c = portalCtx.getContainer();
+        User user = portalCtx.getUser();
+        Map<String, String> props = webPart.getPropertyMap();
+
+        // Next two props are required.  TODO: throw if null
         String entityId = webPart.getPropertyMap().get("entityId");
-        WebPartView view = DiscussionService.get().getDisussionArea(portalCtx, entityId, AppProps.getInstance().getHomePageActionURL(), "New Discussion", false, true);
+
+        String pageUrlString = props.get("pageURL");
+        ActionURL pageURL = null != pageUrlString ? new ActionURL(pageUrlString) : null;
+
+        String currentUrlString = props.get("currentURL");
+        URLHelper currentURL = (null != currentUrlString ? new URLHelper(currentUrlString) : portalCtx.getActionURL());
+
+        String newDiscussionTitle = props.get("newDiscussionTitle");
+        if (null == newDiscussionTitle)
+            newDiscussionTitle = "New Discussion";
+
+        String allowMultipleDiscussionsString = props.get("allowMultipleDiscussions");
+        boolean allowMultipleDiscussions = (null != allowMultipleDiscussionsString && new BooleanFormat().parseObject(allowMultipleDiscussionsString).booleanValue());
+
+        WebPartView view = DiscussionService.get().getDisussionArea(c, user, currentURL, entityId, pageURL, newDiscussionTitle, allowMultipleDiscussions, true);
         view.setTitle("Discussion");
         view.setFrame(WebPartView.FrameType.PORTAL);
 

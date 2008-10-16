@@ -196,7 +196,7 @@ public class SequenceVisitManager extends VisitManager
             String sqlUpdateVisitDates = "UPDATE " + tableParticipantVisit + "\n" +
                     "SET VisitDate = \n" +
                     " (\n" +
-                    " SELECT SD._VisitDate\n" +
+                    " SELECT DISTINCT(SD._VisitDate)\n" +
                     " FROM " + tableStudyData + " SD,  " + tableVisit + " V\n" +
                     " WHERE  ParticipantVisit.VisitRowId = V.RowId AND" +    // 'join' V
                     "   SD.ParticipantId = ParticipantVisit.ParticipantId AND SD.SequenceNum = ParticipantVisit.SequenceNum AND\n" +    // 'join' SD

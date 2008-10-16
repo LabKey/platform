@@ -494,8 +494,12 @@ public class ListController extends SpringActionController
 
         for (DisplayColumn dc : defaultGridColumns)
         {
-            if (editableOnly && !dc.isEditable())
-                continue;
+            if (editableOnly)
+            {
+                // In update/insert, skip non-editable and joined columns
+                if (!dc.isEditable() || dc.getColumnInfo() instanceof LookupColumn)
+                    continue;
+            }
 
             if (dc instanceof UrlColumn)
                 continue;

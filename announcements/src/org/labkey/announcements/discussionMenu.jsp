@@ -15,17 +15,17 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.announcements.model.DiscussionServiceImpl" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.announcements.model.Announcement" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
-<%@ page import="java.util.Set" %>
-<%@ page import="java.util.HashSet" %>
+<%@ page import="org.labkey.announcements.model.DiscussionServiceImpl" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.security.ACL" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.URLHelper" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="java.util.HashSet" %>
+<%@ page import="java.util.Set" %>
 <%
     DiscussionServiceImpl.PickerView me = (DiscussionServiceImpl.PickerView) HttpView.currentView();
     ViewContext context = me.getViewContext();
@@ -33,7 +33,7 @@
     Announcement[] announcements = me.announcements;
     if (null == announcements)
         announcements = new Announcement[0];
-    ActionURL pageURL = me.pageURL;
+    URLHelper pageURL = me.pageURL;
 
     boolean longFormat = false;
     Set<String> menuItems = new HashSet<String>();
@@ -44,12 +44,13 @@
             longFormat |= !menuItems.add(a.getCreatedByName(me.getViewContext()) + "|" + DateUtil.formatDate(a.getCreated()));
     }
 %>
-
 <script type="text/javascript">
 LABKEY.requiresMenu();
 </script>
 
 <script type="text/javascript">
+if (discussionMenu)
+    discussionMenu.menu.destroy();
 
 var discussionMenu = {};
 (function(){
@@ -101,7 +102,7 @@ var discussionMenu = {};
         discussionMenu.menu.show();
     }
 
-    discussionMenu.onWindowLoad = function(event)
+    discussionMenu.init = function()
     {
         YAHOO.widget.MenuItem.prototype.IMG_ROOT = LABKEY.yahooRoot + "/menu/assets/";
         discussionMenu.menu = new YAHOO.widget.ContextMenu("menuDiscussionMenu", {context:['discussionMenuToggle','tl','tr'], position:'dynamic', visible:false});
@@ -109,9 +110,12 @@ var discussionMenu = {};
         discussionMenu.menu.render(document.body);
         YAHOO.util.Event.addListener("discussionMenuToggle", "mousedown", discussionMenu.showEvent);
     }
-
-    YAHOO.util.Event.addListener(window, "load", discussionMenu.onWindowLoad);
 })();
+
+    if (LABKEY.isDocumentClosed)
+        discussionMenu.init();
+    else
+        YAHOO.util.Event.addListener(window, "load", discussionMenu.init);
 
 </script>
 <span id=discussionMenuToggle>[<a href="#" onclick="return false;"><%

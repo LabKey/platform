@@ -406,7 +406,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         if (name != null)
         {
             if (_requiredFields != null && _requiredFields.indexOf(columnName.toLowerCase()) != -1)
-                    return "<span class=\"labkey-error\">*</span>&nbsp;" + name;
+                return name + "<span class=\"labkey-error\">*</span>";
             return name;
         }
         return columnName;

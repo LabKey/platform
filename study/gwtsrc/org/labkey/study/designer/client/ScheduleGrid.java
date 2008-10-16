@@ -46,11 +46,13 @@ public abstract class ScheduleGrid extends EditableGrid
 
     protected Schedule schedule;
     protected String timelineTitle;
+    protected final Designer designer;
 
-    protected ScheduleGrid(Schedule schedule, String timelineTitle)
+    protected ScheduleGrid(Schedule schedule, String timelineTitle, Designer designer)
     {
         this.schedule = schedule;
         this.timelineTitle = timelineTitle;
+        this.designer = designer;
     }
 
     public void updateAll()
@@ -171,6 +173,7 @@ public abstract class ScheduleGrid extends EditableGrid
             if (isGhost)
             {
                 schedule.addTimepoint(tp);
+                designer.setDirty(true);
                 updateAll();
             }
             else
@@ -250,6 +253,7 @@ public abstract class ScheduleGrid extends EditableGrid
                         public void onClick(Widget sender)
                         {
                             schedule.removeTimepoint(tp);
+                            designer.setDirty(true);
                             hide();
                             updateAll();
                         }

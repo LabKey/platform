@@ -59,6 +59,8 @@ public class Designer implements EntryPoint
     private boolean _create;
     private boolean _dirty;
 
+    private SubmitButton _saveButton;
+
     public void onModuleLoad()
     {
         int datasetId = Integer.parseInt(PropertyUtil.getServerProperty("datasetId"));
@@ -79,7 +81,10 @@ public class Designer implements EntryPoint
         _propTable.setMode(PropertiesEditor.modeEdit);
 
         _buttons = new FlexTable();
-        _buttons.setWidget(0, 0, new SubmitButton());
+
+        _saveButton = new SubmitButton();
+
+        _buttons.setWidget(0, 0, _saveButton);
         _buttons.setWidget(0, 1, new CancelButton());
 
         _root.add(_loading);
@@ -184,6 +189,9 @@ public class Designer implements EntryPoint
 
     private void submitForm()
     {
+        // bug 6898: prevent user from double-clicking on save button, causing a race condition
+        _saveButton.setEnabled(false);
+
         List errors = new ArrayList();
 
         _propertiesPanel.validate(errors);
@@ -195,6 +203,7 @@ public class Designer implements EntryPoint
             for (int i=0 ; i < errors.size() ; i++)
                 s += errors.get(i) + "\n";
             Window.alert(s);
+            _saveButton.setEnabled(true);
             return;
         }
 
@@ -202,6 +211,7 @@ public class Designer implements EntryPoint
             public void onFailure(Throwable caught)
             {
                 Window.alert(caught.getMessage());
+                _saveButton.setEnabled(true);
             }
 
             public void onSuccess(Object result)
@@ -218,6 +228,7 @@ public class Designer implements EntryPoint
                     for (int i=0 ; i<errors.size() ; i++)
                         s += errors.get(i) + "\n";
                     Window.alert(s);
+                    _saveButton.setEnabled(true);
                 }
             }
         };

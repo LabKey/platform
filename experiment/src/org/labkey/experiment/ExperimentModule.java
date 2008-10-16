@@ -399,7 +399,10 @@ public class ExperimentModule extends SpringModule
         }
         catch (SQLException ex)
         {
-            if (!"42P07".equals(ex.getSQLState()) && !"S0001".equals(ex.getSQLState()))
+            // 42P07 DUPLICATE TABLE (pgsql)
+            // 42S11 Index already exists (mssql)
+            // S0001 sql server bug?
+            if (!"42P07".equals(ex.getSQLState()) && !"42S11".equals(ex.getSQLState()) && !"S0001".equals(ex.getSQLState()))
                 throw ex;
         }
         sql = " ALTER TABLE exp.DomainDescriptor ALTER COLUMN Project " + keywordNotNull + " NOT NULL ;";
@@ -412,7 +415,7 @@ public class ExperimentModule extends SpringModule
         }
         catch (SQLException ex)
         {
-            if (!"42P07".equals(ex.getSQLState()) && !"S0001".equals(ex.getSQLState()))
+            if (!"42P07".equals(ex.getSQLState()) && !"42S11".equals(ex.getSQLState()) && !"S0001".equals(ex.getSQLState()))
                 throw ex;
         }
     }

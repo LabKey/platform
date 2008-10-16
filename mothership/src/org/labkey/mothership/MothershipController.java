@@ -37,6 +37,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.UserManager;
@@ -475,8 +476,12 @@ public class MothershipController extends SpringActionController
                 throw new NotFoundException();
             }
             ServerSessionDetailView detailView = new ServerSessionDetailView(form);
+            
+            MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
+            QuerySettings settings = new QuerySettings(getViewContext(), "ExceptionReports", MothershipSchema.EXCEPTION_REPORT_TABLE_NAME);
+            settings.setAllowChooseQuery(false);
+            SessionExceptionReportGridView exceptionGridView = new SessionExceptionReportGridView(schema, settings, session.getServerSessionId());
 
-            SessionExceptionReportGridView exceptionGridView = new SessionExceptionReportGridView(session.getServerSessionId());
             return new VBox(detailView, exceptionGridView);
         }
 
@@ -1219,21 +1224,32 @@ public class MothershipController extends SpringActionController
         }
     }
 
-    public static class SessionExceptionReportGridView extends GridView
+    public static class SessionExceptionReportGridView extends QueryView
     {
-        public SessionExceptionReportGridView(int sessionId)
-        {
-            super(new DataRegion());
-            getDataRegion().addColumns(MothershipManager.get().getTableInfoExceptionReportSummary(), "ExceptionStackTraceId,Created,URL,Username,Browser");
-            getDataRegion().addDisplayColumn(new StackTraceDisplayColumn(MothershipManager.get().getTableInfoExceptionReportSummary().getColumn("StackTrace")));
-            getDataRegion().getDisplayColumn("URL").setURL("${URL}");
-            getDataRegion().getDisplayColumn("ExceptionStackTraceId").setURL("showStackTraceDetail.view?exceptionStackTraceId=${ExceptionStackTraceId}");
-            getDataRegion().getDisplayColumn("ExceptionStackTraceId").setCaption("Exception");
-            getDataRegion().getDisplayColumn("ExceptionStackTraceId").setFormatString("'#'0");
+        private final int _sessionId;
 
-            ButtonBar bb = new ButtonBar();
-            getDataRegion().setButtonBar(bb);
-            setFilter(new SimpleFilter("ServerSessionId", sessionId));
+        public SessionExceptionReportGridView(MothershipSchema schema, QuerySettings settings, int sessionId)
+        {
+            super(schema, settings);
+            _sessionId = sessionId;
+            setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
+        }
+
+        protected void setupDataView(DataView view)
+        {
+            view.getRenderContext().setBaseSort(new Sort("-Created"));
+            super.setupDataView(view);
+        }
+
+        protected TableInfo createTable()
+        {
+            FilteredTable table = ((MothershipSchema) getSchema()).createExceptionReportTable();
+            table.addCondition(table.getRealTable().getColumn("ServerSessionId"), _sessionId);
+            List<FieldKey> defaultCols = new ArrayList<FieldKey>(table.getDefaultVisibleColumns());
+            defaultCols.add(FieldKey.fromParts("ExceptionStackTraceId", "StackTrace"));
+            table.setDefaultVisibleColumns(defaultCols);
+            
+            return table;
         }
     }
 

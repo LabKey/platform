@@ -46,6 +46,11 @@ public class StudyDomainKind extends BaseStudyDomainKind
         return new ActionURL(StudyController.ManageStudyAction.class, domain.getContainer());
     }
 
+    public ActionURL urlShowData(Domain domain)
+    {
+        return new ActionURL(StudyController.ManageStudyAction.class, domain.getContainer());
+    }
+
     public SQLFragment sqlObjectIdsInDomain(Domain domain)
     {
         return new SQLFragment("NULL");

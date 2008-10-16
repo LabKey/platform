@@ -23,6 +23,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.mothership.MothershipManager;
 import org.labkey.mothership.MothershipController;
+import org.labkey.mothership.StackTraceDisplayColumn;
 
 import java.sql.Types;
 import java.util.*;
@@ -211,6 +212,19 @@ public class MothershipSchema extends UserSchema
         return result;
     }
 
+    public FilteredTable createExceptionStackTraceTable()
+    {
+        FilteredTable result = new FilteredTable(MothershipManager.get().getTableInfoExceptionStackTrace());
+        result.wrapAllColumns(true);
+        result.getColumn("StackTrace").setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            {
+                return new StackTraceDisplayColumn(colInfo);
+            }
+        });
+        return result;
+    }
 
     public FilteredTable createExceptionReportTable()
     {
@@ -232,6 +246,15 @@ public class MothershipSchema extends UserSchema
                 DataColumn result = new DataColumn(colInfo);
                 result.setURLExpression(StringExpressionFactory.create("${ReferrerURL}", false));
                 return result;
+            }
+        });
+
+        result.getColumn("ExceptionStackTraceId").setCaption("Exception");
+        result.getColumn("ExceptionStackTraceId").setFk(new LookupForeignKey("ExceptionStackTraceId")
+        {
+            public TableInfo getLookupTableInfo()
+            {
+                return createExceptionStackTraceTable();
             }
         });
 

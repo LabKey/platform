@@ -45,6 +45,8 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
     {
         switch (column)
         {
+            case Container:
+                return wrapColumn(alias, _rootTable.getColumn("Container"));
             case LSID:
                 return wrapColumn(alias, _rootTable.getColumn("LSID"));
             case Name:
@@ -141,6 +143,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         addColumn(ExpMaterialTable.Column.RowId);
         addColumn(ExpMaterialTable.Column.Name);
         addColumn(ExpMaterialTable.Column.CpasType);
+        addContainerColumn(ExpMaterialTable.Column.Container);
         addColumn(ExpMaterialTable.Column.Run).setFk(new ExpSchema(schema.getUser(), schema.getContainer()).getRunIdForeignKey());
         ColumnInfo colLSID = addColumn(ExpMaterialTable.Column.LSID);
         colLSID.setIsHidden(true);

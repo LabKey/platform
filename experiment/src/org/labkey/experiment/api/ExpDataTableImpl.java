@@ -53,6 +53,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         addColumn(Column.LSID).setIsHidden(true);
         addColumn(Column.DataFileUrl);
         addColumn(Column.Protocol).setIsHidden(true);
+        addContainerColumn(Column.Container);
         setTitleColumn("Name");
         ActionURL detailsURL = new ActionURL("Experiment", "showData", schema.getContainer().getPath());
         setDetailsURL(new DetailsURL(detailsURL, Collections.singletonMap("rowId", "RowId")));

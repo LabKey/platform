@@ -57,6 +57,7 @@ import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.net.URISyntaxException;
 
 
 /**
@@ -183,7 +184,7 @@ public class AnnouncementsController extends SpringActionController
         }
     }
 
-    public static ActionURL getAdminEmailURL(Container c, ActionURL returnURL)
+    public static ActionURL getAdminEmailURL(Container c, URLHelper returnURL)
     {
         ActionURL url = new ActionURL(AdminEmailAction.class, c);
         url.addReturnURL(returnURL);
@@ -220,7 +221,7 @@ public class AnnouncementsController extends SpringActionController
 
             ButtonBar bb = new ButtonBar();
 
-            ActionButton bulkEdit = new ActionButton(getBulkEditURL(form.getReturnActionURL()), "Bulk Edit");
+            ActionButton bulkEdit = new ActionButton(getBulkEditURL(new URLHelper(form.getReturnUrl())), "Bulk Edit");
             bulkEdit.setActionType(ActionButton.Action.LINK);
             bb.add(bulkEdit);
             rgn.setButtonBar(bb);
@@ -276,9 +277,9 @@ public class AnnouncementsController extends SpringActionController
                 colLastModifiedBy.setVisible(false);
 
             VBox vbox = new VBox();
-            vbox.addView(new AnnouncementEmailDefaults(c, form.getReturnActionURL()));
+            vbox.addView(new AnnouncementEmailDefaults(c, new URLHelper(form.getReturnUrl())));
             vbox.addView(gridView);
-            vbox.addView(new HtmlView("<br>" + PageFlowUtil.generateButton("Done", form.getReturnActionURL())));
+            vbox.addView(new HtmlView("<br>" + PageFlowUtil.generateButton("Done", form.getReturnUrl())));
 
             return vbox;
         }
@@ -290,7 +291,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    public ActionURL getBulkEditURL(ActionURL returnURL)
+    public ActionURL getBulkEditURL(URLHelper returnURL)
     {
         ActionURL url = new ActionURL(BulkEditAction.class, getContainer());
         url.addReturnURL(returnURL);
@@ -301,11 +302,18 @@ public class AnnouncementsController extends SpringActionController
     @RequiresPermission(ACL.PERM_ADMIN)
     public class BulkEditAction extends FormViewAction<BulkEditEmailPrefsForm>
     {
-        private ActionURL _returnUrl;
+        private URLHelper _returnUrl;
 
         public ActionURL getSuccessURL(BulkEditEmailPrefsForm form)
         {
-            return getAdminEmailURL(getContainer(), form.getReturnActionURL());
+            try
+            {
+                return getAdminEmailURL(getContainer(), new URLHelper(form.getReturnUrl()));
+            }
+            catch (URISyntaxException e)
+            {
+                return null;
+            }
         }
 
         public ModelAndView getView(BulkEditEmailPrefsForm form, boolean reshow, BindException errors) throws Exception
@@ -349,9 +357,9 @@ public class AnnouncementsController extends SpringActionController
                 ResultSetUtil.close(rs);
             }
 
-            _returnUrl = form.getReturnActionURL();  // NavTrail needs this
+            _returnUrl = new URLHelper(form.getReturnUrl());  // NavTrail needs this
 
-            return new BulkEditView(c, emailPrefList, form.getReturnActionURL());
+            return new BulkEditView(c, emailPrefList, _returnUrl);
         }
 
         public boolean handlePost(BulkEditEmailPrefsForm form, BindException errors) throws Exception
@@ -396,7 +404,7 @@ public class AnnouncementsController extends SpringActionController
 
     public static class BulkEditView extends JspView<BulkEditView.BulkEditBean>
     {
-        private BulkEditView(Container c, List<EmailPref> emailPrefList, ActionURL returnUrl) throws SQLException
+        private BulkEditView(Container c, List<EmailPref> emailPrefList, URLHelper returnUrl) throws SQLException
         {
             super("/org/labkey/announcements/bulkEdit.jsp", new BulkEditBean(c, emailPrefList, returnUrl));
             setTitle("Admin Email Preferences");
@@ -406,9 +414,9 @@ public class AnnouncementsController extends SpringActionController
         {
             public List<EmailPref> emailPrefList;
             public String folderEmailOption;
-            public ActionURL returnURL;
+            public URLHelper returnURL;
 
-            private BulkEditBean(Container c, List<EmailPref> emailPrefList, ActionURL returnURL) throws SQLException
+            private BulkEditBean(Container c, List<EmailPref> emailPrefList, URLHelper returnURL) throws SQLException
             {
                 EmailOption[] emailOptions = AnnouncementManager.getEmailOptions();
                 int defaultEmailOptionId = AnnouncementManager.getDefaultEmailOption(c);
@@ -482,8 +490,8 @@ public class AnnouncementsController extends SpringActionController
 
     public abstract class DeleteMessageAction extends ConfirmAction<AnnouncementDeleteForm>
     {
-        protected ActionURL _returnUrl;
-        protected ActionURL _cancelUrl;
+        protected URLHelper _returnUrl;
+        protected URLHelper _cancelUrl;
 
         public ModelAndView getConfirmView(AnnouncementDeleteForm form, BindException errors) throws Exception
         {
@@ -500,10 +508,10 @@ public class AnnouncementsController extends SpringActionController
             if (!perm.allowDeleteMessage(ann))
                 HttpView.throwUnauthorized();
 
-            _returnUrl = form.getReturnActionURL();
+            _returnUrl = new URLHelper(form.getReturnUrl());
 
             if (null != form.getCancelUrl())
-                _cancelUrl = form.getCancelActionURL();
+                _cancelUrl = new URLHelper(form.getCancelUrl());
             else
                 _cancelUrl = _returnUrl;
 
@@ -512,7 +520,7 @@ public class AnnouncementsController extends SpringActionController
 
         public ActionURL getSuccessURL(AnnouncementDeleteForm form)
         {
-            return form.getReturnActionURL();
+            throw new IllegalStateException("Shouldn't get here; post handler should have redirected.");
         }
 
         public boolean handlePost(AnnouncementDeleteForm form, BindException errors) throws Exception
@@ -532,6 +540,9 @@ public class AnnouncementsController extends SpringActionController
                 HttpView.throwUnauthorized();
 
             AnnouncementManager.deleteAnnouncement(c, ann.getRowId());
+
+            // Can't use getSuccessURL since this is a URLHelper, not an ActionURL
+            HttpView.throwRedirect(form.getReturnUrl());
 
             return true;
         }
@@ -583,7 +594,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    public static ActionURL getDeleteResponseURL(Container c, String entityId, ActionURL returnUrl)
+    public static ActionURL getDeleteResponseURL(Container c, String entityId, URLHelper returnUrl)
     {
         ActionURL url = new ActionURL(DeleteResponseAction.class, c);
         url.addParameter("entityId", entityId);
@@ -601,7 +612,7 @@ public class AnnouncementsController extends SpringActionController
             return "response from the";
         }
 
-        public ActionURL getCancelUrl()
+        public URLHelper getCancelUrl()
         {
             return _returnUrl;
         }
@@ -859,16 +870,16 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    private ActionURL getReturnURL()
+    private URLHelper getReturnURL() throws URISyntaxException
     {
         String url = StringUtils.trimToNull((String)getViewContext().get("returnUrl"));
         if (null != url)
-            return new ActionURL(url);
+            return new URLHelper(url);
         return null;
     }
 
     
-    public static ActionURL getCustomizeURL(Container c, ActionURL returnUrl)
+    public static ActionURL getCustomizeURL(Container c, URLHelper returnUrl)
     {
         ActionURL url = new ActionURL(CustomizeAction.class, c);
         url.addReturnURL(returnUrl);
@@ -881,7 +892,7 @@ public class AnnouncementsController extends SpringActionController
     {
         public ActionURL getSuccessURL(Settings form)
         {
-            return getReturnURL();
+            throw new IllegalStateException("Shouldn't get here; post handler should have redirected.");
         }
 
         public ModelAndView getView(Settings form, boolean reshow, BindException errors) throws Exception
@@ -904,6 +915,7 @@ public class AnnouncementsController extends SpringActionController
         {
             AnnouncementManager.saveMessageBoardSettings(getContainer(), form);
 
+            HttpView.throwRedirect(getReturnURL().getLocalURIString());
             return true;
         }
 
@@ -924,7 +936,7 @@ public class AnnouncementsController extends SpringActionController
     public static class CustomizeBean
     {
         public Settings settings;
-        public ActionURL returnURL;
+        public URLHelper returnURL;
         public String securityWarning;
         public String assignedToSelect;
     }
@@ -943,7 +955,7 @@ public class AnnouncementsController extends SpringActionController
     @RequiresPermission(ACL.PERM_INSERT)
     public abstract class BaseInsertAction extends FormViewAction<AnnouncementForm>
     {
-        private ActionURL _returnURL;
+        private URLHelper _returnURL;
         protected HttpView _attachmentErrorView;
 
         protected abstract ModelAndView getInsertUpdateView(AnnouncementForm announcementForm, boolean reshow, BindException errors) throws Exception;
@@ -1005,7 +1017,7 @@ public class AnnouncementsController extends SpringActionController
                 sendNotificationEmails(insert, currentRendererType);
             }
 
-            ActionURL returnURL = form.getReturnUrl();
+            URLHelper returnURL = form.getReturnUrl();
 
             // Null in insert/update message case, since we want to redirect to thread view anchoring to new post
             if (null == returnURL)
@@ -1030,12 +1042,18 @@ public class AnnouncementsController extends SpringActionController
             _attachmentErrorView = AttachmentService.get().getErrorView(files, errors, returnURL);
             _returnURL = returnURL;
 
-            return (null == _attachmentErrorView);
+            boolean success = (null == _attachmentErrorView);
+
+            // Can't use getSuccessURL since this is a URLHelper, not an ActionURL
+            if (success)
+                HttpView.throwRedirect(_returnURL.getLocalURIString());
+
+            return false;
         }
 
         public ActionURL getSuccessURL(AnnouncementForm announcementForm)
         {
-            return _returnURL;
+            throw new IllegalStateException("Shouldn't get here; post handler should have redirected.");
         }
 
 
@@ -1314,7 +1332,7 @@ public class AnnouncementsController extends SpringActionController
 
     public abstract static class BaseInsertView extends JspView<BaseInsertView.InsertBean>
     {
-        public BaseInsertView(String page, InsertBean bean, AnnouncementForm form, ActionURL cancelURL, String title, BindException errors, Announcement latestPost, boolean reshow, boolean fromDiscussion)
+        public BaseInsertView(String page, InsertBean bean, AnnouncementForm form, URLHelper cancelURL, String title, BindException errors, Announcement latestPost, boolean reshow, boolean fromDiscussion)
         {
             super(page, bean, errors);
             setTitle(title);
@@ -1385,7 +1403,7 @@ public class AnnouncementsController extends SpringActionController
             public WikiRendererType[] renderers;
             public WikiRendererType currentRendererType;
             public AnnouncementForm form;
-            public ActionURL cancelURL;
+            public URLHelper cancelURL;
             public Announcement parentAnnouncement;   // Used by RespondView only... move to subclass?
             public boolean fromDiscussion;
             public boolean allowMultipleDiscussions = true;
@@ -1395,7 +1413,7 @@ public class AnnouncementsController extends SpringActionController
 
     public static class InsertMessageView extends BaseInsertView
     {
-        public InsertMessageView(AnnouncementForm form, String title, BindException errors, boolean reshow, ActionURL cancelURL, boolean fromDiscussion, boolean allowMultipleDiscussions)
+        public InsertMessageView(AnnouncementForm form, String title, BindException errors, boolean reshow, URLHelper cancelURL, boolean fromDiscussion, boolean allowMultipleDiscussions)
         {
             super("/org/labkey/announcements/insert.jsp", new InsertBean(), form, cancelURL, title, errors, null, reshow, fromDiscussion);
 
@@ -1408,21 +1426,21 @@ public class AnnouncementsController extends SpringActionController
 
     public static class RespondView extends BaseInsertView
     {
-        public RespondView(Container c, Announcement parent, AnnouncementForm form, ActionURL cancelURL, BindException errors, boolean reshow, boolean fromDiscussion)
+        public RespondView(Container c, Announcement parent, AnnouncementForm form, URLHelper cancelURL, BindException errors, boolean reshow, boolean fromDiscussion)
         {
             super("/org/labkey/announcements/respond.jsp", new InsertBean(), form, cancelURL, "Response", errors, AnnouncementManager.getLatestPost(c, parent), reshow, fromDiscussion);
 
             getModelBean().parentAnnouncement = parent;
         }
 
-        public RespondView(Container c, Announcement parent, ActionURL cancelURL, boolean fromDiscussion)
+        public RespondView(Container c, Announcement parent, URLHelper cancelURL, boolean fromDiscussion)
         {
             this(c, parent, new AnnouncementForm(), cancelURL, null, false, fromDiscussion);
         }
     }
 
 
-    public static ActionURL getUpdateURL(Container c, String threadId, ActionURL returnUrl)
+    public static ActionURL getUpdateURL(Container c, String threadId, URLHelper returnUrl)
     {
         ActionURL url = new ActionURL(UpdateAction.class, c);
         url.addParameter("entityId", threadId);
@@ -1438,7 +1456,7 @@ public class AnnouncementsController extends SpringActionController
 
         public ActionURL getSuccessURL(AnnouncementForm form)
         {
-            return form.getReturnUrl();
+            throw new IllegalStateException("Shouldn't get here; post handler should have redirected.");
         }
 
         public ModelAndView getView(AnnouncementForm form, boolean reshow, BindException errors) throws Exception
@@ -1470,6 +1488,10 @@ public class AnnouncementsController extends SpringActionController
                 HttpView.throwUnauthorized();
 
             AnnouncementManager.updateAnnouncement(form.getUser(), update);
+
+            // Needs to support non-ActionURL (e.g., an HTML page using the client API with embedded discussion webpart)
+            // so we can't use getSuccessURL()
+            HttpView.throwRedirect(form.getReturnUrl().getLocalURIString());
 
             return true;
         }
@@ -1601,7 +1623,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    public static ActionURL getEmailPreferencesURL(Container c, ActionURL srcUrl)
+    public static ActionURL getEmailPreferencesURL(Container c, URLHelper srcUrl)
     {
         return new ActionURL(EmailPreferencesAction.class, c).addParameter("srcUrl", srcUrl.getLocalURIString());
     }
@@ -1687,7 +1709,14 @@ public class AnnouncementsController extends SpringActionController
 
         public ActionURL getSuccessURL(EmailDefaultSettingsForm form)
         {
-            return getAdminEmailURL(getContainer(), form.getReturnActionURL());
+            try
+            {
+                return getAdminEmailURL(getContainer(), new URLHelper(form.getReturnUrl()));
+            }
+            catch (URISyntaxException e)
+            {
+                return null;
+            }
         }
 
         public void validateCommand(EmailDefaultSettingsForm target, Errors errors)
@@ -1899,11 +1928,6 @@ public class AnnouncementsController extends SpringActionController
         {
             _cancelUrl = cancelUrl;
         }
-
-        public ActionURL getCancelActionURL()
-        {
-            return new ActionURL(_cancelUrl);
-        }
     }
 
     public static class AnnouncementForm extends BeanViewForm<Announcement>
@@ -2039,14 +2063,22 @@ public class AnnouncementsController extends SpringActionController
             }
         }
 
-        public ActionURL getReturnUrl()
+        public URLHelper getReturnUrl()
         {
             String urlString = StringUtils.trimToNull((String)get("returnUrl"));
 
-            if (null == urlString)
-                return null;
-            else
-                return new ActionURL(urlString);
+            if (null != urlString)
+            {
+                try
+                {
+                    return new URLHelper(urlString);
+                }
+                catch (URISyntaxException e)
+                {
+                }
+            }
+
+            return null;
         }
 
         public ActionURL getCancelUrl()
@@ -2159,7 +2191,7 @@ public class AnnouncementsController extends SpringActionController
 
     public static class AnnouncementEmailDefaults extends JspView<AnnouncementEmailDefaults.EmailDefaultsBean>
     {
-        public AnnouncementEmailDefaults(Container c, ActionURL returnURL) throws SQLException
+        public AnnouncementEmailDefaults(Container c, URLHelper returnURL) throws SQLException
         {
             super("/org/labkey/announcements/announcementEmailDefaults.jsp", new EmailDefaultsBean(c, returnURL));
         }
@@ -2168,9 +2200,9 @@ public class AnnouncementsController extends SpringActionController
         {
             public List<AnnouncementManager.EmailOption> emailOptionsList;
             public int defaultEmailOption;
-            public ActionURL returnURL;
+            public URLHelper returnURL;
 
-            private EmailDefaultsBean(Container c, ActionURL returnURL) throws SQLException
+            private EmailDefaultsBean(Container c, URLHelper returnURL) throws SQLException
             {
                 emailOptionsList = Arrays.asList(AnnouncementManager.getEmailOptions());
                 defaultEmailOption = AnnouncementManager.getDefaultEmailOption(c);
@@ -2497,7 +2529,8 @@ public class AnnouncementsController extends SpringActionController
         public Settings settings;
         public ActionURL messagesURL;
         public ActionURL listURL;
-        public ActionURL printURL;
+        public URLHelper printURL;
+        public URLHelper currentURL;
         public boolean print = false;
         public boolean includeGroups;
     }
@@ -2510,10 +2543,10 @@ public class AnnouncementsController extends SpringActionController
             super("/org/labkey/announcements/announcementThread.jsp", new ThreadViewBean());
         }
 
-        public ThreadView(Container c, User user, String rowId, String entityId) throws ServletException
+        public ThreadView(Container c, URLHelper currentURL, User user, String rowId, String entityId) throws ServletException
         {
             this();
-            init(c, findThread(c, rowId, entityId), null, getPermissions(c, user, getSettings(c)), false, false);
+            init(c, findThread(c, rowId, entityId), currentURL, getPermissions(c, user, getSettings(c)), false, false);
         }
 
         public ThreadView(Container c, ActionURL url, Announcement ann, Permissions perm) throws ServletException
@@ -2530,7 +2563,7 @@ public class AnnouncementsController extends SpringActionController
             init(c, ann, url, perm, false, print);
         }
 
-        protected void init(Container c, Announcement ann, ActionURL url, Permissions perm, boolean isResponse, boolean print)
+        protected void init(Container c, Announcement ann, URLHelper currentURL, Permissions perm, boolean isResponse, boolean print)
                 throws ServletException
         {
             if (null == c || !perm.allowRead(ann))
@@ -2541,13 +2574,14 @@ public class AnnouncementsController extends SpringActionController
 
             ThreadViewBean bean = getModelBean();
             bean.announcement = ann;
+            bean.currentURL = currentURL;
             bean.settings = getSettings(c);
             bean.message = null;
             bean.perm = perm;
             bean.isResponse = isResponse;
             bean.messagesURL = getBeginURL(c);  // TODO: Used as returnURL after delete thread... should be messages or list, as appropriate
             bean.listURL = getListURL(c);
-            bean.printURL = null == url ? null : url.clone().replaceParameter("_print", "1");
+            bean.printURL = null == currentURL ? null : currentURL.clone().replaceParameter("_print", "1");
             bean.print = print;
             bean.includeGroups = perm.includeGroups();
 
@@ -2620,7 +2654,7 @@ public class AnnouncementsController extends SpringActionController
             public WikiRendererType currentRendererType;
             public DownloadURL deleteURL;
             public ActionURL addAttachmentURL;
-            public ActionURL returnURL;
+            public URLHelper returnURL;
 
             private UpdateBean(AnnouncementForm form, Announcement ann)
             {

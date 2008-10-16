@@ -39,6 +39,7 @@ public class IssuesQueryView extends QueryView
         super(schema, settings);
         _context = context;
         setShowDetailsColumn(false);
+        setShowRecordSelectors(true);
         getSettings().setAllowChooseQuery(false);
     }
 
@@ -50,14 +51,13 @@ public class IssuesQueryView extends QueryView
         ResultSet rs = rgn.getResultSet(view.getRenderContext());
         return rs;
     }
-    
+
     public DataView createDataView()
     {
         DataView view = super.createDataView();
 
         if (view.getDataRegion().getButtonBarPosition() != DataRegion.ButtonBarPosition.NONE)
             view.getDataRegion().setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
-        view.getDataRegion().setShowRecordSelectors(true);
         view.getDataRegion().setRecordSelectorValueColumns("IssueId");
         view.getDataRegion().setShadeAlternatingRows(true);
         view.getDataRegion().setShowBorders(true);
@@ -73,7 +73,7 @@ public class IssuesQueryView extends QueryView
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
         super.populateButtonBar(view, bar);
-        
+
         if (view.getDataRegion().getButtonBarPosition() != DataRegion.ButtonBarPosition.NONE)
         {
             String viewDetailsURL = _context.cloneActionURL().setAction("detailsList.view").getEncodedLocalURIString();
@@ -135,7 +135,6 @@ public class IssuesQueryView extends QueryView
                 item.setHighlighted(target.toString().equals(url.toString()));
             menu.addMenuItem(item);
         }
-        menu.addSeparator();
 
         // sort the grid view alphabetically, with private views over public ones
         List<CustomView> views = new ArrayList<CustomView>(getQueryDef().getCustomViews(getViewContext().getUser(), getViewContext().getRequest()).values());
@@ -151,7 +150,13 @@ public class IssuesQueryView extends QueryView
             }
         });
 
-        boolean addSep = false;
+        boolean addSep = true;
+
+        // issues doesn't preserve any URL sorts or filters because they may have been introduced by
+        // the built in filter views.
+        // TODO: replace these views with programatically filtered ones so we can leave URL filters on
+        target.deleteParameters();
+
         for (CustomView view : views)
         {
             if (view.isHidden())
@@ -160,7 +165,11 @@ public class IssuesQueryView extends QueryView
             if (label == null)
                 continue;
 
-            addSep = true;
+            if (addSep)
+            {
+                menu.addSeparator();
+                addSep = false;
+            }
             item = new NavTree(label, target.clone().replaceParameter(param(QueryParam.viewName), label).getLocalURIString());
             item.setId("Views:" + label);
             if (label.equals(currentView))
@@ -173,8 +182,6 @@ public class IssuesQueryView extends QueryView
 
             menu.addMenuItem(item);
         }
-        if (addSep)
-            menu.addSeparator();
     }
 
     protected void populateReportButtonBar(ButtonBar bar)
@@ -196,7 +203,7 @@ public class IssuesQueryView extends QueryView
 
         return reports;
     }
-    
+
     protected void setupDataView(DataView view)
     {
         // We need to set the base sort _before_ calling super.setupDataView.  If the user

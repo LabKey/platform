@@ -44,7 +44,7 @@ public class AssayPanel extends Composite
         this.studyDef = parent.getDefinition();
         this.assaySchedule = studyDef.getAssaySchedule();
 
-        eg = new AssayGrid();
+        eg = new AssayGrid(parent);
         VerticalPanel vpanel = new VerticalPanel();
 
         if (!designer.isReadOnly())
@@ -136,9 +136,9 @@ public class AssayPanel extends Composite
     {
         private GWTAssayDefinition ghostAssayDefinition = null;
 
-        AssayGrid()
+        AssayGrid(Designer designer)
         {
-            super(assaySchedule, "Assay Schedule");
+            super(assaySchedule, "Assay Schedule", designer);
             DOM.setAttribute(getElement(), "id", "AssayGrid");
             setReadOnly(designer.isReadOnly());
         }

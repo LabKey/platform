@@ -63,7 +63,7 @@
         <td><%= generateButton("View Grid", IssuesController.issueURL(context.getContainer(), "list").addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
     </tr></table>
 
-    <table width=640>
+    <table>
         <tr><td colspan=3><table><tr>
 <%
             if (0 == issue.getIssueId())
@@ -82,7 +82,7 @@
                 </td></tr>
             </table></td></tr>
         <tr>
-            <td valign="top" width="34%"><table>
+            <td valign="top"><table>
                 <tr><td class="labkey-form-label"><%=bean.getLabel("Status")%></td><td><%=h(issue.getStatus())%></td></tr>
                 <tr><td class="labkey-form-label"><%=bean.getLabel("AssignedTo")%></td><td><%=bean.writeSelect("assignedTo", "" + issue.getAssignedTo(), issue.getAssignedToName(context), bean.getUserOptions(c, issue, context))%></td></tr>
                 <tr><td class="labkey-form-label"><%=bean.getLabel("Type")%></td><td><%=bean.writeSelect("type", issue.getType(), bean.getTypeOptions(c.getId()))%></td></tr>
@@ -90,7 +90,7 @@
                 <tr><td class="labkey-form-label"><%=bean.getLabel("Priority")%></td><td><%=bean.writeSelect("priority", "" + bean._toString(issue.getPriority()), bean.getPriorityOptions(c))%></td></tr>
                 <tr><td class="labkey-form-label"><%=bean.getLabel("Milestone")%></td><td><%=bean.writeSelect("milestone", issue.getMilestone(), bean.getMilestoneOptions(c.getId()))%></td></tr>
             </table></td>
-            <td valign="top" width="33%"><table>
+            <td valign="top"><table>
                 <tr><td class="labkey-form-label"><%=bean.getLabel("Opened&nbsp;By")%></td><td><%=h(issue.getCreatedByName(context))%></td></tr>
                 <tr><td class="labkey-form-label"><%=bean.getLabel("Opened")%></td><td><%=bean.writeDate(issue.getCreated())%></td></tr>
                 <tr><td class="labkey-form-label"><%=bean.getLabel("ResolvedBy")%></td><td><%=h(issue.getResolvedByName(context))%></td></tr>
@@ -109,7 +109,7 @@
                 <%=bean.writeCustomColumn(c.getId(), "int1", bean._toString(issue.getInt1()), IssuesController.ISSUE_NONE)%>
                 <%=bean.writeCustomColumn(c.getId(), "int2", bean._toString(issue.getInt2()), IssuesController.ISSUE_NONE)%>
             </table></td>
-            <td valign="top" width="33%"><table>
+            <td valign="top"><table>
                 <tr><td class="labkey-form-label">Changed&nbsp;By</td><td><%=h(issue.getModifiedByName(context))%></td></tr>
                 <tr><td class="labkey-form-label">Changed</td><td><%=bean.writeDate(issue.getModified())%></td></tr>
                 <tr><td class="labkey-form-label">Closed&nbsp;By</td><td><%=h(issue.getClosedByName(context))%></td></tr>

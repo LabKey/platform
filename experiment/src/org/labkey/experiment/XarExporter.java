@@ -152,13 +152,13 @@ public class XarExporter
 
         addProtocol(protocol, true);
 
-        List<Data> inputData = ExperimentServiceImpl.get().getRunInputData(run.getLSID());
+        Collection<ExpData> inputData = run.getDataInputs().keySet();
         ExperimentArchiveType.StartingInputDefinitions inputDefs = _archive.getStartingInputDefinitions();
         if (inputData.size() > 0 && inputDefs == null)
         {
             inputDefs = _archive.addNewStartingInputDefinitions();
         }
-        for (Data data : inputData)
+        for (ExpData data : inputData)
         {
             if (!_inputDataLSIDs.contains(data.getLSID()))
             {
@@ -230,7 +230,11 @@ public class XarExporter
             if (AutoFileLSIDReplacer.AUTO_FILE_LSID_SUBSTITUTION.equals(dataLSID.getStringValue()))
             {
                 ExpDataImpl expData = new ExpDataImpl(data);
-                dataLSID.setDataFileUrl(_urlRewriter.rewriteURL(expData.getFile(), expData, run));
+                String url = _urlRewriter.rewriteURL(expData.getFile(), expData, run);
+                if (url != null && !"".equals(url))
+                {
+                    dataLSID.setDataFileUrl(url);
+                }
             }
             String roleName = null;
             for (DataInput dataInput : dataInputs)
@@ -286,10 +290,10 @@ public class XarExporter
         xApplication.setName(application.getName());
 
         ProtocolApplicationBaseType.OutputDataObjects outputDataObjects = xApplication.addNewOutputDataObjects();
-        Data[] outputData = ExperimentServiceImpl.get().getOutputDataForApplication(application.getRowId());
-        if (outputData.length > 0)
+        List<ExpData> outputData = application.getOutputDatas();
+        if (!outputData.isEmpty())
         {
-            for (Data data : outputData)
+            for (ExpData data : outputData)
             {
                 DataBaseType xData = outputDataObjects.addNewData();
                 populateData(xData, data, run);
@@ -525,20 +529,20 @@ public class XarExporter
         return properties;
     }
 
-    private void populateData(DataBaseType xData, Data data, ExpRun run) throws ExperimentException
+    private void populateData(DataBaseType xData, ExpData data, ExpRun run) throws ExperimentException
     {
         logProgress("Adding data " + data.getLSID());
-        xData.setAbout(_relativizedLSIDs.relativize(data.getLSID()));
+        xData.setAbout(_relativizedLSIDs.relativize(data));
         xData.setCpasType(data.getCpasType() == null ? "Data" : _relativizedLSIDs.relativize(data.getCpasType()));
 
         File f = data.getFile();
         String url = null;
         if (f != null)
         {
-            url = _urlRewriter.rewriteURL(f, new ExpDataImpl(data), run);
+            url = _urlRewriter.rewriteURL(f, data, run);
         }
         xData.setName(data.getName());
-        PropertyCollectionType dataProperties = getProperties(data.getLSID(), ContainerManager.getForId(data.getContainer()));
+        PropertyCollectionType dataProperties = getProperties(data.getLSID(), data.getContainer());
         if (url != null)
         {
             xData.setDataFileUrl(url);
@@ -554,10 +558,14 @@ public class XarExporter
         {
             xData.setProperties(dataProperties);
         }
-        String sourceProtocolLSID = _relativizedLSIDs.relativize(data.getSourceProtocolLSID());
-        if (sourceProtocolLSID != null)
+        ExpProtocol protocol = data.getSourceProtocol();
+        if (protocol != null)
         {
-            xData.setSourceProtocolLSID(sourceProtocolLSID);
+            String sourceProtocolLSID = _relativizedLSIDs.relativize(protocol.getLSID());
+            if (sourceProtocolLSID != null)
+            {
+                xData.setSourceProtocolLSID(sourceProtocolLSID);
+            }
         }
     }
 

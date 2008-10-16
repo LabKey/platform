@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.action.ReturnUrlForm" %>
+<%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <!--ANNOUNCEMENTS-->
 <%
@@ -51,7 +52,7 @@ if (null != bean.message)
 }
 
 // is this an embedded discussion?
-boolean embedded = (null != announcement.getDiscussionSrcURL() && !context.getActionURL().getPageFlow().equalsIgnoreCase("announcements"));
+boolean embedded = (null != announcement.getDiscussionSrcURL() && !context.getActionURL().getPageFlow().equalsIgnoreCase("announcements"));  // TODO: Should have explicit flag for discussion case
 ActionURL discussionSrc = null;
 
 if (!embedded && null != announcement.getDiscussionSrcURL())
@@ -94,11 +95,9 @@ if (false && !bean.print && null != discussionSrc)
     %>[<a href="<%=h(discussionSrc.getLocalURIString())%>#discussionArea">view&nbsp;in&nbsp;context</a>]&nbsp;<%
 }
 
-ActionURL returnUrl = context.getActionURL();
-
 if (bean.perm.allowUpdate(announcement) && !bean.print)
 {
-    ActionURL update = AnnouncementsController.getUpdateURL(c, announcement.getEntityId(), returnUrl);
+    ActionURL update = AnnouncementsController.getUpdateURL(c, announcement.getEntityId(), bean.currentURL);
     %>[<a href="<%=h(update.getLocalURIString())%>">edit</a>]<%
 }
 %>&nbsp;<%=h(DateUtil.formatDateTime(announcement.getCreated()))%></td>
@@ -144,7 +143,7 @@ if (null != announcement.getBody())
 
 %>
 <tr>
-    <td colspan="3"><%=announcement.translateBody(context.getContainer())%></td>
+    <td colspan="3"><%=announcement.translateBody(c)%></td>
 </tr><%
 
 if (0 < announcement.getAttachments().size())
@@ -182,12 +181,12 @@ if (0 < announcement.getResponses().size())
                 <td class="labkey-bordered" style="border-left: 0 none" align="right"><%
                 if (bean.perm.allowUpdate(r) && !bean.print)
                 {
-                    ActionURL update = AnnouncementsController.getUpdateURL(c, r.getEntityId(), returnUrl);
+                    ActionURL update = AnnouncementsController.getUpdateURL(c, r.getEntityId(), bean.currentURL);
                     %>[<a href="<%=h(update.getLocalURIString())%>">edit</a>]<%
                     }
                     if (bean.perm.allowDeleteMessage(r) && !bean.print)
                     {
-                        ActionURL deleteResponse = AnnouncementsController.getDeleteResponseURL(c, r.getEntityId(), returnUrl);
+                        ActionURL deleteResponse = AnnouncementsController.getDeleteResponseURL(c, r.getEntityId(), bean.currentURL);
                 %>&nbsp;[<a href="<%=h(deleteResponse.getLocalURIString())%>">delete</a>]<%
                 }
                 %>&nbsp;<%=h(DateUtil.formatDateTime(r.getCreated()))%></td>
@@ -228,7 +227,7 @@ if (0 < announcement.getResponses().size())
             </tr><%
             } %>
             <tr>
-                <td colspan="2"><%=r.translateBody(context.getContainer())%></td>
+                <td colspan="2"><%=r.translateBody(c)%></td>
             </tr><%
             if (0 < r.getAttachments().size())
             { %>
@@ -266,7 +265,7 @@ if (!bean.isResponse && !bean.print)
         if (embedded)
         {
             // UNDONE: respond in place
-            ActionURL url = context.cloneActionURL();
+            URLHelper url = bean.currentURL.clone();
             url.replaceParameter("discussion.id",""+announcement.getRowId());
             url.replaceParameter("discussion.reply","1");
             %>
@@ -274,18 +273,19 @@ if (!bean.isResponse && !bean.print)
         }
         else
         {
-            ActionURL respond = announcementURL(context, "respond", "parentId", announcement.getEntityId(), ReturnUrlForm.Params.returnUrl.toString(), context.getActionURL().getEncodedLocalURIString());
+            ActionURL respond = announcementURL(c, "respond", "parentId", announcement.getEntityId());
+            respond.addReturnURL(bean.currentURL);
             %>
         <%=PageFlowUtil.generateButton("Post Response", respond.getLocalURIString())%>&nbsp;<%
         }
     }
     if (bean.perm.allowDeleteMessage(announcement))
     {
-        ActionURL deleteThread = announcementURL(context, "deleteThread", "entityId", announcement.getEntityId());
-        deleteThread.addParameter("cancelUrl", context.getActionURL().getLocalURIString());
+        ActionURL deleteThread = announcementURL(c, "deleteThread", "entityId", announcement.getEntityId());
+        deleteThread.addParameter("cancelUrl", bean.currentURL.getLocalURIString());
         if (embedded)
         {
-            ActionURL redirect = context.cloneActionURL().deleteScopeParameters("discussion");
+            URLHelper redirect = bean.currentURL.clone().deleteScopeParameters("discussion");
             deleteThread.addReturnURL(redirect);
         }
         else
@@ -308,9 +308,9 @@ if (bean.isResponse)
 %>
 
 <%!
-    ActionURL announcementURL(ViewContext context, String action, String... params)
+    ActionURL announcementURL(Container c, String action, String... params)
     {
-        ActionURL url = new ActionURL("announcements", action, context.getContainer());
+        ActionURL url = new ActionURL("announcements", action, c);
         for (int i=0 ; i<params.length ; i+=2)
             url.addParameter(params[i], params[i+1]);
         return url;

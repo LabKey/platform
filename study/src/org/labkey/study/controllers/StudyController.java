@@ -627,6 +627,7 @@ public class StudyController extends BaseStudyController
             exportMenuButton.addMenuItem("Create R Script", queryView.urlFor(QueryAction.exportRScript).getLocalURIString());
             buttonBar.add(exportMenuButton);
 
+            buttonBar.add(queryView.createPageSizeMenuButton());
 
             User user = getUser();
             boolean canWrite = def.canWrite(user) && def.getContainer().getAcl().hasPermission(user, ACL.PERM_UPDATE);

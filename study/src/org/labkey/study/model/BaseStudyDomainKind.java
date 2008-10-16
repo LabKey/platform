@@ -62,11 +62,6 @@ public abstract class BaseStudyDomainKind extends DomainKind
         return null;
     }
 
-    public ActionURL urlShowData(Domain domain)
-    {
-        throw new UnsupportedOperationException("Not implemented");
-    }
-
     protected abstract Class<? extends ExtensibleStudyEntity> getSupportedClass();
 
     protected abstract TableInfo getTableInfo();

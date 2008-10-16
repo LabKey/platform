@@ -4644,6 +4644,32 @@ public class AdminController extends SpringActionController
             root.addChild("Admin Console", new ActionURL(ShowAdminAction.class, getViewContext().getContainer()).getLocalURIString());
             return root.addChild("Test Email Configuration");
         }
+    }
 
+
+    @RequiresSiteAdmin
+    public class RecreateViewsAction extends ConfirmAction
+    {
+        public ModelAndView getConfirmView(Object o, BindException errors) throws Exception
+        {
+            getPageConfig().setIncludeHeader(false);
+            getPageConfig().setTitle("Recreate Views?");
+            return new HtmlView("Are you sure you want to drop and recreate all non-core module views?");
+        }
+
+        public boolean handlePost(Object o, BindException errors) throws Exception
+        {
+            ModuleLoader.getInstance().recreateViews();
+            return true;
+        }
+
+        public void validateCommand(Object o, Errors errors)
+        {
+        }
+
+        public ActionURL getSuccessURL(Object o)
+        {
+            return AppProps.getInstance().getHomePageActionURL();
+        }
     }
 }

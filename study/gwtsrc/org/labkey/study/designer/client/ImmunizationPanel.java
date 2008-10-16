@@ -44,7 +44,7 @@ public class ImmunizationPanel extends Composite
         this.designer = parent;
         this.studyDef = designer.getDefinition();
         this.immunizationSchedule = studyDef.getImmunizationSchedule();
-        immunizationGrid = new ImmunizationGrid();
+        immunizationGrid = new ImmunizationGrid(parent);
         immunizationGrid.updateAll();
         VerticalPanel vpanel = new VerticalPanel();
         vpanel.add(immunizationGrid);
@@ -66,9 +66,9 @@ public class ImmunizationPanel extends Composite
     {
         GWTCohort ghostCohort = new GWTCohort();
 
-        protected ImmunizationGrid()
+        protected ImmunizationGrid(Designer designer)
         {
-            super(immunizationSchedule, "Immunization Schedule");
+            super(immunizationSchedule, "Immunization Schedule", designer);
             DOM.setAttribute(getElement(), "id", "ImmunizationGrid");
             setReadOnly(designer.isReadOnly());
         }

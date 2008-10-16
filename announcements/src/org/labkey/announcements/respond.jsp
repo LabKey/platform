@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.wiki.WikiRendererType" %>
+<%@ page import="org.labkey.api.action.ReturnUrlForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<BaseInsertView.InsertBean> me = (HttpView<BaseInsertView.InsertBean>) HttpView.currentView();
@@ -48,6 +49,7 @@ function validateForm(form)
 </script>
 <form method=post enctype="multipart/form-data" action="<%=respondUrl%>" onSubmit="return validateForm(this)">
 <input type="hidden" name="cancelUrl" value="<%=h(bean.cancelURL)%>">
+<input type="hidden" name="<%=ReturnUrlForm.Params.returnUrl%>" value="<%=h(bean.cancelURL)%>">
 <input type="hidden" name="fromDiscussion" value="<%=bean.fromDiscussion%>">
 <table><%
 
@@ -91,7 +93,7 @@ if (settings.hasExpires())
 
 %>
     <tr>
-    <td class="labkey-form-label">Body</td><td colspan=2 width="100%"><textarea cols="60" rows="15" id="body" name="body" width="100%"><%=h(form.get("body"))%></textarea>
+    <td class="labkey-form-label">Body</td><td colspan=2 width="100%"><textarea cols="60" rows="15" id="body" name="body" style="width:100%;"><%=h(form.get("body"))%></textarea>
         <input type="hidden" name="parentId" value="<%=bean.parentAnnouncement.getEntityId()%>"/>
     </td>
 </tr><%
@@ -136,7 +138,7 @@ if (settings.hasFormatPicker())
       </table>
     </td></tr>
 </table>
-<br>&nbsp;<%=PageFlowUtil.generateSubmitButton("Submit")%>&nbsp;<%=PageFlowUtil.generateButton("Cancel", bean.cancelURL) %>
+<br>&nbsp;<%=PageFlowUtil.generateSubmitButton("Submit")%>&nbsp;<%=PageFlowUtil.generateButton("Cancel", bean.cancelURL.getLocalURIString()) %>
 </form>
 <br>
 <% me.include(bean.currentRendererType.getSyntaxHelpView(), out); %>
