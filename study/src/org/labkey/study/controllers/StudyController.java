@@ -18,6 +18,7 @@ package org.labkey.study.controllers;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.converters.BooleanConverter;
+import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
@@ -78,7 +79,8 @@ import org.labkey.study.query.DataSetQueryView;
 import org.labkey.study.query.PublishedRecordQueryView;
 import org.labkey.study.query.StudyPropertiesQueryView;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.reports.*;
+import org.labkey.study.reports.ReportManager;
+import org.labkey.study.reports.StudyReportUIProvider;
 import org.labkey.study.visitmanager.VisitManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -1888,7 +1890,8 @@ public class StudyController extends BaseStudyController
                     }
 
                     // Deal with extra key field
-                    Integer keyField = (Integer)props.get("key");
+                    IntegerConverter intConverter = new IntegerConverter(0);
+                    Integer keyField = (Integer)intConverter.convert(Integer.class, props.get("key"));
                     if (keyField != null && keyField.intValue() == 1)
                     {
                         if (info.keyPropertyName == null)
@@ -2005,6 +2008,7 @@ public class StudyController extends BaseStudyController
                             def.setShowByDefault(!info.isHidden);
                             def.setKeyPropertyName(info.keyPropertyName);
                             def.setCategory(info.category);
+                            def.setKeyPropertyManaged(info.keyManaged);
                             manager.createDataSetDefinition(getUser(), def);
                         }
                         else
@@ -2017,6 +2021,7 @@ public class StudyController extends BaseStudyController
                             def.setShowByDefault(!info.isHidden);
                             def.setKeyPropertyName(info.keyPropertyName);
                             def.setCategory(info.category);
+                            def.setKeyPropertyManaged(info.keyManaged);
                             manager.updateDataSetDefinition(getUser(), def);
                         }
                     }
