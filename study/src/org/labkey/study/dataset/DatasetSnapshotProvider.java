@@ -63,7 +63,6 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
     // map of property uri to dataset id
     private static final Map<String, Map<String, Integer>> _datasetPropertyMap = new HashMap<String, Map<String, Integer>>();
-    private static Timer _timer = new Timer("SnapshotUpdateTimer", true);
 
     private DatasetSnapshotProvider()
     {
@@ -529,12 +528,13 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 def.save(user, def.getContainer());
 
                 TimerTask task = new SnapshotUpdateTask(def, url);
-                _timer.schedule(task, startTime.getTime());
+                Timer timer = new Timer("SnapshotUpdateTimer", true);
+                timer.schedule(task, startTime.getTime());
             }
         }
     }
 
-    private static class SnapshotUpdateTask extends TimerTask implements ShutdownListener
+    private static class SnapshotUpdateTask extends TimerTask
     {
         private QuerySnapshotDefinition _def;
         private ActionURL _url;
@@ -566,12 +566,6 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             {
                 ExceptionUtil.logExceptionToMothership(AppProps.getInstance().createMockRequest(), e);
             }
-        }
-
-        public void shutdownStarted(ServletContextEvent servletContextEvent)
-        {
-            ContextListener.removeShutdownListener(this);
-            _timer.cancel();
         }
     }
 }
