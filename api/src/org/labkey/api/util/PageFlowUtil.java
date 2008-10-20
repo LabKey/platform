@@ -1644,6 +1644,10 @@ public class PageFlowUtil
         sb.append(",isAdmin:").append(container.hasPermission(user, ACL.PERM_ADMIN) ? "true" : "false");
         sb.append("}"); //end user object
 
+        sb.append(",container:{id:'").append(container.getId()).append("'");
+        sb.append(",path:").append(jsString(container.getPath()));
+        sb.append("}"); //end container object
+
         sb.append("}"); //end config
         return sb.toString();
     }
