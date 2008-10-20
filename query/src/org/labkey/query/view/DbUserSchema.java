@@ -135,4 +135,9 @@ public class DbUserSchema extends UserSchema
     {
         return _def.isEditable();
     }
+
+    public Container getDbContainer()
+    {
+        return null == _def.getDbContainer() ? null : ContainerManager.getForId(_def.getDbContainer());
+    }
 }

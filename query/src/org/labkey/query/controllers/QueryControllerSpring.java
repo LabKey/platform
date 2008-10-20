@@ -41,6 +41,7 @@ import org.labkey.query.QueryDefinitionImpl;
 import org.labkey.query.TableXML;
 import org.labkey.query.data.DefaultSchemaUpdateService;
 import org.labkey.query.data.Query;
+import org.labkey.query.data.DbUserSchemaUpdateService;
 import org.labkey.query.design.DgMessage;
 import org.labkey.query.design.ErrorsDocument;
 import org.labkey.query.design.QueryDocument;
@@ -1499,7 +1500,7 @@ public class QueryControllerSpring extends SpringActionController
             {
                 DbUserSchemaDef dbusd = QueryManager.get().getDbUserSchemaDef(getViewContext().getContainer(), schemaName);
                 if(null != dbusd && dbusd.isEditable())
-                    sus = new DefaultSchemaUpdateService(new DbUserSchema(getViewContext().getUser(),
+                    sus = new DbUserSchemaUpdateService(new DbUserSchema(getViewContext().getUser(),
                             getViewContext().getContainer(), dbusd));
             }
 

@@ -54,7 +54,7 @@ public class DefaultQueryUpdateService implements QueryUpdateService
         Map<String,Object> row = ((Map<String,Object>)Table.selectObject(_table, getKeys(keys), Map.class));
 
         //PostgreSQL includes a column named _row for the row index, but since this is selecting by
-        //primary key, it will always be 1, which is not only uncessary, but confusing, so strip it
+        //primary key, it will always be 1, which is not only unnecessary, but confusing, so strip it
         if(null != row)
             row.remove("_row");
         
@@ -64,6 +64,7 @@ public class DefaultQueryUpdateService implements QueryUpdateService
     public Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         convertTypes(row);
+        setSpecialColumns(user, container, getTable(), row);
         return Table.insert(user, getTable(), row);
     }
 
@@ -86,6 +87,7 @@ public class DefaultQueryUpdateService implements QueryUpdateService
         }
 
         convertTypes(rowStripped);
+        setSpecialColumns(user, container, getTable(), row);
         Map<String,Object> updatedRow = Table.update(user, getTable(), rowStripped, null == oldKeys ? getKeys(row) : getKeys(oldKeys), null);
 
         //when passing a map for the row, the Table layer returns the map of fields it updated, which excludes
@@ -132,5 +134,17 @@ public class DefaultQueryUpdateService implements QueryUpdateService
                 }
             }
         }
+    }
+
+    /**
+     * Override this method to alter the row before insert or update.
+     * For example, you can automatically adjust certain column values based on context.
+     * @param user The current user
+     * @param container The current container
+     * @param table The table to be updated
+     * @param row The row data
+     */
+    protected void setSpecialColumns(User user, Container container, TableInfo table, Map<String,Object> row)
+    {
     }
 }
