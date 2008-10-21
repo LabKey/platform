@@ -39,7 +39,6 @@ import org.labkey.data.xml.TablesDocument;
 import org.labkey.query.CustomViewImpl;
 import org.labkey.query.QueryDefinitionImpl;
 import org.labkey.query.TableXML;
-import org.labkey.query.data.DefaultSchemaUpdateService;
 import org.labkey.query.data.Query;
 import org.labkey.query.data.DbUserSchemaUpdateService;
 import org.labkey.query.design.DgMessage;
@@ -2245,5 +2244,109 @@ public class QueryControllerSpring extends SpringActionController
     public static String getMessage(SqlDialect d, SQLException x)
     {
         return x.getMessage();
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    @ApiVersion(9.1)
+    public class GetSchemasAction extends ApiAction
+    {
+        public ApiResponse execute(Object o, BindException errors) throws Exception
+        {
+            return new ApiSimpleResponse("schemas", DefaultSchema.get(getViewContext().getUser(),
+                    getViewContext().getContainer()).getUserSchemaNames());
+        }
+    }
+
+    public static class GetQueriesForm
+    {
+        private String _schemaName;
+        private boolean _includeUserQueries = true;
+        private boolean _includeColumns = true;
+
+        public String getSchemaName()
+        {
+            return _schemaName;
+        }
+
+        public void setSchemaName(String schemaName)
+        {
+            _schemaName = schemaName;
+        }
+
+        public boolean isIncludeUserQueries()
+        {
+            return _includeUserQueries;
+        }
+
+        public void setIncludeUserQueries(boolean includeUserQueries)
+        {
+            _includeUserQueries = includeUserQueries;
+        }
+
+        public boolean isIncludeColumns()
+        {
+            return _includeColumns;
+        }
+
+        public void setIncludeColumns(boolean includeColumns)
+        {
+            _includeColumns = includeColumns;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class GetQueriesAction extends ApiAction<GetQueriesForm>
+    {
+        public ApiResponse execute(GetQueriesForm form, BindException errors) throws Exception
+        {
+            if(null == StringUtils.trimToNull(form.getSchemaName()))
+                throw new IllegalArgumentException("You must supply a value for the 'schemaName' parameter!");
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            QuerySchema qschema = DefaultSchema.get(getViewContext().getUser(), getViewContext().getContainer()).getSchema(form.getSchemaName());
+            if(null == qschema)
+                throw new NotFoundException("The schema name '" + form.getSchemaName()
+                        + "' was not found within the folder '" + getViewContext().getContainer().getPath());
+
+            if(!(qschema instanceof UserSchema))
+                throw new NotFoundException("The schema name '" + form.getSchemaName() + "'  cannot be accessed by these APIs!");
+
+            response.put("schemaName", form.getSchemaName());
+            UserSchema uschema = (UserSchema) qschema;
+            Collection<String> qnames = form.isIncludeUserQueries() ? uschema.getTableAndQueryNames(true) : uschema.getVisibleTableNames();
+            List<Map<String,Object>> qinfos = new ArrayList<Map<String,Object>>();
+
+            for(String qname : qnames)
+            {
+                Map<String,Object> qinfo = new HashMap<String,Object>();
+                qinfo.put("name", qname);
+
+                if(form.isIncludeColumns())
+                {
+                    //get the table and enumerate the columns
+                    TableInfo table = uschema.getTable(qname, null);
+                    List<Map<String,Object>> cinfos = new ArrayList<Map<String,Object>>();
+                    for(ColumnInfo col : table.getColumns())
+                    {
+                        Map<String,Object> cinfo = new HashMap<String,Object>();
+                        cinfo.put("name", col.getName());
+                        if(null != col.getCaption())
+                            cinfo.put("caption", col.getCaption());
+                        if(null != col.getDescription())
+                            cinfo.put("description", col.getDescription());
+
+                        cinfos.add(cinfo);
+                    }
+                    if(cinfos.size() > 0)
+                        qinfo.put("columns", cinfos);
+                }
+
+                qinfos.add(qinfo);
+            } //for each query name
+            
+            response.put("queries", qinfos);
+
+            return response;
+        }
     }
 }
