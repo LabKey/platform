@@ -1096,14 +1096,23 @@ public class PageFlowUtil
 
     public static String generateSubmitButton(String text, String onClick, String attributes, boolean enabled)
     {
+        String guid = GUID.makeGUID();
+        char quote = getUsedQuoteSymbol(onClick); // we're modifying the javascript, so need to use whatever quoting the caller used
+
+        String submitCode = "document.getElementById(" + quote + guid + quote + ").form.submit(); return false;";
+
         String onClickMethod;
 
         if (onClick == null || "".equals(onClick))
-            onClickMethod = "submitEnclosingForm(this); return false;";
+            onClickMethod = submitCode;
         else
-            onClickMethod = "this.form = getEnclosingForm(this); if (isTrueOrUndefined(function() {" + onClick + "}.call(this))) submitEnclosingForm(this); return false;";
+            onClickMethod = "this.form = document.getElementById(" + quote + guid + quote + ").form; if (isTrueOrUndefined(function() {" + onClick + "}.call(this))) " +  submitCode;
 
         StringBuilder sb = new StringBuilder();
+
+        sb.append("<input type=\"submit\" style=\"display: none;\" id=\"");
+        sb.append(guid);
+        sb.append("\">");
 
         if (enabled)
             sb.append("<a class=\"labkey-button\"");
@@ -1153,17 +1162,33 @@ public class PageFlowUtil
     /* This function is used so that the onClick script can use either " or ' quote scheme inside of itself */
     public static String wrapOnClick(String onClick)
     {
-        int singleQuote = onClick.indexOf('\'');
-        int doubleQuote = onClick.indexOf('"');
+        char quote = getUnusedQuoteSymbol(onClick);
+
+        return quote + onClick + quote;
+    }
+
+    /**
+     * If the provided text uses ", return '. If it uses ', return ".
+     * This is useful to quote javascript.
+     */
+    public static char getUnusedQuoteSymbol(String text)
+    {
+        if (text == null || text.equals(""))
+            return '"';
+        
+        int singleQuote = text.indexOf('\'');
+        int doubleQuote = text.indexOf('"');
         if (doubleQuote == -1 || (singleQuote != -1 && singleQuote <= doubleQuote))
-        {
-            onClick = "\"" + onClick + "\"";
-        }
-        else
-        {
-            onClick = "'" + onClick + "'";
-        }
-        return onClick;
+            return '"';
+        return '\'';
+    }
+
+    public static char getUsedQuoteSymbol(String text)
+    {
+        char c = getUnusedQuoteSymbol(text);
+        if (c == '"')
+            return '\'';
+        return '"';
     }
 
     public static String textLink(String text, String href, String id)
