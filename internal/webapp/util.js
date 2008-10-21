@@ -384,6 +384,14 @@ function mouseExitedHelpDiv()
     hideHelpDivDelay();
 }
 
+function submitForm(form)
+{
+    if (form == null)
+        return;
+    if (!form.onsubmit || (form.onsubmit() !== false))
+        form.submit();
+}
+
 function isTrueOrUndefined(obj)
 {
     return obj === undefined || obj === true;

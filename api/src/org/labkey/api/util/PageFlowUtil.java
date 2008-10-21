@@ -1099,7 +1099,7 @@ public class PageFlowUtil
         String guid = GUID.makeGUID();
         char quote = getUsedQuoteSymbol(onClick); // we're modifying the javascript, so need to use whatever quoting the caller used
 
-        String submitCode = "document.getElementById(" + quote + guid + quote + ").form.submit(); return false;";
+        String submitCode = "submitForm(document.getElementById(" + quote + guid + quote + ").form); return false;";
 
         String onClickMethod;
 
