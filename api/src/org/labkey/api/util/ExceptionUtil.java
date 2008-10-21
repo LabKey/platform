@@ -636,11 +636,11 @@ public class ExceptionUtil
                     ActionURL redirect;
                     if (uae instanceof TermsOfUseException)
                     {
-                        redirect = PageFlowUtil.urlProvider(LoginUrls.class).getAgreeToTermsURL(uae.getContainer(), uae.getURL());
+                        redirect = PageFlowUtil.urlProvider(LoginUrls.class).getAgreeToTermsURL(HttpView.getContextContainer(), HttpView.getContextURL());
                     }
                     else
                     {
-                        redirect = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(uae.getContainer(), uae.getURL());
+                        redirect = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(HttpView.getContextContainer(), HttpView.getContextURL());
                     }
 
                     return new ViewForward(redirect);

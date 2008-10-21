@@ -63,6 +63,13 @@ public class AuthFilter implements Filter
         // No startup failure, so check for SSL redirection
         if (!req.getScheme().toLowerCase().equals("https") && AppProps.getInstance().isSSLRequired())
         {
+            // We can't redirect posts (we'll lose the post body), so return an error code
+            if ("post".equalsIgnoreCase(req.getMethod()))
+            {
+                resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Can't POST to an http URL; POSTs to this server require https");
+                return;
+            }
+
             StringBuffer originalURL = req.getRequestURL();
             if (req.getQueryString() != null)
             {
