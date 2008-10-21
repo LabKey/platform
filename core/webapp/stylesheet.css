@@ -30,8 +30,12 @@ body, div, td, th, table, img, form
 {
     font-family: verdana, arial, helvetica, sans-serif;
     font-size: 8pt;
-    border: 0px none;
     margin: 0px;
+}
+
+img
+{
+    border: 0px none;
 }
 
 th

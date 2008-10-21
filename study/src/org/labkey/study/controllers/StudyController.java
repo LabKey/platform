@@ -567,6 +567,8 @@ public class StudyController extends BaseStudyController
             queryView.setButtons(buttonBar);
 
             StringBuffer sb = new StringBuffer();
+            if (def.getDescription() != null && def.getDescription().length() > 0)
+                sb.append(PageFlowUtil.filter(def.getDescription(), true, true)).append("<br/>");
             sb.append("<br/><span><b>View :</b> ").append(getViewName()).append("</span>");
             if (cohort != null)
                 sb.append("<br/><span><b>Cohort :</b> ").append(cohort.getLabel()).append("</span>");
@@ -3979,9 +3981,9 @@ public class StudyController extends BaseStudyController
                 boolean show = visible.contains(allIds[i]);
                 String label = form.getLabel()[i];
                 String typeStr = form.getExtraData()[i];
-                Integer cohortId = form.getCohort()[i];
-                if (cohortId.intValue() == -1)
-                    cohortId = null;
+                Integer cohortId = null;
+                if (form.getCohort() != null && form.getCohort()[i] != -1)
+                    cohortId = form.getCohort()[i];
                 Character type = typeStr != null && typeStr.length() > 0 ? typeStr.charAt(0) : null;
                 if (def.isShowByDefault() != show || !nullSafeEqual(label, def.getLabel()) || type != def.getTypeCode() || !nullSafeEqual(cohortId, def.getCohortId()))
                 {
