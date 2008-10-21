@@ -47,8 +47,8 @@ LABKEY.Query = new function()
         Ext.Ajax.request({
             url : LABKEY.ActionURL.buildURL("query", config.action, config.containerPath),
             method : 'POST',
-            success: getCallbackWrapper(config.successCallback),
-            failure: getCallbackWrapper(config.errorCallback),
+            success: getSuccessCallbackWrapper(config.successCallback),
+            failure: getErrorCallbackWrapper(config.errorCallback),
             jsonData : dataObject,
             headers : {
                 'Content-Type' : 'application/json'
@@ -56,24 +56,46 @@ LABKEY.Query = new function()
         });
     }
 
-    function getCallbackWrapper(callbackFn, stripHiddenCols)
+    function getContentType(response)
     {
+        //The response object is not actually the XMLHttpRequest object
+        //it's a 'synthesized' object provided by Ext to help on IE 6
+        //http://extjs.com/forum/showthread.php?t=27190&highlight=getResponseHeader
+        return response && response.getResponseHeader ? response.getResponseHeader['Content-Type'] : null;
+    }
+
+    function getSuccessCallbackWrapper(callbackFn, stripHiddenCols)
+    {
+        if(!callbackFn)
+            Ext.Msg.alert("Coding Error!", "You must supply a successCallback function in your configuration object!");
+        
         return function(response, options)
         {
             var data = null;
 
-            //The response object is not actually the XMLHttpRequest object
-            //it's a 'synthesized' object provided by Ext to help on IE 6
-            //http://extjs.com/forum/showthread.php?t=27190&highlight=getResponseHeader
-            var contentType = response.getResponseHeader['Content-Type'];
-
+            var contentType = getContentType(response);
             if(contentType && contentType.indexOf('application/json') >= 0)
-                data = Ext.util.JSON.decode(response.responseText)
+                data = Ext.util.JSON.decode(response.responseText);
 
             if(data && data.rows && stripHiddenCols)
                 stripHiddenColData(data);
 
             callbackFn(data, options, response);
+        }
+    }
+
+    function getErrorCallbackWrapper(callbackFn)
+    {
+        return function(response, options)
+        {
+            var errorInfo = null;
+            var contentType = getContentType(response);
+            if(contentType && contentType.indexOf('application/json') >= 0)
+                errorInfo = Ext.util.JSON.decode(response.responseText);
+            else
+                errorInfo = {exception: (response && response.statusText ? response.statusText : "Communication failure.")};
+
+            callbackFn(errorInfo, options, response);
         }
     }
 
@@ -166,8 +188,8 @@ LABKEY.Query = new function()
             Ext.Ajax.request({
                 url : LABKEY.ActionURL.buildURL("query", "executeSql", config.containerPath),
                 method : 'POST',
-                success: getCallbackWrapper(config.successCallback, config.stripHiddenColumns),
-                failure: getCallbackWrapper(config.errorCallback),
+                success: getSuccessCallbackWrapper(config.successCallback, config.stripHiddenColumns),
+                failure: getErrorCallbackWrapper(config.errorCallback),
                 jsonData : dataObject,
                 headers : {
                     'Content-Type' : 'application/json'
@@ -305,8 +327,8 @@ LABKEY.Query = new function()
             Ext.Ajax.request({
                 url : LABKEY.ActionURL.buildURL('query', 'getQuery', config.containerPath),
                 method : 'GET',
-                success: getCallbackWrapper(config.successCallback, config.stripHiddenColumns),
-                failure: getCallbackWrapper(config.errorCallback),
+                success: getSuccessCallbackWrapper(config.successCallback, config.stripHiddenColumns),
+                failure: getErrorCallbackWrapper(config.errorCallback),
                 params : dataObject
             });
         },
@@ -440,6 +462,88 @@ LABKEY.Query = new function()
             }
 
             return params;
+        },
+
+        /**
+         * Returns the set of schemas available in the specified container.
+         * @param config An object that contains the following configuration parameters
+         * @param {function} config.successCallback The function to call when the function finishes successfully.
+         * This function will be called with the following parameters:
+         * <ul>
+         * <li><b>schemasInfo:</b> An object with a property called "schemas," which contains an array of schema names.</li>
+         * </ul>
+         * @param {function} [config.errorCallback] The function to call if this function encounters an error.
+         * This function will be called with the following parameters:
+         * <ul>
+         * <li><b>errorInfo:</b> An object with a property called "exception," which contains the error message.</li>
+         * </ul>
+         * @param {String} [config.containerPath] A container path in which to execute this command. If not supplied,
+         * the current container will be used.
+         */
+        getSchemas : function(config)
+        {
+            Ext.Ajax.request({
+                url : LABKEY.ActionURL.buildURL('query', 'getSchemas', config.containerPath),
+                method : 'GET',
+                success: getSuccessCallbackWrapper(config.successCallback),
+                failure: getErrorCallbackWrapper(config.errorCallback)
+            });
+        },
+
+        /**
+         * Returns the set of queries available in a given schema.
+         * @param config An object that contains the following configuration parameters
+         * @param {String} config.schemaName The name of the schema.
+         * @param {function} config.successCallback The function to call when the function finishes successfully.
+         * This function will be called with the following parameters:
+         * <ul>
+         * <li><b>queriesInfo:</b> An object with the following properties
+         *  <ul>
+         *      <li>schemaName: the name of the requested schema</li>
+         *      <li>queries: an array of objects, each of which has the following properties
+         *          <ul>
+         *              <li>name: the name of the query</li>
+         *              <li>columns: if config.includeColumns is not false, this will contain an array of
+         *                 objects with the following properties
+         *                  <ul>
+         *                      <li>name: the name of the column</li>
+         *                      <li>caption: the caption of the column (may be undefined)</li>
+         *                      <li>description: the description of the column (may be undefined)</li>
+         *                  </ul>
+          *             </li>
+         *          </ul>
+         *      </li>
+         *  </ul>
+         * </li>
+         * </ul>
+         * @param {function} [config.errorCallback] The function to call if this function encounters an error.
+         * This function will be called with the following parameters:
+         * <ul>
+         * <li><b>errorInfo:</b> An object with a property called "exception," which contains the error message.</li>
+         * </ul>
+         * @param {Boolean} [config.includeUserQueries] If set to false, user-defined queries will not be included in
+         * the results. Default is true.
+         * @param {Boolean} [config.includeColumns] If set to false, information about the available columns in this
+         * query will not be included in the results. Default is true.
+         * @param {String} [config.containerPath] A container path in which to execute this command. If not supplied,
+         * the current container will be used.
+         */
+        getQueries : function(config)
+        {
+            var params = {};
+            if(config.schemaName)
+                params.schemaName = config.schemaName;
+            if(config.includeColumns)
+                params.includeColumns = config.includeColumns;
+            if(config.includeUserQueries)
+                params.includeUserQueries = config.includeUserQueries;
+            Ext.Ajax.request({
+                url: LABKEY.ActionURL.buildURL('query', 'getQueries', config.containerPath),
+                method : 'GET',
+                success: getSuccessCallbackWrapper(config.successCallback),
+                failure: getErrorCallbackWrapper(config.errorCallback),
+                params: params
+            });
         },
 
         URL_COLUMN_PREFIX: "_labkeyurl_"
