@@ -65,8 +65,9 @@ Ext.namespace("LABKEY", "LABKEY.ext");
 LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
     constructor: function(config) {
 
-        Ext.apply(this, config);
-        this.remoteSort = true;
+        Ext.apply(this, config, {
+            remoteSort: true
+        });
 
         var baseParams = {schemaName: config.schemaName};
         baseParams['query.queryName'] = config.queryName;

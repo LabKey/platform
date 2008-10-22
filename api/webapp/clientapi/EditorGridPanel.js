@@ -538,7 +538,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         for(var idx = 0; idx < this.columns.length; ++idx)
         {
             col = this.columns[idx];
-            if(col.multiline || (undefined === col.multiline && col.scale > 255))
+            if(col.multiline || (undefined === col.multiline && col.scale > 255 && this.metaMap[col.dataIndex].type === "string"))
             {
                 col.renderer = function(data, metadata, record, rowIndex, colIndex, store)
                 {
