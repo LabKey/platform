@@ -22,6 +22,10 @@ import org.labkey.api.util.NamedObject;
 import org.labkey.api.util.NamedObjectList;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.property.IPropertyValidator;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -500,6 +504,15 @@ public class DataColumn extends DisplayColumn
                 if (_boundColumn.getDescription() != null)
                 {
                     sb.append("Description: ").append(_boundColumn.getDescription()).append("\n");
+                }
+                if (_boundColumn.getPropertyURI() != null)
+                {
+                    PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(_boundColumn.getPropertyURI(), ctx.getContainer());
+                    if (pd != null)
+                    {
+                        for (IPropertyValidator validator : PropertyService.get().getPropertyValidators(pd))
+                            sb.append("Validator: ").append(validator).append("\n");
+                    }
                 }
                 if (sb.length() > 0)
                 {
