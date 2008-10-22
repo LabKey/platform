@@ -17,9 +17,7 @@
 package org.labkey.core;
 
 import org.apache.commons.lang.StringUtils;
-import org.labkey.api.action.ExportAction;
-import org.labkey.api.action.SimpleRedirectAction;
-import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.*;
 import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
@@ -35,18 +33,22 @@ import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil.Content;
 import org.labkey.api.util.PageFlowUtil.NoContent;
 import org.labkey.api.view.*;
+import org.labkey.api.module.ModuleLoader;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.mvc.Controller;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.ServletException;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.io.IOException;
+import java.io.*;
 
 /**
  * User: jeckels
@@ -287,6 +289,58 @@ public class CoreController extends SpringActionController
         public void setPageflow(String pageflow)
         {
             _pageflow = pageflow;
+        }
+    }
+
+    public static class GetAttachmentIconForm
+    {
+        private String _extension;
+
+        public String getExtension()
+        {
+            return _extension;
+        }
+
+        public void setExtension(String extension)
+        {
+            _extension = extension;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_NONE)
+    public class GetAttachmentIconAction extends SimpleViewAction<GetAttachmentIconForm>
+    {
+        public ModelAndView getView(GetAttachmentIconForm form, BindException errors) throws Exception
+        {
+            String path = Attachment.getFileIcon(StringUtils.trimToEmpty(form.getExtension()));
+
+            //open the file and stream it back to the client
+            HttpServletResponse response = getViewContext().getResponse();
+            response.setContentType(PageFlowUtil.getContentTypeFor(path));
+            response.setHeader("Cache-Control", "public");
+            response.setHeader("Pragma", "");
+
+            byte[] buf = new byte[4096];
+            InputStream is = ViewServlet.getViewServletContext().getResourceAsStream(path);
+            OutputStream os = response.getOutputStream();
+
+            try
+            {
+                for(int len; (len=is.read(buf))!=-1; )
+                    os.write(buf,0,len);
+            }
+            finally
+            {
+                os.close();
+                is.close();
+            }
+
+            return null;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
         }
     }
 }
