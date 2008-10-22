@@ -207,4 +207,13 @@ public class PropertyValidatorImpl implements IPropertyValidator
         }
         return _validator;
     }
+
+    public String toString()
+    {
+        StringBuffer sb = new StringBuffer(_validator.getName());
+        if (_validator.getDescription() != null)
+            sb.append(" (").append(_validator.getDescription()).append(")");
+
+        return sb.toString();
+    }
 }
