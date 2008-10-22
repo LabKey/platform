@@ -214,7 +214,7 @@ LABKEY.Utils = new function()
         getFileIconUrl : function(fileName) {
             var idx = fileName.lastIndexOf(".");
             var extension = (idx >= 0) ? fileName.substring(idx + 1) : "_generic";
-            return LABKEY.ActionURL.getContextPath() + "/_icons/" + extension.toLowerCase() + ".gif";
+            return LABKEY.ActionURL.buildURL("core", "getAttachmentIcon", "", {extension: extension});
         }
     }
 }

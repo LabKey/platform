@@ -122,6 +122,7 @@ public class Attachment implements Serializable
         String extension = "_generic"; // old-school default; used if name is null or file has no extension
         if (null != name)
         {
+            extension = name;
             int dotPos = name.lastIndexOf(".");
             if (dotPos > -1)
                 extension = name.substring(dotPos + 1).toLowerCase();
