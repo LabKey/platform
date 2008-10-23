@@ -30,6 +30,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -114,10 +115,11 @@ public class AttachmentService
         public void renameAttachment(AttachmentParent parent, String oldName, String newName) throws SQLException, DuplicateFilenameException;
         public void copyAttachment(User user, AttachmentParent parent, Attachment a, String newName) throws IOException, SQLException, DuplicateFilenameException;
         public List<AttachmentFile> getAttachmentFiles(Collection<Attachment> attachments) throws IOException, SQLException;
-        public Attachment[] getAttachments(AttachmentParent parent) throws SQLException;
-        public Attachment getAttachment(AttachmentParent parent, String name) throws SQLException;
+        public Attachment[] getAttachments(AttachmentParent parent);
+        public Attachment getAttachment(AttachmentParent parent, String name);
         public void setAttachments(Collection<AttachmentParent> parents) throws SQLException;
         public void writeDocument(DocumentWriter writer, AttachmentParent parent, String name, boolean asAttachment) throws ServletException, IOException;
+        public InputStream getInputStream(AttachmentParent parent, String name) throws FileNotFoundException;
     }
 
     public static void register(Service serviceImpl)

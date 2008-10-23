@@ -110,6 +110,10 @@
         <filter-name>Module Loader</filter-name>
         <url-pattern>/services/*</url-pattern>
     </filter-mapping>
+    <filter-mapping>
+        <filter-name>Module Loader</filter-name>
+        <url-pattern>/webdav/*</url-pattern>
+    </filter-mapping>
 
     <filter-mapping>
         <filter-name>Set Character Encoding</filter-name>

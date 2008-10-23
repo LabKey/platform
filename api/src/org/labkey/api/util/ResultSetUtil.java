@@ -29,11 +29,9 @@ import org.labkey.api.security.User;
 
 import java.beans.Introspector;
 import java.io.*;
-import java.sql.Clob;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.*;
+import java.util.Date;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 
@@ -64,6 +62,21 @@ public class ResultSetUtil
         }
     }
 
+
+    public static void close(Statement stmt)
+    {
+        if (null == stmt)
+            return;
+        try
+        {
+            stmt.close();
+        }
+        catch (SQLException x)
+        {
+            _log.error("unexpected error", x);
+        }
+    }
+    
 
     public static ResultSet filter(ResultSet in, Predicate pred)
     {

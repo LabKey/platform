@@ -28,6 +28,7 @@ import java.nio.channels.FileLock;
 import java.security.MessageDigest;
 import java.security.DigestInputStream;
 import java.security.NoSuchAlgorithmException;
+import java.net.URI;
 
 /**
  * User: jeckels
@@ -451,5 +452,29 @@ quickScan:
         int r;
         while (0 < (r = is.read(buf)))
             os.write(buf,0,r);
+    }
+
+    public static File canonicalFile(URI uri)
+    {
+        return canonicalFile(new File(uri));
+    }
+
+
+    public static File canonicalFile(String path)
+    {
+        return canonicalFile(new File(path));
+    }
+
+
+    public static File canonicalFile(File f)
+    {
+        try
+        {
+            return f.getCanonicalFile();
+        }
+        catch (IOException x)
+        {
+            return f;
+        }
     }
 }

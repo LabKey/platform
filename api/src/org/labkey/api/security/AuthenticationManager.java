@@ -24,6 +24,7 @@ import org.labkey.api.attachments.*;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.RequestAuthenticationProvider;
 import org.labkey.api.settings.AppProps;
@@ -654,7 +655,7 @@ public class AuthenticationManager
                     if (null != logo)
                         img = "<img src=\"" + AppProps.getInstance().getContextPath() + "/" + prefix + _name + ".image?revision=" + AppProps.getInstance().getLookAndFeelRevision() + "\" alt=\"Sign in using " + _name + "\">";
                 }
-                catch(SQLException e)
+                catch (RuntimeSQLException e)
                 {
                     ExceptionUtil.logExceptionToMothership(null, e);
                 }
