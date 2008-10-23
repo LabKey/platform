@@ -48,7 +48,6 @@ public abstract class AbstractDocumentResource extends AbstractResource
         return Collections.emptyList();
     }
     
-    @Override
     public boolean isCollection()
     {
         return false;

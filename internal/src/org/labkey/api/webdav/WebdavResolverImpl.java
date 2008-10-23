@@ -296,7 +296,6 @@ public class WebdavResolverImpl implements WebdavResolver
             return true;
         }
 
-        @Override
         public synchronized List<String> getWebFoldersNames(User user)
         {
             if (null ==_children)
