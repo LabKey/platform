@@ -119,15 +119,24 @@ public class HtmlRenderer implements WikiRenderer
         }
 
         // back to html
-        Node bodyNode = doc.getElementsByTagName("body").item(0);
+        StringBuilder innerHtml = new StringBuilder();
 
+        //look for style elements, as tidy moves them to the head section
+        NodeList styleNodes = doc.getElementsByTagName("style");
+        for(int idx = 0; idx < styleNodes.getLength(); ++idx)
+        {
+            innerHtml.append(PageFlowUtil.convertNodeToHtml(styleNodes.item(idx)));
+            innerHtml.append('\n');
+        }
+        
+        Node bodyNode = doc.getElementsByTagName("body").item(0);
         // Uncomment the below to debug bodyNode contents
         // inspectNode(bodyNode, 0);
 
         String bodyHtml = PageFlowUtil.convertNodeToHtml(bodyNode);
-        String innerHtml = bodyHtml.substring("<body>".length(), bodyHtml.length()-"</body>".length());
+        innerHtml.append(bodyHtml.substring("<body>".length(), bodyHtml.length()-"</body>".length()));
 
-        return new FormattedHtml(innerHtml, volatilePage);
+        return new FormattedHtml(innerHtml.toString(), volatilePage);
     }
 
 
