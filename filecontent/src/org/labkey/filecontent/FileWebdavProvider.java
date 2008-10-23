@@ -109,7 +109,7 @@ public class FileWebdavProvider implements WebdavService.Provider
             return 0;
         }
 
-        @Override @NotNull
+        @NotNull
         public List<String> listNames()
         {
             return Collections.unmodifiableList(_names);
