@@ -135,7 +135,7 @@ public class SamplesController extends BaseController
         requiresAdmin();
         SampleRequestActor actor = SampleManager.getInstance().getRequirementsProvider().getActor(getContainer(), form.getId());
         if (actor == null)
-            return HttpView.throwNotFound();
+            return HttpView.throwNotFoundForward();
 
         Site site = null;
         if (form.getSiteId() != null)
@@ -1255,7 +1255,8 @@ public class SamplesController extends BaseController
         SpecimenBatch batch = new SpecimenBatch(new ViewBackgroundInfo(this), f);
         batch.submit();
 
-        return HttpView.throwRedirect(PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c));
+        HttpView.throwRedirect(PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c));
+        return null;
     }
 
     @Jpf.Action

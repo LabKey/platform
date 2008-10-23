@@ -821,7 +821,7 @@ public class AdminController extends SpringActionController
                 wikiSource = wikiSource + getErrors(wikiSource, creditsFilename, filenames, fileType, foundWhere, wikiSourceSearchPattern);
 
             WikiRenderer wf = WikiService.get().getRenderer(WikiRendererType.RADEOX);
-            _html = wf.format(wikiSource).getHtml();
+            _html = "<style type=\"text/css\">\ntr.table-odd td { background-color: #EEEEEE; }</style>\n" + wf.format(wikiSource).getHtml();
         }
 
 
@@ -898,9 +898,7 @@ public class AdminController extends SpringActionController
         if (!AppProps.getInstance().isDevMode())
             return null;
 
-        Module core = ModuleLoader.getInstance().getCoreModule();
-
-        File common = new File(core.getBuildPath(), "../../../external/lib/common");
+        File common = new File(AppProps.getInstance().getProjectRoot(), "external/lib/common");
 
         if (!common.exists())
             return null;
@@ -918,9 +916,7 @@ public class AdminController extends SpringActionController
         if (!AppProps.getInstance().isDevMode())
             return null;
 
-        Module core = ModuleLoader.getInstance().getCoreModule();
-
-        File binRoot = new File(core.getBuildPath(), "../../../external/bin");
+        File binRoot = new File(AppProps.getInstance().getProjectRoot(), "external/bin");
 
         if (!binRoot.exists())
             return null;
@@ -1074,7 +1070,7 @@ public class AdminController extends SpringActionController
             {
                 if (form.getThemeName() != null)
                 {
-                    WebTheme theme = WebTheme.getTheme(form.getThemeName());
+                    WebTheme theme = WebThemeManager.getTheme(form.getThemeName());
                     if (theme != null)
                     {
                         props.setThemeName(theme.getFriendlyName());
@@ -1268,7 +1264,7 @@ public class AdminController extends SpringActionController
 
     public static class LookAndFeelPropertiesBean extends LookAndFeelBean
     {
-        public List<WebTheme> themes = WebTheme.getWebThemes();
+        public Collection<WebTheme> themes = WebThemeManager.getWebThemes();
         public List<ThemeFont> themeFonts = ThemeFont.getThemeFonts();
         public ThemeFont currentThemeFont;
         public WebTheme currentTheme;
@@ -1281,13 +1277,13 @@ public class AdminController extends SpringActionController
         {
             customLogo = AttachmentCache.lookupLogoAttachment(c);
             customFavIcon = AttachmentCache.lookupFavIconAttachment(new ContainerParent(c));
-            currentTheme = WebTheme.getTheme(c);
+            currentTheme = WebThemeManager.getTheme(c);
             currentThemeFont = ThemeFont.getThemeFont(c);
             customStylesheet = AttachmentCache.lookupCustomStylesheetAttachment(new ContainerParent(c));
 
             //if new color scheme defined, get new theme name from url
             if (newThemeName != null)
-                newTheme = WebTheme.getTheme(newThemeName);
+                newTheme = WebThemeManager.getTheme(newThemeName);
         }
     }
 
@@ -3041,15 +3037,9 @@ public class AdminController extends SpringActionController
 
 
     @RequiresPermission(ACL.PERM_ADMIN)
-    public class DefineWebThemesAction extends FormViewAction<WebThemeForm>
+    public class DefineWebThemesAction extends SimpleViewAction<WebThemeForm>
     {
-        private ActionURL _successURL;
-
-        public void validateCommand(WebThemeForm target, Errors errors)
-        {
-        }
-
-        public ModelAndView getView(WebThemeForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(WebThemeForm form, BindException errors) throws Exception
         {
             if (form.isUpgradeInProgress())
             {
@@ -3060,51 +3050,61 @@ public class AdminController extends SpringActionController
             return new DefineWebThemesView(form, errors);
         }
 
-        public boolean handlePost(WebThemeForm form, BindException errors) throws Exception
-        {
-            String themeName = form.getThemeName();
-            String friendlyName = form.getFriendlyName();
-
-            _successURL = new AdminUrlsImpl().getLookAndFeelSettingsURL(getContainer());
-
-            if (null != getViewContext().getRequest().getParameter("Delete"))
-            {
-                // delete the web theme
-                WebTheme.deleteWebTheme(themeName);
-            }
-            else
-            {
-                //new theme
-                if (null == themeName || 0 == themeName.length())
-                    themeName = friendlyName;
-
-                //add new theme or save existing theme
-                WebTheme.updateWebTheme (
-                    themeName
-                    , form.getNavBarColor(), form.getHeaderLineColor()
-                    , form.getEditFormColor(), form.getFullScreenBorderColor()
-                    , form.getTitleBarBackgroundColor(), form.getTitleBarBorderColor()
-                    );
-
-                //parameter to use to set customize page drop-down to user's last choice on define themes page
-                _successURL.addParameter("themeName", themeName);
-            }
-
-            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
-
-            return true;
-        }
-
-        public ActionURL getSuccessURL(WebThemeForm webThemeForm)
-        {
-            return _successURL;
-        }
-
         public NavTree appendNavTrail(NavTree root)
         {
             // TODO: Look & Feel Settings page should be on nav trail
 
             return appendAdminNavTrail(root, "Web Themes", this.getClass());
+        }
+    }
+
+
+    private abstract class AbstractWebThemeAction extends SimpleRedirectAction<WebThemeForm>
+    {
+        protected abstract void handleTheme(WebThemeForm form, ActionURL redirectURL) throws Exception;
+
+        public ActionURL getRedirectURL(WebThemeForm form) throws Exception
+        {
+            ActionURL redirectURL = new AdminUrlsImpl().getLookAndFeelSettingsURL(getContainer());
+            handleTheme(form, redirectURL);
+            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
+
+            return redirectURL;
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class SaveWebThemeAction extends AbstractWebThemeAction
+    {
+        protected void handleTheme(WebThemeForm form, ActionURL successURL) throws SQLException
+        {
+            String themeName = form.getThemeName();
+
+            //new theme
+            if (null == themeName || 0 == themeName.length())
+                themeName = form.getFriendlyName();
+
+            //add new theme or update existing theme
+            WebThemeManager.updateWebTheme(
+                themeName
+                , form.getNavBarColor(), form.getHeaderLineColor()
+                , form.getEditFormColor(), form.getFullScreenBorderColor()
+                , form.getTitleBarBackgroundColor(), form.getTitleBarBorderColor()
+                );
+
+            //parameter to use to set customize page drop-down to user's last choice on define themes page
+            successURL.addParameter("themeName", themeName);
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class DeleteWebThemeAction extends AbstractWebThemeAction
+    {
+        protected void handleTheme(WebThemeForm form, ActionURL redirectURL) throws SQLException
+        {
+            WebThemeManager.deleteWebTheme(form.getThemeName());
         }
     }
 
@@ -3120,15 +3120,15 @@ public class AdminController extends SpringActionController
 
     public static class WebThemesBean
     {
-        public List<WebTheme> themes;
+        public Collection<WebTheme> themes;
         public WebTheme selectedTheme;
         public WebThemeForm form;
 
         public WebThemesBean(WebThemeForm form)
         {
-            themes = WebTheme.getWebThemes();
+            themes = WebThemeManager.getWebThemes();
             String themeName = form.getThemeName();
-            selectedTheme = WebTheme.getTheme(themeName);
+            selectedTheme = WebThemeManager.getTheme(themeName);
             this.form = form;
         }
     }
@@ -4104,7 +4104,7 @@ public class AdminController extends SpringActionController
             Container newParent =  ContainerManager.getForPath(form.getTarget());
 
             if (c.isRoot())
-                return HttpView.throwNotFoundMV("Can't move the root folder.");  // Don't show move tree from root
+                return HttpView.throwNotFound("Can't move the root folder.");  // Don't show move tree from root
 
             if (null == newParent)
             {

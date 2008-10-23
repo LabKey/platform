@@ -375,11 +375,11 @@ public class StatusController extends SpringActionController
 
             PipelineStatusFileImpl sf = getStatusFile(form.getRowId());
             if (sf == null)
-                return HttpView.throwNotFoundMV();
+                return HttpView.throwNotFound();
 
             PipelineProvider provider = PipelineService.get().getPipelineProvider(sf.getProvider());
             if (provider == null)
-                return HttpView.throwNotFoundMV();
+                return HttpView.throwNotFound();
 
             try
             {

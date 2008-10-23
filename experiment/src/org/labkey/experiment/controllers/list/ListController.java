@@ -892,7 +892,7 @@ public class ListController extends SpringActionController
             if (event != null)
                 return new JspView<AuditLogEvent>("/org/labkey/experiment/controllers/list/historyDetail.jsp", event);
             else
-                return HttpView.throwNotFoundMV("Unable to find the audit history detail for this event");
+                return HttpView.throwNotFound("Unable to find the audit history detail for this event");
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -941,7 +941,7 @@ public class ListController extends SpringActionController
                     }
                 }
             }
-            return HttpView.throwNotFoundMV("Unable to find the audit history detail for this event");
+            return HttpView.throwNotFound("Unable to find the audit history detail for this event");
         }
 
         public NavTree appendNavTrail(NavTree root)

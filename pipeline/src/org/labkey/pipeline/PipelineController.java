@@ -462,7 +462,7 @@ public class PipelineController extends SpringActionController
             PipeRoot pr = PipelineService.get().findPipelineRoot(c);
 
             if (pr == null || !URIUtil.exists(pr.getUri()))
-                return HttpView.throwNotFoundMV("Pipeline root not set or does not exist on disk");
+                return HttpView.throwNotFound("Pipeline root not set or does not exist on disk");
 
             URI uriRoot = pr.getUri(c);
 
@@ -476,11 +476,11 @@ public class PipelineController extends SpringActionController
 
             URI current = URIUtil.resolve(uriRoot, _path);
             if (current == null)
-                return HttpView.throwNotFoundMV();
+                return HttpView.throwNotFound();
 
             File fileCurrent = new File(current);
             if (!fileCurrent.exists())
-                HttpView.throwNotFoundMV("File not found: " + current.getPath());
+                HttpView.throwNotFound("File not found: " + current.getPath());
             setHelpTopic(getHelpTopic("pipeline/browse"));
 
             saveReferer();
@@ -1185,7 +1185,7 @@ public class PipelineController extends SpringActionController
         {
             // Job data is only available from the mini-pipeline.
             if (PipelineService.get().isEnterprisePipeline())
-                return HttpView.throwNotFoundMV();
+                return HttpView.throwNotFound();
             
             setHelpTopic(getHelpTopic("pipeline/status"));
 
@@ -1224,7 +1224,7 @@ public class PipelineController extends SpringActionController
             // Pipeline, since it redirects to the mini-pipeline queue status
             // page.
             if (PipelineService.get().isEnterprisePipeline())
-                HttpView.throwNotFoundMV();
+                HttpView.throwNotFound();
 
             PipelineQueue queue = PipelineService.get().getPipelineQueue();
             boolean success = queue.cancelJob(getJobDataContainer(), form.getJobId());
@@ -1290,16 +1290,16 @@ public class PipelineController extends SpringActionController
         {
             PipeRoot pipeRoot = getPipelineRoot(getContainer());
             if (null == pipeRoot || null == StringUtils.trimToNull(form.getPath()))
-                return HttpView.throwNotFoundMV();
+                return HttpView.throwNotFound();
 
             // check pipeline ACL
             ACL acl = pipeRoot.getACL();
             if (!acl.hasPermission(getUser(), ACL.PERM_READ))
-                return HttpView.throwUnauthorizedMV();
+                return HttpView.throwUnauthorized();
 
             File file = new File(pipeRoot.getRootPath(),form.getPath());
             if (!file.exists() || !file.isFile())
-                return HttpView.throwNotFoundMV();
+                return HttpView.throwNotFound();
 
             PageFlowUtil.streamFile(getViewContext().getResponse(), file, true);
             return null;

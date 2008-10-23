@@ -239,7 +239,7 @@ function updateAll()
 }
 </script>
 
-<form action="defineWebThemes.view" enctype="multipart/form-data" method="post">
+<form name="themeForm" action="saveWebTheme.view" enctype="multipart/form-data" method="post">
 <input type="hidden" name="upgradeInProgress" value="<%=bean.form.isUpgradeInProgress()%>" />
 <table width="100%">
 <%
@@ -361,7 +361,7 @@ if (null == webThemeErrors)
             <%
             if (selectedTheme != null && bean.themes.size() > 1)
             {%>
-                <%=PageFlowUtil.generateSubmitButton("Delete", "return confirm('Are you sure you want to delete the theme named " + request.getParameter("themeName") + "?');", "name=\"Delete\"")%>&nbsp;
+                <%=PageFlowUtil.generateSubmitButton("Delete", "var sure = confirm('Are you sure you want to delete the theme named " + request.getParameter("themeName") + "?'); if (sure) document.themeForm.action = 'deleteWebTheme.view'; return sure;", "name=\"Delete\"")%>&nbsp;
             <%}
         }
         else
@@ -389,7 +389,6 @@ if (null == webThemeErrors)
   <td colspan="3">&nbsp;</td>
 </tr>
 
-<form name="login" method="post" onsubmit="javascript:return false;">
 <tr>
   <td colspan="3" class="labkey-full-screen-background">
     <table class="labkey-full-screen-table">
@@ -404,7 +403,6 @@ if (null == webThemeErrors)
     </table>
    </td>
 </tr>
-</form>
 </table>
 <!-- end of dialog preview -->
 </td>
@@ -424,7 +422,7 @@ New themes will not be visible to other users until you save changes on the Look
 </table>
 
 </form>
-<script>
+<script type="text/javascript">
 function changeTheme(sel)
 {
     var search = document.location.search;

@@ -180,10 +180,10 @@ public class TypesController extends SpringActionController
                     }
                     // CONSIDER: intermediate success page?
                     if (domains.size() == 1)
-                        HttpView.throwRedirect("typeDetails.view?type=" + PageFlowUtil.encode(domains.first()));
+                        HttpView.redirect("typeDetails.view?type=" + PageFlowUtil.encode(domains.first()));
                     else
                     {
-                        HttpView.throwRedirect("types.view");
+                        HttpView.redirect("types.view");
                     }
                 }
             }
@@ -310,7 +310,7 @@ public class TypesController extends SpringActionController
 			OntologyManager.deleteObjectsOfType(form.getTypeURI(), getContainer());
 		}
 
-		HttpView.throwRedirect("types.view");
+		HttpView.redirect("types.view");
 		return null;
 	}
 

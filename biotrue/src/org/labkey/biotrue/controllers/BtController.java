@@ -291,7 +291,7 @@ public class BtController extends SpringActionController
         public ModelAndView getView(NewServerForm form, boolean reshow, BindException errors) throws Exception
         {
             if (!getViewContext().getUser().isAdministrator())
-                return HttpView.throwUnauthorizedMV();
+                return HttpView.throwUnauthorized();
 
             return FormPage.getView(BtController.class, form, errors, "newServer.jsp");
         }

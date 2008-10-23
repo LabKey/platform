@@ -16,14 +16,7 @@
 
 package org.labkey.study.controllers.plate;
 
-import org.apache.beehive.netui.pageflow.annotations.Jpf;
-import org.apache.beehive.netui.pageflow.Forward;
-import org.apache.beehive.netui.pageflow.FormData;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
 import org.apache.log4j.Logger;
-import org.labkey.study.controllers.BaseController;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
@@ -44,7 +37,6 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.sql.SQLException;
 
@@ -161,10 +153,10 @@ public class PlateController extends SpringActionController
         {
             Plate plate = PlateService.get().getPlate(getContainer(), form.getRowId());
             if (plate == null)
-                return HttpView.throwNotFoundMV("Plate " + form.getRowId() + " does not exist.");
+                return HttpView.throwNotFound("Plate " + form.getRowId() + " does not exist.");
             ActionURL url = PlateManager.get().getDetailsURL(plate);
             if (url == null)
-                return HttpView.throwNotFoundMV("Details URL has not been configured for plate type " + plate.getName() + ".");
+                return HttpView.throwNotFound("Details URL has not been configured for plate type " + plate.getName() + ".");
 
             return HttpView.redirect(url);
         }

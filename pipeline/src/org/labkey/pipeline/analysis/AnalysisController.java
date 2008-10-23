@@ -104,33 +104,33 @@ public class AnalysisController extends SpringActionController
             
             TaskId taskId = form.getTaskId();
             if (taskId == null)
-                return HttpView.throwNotFoundMV("The pipeline is not valid.");
+                return HttpView.throwNotFound("The pipeline is not valid.");
             TaskPipeline pipeline = PipelineJobService.get().getTaskPipeline(taskId);
             if (pipeline == null)
-                return HttpView.throwNotFoundMV("The pipeline '" + taskId + "' was not found.");
+                return HttpView.throwNotFound("The pipeline '" + taskId + "' was not found.");
             if (!(pipeline instanceof FileAnalysisTaskPipeline))
-                return HttpView.throwNotFoundMV("The pipeline '" + taskId + "' is not valid.");
+                return HttpView.throwNotFound("The pipeline '" + taskId + "' is not valid.");
 
             _taskPipeline = (FileAnalysisTaskPipeline) pipeline;
 
             PipeRoot pr = PipelineService.get().findPipelineRoot(getContainer());
             if (pr == null || !URIUtil.exists(pr.getUri()))
-                return HttpView.throwNotFoundMV();
+                return HttpView.throwNotFound();
 
             URI uriRoot = pr.getUri();
             URI uriData = URIUtil.resolve(uriRoot, form.getPath());
             if (uriData == null)
-                return HttpView.throwNotFoundMV();
+                return HttpView.throwNotFound();
 
             _dirRoot = new File(uriRoot);
             _dirData = new File(uriData);
             if (!NetworkDrive.exists(_dirData))
-                return HttpView.throwNotFoundMV();
+                return HttpView.throwNotFound();
 
             _provider = (FileAnalysisPipelineProvider)
                     PipelineService.get().getPipelineProvider(FileAnalysisPipelineProvider.name);
             if (_provider == null)
-                return HttpView.throwNotFoundMV();
+                return HttpView.throwNotFound();
 
             FileAnalysisProtocolFactory protocolFactory = _provider.getProtocolFactory(_taskPipeline);
 

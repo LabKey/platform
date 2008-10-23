@@ -1525,7 +1525,7 @@ public class StudyController extends BaseStudyController
             Study study = getStudy();
             _visit = StudyManager.getInstance().getVisitForRowId(study, visitId);
             if (null == _visit)
-                return HttpView.throwNotFoundMV();
+                return HttpView.throwNotFound();
 
             ModelAndView view = new StudyJspView<Visit>(study, "confirmDeleteVisit.jsp", _visit, errors);
             return view;
@@ -1706,7 +1706,7 @@ public class StudyController extends BaseStudyController
 
             form.setTypeURI(StudyManager.getInstance().getDatasetType(getContainer(), form.getDatasetId()));
             if (form.getTypeURI() == null)
-                return HttpView.throwNotFoundMV();
+                return HttpView.throwNotFound();
             form.setKeys(StringUtils.join(def.getDisplayKeyNames(), ", "));
 
             return new JspView<ImportDataSetForm>("/org/labkey/study/view/importDataset.jsp", form, errors);
@@ -4455,7 +4455,7 @@ public class StudyController extends BaseStudyController
                 DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinition(study, form.getSnapshotName());
 
                 if (dsDef == null)
-                    return HttpView.throwNotFoundMV("Unable to edit the created DataSet Definition");
+                    return HttpView.throwNotFound("Unable to edit the created DataSet Definition");
 
                 Map<String,String> props = PageFlowUtil.map(
                         "studyId", String.valueOf(study.getRowId()),
@@ -4539,7 +4539,7 @@ public class StudyController extends BaseStudyController
                     DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinition(study, form.getSnapshotName());
 
                     if (dsDef == null)
-                        return HttpView.throwNotFoundMV("Unable to edit the created DataSet Definition");
+                        return HttpView.throwNotFound("Unable to edit the created DataSet Definition");
 
                     Map<String,String> props = PageFlowUtil.map(
                             "studyId", String.valueOf(study.getRowId()),

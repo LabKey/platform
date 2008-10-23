@@ -660,13 +660,13 @@ public class ExperimentController extends SpringActionController
             ExpRun run = ExperimentService.get().getExpRun(form.getRunId());
             if (run == null || !run.getContainer().equals(getViewContext().getContainer()))
             {
-                return HttpView.throwNotFoundMV();
+                return HttpView.throwNotFound();
             }
 
             ExpExperiment exp = ExperimentService.get().getExpExperiment(form.getExperimentId());
             if (exp == null || !exp.getContainer().equals(getViewContext().getContainer()))
             {
-                return HttpView.throwNotFoundMV();
+                return HttpView.throwNotFound();
             }
 
             if (form.isIncluded())
@@ -1652,7 +1652,7 @@ public class ExperimentController extends SpringActionController
             Experiment exp = form.getBean();
             if (exp == null)
             {
-                return HttpView.throwNotFoundMV();
+                return HttpView.throwNotFound();
             }
             ensureCorrectContainer(getContainer(), ExperimentService.get().getExpExperiment(exp.getRowId()), getViewContext());
 
@@ -2039,7 +2039,7 @@ public class ExperimentController extends SpringActionController
             Set<String> runIds = DataRegionSelection.getSelected(getViewContext(), true);
             if (runIds == null || runIds.isEmpty())
             {
-                HttpView.throwNotFoundMV();
+                HttpView.throwNotFound();
             }
 
             try
@@ -2050,7 +2050,7 @@ public class ExperimentController extends SpringActionController
                     ExpRun run = ExperimentService.get().getExpRun(id);
                     if (run == null || !run.getContainer().equals(getContainer()))
                     {
-                        HttpView.throwNotFoundMV("Could not find run " + id);
+                        HttpView.throwNotFound("Could not find run " + id);
                     }
                 }
 
@@ -2060,7 +2060,7 @@ public class ExperimentController extends SpringActionController
                     ExpExperiment experiment = ExperimentService.get().getExpExperiment(form.getExpRowId());
                     if (experiment != null && !experiment.getContainer().equals(getContainer()))
                     {
-                        HttpView.throwNotFoundMV("Experiment " + form.getExpRowId());
+                        HttpView.throwNotFound("Experiment " + form.getExpRowId());
                     }
                     selection.addExperimentIds(experiment.getRowId());
                 }
@@ -2077,7 +2077,7 @@ public class ExperimentController extends SpringActionController
             }
             catch (NumberFormatException e)
             {
-                HttpView.throwNotFoundMV(runIds.toString());
+                HttpView.throwNotFound(runIds.toString());
                 return true;
             }
         }
@@ -2154,14 +2154,14 @@ public class ExperimentController extends SpringActionController
             ExpExperiment exp = form.lookupExperiment();
             if (exp == null || !exp.getContainer().equals(getContainer()))
             {
-                HttpView.throwNotFoundMV("Experiment " + form.getExpRowId());
+                HttpView.throwNotFound("Experiment " + form.getExpRowId());
             }
             for (int runId : PageFlowUtil.toInts(runIds))
             {
                 ExpRun run = ExperimentService.get().getExpRun(runId);
                 if (run == null || !run.getContainer().equals(getContainer()))
                 {
-                    HttpView.throwNotFoundMV("Run " + runId);
+                    HttpView.throwNotFound("Run " + runId);
                 }
                 exp.removeRun(getUser(), run);
             }
@@ -2263,10 +2263,10 @@ public class ExperimentController extends SpringActionController
         {
             String lsid = form.getLsid();
             if (lsid == null)
-                return HttpView.throwNotFoundMV();
+                return HttpView.throwNotFound();
             ExpObject obj = ExperimentService.get().findObjectFromLSID(lsid);
             if (obj == null)
-                return HttpView.throwNotFoundMV();
+                return HttpView.throwNotFound();
             Container container = obj.getContainer();
             if (!container.hasPermission(getUser(), ACL.PERM_UPDATE))
                 HttpView.throwUnauthorized();
@@ -2304,7 +2304,7 @@ public class ExperimentController extends SpringActionController
             List<ExpMaterial> materials = form.lookupMaterials();
             if (materials.isEmpty())
             {
-                return HttpView.throwNotFoundMV("Could not find any matching materials");
+                return HttpView.throwNotFound("Could not find any matching materials");
             }
             if (!materials.get(0).getContainer().equals(getContainer()))
             {
@@ -2865,7 +2865,7 @@ public class ExperimentController extends SpringActionController
             _targetContainer = ContainerManager.getForId(form.getTargetContainerId());
             if (_targetContainer == null || !_targetContainer.hasPermission(getUser(), ACL.PERM_INSERT))
             {
-                HttpView.throwUnauthorizedMV();
+                HttpView.throwUnauthorized();
             }
 
             Set<String> runIds = DataRegionSelection.getSelected(getViewContext(), true);

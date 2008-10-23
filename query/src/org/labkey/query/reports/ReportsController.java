@@ -281,7 +281,7 @@ public class ReportsController extends SpringActionController
             if (report != null)
             {
                 if (!report.getDescriptor().canEdit(getViewContext()))
-                    return HttpView.throwUnauthorizedMV();
+                    return HttpView.throwUnauthorized();
                 ReportService.get().deleteReport(getViewContext(), report);
             }
             return HttpView.redirect(forwardUrl);

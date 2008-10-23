@@ -94,7 +94,7 @@ public class XarAssayController extends SpringActionController
                 //TODO  encode?
                 if (null!= form.getPath())
                     helper.addParameter("path", form.getPath());
-                HttpView.throwRedirect(helper);
+                HttpView.redirect(helper);
             }
 
             ArrayList<ExpProtocol> assayProtocols = new ArrayList<ExpProtocol>();

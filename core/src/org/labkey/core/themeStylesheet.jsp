@@ -19,11 +19,12 @@
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.view.ThemeFont" %>
 <%@ page import="org.labkey.api.view.WebTheme" %>
+<%@ page import="org.labkey.api.view.WebThemeManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Container c = getViewContext().getContainer();
     response.setContentType("text/css");
-    WebTheme theme = WebTheme.getTheme(c);
+    WebTheme theme = WebThemeManager.getTheme(c);
     ThemeFont themeFont = ThemeFont.getThemeFont(c);
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
     String navBarWidth = laf.getNavigationBarWidth();

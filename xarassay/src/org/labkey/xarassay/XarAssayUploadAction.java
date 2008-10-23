@@ -66,7 +66,7 @@ public class XarAssayUploadAction extends UploadWizardAction<XarAssayForm>
         if ((null == referer && null==assayRunUploadForm.getUploadStep()))
         {
             // want to redirect the Upload Runs button from the Assay Details list to the pipeline first
-            HttpView.throwRedirect(PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(assayRunUploadForm.getContainer(),null));
+            HttpView.redirect(PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(assayRunUploadForm.getContainer(),null));
         }
         return super.getView(assayRunUploadForm, errors);
 
@@ -114,7 +114,7 @@ public class XarAssayUploadAction extends UploadWizardAction<XarAssayForm>
             ActionURL helper = form.getProvider().getUploadWizardURL(getContainer(), _protocol);
             helper.replaceParameter("path", form.getPath());
             helper.replaceParameter("providerName", form.getProviderName());
-            HttpView.throwRedirect(helper);
+            HttpView.redirect(helper);
 
             return null;
         }

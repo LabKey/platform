@@ -735,7 +735,7 @@ public class LoginController extends SpringActionController
                     if (getUser() != null && !getUser().isGuest())
                     {
                         SecurityManager.logoutUser(getViewContext().getRequest(), getUser());
-                        HttpView.redirect(currentUrl);
+                        HttpView.throwRedirect(currentUrl);
                     }
 
                     // Success
