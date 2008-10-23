@@ -35,6 +35,7 @@ import org.labkey.api.view.GWTView;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.view.JspView;
 import org.labkey.common.tools.TabLoader;
+import org.labkey.common.tools.ColumnDescriptor;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayInputStream;
@@ -116,7 +117,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
 
             Map<String, ParticipantVisit> values = new HashMap<String, ParticipantVisit>();
             TabLoader tabLoader = new TabLoader(file);
-            TabLoader.ColumnDescriptor[] cols = tabLoader.getColumns();
+            ColumnDescriptor[] cols = tabLoader.getColumns();
             if (tabLoader.getSkipLines() == 0)
             {
                 tabLoader = new TabLoader(file);

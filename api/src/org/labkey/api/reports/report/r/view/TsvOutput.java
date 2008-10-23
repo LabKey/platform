@@ -24,6 +24,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.common.tools.TabLoader;
+import org.labkey.common.tools.ColumnDescriptor;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -76,17 +77,17 @@ public class TsvOutput extends AbstractParamReplacement
             {
                 TabLoader tabLoader = new TabLoader(getFile());
                 tabLoader.setParseQuotes(true);
-                TabLoader.ColumnDescriptor[] cols = tabLoader.getColumns();
+                ColumnDescriptor[] cols = tabLoader.getColumns();
                 Map[] data = (Map[]) tabLoader.load();
 
-                List<TabLoader.ColumnDescriptor> display = new ArrayList<TabLoader.ColumnDescriptor>();
-                HashMap<String, TabLoader.ColumnDescriptor> hrefs = new HashMap<String, TabLoader.ColumnDescriptor>(tabLoader.getColumns().length * 2);
-                HashMap<String, TabLoader.ColumnDescriptor> styles = new HashMap<String, TabLoader.ColumnDescriptor>(tabLoader.getColumns().length * 2);
+                List<ColumnDescriptor> display = new ArrayList<ColumnDescriptor>();
+                HashMap<String, ColumnDescriptor> hrefs = new HashMap<String, ColumnDescriptor>(tabLoader.getColumns().length * 2);
+                HashMap<String, ColumnDescriptor> styles = new HashMap<String, ColumnDescriptor>(tabLoader.getColumns().length * 2);
 
-                for (TabLoader.ColumnDescriptor col : cols)
+                for (ColumnDescriptor col : cols)
                     hrefs.put(col.name, null);
 
-                for (TabLoader.ColumnDescriptor col : cols)
+                for (ColumnDescriptor col : cols)
                 {
                     if (col.name.endsWith(".href"))
                     {
@@ -117,7 +118,7 @@ public class TsvOutput extends AbstractParamReplacement
                 else
                     out.write("<tr><td><table class=\"labkey-r-tsvout\">");
                 out.write("<tr>");
-                for (TabLoader.ColumnDescriptor col : display)
+                for (ColumnDescriptor col : display)
                 {
                     if (Number.class.isAssignableFrom(col.getClass()))
                         out.write("<td class='labkey-header' align='right'>");
@@ -135,14 +136,14 @@ public class TsvOutput extends AbstractParamReplacement
                         out.write("<tr class=\"labkey-alternate-row\">");
                     else
                         out.write("<tr class=\"labkey-row\">");
-                    for (TabLoader.ColumnDescriptor col : display)
+                    for (ColumnDescriptor col : display)
                     {
                         Object colVal = m.get(col.name);
                         if ("NA".equals(colVal))
                             colVal = null;
-                        TabLoader.ColumnDescriptor hrefCol = hrefs.get(col.name);
+                        ColumnDescriptor hrefCol = hrefs.get(col.name);
                         String href = hrefCol == null ? null : ConvertUtils.convert((m.get(hrefCol.name)));
-                        TabLoader.ColumnDescriptor styleCol = styles.get(col.name);
+                        ColumnDescriptor styleCol = styles.get(col.name);
                         String style = styleCol == null ? null : ConvertUtils.convert((m.get(styleCol.name)));
 
                         out.write("<td");

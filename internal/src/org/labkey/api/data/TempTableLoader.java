@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.labkey.common.tools.TabLoader;
+import org.labkey.common.tools.ColumnDescriptor;
 
 import java.util.ArrayList;
 import java.util.Date;
