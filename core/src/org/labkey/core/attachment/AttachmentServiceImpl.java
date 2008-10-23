@@ -611,15 +611,23 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     }
 
 
-    public Attachment[] getAttachments(AttachmentParent parent) throws SQLException
+    public Attachment[] getAttachments(AttachmentParent parent)
     {
         Attachment[] attachments;
-        attachments = Table.select(coreTables().getTableInfoDocuments(),
-                _attachmentColumns,
-                new SimpleFilter("Parent", parent.getEntityId()),
-                new Sort("+Created"),
-                Attachment.class
-        );
+
+        try
+        {
+            attachments = Table.select(coreTables().getTableInfoDocuments(),
+                    _attachmentColumns,
+                    new SimpleFilter("Parent", parent.getEntityId()),
+                    new Sort("+Created"),
+                    Attachment.class
+            );
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
 
         File parentDir = null;
         try
@@ -676,7 +684,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     }
 
 
-    public Attachment getAttachment(AttachmentParent parent, String name) throws SQLException
+    public Attachment getAttachment(AttachmentParent parent, String name)
     {
         Attachment[] attachments = getAttachments(parent);
 
@@ -1083,6 +1091,77 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             }
         }
     }
+
+
+    public InputStream getInputStream(AttachmentParent parent, String name) throws FileNotFoundException
+    {
+        Connection conn;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        DbSchema schema = coreTables().getSchema();
+
+        try
+        {
+            // we don't want a RowSet, so execute directly (not Table.executeQuery())
+            conn = schema.getScope().getConnection();
+            if (null == parent.getEntityId())
+                stmt = Table.prepareStatement(conn, sqlRootDocument(), new Object[]{name});
+            else
+                stmt = Table.prepareStatement(conn, sqlDocument(), new Object[]{parent.getEntityId(), name});
+            rs = stmt.executeQuery();
+
+            if (parent instanceof AttachmentDirectory)
+            {
+                File parentDir = ((AttachmentDirectory) parent).getFileSystemDirectory();
+                if (!parentDir.exists())
+                    throw new FileNotFoundException("No parent directory for downloaded file " + name + ". Please contact an administrator.");
+                File file = new File(parentDir, name);
+                stmt.close();
+                stmt = null;
+                rs.close();
+                rs = null;
+                return new FileInputStream(file);
+            }
+            else
+            {
+                if (!rs.next())
+                    throw new FileNotFoundException(name);
+                final int size = rs.getInt("DocumentSize");
+                InputStream is = rs.getBinaryStream("Document");
+
+                final PreparedStatement  fstmt = stmt;
+                final ResultSet frs = rs;
+                InputStream ret = new FilterInputStream(is)
+                {
+                    public void close() throws IOException
+                    {
+                        ResultSetUtil.close(fstmt);
+                        ResultSetUtil.close(frs);
+                        super.close();
+                    }
+
+                    // slight hack here to get the size cheaply
+                    public int available() throws IOException
+                    {
+                        return size;
+                    }
+                };
+                stmt = null;
+                rs = null;
+                return ret;
+            }
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+        finally
+        {
+            ResultSetUtil.close(stmt);
+            ResultSetUtil.close(rs);
+        }
+    }
+
 
     private CoreSchema coreTables()
     {

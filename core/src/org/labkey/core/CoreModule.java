@@ -49,7 +49,8 @@ import org.labkey.core.security.SecurityController;
 import org.labkey.core.test.TestController;
 import org.labkey.core.user.UserController;
 import org.labkey.core.webdav.FileSystemAuditViewFactory;
-import org.labkey.core.webdav.WebdavResolverImpl;
+import org.labkey.api.webdav.WebdavResolverImpl;
+import org.labkey.api.webdav.WebdavService;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -416,6 +417,8 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
 
         AdminController.registerAdminConsoleLinks();
         AnalyticsController.registerAdminConsoleLinks();
+
+        WebdavService.setResolver(WebdavResolverImpl.get());
     }
 
     @Override

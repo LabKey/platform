@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.core.ftp.FtpPage" %>
 <%@ page import="org.labkey.core.webdav.DavController" %>
 <%@ page import="org.labkey.api.util.GUID" %>
+<%@ page import="org.labkey.api.webdav.WebdavService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView me = HttpView.currentView();
@@ -67,7 +68,7 @@ LABKEY.writeApplet({
           host:<%=PageFlowUtil.jsString(dropPage.getHost())%>,
           port:<%=PageFlowUtil.jsString(dropPage.getPort())%>,
           path:<%=PageFlowUtil.jsString(dropPage.getPath())%>,
-          webdavPrefix:<%=PageFlowUtil.jsString(contextPath + "/" + DavController.SERVLETPATH)%>,
+          webdavPrefix:<%=PageFlowUtil.jsString(contextPath + "/" + WebdavService.getServletPath())%>,
         user:<%=PageFlowUtil.jsString(context.getUser().getEmail())%>,
         password:<%=PageFlowUtil.jsString(sessionId)%>,
         updateEvent:"dropApplet_Update",

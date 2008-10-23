@@ -32,6 +32,7 @@ import org.labkey.api.util.SearchHit;
 import org.labkey.api.view.*;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
+import org.labkey.api.webdav.WebdavService;
 import org.labkey.wiki.model.CollaborationFolderType;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
@@ -136,6 +137,7 @@ public class WikiModule extends DefaultModule implements ContainerManager.Contai
         ContainerManager.addContainerListener(this);
         Search.register(this);
         ModuleLoader.getInstance().registerFolderType(new CollaborationFolderType(this));
+        WebdavService.addProvider(new WikiWebdavProvider());
 
         if (_newInstall)
         {

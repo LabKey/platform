@@ -720,16 +720,8 @@ public class SpecimenUtils
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
             Map cols = ctx.getRow();
-            Attachment[] attachments;
-            try
-            {
-                SampleRequestEvent event = ObjectFactory.Registry.getFactory(SampleRequestEvent.class).fromMap(cols);
-                attachments = AttachmentService.get().getAttachments(event);
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+            SampleRequestEvent event = ObjectFactory.Registry.getFactory(SampleRequestEvent.class).fromMap(cols);
+            Attachment[] attachments = AttachmentService.get().getAttachments(event);
 
             if (attachments != null && attachments.length > 0)
             {

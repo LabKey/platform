@@ -34,6 +34,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.*;
+import org.labkey.api.webdav.WebdavService;
 import org.labkey.pipeline.analysis.AnalysisController;
 import org.labkey.pipeline.analysis.FileAnalysisPipelineProvider;
 import org.labkey.pipeline.api.*;
@@ -118,6 +119,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         PipelineEmailPreferences.get().startNotificationTasks();
         PipelineController.registerAdminConsoleLinks();
         StatusController.registerAdminConsoleLinks();
+        WebdavService.addProvider(new PipelineWebdavProvider());
     }
 
     public void afterSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)

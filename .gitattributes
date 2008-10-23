@@ -416,8 +416,6 @@ core/src/org/labkey/core/user/userAccess.jsp -text
 core/src/org/labkey/core/user/userPreferences.jsp -text
 core/src/org/labkey/core/webdav/DavController.java -text
 core/src/org/labkey/core/webdav/FileSystemAuditViewFactory.java -text
-core/src/org/labkey/core/webdav/WebdavResolver.java -text
-core/src/org/labkey/core/webdav/WebdavResolverImpl.java -text
 core/src/org/labkey/core/webdav/WebdavServlet.java -text
 core/src/org/labkey/core/webdav/apache/XMLWriter.java -text
 core/src/org/labkey/core/webdav/list.jsp -text
@@ -782,6 +780,7 @@ filecontent/src/META-INF/filecontent.xml -text
 filecontent/src/org/labkey/filecontent/CustomizeFilesWebPartView.java -text
 filecontent/src/org/labkey/filecontent/FileContentController.java -text
 filecontent/src/org/labkey/filecontent/FileContentModule.java -text
+filecontent/src/org/labkey/filecontent/FileWebdavProvider.java -text
 filecontent/src/org/labkey/filecontent/FilesWebPart.java -text
 filecontent/src/org/labkey/filecontent/view/configure.jsp -text
 filecontent/src/org/labkey/filecontent/view/customizeWebPart.jsp -text
@@ -976,6 +975,7 @@ pipeline/src/org/labkey/pipeline/FileContentPipelineProvider.java -text
 pipeline/src/org/labkey/pipeline/PipelineController.java -text
 pipeline/src/org/labkey/pipeline/PipelineModule.java -text
 pipeline/src/org/labkey/pipeline/PipelineWebPart.java -text
+pipeline/src/org/labkey/pipeline/PipelineWebdavProvider.java -text
 pipeline/src/org/labkey/pipeline/analysis/AnalysisController.java -text
 pipeline/src/org/labkey/pipeline/analysis/AnalyzePage.java -text
 pipeline/src/org/labkey/pipeline/analysis/CommandTaskImpl.java -text
@@ -2192,6 +2192,7 @@ wiki/src/org/labkey/wiki/ServiceImpl.java -text
 wiki/src/org/labkey/wiki/WikiCache.java -text
 wiki/src/org/labkey/wiki/WikiManager.java -text
 wiki/src/org/labkey/wiki/WikiModule.java -text
+wiki/src/org/labkey/wiki/WikiWebdavProvider.java -text
 wiki/src/org/labkey/wiki/model/BaseWikiView.java -text
 wiki/src/org/labkey/wiki/model/CollaborationFolderType.java -text
 wiki/src/org/labkey/wiki/model/RadeoxMacroProxy.java -text

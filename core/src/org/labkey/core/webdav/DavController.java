@@ -37,6 +37,9 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.webdav.WebdavResolver;
+import org.labkey.api.webdav.WebdavResolverImpl;
+import org.labkey.api.webdav.WebdavService;
 import org.labkey.common.util.Pair;
 import org.labkey.core.webdav.apache.XMLWriter;
 import org.springframework.web.multipart.MultipartException;
@@ -74,7 +77,6 @@ import java.util.*;
  */
 public class DavController extends SpringActionController
 {
-    public static final String SERVLETPATH="webdav";
     public static final String name = "_dav_";
     public static final String mimeSeparation = "<[[mime " + GUID.makeHash() + "_separator_]]>";
 
@@ -888,7 +890,7 @@ public class DavController extends SpringActionController
                xml.writeText(h(resource.getLocalHref(getViewContext())));
                xml.writeElement(null, "href", XMLWriter.CLOSING);
 
-               String displayName = resource.getPath().equals("/") ? SERVLETPATH : resource.getName();
+               String displayName = resource.getPath().equals("/") ? WebdavService.getServletPath() : resource.getName();
 
                switch (type)
                {
@@ -2319,6 +2321,8 @@ public class DavController extends SpringActionController
                 path = "/";
             _resourcePath = path;
         }
+        if (_resourcePath.equals(""))
+            _resourcePath = "/";
         if (!_resourcePath.startsWith("/"))
             return null;
         return _resourcePath;

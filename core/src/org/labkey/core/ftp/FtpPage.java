@@ -20,8 +20,10 @@ import org.labkey.api.data.Container;
 import org.labkey.api.ftp.FtpConnector;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.webdav.WebdavService;
 import org.labkey.core.webdav.DavController;
 import org.apache.commons.lang.StringUtils;
 
@@ -35,11 +37,22 @@ public class FtpPage implements HasViewContext
 {
     ViewContext context = null;
     public String pipeline = null;
+    public String fileSetName = null;
     boolean useFTP = false;
 
     public FtpPage()
     {
         useFTP = null != StringUtils.trimToNull(AppProps.getInstance().getPipelineFTPHost());
+    }
+
+    public void setFileSetName(String fileSetName)
+    {
+        this.fileSetName = fileSetName;
+    }
+
+    public String getFileSetName()
+    {
+        return fileSetName;
     }
 
     public void setViewContext(ViewContext context)
@@ -92,7 +105,7 @@ public class FtpPage implements HasViewContext
         Container c = getViewContext().getContainer();
         StringBuilder path = new StringBuilder(100);
         path.append(c.getEncodedPath());
-        if (null != pipeline && pipeline.length() > 0)
+        if (!StringUtils.isEmpty(pipeline))
         {
             String subdir = PageFlowUtil.decode(pipeline);
             if (subdir.equals(".") || subdir.startsWith("./"))
@@ -104,6 +117,13 @@ public class FtpPage implements HasViewContext
                 path.append('/');
             path.append(PageFlowUtil.encodePath(subdir));
         }
+        else if (!StringUtils.isEmpty(fileSetName))
+        {
+            if (path.charAt(path.length()-1) != '/')
+                path.append('/');
+            path.append("@files/");
+            path.append(PageFlowUtil.encodePath(fileSetName));
+        }        
         return path.toString();
     }
 
@@ -114,7 +134,7 @@ public class FtpPage implements HasViewContext
         if (getPort().length() != 0)
             path.append(":").append(getPort());
         if (!useFTP)
-            path.append(getViewContext().getContextPath()).append("/").append(DavController.SERVLETPATH);
+            path.append(getViewContext().getContextPath()).append("/").append(WebdavService.getServletPath());
         path.append(getPath());
         return path.toString();
     }

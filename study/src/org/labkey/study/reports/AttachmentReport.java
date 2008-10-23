@@ -150,14 +150,7 @@ public class AttachmentReport extends RedirectReport implements AttachmentParent
         if (null == getEntityId())
             return null;
 
-        try
-        {
-            attachments = AttachmentService.get().getAttachments(this);
-        } catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-
+        attachments = AttachmentService.get().getAttachments(this);
         return attachments;
     }
 

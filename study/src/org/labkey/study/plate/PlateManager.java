@@ -640,21 +640,14 @@ public class PlateManager implements PlateService.Service
     public ActionURL getDataFileURL(Plate iplate, String pageFlow)
     {
         PlateImpl plate = (PlateImpl) iplate;
-        try
+        if (plate.getDataFileId() != null)
         {
-            if (plate.getDataFileId() != null)
+            Attachment[] attachments = AttachmentService.get().getAttachments(plate);
+            if (attachments != null && attachments.length > 0)
             {
-                Attachment[] attachments = AttachmentService.get().getAttachments(plate);
-                if (attachments != null && attachments.length > 0)
-                {
-                    assert attachments.length == 1 : "Expected only one data file per plate";
-                    return new DownloadURL(pageFlow, plate.getContainer().getPath(), plate.getDataFileId(), attachments[0].getName());
-                }
+                assert attachments.length == 1 : "Expected only one data file per plate";
+                return new DownloadURL(pageFlow, plate.getContainer().getPath(), plate.getDataFileId(), attachments[0].getName());
             }
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
         }
         return null;
     }

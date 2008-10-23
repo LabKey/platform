@@ -136,11 +136,16 @@
 <br>
 <% if (context.hasPermission(ACL.PERM_INSERT))
 {
+    ActionURL dropURL = new ActionURL("ftp","drop", context.getContainer());
     // UNDONE: use yahoo dialog to avoid pop-under
     %>[<a href="#uploadFile" onclick="window.open('<%=addAttachmentUrl%>','uploadFiles','height=200,width=550,resizable=yes', false);">Upload&nbsp;File</a>]&nbsp;<%
     if (null == StringUtils.trimToNull(parent.getLabel()))
     {
-    %>[<a href="#uploadFiles" onclick="window.open('<%=h((new ActionURL("ftp","drop", context.getContainer()).getLocalURIString()))%>', '_blank', 'height=600,width=1000,resizable=yes');">Upload Multiple Files</a>]&nbsp;<%
+    %>[<a href="#uploadFiles" onclick="window.open('<%=h(dropURL.getLocalURIString())%>', '_blank', 'height=600,width=1000,resizable=yes');">Upload Multiple Files</a>]&nbsp;<%
+    }
+    else
+    {
+    %>[<a href="#uploadFiles" onclick="window.open('<%=h(dropURL.addParameter("fileSetName",parent.getLabel()).getLocalURIString())%>', '_blank', 'height=600,width=1000,resizable=yes');">Upload Multiple Files</a>]&nbsp;<%
     }
 }
 if (context.hasPermission(ACL.PERM_UPDATE))

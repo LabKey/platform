@@ -24,6 +24,7 @@ import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
+import org.labkey.api.webdav.WebdavService;
 
 import java.beans.PropertyChangeEvent;
 import java.util.Collection;
@@ -52,6 +53,7 @@ public class FileContentModule extends DefaultModule
     public void startup(ModuleContext moduleContext)
     {
         super.startup(moduleContext);
+        WebdavService.addProvider(new FileWebdavProvider());
     }
 
     @Override

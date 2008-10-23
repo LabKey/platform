@@ -27,13 +27,13 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.*;
 import org.labkey.api.util.NetworkDrive;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.core.webdav.WebdavResolver;
-import org.labkey.core.webdav.WebdavResolverImpl;
+import org.labkey.api.webdav.WebdavResolver;
+import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.core.webdav.FileSystemAuditViewFactory;
 import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartException;
@@ -79,26 +79,28 @@ public class FtpController extends SpringActionController
 
         public FtpConnector getInstance(int version)
         {
-            return new FtpConnectorImpl(getViewContext().getUser());
+            return new FtpConnectorImpl(getViewContext());
         }
     }
 
     public static class FtpConnectorImpl implements FtpConnector
     {
         //HttpServletRequest _request = null;
-        User _user = null;
+        ViewContext _context = null;
+        User _user;
         WebdavResolver _resolver = WebdavResolverImpl.get();
         
-        public FtpConnectorImpl(User user)
+        public FtpConnectorImpl(ViewContext context)
         {
-             _user = user;
+            _context = context;
+            _user = _context.getUser();
         }
 
 
         public int userid(String username, String password) throws Exception
         {
             // first see if we are already authenticated (e.g. sessionid, or basic auth)
-            if (null != _user)
+            if (null != _user && !_user.isGuest())
             {
                 if (_user.getEmail().equalsIgnoreCase(username))
                     return _user.getUserId();
@@ -161,23 +163,18 @@ public class FtpController extends SpringActionController
             if (path == null)
                 return null;
 
-            WebdavResolverImpl.ResourceImpl  resource = (WebdavResolverImpl.ResourceImpl)_resolver.lookup(path);
-            if (!resource.isWebFolder())
+            WebdavResolverImpl.Resource  resource = _resolver.lookup(path);
+            if (!(resource instanceof WebdavResolver.WebFolder))
                 return null;
 
-            path = resource.getPath();
-            boolean isPipelineLink = path.endsWith("/" + PIPELINE_LINK);
-            String folder = isPipelineLink ? path.substring(0, path.length()-("/"+PIPELINE_LINK).length()) : path;
-            ActionURL url = new ActionURL(isPipelineLink ? "Pipeline" : "Project", "begin", folder);
-
             WebFolderInfo info = new WebFolderInfo();
-            info.url = url.getURIString();
+            info.url = resource.getHref(_context);
             info.name = resource.getName();
             info.path = resource.getPath();
             info.created = resource.getCreation();
             info.fsRoot = resource.getFile() == null ? null : initFileSystemRoot(resource.getFile());
-            info.perm = resource.getPermissions(user);
-            List<String> webFoldersNames = resource.getWebFoldersNames(user);
+            info.perm = ((WebdavResolver.WebFolder)resource).getPermissions(user);
+            List<String> webFoldersNames = ((WebdavResolver.WebFolder)resource).getWebFoldersNames(user);
             info.subfolders = webFoldersNames.toArray(new String[webFoldersNames.size()]);
             return info;
         }
