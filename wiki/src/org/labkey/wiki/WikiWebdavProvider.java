@@ -100,7 +100,7 @@ class WikiWebdavProvider implements WebdavService.Provider
             return new WikiFolder(this, name);
         }
 
-        @Override @NotNull
+        @NotNull
         public List<String> listNames()
         {
             return WikiService.get().getNames(_c);
@@ -156,7 +156,7 @@ class WikiWebdavProvider implements WebdavService.Provider
             return null != _wiki;
         }
 
-        @Override @NotNull
+        @NotNull
         public List<String> listNames()
         {
             if (!exists())
