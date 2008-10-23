@@ -21,6 +21,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.reports.Report;
 
 import java.io.File;
+import java.util.Map;
 
 /**
  * Handles substitution parameters for R reports by mapping symbolic names to
@@ -38,6 +39,10 @@ public interface ParamReplacement
     public String getName();
     public void setName(String name);
 
+    /** optional replacement parameter properties */
+    public Map<String, String> getProperties();
+    public void setProperties(Map<String, String> properties);
+
     /**
      * Convert the substitution to it's eventual generated file.
      * @param directory - the parent directory to crete the generated file (if any, can be null)
@@ -47,7 +52,7 @@ public interface ParamReplacement
     public File getFile();
     public void setFile(File file);
     public String toString();
-    
+
     public void setReport(Report report);
     public Report getReport();
 

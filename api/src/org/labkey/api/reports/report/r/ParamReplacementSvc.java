@@ -17,6 +17,7 @@
 package org.labkey.api.reports.report.r;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.util.PageFlowUtil;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -115,7 +116,17 @@ public class ParamReplacementSvc
             ParamReplacement param = getHandlerInstance(id);
             if (param != null)
             {
-                param.setName(name);
+                if (name.indexOf('?') != -1)
+                {
+                    String[] parts = name.split("\\?");
+                    if (parts.length == 2)
+                    {
+                        param.setName(parts[0]);
+                        param.setProperties(PageFlowUtil.mapFromQueryString(parts[1]));
+                    }
+                }
+                else
+                    param.setName(name);
                 return param;
             }
         }
@@ -160,7 +171,8 @@ public class ParamReplacementSvc
              for (ParamReplacement output : outputSubst)
              {
                  if (output.getName() != null && output.getFile() != null)
-                    bw.write(output.getId() + '\t' + output.getName() + '\t' + output.getFile().getAbsolutePath() + '\n');
+                    bw.write(output.getId() + '\t' + output.getName() + '\t' + output.getFile().getAbsolutePath() + '\t' +
+                            PageFlowUtil.toQueryString(output.getProperties().entrySet()) + '\n');
              }
          }
          finally
@@ -183,13 +195,14 @@ public class ParamReplacementSvc
                  while ((l = br.readLine()) != null)
                  {
                      String[] parts = l.split("\\t");
-                     if (parts.length == 3)
+                     if (parts.length == 4)
                      {
                          ParamReplacement handler = getHandlerInstance(parts[0]);
                          if (handler != null)
                          {
                              handler.setName(parts[1]);
                              handler.setFile(new File(parts[2]));
+                             handler.setProperties(PageFlowUtil.mapFromQueryString(parts[3]));
 
                              outputSubst.add(handler);
                          }

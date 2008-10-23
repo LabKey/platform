@@ -49,6 +49,7 @@ public abstract class AbstractParamReplacement implements ParamReplacement
     protected File _file;
     protected Report _report;
     protected boolean _headerVisible = true;
+    protected Map<String, String> _properties = Collections.emptyMap();
 
     public AbstractParamReplacement(String id)
     {
@@ -103,5 +104,15 @@ public abstract class AbstractParamReplacement implements ParamReplacement
     public String toString()
     {
         return getName() + " (" + getId() + ")";
+    }
+
+    public Map<String, String> getProperties()
+    {
+        return _properties;
+    }
+
+    public void setProperties(Map<String, String> properties)
+    {
+        _properties = properties;
     }
 }

@@ -22,6 +22,7 @@ import org.labkey.api.reports.report.r.ParamReplacement;
 
 import java.io.PrintWriter;
 import java.io.File;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -34,11 +35,13 @@ public class ROutputView extends HttpView
     private boolean _collapse;
     private boolean _showHeader = true;
     private File _file;
+    private Map<String, String> _properties;
 
     public ROutputView(ParamReplacement param)
     {
         _file = param.getFile();
         _showHeader = param.getHeaderVisible();
+        _properties = param.getProperties();
     }
 
     public String getLabel()
@@ -79,6 +82,16 @@ public class ROutputView extends HttpView
     public void setFile(File file)
     {
         _file = file;
+    }
+
+    public Map<String, String> getProperties()
+    {
+        return _properties;
+    }
+
+    public void setProperties(Map<String, String> properties)
+    {
+        _properties = properties;
     }
 
     protected void renderTitle(Object model, PrintWriter out) throws Exception
