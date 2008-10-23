@@ -1010,6 +1010,7 @@
         _convertWin.hide();
 
         setStatus("Converted. Click Save to save the converted content, or Cancel to abandon all your changes and exit.", true);
+        updateBodyFormatCaption(_wikiProps.rendererType);
         showEditingHelp(_wikiProps.rendererType);
     }
 
