@@ -25,9 +25,4 @@ import org.labkey.api.data.Container;
  */
 public class TermsOfUseException extends UnauthorizedException
 {
-    // Note: Use HttpView.throwTermsOfUseException() since it will redirect to the original URL; current ActionURL might have been mangled. 
-    TermsOfUseException(String url, Container c)
-    {
-        super(null, url, c);
-    }
 }

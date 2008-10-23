@@ -54,7 +54,7 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
                 if (!getViewContext().getUser().isGuest())
                     throw e;
                 else
-                    throw new UnauthorizedException(true);
+                    throw new RequestBasicAuthException();
             }
         }
         else

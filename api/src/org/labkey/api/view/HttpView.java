@@ -609,88 +609,54 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     }
 
     
-    public static Forward throwRedirect(ActionURL url)
-            throws RedirectException
+    public static ModelAndView throwRedirect(ActionURL url) throws RedirectException
     {
         throw new RedirectException(url.getLocalURIString());
     }
 
 
-    public static Forward throwRedirect(String url)
-            throws RedirectException
+    public static ModelAndView throwRedirect(String url) throws RedirectException
     {
         throw new RedirectException(url);
     }
 
-    public static ModelAndView redirect(ActionURL url)
-            throws ServletException
+    public static ModelAndView redirect(ActionURL url) throws ServletException
     {
         return new ModelAndView(new RedirectView(url.getLocalURIString(), false));
     }
 
 
-    public static ModelAndView redirect(String url)
-            throws ServletException
+    public static ModelAndView redirect(String url) throws ServletException
     {
         return new ModelAndView(new RedirectView(url, false));
     }
 
-
-    public static Forward throwNotFound()
-            throws NotFoundException
+    @Deprecated
+    public static Forward throwNotFoundForward() throws NotFoundException
     {
         throw new NotFoundException();
     }
 
-
-    public static ModelAndView throwNotFoundMV()
-            throws NotFoundException
+    public static ModelAndView throwNotFound() throws NotFoundException
     {
         throw new NotFoundException();
     }
 
-
-    public static Forward throwNotFound(String message)
-            throws NotFoundException
+    public static ModelAndView throwNotFound(String message) throws NotFoundException
     {
         throw new NotFoundException(message);
     }
 
-
-    public static ModelAndView throwNotFoundMV(String message)
-            throws NotFoundException
+    public static ModelAndView throwUnauthorized() throws UnauthorizedException
     {
-        throw new NotFoundException(message);
+        throw new UnauthorizedException(null);
     }
 
-    public static Forward throwUnauthorized()
-            throws UnauthorizedException
+    public static void throwUnauthorized(String message) throws UnauthorizedException
     {
-        throw new UnauthorizedException(null, getContextURL(), getContextContainer());
+        throw new UnauthorizedException(message);
     }
 
-    public static Forward throwForbiddenProject()
-            throws ForbiddenProjectException
-    {
-        throw new ForbiddenProjectException(getContextURL(), getContextContainer());
-    }
-
-    public static ModelAndView throwUnauthorizedMV()
-            throws UnauthorizedException
-    {
-        throw new UnauthorizedException(null, getContextURL(), getContextContainer());
-    }
-
-    public static void throwUnauthorized(String message)
-            throws UnauthorizedException
-    {
-        throw new UnauthorizedException(message, getContextURL(), getContextContainer());
-    }
-
-    public static void throwTermsOfUseException() throws TermsOfUseException
-    {
-        throw new TermsOfUseException(getContextURL(), getContextContainer());
-    }
     /**
      * Pulls out the context's URL for redirecting. This fetches
      * the original URL before any redirects, in case internally

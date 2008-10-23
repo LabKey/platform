@@ -438,7 +438,7 @@ public class ViewContext extends BoundMap implements MessageSource
     public void requiresTermsOfUse() throws TermsOfUseException
     {
         if (!hasAgreedToTermsOfUse())
-            HttpView.throwTermsOfUseException();
+            throw new TermsOfUseException();
     }
 
     /* return PropertyValues object used to bind the current commmand object

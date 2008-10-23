@@ -21,8 +21,8 @@ import org.labkey.api.util.GUID;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSessionBindingEvent;
 import javax.servlet.http.HttpSessionBindingListener;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * User: adam
@@ -31,7 +31,7 @@ import java.util.Map;
  */
 public class TokenAuthentication
 {
-    private static Map<String, User> _tokenMap = new HashMap<String, User>();
+    private final static Map<String, User> _tokenMap = new ConcurrentHashMap<String, User>();
 
     // Generate a random token associated with this user/session.  We store the token in a map
     // associated with the user.  Later, we will validate the token by checking the map and

@@ -385,7 +385,7 @@ public class UserManager
             }
             catch (SQLException e)
             {
-                _log.error(e);
+                throw new RuntimeSQLException(e);
             }
             finally
             {
@@ -595,7 +595,7 @@ public class UserManager
             }
             catch (SQLException e)
             {
-                _log.error(e);
+                throw new RuntimeSQLException(e);
             }
         }
 

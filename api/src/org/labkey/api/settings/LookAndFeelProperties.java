@@ -17,8 +17,8 @@ package org.labkey.api.settings;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.view.WebTheme;
 import org.labkey.api.view.ThemeFont;
+import org.labkey.api.view.WebThemeManager;
 import org.labkey.api.util.FolderDisplayMode;
 
 import java.sql.SQLException;
@@ -114,7 +114,7 @@ public class LookAndFeelProperties extends AbstractWriteableSettingsGroup
 
     public String getThemeName()
     {
-        return lookupStringValue(THEME_NAME_PROP, WebTheme.DEFAULT_THEME.toString());
+        return lookupStringValue(THEME_NAME_PROP, WebThemeManager.DEFAULT_THEME.toString());
     }
 
     public String getThemeFont()

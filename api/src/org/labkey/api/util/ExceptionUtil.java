@@ -621,7 +621,7 @@ public class ExceptionUtil
             //If user has not logged in or agreed to terms, not really unauthorized yet...
             if (user.isGuest() || ex instanceof TermsOfUseException)
             {
-                if (((UnauthorizedException)ex).isRequestBasicAuth())
+                if (ex instanceof RequestBasicAuthException)
                 {
                     response.setHeader("WWW-Authenticate", "Basic realm=\"" + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getDescription() + "\"");
                     responseStatus = HttpServletResponse.SC_UNAUTHORIZED;

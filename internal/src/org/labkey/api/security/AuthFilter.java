@@ -19,6 +19,7 @@ package org.labkey.api.security;
 import java.io.IOException;
 import java.security.Principal;
 import java.net.URL;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.servlet.*;
 import javax.servlet.http.*;
 
@@ -33,8 +34,7 @@ import org.labkey.api.module.SafeFlushResponseWrapper;
 public class AuthFilter implements Filter
 {
     private static Logger _log = Logger.getLogger(AuthFilter.class);
-    private static boolean _firstRequestHandled = false;
-    private static final Object _firstRequestLock = new Object();
+    private static AtomicBoolean _firstRequestHandled = new AtomicBoolean(false);
 
 
     public void init(FilterConfig filterConfig) throws ServletException
@@ -123,15 +123,11 @@ public class AuthFilter implements Filter
     {
         // Must be done early so init exceptions get logged to mothership, authentication gets initialized before
         // basic auth is attempted in this filter, etc.
-        synchronized (_firstRequestLock)
+        if (_firstRequestHandled.compareAndSet(false, true))
         {
-            if (_firstRequestHandled)
-                return;
-
             AppProps.getInstance().initializeBaseServerUrl(request);
             AppProps.getInstance().setContextPath(request);
             FirstRequestHandler.handleFirstRequest(request);
-            _firstRequestHandled = true;
         }
     }
 }

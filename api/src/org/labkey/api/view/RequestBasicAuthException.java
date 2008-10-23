@@ -15,22 +15,11 @@
  */
 package org.labkey.api.view;
 
-import org.labkey.api.data.Container;
-import org.labkey.api.security.LoginUrls;
-import org.labkey.api.util.PageFlowUtil;
-
 /**
  * User: adam
- * Date: Aug 27, 2008
- * Time: 3:00:45 PM
+ * Date: Oct 21, 2008
+ * Time: 6:00:47 PM
  */
-
-// Thrown when admin is impersonating within a project and attempts to access a folder outside that project.  Used to
-//  provide a more helpful error message.
-public class ForbiddenProjectException extends UnauthorizedException
+public class RequestBasicAuthException extends UnauthorizedException
 {
-    public ForbiddenProjectException()
-    {
-        super("You are not allowed to access this folder while impersonating within a different project.");
-    }
 }

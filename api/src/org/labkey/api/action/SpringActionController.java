@@ -474,12 +474,20 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
         private void addAction(Class<? extends Controller> actionClass)
         {
-            ActionDescriptor ad = new DefaultActionDescriptor(actionClass);
+            try
+            {
+                ActionDescriptor ad = new DefaultActionDescriptor(actionClass);
 
-            for (String name : ad.getAllNames())
-                _nameToDescriptor.put(name, ad);
+                for (String name : ad.getAllNames())
+                    _nameToDescriptor.put(name, ad);
 
-            registerAction(ad);
+                registerAction(ad);
+            }
+            catch (Exception e)
+            {
+                // Too early to log to mothership
+                _log.error("Exception while registering action class", e);
+            }
         }
 
 
@@ -542,8 +550,11 @@ public abstract class SpringActionController implements Controller, HasViewConte
             private long _elapsedTime = 0;
             private long _maxTime = 0;
 
-            private DefaultActionDescriptor(Class<? extends Controller> actionClass)
+            private DefaultActionDescriptor(Class<? extends Controller> actionClass) throws ServletException
             {
+                if (actionClass.getConstructors().length == 0)
+                    throw new ServletException(actionClass.getName() + " has no public constructors");
+
                 _actionClass = actionClass;
 
                 // @ActionNames("name1, name2") annotation overrides default behavior of using class name to generate name

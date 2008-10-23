@@ -15,15 +15,7 @@
  */
 package org.labkey.api.view;
 
-import org.labkey.api.data.Container;
-import org.labkey.api.data.PropertyManager;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.LookAndFeelProperties;
-
 import java.awt.*;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * User: jeckels
@@ -31,9 +23,6 @@ import java.util.List;
  */
 public class WebTheme
 {
-    protected final static WebTheme BLUE = new WebTheme("Blue", "e1ecfc", "89a1b4", "ffdf8c", "336699", "ebf4ff", "89a1b4");
-    protected final static WebTheme BROWN = new WebTheme("Brown", "cccc99", "929146", "e1e1c4", "666633", "e1e1c4", "929146");
-
     private final String _navBarColor;
     private final String _headerLineColor;
     private final String _editFormColor;
@@ -43,7 +32,7 @@ public class WebTheme
     private final Color _titleBarBorderColor;
     private final Color _titleColor;
 
-    private WebTheme(String friendlyName, String navBarColor, String headerLineColor, String editFormColor, String fullScreenBorderColor, String titleBarBackgroundColor, String titleBarBorderColor)
+    WebTheme(String friendlyName, String navBarColor, String headerLineColor, String editFormColor, String fullScreenBorderColor, String titleBarBackgroundColor, String titleBarBorderColor)
     {
         _friendlyName = friendlyName;
 
@@ -106,7 +95,7 @@ public class WebTheme
         return _friendlyName;
     }
 
-    public static String toRGB(Color c)
+    private static String toRGB(Color c)
     {
         String rgb = Integer.toHexString(0x00ffffff & c.getRGB());
         return rgb.length() == 6 ? rgb : "000000".substring(rgb.length()) + rgb;
@@ -140,246 +129,6 @@ public class WebTheme
     public String getTitleBarBorderString()
     {
         return toRGB(_titleBarBorderColor);
-    }
-
-    public final static WebTheme DEFAULT_THEME = BLUE;
-
-    public static WebTheme getTheme(Container c)
-    {
-        Container settingsContainer = LookAndFeelProperties.getSettingsContainer(c);
-        return lookupTheme(settingsContainer);
-    }
-
-    private static WebTheme lookupTheme(Container c)
-    {
-        WebTheme theme = null;
-
-        try
-        {
-            LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
-
-            if (laf.hasProperties())
-                theme = WebTheme.getTheme(laf.getThemeName());
-        }
-        catch (IllegalArgumentException e)
-        {
-        }
-
-        if (null == theme)
-        {
-            if (c.isRoot())
-               theme = DEFAULT_THEME;
-            else
-               theme = lookupTheme(c.getParent());   // Recurse up the chain
-        }
-
-        return theme;
-    }
-
-    // handle Web Theme color management
-    protected static final String THEME_NAMES_KEY = "themeNames";
-    protected static final String THEME_COLORS_KEY = "themeColors-";
-    protected static List<WebTheme> _webThemeList = new ArrayList<WebTheme>();
-
-    public static List<WebTheme> getWebThemes()
-    {
-        if (0 == _webThemeList.size())
-        {
-            boolean loadDefault = true;
-
-            try
-            {
-                PropertyManager.PropertyMap properties = AppProps.getWebThemeConfigProperties();
-                String themeNames = properties.get(THEME_NAMES_KEY);
-                String[] themeNamesArray = (null == themeNames ? "" : themeNames).split(";");
-                if (null != themeNamesArray)
-                {
-                    // load the color settings from database
-                    for (String themeName : themeNamesArray)
-                    {
-                        if (null == themeName || 0 == themeName.length())
-                            continue;
-
-                        // let's get the colours
-                        // we read the colors separated by ';' in order
-                        StringBuffer key = new StringBuffer();
-                        key.append(THEME_COLORS_KEY);
-                        key.append(themeName);
-                        String themeColours = properties.get(key.toString());
-                        String[] themeColoursArray = (null == themeColours ? "" : themeColours).split(";");
-                        if (null == themeColoursArray || 0 == themeColoursArray.length)
-                        {
-                            // no colour defined, let's just skip it
-                            continue;
-                        }
-                        else
-                        {
-                            if (6 != themeColoursArray.length)
-                            {
-                                // incorrect number of colours defined, let's just skip it
-                                continue;
-                            }
-
-                            String navBarColor = themeColoursArray[0];
-                            String headerLineColor = themeColoursArray[1];
-                            String editFormColor = themeColoursArray[2];
-                            String fullScreenBorderColor = themeColoursArray[3];
-                            String titleBarBackgroundColor = themeColoursArray[4];
-                            String titleBarBorderColor = themeColoursArray[5];
-
-                            try
-                            {
-                                WebTheme webTheme = new WebTheme(
-                                        themeName,
-                                        navBarColor, headerLineColor,
-                                        editFormColor, fullScreenBorderColor,
-                                        titleBarBackgroundColor, titleBarBorderColor);
-
-                                _webThemeList.add(webTheme);
-                            }
-                            catch (IllegalArgumentException e)
-                            {
-                                // let's just ignore colour definition problem
-                            }
-                        }
-                    }
-                }
-
-                if (_webThemeList.size() > 0)
-                {
-                    // some colour loaded
-                    loadDefault = false;
-                }
-            }
-            catch (SQLException e)
-            {
-                // load the default as we need to continue
-            }
-
-            if (loadDefault)
-            {
-                // load the default as we need to continue
-                _webThemeList.add(BLUE);
-                _webThemeList.add(BROWN);
-            }
-        }
-        return _webThemeList;
-    }
-
-    public static WebTheme getTheme(String themeName)
-    {
-        if (null != themeName && 0 < themeName.length ())
-        {
-            // locate the name
-            for (WebTheme theme : WebTheme.getWebThemes())
-            {
-                if (theme.getFriendlyName().equals(themeName))
-                {
-                    return theme;
-                }
-            }
-        }
-        return null;
-    }
-
-    private static void updateWebTheme(WebTheme webTheme)
-    {
-        if (null == webTheme)
-            return;
-
-        String webThemeName = webTheme.getFriendlyName();
-
-        if (null != webThemeName && 0 < webThemeName.length())
-        {
-            List<WebTheme> webThemeList = WebTheme.getWebThemes();
-            boolean themeFound = false;
-            // locate the name
-            for (int i = 0; i < webThemeList.size(); i++)
-            {
-                WebTheme theme = webThemeList.get(i);
-                if (theme.getFriendlyName().equals(webThemeName))
-                {
-                    themeFound = true;
-                    webThemeList.set(i, webTheme);
-                    break;
-                }
-            }
-            if (!themeFound)
-            {
-                _webThemeList.add(webTheme);
-            }
-        }
-    }
-
-    public static boolean updateWebTheme(String friendlyName, String navBarColor, String headerLineColor, String editFormColor, String fullScreenBorderColor, String titleBarBackgroundColor, String titleBarBorderColor)
-        throws SQLException
-    {
-        WebTheme updateTheme = new WebTheme (friendlyName, navBarColor, headerLineColor, editFormColor, fullScreenBorderColor, titleBarBackgroundColor, titleBarBorderColor);
-        WebTheme.updateWebTheme(updateTheme);
-
-        saveWebThemes();
-
-        return true;
-    }
-
-    public static void deleteWebTheme(String friendlyName) throws SQLException
-    {
-        if (null == friendlyName || 0 == friendlyName.length())
-            return;
-
-        List<WebTheme> webThemeList = WebTheme.getWebThemes();
-        for (int i = 0; i < webThemeList.size(); i++)
-        {
-            WebTheme theme = webThemeList.get(i);
-            if (theme.getFriendlyName().equals(friendlyName))
-            {
-                _webThemeList.remove(i);
-                WebTheme.saveWebThemes();
-                break;
-            }
-        }
-    }
-
-    public static void saveWebThemes() throws SQLException
-    {
-        // let's save the changes
-        PropertyManager.PropertyMap properties = AppProps.getWebThemeConfigProperties();
-
-        // keep a copy of all the themes
-        {
-            StringBuffer buffer = new StringBuffer();
-            boolean firstEntry = true;
-            for (WebTheme theme : _webThemeList)
-            {
-                if (firstEntry)
-                {
-                    firstEntry = false;
-                }
-                else
-                {
-                    buffer.append(";");
-                }
-                buffer.append(theme.getFriendlyName());
-            }
-            properties.put(THEME_NAMES_KEY, buffer.toString());
-        }
-
-        // let's update the theme's definition
-        for (WebTheme theme : _webThemeList)
-        {
-            StringBuffer key = new StringBuffer();
-            key.append(THEME_COLORS_KEY);
-            key.append(theme.getFriendlyName());
-            StringBuffer buffer = new StringBuffer();
-            buffer.append(theme.getNavBarColor ());
-            buffer.append(";").append(theme.getHeaderLineColor());
-            buffer.append(";").append(theme.getEditFormColor());
-            buffer.append(";").append(theme.getFullScreenBorderColor());
-            buffer.append(";").append(theme.getTitleBarBackgroundString());
-            buffer.append(";").append(theme.getTitleBarBorderString());
-            properties.put(key.toString (), buffer.toString ());
-        }
-        PropertyManager.saveProperties(properties);
     }
 
     public Color getTitleColor()

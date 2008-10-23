@@ -27,10 +27,7 @@ import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.TermsOfUseException;
-import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.security.*;
 import org.springframework.beans.*;
@@ -531,7 +528,7 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
             if (!c.hasPermission(user, requiresPermission.value()))
             {
                 if (c.isForbiddenProject(user))
-                    HttpView.throwForbiddenProject();
+                    throw new ForbiddenProjectException();
                 else
                     HttpView.throwUnauthorized();
 
@@ -558,6 +555,6 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
 
         IgnoresTermsOfUse ignoresTermsOfUse = actionClass.getAnnotation(IgnoresTermsOfUse.class);
         if (null == ignoresTermsOfUse && !context.hasAgreedToTermsOfUse())
-            HttpView.throwTermsOfUseException();
+            throw new TermsOfUseException();
     }
 }
