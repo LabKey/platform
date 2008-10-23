@@ -26,6 +26,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.common.tools.TabLoader;
+import org.labkey.common.tools.ColumnDescriptor;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.Material;
 import org.labkey.experiment.api.MaterialSource;
@@ -56,7 +57,7 @@ public class UploadSamplesHelper
                 {
                     ret.put(-1, "");
                 }
-                TabLoader.ColumnDescriptor[] cds = tl.getColumns();
+                ColumnDescriptor[] cds = tl.getColumns();
                 for (int i = 0; i < cds.length; i ++)
                 {
                     ret.put(i, cds[i].name);
@@ -88,7 +89,7 @@ public class UploadSamplesHelper
             source = ExperimentServiceImpl.get().getMaterialSource(materialSourceLsid);
             ExperimentService.get().getSchema().getScope().beginTransaction();
 
-            TabLoader.ColumnDescriptor[] columns = tl.getColumns();
+            ColumnDescriptor[] columns = tl.getColumns();
 
             PropertyDescriptor[] pds = OntologyManager.getPropertiesForType(materialSourceLsid, getContainer());
             Map<String, PropertyDescriptor> descriptorsByName = OntologyManager.createImportPropertyMap(pds);
@@ -106,7 +107,7 @@ public class UploadSamplesHelper
 
             for (int i = 0; i < columns.length; i++)
             {
-                TabLoader.ColumnDescriptor cd = columns[i];
+                ColumnDescriptor cd = columns[i];
                 PropertyDescriptor pd = descriptorsByName.get(cd.name);
                 if (pd == null || source == null)
                 {

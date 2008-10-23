@@ -31,13 +31,13 @@ public class GWTTabLoader
         this.tsv = tsv;
     }
 
-    public Map[] getData()
+    public List<Map<String,String>> getData()
     {
         List rows = getRows();
 
         if (rows.size() < 2)
         {
-            return new Map[0];
+            return Collections.emptyList();
         }
 
         // First row is keys -- lowercase for easier access
@@ -47,14 +47,14 @@ public class GWTTabLoader
             keys[i] = keys[i].trim().toLowerCase();
         }
 
-        Map[] data = new Map[rows.size() - 1];
+        List<Map<String,String>> data = new ArrayList<Map<String,String>>(rows.size() - 1);
 
         // Iterate starting at 1, since our keys were the first row
         for (int i=1;i<rows.size(); i++)
         {
             String row = (String)rows.get(i);
             String[] rowData = row.split("\t");
-            Map map = new HashMap();
+            Map<String,String> map = new HashMap<String,String>();
             for (int j=0;j<keys.length;j++)
             {
                 String fieldData = "";
@@ -63,15 +63,15 @@ public class GWTTabLoader
                 map.put(keys[j], fieldData);
             }
 
-            data[i - 1] = map;
+            data.add(map);
         }
         return data;
 
     }
 
-    private List/*<String>*/ getRows()
+    private List<String> getRows()
     {
-        List rows = new ArrayList();
+        List<String> rows = new ArrayList<String>();
         StringBuffer sb = new StringBuffer();
 
         for (int index = 0; index < tsv.length(); index++)

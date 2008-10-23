@@ -34,6 +34,7 @@ import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.common.tools.TabLoader;
+import org.labkey.common.tools.ColumnDescriptor;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
@@ -500,10 +501,10 @@ public class ExternalReport extends AbstractReport
         protected void renderInternal(Object model, PrintWriter out) throws Exception
         {
             TabLoader tabLoader = new TabLoader(file);
-            TabLoader.ColumnDescriptor[] cols = tabLoader.getColumns();
+            ColumnDescriptor[] cols = tabLoader.getColumns();
             Map[] data = (Map[]) tabLoader.load();
             out.write("<table><tr>");
-            for (TabLoader.ColumnDescriptor col : cols)
+            for (ColumnDescriptor col : cols)
             {
                 out.write("<td class='labkey-header'>");
                 out.write(PageFlowUtil.filter(col.name));
@@ -513,7 +514,7 @@ public class ExternalReport extends AbstractReport
             for (Map m : data)
             {
                 out.write("<tr>");
-                for (TabLoader.ColumnDescriptor col : cols)
+                for (ColumnDescriptor col : cols)
                 {
                     out.write("<td");
                     if (Number.class.isAssignableFrom(col.clazz))

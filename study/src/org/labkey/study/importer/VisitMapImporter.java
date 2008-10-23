@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.security.User;
 import org.labkey.common.tools.TabLoader;
+import org.labkey.common.tools.ColumnDescriptor;
 import org.labkey.study.StudySchema;
 import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.visitmanager.SequenceVisitManager;
@@ -192,19 +193,19 @@ public class VisitMapImporter
         try
         {
             TabLoader loader = new TabLoader(tsv, false);
-            loader.setColumns(new TabLoader.ColumnDescriptor[]
+            loader.setColumns(new ColumnDescriptor[]
                     {
-                    new TabLoader.ColumnDescriptor("sequenceRange", String.class),
-                    new TabLoader.ColumnDescriptor("visitType", String.class),
-                    new TabLoader.ColumnDescriptor("visitLabel", String.class),
-                    new TabLoader.ColumnDescriptor("visitDatePlate", Integer.class),
-                    new TabLoader.ColumnDescriptor("visitDateField", String.class),
-                    new TabLoader.ColumnDescriptor("visitDueDay", Integer.class),
-                    new TabLoader.ColumnDescriptor("visitDueAllowance", Integer.class),
-                    new TabLoader.ColumnDescriptor("requiredPlates", String.class),
-                    new TabLoader.ColumnDescriptor("optionalPlates", String.class),
-                    new TabLoader.ColumnDescriptor("missedNotificationPlate", Integer.class),
-                    new TabLoader.ColumnDescriptor("terminationWindow", String.class)
+                    new ColumnDescriptor("sequenceRange", String.class),
+                    new ColumnDescriptor("visitType", String.class),
+                    new ColumnDescriptor("visitLabel", String.class),
+                    new ColumnDescriptor("visitDatePlate", Integer.class),
+                    new ColumnDescriptor("visitDateField", String.class),
+                    new ColumnDescriptor("visitDueDay", Integer.class),
+                    new ColumnDescriptor("visitDueAllowance", Integer.class),
+                    new ColumnDescriptor("requiredPlates", String.class),
+                    new ColumnDescriptor("optionalPlates", String.class),
+                    new ColumnDescriptor("missedNotificationPlate", Integer.class),
+                    new ColumnDescriptor("terminationWindow", String.class)
                     });
 
             // UNDONE: TabLoader does not integerate with ObjectFactory yet...

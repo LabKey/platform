@@ -527,6 +527,7 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
             org.labkey.common.tools.PeptideTestCase.class,
             org.labkey.api.data.ContainerManager.TestCase.class,
             org.labkey.common.tools.TabLoader.TabLoaderTestCase.class,
+            org.labkey.common.tools.ExcelLoader.ExcelLoaderTestCase.class,
             ModuleDependencySorter.TestCase.class,
             org.labkey.api.security.GroupManager.TestCase.class,
             DateUtil.TestCase.class,

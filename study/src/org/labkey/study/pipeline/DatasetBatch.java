@@ -24,7 +24,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.study.model.QCState;
-import org.labkey.common.tools.TabLoader;
+import org.labkey.common.tools.ColumnDescriptor;
 import org.labkey.common.util.Pair;
 import org.labkey.common.util.CPUTimer;
 import org.labkey.study.StudySchema;
@@ -809,13 +809,13 @@ public class DatasetBatch extends StudyBatch implements Serializable
         public void _run() throws IOException, SQLException
         {
             TempTableLoader loader = new TempTableLoader(tsv, true);
-            CaseInsensitiveHashMap<TabLoader.ColumnDescriptor> columnMap = new CaseInsensitiveHashMap<TabLoader.ColumnDescriptor>();
-            for (TabLoader.ColumnDescriptor c : loader.getColumns())
+            CaseInsensitiveHashMap<ColumnDescriptor> columnMap = new CaseInsensitiveHashMap<ColumnDescriptor>();
+            for (ColumnDescriptor c : loader.getColumns())
                 columnMap.put(c.name, c);
 
             if (!columnMap.containsKey("ParticipantId"))
             {
-                _logError("Dataset does not contain column ParticiapntId.");
+                _logError("Dataset does not contain column ParticipantId.");
                 return;
             }
 

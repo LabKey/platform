@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.common.tools.TabLoader;
+import org.labkey.common.tools.ColumnDescriptor;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
 
@@ -106,12 +107,12 @@ public class SimpleSpecimenImporter extends SpecimenImporter
     public void fixupSpecimenColumns(TabLoader tl)
             throws IOException
     {
-        TabLoader.ColumnDescriptor[] cols = tl.getColumns();
-        TabLoader.ColumnDescriptor[] mappedCols = new TabLoader.ColumnDescriptor[cols.length];
+        ColumnDescriptor[] cols = tl.getColumns();
+        ColumnDescriptor[] mappedCols = new ColumnDescriptor[cols.length];
 
         for (int i = 0; i < cols.length; i++)
         {
-            TabLoader.ColumnDescriptor col = cols[i];
+            ColumnDescriptor col = cols[i];
             SpecimenColumn specCol = findSpecimenColumn(col.name);
             if (null == specCol)
             {
@@ -126,7 +127,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         tl.setColumns(mappedCols);
     }
 
-    public TabLoader.ColumnDescriptor[] getSimpleSpecimenColumns()
+    public ColumnDescriptor[] getSimpleSpecimenColumns()
     {
         List<String> colNames = new ArrayList<String>(Arrays.asList(
                 VIAL_ID,
@@ -141,11 +142,11 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         if (!_dateBasedStudy)
             colNames.add(3, VISIT);
 
-        TabLoader.ColumnDescriptor[] cols = new TabLoader.ColumnDescriptor[colNames.size()];
+        ColumnDescriptor[] cols = new ColumnDescriptor[colNames.size()];
         for (int i = 0; i < cols.length; i++)
         {
             SpecimenColumn specCol = findSpecimenColumn(colNames.get(i));
-            cols[i] = null == specCol ? new TabLoader.ColumnDescriptor(colNames.get(i), String.class) : specCol.getColumnDescriptor();
+            cols[i] = null == specCol ? new ColumnDescriptor(colNames.get(i), String.class) : specCol.getColumnDescriptor();
         }
         
         return cols;

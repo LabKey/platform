@@ -23,7 +23,7 @@ import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
-import org.labkey.common.tools.TabLoader;
+import org.labkey.common.tools.ColumnDescriptor;
 import org.labkey.experiment.list.ListItemImpl;
 
 import java.sql.SQLException;
@@ -34,8 +34,8 @@ public class ListImportHelper implements OntologyManager.ImportHelper
     User _user;
     ListDefinition _list;
     DomainProperty[] _properties;
-    TabLoader.ColumnDescriptor _cdKey;
-    public ListImportHelper(User user, ListDefinition list, DomainProperty[] properties, TabLoader.ColumnDescriptor cdKey)
+    ColumnDescriptor _cdKey;
+    public ListImportHelper(User user, ListDefinition list, DomainProperty[] properties, ColumnDescriptor cdKey)
     {
         _user = user;
         _list = list;

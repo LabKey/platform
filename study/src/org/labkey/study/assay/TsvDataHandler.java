@@ -21,6 +21,7 @@ import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.study.assay.*;
 import org.labkey.common.tools.TabLoader;
+import org.labkey.common.tools.ColumnDescriptor;
 import org.apache.commons.beanutils.ConversionException;
 
 import java.io.*;
@@ -217,7 +218,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler
         try
         {
             TabLoader loader = new TabLoader(fileReader, true);
-            for (TabLoader.ColumnDescriptor column : loader.getColumns())
+            for (ColumnDescriptor column : loader.getColumns())
             {
                 Class expectedColumnClass = expectedColumns.get(column.name.toLowerCase());
                 if (expectedColumnClass != null)

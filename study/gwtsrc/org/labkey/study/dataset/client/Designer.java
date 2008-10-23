@@ -192,17 +192,17 @@ public class Designer implements EntryPoint
         // bug 6898: prevent user from double-clicking on save button, causing a race condition
         _saveButton.setEnabled(false);
 
-        List errors = new ArrayList();
+        List<String> errors = new ArrayList<String>();
 
         _propertiesPanel.validate(errors);
         _schemaPanel.validate(errors);
 
         if (!errors.isEmpty())
         {
-            String s = "";
-            for (int i=0 ; i < errors.size() ; i++)
-                s += errors.get(i) + "\n";
-            Window.alert(s);
+            StringBuilder sb = new StringBuilder();
+            for (String error : errors)
+                sb.append(error).append("\n");
+            Window.alert(sb.toString());
             _saveButton.setEnabled(true);
             return;
         }
@@ -216,7 +216,8 @@ public class Designer implements EntryPoint
 
             public void onSuccess(Object result)
             {
-                List errors = (List)result;
+                //noinspection unchecked
+                List<String> errors = (List<String>)result;
                 if (null == errors)
                 {
                     _saved = true;  // avoid popup warning
@@ -224,10 +225,10 @@ public class Designer implements EntryPoint
                 }
                 else
                 {
-                    String s = "";
-                    for (int i=0 ; i<errors.size() ; i++)
-                        s += errors.get(i) + "\n";
-                    Window.alert(s);
+                    StringBuilder sb = new StringBuilder();
+                    for (String error : errors)
+                        sb.append(error).append("\n");
+                    Window.alert(sb.toString());
                     _saveButton.setEnabled(true);
                 }
             }
@@ -322,7 +323,7 @@ public class Designer implements EntryPoint
             domain.setName("DEM");
             domain.setDescription("I'm a description");
 
-            List list = new ArrayList();
+            List<GWTPropertyDescriptor> list = new ArrayList<GWTPropertyDescriptor>();
 
             GWTPropertyDescriptor p = new GWTPropertyDescriptor();
             p.setName("ParticipantID");
@@ -815,6 +816,8 @@ public class Designer implements EntryPoint
             setWidget(row, 0, panel);
             cellFormatter.setStyleName(row, 0, labelStyleName);
             setWidget(row, 1, description);
+
+            //noinspection UnusedAssignment
             getFlexCellFormatter().setColSpan(row++, 1, 3);
         }
 
@@ -823,22 +826,16 @@ public class Designer implements EntryPoint
             // Need to look up what properties have been defined
             // to populate the drop-down boxes for additional keys
 
-            List/*<GWTPropertyDescriptor>*/ descriptors = new ArrayList();
+            List<GWTPropertyDescriptor> descriptors = new ArrayList<GWTPropertyDescriptor>();
             for (int i=0; i<_propTable.getPropertyCount(); i++)
             {
                 descriptors.add(_propTable.getPropertyDescriptor(i));
             }
-            Map/*<String,String>*/ fields = new HashMap();
-            Map/*<String,String>*/ numericFields = new HashMap();
+            Map<String,String> fields = new HashMap<String,String>();
+            Map<String,String> numericFields = new HashMap<String,String>();
 
-            // Need to add empty items for both for no selection
-            //fields.put("","");
-            //numericFields.put("","");
-
-            for (Iterator iter = descriptors.iterator(); iter.hasNext();)
+            for (GWTPropertyDescriptor descriptor : descriptors)
             {
-                GWTPropertyDescriptor descriptor = (GWTPropertyDescriptor)iter.next();
-
                 // Don't add deleted properties
                 if (_propTable.getStatus(descriptor).equals(PropertiesEditor.statusDeleted))
                     continue;
@@ -892,7 +889,7 @@ public class Designer implements EntryPoint
             }
         }
 
-        public void validate(List errors)
+        public void validate(List<String> errors)
         {
             if (_dataset.getName() == null || _dataset.getName().length() == 0)
                 errors.add("Dataset name cannot be empty.");
@@ -1008,25 +1005,25 @@ public class Designer implements EntryPoint
                     return;
                 }
                 GWTTabLoader loader = new GWTTabLoader(schemaTsv.getText());
-                Map[] data = loader.getData();
+                List<Map<String,String>> data = loader.getData();
 
-                if (data.length == 0)
+                if (data.size() == 0)
                 {
                     Window.alert("Unable to parse the tab-delimited text");
                     return;
                 }
 
                 // Insert the new properties
-                List properties = new ArrayList();
-                for (int i=0;i<data.length;i++)
+                List<GWTPropertyDescriptor> properties = new ArrayList<GWTPropertyDescriptor>();
+                for (Map<String,String> row : data)
                 {
                     GWTPropertyDescriptor prop = new GWTPropertyDescriptor();
-                    prop.setName((String)data[i].get("property"));
-                    prop.setLabel((String)data[i].get("label"));
-                    prop.setDescription((String)data[i].get("description"));
-                    prop.setRequired(isRequired(data[i]));
-                    prop.setRangeURI(getRangeURI(data[i]));
-                    prop.setFormat((String)data[i].get("format"));
+                    prop.setName(row.get("property"));
+                    prop.setLabel(row.get("label"));
+                    prop.setDescription(row.get("description"));
+                    prop.setRequired(isRequired(row));
+                    prop.setRangeURI(getRangeURI(row));
+                    prop.setFormat(row.get("format"));
                     properties.add(prop);
                 }
                 _propEdit.setPropertyDescriptors(properties);
@@ -1035,9 +1032,9 @@ public class Designer implements EntryPoint
                 TsvPopup.this.hide();
             }
 
-            private boolean isRequired(Map map)
+            private boolean isRequired(Map<String,String> map)
             {
-                String reqString = (String)map.get("notnull");
+                String reqString = map.get("notnull");
                 return reqString != null && reqString.equalsIgnoreCase("TRUE");
             }
 
@@ -1061,9 +1058,9 @@ public class Designer implements EntryPoint
             }
         }
 
-        public void validate(List errors)
+        public void validate(List<String> errors)
         {
-            List error = _propEdit.validate();
+            List<String> error = _propEdit.validate();
             if (error != null)
                 errors.addAll(error);
         }

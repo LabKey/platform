@@ -25,11 +25,9 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.util.GUID;
 import org.labkey.common.tools.TabLoader;
+import org.labkey.common.tools.ColumnDescriptor;
 import org.labkey.common.util.CPUTimer;
-import org.labkey.api.util.GUID;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.NetworkDrive;
-import org.labkey.api.study.SpecimenService;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.Specimen;
@@ -86,9 +84,9 @@ public class SpecimenImporter
         }
 
 
-        public TabLoader.ColumnDescriptor getColumnDescriptor()
+        public ColumnDescriptor getColumnDescriptor()
         {
-            return new TabLoader.ColumnDescriptor(_tsvColumnName, getJavaType());
+            return new ColumnDescriptor(_tsvColumnName, getJavaType());
         }
 
         public String getDbColumnName()
@@ -1117,14 +1115,14 @@ public class SpecimenImporter
     private Map[] loadTsv(ImportableColumn[] columns, File tsvFile, String tableName) throws IOException
     {
         info(tableName + ": Parsing data file for table...");
-        Map<String, TabLoader.ColumnDescriptor> expectedColumns = new HashMap<String, TabLoader.ColumnDescriptor>(columns.length);
+        Map<String, ColumnDescriptor> expectedColumns = new HashMap<String, ColumnDescriptor>(columns.length);
         for (ImportableColumn col : columns)
             expectedColumns.put(col.getTsvColumnName().toLowerCase(), col.getColumnDescriptor());
 
         TabLoader loader = new TabLoader(tsvFile);
-        for (TabLoader.ColumnDescriptor column : loader.getColumns())
+        for (ColumnDescriptor column : loader.getColumns())
         {
-            TabLoader.ColumnDescriptor expectedColumnDescriptor = expectedColumns.get(column.name.toLowerCase());
+            ColumnDescriptor expectedColumnDescriptor = expectedColumns.get(column.name.toLowerCase());
             if (expectedColumnDescriptor != null)
                 column.clazz = expectedColumnDescriptor.clazz;
             else

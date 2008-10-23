@@ -47,6 +47,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.common.tools.TabLoader;
+import org.labkey.common.tools.ColumnDescriptor;
 import org.labkey.common.util.Pair;
 import org.labkey.experiment.list.ListAuditViewFactory;
 import org.labkey.experiment.list.ListManager;
@@ -670,12 +671,12 @@ public class ListController extends SpringActionController
                 pds.add(property.getPropertyDescriptor());
             Map<String, PropertyDescriptor> propertiesByName = OntologyManager.createImportPropertyMap(pds.toArray(new PropertyDescriptor[pds.size()]));
             Map<String, PropertyDescriptor> properties = new CaseInsensitiveHashMap<PropertyDescriptor>();
-            TabLoader.ColumnDescriptor cdKey = null;
+            ColumnDescriptor cdKey = null;
             if (form.ff_data == null)
                 hasError = hasError || addError(errors, "Form contains no data");
             else
             {
-                for (TabLoader.ColumnDescriptor cd : tl.getColumns())
+                for (ColumnDescriptor cd : tl.getColumns())
                 {
                     PropertyDescriptor property = propertiesByName.get(cd.name);
                     cd.errorValues = ERROR_VALUE;
@@ -797,7 +798,7 @@ public class ListController extends SpringActionController
             return doBulkInsert(cdKey, _list.getDomain(), properties, rows, errors);
         }
 
-        private boolean doBulkInsert(TabLoader.ColumnDescriptor cdKey, Domain domain, Map<String, PropertyDescriptor> properties, Map[] rows, BindException errors) throws SQLException
+        private boolean doBulkInsert(ColumnDescriptor cdKey, Domain domain, Map<String, PropertyDescriptor> properties, Map[] rows, BindException errors) throws SQLException
         {
             boolean transaction = false;
             

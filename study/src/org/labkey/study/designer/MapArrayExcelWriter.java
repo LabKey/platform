@@ -18,7 +18,7 @@ package org.labkey.study.designer;
 
 import org.labkey.api.data.*;
 import org.labkey.api.view.HttpView;
-import org.labkey.common.tools.TabLoader;
+import org.labkey.common.tools.ColumnDescriptor;
 import jxl.write.WritableSheet;
 import jxl.write.WriteException;
 
@@ -52,11 +52,11 @@ public class MapArrayExcelWriter extends ExcelWriter
         setDisplayColumns(cols);
     }
 
-    public MapArrayExcelWriter(Map<String,Object>[] maps, TabLoader.ColumnDescriptor[] cols)
+    public MapArrayExcelWriter(Map<String,Object>[] maps, ColumnDescriptor[] cols)
     {
         this.maps = maps;
         List<DisplayColumn> xlcols = new ArrayList<DisplayColumn>();
-        for (TabLoader.ColumnDescriptor col : cols)
+        for (ColumnDescriptor col : cols)
             xlcols.add(new MapArrayDisplayColumn(col.name, col.clazz));
 
         setDisplayColumns(xlcols);

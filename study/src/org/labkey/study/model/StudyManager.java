@@ -45,9 +45,9 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartView;
 import org.labkey.common.tools.TabLoader;
+import org.labkey.common.tools.ColumnDescriptor;
 import org.labkey.common.util.CPUTimer;
 import org.labkey.study.QueryHelper;
 import org.labkey.study.SampleManager;
@@ -1860,8 +1860,8 @@ public class StudyManager
         // create columns to properties map
         //
         HashSet<String> foundProperties = new HashSet<String>();
-        TabLoader.ColumnDescriptor[] cols = loader.getColumns();
-        for (TabLoader.ColumnDescriptor col : cols)
+        ColumnDescriptor[] cols = loader.getColumns();
+        for (ColumnDescriptor col : cols)
         {
             String name = col.name.toLowerCase();
 
@@ -1894,8 +1894,8 @@ public class StudyManager
         // during import, and map them to values that will be populated in the QCState Id column.  As a result, we need to
         // ensure QC label is in the loader's column set so it's found at import time, and that the QC ID is in the set so
         // we can assign a value to the property before we insert the data.  brittp, 7.23.2008
-        loader.ensureColumn(new TabLoader.ColumnDescriptor(DataSetTable.QCSTATE_LABEL_COLNAME, String.class));
-        loader.ensureColumn(new TabLoader.ColumnDescriptor(DataSetDefinition.getQCStateURI(), Integer.class));
+        loader.ensureColumn(new ColumnDescriptor(DataSetTable.QCSTATE_LABEL_COLNAME, String.class));
+        loader.ensureColumn(new ColumnDescriptor(DataSetDefinition.getQCStateURI(), Integer.class));
 
         Map<String, Object>[] maps = (Map<String, Object>[]) loader.load();
 

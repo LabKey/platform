@@ -37,6 +37,7 @@ import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.common.tools.TabLoader;
+import org.labkey.common.tools.ColumnDescriptor;
 import org.labkey.study.designer.*;
 import org.labkey.study.designer.client.model.GWTCohort;
 import org.labkey.study.designer.client.model.GWTStudyDefinition;
@@ -100,10 +101,10 @@ public class DesignerController extends SpringActionController
     }
 
     private static final String TEMPLATE_NAME = "Template";
-    private static final TabLoader.ColumnDescriptor[] PARTICIPANT_COLS = new TabLoader.ColumnDescriptor[]{
-            new TabLoader.ColumnDescriptor("ParticipantId", String.class),
-            new TabLoader.ColumnDescriptor("Cohort", String.class),
-            new TabLoader.ColumnDescriptor("StartDate", Date.class)
+    private static final ColumnDescriptor[] PARTICIPANT_COLS = new ColumnDescriptor[]{
+            new ColumnDescriptor("ParticipantId", String.class),
+            new ColumnDescriptor("Cohort", String.class),
+            new ColumnDescriptor("StartDate", Date.class)
     };
 
     private static final String PARTICIPANT_KEY = DesignerController.class + ".participants";
@@ -271,10 +272,10 @@ public class DesignerController extends SpringActionController
                 }
             }
 
-            TabLoader.ColumnDescriptor[] xlCols = new TabLoader.ColumnDescriptor[3];
-            xlCols[0] = new TabLoader.ColumnDescriptor("SubjectId", Integer.class);
-            xlCols[1] = new TabLoader.ColumnDescriptor("Cohort", String.class);
-            xlCols[2] = new TabLoader.ColumnDescriptor("StartDate", Date.class);
+            ColumnDescriptor[] xlCols = new ColumnDescriptor[3];
+            xlCols[0] = new ColumnDescriptor("SubjectId", Integer.class);
+            xlCols[1] = new ColumnDescriptor("Cohort", String.class);
+            xlCols[2] = new ColumnDescriptor("StartDate", Date.class);
             MapArrayExcelWriter xlWriter = new MapArrayExcelWriter
                     (participantList.toArray(new Map[participantList.size()]), xlCols);
             xlWriter.setHeaders(Arrays.asList("#Update the SubjectId column of this spreadsheet to the identifiers used when sending a sample to labs", "#"));
@@ -555,14 +556,14 @@ public class DesignerController extends SpringActionController
 
     private static void fixupParticipantCols(TabLoader loader) throws IOException
     {
-        TabLoader.ColumnDescriptor[] loaderCols = loader.getColumns();
-        Map<String,TabLoader.ColumnDescriptor> colMap = new CaseInsensitiveHashMap<TabLoader.ColumnDescriptor>();
-        for (TabLoader.ColumnDescriptor col : PARTICIPANT_COLS)
+        ColumnDescriptor[] loaderCols = loader.getColumns();
+        Map<String, ColumnDescriptor> colMap = new CaseInsensitiveHashMap<ColumnDescriptor>();
+        for (ColumnDescriptor col : PARTICIPANT_COLS)
             colMap.put(col.name, col);
         colMap.put("ptid", colMap.get("ParticipantId"));
         colMap.put("SubjectId", colMap.get(SimpleSpecimenImporter.PARTICIPANT_ID));
 
-        TabLoader.ColumnDescriptor[] newCols = new TabLoader.ColumnDescriptor[loaderCols.length];
+        ColumnDescriptor[] newCols = new ColumnDescriptor[loaderCols.length];
         for (int i = 0; i < loaderCols.length; i++)
         {
             if (colMap.containsKey(loaderCols[i].name))
@@ -628,7 +629,7 @@ public class DesignerController extends SpringActionController
 
         //Remember whether we used a different header so we can put up error messages that make sense
         Map<String,String> labels = new HashMap();
-        for (TabLoader.ColumnDescriptor c : loader.getColumns())
+        for (ColumnDescriptor c : loader.getColumns())
         {
             if (columnAliases.containsKey(c.name))
             {

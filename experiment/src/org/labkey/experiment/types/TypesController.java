@@ -21,6 +21,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.common.tools.TabLoader;
+import org.labkey.common.tools.ColumnDescriptor;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.data.*;
@@ -700,7 +701,7 @@ public class TypesController extends SpringActionController
 
 
     // this class is just so I can have a constructor
-    public static class VocabularyDescriptor extends TabLoader.ColumnDescriptor
+    public static class VocabularyDescriptor extends ColumnDescriptor
     {
         public VocabularyDescriptor(String name)
         {

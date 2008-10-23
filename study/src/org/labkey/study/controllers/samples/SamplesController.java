@@ -38,6 +38,7 @@ import org.labkey.api.study.SpecimenService;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.common.tools.TabLoader;
+import org.labkey.common.tools.ColumnDescriptor;
 import org.labkey.common.util.Pair;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
@@ -1081,7 +1082,7 @@ public class SamplesController extends BaseController
 
         //Remember whether we used a different header so we can put up error messages that make sense
         Map<String,String> labels = new HashMap();
-        for (TabLoader.ColumnDescriptor c : loader.getColumns())
+        for (ColumnDescriptor c : loader.getColumns())
         {
             if (columnAliases.containsKey(c.name))
             {
