@@ -135,7 +135,11 @@ public class SamplesController extends BaseController
         requiresAdmin();
         SampleRequestActor actor = SampleManager.getInstance().getRequirementsProvider().getActor(getContainer(), form.getId());
         if (actor == null)
-            return HttpView.throwNotFoundForward();
+        {
+            // TODO: After Spring conversion, change to return HttpView.throwNotFound();
+            HttpView.throwNotFound();
+            return null;
+        }
 
         Site site = null;
         if (form.getSiteId() != null)
