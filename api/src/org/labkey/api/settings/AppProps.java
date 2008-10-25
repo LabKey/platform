@@ -79,14 +79,6 @@ public class AppProps extends AbstractWriteableSettingsGroup
 
     protected static final String SITE_CONFIG_NAME = "SiteConfig";
 
-    //WCH: 20060629 - for Customisable web colour theme
-    protected static final String WEB_THEME_CONFIG_NAME = "WebThemeConfig";
-    //END-WCH: 20060629
-
-    //WCH: 20060630 - for Customisable web theme font size
-    protected static final String WEB_THEME_FONT_NAME = "WebThemeFont";
-    //END-WCH: 20060630
-
     private static final String SERVER_SESSION_GUID = GUID.makeGUID();
 
     public static synchronized AppProps getInstance()
@@ -480,16 +472,12 @@ public class AppProps extends AbstractWriteableSettingsGroup
     }
 
     //WCH: 20060629 - for Customisable web colour theme
+    protected static final String WEB_THEME_CONFIG_NAME = "WebThemeConfig";
+    //END-WCH: 20060629
+
+    //WCH: 20060629 - for Customisable web colour theme
     public static PropertyManager.PropertyMap getWebThemeConfigProperties() throws SQLException
     {
-        //return PropertyManager.getProperties(SITE_CONFIG_USER_ID, ContainerManager.getRoot().getId(), WEB_THEME_CONFIG_NAME, true, true);
         return PropertyManager.getWritableProperties(SITE_CONFIG_USER_ID, ContainerManager.getRoot().getId(), WEB_THEME_CONFIG_NAME, true);
-    }
-
-    // TODO: Delete?  Not used...
-    public static PropertyManager.PropertyMap getWebThemeFontProperties() throws SQLException
-    {
-        //return PropertyManager.getProperties(SITE_CONFIG_USER_ID, ContainerManager.getRoot().getId(), WEB_THEME_FONT_NAME, true, true);
-        return PropertyManager.getWritableProperties(SITE_CONFIG_USER_ID, ContainerManager.getRoot().getId(), WEB_THEME_FONT_NAME, true);
     }
 }

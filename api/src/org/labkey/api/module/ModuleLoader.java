@@ -203,7 +203,6 @@ public class ModuleLoader implements Filter
 
         removeAPIFiles(unclaimedFiles, _webappDir);
 
-
         Set<File> moduleFiles;
         try
         {
@@ -573,7 +572,7 @@ public class ModuleLoader implements Filter
         }
 
         _log.error("Attempted to connect three times... giving up.", lastException);
-        throw(new ServletException("Can't connect to datasource \"" + dsName + "\", be sure that webapp configuration xml is configured correctly for your database and that the database server is running.", lastException));
+        throw new ServletException("Can't connect to datasource \"" + dsName + "\".  Make sure that your LabKey Server configuration file includes the correct user name, password, url, port, etc. for your database and that the database server is running.", lastException);
     }
 
 
@@ -627,7 +626,7 @@ public class ModuleLoader implements Filter
 
     // Update the CoreModule "manually", outside the normal page flow-based process.  We want to be able to change the core tables
     // before we display pages, require login, check permissions, etc.
-    private void upgradeCoreModule()
+    private void upgradeCoreModule() throws ServletException
     {
         Module coreModule = ModuleLoader.getInstance().getCoreModule();
         if (coreModule == null)
@@ -652,7 +651,12 @@ public class ModuleLoader implements Filter
             coreModule.bootstrap();
         }
         else
+        {
+            if (coreContext.getInstalledVersion() < 2.0)
+                throw new ServletException("Can't upgrade from LabKey Server version " + coreContext.getInstalledVersion() + "; installed version must be 2.0 or later. Contact info@labkey.com for assistance.");
+
             _log.debug("Upgrading core module from " + ModuleContext.formatVersion(coreContext.getInstalledVersion()) + " to " + coreModule.getFormattedVersion());
+        }
 
         coreModule.versionUpdate(coreContext, null);
         coreContext.upgradeComplete(coreModule.getVersion());
