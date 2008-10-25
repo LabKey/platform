@@ -15,16 +15,16 @@
  */
 package org.labkey.api.view;
 
-import org.apache.log4j.Logger;
-import org.apache.beehive.netui.pageflow.Forward;
 import org.apache.commons.lang.ObjectUtils;
-import org.labkey.api.util.Debug;
-import org.labkey.api.util.MemTracker;
+import org.apache.log4j.Logger;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.data.Container;
-import org.springframework.web.servlet.*;
-import org.springframework.web.servlet.view.RedirectView;
+import org.labkey.api.util.Debug;
+import org.labkey.api.util.MemTracker;
 import org.springframework.beans.PropertyValues;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.View;
+import org.springframework.web.servlet.view.RedirectView;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
@@ -35,7 +35,10 @@ import javax.servlet.jsp.PageContext;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.Stack;
 
 
 /**
@@ -629,12 +632,6 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     public static ModelAndView redirect(String url) throws ServletException
     {
         return new ModelAndView(new RedirectView(url, false));
-    }
-
-    @Deprecated
-    public static Forward throwNotFoundForward() throws NotFoundException
-    {
-        throw new NotFoundException();
     }
 
     public static ModelAndView throwNotFound() throws NotFoundException
