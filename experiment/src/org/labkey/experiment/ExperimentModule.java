@@ -22,8 +22,10 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ExperimentRunFilter;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.api.*;
+import org.labkey.api.exp.api.DefaultExperimentDataHandler;
+import org.labkey.api.exp.api.ExpSchema;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SamplesSchema;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -39,7 +41,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.LogDataType;
-import org.labkey.experiment.api.Material;
 import org.labkey.experiment.api.SampleSetDomainType;
 import org.labkey.experiment.api.property.PropertyServiceImpl;
 import org.labkey.experiment.api.property.RangeValidator;
@@ -86,7 +87,6 @@ public class ExperimentModule extends SpringModule
         PropertyService.setInstance(new PropertyServiceImpl());
         ListService.setInstance(new ListServiceImpl());
         
-
         ExperimentProperty.register();
         SamplesSchema.register();
         ExpSchema.register();
@@ -297,17 +297,6 @@ public class ExperimentModule extends SpringModule
             }
         }
 
-        if (version > 0 && version < 1.7)
-        {
-            try {
-                doInputRoleUpdate(viewContext);
-            } catch (Exception e) {
-                String msg = "Error running afterSchemaUpdate doInputRoleUpdate on ExperimentModule, upgrade from version " + String.valueOf(version);
-                _log.error(msg, e);
-                ExceptionUtil.getErrorRenderer(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg, e, viewContext.getRequest(), false, false);
-            }
-        }
-
         if (version > 0 && version < 2.23)
         {
             try
@@ -325,7 +314,7 @@ public class ExperimentModule extends SpringModule
         super.afterSchemaUpdate(moduleContext, viewContext);
     }
 
-    public static void doVersion_132Update() throws SQLException, NamingException, ServletException
+    private void doVersion_132Update() throws SQLException, NamingException, ServletException
     {
         DbSchema tmpSchema = DbSchema.createFromMetaData("exp");
         doProjectColumnUpdate(tmpSchema, "exp.PropertyDescriptor");
@@ -333,7 +322,7 @@ public class ExperimentModule extends SpringModule
         alterDescriptorTables(tmpSchema);
     }
 
-    protected static void doProjectColumnUpdate(DbSchema tmpSchema, String descriptorTable) throws SQLException
+    private void doProjectColumnUpdate(DbSchema tmpSchema, String descriptorTable) throws SQLException
     {
         String sql = "SELECT DISTINCT(Container) FROM " + descriptorTable + " WHERE Project IS NULL ";
         String[] cids = Table.executeArray(tmpSchema, sql, new Object[]{}, String.class);
@@ -350,7 +339,7 @@ public class ExperimentModule extends SpringModule
         }
     }
 
-    private static void doPopulateListEntityIds() throws SQLException
+    private void doPopulateListEntityIds() throws SQLException
     {
         ListDef[] listDefs = ListManager.get().getAllLists();
 
@@ -372,13 +361,13 @@ public class ExperimentModule extends SpringModule
         }
     }
 
-    protected static void setDescriptorProject (DbSchema tmpSchema, String containerId, String projectId, String newContainerId, String descriptorTable) throws SQLException
+    private void setDescriptorProject(DbSchema tmpSchema, String containerId, String projectId, String newContainerId, String descriptorTable) throws SQLException
     {
         String sql = " UPDATE " + descriptorTable + " SET Project = ?, Container = ? WHERE Container = ? ";
         Table.execute(tmpSchema, sql, new Object[]{projectId, newContainerId, containerId});
     }
 
-    protected static void alterDescriptorTables(DbSchema tmpSchema) throws SQLException
+    private void alterDescriptorTables(DbSchema tmpSchema) throws SQLException
     {
         String indexOption = " ";
         String keywordNotNull = " ENTITYID ";
@@ -417,73 +406,6 @@ public class ExperimentModule extends SpringModule
         {
             if (!"42P07".equals(ex.getSQLState()) && !"42S11".equals(ex.getSQLState()) && !"S0001".equals(ex.getSQLState()))
                 throw ex;
-        }
-    }
-
-    protected static void doInputRoleUpdate(ViewContext viewContext) throws Exception
-    {
-        DbSchema exp = ExperimentService.get().getSchema();
-
-        String sqlSelect = "SELECT DISTINCT(D.Container) FROM "+ ExperimentServiceImpl.get().getTinfoDataInput() + ", ";
-        String sqlUpdate = "UPDATE  " + ExperimentServiceImpl.get().getTinfoDataInput() + " SET PropertyId = ?  FROM ";
-
-        String sqlFrom = ExperimentServiceImpl.get().getTinfoData() + " D, " +
-                ExperimentServiceImpl.get().getTinfoProtocolApplication() + " PA " +
-                " WHERE D.RowID = " + ExperimentServiceImpl.get().getTinfoDataInput() + ".DataId " +
-                " AND PA.RowId = " + ExperimentServiceImpl.get().getTinfoDataInput() + ".TargetApplicationId " +
-                " AND UPPER(PA.CpasType)='EXPERIMENTRUN' " +
-                " AND " + ExperimentServiceImpl.get().getTinfoDataInput() + ".PropertyId IS NULL ";
-
-        Map<String, String> roleFilters = new HashMap<String, String>();
-        roleFilters.put("mzXML", " AND UPPER(D.DataFileUrl) LIKE '%.MZXML' ");
-        roleFilters.put("FASTA", " AND (UPPER(D.DataFileUrl) LIKE '%.FSA' OR  UPPER(D.DataFileUrl) LIKE '%.FASTA' ) ");
-        roleFilters.put("SearchConfig", " AND UPPER(D.DataFileUrl) LIKE '%TANDEM.XML' ");
-
-        String containerFilt = " AND D.Container = ? ";
-
-        User user = viewContext.getUser();
-        Container c ;
-        String[] cids;
-        PropertyDescriptor pd;
-
-        for (String roleName : roleFilters.keySet())
-        {
-            cids = Table.executeArray(exp, sqlSelect + sqlFrom + roleFilters.get(roleName), new Object[]{}, String.class);
-            for (String cid : cids)
-            {
-                c = ContainerManager.getForId(cid);
-                pd = ExperimentService.get().ensureDataInputRole(user, c, roleName, null);
-                Table.execute(exp, sqlUpdate + sqlFrom + roleFilters.get(roleName) + containerFilt,
-                        new Object[]{pd.getPropertyId(),  cid});
-            }
-        }
-
-        sqlSelect = "SELECT M.* FROM "+ ExperimentServiceImpl.get().getTinfoMaterialInput() + ", ";
-        sqlUpdate = "UPDATE  " + ExperimentServiceImpl.get().getTinfoMaterialInput() + " SET PropertyId = ? FROM ";
-
-        sqlFrom = ExperimentServiceImpl.get().getTinfoMaterial() + " M, " +
-                ExperimentServiceImpl.get().getTinfoProtocolApplication() + " PA " +
-                " WHERE M.RowID = " + ExperimentServiceImpl.get().getTinfoMaterialInput() + ".MaterialId " +
-                " AND PA.RowId = " + ExperimentServiceImpl.get().getTinfoMaterialInput() + ".TargetApplicationId " +
-                " AND UPPER(PA.CpasType)='EXPERIMENTRUN' " +
-
-                " AND " + ExperimentServiceImpl.get().getTinfoMaterialInput() + ".MaterialId = " +
-                " (SELECT MIN(MI2.MaterialId) FROM " + ExperimentServiceImpl.get().getTinfoMaterialInput() + " MI2 " +
-                " WHERE MI2.TargetApplicationId = " + ExperimentServiceImpl.get().getTinfoMaterialInput() + ".TargetApplicationId )" +
-                " AND "  + ExperimentServiceImpl.get().getTinfoMaterialInput() + ".PropertyId IS NULL ";
-
-        String sqlMaterialToUpdate = " AND M.RowId = ? ";
-        String roleName= "Material";
-        ExpMaterial sample;
-        Material[] aMats = Table.executeQuery(exp, sqlSelect + sqlFrom, new Object[]{}, Material.class);
-
-        for (Material m : aMats)
-        {
-            sample = ExperimentService.get().getExpMaterial(m.getRowId());
-            c = ContainerManager.getForId(m.getContainer());
-            pd = ExperimentService.get().ensureMaterialInputRole(c, roleName, sample);
-
-            Table.execute(exp, sqlUpdate + sqlFrom + sqlMaterialToUpdate, new Object[]{pd.getPropertyId(), m.getRowId()});
         }
     }
 }

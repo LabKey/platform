@@ -448,45 +448,6 @@ public class WikiManager
         return tree;
     }
 
-    /**
-     * This method will update the parent pointers of all wiki pages in a given container.
-     *
-     * @param current
-     */
-    public static void updateWikiParenting(Container current) throws SQLException
-    {
-        Map<String, Wiki> pageMap = generatePageMap(current);
-        for (Wiki page : pageMap.values())
-        {
-            int slash = page.getName().lastIndexOf("/");
-            if (slash >= 0)
-            {
-                String parentName = page.getName().substring(0, slash);
-                boolean done = false;
-                while (!done)
-                {
-                    Wiki parent = pageMap.get(parentName);
-                    if (parent != null)
-                    {
-                        page.setParent(parent.getRowId());
-                        updateWiki(null, page, null);
-                        done = true;
-                    }
-                    else
-                    {
-                        // if we couldn't find an exact match, there's probably a
-                        // bad container name in our hierarchy; go up one parent and try again.
-                        slash = parentName.lastIndexOf("/");
-                        if (slash > 0)
-                            parentName = parentName.substring(0, slash);
-                        else
-                            done = true;
-                    }
-                }
-            }
-        }
-    }
-
     private static void addAllChildren(List<Wiki> pages, Wiki current)
     {
         pages.add(current);

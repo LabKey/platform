@@ -17,7 +17,6 @@ package org.labkey.core;
 
 import junit.framework.TestCase;
 import org.apache.log4j.Logger;
-import org.fhcrc.cpas.util.NetworkDrive;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogEvent;
@@ -31,11 +30,12 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.security.*;
 import org.labkey.api.security.AuthenticationManager.Priority;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
+import org.labkey.api.webdav.WebdavResolverImpl;
+import org.labkey.api.webdav.WebdavService;
 import org.labkey.core.admin.AdminController;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.analytics.AnalyticsController;
@@ -49,13 +49,7 @@ import org.labkey.core.security.SecurityController;
 import org.labkey.core.test.TestController;
 import org.labkey.core.user.UserController;
 import org.labkey.core.webdav.FileSystemAuditViewFactory;
-import org.labkey.api.webdav.WebdavResolverImpl;
-import org.labkey.api.webdav.WebdavService;
 
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NameNotFoundException;
-import javax.naming.NamingException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import java.beans.PropertyChangeEvent;
@@ -238,25 +232,6 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
             GroupManager.bootstrapGroup(Group.groupUsers, "Users");
             GroupManager.bootstrapGroup(Group.groupGuests, "Guests");
         }
-        else if (installedVersion < 1.6)
-        {
-            upgradeTo160();
-        }
-        else if (installedVersion < 1.74)
-        {
-            try
-            {
-                upgradeTo174();
-            }
-            catch (NamingException e)
-            {
-                throw new RuntimeException(e);
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeException(e);
-            }
-        }
 
         if (installedVersion < 8.11)
             GroupManager.bootstrapGroup(Group.groupDevelopers, "Developers", GroupManager.PrincipalType.ROLE);
@@ -341,34 +316,6 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
         map.put("Authentication", activeAuthProviders);
         PropertyManager.saveProperties(map);
     }
-
-    private void upgradeTo174() throws NamingException, SQLException
-    {
-        Context initCtx = new InitialContext();
-        Context env = (Context) initCtx.lookup("java:comp/env");
-        NetworkDrive drive;
-        for (char driveChar = 'a'; driveChar <= 'z'; driveChar++)
-        {
-            try
-            {
-                drive = (NetworkDrive) env.lookup("drive/" + driveChar);
-                WriteableAppProps appProps = AppProps.getWriteableInstance();
-                appProps.setNetworkDriveLetter(Character.toString(driveChar));
-                appProps.setNetworkDriveUser(drive.getUser());
-                appProps.setNetworkDrivePassword(drive.getPassword());
-                appProps.setNetworkDrivePath(drive.getPath());
-                appProps.save();
-
-                // We currently only support a single network drive configuration
-                break;
-            }
-            catch (NameNotFoundException e)
-            {
-                // Bail out - not configured as a network drive we can try to map for the user
-            }
-        }
-    }
-
 
     @Override
     public void destroy()
@@ -565,62 +512,6 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
                     PropertyManager.getSchemaName(),                // prop
                     TestSchema.getInstance().getSchemaName()        // test
                 );
-    }
-
-    // On PostgreSQL installations prior to CPAS 1.6, the same email address could be added more than once using different casing.
-    // This routine deletes duplicate email addresses on PostgreSQL installations and forces all emails to lowercase.
-    private void upgradeTo160()
-    {
-        DbSchema core = CoreSchema.getInstance().getSchema();
-        TableInfo users = CoreSchema.getInstance().getTableInfoUsers();
-
-        // Only need to delete users on case-sensitive installations (PostgreSQL)
-        if (core.getSqlDialect().isCaseSensitive())
-        {
-            // For email addresses that have duplicates, keep the most recently used user.  Most recently used is the user with
-            // the latest LastLogin.  If LastLogin is NULL for all duplicates, then keep the most recently modified.
-            SQLFragment sql = new SQLFragment("SELECT UserId FROM " + users + " u JOIN (SELECT LOWER(Email) AS Email, MAX(LastLogin) AS ll, MAX(Modified) AS mod FROM " + users + "\n" +
-                    "GROUP BY LOWER(Email)\n" +
-                    "HAVING COUNT(*) > 1) dup ON dup.email = LOWER(u.email)\n" +
-                    "WHERE CASE WHEN ll IS NULL THEN mod <> Modified ELSE LastLogin IS NULL OR ll <> LastLogin END");
-
-            Integer[] duplicateUserIds;
-
-            try
-            {
-                duplicateUserIds = Table.executeArray(core, sql, Integer.class);
-            }
-            catch(SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
-
-            for (int userId : duplicateUserIds)
-            {
-                try
-                {
-                    UserManager.deleteUser(userId);
-                }
-                catch(SecurityManager.UserManagementException e)
-                {
-                    _log.error("Error attempting to delete user", e);
-                }
-            }
-        }
-
-        // For all database types, force user names in Principals and Logins to all lowercase
-        TableInfo principals = CoreSchema.getInstance().getTableInfoPrincipals();
-        TableInfo logins = CoreSchema.getInstance().getTableInfoLogins();
-
-        try
-        {
-            Table.execute(core, "UPDATE " + logins + " SET Email = LOWER(Email)", null);
-            Table.execute(core, "UPDATE " + principals + " SET Name = LOWER(Name) WHERE Type = 'u'", null);
-        }
-        catch (SQLException e)
-        {
-            _log.error("Error attempting to convert to lowercase user names", e);
-        }
     }
 
     public void handleFirstRequest(HttpServletRequest request)

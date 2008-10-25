@@ -215,23 +215,6 @@ public class WikiModule extends DefaultModule implements ContainerManager.Contai
             _newInstall = true;
             _installerUser = viewContext.getUser();
         }
-
-        if (moduleContext.getInstalledVersion() == 1.0)
-        {
-            Container root = ContainerManager.getRoot();
-            if (root != null)
-            {
-                try
-                {
-                    for (Container child : ContainerManager.getAllChildren(root))
-                        WikiManager.updateWikiParenting(child);
-                }
-                catch (SQLException e)
-                {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
     }
 
     private void loadWikiContent(Container c, User user, String name, String title, String resource, WikiRendererType renderAs)

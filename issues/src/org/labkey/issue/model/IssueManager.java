@@ -25,10 +25,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.*;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.issue.IssuesController;
-import org.labkey.issue.IssuesModule;
 
 import javax.servlet.ServletException;
 import java.io.IOException;

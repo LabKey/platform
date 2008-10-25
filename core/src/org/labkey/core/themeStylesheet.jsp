@@ -324,6 +324,13 @@ td.labkey-tab-shaded
     background-color: #<%= navBackground %>;
 }
 
+td.labkey-tab-content
+{
+    border-left:solid 1px #<%= navBorder %>;
+    border-right:solid 1px #<%= navBorder %>;
+    border-bottom:solid 1px #<%= navBorder %>;
+}
+
 td.labkey-wiki-tab
 {
     color: #000000;

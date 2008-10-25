@@ -15,12 +15,13 @@
  */
 package org.labkey.study.reports;
 
-import org.apache.log4j.Logger;
-import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
+import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
+import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
@@ -28,16 +29,14 @@ import org.labkey.api.reports.report.ReportDB;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.reports.report.view.ReportUtil;
-import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.User;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.module.ModuleContext;
+import org.labkey.common.util.Pair;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.*;
-import org.labkey.common.util.Pair;
 
 import javax.servlet.ServletException;
 import java.sql.ResultSet;
@@ -360,27 +359,6 @@ public class ReportManager implements StudyManager.UnmaterializeListener
         else
             // explicit permissions
             return acl.hasPermission(user, ACL.PERM_READ);
-    }
-
-    public void upgradeStudyReports(ViewContext context)
-    {
-        try {
-            StudyReport[] reports = Table.select(getTable(), Table.ALL_COLUMNS, null, null, StudyReport.class);
-            for (StudyReport report : reports)
-            {
-                Report r = createReport(report);
-                if (r != null)
-                {
-                    User user = UserManager.getUser(r.getDescriptor().getCreatedBy());
-                    if (user != null)
-                        ReportService.get().saveReport(context, r.getDescriptor().getReportKey(), r);
-                }
-            }
-        }
-        catch (SQLException se)
-        {
-            _log.error("Unable to convert study report", se);
-        }
     }
 
     private Report createReport(StudyReport report)

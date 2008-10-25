@@ -286,16 +286,6 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
 
     public void afterSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)
     {
-        if (moduleContext.getInstalledVersion() >= 1.3 && moduleContext.getInstalledVersion() < 1.7)
-        {
-            StudyManager.getInstance().upgradeParticipantVisits(viewContext.getUser());
-        }
-
-        if (moduleContext.getInstalledVersion() >= 1.7 && moduleContext.getInstalledVersion() < 1.74)
-        {
-            ReportManager.get().upgradeStudyReports(viewContext);
-        }
-
         if (moduleContext.getInstalledVersion() >= 1.3 && moduleContext.getInstalledVersion() < 2.11)
         {
             try

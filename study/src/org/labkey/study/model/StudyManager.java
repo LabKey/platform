@@ -2351,38 +2351,6 @@ public class StudyManager
     }
 
 
-    public void upgradeParticipantVisits(User user)
-    {
-        ResultSet rs = null;
-        try
-        {
-            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), "SELECT DISTINCT Container FROM study.StudyData", (Object[])null);
-            while (rs.next())
-            {
-                String containerId = rs.getString(1);
-                assert null != StringUtils.trimToNull(containerId);
-                if (StringUtils.trimToNull(containerId) == null)
-                    continue;
-                Container c = ContainerManager.getForId(containerId);
-//                assert null != c;
-                if (null == c)
-                    continue;
-                Study study = StudyManager.getInstance().getStudy(c);
-                getVisitManager(study).updateParticipantVisits(user);
-            }
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-        finally
-        {
-            if (null != rs)
-                try { rs.close(); } catch (SQLException x) { logError(x); }
-        }
-    }
-
-
     public VisitManager getVisitManager(Study study)
     {
         if (!study.isDateBased())
