@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ACL;
 import org.labkey.api.util.FileUtil;
+import org.apache.commons.io.IOUtils;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -107,7 +108,7 @@ public class FileSystemResource extends AbstractResource
     }
 
 
-    public InputStream getInputStream() throws IOException
+    public InputStream getInputStream(User user) throws IOException
     {
         if (null == _file || !_file.exists())
             return null;
@@ -115,12 +116,32 @@ public class FileSystemResource extends AbstractResource
     }
 
 
-    public OutputStream getOutputStream() throws IOException
+    public OutputStream getOutputStream(User user) throws IOException
     {
         if (null == _file || !_file.exists())
             return null;
         return new FileOutputStream(_file);
     }
+
+
+    public long copyFrom(User user, InputStream is) throws IOException
+    {
+        if (null == _file || !_file.exists())
+            return -1;
+        FileOutputStream fos=null;
+        try
+        {
+            fos = new FileOutputStream(_file);
+            long len = FileUtil.copyData(is, fos);
+            fos.getFD().sync();
+            return len;
+        }
+        finally
+        {
+            IOUtils.closeQuietly(fos);
+        }
+    }
+    
 
     @NotNull
     public List<String> listNames()
@@ -226,7 +247,7 @@ public class FileSystemResource extends AbstractResource
 
     public boolean delete(User user)
     {
-        if (_file == null || !canDelete(user))
+        if (_file == null || (null != user && !canDelete(user)))
             return false;
         return _file.delete();
     }

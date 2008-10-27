@@ -15,16 +15,14 @@
  */
 package org.labkey.api.webdav;
 
-import org.labkey.api.data.Container;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
-import java.util.Collections;
-import java.util.List;
 import java.io.File;
+import java.io.IOException;
 
 /**
  * Created by IntelliJ IDEA.
@@ -185,7 +183,7 @@ public abstract class AbstractResource implements WebdavResolver.Resource
     }
 
 
-    public boolean delete(User user)
+    public boolean delete(User user) throws IOException
     {
         assert !canDelete(user);
         return false;
@@ -194,5 +192,10 @@ public abstract class AbstractResource implements WebdavResolver.Resource
     public File getFile()
     {
         return null;
+    }
+
+    public long copyFrom(User user, WebdavResolver.Resource r) throws IOException
+    {
+        return copyFrom(user, r.getInputStream(user));
     }
 }

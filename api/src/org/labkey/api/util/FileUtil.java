@@ -421,12 +421,17 @@ quickScan:
     final static int BUFFERSIZE = 32*1024;
 
     /** Does not close input or output stream */
-    public static void copyData(InputStream is, OutputStream os) throws IOException
+    public static long copyData(InputStream is, OutputStream os) throws IOException
     {
         byte[] buf = new byte[BUFFERSIZE];
+        long total = 0;
         int r;
         while (0 <= (r = is.read(buf)))
+        {
             os.write(buf,0,r);
+            total += r;
+        }
+        return total;
     }
 
 

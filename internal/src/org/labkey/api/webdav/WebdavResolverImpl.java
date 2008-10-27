@@ -20,6 +20,7 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Category;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
@@ -29,14 +30,12 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.util.*;
-import org.jetbrains.annotations.NotNull;
 
 import java.beans.PropertyChangeEvent;
+import java.io.IOException;
+import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.*;
-import java.io.InputStream;
-import java.io.IOException;
-import java.io.OutputStream;
 
 
 /**
@@ -470,14 +469,14 @@ public class WebdavResolverImpl implements WebdavResolver
             return 0;
         }
 
-        public InputStream getInputStream() throws IOException
+        public InputStream getInputStream(User user) throws IOException
         {
             return null;
         }
 
-        public OutputStream getOutputStream() throws IOException
+        public long copyFrom(User user, InputStream in) throws IOException
         {
-            return null;
+            throw new UnsupportedOperationException();
         }
 
         public long getContentLength()

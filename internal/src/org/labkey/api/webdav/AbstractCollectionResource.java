@@ -15,13 +15,12 @@
  */
 package org.labkey.api.webdav;
 
-import org.apache.axis.encoding.ser.ArrayDeserializer;
+import org.labkey.api.security.User;
 
-import java.io.InputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.util.List;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -51,14 +50,14 @@ public abstract class AbstractCollectionResource extends AbstractResource
         return false;
     }
 
-    public InputStream getInputStream() throws IOException
+    public InputStream getInputStream(User user) throws IOException
     {
-        return null;
+        throw new IllegalStateException("Can't read from a collection");
     }
 
-    public OutputStream getOutputStream() throws IOException
+    public long copyFrom(User user, InputStream in) throws IOException
     {
-        return null;
+        throw new IllegalStateException("Can't write to a collection");
     }
 
     public long getContentLength()

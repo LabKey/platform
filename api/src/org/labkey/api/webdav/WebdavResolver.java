@@ -16,13 +16,12 @@
 
 package org.labkey.api.webdav;
 
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.security.User;
+import org.labkey.api.view.ViewContext;
 
 import java.io.File;
-import java.io.InputStream;
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.InputStream;
 import java.util.List;
 
 /**
@@ -73,9 +72,12 @@ public interface WebdavResolver
 
         String getContentType();
 
-        InputStream getInputStream() throws IOException;
+        InputStream getInputStream(User user) throws IOException;
 
-        OutputStream getOutputStream() throws IOException;
+//        OutputStream getOutputStream(User user) throws IOException;
+        long copyFrom(User user, InputStream in) throws IOException;
+
+        long copyFrom(User user, Resource r) throws IOException;
 
         long getContentLength();
 
@@ -97,7 +99,7 @@ public interface WebdavResolver
         boolean canRename(User user);
 
         // dav methods
-        boolean delete(User user);
+        boolean delete(User user) throws IOException;
     }
 
     // marker interfaces for web folder, see FtpConnectorImpl
