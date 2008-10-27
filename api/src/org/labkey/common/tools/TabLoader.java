@@ -1073,9 +1073,18 @@ public class TabLoader extends DataLoader
         }
 
 
-        public void testObjects()
+        public void testObject() throws Exception
         {
-            // UNDONE
+            File tsv = _createTempFile(tsvData, ".tsv");
+            TabLoader loader = new TabLoader(tsv, TestRow.class);
+            TestRow[] rows = (TestRow[])loader.load();
+
+            assertTrue(rows.length == 7);
+
+            TestRow firstRow = rows[0];
+            assertEquals(firstRow.getScan(), 96);
+            assertFalse(firstRow.isAccurateMZ());
+            assertEquals(firstRow.getDescription(), "description");
         }
 
 

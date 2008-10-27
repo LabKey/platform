@@ -22,8 +22,10 @@ import jxl.Cell;
 import jxl.Sheet;
 import jxl.Workbook;
 import jxl.read.biff.BiffException;
-import org.labkey.api.settings.AppProps;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.collections.Transformer;
+import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.settings.AppProps;
 
 import java.io.File;
 import java.io.IOException;
@@ -108,6 +110,22 @@ public class ExcelLoader extends DataLoader
         workbook.close();
     }
 
+    private static class SimpleTransformer implements Transformer
+    {
+        private final ObjectFactory<?> factory;
+
+        public SimpleTransformer(Class<?> clazz)
+        {
+            this.factory = ObjectFactory.Registry.getFactory(clazz);
+        }
+
+        public Object transform(Object o)
+        {
+            //noinspection unchecked
+            return factory.fromMap((Map)o);   
+        }
+    }
+
     private class ExcelIterator implements Iterator
     {
         private boolean returnMaps;
@@ -125,7 +143,7 @@ public class ExcelLoader extends DataLoader
 
             if (_transformer == null && !returnMaps)
             {
-                throw new UnsupportedOperationException("Cannot yet support returning a bean without a transformer");
+                _transformer = new SimpleTransformer(_returnElementClass);
             }
 
             sheet = getSheet();
@@ -201,6 +219,7 @@ public class ExcelLoader extends DataLoader
             ExcelLoader loader = new ExcelLoader(metadataSample);
             checkColumnMetadata(loader);
             checkData(loader);
+            checkObject(loader);
             loader.close();
         }
 
@@ -234,6 +253,19 @@ public class ExcelLoader extends DataLoader
             assertTrue(firstRow.get("scan").equals(96));
             assertTrue(firstRow.get("accurateMZ").equals(false));
             assertTrue(firstRow.get("description").equals("description"));
+        }
+
+        private static void checkObject(ExcelLoader loader) throws IOException
+        {
+            loader.setReturnElementClass(TestRow.class);
+            TestRow[] rows = (TestRow[])loader.load();
+
+            assertTrue(rows.length == 7);
+
+            TestRow firstRow = rows[0];
+            assertEquals(firstRow.getScan(), 96);
+            assertFalse(firstRow.isAccurateMZ());
+            assertEquals(firstRow.getDescription(), "description");
         }
     }
 }
