@@ -1628,7 +1628,7 @@ internal/webapp/_icons/docm.gif -text
 internal/webapp/_icons/docx.gif -text
 internal/webapp/_icons/dotm.gif -text
 internal/webapp/_icons/dotx.gif -text
-internal/webapp/_icons/exe.gif -text
+internal/webapp/_icons/exe.png -text
 internal/webapp/_icons/gif.gif -text
 internal/webapp/_icons/gz.gif -text
 internal/webapp/_icons/htm.gif -text
@@ -1651,9 +1651,11 @@ internal/webapp/_icons/pptx.gif -text
 internal/webapp/_icons/prg.gif -text
 internal/webapp/_icons/rtf.gif -text
 internal/webapp/_icons/tar.gif -text
+internal/webapp/_icons/text.png -text
 internal/webapp/_icons/tgz.gif -text
 internal/webapp/_icons/tsv.gif -text
-internal/webapp/_icons/txt.gif -text
+internal/webapp/_icons/txt.png -text
+internal/webapp/_icons/video.png -text
 internal/webapp/_icons/vsd.gif -text
 internal/webapp/_icons/xar.gif -text
 internal/webapp/_icons/xls.gif -text
