@@ -16,24 +16,31 @@
 
 package org.labkey.wiki;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.webdav.*;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
-import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.attachments.AttachmentParent;
-import org.labkey.api.attachments.Attachment;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
-import org.apache.commons.io.IOUtils;
 
+import javax.naming.OperationNotSupportedException;
 import java.io.*;
-import java.util.*;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -221,8 +228,8 @@ class WikiWebdavProvider implements WebdavService.Provider
 
         public boolean exists()
         {
-            List<String> names = WikiService.get().getNames(_folder._c);
-            return names.contains(_wiki.getName());
+            WikiVersion version = WikiManager.getLatestVersion(_wiki);
+            return null != version && !StringUtils.isEmpty(version.getBody());
         }
 
         public boolean isCollection()
@@ -245,26 +252,39 @@ class WikiWebdavProvider implements WebdavService.Provider
             return false; // NYI
         }
 
-        public boolean canDelete()
-        {
-            return false; // NYI
-        }
-
-        public boolean canWrite(User user)
-        {
-            return false; // NYI
-        }
-
-        public InputStream getInputStream() throws IOException
+        public InputStream getInputStream(User user) throws IOException
         {
             WikiVersion v = WikiManager.getLatestVersion(_wiki);
             byte[] buf = v.getBody().getBytes("UTF-8");
             return new ByteArrayInputStream(buf);
         }
 
-        public OutputStream getOutputStream() throws IOException
+        public long copyFrom(User user, InputStream in) throws IOException
         {
-            return new ByteArrayOutputStream();
+            ByteArrayOutputStream buf = new ByteArrayOutputStream();
+            FileUtil.copyData(in,buf);
+            long len = buf.size();
+            WikiVersion version = WikiManager.getLatestVersion(_wiki);
+            version.setBody(buf.toString("UTF-8"));
+            try
+            {
+                WikiManager.updateWiki(user, _wiki, version);
+                WikiManager.getLatestVersion(_wiki, true);
+                return len;
+            }
+            catch (SQLException x)
+            {
+                throw new IOException("error writing to wiki", x);
+            }
+        }
+
+
+        // You can't actually delete this file, however, some clients do delete instead of overwrite,
+        // so pretend we deleted it.
+        public boolean delete(User user) throws IOException
+        {
+            copyFrom(user, new ByteArrayInputStream(new byte[0]));
+            return true;
         }
 
         public WebdavResolver.Resource parent()
@@ -309,11 +329,6 @@ class WikiWebdavProvider implements WebdavService.Provider
         public WebdavResolver.Resource find(String name)
         {
             return null;
-        }
-
-        public int getPermissions(User user)
-        {
-            return super.getPermissions(user) & ACL.PERM_READ;
         }
     }
 
@@ -361,17 +376,18 @@ class WikiWebdavProvider implements WebdavService.Provider
 
         public boolean canDelete()
         {
-            return false; // NYI
+            return true;
         }
 
-        public InputStream getInputStream() throws IOException
+        public InputStream getInputStream(User user) throws IOException
         {
             return AttachmentService.get().getInputStream(_parent, _name);
         }
 
-        public OutputStream getOutputStream() throws IOException
+        //        OutputStream getOutputStream(User user) throws IOException;
+        public long copyFrom(User user, InputStream in) throws IOException
         {
-            return new ByteArrayOutputStream();
+            throw new UnsupportedOperationException();
         }
 
         public WebdavResolver.Resource parent()
@@ -395,7 +411,7 @@ class WikiWebdavProvider implements WebdavService.Provider
             InputStream is = null;
             try
             {
-                is = getInputStream();
+                is = getInputStream(null);
                 if (null != is)
                 {
                     if (is instanceof FileInputStream)

@@ -1101,7 +1101,7 @@ public class DavController extends SpringActionController
                                String md5sum = null;
                                try
                                {
-                                   md5sum = FileUtil.md5sum(resource.getInputStream());
+                                   md5sum = FileUtil.md5sum(resource.getInputStream(getUser()));
                                }
                                catch (IOException x)
                                {
@@ -1381,8 +1381,8 @@ public class DavController extends SpringActionController
             {
                 json.key("lastmodified").value(new Date(resource.getLastModified()));
                 json.key("contentlength").value(resource.getContentLength());
-                if (null != resource.getFile())
-                    json.key("size").value(resource.getFile().length());
+                if (resource.getContentLength() >= 0)
+                    json.key("size").value(resource.getContentLength());
                 String contentType = resource.getContentType();
                 if (contentType != null)
                     json.key("contenttype").value(contentType);
@@ -1392,8 +1392,6 @@ public class DavController extends SpringActionController
             else
             {
                 json.key("leaf").value(false);
-                if (resource.getFile() != null)
-                    json.key("directory").value(resource.getFile().getPath());
             }
 
             json.endObject();
@@ -1540,7 +1538,7 @@ public class DavController extends SpringActionController
             try
             {
                 is = getRequest().getInputStream();
-                if (!resource.getFile().exists())
+                if (!resource.exists())
                 {
                     temp = getTemporary();
                     File f = resource.getFile();
@@ -1588,17 +1586,14 @@ public class DavController extends SpringActionController
                         is = new ByteArrayInputStream(buf);
                     }
 
-                    os = resource.getOutputStream();
-                    assert track(os);
-                    FileUtil.copyData(is, os);
-                    if (os instanceof FileOutputStream)
-                        ((FileOutputStream)os).getFD().sync();
-                    if (temp)
-                        ;
-                    else if (exists)
-                        audit(resource, "replaced");
-                    else
-                        audit(resource, "created");
+                    resource.copyFrom(getUser(), is);
+                    if (!temp)
+                    {
+                        if (exists)
+                            audit(resource, "replaced");
+                        else
+                            audit(resource, "created");
+                    }
                 }
 
                 // if we got here then we succeeded
@@ -1611,10 +1606,7 @@ public class DavController extends SpringActionController
                 close(raf, "put action outputdata");
                 if (deleteFileOnFail)
                 {
-                    File f = resource.getFile();
-                    if (null != f)
-                        f.delete();
-                    rmTempFile(resource);
+                    resource.delete(null);
                 }
             }
 
@@ -1740,8 +1732,15 @@ public class DavController extends SpringActionController
                 if (child.isCollection())
                     deleteCollection(child, errorList);
 
-                if (!child.delete(getUser()))
-                    errorList.put(childName, WebdavStatus.SC_INTERNAL_SERVER_ERROR);
+                try
+                {
+                    if (!child.delete(getUser()))
+                        errorList.put(childName, WebdavStatus.SC_INTERNAL_SERVER_ERROR);
+                }
+                catch (IOException x)
+                {
+                    errorList.put(childName, WebdavStatus.SC_INTERNAL_SERVER_ERROR);   
+                }
                 
                 boolean temp = rmTempFile(child);
                 if (!temp)
@@ -2083,9 +2082,9 @@ public class DavController extends SpringActionController
                 getResponse().setContentType(contentType);
             }
             if (ostream != null)
-                copy(resource.getInputStream(), ostream);
+                copy(resource.getInputStream(getUser()), ostream);
             else
-                copy(resource.getInputStream(), writer);
+                copy(resource.getInputStream(getUser()), writer);
 
         }
         else
@@ -2108,7 +2107,7 @@ public class DavController extends SpringActionController
                     getResponse().setContentType(contentType);
 
                 if (content)
-                    copy(resource.getInputStream(), ostream, range.start, range.end);
+                    copy(resource.getInputStream(getUser()), ostream, range.start, range.end);
             }
             else
             {
@@ -2166,7 +2165,7 @@ public class DavController extends SpringActionController
     {
         while (ranges.hasNext())
         {
-            InputStream resourceInputStream = resource.getInputStream();
+            InputStream resourceInputStream = resource.getInputStream(getUser());
             assert track(resourceInputStream);
             InputStream istream = new BufferedInputStream(resourceInputStream, 16*1024);
             assert track(istream);
@@ -3141,7 +3140,8 @@ public class DavController extends SpringActionController
         return null;
     }
 
-    
+
+    // UNDONE: move auditing into the Resource
     void audit(WebdavResolver.Resource resource, String message)
     {
         String dir;
