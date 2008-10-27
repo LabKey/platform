@@ -52,4 +52,9 @@ public class ColumnDescriptor
     public Object errorValues = null;
     public Converter converter = null;
     public Method setter = null;
+
+    public String toString()
+    {
+        return name + ":" + clazz.getSimpleName();
+    }
 }

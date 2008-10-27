@@ -69,8 +69,6 @@ public class TabLoader extends DataLoader
     protected boolean _parseQuotes = false;
     protected boolean _throwOnErrors = false;
 
-    private Transformer _transformer = null;
-
 
     public TabLoader(File inputFile) throws IOException
     {
@@ -207,24 +205,6 @@ public class TabLoader extends DataLoader
     {
         //noinspection unchecked
         return Collections.unmodifiableMap(_comments);
-    }
-
-
-    /**
-     * Returns an array of objects one for each non-header row of the file.
-     * By default the objects are maps, but may be java beans.
-     */
-    public Object[] load() throws IOException
-    {
-        getColumns();
-
-        List<Object> rowList = new ArrayList<Object>();
-        Iterator it = new TabLoaderIterator();
-        while (it.hasNext())
-            rowList.add(it.next());
-
-        Object[] oarr = rowList.toArray((Object[]) Array.newInstance(_returnElementClass, rowList.size()));
-        return oarr;
     }
 
 
@@ -441,7 +421,8 @@ public class TabLoader extends DataLoader
     }
 
 
-    public TabLoaderIterator iterator() throws IOException
+    public TabLoaderIterator
+    iterator() throws IOException
     {
         TabLoaderIterator retVal = new TabLoader.TabLoaderIterator();
         return retVal;
@@ -516,18 +497,6 @@ public class TabLoader extends DataLoader
         System.arraycopy(existingColumns, 0, newColumns, 0, existingColumns.length);
         newColumns[newColumns.length - 1] = column;
         setColumns(newColumns);
-    }
-
-
-    public Transformer getTransformer()
-    {
-        return _transformer;
-    }
-
-
-    public void setTransformer(Transformer transformer)
-    {
-        this._transformer = transformer;
     }
 
 
@@ -1018,16 +987,23 @@ public class TabLoader extends DataLoader
 
         public void testTSVFile() throws IOException
         {
-            File csv = _createTempFile(tsvData, ".tsv");
+            File tsv = _createTempFile(tsvData, ".tsv");
 
-            TabLoader l = new TabLoader(csv);
+            TabLoader l = new TabLoader(tsv);
             Map[] maps = (Map[]) l.load();
             assertEquals(l.getColumns().length, 18);
             assertEquals(l.getColumns()[0].clazz, Date.class);
             assertEquals(l.getColumns()[1].clazz, Integer.class);
             assertEquals(l.getColumns()[2].clazz, Double.class);
+            assertEquals(l.getColumns()[4].clazz, Boolean.class);
+            assertEquals(l.getColumns()[17].clazz, String.class);
             assertEquals(maps.length, 7);
-            csv.delete();
+
+            Map firstRow = maps[0];
+            assertTrue(firstRow.get("scan").equals(96));
+            assertTrue(firstRow.get("accurateMZ").equals(false));
+            assertTrue(firstRow.get("description").equals("description"));
+            tsv.delete();
         }
 
 
@@ -1055,7 +1031,15 @@ public class TabLoader extends DataLoader
             assertEquals(l.getColumns()[0].clazz, Date.class);
             assertEquals(l.getColumns()[1].clazz, Integer.class);
             assertEquals(l.getColumns()[2].clazz, Double.class);
+            assertEquals(l.getColumns()[4].clazz, Boolean.class);
+            assertEquals(l.getColumns()[17].clazz, String.class);
             assertEquals(maps.length, 7);
+
+            Map firstRow = maps[0];
+            assertTrue(firstRow.get("scan").equals(96));
+            assertTrue(firstRow.get("accurateMZ").equals(false));
+            assertTrue(firstRow.get("description").equals("description"));
+
             csv.delete();
         }
 

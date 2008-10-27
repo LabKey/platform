@@ -22,12 +22,12 @@ import jxl.Cell;
 import jxl.Sheet;
 import jxl.Workbook;
 import jxl.read.biff.BiffException;
+import org.labkey.api.settings.AppProps;
+import org.apache.commons.beanutils.ConvertUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 /**
  * Data loader for Excel files -- can infer columns and return rows of data
@@ -64,22 +64,22 @@ public class ExcelLoader extends DataLoader
         this.sheetName = sheetName;
     }
 
-    public Object[] load() throws IOException
+    private Sheet getSheet()
     {
-        throw new UnsupportedOperationException();
+        if (sheetName != null)
+            return workbook.getSheet(sheetName);
+        else
+            return workbook.getSheet(0);
     }
 
     protected String[][] getFirstNLines(int n) throws IOException
     {
-        Sheet sheet;
-        if (sheetName != null)
-            sheet = workbook.getSheet(sheetName);
-        else
-            sheet = workbook.getSheet(0);
+        Sheet sheet = getSheet();
 
         List<String[]> cells = new ArrayList<String[]>();
         int numCols = sheet.getColumns();
-        for (int row = 1; row <= n; row++) // rows are 1-indexed
+        int numRows = Math.min(sheet.getRows(), n);
+        for (int row = 0; row < numRows; row++)
         {
             String[] rowData = new String[numCols];
             for (int column = 0; column < numCols; column++)
@@ -90,6 +90,84 @@ public class ExcelLoader extends DataLoader
             cells.add(rowData);
         }
         return cells.toArray(new String[cells.size()][]);
+    }
+
+    protected Iterator<?> iterator() throws IOException
+    {
+        return new ExcelIterator();
+    }
+
+    public void finalize() throws Throwable
+    {
+        workbook.close();
+        super.finalize();
+    }
+
+    public void close()
+    {
+        workbook.close();
+    }
+
+    private class ExcelIterator implements Iterator
+    {
+        private boolean returnMaps;
+        private int rowIndex;
+        private Sheet sheet;
+        private int numRows;
+
+        public ExcelIterator()
+        {
+            // find a converter for each column type
+            for (ColumnDescriptor column : _columns)
+                column.converter = ConvertUtils.lookup(column.clazz);
+
+            returnMaps = _returnElementClass == null || _returnElementClass.equals(java.util.Map.class);
+
+            if (_transformer == null && !returnMaps)
+            {
+                throw new UnsupportedOperationException("Cannot yet support returning a bean without a transformer");
+            }
+
+            sheet = getSheet();
+            numRows = sheet.getRows();
+
+            rowIndex = _skipLines == -1 ? 1 : _skipLines;
+        }
+
+        public boolean hasNext()
+        {
+            return rowIndex < numRows;
+        }
+
+        public Object next()
+        {
+            if (rowIndex >= numRows)
+                throw new IllegalStateException("Attempt to call next() on a finished iterator");
+
+            Map<String,Object> row = new HashMap<String,Object>();
+            for (int columnIndex = 0; columnIndex < _columns.length; columnIndex++)
+            {
+                ColumnDescriptor column = _columns[columnIndex];
+                Cell cell = sheet.getCell(columnIndex, rowIndex);
+                String contents = cell.getContents();
+                Object value = "".equals(contents) ?
+                    column.missingValues :
+                    column.converter.convert(column.clazz, contents);
+
+                row.put(column.name, value);
+            }
+            rowIndex++;
+
+            if (_transformer != null)
+                return _transformer.transform(row);
+
+            return row;
+        }
+
+        public void remove()
+        {
+            throw new UnsupportedOperationException("Please don't do that.");
+        }
     }
 
     public static class ExcelLoaderTestCase extends TestCase
@@ -106,7 +184,56 @@ public class ExcelLoader extends DataLoader
 
         public void testColumnTypes() throws Exception
         {
-            
+            AppProps props = AppProps.getInstance();
+            if (!props.isDevMode()) // We can only run the excel tests if we're in dev mode and have access to our samples
+                return;
+
+            String projectRootPath =  props.getProjectRoot();
+            File projectRoot = new File(projectRootPath);
+
+            File excelSamplesRoot = new File(projectRoot, "sampledata/dataLoading/excel");
+
+            if (!excelSamplesRoot.exists() || !excelSamplesRoot.canRead())
+                throw new IOException("Could not read excel samples in: " + excelSamplesRoot);
+
+            File metadataSample = new File(excelSamplesRoot, "ExcelLoaderTest.xls");
+
+            ExcelLoader loader = new ExcelLoader(metadataSample);
+            checkColumnMetadata(loader);
+            checkData(loader);
+            loader.close();
+        }
+
+        private static void checkColumnMetadata(ExcelLoader loader) throws IOException
+        {
+            ColumnDescriptor[] columns = loader.getColumns();
+
+            assertTrue(columns.length == 18);
+
+            assertEquals(columns[0].clazz, Date.class);
+            assertEquals(columns[1].clazz, Integer.class);
+            assertEquals(columns[2].clazz, Double.class);
+
+            assertEquals(columns[4].clazz, Boolean.class);
+
+            assertEquals(columns[17].clazz, String.class);
+        }
+
+        private static void checkData(ExcelLoader loader) throws IOException
+        {
+            Map[] data = (Map[])loader.load();
+
+            assertTrue(data.length == 7);
+
+            for (Map map : data)
+            {
+                assertTrue(map.size() == 18);
+            }
+
+            Map firstRow = data[0];
+            assertTrue(firstRow.get("scan").equals(96));
+            assertTrue(firstRow.get("accurateMZ").equals(false));
+            assertTrue(firstRow.get("description").equals("description"));
         }
     }
 }

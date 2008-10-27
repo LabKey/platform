@@ -32,7 +32,7 @@ import java.sql.SQLException;
  */
 public interface ObjectFactory<K>
 {
-    K fromMap(Map<String, ? extends Object> m);
+    K fromMap(Map<String, ?> m);
 
     Map<String, Object> toMap(K bean, Map<String, Object> m);
 

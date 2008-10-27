@@ -373,8 +373,7 @@
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/web/jexcelapi_2_5_7.zip!/" />
-          <root url="jar://$MODULE_DIR$/../../external/lib/web/jexcelapi_2_5_7.zip!/src" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/web/jexcelapi_2_6_8.zip!/src" />
         </SOURCES>
       </library>
     </orderEntry>

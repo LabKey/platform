@@ -17,13 +17,14 @@ package org.labkey.common.tools;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.commons.collections.Transformer;
 
+import java.beans.PropertyDescriptor;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Date;
-import java.util.HashMap;
-import java.beans.PropertyDescriptor;
+import java.lang.reflect.Array;
+import java.util.*;
 
 /**
  * Interface for loading columnar data from different sources: TSVs, Excel files, etc.
@@ -56,6 +57,7 @@ public abstract class DataLoader
     // CONSIDER: explicit flags for hasHeaders, inferHeaders, skipLines etc.
     protected int _skipLines = -1;      // -1 means infer headers
     protected Class _returnElementClass = java.util.Map.class;
+    protected Transformer _transformer = null;
 
     public final ColumnDescriptor[] getColumns() throws IOException
     {
@@ -77,8 +79,6 @@ public abstract class DataLoader
             initColumnInfos(_returnElementClass);
     }
 
-    public abstract Object[] load() throws IOException;
-
     protected void setSource(File inputFile) throws IOException
     {
         _file = inputFile;
@@ -94,6 +94,11 @@ public abstract class DataLoader
      * if there are fewer rows than that in the data.
      **/
     protected abstract String[][] getFirstNLines(int n) throws IOException;
+
+    /**
+     * Returns an iterator over the data in this file
+     */
+    protected abstract Iterator<?> iterator() throws IOException;
 
     /**
      * Look at first <code>scanAheadLineCount</code> lines of the file and infer col names, data types.
@@ -281,5 +286,32 @@ public abstract class DataLoader
     public void setReturnElementClass(Class returnElementClass)
     {
         this._returnElementClass = returnElementClass;
+    }
+
+    public Transformer getTransformer()
+    {
+        return _transformer;
+    }
+
+    public void setTransformer(Transformer transformer)
+    {
+        this._transformer = transformer;
+    }
+
+    /**
+     * Returns an array of objects one for each non-header row of the file.
+     * By default the objects are maps, but may be java beans.
+     */
+    public Object[] load() throws IOException
+    {
+        getColumns();
+
+        List<Object> rowList = new ArrayList<Object>();
+        Iterator it = iterator();
+        while (it.hasNext())
+            rowList.add(it.next());
+
+        Object[] oarr = rowList.toArray((Object[]) Array.newInstance(_returnElementClass, rowList.size()));
+        return oarr;
     }
 }
