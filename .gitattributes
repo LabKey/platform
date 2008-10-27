@@ -1622,6 +1622,8 @@ internal/webapp/DataRegion.js -text
 internal/webapp/_.gif -text
 internal/webapp/_icons/_deleted.gif -text
 internal/webapp/_icons/_generic.gif -text
+internal/webapp/_icons/application.png -text
+internal/webapp/_icons/audio.png -text
 internal/webapp/_icons/dll.gif -text
 internal/webapp/_icons/doc.gif -text
 internal/webapp/_icons/docm.gif -text
@@ -1629,14 +1631,12 @@ internal/webapp/_icons/docx.gif -text
 internal/webapp/_icons/dotm.gif -text
 internal/webapp/_icons/dotx.gif -text
 internal/webapp/_icons/exe.png -text
-internal/webapp/_icons/gif.gif -text
 internal/webapp/_icons/gz.gif -text
 internal/webapp/_icons/htm.gif -text
 internal/webapp/_icons/html.gif -text
+internal/webapp/_icons/image.png -text
 internal/webapp/_icons/iqy.gif -text
 internal/webapp/_icons/jar.gif -text
-internal/webapp/_icons/jpeg.gif -text
-internal/webapp/_icons/jpg.gif -text
 internal/webapp/_icons/log.gif -text
 internal/webapp/_icons/mdb.gif -text
 internal/webapp/_icons/pdf.gif -text

@@ -21,6 +21,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.MimeMap;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.ViewContext;
 
@@ -31,6 +32,7 @@ import java.io.Serializable;
 import java.io.File;
 import java.util.Date;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 //import java.io.Serializable;
 
 
@@ -82,7 +84,6 @@ public class Attachment implements Serializable
     private long created;
     private File file;
 
-    private static final CaseInsensitiveHashMap<String> icons = new CaseInsensitiveHashMap<String>();
 
     public Attachment()
     {
@@ -138,35 +139,52 @@ public class Attachment implements Serializable
     }
 
 
+    static MimeMap mime = new MimeMap();
+    private static final ConcurrentHashMap<String,String> icons = new ConcurrentHashMap<String, String>();
+
     static String lookupIcon(String lookup)
     {
         synchronized (icons)
         {
             if (icons.size() == 0)
             {
-                String iconFileExtension = ".gif";
-
                 ServletContext context = ViewServlet.getViewServletContext();
                 if (context != null)
                 {
                     Set<String> paths = context.getResourcePaths("/_icons");
                     for (String fileName : paths)
                     {
-                        String extension;
-                        if (fileName.toLowerCase().endsWith(iconFileExtension))
-                        {
-                            int index = fileName.lastIndexOf('/');
-                            if (-1 != index)
-                                extension = fileName.substring(index + 1, fileName.length() - iconFileExtension.length());
-                            else
-                                extension = fileName.substring(0, fileName.length() - iconFileExtension.length());
+                        int index = fileName.lastIndexOf('/');
+                        int dot = fileName.lastIndexOf('.');
+                        String extension = fileName.substring(index + 1, dot).toLowerCase();
+                        if (mime.isInlineImageFor(fileName))    // .jpg .png .gif
                             icons.put(extension, fileName);
-                        }
+                        String contenttype = mime.getContentType(extension);
+                        if (null != contenttype)
+                            icons.put(contenttype, fileName);
                     }
                 }
             }
         }
-        return icons.get(lookup);
+
+        String icon = icons.get(lookup);
+        if (icon != null)
+            return icon;
+
+        String mimetype = mime.getContentType(lookup);
+        if (mimetype != null)
+        {
+            icon = icons.get(mimetype);
+            if (icon == null)
+            {
+                int i = mimetype.indexOf('/');
+                if (i > 0)
+                    icon = icons.get(mimetype.substring(0,i));
+            }
+            if (icon != null)
+                icons.put(lookup, icon);
+        }
+        return icon;
     }
 
 
