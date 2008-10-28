@@ -274,7 +274,7 @@ class WikiWebdavProvider implements WebdavService.Provider
             }
             catch (SQLException x)
             {
-                throw new IOException("error writing to wiki", x);
+                throw new IOException("error writing to wiki");
             }
         }
 
