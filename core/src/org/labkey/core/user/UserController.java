@@ -1360,7 +1360,7 @@ public class UserController extends SpringActionController
                 //get users in given group/role name
                 Integer groupId = form.getGroupId();
                 if(null == groupId)
-                    groupId = SecurityManager.getGroupId(container, form.getGroup(), false);
+                    groupId = SecurityManager.getGroupId(container.getProject(), form.getGroup(), false);
                 if(null == groupId)
                     throw new IllegalArgumentException("The group '" + form.getGroup() + "' does not exist in the project '"
                             + project.getPath() + "'");
