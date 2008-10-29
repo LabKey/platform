@@ -16,9 +16,6 @@
 
 package org.labkey.study.designer.client.model;
 
-import com.google.gwt.xml.client.Element;
-import com.google.gwt.xml.client.Document;
-import com.google.gwt.xml.client.NodeList;
 import com.google.gwt.user.client.rpc.IsSerializable;
 
 import java.util.*;
@@ -31,14 +28,8 @@ import java.util.*;
  */
 public class GWTImmunizationSchedule implements Schedule, IsSerializable
 {
-    /**
-     * @gwt.typeArgs <org.labkey.study.designer.client.model.GWTCohort, java.util.Map<org.labkey.study.designer.client.model.GWTTimepoint,org.labkey.study.designer.client.model.GWTImmunization>>
-     */
-    Map/*<Cohort,Map<Timepoint,Immunization>>*/ schedule = new HashMap();
-    /**
-     * @gwt.typeArgs <org.labkey.study.designer.client.model.GWTTimepoint>
-     */
-    List/*<Timepoint>*/ timepoints = new ArrayList/*<Timepoint>*/();
+    Map<GWTCohort,Map<GWTTimepoint,GWTImmunization>> schedule = new HashMap<GWTCohort,Map<GWTTimepoint,GWTImmunization>>();
+    List<GWTTimepoint> timepoints = new ArrayList<GWTTimepoint>();
 
     public  GWTImmunizationSchedule()
     {
@@ -59,10 +50,10 @@ public class GWTImmunizationSchedule implements Schedule, IsSerializable
         if (!timepoints.contains(tp))
             timepoints.add(tp);
         
-        Map/*<Timepoint,Immunization>*/ tpimMap = (Map) schedule.get(group);
+        Map<GWTTimepoint,GWTImmunization> tpimMap = schedule.get(group);
         if (null == tpimMap)
         {
-            tpimMap = new HashMap();
+            tpimMap = new HashMap<GWTTimepoint,GWTImmunization>();
             schedule.put(group, tpimMap);
         }
         tpimMap.put(tp, i);
@@ -71,7 +62,7 @@ public class GWTImmunizationSchedule implements Schedule, IsSerializable
 
     public void removeImmunization(GWTCohort group, GWTTimepoint tp)
     {
-        Map/*<Timepoint,Immunization>*/ tpimMap = (Map) schedule.get(group);
+        Map<GWTTimepoint,GWTImmunization> tpimMap = schedule.get(group);
         if (null == tpimMap)
             return;
 
@@ -81,11 +72,11 @@ public class GWTImmunizationSchedule implements Schedule, IsSerializable
 
     public GWTImmunization getImmunization(GWTCohort group, GWTTimepoint tp)
     {
-        Map/*<Timepoint,Immunization>*/ tpimMap = (Map) schedule.get(group);
+        Map<GWTTimepoint,GWTImmunization> tpimMap = schedule.get(group);
         if (null == tpimMap)
             return null;
 
-        return (GWTImmunization) tpimMap.get(tp);
+        return tpimMap.get(tp);
     }
 
     public void removeGroup(GWTCohort group)
@@ -95,10 +86,9 @@ public class GWTImmunizationSchedule implements Schedule, IsSerializable
 
     public void removeTimepoint(GWTTimepoint tp)
     {
-        for (Iterator iterator = schedule.keySet().iterator(); iterator.hasNext();)
+        for (GWTCohort group : schedule.keySet())
         {
-            GWTCohort group = (GWTCohort) iterator.next();
-            Map/*<Timepoint,Immunization>*/ tpimMap = (Map) schedule.get(group);
+            Map<GWTTimepoint,GWTImmunization> tpimMap = schedule.get(group);
             if (null == tpimMap)
                 continue;
 
@@ -117,7 +107,7 @@ public class GWTImmunizationSchedule implements Schedule, IsSerializable
         if (i >= timepoints.size())
             return null;
 
-        return (GWTTimepoint) timepoints.get(i);
+        return timepoints.get(i);
     }
     public void addTimepoint(GWTTimepoint tp)
     {
@@ -131,18 +121,16 @@ public class GWTImmunizationSchedule implements Schedule, IsSerializable
 
     public void removeTimepoint(int index)
     {
-        GWTTimepoint tp = (GWTTimepoint) timepoints.get(index);
+        GWTTimepoint tp = timepoints.get(index);
         removeTimepoint(tp);
     }
 
     public void removeImmunogen(GWTImmunogen immunogen)
     {
-        for (Iterator iterator = schedule.keySet().iterator(); iterator.hasNext();)
+        for (GWTCohort gwtCohort : schedule.keySet())
         {
-            GWTCohort gwtCohort = (GWTCohort) iterator.next();
-            for (Iterator iterator1 = timepoints.iterator(); iterator1.hasNext();)
+            for (GWTTimepoint gwtTimepoint : timepoints)
             {
-                GWTTimepoint gwtTimepoint = (GWTTimepoint) iterator1.next();
                 GWTImmunization im = getImmunization(gwtCohort, gwtTimepoint);
                 if (null != im)
                     im.immunogens.remove(immunogen);
@@ -152,12 +140,10 @@ public class GWTImmunizationSchedule implements Schedule, IsSerializable
 
     public void removeAdjuvant(GWTAdjuvant adjuvant)
     {
-        for (Iterator iterator = schedule.keySet().iterator(); iterator.hasNext();)
+        for (GWTCohort gwtCohort : schedule.keySet())
         {
-            GWTCohort gwtCohort = (GWTCohort) iterator.next();
-            for (Iterator iterator1 = timepoints.iterator(); iterator1.hasNext();)
+            for (GWTTimepoint gwtTimepoint : timepoints)
             {
-                GWTTimepoint gwtTimepoint = (GWTTimepoint) iterator1.next();
                 GWTImmunization im = getImmunization(gwtCohort, gwtTimepoint);
                 if (null != im)
                     im.adjuvants.remove(adjuvant);

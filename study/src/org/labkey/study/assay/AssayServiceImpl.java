@@ -95,7 +95,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         for (Domain domain : template.getValue())
         {
             GWTDomain gwtDomain = new GWTDomain();
-            Set<String> requiredPropertyDescriptors = new HashSet<String>();
+            Set<String> mandatoryPropertyDescriptors = new HashSet<String>();
             if (!copy)
             {
                 gwtDomain.setDomainId(domain.getTypeId());
@@ -111,11 +111,11 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                 GWTPropertyDescriptor gwtProp = getPropertyDescriptor(prop, copy);
 
                 gwtProps.add(gwtProp);
-                if (provider.isRequiredDomainProperty(domain, prop.getName()))
-                    requiredPropertyDescriptors.add(prop.getName());
+                if (provider.isMandatoryDomainProperty(domain, prop.getName()))
+                    mandatoryPropertyDescriptors.add(prop.getName());
             }
             gwtDomain.setPropertyDescriptors(gwtProps);
-            gwtDomain.setRequiredPropertyDescriptors(requiredPropertyDescriptors);
+            gwtDomain.setMandatoryPropertyDescriptorNames(mandatoryPropertyDescriptors);
             gwtDomain.setReservedPropertyNames(provider.getReservedPropertyNames(protocol, domain));
         }
 

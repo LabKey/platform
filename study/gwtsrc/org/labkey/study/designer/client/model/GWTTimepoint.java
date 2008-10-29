@@ -16,8 +16,6 @@
 
 package org.labkey.study.designer.client.model;
 
-import com.google.gwt.xml.client.Element;
-import com.google.gwt.xml.client.Document;
 import com.google.gwt.user.client.rpc.IsSerializable;
 
 import java.util.Comparator;
@@ -171,11 +169,11 @@ public class GWTTimepoint implements Comparable, IsSerializable
     }
 
     //Need this since bad bug in google's sorting...
-    public static class TimepointComparator implements Comparator
+    public static class TimepointComparator implements Comparator<GWTTimepoint>
     {
-        public int compare(Object o1, Object o2)
+        public int compare(GWTTimepoint o1, GWTTimepoint o2)
         {
-            return ((GWTTimepoint) o1).compareTo(o2);
+            return o1.compareTo(o2);
         }
     }
 }

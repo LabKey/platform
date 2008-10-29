@@ -81,7 +81,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
             GWTPlate plate = new GWTPlate(template.getName(), template.getType(), template.getRows(),
                     template.getColumns(), getTypeList(template));
             plate.setGroups(translated);
-            Map<String, String> templateProperties = new HashMap<String, String>();
+            Map<String, Object> templateProperties = new HashMap<String, Object>();
             for (String propName : template.getPropertyNames())
             {
                 templateProperties.put(propName, template.getProperty(propName) == null ? null : template.getProperty(propName).toString());
@@ -126,21 +126,21 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
 
             template = PlateService.get().createPlateTemplate(getContainer(), gwtPlate.getType());
             template.setName(gwtPlate.getName());
-            for (Map.Entry<String, Object> entry : ((Map<String, Object>) gwtPlate.getPlateProperties()).entrySet())
+            for (Map.Entry<String, Object> entry : gwtPlate.getPlateProperties().entrySet())
                 template.setProperty(entry.getKey(), entry.getValue());
 
-            List<GWTWellGroup> groups = (List<GWTWellGroup>) gwtPlate.getGroups();
+            List<GWTWellGroup> groups = gwtPlate.getGroups();
             for (GWTWellGroup gwtGroup : groups)
             {
                 List<Position> positions = new ArrayList<Position>();
-                for (GWTPosition gwtPosition : (List<GWTPosition>) gwtGroup.getPositions())
+                for (GWTPosition gwtPosition : gwtGroup.getPositions())
                     positions.add(template.getPosition(gwtPosition.getRow(), gwtPosition.getCol()));
 
                 if (!positions.isEmpty())
                 {
                     WellGroupTemplate group = template.addWellGroup(gwtGroup.getName(), WellGroup.Type.valueOf(gwtGroup.getType()), positions);
 
-                    for (Map.Entry<String, Object> entry : ((Map<String, Object>) gwtGroup.getProperties()).entrySet())
+                    for (Map.Entry<String, Object> entry : gwtGroup.getProperties().entrySet())
                         group.setProperty(entry.getKey(), entry.getValue());
                 }
             }

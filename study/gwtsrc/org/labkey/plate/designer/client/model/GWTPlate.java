@@ -31,27 +31,18 @@ public class GWTPlate implements IsSerializable
     private String _type;
     private int _rows;
     private int _cols;
-    /**
-     * @gwt.typeArgs <org.labkey.plate.designer.client.model.GWTWellGroup>
-     */
-    private List _groups = new ArrayList();
+    private List<GWTWellGroup> _groups = new ArrayList<GWTWellGroup>();
 
-    /**
-     * @gwt.typeArgs <java.lang.String>
-     */
-    private List _groupTypes;
-    /**
-     * @gwt.typeArgs <java.lang.String,java.lang.String>
-     */
-    private Map _plateProperties = new HashMap();
-    private transient Map _positionToGroups = null;
-    private transient Map _typeToGroups = null;
+    private List<String> _groupTypes;
+    private Map<String, Object> _plateProperties = new HashMap<String, Object>();
+    private transient Map<GWTPosition, Set<GWTWellGroup>> _positionToGroups = null;
+    private transient Map<String, List<GWTWellGroup>> _typeToGroups = null;
 
     public GWTPlate()
     {
     }
 
-    public GWTPlate(String name, String type, int rows, int cols, List groupTypes)
+    public GWTPlate(String name, String type, int rows, int cols, List<String> groupTypes)
     {
         _name = name;
         _type = type;
@@ -64,19 +55,15 @@ public class GWTPlate implements IsSerializable
     {
         if (_positionToGroups == null)
         {
-            _positionToGroups = new HashMap();
-            Iterator groupIterator = _groups.iterator();
-            while (groupIterator.hasNext())
+            _positionToGroups = new HashMap<GWTPosition, Set<GWTWellGroup>>();
+            for (GWTWellGroup group : _groups)
             {
-                GWTWellGroup group = (GWTWellGroup) groupIterator.next();
-                Iterator positionIterator = group.getPositions().iterator();
-                while (positionIterator.hasNext())
+                for (GWTPosition position : group.getPositions())
                 {
-                    GWTPosition position = (GWTPosition) positionIterator.next();
-                    Set groupList = (Set) _positionToGroups.get(position);
+                    Set<GWTWellGroup> groupList = _positionToGroups.get(position);
                     if (groupList == null)
                     {
-                        groupList = new HashSet();
+                        groupList = new HashSet<GWTWellGroup>();
                         _positionToGroups.put(position, groupList);
                     }
                     groupList.add(group);
@@ -90,15 +77,13 @@ public class GWTPlate implements IsSerializable
     {
         if (_typeToGroups == null)
         {
-            _typeToGroups = new HashMap();
-            Iterator groupIterator = _groups.iterator();
-            while (groupIterator.hasNext())
+            _typeToGroups = new HashMap<String, List<GWTWellGroup>>();
+            for (GWTWellGroup group : _groups)
             {
-                GWTWellGroup group = (GWTWellGroup) groupIterator.next();
-                List groupList = (List) _typeToGroups.get(group.getType());
+                List<GWTWellGroup> groupList = _typeToGroups.get(group.getType());
                 if (groupList == null)
                 {
-                    groupList = new ArrayList();
+                    groupList = new ArrayList<GWTWellGroup>();
                     _typeToGroups.put(group.getType(), groupList);
                 }
                 groupList.add(group);
@@ -126,7 +111,7 @@ public class GWTPlate implements IsSerializable
         return _cols;
     }
 
-    public List getGroups()
+    public List<GWTWellGroup> getGroups()
     {
         return _groups;
     }
@@ -151,17 +136,17 @@ public class GWTPlate implements IsSerializable
         _name = name;
     }
 
-    public void setGroups(List groups)
+    public void setGroups(List<GWTWellGroup> groups)
     {
         _groups = groups;
     }
 
-    public void setPlateProperties(Map plateProperties)
+    public void setPlateProperties(Map<String, Object> plateProperties)
     {
         _plateProperties = plateProperties;
     }
 
-    public Map getPlateProperties()
+    public Map<String, Object> getPlateProperties()
     {
         return _plateProperties;
     }

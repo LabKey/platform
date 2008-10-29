@@ -44,26 +44,11 @@ public class GWTStudyDefinition implements SourcesChangeEvents, IsSerializable
     private int revision;
     private GWTImmunizationSchedule immunizationSchedule = new GWTImmunizationSchedule();
     private GWTAssaySchedule assaySchedule = new GWTAssaySchedule();
-    /**
-     * @gwt.typeArgs <org.labkey.study.designer.client.model.GWTCohort>
-     */
-    private List/*<Cohort>*/ groups = new ArrayList();
-    /**
-     * @gwt.typeArgs <org.labkey.study.designer.client.model.GWTAssayDefinition>
-     */
-    private List/*<GWTAssayDefinition>*/ assays = new ArrayList();
-    /**
-     * @gwt.typeArgs <org.labkey.study.designer.client.model.GWTImmunogen>
-     */
-    private List/*<GWTImmunogen>*/ immunogens = new ArrayList();
-    /**
-     * @gwt.typeArgs <org.labkey.study.designer.client.model.GWTAdjuvant>
-     */
-    private List/*<GWTAdjuvant>*/ adjuvants = new ArrayList();
-    /**
-     * @gwt.typeArgs <org.labkey.study.designer.client.model.GWTSampleType>
-     */
-    private List /*GWTSampleType*/ sampleTypes = new ArrayList(Arrays.asList(GWTSampleType.DEFAULTS));
+    private List<GWTCohort> groups = new ArrayList<GWTCohort>();
+    private List<GWTAssayDefinition> assays = new ArrayList<GWTAssayDefinition>();
+    private List<GWTImmunogen> immunogens = new ArrayList<GWTImmunogen>();
+    private List<GWTAdjuvant> adjuvants = new ArrayList<GWTAdjuvant>();
+    private List<GWTSampleType> sampleTypes = new ArrayList<GWTSampleType>(Arrays.asList(GWTSampleType.DEFAULTS));
 
     private String description;
     public static String[] immunogenTypes = {"Adenovirus-5", "Adenovirus-6", "Canarypox", "MVA", "Fowlpox", "NYVAC", "Vaccinia", "VEE", "AAV-2", "DNA", "Subunit Protein", "Subunit Peptide"};
@@ -94,7 +79,7 @@ public class GWTStudyDefinition implements SourcesChangeEvents, IsSerializable
     {
         GWTStudyDefinition study = new GWTStudyDefinition();
         //Initialize Assays
-        List/*<GWTAssayDefinition>*/ assays = study.getAssays();
+        List<GWTAssayDefinition> assays = study.getAssays();
         String[] labs = new String[] {"Lab 1", "Lab 2"};
         assays.add(new GWTAssayDefinition("ELISPOT", new String[] {"Schmitz"}, new GWTSampleMeasure(2, GWTSampleMeasure.Unit.ML, GWTSampleType.SERUM)));
         assays.add(new GWTAssayDefinition("Neutralizing Antibodies Panel 1", new String[] {"Montefiori", "Seaman"}, new GWTSampleMeasure(2, GWTSampleMeasure.Unit.ML, GWTSampleType.SERUM)));
@@ -125,23 +110,23 @@ public class GWTStudyDefinition implements SourcesChangeEvents, IsSerializable
         GWTImmunization immunization1 = new GWTImmunization();
         immunization1.adjuvants.add(study.getAdjuvants().get(0));
         immunization1.immunogens.add(study.getImmunogens().get(0));
-        study.getImmunizationSchedule().setImmunization((GWTCohort) study.getGroups().get(0), tp1, immunization1);
+        study.getImmunizationSchedule().setImmunization(study.getGroups().get(0), tp1, immunization1);
 
         GWTImmunization immunization2 = new GWTImmunization();
         immunization2.adjuvants.add(study.getAdjuvants().get(0));
         immunization2.immunogens.add(study.getImmunogens().get(1));
-        study.getImmunizationSchedule().setImmunization((GWTCohort) study.getGroups().get(0), tp2, immunization2);
+        study.getImmunizationSchedule().setImmunization(study.getGroups().get(0), tp2, immunization2);
 
         GWTImmunization immunization3 = new GWTImmunization();
         immunization3.adjuvants.add(study.getAdjuvants().get(0));
-        study.getImmunizationSchedule().setImmunization((GWTCohort) study.getGroups().get(1), tp1, immunization3);
+        study.getImmunizationSchedule().setImmunization(study.getGroups().get(1), tp1, immunization3);
 
         GWTImmunization immunization4 = new GWTImmunization();
         immunization4.adjuvants.add(study.getAdjuvants().get(0));
-        study.getImmunizationSchedule().setImmunization((GWTCohort) study.getGroups().get(1), tp2, immunization4);
+        study.getImmunizationSchedule().setImmunization(study.getGroups().get(1), tp2, immunization4);
 
         for (int i = 0; i < study.getAssays().size(); i++)
-            study.getAssaySchedule().addAssay((GWTAssayDefinition) study.getAssays().get(i));
+            study.getAssaySchedule().addAssay(study.getAssays().get(i));
 
         return study;
     }
@@ -271,42 +256,42 @@ public class GWTStudyDefinition implements SourcesChangeEvents, IsSerializable
         this.assaySchedule = assaySchedule;
     }
 
-    public List getGroups()
+    public List<GWTCohort> getGroups()
     {
         return groups;
     }
 
-    public void setGroups(List groups)
+    public void setGroups(List<GWTCohort> groups)
     {
         this.groups = groups;
     }
 
-    public List getAssays()
+    public List<GWTAssayDefinition> getAssays()
     {
         return assays;
     }
 
-    public void setAssays(List assays)
+    public void setAssays(List<GWTAssayDefinition> assays)
     {
         this.assays = assays;
     }
 
-    public List getImmunogens()
+    public List<GWTImmunogen> getImmunogens()
     {
         return immunogens;
     }
 
-    public void setImmunogens(List immunogens)
+    public void setImmunogens(List<GWTImmunogen> immunogens)
     {
         this.immunogens = immunogens;
     }
 
-    public List getAdjuvants()
+    public List<GWTAdjuvant> getAdjuvants()
     {
         return adjuvants;
     }
 
-    public void setAdjuvants(List adjuvants)
+    public void setAdjuvants(List<GWTAdjuvant> adjuvants)
     {
         this.adjuvants = adjuvants;
     }
@@ -381,15 +366,15 @@ public class GWTStudyDefinition implements SourcesChangeEvents, IsSerializable
         return description;
     }
 
-    public List getSampleTypes()
+    public List<GWTSampleType> getSampleTypes()
     {
         if (null == sampleTypes)
-            sampleTypes = new ArrayList(Arrays.asList(GWTSampleType.DEFAULTS));
+            sampleTypes = new ArrayList<GWTSampleType>(Arrays.asList(GWTSampleType.DEFAULTS));
         
         return sampleTypes;
     }
 
-    public void setSampleTypes(List sampleTypes)
+    public void setSampleTypes(List<GWTSampleType> sampleTypes)
     {
         this.sampleTypes = sampleTypes;
     }

@@ -18,6 +18,7 @@ package org.labkey.study.chart.client;
 
 import org.labkey.api.gwt.client.model.GWTChart;
 import org.labkey.api.gwt.client.ui.ChartService;
+import org.labkey.study.chart.client.model.GWTPair;
 
 import java.util.List;
 import java.util.Map;
@@ -31,15 +32,11 @@ public interface StudyChartService extends ChartService
 {
     /**
      * Map of dataset names to ids
-     *
-     * @gwt.typeArgs <org.labkey.study.chart.client.model.GWTPair>
      */
-    public List getStudyDatasets();
+    public List<GWTPair> getStudyDatasets();
     
     /**
      * @return a list of errors
-     *
-     * @gwt.typeArgs <java.lang.String>
      */
-    public List saveCharts(GWTChart[] chart, Map properties);
+    public List<String> saveCharts(GWTChart[] chart, Map properties);
 }

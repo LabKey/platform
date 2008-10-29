@@ -28,18 +28,9 @@ import java.util.*;
  */
 public class GWTAssaySchedule implements Schedule, IsSerializable
 {
-    /**
-     * @gwt.typeArgs <org.labkey.study.designer.client.model.GWTTimepoint>
-     */
-    List/*<GWTTimepoint>*/ timepoints = new ArrayList/*<GWTTimepoint>*/();
-    /**
-     * @gwt.typeArgs <org.labkey.study.designer.client.model.GWTAssayDefinition>
-     */
-    List/*<GWTAssayDefinition>*/ assays = new ArrayList/*<GWTAssayDefinition>*/();
-    /**
-     * @gwt.typeArgs  <org.labkey.study.designer.client.model.GWTAssayDefinition,java.util.Map<org.labkey.study.designer.client.model.GWTTimepoint,org.labkey.study.designer.client.model.GWTAssayNote>>
-     */
-    Map/*<GWTAssayDefinition,Map<GWTTimepoint,GWTAssayNote>*/ assaySchedule = new HashMap/*<GWTAssayDefinition,Map<Timepoint,GWTAssayNote>*/ ();
+    List<GWTTimepoint> timepoints = new ArrayList<GWTTimepoint>();
+    List<GWTAssayDefinition> assays = new ArrayList<GWTAssayDefinition>();
+    Map<GWTAssayDefinition,Map<GWTTimepoint,GWTAssayNote>> assaySchedule = new HashMap<GWTAssayDefinition,Map<GWTTimepoint,GWTAssayNote>> ();
     private String description;
 
     public GWTAssaySchedule()
@@ -49,10 +40,10 @@ public class GWTAssaySchedule implements Schedule, IsSerializable
 
     public void setAssayPerformed(GWTAssayDefinition ad, GWTTimepoint tp, boolean perform)
     {
-        Map/*<GWTTimepoint, GWTAssayTime>*/ tpatMap = (Map/*<GWTTimepoint, GWTAssayTime>*/)assaySchedule.get(ad);
+        Map<GWTTimepoint, GWTAssayNote> tpatMap = assaySchedule.get(ad);
         if (null == tpatMap)
         {
-            tpatMap = new HashMap/*<GWTTimepoint,GWTAssayTime>*/();
+            tpatMap = new HashMap<GWTTimepoint,GWTAssayNote>();
             assaySchedule.put(ad, tpatMap);
         }
         if (perform)
@@ -69,10 +60,10 @@ public class GWTAssaySchedule implements Schedule, IsSerializable
             Collections.sort(timepoints, new GWTTimepoint.TimepointComparator());
         }
         
-        Map/*<GWTTimepoint, GWTAssayTime>*/ tpatMap = (Map/*<GWTTimepoint, GWTAssayTime>*/)assaySchedule.get(ad);
+        Map<GWTTimepoint, GWTAssayNote> tpatMap = assaySchedule.get(ad);
         if (null == tpatMap)
         {
-            tpatMap = new HashMap/*<GWTTimepoint,GWTAssayTime>*/();
+            tpatMap = new HashMap<GWTTimepoint, GWTAssayNote>();
             assaySchedule.put(ad, tpatMap);
         }
         tpatMap.put(tp, gwtAssayNote);
@@ -86,7 +77,7 @@ public class GWTAssaySchedule implements Schedule, IsSerializable
 
     public GWTAssayNote getAssayPerformed(GWTAssayDefinition ad, GWTTimepoint tp)
     {
-        Map/*<GWTTimepoint, GWTAssayTime>*/ tpatMap = (Map/*<GWTTimepoint, GWTAssayTime>*/)assaySchedule.get(ad);
+        Map<GWTTimepoint, GWTAssayNote> tpatMap = assaySchedule.get(ad);
         if (null == tpatMap)
             return null;
 
@@ -111,14 +102,13 @@ public class GWTAssaySchedule implements Schedule, IsSerializable
 
     public GWTAssayDefinition getAssay(int i)
     {
-        return (GWTAssayDefinition) assays.get(i);
+        return assays.get(i);
     }
 
     public GWTAssayDefinition findAssayByName(String name)
     {
-        for (int i = 0; i < assays.size(); i++)
+        for (GWTAssayDefinition assayDefinition : assays)
         {
-            GWTAssayDefinition assayDefinition = (GWTAssayDefinition) assays.get(i);
             if (assayDefinition.getName().equalsIgnoreCase(name))
                 return assayDefinition;
         }
@@ -137,15 +127,15 @@ public class GWTAssaySchedule implements Schedule, IsSerializable
 
     public void removeTimepoint(int index)
     {
-        GWTTimepoint tp = (GWTTimepoint) timepoints.get(index);
+        GWTTimepoint tp = timepoints.get(index);
         removeTimepoint(tp);
     }
 
     public void removeTimepoint(GWTTimepoint tp)
     {
-        for (Iterator iterator = assaySchedule.keySet().iterator(); iterator.hasNext();)
+        for (GWTAssayDefinition assayDef : assaySchedule.keySet())
         {
-            Map/*<GWTTimepoint, GWTAssayTime>*/ tpatMap = (Map/*<GWTTimepoint, GWTAssayTime>*/) assaySchedule.get(iterator.next());
+            Map<GWTTimepoint, GWTAssayNote> tpatMap = assaySchedule.get(assayDef);
             if (null != tpatMap)
                 tpatMap.remove(tp);
         }
@@ -159,7 +149,7 @@ public class GWTAssaySchedule implements Schedule, IsSerializable
 
     public GWTTimepoint getTimepoint(int i)
     {
-        return (GWTTimepoint) timepoints.get(i);
+        return timepoints.get(i);
     }
 
 //    public Element toElement(Document doc)

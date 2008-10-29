@@ -182,9 +182,7 @@ public class PropertyController extends SpringActionController
         try
         {
             response.putBean(domain, "domainId", "name", "domainURI", "description");
-            List<GWTPropertyDescriptor> props = (List<GWTPropertyDescriptor>)domain.getPropertyDescriptors();
-            response.putBeanList("fields", props);
-
+            response.putBeanList("fields", domain.getPropertyDescriptors());
         }
         catch (Exception e)
         {
@@ -217,15 +215,7 @@ public class PropertyController extends SpringActionController
             props.add(prop);
         }
 
-        Set<GWTPropertyDescriptor> requiredProps = new HashSet<GWTPropertyDescriptor>();
-        for (GWTPropertyDescriptor prop : props)
-        {
-            if (prop.isRequired())
-                requiredProps.add(prop);
-        }
-
         domain.setPropertyDescriptors(props);
-        domain.setRequiredPropertyDescriptors(requiredProps);
 
         return domain;
     }

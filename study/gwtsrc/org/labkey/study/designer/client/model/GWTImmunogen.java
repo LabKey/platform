@@ -34,10 +34,7 @@ public class GWTImmunogen extends VaccineComponent implements IsSerializable
 {
     private String type;
     private String admin;
-    /**
-     * @gwt.typeArgs <org.labkey.study.designer.client.model.GWTAntigen>
-     */
-    private List/*<GWTAntigen>*/ antigens = new ArrayList();
+    private List<GWTAntigen> antigens = new ArrayList<GWTAntigen>();
     
     public GWTImmunogen()
     {
@@ -66,9 +63,8 @@ public class GWTImmunogen extends VaccineComponent implements IsSerializable
     {
         String sep = "";
         StringBuffer sb = new StringBuffer();
-        for (int i = 0; i < antigens.size(); i++)
+        for (GWTAntigen antigen : antigens)
         {
-            GWTAntigen antigen = (GWTAntigen) antigens.get(i);
             sb.append(sep);
             sb.append(antigen.toString());
             sep = ",";
@@ -143,12 +139,12 @@ public class GWTImmunogen extends VaccineComponent implements IsSerializable
         this.admin = admin;
     }
 
-    public List getAntigens()
+    public List<GWTAntigen> getAntigens()
     {
         return antigens;
     }
 
-    public void setAntigens(List antigens)
+    public void setAntigens(List<GWTAntigen> antigens)
     {
         this.antigens = antigens;
     }

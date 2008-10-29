@@ -30,15 +30,11 @@ import java.util.Map;
  */
 public interface PropertyService extends RemoteService //, PropertiesEditorService
 {
-    /** @gwt.typeArgs <java.lang.String> */
-    public List updateDomainDescriptor(GWTDomain orig, GWTDomain dd);
+    public List<String> updateDomainDescriptor(GWTDomain orig, GWTDomain dd);
     public GWTDomain getDomainDescriptor(String typeURI);
 
     // PropertiesEditor.LookupService
-    /** @gwt.typeArgs <java.lang.String> */
-    public List getContainers();
-    /** @gwt.typeArgs <java.lang.String> */
-    public List getSchemas(String containerId);
-    /** @gwt.typeArgs <java.lang.String, java.lang.String> */
-    public Map getTablesForLookup(String containerId, String schemaName);
+    public List<String> getContainers();
+    public List<String> getSchemas(String containerId);
+    public Map<String, String> getTablesForLookup(String containerId, String schemaName);
 }

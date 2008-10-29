@@ -3,9 +3,9 @@
   <component name="FacetManager">
     <facet type="gwt" name="GWT">
       <configuration>
-        <setting name="gwtSdkUrl" value="file://$GWT_HOME$" />
+        <setting name="gwtSdkUrl" value="file://$GWT_15_HOME$" />
         <setting name="gwtScriptOutputStyle" value="DETAILED" />
-        <setting name="runGwtCompilerOnMake" value="true" />
+        <setting name="runGwtCompilerOnMake" value="false" />
         <setting name="compilerMaxHeapSize" value="128" />
         <packaging>
           <module name="org.labkey.study.designer.Designer" path="/org.labkey.study.designer.Designer" />

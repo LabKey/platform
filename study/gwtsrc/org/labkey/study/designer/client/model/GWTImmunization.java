@@ -29,14 +29,8 @@ import java.util.List;import java.util.ArrayList;
 public class GWTImmunization implements IsSerializable
 {
     private int hashCode = 0;
-    /**
-     * @gwt.typeArgs <org.labkey.study.designer.client.model.GWTImmunogen>
-     */
-    public List/*<GWTImmunogen>*/ immunogens = new ArrayList();
-    /**
-     * @gwt.typeArgs <org.labkey.study.designer.client.model.GWTAdjuvant>
-     */
-    public List/*<GWTAdjuvant>*/ adjuvants = new ArrayList();
+    public List<GWTImmunogen> immunogens = new ArrayList<GWTImmunogen>();
+    public List<GWTAdjuvant> adjuvants = new ArrayList<GWTAdjuvant>();
 
     public GWTImmunization()
     {
@@ -64,17 +58,19 @@ public class GWTImmunization implements IsSerializable
     {
         StringBuffer sb = new StringBuffer();
         String sep = "";
-        for (int i = 0; i < immunogens.size(); i++)
+        for (GWTImmunogen immunogen : immunogens)
         {
             sb.append(sep);
-            sb.append(((VaccineComponent)immunogens.get(i)).getName());
+            sb.append(immunogen.getName());
             sep = "|";
         }
-        for (int i = 0; i < adjuvants.size(); i++)
+        int i = 0;
+        while (i < adjuvants.size())
         {
             sb.append(sep);
-            sb.append(((VaccineComponent)adjuvants.get(i)).getName());
+            sb.append(adjuvants.get(i).getName());
             sep = "|";
+            i++;
         }
 
         return sb.length() > 0 ? sb.toString() : "(none)";

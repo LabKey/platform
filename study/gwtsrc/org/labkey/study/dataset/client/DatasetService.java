@@ -39,31 +39,27 @@ public interface DatasetService extends RemoteService //, PropertiesEditorServic
      * @param dd New Domain
      * @return List of errors
      * @throws Exception
-     * @gwt.typeArgs <java.lang.String>
      */
-    public List updateDatasetDefinition(GWTDataset ds, GWTDomain orig, GWTDomain dd);
-    public List updateDatasetDefinition(GWTDataset ds, GWTDomain orig, String schema);
+    public List<String> updateDatasetDefinition(GWTDataset ds, GWTDomain orig, GWTDomain dd);
+    public List<String> updateDatasetDefinition(GWTDataset ds, GWTDomain orig, String schema);
     public GWTDomain getDomainDescriptor(String typeURI, String domainContainerId);
     public GWTDomain getDomainDescriptor(String typeURI);
 
     // PropertiesEditor.LookupService
     /**
      * @return list of container paths
-     * @gwt.typeArgs <java.lang.String>
      */
-    public List getContainers();
+    public List<String> getContainers();
     /**
      * @return list of schema names
-     * @gwt.typeArgs <java.lang.String>
      */
-    public List getSchemas(String containerId);
+    public List<String> getSchemas(String containerId);
 
     /**
      *
      * @param containerId container
      * @param schemaName name of schema for query module
      * @return map table name to pk column name
-     * @gwt.typeArgs <java.lang.String,java.lang.String>
      */
-    public Map getTablesForLookup(String containerId, String schemaName);
+    public Map<String, String> getTablesForLookup(String containerId, String schemaName);
 }

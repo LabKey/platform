@@ -44,15 +44,9 @@ public class GWTDataset implements IsSerializable
     private BooleanProperty _showByDefault = new BooleanProperty();
     private StringProperty _description = new StringProperty();
 
-    /**
-     * @gwt.typeArgs <java.lang.String, java.lang.String>
-     */
-    private Map _cohortMap;
+    private Map<String, String> _cohortMap;
 
-    /**
-     * @gwt.typeArgs <java.lang.String, java.lang.String>
-     */
-    private Map _visitDateMap;
+    private Map<String, String> _visitDateMap;
 
 
     public GWTDataset()
@@ -179,22 +173,22 @@ public class GWTDataset implements IsSerializable
         _description.set(description);
     }
 
-    public Map getCohortMap()
+    public Map<String, String> getCohortMap()
     {
         return _cohortMap;
     }
 
-    public void setCohortMap(Map cohortMap)
+    public void setCohortMap(Map<String, String> cohortMap)
     {
         _cohortMap = cohortMap;
     }
 
-    public Map getVisitDateMap()
+    public Map<String, String> getVisitDateMap()
     {
         return _visitDateMap;
     }
 
-    public void setVisitDateMap(Map visitDateMap)
+    public void setVisitDateMap(Map<String, String> visitDateMap)
     {
         _visitDateMap = visitDateMap;
     }
