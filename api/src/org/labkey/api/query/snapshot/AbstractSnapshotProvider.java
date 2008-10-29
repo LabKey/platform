@@ -112,7 +112,7 @@ public abstract class AbstractSnapshotProvider implements QuerySnapshotService.I
         return null;
     }
 
-    protected DomainProperty addAsDomainProperty(Domain domain, ColumnInfo column)
+    public static DomainProperty addAsDomainProperty(Domain domain, ColumnInfo column)
     {
         PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(column.getPropertyURI(), domain.getContainer());
 
@@ -144,7 +144,7 @@ public abstract class AbstractSnapshotProvider implements QuerySnapshotService.I
         return prop;
     }
 
-    protected String getPropertyURI(Domain domain, ColumnInfo column)
+    public static String getPropertyURI(Domain domain, ColumnInfo column)
     {
         return domain.getTypeURI() + "." + column.getName();
     }
