@@ -39,6 +39,7 @@ import org.labkey.data.xml.TablesDocument;
 import org.labkey.query.CustomViewImpl;
 import org.labkey.query.QueryDefinitionImpl;
 import org.labkey.query.TableXML;
+import org.labkey.query.TableQueryDefinition;
 import org.labkey.query.data.Query;
 import org.labkey.query.data.DbUserSchemaUpdateService;
 import org.labkey.query.design.DgMessage;
@@ -2347,6 +2348,93 @@ public class QueryControllerSpring extends SpringActionController
             response.put("queries", qinfos);
 
             return response;
+        }
+    }
+
+    public static class GetQueryViewsForm
+    {
+        private String _schemaName;
+        private String _queryName;
+
+        public String getSchemaName()
+        {
+            return _schemaName;
+        }
+
+        public void setSchemaName(String schemaName)
+        {
+            _schemaName = schemaName;
+        }
+
+        public String getQueryName()
+        {
+            return _queryName;
+        }
+
+        public void setQueryName(String queryName)
+        {
+            _queryName = queryName;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class GetQueryViewsAction extends ApiAction<GetQueryViewsForm>
+    {
+        public ApiResponse execute(GetQueryViewsForm form, BindException errors) throws Exception
+        {
+            if(null == StringUtils.trimToNull(form.getSchemaName()))
+                throw new IllegalArgumentException("You must pass a value for the 'schemaName' parameter!");
+            if(null == StringUtils.trimToNull(form.getQueryName()))
+                throw new IllegalArgumentException("You must pass a value for the 'queryName' parameter!");
+
+            QuerySchema qschema = DefaultSchema.get(getViewContext().getUser(), getViewContext().getContainer()).getSchema(form.getSchemaName());
+            if(null == qschema)
+                throw new NotFoundException("The schema name '" + form.getSchemaName()
+                        + "' was not found within the folder '" + getViewContext().getContainer().getPath());
+
+            if(!(qschema instanceof UserSchema))
+                throw new NotFoundException("The schema name '" + form.getSchemaName() + "'  cannot be accessed by these APIs!");
+
+            TableInfo table = qschema.getTable(form.getQueryName(), form.getQueryName());
+            if(null == table)
+                throw new NotFoundException("The query '" + form.getQueryName() + "' was not found within the '"
+                        + form.getSchemaName() + "' schema in the container '"
+                        + getViewContext().getContainer().getPath() + "'!");
+
+            TableQueryDefinition querydef = new TableQueryDefinition((UserSchema)qschema, form.getQueryName(), table);
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("schemaName", form.getSchemaName());
+            response.put("queryName", form.getQueryName());
+            
+            Map<String,CustomView> views = querydef.getCustomViews(getViewContext().getUser(), getViewContext().getRequest());
+            if(null == views)
+                views = Collections.emptyMap();
+
+            List<Map<String,Object>> viewInfos = new ArrayList<Map<String,Object>>(views.size());
+            for(CustomView view : views.values())
+                viewInfos.add(getViewInfo(view));
+
+            response.put("views", viewInfos);
+
+            return response;
+        }
+
+        protected Map<String,Object> getViewInfo(CustomView view)
+        {
+            Map<String,Object> viewInfo = new HashMap<String,Object>();
+            viewInfo.put("name", view.getName());
+            viewInfo.put("owner", view.getOwner().getDisplayName(getViewContext()));
+            List<Map<String,Object>> colInfos = new ArrayList<Map<String,Object>>();
+            for(FieldKey key : view.getColumns())
+            {
+                Map<String,Object> colInfo = new HashMap<String,Object>();
+                colInfo.put("name", key.getName());
+                colInfo.put("key", key.toString());
+                colInfos.add(colInfo);
+            }
+            viewInfo.put("columns", colInfos);
+            return viewInfo;
         }
     }
 }
