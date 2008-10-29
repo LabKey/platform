@@ -546,6 +546,56 @@ LABKEY.Query = new function()
             });
         },
 
+        /**
+         * Returns the set of views available for a given query in a given schema.
+         * @param config An object that contains the following configuration parameters
+         * @param {String} config.schemaName The name of the schema.
+         * @param {String config.queryName the name of the query.
+         * @param {function} config.successCallback The function to call when the function finishes successfully.
+         * This function will be called with the following parameters:
+         * <ul>
+         * <li><b>viewsInfo:</b> An object with the following properties
+         *  <ul>
+         *      <li>schemaName: the name of the requested schema</li>
+         *      <li>queryName: the name of the requested query</li>
+         *      <li>views: an array of objects, each of which has the following properties
+         *          <ul>
+         *              <li>name: the name of the view</li>
+         *              <li>columns: this will contain an array of objects with the following properties
+         *                  <ul>
+         *                      <li>name: the name of the column</li>
+         *                      <li>key: the field key for the column (may include join column names, e.g. 'State/Population')</li>
+         *                  </ul>
+          *             </li>
+         *          </ul>
+         *      </li>
+         *  </ul>
+         * </li>
+         * </ul>
+         * @param {function} [config.errorCallback] The function to call if this function encounters an error.
+         * This function will be called with the following parameters:
+         * <ul>
+         * <li><b>errorInfo:</b> An object with a property called "exception," which contains the error message.</li>
+         * </ul>
+         * @param {String} [config.containerPath] A container path in which to execute this command. If not supplied,
+         * the current container will be used.
+         */
+        getQueryViews : function(config)
+        {
+            var params = {};
+            if(config.schemaName)
+                params.schemaName = config.schemaName;
+            if(config.queryName)
+                params.queryName = config.queryName;
+            Ext.Ajax.request({
+                url: LABKEY.ActionURL.buildURL('query', 'getQueryViews', config.containerPath),
+                method : 'GET',
+                success: getSuccessCallbackWrapper(config.successCallback),
+                failure: getErrorCallbackWrapper(config.errorCallback),
+                params: params
+            });
+        },
+
         URL_COLUMN_PREFIX: "_labkeyurl_"
     }
 };
