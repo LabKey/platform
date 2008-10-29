@@ -187,7 +187,7 @@ public class PropertiesEditor implements LookupListener
             GWTPropertyDescriptor p = (GWTPropertyDescriptor)l.get(i);
             _rows.add(new Row(p));
             _setReadOnly(i, !p.isEditable());
-            if (domain.getRequiredPropertyDescriptors().contains(p.getName()))
+            if (domain.getMandatoryPropertyDescriptorNames().contains(p.getName()))
                 _setLocked(i, true);
         }
 

@@ -43,30 +43,26 @@ public interface AssayService extends RemoteService
      * @param update Edited domain
      * @return list of errors
      * @throws Exception
-     * @gwt.typeArgs <java.lang.String>
      */
-    List updateDomainDescriptor(GWTDomain orig, GWTDomain update) throws AssayException;
+    List<String> updateDomainDescriptor(GWTDomain orig, GWTDomain update) throws AssayException;
     
     // PropertiesEditor.LookupService
     /**
      *
      * @return list of container paths
-     * @gwt.typeArgs <java.lang.String>
      */
-    List getContainers();
+    List<String> getContainers();
 
     /**
      * @return list of schema names
-     * @gwt.typeArgs <java.lang.String>
      */
-    List getSchemas(String containerId);
+    List<String> getSchemas(String containerId);
 
     /**
      *
      * @param containerId container
      * @param schemaName name of schema for query module
      * @return map table name to pk column name
-     * @gwt.typeArgs <java.lang.String,java.lang.String>
      */
-    Map getTablesForLookup(String containerId, String schemaName);
+    Map<String, String> getTablesForLookup(String containerId, String schemaName);
 }

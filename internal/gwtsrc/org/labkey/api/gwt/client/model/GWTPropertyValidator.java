@@ -40,10 +40,7 @@ public class GWTPropertyValidator implements Serializable
     private String _errorMessage;
     private boolean _isNew;
 
-    /**
-     * @gwt.typeArgs <java.lang.String, java.lang.String>
-     */
-    private Map _properties = new HashMap();
+    private Map<String, String> _properties = new HashMap<String, String>();
 
     public GWTPropertyValidator()
     {
@@ -132,12 +129,12 @@ public class GWTPropertyValidator implements Serializable
         _errorMessage = errorMessage;
     }
 
-    public Map getProperties()
+    public Map<String, String> getProperties()
     {
         return _properties;
     }
 
-    public void setProperties(Map properties)
+    public void setProperties(Map<String, String> properties)
     {
         _properties = properties;
     }
@@ -152,7 +149,7 @@ public class GWTPropertyValidator implements Serializable
         _isNew = aNew;
     }
 
-    public void validate(List errors)
+    public void validate(List<String> errors)
     {
         if (StringUtils.trimToNull(getName()) == null)
             errors.add("Validator Name cannot be blank");

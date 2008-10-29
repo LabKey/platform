@@ -26,8 +26,7 @@ import java.util.ArrayList;
  */
 public class GWTComparisonGroup implements Serializable
 {
-    /** @gwt.typeArgs <org.labkey.api.gwt.client.model.GWTComparisonMember> */
-    private List _members = new ArrayList();
+    private List<GWTComparisonMember> _members = new ArrayList<GWTComparisonMember>();
     private String _name;
     private String _url;
     private int _count = 0;
@@ -69,7 +68,7 @@ public class GWTComparisonGroup implements Serializable
         if (_count == -1)
         {
             _count = 0;
-            int totalCount = ((GWTComparisonMember)_members.get(0)).getTotalCount();
+            int totalCount = _members.get(0).getTotalCount();
             for (int i = 0; i < totalCount; i++)
             {
                 if (contains(i))
@@ -83,9 +82,9 @@ public class GWTComparisonGroup implements Serializable
 
     public boolean contains(int index)
     {
-        for (int i = 0; i < _members.size(); i++)
+        for (GWTComparisonMember _member : _members)
         {
-            if (((GWTComparisonMember)_members.get(i)).contains(index))
+            if (_member.contains(index))
             {
                 return true;
             }

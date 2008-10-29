@@ -3,9 +3,9 @@
   <component name="FacetManager">
     <facet type="gwt" name="GWT">
       <configuration>
-        <setting name="gwtSdkUrl" value="file://$GWT_HOME$" />
+        <setting name="gwtSdkUrl" value="file://$GWT_15_HOME$" />
         <setting name="gwtScriptOutputStyle" value="DETAILED" />
-        <setting name="runGwtCompilerOnMake" value="true" />
+        <setting name="runGwtCompilerOnMake" value="false" />
         <setting name="compilerMaxHeapSize" value="128" />
         <packaging>
           <module name="org.labkey.api.gwt.Internal" path="/org.labkey.api.gwt.Internal" />
@@ -13,7 +13,7 @@
       </configuration>
     </facet>
   </component>
-  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_4" inherit-compiler-output="false">
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_5" inherit-compiler-output="false">
     <output url="file://$MODULE_DIR$/../../intellijBuild/internalGWT" />
     <exclude-output />
     <content url="file://$MODULE_DIR$/gwtsrc">

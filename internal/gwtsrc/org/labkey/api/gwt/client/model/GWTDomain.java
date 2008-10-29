@@ -34,20 +34,11 @@ public class GWTDomain implements IsSerializable
     private String description;
     private boolean allowFileLinkProperties;
     private boolean allowAttachmentProperties;
-    /**
-     * @gwt.typeArgs <org.labkey.api.gwt.client.model.GWTPropertyDescriptor>
-     */
-    private List propertyDescriptors = new ArrayList();
+    private List<GWTPropertyDescriptor> propertyDescriptors = new ArrayList<GWTPropertyDescriptor>();
 
-    /**
-     * @gwt.typeArgs <java.lang.String>
-     */
-    private Set requiredPropertyDescriptors = new HashSet();
+    private Set<String> mandatoryPropertyDescriptorNames = new HashSet<String>();
 
-    /**
-     * @gwt.typeArgs <java.lang.String>
-     */
-    private Set reservedPropertyNames = new HashSet();
+    private Set<String> reservedPropertyNames = new HashSet<String>();
 
     public GWTDomain()
     {
@@ -67,16 +58,14 @@ public class GWTDomain implements IsSerializable
         for (int i=0 ; i<src.getPropertyDescriptors().size() ; i++)
             this.propertyDescriptors.add(new GWTPropertyDescriptor((GWTPropertyDescriptor)src.getPropertyDescriptors().get(i)));
 
-        if (src.getRequiredPropertyDescriptors() != null)
+        if (src.getMandatoryPropertyDescriptorNames() != null)
         {
-            for (Iterator it = src.getRequiredPropertyDescriptors().iterator() ; it.hasNext() ; )
-                this.requiredPropertyDescriptors.add(it.next());
+            this.mandatoryPropertyDescriptorNames.addAll(src.getMandatoryPropertyDescriptorNames());
         }
 
         if (src.getReservedPropertyNames() != null)
         {
-            for (Iterator it = src.getReservedPropertyNames().iterator() ; it.hasNext() ; )
-                this.getReservedPropertyNames().add(it.next());
+            this.getReservedPropertyNames().addAll(src.getReservedPropertyNames());
         }
     }
 
@@ -121,12 +110,12 @@ public class GWTDomain implements IsSerializable
         this.description = description;
     }
 
-    public List getPropertyDescriptors()
+    public List<GWTPropertyDescriptor> getPropertyDescriptors()
     {
         return propertyDescriptors;
     }
 
-    public void setPropertyDescriptors(List list)
+    public void setPropertyDescriptors(List<GWTPropertyDescriptor> list)
     {
         propertyDescriptors = list;
     }
@@ -151,22 +140,28 @@ public class GWTDomain implements IsSerializable
         this.allowAttachmentProperties = allowAttachmentProperties;
     }
 
-    public Set getRequiredPropertyDescriptors()
+    /**
+     * @return names of property descriptors that must be present in this domain. Does not indicate that they must be non-nullable.
+     */
+    public Set<String> getMandatoryPropertyDescriptorNames()
     {
-        return requiredPropertyDescriptors;
+        return mandatoryPropertyDescriptorNames;
     }
 
-    public void setRequiredPropertyDescriptors(Set requiredPropertyDescriptors)
+    /**
+     * @param mandatoryPropertyDescriptors names of property descriptors that must be present in this domain.  Does not indicate that they must be non-nullable.
+     */
+    public void setMandatoryPropertyDescriptorNames(Set<String> mandatoryPropertyDescriptors)
     {
-        this.requiredPropertyDescriptors = requiredPropertyDescriptors;
+        this.mandatoryPropertyDescriptorNames = mandatoryPropertyDescriptors;
     }
 
-    public Set getReservedPropertyNames()
+    public Set<String> getReservedPropertyNames()
     {
         return reservedPropertyNames;
     }
 
-    public void setReservedPropertyNames(Set reservedPropertyNames)
+    public void setReservedPropertyNames(Set<String> reservedPropertyNames)
     {
         this.reservedPropertyNames = reservedPropertyNames;
     }

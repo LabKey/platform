@@ -817,7 +817,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     private Map<String, Set<String>> _requiredDomainProperties;
-    public boolean isRequiredDomainProperty(Domain domain, String propertyName)
+    public boolean isMandatoryDomainProperty(Domain domain, String propertyName)
     {
         if (_requiredDomainProperties == null)
             _requiredDomainProperties = getRequiredDomainProperties();

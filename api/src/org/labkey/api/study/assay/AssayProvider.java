@@ -107,7 +107,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     boolean isFileLinkPropertyAllowed(ExpProtocol protocol, Domain domain);
 
-    boolean isRequiredDomainProperty(Domain domain, String propertyName);
+    boolean isMandatoryDomainProperty(Domain domain, String propertyName);
 
     boolean allowUpload(User user, Container container, ExpProtocol protocol);
 

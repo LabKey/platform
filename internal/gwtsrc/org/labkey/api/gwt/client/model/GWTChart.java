@@ -49,10 +49,8 @@ public class GWTChart implements IsSerializable
     private boolean _isVerticalOrientation;
     /**
      * Map of column captions to aliases
-     *
-     * @gwt.typeArgs <java.lang.String, java.lang.String>
      */
-    private Map _properties = new HashMap();
+    private Map<String, String> _properties = new HashMap<String, String>();
 
     public GWTChart()
     {
@@ -249,10 +247,7 @@ public class GWTChart implements IsSerializable
         _isVerticalOrientation = verticalOrientation;
     }
 
-    /**
-     * @gwt.typeArgs errors <java.lang.String>
-     */
-    public void validate(List errors)
+    public void validate(List<String> errors)
     {
         if (_columnXName == null || _columnXName.length() == 0)
             errors.add("A measurement for the horizontal axis must be selected");

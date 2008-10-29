@@ -31,15 +31,9 @@ public class GWTChartRenderer implements IsSerializable
     private String _type;
     private String _name;
 
-    /**
-     * @gwt.typeArgs <org.labkey.api.gwt.client.model.GWTChartColumn>
-     */
-    private List _columnX = new ArrayList();
+    private List<GWTChartColumn> _columnX = new ArrayList<GWTChartColumn>();
 
-    /**
-     * @gwt.typeArgs <org.labkey.api.gwt.client.model.GWTChartColumn>
-     */
-    private List _columnY = new ArrayList();
+    private List<GWTChartColumn> _columnY = new ArrayList<GWTChartColumn>();
 
     public String getType()
     {
@@ -61,22 +55,22 @@ public class GWTChartRenderer implements IsSerializable
         _name = name;
     }
 
-    public List getColumnX()
+    public List<GWTChartColumn> getColumnX()
     {
         return _columnX;
     }
 
-    public void setColumnX(List columnX)
+    public void setColumnX(List<GWTChartColumn> columnX)
     {
         _columnX = columnX;
     }
 
-    public List getColumnY()
+    public List<GWTChartColumn> getColumnY()
     {
         return _columnY;
     }
 
-    public void setColumnY(List columnY)
+    public void setColumnY(List<GWTChartColumn> columnY)
     {
         _columnY = columnY;
     }

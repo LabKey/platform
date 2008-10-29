@@ -1712,7 +1712,14 @@ public class OntologyManager
                      "   INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (DD.DomainId = PDM.DomainId) " +
                      "  WHERE DD.DomainURI = ?  AND DD.Project IN (?,?) ORDER BY PD.PropertyId ASC ";
 
-            PropertyDescriptor[] pdArray = Table.executeQuery(getExpSchema(), sql, new Object[]{typeURI, c.getProject().getId(), _sharedContainer.getProject().getId()}, PropertyDescriptor.class);
+            Object[] params = new Object[]
+            {
+                typeURI,
+                // If we're in the root, just double-up the shared project's id
+                c.getProject() == null ? _sharedContainer.getProject().getId() : c.getProject().getId(),
+                _sharedContainer.getProject().getId()
+            };
+            PropertyDescriptor[] pdArray = Table.executeQuery(getExpSchema(), sql, params, PropertyDescriptor.class);
             //NOTE: cached descriptors may have differing values of isRequired() as that is a per-domain setting
             //Descriptors returned from this method come direct from DB and have correct values.
             for (PropertyDescriptor pd : pdArray) {

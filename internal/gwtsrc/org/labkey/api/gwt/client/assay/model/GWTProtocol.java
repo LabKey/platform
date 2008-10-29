@@ -21,6 +21,8 @@ import com.google.gwt.user.client.rpc.IsSerializable;
 import java.util.List;
 import java.util.Map;
 
+import org.labkey.api.gwt.client.model.GWTDomain;
+
 /**
  * User: brittp
  * Date: Jun 20, 2007
@@ -33,20 +35,11 @@ public class GWTProtocol implements IsSerializable
     private String _description;
     private String _providerName;
 
-    /**
-     * @gwt.typeArgs <java.lang.String, java.lang.String>
-     */
-    private Map _protocolParameters;
+    private Map<String, String> _protocolParameters;
 
-    /**
-     * @gwt.typeArgs <org.labkey.api.gwt.client.model.GWTDomain>
-     */
-    private List _domains;
+    private List<GWTDomain> _domains;
 
-    /**
-     * @gwt.typeArgs <java.lang.String>
-     */
-    private List _availablePlateTemplates;
+    private List<String> _availablePlateTemplates;
 
     private String _selectedPlateTemplate;
 
@@ -65,12 +58,12 @@ public class GWTProtocol implements IsSerializable
     }
 
 
-    public List getDomains()
+    public List<GWTDomain> getDomains()
     {
         return _domains;
     }
 
-    public void setDomains(List domains)
+    public void setDomains(List<GWTDomain> domains)
     {
         _domains = domains;
     }
@@ -95,12 +88,12 @@ public class GWTProtocol implements IsSerializable
         _description = description;
     }
 
-    public Map getProtocolParameters()
+    public Map<String, String> getProtocolParameters()
     {
         return _protocolParameters;
     }
 
-    public void setProtocolParameters(Map protocolParameters)
+    public void setProtocolParameters(Map<String, String> protocolParameters)
     {
         _protocolParameters = protocolParameters;
     }
@@ -115,12 +108,12 @@ public class GWTProtocol implements IsSerializable
         _providerName = providerName;
     }
 
-    public List getAvailablePlateTemplates()
+    public List<String> getAvailablePlateTemplates()
     {
         return _availablePlateTemplates;
     }
 
-    public void setAvailablePlateTemplates(List availablePlateTemplates)
+    public void setAvailablePlateTemplates(List<String> availablePlateTemplates)
     {
         _availablePlateTemplates = availablePlateTemplates;
     }
