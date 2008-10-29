@@ -34,6 +34,8 @@ import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
@@ -68,6 +70,7 @@ import org.labkey.study.SampleManager;
 import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
+import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.reports.ReportsController;
@@ -4411,13 +4414,46 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    public static class StudySnapshotForm extends QuerySnapshotForm
+    {
+        private int _snapshotDatasetId;
+        private String _action;
+
+        public static final String EDIT_DATASET = "editDataset";
+        public static final String CREATE_SNAPSHOT = "createSnapshot";
+        public static final String CANCEL = "cancel";
+
+        public int getSnapshotDatasetId()
+        {
+            return _snapshotDatasetId;
+        }
+
+        public void setSnapshotDatasetId(int snapshotDatasetId)
+        {
+            _snapshotDatasetId = snapshotDatasetId;
+        }
+
+        public String getAction()
+        {
+            return _action;
+        }
+
+        public void setAction(String action)
+        {
+            _action = action;
+        }
+    }
+
     @RequiresPermission(ACL.PERM_ADMIN)
-    public class CreateSnapshotAction extends FormViewAction<QuerySnapshotForm>
+    public class CreateSnapshotAction extends FormViewAction<StudySnapshotForm>
     {
         ActionURL _successURL;
 
-        public void validateCommand(QuerySnapshotForm form, Errors errors)
+        public void validateCommand(StudySnapshotForm form, Errors errors)
         {
+            if (StudySnapshotForm.CANCEL.equals(form.getAction()))
+                return;
+            
             String name = StringUtils.trimToNull(form.getSnapshotName());
 
             if (name != null)
@@ -4430,29 +4466,25 @@ public class StudyController extends BaseStudyController
                 errors.reject("snapshotQuery.error", "The Query Snapshot name cannot be blank");
         }
 
-        public ModelAndView getView(QuerySnapshotForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(StudySnapshotForm form, boolean reshow, BindException errors) throws Exception
         {
-            if (!reshow)
-            {
-                List<DisplayColumn> columns = QuerySnapshotService.get(form.getSchemaName()).getDisplayColumns(form);
-                String[] columnNames = new String[columns.size()];
-                int i=0;
-
-                for (DisplayColumn dc : columns)
-                    columnNames[i++] = dc.getName();
-                form.setSnapshotColumns(columnNames);
-            }
-
-            String redirect = getViewContext().getActionURL().getParameter("successURL");
-            if (redirect != null)
-                return HttpView.redirect(PageFlowUtil.decode(redirect));
-
             if (!reshow || errors.hasErrors())
+            {
+                ActionURL url = getViewContext().getActionURL();
+                form.setSnapshotName(url.getParameter("ff_snapshotName"));
+                form.setUpdateDelay(NumberUtils.toInt(url.getParameter("ff_updateDelay")));
+                form.setSnapshotDatasetId(NumberUtils.toInt(url.getParameter("ff_snapshotDatasetId")));
+
                 return new JspView<QueryForm>("/org/labkey/study/view/createDatasetSnapshot.jsp", form, errors);
-            else
+            }
+            else if (StudySnapshotForm.EDIT_DATASET.equals(form.getAction()))
             {
                 Study study = getStudy();
                 DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinition(study, form.getSnapshotName());
+
+                ActionURL url = getViewContext().cloneActionURL().replaceParameter("ff_snapshotName", form.getSnapshotName()).
+                        replaceParameter("ff_updateDelay", String.valueOf(form.getUpdateDelay())).
+                        replaceParameter("ff_snapshotDatasetId", String.valueOf(form.getSnapshotDatasetId()));
 
                 if (dsDef == null)
                     return HttpView.throwNotFound("Unable to edit the created DataSet Definition");
@@ -4461,12 +4493,11 @@ public class StudyController extends BaseStudyController
                         "studyId", String.valueOf(study.getRowId()),
                         "datasetId", String.valueOf(dsDef.getDataSetId()),
                         "typeURI", dsDef.getTypeURI(),
-                        "dateBased", "false",
-                        "returnURL", getViewContext().cloneActionURL().addParameter("successURL", PageFlowUtil.encode(_successURL.getLocalURIString())).toString(),
+                        "dateBased", String.valueOf(study.isDateBased()),
+                        "returnURL", url.getLocalURIString(),
                         "create", "false");
 
-                HtmlView text = new HtmlView("Modify the properties and schema (form fields/properties) for this dataset.<br>Click the save button to " +
-                        "save any changes, else click the cancel button to complete the snapshot.");
+                HtmlView text = new HtmlView("Modify the properties and schema (form fields/properties) for this dataset.");
                 HttpView view = new GWTView("org.labkey.study.dataset.Designer", props);
 
                 // hack for 4404 : Lookup picker performance is terrible when there are many containers
@@ -4474,12 +4505,116 @@ public class StudyController extends BaseStudyController
 
                 return new VBox(text, view);
             }
+            return null;
         }
 
-        public boolean handlePost(QuerySnapshotForm form, BindException errors) throws Exception
+        private void deletePreviousDatasetDefinition(StudySnapshotForm form) throws SQLException
+        {
+            if (form.getSnapshotDatasetId() != 0)
+            {
+                Study study = StudyManager.getInstance().getStudy(getContainer());
+
+                // a dataset definition was edited previously, but under a different name, need to delete the old one
+                DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinition(study, form.getSnapshotDatasetId());
+                if (dsDef != null)
+                    StudyManager.getInstance().deleteDataset(study, getUser(), dsDef);
+            }
+        }
+
+        private void createDataset(StudySnapshotForm form, BindException errors) throws Exception
+        {
+            Study study = StudyManager.getInstance().getStudy(getContainer());
+            DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinition(study, form.getSnapshotName());
+
+            if (dsDef == null)
+            {
+                deletePreviousDatasetDefinition(form);
+
+                // if this snapshot is being created from an existing dataset, copy key field settings
+                int datasetId = NumberUtils.toInt(getViewContext().getActionURL().getParameter(DataSetDefinition.DATASETKEY), -1);
+                String additionalKey = null;
+                boolean isKeyManaged = false;
+                boolean isDemographicData = false;
+
+                if (datasetId != -1)
+                {
+                    DataSetDefinition sourceDef = study.getDataSet(datasetId);
+                    if (sourceDef != null)
+                    {
+                        additionalKey = sourceDef.getKeyPropertyName();
+                        isKeyManaged = sourceDef.isKeyPropertyManaged();
+                        isDemographicData = sourceDef.isDemographicData();
+                    }
+                }
+                DataSetDefinition def = AssayPublishManager.getInstance().createAssayDataset(form.getViewContext().getUser(),
+                        study, form.getSnapshotName(), additionalKey, null, isDemographicData);
+                if (def != null)
+                {
+                    form.setSnapshotDatasetId(def.getDataSetId());
+                    if (isKeyManaged)
+                    {
+                        def = def.createMutable();
+                        def.setKeyPropertyManaged(true);
+
+                        StudyManager.getInstance().updateDataSetDefinition(form.getViewContext().getUser(), def);
+                    }
+
+                    String domainURI = def.getTypeURI();
+                    OntologyManager.ensureDomainDescriptor(domainURI, form.getSnapshotName(), form.getViewContext().getContainer());
+                    Domain d = PropertyService.get().getDomain(form.getViewContext().getContainer(), domainURI);
+
+                    for (DisplayColumn dc : QuerySnapshotService.get(form.getSchemaName()).getDisplayColumns(form))
+                    {
+                        ColumnInfo col = dc.getColumnInfo();
+                        if (!DataSetDefinition.isDefaultFieldName(col.getName(), study))
+                            DatasetSnapshotProvider.addAsDomainProperty(d, col);
+                    }
+                    d.save(form.getViewContext().getUser());
+                }
+            }
+        }
+
+        public boolean handlePost(StudySnapshotForm form, BindException errors) throws Exception
         {
             List<String> errorList = new ArrayList<String>();
-            _successURL = QuerySnapshotService.get(form.getSchemaName()).createSnapshot(form, errorList);
+
+            DbSchema schema = StudyManager.getSchema();
+            boolean startedTransaction = false;
+
+            try {
+                if (!schema.getScope().isTransactionActive())
+                {
+                    schema.getScope().beginTransaction();
+                    startedTransaction = true;
+                }
+
+                if (StudySnapshotForm.EDIT_DATASET.equals(form.getAction()))
+                {
+                    createDataset(form, errors);
+                }
+                else if (StudySnapshotForm.CREATE_SNAPSHOT.equals(form.getAction()))
+                {
+                    createDataset(form, errors);
+                    if (!errors.hasErrors())
+                        _successURL = QuerySnapshotService.get(form.getSchemaName()).createSnapshot(form, errorList);
+                }
+                else if (StudySnapshotForm.CANCEL.equals(form.getAction()))
+                {
+                    deletePreviousDatasetDefinition(form);
+                    String redirect = getViewContext().getActionURL().getParameter("redirectURL");
+                    if (redirect != null)
+                        _successURL = new ActionURL(PageFlowUtil.decode(redirect));
+                }
+
+                if (startedTransaction)
+                    schema.getScope().commitTransaction();
+            }
+            finally
+            {
+                if (startedTransaction && schema.getScope().isTransactionActive())
+                    schema.getScope().rollbackTransaction();
+            }
+
             if (!errorList.isEmpty())
             {
                 for (String error : errorList)
@@ -4489,9 +4624,9 @@ public class StudyController extends BaseStudyController
             return true;
         }
 
-        public ActionURL getSuccessURL(QuerySnapshotForm queryForm)
+        public ActionURL getSuccessURL(StudySnapshotForm queryForm)
         {
-            return null;
+            return _successURL;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -4501,15 +4636,15 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ACL.PERM_ADMIN)
-    public class EditSnapshotAction extends FormViewAction<QuerySnapshotForm>
+    public class EditSnapshotAction extends FormViewAction<StudySnapshotForm>
     {
         ActionURL _successURL;
 
-        public void validateCommand(QuerySnapshotForm form, Errors errors)
+        public void validateCommand(StudySnapshotForm form, Errors errors)
         {
         }
 
-        public ModelAndView getView(QuerySnapshotForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(StudySnapshotForm form, boolean reshow, BindException errors) throws Exception
         {
             form.setEdit(true);
             if (!reshow)
@@ -4563,7 +4698,7 @@ public class StudyController extends BaseStudyController
             return box;
         }
 
-        public boolean handlePost(QuerySnapshotForm form, BindException errors) throws Exception
+        public boolean handlePost(StudySnapshotForm form, BindException errors) throws Exception
         {
             List<String> errorList = new ArrayList<String>();
 
@@ -4601,7 +4736,7 @@ public class StudyController extends BaseStudyController
             return true;
         }
 
-        public ActionURL getSuccessURL(QuerySnapshotForm form)
+        public ActionURL getSuccessURL(StudySnapshotForm form)
         {
             return _successURL;
         }

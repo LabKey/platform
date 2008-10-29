@@ -19,27 +19,25 @@
 <%@ page import="org.apache.commons.lang.math.NumberUtils" %>
 <%@ page import="org.labkey.api.data.ColumnInfo" %>
 <%@ page import="org.labkey.api.data.DisplayColumn" %>
-<%@ page import="org.labkey.api.query.snapshot.QuerySnapshotForm" %>
 <%@ page import="org.labkey.api.query.snapshot.QuerySnapshotService" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.DataSetDefinition" %>
 <%@ page import="org.labkey.study.model.Study" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="java.io.IOException" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.LinkedHashMap" %>
-<%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <%
-    JspView<QuerySnapshotForm> me = (JspView<QuerySnapshotForm>) HttpView.currentView();
-    QuerySnapshotForm bean = me.getModelBean();
+    JspView<StudyController.StudySnapshotForm> me = (JspView<StudyController.StudySnapshotForm>) HttpView.currentView();
+    StudyController.StudySnapshotForm bean = me.getModelBean();
     ViewContext context = HttpView.currentContext();
 
     Map<String, String> columnMap = new HashMap<String, String>();
@@ -59,23 +57,6 @@
 
     int datasetId = NumberUtils.toInt(context.getActionURL().getParameter(DataSetDefinition.DATASETKEY), -1);
     Study study = StudyManager.getInstance().getStudy(context.getContainer());
-    String additionalKey = null;
-    boolean isKeyManaged = false;
-    boolean isDemographicData = false;
-
-    if (datasetId != -1 && study != null)
-    {
-        DataSetDefinition dsDef = study.getDataSet(datasetId);
-        if (dsDef != null)
-        {
-            additionalKey = dsDef.getKeyPropertyName();
-            isKeyManaged = dsDef.isKeyPropertyManaged();
-            isDemographicData = dsDef.isDemographicData();
-        }
-    }
-
-    Map<String, String> dataKeyMap = createSelection(study, QuerySnapshotService.get(bean.getSchemaName()).getDisplayColumns(bean), false);
-    Map<String, String> managedKeyMap = createSelection(study, QuerySnapshotService.get(bean.getSchemaName()).getDisplayColumns(bean), true);
 %>
 
 <script type="text/javascript">LABKEY.requiresYahoo("yahoo");</script>
@@ -103,36 +84,22 @@
         <tr><td>Automatic&nbsp;Refresh</td><td><input <%=isAutoUpdateable ? "" : "disabled"%> <%=bean.getUpdateDelay() != 0 ? "checked" : ""%> type="radio" name="updateType" onclick="onAutoUpdate();"></td></tr>
         <tr><td>&nbsp;</td></tr>
         <tr><td></td><td><select name="updateDelay" id="updateDelay" style="display:none"><labkey:options value="<%=String.valueOf(bean.getUpdateDelay())%>" map="<%=updateDelay%>"></labkey:options></select></td></tr>
-
-<% if (!bean.isEdit()) { %>
-        <tr><th colspan="10" class="labkey-header">Additional Key&nbsp;<%=helpPopup("Additional Key",
-                    "If dataset has more than one row per participant/visit, " +
-                            "an additional key field must be provided. There " +
-                            "can be at most one row in the dataset for each " +
-                            "combination of participant, visit and key. " +
-                            "<ul><li>None: No additional key</li>" +
-                            "<li>Data Field: A user-managed key field</li>" +
-                            "<li>Managed Field: A numeric field defined below will be managed " +
-                            "by the server to make each new entry unique</li>" +
-                            "</ul>", true)%><th></tr>
         <tr><td colspan="10" class="labkey-title-area-line"><img height="1" width="1" src="<%=AppProps.getInstance().getContextPath() + "/_.gif"%>"></td></tr>
-        <tr><td colspan="2"><i>If the source query has more than one row per participant/visit, an additional key<br/>field must be provided.</i></td></tr>
-        <tr><td>&nbsp;</td></tr>
-
-        <tr><td>None:</td><td><input type="radio" id="keyTypeNone" name="additionalKeyType" value="none" <%=additionalKey==null ? "checked" : ""%> onclick="onKeyType();"></td></tr>
-        <tr><td>Data Field:</td><td><input type="radio" id="keyTypeData" name="additionalKeyType" value="data" <%=(additionalKey!=null && !isKeyManaged) ? "checked" : ""%> onclick="onKeyType();">&nbsp;
-            <select name="additionalKey" id="dataKeyList"><labkey:options value="<%=additionalKey%>" map="<%=dataKeyMap%>"/></select>
-        </td></tr>
-        <tr><td>Managed Field:</td><td><input type="radio" id="keyTypeManaged" name="additionalKeyType" value="managed" <%=isKeyManaged ? "checked" : ""%> onclick="onKeyType();">&nbsp;
-            <select name="additionalKey" id="managedKeyList"><labkey:options value="<%=additionalKey%>" map="<%=managedKeyMap%>"/></select>
-        </td></tr>
-        <tr><td>&nbsp;</td></tr>
-        <tr><th colspan="10" class="labkey-header">Demographic Data&nbsp;<%=helpPopup("Demographic Data", "Demographic data appears only once for each participant in the study.")%><th></tr>
-        <tr><td colspan="10" class="labkey-title-area-line"><img height="1" width="1" src="<%=AppProps.getInstance().getContextPath() + "/_.gif"%>"></td></tr>
-        <tr><td>Demographic Data:</td><td><input type="checkbox" name="demographicData" <%=isDemographicData ? "checked" : ""%></td></tr>
-<% } %>
-
-        <tr><td><%=PageFlowUtil.generateSubmitButton(bean.isEdit() ? "Update" : "Next")%></td></tr>
+        <tr><td colspan="10">
+        <%
+            if (!bean.isEdit())
+            {
+                out.println(PageFlowUtil.generateSubmitButton("Edit Dataset Definition", "YAHOO.util.Dom.get('action').value='" + StudyController.StudySnapshotForm.EDIT_DATASET + "'"));
+                out.print("&nbsp;");
+                out.println(PageFlowUtil.generateSubmitButton(bean.isEdit() ? "Update" : "Create Snapshot"));
+                out.print("&nbsp;");
+                out.println(PageFlowUtil.generateSubmitButton("Cancel", "YAHOO.util.Dom.get('action').value='" + StudyController.StudySnapshotForm.CANCEL + "'"));
+            }
+            else
+            {
+                out.println(PageFlowUtil.generateSubmitButton(bean.isEdit() ? "Update" : "Create Snapshot"));
+            }
+        %>
     </table>
     <%  for (DisplayColumn col : QuerySnapshotService.get(bean.getSchemaName()).getDisplayColumns(bean)) { %>
             <input type="hidden" name="snapshotColumns" value="<%=getColumnName(col)%>">
@@ -140,28 +107,11 @@
         if (context.getActionURL().getParameter(DataSetDefinition.DATASETKEY) != null) { %>
             <input type="hidden" name="<%=DataSetDefinition.DATASETKEY%>" value="<%=context.getActionURL().getParameter(DataSetDefinition.DATASETKEY)%>">
     <%  } %>
+    <input type="hidden" name="action" value="<%=StudyController.StudySnapshotForm.CREATE_SNAPSHOT%>" id="action">
+    <input type="hidden" name="snapshotDatasetId" value="<%=bean.getSnapshotDatasetId()%>">
 </form>
 
 <script type="text/javascript">
-
-    function onKeyType()
-    {
-        if (YAHOO.util.Dom.get('keyTypeNone').checked)
-        {
-            YAHOO.util.Dom.get('dataKeyList').disabled=true;
-            YAHOO.util.Dom.get('managedKeyList').disabled=true;
-        }
-        else if (YAHOO.util.Dom.get('keyTypeData').checked)
-        {
-            YAHOO.util.Dom.get('dataKeyList').disabled=false;
-            YAHOO.util.Dom.get('managedKeyList').disabled=true;
-        }
-        else if (YAHOO.util.Dom.get('keyTypeManaged').checked)
-        {
-            YAHOO.util.Dom.get('dataKeyList').disabled=true;
-            YAHOO.util.Dom.get('managedKeyList').disabled=false;
-        }
-    }
 
     function onAutoUpdate()
     {
@@ -184,7 +134,6 @@
     }
 
     YAHOO.util.Event.addListener(window, "load", onAutoUpdate)
-    YAHOO.util.Event.addListener(window, "load", onKeyType);
 </script>
 
 <%!
@@ -195,21 +144,5 @@
             return info.getName();
 
         return col.getName();
-    }
-
-    Map<String, String> createSelection(Study study, List<DisplayColumn> columns, boolean numericOnly) throws IOException
-    {
-        Map<String, String> viewMap = new HashMap<String, String>();
-        for (DisplayColumn col : columns)
-        {
-            if (DataSetDefinition.isDefaultFieldName(col.getName(), study))
-                continue;
-            if (numericOnly && !Number.class.isAssignableFrom(col.getValueClass()))
-                continue;
-
-            String name = getColumnName(col);
-            viewMap.put(name, col.getCaption());
-        }
-        return viewMap;
     }
 %>

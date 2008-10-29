@@ -31,10 +31,7 @@ import org.labkey.api.query.snapshot.QuerySnapshotForm;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.CaseInsensitiveHashMap;
-import org.labkey.api.util.ContextListener;
-import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -146,7 +143,8 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 addParameter(qs.param(QueryParam.schemaName), settings.getSchemaName()).
                 addParameter(qs.param(QueryParam.queryName), settings.getQueryName()).
                 addParameter(qs.param(QueryParam.viewName), settings.getViewName()).
-                addParameter(DataSetDefinition.DATASETKEY, context.getActionURL().getParameter(DataSetDefinition.DATASETKEY));
+                addParameter(DataSetDefinition.DATASETKEY, context.getActionURL().getParameter(DataSetDefinition.DATASETKEY)).
+                addParameter("redirectURL", PageFlowUtil.encode(context.getActionURL().getLocalURIString()));
     }
 
     public ActionURL createSnapshot(QuerySnapshotForm form, List<String> errors) throws Exception
@@ -169,47 +167,28 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             }
             // create the dataset definition
             Study study = StudyManager.getInstance().getStudy(form.getViewContext().getContainer());
-            boolean isDemographicData = BooleanUtils.toBoolean((String)form.getViewContext().get("demographicData"));
-            String keyType = StringUtils.defaultString((String)form.getViewContext().get("additionalKeyType"), "none");
-            String additionalKey = null;
-            boolean keyPropertyManaged = false;
 
-            if ("data".equals(keyType) || "managed".equals(keyType))
-            {
-                additionalKey = (String)form.getViewContext().get("additionalKey");
-                keyPropertyManaged = "managed".equals(keyType);
-            }
-
-            DataSetDefinition def = AssayPublishManager.getInstance().createAssayDataset(form.getViewContext().getUser(),
-                    study, form.getSnapshotName(), additionalKey, null, isDemographicData);
+            DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, form.getSnapshotName());
             if (def != null)
             {
-                if (keyPropertyManaged)
-                {
-                    def = def.createMutable();
-                    def.setKeyPropertyManaged(true);
-
-                    StudyManager.getInstance().updateDataSetDefinition(form.getViewContext().getUser(), def);
-                }
                 QuerySnapshotDefinition snapshot = createSnapshotDef(form);
                 if (snapshot == null)
                     throw new IllegalArgumentException("Unable to create the query snapshot definition");
 
                 snapshot.save(form.getViewContext().getUser(), form.getViewContext().getContainer());
+
                 String domainURI = def.getTypeURI();
-                OntologyManager.ensureDomainDescriptor(domainURI, form.getSnapshotName(), form.getViewContext().getContainer());
                 Domain d = PropertyService.get().getDomain(form.getViewContext().getContainer(), domainURI);
                 Map<String, String> columnMap = new CaseInsensitiveHashMap<String>();
-                
-                for (ColumnInfo col : QueryService.get().getColumns(view.getTable(), snapshot.getColumns()).values())
+
+                for (DisplayColumn dc : QuerySnapshotService.get(form.getSchemaName()).getDisplayColumns(form))
                 {
+                    ColumnInfo col = dc.getColumnInfo();
                     if (!DataSetDefinition.isDefaultFieldName(col.getName(), study))
                     {
-                        addAsDomainProperty(d, col);
                         columnMap.put(col.getAlias(), getPropertyURI(d, col));
                     }
                 }
-                d.save(form.getViewContext().getUser());
 
                 // import the data
                 StudyManager.getInstance().importDatasetTSV(study, form.getViewContext().getUser(), def, sb.toString(),
