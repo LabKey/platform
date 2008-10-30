@@ -372,7 +372,9 @@
           <root url="jar://$MODULE_DIR$/../../external/lib/server/jxl.jar!/" />
         </CLASSES>
         <JAVADOC />
-        <SOURCES />
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/jexcelapi_2_6_8.zip!/src" />
+        </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
