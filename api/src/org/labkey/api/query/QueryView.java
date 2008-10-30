@@ -838,7 +838,10 @@ public class QueryView extends WebPartView<Object>
         {
             QuerySnapshotService.I provider = QuerySnapshotService.get(getSchema().getSchemaName());
             if (provider != null)
-                button.addMenuItem("Edit Snapshot", provider.getEditSnapshotURL(getSettings(), getViewContext()));
+            {
+                NavTree item = button.addMenuItem("Edit Snapshot", provider.getEditSnapshotURL(getSettings(), getViewContext()));
+                item.setId("Views:Edit Snapshot");
+            }
         }
     }
 
