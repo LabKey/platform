@@ -47,6 +47,7 @@ public class PropertiesEditor implements LookupListener
     public static final String modeEdit = "edit";
     public static final String modeRead = "read";
 
+    private final boolean _includeImportExportButtons;
     private DockPanel _panel;
     private PropertyPane _propertiesPane;
     private VerticalPanel _noColumnsPanel;
@@ -89,6 +90,12 @@ public class PropertiesEditor implements LookupListener
 
     public PropertiesEditor(LookupServiceAsync service)
     {
+        this(service, true);
+    }
+
+    public PropertiesEditor(LookupServiceAsync service, boolean includeImportExportButtons)
+    {
+        _includeImportExportButtons = includeImportExportButtons;
         _rows = new ArrayList();
 
         _lookupService = service;
@@ -109,6 +116,7 @@ public class PropertiesEditor implements LookupListener
                 addPropertyDescriptor();
             }
         };
+
         _addButtonNoProps = new ImageButton("Add Field", addListener);
         ImageButton addButtonProps = new ImageButton("Add Field", addListener);
         _addButtonPanelProps = new HorizontalPanel();
@@ -119,6 +127,45 @@ public class PropertiesEditor implements LookupListener
         _noColumnsPanel.add(_addButtonNoProps);
 
         VerticalPanel propertiesListPanel = new VerticalPanel();
+        if (_includeImportExportButtons)
+        {
+            ImageButton importSchemaButton = new ImageButton("Import Schema", new ClickListener()
+            {
+                public void onClick(Widget sender)
+                {
+                    final ImportSchemaWizard popup = new ImportSchemaWizard(PropertiesEditor.this);
+                    popup.setText("Import Schema");
+                    popup.center();
+                }
+            });
+
+            ImageButton exportSchemaButton = new ImageButton("Export Schema", new ClickListener()
+            {
+                public void onClick(Widget sender)
+                {
+                    final ExportSchemaWizard popup = new ExportSchemaWizard(PropertiesEditor.this);
+                    popup.setText("Export Schema");
+                    popup.center();
+                }
+            });
+
+            ImageButton inferSchemaButton = new ImageButton("Infer Schema from File", new ClickListener()
+            {
+                public void onClick(Widget sender)
+                {
+                    final InferSchemaWizard popup = new InferSchemaWizard(PropertiesEditor.this);
+                    popup.setText("Infer Schema");
+                    popup.center();
+                }
+            });
+
+            HorizontalPanel importExportButtonPanel = new HorizontalPanel();
+            importExportButtonPanel.add(importSchemaButton);
+            importExportButtonPanel.add(exportSchemaButton);
+            importExportButtonPanel.add(inferSchemaButton);
+
+            propertiesListPanel.add(importExportButtonPanel);
+        }
         propertiesListPanel.add(_noColumnsPanel);
         propertiesListPanel.add(_table);
 

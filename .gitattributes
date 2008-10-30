@@ -1514,9 +1514,13 @@ internal/gwtsrc/org/labkey/api/gwt/client/ui/ChartService.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/ChartServiceAsync.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/ConceptPickerPanel.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/DirtyCallback.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/ExportSchemaWizard.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/FormUtil.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/GWTTabLoader.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/HelpPopup.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/ImageButton.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/ImportSchemaWizard.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/InferSchemaWizard.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/LinkButton.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/LookupEditor.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/LookupListener.java -text
