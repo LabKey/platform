@@ -157,6 +157,7 @@ public class PropertyController extends SpringActionController
             else // tsv
             {
                 TabLoader dataLoader = new TabLoader(inferForm.getTsvText());
+                dataLoader.setSkipLines(1); // There must be a header
                 data = getData(dataLoader);
             }
 
@@ -276,22 +277,26 @@ public class PropertyController extends SpringActionController
 
         private DataLoader getDataLoader(File tempFile, String suffix) throws IOException
         {
+            DataLoader dataLoader = null;
             if (suffix.equals("xls"))
             {
-                return new ExcelLoader(tempFile);
+                dataLoader = new ExcelLoader(tempFile);
             }
             else if (suffix.equals("tsv") || suffix.equals("txt"))
             {
-                return new TabLoader(tempFile);
+                dataLoader = new TabLoader(tempFile);
             }
             else if (suffix.equals("csv"))
             {
                 TabLoader loader = new TabLoader(tempFile);
                 loader.parseAsCSV();
-                return loader;
+                dataLoader = loader;
             }
-            // unknown document type
-            return null;
+            if (dataLoader == null) // unknown document type
+                return null;
+
+            dataLoader.setSkipLines(1); // The first line must be the header
+            return dataLoader;
         }
     }
 
