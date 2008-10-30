@@ -62,7 +62,7 @@ public abstract class DefaultModule implements Module
 
     private ModuleMetaData _metaData;
     private boolean _loadFromSource;
-    private String _buildPath;
+    private String _sourcePath;
 
     private enum SchemaUpdateType
     {
@@ -87,19 +87,40 @@ public abstract class DefaultModule implements Module
 
     protected DefaultModule(String name, double version, String resourcePath, boolean shouldRunScripts, WebPartFactory... webParts)
     {
-        synchronized (INSTANTIATED_MODULES)
-        {
-            if (INSTANTIATED_MODULES.contains(getClass()))
-                throw new IllegalStateException("An instance of " + getClass() + " has already been created. Modules should be singletons");
-        }
-
         _name = name;
         _version = version;
         _shouldRunScripts = shouldRunScripts;
         _webParts = webParts;
-        ModuleLoader.getInstance().registerResourcePrefix(resourcePath, this);
-        for (WebPartFactory part : webParts)
+    }
+
+    protected DefaultModule()
+    {
+        _webParts = null;
+    }
+
+    final public void initialize()
+    {
+        synchronized (INSTANTIATED_MODULES)
+        {
+            if (INSTANTIATED_MODULES.contains(getClass()))
+                throw new IllegalStateException("An instance of " + getClass() + " has already been created. Modules should be singletons");
+            else
+                INSTANTIATED_MODULES.add(getClass());
+        }
+
+        ModuleLoader.getInstance().registerResourcePrefix(getResourcePath(), this);
+        ModuleLoader.getInstance().registerResourcePrefix(getResourcePath(), new ResourceFinder(this));
+        for (WebPartFactory part : _webParts)
             part.setModule(this);
+
+        init();
+    }
+
+    protected abstract void init();
+
+    protected String getResourcePath()
+    {
+        return "/" + getClass().getPackage().getName().replaceAll("\\.", "/");
     }
 
     protected void addController(String primaryName, Class cl, String... aliases)
@@ -155,7 +176,7 @@ public abstract class DefaultModule implements Module
 
     public String getFormattedVersion()
     {
-        return ModuleContext.formatVersion(_version);
+        return ModuleContext.formatVersion(getVersion());
     }
 
 
@@ -379,11 +400,11 @@ public abstract class DefaultModule implements Module
     {
         _metaData = metaData;
         _loadFromSource = false;
-        _buildPath = _metaData.getBuildPath();
+        _sourcePath = _metaData.getSourcePath();
 
-        if (AppProps.getInstance().isDevMode() && _buildPath != null)
+        if (AppProps.getInstance().isDevMode() && _sourcePath != null)
         {
-            File f = new File(_buildPath);
+            File f = new File(_sourcePath);
             if (f.exists())
                 _loadFromSource = true;
         }
@@ -394,9 +415,9 @@ public abstract class DefaultModule implements Module
         return _metaData;
     }
 
-    public String getBuildPath()
+    public String getSourcePath()
     {
-        return _buildPath;
+        return _sourcePath;
     }
 
     public List<String> getAttributions()
@@ -408,7 +429,7 @@ public abstract class DefaultModule implements Module
     {
         if (_loadFromSource)
         {
-            File f = new File(_buildPath, "/webapp" + path);
+            File f = new File(_sourcePath, "/webapp" + path);
             return new FileInputStream(f);
         }
         else
@@ -422,7 +443,7 @@ public abstract class DefaultModule implements Module
     {
         if (_loadFromSource)
         {
-            File f = new File(_buildPath, "/src" + path);
+            File f = new File(_sourcePath, "/src" + path);
             long ts = f.lastModified();
             if (tsPrevious == ts)
                 return null;
@@ -436,7 +457,7 @@ public abstract class DefaultModule implements Module
     {
         if (_loadFromSource)
         {
-            File f = new File(_buildPath, "/src" + path);
+            File f = new File(_sourcePath, "/src" + path);
             return new FileInputStream(f);
         }
         else
@@ -451,7 +472,7 @@ public abstract class DefaultModule implements Module
 
         if (_loadFromSource)
         {
-            File dir = new File(_buildPath, "/src" + path);
+            File dir = new File(_sourcePath, "/src" + path);
 
             if (dir.exists())
             {

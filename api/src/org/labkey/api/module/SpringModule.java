@@ -49,7 +49,7 @@ import java.util.*;
  *
  * SpringModule knows how to load spring application context information (applicationContext.xml etc)
  */
-public class SpringModule extends DefaultModule implements ServletContext
+public abstract class SpringModule extends DefaultModule implements ServletContext
 {
     /**
      * The name of the init parameter on the <code>ServletContext</code> specifying
@@ -74,7 +74,7 @@ public class SpringModule extends DefaultModule implements ServletContext
 
     public void startup(ModuleContext moduleContext)
     {
-        super.startup(moduleContext);    //To change body of overridden methods use File | Settings | File Templates.
+        super.startup(moduleContext);
 
         // each module has its own WebApplicationContext();
         initWebApplicationContext();

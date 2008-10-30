@@ -48,6 +48,11 @@ public interface Module
     }
 
     /**
+     * Perform any post-constructor initialization
+     */
+    public void initialize();
+
+    /**
      * Name of this module
      */
     String getName();
@@ -178,7 +183,7 @@ public interface Module
     public InputStream getResourceStreamFromWebapp(ServletContext ctx, String filename) throws FileNotFoundException;
     public InputStream getResourceStream(String filename) throws FileNotFoundException;
     public Pair<InputStream, Long> getResourceStreamIfChanged(String filename, long tsPrevious) throws FileNotFoundException;
-    public String getBuildPath();
+    public String getSourcePath();
 
     /** Get a list of attributions (in HTML) that should be shown before users can log in. */
     public List<String> getAttributions();

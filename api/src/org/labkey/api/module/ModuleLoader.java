@@ -45,6 +45,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -67,7 +68,8 @@ public class ModuleLoader implements Filter
     private static final Map<String, Module> _pageFlowToModule = new HashMap<String, Module>();
     private static final Map<Package, String> _packageToPageFlowURL = new HashMap<Package, String>();
     private static final Map<String, Module> _schemaNameToModule = new HashMap<String, Module>();
-    private static final Map<String, Module> _resourcePrefixToModule = new HashMap<String, Module>();
+    private static final Map<String, Module> _resourcePrefixToModule = new ConcurrentHashMap<String, Module>();
+    private static final Map<String, Collection<ResourceFinder>> _resourceFinders = new ConcurrentHashMap<String, Collection<ResourceFinder>>();
     private static final Map<Class, Class<? extends UrlProvider>> _urlProviderToImpl = new HashMap<Class, Class<? extends UrlProvider>>();
     private static CoreSchema _core = CoreSchema.getInstance();
 
@@ -311,7 +313,7 @@ public class ModuleLoader implements Filter
 
     private void verifyJavaVersion() throws ServletException
     {
-        String javaVersion = System.getProperties().getProperty("java.specification.version");
+        String javaVersion = AppProps.getInstance().getJavaVersion();
 
         if (null != javaVersion && (javaVersion.startsWith("1.5") || javaVersion.startsWith("1.6")))
             return;
@@ -1146,9 +1148,50 @@ public class ModuleLoader implements Filter
     }
 
 
+    public void registerResourcePrefix(String prefix, ResourceFinder finder)
+    {
+        if (null == prefix)
+            return;
+
+        synchronized(_resourceFinders)
+        {
+            // First make sure there's no overlap with a different prefix
+            for (Map.Entry<String, Collection<ResourceFinder>> e : _resourceFinders.entrySet())
+            {
+                // We allow more than one finder with the same key (e.g., API and Internal have the same package)
+                if (!prefix.equals(e.getKey()))
+                {
+                    if (prefix.startsWith(e.getKey()) || e.getKey().startsWith(prefix))
+                        throw new RuntimeException(finder.getName() + " prefix (" + prefix + ") overlaps with existing prefix (" + e.getKey() + ")");
+                }
+            }
+
+            Collection<ResourceFinder> col = _resourceFinders.get(prefix);
+
+            if (null == col)
+            {
+                col = new ArrayList<ResourceFinder>();
+                _resourceFinders.put(prefix, col);
+            }
+
+            col.add(finder);
+        }
+    }
+
+
+    public Collection<ResourceFinder> getResourceFindersForPath(String path)
+    {
+        for (Map.Entry<String, Collection<ResourceFinder>> e : _resourceFinders.entrySet())
+            if (path.startsWith(e.getKey()))
+                return e.getValue();
+
+        return null;
+    }
+
+
     public Module getModuleForResourcePath(String path)
     {
-        for (Map.Entry<String, Module> e : _resourcePrefixToModule.entrySet())
+            for (Map.Entry<String, Module> e : _resourcePrefixToModule.entrySet())
             if (path.startsWith(e.getKey()))
                 return e.getValue();
 

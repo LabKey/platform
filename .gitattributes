@@ -240,7 +240,9 @@ api/src/org/labkey/api/exp/xar/Replacer.java -text
 api/src/org/labkey/api/jsp/ContextPage.java -text
 api/src/org/labkey/api/jsp/FormPage.java -text
 api/src/org/labkey/api/jsp/JspBase.java -text
+api/src/org/labkey/api/jsp/JspClassLoader.java -text
 api/src/org/labkey/api/jsp/JspLoader.java -text
+api/src/org/labkey/api/jsp/RecompilingJspClassLoader.java -text
 api/src/org/labkey/api/jsp/taglib/ButtonTag.java -text
 api/src/org/labkey/api/jsp/taglib/CheckboxTag.java -text
 api/src/org/labkey/api/jsp/taglib/ClearAll.java -text
@@ -263,6 +265,7 @@ api/src/org/labkey/api/module/ModuleContext.java -text
 api/src/org/labkey/api/module/ModuleDependencySorter.java -text
 api/src/org/labkey/api/module/ModuleLoader.java -text
 api/src/org/labkey/api/module/ModuleMetaData.java -text
+api/src/org/labkey/api/module/ResourceFinder.java -text
 api/src/org/labkey/api/module/SafeFlushResponseWrapper.java -text
 api/src/org/labkey/api/module/SpringModule.java -text
 api/src/org/labkey/api/ms1/MS1Service.java -text

@@ -15,18 +15,17 @@
  */
 package org.labkey.api.module;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.util.CaseInsensitiveHashSet;
-import org.apache.log4j.Logger;
-import org.apache.commons.collections15.MultiMap;
 
-import java.util.*;
-import java.util.jar.Manifest;
-import java.util.jar.JarFile;
-import java.util.jar.JarEntry;
-import java.io.InputStream;
-import java.io.IOException;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 
 /**
  * Captures the data from a module's manifest.mf, which the build generates by grabbing data from module.properties
@@ -132,6 +131,7 @@ public class ModuleMetaData
 
         Module result = clazz.newInstance();
         result.setMetaData(this);
+        result.initialize();
         return result;
     }
 
@@ -145,19 +145,13 @@ public class ModuleMetaData
         return _properties;
     }
 
-    public String getBuildPath()
+    public String getSourcePath()
     {
-        String buildPath = _properties.get("BuildPath");
-
-        if (null != buildPath)
-        {
-            return buildPath.replaceAll("\\\\\\\\","\\\\");
-        }
-        return null;
+        return _properties.get("BuildPath");
     }
 
     public String toString()
     {
-        return _name.toString();
+        return _name;
     }
 }
