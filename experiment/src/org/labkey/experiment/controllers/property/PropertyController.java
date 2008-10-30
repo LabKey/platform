@@ -34,6 +34,7 @@ import org.labkey.api.query.SchemaUpdateServiceRegistry;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.*;
 import org.labkey.common.tools.ColumnDescriptor;
@@ -45,7 +46,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
@@ -139,10 +139,43 @@ public class PropertyController extends SpringActionController
     {
         public void export(InferForm inferForm, HttpServletResponse response, BindException errors) throws Exception
         {
+            response.reset();
+            response.setContentType("text/html");
+
+            OutputStream out = response.getOutputStream();
+
+            OutputStreamWriter writer = new OutputStreamWriter(out);
+
+            String data;
+
+            if ("file".equals(inferForm.getSource()))
+            {
+                data = getDataFromFile(writer);
+                if (data == null)
+                    return; // We'll already have written out the error
+            }
+            else // tsv
+            {
+                TabLoader dataLoader = new TabLoader(inferForm.getTsvText());
+                data = getData(dataLoader);
+            }
+
+            writer.write("Success:");
+            writer.write(data);
+
+            writer.flush();
+            writer.close();
+        }
+
+        private String getDataFromFile(Writer writer) throws IOException
+        {
             HttpServletRequest basicRequest = getViewContext().getRequest();
 
             if (! (basicRequest instanceof MultipartHttpServletRequest))
-                throw new IllegalArgumentException("No file uploaded");
+            {
+                error(writer, "No file uploaded");
+                return null;
+            }
 
             MultipartHttpServletRequest request = (MultipartHttpServletRequest)basicRequest;
 
@@ -153,16 +186,16 @@ public class PropertyController extends SpringActionController
             String filename = file.getOriginalFilename();
             int dotIndex = filename.lastIndexOf(".");
             if (dotIndex < 0)
-                throw new IOException("No file type");
+            {
+                error(writer, "Unrecognized file type. Please upload a .xls, .tsv, .csv or .txt file");
+                return null;
+            }
             String suffix = filename.substring(dotIndex + 1).toLowerCase();
             String prefix = filename.substring(0, dotIndex);
-
-
 
             File tempFile = File.createTempFile(prefix, suffix);
             InputStream input = file.getInputStream();
             OutputStream output = new FileOutputStream(tempFile);
-            String data;
             try
             {
                 byte[] buffer = new byte[1024];
@@ -175,36 +208,48 @@ public class PropertyController extends SpringActionController
                 input.close();
 
                 DataLoader dataLoader = getDataLoader(tempFile, suffix);
-
-                ColumnDescriptor[] columns = dataLoader.getColumns();
-                StringBuilder sb = new StringBuilder();
-
-                sb.append("Property").append("\t");
-                sb.append("RangeURI").append("\t\n");
-
-                for (ColumnDescriptor column : columns)
+                if (dataLoader == null)
                 {
-                    sb.append(getStringValue(column.name)).append("\t");
-                    sb.append(getRangeURI(column.clazz)).append("\t\n");
+                    error(writer, "Unrecognized file type. Please upload a .xls, .tsv, .csv or .txt file");
+                    return null;
                 }
-                sb.setLength(sb.length() - 1); // remove last return char
-                data = sb.toString();
+
+                return getData(dataLoader);
+            }
+            catch (IOException ioe)
+            {
+                ExceptionUtil.logExceptionToMothership(request, ioe);
+                error(writer, ioe.getMessage());
+                return null;
             }
             finally
             {
                 tempFile.delete();
             }
-            
+        }
 
-            response.reset();
-            response.setContentType("text/html");
+        private String getData(DataLoader dataLoader) throws IOException
+        {
+            ColumnDescriptor[] columns = dataLoader.getColumns();
+            StringBuilder sb = new StringBuilder();
 
-            ServletOutputStream out = response.getOutputStream();
+            sb.append("Property").append("\t");
+            sb.append("RangeURI").append("\t\n");
 
-            out.write(data.getBytes("UTF8"));
+            for (ColumnDescriptor column : columns)
+            {
+                sb.append(getStringValue(column.name)).append("\t");
+                sb.append(getRangeURI(column.clazz)).append("\t\n");
+            }
+            sb.setLength(sb.length() - 1); // remove last return char
+            return sb.toString();
+        }
 
-            out.flush();
-            out.close();
+        private void error(Writer writer, String message) throws IOException
+        {
+            writer.write(message);
+            writer.flush();
+            writer.close();
         }
 
         private String getRangeURI(Class clazz)
@@ -245,25 +290,34 @@ public class PropertyController extends SpringActionController
                 loader.parseAsCSV();
                 return loader;
             }
-            else
-            {
-                throw new IllegalArgumentException("Unknown file type: " + suffix);
-            }
+            // unknown document type
+            return null;
         }
     }
 
     public static class InferForm
     {
-        private String status;
+        private String source;
+        private String tsvText;
 
-        public String getStatus()
+        public String getSource()
         {
-            return status;
+            return source;
         }
 
-        public void setStatus(String status)
+        public void setSource(String source)
         {
-            this.status = status;
+            this.source = source;
+        }
+
+        public String getTsvText()
+        {
+            return tsvText;
+        }
+
+        public void setTsvText(String tsvText)
+        {
+            this.tsvText = tsvText;
         }
     }
 
