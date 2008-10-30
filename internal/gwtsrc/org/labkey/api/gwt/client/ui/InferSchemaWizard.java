@@ -32,7 +32,7 @@ public class InferSchemaWizard extends DialogBox
     private RadioButtonWithValue fileButton;
     private RadioButtonWithValue tsvButton;
     private TextArea tsvTextArea;
-    private FileUpload upload;
+    private FileUploadWithListeners upload;
     private HTML statusLabel;
 
     public InferSchemaWizard(PropertiesEditor propertiesEditor)
@@ -58,8 +58,15 @@ public class InferSchemaWizard extends DialogBox
         fileButton.setChecked(true);
         panel.add(fileButton);
 
-        upload = new FileUpload();
+        upload = new FileUploadWithListeners();
         upload.setName("uploadFormElement");
+        upload.addClickListener(new ClickListener()
+        {
+            public void onClick(Widget sender)
+            {
+                fileButton.setChecked(true);
+            }
+        });
         panel.add(upload);
 
         tsvButton = new RadioButtonWithValue("source", "tsv");
@@ -69,6 +76,13 @@ public class InferSchemaWizard extends DialogBox
         tsvTextArea = new TextArea();
         tsvTextArea.setName("tsvText");
         tsvTextArea.setSize("400", "200");
+        tsvTextArea.addClickListener(new ClickListener()
+        {
+            public void onClick(Widget sender)
+            {
+                tsvButton.setChecked(true);
+            }
+        });
         panel.add(tsvTextArea);
 
         statusLabel = new HTML("&nbsp;");
