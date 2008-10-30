@@ -25,7 +25,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
  * Date: Apr 26, 2007
  * Time: 1:36:23 PM
  */
-public interface PropertyServiceAsync // extends PropertiesEditorServiceAsync
+public interface PropertyServiceAsync
 {
 
     void updateDomainDescriptor(GWTDomain orig, GWTDomain dd, AsyncCallback async);

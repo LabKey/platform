@@ -1529,7 +1529,6 @@ study/gwtsrc/org/labkey/study/dataset/Designer.gwt.xml -text
 study/gwtsrc/org/labkey/study/dataset/client/DatasetService.java -text
 study/gwtsrc/org/labkey/study/dataset/client/DatasetServiceAsync.java -text
 study/gwtsrc/org/labkey/study/dataset/client/Designer.java -text
-study/gwtsrc/org/labkey/study/dataset/client/GWTTabLoader.java -text
 study/gwtsrc/org/labkey/study/dataset/client/model/GWTDataset.java -text
 study/gwtsrc/org/labkey/study/designer/Designer.gwt.xml -text
 study/gwtsrc/org/labkey/study/designer/client/ActivatingLabel.java -text

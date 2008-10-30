@@ -36,9 +36,19 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.*;
+import org.labkey.common.tools.ColumnDescriptor;
+import org.labkey.common.tools.DataLoader;
+import org.labkey.common.tools.ExcelLoader;
+import org.labkey.common.tools.TabLoader;
 import org.springframework.validation.BindException;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.*;
 import java.util.*;
 
 public class PropertyController extends SpringActionController
@@ -121,6 +131,139 @@ public class PropertyController extends SpringActionController
             DomainUtil.updateDomainDescriptor(originalDomain, newDomain, getContainer(), getUser());
 
             return new ApiSimpleResponse();
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class InferPropertiesAction extends ExportAction<InferForm>
+    {
+        public void export(InferForm inferForm, HttpServletResponse response, BindException errors) throws Exception
+        {
+            HttpServletRequest basicRequest = getViewContext().getRequest();
+
+            if (! (basicRequest instanceof MultipartHttpServletRequest))
+                throw new IllegalArgumentException("No file uploaded");
+
+            MultipartHttpServletRequest request = (MultipartHttpServletRequest)basicRequest;
+
+            //noinspection unchecked
+            Iterator<String> nameIterator = request.getFileNames();
+            String formElementName = nameIterator.next();
+            MultipartFile file = request.getFile(formElementName);
+            String filename = file.getOriginalFilename();
+            int dotIndex = filename.lastIndexOf(".");
+            if (dotIndex < 0)
+                throw new IOException("No file type");
+            String suffix = filename.substring(dotIndex + 1).toLowerCase();
+            String prefix = filename.substring(0, dotIndex);
+
+
+
+            File tempFile = File.createTempFile(prefix, suffix);
+            InputStream input = file.getInputStream();
+            OutputStream output = new FileOutputStream(tempFile);
+            String data;
+            try
+            {
+                byte[] buffer = new byte[1024];
+                int len;
+                while ((len = input.read(buffer)) > 0)
+                    output.write(buffer, 0, len);
+
+                output.flush();
+                output.close();
+                input.close();
+
+                DataLoader dataLoader = getDataLoader(tempFile, suffix);
+
+                ColumnDescriptor[] columns = dataLoader.getColumns();
+                StringBuilder sb = new StringBuilder();
+
+                sb.append("Property").append("\t");
+                sb.append("RangeURI").append("\t\n");
+
+                for (ColumnDescriptor column : columns)
+                {
+                    sb.append(getStringValue(column.name)).append("\t");
+                    sb.append(getRangeURI(column.clazz)).append("\t\n");
+                }
+                sb.setLength(sb.length() - 1); // remove last return char
+                data = sb.toString();
+            }
+            finally
+            {
+                tempFile.delete();
+            }
+            
+
+            response.reset();
+            response.setContentType("text/html");
+
+            ServletOutputStream out = response.getOutputStream();
+
+            out.write(data.getBytes("UTF8"));
+
+            out.flush();
+            out.close();
+        }
+
+        private String getRangeURI(Class clazz)
+        {
+            if (clazz == String.class)
+                return "xsd:string";
+            if (clazz == Integer.class)
+                return "xsd:int";
+            if (clazz == Double.class)
+                return "xsd:double";
+            if (clazz == Date.class)
+                return "xsd:dateTime";
+            if (clazz == Boolean.class)
+                return "xsd:boolean";
+            throw new IllegalArgumentException("Unknown class for column: " + clazz);
+        }
+
+        private String getStringValue(Object o)
+        {
+            if (o == null)
+                return "";
+            return o.toString();
+        }
+
+        private DataLoader getDataLoader(File tempFile, String suffix) throws IOException
+        {
+            if (suffix.equals("xls"))
+            {
+                return new ExcelLoader(tempFile);
+            }
+            else if (suffix.equals("tsv") || suffix.equals("txt"))
+            {
+                return new TabLoader(tempFile);
+            }
+            else if (suffix.equals("csv"))
+            {
+                TabLoader loader = new TabLoader(tempFile);
+                loader.parseAsCSV();
+                return loader;
+            }
+            else
+            {
+                throw new IllegalArgumentException("Unknown file type: " + suffix);
+            }
+        }
+    }
+
+    public static class InferForm
+    {
+        private String status;
+
+        public String getStatus()
+        {
+            return status;
+        }
+
+        public void setStatus(String status)
+        {
+            this.status = status;
         }
     }
 
