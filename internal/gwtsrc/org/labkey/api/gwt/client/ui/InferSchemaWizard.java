@@ -15,8 +15,10 @@
  */
 package org.labkey.api.gwt.client.ui;
 
+import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.*;
 import org.labkey.api.gwt.client.util.PropertyUtil;
+import org.labkey.api.gwt.client.util.StringUtils;
 
 /**
  * User: jgarms
@@ -27,6 +29,11 @@ public class InferSchemaWizard extends DialogBox
     private final PropertiesEditor propertiesEditor;
 
     private final ImageButton submitButton;
+    private RadioButtonWithValue fileButton;
+    private RadioButtonWithValue tsvButton;
+    private TextArea tsvTextArea;
+    private FileUpload upload;
+    private HTML statusLabel;
 
     public InferSchemaWizard(PropertiesEditor propertiesEditor)
     {
@@ -45,9 +52,27 @@ public class InferSchemaWizard extends DialogBox
         VerticalPanel panel = new VerticalPanel();
         form.setWidget(panel);
 
-        FileUpload upload = new FileUpload();
+        fileButton = new RadioButtonWithValue("source", "file");
+        fileButton.setText("File:");
+        fileButton.setValue("file");
+        fileButton.setChecked(true);
+        panel.add(fileButton);
+
+        upload = new FileUpload();
         upload.setName("uploadFormElement");
         panel.add(upload);
+
+        tsvButton = new RadioButtonWithValue("source", "tsv");
+        tsvButton.setText("Tab-delimited data:");
+        tsvButton.setValue("tsv");
+        panel.add(tsvButton);
+        tsvTextArea = new TextArea();
+        tsvTextArea.setName("tsvText");
+        tsvTextArea.setSize("400", "200");
+        panel.add(tsvTextArea);
+
+        statusLabel = new HTML("&nbsp;");
+        panel.add(statusLabel);
 
         submitButton = new ImageButton("Submit", new ClickListener()
         {
@@ -55,7 +80,6 @@ public class InferSchemaWizard extends DialogBox
             {
                 submitButton.setEnabled(false);
                 form.submit();
-                submitButton.setEnabled(true);
             }
         });
 
@@ -80,17 +104,50 @@ public class InferSchemaWizard extends DialogBox
     {
         public void onSubmit(FormSubmitEvent event)
         {
+            if (tsvButton.isChecked())
+            {
+                String tsv = StringUtils.trimToNull(tsvTextArea.getText());
+                if (tsv == null)
+                {
+                    Window.alert("Please enter some tab-delimited text to upload");
+                    event.setCancelled(true);
+                    submitButton.setEnabled(true);
+                    return;
+                }
+            }
+            else
+            {
+                if(upload.getFilename().length() == 0)
+                {
+                    Window.alert("Please select a file to upload");
+                    event.setCancelled(true);
+                    submitButton.setEnabled(true);
+                    return;
+                }
+            }
+            statusLabel.setText("Processing...");
         }
 
         public void onSubmitComplete(FormSubmitCompleteEvent event)
         {
-            GWTTabLoader loader = new GWTTabLoader(event.getResults());
-            if (loader.processTsv(propertiesEditor))
+            String result = event.getResults();
+            if (result.startsWith("Success:"))
             {
-                hide();
+                result = result.substring(8); // trim the "Success:" prefix
+                GWTTabLoader loader = new GWTTabLoader(result);
+                if (loader.processTsv(propertiesEditor))
+                {
+                    statusLabel.setText("&nbsp;");
+                    hide();
+                }
+            }
+            else
+            {
+                statusLabel.setText("");
+                Window.alert(result);
+                submitButton.setEnabled(true);
             }
         }
     }
-
     
 }
