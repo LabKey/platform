@@ -43,8 +43,11 @@ public class MothershipModule extends DefaultModule
     public MothershipModule()
     {
         super(NAME, 8.20, null, true);
-        addController("mothership", MothershipController.class);
+    }
 
+    protected void init()
+    {
+        addController("mothership", MothershipController.class);
         MothershipSchema.register();
     }
 

@@ -97,7 +97,10 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
                 samplesWidePartFactory, datasetsPartFactory, manageStudyPartFactory,
                 enrollmentChartPartFactory, studyDesignsWebPartFactory, studyDesignSummaryWebPartFactory,
                 assayListWebPartFactory, assayDetailsWebPartFactory, participantWebPartFactory);
+    }
 
+    protected void init()
+    {
         addController("study", StudyController.class);
         addController("study-reports", ReportsController.class);
         addController("study-samples", SpringSpecimenController.class);

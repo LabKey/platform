@@ -53,6 +53,10 @@ public class TimelineModule extends DefaultModule implements ContainerManager.Co
                 return new JspView<Portal.WebPart>(TimelineView.class, "customizeTimeline.jsp", webPart);
             }
         });
+    }
+
+    protected void init()
+    {
         addController("timeline", TimelineController.class);
     }
 

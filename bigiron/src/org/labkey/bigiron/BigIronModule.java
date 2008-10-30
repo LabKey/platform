@@ -27,7 +27,11 @@ public class BigIronModule extends DefaultModule
 
     public BigIronModule()
     {
-        super(NAME, 8.20, null, false);
+        super(NAME, 8.20, "org/labkey/bigiron", false);
+    }
+
+    protected void init()
+    {
         SqlDialect.register(new SqlDialectMicrosoftSQLServer());
         SqlDialect.register(new SqlDialectMicrosoftSQLServer9());
     }

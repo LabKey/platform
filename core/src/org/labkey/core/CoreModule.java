@@ -79,7 +79,10 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
                     return new ContactWebPart();
                 }
             });
+    }
 
+    protected void init()
+    {
         SqlDialect.register(new SqlDialectPostgreSQL());
 
         addController("admin", AdminController.class);
@@ -104,7 +107,28 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
             {
                 return new CoreQuerySchema(schema.getUser(), schema.getContainer());
             }
-        });            
+        });
+
+        if (null != getSourcePath())
+        {
+            File projectRoot = new File(getSourcePath(), "../../..");
+            if (projectRoot.exists())
+            {
+                try
+                {
+                    AppProps.getInstance().setProjectRoot(projectRoot.getCanonicalPath());
+                }
+                catch(IOException e)
+                {
+                    // Do nothing -- leave project root null
+                }
+            }
+        }
+
+        ResourceFinder api = new ResourceFinder("API", AppProps.getInstance().getProjectRoot() + "/server/api");
+        ModuleLoader.getInstance().registerResourcePrefix("/org/labkey/api", api);
+        ResourceFinder internal = new ResourceFinder("Internal", AppProps.getInstance().getProjectRoot() + "/server/internal");
+        ModuleLoader.getInstance().registerResourcePrefix("/org/labkey/api", internal);
     }
 
     @Override
@@ -341,22 +365,6 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
         AuditLogService.get().addAuditViewFactory(AttachmentAuditViewFactory.getInstance());
         AuditLogService.get().addAuditViewFactory(ContainerAuditViewFactory.getInstance());
         AuditLogService.get().addAuditViewFactory(FileSystemAuditViewFactory.getInstance());
-
-        if (null != getBuildPath())
-        {
-            File projectRoot = new File(getBuildPath(), "../../..");
-            if (projectRoot.exists())
-            {
-                try
-                {
-                    AppProps.getInstance().setProjectRoot(projectRoot.getCanonicalPath());
-                }
-                catch(IOException e)
-                {
-                    // Do nothing -- leave project root null
-                }
-            }
-        }
 
         ContextListener.addStartupListener(TempTableTracker.getStartupListener());
         ContextListener.addShutdownListener(TempTableTracker.getShutdownListener());

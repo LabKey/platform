@@ -45,7 +45,7 @@ public class DemoWebPart extends JspView<BulkUpdatePage>
     {
         super("/org/labkey/demo/view/demoWebPart.jsp", new BulkUpdatePage());
         setTitle("Demo Summary");
-        setTitleHref(new ActionURL("demo", "begin", HttpView.currentContext().getContainer()));
+        setTitleHref(new ActionURL("demo", "begin", c));
     }
 
 

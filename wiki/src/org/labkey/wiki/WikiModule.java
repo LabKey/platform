@@ -67,6 +67,10 @@ public class WikiModule extends DefaultModule implements ContainerManager.Contai
                 new WikiWebPartFactory(),
                 new WikiTOCFactory(),
                 new WikiWebPartFactory(WEB_PART_NAME, "right"));
+    }
+
+    protected void init()
+    {
         addController("wiki", WikiController.class, "attachments");
 
         WikiService.register(new ServiceImpl());

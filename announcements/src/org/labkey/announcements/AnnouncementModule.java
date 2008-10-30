@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.announcements.model;
+package org.labkey.announcements;
 
 import junit.framework.TestCase;
 import org.apache.log4j.Logger;
 import org.labkey.announcements.AnnouncementsController;
+import org.labkey.announcements.model.*;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.data.Container;
@@ -100,6 +101,10 @@ public class AnnouncementModule extends DefaultModule implements ContainerManage
             },
             new DiscussionWebPartFactory()
         );
+    }
+
+    protected void init()
+    {
         addController("announcements", AnnouncementsController.class);
     }
 

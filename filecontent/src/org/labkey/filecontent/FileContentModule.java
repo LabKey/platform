@@ -40,6 +40,10 @@ public class FileContentModule extends DefaultModule
     public FileContentModule()
     {
         super(NAME, 8.20, null, false, new FilesWebPart.Factory(HttpView.BODY), new FilesWebPart.Factory("right"));
+    }
+
+    protected void init()
+    {
         addController("filecontent", FileContentController.class);
     }
 

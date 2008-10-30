@@ -41,7 +41,11 @@ public class AuditModule extends DefaultModule
 
     public AuditModule()
     {
-        super(NAME, 8.24, null, true);
+        super(NAME, 8.24, "/org/labkey/audit", true);
+    }
+
+    protected void init()
+    {
         AuditLogService.registerProvider(AuditLogImpl.get());
         addController("audit", AuditController.class);
     }

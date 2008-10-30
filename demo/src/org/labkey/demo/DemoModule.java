@@ -45,7 +45,7 @@ public class DemoModule extends DefaultModule implements ContainerManager.Contai
 
     public DemoModule()
     {
-        super(NAME, 1.00, null, true,
+        super(NAME, 1.00, "/org/labkey/demo", true,
             new BaseWebPartFactory("Demo Summary") {
                 public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
                 {
@@ -62,6 +62,10 @@ public class DemoModule extends DefaultModule implements ContainerManager.Contai
                     return new DemoWebPart();
                 }
             });
+    }
+
+    protected void init()
+    {
         addController("demo", DemoController.class);
     }
 

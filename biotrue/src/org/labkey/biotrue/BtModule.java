@@ -37,10 +37,14 @@ public class BtModule extends DefaultModule
     public BtModule()
     {
         super(NAME, 8.20, null, true, BtOverviewWebPart.FACTORY);
+    }
+
+    protected void init()
+    {
         addController("biotrue", BtController.class);
         DefaultSchema.registerProvider("biotrue", BtSchema.PROVIDER);
     }
-    
+
     public Set<String> getSchemaNames()
     {
         return Collections.singleton("biotrue");

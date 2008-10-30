@@ -65,7 +65,10 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
                 return new PipelineWebPart(portalCtx);
             }
         });
+    }
 
+    protected void init()
+    {
         PipelineServiceImpl ps = new PipelineServiceImpl();
         PipelineService.setInstance(ps);
 

@@ -48,16 +48,21 @@ public class QueryModule extends DefaultModule
     public QueryModule()
     {
         super(NAME, 8.25, null, true, new QueryWebPartFactory(), new ReportsWebPartFactory());
+    }
+
+
+    protected void init()
+    {
         addController("query", QueryControllerSpring.class);
         addController("reports", ReportsController.class);
         addController("dbuserschema", DbUserSchemaController.class);
-        
+
         QueryService.set(new QueryServiceImpl());
         ContainerManager.addContainerListener(QueryManager.CONTAINER_LISTENER);
 
         ReportService.registerProvider(new ReportServiceImpl());
         ReportService.get().addUIProvider(new ReportUIProvider());
-        
+
         ChartRendererFactory.get().addChartRenderer(XYChartRenderer.getInstance());
         ChartRendererFactory.get().addChartRenderer(TimeSeriesRenderer.getInstance());
         ReportService.get().registerDescriptor(new ReportDescriptor());
@@ -70,23 +75,11 @@ public class QueryModule extends DefaultModule
         ReportService.get().registerReport(new RReport());
     }
 
-
     public void startup(ModuleContext moduleContext)
     {
         PipelineService.get().registerPipelineProvider(new ReportsPipelineProvider());
         ReportsController.registerAdminConsoleLinks();
         super.startup(moduleContext);
-
-/*
-        ReportService.get().registerDescriptor(new ReportDescriptor());
-        ReportService.get().registerDescriptor(new ChartReportDescriptor());
-        ReportService.get().registerDescriptor(new QueryReportDescriptor());
-        ReportService.get().registerDescriptor(new RReportDescriptor());
-
-        ReportService.get().registerReport(new QueryReport());
-        ReportService.get().registerReport(new ChartQueryReport());
-        ReportService.get().registerReport(new RReport());
-*/
     }
 
 

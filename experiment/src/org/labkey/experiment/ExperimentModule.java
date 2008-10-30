@@ -79,6 +79,10 @@ public class ExperimentModule extends SpringModule
     public ExperimentModule()
     {
         super(ExperimentService.MODULE_NAME, 8.23, "/org/labkey/experiment", true, createWebPartList());
+    }
+
+    protected void init()
+    {
         addController("experiment", ExperimentController.class);
         addController("experiment-types", TypesController.class);
         addController("property", PropertyController.class);
@@ -86,7 +90,7 @@ public class ExperimentModule extends SpringModule
         ExperimentService.setInstance(new ExperimentServiceImpl());
         PropertyService.setInstance(new PropertyServiceImpl());
         ListService.setInstance(new ListServiceImpl());
-        
+
         ExperimentProperty.register();
         SamplesSchema.register();
         ExpSchema.register();

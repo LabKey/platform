@@ -38,7 +38,11 @@ public class AuthenticationModule extends DefaultModule
 
     public AuthenticationModule()
     {
-        super(NAME, 8.20, null, false);
+        super(NAME, 8.20, "org/labkey/authentication", false);
+    }
+
+    protected void init()
+    {
         addController("opensso", OpenSSOController.class);
         addController("ldap", LdapController.class);
         AuthenticationManager.registerProvider(new OpenSSOProvider(), Priority.High);

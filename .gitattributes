@@ -52,6 +52,7 @@ announcements/src/META-INF/announcements/scripts/sql[!!-~]server/obsolete/cpas-0
 announcements/src/META-INF/announcements/scripts/sql[!!-~]server/obsolete/cpas-0.00-0.70.sql -text
 announcements/src/META-INF/announcements/scripts/sql[!!-~]server/obsolete/cpas-0.58-0.59.sql -text
 announcements/src/META-INF/comm.xml -text
+announcements/src/org/labkey/announcements/AnnouncementModule.java -text
 announcements/src/org/labkey/announcements/DailyDigestPage.java -text
 announcements/src/org/labkey/announcements/EmailNotificationPage.java -text
 announcements/src/org/labkey/announcements/EmailPreferencesPage.java -text
@@ -73,7 +74,6 @@ announcements/src/org/labkey/announcements/emailPreferences.jsp -text
 announcements/src/org/labkey/announcements/insert.jsp -text
 announcements/src/org/labkey/announcements/model/Announcement.java -text
 announcements/src/org/labkey/announcements/model/AnnouncementManager.java -text
-announcements/src/org/labkey/announcements/model/AnnouncementModule.java -text
 announcements/src/org/labkey/announcements/model/DailyDigest.java -text
 announcements/src/org/labkey/announcements/model/DailyDigestEmailPrefsSelector.java -text
 announcements/src/org/labkey/announcements/model/DiscussionServiceImpl.java -text
