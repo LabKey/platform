@@ -20,7 +20,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayService;
@@ -40,7 +39,7 @@ public class XarAssayModule extends DefaultModule implements ContainerManager.Co
 
     public XarAssayModule()
     {
-        super("XarAssay", 8.10, null, false);
+        super("XarAssay", 8.30, null, false);
         addController("xarassay", XarAssayController.class);
     }
 
@@ -73,6 +72,7 @@ public class XarAssayModule extends DefaultModule implements ContainerManager.Co
         ContainerManager.addContainerListener(this);
 
         AssayService.get().registerAssayProvider(new XarAssayProvider());
+//        AssayService.get().registerAssayProvider(new MsFractionAssayProvider());
         AssayService.get().registerAssayProvider(new CptacAssayProvider());
         PipelineService.get().registerPipelineProvider(new XarAssayPipelineProvider());
 

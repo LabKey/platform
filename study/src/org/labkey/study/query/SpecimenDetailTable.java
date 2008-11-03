@@ -34,6 +34,7 @@ public class SpecimenDetailTable extends BaseStudyTable
         rowIdColumn.setKeyField(true);
         addWrapColumn(_rootTable.getColumn("Container"));
         addWrapColumn(_rootTable.getColumn("SpecimenNumber"));
+        addWrapColumn(_rootTable.getColumn("SpecimenHash")).setIsHidden(true);
         addWrapColumn(_rootTable.getColumn("GlobalUniqueId"));
         ColumnInfo participantColumn = new AliasedColumn(this, "ParticipantId", _rootTable.getColumn("PTID"));
         participantColumn.setFk(new QueryForeignKey(_schema, "Participant", "ParticipantId", null));

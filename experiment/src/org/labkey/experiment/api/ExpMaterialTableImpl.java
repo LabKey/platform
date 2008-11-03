@@ -24,6 +24,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.security.ACL;
+import org.labkey.experiment.list.ListSchema;
 
 import java.util.Collections;
 import java.util.List;
@@ -39,6 +40,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
     {
         super(alias, ExperimentServiceImpl.get().getTinfoMaterial());
         _schema = schema;
+        setName(ExpSchema.TableType.Materials.name());
     }
 
     public ColumnInfo createColumn(String alias, Column column)
@@ -163,6 +165,10 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
                 addSampleSetColumns(_ss);
             }
         }
+        if (_ss != null)
+        {
+            setName(_ss.getName());
+        }
 
         ActionURL url = new ActionURL("Experiment", "showMaterial", schema.getContainer().getPath());
         setDetailsURL(new DetailsURL(url, Collections.singletonMap("rowId", "RowId")));
@@ -180,5 +186,14 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
             visibleColumns.add(new FieldKey(keyProp, pd.getName()));
         }
         setDefaultVisibleColumns(visibleColumns);
+    }
+
+    public String getPublicSchemaName()
+    {
+        if (_ss != null)
+        {
+            return SamplesSchema.SCHEMA_NAME;
+        }
+        return super.getPublicSchemaName();
     }
 }

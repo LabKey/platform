@@ -178,13 +178,13 @@ public class MothershipManager
             else
             {
                 existingSession.setLastKnownTime(now);
-                existingSession.setContainerCount(session.getContainerCount());
-                existingSession.setProjectCount(session.getProjectCount());
-                existingSession.setActiveUserCount(session.getActiveUserCount());
-                existingSession.setUserCount(session.getUserCount());
-                existingSession.setAdministratorEmail(session.getAdministratorEmail());
-                existingSession.setEnterprisePipelineEnabled(session.isEnterprisePipelineEnabled());
-                existingSession.setLdapEnabled(session.isLdapEnabled());
+                existingSession.setContainerCount(getBestInteger(existingSession.getContainerCount(), session.getContainerCount()));
+                existingSession.setProjectCount(getBestInteger(existingSession.getProjectCount(), session.getProjectCount()));
+                existingSession.setActiveUserCount(getBestInteger(existingSession.getActiveUserCount(), session.getActiveUserCount()));
+                existingSession.setUserCount(getBestInteger(existingSession.getUserCount(), session.getUserCount()));
+                existingSession.setAdministratorEmail(getBestString(existingSession.getAdministratorEmail(), session.getAdministratorEmail()));
+                existingSession.setEnterprisePipelineEnabled(getBestBoolean(existingSession.isEnterprisePipelineEnabled(), session.isEnterprisePipelineEnabled()));
+                existingSession.setLdapEnabled(getBestBoolean(existingSession.isLdapEnabled(), session.isLdapEnabled()));
 
                 session = Table.update(null, getTableInfoServerSession(), existingSession, existingSession.getServerSessionId(), null);
             }
@@ -201,6 +201,24 @@ public class MothershipManager
     private String getBestString(String currentValue, String newValue)
     {
         if (newValue == null || newValue.equals(""))
+        {
+            return currentValue;
+        }
+        return newValue;
+    }
+
+    private Integer getBestInteger(Integer currentValue, Integer newValue)
+    {
+        if (newValue == null)
+        {
+            return currentValue;
+        }
+        return newValue;
+    }
+
+    private Boolean getBestBoolean(Boolean currentValue, Boolean newValue)
+    {
+        if (newValue == null)
         {
             return currentValue;
         }

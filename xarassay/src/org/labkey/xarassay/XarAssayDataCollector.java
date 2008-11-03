@@ -22,7 +22,6 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.security.ACL;
 import org.labkey.api.study.assay.AbstractAssayDataCollector;
 import org.labkey.api.study.assay.AssayRunUploadContext;
-import org.labkey.api.study.assay.AbstractAssayDataCollector;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 

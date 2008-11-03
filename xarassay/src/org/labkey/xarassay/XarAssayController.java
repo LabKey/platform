@@ -16,9 +16,8 @@
 
 package org.labkey.xarassay;
 
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -103,13 +102,13 @@ public class XarAssayController extends SpringActionController
             runUploadLink.addParameter("path",form.getPath());
             runUploadLink.addParameter("referer","pipeline");
 
-            Map<String, XarAssayProvider> mapXarAssayProviders = XarAssayProvider.getXarAssayProviders();
+            Map<String, XarAssayProvider> mapMsBaseAssayProviders = XarAssayProvider.getMsBaseAssayProviders();
 
             List<ExpProtocol> ap = AssayService.get().getAssayProtocols(c);
             for (ExpProtocol p : ap)
             {
                 Lsid lsid = new Lsid(p.getLSID());
-                if (mapXarAssayProviders.containsKey(lsid.getNamespacePrefix()) )
+                if (mapMsBaseAssayProviders.containsKey(lsid.getNamespacePrefix()) )
                 {
                     assayProtocols.add(p);
                     runUploadLink.replaceParameter("rowId", Integer.toString(p.getRowId()));

@@ -567,7 +567,7 @@ table.labkey-data-region
     vertical-align: top;
 }
 
-.labkey-data-region TD, .labkey-data-region TH
+.labkey-data-region TD, .labkey-data-region TH, .wiki-table TD, .wiki-table TH
 {
     padding: 1px;
     padding-right:4px;

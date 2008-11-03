@@ -24,10 +24,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.RequiresSiteAdmin;
-import org.labkey.api.security.User;
+import org.labkey.api.security.*;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.*;
 import org.labkey.api.util.Search.SearchResultsView;
@@ -864,7 +861,7 @@ public class ProjectController extends SpringActionController
     /**
      * Returns all contains visible to the current user
      */
-    @RequiresPermission(ACL.PERM_NONE) //the action returns only containers that are visible to the current user
+    @RequiresLogin
     public class GetContainersAction extends ApiAction<GetContainersForm>
     {
         public ApiResponse execute(GetContainersForm form, BindException errors) throws Exception

@@ -18,6 +18,7 @@ package org.labkey.xarassay;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.list.ListService;
@@ -25,8 +26,8 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.security.User;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.study.actions.AssayRunUploadForm;
+import org.labkey.api.view.HttpView;
 
 import java.util.Map;
 
@@ -37,16 +38,15 @@ import java.util.Map;
  */
 public class CptacAssayProvider extends XarAssayProvider
 {
-    // todo:  check if these should have differnt names from XarAssayProvider class
+    // todo:  check if these should have differnt names from MsFractionAssayProvider class
     public static final String PROTOCOL_LSID_NAMESPACE_PREFIX = "CptacAssayProtocol";
-    public static final String TEMPLATE_RESOURCE_DIR = "org/labkey/xarassay/";
-    public static final String TEMPLATE_FILE = "CptacDefaultTemplate.xml";
     public static final String NAME = "Cptac";
-
+    public static final String DATA_LSID_PREFIX = "MZXMLData";
+    public static final DataType MS_ASSAY_DATA_TYPE = new DataType(DATA_LSID_PREFIX);
 
     public CptacAssayProvider()
     {
-        super(PROTOCOL_LSID_NAMESPACE_PREFIX, RUN_LSID_NAMESPACE_PREFIX);
+        super(PROTOCOL_LSID_NAMESPACE_PREFIX, RUN_LSID_NAMESPACE_PREFIX, MS_ASSAY_DATA_TYPE);
     }
 
 
@@ -55,7 +55,7 @@ public class CptacAssayProvider extends XarAssayProvider
         return PROTOCOL_LSID_NAMESPACE_PREFIX;
     }
 
-    public String getRunLsidNamespacePrefix()
+  /*  public String getRunLsidNamespacePrefix()
     {
         return RUN_LSID_NAMESPACE_PREFIX;
     }
@@ -65,22 +65,7 @@ public class CptacAssayProvider extends XarAssayProvider
         return RUN_LSID_OBJECT_ID_PREFIX;
     }
 
-    public String getTemplateResource()
-    {
-        return TEMPLATE_RESOURCE_DIR + TEMPLATE_FILE;
-    }
-
-    public String getTemplateDir()
-    {
-        return "protocols/" + getName();
-    }
-
-    public String getTemplateFileName()
-    {
-        return TEMPLATE_FILE;
-    }
-
-    public String getName()
+*/    public String getName()
     {
         return NAME;
     }
@@ -302,8 +287,8 @@ public class CptacAssayProvider extends XarAssayProvider
     protected Domain createRunDomain(Container c, User user)
     {
         Domain runDomain = super.createRunDomain(c, user);
-        addProperty(runDomain, "SOP", PropertyType.BOOLEAN);
-        addProperty(runDomain, "StartDate", PropertyType.DATE_TIME);
+        addProperty(runDomain, "SOP","SOP", PropertyType.BOOLEAN, "Standard Operating Procedure used for this run");
+        addProperty(runDomain, "StartDate", "Start Date", PropertyType.DATE_TIME, "Date that this run was performed (not upload date). ");
 
         return runDomain;
     }

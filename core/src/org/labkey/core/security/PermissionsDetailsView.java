@@ -39,16 +39,6 @@ import java.util.List;
 */
 public class PermissionsDetailsView extends WebPartView
 {
-    String optionsAll =
-            "<option value=" + org.labkey.api.security.SecurityManager.PermissionSet.ADMIN.getPermissions() + ">" + SecurityManager.PermissionSet.ADMIN.getLabel() + "</option>";
-    String options =
-            "<option value=" + SecurityManager.PermissionSet.EDITOR.getPermissions() + ">" + SecurityManager.PermissionSet.EDITOR.getLabel() + "</option>" +
-                    "<option value=" + SecurityManager.PermissionSet.AUTHOR.getPermissions() + ">" + SecurityManager.PermissionSet.AUTHOR.getLabel() + "</option>" +
-                    "<option value=" + SecurityManager.PermissionSet.READER.getPermissions() + ">" + SecurityManager.PermissionSet.READER.getLabel() + "</option>" +
-                    "<option value=" + SecurityManager.PermissionSet.RESTRICTED_READER.getPermissions() + ">" + SecurityManager.PermissionSet.RESTRICTED_READER.getLabel() + "</option>" +
-                    "<option value=" + SecurityManager.PermissionSet.SUBMITTER.getPermissions() + ">" + SecurityManager.PermissionSet.SUBMITTER.getLabel() + "</option>" +
-                    "<option value=" + SecurityManager.PermissionSet.NO_PERMISSIONS.getPermissions() + ">" + SecurityManager.PermissionSet.NO_PERMISSIONS.getLabel() + "</option>";
-
     String helpText = "<b>Admin:</b> Users have all permissions on a folder.<br><br>" +
             "<b>Editor:</b> Users can modify data, but cannot perform administrative actions.<br><br>" +
             "<b>Author:</b> Users can modify their own data, but can only read others' data.<br><br>" +
@@ -80,6 +70,13 @@ public class PermissionsDetailsView extends WebPartView
             setTitle("Permissions for " + _c.getPath());
     }
 
+    private String getPermissionsOption(SecurityManager.PermissionSet permission, int selectedPerm)
+    {
+        return "<option value=\"" + permission.getPermissions() + "\"" +
+                    (selectedPerm == permission.getPermissions() ? " SELECTED" : "") +
+                    ">" + permission.getLabel() + "</option>\n";
+    }
+
     private void renderGroupTableRow(Group group, ACL acl, PrintWriter out, String displayName)
     {
         int id = group.getUserId();
@@ -94,8 +91,15 @@ public class PermissionsDetailsView extends WebPartView
         out.print(htmlId);
         out.print(">");
         if (!group.isGuests() || perm == ACL.PERM_ALLOWALL)
-            out.print(optionsAll);
-        out.print(options);
+            out.print(getPermissionsOption(SecurityManager.PermissionSet.ADMIN, perm));
+
+        out.print(getPermissionsOption(SecurityManager.PermissionSet.EDITOR, perm));
+        out.print(getPermissionsOption(SecurityManager.PermissionSet.AUTHOR, perm));
+        out.print(getPermissionsOption(SecurityManager.PermissionSet.READER, perm));
+        out.print(getPermissionsOption(SecurityManager.PermissionSet.RESTRICTED_READER, perm));
+        out.print(getPermissionsOption(SecurityManager.PermissionSet.SUBMITTER, perm));
+        out.print(getPermissionsOption(SecurityManager.PermissionSet.NO_PERMISSIONS, perm));
+        
         SecurityManager.PermissionSet permSet = SecurityManager.PermissionSet.findPermissionSet(perm);
         if (permSet == null)
             out.print("<option value=" + perm + ">" + perm + "</option>");
@@ -112,11 +116,6 @@ public class PermissionsDetailsView extends WebPartView
             out.print("permissions</a>]</td>");
         }
         out.print("</tr>");
-        out.print("<script><!--\n");
-        out.print("document.getElementById('");
-        out.print(htmlId);
-        out.print("').value = '" + perm + "';\n");
-        out.print("--></script>\n");
     }
 
 

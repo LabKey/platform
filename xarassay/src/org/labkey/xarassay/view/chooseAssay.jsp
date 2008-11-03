@@ -16,13 +16,12 @@
  */
 %>
 <%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.xarassay.XarChooseAssayForm" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.xarassay.XarAssayController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<XarChooseAssayForm> me = (JspView<XarChooseAssayForm>) HttpView.currentView();

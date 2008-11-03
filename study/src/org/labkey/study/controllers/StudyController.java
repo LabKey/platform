@@ -534,12 +534,6 @@ public class StudyController extends BaseStudyController
             queryView.setForExport(export != null);
             queryView.setShowEditLinks(!QueryService.get().isQuerySnapshot(getContainer(), StudyManager.getSchemaName(), def.getLabel()));
 
-            // Only show the checkboxes next to items if it's an administrator or they have write access
-            if (getUser().isAdministrator() || def.canWrite(getUser()))
-                queryView.setShowRecordSelectors(true);
-            else
-                queryView.setShowRecordSelectors(false);
-
             final ActionURL url = context.getActionURL();
             setColumnURL(url, queryView, querySchema, def);
 
@@ -2810,6 +2804,7 @@ public class StudyController extends BaseStudyController
         private Integer _cohortId;
         private String _label;
         private Visit _visit;
+        private int _visitDateDatasetId;
 
         public VisitForm()
         {
@@ -2884,6 +2879,7 @@ public class StudyController extends BaseStudyController
                 addActionError("Sequence numbers must be numeric");
             }
             _visit.setCohortId(getCohortId());
+            _visit.setVisitDateDatasetId(getVisitDateDatasetId());
 
             return _visit;
         }
@@ -2978,6 +2974,16 @@ public class StudyController extends BaseStudyController
         public void setCohortId(Integer cohortId)
         {
             _cohortId = cohortId;
+        }
+
+        public int getVisitDateDatasetId()
+        {
+            return _visitDateDatasetId;
+        }
+
+        public void setVisitDateDatasetId(int visitDateDatasetId)
+        {
+            _visitDateDatasetId = visitDateDatasetId;
         }
     }
 

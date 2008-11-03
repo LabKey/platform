@@ -18,7 +18,6 @@ package org.labkey.pipeline.mule;
 import org.apache.axis.message.addressing.EndpointReferenceType;
 import org.apache.axis.types.NonNegativeInteger;
 import org.apache.log4j.Logger;
-import org.apache.commons.io.FileUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.globus.axis.util.Util;
 import org.globus.exec.client.GramJob;
@@ -38,7 +37,6 @@ import org.globus.gsi.proxy.ext.ProxyPolicy;
 import org.globus.wsrf.NotificationConsumerManager;
 import org.globus.wsrf.impl.notification.ServerNotificationConsumerManager;
 import org.globus.wsrf.impl.security.authorization.Authorization;
-import org.globus.wsrf.impl.security.authorization.exceptions.AuthorizationException;
 import org.globus.wsrf.impl.security.descriptor.GSITransportAuthMethod;
 import org.globus.wsrf.impl.security.descriptor.ResourceSecurityDescriptor;
 import org.ietf.jgss.GSSCredential;
@@ -46,7 +44,6 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.NetworkDrive;
-import org.labkey.pipeline.xstream.PathMapperImpl;
 import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
@@ -67,7 +64,6 @@ import java.security.InvalidKeyException;
 import java.security.Security;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
 {
@@ -128,7 +124,7 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
     {
         for (PipelineStatusFileImpl sf : PipelineStatusManager.getStatusFilesForLocation(location, false))
         {
-            if (sf.getJobStore() != null)
+            if (sf.getJobStore() != null && sf.isActive())
             {
                 PipelineJob job = null;
                 try

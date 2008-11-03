@@ -36,7 +36,6 @@ public class SpecimenSummaryTable extends BaseStudyTable
     public SpecimenSummaryTable(StudyQuerySchema schema)
     {
         super(schema, StudySchema.getInstance().getTableInfoSpecimenSummary());
-        addWrapColumn(_rootTable.getColumn("SpecimenNumber"));
         ColumnInfo participantColumn = new AliasedColumn(this, "ParticipantId", _rootTable.getColumn("PTID"));
         participantColumn.setFk(new QueryForeignKey(_schema, "Participant", "ParticipantId", null));
         participantColumn.setKeyField(true);
@@ -125,6 +124,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("SalReceiptDate"));
         addWrapColumn(_rootTable.getColumn("ClassId"));
         addWrapColumn(_rootTable.getColumn("ProtocolNumber"));
+        addWrapColumn(_rootTable.getColumn("SpecimenHash")).setIsHidden(true);
 
         // Create an ExprColumn to get the max *possible* comments for each specimen.  It's only the possible number
         // (rather than the actual number), because a specimennumber isn't sufficient to identify a row in the specimen
@@ -132,7 +132,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
         // (more expensive) queries are required to check for actual comments in the DB for each row.
         SQLFragment sqlFrag = new SQLFragment("(SELECT CAST(COUNT(*) AS VARCHAR(5)) FROM " +
                 StudySchema.getInstance().getTableInfoSpecimenComment() +
-                " WHERE SpecimenNumber = " + ExprColumn.STR_TABLE_ALIAS + ".SpecimenNumber" +
+                " WHERE SpecimenHash = " + ExprColumn.STR_TABLE_ALIAS + ".SpecimenHash" +
                 " AND Container = ?)");
         sqlFrag.add(getContainer().getId());
         //  Set this column type to string so that exports to excel correctly set the column type as string.
@@ -169,17 +169,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
         public void addQueryColumns(Set<ColumnInfo> columns)
         {
             columns.add(getColumnInfo().getParentTable().getColumn("Comments"));
-            columns.add(getColumnInfo().getParentTable().getColumn("SpecimenNumber"));
-            columns.add(getColumnInfo().getParentTable().getColumn("AdditiveType"));
-            columns.add(getColumnInfo().getParentTable().getColumn("DerivativeType"));
-        }
-
-        private SampleManager.SpecimenSummaryKey getKey(RenderContext ctx)
-        {
-            String specimenNumber = (String) ctx.get("SpecimenNumber");
-            Integer additiveType = (Integer) ctx.get("AdditiveType");
-            Integer derivativeType = (Integer) ctx.get("DerivativeType");
-            return new SampleManager.SpecimenSummaryKey(specimenNumber, derivativeType, additiveType);
+            columns.add(getColumnInfo().getParentTable().getColumn("SpecimenHash"));
         }
 
         private String getDisplayText(RenderContext ctx, String lineSeparator)
@@ -192,7 +182,8 @@ public class SpecimenSummaryTable extends BaseStudyTable
             {
                 try
                 {
-                    SpecimenComment[] comments = SampleManager.getInstance().getSpecimenCommentForSpecimen(ctx.getContainer(), getKey(ctx));
+                    String specimenHash = (String) ctx.get("SpecimenHash");
+                    SpecimenComment[] comments = SampleManager.getInstance().getSpecimenCommentForSpecimen(ctx.getContainer(), specimenHash);
                     if (comments != null && comments.length > 0)
                     {
                         Map<String, List<String>> commentToIds = new TreeMap<String, List<String>>();

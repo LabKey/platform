@@ -47,7 +47,7 @@ public class QueryModule extends DefaultModule
     public static final String NAME = "Query";
     public QueryModule()
     {
-        super(NAME, 8.25, null, true, new QueryWebPartFactory(), new ReportsWebPartFactory());
+        super(NAME, 8.30, null, true, new QueryWebPartFactory(), new ReportsWebPartFactory());
     }
 
 

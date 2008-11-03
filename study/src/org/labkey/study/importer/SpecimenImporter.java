@@ -33,6 +33,7 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.model.Specimen;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.SpecimenComment;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -386,6 +387,8 @@ public class SpecimenImporter
                     fileMap.get("primary_types"), false);
             populateSpecimenTables(schema, user, container, loadInfo);
 
+            updateSpecimenCommentHashes(container, user);
+
             Study study = StudyManager.getInstance().getStudy(container);
             StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user);
 
@@ -430,6 +433,8 @@ public class SpecimenImporter
             replaceTable(schema, container, "SpecimenPrimaryType", PRIMARYTYPE_COLUMNS,
                     tsvMap.get("primary_types"), false);
             populateSpecimenTables(schema, user, container, loadInfo);
+
+            updateSpecimenCommentHashes(container, user);
 
             Study study = StudyManager.getInstance().getStudy(container);
             StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user);
@@ -498,7 +503,7 @@ public class SpecimenImporter
         populateSpecimenEvents(schema, container, info);
 
         cpuCurrentLocations.start();
-        updateSpecimenLocations(container, user);
+        updateCalculatedSpecimenData(container, user);
         cpuCurrentLocations.stop();
         info("Time to determine locations: " + cpuCurrentLocations.toString());
 
@@ -515,7 +520,7 @@ public class SpecimenImporter
         return a.intValue() == b.intValue();
     }
 
-    public static void updateAllSpecimenLocations(User user) throws SQLException
+    public static void updateAllCalculatedSpecimenData(User user) throws SQLException
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         DbScope scope = schema.getScope();
@@ -527,7 +532,8 @@ public class SpecimenImporter
             {
                 if (transactionOwner)
                     scope.beginTransaction();
-                updateSpecimenLocations(study.getContainer(), user);
+                updateCalculatedSpecimenData(study.getContainer(), user);
+                updateSpecimenCommentHashes(study.getContainer(), user);
                 if (transactionOwner)
                     scope.commitTransaction();
             }
@@ -539,7 +545,7 @@ public class SpecimenImporter
         }
     }
 
-    private static void updateSpecimenLocations(Container container, User user) throws SQLException
+    private static void updateCalculatedSpecimenData(Container container, User user) throws SQLException
     {
         // clear caches before determining current sites:
         SimpleFilter containerFilter = new SimpleFilter("Container", container.getId());
@@ -553,15 +559,49 @@ public class SpecimenImporter
             for (Specimen specimen : specimens)
             {
                 Integer currentLocation = SampleManager.getInstance().getCurrentSiteId(specimen);
-                if (!safeIntegerEqual(currentLocation, specimen.getCurrentLocation()))
+                String specimenHash = getSpecimenHash(specimen);
+                if (!safeIntegerEqual(currentLocation, specimen.getCurrentLocation()) ||
+                    !specimenHash.equals(specimen.getSpecimenHash()))
                 {
                     specimen.setCurrentLocation(currentLocation);
+                    specimen.setSpecimenHash(specimenHash);
                     Table.update(user, StudySchema.getInstance().getTableInfoSpecimen(), specimen, specimen.getRowId(), null);
                 }
             }
             offset += CURRENT_SITE_UPDATE_SIZE;
         }
         while (specimens.length > 0);
+    }
+
+    private static String getSpecimenHash(Specimen specimen)
+    {
+        String separator = "~";
+        StringBuilder builder = new StringBuilder();
+        builder.append(specimen.getPtid()).append(separator);
+        builder.append(specimen.getDrawTimestamp()).append(separator);
+        builder.append(specimen.getVisitValue()).append(separator);
+        builder.append(specimen.getVisitDescription()).append(separator);
+        builder.append(specimen.getVolumeUnits()).append(separator);
+        builder.append(specimen.getSubAdditiveDerivative()).append(separator);
+        builder.append(specimen.getPrimaryTypeId()).append(separator);
+        builder.append(specimen.getDerivativeTypeId()).append(separator);
+        builder.append(specimen.getAdditiveTypeId()).append(separator);
+        builder.append(specimen.getSalReceiptDate()).append(separator);
+        builder.append(specimen.getProtocolNumber()).append(separator);
+        builder.append(specimen.getOriginatingLocationId());
+        return builder.toString();
+    }
+
+    private static void updateSpecimenCommentHashes(Container container, User user) throws SQLException
+    {
+        Map<Specimen, SpecimenComment> allcommented = SampleManager.getInstance().getSpecimensWithComments(container);
+        for (Map.Entry<Specimen, SpecimenComment> commented : allcommented.entrySet())
+        {
+            Specimen specimen = commented.getKey();
+            SpecimenComment comment = commented.getValue();
+            comment.setSpecimenHash(getSpecimenHash(specimen));
+            Table.update(user, StudySchema.getInstance().getTableInfoSpecimenComment(), comment, comment.getRowId(), null);
+        }
     }
 
     private Map<String, File> createFilemap(List<File> files) throws IOException

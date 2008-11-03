@@ -41,7 +41,7 @@ public class AuditModule extends DefaultModule
 
     public AuditModule()
     {
-        super(NAME, 8.24, "/org/labkey/audit", true);
+        super(NAME, 8.30, "/org/labkey/audit", true);
     }
 
     protected void init()

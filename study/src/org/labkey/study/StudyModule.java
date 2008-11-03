@@ -93,7 +93,7 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
 
     public StudyModule()
     {
-        super(NAME, 8.29, "/org/labkey/study", true, reportsPartFactory, reportsWidePartFactory, samplesPartFactory,
+        super(NAME, 8.3, "/org/labkey/study", true, reportsPartFactory, reportsWidePartFactory, samplesPartFactory,
                 samplesWidePartFactory, datasetsPartFactory, manageStudyPartFactory,
                 enrollmentChartPartFactory, studyDesignsWebPartFactory, studyDesignSummaryWebPartFactory,
                 assayListWebPartFactory, assayDetailsWebPartFactory, participantWebPartFactory);
@@ -311,7 +311,7 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
         {
             try
             {
-                SpecimenImporter.updateAllSpecimenLocations(viewContext.getUser());
+                SpecimenImporter.updateAllCalculatedSpecimenData(viewContext.getUser());
             }
             catch (SQLException e)
             {
@@ -330,6 +330,19 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
                 throw new RuntimeSQLException(se);
             }
         }
+
+        if (moduleContext.getInstalledVersion() >= 1.3 && moduleContext.getInstalledVersion() < 8.291)
+        {
+            try
+            {
+                SpecimenImporter.updateAllCalculatedSpecimenData(viewContext.getUser());
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
+        }
+
     }
 
     private static class ReportsWebPartFactory extends BaseWebPartFactory

@@ -14,25 +14,8 @@
  * limitations under the License.
  */
 
-package org.labkey.bigiron;
-
-import org.labkey.api.data.SqlDialect;
-import org.labkey.api.data.SqlDialectMicrosoftSQLServer;
-import org.labkey.api.data.SqlDialectMicrosoftSQLServer9;
-import org.labkey.api.module.DefaultModule;
-
-public class BigIronModule extends DefaultModule
-{
-    public static final String NAME = "BigIron";
-
-    public BigIronModule()
-    {
-        super(NAME, 8.30, "org/labkey/bigiron", false);
-    }
-
-    protected void init()
-    {
-        SqlDialect.register(new SqlDialectMicrosoftSQLServer());
-        SqlDialect.register(new SqlDialectMicrosoftSQLServer9());
-    }
-}
+UPDATE exp.protocolapplication SET cpastype = 'ProtocolApplication' WHERE
+    cpastype != 'ProtocolApplication' AND
+    cpastype != 'ExperimentRun' AND
+    cpastype != 'ExperimentRunOutput'
+GO

@@ -17,9 +17,9 @@
 package org.labkey.xarassay ;
 
 import org.labkey.api.action.FormArrayList;
-import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 
 import java.io.File;
@@ -41,8 +41,6 @@ public class XarAssayForm extends AssayRunUploadForm
     private Integer _numFilesRemaining;
     private ArrayList<String> _undescribedFileNames = new FormArrayList<String>(String.class) ;
     private Map<String, String> _links = new LinkedHashMap<String, String>();
-
-    //private int _dataId;
 
     public XarAssayForm()
     {
@@ -126,7 +124,7 @@ public class XarAssayForm extends AssayRunUploadForm
                 {
                     f = entry.getValue();
 
-                    d = ExperimentService.get().getDataByURL(f, getContainer());
+                    d = ExperimentService.get().getExpDataByURL(f, getContainer());
                     if ((null == d) || (null== d.getRun()))
                         udf.add(entry.getKey());
                 }
@@ -155,21 +153,5 @@ public class XarAssayForm extends AssayRunUploadForm
     public void setLinks(Map<String, String> links)
     {
         _links = links;
-    }
-
-    //todo: can I switch to built-in sample handling?
-    public Map<String, String> getRunSamplesByCaption()
-    {
-        return Collections.emptyMap();
-    }
-
-    public Map<String, String> getRunSamplesByFormElementName()
-    {
-        return Collections.emptyMap();
-    }
-
-    public Collection<String> getSampleIds()
-    {
-        return Collections.emptyList();
     }
 }

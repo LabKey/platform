@@ -26,7 +26,7 @@ import org.labkey.api.data.Entity;
 public class SpecimenComment extends Entity
 {
     private String _globalUniqueId;
-    private String _specimenNumber;
+    private String _specimenHash;
     private String _comment;
     private Integer _rowId;
 
@@ -60,13 +60,13 @@ public class SpecimenComment extends Entity
         _rowId = rowId;
     }
 
-    public String getSpecimenNumber()
+    public String getSpecimenHash()
     {
-        return _specimenNumber;
+        return _specimenHash;
     }
 
-    public void setSpecimenNumber(String specimenNumber)
+    public void setSpecimenHash(String specimenHash)
     {
-        _specimenNumber = specimenNumber;
+        _specimenHash = specimenHash;
     }
 }

@@ -60,7 +60,7 @@ CREATE VIEW study.SpecimenDetail AS
         ) SpecimenInfo;
 
 CREATE VIEW study.SpecimenSummary AS
-    SELECT Container, SpecimenNumber, Ptid, VisitDescription, VisitValue, SUM(Volume) AS TotalVolume,
+    SELECT Container, SpecimenHash, Ptid, VisitDescription, VisitValue, SUM(Volume) AS TotalVolume,
         SUM(CASE Available WHEN True THEN Volume ELSE 0 END) AS AvailableVolume,
         VolumeUnits, PrimaryTypeId, AdditiveTypeId, DerivativeTypeId, DrawTimestamp, SalReceiptDate,
         ClassId, ProtocolNumber, SubAdditiveDerivative, OriginatingLocationId,
@@ -69,7 +69,7 @@ CREATE VIEW study.SpecimenSummary AS
         SUM(CASE AtRepository WHEN True THEN 1 ELSE 0 END) AS AtRepositoryCount,
         SUM(CASE Available WHEN True THEN 1 ELSE 0 END) AS AvailableCount
     FROM study.SpecimenDetail
-    GROUP BY Container, SpecimenNumber, Ptid, VisitDescription,
+    GROUP BY Container, SpecimenHash, Ptid, VisitDescription,
         VisitValue, VolumeUnits, PrimaryTypeId, AdditiveTypeId, DerivativeTypeId,
         DrawTimestamp, SalReceiptDate, ClassId, ProtocolNumber, SubAdditiveDerivative,
         OriginatingLocationId;

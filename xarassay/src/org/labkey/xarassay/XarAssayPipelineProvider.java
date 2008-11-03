@@ -16,12 +16,14 @@
 
 package org.labkey.xarassay;
 
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineProvider;
-import org.labkey.api.view.ViewContext;
+import org.labkey.api.util.FileType;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 
+import java.io.File;
 import java.util.List;
-import java.util.ListIterator;
 
 /**
  * User: peter@labkey.com
@@ -31,6 +33,8 @@ import java.util.ListIterator;
 public class XarAssayPipelineProvider extends PipelineProvider
 {
     public static String name = "XarAssay";
+    public static String PIPELINE_BUTTON_TEXT = "Create Assay Run";
+    public static final FileType FT_MZXML = new FileType(".mzXML");
 
     public XarAssayPipelineProvider()
     {
@@ -42,33 +46,61 @@ public class XarAssayPipelineProvider extends PipelineProvider
         return true;
 
     }
+    //TODO:
+    // use same strategy as Microarray assays to put buttons on the pipeline browser and get rid of
+    // the separate page for choosing which of the MsBaseAssay subclasses to use
 
-    public void updateFileProperties(ViewContext context, List<FileEntry> entries)
+    public void updateFileProperties(ViewContext context, PipeRoot pr, List<FileEntry> entries)
     {
 
-        for (ListIterator<FileEntry> it = entries.listIterator(); it.hasNext();)
+        for (FileEntry entry : entries)
         {
-            FileEntry entry = it.next();
             if (!entry.isDirectory())
             {
                 continue;
             }
             ActionURL actionUrl = entry.cloneHref();
-            //TODO
- /*           actionUrl.setPageFlow("XarAssay");
-            actionUrl.setAction("chooseAssay");
-*/
             actionUrl.setAction(XarAssayController.ChooseAssayAction.class);
             String protId = context.getRequest().getParameter("rowId");
             if (null != protId)
                 actionUrl.addParameter("rowId", protId);
 
             //todo:  make it possible for xarAssayProvider extensions to each put up their own buttons
-            FileAction fa = new FileAction("Create Assay Run", actionUrl, entry.listFiles(new XarAssayProvider.AnalyzeFileFilter()));
-            entry.addAction(fa);
+            addAction(actionUrl,PIPELINE_BUTTON_TEXT , entry, entry.listFiles(XarAssayPipelineProvider.getAnalyzeFilter(pr.isPerlPipeline())));
 
         }
+
     }
+
+    public static PipelineProvider.FileEntryFilter getAnalyzeFilter(boolean supportCluster)
+    {
+        return new PipelineProvider.FileEntryFilter()
+            {
+                public boolean accept(File f)
+                {
+                    return isMzXMLFile(f);
+                }
+            };
+    }
+
+    public static class AnalyzeFileFilter extends PipelineProvider.FileEntryFilter
+    {
+        public boolean accept(File file)
+        {
+            // Show all mzXML files.
+            if (isMzXMLFile(file))
+                return true;
+
+            // TODO:  If no corresponding mzXML file, show raw files.
+
+            return false;
+        }
+    }
+    public static boolean isMzXMLFile(File file)
+    {
+        return FT_MZXML.isType(file);
+    }
+
 
 
 }

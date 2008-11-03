@@ -19,6 +19,7 @@ package org.labkey.study.assay;
 import com.google.gwt.user.client.rpc.SerializableException;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
@@ -41,6 +42,7 @@ import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.common.util.Pair;
+import org.labkey.study.StudySchema;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 
 import java.sql.SQLException;
@@ -221,8 +223,13 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
     {
         if (replaceIfExisting)
         {
+            DbSchema schema = StudySchema.getInstance().getSchema();
+            boolean transactionOwner = !schema.getScope().isTransactionActive();
             try
             {
+                if (transactionOwner)
+                    schema.getScope().beginTransaction();
+
                 ExpProtocol protocol;
                 if (assay.getProtocolId() == null)
                 {
@@ -297,11 +304,15 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                 if (errors.length() > 0)
                     throw new AssayException(errors.toString());
 
+                if (transactionOwner)
+                    schema.getScope().commitTransaction();
+
                 return assay;
             }
             catch (UnexpectedException e)
             {
-                throw new AssayException(e);
+                Throwable cause = e.getCause();
+                throw new AssayException(cause.getMessage());
             }
             catch (ExperimentException e)
             {
@@ -310,6 +321,11 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             catch (SQLException e)
             {
                 throw new RuntimeSQLException(e);
+            }
+            finally
+            {
+                if (transactionOwner && schema.getScope().isTransactionActive())
+                    schema.getScope().rollbackTransaction();
             }
         }
         else

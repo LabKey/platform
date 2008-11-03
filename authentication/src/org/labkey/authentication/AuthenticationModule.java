@@ -38,7 +38,7 @@ public class AuthenticationModule extends DefaultModule
 
     public AuthenticationModule()
     {
-        super(NAME, 8.20, "org/labkey/authentication", false);
+        super(NAME, 8.30, "org/labkey/authentication", false);
     }
 
     protected void init()

@@ -140,8 +140,8 @@ public class SpecimenQueryView extends BaseStudyQueryView
             }
             else
             {
-                SpecimenSummary current = new SpecimenSummary(ctx.getContainer(), ctx.getRow());
-                count = getSampleCounts(ctx).get(current);
+                String hash = (String) ctx.getRow().get("SpecimenHash");
+                count = getSampleCounts(ctx).get(hash);
             }
             return (count != null && count.intValue() > 0);
         }
@@ -163,15 +163,15 @@ public class SpecimenQueryView extends BaseStudyQueryView
         @Override
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
-            SpecimenSummary current = new SpecimenSummary(ctx.getContainer(), ctx.getRow());
-            Integer count;
+            String hash = (String) ctx.getRow().get("SpecimenHash");
+            int count;
             if (ctx.getRow().get("AvailableCount") != null)
             {
                 count = ((Number)ctx.getRow().get("AvailableCount")).intValue();
             }
             else
             {
-                count = getSampleCounts(ctx).get(current);
+                count = getSampleCounts(ctx).get(hash).intValue();
             }
             
             if (_showOneVialIndicator && count == 1)
@@ -200,19 +200,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
         @Override
         public void addQueryColumns(Set<ColumnInfo> set)
         {
-            set.add(_table.getColumn("SpecimenNumber"));
-            set.add(_table.getColumn("PrimaryType"));
-            set.add(_table.getColumn("DerivativeType"));
-            set.add(_table.getColumn("ParticipantId"));
-            set.add(_table.getColumn("VisitDescription"));
-            set.add(_table.getColumn("Visit"));
-            set.add(_table.getColumn("VolumeUnits"));
-            set.add(_table.getColumn("AdditiveType"));
-            set.add(_table.getColumn("DrawTimestamp"));
-            set.add(_table.getColumn("SalReceiptDate"));
-            set.add(_table.getColumn("ClassId"));
-            set.add(_table.getColumn("ProtocolNumber"));
-            set.add(_table.getColumn("SubAdditiveDerivative"));
+            set.add(_table.getColumn("SpecimenHash"));
             // fix for https://cpas.fhcrc.org/Issues/home/issues/details.view?issueId=3116
             ColumnInfo atRepositoryColumn = _table.getColumn("AtRepository");
             if (atRepositoryColumn != null)
@@ -232,7 +220,8 @@ public class SpecimenQueryView extends BaseStudyQueryView
     private boolean _showRecordSelectors;
     private boolean _restrictRecordSelectors = true;
     private Map<String, String> _hiddenFormFields;
-    private Map<SpecimenSummary,Integer> _availableSpecimenCounts;
+    // key of _availableSpecimenCounts is a specimen hash, which includes ptid, type, etc.
+    private Map<String, Integer> _availableSpecimenCounts;
     private boolean _participantVisitFiltered = false;
 
 
@@ -355,14 +344,14 @@ public class SpecimenQueryView extends BaseStudyQueryView
         return new SpecimenQueryView(context, schema, qs, filter, sort, viewType, participantVisitFiltered);
     }
 
-    private Map<SpecimenSummary,Integer> getSampleCounts(RenderContext ctx)
+    private Map<String, Integer> getSampleCounts(RenderContext ctx)
     {
         if (null  == _availableSpecimenCounts)
             try
             {
-                _availableSpecimenCounts = new HashMap<SpecimenSummary, Integer>();
+                _availableSpecimenCounts = new HashMap<String, Integer>();
                 ResultSet rs = ctx.getResultSet();
-                Set<String> specimenNumbers = new HashSet<String>();
+                Set<String> specimenHashes = new HashSet<String>();
                 int originalRow = rs.getRow();
                 rs.last();
                 if (rs.getRow() - originalRow < 1000)
@@ -374,17 +363,17 @@ public class SpecimenQueryView extends BaseStudyQueryView
                     }
                     do
                     {
-                        specimenNumbers.add(rs.getString("SpecimenNumber"));
-                        if (specimenNumbers.size() > 150)
+                        specimenHashes.add(rs.getString("SpecimenHash"));
+                        if (specimenHashes.size() > 150)
                         {
-                            _availableSpecimenCounts.putAll(SampleManager.getInstance().getSampleCounts(ctx.getContainer(), specimenNumbers));
-                            specimenNumbers = new HashSet<String>();
+                            _availableSpecimenCounts.putAll(SampleManager.getInstance().getSampleCounts(ctx.getContainer(), specimenHashes));
+                            specimenHashes = new HashSet<String>();
                         }
                     }
                     while(rs.next());
-                    if (!specimenNumbers.isEmpty())
+                    if (!specimenHashes.isEmpty())
                     {
-                        _availableSpecimenCounts.putAll(SampleManager.getInstance().getSampleCounts(ctx.getContainer(), specimenNumbers));
+                        _availableSpecimenCounts.putAll(SampleManager.getInstance().getSampleCounts(ctx.getContainer(), specimenHashes));
                     }
                 }
                 else
@@ -404,9 +393,9 @@ public class SpecimenQueryView extends BaseStudyQueryView
     private static Sort createDefaultSort(ViewType viewType)
     {
         if (viewType.isVialView())
-            return new Sort("SpecimenNumber,GlobalUniqueId");
+            return new Sort("GlobalUniqueId");
         else
-            return new Sort("SpecimenNumber");
+            return new Sort("ParticipantId,Visit,PrimaryType,DerivativeType,AdditiveType");
     }
 
     protected static SimpleFilter addFilterClause(SimpleFilter filter, Specimen[] specimens, ViewType viewType)
@@ -417,13 +406,13 @@ public class SpecimenQueryView extends BaseStudyQueryView
             if (viewType.isVialView())
                 whereClause.append("RowId IN (");
             else
-                whereClause.append("SpecimenNumber IN (");
+                whereClause.append("SpecimenHash IN (");
             for (int i = 0; i < specimens.length; i++)
             {
                 if (viewType.isVialView())
                     whereClause.append(specimens[i].getRowId());
                 else
-                    whereClause.append(specimens[i].getSpecimenNumber());
+                    whereClause.append(specimens[i].getSpecimenHash());
                 if (i < specimens.length - 1)
                     whereClause.append(", ");
             }
@@ -455,13 +444,13 @@ public class SpecimenQueryView extends BaseStudyQueryView
 
     protected static SimpleFilter addNotPreviouslyRequestedClause(SimpleFilter filter, Container container, int siteId)
     {
-        String sql = "SpecimenNumber NOT IN (" +
-        "SELECT s.SpecimenNumber from study.SampleRequestSpecimen rs join study.SampleRequest r on rs.SamplerequestId=r.RowId "
+        String sql = "SpecimenHash NOT IN (" +
+        "SELECT s.SpecimenHash from study.SampleRequestSpecimen rs join study.SampleRequest r on rs.SamplerequestId=r.RowId "
                 + "join study.Specimen s on rs.SpecimenGlobalUniqueId=s.GlobalUniqueId "
                 + "join study.SamplerequestStatus status ON r.StatusId=status.RowId "
                 +  "where r.DestinationSiteId=? AND s.Container=? AND status.SpecimensLocked=?)";
 
-        filter.addWhereClause(sql, new Object[] {siteId, container.getId(), Boolean.TRUE}, "SpecimenNumber");
+        filter.addWhereClause(sql, new Object[] {siteId, container.getId(), Boolean.TRUE}, "SpecimenHash");
 
         return filter;
     }
@@ -558,7 +547,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
             rgn.setDisplayColumns(getDisplayColumns());
             rgn.setShowRecordSelectors(_showRecordSelectors);
 
-            rgn.setRecordSelectorValueColumns("SpecimenNumber","DerivativeType","AdditiveType");
+            rgn.setRecordSelectorValueColumns("SpecimenHash");
             if (_showRecordSelectors)
             {
                 if (null == _hiddenFormFields)

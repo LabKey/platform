@@ -63,7 +63,8 @@ public class ProtocolApplication extends IdentifiableBase
 
     public void setCpasType(String cpasType)
     {
-        assert ExpProtocol.ApplicationType.valueOf(cpasType) != null : "Invalid cpasType: " + cpasType;
+        // Make sure that we have a valid CpasType
+        ExpProtocol.ApplicationType.valueOf(cpasType);
         this.cpasType = cpasType;
     }
 

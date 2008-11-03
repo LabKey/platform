@@ -532,8 +532,8 @@ public class SpecimenUtils
         Specimen[] selectedVials;
         if (fromGroupedView)
         {
-            List<SampleManager.SpecimenSummaryKey> keys = getKeysForSpecimenFormIds(formValues);
-            Map<SampleManager.SpecimenSummaryKey,List<Specimen>> keyToVialMap = SampleManager.getInstance().getVialsForSampleKeys(getContainer(), keys, onlyAvailable);
+            Map<String, List<Specimen>> keyToVialMap =
+                    SampleManager.getInstance().getVialsForSampleHashes(getContainer(), formValues, onlyAvailable);
             List<Specimen> vials = new ArrayList<Specimen>();
             for (List<Specimen> vialList : keyToVialMap.values())
                 vials.addAll(vialList);
@@ -542,14 +542,6 @@ public class SpecimenUtils
         else
             selectedVials = getSpecimensFromIds(formValues);
         return selectedVials;
-    }
-
-    public List<SampleManager.SpecimenSummaryKey> getKeysForSpecimenFormIds(Collection<String> ids)
-    {
-        List<SampleManager.SpecimenSummaryKey> keys = new ArrayList<SampleManager.SpecimenSummaryKey>();
-        for (String s : ids)
-            keys.add(new SampleManager.SpecimenSummaryKey(s));
-        return keys;
     }
 
     public static class AmbiguousLocationException extends Exception
@@ -651,21 +643,20 @@ public class SpecimenUtils
 
     public RequestedSpecimens getRequestableBySampleFormValue(Set<String> formValues, Integer preferredLocation) throws SQLException, AmbiguousLocationException
     {
-        List<SampleManager.SpecimenSummaryKey> keys = getKeysForSpecimenFormIds(formValues);
-        Map<SampleManager.SpecimenSummaryKey,List<Specimen>> samplesForKeys = SampleManager.getInstance().getVialsForSampleKeys(getContainer(), keys, true);
+        Map<String, List<Specimen>> vialsByHash = SampleManager.getInstance().getVialsForSampleHashes(getContainer(), formValues, true);
         if (preferredLocation == null)
         {
-            Collection<Integer> preferredLocations = getPreferredProvidingLocations(samplesForKeys.values());
+            Collection<Integer> preferredLocations = getPreferredProvidingLocations(vialsByHash.values());
             if (preferredLocations.size() == 1)
                 preferredLocation = preferredLocations.iterator().next();
             else if (preferredLocations.size() > 1)
                 throw new AmbiguousLocationException(getContainer(), preferredLocations);
         }
-        Specimen[] requestedSamples = new Specimen[keys.size()];
+        Specimen[] requestedSamples = new Specimen[vialsByHash.size()];
 
         int i = 0;
         Set<Integer> providingLocations = new HashSet<Integer>();
-        for (List<Specimen> vials : samplesForKeys.values())
+        for (List<Specimen> vials : vialsByHash.values())
         {
             Specimen selectedVial = null;
             if (preferredLocation == null)

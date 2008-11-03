@@ -16,69 +16,196 @@
 
 package org.labkey.xarassay;
 
-import org.fhcrc.cpas.exp.xml.*;
-import org.labkey.api.data.*;
-import org.labkey.api.exp.*;
+import org.apache.log4j.Logger;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.*;
-import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.pipeline.PipeRoot;
-import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineProvider;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.security.User;
-import org.labkey.api.study.*;
-import org.labkey.api.study.query.RunDataQueryView;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.assay.*;
-import org.labkey.api.util.AppProps;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.query.QuerySchema;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryView;
-import org.labkey.api.query.QuerySettings;
+import org.labkey.api.view.ViewBackgroundInfo;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
 
 /**
- * User: peterhus
- * Date: Oct 11, 2007
- * Time: 11:29:58 PM
+ * User: Peter@labkey.com
+ * Date: Oct 17, 2008
+ * Time: 5:54:45 PM
  */
+
+
 public class XarAssayProvider extends AbstractAssayProvider
 {
-    public static final String PROTOCOL_LSID_NAMESPACE_PREFIX = "XarAssayProtocol";
+    public static final String PROTOCOL_LSID_NAMESPACE_PREFIX = "MsBaseProtocol";
+    public static final String NAME = "MS Basic";
+    public static final String DATA_LSID_PREFIX = "MZXMLData";
+    public static final DataType MS_ASSAY_DATA_TYPE = new DataType(DATA_LSID_PREFIX);
+    private static final Logger LOG = Logger.getLogger(XarAssayProvider.class);
     public static final String PROTOCOL_LSID_OBJECTID_PREFIX = "FileType.mzXML";
-    public static final String TEMPLATE_RESOURCE_DIR = "org/labkey/xarassay/";
-    public static final String TEMPLATE_FILE = "DefaultTemplate.xml";
-    public static final String NAME = "GenericXarAssay";
-
-
     public static final String RUN_LSID_NAMESPACE_PREFIX = "ExperimentRun";
     public static final String RUN_LSID_OBJECT_ID_PREFIX = "MS2PreSearch";
-    public static final String DATA_LSID_PREFIX = "MZXMLData";
-    public static final DataType XARASSAY_DATA_TYPE = new DataType(DATA_LSID_PREFIX);
-    public static final String SAMPLE_PROPERTY_NAME= "StartingSample";
+    public static final String SAMPLE_PROPERTY_NAME = "SampleId";
+    public static final String SAMPLE_PROPERTY_LABEL = "Source Sample";
+    public static final String SAMPLE_LIST_NAME = "Samples";
     protected static String _pipelineMzXMLExt = ".mzXML";
+
+    public XarAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, DataType dataType)
+    {
+        super(protocolLSIDPrefix, runLSIDPrefix, dataType);
+    }
 
     public XarAssayProvider()
     {
-        super(PROTOCOL_LSID_NAMESPACE_PREFIX, RUN_LSID_NAMESPACE_PREFIX, XARASSAY_DATA_TYPE);
+        super(PROTOCOL_LSID_NAMESPACE_PREFIX, RUN_LSID_NAMESPACE_PREFIX, MS_ASSAY_DATA_TYPE);
     }
-
-
-    public XarAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix)
+    @Override
+    protected Domain createUploadSetDomain(Container c, User user)
     {
-        super(protocolLSIDPrefix, runLSIDPrefix, XARASSAY_DATA_TYPE);
+        // don't call the standard upload set create because we don't want the target study or participant data resolver
+        Domain domain = PropertyService.get().createDomain(c, getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_UPLOAD_SET), "Run Set Fields");
+        domain.setDescription("The user is prompted for run set properties once for each set of runs they import. The run " +
+                "set is a convenience to let users set properties that seldom change in one place and import many runs " +
+                "using them. This is the first step of the import process.");
+
+        return domain;
     }
+
+
+    @Override
+    protected Domain createRunDomain(Container c, User user)
+    {
+        ExpSampleSet sourceSampleSet = null;
+
+        try { sourceSampleSet = ExperimentService.get().ensureActiveSampleSet(c);}
+        catch (SQLException e){ }
+
+        Domain runDomain = super.createRunDomain(c, user);
+        DomainProperty startingSampleProperty = addProperty(runDomain, SAMPLE_PROPERTY_NAME, SAMPLE_PROPERTY_LABEL, PropertyType.INTEGER);
+        startingSampleProperty.setRequired(true);
+        if(null!=sourceSampleSet)
+            startingSampleProperty.setLookup(new Lookup(sourceSampleSet.getContainer(), SAMPLE_LIST_NAME, sourceSampleSet.getName()));
+
+        return runDomain;
+    }
+
+    public List<Domain> createDefaultDomains(Container c, User user)
+    {
+        List<Domain> result = super.createDefaultDomains(c, user);
+
+        // remove data properties since we don't same vthem
+        String lsidName = "Data Properties";
+        for (Domain d : result)
+        {
+            if (d.getName().equals(lsidName))
+            {
+                result.remove(d);
+                break;
+            }
+        }
+
+        return result;
+    }
+
+    public ExpRun saveExperimentRun(AssayRunUploadContext context) throws ExperimentException
+    {
+        ExpRun run = null;
+        XarAssayForm form = (XarAssayForm) context;
+        validateUpload(form);
+
+        PipeRoot pipeRoot = getPipelineRoot(context);
+
+        Map<ExpMaterial, String> inputMaterials = new HashMap<ExpMaterial, String>();
+        Map<ExpData, String> inputDatas = new HashMap<ExpData, String>();
+        Map<ExpMaterial, String> outputMaterials = new HashMap<ExpMaterial, String>();
+        Map<ExpData, String> outputDatas = new HashMap<ExpData, String>();
+
+        Map<PropertyDescriptor, String> runProperties = context.getRunProperties();
+        Map<PropertyDescriptor, String> uploadSetProperties = context.getUploadSetProperties();
+
+        Map<PropertyDescriptor, String> allProperties = new HashMap<PropertyDescriptor, String>();
+        allProperties.putAll(runProperties);
+        allProperties.putAll(uploadSetProperties);
+
+        DbScope scope = ExperimentService.get().getSchema().getScope();
+        boolean transactionOwner = !scope.isTransactionActive();
+        try {
+            // non-fraction case
+            addSampleInput(context, inputMaterials, allProperties);
+            List<File> files = new ArrayList<File>();
+            files.add(form.getUploadedData().get(form.getCurrentFileName()));
+            addMzxmlOutputs(form, outputDatas, files);
+
+            String fName = form.getCurrentFileName();
+            String runName = form.getName();
+            if (null == runName)
+                runName = form.getProtocol().getName() + " (" + fName.substring(0, fName.lastIndexOf('.')) + ") ";
+
+            if (transactionOwner)
+                scope.beginTransaction();
+
+            run = createSingleExpRun(form, inputMaterials, inputDatas,  outputMaterials, outputDatas
+                    , runProperties , uploadSetProperties, runName, pipeRoot);
+
+            if (transactionOwner)
+                scope.commitTransaction();
+            return run;
+        }
+        catch (SQLException e)
+        {
+            if (transactionOwner)
+                scope.rollbackTransaction();
+
+            throw new RuntimeException(e);
+        }
+        finally
+        {
+            if (transactionOwner)
+                scope.closeConnection();
+        }
+    }
+    public void validateUpload(XarAssayForm form) throws ExperimentException
+    {
+        if ((null == form.getNumFilesRemaining()) || (form.getNumFilesRemaining().equals(0)))
+            throw new ExperimentException("No more files left to describe");
+    }
+    protected PipeRoot getPipelineRoot (AssayRunUploadContext context) throws ExperimentException
+    {
+        PipeRoot pipeRoot = null;
+        try
+        {
+            pipeRoot = PipelineService.get().findPipelineRoot(context.getContainer());
+        }
+        catch (SQLException se)
+        {  }
+        if (pipeRoot == null || !NetworkDrive.exists(pipeRoot.getRootPath()))
+        {
+            throw new ExperimentException("The target container must have a valid pipeline root");
+        }
+        return pipeRoot;
+    }
+
+
 
     public String getName()
     {
@@ -95,11 +222,6 @@ public class XarAssayProvider extends AbstractAssayProvider
         return result;
     }
 
-    protected void addOutputDatas(AssayRunUploadContext context, Map<ExpData, String> outputDatas, ParticipantVisitResolverType resolverType) throws ExperimentException
-    {
-        throw new UnsupportedOperationException("Xar Assay uses a Xar file template to do all data import");
-    }
-
     public ExpData getDataForDataRow(Object dataRowId)
     {
         throw new UnsupportedOperationException("Whoa how did i get here");
@@ -114,7 +236,6 @@ public class XarAssayProvider extends AbstractAssayProvider
         return url;
     }
 
-
     public Set<FieldKey> getParticipantIDDataKeys()
     {
         return null;
@@ -125,26 +246,15 @@ public class XarAssayProvider extends AbstractAssayProvider
         return null;
     }
 
-    public FieldKey getRunIdFieldKeyFromDataRow()
-    {
-        return FieldKey.fromParts("Run");
-    }
-
-    public FieldKey getDataRowIdFieldKey()
-    {
-        return FieldKey.fromParts("RowId");
-    }
-
-    @Override
     public String getRunDataTableName(ExpProtocol protocol)
     {
         // use the Runs list table here so that there is a way to order columns in a run upload form
         return protocol.getName() + " Runs";
     }
 
-    public FieldKey getSpecimenIDFieldKey()
+    public ActionURL publish(User user, ExpProtocol protocol, Container study, Map<Integer, AssayPublishKey> dataKeys, List<String> errors)
     {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     public List<ParticipantVisitResolverType> getParticipantVisitResolverTypes()
@@ -167,191 +277,85 @@ public class XarAssayProvider extends AbstractAssayProvider
         throw new UnsupportedOperationException("Publish not implemented for assay type " + getName());
     }
 
-    protected Domain createRunDomain(Container c, User user)
+
+    protected ExpRun createSingleExpRun(XarAssayForm form
+            , Map<ExpMaterial, String> inputMaterials
+            , Map<ExpData, String> inputDatas
+            , Map<ExpMaterial, String> outputMaterials
+            , Map<ExpData, String> outputDatas
+            , Map<PropertyDescriptor, String> runProperties
+            , Map<PropertyDescriptor,String> uploadSetProperties
+            , String runName, PipeRoot pipeRoot)  throws SQLException, ExperimentException
     {
-        ExpSampleSet ms;
-        try
-        {
-            ms = ExperimentService.get().ensureActiveSampleSet(c);
-            if (ms.getLSID().equals(ExperimentService.get().ensureDefaultSampleSet().getLSID())
-                    )
-                ms = null;
-        }
-        catch (SQLException e)
-        {
-            ms=null;
-        }
 
-        Domain runDomain = super.createRunDomain(c, user);
-        DomainProperty startingSampleProperty = addProperty(runDomain, getSamplePropertyName(), PropertyType.INTEGER);
-        startingSampleProperty.setRequired(true);
-        if(null!=ms)
-            startingSampleProperty.setLookup(new Lookup(ms.getContainer(), "Samples", ms.getName()));
+        // user inputs from the form
+        ExpRun run = ExperimentService.get().createExperimentRun(form.getContainer(), runName);
+        run.setProtocol(form.getProtocol());
+        run.setFilePathRoot(pipeRoot.getRootPath());
+        String entityId = GUID.makeGUID();
+        Lsid lsid = new Lsid(getRunLsidNamespacePrefix(), "Folder-" + form.getContainer().getRowId(),
+                getRunLsidObjectIdPrefix() + "." + entityId);
+        run.setLSID(lsid.toString());
+        run.setComments(form.getComments());
 
-        return runDomain;
+        savePropertyObject(run.getLSID(), runProperties, form.getContainer());
+        savePropertyObject(run.getLSID(), uploadSetProperties, form.getContainer());
+
+        run = ExperimentService.get().insertSimpleExperimentRun(run,
+                inputMaterials,
+                inputDatas,
+                outputMaterials,
+                outputDatas,
+                new ViewBackgroundInfo(form.getContainer(),
+                        form.getUser(), form.getActionURL()), LOG);
+        return run;
+
     }
 
-
-    public List<Domain> createDefaultDomains(Container c, User user)
+    protected void addSampleInput(AssayRunUploadContext context
+            , Map<ExpMaterial, String> inputMaterials
+            , Map<PropertyDescriptor, String> allProperties) throws ExperimentException
     {
-        List<Domain> result = super.createDefaultDomains(c, user);
-
-        // remove data properties since we don't same vthem
-        String lsidName = "Data Properties";
-        for (Domain d : result)
+        Integer sampleRowId = null;
+        for (Map.Entry<PropertyDescriptor, String> entry : allProperties.entrySet())
         {
-            if (d.getName().equals(lsidName))
+            if (entry.getKey().getName().equals(SAMPLE_PROPERTY_NAME))
             {
-                result.remove(d);
-                break;
+                try {sampleRowId = Integer.parseInt(entry.getValue());}
+                catch(Exception e) {}
             }
         }
+        if (null == sampleRowId)
+            throw new ExperimentException("No sample selected.");
 
-        return result;
+        String roleName = SAMPLE_PROPERTY_LABEL ;
+        ExpMaterial material = ExperimentService.get().getExpMaterial(sampleRowId);
+        if (material == null)
+            throw new ExperimentException("Unable to find selected sample.");
+        inputMaterials.put(material, roleName);
+        return;
     }
 
-    public ExpRun saveExperimentRun(AssayRunUploadContext context) throws ExperimentException
+    protected void addMzxmlOutputs(XarAssayForm form, Map<ExpData, String> outputDatas, List<File> files) throws ExperimentException
     {
-        Container c = context.getContainer();
 
-        XarAssayForm form = (XarAssayForm)context;
-        if ((null==form.getNumFilesRemaining()) || (form.getNumFilesRemaining()==0))
-            throw new ExperimentException("No more files left to describe");
-
-        ExpRun run = createExperimentRunFromXar(form);
-        DbScope scope = ExperimentService.get().getSchema().getScope();
-        boolean transactionOwner = !scope.isTransactionActive();
-        XarAssayRunSource src;
-        try
+        ExpData data;
+        for (File f : files)
         {
-            Map<String, File> mapFiles ;
-            mapFiles = context.getUploadedData();
-            File f = mapFiles.get(form.getCurrentFileName());
+            try
+            {
+                data = ExperimentService.get().getExpDataByURL(f, form.getContainer());
+            }
+            catch (IOException e)
+            {
+                throw new ExperimentException(e);
+            }
+            if (null == data)
+                data = createData(form.getContainer(), f, new DataType(_dataLSIDPrefix));
 
-
-            ViewBackgroundInfo info = new ViewBackgroundInfo(c, context.getUser(), new ActionURL("Project","begin", c));
-            XarAssayPipelineJob pj = new XarAssayPipelineJob(info, getLogFileFor(getAssayXarFile(c, form.getProtocol())));
-
-            if (transactionOwner)
-                scope.beginTransaction();
-
-            src = new XarAssayRunSource(form, run);
-
-            ExperimentService.get().loadXar(src, pj, false);
-
-            savePropertyObject(run.getLSID(), context.getRunProperties(),context.getContainer());
-            savePropertyObject(run.getLSID(), context.getUploadSetProperties(), context.getContainer());
-
-            ExpRun rNew = ExperimentService.get().getExpRun(run.getLSID());
-            if (transactionOwner)
-                scope.commitTransaction();
-            return rNew;
+            outputDatas.put(data, "mzXML");
         }
-        catch (Exception e)
-        {
-            throw new ExperimentException(e);
-        }
-        finally
-        {
-            if (transactionOwner)
-                scope.closeConnection();
-        }
-    }
-
-
-    protected ExpRun createExperimentRunFromXar(XarAssayForm context) throws ExperimentException
-    {
-        String name = context.getName();
-        if (name==null)
-            name = "Sample prep run for "  + context.getCurrentFileName();
-
-        ExpRun run = ExperimentService.get().createExperimentRun(context.getContainer(), name);
-
-        run.setProtocol(context.getProtocol());
-        String entityId = GUID.makeGUID();
-        Lsid lsid = new Lsid(getRunLsidNamespacePrefix(), "Folder-" + context.getContainer().getRowId(),
-                getRunLsidObjectIdPrefix()+ "." + entityId);
-        run.setLSID(lsid.toString());
-        run.setComments(context.getComments());
-
-        return run;
-    }
-
-    public ExpProtocol createAssayDefinition(User user, Container container, String name, String description, int maxMaterials) throws ExperimentException, SQLException
-    {
-        PipeRoot pr=null;
-        try
-        {
-            pr = PipelineService.get().findPipelineRoot(container);
-        }
-        catch (SQLException e){
-            e.printStackTrace();
-        }
-        if (null == pr )
-            throw new RuntimeException("You must set a pipeline root in this folder or project before you save an Assay definition.");
-
-        ExpSampleSet ms=null;
-        try {ms = ExperimentService.get().ensureActiveSampleSet(container);}
-        catch (SQLException e){}
-        if ((null==ms)
-                ||   ms.getLSID().equals(ExperimentService.get().ensureDefaultSampleSet().getLSID())
-            //   || !ms.getContainer().equals(container.getId())
-                )
-            throw new ExperimentException("You must upload a Sample Set into this folder before you save this Assay definition.");
-
-        String protocolLsid = new Lsid(getProtocolLsidNamespacePrefix(),"Folder-" + container.getRowId(),getProtocolLsidObjectidPrefix()+ "." + name ).toString();
-        if (ExperimentService.get().getExpProtocol(protocolLsid) != null)
-        {
-            //    throw new ExperimentException("An assay with that name already exists");
-        }
-
-        ExpProtocol protocol = ExperimentService.get().createExpProtocol(container, name, ExpProtocol.ApplicationType.ExperimentRun);
-        protocol.setProtocolDescription(description);
-        protocol.setLSID(protocolLsid);
-        protocol.setMaxInputMaterialPerInstance(maxMaterials);
-        protocol.setMaxInputDataPerInstance(1);
-
-        ViewBackgroundInfo info = new ViewBackgroundInfo(container, user, new ActionURL("XarAssay","chooseAssay", container));
-        XarSource xs = new XarAssayProtocolSource(container, protocol);
-        XarAssayPipelineJob pj = null;
-        try
-        {
-            pj = new XarAssayPipelineJob(info, getLogFileFor(getAssayXarFile(container, protocol)));
-        }
-        catch (IOException e)
-        {
-            throw new ExperimentException(e);
-        }
-        List<ExpRun> expRuns = ExperimentService.get().loadXar(xs, pj, false);
-        ExpProtocol px = ExperimentService.get().getExpProtocol(protocolLsid);
-        px.retrieveProtocolParameters();
-        return px;
-
-    }
-
-    // next three are workaround to unmoifiable map exception,   can't re pro reliably
-/*
-    public PropertyDescriptor[] getRunInputPropertyColumns(ExpProtocol protocol)
-    {
-        List<PropertyDescriptor> result = new ArrayList<PropertyDescriptor>(Arrays.asList(super.getRunInputPropertyColumns(protocol)));
-        return result.toArray(new PropertyDescriptor[result.size()]);
-    }
-
-
-    public PropertyDescriptor[] getUploadSetColumns(ExpProtocol protocol)
-    {
-        List<PropertyDescriptor> result = new ArrayList<PropertyDescriptor>(Arrays.asList(super.getUploadSetColumns(protocol)));
-        return result.toArray(new PropertyDescriptor[result.size()]);
-    }
-
-
-    public PropertyDescriptor[] getRunPropertyColumns(ExpProtocol protocol)
-    {
-        List<PropertyDescriptor> result = new ArrayList<PropertyDescriptor>(Arrays.asList(super.getRunPropertyColumns(protocol)));
-              return result.toArray(new PropertyDescriptor[result.size()]);
-    }
-  */
-    // todo:  should these all be static
+    }// todo:  should these all be static
     public String getProtocolLsidNamespacePrefix()
     {
         return PROTOCOL_LSID_NAMESPACE_PREFIX;
@@ -372,317 +376,6 @@ public class XarAssayProvider extends AbstractAssayProvider
         return RUN_LSID_OBJECT_ID_PREFIX;
     }
 
-    public String getSamplePropertyName()
-    {
-        return SAMPLE_PROPERTY_NAME;
-    }
-
-    public String getTemplateResource()
-    {
-        return TEMPLATE_RESOURCE_DIR + TEMPLATE_FILE;
-    }
-
-    public String getTemplateDir()
-    {
-        return "protocols/" + getName();
-    }
-
-    public String getTemplateFileName()
-    {
-        return TEMPLATE_FILE;
-    }
-
-
-    public TableInfo createDataTable(QuerySchema schema, String alias, ExpProtocol protocol)
-    {
-        return new ExpSchema(schema.getUser(), schema.getContainer()).createDatasTable(alias);
-    }
-
-    public FieldKey getParticipantIDFieldKey()
-    {
-        return null;
-    }
-
-    public FieldKey getVisitIDFieldKey(Container targetStudy)
-    {
-        return null;
-    }
-
-    protected File getAssayXarFile(Container container, ExpProtocol assayProtocol) throws IOException
-    {
-        File pipeRoot = null;
-
-        try
-        {
-            pipeRoot = PipelineService.get().findPipelineRoot(container).getRootPath();
-        }
-        catch (SQLException e)
-        {
-            throw new IOException(e.getMessage());
-        }
-        File templateDir = new File(pipeRoot, getTemplateDir());
-        if (!templateDir.exists())
-            templateDir.mkdirs();
-
-        File assayXarFile = new File(templateDir, "Folder-" + container.getRowId() + "-" + assayProtocol.getName() + ".xar.xml") ;
-
-        if (!assayXarFile.exists())
-        {
-            copyDefaultTemplateXar(templateDir, assayXarFile, assayProtocol);
-        }
-        return assayXarFile;
-
-    }
-
-    protected void copyDefaultTemplateXar(File templateDir, File destXarFile, ExpProtocol assayProtocol) throws IOException
-    {
-        InputStream in;
-        File templateXar = new File(templateDir, getTemplateFileName());
-        if (!templateXar.exists())
-        {
-            in = getClass().getClassLoader().getResourceAsStream(getTemplateResource());
-
-            BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-            FileOutputStream fOut = new FileOutputStream(templateXar);
-            PrintWriter writer = new PrintWriter(fOut);
-            String line;
-            try
-            {
-                while ((line = reader.readLine()) != null)
-                {
-                    writer.println(line);
-                }
-            }
-            finally
-            {
-                reader.close();
-                writer.close();
-                fOut.close();
-                in.close();
-            }
-        }
-
-
-        in = new FileInputStream(templateXar);
-        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-        StringBuilder sb = new StringBuilder();
-        String line;
-        try
-        {
-            while ((line = reader.readLine()) != null)
-            {
-                sb.append(line);
-                sb.append("\n");
-            }
-        }
-        finally
-        {
-            reader.close();
-            in.close();
-        }
-
-        Map<String,String> tokenMap = getProtocolTokenMap(assayProtocol);
-        String xarXml = tokenReplace(sb.toString(), tokenMap);
-
-        // Write the XAR to disk so that it can be loaded
-
-        FileOutputStream fOut = new FileOutputStream(destXarFile);
-        PrintWriter writer = new PrintWriter(fOut);
-        try
-        {
-            writer.write(xarXml);
-        }
-        finally
-        {
-            writer.close();
-            fOut.close();
-        }
-    }
-
-    public static File getLogFileFor(File f) throws IOException
-    {
-        File xarDirectory = f.getParentFile();
-        if (!xarDirectory.exists())
-        {
-            throw new IOException("Xar file parent directory does not exist");
-        }
-        String xarShortName = f.getName();
-        int index = xarShortName.toLowerCase().lastIndexOf(".xml");
-        if (index != -1)
-        {
-            xarShortName = xarShortName.substring(0, index);
-        }
-        return new File(xarDirectory, xarShortName + "log");
-
-    }
-
-    /**
-     * Replaces tokens surrounded by @@TOKEN_NAME@@ in an input stream
-     */
-    protected static String tokenReplace(String s, Map<String, String> tokens)
-    {
-        StringBuilder sb = new StringBuilder(s);
-
-        for (Map.Entry<String, String> entry :
-                tokens.entrySet())
-        {
-            String replacement = PageFlowUtil.filter(entry.getValue(), false, false);
-            replaceString(sb, entry.getKey(), replacement);
-        }
-
-        return sb.toString();
-    }
-
-    static void replaceString(StringBuilder sb, String oldString, String newString)
-    {
-        oldString = "@@" + oldString + "@@";
-        int index = sb.indexOf(oldString);
-        while (index != -1)
-        {
-            sb.replace(index, index + oldString.length(), newString);
-            index = sb.indexOf(oldString);
-        }
-    }
-
-    /*
-    these string subistitutions are made at assay deinfintion time and saved in a copy of the xar file
-     */
-    protected static Map<String, String> getProtocolTokenMap(ExpProtocol p)
-    {
-        Map<String, String> tokenMap = new HashMap<String, String>();
-        tokenMap.put("PROTOCOL_LSID", PageFlowUtil.filter(p.getLSID()));
-        tokenMap.put("PROTOCOL_NAME", PageFlowUtil.filter(p.getName()));
-        if(null != p.getProtocolDescription())
-            tokenMap.put("PROTOCOL_DESCRIPTION", PageFlowUtil.filter(p.getProtocolDescription()));
-        else
-            tokenMap.put("PROTOCOL_DESCRIPTION", PageFlowUtil.filter(""));
-
-        tokenMap.put("PROTOCOL_CONTAINER", "Folder-"+ p.getContainer().getRowId());
-        tokenMap.put("PROTOCOL_PROJECT", "Project-"+ p.getContainer().getRowId());
-        tokenMap.put("LSID_AUTHORITY", AppProps.getInstance().getDefaultLsidAuthority());
-        tokenMap.put("PROTOCOL_LSID_NAMESPACE_PREFIX", PROTOCOL_LSID_NAMESPACE_PREFIX);
-        tokenMap.put("PROVIDER_NAME", NAME);
-
-        return tokenMap;
-    }
-
-    /*
-    these substitutions are made at assay run creation time
-     */
-    protected static Map<String, String> getRunTokens(XarAssayForm form) throws ExperimentException, IOException
-    {
-        Map<String,String> tokenMap = new HashMap<String,String>();
-        Map<String,File> dataFiles;
-        PipeRoot pr = null;
-        File curFile;
-        try
-        {
-            pr = PipelineService.get().findPipelineRoot(form.getContainer());
-            dataFiles = form.getUploadedData();
-            curFile = dataFiles.get(form.getCurrentFileName());
-
-            if (null != curFile)
-            {
-                String rPath = pr.relativePath(curFile);
-                tokenMap.put("RUN_FILEPATH", PageFlowUtil.filter(rPath));
-                String dirPath = pr.relativePath(curFile.getParentFile());
-                tokenMap.put("RUN_FILEDIR", PageFlowUtil.filter(dirPath));
-            }
-
-            tokenMap.put("RUN_CONTAINER", "Folder-" + form.getContainer().getRowId());
-        }
-
-
-        catch (SQLException e)
-        {
-            throw new ExperimentException(e);
-        }
-        return tokenMap;
-    }
-    public static String getTemplateText(File template)  throws IOException
-    {
-        BufferedReader reader = null;
-        try
-        {
-            reader = new BufferedReader(new FileReader(template));
-
-            StringBuffer sb = new StringBuffer();
-            String line;
-            while ((line = reader.readLine()) != null)
-            {
-                sb.append(line);
-                sb.append("\n");
-            }
-            return sb.toString();
-        }
-
-        finally
-        {
-            if (reader != null)
-            {
-                try
-                {
-                    reader.close();
-                }
-                catch (IOException eio)
-                {
-                }
-            }
-        }
-
-    }
-
-    static int getActionSequence(ExperimentArchiveType xar, ProtocolBaseType protocol)
-    {
-        ExperimentArchiveType.ProtocolActionDefinitions defs = xar.getProtocolActionDefinitions();
-        ProtocolActionSetType[] pas = defs.getProtocolActionSetArray();
-
-        for (ProtocolActionSetType setType : pas)
-        {
-            for (ProtocolActionType actionType : setType.getProtocolActionArray())
-            {
-                if (actionType.getChildProtocolLSID().equals(protocol.getAbout()))
-                    return actionType.getActionSequence();
-            }
-        }
-
-        return -1;
-    }
-
-    public static String getTemplateInstanceText(File template, Map<String, String> tokenMap) throws IOException
-    {
-        String instanceText = getTemplateText(template);
-        instanceText = tokenReplace(instanceText, tokenMap);
-        return instanceText;
-    }
-
-    static ExperimentLogEntryType getLogEntry(ExperimentArchiveType xar, ProtocolBaseType protocol)
-    {
-        int seq = getActionSequence(xar, protocol);
-        for (ExperimentLogEntryType entry : xar.getExperimentRuns().getExperimentRunArray(0).getExperimentLog().getExperimentLogEntryArray())
-        {
-            if (entry.getActionSequenceRef() == seq)
-                return entry;
-        }
-
-        return null;
-    }
-
-    protected static Map<String, XarAssayProvider> getXarAssayProviders()
-    {
-        List<AssayProvider> ap = AssayService.get().getAssayProviders();
-        Map<String, XarAssayProvider>  map = new HashMap<String, XarAssayProvider> ();
-        for (AssayProvider ax : ap)
-        {
-            if (ax instanceof XarAssayProvider)
-            {
-                XarAssayProvider xa = (XarAssayProvider)ax;
-                map.put(xa.getProtocolLsidNamespacePrefix(), xa);
-            }
-        }
-        return map;
-    }
-
     public static boolean isMzXMLFile(File file)
     {
         return file.getName().endsWith(_pipelineMzXMLExt);
@@ -699,4 +392,54 @@ public class XarAssayProvider extends AbstractAssayProvider
             return false;
         }
     }
+    public String getSamplePropertyName()
+    {
+        return SAMPLE_PROPERTY_NAME;
+    }
+
+    public TableInfo createDataTable(QuerySchema schema, String alias, ExpProtocol protocol)
+    {
+        //return MsAssaySchema.getDataRowTable(schema,protocol,alias );
+        return new ExpSchema(schema.getUser(), schema.getContainer()).createDatasTable(alias);
+    }
+
+    public FieldKey getParticipantIDFieldKey()
+    {
+        return null;
+    }
+
+    public FieldKey getVisitIDFieldKey(Container targetStudy)
+    {
+        return null;
+    }
+
+    public FieldKey getSpecimenIDFieldKey()
+    {
+        return null;
+    }
+
+    public FieldKey getRunIdFieldKeyFromDataRow()
+    {
+        return FieldKey.fromParts("RowId");
+    }
+
+    public FieldKey getDataRowIdFieldKey()
+    {
+        return FieldKey.fromParts("RowId");
+    }
+    protected static Map<String, XarAssayProvider> getMsBaseAssayProviders()
+    {
+        List<AssayProvider> ap = AssayService.get().getAssayProviders();
+        Map<String, XarAssayProvider> map = new HashMap<String, XarAssayProvider>();
+        for (AssayProvider ax : ap)
+        {
+            if (ax instanceof XarAssayProvider)
+            {
+                XarAssayProvider xa = (XarAssayProvider) ax;
+                map.put(xa.getProtocolLsidNamespacePrefix(), xa);
+            }
+        }
+        return map;
+    }
+
 }

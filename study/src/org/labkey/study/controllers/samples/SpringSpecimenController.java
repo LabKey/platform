@@ -783,7 +783,11 @@ public class SpringSpecimenController extends BaseStudyController
             {
                 Set<Integer> siteSet = new HashSet<Integer>();
                 for (Specimen specimen : _sampleRequest.getSpecimens())
-                    siteSet.add(specimen.getCurrentLocation());
+                {
+                    Integer siteId = specimen.getCurrentLocation();
+                    if (siteId != null)
+                        siteSet.add(siteId);
+                }
                 _providingSites = new Site[siteSet.size()];
                 int i = 0;
                 for (Integer siteId : siteSet)

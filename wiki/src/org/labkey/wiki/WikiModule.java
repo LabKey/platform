@@ -63,7 +63,7 @@ public class WikiModule extends DefaultModule implements ContainerManager.Contai
 
     public WikiModule()
     {
-        super(NAME, 8.20, "/org/labkey/wiki", false,
+        super(NAME, 8.30, "/org/labkey/wiki", false,
                 new WikiWebPartFactory(),
                 new WikiTOCFactory(),
                 new WikiWebPartFactory(WEB_PART_NAME, "right"));

@@ -46,6 +46,7 @@ public class Specimen extends AbstractStudyCachable<Specimen>
     private Integer _additiveTypeId; // INT,
     private Integer _originatingLocationId;
     private Integer _currentLocation;
+    private String _specimenHash;
 
     public Integer getAdditiveTypeId()
     {
@@ -266,5 +267,15 @@ public class Specimen extends AbstractStudyCachable<Specimen>
         builder.append(", Participant ").append(_ptid);
         builder.append(", ").append(_visitDescription).append(" ").append(_visitValue);
         return builder.toString();
+    }
+
+    public String getSpecimenHash()
+    {
+        return _specimenHash;
+    }
+
+    public void setSpecimenHash(String specimenHash)
+    {
+        _specimenHash = specimenHash;
     }
 }

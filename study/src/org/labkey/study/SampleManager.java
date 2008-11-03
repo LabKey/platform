@@ -16,7 +16,6 @@
 
 package org.labkey.study;
 
-import org.apache.commons.lang.StringUtils;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.*;
@@ -1482,6 +1481,30 @@ public class SampleManager
         return missingSpecimens;
     }
 
+    public Map<Specimen, SpecimenComment> getSpecimensWithComments(Container container) throws SQLException
+    {
+        SimpleFilter filter = new SimpleFilter("Container", container.getId());
+        SpecimenComment[] allComments = Table.select(StudySchema.getInstance().getTableInfoSpecimenComment(),
+                Table.ALL_COLUMNS, filter, null, SpecimenComment.class);
+
+        Map<Specimen, SpecimenComment> result = new HashMap<Specimen, SpecimenComment>();
+        if (allComments.length > 0)
+        {
+            Map<String, SpecimenComment> globalUniqueIds = new HashMap<String, SpecimenComment>();
+            for (SpecimenComment comment : allComments)
+                globalUniqueIds.put(comment.getGlobalUniqueId(), comment);
+
+            // reuse the container filter object with an added 'in' clause:
+            filter.addInClause("GlobalUniqueId", globalUniqueIds.keySet());
+            Specimen[] commented = Table.select(StudySchema.getInstance().getTableInfoSpecimen(),
+                    Table.ALL_COLUMNS, filter, null, Specimen.class);
+
+            for (Specimen specimen : commented)
+                result.put(specimen, globalUniqueIds.get(specimen.getGlobalUniqueId()));
+        }
+        return result;
+    }
+
     public Specimen[] getSpecimensByAvailableVialCount(Container container, int count) throws SQLException
     {
         SimpleFilter filter = new SimpleFilter("Container", container.getId());
@@ -1489,166 +1512,46 @@ public class SampleManager
         return Table.select(StudySchema.getInstance().getTableInfoSpecimenSummary(), Table.ALL_COLUMNS, filter, null, Specimen.class);
     }
 
-    public Map<SpecimenSummaryKey,List<Specimen>> getVialsForSampleKeys(Container container, List<SampleManager.SpecimenSummaryKey> keys, boolean onlyAvailable) throws SQLException
+    public Map<String,List<Specimen>> getVialsForSampleHashes(Container container, Collection<String> hashes, boolean onlyAvailable) throws SQLException
     {
         SimpleFilter filter = new SimpleFilter("Container", container.getId());
-        filter.addClause(getSpecimenFilter(keys));
+        filter.addInClause("SpecimenHash", hashes);
         if (onlyAvailable)
             filter.addCondition("Available", true);
         SQLFragment sql = new SQLFragment("SELECT * FROM " + StudySchema.getInstance().getTableInfoSpecimenDetail().getAliasName() + " ");
         sql.append(filter.getSQLFragment(StudySchema.getInstance().getSqlDialect()));
 
-        Map<SpecimenSummaryKey,List<Specimen>> map = new HashMap<SpecimenSummaryKey, List<Specimen>>();
+        Map<String, List<Specimen>> map = new HashMap<String, List<Specimen>>();
         Specimen[] specimens = Table.executeQuery(StudySchema.getInstance().getSchema(), sql.getSQL(), sql.getParamsArray(), Specimen.class);
         for (Specimen specimen : specimens)
         {
-            SpecimenSummaryKey key = new SpecimenSummaryKey(specimen);
-            List<Specimen> keySpecimens = map.get(key);
+            String hash = specimen.getSpecimenHash();
+            List<Specimen> keySpecimens = map.get(hash);
             if (null == keySpecimens)
             {
                 keySpecimens = new ArrayList<Specimen>();
-                map.put(key, keySpecimens);
+                map.put(hash, keySpecimens);
             }
             keySpecimens.add(specimen);
         }
         return map;
     }
 
-    public static class SpecimenSummaryKey
-    {
-        private String _specimenNumber;
-        private Integer _derivativeTypeId;
-        private Integer _additiveTypeId;
-
-        public SpecimenSummaryKey(String commaSeparatedKey)
-        {
-            String[] parts = commaSeparatedKey.split(",");
-            _specimenNumber = parts[0];
-            if (parts.length > 1 && parts[1] != null && parts[1].length() > 0)
-                _derivativeTypeId = Integer.parseInt(parts[1]);
-            if (parts.length > 2 && parts[2] != null && parts[2].length() > 0)
-                _additiveTypeId = Integer.parseInt(parts[2]);
-        }
-
-        public SpecimenSummaryKey(Specimen specimen)
-        {
-            _specimenNumber = specimen.getSpecimenNumber();
-            _derivativeTypeId = specimen.getDerivativeTypeId();
-            _additiveTypeId = specimen.getAdditiveTypeId();
-
-        }
-        public SpecimenSummaryKey(String specimenNumber, Integer derivativeTypeId, Integer additiveTypeId)
-        {
-            _specimenNumber = specimenNumber;
-            _derivativeTypeId = derivativeTypeId;
-            _additiveTypeId = additiveTypeId;
-        }
-
-        public String getSpecimenNumber()
-        {
-            return _specimenNumber;
-        }
-
-        public void setSpecimenNumber(String specimenNumber)
-        {
-            _specimenNumber = specimenNumber;
-        }
-
-        public Integer getDerivativeTypeId()
-        {
-            return _derivativeTypeId;
-        }
-
-        public void setDerivativeTypeId(int derivativeTypeId)
-        {
-            _derivativeTypeId = derivativeTypeId;
-        }
-
-        public Integer getAdditiveTypeId()
-        {
-            return _additiveTypeId;
-        }
-
-        public void setAdditiveTypeId(int additiveTypeId)
-        {
-            _additiveTypeId = additiveTypeId;
-        }
-
-        public boolean equals(Object o)
-        {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            SpecimenSummaryKey that = (SpecimenSummaryKey) o;
-
-            if (_additiveTypeId != null ? !_additiveTypeId.equals(that._additiveTypeId) : that._additiveTypeId != null)
-                return false;
-            if (_derivativeTypeId != null ? !_derivativeTypeId.equals(that._derivativeTypeId) : that._derivativeTypeId != null)
-                return false;
-            if (_specimenNumber != null ? !_specimenNumber.equals(that._specimenNumber) : that._specimenNumber != null)
-                return false;
-
-            return true;
-        }
-
-        public int hashCode()
-        {
-            int result;
-            result = (_specimenNumber != null ? _specimenNumber.hashCode() : 0);
-            result = 31 * result + (_derivativeTypeId != null ? _derivativeTypeId.hashCode() : 0);
-            result = 31 * result + (_additiveTypeId != null ? _additiveTypeId.hashCode() : 0);
-            return result;
-        }
-    }
-
-    private SimpleFilter.SQLClause getSpecimenFilter(List<SampleManager.SpecimenSummaryKey> specimens)
-    {
-        String sep = "";
-        StringBuilder filterFragment = new StringBuilder();
-        List<Object> allParams = new ArrayList<Object>(specimens.size() * 3);
-        for (SpecimenSummaryKey ssi : specimens)
-        {
-            filterFragment.append(sep);
-            filterFragment.append("(SpecimenNumber = ? AND AdditiveTypeId ");
-            allParams.add(ssi.getSpecimenNumber());
-            if (ssi.getAdditiveTypeId() != null)
-            {
-                filterFragment.append("= ?");
-                allParams.add(ssi.getAdditiveTypeId());
-            }
-            else
-                filterFragment.append("IS NULL");
-
-            filterFragment.append(" AND DerivativeTypeId ");
-            if (ssi.getDerivativeTypeId() != null)
-            {
-                filterFragment.append("= ?");
-                allParams.add(ssi.getDerivativeTypeId());
-            }
-            else
-                filterFragment.append("IS NULL");
-            filterFragment.append(")");
-            sep = " OR ";
-        }
-        return new SimpleFilter.SQLClause(filterFragment.toString(), allParams.toArray(), "SpecimenNumber", "AdditiveTypeId", "DerivativeTypeId");
-    }
-
-
-    public Map<SpecimenSummary,Integer> getSampleCounts(Container container, Set<String> specimenNumbers) throws SQLException
+    public Map<String, Integer> getSampleCounts(Container container, Collection<String> specimenHashes) throws SQLException
     {
 
         Table.TableResultSet rs = null;
-        Map<SpecimenSummary, Integer> map = new HashMap<SpecimenSummary, Integer>();
+        Map<String, Integer> map = new HashMap<String, Integer>();
         try
         {
             List<Object> params = new ArrayList<Object>();
             params.add(container.getId());
             StringBuilder extraClause = new StringBuilder();
-            if (specimenNumbers != null)
+            if (specimenHashes != null)
             {
-                extraClause.append(" AND SpecimenNumber IN(");
+                extraClause.append(" AND SpecimenHash IN(");
                 String separator = "";
-                for (String specimenNumber : specimenNumbers)
+                for (String specimenNumber : specimenHashes)
                 {
                     extraClause.append(separator);
                     separator = ", ";
@@ -1659,25 +1562,13 @@ public class SampleManager
             }
 
             rs = Table.executeQuery(StudySchema.getInstance().getSchema(), "SELECT " +
-                    "SpecimenNumber, " +
-                    "PrimaryTypeId AS PrimaryType, " +
-                    "DerivativeTypeId AS DerivativeType, " +
-                    "ptid AS ParticipantId, " +
-                    "VisitDescription, " +
-                    "VisitValue AS Visit, " +
-                    "VolumeUnits, " +
-                    "AdditiveTypeId AS AdditiveType, " +
-                    "DrawTimestamp, " +
-                    "SalReceiptDate, " +
-                    "ClassId, " +
-                    "ProtocolNumber, " +
-                    "SubAdditiveDerivative, " +
-                    "CAST(AvailableCount AS Integer) AS AvailableCount" +
-                    " FROM " + StudySchema.getInstance().getTableInfoSpecimenSummary().getAliasName() + " WHERE Container = ?" + extraClause, params.toArray(new Object[params.size()]));
+                    "SpecimenHash, CAST(AvailableCount AS Integer) AS AvailableCount" +
+                    " FROM " + StudySchema.getInstance().getTableInfoSpecimenSummary().getAliasName() +
+                    " WHERE Container = ?" + extraClause, params.toArray(new Object[params.size()]));
             while(rs.next())
             {
-                SpecimenSummary summary = new SpecimenSummary(container, rs.getRowMap());
-                map.put(summary, rs.getInt("AvailableCount"));
+                String specimenHash = rs.getString("SpecimenHash");
+                map.put(specimenHash, rs.getInt("AvailableCount"));
             }
         }
         finally
@@ -2327,10 +2218,10 @@ public class SampleManager
         return Table.selectObject(StudySchema.getInstance().getTableInfoSpecimenComment(), filter, null, SpecimenComment.class);
     }
 
-    public SpecimenComment[] getSpecimenCommentForSpecimen(Container container, SpecimenSummaryKey key) throws SQLException
+    public SpecimenComment[] getSpecimenCommentForSpecimen(Container container, String specimenHash) throws SQLException
     {
         SimpleFilter vialFilter = new SimpleFilter("Container", container.getId());
-        vialFilter.addClause(getSpecimenFilter(Collections.singletonList(key)));
+        vialFilter.addCondition("SpecimenHash", specimenHash);
         List<String> globalUniqueIds = new ArrayList<String>();
         ResultSet rs = null;
         try
@@ -2371,7 +2262,7 @@ public class SampleManager
             {
                 comment = new SpecimenComment();
                 comment.setGlobalUniqueId(vial.getGlobalUniqueId());
-                comment.setSpecimenNumber(vial.getSpecimenNumber());
+                comment.setSpecimenHash(vial.getSpecimenHash());
                 comment.setComment(commentText);
                 comment.beforeInsert(user, vial.getContainer().getId());
                 return Table.insert(user, StudySchema.getInstance().getTableInfoSpecimenComment(), comment);

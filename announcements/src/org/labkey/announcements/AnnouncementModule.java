@@ -60,7 +60,7 @@ public class AnnouncementModule extends DefaultModule implements ContainerManage
 
     public AnnouncementModule()
     {
-        super(NAME, 8.20, "/org/labkey/announcements", true,
+        super(NAME, 8.30, "/org/labkey/announcements", true,
             new BaseWebPartFactory(WEB_PART_NAME)
             {
                 public WebPartView getWebPartView(ViewContext parentCtx, Portal.WebPart webPart)

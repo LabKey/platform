@@ -50,7 +50,7 @@ public class IssuesModule extends DefaultModule implements ContainerManager.Cont
 
     public IssuesModule()
     {
-        super(NAME, 8.20, "/org/labkey/issue", true, new IssuesWebPartFactory());
+        super(NAME, 8.30, "/org/labkey/issue", true, new IssuesWebPartFactory());
     }
 
     protected void init()

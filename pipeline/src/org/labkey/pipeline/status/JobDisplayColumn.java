@@ -17,6 +17,7 @@ package org.labkey.pipeline.status;
 
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.util.PageFlowUtil;
 import static org.labkey.pipeline.api.PipelineStatusManager.*;
@@ -104,7 +105,13 @@ public class JobDisplayColumn extends SimpleDisplayColumn
             try
             {
                 if (_split)
-                    _jobStatus = getSplitStatusFiles((String) ctx.get("Job"));
+                {
+                    String jobId = (String) ctx.get("Job");
+                    if (jobId != null)
+                    {
+                        _jobStatus = getSplitStatusFiles(jobId);
+                    }
+                }
                 else if (ctx.get("JobParent") != null)
                 {
                     PipelineStatusFileImpl parent = getJobStatusFile((String) ctx.get("JobParent"));
@@ -116,6 +123,7 @@ public class JobDisplayColumn extends SimpleDisplayColumn
             }
             catch (SQLException e)
             {
+                throw new RuntimeSQLException(e);
             }
             if (_jobStatus == null)
                 _jobStatus = new PipelineStatusFile[0];

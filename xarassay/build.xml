@@ -3,7 +3,7 @@
 <project name="Standalone Build" default="build_module" basedir=".">
 
     <!-- -->
-    <property name="module.name" value="XarAssay" />
+    <property name="module.name" value="xarassay" />
 
     <property environment="env"/>
     <target name="init">
@@ -64,4 +64,21 @@
         <antcall target="rebuild_labkey"/>
         <antcall target="build_module"/>
     </target>
+    <target name="clean_module"  description="Cleans the build directory for this module " depends="init" >
+            <property name="build.thismodule.dir" value="${labkey.root}/build/modules/${module.name}" />
+            <property name="gensrc.jsp.dir" value="${labkey.root}/build/gensrc/pageflow/${module.name}" />            
+            <property name="staging.modules.dir" value="${labkey.root}/build/staging/modules" />
+            <property name="staging.thismodule.file" value="${staging.modules.dir}/${module.name}.module" />
+
+        <delete quiet="true" includeemptydirs="true">
+            <fileset dir="${build.thismodule.dir}" includes="**/*" />                
+            <fileset dir="${gensrc.jsp.dir}" includes="**/*"/>
+        </delete>
+        <delete dir="${build.thismodule.dir}" />
+        <delete file="${staging.thismodule.file}" />
+		
+
+    </target>
+    
+    
 </project>

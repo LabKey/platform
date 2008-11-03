@@ -20,19 +20,19 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.actions.UploadWizardAction;
-import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URIUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.InsertView;
-import org.labkey.api.view.ActionURL;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -41,7 +41,6 @@ import java.io.File;
 import java.net.URI;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -150,9 +149,8 @@ public class XarAssayUploadAction extends UploadWizardAction<XarAssayForm>
                     view.getDataRegion().addHiddenFormField(XarAssayDataCollector.CURRENT_FILE_FORM_ELEMENT_NAME, form.getCurrentFileName());
                 }
                 view.getDataRegion().addHiddenFormField(XarAssayDataCollector.NUMBER_REMAINING_FORM_ELEMENT_NAME, Integer.toString(form.getNumFilesRemaining()));
-
-
             }
+
 
         }
         catch (Exception e) {
@@ -160,5 +158,29 @@ public class XarAssayUploadAction extends UploadWizardAction<XarAssayForm>
         }
 
         return view;
+    }
+
+    @Override
+    protected InsertView createRunInsertView(XarAssayForm form, boolean reshow, BindException errors)
+    {
+        InsertView parent = super.createRunInsertView(form, reshow, errors);
+
+/*
+        AssayProvider provider = getProvider(form);
+        try
+        {
+            if (provider instanceof MsFractionAssayProvider)
+            {
+            MsFractionPropertyHelper helper = ((MsFractionAssayProvider)getProvider(form)).createSamplePropertyHelper(form, form.getProtocol(),null);
+            helper.addSampleColumns(parent.getDataRegion(), form.getUser());
+            }
+            return parent;
+        }
+        catch (ExperimentException e)
+        {
+            throw new RuntimeException(e);
+        }
+*/
+    return parent;      
     }
 }
