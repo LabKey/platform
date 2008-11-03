@@ -2437,4 +2437,13 @@ public class QueryControllerSpring extends SpringActionController
             return viewInfo;
         }
     }
+
+    @RequiresPermission(ACL.PERM_NONE)
+    public class GetServerDateAction extends ApiAction
+    {
+        public ApiResponse execute(Object o, BindException errors) throws Exception
+        {
+            return new ApiSimpleResponse("date", new Date());
+        }
+    }
 }
