@@ -99,7 +99,7 @@ public class WebThemeManager
             // just continue
         }
 
-        if (_webThemeMap.size() > 0)
+        if (_webThemeMap.isEmpty())
         {
             // add the defaults if nothing was loaded
             addToMap(BLUE);
