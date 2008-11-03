@@ -74,7 +74,7 @@ public class PublishedRecordQueryView extends DataSetQueryView
         {
             SimpleFilter filter = new SimpleFilter();
 
-            filter.addWhereClause("sourceLsid = ?", new Object[]{_sourceLsid});
+            filter.addCondition("SourceLSID", _sourceLsid, CompareType.EQUAL);
             SimpleFilter baseFilter = (SimpleFilter) view.getRenderContext().getBaseFilter();
             if (baseFilter != null)
                 baseFilter.addAllClauses(filter);
