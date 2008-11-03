@@ -596,6 +596,33 @@ LABKEY.Query = new function()
             });
         },
 
+        /**
+         * Returns the current date/time on the LabKey server.
+         * @param config An object that contains the following configuration parameters
+         * @param {function} config.successCallback The function to call when the function finishes successfully.
+         * This function will be called with a single parameter of type Date.
+         * @param {function} [config.errorCallback] The function to call if this function encounters an error.
+         * This function will be called with the following parameters:
+         * <ul>
+         * <li><b>errorInfo:</b> An object with a property called "exception," which contains the error message.</li>
+         * </ul>
+         */
+        getServerDate : function(config)
+        {
+            Ext.Ajax.request({
+                url: LABKEY.ActionURL.buildURL('query', 'getServerDate'),
+                failure: getErrorCallbackWrapper(config.errorCallback),
+                success: getSuccessCallbackWrapper(function(json){
+                    var d;
+                    if(json && json.date && config.successCallback)
+                    {
+                        d = new Date(json.date);
+                        config.successCallback(d);
+                    }
+                })
+            });
+        },
+
         URL_COLUMN_PREFIX: "_labkeyurl_"
     }
 };
