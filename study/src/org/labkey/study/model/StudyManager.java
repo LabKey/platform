@@ -1825,7 +1825,7 @@ public class StudyManager
 
     private static final String CONVERSION_ERROR = "Conversion Error";
 
-    Map<String, Object>[] parseTSV(DataSetDefinition def,
+    private Map<String, Object>[] parseTSV(DataSetDefinition def,
                                    String tsv,
                                    Map<String, String> columnMap,
                                    List<String> errors)
@@ -1987,20 +1987,24 @@ public class StudyManager
     }
 
     /**
-     * dataMaps must have strings which are property URIs
+     * dataMaps have keys which are property URIs, and values which have already been converted.
      */
     public String[] importDatasetData(Study study, User user, DataSetDefinition def, Map<String, Object>[] dataMaps, long lastModified,
                                       List<String> errors, boolean checkDuplicates, QCState defaultQCState)
             throws IOException, ServletException, SQLException
     {
+        if (dataMaps.length == 0)
+            return new String[0];
+
         Container c = study.getContainer();
         TableInfo tinfo = def.getTableInfo(null, false, false);
         String[] imported = new String[0];
 
         Map<String, QCState> qcStateLabels =  new CaseInsensitiveHashMap<QCState>();
-        boolean checkQCStateLabels = tinfo.getColumn(DataSetTable.QCSTATE_ID_COLNAME) != null &&
-                dataMaps != null && dataMaps.length > 0 && dataMaps[0].keySet().contains(DataSetTable.QCSTATE_LABEL_COLNAME);
-        if (checkQCStateLabels)
+
+        boolean needToHandleQCState = tinfo.getColumn(DataSetTable.QCSTATE_ID_COLNAME) != null;
+
+        if (needToHandleQCState)
         {
             for (QCState state : StudyManager.getInstance().getQCStates(study.getContainer()))
                 qcStateLabels.put(state.getLabel(), state);
@@ -2027,16 +2031,6 @@ public class StudyManager
             // lsid is generated
             if (col.getName().equalsIgnoreCase("lsid"))
                 continue;
-
-            // We need to un-escape any \n instances we find if this is a multiline text field
-            boolean isMultilineText = false;
-            PropertyDescriptor propertyDescriptor = OntologyManager.getPropertyDescriptor(col.getPropertyURI(), c);
-            if (propertyDescriptor != null)
-            {
-                PropertyType type = propertyDescriptor.getPropertyType();
-                if (type == PropertyType.MULTI_LINE)
-                    isMultilineText = true;
-            }
             
             for (int i = 0; i < dataMaps.length; i++)
             {
@@ -2082,21 +2076,6 @@ public class StudyManager
                 {
                     errors.add("Row " + (i+1) + " data type error for field " + col.getName() + "."); // + " '" + String.valueOf(val) + "'.");
                     break;
-                }
-
-                if (val != null && isMultilineText)
-                {
-                    String newVal = val.toString();
-                    if (newVal.indexOf("\\n") != -1)
-                    {
-                        // We need to convert \n strings to actual returns
-                        newVal = newVal.replaceAll("\\\\n", "\n");
-
-                        // Note that we have to actually swap out the map in order to update our entry
-                        dataMap = new CaseInsensitiveHashMap<Object>(dataMap);
-                        dataMap.put(col.getPropertyURI(), newVal);
-                        dataMaps[i] = dataMap;
-                    }
                 }
             }
         }
@@ -2179,7 +2158,7 @@ public class StudyManager
                     scope.beginTransaction();
                 }
 
-                if (checkQCStateLabels)
+                if (needToHandleQCState)
                 {
                     // We first insert new QC states for any previously unknown QC labels found in the data:
                     Map<String, QCState> iterableStates = new HashMap<String, QCState>(qcStateLabels);
@@ -2196,10 +2175,7 @@ public class StudyManager
                             qcStateLabels.put(state.getKey(), newState);
                         }
                     }
-                }
 
-                if (checkQCStateLabels)
-                {
                     // All QC states should now be stored in the database.  Next we iterate the row maps,
                     // swapping in the appropriate row id for each QC label, and applying the default QC state
                     // to null QC rows if appropriate:

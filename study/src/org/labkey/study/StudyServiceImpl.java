@@ -108,9 +108,10 @@ public class StudyServiceImpl implements StudyService.Service
 
             StudyManager.getInstance().deleteDatasetRows(study, def, Collections.singletonList(lsid));
 
-            String tsv = createTSV(newData);
-            String[] result = StudyManager.getInstance().importDatasetTSV(study, u, def, tsv, System.currentTimeMillis(),
-                Collections.<String,String>emptyMap(), errors, true, defaultQCState);
+            Map<String,Object>[] dataMap = convertMapToPropertyMapArray(newData, def);
+            
+            String[] result = StudyManager.getInstance().importDatasetData(
+                study, u, def, dataMap, System.currentTimeMillis(), errors, true, defaultQCState);
 
             if (errors.size() > 0)
             {
@@ -179,6 +180,11 @@ public class StudyServiceImpl implements StudyService.Service
     {
         Study study = StudyManager.getInstance().getStudy(c);
         DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
+
+        if (def == null)
+        {
+            throw new RuntimeException("Dataset for id " + datasetId + " not found");
+        }
         
         // Unfortunately we need to use two tableinfos: one to get the column names with correct casing,
         // and one to get the data.  We should eventually be able to convert to using Query completely.
@@ -230,7 +236,6 @@ public class StudyServiceImpl implements StudyService.Service
     {
         Study study = StudyManager.getInstance().getStudy(c);
         DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
-        String tsv = createTSV(data);
 
         Integer defaultQcStateId = study.getDefaultDirectEntryQCState();
         QCState defaultQCState = null;
@@ -244,9 +249,11 @@ public class StudyServiceImpl implements StudyService.Service
             if (transactionOwner)
                 beginTransaction();
 
-            String[] result = StudyManager.getInstance().importDatasetTSV(study, u, def, tsv, System.currentTimeMillis(),
-                Collections.<String,String>emptyMap(), errors, true, defaultQCState);
+            Map<String,Object>[] dataMap = convertMapToPropertyMapArray(data, def);
 
+            String[] result = StudyManager.getInstance().importDatasetData(
+                study, u, def, dataMap, System.currentTimeMillis(), errors, true, defaultQCState);
+            
             if (result.length > 0)
             {
                 // Log to the audit log
@@ -308,40 +315,38 @@ public class StudyServiceImpl implements StudyService.Service
         }
     }
 
-    private String createTSV(Map<String,Object> data)
+    /**
+     * Requests arrive as maps of name->value. The StudyManager expects arrays of maps
+     * of property URI -> value. This is a convenience method to do that conversion.
+     */
+    private Map<String,Object>[] convertMapToPropertyMapArray(Map<String,Object> origData, DataSetDefinition def)
+        throws SQLException
     {
-        StringBuilder sb = new StringBuilder();
+        Map<String,Object> map = new HashMap<String,Object>();
+        //noinspection unchecked
+        Map<String,Object>[] result = new Map[]{map};
 
-        // Need to hold the keys in an array list to preserve order
-        List<String> keyList = new ArrayList<String>();
-        for (Map.Entry<String,Object> entry : data.entrySet())
+        TableInfo tInfo;
+        try
         {
-            keyList.add(entry.getKey());
-            sb.append(entry.getKey()).append('\t');
+            tInfo = def.getTableInfo(null, false, false);
         }
-        sb.append(System.getProperty("line.separator"));
-
-        for (String key:keyList)
+        catch (ServletException e)
         {
-            Object valueObj = data.get(key);
-            if (valueObj != null)
-            {
-                // Since we're creating a TSV, we can't use tabs.
-                // Replace them with 4 spaces.
-                valueObj = valueObj.toString().replaceAll("\t", "    ");
-
-                // Escape newlines with backslash-n. This will get unescaped when we write to the database
-                valueObj = valueObj.toString().replaceAll("\r", ""); // we don't need to preserve windows carriage returns
-                valueObj = valueObj.toString().replaceAll("\n", "\\\\n");
-
-            }
-            else
-            {
-                valueObj = "";
-            }
-            sb.append(valueObj).append('\t');
+            throw UnexpectedException.wrap(e);
         }
-        return sb.toString();
+        for (ColumnInfo col : tInfo.getColumns())
+        {
+            String name = col.getName();
+            Object value = origData.get(name);
+
+            if (value == null) // value isn't in the map. Ignore.
+                continue;
+
+            map.put(col.getPropertyURI(), value);
+        }
+
+        return result;
     }
 
     /**
@@ -521,6 +526,9 @@ public class StudyServiceImpl implements StudyService.Service
             // Check permission
             Study study = StudyManager.getInstance().getStudy(container);
             DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
+            if (def == null)
+                throw new RuntimeException("Could not find dataset with id of " + datasetId);
+
             if (def.canWrite(user))
                 return new DatasetUpdateService(datasetId);
             else
