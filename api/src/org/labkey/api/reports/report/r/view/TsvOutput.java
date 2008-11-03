@@ -75,7 +75,13 @@ public class TsvOutput extends AbstractParamReplacement
         {
             if (getFile() != null && getFile().exists() && (getFile().length() > 0))
             {
-                TabLoader tabLoader = new TabLoader(getFile());
+                TabLoader tabLoader = new TabLoader(getFile(), 1) {
+                    protected String getDefaultColumnName(int col)
+                    {
+                        // a blank column name is okay...
+                        return "";
+                    }
+                };
                 tabLoader.setParseQuotes(true);
                 ColumnDescriptor[] cols = tabLoader.getColumns();
                 Map[] data = (Map[]) tabLoader.load();

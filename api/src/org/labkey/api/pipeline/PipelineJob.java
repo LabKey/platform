@@ -813,6 +813,7 @@ abstract public class PipelineJob extends Job implements Serializable
         {
             if (isAutoRetry())
             {
+                info("Attempting to auto-retry");
                 PipelineJobService.get().getJobStore().retry(getJobGUID());
                 // Retry has been queued
                 return true;

@@ -684,15 +684,13 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
     {
         BindException errors = new BindException(new BaseViewAction.BeanUtilsPropertyBindingResult(this, "form"));
         reset(null, getViewContext().getRequest());
-        Map<String,String> strings = new CaseInsensitiveHashMap<String>();
         {
             for (PropertyValue pv : params.getPropertyValues())
             {
                 if (pv.getValue() instanceof String)
-                    strings.put(pv.getName(), (String)pv.getValue());
+                    set(pv.getName(), (String)pv.getValue());
             }
         }
-        setStrings(strings);
         validateBind(errors);
         return errors;
     }

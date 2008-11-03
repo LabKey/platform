@@ -21,6 +21,7 @@ import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.util.UnexpectedException;
 
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Array;
@@ -236,12 +237,11 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
                     }
                     catch (IllegalAccessException x)
                     {
-                        assert false : "unexpected exception";
+                        throw new UnexpectedException(x);
                     }
                     catch (InvocationTargetException x)
                     {
-                        _log.error("handleArray", x);
-                        assert false;
+                        throw new UnexpectedException(x);
                     }
                 }
 

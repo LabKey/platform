@@ -576,19 +576,23 @@ public class QueryView extends WebPartView<Object>
         for (Integer pageSize : sizes)
         {
             boolean checked = pageSize.intValue() == maxRows;
-            pageSizeMenu.addMenuItem(String.valueOf(pageSize) + " per page", "#",
+            NavTree item = pageSizeMenu.addMenuItem(String.valueOf(pageSize) + " per page", "#",
                     "LABKEY.DataRegions[" + PageFlowUtil.jsString(regionName) + "].setMaxRows(" + String.valueOf(pageSize) + ")", checked);
+            item.setId("Page Size:" + pageSize);
         }
         pageSizeMenu.addSeparator();
         if (showRecordSelectors() || showingSelected || showingUnselected)
         {
-            pageSizeMenu.addMenuItem("Show Selected", "#",
+            NavTree item = pageSizeMenu.addMenuItem("Show Selected", "#",
                     "LABKEY.DataRegions[" + PageFlowUtil.jsString(regionName) + "].showSelected()", showingSelected);
-            pageSizeMenu.addMenuItem("Show Unselected", "#",
+            item.setId("Page Size:Selected");
+            item = pageSizeMenu.addMenuItem("Show Unselected", "#",
                     "LABKEY.DataRegions[" + PageFlowUtil.jsString(regionName) + "].showUnselected()", showingUnselected);
+            item.setId("Page Size:Unselected");
         }
-        pageSizeMenu.addMenuItem("Show All", "#",
+        NavTree item = pageSizeMenu.addMenuItem("Show All", "#",
                 "LABKEY.DataRegions[" + PageFlowUtil.jsString(regionName) + "].showAll()", showingAll);
+        item.setId("Page Size:All");
 
         return pageSizeMenu;
     }

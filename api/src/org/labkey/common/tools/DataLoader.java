@@ -198,18 +198,23 @@ public abstract class DataLoader
         {
             String[] headers = lineFields[_skipLines - 1];
             for (int f = 0; f < nCols; f++)
-                colDescs[f].name = (f >= headers.length || "".equals(headers[f])) ? "column" + f : headers[f];
+                colDescs[f].name = (f >= headers.length || "".equals(headers[f])) ? getDefaultColumnName(f) : headers[f];
         }
         else
         {
             for (int f = 0; f < colDescs.length; f++)
             {
                 ColumnDescriptor colDesc = colDescs[f];
-                colDesc.name = "column" + f;
+                colDesc.name = getDefaultColumnName(f);
             }
         }
 
         _columns = colDescs;
+    }
+
+    protected String getDefaultColumnName(int col)
+    {
+        return "column" + col;
     }
 
     /**

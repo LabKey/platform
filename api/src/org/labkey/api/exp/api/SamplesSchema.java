@@ -31,6 +31,8 @@ import java.util.TreeMap;
 
 public class SamplesSchema extends UserSchema
 {
+    public static final String SCHEMA_NAME = "Samples";
+
     static private Map<String, ExpSampleSet> getSampleSetMap(Container container)
     {
         Map<String, ExpSampleSet> map = new TreeMap();
@@ -43,7 +45,7 @@ public class SamplesSchema extends UserSchema
 
     static public void register()
     {
-        DefaultSchema.registerProvider("Samples", new DefaultSchema.SchemaProvider() {
+        DefaultSchema.registerProvider(SCHEMA_NAME, new DefaultSchema.SchemaProvider() {
             public QuerySchema getSchema(DefaultSchema schema)
             {
                 Map<String, ExpSampleSet> map = getSampleSetMap(schema.getContainer());
@@ -62,7 +64,7 @@ public class SamplesSchema extends UserSchema
     private Map<String, ExpSampleSet> _sampleSetMap;
     private SamplesSchema(User user, Container container, Map<String, ExpSampleSet> sampleSetMap)
     {
-        super("Samples", user, container, ExperimentService.get().getSchema());
+        super(SCHEMA_NAME, user, container, ExperimentService.get().getSchema());
         _sampleSetMap = sampleSetMap;
     }
 
