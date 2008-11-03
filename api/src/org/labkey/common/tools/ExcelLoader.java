@@ -45,6 +45,11 @@ public class ExcelLoader extends DataLoader
 
     public ExcelLoader(File file) throws IOException
     {
+        this(file, false);
+    }
+
+    public ExcelLoader(File file, boolean hasColumnHeaders) throws IOException
+    {
         setSource(file);
         try
         {
@@ -54,6 +59,7 @@ public class ExcelLoader extends DataLoader
         {
             throw new IOException(e.getMessage());
         }
+        _skipLines = hasColumnHeaders ? 1 : 0;
     }
 
     public List<String> getSheetNames()
@@ -216,7 +222,7 @@ public class ExcelLoader extends DataLoader
 
             File metadataSample = new File(excelSamplesRoot, "ExcelLoaderTest.xls");
 
-            ExcelLoader loader = new ExcelLoader(metadataSample);
+            ExcelLoader loader = new ExcelLoader(metadataSample, true);
             checkColumnMetadata(loader);
             checkData(loader);
             checkObject(loader);

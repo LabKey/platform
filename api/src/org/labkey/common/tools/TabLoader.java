@@ -75,6 +75,12 @@ public class TabLoader extends DataLoader
         setSource(inputFile);
     }
 
+    public TabLoader(File inputFile, boolean hasColumnHeaders) throws IOException
+    {
+        setSource(inputFile);
+        _skipLines = hasColumnHeaders ? 1 : 0;
+    }
+
 
     public TabLoader(Reader reader, boolean hasColumnHeaders, Class returnClass)
     {
