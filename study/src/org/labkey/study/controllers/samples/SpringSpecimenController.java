@@ -206,7 +206,7 @@ public class SpringSpecimenController extends BaseStudyController
             }
             else
                 view = getUtils().getSpecimenQueryView(form.isShowVials(), forExport, form.isCommentsMode());
-            view.setAllowExcelWebQuery(false);
+            view.setAllowExportExternalQuery(false);
             return view;
         }
 
