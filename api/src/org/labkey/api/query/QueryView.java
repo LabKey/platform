@@ -74,7 +74,7 @@ public class QueryView extends WebPartView<Object>
     private Report _report;
 
     private boolean _showExportButtons = true;
-    private boolean _allowExcelWebQuery = true;
+    private boolean _allowExportExternalQuery = true;
     private boolean _useQueryViewActionExportURLs = false;
     private boolean _printView = false;
     private boolean _exportView = false;
@@ -531,12 +531,12 @@ public class QueryView extends WebPartView<Object>
             tsvURL.addParameter("exportAsWebPage", "true");
         }
         exportMenuButton.addMenuItem("Export All to Text (.tsv)", tsvURL.getLocalURIString());
-        if (_allowExcelWebQuery)
+        if (_allowExportExternalQuery)
         {
             exportMenuButton.addMenuItem("Excel Web Query (.iqy)", urlFor(QueryAction.excelWebQueryDefinition).getLocalURIString());
+            exportMenuButton.addSeparator();
+            exportMenuButton.addMenuItem("Create R Script", urlFor(QueryAction.exportRScript).getLocalURIString());
         }
-        exportMenuButton.addSeparator();
-        exportMenuButton.addMenuItem("Create R Script", urlFor(QueryAction.exportRScript).getLocalURIString());
         return exportMenuButton;
     }
 
@@ -1315,14 +1315,14 @@ public class QueryView extends WebPartView<Object>
         _useQueryViewActionExportURLs = useQueryViewActionExportURLs;
     }
 
-    public boolean isAllowExcelWebQuery()
+    public boolean isAllowExportExternalQuery()
     {
-        return _allowExcelWebQuery;
+        return _allowExportExternalQuery;
     }
 
-    public void setAllowExcelWebQuery(boolean allowExcelWebQuery)
+    public void setAllowExportExternalQuery(boolean allowExportExternalQuery)
     {
-        _allowExcelWebQuery = allowExcelWebQuery;
+        _allowExportExternalQuery = allowExportExternalQuery;
     }
 
     public boolean isShadeAlternatingRows()
