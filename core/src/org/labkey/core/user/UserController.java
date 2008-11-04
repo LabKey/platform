@@ -182,12 +182,12 @@ public class UserController extends SpringActionController
             gridButtonBar.add(delete);
 
             ActionButton deactivate = new ActionButton("button", "Deactivate");
-            deactivate.setScript("return verifySelected(this.form, \"deactivateUsers.post\", \"post\", \"users\", \"Are you sure you want to deactivate these users?\")");
+            deactivate.setScript("return verifySelected(this.form, \"deactivateUsers.post\", \"post\", \"users\", null)");
             deactivate.setActionType(ActionButton.Action.GET);
             gridButtonBar.add(deactivate);
 
             ActionButton activate = new ActionButton("button", "Re-Activate");
-            activate.setScript("return verifySelected(this.form, \"activateUsers.post\", \"post\", \"users\", \"Are you sure you want to re-activate these users?\")");
+            activate.setScript("return verifySelected(this.form, \"activateUsers.post\", \"post\", \"users\", null)");
             activate.setActionType(ActionButton.Action.GET);
             gridButtonBar.add(activate);
 
@@ -291,7 +291,32 @@ public class UserController extends SpringActionController
         }
     }
 
-    public abstract class BaseActivateUsersAction extends FormHandlerAction
+    public static class UserIdForm
+    {
+        private Integer[] _userId;
+        private String _redirUrl;
+
+        public Integer[] getUserId()
+        {
+            return _userId;
+        }
+
+        public void setUserId(Integer[] userId)
+        {
+            _userId = userId;
+        }
+
+        public String getRedirUrl()
+        {
+            return _redirUrl;
+        }
+
+        public void setRedirUrl(String redirUrl)
+        {
+            _redirUrl = redirUrl;
+        }
+    }
+    public abstract class BaseActivateUsersAction extends FormViewAction<UserIdForm>
     {
         private boolean _active = true;
 
@@ -300,28 +325,58 @@ public class UserController extends SpringActionController
             _active = active;
         }
 
-        public void validateCommand(Object target, Errors errors)
+        public void validateCommand(UserIdForm form, Errors errors)
         {
         }
 
-        public boolean handlePost(Object o, BindException errors) throws Exception
+        public ModelAndView getView(UserIdForm form, boolean reshow, BindException errors) throws Exception
         {
-            Set<String> userIds = DataRegionSelection.getSelected(getViewContext(), true);
-            if (userIds != null)
+            DeactivateUsersBean bean = new DeactivateUsersBean(_active, null == form.getRedirUrl() ? null : new ActionURL(form.getRedirUrl()));
+            if(null != form.getUserId())
             {
-                for (String userId : userIds)
-                {
-                    Integer id = Integer.valueOf(userId);
-                    if(null != id)
-                        UserManager.setUserActive(getViewContext().getUser(), id.intValue(), _active);
-                }
+                for(Integer userId : form.getUserId())
+                    bean.addUser(UserManager.getUser(userId.intValue()));
+            }
+            else
+            {
+                //try to get a user selection list from the dataregion
+                Set<String> userIds = DataRegionSelection.getSelected(getViewContext(), true);
+                if(null == userIds || userIds.size() == 0)
+                    throw new RedirectException(new UserUrlsImpl().getSiteUsersURL().getLocalURIString());
+
+                for(String userId : userIds)
+                    bean.addUser(UserManager.getUser(Integer.parseInt(userId)));
+            }
+
+            if(bean.getUsers().size() == 0)
+                throw new RedirectException(bean.getRedirUrl().getLocalURIString());
+
+            return new JspView<DeactivateUsersBean>("/org/labkey/core/user/deactivateUsers.jsp", bean, errors);
+        }
+
+        public boolean handlePost(UserIdForm form, BindException errors) throws Exception
+        {
+            if(null == form.getUserId())
+                return false;
+
+            User curUser = getViewContext().getUser();
+            for(Integer userId : form.getUserId())
+            {
+                UserManager.setUserActive(curUser, userId, _active);
             }
             return true;
         }
 
-        public ActionURL getSuccessURL(Object o)
+        public ActionURL getSuccessURL(UserIdForm form)
         {
-            return new UserUrlsImpl().getSiteUsersURL();
+            return null != form.getRedirUrl() ? new ActionURL(form.getRedirUrl())
+                    : new UserUrlsImpl().getSiteUsersURL();
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            String title = _active ? "Re-activate Users" : "Deactivate Users";
+            return root.addChild(title);
         }
     }
 
@@ -858,6 +913,7 @@ public class UserController extends SpringActionController
             User user = getUser();
             int userId = user.getUserId();
             _detailsUserId = Integer.valueOf(form.getUserId());
+            User detailsUser = UserManager.getUser(_detailsUserId.intValue());
             boolean isOwnRecord = (_detailsUserId.intValue() == userId);
 
             // Anyone can view their own record; otherwise, make sure current user can view the details of this user
@@ -890,6 +946,11 @@ public class UserController extends SpringActionController
                 ActionURL changeEmailURL = getViewContext().cloneActionURL().setAction("showChangeEmail");
                 changeEmail.setURL(changeEmailURL.getLocalURIString());
                 bb.add(changeEmail);
+
+                ActionURL deactivateUrl = new ActionURL(detailsUser.isActive() ? DeactivateUsersAction.class : ActivateUsersAction.class, c);
+                deactivateUrl.addParameter("userId", _detailsUserId.intValue());
+                deactivateUrl.addParameter("redirUrl", getViewContext().getActionURL().getEncodedLocalURIString());
+                bb.add(new ActionButton(detailsUser.isActive() ? "Deactivate" : "Re-Activate", deactivateUrl));
             }
 
             if (isAnyAdmin)
@@ -996,9 +1057,7 @@ public class UserController extends SpringActionController
                 form.setContainer(null);
                 DataRegion rgn = getGridRegion(isOwnRecord);
 
-                //don't let the user make themselves inactive
-                if(isOwnRecord)
-                    rgn.removeColumns("Active");
+                rgn.removeColumns("Active");
 
                 String returnUrl = form.getStrings().get(ReturnUrlForm.Params.returnUrl.toString());
 
