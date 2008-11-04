@@ -115,6 +115,9 @@ public class RecompilingJspClassLoader extends JspClassLoader
                     jasper.setTrimSpaces(false);
                     jasper.setCompile(false);
                     jasper.setListErrors(true);
+
+                    if (relativePath.startsWith("/"))
+                        relativePath = relativePath.substring(1);
                     jasper.setJspFiles(relativePath);
                     jasper.setClassPath(cp.getPath());
                     jasper.execute();
