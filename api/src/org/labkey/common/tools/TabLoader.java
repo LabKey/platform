@@ -889,7 +889,7 @@ public class TabLoader extends DataLoader
         }
     }
 
-    protected String[][] getFirstNLines(int n) throws IOException
+    public String[][] getFirstNLines(int n) throws IOException
     {
         BufferedReader reader = getReader();
         try

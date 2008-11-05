@@ -18,6 +18,7 @@ package org.labkey.common.tools;
 import org.apache.commons.beanutils.Converter;
 
 import java.lang.reflect.Method;
+import java.util.Date;
 
 /**
  * Used by data loaders to define their column properties
@@ -56,5 +57,20 @@ public class ColumnDescriptor
     public String toString()
     {
         return name + ":" + clazz.getSimpleName();
+    }
+
+    public String getRangeURI()
+    {
+        if (clazz == String.class)
+            return "xsd:string";
+        if (clazz == Integer.class)
+            return "xsd:int";
+        if (clazz == Double.class)
+            return "xsd:double";
+        if (clazz == Date.class)
+            return "xsd:dateTime";
+        if (clazz == Boolean.class)
+            return "xsd:boolean";
+        throw new IllegalArgumentException("Unknown class for column: " + clazz);
     }
 }

@@ -117,4 +117,9 @@ public abstract class BaseRemoteService extends RemoteServiceServlet
         }
 
     }
+
+    public ViewContext getViewContext()
+    {
+        return _context;
+    }
 }

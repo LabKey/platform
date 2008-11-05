@@ -1544,6 +1544,12 @@ internal/gwtsrc/org/labkey/api/gwt/client/ui/VennDiagramView.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/WebPartPanel.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/WidgetUpdatable.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/WindowUtil.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/domain/DomainImportGrid.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/domain/DomainImporter.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/domain/DomainImporterService.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/domain/DomainImporterServiceAsync.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/domain/ImportException.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/domain/InferencedColumn.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/RangeValidatorDialog.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/RegexValidatorDialog.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/ValidatorDialog.java -text
@@ -1588,6 +1594,7 @@ internal/src/org/labkey/api/exp/AbstractFileXarSource.java -text
 internal/src/org/labkey/api/exp/CompressedXarSource.java -text
 internal/src/org/labkey/api/exp/FileXarSource.java -text
 internal/src/org/labkey/api/exp/property/DomainEditorServiceBase.java -text
+internal/src/org/labkey/api/exp/property/DomainImporterServiceBase.java -text
 internal/src/org/labkey/api/exp/property/DomainUtil.java -text
 internal/src/org/labkey/api/exp/property/ExperimentProperty.java -text
 internal/src/org/labkey/api/exp/property/SystemProperty.java -text
@@ -1605,6 +1612,7 @@ internal/src/org/labkey/api/util/FTPUtil.java -text
 internal/src/org/labkey/api/util/HashHelpers.java -text
 internal/src/org/labkey/api/util/LogPrintWriter.java -text
 internal/src/org/labkey/api/util/Search.java -text
+internal/src/org/labkey/api/util/SessionTempFileHolder.java -text
 internal/src/org/labkey/api/util/URLExpression.java -text
 internal/src/org/labkey/api/util/wiki_markup.properties -text
 internal/src/org/labkey/api/view/AbstractCustomizeWebPartView.java -text

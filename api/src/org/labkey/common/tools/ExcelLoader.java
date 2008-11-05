@@ -80,7 +80,7 @@ public class ExcelLoader extends DataLoader
             return workbook.getSheet(0);
     }
 
-    protected String[][] getFirstNLines(int n) throws IOException
+    public String[][] getFirstNLines(int n) throws IOException
     {
         Sheet sheet = getSheet();
 

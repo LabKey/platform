@@ -93,7 +93,7 @@ public abstract class DataLoader
      * subclasses are allowed to return fewer than n lines
      * if there are fewer rows than that in the data.
      **/
-    protected abstract String[][] getFirstNLines(int n) throws IOException;
+    public abstract String[][] getFirstNLines(int n) throws IOException;
 
     /**
      * Returns an iterator over the data in this file
@@ -319,6 +319,8 @@ public abstract class DataLoader
         Object[] oarr = rowList.toArray((Object[]) Array.newInstance(_returnElementClass, rowList.size()));
         return oarr;
     }
+
+    public void close() {}
 
 
     /** Test class for JUnit tests **/
