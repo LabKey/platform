@@ -26,7 +26,7 @@ import org.labkey.api.util.StringExpressionFactory;
 import java.util.Map;
 import java.util.TreeMap;
 
-public class PropertyForeignKey implements ForeignKey
+public class PropertyForeignKey extends AbstractForeignKey
 {
     Map<String, PropertyDescriptor> _pdMap;
     private QuerySchema _schema;

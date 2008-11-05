@@ -45,4 +45,16 @@ public interface ForeignKey
      * constructed knowing only the foreign key value, as other columns may not be available in the ResultSet.
      */
     StringExpressionFactory.StringExpression getURL(ColumnInfo parent);
+
+    /**
+     * Just for introspection.
+     * @return The name of the foreign user schema table.
+     */
+    String getLookupTableName();
+
+    /**
+     * Just for introspection.
+     * @return The name of the column in the foreign user schema table.
+     */
+    String getLookupColumnName();
 }

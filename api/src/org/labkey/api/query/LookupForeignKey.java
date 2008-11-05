@@ -16,7 +16,7 @@
 
 package org.labkey.api.query;
 
-import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.LookupColumn;
@@ -25,38 +25,56 @@ import org.labkey.api.util.StringExpressionFactory;
 
 import java.util.Collections;
 
-abstract public class LookupForeignKey implements ForeignKey
+abstract public class LookupForeignKey extends AbstractForeignKey
 {
     ActionURL _baseURL;
     Object _param;
-    String _pkColumnName;
     private boolean _prefixColumnCaption = true;
     String _titleColumn;
 
+    public LookupForeignKey(ActionURL baseURL, String paramName, String tableName, String pkColumnName, String titleColumn)
+    {
+        super(tableName, pkColumnName);
+        _baseURL = baseURL;
+        _param = paramName;
+        _titleColumn = titleColumn;
+    }
+
+    public LookupForeignKey(ActionURL baseURL, Enum paramName, String tableName, String pkColumnName, String titleColumn)
+    {
+        this(pkColumnName);
+        _baseURL = baseURL;
+        _param = paramName;
+        _titleColumn = titleColumn;
+    }
+
+    // XXX: remove all calls to this constructor
     public LookupForeignKey(ActionURL baseURL, String paramName, String pkColumnName, String titleColumn)
     {
-        this(pkColumnName);
-        _baseURL = baseURL;
-        _param = paramName;
-        _titleColumn = titleColumn;
+        this(baseURL, paramName, null, pkColumnName, titleColumn);
     }
 
+    // XXX: remove all calls to this constructor
     public LookupForeignKey(ActionURL baseURL, Enum paramName, String pkColumnName, String titleColumn)
     {
-        this(pkColumnName);
-        _baseURL = baseURL;
-        _param = paramName;
-        _titleColumn = titleColumn;
+        this(baseURL, paramName, null, pkColumnName, titleColumn);
     }
 
+    public LookupForeignKey(String tableName, String pkColumnName, String titleColumn)
+    {
+         this(null, (String) null, tableName, pkColumnName, titleColumn);
+    }
+
+    // XXX: remove all calls to this constructor
     public LookupForeignKey(String pkColumnName, String titleColumn)
     {
-         this(null, (String) null, pkColumnName, titleColumn);
+         this(null, (String) null, null, pkColumnName, titleColumn);
     }
 
+    // XXX: remove all calls to this constructor
     public LookupForeignKey(String pkColumnName)
     {
-        _pkColumnName = pkColumnName;
+        this(null, (String) null, null, pkColumnName, null);
     }
 
     public void setPrefixColumnCaption(boolean prefix)
@@ -80,13 +98,13 @@ abstract public class LookupForeignKey implements ForeignKey
 
     /**
      * Override this method if the primary key of the lookup table does not really exist.
-     * 
+     *
      * @param table
      * @return
      */
     protected ColumnInfo getPkColumn(TableInfo table)
     {
-        return table.getColumn(_pkColumnName);
+        return table.getColumn(_columnName);
     }
 
     public StringExpressionFactory.StringExpression getURL(ColumnInfo parent)
@@ -98,7 +116,7 @@ abstract public class LookupForeignKey implements ForeignKey
             {
                 return null;
             }
-            return lookupTable.getDetailsURL(Collections.singletonMap(_pkColumnName, parent));
+            return lookupTable.getDetailsURL(Collections.singletonMap(_columnName, parent));
         }
         return new LookupURLExpression(_baseURL, Collections.singletonMap(_param, parent));
     }

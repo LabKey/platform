@@ -207,7 +207,7 @@ public class ExpSchema extends UserSchema
             {
                 boolean restrictContainer = isRestrictContainer();
                 setRestrictContainer(false);
-                ExpProtocolTable protocolTable = createProtocolsTable("lookup");
+                ExpProtocolTable protocolTable = createProtocolsTable("Protocols");
                 setRestrictContainer(restrictContainer);
                 return protocolTable;
             }
@@ -220,7 +220,7 @@ public class ExpSchema extends UserSchema
         {
             public TableInfo getLookupTableInfo()
             {
-                return createRunsTable("lookup");
+                return createRunsTable("Runs");
             }
         };
     }
@@ -231,7 +231,7 @@ public class ExpSchema extends UserSchema
         {
             public TableInfo getLookupTableInfo()
             {
-                return createDatasTable("lookup");
+                return createDatasTable("Datas");
             }
         };
     }
@@ -242,7 +242,7 @@ public class ExpSchema extends UserSchema
         {
             public TableInfo getLookupTableInfo()
             {
-                return createMaterialsTable("lookup");
+                return createMaterialsTable("Materials");
             }
         };
     }
@@ -253,7 +253,7 @@ public class ExpSchema extends UserSchema
         {
             public TableInfo getLookupTableInfo()
             {
-                return createRunsTable("lookup");
+                return createRunsTable("Runs");
             }
         };
     }

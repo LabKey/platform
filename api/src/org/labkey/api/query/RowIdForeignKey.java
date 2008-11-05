@@ -16,7 +16,7 @@
 
 package org.labkey.api.query;
 
-import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.LookupColumn;
@@ -32,11 +32,12 @@ import java.util.Collections;
  * This particular type of Foreign Key is treated specially in the Query Designer.  You can only select columns from the
  * lookup table if the RowIdForeignKey is attached to a column that has been imported into another table. 
  */
-public class RowIdForeignKey implements ForeignKey
+public class RowIdForeignKey extends AbstractForeignKey
 {
     protected ColumnInfo _rowidColumn;
     public RowIdForeignKey(ColumnInfo rowidColumn)
     {
+        super(rowidColumn.getParentTable().getName(), rowidColumn.getName());
         _rowidColumn = rowidColumn;
     }
     public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)

@@ -24,7 +24,7 @@ import org.labkey.api.util.StringExpressionFactory;
 
 import java.util.Collections;
 
-public class PdLookupForeignKey implements ForeignKey
+public class PdLookupForeignKey extends AbstractForeignKey
 {
     User _user;
     PropertyDescriptor _pd;

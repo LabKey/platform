@@ -551,9 +551,9 @@ public class SchemaTableInfo implements TableInfo
                 if (fk.isJoinWithContainer())
                     out.write(", Container");
                 out.write(") REFERENCES ");
-                out.write(dialect.getTableSelectName(fk.getTableName()));
+                out.write(dialect.getTableSelectName(fk.getLookupTableName()));
                 out.write("(");
-                out.write(dialect.getColumnSelectName(fk.getColumnName()));
+                out.write(dialect.getColumnSelectName(fk.getLookupColumnName()));
                 if (fk.isJoinWithContainer())
                     out.write(", Container");
                 out.write(")\nGO\n");

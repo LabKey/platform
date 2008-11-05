@@ -953,12 +953,13 @@ public class ColumnInfo
         {
             return _joinWithContainer;
         }
-        public String getTableName()
+        
+        public String getLookupTableName()
         {
             return _tableName;
         }
 
-        public String getColumnName()
+        public String getLookupColumnName()
         {
             return _lookupKey;
         }

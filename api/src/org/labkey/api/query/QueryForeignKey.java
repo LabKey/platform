@@ -24,12 +24,15 @@ import java.util.Collections;
 public class QueryForeignKey implements ForeignKey
 {
     TableInfo _table;
+    String _schemaName;
     String _tableName;
     String _lookupKey;
     String _displayField;
 
     public QueryForeignKey(QuerySchema schema, String tableName, String lookupKey, String displayField)
     {
+        if (schema instanceof UserSchema)
+            _schemaName = ((UserSchema)schema).getSchemaName();
         _table = schema.getTable(tableName, tableName);
         _tableName = tableName;
         _lookupKey = lookupKey;
@@ -77,5 +80,15 @@ public class QueryForeignKey implements ForeignKey
         if (table == null)
             return null;
         return table.getDetailsURL(Collections.singletonMap(_lookupKey, parent));
+    }
+
+    public String getLookupTableName()
+    {
+        return _tableName;
+    }
+
+    public String getLookupColumnName()
+    {
+        return _lookupKey;
     }
 }

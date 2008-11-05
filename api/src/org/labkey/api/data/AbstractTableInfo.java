@@ -433,7 +433,7 @@ abstract public class AbstractTableInfo implements TableInfo
                 ColumnInfo column = getColumn(xbColumn.getColumnName());
                 if (column == null)
                 {
-                    // qpe.add(new MetadataException("Column " + xbColumn.getColumnName() + " not found."));
+                    // qpe.add(new MetadataException("Column " + xbColumn.getLookupColumnName() + " not found."));
                     continue;
                 }
                 initColumnFromXml(schema, column, xbColumn, qpe);

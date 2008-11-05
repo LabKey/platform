@@ -16,12 +16,12 @@
 
 package org.labkey.api.query;
 
-import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.LookupColumn;
-import org.labkey.api.view.ActionURL;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.view.ActionURL;
 
 import java.util.Collections;
 
@@ -30,7 +30,7 @@ import java.util.Collections;
  * It's just used for a link on a column bound to rowid which displays
  * a different column from the same table.
  */
-public class TitleForeignKey implements ForeignKey
+public class TitleForeignKey extends AbstractForeignKey
 {
     ActionURL _baseURL;
     ColumnInfo _lookupKey;
