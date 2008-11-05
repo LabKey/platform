@@ -76,9 +76,14 @@ public class ExperimentModule extends SpringModule
 
     private static final Logger _log = Logger.getLogger(ExperimentModule.class);
 
-    public ExperimentModule()
+    public String getName()
     {
-        super(ExperimentService.MODULE_NAME, 8.30, "/org/labkey/experiment", true, createWebPartList());
+        return ExperimentService.MODULE_NAME;
+    }
+
+    public double getVersion()
+    {
+        return 8.30;
     }
 
     protected void init()
@@ -99,13 +104,18 @@ public class ExperimentModule extends SpringModule
         PropertyService.get().registerDomainKind(new ListDomainType());
     }
 
+    public boolean hasScripts()
+    {
+        return true;
+    }
+
     @Override
     protected ContextType getContextType()
     {
         return ContextType.config;
     }
 
-    private static BaseWebPartFactory[] createWebPartList()
+    protected Collection<? extends WebPartFactory> createWebPartFactories()
     {
         List<BaseWebPartFactory> result = new ArrayList<BaseWebPartFactory>();
         
@@ -179,7 +189,7 @@ public class ExperimentModule extends SpringModule
         result.add(ListWebPart.FACTORY);
         result.add(new SingleListWebPartFactory());
 
-        return result.toArray(new BaseWebPartFactory[result.size()]);
+        return result;
     }
 
 

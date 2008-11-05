@@ -17,7 +17,6 @@ package org.labkey.announcements;
 
 import junit.framework.TestCase;
 import org.apache.log4j.Logger;
-import org.labkey.announcements.AnnouncementsController;
 import org.labkey.announcements.model.*;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
@@ -58,10 +57,24 @@ public class AnnouncementModule extends DefaultModule implements ContainerManage
     private boolean _newInstall = false;
     private User _installerUser = null;
 
-    public AnnouncementModule()
+    public String getName()
     {
-        super(NAME, 8.30, "/org/labkey/announcements", true,
-            new BaseWebPartFactory(WEB_PART_NAME)
+        return "Announcements";
+    }
+
+    public double getVersion()
+    {
+        return 8.30;
+    }
+
+    protected void init()
+    {
+        addController("announcements", AnnouncementsController.class);
+    }
+
+    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    {
+        return Arrays.asList(new AlwaysAvailableWebPartFactory(WEB_PART_NAME)
             {
                 public WebPartView getWebPartView(ViewContext parentCtx, Portal.WebPart webPart)
                 {
@@ -74,13 +87,8 @@ public class AnnouncementModule extends DefaultModule implements ContainerManage
                         throw new RuntimeException(e); // TODO: getWebPartView should throw Exception?
                     }
                 }
-
-                public boolean isAvailable(Container c, String location)
-                {
-                    return location.equals(getDefaultLocation());
-                }
             },
-            new BaseWebPartFactory(WEB_PART_NAME + " List")
+            new AlwaysAvailableWebPartFactory(WEB_PART_NAME + " List")
             {
                 public WebPartView getWebPartView(ViewContext parentCtx, Portal.WebPart webPart)
                 {
@@ -93,19 +101,14 @@ public class AnnouncementModule extends DefaultModule implements ContainerManage
                         throw new RuntimeException(e); // TODO: getWebPartView should throw Exception?
                     }
                 }
-
-                public boolean isAvailable(Container c, String location)
-                {
-                    return location.equals(getDefaultLocation());
-                }
             },
-            new DiscussionWebPartFactory()
-        );
+            new DiscussionWebPartFactory());
+
     }
 
-    protected void init()
+    public boolean hasScripts()
     {
-        addController("announcements", AnnouncementsController.class);
+        return true;
     }
 
     public String getTabName(ViewContext context)

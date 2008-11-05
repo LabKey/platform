@@ -52,21 +52,22 @@ import java.util.*;
  */
 public class WikiModule extends DefaultModule implements ContainerManager.ContainerListener, Searchable
 {
-    public static final String NAME = "Wiki";
     public static final String WEB_PART_NAME = "Wiki";
     public static final String SEARCH_DOMAIN = "wiki";
 
     private boolean _newInstall = false;
     private User _installerUser = null;
 
-    Logger _log = Logger.getLogger(WikiModule.class);
+    private static final Logger _log = Logger.getLogger(WikiModule.class);
 
-    public WikiModule()
+    public String getName()
     {
-        super(NAME, 8.30, "/org/labkey/wiki", false,
-                new WikiWebPartFactory(),
-                new WikiTOCFactory(),
-                new WikiWebPartFactory(WEB_PART_NAME, "right"));
+        return "Wiki";
+    }
+
+    public double getVersion()
+    {
+        return 8.30;
     }
 
     protected void init()
@@ -76,7 +77,19 @@ public class WikiModule extends DefaultModule implements ContainerManager.Contai
         WikiService.register(new ServiceImpl());
     }
 
-    public static class WikiWebPartFactory extends BaseWebPartFactory
+    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    {
+        return Arrays.asList(new WikiWebPartFactory(),
+                new WikiTOCFactory(),
+                new WikiWebPartFactory(WEB_PART_NAME, "right"));
+    }
+
+    public boolean hasScripts()
+    {
+        return false;
+    }
+
+    public static class WikiWebPartFactory extends AlwaysAvailableWebPartFactory
     {
         public WikiWebPartFactory()
         {
@@ -87,11 +100,6 @@ public class WikiModule extends DefaultModule implements ContainerManager.Contai
         {
             super(name, location, true, false);
             addLegacyNames("Narrow Wiki");
-        }
-
-        public boolean isAvailable(Container c, String location)
-        {
-            return location.equals(getDefaultLocation());
         }
 
         public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException

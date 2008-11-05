@@ -16,13 +16,12 @@
 
 package org.labkey.query.view;
 
-import org.labkey.api.view.*;
 import org.labkey.api.query.QueryWebPart;
-import org.labkey.api.data.Container;
+import org.labkey.api.view.*;
 
 import java.lang.reflect.InvocationTargetException;
 
-public class QueryWebPartFactory extends BaseWebPartFactory
+public class QueryWebPartFactory extends AlwaysAvailableWebPartFactory
 {
     public QueryWebPartFactory()
     {
@@ -39,10 +38,5 @@ public class QueryWebPartFactory extends BaseWebPartFactory
     public HttpView getEditView(Portal.WebPart webPart)
     {
         return new EditQueryView(webPart);
-    }
-
-    public boolean isAvailable(Container c, String location)
-    {
-        return location.equals(getDefaultLocation());
     }
 }

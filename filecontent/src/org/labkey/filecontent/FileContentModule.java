@@ -18,33 +18,44 @@ package org.labkey.filecontent;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.*;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.WebdavService;
 
-import java.beans.PropertyChangeEvent;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Set;
+import java.util.Arrays;
 
 
 public class FileContentModule extends DefaultModule
 {
     private static final Logger _log = Logger.getLogger(FileContentModule.class);
-    public static final String NAME = "FileContent";
 
-    public FileContentModule()
+    public String getName()
     {
-        super(NAME, 8.30, null, false, new FilesWebPart.Factory(HttpView.BODY), new FilesWebPart.Factory("right"));
+        return "FileContent";
+    }
+
+    public double getVersion()
+    {
+        return 8.30;
     }
 
     protected void init()
     {
         addController("filecontent", FileContentController.class);
+    }
+
+    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    {
+        return Arrays.asList(new FilesWebPart.Factory(HttpView.BODY), new FilesWebPart.Factory("right"));
+    }
+
+    public boolean hasScripts()
+    {
+        return false;
     }
 
     @Override
@@ -58,11 +69,5 @@ public class FileContentModule extends DefaultModule
     {
         super.startup(moduleContext);
         WebdavService.addProvider(new FileWebdavProvider());
-    }
-
-    @Override
-    public Set<DbSchema> getSchemasToTest()
-    {
-        return PageFlowUtil.set();
     }
 }

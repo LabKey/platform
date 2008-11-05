@@ -16,29 +16,41 @@
 
 package org.labkey.timeline;
 
-import org.labkey.api.module.DefaultModule;
-import org.labkey.api.module.ModuleContext;
-import org.labkey.api.data.ContainerManager;
+import org.apache.commons.beanutils.BeanUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.module.DefaultModule;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.security.User;
 import org.labkey.api.view.*;
 import org.labkey.timeline.view.TimelineView;
-import org.apache.commons.beanutils.BeanUtils;
 
-import java.beans.PropertyChangeEvent;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 
-public class TimelineModule extends DefaultModule implements ContainerManager.ContainerListener
+public class TimelineModule extends DefaultModule
 {
     public static final String NAME = "Timeline";
 
-    public TimelineModule()
+    public String getName()
     {
-        super(NAME, 0.01, null, false, new BaseWebPartFactory(NAME, null, true, true){
+        return "Timeline";
+    }
+
+    public double getVersion()
+    {
+        return 8.30;
+    }
+
+    protected void init()
+    {
+        addController("timeline", TimelineController.class);
+    }
+
+    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    {
+        return Arrays.asList(new BaseWebPartFactory(NAME, null, true, true){
 
             public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
             {
@@ -55,33 +67,14 @@ public class TimelineModule extends DefaultModule implements ContainerManager.Co
         });
     }
 
-    protected void init()
+    public boolean hasScripts()
     {
-        addController("timeline", TimelineController.class);
-    }
-
-    public void containerCreated(Container c)
-    {
-    }
-
-    public void containerDeleted(Container c, User user)
-    {
+        return false;
     }
 
     public Collection<String> getSummary(Container c)
     {
         return Collections.emptyList();
-    }
-
-    public void propertyChange(PropertyChangeEvent evt)
-    {
-    }
-
-    public void startup(ModuleContext moduleContext)
-    {
-        super.startup(moduleContext);
-        // add a container listener so we'll know when our container is deleted:
-        ContainerManager.addContainerListener(this);
     }
 
     public Set<String> getSchemaNames()

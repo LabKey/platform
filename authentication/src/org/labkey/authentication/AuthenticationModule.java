@@ -26,19 +26,38 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.*;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartFactory;
 import org.labkey.authentication.opensso.OpenSSOController;
 import org.labkey.authentication.opensso.OpenSSOProvider;
 import org.labkey.authentication.ldap.LdapAuthenticationProvider;
 import org.labkey.authentication.ldap.LdapController;
+
+import java.util.Collection;
+import java.util.Collections;
 
 public class AuthenticationModule extends DefaultModule
 {
     public static final String NAME = "Authentication";
     private static Logger _log = Logger.getLogger(AuthenticationModule.class);
 
-    public AuthenticationModule()
+    public String getName()
     {
-        super(NAME, 8.30, "org/labkey/authentication", false);
+        return "Authentication";
+    }
+
+    public double getVersion()
+    {
+        return 8.30;
+    }
+
+    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    {
+        return Collections.emptyList();
+    }
+
+    public boolean hasScripts()
+    {
+        return false;
     }
 
     protected void init()

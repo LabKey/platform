@@ -23,7 +23,6 @@ import org.labkey.api.attachments.AttachmentDirectory;
 import org.apache.commons.lang.StringUtils;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Jul 9, 2007
  * Time: 2:13:18 PM
@@ -110,7 +109,7 @@ public class FilesWebPart extends JspView<AttachmentDirectory>
             setModelBean(AttachmentService.get().getRegisteredDirectory(container, fileSet));
     }
 
-    public static class Factory extends BaseWebPartFactory
+    public static class Factory extends AlwaysAvailableWebPartFactory
     {
         public Factory(String location)
         {
@@ -120,11 +119,6 @@ public class FilesWebPart extends JspView<AttachmentDirectory>
         public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
         {
             return new FilesWebPart(portalCtx, webPart);
-        }
-
-        public boolean isAvailable(Container c, String location)
-        {
-            return location.equals(getDefaultLocation());
         }
 
         @Override

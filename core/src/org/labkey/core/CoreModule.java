@@ -67,18 +67,15 @@ import java.util.*;
 public class CoreModule extends SpringModule implements ContainerManager.ContainerListener, FirstRequestHandler.FirstRequestListener
 {
     private static Logger _log = Logger.getLogger(CoreModule.class);
-    private static final String NAME = CORE_MODULE_NAME;
 
-    public CoreModule()
+    public String getName()
     {
-        super(NAME, 8.30, "/org/labkey/core", false,
-            new BaseWebPartFactory("Contacts")
-            {
-                public WebPartView getWebPartView(ViewContext ctx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
-                {
-                    return new ContactWebPart();
-                }
-            });
+        return CORE_MODULE_NAME;
+    }
+
+    public double getVersion()
+    {
+        return 8.30;
     }
 
     protected void init()
@@ -117,6 +114,12 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
                 try
                 {
                     AppProps.getInstance().setProjectRoot(projectRoot.getCanonicalPath());
+
+                    String root = AppProps.getInstance().getProjectRoot();
+                    ResourceFinder api = new ResourceFinder("API", root + "/server/api", root + "/build/modules/api");
+                    ModuleLoader.getInstance().registerResourcePrefix("/org/labkey/api", api);
+                    ResourceFinder internal = new ResourceFinder("Internal", root + "/server/internal", root + "/build/modules/internal");
+                    ModuleLoader.getInstance().registerResourcePrefix("/org/labkey/api", internal);
                 }
                 catch(IOException e)
                 {
@@ -124,11 +127,17 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
                 }
             }
         }
+    }
 
-        ResourceFinder api = new ResourceFinder("API", AppProps.getInstance().getProjectRoot() + "/server/api");
-        ModuleLoader.getInstance().registerResourcePrefix("/org/labkey/api", api);
-        ResourceFinder internal = new ResourceFinder("Internal", AppProps.getInstance().getProjectRoot() + "/server/internal");
-        ModuleLoader.getInstance().registerResourcePrefix("/org/labkey/api", internal);
+    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    {
+        return Collections.singletonList(new BaseWebPartFactory("Contacts")
+            {
+                public WebPartView getWebPartView(ViewContext ctx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
+                {
+                    return new ContactWebPart();
+                }
+            });
     }
 
     @Override
@@ -530,8 +539,6 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
     }
 
 
-    // Base class returns _shouldRunScripts -- override because Core does have scripts, it just doesn't want
-    // DefaultModule to run them.
     @Override
     public boolean hasScripts()
     {

@@ -24,29 +24,37 @@ import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
-import org.labkey.api.security.User;
-import org.labkey.demo.model.Person;
 import org.labkey.demo.model.DemoManager;
+import org.labkey.demo.model.Person;
 import org.labkey.demo.view.DemoWebPart;
 
-import java.beans.PropertyChangeEvent;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.Set;
+import java.util.*;
 
 
-public class DemoModule extends DefaultModule implements ContainerManager.ContainerListener
+public class DemoModule extends DefaultModule
 {
     private static final Logger _log = Logger.getLogger(DefaultModule.class);
-    public static final String NAME = "Demo";
 
-    public DemoModule()
+    public String getName()
     {
-        super(NAME, 1.00, "/org/labkey/demo", true,
-            new BaseWebPartFactory("Demo Summary") {
+        return "Demo";
+    }
+
+    public double getVersion()
+    {
+        return 1.00;
+    }
+
+    protected void init()
+    {
+        addController("demo", DemoController.class);
+    }
+
+    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    {
+        return Arrays.asList(new BaseWebPartFactory("Demo Summary") {
                 public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
                 {
                     return new DemoWebPart();
@@ -64,26 +72,9 @@ public class DemoModule extends DefaultModule implements ContainerManager.Contai
             });
     }
 
-    protected void init()
+    public boolean hasScripts()
     {
-        addController("demo", DemoController.class);
-    }
-
-    public void containerCreated(Container c)
-    {
-    }
-
-    public void containerDeleted(Container c, User user)
-    {
-        try
-        {
-            DemoManager.getInstance().deleteAllData(c);
-        }
-        catch (SQLException e)
-        {
-            // ignore any failures.
-            _log.error("Failure cleaning up demo data when deleting container " + c.getPath(), e);
-        }
+        return true;
     }
 
     public Collection<String> getSummary(Container c)
@@ -105,15 +96,11 @@ public class DemoModule extends DefaultModule implements ContainerManager.Contai
         return Collections.emptyList();
     }
 
-    public void propertyChange(PropertyChangeEvent evt)
-    {
-    }
-
     public void startup(ModuleContext moduleContext)
     {
         super.startup(moduleContext);
         // add a container listener so we'll know when our container is deleted:
-        ContainerManager.addContainerListener(this);
+        ContainerManager.addContainerListener(new DemoContainerListener());
     }
 
     public Set<DbSchema> getSchemasToTest()

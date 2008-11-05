@@ -75,7 +75,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Feb 27, 2008
  */

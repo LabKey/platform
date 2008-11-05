@@ -68,6 +68,7 @@ import java.io.IOException;
 import java.sql.*;
 import java.util.*;
 import java.util.Date;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 
 public class StudyManager
@@ -2850,27 +2851,22 @@ public class StudyManager
         void dataSetUnmaterialized(DataSetDefinition def);
     }
 
-    static final ArrayList<UnmaterializeListener> _listeners = new ArrayList<UnmaterializeListener>();
+    // Thread-safe list implementation that allows iteration and modifications without external synchronization
+    private static final List<UnmaterializeListener> _listeners = new CopyOnWriteArrayList<UnmaterializeListener>();
 
     public static void addUnmaterializeListener(UnmaterializeListener listener)
     {
-        synchronized (_listeners)
-        {
-            _listeners.add(listener);
-        }
+        _listeners.add(listener);
     }
 
-    protected static UnmaterializeListener[] getListeners()
+    private static List<UnmaterializeListener> getListeners()
     {
-        synchronized (_listeners)
-        {
-            return _listeners.toArray(new UnmaterializeListener[_listeners.size()]);
-        }
+        return _listeners;
     }
     
     public static void fireUnmaterialized(DataSetDefinition def)
     {
-        UnmaterializeListener[] list = getListeners();
+        List<UnmaterializeListener> list = getListeners();
         for (UnmaterializeListener l : list)
             try
             {

@@ -19,7 +19,6 @@ package org.labkey.experiment.controllers.list;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.view.*;
-import org.labkey.api.data.Container;
 
 import java.util.Map;
 
@@ -28,7 +27,7 @@ import java.util.Map;
  * Date: Nov 11, 2007
  * Time: 4:39:47 PM
  */
-public class SingleListWebPartFactory extends BaseWebPartFactory
+public class SingleListWebPartFactory extends AlwaysAvailableWebPartFactory
 {
     public SingleListWebPartFactory()
     {
@@ -60,11 +59,6 @@ public class SingleListWebPartFactory extends BaseWebPartFactory
         {
             return new HtmlView(title, "List does not exist");
         }
-    }
-
-    public boolean isAvailable(Container c, String location)
-    {
-        return location.equals(getDefaultLocation());
     }
 
     public HttpView getEditView(Portal.WebPart webPart)

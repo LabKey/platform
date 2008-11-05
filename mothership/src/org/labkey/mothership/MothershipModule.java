@@ -20,6 +20,7 @@ import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.Module;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.data.*;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
@@ -29,6 +30,8 @@ import org.labkey.mothership.query.MothershipSchema;
 import java.sql.SQLException;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Collection;
+import java.util.Collections;
 import java.beans.PropertyChangeEvent;
 
 import junit.framework.TestCase;
@@ -39,16 +42,30 @@ import junit.framework.TestCase;
  */
 public class MothershipModule extends DefaultModule
 {
-    private static final String NAME = "Mothership";
-    public MothershipModule()
+    public String getName()
     {
-        super(NAME, 8.30, null, true);
+        return "Mothership";
+    }
+
+    public double getVersion()
+    {
+        return 8.30;
     }
 
     protected void init()
     {
         addController("mothership", MothershipController.class);
         MothershipSchema.register();
+    }
+
+    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    {
+        return Collections.emptyList();
+    }
+
+    public boolean hasScripts()
+    {
+        return true;
     }
 
     public void afterSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)

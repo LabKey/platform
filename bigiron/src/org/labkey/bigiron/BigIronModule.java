@@ -20,14 +20,33 @@ import org.labkey.api.data.SqlDialect;
 import org.labkey.api.data.SqlDialectMicrosoftSQLServer;
 import org.labkey.api.data.SqlDialectMicrosoftSQLServer9;
 import org.labkey.api.module.DefaultModule;
+import org.labkey.api.view.WebPartFactory;
+
+import java.util.Collection;
+import java.util.Collections;
 
 public class BigIronModule extends DefaultModule
 {
     public static final String NAME = "BigIron";
 
-    public BigIronModule()
+    public String getName()
     {
-        super(NAME, 8.30, "org/labkey/bigiron", false);
+        return "BigIron";
+    }
+
+    public double getVersion()
+    {
+        return 8.30;
+    }
+
+    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    {
+        return Collections.emptyList();
+    }
+
+    public boolean hasScripts()
+    {
+        return false;
     }
 
     protected void init()

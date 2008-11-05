@@ -22,24 +22,39 @@ import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.WebPartFactory;
 
+import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
 public class caBIGModule extends DefaultModule
 {
     private static final Logger _log = Logger.getLogger(caBIGModule.class);
-    public static final String NAME = "caBIG";
 
-    public caBIGModule()
+    public String getName()
     {
-        super(NAME, 8.30, null, true);
+        return "caBIG";
+    }
+
+    public double getVersion()
+    {
+        return 8.30;
     }
 
     protected void init()
     {
         addController("cabig", caBIGController.class);
+    }
+
+    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    {
+        return Collections.emptyList();
+    }
+
+    public boolean hasScripts()
+    {
+        return true;
     }
 
     public void startup(ModuleContext moduleContext)

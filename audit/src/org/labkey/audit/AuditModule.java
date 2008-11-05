@@ -27,6 +27,7 @@ import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartFactory;
 import org.labkey.audit.model.LogManager;
 import org.labkey.audit.query.AuditQuerySchema;
 
@@ -39,9 +40,24 @@ public class AuditModule extends DefaultModule
     private static final Logger _log = Logger.getLogger(AuditModule.class);
     private static Runnable _startupTask;
 
-    public AuditModule()
+    protected Collection<? extends WebPartFactory> createWebPartFactories()
     {
-        super(NAME, 8.30, "/org/labkey/audit", true);
+        return Collections.emptyList();
+    }
+
+    public boolean hasScripts()
+    {
+        return true;
+    }
+
+    public String getName()
+    {
+        return "Audit";
+    }
+
+    public double getVersion()
+    {
+        return 8.30;
     }
 
     protected void init()
@@ -53,11 +69,6 @@ public class AuditModule extends DefaultModule
     public TabDisplayMode getTabDisplayMode()
     {
         return TabDisplayMode.DISPLAY_NEVER;
-    }
-
-    public Collection<String> getSummary(Container c)
-    {
-        return Collections.emptyList();
     }
 
     public void startup(ModuleContext moduleContext)

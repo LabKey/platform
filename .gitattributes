@@ -435,6 +435,7 @@ demo/module.properties -text
 demo/src/META-INF/demo.xml -text
 demo/src/META-INF/demo/scripts/postgresql/demo-0.00-1.00.sql -text
 demo/src/META-INF/demo/scripts/sql[!!-~]server/demo-0.00-1.00.sql -text
+demo/src/org/labkey/demo/DemoContainerListener.java -text
 demo/src/org/labkey/demo/DemoController.java -text
 demo/src/org/labkey/demo/DemoModule.java -text
 demo/src/org/labkey/demo/DemoSchema.java -text
@@ -1773,6 +1774,7 @@ study/src/org/labkey/study/QueryHelper.java -text
 study/src/org/labkey/study/SampleManager.java -text
 study/src/org/labkey/study/SpecimenServiceImpl.java -text
 study/src/org/labkey/study/StudyCache.java -text
+study/src/org/labkey/study/StudyContainerListener.java -text
 study/src/org/labkey/study/StudyFolderType.java -text
 study/src/org/labkey/study/StudyMacroProvider.java -text
 study/src/org/labkey/study/StudyModule.java -text

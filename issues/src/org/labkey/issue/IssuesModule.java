@@ -48,9 +48,14 @@ public class IssuesModule extends DefaultModule implements ContainerManager.Cont
 
     public static final String NAME = "Issues";
 
-    public IssuesModule()
+    public String getName()
     {
-        super(NAME, 8.30, "/org/labkey/issue", true, new IssuesWebPartFactory());
+        return NAME;
+    }
+
+    public double getVersion()
+    {
+        return 8.30;
     }
 
     protected void init()
@@ -59,7 +64,17 @@ public class IssuesModule extends DefaultModule implements ContainerManager.Cont
         IssuesQuerySchema.register();        
     }
 
-    static class IssuesWebPartFactory extends BaseWebPartFactory
+    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    {
+        return Arrays.asList(new IssuesWebPartFactory());
+    }
+
+    public boolean hasScripts()
+    {
+        return true;
+    }
+
+    private static class IssuesWebPartFactory extends AlwaysAvailableWebPartFactory
     {
         public IssuesWebPartFactory()
         {
@@ -76,11 +91,6 @@ public class IssuesModule extends DefaultModule implements ContainerManager.Cont
             WebPartView v = new IssuesController.SummaryWebPart();
             populateProperties(v, webPart.getPropertyMap());
             return v;
-        }
-
-        public boolean isAvailable(Container c, String location)
-        {
-            return location.equals(getDefaultLocation());
         }
 
         @Override

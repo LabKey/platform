@@ -21,6 +21,7 @@ import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.WebPartFactory;
 import org.labkey.biotrue.controllers.BtController;
 import org.labkey.biotrue.controllers.BtOverviewWebPart;
 import org.labkey.biotrue.datamodel.BtManager;
@@ -30,13 +31,29 @@ import org.labkey.biotrue.task.ScheduledTask;
 
 import java.util.Collections;
 import java.util.Set;
+import java.util.Collection;
+import java.util.Arrays;
 
 public class BtModule extends DefaultModule
 {
-    static public final String NAME = "BioTrue";
-    public BtModule()
+    public String getName()
     {
-        super(NAME, 8.30, null, true, BtOverviewWebPart.FACTORY);
+        return "BioTrue";
+    }
+
+    public double getVersion()
+    {
+        return 8.30;
+    }
+
+    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    {
+        return Arrays.asList(BtOverviewWebPart.FACTORY);
+    }
+
+    public boolean hasScripts()
+    {
+        return true;
     }
 
     protected void init()

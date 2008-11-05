@@ -57,14 +57,14 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 {
     private static Logger _log = Logger.getLogger(PipelineModule.class);
 
-    public PipelineModule()
+    public String getName()
     {
-        super(PipelineService.MODULE_NAME, 8.30, "/org/labkey/pipeline", true, new BaseWebPartFactory(PipelineWebPart.getPartName()){
-            public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
-            {
-                return new PipelineWebPart(portalCtx);
-            }
-        });
+        return PipelineService.MODULE_NAME;
+    }
+
+    public double getVersion()
+    {
+        return 8.30;
     }
 
     protected void init()
@@ -85,6 +85,21 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         EmailTemplateService.get().registerTemplate(PipelineManager.PipelineJobFailed.class);
         EmailTemplateService.get().registerTemplate(PipelineManager.PipelineDigestJobSuccess.class);
         EmailTemplateService.get().registerTemplate(PipelineManager.PipelineDigestJobFailed.class);
+    }
+
+    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    {
+        return Arrays.asList(new BaseWebPartFactory(PipelineWebPart.getPartName()){
+            public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
+            {
+                return new PipelineWebPart(portalCtx);
+            }
+        });
+    }
+
+    public boolean hasScripts()
+    {
+        return true;
     }
 
     @Override

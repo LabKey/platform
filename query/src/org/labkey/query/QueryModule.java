@@ -17,39 +17,43 @@
 package org.labkey.query;
 
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.Container;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.reports.chart.ChartRendererFactory;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.chart.ChartRendererFactory;
 import org.labkey.api.reports.report.*;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.WebPartFactory;
 import org.labkey.query.controllers.QueryControllerSpring;
 import org.labkey.query.controllers.dbuserschema.DbUserSchemaController;
 import org.labkey.query.persist.QueryManager;
-import org.labkey.query.persist.DbUserSchemaDef;
+import org.labkey.query.reports.ReportServiceImpl;
 import org.labkey.query.reports.ReportsController;
 import org.labkey.query.reports.ReportsPipelineProvider;
-import org.labkey.query.reports.ReportServiceImpl;
 import org.labkey.query.reports.ReportsWebPartFactory;
-import org.labkey.query.reports.view.ReportUIProvider;
 import org.labkey.query.reports.chart.TimeSeriesRenderer;
 import org.labkey.query.reports.chart.XYChartRenderer;
+import org.labkey.query.reports.view.ReportUIProvider;
 import org.labkey.query.view.QueryWebPartFactory;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Set;
 
 
 public class QueryModule extends DefaultModule
 {
-    public static final String NAME = "Query";
-    public QueryModule()
+    public String getName()
     {
-        super(NAME, 8.30, null, true, new QueryWebPartFactory(), new ReportsWebPartFactory());
+        return "Query";
     }
 
+    public double getVersion()
+    {
+        return 8.30;
+    }
 
     protected void init()
     {
@@ -75,13 +79,22 @@ public class QueryModule extends DefaultModule
         ReportService.get().registerReport(new RReport());
     }
 
+    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    {
+        return Arrays.asList(new QueryWebPartFactory(), new ReportsWebPartFactory());
+    }
+
+    public boolean hasScripts()
+    {
+        return true;
+    }
+
     public void startup(ModuleContext moduleContext)
     {
         PipelineService.get().registerPipelineProvider(new ReportsPipelineProvider());
         ReportsController.registerAdminConsoleLinks();
         super.startup(moduleContext);
     }
-
 
     public Set<String> getSchemaNames()
     {

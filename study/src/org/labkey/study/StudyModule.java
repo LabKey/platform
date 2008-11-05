@@ -33,7 +33,6 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.User;
 import org.labkey.api.study.PlateService;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.StudyService;
@@ -67,17 +66,16 @@ import org.labkey.study.reports.*;
 import org.labkey.study.samples.SamplesWebPart;
 import org.labkey.study.view.*;
 
-import java.beans.PropertyChangeEvent;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
 
-public class StudyModule extends DefaultModule implements ContainerManager.ContainerListener
+public class StudyModule extends DefaultModule
 {
     private static final Logger _log = Logger.getLogger(DefaultModule.class);
-    public static final String NAME = "Study";
+
     public static final BaseWebPartFactory reportsPartFactory = new ReportsWebPartFactory();
     public static final WebPartFactory reportsWidePartFactory = new ReportsWideWebPartFactory();
     public static final WebPartFactory samplesPartFactory = new SamplesWebPartFactory("right");
@@ -91,12 +89,14 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
     public static final WebPartFactory assayDetailsWebPartFactory = new AssayDetailsWebPartFactory();
     public static final WebPartFactory participantWebPartFactory = new ParticipantWebPartFactory();
 
-    public StudyModule()
+    public String getName()
     {
-        super(NAME, 8.3, "/org/labkey/study", true, reportsPartFactory, reportsWidePartFactory, samplesPartFactory,
-                samplesWidePartFactory, datasetsPartFactory, manageStudyPartFactory,
-                enrollmentChartPartFactory, studyDesignsWebPartFactory, studyDesignSummaryWebPartFactory,
-                assayListWebPartFactory, assayDetailsWebPartFactory, participantWebPartFactory);
+        return "Study";
+    }
+
+    public double getVersion()
+    {
+        return 8.30;
     }
 
     protected void init()
@@ -131,23 +131,18 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
         QuerySnapshotService.registerProvider(StudyManager.getSchemaName(), DatasetSnapshotProvider.getInstance());
     }
 
-    public void containerCreated(Container c)
+    public boolean hasScripts()
     {
+        return true;
     }
 
-    public void containerDeleted(Container c, User user)
+    protected Collection<? extends WebPartFactory> createWebPartFactories()
     {
-        try
-        {
-            StudyManager.getInstance().deleteAllStudyData(c);
-        }
-        catch (SQLException e)
-        {
-            // ignore any failures.
-            _log.error("Failure cleaning up study data when deleting container " + c.getPath(), e);
-        }
+        return Arrays.asList(reportsPartFactory, reportsWidePartFactory, samplesPartFactory,
+                samplesWidePartFactory, datasetsPartFactory, manageStudyPartFactory,
+                enrollmentChartPartFactory, studyDesignsWebPartFactory, studyDesignSummaryWebPartFactory,
+                assayListWebPartFactory, assayDetailsWebPartFactory, participantWebPartFactory);
     }
-
 
     public Collection<String> getSummary(Container c)
     {
@@ -166,15 +161,11 @@ public class StudyModule extends DefaultModule implements ContainerManager.Conta
     }
 
 
-    public void propertyChange(PropertyChangeEvent evt)
-    {
-    }
-
     public void startup(ModuleContext moduleContext)
     {
         super.startup(moduleContext);
         PipelineService.get().registerPipelineProvider(new StudyPipeline());
-        ContainerManager.addContainerListener(this);
+        ContainerManager.addContainerListener(new StudyContainerListener());
         AssayPublishService.register(new AssayPublishManager());
         SpecimenService.register(new SpecimenServiceImpl());
         LsidManager.get().registerHandler("Study", StudyManager.getLsidHandler());

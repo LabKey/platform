@@ -28,6 +28,8 @@ import org.labkey.api.security.User;
 
 import java.beans.PropertyChangeEvent;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
+import java.util.Arrays;
 
 /**
  * User: migra
@@ -36,17 +38,18 @@ import java.lang.reflect.InvocationTargetException;
  */
 public class PortalModule extends DefaultModule
 {
-    public static final String NAME = "Portal";
     private static final Logger _log = Logger.getLogger(DefaultModule.class);
 
-    public PortalModule()
+    public String getName()
     {
-        // NOTE: the version number of the portal module does not govern the scripts run for the
-        // portal schema.  Bump the core module version number to cause a portal-xxx.sql script to run
-        super(NAME, 8.30, "/org/labkey/portal", false,
-            new SearchWebPartFactory("Search", null),
-            new SearchWebPartFactory("Search", "right")
-        );
+        return "Portal";
+    }
+
+    // NOTE: the version number of the portal module does not govern the scripts run for the
+    // portal schema.  Bump the core module version number to cause a portal-xxx.sql script to run
+    public double getVersion()
+    {
+        return 8.30;
     }
 
     protected void init()
@@ -54,17 +57,23 @@ public class PortalModule extends DefaultModule
         addController("project", ProjectController.class);
     }
 
-    public static class SearchWebPartFactory extends BaseWebPartFactory
+    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    {
+        return Arrays.asList(new SearchWebPartFactory("Search", null),
+            new SearchWebPartFactory("Search", "right"));
+    }
+
+    public boolean hasScripts()
+    {
+        return false;
+    }
+
+    public static class SearchWebPartFactory extends AlwaysAvailableWebPartFactory
     {
         public SearchWebPartFactory(String name, String location)
         {
             super(name, location, true, false);
             addLegacyNames("Narrow Search");
-        }
-
-        public boolean isAvailable(Container c, String location)
-        {
-            return location.equals(getDefaultLocation());
         }
 
         public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
