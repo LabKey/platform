@@ -17,7 +17,8 @@
 package org.labkey.api.module;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * User: adam
@@ -26,14 +27,12 @@ import java.util.ArrayList;
  */
 public class FirstRequestHandler
 {
-    private static final ArrayList<FirstRequestListener> _listeners = new ArrayList<FirstRequestListener>();
+    // Thread-safe list implementation that allows iteration and modifications without external synchronization
+    private static final List<FirstRequestListener> _listeners = new CopyOnWriteArrayList<FirstRequestListener>();
 
     public static void addFirstRequestListener(FirstRequestListener listener)
     {
-        synchronized (_listeners)
-        {
-            _listeners.add(listener);
-        }
+        _listeners.add(listener);
     }
 
     public static void handleFirstRequest(HttpServletRequest request)

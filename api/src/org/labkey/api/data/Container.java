@@ -529,10 +529,10 @@ public class Container implements Serializable
                     //get set of all web parts for all modules
                     for (Module module : allModules)
                     {
-                        WebPartFactory[] webparts = module.getModuleWebParts();
-                        if (webparts != null)
+                        Collection<? extends WebPartFactory> factories = module.getWebPartFactories();
+                        if (factories != null)
                         {
-                            for (WebPartFactory desc : webparts)
+                            for (WebPartFactory desc : factories)
                                 mapWebPartModule.put(desc.getName(), module);
                         }
                     }

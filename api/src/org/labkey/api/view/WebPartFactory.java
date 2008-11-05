@@ -21,7 +21,6 @@ import org.labkey.api.data.Container;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Oct 16, 2008
  * Time: 10:21:49 AM

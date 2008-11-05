@@ -18,9 +18,11 @@ package org.labkey.api.security;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.*;
@@ -30,9 +32,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.wiki.WikiService;
-import org.labkey.api.audit.AuditLogService;
 import org.labkey.common.util.Pair;
-import org.jetbrains.annotations.NotNull;
 
 import javax.mail.Address;
 import javax.mail.Message;
@@ -44,10 +44,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.*;
+import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 
 /**
@@ -197,29 +199,24 @@ public class SecurityManager
         void principalDeletedFromGroup(Group group, UserPrincipal principal);
     }
 
-    private static final ArrayList<GroupListener> _listeners = new ArrayList<GroupListener>();
+    // Thread-safe list implementation that allows iteration and modifications without external synchronization
+    private static final List<GroupListener> _listeners = new CopyOnWriteArrayList<GroupListener>();
 
     public static void addGroupListener(GroupListener listener)
     {
-        synchronized (_listeners)
-        {
-            _listeners.add(listener);
-        }
+        _listeners.add(listener);
     }
 
-    protected static GroupListener[] getListeners()
+    private static List<GroupListener> getListeners()
     {
-        synchronized (_listeners)
-        {
-            return _listeners.toArray(new GroupListener[_listeners.size()]);
-        }
+        return _listeners;
     }
 
     protected static void fireAddPrincipalToGroup(Group group, UserPrincipal user)
     {
         if (user == null)
             return;
-        GroupListener[] list = getListeners();
+        List<GroupListener> list = getListeners();
         for (GroupListener GroupListener : list)
         {
             try
@@ -241,12 +238,12 @@ public class SecurityManager
 
         Group group = getGroup(groupId);
 
-        GroupListener[] list = getListeners();
-        for (GroupListener GroupListener : list)
+        List<GroupListener> list = getListeners();
+        for (GroupListener gl : list)
         {
             try
             {
-                GroupListener.principalDeletedFromGroup(group, user);
+                gl.principalDeletedFromGroup(group, user);
             }
             catch (Throwable t)
             {

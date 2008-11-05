@@ -31,6 +31,7 @@ import java.beans.PropertyChangeListener;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class UserManager
 {
@@ -69,27 +70,22 @@ public class UserManager
         void userAccountEnabled(User user);
     }
 
-    private static final ArrayList<UserListener> _listeners = new ArrayList<UserListener>();
+    // Thread-safe list implementation that allows iteration and modifications without external synchronization
+    private static final List<UserListener> _listeners = new CopyOnWriteArrayList<UserListener>();
 
     public static void addUserListener(UserListener listener)
     {
-        synchronized (_listeners)
-        {
-            _listeners.add(listener);
-        }
+        _listeners.add(listener);
     }
 
-    protected static UserListener[] getListeners()
+    private static List<UserListener> getListeners()
     {
-        synchronized (_listeners)
-        {
-            return _listeners.toArray(new UserListener[0]);
-        }
+        return _listeners;
     }
 
     protected static void fireAddUser(User user)
     {
-        UserListener[] list = getListeners();
+        List<UserListener> list = getListeners();
         for (UserListener userListener : list)
         {
             try
@@ -105,7 +101,7 @@ public class UserManager
 
     protected static List<Throwable> fireDeleteUser(User user)
     {
-        UserListener[] list = getListeners();
+        List<UserListener> list = getListeners();
         List<Throwable> errors = new ArrayList<Throwable>();
 
         for (UserListener userListener : list)
@@ -125,7 +121,7 @@ public class UserManager
 
     protected static List<Throwable> fireUserDisabled(User user)
     {
-        UserListener[] list = getListeners();
+        List<UserListener> list = getListeners();
         List<Throwable> errors = new ArrayList<Throwable>();
 
         for (UserListener userListener : list)
@@ -145,7 +141,7 @@ public class UserManager
 
     protected static List<Throwable> fireUserEnabled(User user)
     {
-        UserListener[] list = getListeners();
+        List<UserListener> list = getListeners();
         List<Throwable> errors = new ArrayList<Throwable>();
 
         for (UserListener userListener : list)

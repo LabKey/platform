@@ -49,12 +49,9 @@ public abstract class DefaultModule implements Module
     private static final Set<Class> INSTANTIATED_MODULES = new HashSet<Class>();
     private static final Object SCHEMA_UPDATE_LOCK = new Object();
 
-    private String _name;
-    private double _version;
-    private boolean _shouldRunScripts;
     private final Map<String, Class> _pageFlowNameToClass = new LinkedHashMap<String, Class>();
     private final Map<Class, String> _pageFlowClassToName = new HashMap<Class, String>();
-    private final WebPartFactory[] _webParts;
+    private final Collection<? extends WebPartFactory> _webPartFactories;
 
     private boolean _beforeSchemaUpdateComplete = false;
     private UpdateState _afterSchemaUpdateState = UpdateState.NotStarted;
@@ -62,6 +59,7 @@ public abstract class DefaultModule implements Module
 
     private ModuleMetaData _metaData;
     private boolean _loadFromSource;
+    private String _buildPath;
     private String _sourcePath;
 
     private enum SchemaUpdateType
@@ -85,17 +83,16 @@ public abstract class DefaultModule implements Module
         abstract List<SqlScript> getScripts(SqlScriptProvider provider) throws SqlScriptRunner.SqlScriptException;
     }
 
-    protected DefaultModule(String name, double version, String resourcePath, boolean shouldRunScripts, WebPartFactory... webParts)
+/*    protected DefaultModule(String name, double version, String resourcePath, boolean shouldRunScripts, WebPartFactory... webParts)
     {
         _name = name;
         _version = version;
         _shouldRunScripts = shouldRunScripts;
-        _webParts = webParts;
     }
-
+*/
     protected DefaultModule()
     {
-        _webParts = null;
+        _webPartFactories = createWebPartFactories();
     }
 
     final public void initialize()
@@ -110,13 +107,16 @@ public abstract class DefaultModule implements Module
 
         ModuleLoader.getInstance().registerResourcePrefix(getResourcePath(), this);
         ModuleLoader.getInstance().registerResourcePrefix(getResourcePath(), new ResourceFinder(this));
-        for (WebPartFactory part : _webParts)
+
+        for (WebPartFactory part : getWebPartFactories())
             part.setModule(this);
 
         init();
     }
 
     protected abstract void init();
+    protected abstract Collection<? extends WebPartFactory> createWebPartFactories();
+    public abstract boolean hasScripts();
 
     protected String getResourcePath()
     {
@@ -156,33 +156,15 @@ public abstract class DefaultModule implements Module
     }
 
 
-    public String getName()
-    {
-        return _name;
-    }
-
-
     public String getTabName(ViewContext context)
     {
         return getName();
     }
 
 
-    public double getVersion()
-    {
-        return _version;
-    }
-
-
     public String getFormattedVersion()
     {
         return ModuleContext.formatVersion(getVersion());
-    }
-
-
-    public boolean hasScripts()
-    {
-        return _shouldRunScripts;
     }
 
 
@@ -223,7 +205,7 @@ public abstract class DefaultModule implements Module
             _beforeSchemaUpdateComplete = true;
         }
 
-        if (_shouldRunScripts)
+        if (hasScripts())
         {
             Map m = moduleContext.getProperties();
             Boolean scriptsRun = (Boolean) m.get(SqlScriptRunner.SCRIPTS_RUN_KEY);
@@ -311,16 +293,16 @@ public abstract class DefaultModule implements Module
         moduleContext.setModuleState(ModuleLoader.ModuleState.Running);
     }
 
-    public void deleteContainerData(Container container)
-    {
-        //TODO: If module has standard table structure should be able to do this in base class using DbSchema
-    }
-
     public WebPartFactory[] getModuleWebParts()
     {
-        return _webParts;
+        throw new IllegalStateException("This method is dead");
     }
 
+
+    public final Collection<? extends WebPartFactory> getWebPartFactories()
+    {
+        return _webPartFactories;
+    }
 
     public void destroy()
     {
@@ -400,6 +382,7 @@ public abstract class DefaultModule implements Module
     {
         _metaData = metaData;
         _loadFromSource = false;
+        _buildPath = _metaData.getBuildPath();
         _sourcePath = _metaData.getSourcePath();
 
         if (AppProps.getInstance().isDevMode() && _sourcePath != null)
@@ -418,6 +401,11 @@ public abstract class DefaultModule implements Module
     public String getSourcePath()
     {
         return _sourcePath;
+    }
+
+    public String getBuildPath()
+    {
+        return _buildPath;
     }
 
     public List<String> getAttributions()

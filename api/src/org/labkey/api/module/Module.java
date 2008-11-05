@@ -120,13 +120,13 @@ public interface Module
     public void destroy();
 
     /**
-     * Return array of WebPartDescription objects for this module.
+     * Return Collection of WebPartFactory objects for this module.
      * NOTE: This may be called before startup, but will never be called
      * before bootstrap.
      *
-     * @return null if no web parts, otherwise array of WebPartDescription
+     * @return null if no web parts, otherwise Collection of WebPartFactory
      */
-    public WebPartFactory[] getModuleWebParts();
+    public Collection<? extends WebPartFactory> getWebPartFactories();
 
     /**
      * @param c container in which the items would be stored
@@ -184,6 +184,7 @@ public interface Module
     public InputStream getResourceStream(String filename) throws FileNotFoundException;
     public Pair<InputStream, Long> getResourceStreamIfChanged(String filename, long tsPrevious) throws FileNotFoundException;
     public String getSourcePath();
+    public String getBuildPath();
 
     /** Get a list of attributions (in HTML) that should be shown before users can log in. */
     public List<String> getAttributions();

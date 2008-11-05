@@ -651,10 +651,10 @@ public class Portal
         List<Module> modules = ModuleLoader.getInstance().getModules();
         for (Module module : modules)
         {
-            WebPartFactory[] parts = module.getModuleWebParts();
-            if (null == parts)
+            Collection<? extends WebPartFactory> factories = module.getWebPartFactories();
+            if (null == factories)
                 continue;
-            for (WebPartFactory webpart : parts)
+            for (WebPartFactory webpart : factories)
             {
                 _viewMap.put(webpart.getName(), webpart);
                 for (String legacyName : webpart.getLegacyNames())
@@ -679,9 +679,9 @@ public class Portal
         Set<String> webPartNames = new TreeSet<String>();
         for (Module module : ModuleLoader.getInstance().getModules())
         {
-            WebPartFactory[] factories = module.getModuleWebParts();
+            Collection<? extends WebPartFactory> factories = module.getWebPartFactories();
             if (null != factories)
-                for (WebPartFactory factory : module.getModuleWebParts())
+                for (WebPartFactory factory : factories)
                     if (factory.isAvailable(c, location))
                         webPartNames.add(factory.getName());
         }

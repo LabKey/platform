@@ -38,6 +38,7 @@ import java.beans.PropertyChangeListener;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * This class manages a hierarchy of collections, backed by a database table called Containers.
@@ -1325,33 +1326,28 @@ public class ContainerManager
         }
     }
 
-    static final ArrayList<ContainerListener> _listeners = new ArrayList<ContainerListener>();
+    // Thread-safe list implementation that allows iteration and modifications without external synchronization
+    private static final List<ContainerListener> _listeners = new CopyOnWriteArrayList<ContainerListener>();
 
     public static void addContainerListener(ContainerListener listener)
     {
-        synchronized (_listeners)
-        {
-            _listeners.add(listener);
-        }
+        _listeners.add(listener);
     }
 
 
-    protected static ContainerListener[] getListeners()
+    private static List<ContainerListener> getListeners()
     {
-        synchronized (_listeners)
-        {
-            return _listeners.toArray(new ContainerListener[_listeners.size()]);
-        }
+        return _listeners;
     }
 
 
     protected static void fireCreateContainer(Container c)
     {
-        ContainerListener[] list = getListeners();
-        for (ContainerListener l : list)
+        List<ContainerListener> list = getListeners();
+        for (ContainerListener cl : list)
             try
             {
-                l.containerCreated(c);
+                cl.containerCreated(c);
             }
             catch (Throwable t)
             {
@@ -1362,7 +1358,7 @@ public class ContainerManager
 
     protected static List<Throwable> fireDeleteContainer(Container c, User user)
     {
-        ContainerListener[] list = getListeners();
+        List<ContainerListener> list = getListeners();
         List<Throwable> errors = new ArrayList<Throwable>();
 
         for (ContainerListener l : list)
@@ -1397,7 +1393,7 @@ public class ContainerManager
 
     public static void firePropertyChangeEvent(ContainerPropertyChangeEvent evt)
     {
-        ContainerListener[] list = getListeners();
+        List<ContainerListener> list = getListeners();
         for (ContainerListener l : list)
         {
             try
@@ -1406,7 +1402,7 @@ public class ContainerManager
             }
             catch (Throwable t)
             {
-                _log.error("fireMoveContainer", t);
+                _log.error("firePropertyChangeEvent", t);
             }
         }
     }

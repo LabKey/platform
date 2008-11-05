@@ -147,6 +147,11 @@ public class ModuleMetaData
 
     public String getSourcePath()
     {
+        return _properties.get("SourcePath");
+    }
+
+    public String getBuildPath()
+    {
         return _properties.get("BuildPath");
     }
 

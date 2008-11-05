@@ -23,17 +23,22 @@ package org.labkey.api.module;
 public class ResourceFinder
 {
     String _name;
+    String _buildPath;
     String _sourcePath;
 
-    public ResourceFinder(String name, String sourcePath)
+    public ResourceFinder(String name, String sourcePath, String buildPath)
     {
         _name = name;
         _sourcePath = sourcePath;
+        _buildPath = buildPath;
+
+        assert _sourcePath != null : "Source path not set; it appears you need to rebuild";
+        assert _buildPath != null : "Build path not set; it appears you need to rebuild";
     }
 
     public ResourceFinder(Module module)
     {
-        this(module.getName(), module.getSourcePath());
+        this(module.getName(), module.getSourcePath(), module.getBuildPath());
     }
 
     public String getName()
@@ -46,9 +51,8 @@ public class ResourceFinder
         return _sourcePath;
     }
 
-    // TODO: module.properties should include, and Modules should publish, both SourcePath and BuildPath -- use that here
     public String getBuildPath()
     {
-        return ModuleLoader.getServletContext().getRealPath("../../modules/" + getName().toLowerCase());
+        return _buildPath;
     }
 }
